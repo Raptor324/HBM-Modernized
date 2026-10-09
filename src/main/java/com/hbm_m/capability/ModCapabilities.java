@@ -63,32 +63,20 @@ public class ModCapabilities {
             if (!supplier.isPresent()) continue;
             var type = (BlockEntityType<BlockEntity>) supplier.get();
 
-            // 1. Предметы (ItemHandler)
-            event.registerBlockEntity(
-                Capabilities.ItemHandler.BLOCK, type,
-                (be, side) -> (be instanceof BaseHbmBlockEntity hbm) ? (net.neoforged.neoforge.items.IItemHandler) hbm.getItemHandler(side) : null
-            );
-
-            // 2. Жидкости (FluidHandler)
-            event.registerBlockEntity(
-                Capabilities.FluidHandler.BLOCK, type,
-                (be, side) -> (be instanceof BaseHbmBlockEntity hbm) ? (net.neoforged.neoforge.fluids.capability.IFluidHandler) hbm.getFluidHandler(side) : null
-            );
-
-            // 3. Энергия (EnergyStorage)
-            event.registerBlockEntity(
-                Capabilities.EnergyStorage.BLOCK, type,
-                (be, side) -> {
-                    if (be instanceof com.hbm_m.api.energy.ConverterBlockEntity conv)
-                        return new com.hbm_m.api.energy.HbmForgeWrapper(conv);
-                    return (be instanceof BaseHbmBlockEntity hbm) ? (net.neoforged.neoforge.energy.IEnergyStorage) hbm.getEnergyStorage(side) : null;
-                }
-            );
-
-            // 4. HBM Custom Energy
-            event.registerBlockEntity(HBM_ENERGY_PROVIDER, type, (be, side) -> (be instanceof IEnergyProvider p) ? p : null);
-            event.registerBlockEntity(HBM_ENERGY_RECEIVER, type, (be, side) -> (be instanceof IEnergyReceiver r) ? r : null);
-            event.registerBlockEntity(HBM_ENERGY_CONNECTOR, type, (be, side) -> (be instanceof IEnergyConnector c && c.canConnectEnergy(side)) ? c : null);
+            // Alle Seiten-/Proxy-Regeln stehen in getHbmCapability (1:1-Spiegel des Forge-getCapability),
+            // Standard ohne Forge-Zweig: HbmCaps.defaults (bisherige NeoForge-Anmeldung).
+            event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, type,
+                (be, side) -> com.hbm_m.platform.HbmCaps.query(be, com.hbm_m.platform.HbmCap.ITEM_HANDLER, side));
+            event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, type,
+                (be, side) -> com.hbm_m.platform.HbmCaps.query(be, com.hbm_m.platform.HbmCap.FLUID_HANDLER, side));
+            event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, type,
+                (be, side) -> com.hbm_m.platform.HbmCaps.query(be, com.hbm_m.platform.HbmCap.ENERGY, side));
+            event.registerBlockEntity(HBM_ENERGY_PROVIDER, type,
+                (be, side) -> com.hbm_m.platform.HbmCaps.query(be, com.hbm_m.platform.HbmCap.HBM_ENERGY_PROVIDER, side));
+            event.registerBlockEntity(HBM_ENERGY_RECEIVER, type,
+                (be, side) -> com.hbm_m.platform.HbmCaps.query(be, com.hbm_m.platform.HbmCap.HBM_ENERGY_RECEIVER, side));
+            event.registerBlockEntity(HBM_ENERGY_CONNECTOR, type,
+                (be, side) -> com.hbm_m.platform.HbmCaps.query(be, com.hbm_m.platform.HbmCap.HBM_ENERGY_CONNECTOR, side));
         }
 
         registerBatteryItemCaps(event);
@@ -107,27 +95,70 @@ public class ModCapabilities {
                 continue;
             }
 
-            if (!(item instanceof com.hbm_m.item.fekal_electric.ModBatteryItem battery)) continue;
+            // Fluessigkeitsfass (Forge: initCapabilities -> FluidBarrelCapabilityProvider)
+            if (item instanceof com.hbm_m.item.liquids.FluidBarrelItem) {
+                event.registerItem(Capabilities.FluidHandler.ITEM,
+                        (stack, ctx) -> new com.hbm_m.item.liquids.FluidBarrelItem.FluidBarrelCapabilityHandler(stack), item);
+                continue;
+            }
+            // Loetlampe (Forge: FillOnlyCapability, nur Befuellen)
+            if (item instanceof com.hbm_m.item.tool.ItemBlowtorch blowtorch) {
+                event.registerItem(Capabilities.FluidHandler.ITEM,
+                        (stack, ctx) -> new com.hbm_m.item.tool.ItemBlowtorch.FillOnlyCapability(stack, blowtorch), item);
+                continue;
+            }
+            // Pipette (Forge: PipetteCapability)
+            if (item instanceof com.hbm_m.item.tool.ItemPipette) {
+                event.registerItem(Capabilities.FluidHandler.ITEM,
+                        (stack, ctx) -> new com.hbm_m.item.tool.ItemPipette.PipetteCapability(stack), item);
+                continue;
+            }
 
-            event.registerItem(HBM_ITEM_ENERGY_PROVIDER, (stack, ctx) ->
-                    new com.hbm_m.api.energy.EnergyCapabilityProvider.ItemEnergyStorage(
-                            stack, battery.getCapacity(), battery.getMaxReceive(), battery.getMaxExtract()), item);
-            event.registerItem(HBM_ITEM_ENERGY_RECEIVER, (stack, ctx) ->
-                    new com.hbm_m.api.energy.EnergyCapabilityProvider.ItemEnergyStorage(
-                            stack, battery.getCapacity(), battery.getMaxReceive(), battery.getMaxExtract()), item);
-
-            event.registerItem(Capabilities.EnergyStorage.ITEM, (stack, ctx) ->
-                    new com.hbm_m.api.energy.LongEnergyWrapper(
-                            new com.hbm_m.api.energy.EnergyCapabilityProvider.ItemEnergyStorage(
-                                    stack, battery.getCapacity(), battery.getMaxReceive(), battery.getMaxExtract()),
-                            com.hbm_m.api.energy.LongEnergyWrapper.BitMode.LOW), item);
+            // Energie-Items: Forge initCapabilities -> EnergyCapabilityProvider(stack, capacity, maxReceive, maxExtract)
+            if (item instanceof com.hbm_m.item.fekal_electric.ModBatteryItem battery) {
+                registerEnergyItem(event, item, stack -> new com.hbm_m.api.energy.EnergyCapabilityProvider.ItemEnergyStorage(
+                        stack, battery.getCapacity(), battery.getMaxReceive(), battery.getMaxExtract()));
+            } else if (item instanceof com.hbm_m.item.tool.ItemSwordAbilityPower sword) {
+                registerEnergyItem(event, item, stack -> new com.hbm_m.api.energy.EnergyCapabilityProvider.ItemEnergyStorage(
+                        stack, sword.maxPower, sword.chargeRate, 0));
+            } else if (item instanceof com.hbm_m.item.tool.ItemToolAbilityPower tool) {
+                registerEnergyItem(event, item, stack -> new com.hbm_m.api.energy.EnergyCapabilityProvider.ItemEnergyStorage(
+                        stack, tool.maxPower, tool.chargeRate, 0));
+            } else if (item instanceof com.hbm_m.powerarmor.ModArmorFSBPowered armor) {
+                // Kapazitaet haengt von den Ruestungsmods ab; NeoForge fragt Item-Caps bei jedem Zugriff neu ab,
+                // daher entfaellt das Forge-invalidateCaps aus ArmorModificationHelper.
+                registerEnergyItem(event, item, stack -> {
+                    long modifiedCapacity = armor.getMaxCharge(stack);
+                    return new com.hbm_m.api.energy.EnergyCapabilityProvider.ItemEnergyStorage(
+                            stack, modifiedCapacity, armor.chargeRate, modifiedCapacity);
+                });
+            }
         }
     }
 
+    /^*
+     * 1:1 Forge {@code EnergyCapabilityProvider.getCapability}: HBM-Provider nur wenn entnehmbar, HBM-Receiver nur wenn
+     * aufladbar, FE immer (untere Bits).
+     ^/
+    private static void registerEnergyItem(RegisterCapabilitiesEvent event, net.minecraft.world.item.Item item,
+            java.util.function.Function<net.minecraft.world.item.ItemStack, com.hbm_m.api.energy.EnergyCapabilityProvider.ItemEnergyStorage> storage) {
+        event.registerItem(HBM_ITEM_ENERGY_PROVIDER, (stack, ctx) -> {
+            var s = storage.apply(stack);
+            return s.canExtract() ? s : null;
+        }, item);
+        event.registerItem(HBM_ITEM_ENERGY_RECEIVER, (stack, ctx) -> {
+            var s = storage.apply(stack);
+            return s.canReceive() ? s : null;
+        }, item);
+        event.registerItem(Capabilities.EnergyStorage.ITEM, (stack, ctx) ->
+                new com.hbm_m.api.energy.LongEnergyWrapper(storage.apply(stack), com.hbm_m.api.energy.LongEnergyWrapper.BitMode.LOW), item);
+    }
+
     public static boolean hasEnergyComponent(BlockEntity be) {
-        return be instanceof IEnergyConnector
-            || be instanceof IEnergyProvider
-            || be instanceof IEnergyReceiver;
+        // wie Forge be.getCapability(..) ohne Seite
+        return com.hbm_m.platform.HbmCaps.get(be, com.hbm_m.platform.HbmCap.HBM_ENERGY_CONNECTOR, null).isPresent()
+            || com.hbm_m.platform.HbmCaps.get(be, com.hbm_m.platform.HbmCap.HBM_ENERGY_PROVIDER, null).isPresent()
+            || com.hbm_m.platform.HbmCaps.get(be, com.hbm_m.platform.HbmCap.HBM_ENERGY_RECEIVER, null).isPresent();
     }
 }
 *///?}

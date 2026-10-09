@@ -30,7 +30,9 @@ import net.minecraft.world.phys.Vec3;
 public class EntityBulletBaseMK4 extends EntityThrowableNT
         //? if forge {
         implements net.minecraftforge.entity.IEntityAdditionalSpawnData
-        //?}
+        //?} elif neoforge {
+        /*implements net.neoforged.neoforge.entity.IEntityWithComplexSpawn
+        *///?}
 {
 
     private static final EntityDataAccessor<Integer> CONFIG = SynchedEntityData.defineId(EntityBulletBaseMK4.class, EntityDataSerializers.INT);
@@ -244,5 +246,20 @@ public class EntityBulletBaseMK4 extends EntityThrowableNT
     public net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ClientGamePacketListener> getAddEntityPacket() {
         return net.minecraftforge.network.NetworkHooks.getEntitySpawningPacket(this);
     }
-    //?}
+    //?} elif neoforge {
+    /*// NeoForge: IEntityWithComplexSpawn (Spawn-Paket wird automatisch erweitert)
+    @Override
+    public void writeSpawnData(net.minecraft.network.RegistryFriendlyByteBuf buf) {
+        buf.writeInt(this.thrower != null ? thrower.getId() : -1);
+        buf.writeInt(this.config != null ? this.config.id : 0);
+    }
+
+    @Override
+    public void readSpawnData(net.minecraft.network.RegistryFriendlyByteBuf buf) {
+        Entity e = level().getEntity(buf.readInt());
+        if (e instanceof LivingEntity living) this.thrower = living;
+        int id = buf.readInt();
+        if (id >= 0 && id < BulletConfig.configs.size()) this.config = BulletConfig.configs.get(id);
+    }
+    *///?}
 }

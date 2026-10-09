@@ -207,7 +207,38 @@ public class PADetectorBlockEntity extends CooledMachineBlockEntity implements I
         sided.values().forEach(net.minecraftforge.common.util.LazyOptional::invalidate);
         sided.clear();
     }
-    //?}
+    //?} elif neoforge {
+    /*private final java.util.Map<Direction, com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler>> sided = new java.util.EnumMap<>(Direction.class);
+
+    /^* Original: Zugriff auf 1-4, hinein nur in die Behaelterplaetze 1/2, heraus nur aus den Ausgaben 3/4. ^/
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) {
+            return sided.computeIfAbsent(side, d -> com.hbm_m.platform.LazyCap.of(() -> new net.neoforged.neoforge.items.IItemHandler() {
+                @Override public int getSlots() { return 4; }
+                @Override public @org.jetbrains.annotations.NotNull ItemStack getStackInSlot(int slot) { return getInventory().getStackInSlot(slot + 1); }
+                @Override public @org.jetbrains.annotations.NotNull ItemStack insertItem(int slot, @org.jetbrains.annotations.NotNull ItemStack stack, boolean simulate) {
+                    if (slot + 1 != SLOT_CONTAINER_A && slot + 1 != SLOT_CONTAINER_B) return stack;
+                    return getInventory().insertItem(slot + 1, stack, simulate);
+                }
+                @Override public @org.jetbrains.annotations.NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+                    if (slot + 1 != SLOT_OUTPUT_A && slot + 1 != SLOT_OUTPUT_B) return ItemStack.EMPTY;
+                    return getInventory().extractItem(slot + 1, amount, simulate);
+                }
+                @Override public int getSlotLimit(int slot) { return getInventory().getSlotLimit(slot + 1); }
+                @Override public boolean isItemValid(int slot, @org.jetbrains.annotations.NotNull ItemStack stack) { return slot + 1 == SLOT_CONTAINER_A || slot + 1 == SLOT_CONTAINER_B; }
+            })).cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sided.values().forEach(com.hbm_m.platform.LazyCap::invalidate);
+        sided.clear();
+    }
+    *///?}
 
     @Override
     protected Component getDefaultName() {

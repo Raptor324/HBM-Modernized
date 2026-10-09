@@ -12,7 +12,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 //? if forge {
 import net.minecraftforge.items.SlotItemHandler;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.neoforge.items.SlotItemHandler;
+*///?}
 
 /** Slot-Koordinaten angelehnt an {@code ContainerRadiolysis} (1.7.10 Original): Fluid-ID (34,17),
  *  Batterie (8,53). RTG- und Sterilisations-Slots des Originals entfallen (siehe
@@ -30,7 +32,8 @@ public class MachineRadiolysisMenu extends AbstractContainerMenu {
         super(ModMenuTypes.RADIOLYSIS_MENU.get(), id);
         this.blockEntity = be;
 
-        //? if forge {
+        // NeoForge: gleiche SlotItemHandler-API (ModItemStackHandler ist dort IItemHandler)
+        //? if forge || neoforge {
         var handler = be.getInventory();
 
         // 1:1 aus {@code ContainerRadiolysis}: zwei Spalten zu fuenf Pelletplaetzen rechts aussen.
@@ -58,9 +61,13 @@ public class MachineRadiolysisMenu extends AbstractContainerMenu {
     }
 
     /** Original: {@code SlotTakeOnly} - herausnehmen ja, hineinlegen nein. */
-    //? if forge {
+    //? if forge || neoforge {
     private static class TakeOnlySlot extends SlotItemHandler {
+        //? if forge {
         TakeOnlySlot(net.minecraftforge.items.IItemHandler handler, int index, int x, int y) {
+        //?} else {
+        /*TakeOnlySlot(net.neoforged.neoforge.items.IItemHandler handler, int index, int x, int y) {
+        *///?}
             super(handler, index, x, y);
         }
 

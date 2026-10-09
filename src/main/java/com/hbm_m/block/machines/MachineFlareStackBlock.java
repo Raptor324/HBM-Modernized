@@ -198,8 +198,12 @@ public class MachineFlareStackBlock extends BaseEntityBlock implements IMultiblo
 
     /** Original {@code MachineGasFlare.addInformation} (fest im Code, englisch). */
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(net.minecraft.world.item.ItemStack stack, @Nullable BlockGetter level,
                                 java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(net.minecraft.world.item.ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    *///?}
         net.minecraft.ChatFormatting gold = net.minecraft.ChatFormatting.GOLD, red = net.minecraft.ChatFormatting.RED, yellow = net.minecraft.ChatFormatting.YELLOW;
         list.add(net.minecraft.network.chat.Component.literal("Can burn fluids and vent gasses").withStyle(gold));
         list.add(net.minecraft.network.chat.Component.literal("Burns up to ").withStyle(gold).append(net.minecraft.network.chat.Component.literal("10mB/t").withStyle(red)));

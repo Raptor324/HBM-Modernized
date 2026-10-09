@@ -21,7 +21,7 @@
 // *///?} elif neoforge {
 // /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 // *///?}
-// public class TestBlockRenderer implements BlockEntityRenderer<TestBlockEntity> {
+// public class TestBlockRenderer implements com.hbm_m.client.render.HbmBerBounds<TestBlockEntity> {
 
 //     private static final String CACHE_KEY = "test_block:" + TestBakedModel.PART_DEFAULT;
 

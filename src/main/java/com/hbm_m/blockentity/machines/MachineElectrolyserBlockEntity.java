@@ -437,7 +437,39 @@ public class MachineElectrolyserBlockEntity extends BaseMachineBlockEntity imple
         if (sided != null) sided.invalidate();
         sided = null;
     }
-    //?}
+    //?} elif neoforge {
+    /*private com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler> sided;
+
+    /^* Original {@code getAccessibleSlotsFromSide {11-20}}: nur Slot 14 einfuegbar, alles ausser 14 entnehmbar. ^/
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) {
+            if (sided == null) sided = com.hbm_m.platform.LazyCap.of(() -> new net.neoforged.neoforge.items.IItemHandler() {
+                @Override public int getSlots() { return 10; }
+                @Override public @NotNull ItemStack getStackInSlot(int slot) { return inventory.getStackInSlot(11 + slot); }
+                @Override public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
+                    if (11 + slot != 14 || ElectrolyserMetalRecipes.getRecipe(stack) == null) return stack;
+                    return inventory.insertItem(14, stack, simulate);
+                }
+                @Override public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+                    if (11 + slot == 14) return ItemStack.EMPTY;
+                    return inventory.extractItem(11 + slot, amount, simulate);
+                }
+                @Override public int getSlotLimit(int slot) { return inventory.getSlotLimit(11 + slot); }
+                @Override public boolean isItemValid(int slot, @NotNull ItemStack stack) { return 11 + slot == 14 && ElectrolyserMetalRecipes.getRecipe(stack) != null; }
+            });
+            return sided.cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        if (sided != null) sided.invalidate();
+        sided = null;
+    }
+    *///?}
 
     // ── NBT ─────────────────────────────────────────────────────────────────
 

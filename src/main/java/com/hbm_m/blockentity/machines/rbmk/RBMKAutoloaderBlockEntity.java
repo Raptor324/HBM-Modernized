@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines.rbmk;
 
+import com.hbm_m.platform.StackNbt;
+
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.handler.rbmk.RBMKNeutronHandler.RBMKType;
 import com.hbm_m.inventory.menu.RBMKAutoloaderMenu;
@@ -176,15 +178,16 @@ public class RBMKAutoloaderBlockEntity extends RBMKColumnBlockEntity implements 
      * The piston travels four blocks <b>down</b> into the fuel channel, so the inherited column box
      * (which only ever grows upward) culls it away as soon as the block itself leaves the frustum.
      */
+    // Phase D: auf NeoForge ueber RenderBoundsProvider (HbmBerBounds), daher Methode auf beiden Loadern
     //? if forge {
     @Override
     @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?}
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
         BlockPos p = getBlockPos();
         return new net.minecraft.world.phys.AABB(p.getX(), p.getY() - 5, p.getZ(),
                                                  p.getX() + 1, p.getY() + 2, p.getZ() + 1);
     }
-    //?}
 
     @Override public Component getDisplayName() { return Component.translatable("block.hbm_m.rbmk_autoloader"); }
     @Override public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) { return new RBMKAutoloaderMenu(id, inv, this); }
@@ -228,7 +231,7 @@ public class RBMKAutoloaderBlockEntity extends RBMKColumnBlockEntity implements 
             CompoundTag s = list.getCompound(i);
             int idx = s.getByte("s") & 0xFF;
             if (idx < SLOTS && s.contains("item"))
-                slots[idx] = ItemStack.of(s.getCompound("item"));
+                slots[idx] = StackNbt.parse(s.getCompound("item"));
         }
     }
 

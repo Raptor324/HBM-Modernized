@@ -1,5 +1,7 @@
 package com.hbm_m.armormod.item;
 
+import com.hbm_m.platform.ItemHooks;
+
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -44,7 +46,7 @@ public class ItemModTesla extends ItemArmorMod {
             targets = com.hbm_m.blockentity.machines.TeslaBlockEntity.zap(entity.level(), entity.getX(), entity.getY() + 1.25, entity.getZ(), 5, entity);
 
             if (targets != null && !targets.isEmpty() && entity.getRandom().nextInt(5) == 0) {
-                armor.hurtAndBreak(1, entity, e -> {});
+                ItemHooks.hurtAndBreakSilent(armor, 1, entity);
             }
         }
     }

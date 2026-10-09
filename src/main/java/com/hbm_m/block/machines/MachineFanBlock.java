@@ -1,5 +1,7 @@
 package com.hbm_m.block.machines;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -64,7 +66,7 @@ public class MachineFanBlock extends BaseEntityBlock implements IToolable {
     public static Direction determineOrientation(BlockPos pos, @Nullable LivingEntity player) {
         if (player == null) return Direction.UP;
         if (Mth.abs((float) player.getX() - pos.getX()) < 2.0F && Mth.abs((float) player.getZ() - pos.getZ()) < 2.0F) {
-            double d0 = player.getY() + 1.82D - player.getMyRidingOffset();
+            double d0 = player.getY() + 1.82D - PlatformHooks.getMyRidingOffset(player);
             if (d0 - pos.getY() > 2.0D) return Direction.UP;
             if (pos.getY() - d0 > 0.0D) return Direction.DOWN;
         }
@@ -133,7 +135,11 @@ public class MachineFanBlock extends BaseEntityBlock implements IToolable {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> list, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+    *///?}
         com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
     }
 

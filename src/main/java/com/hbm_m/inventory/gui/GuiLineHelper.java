@@ -29,12 +29,18 @@ public final class GuiLineHelper {
 
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
         Matrix4f m = g.pose().last().pose();
-        BufferBuilder buf = Tesselator.getInstance().getBuilder();
-        buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+        BufferBuilder buf = com.hbm_m.platform.RenderHooks.beginTesselator(Tesselator.getInstance(), VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+        //? if < 1.21.1 {
         buf.vertex(m, (float) (x1 + nx), (float) (y1 + ny), 0F).color(r, gr, b, 1F).endVertex();
         buf.vertex(m, (float) (x2 + nx), (float) (y2 + ny), 0F).color(r, gr, b, 1F).endVertex();
         buf.vertex(m, (float) (x2 - nx), (float) (y2 - ny), 0F).color(r, gr, b, 1F).endVertex();
         buf.vertex(m, (float) (x1 - nx), (float) (y1 - ny), 0F).color(r, gr, b, 1F).endVertex();
-        Tesselator.getInstance().end();
+        //?} else {
+        /*buf.addVertex(m, (float) (x1 + nx), (float) (y1 + ny), 0F).setColor(r, gr, b, 1F);
+        buf.addVertex(m, (float) (x2 + nx), (float) (y2 + ny), 0F).setColor(r, gr, b, 1F);
+        buf.addVertex(m, (float) (x2 - nx), (float) (y2 - ny), 0F).setColor(r, gr, b, 1F);
+        buf.addVertex(m, (float) (x1 - nx), (float) (y1 - ny), 0F).setColor(r, gr, b, 1F);
+        *///?}
+        com.hbm_m.platform.RenderHooks.drawWithShader(buf);
     }
 }

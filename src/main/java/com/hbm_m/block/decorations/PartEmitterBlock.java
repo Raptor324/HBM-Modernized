@@ -60,7 +60,15 @@ public class PartEmitterBlock extends BaseEntityBlock implements IToolable {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> tooltip, TooltipFlag flag) {
+    *///?}
         tooltip.add(Component.translatable("tooltip.hbm_m.emitter.hand_drill").withStyle(ChatFormatting.GOLD));
     }
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<PartEmitterBlock> CODEC = simpleCodec(PartEmitterBlock::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

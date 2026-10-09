@@ -238,7 +238,56 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
             return new FluidStack(ModFluids.FLUE.getSource(), drained);
         }
     }
-    //?}
+    //?} elif neoforge {
+    /*private com.hbm_m.platform.LazyCap<net.neoforged.neoforge.fluids.capability.IFluidHandler> lazyFluidHandler = com.hbm_m.platform.LazyCap.empty();
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        lazyFluidHandler = com.hbm_m.platform.LazyCap.of(() -> new CombinedFluidHandler());
+    }
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER) {
+            return lazyFluidHandler.cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        lazyFluidHandler.invalidate();
+    }
+
+    /^* Заполнение - только дутьё, слив - только дымовые газы (как в оригинале). ^/
+    private class CombinedFluidHandler implements net.neoforged.neoforge.fluids.capability.IFluidHandler {
+        @Override public int getTanks() { return 2; }
+        @Override public net.neoforged.neoforge.fluids.FluidStack getFluidInTank(int tank) {
+            if (tank == 0 && !airTank.isEmpty()) return new net.neoforged.neoforge.fluids.FluidStack(airTank.getStoredFluid(), airTank.getFluidAmountMb());
+            if (tank == 1 && !flueTank.isEmpty()) return new net.neoforged.neoforge.fluids.FluidStack(flueTank.getStoredFluid(), flueTank.getFluidAmountMb());
+            return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        }
+        @Override public int getTankCapacity(int tank) { return tank == 0 ? AIR_CAPACITY_MB : tank == 1 ? FLUE_CAPACITY_MB : 0; }
+        @Override public boolean isFluidValid(int tank, net.neoforged.neoforge.fluids.FluidStack stack) {
+            return tank == 0 && !stack.isEmpty() && stack.getFluid() == ModFluids.AIRBLAST.getSource();
+        }
+        @Override public int fill(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty() || resource.getFluid() != ModFluids.AIRBLAST.getSource()) return 0;
+            return airTank.fillMb(resource.getFluid(), resource.getAmount(), action.simulate());
+        }
+        @Override public net.neoforged.neoforge.fluids.FluidStack drain(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty() || resource.getFluid() != flueTank.getStoredFluid()) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            return drain(resource.getAmount(), action);
+        }
+        @Override public net.neoforged.neoforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+            int drained = flueTank.drainMb(maxDrain, action.simulate());
+            if (drained <= 0) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            return new net.neoforged.neoforge.fluids.FluidStack(ModFluids.FLUE.getSource(), drained);
+        }
+    }
+    *///?}
 
     @Override
     public @Nullable Object getFluidHandler(@Nullable Direction side) {

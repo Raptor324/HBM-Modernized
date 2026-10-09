@@ -1,5 +1,7 @@
 package com.hbm_m.compat.curios;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import java.util.UUID;
 
 import net.minecraft.world.entity.EquipmentSlot;
@@ -68,7 +70,7 @@ public class GasMaskCurio implements ICurio {
                 com.google.common.collect.ImmutableMultimap.builder();
         for (java.util.Map.Entry<Attribute, AttributeModifier> e : base.entries()) {
             AttributeModifier m = e.getValue();
-            builder.put(e.getKey(), new AttributeModifier(uuid, m.getName() + "_curios", m.getAmount(), m.getOperation()));
+            builder.put(e.getKey(), PlatformHooks.attributeModifier(uuid, m.getName() + "_curios", m.getAmount(), m.getOperation()));
         }
         return builder.build();
     }

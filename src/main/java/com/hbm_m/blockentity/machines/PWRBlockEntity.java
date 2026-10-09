@@ -49,6 +49,9 @@ public class PWRBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity
         this.block = block;
         this.core = core.immutable();
         setChanged();
+        //? if neoforge {
+        /*invalidateCapabilities(); // NeoForge-Capability-Cache: Anschluss geaendert
+        *///?}
     }
 
     private boolean isPort() {
@@ -160,7 +163,18 @@ public class PWRBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity
         }
         return super.getCapability(cap, side);
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER) {
+            if (!isPort() || block == null) return com.hbm_m.platform.LazyCap.empty();
+            PWRControllerBlockEntity controller = getCore();
+            if (controller != null) return com.hbm_m.platform.HbmCaps.get(controller, cap, side);
+            return com.hbm_m.platform.LazyCap.empty();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+    *///?}
 
     // ── NBT ─────────────────────────────────────────────────────────────────
 

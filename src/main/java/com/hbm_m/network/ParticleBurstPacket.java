@@ -2,7 +2,6 @@ package com.hbm_m.network;
 
 import dev.architectury.networking.NetworkManager.PacketContext;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
@@ -47,9 +46,7 @@ public class ParticleBurstPacket implements S2CPacket {
     public static void handle(ParticleBurstPacket m, PacketContext context) {
         context.queue(() -> {
             try {
-                Minecraft mc = Minecraft.getInstance();
-                if (mc.level == null) return;
-                mc.particleEngine.destroy(new BlockPos(m.x, m.y, m.z), Block.stateById(m.stateId));
+                com.hbm_m.client.ClientAccess.destroyBlockParticles(new BlockPos(m.x, m.y, m.z), Block.stateById(m.stateId));
             } catch (Exception ignored) { }
         });
     }

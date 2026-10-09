@@ -110,7 +110,30 @@ public class ItemCrucible extends ItemSwordAbility implements IEquipReceiver, IA
         if (slot != EquipmentSlot.MAINHAND || !isActive(stack)) return ImmutableMultimap.of();
         return super.getDefaultAttributeModifiers(slot);
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public boolean onEntitySwing(ItemStack stack, LivingEntity entity) {
+        onSwing(entity, stack);
+        return false;
+    }
+
+    @Override
+    public void initializeClient(java.util.function.Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
+        consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
+            @Override
+            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return com.hbm_m.client.weapon.GunItemRenderer.INSTANCE;
+            }
+        });
+    }
+
+    /^* Original {@code getAttributeModifiers(ItemStack)}: Modifikatoren nur mit Ladung (ItemSwordAbility liefert nur MAINHAND). ^/
+    @Override
+    public net.minecraft.world.item.component.ItemAttributeModifiers getDefaultAttributeModifiers(ItemStack stack) {
+        if (!isActive(stack)) return net.minecraft.world.item.component.ItemAttributeModifiers.EMPTY;
+        return super.getDefaultAttributeModifiers(stack);
+    }
+    *///?}
 
     @Override
     public boolean hurtEnemy(ItemStack stack, LivingEntity victim, LivingEntity attacker) {
@@ -204,8 +227,7 @@ public class ItemCrucible extends ItemSwordAbility implements IEquipReceiver, IA
 
     /** Nur clientseitig aufgerufen (aus {@link #getAnimation} im Animationspaket-Handler). */
     private void playSwing(float pitch) {
-        net.minecraft.client.Minecraft.getInstance().getSoundManager().play(
-                net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(HbmSoundsNT.get("hbm:weapon.cSwing"), pitch));
+        com.hbm_m.client.ClientAccess.playUiSound(HbmSoundsNT.get("hbm:weapon.cSwing"), pitch);
     }
 
     @Override

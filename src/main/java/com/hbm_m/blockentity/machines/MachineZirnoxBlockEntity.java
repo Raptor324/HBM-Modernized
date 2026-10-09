@@ -523,6 +523,9 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
         this.fluidSidesFromMultiblockStructure = false;
         setChanged();
         sendUpdateToClient();
+        //? if neoforge {
+        /*invalidateCapabilities(); // NeoForge-Capability-Cache: Seiten/Rolle geaendert
+        *///?}
     }
 
     /**
@@ -647,7 +650,110 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
             return drained;
         }
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    protected void setupFluidCapability() {
+        setFluidHandler(new UnifiedFluidHandler(this));
+    }
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast(); // Original ISidedInventory
+        if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER && side != null) {
+            if (fluidSidesFromMultiblockStructure && !allowedFluidSides.contains(side)) {
+                return com.hbm_m.platform.LazyCap.empty();
+            }
+            if (!fluidSidesFromMultiblockStructure && !allowedFluidSides.isEmpty() && !allowedFluidSides.contains(side)) {
+                return com.hbm_m.platform.LazyCap.empty();
+            }
+        }
+        return super.getHbmCapability(cap, side);
+    }
+
+    private static class UnifiedFluidHandler implements net.neoforged.neoforge.fluids.capability.IFluidHandler {
+        private final MachineZirnoxBlockEntity be;
+
+        UnifiedFluidHandler(MachineZirnoxBlockEntity be) {
+            this.be = be;
+        }
+
+        @Override public int getTanks() { return 3; }
+
+        @Override
+        public @NotNull net.neoforged.neoforge.fluids.FluidStack getFluidInTank(int tank) {
+            return switch (tank) {
+                case 0 -> new net.neoforged.neoforge.fluids.FluidStack(be.waterTank.getTankType(), be.waterTank.getFill());
+                case 1 -> new net.neoforged.neoforge.fluids.FluidStack(be.co2Tank.getTankType(), be.co2Tank.getFill());
+                case 2 -> new net.neoforged.neoforge.fluids.FluidStack(be.steamTank.getTankType(), be.steamTank.getFill());
+                default -> net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            };
+        }
+
+        @Override
+        public int getTankCapacity(int tank) {
+            return switch (tank) {
+                case 0 -> be.waterTank.getMaxFill();
+                case 1 -> be.co2Tank.getMaxFill();
+                case 2 -> be.steamTank.getMaxFill();
+                default -> 0;
+            };
+        }
+
+        @Override
+        public boolean isFluidValid(int tank, @NotNull net.neoforged.neoforge.fluids.FluidStack stack) {
+            if (tank == 0) return VanillaFluidEquivalence.sameSubstance(stack.getFluid(), Fluids.WATER);
+            if (tank == 1) return VanillaFluidEquivalence.sameSubstance(stack.getFluid(), ModFluids.CARBONDIOXIDE.getSource());
+            return false;
+        }
+
+        @Override
+        public int fill(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty()) return 0;
+            if (VanillaFluidEquivalence.sameSubstance(resource.getFluid(), Fluids.WATER)) {
+                int space = be.waterTank.getMaxFill() - be.waterTank.getFill();
+                int toFill = Math.min(space, resource.getAmount());
+                if (toFill <= 0) return 0;
+                if (action.execute()) be.waterTank.fillMb(Fluids.WATER, toFill);
+                return toFill;
+            }
+            if (VanillaFluidEquivalence.sameSubstance(resource.getFluid(), ModFluids.CARBONDIOXIDE.getSource())) {
+                int space = be.co2Tank.getMaxFill() - be.co2Tank.getFill();
+                int toFill = Math.min(space, resource.getAmount());
+                if (toFill <= 0) return 0;
+                if (action.execute()) be.co2Tank.fillMb(ModFluids.CARBONDIOXIDE.getSource(), toFill);
+                return toFill;
+            }
+            return 0;
+        }
+
+        @Override
+        public @NotNull net.neoforged.neoforge.fluids.FluidStack drain(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty() || be.steamTank.getFill() <= 0) {
+                return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            }
+            if (!VanillaFluidEquivalence.sameSubstance(resource.getFluid(), be.steamTank.getTankType())) {
+                return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            }
+            int toDrain = Math.min(resource.getAmount(), be.steamTank.getFill());
+            net.neoforged.neoforge.fluids.FluidStack drained =
+                    new net.neoforged.neoforge.fluids.FluidStack(be.steamTank.getTankType(), toDrain);
+            if (action.execute()) be.steamTank.drainMb(toDrain);
+            return drained;
+        }
+
+        @Override
+        public @NotNull net.neoforged.neoforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+            if (maxDrain <= 0 || be.steamTank.getFill() <= 0) {
+                return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            }
+            int toDrain = Math.min(maxDrain, be.steamTank.getFill());
+            net.neoforged.neoforge.fluids.FluidStack drained =
+                    new net.neoforged.neoforge.fluids.FluidStack(be.steamTank.getTankType(), toDrain);
+            if (action.execute()) be.steamTank.drainMb(toDrain);
+            return drained;
+        }
+    }
+    *///?}
 
     //? if forge {
     /** Original {@code ISidedInventory}: Plaetze 0-23; nur Zirnox-Staebe hinein, nur verbrauchte (keine Zirnox-Staebe mehr) heraus. */
@@ -663,7 +769,21 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
         super.invalidateCaps();
         sidedItems.invalidate();
     }
-    //?}
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: Plaetze 0-23; nur Zirnox-Staebe hinein, nur verbrauchte (keine Zirnox-Staebe mehr) heraus. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.range(0, 23); }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot < 24 && !(stack.getItem() instanceof com.hbm_m.item.industrial.ZirnoxRodItem); }
+            });
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
 
     // ── Redstone-over-Radio (1:1 TileEntityReactorZirnox) ──
 

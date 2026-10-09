@@ -198,7 +198,9 @@ public class ArmorModificationHelper {
         }
         //? if forge {
         armorStack.invalidateCaps();
-        //?}
+        //?} elif neoforge {
+        /*// NeoForge fragt Item-Capabilities bei jedem Zugriff neu ab (ModCapabilities.registerEnergyItem) - nichts zu invalidieren.
+        *///?}
         long newMaxCapacity = powered.getMaxCharge(armorStack);
         long currentCharge = powered.getCharge(armorStack);
         if (currentCharge > newMaxCapacity) {

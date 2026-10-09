@@ -1,5 +1,7 @@
 package com.hbm_m.item.weapon;
 
+import com.hbm_m.platform.EffectHooks;
+
 import java.util.List;
 import java.util.Random;
 
@@ -210,10 +212,12 @@ public class ItemAmmoArty extends Item implements ITooltipProvider {
         for (Entity e : hit) {
             PlatformHooks.setSecondsOnFire(e, 5);
             if (e instanceof LivingEntity living) {
-                MobEffectInstance eff = new MobEffectInstance(ModEffects.PHOSPHORUS.get(), 30 * 20, 0, true, true);
+                MobEffectInstance eff = new MobEffectInstance(EffectHooks.of(ModEffects.PHOSPHORUS), 30 * 20, 0, true, true);
                 //? if forge {
                 eff.setCurativeItems(new java.util.ArrayList<>());
-                //?}
+                //?} elif neoforge {
+                /*eff.getCures().clear();
+                *///?}
                 living.addEffect(eff);
             }
         }

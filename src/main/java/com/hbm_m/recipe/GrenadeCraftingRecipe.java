@@ -30,12 +30,22 @@ import net.minecraft.world.level.Level;
  */
 public class GrenadeCraftingRecipe extends CustomRecipe {
 
+    //? if < 1.21.1 {
     public GrenadeCraftingRecipe(ResourceLocation id, CraftingBookCategory category) {
         super(id, category);
     }
+    //?} else {
+    /*public GrenadeCraftingRecipe(CraftingBookCategory category) {
+        super(category);
+    }
+    *///?}
 
     @Override
+    //? if < 1.21.1 {
     public boolean matches(CraftingContainer inv, Level world) {
+    //?} else {
+    /*public boolean matches(net.minecraft.world.item.crafting.CraftingInput inv, Level world) {
+    *///?}
         if (hasForeignObject(inv)) return false; // can't be non-grenade items and can't be more than 4 items total
         EnumGrenadeShell shell = getFirst(inv, ItemGrenadeShell.class, i -> ((ItemGrenadeShell) i).type); // only one shell, null otherwise
         EnumGrenadeFilling filling = getFirst(inv, ItemGrenadeFilling.class, i -> ((ItemGrenadeFilling) i).type); // only one filling, null otherwise
@@ -46,7 +56,11 @@ public class GrenadeCraftingRecipe extends CustomRecipe {
     }
 
     @Override
+    //? if < 1.21.1 {
     public ItemStack assemble(CraftingContainer inv, RegistryAccess registries) {
+    //?} else {
+    /*public ItemStack assemble(net.minecraft.world.item.crafting.CraftingInput inv, net.minecraft.core.HolderLookup.Provider registries) {
+    *///?}
         EnumGrenadeShell shell = getFirst(inv, ItemGrenadeShell.class, i -> ((ItemGrenadeShell) i).type);
         EnumGrenadeFilling filling = getFirst(inv, ItemGrenadeFilling.class, i -> ((ItemGrenadeFilling) i).type);
         EnumGrenadeFuze fuze = getFirst(inv, ItemGrenadeFuze.class, i -> ((ItemGrenadeFuze) i).type);
@@ -61,15 +75,26 @@ public class GrenadeCraftingRecipe extends CustomRecipe {
     }
 
     @Override
+    //? if < 1.21.1 {
     public ItemStack getResultItem(RegistryAccess registries) {
+    //?} else {
+    /*public ItemStack getResultItem(net.minecraft.core.HolderLookup.Provider registries) {
+    *///?}
         return new ItemStack(GrenadeItems.GRENADE_UNIVERSAL.get());
     }
 
     // why write the same crap four times when you can just use your massive cock instead
+    //? if < 1.21.1 {
     private static <T extends Enum<T>> T getFirst(CraftingContainer inv, Class<? extends Item> itemType, Function<Item, T> typeOf) {
         T first = null;
 
         for (int i = 0; i < inv.getContainerSize(); i++) {
+    //?} else {
+    /*private static <T extends Enum<T>> T getFirst(net.minecraft.world.item.crafting.CraftingInput inv, Class<? extends Item> itemType, Function<Item, T> typeOf) {
+        T first = null;
+
+        for (int i = 0; i < inv.size(); i++) {
+    *///?}
             ItemStack stack = inv.getItem(i);
             if (stack.isEmpty()) continue;
             if (itemType.isInstance(stack.getItem())) {
@@ -82,9 +107,15 @@ public class GrenadeCraftingRecipe extends CustomRecipe {
     }
 
     // this should weed out non-grenade grids quickly as to not waste too much CPU time
+    //? if < 1.21.1 {
     private static boolean hasForeignObject(CraftingContainer inv) {
         int itemCount = 0;
         for (int i = 0; i < inv.getContainerSize(); i++) {
+    //?} else {
+    /*private static boolean hasForeignObject(net.minecraft.world.item.crafting.CraftingInput inv) {
+        int itemCount = 0;
+        for (int i = 0; i < inv.size(); i++) {
+    *///?}
             ItemStack stack = inv.getItem(i);
             if (stack.isEmpty()) continue;
             Item item = stack.getItem();

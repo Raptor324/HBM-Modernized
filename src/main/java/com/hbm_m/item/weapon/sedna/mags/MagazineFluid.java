@@ -1,5 +1,7 @@
 package com.hbm_m.item.weapon.sedna.mags;
 
+import com.hbm_m.platform.StackNbt;
+
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.item.ModItems;
@@ -79,12 +81,12 @@ public class MagazineFluid implements IMagazine<Fluid> {
     }
 
     public static Fluid getMagType(ItemStack stack, int index) {
-        if (!stack.hasTag()) return Fluids.EMPTY;
-        ResourceLocation key = ResourceLocation.tryParse(stack.getTag().getString(KEY_MAG_TYPE + index));
+        if (!StackNbt.has(stack)) return Fluids.EMPTY;
+        ResourceLocation key = ResourceLocation.tryParse(StackNbt.read(stack).getString(KEY_MAG_TYPE + index));
         return key == null ? Fluids.EMPTY : BuiltInRegistries.FLUID.get(key);
     }
     public static void setMagType(ItemStack stack, int index, Fluid value) {
-        stack.getOrCreateTag().putString(KEY_MAG_TYPE + index, BuiltInRegistries.FLUID.getKey(value == null ? Fluids.EMPTY : value).toString());
+        StackNbt.orCreate(stack).putString(KEY_MAG_TYPE + index, BuiltInRegistries.FLUID.getKey(value == null ? Fluids.EMPTY : value).toString());
     }
     public static int getMagCount(ItemStack stack, int index) { return ItemGunBaseNT.getValueInt(stack, KEY_MAG_COUNT + index); }
     public static void setMagCount(ItemStack stack, int index, int value) { ItemGunBaseNT.setValueInt(stack, KEY_MAG_COUNT + index, value); }

@@ -1,5 +1,9 @@
 package com.hbm_m.block.bomb;
 
+import com.hbm_m.platform.PlatformHooks;
+
+import com.hbm_m.platform.EffectHooks;
+
 import com.hbm_m.effect.ModEffects;
 
 import net.minecraft.core.BlockPos;
@@ -112,8 +116,8 @@ public class BalefireBlock extends FireBlock {
 
     @Override
     public void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
-        entity.setSecondsOnFire(10);
-        if (entity instanceof LivingEntity living) living.addEffect(new MobEffectInstance(ModEffects.RADIATION.get(), 5 * 20, 9));
+        PlatformHooks.setSecondsOnFire(entity, 10);
+        if (entity instanceof LivingEntity living) living.addEffect(new MobEffectInstance(EffectHooks.of(ModEffects.RADIATION), 5 * 20, 9));
     }
 
     /** {@code colorMultiplier}: Helligkeit 1 - Alter/30. */

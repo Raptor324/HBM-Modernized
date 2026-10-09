@@ -476,7 +476,14 @@ public final class PlatformHooks {
      * Регистрация "инвентарной" модели сета по её базовому id (например hbm_m:t51_armor).
      * Файл модели при этом ищется в {@code models/item/<path>.json} на обеих версиях:
      * на 1.20.1 через вариант "inventory", на 1.21.1 через standalone-ключ с путём item/<path>.
+     * Seitentrennung: nur Client (ModelResourceLocation -> ResourceLocation laedt sonst beim Verifizieren
+     * von PlatformHooks die Client-Klasse auf dem dedizierten Server).
      */
+    //? if forge {
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif neoforge {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    *///?}
     public static void registerItemModel(Object event, ResourceLocation id) {
         //? if < 1.21.1 {
         ((net.minecraftforge.client.event.ModelEvent.RegisterAdditional) event).register(

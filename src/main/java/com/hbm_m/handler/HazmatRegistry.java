@@ -1,5 +1,9 @@
 package com.hbm_m.handler;
 
+import com.hbm_m.platform.EffectHooks;
+
+import com.hbm_m.platform.StackNbt;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -226,8 +230,8 @@ public final class HazmatRegistry {
 
     public static double getCladding(ItemStack stack) {
 
-        if (stack.hasTag() && stack.getTag().getFloat("hfr_cladding") > 0)
-            return stack.getTag().getFloat("hfr_cladding");
+        if (StackNbt.has(stack) && StackNbt.read(stack).getFloat("hfr_cladding") > 0)
+            return StackNbt.read(stack).getFloat("hfr_cladding");
 
         if (ArmorModificationHelper.hasMods(stack)) {
             ItemStack cladding = ArmorModificationHelper.pryMods(stack)[ArmorModificationHelper.cladding];
@@ -252,7 +256,7 @@ public final class HazmatRegistry {
             res += (float) getResistance(stack);
         }
 
-        if (player.hasEffect(com.hbm_m.effect.ModEffects.RADX.get()))
+        if (player.hasEffect(EffectHooks.of(com.hbm_m.effect.ModEffects.RADX)))
             res += 0.2F;
 
         return res;

@@ -1,5 +1,7 @@
 package com.hbm_m.block.gas;
 
+import com.hbm_m.platform.EffectHooks;
+
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.effect.ModEffects;
 import com.hbm_m.extprop.HbmLivingProps;
@@ -36,7 +38,7 @@ public class BlockGasRadonDense extends BlockGasBase {
             damageWornFilter(living);
         } else {
             ContaminationUtil.contaminate(living, HazardType.RADIATION, ContaminationType.CREATIVE, 0.5F);
-            living.addEffect(new MobEffectInstance(ModEffects.RADIATION.get(), 15 * 20, 0));
+            living.addEffect(new MobEffectInstance(EffectHooks.of(ModEffects.RADIATION), 15 * 20, 0));
             HbmLivingProps.incrementAsbestos(living, 5);
         }
     }

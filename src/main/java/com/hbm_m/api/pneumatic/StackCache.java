@@ -1,5 +1,7 @@
 package com.hbm_m.api.pneumatic;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -170,7 +172,7 @@ public class StackCache {
      */
     public static long getStackIdentity(@Nullable ItemStack stack) {
         if (stack == null || stack.isEmpty()) return getNullIdentity();
-        return getStackIdentity(stack.getItem(), stack.getTag());
+        return getStackIdentity(stack.getItem(), StackNbt.tag(stack));
     }
 
     public static long getStackIdentity(@Nullable Item item, @Nullable CompoundTag nbt) {

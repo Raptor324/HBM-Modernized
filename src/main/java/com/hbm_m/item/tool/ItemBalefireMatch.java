@@ -1,5 +1,7 @@
 package com.hbm_m.item.tool;
 
+import com.hbm_m.platform.ItemHooks;
+
 import com.hbm_m.block.ModBlocks;
 
 import net.minecraft.core.BlockPos;
@@ -34,7 +36,7 @@ public class ItemBalefireMatch extends Item {
                 world.playSound(null, pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, SoundEvents.FLINTANDSTEEL_USE, SoundSource.BLOCKS, 1.0F, world.random.nextFloat() * 0.4F + 0.8F);
                 if (!world.isClientSide) world.setBlockAndUpdate(pos, ModBlocks.BALEFIRE.get().defaultBlockState());
             }
-            if (player != null) stack.hurtAndBreak(1, player, p -> p.broadcastBreakEvent(EquipmentSlot.MAINHAND));
+            if (player != null) ItemHooks.hurtAndBreak(stack, 1, player, EquipmentSlot.MAINHAND);
             return InteractionResult.sidedSuccess(world.isClientSide);
         }
     }

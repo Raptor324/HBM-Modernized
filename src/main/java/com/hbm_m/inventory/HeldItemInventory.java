@@ -1,5 +1,7 @@
 package com.hbm_m.inventory;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.function.BiPredicate;
 
 import javax.annotation.Nullable;
@@ -41,7 +43,7 @@ public class HeldItemInventory extends SimpleContainer {
         this.crateSounds = crateSounds;
         this.checkSize = checkSize;
 
-        if (!target.hasTag()) target.setTag(new CompoundTag());
+        if (!StackNbt.has(target)) StackNbt.set(target, new CompoundTag());
         ItemStack[] fromNBT = readStacksFromNBT(target, size);
         if (fromNBT != null) {
             for (int i = 0; i < size; i++) {
@@ -53,14 +55,14 @@ public class HeldItemInventory extends SimpleContainer {
     /** {@code ItemStackUtil.readStacksFromNBT}. */
     @Nullable
     public static ItemStack[] readStacksFromNBT(ItemStack stack, int count) {
-        if (!stack.hasTag()) return null;
-        ListTag list = stack.getTag().getList("items", 10);
+        if (!StackNbt.has(stack)) return null;
+        ListTag list = StackNbt.tag(stack).getList("items", 10);
         if (count == 0) count = list.size();
         ItemStack[] stacks = new ItemStack[count];
         for (int i = 0; i < list.size() && i < count; i++) {
             CompoundTag slotNBT = list.getCompound(i);
             byte slot = slotNBT.getByte("slot");
-            ItemStack loaded = ItemStack.of(slotNBT);
+            ItemStack loaded = StackNbt.parse(slotNBT);
             if (slot >= 0 && slot < stacks.length && !loaded.isEmpty()) stacks[slot] = loaded;
         }
         return stacks;
@@ -68,17 +70,17 @@ public class HeldItemInventory extends SimpleContainer {
 
     /** {@code ItemStackUtil.addStacksToNBT}. */
     public static void addStacksToNBT(ItemStack stack, ItemStack... stacks) {
-        if (!stack.hasTag()) stack.setTag(new CompoundTag());
+        if (!StackNbt.has(stack)) StackNbt.set(stack, new CompoundTag());
         ListTag tags = new ListTag();
         for (int i = 0; i < stacks.length; i++) {
             if (stacks[i] != null && !stacks[i].isEmpty()) {
                 CompoundTag slotNBT = new CompoundTag();
                 slotNBT.putByte("slot", (byte) i);
-                stacks[i].save(slotNBT);
+                slotNBT = StackNbt.save(stacks[i], slotNBT);
                 tags.add(slotNBT);
             }
         }
-        stack.getTag().put("items", tags);
+        StackNbt.tag(stack).put("items", tags);
     }
 
     @Override
@@ -97,7 +99,7 @@ public class HeldItemInventory extends SimpleContainer {
         ItemStack[] slots = new ItemStack[getContainerSize()];
         for (int i = 0; i < slots.length; i++) slots[i] = getItem(i);
         addStacksToNBT(target, slots);
-        if (checkSize) checkNBT(target.getTag());
+        if (checkSize) checkNBT(StackNbt.tag(target));
     }
 
     /** {@code ItemInventory.checkNBT}: ueber 6 kB wird der Inhalt ausgeworfen. */

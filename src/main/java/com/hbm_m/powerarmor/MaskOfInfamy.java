@@ -17,8 +17,18 @@ public class MaskOfInfamy extends ArmorItem {
 
     //? if forge {
     @Override
+    //?}
     public String getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot, String type) {
         return "hbm_m:textures/armor/maskofinfamy.png";
     }
-    //?}
+
+    //? if neoforge {
+    /*/^* NeoForge: Textur ueber die String-Variante (1.20.1 Forge {@code getArmorTexture(.., String type)}). ^/
+    @Override
+    public net.minecraft.resources.ResourceLocation getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot,
+            net.minecraft.world.item.ArmorMaterial.Layer layer, boolean innerModel) {
+        String tex = this.getArmorTexture(stack, entity, slot, (String) null);
+        return tex == null ? null : net.minecraft.resources.ResourceLocation.parse(tex);
+    }
+    *///?}
 }

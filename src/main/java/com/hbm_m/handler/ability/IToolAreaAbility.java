@@ -229,7 +229,9 @@ public interface IToolAreaAbility extends IBaseAbility {
             if (player instanceof net.minecraft.server.level.ServerPlayer sp) {
                 //? if forge {
                 d3 = sp.getBlockReach();
-                //?}
+                //?} elif >= 1.21.1 {
+                /*d3 = sp.blockInteractionRange();
+                *///?}
             }
             Vec3 vec31 = vec3.add(player.getViewVector(1.0F).scale(d3));
             return world.clip(new ClipContext(vec3, vec31, ClipContext.Block.OUTLINE,

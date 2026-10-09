@@ -30,7 +30,7 @@ public abstract class LoadedMachineBlockEntity extends BaseHbmBlockEntity implem
         super.setRemoved();
         this.isLoaded = false;
     }
-    //? if forge {
+    //? if forge || neoforge {
     @Override
     public void onChunkUnloaded() {
         super.onChunkUnloaded();

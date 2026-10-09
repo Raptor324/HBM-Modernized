@@ -39,7 +39,7 @@ public class MachineConverterRfHeBlock extends BaseEntityBlock implements com.hb
     public void printHook(net.minecraft.client.gui.GuiGraphics g, Level world, BlockPos pos) {
         if (!(world.getBlockEntity(pos) instanceof MachineConverterRfHeBlockEntity converter)) return;
         List<Component> text = new ArrayList<>();
-        //? if forge {
+        //? if forge || neoforge {
         text.add(Component.literal(ChatFormatting.GREEN + "-> " + ChatFormatting.RESET + com.hbm_m.util.BobMathUtil.getShortNumber(converter.storage.getEnergyStored()) + "RF"));
         //?}
         text.add(Component.literal(ChatFormatting.RED + "<- " + ChatFormatting.RESET + com.hbm_m.util.BobMathUtil.getShortNumber(converter.power) + "HE"));

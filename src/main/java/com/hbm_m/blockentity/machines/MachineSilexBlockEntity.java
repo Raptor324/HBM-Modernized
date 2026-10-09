@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.StackNbt;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -139,7 +141,7 @@ public class MachineSilexBlockEntity extends BaseMachineBlockEntity implements I
     }
 
     private static boolean sameSingular(ItemStack a, ItemStack b) {
-        return !a.isEmpty() && !b.isEmpty() && a.getItem() == b.getItem() && ItemStack.isSameItemSameTags(a.copyWithCount(1), b.copyWithCount(1));
+        return !a.isEmpty() && !b.isEmpty() && a.getItem() == b.getItem() && StackNbt.sameItemSameTags(a.copyWithCount(1), b.copyWithCount(1));
     }
 
     public void loadFluid(Level world) {
@@ -252,7 +254,7 @@ public class MachineSilexBlockEntity extends BaseMachineBlockEntity implements I
 
             for (int i = 5; i < 11; i++) {
                 ItemStack q = inventory.getStackInSlot(i);
-                if (!q.isEmpty() && q.getCount() < q.getMaxStackSize() && ItemStack.isSameItemSameTags(out, q)) {
+                if (!q.isEmpty() && q.getCount() < q.getMaxStackSize() && StackNbt.sameItemSameTags(out, q)) {
                     ItemStack grown = q.copy();
                     grown.grow(1);
                     inventory.setStackInSlot(i, grown);
@@ -386,5 +388,25 @@ public class MachineSilexBlockEntity extends BaseMachineBlockEntity implements I
         super.invalidateCaps();
         sidedItems.invalidate();
     }
-    //?}
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: Slots {0, 5-10}; Rezepteingang hinein, 5-10 heraus. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0, 5, 6, 7, 8, 9, 10 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 0 && isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot >= 5; }
+            });
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
 }

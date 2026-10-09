@@ -19,7 +19,7 @@ import net.minecraft.util.Mth;
  * 1:1-Port von {@code RenderFusionKlystron} (1.7.10): das Gehaeuse steckt im Blockmodell,
  * hier laeuft nur der Rotor - er dreht sich um die lokale X-Achse auf Hoehe 2,5.
  */
-public class FusionKlystronRenderer implements BlockEntityRenderer<FusionKlystronBlockEntity> {
+public class FusionKlystronRenderer implements com.hbm_m.client.render.HbmBerBounds<FusionKlystronBlockEntity> {
 
     private static final String OBJ = "models/block/machines/klystron.obj";
 

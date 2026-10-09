@@ -32,6 +32,7 @@ public class ArmorModel extends ArmorItem {
 
     //? if forge {
     @Override
+    //?}
     public String getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot, String type) {
         if (stack.getItem() == ModItems.GOGGLES.get()) {
             return "hbm_m:textures/models/goggles.png";
@@ -51,6 +52,17 @@ public class ArmorModel extends ArmorItem {
         return "hbm_m:textures/models/capes/capeunknown.png";
     }
 
+    //? if neoforge {
+    /*/^* NeoForge: Textur ueber die String-Variante (1.20.1 Forge {@code getArmorTexture(.., String type)}). ^/
+    @Override
+    public net.minecraft.resources.ResourceLocation getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot,
+            net.minecraft.world.item.ArmorMaterial.Layer layer, boolean innerModel) {
+        String tex = this.getArmorTexture(stack, entity, slot, (String) null);
+        return tex == null ? null : net.minecraft.resources.ResourceLocation.parse(tex);
+    }
+    *///?}
+
+    //? if forge {
     @Override
     public void initializeClient(Consumer<IClientItemExtensions> consumer) {
         consumer.accept(new IClientItemExtensions() {
@@ -74,7 +86,31 @@ public class ArmorModel extends ArmorItem {
 
         });
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public void initializeClient(Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
+        consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
+            @Override
+            public void renderHelmetOverlay(ItemStack stack, Player player, int width, int height, float partialTick) {
+                ArmorModel.this.renderHelmetOverlay(stack, width, height);
+            }
+
+            private com.hbm_m.powerarmor.layer.PowerArmorEmptyModel model;
+
+            /^* Brille, Hut, No9, Aschebrille und Umhaenge haben eigene Modelle (ArmorAccessoryLayer). ^/
+            @Override
+            public net.minecraft.client.model.HumanoidModel<?> getHumanoidArmorModel(net.minecraft.world.entity.LivingEntity living, ItemStack stack,
+                    EquipmentSlot slot, net.minecraft.client.model.HumanoidModel<?> original) {
+                if (this.model == null) {
+                    this.model = new com.hbm_m.powerarmor.layer.PowerArmorEmptyModel(net.minecraft.client.Minecraft.getInstance()
+                            .getEntityModels().bakeLayer(com.hbm_m.powerarmor.layer.ModModelLayers.POWER_ARMOR));
+                }
+                return com.hbm_m.powerarmor.layer.PowerArmorEmptyModel.prepare(this.model, slot, original);
+            }
+
+        });
+    }
+    *///?}
 
     public void renderHelmetOverlay(ItemStack stack, int width, int height) {
         if (this != ModItems.GOGGLES.get() && this != ModItems.HAZMAT_HELMET_RED.get() && this != ModItems.HAZMAT_HELMET_GREY.get()) return;

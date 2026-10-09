@@ -46,6 +46,7 @@ public final class ToolAbilityClient {
         RenderSystem.disableBlend();
     }
 
+    // neo-pendant: ClientSetup.onRegisterGuiOverlays (neoforge-Zweig) ruft renderHUD direkt
     //? if forge {
     public static final net.minecraftforge.client.gui.overlay.IGuiOverlay OVERLAY = (gui, gfx, partialTick, screenWidth, screenHeight) ->
             renderHUD(gfx, screenWidth, screenHeight);

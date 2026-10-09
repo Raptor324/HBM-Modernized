@@ -1,5 +1,7 @@
 package com.hbm_m.armormod.item;
 
+import com.hbm_m.platform.AttributeOps;
+
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -105,11 +107,19 @@ public class ItemModInsert extends ItemArmorMod {
     }
 
     @Override
+    //? if < 1.21.1 {
     public com.google.common.collect.Multimap<net.minecraft.world.entity.ai.attributes.Attribute, net.minecraft.world.entity.ai.attributes.AttributeModifier> getModifiers(ItemStack armor) {
+    //?} else {
+    /*public com.google.common.collect.Multimap<net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute>, net.minecraft.world.entity.ai.attributes.AttributeModifier> getModifiers(ItemStack armor) {
+    *///?}
         if (speed == 1)
             return null;
+        //? if < 1.21.1 {
         com.google.common.collect.Multimap<net.minecraft.world.entity.ai.attributes.Attribute, net.minecraft.world.entity.ai.attributes.AttributeModifier> multimap = com.google.common.collect.HashMultimap.create();
-        multimap.put(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED, modifier(armor, "NTM Armor Mod Speed", -1F + speed, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.MULTIPLY_TOTAL));
+        //?} else {
+        /*com.google.common.collect.Multimap<net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute>, net.minecraft.world.entity.ai.attributes.AttributeModifier> multimap = com.google.common.collect.HashMultimap.create();
+        *///?}
+        multimap.put(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED, modifier(armor, "NTM Armor Mod Speed", -1F + speed, AttributeOps.MULTIPLY_TOTAL));
         return multimap;
     }
 }

@@ -1,5 +1,7 @@
 package com.hbm_m.handler;
 
+import com.hbm_m.platform.EffectHooks;
+
 import com.hbm_m.effect.ModEffects;
 import com.hbm_m.handler.pollution.PollutionHandler;
 import com.hbm_m.inventory.fluid.trait.PollutionType;
@@ -128,7 +130,7 @@ public final class EntityEffectHandler {
 
             // Original: die beiden oberen Stufen setzen beide Staerke 2 - so uebernommen.
             if (metal > 25) {
-                entity.addEffect(new MobEffectInstance(ModEffects.LEAD.get(), 100, metal < 50 ? 0 : 2));
+                entity.addEffect(new MobEffectInstance(EffectHooks.of(ModEffects.LEAD), 100, metal < 50 ? 0 : 2));
             }
         }
     }

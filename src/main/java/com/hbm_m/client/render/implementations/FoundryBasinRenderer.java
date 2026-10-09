@@ -96,6 +96,10 @@ public class FoundryBasinRenderer<T extends MachineFoundryCastingBaseBlockEntity
 
     private static void vertex(VertexConsumer vc, org.joml.Matrix4f m, org.joml.Matrix3f n, float x, float y, float z,
                                float r, float g, float b, float a, float u, float v, int light) {
+        //? if < 1.21.1 {
         vc.vertex(m, x, y, z).color(r, g, b, a).uv(u, v).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(n, 0, 1, 0).endVertex();
+        //?} else {
+        /*com.hbm_m.platform.RenderHooks.normal(vc.addVertex(m, x, y, z).setColor(r, g, b, a).setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light), n, 0, 1, 0);
+        *///?}
     }
 }

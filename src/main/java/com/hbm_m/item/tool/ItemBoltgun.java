@@ -147,7 +147,18 @@ public class ItemBoltgun extends Item implements com.hbm_m.item.IAnimatedItem<co
             }
         });
     }
-    //?}
+    //?} elif neoforge {
+    /*/^* Original ClientProxy: eigener Itemrenderer (ItemRenderBoltgun) ueber den Waffen-BEWLR. ^/
+    @Override
+    public void initializeClient(java.util.function.Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
+        consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
+            @Override
+            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return com.hbm_m.client.weapon.GunItemRenderer.INSTANCE;
+            }
+        });
+    }
+    *///?}
 
     /** The gun itself never damages anything by swinging - only the rivets do. */
     @Override

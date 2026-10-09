@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.RenderBounds;
+
 import java.util.List;
 
 import com.hbm_m.block.ModBlocks;
@@ -287,6 +289,6 @@ public class MachineFelBlockEntity extends BaseMachineBlockEntity implements com
     @Override
     //?}
     public AABB getRenderBoundingBox() {
-        return INFINITE_EXTENT_AABB;
+        return RenderBounds.INFINITE;
     }
 }

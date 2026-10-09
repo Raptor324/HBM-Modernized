@@ -510,17 +510,17 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
 
     /** Returns NBT data for the RBMK console panel display. Override in subclasses with relevant data. */
     public CompoundTag getNBTForConsole() { return new CompoundTag(); }
-
-    //? if forge {
     /** Expands the render bounding box to cover the full column height so the BESR isn't culled early. */
+    // Phase D: auf NeoForge ueber RenderBoundsProvider (HbmBerBounds), daher Methode auf beiden Loadern
+    //? if forge {
     @Override
     @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?}
     public AABB getRenderBoundingBox() {
         BlockPos p = getBlockPos();
         return new AABB(p.getX(), p.getY(), p.getZ(),
                         p.getX() + 1, p.getY() + com.hbm_m.handler.rbmk.RBMKDials.COLUMN_HEIGHT + 1, p.getZ() + 1);
     }
-    //?}
 
     /**
      * Returns the texture-name prefix used by the BESR to look up

@@ -55,8 +55,7 @@ public final class GuiLinearGauge {
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
         Tesselator tesselator = Tesselator.getInstance();
-        BufferBuilder buffer = tesselator.getBuilder();
-        buffer.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+        BufferBuilder buffer = com.hbm_m.platform.RenderHooks.beginTesselator(tesselator, VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
         double mult = 1.5;
         // Kontur: wie im Original werden die hinteren Ecken nur in X vergroessert
@@ -74,7 +73,7 @@ public final class GuiLinearGauge {
                 cx + bLeft[0], cy + bLeft[1],
                 cx + left[0], cy + left[1]);
 
-        tesselator.end();
+        com.hbm_m.platform.RenderHooks.drawWithShader(buffer);
 
         RenderSystem.enableCull();
         RenderSystem.disableBlend();
@@ -99,8 +98,14 @@ public final class GuiLinearGauge {
         float r = ((color >> 16) & 0xFF) / 255F;
         float g = ((color >> 8) & 0xFF) / 255F;
         float b = (color & 0xFF) / 255F;
+        //? if < 1.21.1 {
         buffer.vertex(matrix, (float) ax, (float) ay, 0F).color(r, g, b, 1F).endVertex();
         buffer.vertex(matrix, (float) bx, (float) by, 0F).color(r, g, b, 1F).endVertex();
         buffer.vertex(matrix, (float) cx, (float) cy, 0F).color(r, g, b, 1F).endVertex();
+        //?} else {
+        /*buffer.addVertex(matrix, (float) ax, (float) ay, 0F).setColor(r, g, b, 1F);
+        buffer.addVertex(matrix, (float) bx, (float) by, 0F).setColor(r, g, b, 1F);
+        buffer.addVertex(matrix, (float) cx, (float) cy, 0F).setColor(r, g, b, 1F);
+        *///?}
     }
 }

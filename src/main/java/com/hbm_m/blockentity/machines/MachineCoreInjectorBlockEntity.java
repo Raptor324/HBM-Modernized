@@ -54,7 +54,15 @@ public class MachineCoreInjectorBlockEntity extends BaseMachineBlockEntity {
         }
         return super.getCapability(cap, side);
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER) {
+            return com.hbm_m.platform.LazyCap.of(() -> new CoreInjectorFluidHandler(this)).cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+    *///?}
 
     /** Original: {@code range = 15}. */
     public static final int RANGE = 15;

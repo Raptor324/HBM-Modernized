@@ -1,5 +1,7 @@
 package com.hbm_m.item.tool;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 import java.util.Locale;
 
@@ -71,8 +73,8 @@ public class ItemBlowtorch extends Item implements IFillableItem, ITooltipProvid
     }
 
     public int getFill(ItemStack stack, Fluid type) {
-        if (!stack.hasTag()) initNBT(stack);
-        return stack.getTag().getInt(key(type));
+        if (!StackNbt.has(stack)) initNBT(stack);
+        return StackNbt.read(stack).getInt(key(type));
     }
 
     public int getMaxFill(Fluid type) {
@@ -83,8 +85,8 @@ public class ItemBlowtorch extends Item implements IFillableItem, ITooltipProvid
     }
 
     public void setFill(ItemStack stack, Fluid type, int fill) {
-        if (!stack.hasTag()) initNBT(stack);
-        stack.getTag().putInt(key(type), fill);
+        if (!StackNbt.has(stack)) initNBT(stack);
+        StackNbt.tag(stack).putInt(key(type), fill);
     }
 
     public void initNBT(ItemStack stack) {
@@ -98,7 +100,7 @@ public class ItemBlowtorch extends Item implements IFillableItem, ITooltipProvid
             tag.putInt(key(unsaturateds()), this.getMaxFill(unsaturateds()));
             tag.putInt(key(oxygen()), this.getMaxFill(oxygen()));
         }
-        stack.setTag(tag);
+        StackNbt.set(stack, tag);
     }
 
     public static ItemStack getEmptyTool(Item item) {
@@ -260,5 +262,32 @@ public class ItemBlowtorch extends Item implements IFillableItem, ITooltipProvid
         @Override public net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, net.minecraftforge.fluids.capability.IFluidHandler.FluidAction action) { return net.minecraftforge.fluids.FluidStack.EMPTY; }
         @Override public net.minecraftforge.fluids.FluidStack drain(int maxDrain, net.minecraftforge.fluids.capability.IFluidHandler.FluidAction action) { return net.minecraftforge.fluids.FluidStack.EMPTY; }
     }
-    //?}
+    //?} elif neoforge {
+    /*// NeoForge: Anmeldung als Capabilities.FluidHandler.ITEM in ModCapabilities.register
+    public static class FillOnlyCapability implements net.neoforged.neoforge.fluids.capability.IFluidHandlerItem {
+        private final ItemStack stack;
+        private final IFillableItem item;
+
+        public FillOnlyCapability(ItemStack stack, IFillableItem item) {
+            this.stack = stack;
+            this.item = item;
+        }
+
+        @Override public ItemStack getContainer() { return stack; }
+        @Override public int getTanks() { return 1; }
+        @Override public net.neoforged.neoforge.fluids.FluidStack getFluidInTank(int tank) { return net.neoforged.neoforge.fluids.FluidStack.EMPTY; }
+        @Override public int getTankCapacity(int tank) { return 50; }
+        @Override public boolean isFluidValid(int tank, net.neoforged.neoforge.fluids.FluidStack fs) { return item.acceptsFluid(fs.getFluid(), stack); }
+
+        @Override
+        public int fill(net.neoforged.neoforge.fluids.FluidStack resource, net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction action) {
+            if (resource.isEmpty() || !item.acceptsFluid(resource.getFluid(), stack)) return 0;
+            ItemStack target = action.simulate() ? stack.copy() : stack;
+            return resource.getAmount() - item.tryFill(resource.getFluid(), resource.getAmount(), target);
+        }
+
+        @Override public net.neoforged.neoforge.fluids.FluidStack drain(net.neoforged.neoforge.fluids.FluidStack resource, net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction action) { return net.neoforged.neoforge.fluids.FluidStack.EMPTY; }
+        @Override public net.neoforged.neoforge.fluids.FluidStack drain(int maxDrain, net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction action) { return net.neoforged.neoforge.fluids.FluidStack.EMPTY; }
+    }
+    *///?}
 }

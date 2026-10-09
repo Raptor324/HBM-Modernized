@@ -1,5 +1,7 @@
 package com.hbm_m.item.machine;
 
+import com.hbm_m.platform.StackNbt;
+
 import com.hbm_m.item.ModItems;
 
 import net.minecraft.ChatFormatting;
@@ -124,18 +126,18 @@ public class ItemRTGPellet extends Item {
     public long getLifespan(ItemStack stack) {
         if (!(stack.getItem() instanceof ItemRTGPellet)) return 0L;
 
-        if (stack.hasTag() && stack.getTag().contains(KEY_DEPLETION)) {
-            return stack.getTag().getLong(KEY_DEPLETION);
+        if (StackNbt.has(stack) && StackNbt.read(stack).contains(KEY_DEPLETION)) {
+            return StackNbt.read(stack).getLong(KEY_DEPLETION);
         }
 
-        stack.getOrCreateTag().putLong(KEY_DEPLETION, getMaxLifespan());
+        StackNbt.orCreate(stack).putLong(KEY_DEPLETION, getMaxLifespan());
         return getMaxLifespan();
     }
 
     /** Original: {@code decay} - ein Tick weniger. */
     public void decay(ItemStack stack) {
         if (!doesDecay()) return;
-        stack.getOrCreateTag().putLong(KEY_DEPLETION, getLifespan(stack) - 1L);
+        StackNbt.orCreate(stack).putLong(KEY_DEPLETION, getLifespan(stack) - 1L);
     }
 
     /** Original: {@code getScaledPower} - die Heizleistung sinkt mit der Restlaufzeit. */

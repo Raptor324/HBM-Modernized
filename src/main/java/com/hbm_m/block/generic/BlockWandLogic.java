@@ -105,6 +105,13 @@ public class BlockWandLogic extends BaseEntityBlock implements ILookOverlay, ITo
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    //?} else {
+    /*@Override
+    protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return com.hbm_m.platform.BlockUseHooks.item(hbmUse(state, world, pos, player, hand, hit));
+    }
+    private InteractionResult hbmUse(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    *///?}
         ItemStack stack = player.getItemInHand(hand);
 
         if (!stack.isEmpty() && stack.getItem() instanceof BlockItem ib && !player.isShiftKeyDown()) {
@@ -123,9 +130,12 @@ public class BlockWandLogic extends BaseEntityBlock implements ILookOverlay, ITo
                 }
             }
         }
+        //? if < 1.21.1 {
         return super.use(state, world, pos, player, hand, hit);
+        //?} else {
+        /*return net.minecraft.world.InteractionResult.PASS;
+        *///?}
     }
-    //?}
 
     @Override
     public boolean onScrew(Level world, Player player, BlockPos pos, Direction side, float fX, float fY, float fZ, InteractionHand hand, ToolType tool) {
@@ -191,7 +201,11 @@ public class BlockWandLogic extends BaseEntityBlock implements ILookOverlay, ITo
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> list, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+    *///?}
         list.add(Component.literal("Use screwdriver to cycle forwards through the action list, shift click to go back").withStyle(ChatFormatting.GOLD));
         list.add(Component.literal("Use defuser to cycle forwards through the condition list, shift click to go back").withStyle(ChatFormatting.GOLD));
         list.add(Component.literal("Use hand drill to cycle forwards through the interaction list, shift click to go back").withStyle(ChatFormatting.GOLD));
@@ -219,4 +233,8 @@ public class BlockWandLogic extends BaseEntityBlock implements ILookOverlay, ITo
 
         return BombReturnCode.TRIGGERED;
     }
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<BlockWandLogic> CODEC = simpleCodec(BlockWandLogic::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

@@ -1,5 +1,7 @@
 package com.hbm_m.item.tool;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 
 import javax.annotation.Nullable;
@@ -34,7 +36,7 @@ public class ItemAnchorRemote extends ModBatteryItem {
     }
 
     private long charge(ItemStack stack) {
-        if (!stack.hasTag() || !stack.getTag().contains("energy")) return getCapacity();
+        if (!StackNbt.has(stack) || !StackNbt.read(stack).contains("energy")) return getCapacity();
         return getEnergy(stack);
     }
 
@@ -50,11 +52,11 @@ public class ItemAnchorRemote extends ModBatteryItem {
         if (ctx.getLevel().getBlockState(pos).is(ModBlocks.TELEANCHOR.get())) {
             ItemStack stack = ctx.getItemInHand();
             long charge = charge(stack);
-            if (!stack.hasTag()) stack.setTag(new CompoundTag());
+            if (!StackNbt.has(stack)) StackNbt.set(stack, new CompoundTag());
             setEnergy(stack, charge);
-            stack.getTag().putInt("x", pos.getX());
-            stack.getTag().putInt("y", pos.getY());
-            stack.getTag().putInt("z", pos.getZ());
+            StackNbt.tag(stack).putInt("x", pos.getX());
+            StackNbt.tag(stack).putInt("y", pos.getY());
+            StackNbt.tag(stack).putInt("z", pos.getZ());
             return InteractionResult.sidedSuccess(ctx.getLevel().isClientSide);
         }
         return InteractionResult.PASS;
@@ -68,7 +70,7 @@ public class ItemAnchorRemote extends ModBatteryItem {
             return InteractionResultHolder.pass(stack);
         }
 
-        if (!stack.hasTag() || !stack.getTag().contains("x")) {
+        if (!StackNbt.has(stack) || !StackNbt.read(stack).contains("x")) {
             world.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 0.25F, 0.75F);
             return InteractionResultHolder.pass(stack);
         }
@@ -78,9 +80,9 @@ public class ItemAnchorRemote extends ModBatteryItem {
             return InteractionResultHolder.pass(stack);
         }
 
-        int x = stack.getTag().getInt("x");
-        int y = stack.getTag().getInt("y");
-        int z = stack.getTag().getInt("z");
+        int x = StackNbt.read(stack).getInt("x");
+        int y = StackNbt.read(stack).getInt("y");
+        int z = StackNbt.read(stack).getInt("z");
 
         world.getChunk(x >> 4, z >> 4);
 

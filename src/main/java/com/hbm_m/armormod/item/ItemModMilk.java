@@ -47,6 +47,10 @@ public class ItemModMilk extends ItemArmorMod {
             *///?}
             if (e.getCategory() == net.minecraft.world.effect.MobEffectCategory.HARMFUL) bad.add(e);
         }
+        //? if < 1.21.1 {
         for (net.minecraft.world.effect.MobEffect e : bad) entity.removeEffect(e);
+        //?} else {
+        /*for (net.minecraft.world.effect.MobEffect e : bad) entity.removeEffect(net.minecraft.core.registries.BuiltInRegistries.MOB_EFFECT.wrapAsHolder(e));
+        *///?}
     }
 }

@@ -15,7 +15,9 @@ import org.jetbrains.annotations.NotNull;
 
 //? if forge {
 import net.minecraftforge.client.extensions.common.IClientMobEffectExtensions;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.neoforge.client.extensions.common.IClientMobEffectExtensions;
+*///?}
 
 /**
  * Gemeinsame Basis der aus {@code HbmPotion} portierten Effekte: Farbe, Kategorie und das Symbol
@@ -74,7 +76,7 @@ public abstract class HbmEffect extends MobEffect {
     }
     *///?}
 
-    //? if forge {
+    //? if forge || neoforge {
     @Override
     public void initializeClient(@NotNull Consumer<IClientMobEffectExtensions> consumer) {
         consumer.accept(new IClientMobEffectExtensions() {

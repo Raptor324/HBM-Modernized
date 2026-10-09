@@ -122,7 +122,7 @@ public class CrucibleUtil {
     @Nullable
     public static ICrucibleAcceptor getPouringTarget(Level world, Vec3 start, Vec3 end, @Nullable BlockHitResult[] mopHolder) {
 
-        BlockHitResult mop = world.clip(new ClipContext(start, end, ClipContext.Block.OUTLINE, ClipContext.Fluid.ANY, null));
+        BlockHitResult mop = world.clip(new ClipContext(start, end, ClipContext.Block.OUTLINE, ClipContext.Fluid.ANY, (net.minecraft.world.entity.Entity) null));
 
         if (mopHolder != null) {
             mopHolder[0] = mop;

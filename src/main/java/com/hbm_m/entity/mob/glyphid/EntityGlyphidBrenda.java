@@ -67,9 +67,18 @@ public class EntityGlyphidBrenda extends EntityGlyphid {
         }
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void dropCustomDeathLoot(DamageSource source, int looting, boolean recentlyHit) {
+    //?} else {
+    /*@Override
+    protected void dropCustomDeathLoot(net.minecraft.server.level.ServerLevel hbmLevel, DamageSource source, boolean recentlyHit) {
+    *///?}
+        //? if < 1.21.1 {
         super.dropCustomDeathLoot(source, looting, recentlyHit);
+        //?} else {
+        /*super.dropCustomDeathLoot(hbmLevel, source, recentlyHit);
+        *///?}
         if (random.nextInt(3) == 0) this.spawnAtLocation(ItemFluidTank.make(ModItems.GLYPHID_GLAND.get(), ModFluids.PHEROMONE.getSource(), 1), 1);
     }
 }

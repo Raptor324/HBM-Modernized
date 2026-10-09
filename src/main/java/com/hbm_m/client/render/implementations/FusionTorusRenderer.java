@@ -34,7 +34,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * Hier wird stattdessen der UV-Versatz beim Aufbau der Geometrie addiert - das Ergebnis ist
  * dasselbe Wandern der Textur, ohne dass eine Texturmatrix gebraucht wird.</p>
  */
-public class FusionTorusRenderer implements BlockEntityRenderer<FusionTorusBlockEntity> {
+public class FusionTorusRenderer implements com.hbm_m.client.render.HbmBerBounds<FusionTorusBlockEntity> {
 
     private static final String OBJ = "models/block/machines/torus.obj";
 
@@ -175,6 +175,7 @@ public class FusionTorusRenderer implements BlockEntityRenderer<FusionTorusBlock
                 int base = i * 8;
                 float u = (float) (tri[base + 3] + du);
                 float v = (float) (tri[base + 4] + dv);
+                //? if < 1.21.1 {
                 vc.vertex(matrix, tri[base], tri[base + 1], tri[base + 2])
                         .color(cr, cg, cb, ca)
                         .uv(u, 1F - v)
@@ -182,6 +183,9 @@ public class FusionTorusRenderer implements BlockEntityRenderer<FusionTorusBlock
                         .uv2(light)
                         .normal(normal, tri[base + 5], tri[base + 6], tri[base + 7])
                         .endVertex();
+                //?} else {
+                /*com.hbm_m.platform.RenderHooks.normal(vc.addVertex(matrix, tri[base], tri[base + 1], tri[base + 2]).setColor(cr, cg, cb, ca).setUv(u, 1F - v).setOverlay(net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY).setLight(light), normal, tri[base + 5], tri[base + 6], tri[base + 7]);
+                *///?}
             }
         }
     }

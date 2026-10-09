@@ -1,5 +1,7 @@
 package com.hbm_m.entity.cart;
 
+import com.hbm_m.platform.StackNbt;
+
 import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.item.tool.ItemModMinecart.EnumCartBase;
@@ -32,11 +34,19 @@ public abstract class EntityMinecartNTM extends AbstractMinecart implements INTM
         this.setBase(base);
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(CART_BASE, 0); //EnumCartBase
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(CART_BASE, 0); //EnumCartBase
+    }
+    *///?}
 
     public void setBase(EnumCartBase type) {
         this.entityData.set(CART_BASE, type.ordinal());
@@ -74,7 +84,7 @@ public abstract class EntityMinecartNTM extends AbstractMinecart implements INTM
         ItemStack itemstack = getCartItem();
 
         if (this.hasCustomName()) {
-            itemstack.setHoverName(this.getCustomName());
+            StackNbt.setCustomName(itemstack, this.getCustomName());
         }
 
         this.spawnAtLocation(itemstack, 0.0F);

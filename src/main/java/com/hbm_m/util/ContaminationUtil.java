@@ -1,5 +1,7 @@
 package com.hbm_m.util;
 
+import com.hbm_m.platform.EffectHooks;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -147,7 +149,7 @@ public final class ContaminationUtil {
         }
 
         // Original: if(((EntityLivingBase)e).isPotionActive(HbmPotion.mutation)) return true;
-        if (living.hasEffect(com.hbm_m.effect.ModEffects.MUTATION.get())) {
+        if (living.hasEffect(EffectHooks.of(com.hbm_m.effect.ModEffects.MUTATION))) {
             return true;
         }
 
@@ -192,7 +194,7 @@ public final class ContaminationUtil {
             return;
         }
         // Original: if(entity.isPotionActive(HbmPotion.stability.id)) return;
-        if (living.hasEffect(com.hbm_m.effect.ModEffects.STABILITY.get())) {
+        if (living.hasEffect(EffectHooks.of(com.hbm_m.effect.ModEffects.STABILITY))) {
             return;
         }
         if (living instanceof Player player && ArmorUtil.checkForDigamma(player)) {

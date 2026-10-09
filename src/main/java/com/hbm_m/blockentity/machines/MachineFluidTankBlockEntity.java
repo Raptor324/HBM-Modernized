@@ -102,7 +102,10 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
     //? if forge {
     private final LazyOptional<IItemHandler> lazyItemHandler;
     private final LazyOptional<IFluidHandler> lazyFluidHandler;
-    //?}
+    //?} elif neoforge {
+    /*private final com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler> lazyItemHandler;
+    private final com.hbm_m.platform.LazyCap<net.neoforged.neoforge.fluids.capability.IFluidHandler> lazyFluidHandler;
+    *///?}
 
     /** Разрешённые стороны прямого подключения к контроллеру. Если {@link #fluidSidesFromMultiblockStructure} — пусто допустимо (= ни одной стороны); иначе пусто = все стороны. */
     private java.util.Set<Direction> allowedFluidSides = java.util.EnumSet.noneOf(Direction.class);
@@ -164,7 +167,10 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
         //? if forge {
         this.lazyItemHandler = LazyOptional.of(() -> itemHandler);
         this.lazyFluidHandler = LazyOptional.of(() -> new NetworkFluidHandlerWrapper(this));
-        //?}
+        //?} elif neoforge {
+        /*this.lazyItemHandler = com.hbm_m.platform.LazyCap.of(() -> itemHandler);
+        this.lazyFluidHandler = com.hbm_m.platform.LazyCap.of(() -> new NetworkFluidHandlerWrapper(this));
+        *///?}
     }
 
     @Override
@@ -786,7 +792,28 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
             }
         return super.getCapability(cap, side);
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast(); // Original ISidedInventory
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER) {
+            return lazyItemHandler.cast();
+        }
+            if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER) {
+                if (side != null) {
+                    if (fluidSidesFromMultiblockStructure) {
+                        if (!allowedFluidSides.contains(side)) {
+                            return com.hbm_m.platform.LazyCap.empty();
+                        }
+                    } else if (!allowedFluidSides.isEmpty() && !allowedFluidSides.contains(side)) {
+                        return com.hbm_m.platform.LazyCap.empty();
+                    }
+                }
+                return lazyFluidHandler.cast();
+            }
+        return super.getHbmCapability(cap, side);
+    }
+    *///?}
 
     @Override
     public void setAllowedFluidSidesFromMultiblockStructure(java.util.Set<Direction> sides) {
@@ -806,6 +833,9 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
         if (level != null && !level.isClientSide) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
+        //? if neoforge {
+        /*invalidateCapabilities(); // NeoForge-Capability-Cache: Seiten/Rolle geaendert
+        *///?}
     }
 
     /**
@@ -829,7 +859,7 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
     @Override
     public void setRemoved() {
         super.setRemoved();
-        //? if forge {
+        //? if forge || neoforge {
         lazyItemHandler.invalidate();
         lazyFluidHandler.invalidate();
         //?}
@@ -938,7 +968,51 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
             return internal.drain(maxDrain, action);
         }
     }
-    //?}
+    //?} elif neoforge {
+    /*private class NetworkFluidHandlerWrapper implements net.neoforged.neoforge.fluids.capability.IFluidHandler {
+        private final MachineFluidTankBlockEntity entity;
+        private net.neoforged.neoforge.fluids.capability.IFluidHandler internal;
+
+        public NetworkFluidHandlerWrapper(MachineFluidTankBlockEntity entity) {
+            this.entity = entity;
+            this.internal = (net.neoforged.neoforge.fluids.capability.IFluidHandler) FluidHooks.getRawFluidHandler(entity.fluidTank.getCapability());
+        }
+
+        @Override
+        public int getTanks() { return internal.getTanks(); }
+
+        @Override
+        public net.neoforged.neoforge.fluids.FluidStack getFluidInTank(int tank) { return internal.getFluidInTank(tank); }
+
+        @Override
+        public int getTankCapacity(int tank) { return internal.getTankCapacity(tank); }
+
+        @Override
+        public boolean isFluidValid(int tank, @NotNull net.neoforged.neoforge.fluids.FluidStack stack) {
+            return internal.isFluidValid(tank, stack);
+        }
+
+        @Override
+        public int fill(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+            if (entity.hasExploded || entity.mode == 0 || entity.mode == 3) return 0;
+            return internal.fill(resource, action);
+        }
+
+        @NotNull
+        @Override
+        public net.neoforged.neoforge.fluids.FluidStack drain(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+            if (entity.hasExploded || entity.mode == 2 || entity.mode == 3) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            return internal.drain(resource, action);
+        }
+
+        @NotNull
+        @Override
+        public net.neoforged.neoforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+            if (entity.hasExploded || entity.mode == 2 || entity.mode == 3) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            return internal.drain(maxDrain, action);
+        }
+    }
+    *///?}
 
     /** Original {@code TileEntityMachineFluidTank.writeNBT}: Tank, Modus, Explosions-/Brandzustand. */
     @Override
@@ -971,7 +1045,27 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
         super.invalidateCaps();
         sidedItems.invalidate();
     }
-    //?}
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: Slots {2, 3, 4, 5}; volle Behaelter in 2, leere in 4, die Gegenstuecke 3 und 5 heraus. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> getItemHandler(),
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 2, 3, 4, 5 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { net.minecraft.world.level.material.Fluid type = fluidTank.getTankType();
+                    if (slot == 4) {
+                        net.minecraft.world.item.ItemStack full = com.hbm_m.inventory.FluidContainerRegistry.getFullContainer(stack, type);
+                        return full != null && !full.isEmpty() && com.hbm_m.inventory.FluidContainerRegistry.getFluidContent(full, type) <= fluidTank.getMaxFill();
+                    }
+                    int content = com.hbm_m.inventory.FluidContainerRegistry.getFluidContent(stack, type);
+                    return slot == 2 && content > 0 && content <= fluidTank.getMaxFill(); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 3 || slot == 5; }
+            });
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
 
     // ── Redstone-over-Radio (1:1 TileEntityMachineFluidTank / TileEntityBarrel - die Faesser erben von hier) ──
 

@@ -1,5 +1,7 @@
 package com.hbm_m.item;
 
+import com.hbm_m.platform.StackNbt;
+
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -21,7 +23,7 @@ public class BrokenItem extends Item {
 
     /** Der gebrochene Gegenstand, oder leer. */
     public static ItemStack getBrokenStack(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = StackNbt.read(stack);
         if (tag == null) return ItemStack.EMPTY;
         ResourceLocation id = ResourceLocation.tryParse(tag.getString("itemID"));
         if (id == null) return ItemStack.EMPTY;
@@ -46,7 +48,7 @@ public class BrokenItem extends Item {
         CompoundTag nbt = new CompoundTag();
         nbt.putString("itemID", BuiltInRegistries.ITEM.getKey(item).toString());
         nbt.putInt("itemMeta", meta);
-        stack.setTag(nbt);
+        StackNbt.set(stack, nbt);
         return stack;
     }
 }

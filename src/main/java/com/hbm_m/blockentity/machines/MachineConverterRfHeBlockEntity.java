@@ -48,7 +48,21 @@ public class MachineConverterRfHeBlockEntity extends BaseHbmBlockEntity implemen
     }
     private final LazyOptional<IEnergyStorage> fe = LazyOptional.of(() -> storage);
     private final LazyOptional<IEnergyProvider> heCap = LazyOptional.of(() -> this);
-    //?}
+    //?} elif neoforge {
+    /*public final RFStorage storage = new RFStorage();
+
+    /^* RF-Speicher des Originals ({@code cofh.api.energy.EnergyStorage}) mit {@code setEnergyStored}. ^/
+    public static class RFStorage extends net.neoforged.neoforge.energy.EnergyStorage {
+        RFStorage() { super(1_000_000, 1_000_000, 1_000_000); }
+        public void set(int value) { this.energy = Math.max(0, Math.min(value, capacity)); }
+        @Override public int receiveEnergy(int maxReceive, boolean simulate) { return super.receiveEnergy(maxReceive, simulate); }
+        @Override public boolean canReceive() { return true; }
+        @Override public int extractEnergy(int maxExtract, boolean simulate) { return 0; }
+        @Override public boolean canExtract() { return false; }
+    }
+    private final com.hbm_m.platform.LazyCap<net.neoforged.neoforge.energy.IEnergyStorage> fe = com.hbm_m.platform.LazyCap.of(() -> storage);
+    private final com.hbm_m.platform.LazyCap<IEnergyProvider> heCap = com.hbm_m.platform.LazyCap.of(() -> this);
+    *///?}
 
     public MachineConverterRfHeBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MACHINE_CONVERTER_RF_HE_BE.get(), pos, state);
@@ -56,7 +70,7 @@ public class MachineConverterRfHeBlockEntity extends BaseHbmBlockEntity implemen
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, MachineConverterRfHeBlockEntity be) {
         if (level.isClientSide) return;
-        //? if forge {
+        //? if forge || neoforge {
         long rfCreated = Math.min(be.storage.getEnergyStored(), (be.maxPower - be.power) * rfInput / heOutput);
         be.storage.set((int) (be.storage.getEnergyStored() - rfCreated));
         be.power += rfCreated * heOutput / rfInput;
@@ -99,13 +113,27 @@ public class MachineConverterRfHeBlockEntity extends BaseHbmBlockEntity implemen
         fe.invalidate();
         heCap.invalidate();
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ENERGY) return fe.cast();
+        if (cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_PROVIDER || cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_CONNECTOR) return heCap.cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        fe.invalidate();
+        heCap.invalidate();
+    }
+    *///?}
 
     @Override
     protected void writeNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(nbt, registries);
         nbt.putLong("power", power);
-        //? if forge {
+        //? if forge || neoforge {
         nbt.putInt("Energy", storage.getEnergyStored());
         //?}
     }
@@ -114,7 +142,7 @@ public class MachineConverterRfHeBlockEntity extends BaseHbmBlockEntity implemen
     protected void readNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(nbt, registries);
         power = nbt.getLong("power");
-        //? if forge {
+        //? if forge || neoforge {
         storage.set(nbt.getInt("Energy"));
         //?}
     }

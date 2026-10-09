@@ -24,7 +24,7 @@ public class GUILemegeton extends AbstractContainerScreen<LemegetonMenu> {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(g);
+        com.hbm_m.client.GuiCompat.renderBackground(this, g, mouseX, mouseY, partialTick);
         super.render(g, mouseX, mouseY, partialTick);
         this.renderTooltip(g, mouseX, mouseY);
     }

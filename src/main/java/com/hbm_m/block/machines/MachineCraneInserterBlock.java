@@ -64,7 +64,7 @@ public class MachineCraneInserterBlock extends CraneBaseBlock implements IEntera
 
     @Override
     public int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
-        //? if forge {
+        //? if forge || neoforge {
         if (level.getBlockEntity(pos) instanceof MachineCraneInserterBlockEntity be) return com.hbm_m.blockentity.network.CraneInventoryUtil.comparator(be.getInventory());
         //?}
         return 0;

@@ -1,5 +1,7 @@
 package com.hbm_m.item.weapon.sedna;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
@@ -179,7 +181,11 @@ public class ItemGunBaseNT extends Item implements IKeybindReceiver {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+    *///?}
         Player player = com.hbm_m.client.weapon.GunClientHooks.clientPlayer();
         int configs = this.configs_DNA.length;
         for (int i = 0; i < configs; i++) {
@@ -381,7 +387,33 @@ public class ItemGunBaseNT extends Item implements IKeybindReceiver {
             }
         });
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public boolean onEntitySwing(ItemStack stack, LivingEntity entity) {
+        return true;
+    }
+
+    @Override
+    public boolean shouldCauseReequipAnimation(ItemStack oldStack, ItemStack newStack, boolean slotChanged) {
+        return slotChanged || oldStack.getItem() != newStack.getItem();
+    }
+
+    @Override
+    public void initializeClient(java.util.function.Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
+        consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
+            @Override
+            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return com.hbm_m.client.weapon.GunItemRenderer.INSTANCE;
+            }
+
+            /^* Original ModEventHandlerRenderer: Waffen halten den Arm wie beim Bogen ({@code aimedBow}). ^/
+            @Override
+            public net.minecraft.client.model.HumanoidModel.ArmPose getArmPose(LivingEntity entity, net.minecraft.world.InteractionHand hand, ItemStack stack) {
+                return net.minecraft.client.model.HumanoidModel.ArmPose.BOW_AND_ARROW;
+            }
+        });
+    }
+    *///?}
 
     // GUN DRAWN //
     public static boolean getIsDrawn(ItemStack stack) { return getValueBool(stack, KEY_DRAWN); }
@@ -429,17 +461,17 @@ public class ItemGunBaseNT extends Item implements IKeybindReceiver {
     public static void setIsEquipped(ItemStack stack, boolean value) { setValueBool(stack, KEY_EQUIPPED, value); }
 
     /// UTIL ///
-    public static int getValueInt(ItemStack stack, String name) { if (stack.hasTag()) return stack.getTag().getInt(name); return 0; }
-    public static void setValueInt(ItemStack stack, String name, int value) { stack.getOrCreateTag().putInt(name, value); }
+    public static int getValueInt(ItemStack stack, String name) { if (StackNbt.has(stack)) return StackNbt.read(stack).getInt(name); return 0; }
+    public static void setValueInt(ItemStack stack, String name, int value) { StackNbt.orCreate(stack).putInt(name, value); }
 
-    public static float getValueFloat(ItemStack stack, String name) { if (stack.hasTag()) return stack.getTag().getFloat(name); return 0; }
-    public static void setValueFloat(ItemStack stack, String name, float value) { stack.getOrCreateTag().putFloat(name, value); }
+    public static float getValueFloat(ItemStack stack, String name) { if (StackNbt.has(stack)) return StackNbt.read(stack).getFloat(name); return 0; }
+    public static void setValueFloat(ItemStack stack, String name, float value) { StackNbt.orCreate(stack).putFloat(name, value); }
 
-    public static byte getValueByte(ItemStack stack, String name) { if (stack.hasTag()) return stack.getTag().getByte(name); return 0; }
-    public static void setValueByte(ItemStack stack, String name, byte value) { stack.getOrCreateTag().putByte(name, value); }
+    public static byte getValueByte(ItemStack stack, String name) { if (StackNbt.has(stack)) return StackNbt.read(stack).getByte(name); return 0; }
+    public static void setValueByte(ItemStack stack, String name, byte value) { StackNbt.orCreate(stack).putByte(name, value); }
 
-    public static boolean getValueBool(ItemStack stack, String name) { if (stack.hasTag()) return stack.getTag().getBoolean(name); return false; }
-    public static void setValueBool(ItemStack stack, String name, boolean value) { stack.getOrCreateTag().putBoolean(name, value); }
+    public static boolean getValueBool(ItemStack stack, String name) { if (StackNbt.has(stack)) return StackNbt.read(stack).getBoolean(name); return false; }
+    public static void setValueBool(ItemStack stack, String name, boolean value) { StackNbt.orCreate(stack).putBoolean(name, value); }
 
     /** Wrapper for extra context used in most Consumer lambdas which are part of the guncfg */
     public static class LambdaContext {

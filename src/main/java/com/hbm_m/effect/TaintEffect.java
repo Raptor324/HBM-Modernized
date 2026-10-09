@@ -23,7 +23,9 @@ import java.util.function.Consumer;
 
 //? if forge {
 import net.minecraftforge.client.extensions.common.IClientMobEffectExtensions;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.neoforge.client.extensions.common.IClientMobEffectExtensions;
+*///?}
 
 /**
  * Эффект порчи — периодический урон и следы блока taint под сущностью.
@@ -99,7 +101,7 @@ public class TaintEffect extends MobEffect {
     }
     *///?}
 
-    //? if forge {
+    //? if forge || neoforge {
     @Override
     public void initializeClient(@NotNull Consumer<IClientMobEffectExtensions> consumer) {
         consumer.accept(new IClientMobEffectExtensions() {

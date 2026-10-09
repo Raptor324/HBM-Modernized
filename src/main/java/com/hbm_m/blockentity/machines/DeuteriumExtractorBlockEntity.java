@@ -34,7 +34,9 @@ public class DeuteriumExtractorBlockEntity extends BaseHbmBlockEntity implements
 
     //? if forge {
     private final LazyOptional<IEnergyReceiver> heCap = LazyOptional.of(() -> this);
-    //?}
+    //?} elif neoforge {
+    /*private final com.hbm_m.platform.LazyCap<IEnergyReceiver> heCap = com.hbm_m.platform.LazyCap.of(() -> this);
+    *///?}
 
     public DeuteriumExtractorBlockEntity(BlockPos pos, BlockState state) {
         this(ModBlockEntities.DEUTERIUM_EXTRACTOR_BE.get(), pos, state);
@@ -144,5 +146,17 @@ public class DeuteriumExtractorBlockEntity extends BaseHbmBlockEntity implements
         super.invalidateCaps();
         heCap.invalidate();
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_RECEIVER || cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_CONNECTOR) return heCap.cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        heCap.invalidate();
+    }
+    *///?}
 }

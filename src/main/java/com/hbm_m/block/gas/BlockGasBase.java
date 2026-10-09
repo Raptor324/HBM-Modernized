@@ -55,7 +55,7 @@ public abstract class BlockGasBase extends Block {
     public void animateTick(BlockState state, Level world, BlockPos pos, RandomSource rand) {
         super.animateTick(state, world, pos, rand);
 
-        Player p = net.minecraft.client.Minecraft.getInstance().player;
+        Player p = com.hbm_m.client.ClientAccess.player();
         if (p != null && p.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.HEAD).is(com.hbm_m.item.ModItems.ASHGLASSES.get())) {
             net.minecraft.nbt.CompoundTag data = new net.minecraft.nbt.CompoundTag();
             data.putString("type", "vanillaExt");

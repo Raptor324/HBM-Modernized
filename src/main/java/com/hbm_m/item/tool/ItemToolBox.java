@@ -1,5 +1,7 @@
 package com.hbm_m.item.tool;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -41,12 +43,20 @@ public class ItemToolBox extends Item {
     }
 
     @Override
+    //? if < 1.21.1 {
     public int getUseDuration(ItemStack stack) {
+    //?} else {
+    /*public int getUseDuration(ItemStack stack, net.minecraft.world.entity.LivingEntity hbmUser) {
+    *///?}
         return 1;
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+    *///?}
         list.add(Component.literal("Click with the toolbox to swap hotbars in/out of the toolbox."));
         list.add(Component.literal("Shift-click with the toolbox to open the toolbox."));
     }
@@ -163,10 +173,10 @@ public class ItemToolBox extends Item {
             player.getInventory().setItem(i, endingHotBar[i] == null ? ItemStack.EMPTY : endingHotBar[i]);
         }
 
-        box.setTag(new CompoundTag());
+        StackNbt.set(box, new CompoundTag());
         HeldItemInventory.addStacksToNBT(box, endingStacks);
 
-        CompoundTag nbt = box.getTag();
+        CompoundTag nbt = StackNbt.tag(box);
 
         if (!nbt.isEmpty()) {
             Random random = new Random();
@@ -205,7 +215,7 @@ public class ItemToolBox extends Item {
                         }
                     }
 
-                    box.setTag(new CompoundTag()); // Reset.
+                    StackNbt.set(box, new CompoundTag()); // Reset.
                 }
             } catch (java.io.IOException ignored) { }
         }
@@ -220,7 +230,7 @@ public class ItemToolBox extends Item {
                 moveRows(stack, player);
                 player.inventoryMenu.broadcastChanges();
             } else if (player instanceof ServerPlayer sp) {
-                stack.getOrCreateTag().putBoolean("isOpen", true);
+                StackNbt.orCreate(stack).putBoolean("isOpen", true);
                 MenuRegistry.openExtendedMenu(sp, new MenuProvider() {
                     @Override public Component getDisplayName() { return stack.getHoverName(); }
                     @Override public AbstractContainerMenu createMenu(int id, Inventory inv, Player p) { return new HeldItemMenu(id, inv, HeldItemMenu.Layout.TOOLBOX, hand); }
@@ -235,9 +245,9 @@ public class ItemToolBox extends Item {
 
     /** InventoryToolBox.closeInventory: Kiste wieder zu, Zufallswert erzwingt die Synchronisierung. */
     public static void onClose(Player player, ItemStack box) {
-        if (box.hasTag()) {
-            box.getTag().remove("isOpen");
-            box.getTag().putInt("rand", player.level().random.nextInt());
+        if (StackNbt.has(box)) {
+            StackNbt.tag(box).remove("isOpen");
+            StackNbt.tag(box).putInt("rand", player.level().random.nextInt());
         }
         player.inventoryMenu.broadcastChanges();
     }

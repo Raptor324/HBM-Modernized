@@ -1,5 +1,7 @@
 package com.hbm_m.item.machine;
 
+import com.hbm_m.platform.StackNbt;
+
 import com.hbm_m.item.ITooltipProvider;
 
 import java.util.List;
@@ -103,12 +105,12 @@ public class ItemPileRodMK2 extends Item implements ITooltipProvider {
     // ── Abbrand ─────────────────────────────────────────────────────────────
 
     public static double getDepletion(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = StackNbt.read(stack);
         return tag == null ? 0D : tag.getDouble(KEY_NBT_DEPLETION);
     }
 
     public static void setDepletion(ItemStack stack, double depletion) {
-        stack.getOrCreateTag().putDouble(KEY_NBT_DEPLETION, depletion);
+        StackNbt.orCreate(stack).putDouble(KEY_NBT_DEPLETION, depletion);
     }
 
     /** Original: {@code getDepletionPercent}. Gibt 0 zurueck, wenn der Stab nicht abbrennt. */

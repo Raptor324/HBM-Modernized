@@ -66,10 +66,11 @@ public abstract class JetpackBase extends ItemArmorMod implements Equipable {
     //? if forge {
     @Override
     @SuppressWarnings("removal")
+    //?}
+    // NeoForge: Aufruf ueber com.hbm_m.powerarmor.ArmorTickNeoForge
     public void onArmorTick(@NotNull ItemStack stack, @NotNull Level world, @NotNull Player player) {
         jetpackTick(world, player, stack);
     }
-    //?}
 
     /** Original isValidArmor: nur der Brustslot. */
     @Override

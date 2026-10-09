@@ -29,10 +29,17 @@ public class EntityCloudFleijaRainbow extends net.minecraft.world.entity.Entity 
         this.setMaxAge(maxAge);
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
         this.entityData.define(MAX_AGE, 0);
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        builder.define(MAX_AGE, 0);
+    }
+    *///?}
 
     @Override
     public boolean fireImmune() {

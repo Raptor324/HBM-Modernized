@@ -1,5 +1,7 @@
 package com.hbm_m.item.special;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -55,7 +57,7 @@ public class ItemDrop extends Item implements ITooltipProvider {
         this.container = container;
     }
 
-    //? if forge {
+    //? if forge || neoforge {
     @Override
     public boolean hasCraftingRemainingItem(ItemStack stack) {
         return container != null;
@@ -80,7 +82,7 @@ public class ItemDrop extends Item implements ITooltipProvider {
 
         if (stack.is(ModItems.DETONATOR_DEADMAN.get())) {
             if (!world.isClientSide) {
-                CompoundTag tag = stack.getTag();
+                CompoundTag tag = StackNbt.read(stack);
                 if (tag != null) {
                     BlockPos pos = new BlockPos(tag.getInt("x"), tag.getInt("y"), tag.getInt("z"));
                     Block b = world.getBlockState(pos).getBlock();
@@ -212,7 +214,7 @@ public class ItemDrop extends Item implements ITooltipProvider {
         if (this == ModItems.DETONATOR_DEADMAN.get()) {
             list.add(Component.literal("Shift right-click to set position,"));
             list.add(Component.literal("drop to detonate!"));
-            CompoundTag tag = itemstack.getTag();
+            CompoundTag tag = StackNbt.read(itemstack);
             if (tag == null) {
                 list.add(Component.literal("No position set!"));
             } else {
@@ -235,7 +237,7 @@ public class ItemDrop extends Item implements ITooltipProvider {
         Player player = ctx.getPlayer();
         ItemStack stack = ctx.getItemInHand();
         Level world = ctx.getLevel();
-        CompoundTag tag = stack.getOrCreateTag();
+        CompoundTag tag = StackNbt.orCreate(stack);
 
         if (player != null && player.isShiftKeyDown()) {
             BlockPos pos = ctx.getClickedPos();

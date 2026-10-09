@@ -28,6 +28,8 @@ public final class LB {
     public final String name;
     private final String[] states;
     private BlockState[] cache;
+    /** Phase D: Tabellen-Eintraege, die nicht geparst werden konnten (fuer den GameTest {@code LegacyBlockTableGameTest}). */
+    private final List<String> broken = new ArrayList<>();
 
     private static final List<LB> ALL = new ArrayList<>();
     private static Map<Block, LB> reverse;
@@ -58,6 +60,7 @@ public final class LB {
             } catch (Exception ex) {
                 MainRegistry.LOGGER.warn("[LegacyBlocks] Zustand '{}' fuer {} nicht lesbar", states[i], name);
                 c[i] = Blocks.AIR.defaultBlockState();
+                broken.add(states[i]);
             }
         }
         cache = c;
@@ -68,6 +71,12 @@ public final class LB {
         if (cache == null) parse();
         if (cache.length == 1) return cache[0];
         return cache[meta & 15];
+    }
+
+    /** Nicht lesbare Zustaende dieser Tabelle (parst bei Bedarf). */
+    public List<String> unparsable() {
+        if (cache == null) parse();
+        return broken;
     }
 
     public BlockState state() {

@@ -20,7 +20,9 @@ import net.minecraftforge.fml.common.Mod;
  */
 //? if forge {
 @Mod.EventBusSubscriber(modid = com.hbm_m.lib.RefStrings.MODID)
-//?}
+//?} elif neoforge {
+/*@net.neoforged.fml.common.EventBusSubscriber(modid = com.hbm_m.lib.RefStrings.MODID)
+*///?}
 public final class FuelHandler {
 
     private static final int SINGLE = 200;
@@ -100,7 +102,13 @@ public final class FuelHandler {
         int t = getBurnTime(event.getItemStack());
         if (t > 0) event.setBurnTime(t);
     }
-    //?}
+    //?} elif neoforge {
+    /*@net.neoforged.bus.api.SubscribeEvent
+    public static void onFuelBurnTime(net.neoforged.neoforge.event.furnace.FurnaceFuelBurnTimeEvent event) {
+        int t = getBurnTime(event.getItemStack());
+        if (t > 0) event.setBurnTime(t);
+    }
+    *///?}
 
     /** Nur damit der Import in der Nicht-Forge-Variante nicht verwaist. */
     @SuppressWarnings("unused")

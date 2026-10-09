@@ -1,15 +1,27 @@
-//? if forge {
+//? if forge || neoforge {
 package com.hbm_m.client;
 
 // Обработчик клиентских событий для очистки данных о радиации при входе в мир или отключении.
 import net.minecraft.client.Minecraft;
+//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+//?} else {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+*///?}
 
+//? if forge {
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
+//?} else {
+/*@EventBusSubscriber(value = Dist.CLIENT)
+*///?}
 public class ClientRadiationEventHandler {
 
     @SubscribeEvent

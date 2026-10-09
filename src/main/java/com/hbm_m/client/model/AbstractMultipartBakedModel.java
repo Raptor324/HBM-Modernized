@@ -339,7 +339,8 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
      * Forge {@code IForgeBakedModel#applyTransform} must stay a no-op for them.
      */
 
-    //? if forge {
+    // NeoForge: gleiche Signatur in IBakedModelExtension
+    //? if forge || neoforge {
     @Override
     public BakedModel applyTransform(ItemDisplayContext transformType, PoseStack poseStack,
                                      boolean applyLeftHandTransform) {

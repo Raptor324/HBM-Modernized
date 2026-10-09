@@ -1,5 +1,7 @@
 package com.hbm_m.block.generic;
 
+import com.hbm_m.platform.EffectHooks;
+
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.effect.ModEffects;
 import com.hbm_m.particle.ModParticleTypes;
@@ -36,19 +38,19 @@ public class BlockOre extends Block {
                 living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 2 * 60 * 20, 2));
             }
             if (this == ModBlocks.BLOCK_TRINITITE.get()) {
-                living.addEffect(new MobEffectInstance(ModEffects.RADIATION.get(), 30 * 20, 2));
+                living.addEffect(new MobEffectInstance(EffectHooks.of(ModEffects.RADIATION), 30 * 20, 2));
             }
             if (this == ModBlocks.BLOCK_WASTE.get()) {
-                living.addEffect(new MobEffectInstance(ModEffects.RADIATION.get(), 30 * 20, 2));
+                living.addEffect(new MobEffectInstance(EffectHooks.of(ModEffects.RADIATION), 30 * 20, 2));
             }
             if (this == ModBlocks.WASTE_TRINITITE.get() || this == ModBlocks.WASTE_TRINITITE_RED.get()) {
-                living.addEffect(new MobEffectInstance(ModEffects.RADIATION.get(), 5 * 20, 2));
+                living.addEffect(new MobEffectInstance(EffectHooks.of(ModEffects.RADIATION), 5 * 20, 2));
             }
             if (this == ModBlocks.BRICK_JUNGLE_OOZE.get()) {
-                living.addEffect(new MobEffectInstance(ModEffects.RADIATION.get(), 15 * 20, 9));
+                living.addEffect(new MobEffectInstance(EffectHooks.of(ModEffects.RADIATION), 15 * 20, 9));
             }
             if (this == ModBlocks.BRICK_JUNGLE_MYSTIC.get()) {
-                living.addEffect(new MobEffectInstance(ModEffects.TAINT.get(), 15 * 20, 2));
+                living.addEffect(new MobEffectInstance(EffectHooks.of(ModEffects.TAINT), 15 * 20, 2));
             }
         }
     }

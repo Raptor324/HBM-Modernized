@@ -55,12 +55,21 @@ public class BoundingBoxDummyEntity extends Entity {
         this.refreshDimensions();
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
         this.entityData.define(TRAIN_ID, 0);
         this.entityData.define(WIDTH, 1F);
         this.entityData.define(HEIGHT, 1F);
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        builder.define(TRAIN_ID, 0);
+        builder.define(WIDTH, 1F);
+        builder.define(HEIGHT, 1F);
+    }
+    *///?}
 
     @Override
     public void onSyncedDataUpdated(@NotNull EntityDataAccessor<?> key) {
@@ -113,7 +122,11 @@ public class BoundingBoxDummyEntity extends Entity {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void lerpTo(double posX, double posY, double posZ, float yaw, float pitch, int turnProg, boolean teleport) {
+    //?} else {
+    /*public void lerpTo(double posX, double posY, double posZ, float yaw, float pitch, int turnProg) {
+    *///?}
         this.trainX = posX;
         this.trainY = posY;
         this.trainZ = posZ;

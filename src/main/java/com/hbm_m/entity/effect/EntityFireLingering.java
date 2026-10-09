@@ -1,5 +1,7 @@
 package com.hbm_m.entity.effect;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import java.util.List;
 
 import com.hbm_m.extprop.HbmLivingProps;
@@ -57,12 +59,21 @@ public class EntityFireLingering extends Entity {
         return this;
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
         this.entityData.define(DATA_TYPE, 0);
         this.entityData.define(DATA_WIDTH, 0F);
         this.entityData.define(DATA_HEIGHT, 0F);
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        builder.define(DATA_TYPE, 0);
+        builder.define(DATA_WIDTH, 0F);
+        builder.define(DATA_HEIGHT, 0F);
+    }
+    *///?}
 
     public EntityFireLingering setType(int type) {
         this.entityData.set(DATA_TYPE, type);
@@ -104,7 +115,7 @@ public class EntityFireLingering extends Entity {
                         else HbmLivingProps.setBlackFire(livng, HbmLivingProps.getBlackFire(livng) + 5);
                     }
                 } else {
-                    e.setSecondsOnFire(4);
+                    PlatformHooks.setSecondsOnFire(e, 4);
                 }
             }
         } else {

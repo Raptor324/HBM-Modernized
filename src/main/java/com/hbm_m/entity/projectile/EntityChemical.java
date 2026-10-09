@@ -1,5 +1,7 @@
 package com.hbm_m.entity.projectile;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import java.util.List;
 
 import com.hbm_m.block.ModBlocks;
@@ -99,7 +101,7 @@ public class EntityChemical extends EntityThrowableNT {
     public Fluid getFluid() {
         String id = this.entityData.get(FLUID);
         if (id.isEmpty()) return ModFluids.NONE.getSource();
-        return net.minecraft.core.registries.BuiltInRegistries.FLUID.get(new net.minecraft.resources.ResourceLocation(id));
+        return net.minecraft.core.registries.BuiltInRegistries.FLUID.get(net.minecraft.resources.ResourceLocation.parse(id));
     }
 
     public FluidType getFluidType() {
@@ -206,7 +208,7 @@ public class EntityChemical extends EntityThrowableNT {
             hurtIgnoreIFrame(e, getDamage(ModDamageTypes.BOIL), Math.min(0.25F + (type.temperature - 100) * 0.001F, 15F)); //.25 damage at 100°C with one extra damage every 1000°C
 
             if (type.temperature >= 500) {
-                e.setSecondsOnFire(10); //afterburn for 10 seconds
+                PlatformHooks.setSecondsOnFire(e, 10); //afterburn for 10 seconds
             }
         }
 
@@ -246,7 +248,7 @@ public class EntityChemical extends EntityThrowableNT {
         if (style == ChemicalStyle.BURNING) {
             FT_Combustible trait = type.getTrait(FT_Combustible.class);
             hurtIgnoreIFrame(e, getDamage(ModDamageTypes.FLAMETHROWER), 0.2F + (trait != null ? (Math.min(trait.getCombustionEnergy() / 100_000F, 15F)) : 0));
-            e.setSecondsOnFire(5);
+            PlatformHooks.setSecondsOnFire(e, 5);
         }
 
         if (style == ChemicalStyle.GASFLAME) {
@@ -256,7 +258,7 @@ public class EntityChemical extends EntityThrowableNT {
             float heat = Math.max(flammable != null ? flammable.getHeatEnergy() / 50_000F : 0, combustible != null ? Math.min(combustible.getCombustionEnergy() / 100_000F, 15F) : 0);
             heat *= intensity;
             hurtIgnoreIFrame(e, getDamage(ModDamageTypes.FLAMETHROWER), (0.2F + heat) * (float) intensity);
-            e.setSecondsOnFire((int) Math.ceil(5 * intensity));
+            PlatformHooks.setSecondsOnFire(e, (int) Math.ceil(5 * intensity));
         }
 
         if (type.hasTrait(FT_Corrosive.class)) {

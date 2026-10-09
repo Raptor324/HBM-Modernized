@@ -315,7 +315,45 @@ public class MachineStrandCasterBlockEntity extends MachineFoundryCastingBaseBlo
         if (casterHandler != null) casterHandler.invalidate();
         casterHandler = null;
     }
-    //?}
+    //?} elif neoforge {
+    /*private com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler> casterHandler;
+
+    /^* Original {@code getAccessibleSlotsFromSide {1..6}}: nur die Ausgaben, entnehmbar. ^/
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER) {
+            if (casterHandler == null) {
+                casterHandler = com.hbm_m.platform.LazyCap.of(() -> new net.neoforged.neoforge.items.IItemHandler() {
+                    @Override public int getSlots() { return 6; }
+                    @Override public @NotNull ItemStack getStackInSlot(int slot) { return slots[slot + 1]; }
+                    @Override public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) { return stack; }
+                    @Override public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+                        ItemStack s = slots[slot + 1];
+                        if (s.isEmpty()) return ItemStack.EMPTY;
+                        ItemStack out = s.copyWithCount(Math.min(amount, s.getCount()));
+                        if (!simulate) {
+                            s.shrink(out.getCount());
+                            if (s.isEmpty()) slots[slot + 1] = ItemStack.EMPTY;
+                            setChanged();
+                        }
+                        return out;
+                    }
+                    @Override public int getSlotLimit(int slot) { return 64; }
+                    @Override public boolean isItemValid(int slot, @NotNull ItemStack stack) { return false; }
+                });
+            }
+            return casterHandler.cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        if (casterHandler != null) casterHandler.invalidate();
+        casterHandler = null;
+    }
+    *///?}
 
     @Override
     public Component getDisplayName() {

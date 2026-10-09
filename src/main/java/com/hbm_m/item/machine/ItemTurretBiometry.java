@@ -1,5 +1,7 @@
 package com.hbm_m.item.machine;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -52,11 +54,11 @@ public class ItemTurretBiometry extends Item implements ITooltipProvider {
 
     @Nullable
     public static String[] getNames(ItemStack stack) {
-        if (!stack.hasTag()) {
+        if (!StackNbt.has(stack)) {
             return null;
         }
 
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = StackNbt.read(stack);
         String[] names = new String[tag.getInt("playercount")];
 
         for (int i = 0; i < names.length; i++) {
@@ -70,7 +72,7 @@ public class ItemTurretBiometry extends Item implements ITooltipProvider {
     }
 
     public static void addName(ItemStack stack, String s) {
-        CompoundTag tag = stack.getOrCreateTag();
+        CompoundTag tag = StackNbt.orCreate(stack);
 
         String[] names = getNames(stack);
         int count = 0;
@@ -86,6 +88,6 @@ public class ItemTurretBiometry extends Item implements ITooltipProvider {
     }
 
     public static void clearNames(ItemStack stack) {
-        stack.getOrCreateTag().putInt("playercount", 0);
+        StackNbt.orCreate(stack).putInt("playercount", 0);
     }
 }

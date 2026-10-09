@@ -9,7 +9,9 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
 import net.minecraftforge.client.model.data.ModelData;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.neoforge.client.model.data.ModelData;
+*///?}
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -66,13 +68,10 @@ public class HeatingOvenBakedModel extends AbstractMultipartBakedModel implement
 
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
-        //? if forge {
+        // NeoForge wie Forge (vorher super.getQuads: alle Teile unverschoben im Chunk)
+        //? if forge || neoforge {
         return getQuads(state, side, rand, ModelData.EMPTY, null);
         //?}
-
-        //? if neoforge {
-        /*return super.getQuads(state, side, rand);
-        *///?}
 
         //? if fabric {
         /*// ITEM RENDER (Inventory/Hand)
@@ -100,7 +99,7 @@ public class HeatingOvenBakedModel extends AbstractMultipartBakedModel implement
         *///?}
     }
 
-    //? if forge {
+    //? if forge || neoforge {
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
                                     RandomSource rand, ModelData modelData,

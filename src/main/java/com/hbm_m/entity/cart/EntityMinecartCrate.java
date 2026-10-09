@@ -1,5 +1,7 @@
 package com.hbm_m.entity.cart;
 
+import com.hbm_m.platform.StackNbt;
+
 import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.inventory.menu.CartCrateMenu;
@@ -29,9 +31,9 @@ public class EntityMinecartCrate extends EntityMinecartContainerBase {
 
     public EntityMinecartCrate(EntityType<?> type, Level world, double x, double y, double z, EnumCartBase base, ItemStack stack) {
         super(type, world, x, y, z, base);
-        if (stack.hasTag()) {
+        if (StackNbt.has(stack)) {
             for (int i = 0; i < getContainerSize(); i++) {
-                setItem(i, ItemStack.of(stack.getTag().getCompound("slot" + i)));
+                setItem(i, StackNbt.parse(StackNbt.tag(stack).getCompound("slot" + i)));
             }
         }
     }
@@ -60,16 +62,16 @@ public class EntityMinecartCrate extends EntityMinecartContainerBase {
                 continue;
 
             CompoundTag slot = new CompoundTag();
-            stack.save(slot);
+            StackNbt.save(stack, slot);
             nbt.put("slot" + i, slot);
         }
 
         if (!nbt.isEmpty()) {
-            itemstack.setTag(nbt);
+            StackNbt.set(itemstack, nbt);
         }
 
         if (this.hasCustomName()) {
-            itemstack.setHoverName(this.getCustomName());
+            StackNbt.setCustomName(itemstack, this.getCustomName());
         }
 
         try {

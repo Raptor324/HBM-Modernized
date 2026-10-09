@@ -110,7 +110,11 @@ public class CableDiodeBlock extends BaseEntityBlock implements ILookOverlay {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> list, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+    *///?}
         list.add(Component.literal("Limits throughput and restricts flow direction").withStyle(ChatFormatting.GOLD));
     }
 

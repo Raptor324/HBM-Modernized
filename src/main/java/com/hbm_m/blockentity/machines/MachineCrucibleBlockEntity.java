@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
@@ -142,7 +144,7 @@ public class MachineCrucibleBlockEntity extends BaseMachineBlockEntity implement
         List<LivingEntity> living = world.getEntitiesOfClass(LivingEntity.class, new AABB(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, pos.getX() + 0.5, pos.getY() + 0.5 + level, pos.getZ() + 0.5).inflate(1, 0, 1));
         for (LivingEntity entity : living) {
             entity.hurt(world.damageSources().lava(), 5F);
-            entity.setSecondsOnFire(5);
+            PlatformHooks.setSecondsOnFire(entity, 5);
         }
 
         /* smelt items from buffer */
@@ -583,7 +585,35 @@ public class MachineCrucibleBlockEntity extends BaseMachineBlockEntity implement
         sided.values().forEach(net.minecraftforge.common.util.LazyOptional::invalidate);
         sided.clear();
     }
-    //?}
+    //?} elif neoforge {
+    /*private final Map<Direction, com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler>> sided = new EnumMap<>(Direction.class);
+
+    /^* Original {@code getAccessibleSlotsFromSide}: Plaetze 1-9, nur Schmelzbares hinein, nichts heraus. ^/
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) {
+            return sided.computeIfAbsent(side, d -> com.hbm_m.platform.LazyCap.of(() -> new net.neoforged.neoforge.items.IItemHandler() {
+                @Override public int getSlots() { return 9; }
+                @Override public @NotNull ItemStack getStackInSlot(int slot) { return inventory.getStackInSlot(slot + 1); }
+                @Override public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
+                    if (!isItemSmeltable(stack)) return stack;
+                    return inventory.insertItem(slot + 1, stack, simulate);
+                }
+                @Override public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) { return ItemStack.EMPTY; }
+                @Override public int getSlotLimit(int slot) { return 1; }
+                @Override public boolean isItemValid(int slot, @NotNull ItemStack stack) { return isItemSmeltable(stack); }
+            })).cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sided.values().forEach(com.hbm_m.platform.LazyCap::invalidate);
+        sided.clear();
+    }
+    *///?}
 
     // ── Menue ────────────────────────────────────────────────────────────────
 

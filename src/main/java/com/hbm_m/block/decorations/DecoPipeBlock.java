@@ -22,7 +22,11 @@ public class DecoPipeBlock extends RotatedPillarBlock {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> tooltip, TooltipFlag flag) {
+    *///?}
         tooltip.add(Component.translatable("tooltip.hbm_m.deco_pipe"));
     }
 }

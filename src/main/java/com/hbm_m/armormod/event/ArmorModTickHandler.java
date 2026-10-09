@@ -23,7 +23,9 @@ import net.minecraftforge.fml.common.Mod;
  */
 //? if forge {
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
-//?}
+//?} elif neoforge {
+/*@net.neoforged.fml.common.EventBusSubscriber(modid = RefStrings.MODID)
+*///?}
 public class ArmorModTickHandler {
 
     private static final EquipmentSlot[] ARMOR_SLOTS = {
@@ -36,7 +38,7 @@ public class ArmorModTickHandler {
      * Mod-Ruestung am Spieler). Getrennt gehalten, damit auf Forge nichts doppelt tickt.
      */
     public static void init() {
-        //? if fabric || neoforge {
+        //? if fabric {
         /*dev.architectury.event.events.common.TickEvent.PLAYER_POST.register(
                 player -> tickArmorMods(player));
         *///?}
@@ -47,7 +49,13 @@ public class ArmorModTickHandler {
     public static void onLivingTick(LivingEvent.LivingTickEvent event) {
         tickArmorMods(event.getEntity());
     }
-    //?}
+    //?} elif neoforge {
+    /*// NeoForge: Forge LivingTickEvent -> EntityTickEvent.Pre, wie auf Forge fuer alle Lebewesen.
+    @net.neoforged.bus.api.SubscribeEvent
+    public static void onLivingTick(net.neoforged.neoforge.event.tick.EntityTickEvent.Pre event) {
+        if (event.getEntity() instanceof LivingEntity living) tickArmorMods(living);
+    }
+    *///?}
 
     private static void tickArmorMods(LivingEntity entity) {
         if (entity.level().isClientSide) return;

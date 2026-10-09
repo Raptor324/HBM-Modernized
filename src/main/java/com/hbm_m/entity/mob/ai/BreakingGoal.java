@@ -170,6 +170,6 @@ public class BreakingGoal extends Goal {
         float f7 = f4 * f5;
         float f8 = f3 * f5;
         Vec3 vec31 = vec3.add((double) f7 * dist, (double) f6 * dist, (double) f8 * dist);
-        return world.clip(new ClipContext(vec3, vec31, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null));
+        return world.clip(new ClipContext(vec3, vec31, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, (net.minecraft.world.entity.Entity) null));
     }
 }

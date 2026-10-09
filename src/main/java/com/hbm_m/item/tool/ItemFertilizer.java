@@ -1,7 +1,11 @@
 package com.hbm_m.item.tool;
 
 import net.minecraft.core.BlockPos;
+//? if < 1.21.1 {
 import net.minecraft.core.BlockSource;
+//?} else {
+/*import net.minecraft.core.dispenser.BlockSource;
+*///?}
 import net.minecraft.core.Direction;
 import net.minecraft.core.dispenser.DefaultDispenseItemBehavior;
 import net.minecraft.server.level.ServerLevel;
@@ -31,18 +35,18 @@ public class ItemFertilizer extends Item {
 
             @Override
             protected @NotNull ItemStack execute(BlockSource source, ItemStack stack) {
-                Direction facing = source.getBlockState().getValue(DispenserBlock.FACING);
-                BlockPos pos = source.getPos().relative(facing);
-                this.dispenseSound = useFertillizer(stack, source.getLevel(), pos.getX(), pos.getY(), pos.getZ());
+                Direction facing = com.hbm_m.platform.DispenseHooks.state(source).getValue(DispenserBlock.FACING);
+                BlockPos pos = com.hbm_m.platform.DispenseHooks.pos(source).relative(facing);
+                this.dispenseSound = useFertillizer(stack, com.hbm_m.platform.DispenseHooks.level(source), pos.getX(), pos.getY(), pos.getZ());
                 return stack;
             }
 
             @Override
             protected void playSound(BlockSource source) {
                 if (this.dispenseSound) {
-                    source.getLevel().levelEvent(1000, source.getPos(), 0);
+                    com.hbm_m.platform.DispenseHooks.level(source).levelEvent(1000, com.hbm_m.platform.DispenseHooks.pos(source), 0);
                 } else {
-                    source.getLevel().levelEvent(1001, source.getPos(), 0);
+                    com.hbm_m.platform.DispenseHooks.level(source).levelEvent(1001, com.hbm_m.platform.DispenseHooks.pos(source), 0);
                 }
             }
         });
@@ -84,7 +88,11 @@ public class ItemFertilizer extends Item {
     public static boolean useFertillizer(ItemStack stack, Level world, int x, int y, int z) {
 
         if (!(world instanceof ServerLevel server)) return false;
+        //? if < 1.21.1 {
         Player player = net.minecraftforge.common.util.FakePlayerFactory.getMinecraft(server);
+        //?} else {
+        /*Player player = net.neoforged.neoforge.common.util.FakePlayerFactory.getMinecraft(server);
+        *///?}
 
         boolean didSomething = false;
 
@@ -111,7 +119,11 @@ public class ItemFertilizer extends Item {
         BlockState state = world.getBlockState(pos);
 
         // BonemealEvent: -1 = abgebrochen, 1 = ALLOW
+        //? if < 1.21.1 {
         int hook = net.minecraftforge.event.ForgeEventFactory.onApplyBonemeal(player, world, pos, state, ItemStack.EMPTY);
+        //?} else {
+        /*var hbmEvent = net.neoforged.neoforge.event.EventHooks.fireBonemealEvent(player, world, pos, state, ItemStack.EMPTY); int hook = hbmEvent.isCanceled() ? (hbmEvent.isSuccessful() ? 1 : -1) : 0;
+        *///?}
         if (hook < 0) {
             return false;
         }
@@ -122,7 +134,11 @@ public class ItemFertilizer extends Item {
 
         if (state.getBlock() instanceof BonemealableBlock growable) {
 
+            //? if < 1.21.1 {
             if (growable.isValidBonemealTarget(world, pos, state, world.isClientSide)) {
+            //?} else {
+            /*if (growable.isValidBonemealTarget(world, pos, state)) {
+            *///?}
 
                 if (world instanceof ServerLevel server) {
                     if (force || growable.isBonemealSuccess(world, world.random, pos, state)) {

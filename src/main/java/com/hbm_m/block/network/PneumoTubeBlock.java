@@ -239,8 +239,16 @@ public class PneumoTubeBlock extends BaseEntityBlock {
 
     /** Original {@code addInformation}: {@code addStandardInfo} (Umschalttaste zeigt {@code .desc}). */
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(net.minecraft.world.item.ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.BlockGetter level,
                                 java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(net.minecraft.world.item.ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    *///?}
         com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
     }
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<PneumoTubeBlock> CODEC = simpleCodec(PneumoTubeBlock::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

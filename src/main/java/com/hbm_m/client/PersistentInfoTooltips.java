@@ -24,7 +24,12 @@ public final class PersistentInfoTooltips {
 
     public static void append(ItemStack stack, List<Component> list) {
         if (!(stack.getItem() instanceof BlockItem bi)) return;
+        //? if < 1.21.1 {
         CompoundTag data = BlockItem.getBlockEntityData(stack);
+        //?} else {
+        /*net.minecraft.world.item.component.CustomData beData = stack.get(net.minecraft.core.component.DataComponents.BLOCK_ENTITY_DATA);
+        CompoundTag data = beData == null ? null : beData.copyTag();
+        *///?}
         if (data == null) return;
         Block b = bi.getBlock();
 

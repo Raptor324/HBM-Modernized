@@ -21,8 +21,13 @@ public class EntityBurningFOEQ extends Entity {
         this.noCulling = true;
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() { }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) { }
+    *///?}
 
     @Override
     public void tick() {

@@ -1,5 +1,7 @@
 package com.hbm_m.item.tool;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 
 import javax.annotation.Nullable;
@@ -41,24 +43,24 @@ public class ItemSettingsTool extends Item implements ITooltipProvider {
     public void inventoryTick(ItemStack stack, Level world, Entity entity, int i, boolean bool) {
         if (!(entity instanceof ServerPlayer player)) return;
 
-        if (player.getMainHandItem() == stack && stack.hasTag()) {
-            int delay = stack.getTag().getInt("inputDelay");
+        if (player.getMainHandItem() == stack && StackNbt.has(stack)) {
+            int delay = StackNbt.read(stack).getInt("inputDelay");
             delay++;
-            ListTag displayInfo = stack.getTag().getList("displayInfo", 10);
+            ListTag displayInfo = StackNbt.tag(stack).getList("displayInfo", 10);
 
             if (HbmPlayerProps.get(player).getKeyPressed(EnumKeybind.TOOL_ALT) && delay > 4) {
-                int index = stack.getTag().getInt("copyIndex") + 1;
+                int index = StackNbt.read(stack).getInt("copyIndex") + 1;
                 if (index > displayInfo.size() - 1) index = 0;
-                stack.getTag().putInt("copyIndex", index);
+                StackNbt.tag(stack).putInt("copyIndex", index);
                 delay = 0;
             }
 
-            stack.getTag().putInt("inputDelay", delay);
+            StackNbt.tag(stack).putInt("inputDelay", delay);
             if (world.getGameTime() % 5 != 0) return;
 
             for (int j = 0; j < displayInfo.size(); j++) {
                 CompoundTag nbt = displayInfo.getCompound(j);
-                ChatFormatting format = stack.getTag().getInt("copyIndex") == j ? ChatFormatting.AQUA : ChatFormatting.YELLOW;
+                ChatFormatting format = StackNbt.read(stack).getInt("copyIndex") == j ? ChatFormatting.AQUA : ChatFormatting.YELLOW;
                 InfoToastPacket.sendTo(player, Component.translatable(nbt.getString("info")).withStyle(format), 80, 897 + j, 0xFFFFFF);
             }
         }
@@ -69,8 +71,8 @@ public class ItemSettingsTool extends Item implements ITooltipProvider {
         list.add(Component.literal("Can copy the settings (filters, fluid ID, etc) of machines"));
         list.add(Component.literal("Shift right-click to copy, right click to paste"));
         list.add(Component.literal("Ctrl click on pipes to paste settings to multiple pipes"));
-        if (stack.getTag() != null) {
-            CompoundTag nbt = stack.getTag();
+        if (StackNbt.read(stack) != null) {
+            CompoundTag nbt = StackNbt.read(stack);
             if (nbt.contains("tileName")) {
                 list.add(Component.translatable(nbt.getString("tileName")).withStyle(ChatFormatting.BLUE));
             } else {
@@ -96,7 +98,7 @@ public class ItemSettingsTool extends Item implements ITooltipProvider {
 
         if (player.isShiftKeyDown()) {
             CompoundTag settings = copiable.getSettings(world, pos);
-            stack.setTag(settings);
+            StackNbt.set(stack, settings);
             if (settings != null) {
                 settings.putString("tileName", copiable.getSettingsSourceID(block));
                 settings.putInt("copyIndex", 0);
@@ -111,15 +113,17 @@ public class ItemSettingsTool extends Item implements ITooltipProvider {
                     }
                     settings.put("displayInfo", displayInfo);
                 }
+                // 1.21.1: set() kopiert das Tag -> nach dem Befuellen erneut setzen (1.20.1: dasselbe Objekt, wirkungslos)
+                StackNbt.set(stack, settings);
                 if (world.isClientSide) {
                     player.sendSystemMessage(prefix.copy().append(Component.literal("Copied settings of ").append(copiable.getSettingsSourceDisplay(block)).withStyle(ChatFormatting.AQUA)));
                 }
             } else {
                 player.sendSystemMessage(prefix.copy().append(Component.literal("Copy failed, machine has no settings tool support: ").append(copiable.getSettingsSourceDisplay(block)).withStyle(ChatFormatting.RED)));
             }
-        } else if (stack.hasTag()) {
-            int index = stack.getTag().getInt("copyIndex");
-            copiable.pasteSettings(stack.getTag(), index, world, player, pos);
+        } else if (StackNbt.has(stack)) {
+            int index = StackNbt.read(stack).getInt("copyIndex");
+            copiable.pasteSettings(StackNbt.tag(stack), index, world, player, pos);
         }
 
         return world.isClientSide ? InteractionResult.PASS : InteractionResult.SUCCESS;

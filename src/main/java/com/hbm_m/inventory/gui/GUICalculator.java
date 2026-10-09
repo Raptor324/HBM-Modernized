@@ -89,7 +89,11 @@ public class GUICalculator extends Screen {
                     String plain = new BigDecimal(result, MathContext.DECIMAL64).toPlainString();
                     Minecraft.getInstance().keyboardHandler.setClipboard(plain);
                     inputField.setValue(plain);
+                    //? if < 1.21.1 {
                     inputField.moveCursorToEnd();
+                    //?} else {
+                    /*inputField.moveCursorToEnd(false);
+                    *///?}
                     inputField.setHighlightPos(0);
                 } catch (Exception ignored) { }
             }

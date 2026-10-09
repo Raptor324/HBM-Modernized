@@ -84,7 +84,7 @@ public class GuiStructureLoad extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        renderBackground(graphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, graphics, mouseX, mouseY, partialTicks);
         fileList.render(graphics, mouseX, mouseY, partialTicks);
         super.render(graphics, mouseX, mouseY, partialTicks);
     }
@@ -116,7 +116,11 @@ public class GuiStructureLoad extends Screen {
     public static class GuiFileList extends ObjectSelectionList<GuiFileList.Row> {
 
         public GuiFileList(Minecraft mc, File[] files, Consumer<File> onSelect, String nameFilter, int width, int height, int top, int bottom, int slotHeight) {
+            //? if < 1.21.1 {
             super(mc, width, height, top, bottom, slotHeight);
+            //?} else {
+            /*super(mc, width, bottom - top, top, slotHeight);
+            *///?}
 
             for (File file : files) {
                 Row row = new Row(this, file, onSelect);

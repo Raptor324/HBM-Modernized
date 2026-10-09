@@ -112,7 +112,7 @@ public interface IRepairable {
     /** {@code addGenericOverlay}: "Repair with:" und die Materialliste. */
     static void addGenericOverlay(net.minecraft.client.gui.GuiGraphics g, Level world, BlockPos core, Component title) {
 
-        Player me = net.minecraft.client.Minecraft.getInstance().player;
+        Player me = com.hbm_m.client.ClientAccess.player();
         if (me == null) return;
         List<RepairStack> materials = getRepairMaterials(world, core, me);
 

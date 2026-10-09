@@ -1,5 +1,7 @@
 package com.hbm_m.item.machine;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 
 import com.hbm_m.blockentity.machines.MachineReactorResearchBlockEntity;
@@ -56,7 +58,7 @@ public class ItemReactorSensor extends Item {
                         .append(Component.literal("Position set!").withStyle(ChatFormatting.GREEN)));
             }
 
-            CompoundTag tag = context.getItemInHand().getOrCreateTag();
+            CompoundTag tag = StackNbt.orCreate(context.getItemInHand());
             tag.putInt(NBT_X, core.getX());
             tag.putInt(NBT_Y, core.getY());
             tag.putInt(NBT_Z, core.getZ());
@@ -94,13 +96,17 @@ public class ItemReactorSensor extends Item {
     /** Gebundene Position, oder {@code null}, wenn der Fuehler noch nicht gesetzt wurde. */
     @Nullable
     public static BlockPos getBoundPos(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = StackNbt.read(stack);
         if (tag == null || !tag.contains(NBT_X)) return null;
         return new BlockPos(tag.getInt(NBT_X), tag.getInt(NBT_Y), tag.getInt(NBT_Z));
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> tooltip, TooltipFlag flag) {
+    *///?}
         BlockPos bound = getBoundPos(stack);
 
         // 1:1 Original ItemReactorSensor.addInformation: drei graue Koordinatenzeilen bzw. Hinweis

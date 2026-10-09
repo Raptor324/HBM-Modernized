@@ -21,7 +21,7 @@ public class GUISatDock extends GuiInfoScreen<MachineSatDockMenu> {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float f) {
-        this.renderBackground(g);
+        com.hbm_m.client.GuiCompat.renderBackground(this, g, mouseX, mouseY, f);
         super.render(g, mouseX, mouseY, f);
 
         String[] lines = Component.translatable("desc.gui.satdock.desc").getString().split("\\$");

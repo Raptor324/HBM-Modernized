@@ -68,7 +68,9 @@ public class EntityProcessorCross implements IEntityProcessor {
         List<Entity> list = level.getEntities(allowSelfDamage ? null : explosion.exploder, new AABB(minX, minY, minZ, maxX, maxY, maxZ));
         //? if forge {
         ForgeEventFactory.onExplosionDetonate(level, explosion.compat, list, size);
-        //?}
+        //?} elif neoforge {
+        /*net.neoforged.neoforge.event.EventHooks.onExplosionDetonate(level, explosion.compat, list, size);
+        *///?}
 
         Vec3[] nodes;
 

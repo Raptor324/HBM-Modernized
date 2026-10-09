@@ -26,4 +26,8 @@ public class BlockDeadPlant extends BushBlock {
         return block == Blocks.GRASS_BLOCK || block == Blocks.DIRT || block == ModBlocks.WASTE_EARTH.get()
                 || block == ModBlocks.DIRT_OILY.get() || block == ModBlocks.DIRT_DEAD.get();
     }
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<BlockDeadPlant> CODEC = simpleCodec(BlockDeadPlant::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BushBlock> codec() { return CODEC; }
+    *///?}
 }

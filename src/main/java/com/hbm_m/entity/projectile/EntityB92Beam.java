@@ -84,8 +84,13 @@ public class EntityB92Beam extends Entity {
         this.xRotO = this.getXRot();
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() { }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) { }
+    *///?}
 
     @Override
     public void tick() {

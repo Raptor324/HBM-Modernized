@@ -18,7 +18,7 @@ import net.minecraft.world.item.ItemStack;
  * {@code RenderSkeletonHolder}: das Skelett ist das statische Blockmodell, hier nur der gehaltene Gegenstand wie
  * {@code RenderItem.renderInFrame} (Rahmendarstellung), Nicht-Bloecke 1.5-fach, 0.125 angehoben.
  */
-public class SkeletonHolderRenderer implements BlockEntityRenderer<SkeletonHolderBlockEntity> {
+public class SkeletonHolderRenderer implements com.hbm_m.client.render.HbmBerBounds<SkeletonHolderBlockEntity> {
 
     public SkeletonHolderRenderer(BlockEntityRendererProvider.Context ctx) { }
 

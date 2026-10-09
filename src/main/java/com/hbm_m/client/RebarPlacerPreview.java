@@ -1,5 +1,7 @@
 package com.hbm_m.client;
 
+import com.hbm_m.platform.StackNbt;
+
 import org.joml.Matrix4f;
 
 import com.hbm_m.block.ModBlocks;
@@ -39,10 +41,10 @@ public final class RebarPlacerPreview {
 
         ItemStack held = player.getMainHandItem();
 
-        if (held.isEmpty() || held.getItem() != ModItems.REBAR_PLACER.get() || !held.hasTag() || !held.getTag().contains("pos")
+        if (held.isEmpty() || held.getItem() != ModItems.REBAR_PLACER.get() || !StackNbt.has(held) || !StackNbt.read(held).contains("pos")
                 || mc.hitResult == null || mc.hitResult.getType() != HitResult.Type.BLOCK) return;
 
-        int[] pos = held.getTag().getIntArray("pos");
+        int[] pos = StackNbt.read(held).getIntArray("pos");
         if (pos.length < 3) return;
         BlockHitResult mop = (BlockHitResult) mc.hitResult;
         BlockPos target = mop.getBlockPos().relative(mop.getDirection());
@@ -92,7 +94,12 @@ public final class RebarPlacerPreview {
         float len = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
         if (len == 0) len = 1;
         dx /= len; dy /= len; dz /= len;
+        //? if < 1.21.1 {
         buf.vertex(m, x0, y0, z0).color(1F, 1F, 1F, 1F).normal(dx, dy, dz).endVertex();
         buf.vertex(m, x1, y1, z1).color(1F, 1F, 1F, 1F).normal(dx, dy, dz).endVertex();
+        //?} else {
+        /*buf.addVertex(m, x0, y0, z0).setColor(1F, 1F, 1F, 1F).setNormal(dx, dy, dz);
+        buf.addVertex(m, x1, y1, z1).setColor(1F, 1F, 1F, 1F).setNormal(dx, dy, dz);
+        *///?}
     }
 }

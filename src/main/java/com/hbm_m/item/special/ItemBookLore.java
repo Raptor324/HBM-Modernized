@@ -1,5 +1,7 @@
 package com.hbm_m.item.special;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 
 import javax.annotation.Nullable;
@@ -36,9 +38,13 @@ public class ItemBookLore extends Item {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
-        if (!stack.hasTag()) return;
-        String key = stack.getTag().getString("k");
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+    *///?}
+        if (!StackNbt.has(stack)) return;
+        String key = StackNbt.read(stack).getString("k");
         if (key.isEmpty()) return;
 
         key = "book_lore." + key + ".author";
@@ -48,8 +54,8 @@ public class ItemBookLore extends Item {
 
     @Override
     public Component getName(ItemStack stack) {
-        if (!stack.hasTag()) return Component.translatable("book_lore.test.name");
-        String key = stack.getTag().getString("k");
+        if (!StackNbt.has(stack)) return Component.translatable("book_lore.test.name");
+        String key = StackNbt.read(stack).getString("k");
         return Component.translatable("book_lore." + (key.isEmpty() ? "test" : key) + ".name");
     }
 
@@ -58,14 +64,14 @@ public class ItemBookLore extends Item {
         switch (pass) {
             default: return 0xFFFFFF;
             case 1: //book cover
-                if (stack.hasTag()) {
-                    int color = stack.getTag().getInt("cov_col");
+                if (StackNbt.has(stack)) {
+                    int color = StackNbt.read(stack).getInt("cov_col");
                     if (color > 0) return color;
                 }
                 return 0x303030;
             case 2: //title color
-                if (stack.hasTag()) {
-                    int color = stack.getTag().getInt("tit_col");
+                if (StackNbt.has(stack)) {
+                    int color = StackNbt.read(stack).getInt("tit_col");
                     if (color > 0) return color;
                 }
                 return 0xFFFFFF;
@@ -80,18 +86,18 @@ public class ItemBookLore extends Item {
         tag.putInt("cov_col", colorCov);
         tag.putInt("tit_col", colorTit);
 
-        book.setTag(tag);
+        StackNbt.set(book, tag);
         return book;
     }
 
     public static void addArgs(ItemStack book, int page, String... args) {
-        if (!book.hasTag()) return;
+        if (!StackNbt.has(book)) return;
         CompoundTag data = new CompoundTag();
         for (int i = 0; i < args.length; i++) {
             data.putString("a" + (i + 1), args[i]);
         }
 
-        book.getTag().put("p" + page, data);
+        StackNbt.tag(book).put("p" + page, data);
     }
 
     /** HbmChestContents.generateOfficeBook: Buero-Notizen (Strukturloot). */

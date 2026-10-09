@@ -141,7 +141,17 @@ public class EntitySiegeCraft extends EntityUFOBase {
         this.entityData.define(LOCK_Z, 0F);
         this.entityData.define(BEAM, false);
     }
-    //?}
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(TIER, 0);
+        builder.define(LOCK_X, 0F);
+        builder.define(LOCK_Y, 0F);
+        builder.define(LOCK_Z, 0F);
+        builder.define(BEAM, false);
+    }
+    *///?}
 
     public void setTier(SiegeTier tier) {
         this.entityData.set(TIER, tier.id);
@@ -346,13 +356,27 @@ public class EntitySiegeCraft extends EntityUFOBase {
 
     @Nullable
     @Override
+    //? if < 1.21.1 {
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData data, @Nullable CompoundTag tag) {
+    //?} else {
+    /*public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData data) {
+        net.minecraft.nbt.CompoundTag tag = null;
+    *///?}
         this.setTier(SiegeTier.tiers[random.nextInt(SiegeTier.getLength())]);
+        //? if < 1.21.1 {
         return super.finalizeSpawn(level, difficulty, reason, data, tag);
+        //?} else {
+        /*return super.finalizeSpawn(level, difficulty, reason, data);
+        *///?}
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void dropCustomDeathLoot(DamageSource source, int looting, boolean byPlayer) {
+    //?} else {
+    /*@Override
+    protected void dropCustomDeathLoot(net.minecraft.server.level.ServerLevel hbmLevel, DamageSource source, boolean byPlayer) {
+    *///?}
 
         if (byPlayer) {
             for (Supplier<ItemStack> drop : this.getTier().dropItem) {

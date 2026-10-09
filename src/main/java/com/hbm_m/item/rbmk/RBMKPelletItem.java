@@ -143,7 +143,7 @@ public class RBMKPelletItem extends Item {
     public boolean onEntityItemUpdate(ItemStack stack, net.minecraft.world.entity.item.ItemEntity entity) {
         if (!entity.isInvulnerable()) {
             entity.setInvulnerable(true);
-            //? if forge {
+            //? if forge || neoforge {
             entity.lifespan = Integer.MAX_VALUE;
             //?}
         }

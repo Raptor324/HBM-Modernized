@@ -19,7 +19,6 @@
     "SubLevelMoveWindowMixin",
     "SubLevelRelinkMixin",
     "SubLevelAssembleExpansionMixin",
-    "HoneyGlueSelectionExpansionMixin",
     "ChunkMapAccessor",
     "LevelImpactMixin",
     "ImpactSinglePoolElementMixin",
@@ -37,7 +36,8 @@
     "client.MixinPlayerRendererHide",
     "client.ClientLevelImpactMixin",
     "client.DimensionSpecialEffectsImpactMixin",
-    "client.LevelRendererImpactMixin"
+    "client.LevelRendererImpactMixin",
+    "HoneyGlueSelectionExpansionMixin"
   ],
   "injectors": {
     "defaultRequire": 1

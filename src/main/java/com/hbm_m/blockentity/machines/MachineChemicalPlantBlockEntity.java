@@ -707,7 +707,112 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
         }
     }
 
-    //?}
+    //?} elif neoforge {
+    /*private static final com.hbm_m.platform.LazyCap<?> EMPTY_CAP = com.hbm_m.platform.LazyCap.empty();
+
+    @Override
+    protected void setupFluidCapability() {
+        setFluidHandler(new CombinedChemPlantFluidHandler(this));
+    }
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast(); // Original ISidedInventory
+        if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER) {
+            // Только горизонтальные стороны (и null) получают объединённый обработчик;
+            // вертикальные стороны ничего не отдают.
+            if (side != null && !side.getAxis().isHorizontal()) return (com.hbm_m.platform.LazyCap<T>) EMPTY_CAP;
+        }
+        return super.getHbmCapability(cap, side);
+    }
+
+    private static class CombinedChemPlantFluidHandler implements net.neoforged.neoforge.fluids.capability.IFluidHandler {
+        private final MachineChemicalPlantBlockEntity be;
+        CombinedChemPlantFluidHandler(MachineChemicalPlantBlockEntity be) { this.be = be; }
+
+        @Override public int getTanks() { return 6; }
+
+        @Override
+        public net.neoforged.neoforge.fluids.FluidStack getFluidInTank(int tank) {
+            FluidTank t = tank < 3 ? be.inputTanks[tank] : be.outputTanks[tank - 3];
+            if (t.isEmpty()) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            return new net.neoforged.neoforge.fluids.FluidStack(t.getStoredFluid(), t.getFluidAmountMb());
+        }
+
+        @Override public int getTankCapacity(int tank) { return TANK_CAPACITY; }
+
+        @Override
+        public boolean isFluidValid(int tank, net.neoforged.neoforge.fluids.FluidStack stack) {
+            if (tank >= 3) return false;
+            if (tank >= be.getActiveFluidInputSlotCount()) return false;
+            return true;
+        }
+
+        // Естественная фильтрация по рецепту:
+        //  - без выбора рецепта / без fluid во входах рецепта — ни один входной бак не примет;
+        //  - лишние баки (NONE после setupTanks) не участвуют (иначе они «пылесосят» вторую порцию той же жидкости).
+        @Override
+        public int fill(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty()) return 0;
+            int bound = be.getActiveFluidInputSlotCount();
+            for (int i = 0; i < bound; i++) {
+                FluidTank tank = be.inputTanks[i];
+                Fluid configured = tank.getConfiguredFluid();
+                if (configured == Fluids.EMPTY || configured == ModFluids.NONE.getSource()) continue;
+                if (!com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(configured, resource.getFluid())) continue;
+                int space = tank.getCapacityMb() - tank.getFluidAmountMb();
+                if (space <= 0) continue;
+                int toFill = Math.min(resource.getAmount(), space);
+                if (action.execute()) {
+                    tank.fillMb(resource.getFluid(), toFill);
+                    be.setChanged();
+                }
+                return toFill;
+            }
+            return 0;
+        }
+
+        @Override
+        public net.neoforged.neoforge.fluids.FluidStack drain(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty()) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            for (int i = 0; i < 3; i++) {
+                FluidTank tank = be.outputTanks[i];
+                if (tank.isEmpty()) continue;
+                if (!com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(tank.getStoredFluid(), resource.getFluid())) continue;
+                int available = tank.getFluidAmountMb();
+                int toDrain = Math.min(resource.getAmount(), available);
+                if (toDrain <= 0) continue;
+                if (action.execute()) {
+                    tank.drainMb(toDrain);
+                    be.setChanged();
+                }
+                Fluid normalized = com.hbm_m.api.fluids.VanillaFluidEquivalence.forVanillaContainerFill(tank.getStoredFluid());
+                return new net.neoforged.neoforge.fluids.FluidStack(normalized, toDrain);
+            }
+            return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        }
+
+        @Override
+        public net.neoforged.neoforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+            if (maxDrain <= 0) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            for (int i = 0; i < 3; i++) {
+                FluidTank tank = be.outputTanks[i];
+                if (tank.isEmpty()) continue;
+                int available = tank.getFluidAmountMb();
+                int toDrain = Math.min(maxDrain, available);
+                if (toDrain <= 0) continue;
+                if (action.execute()) {
+                    tank.drainMb(toDrain);
+                    be.setChanged();
+                }
+                Fluid normalized = com.hbm_m.api.fluids.VanillaFluidEquivalence.forVanillaContainerFill(tank.getStoredFluid());
+                return new net.neoforged.neoforge.fluids.FluidStack(normalized, toDrain);
+            }
+            return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        }
+    }
+
+    *///?}
 
     // Энергопорты мультиблока: позиции фантомов структуры, ранее регистрировавшиеся блоком.
     // Ядро (worldPosition) подписывается в BaseMachineBlockEntity.ensureNetworkInitialized().
@@ -741,7 +846,21 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
         super.invalidateCaps();
         sidedItems.invalidate();
     }
-    //?}
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: Slots {4-9}; Feststoffe nach Rezept hinein, Ausgaben 7-9 und verstopfte Eingaenge heraus. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 4, 5, 6, 7, 8, 9 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return (slot >= 7 && slot <= 9) || getModule().isSlotClogged(slot); }
+            });
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
 
     // ── Redstone-over-Radio (1:1 TileEntityMachineChemicalPlant) ──
 

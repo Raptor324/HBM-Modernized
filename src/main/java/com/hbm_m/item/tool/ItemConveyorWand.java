@@ -1,5 +1,7 @@
 package com.hbm_m.item.tool;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -77,7 +79,11 @@ public class ItemConveyorWand extends Item implements ILookOverlay {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+    *///?}
         if (net.minecraft.client.gui.screens.Screen.hasShiftDown()) {
             for (String s : I18n.get("item.hbm_m.conveyor_wand.desc").split("\\$")) {
                 list.add(Component.literal(s).withStyle(ChatFormatting.YELLOW));
@@ -101,7 +107,7 @@ public class ItemConveyorWand extends Item implements ILookOverlay {
         Direction side = ctx.getClickedFace();
         if (player == null) return InteractionResult.PASS;
 
-        if (player.isShiftKeyDown() && !stack.hasTag()) {
+        if (player.isShiftKeyDown() && !StackNbt.has(stack)) {
             Direction dir = side;
             BlockState onState = world.getBlockState(pos);
             Block onBlock = onState.getBlock();
@@ -138,13 +144,13 @@ public class ItemConveyorWand extends Item implements ILookOverlay {
         // this makes it easier to connect without having to click the small edge of a conveyor
         BlockState onState = world.getBlockState(pos);
         if (onState.getBlock() instanceof ConveyorBendableBlock bendable) {
-            Direction moveDir = stack.hasTag() ? bendable.getInputDirection(onState) : bendable.getOutputDirection(onState);
+            Direction moveDir = StackNbt.has(stack) ? bendable.getInputDirection(onState) : bendable.getOutputDirection(onState);
             if (world.getBlockState(pos.relative(moveDir)).canBeReplaced()) {
                 side = moveDir;
             }
         }
 
-        if (!stack.hasTag()) {
+        if (!StackNbt.has(stack)) {
             // Starting placement
             CompoundTag nbt = new CompoundTag();
             nbt.putInt("x", pos.getX());
@@ -164,10 +170,10 @@ public class ItemConveyorWand extends Item implements ILookOverlay {
             }
 
             nbt.putInt("count", count);
-            stack.setTag(nbt);
+            StackNbt.set(stack, nbt);
         } else {
             // Constructing conveyor
-            CompoundTag nbt = stack.getTag();
+            CompoundTag nbt = StackNbt.read(stack);
 
             BlockPos start = new BlockPos(nbt.getInt("x"), nbt.getInt("y"), nbt.getInt("z"));
             Direction sSide = Direction.from3DDataValue(nbt.getInt("side"));
@@ -205,7 +211,7 @@ public class ItemConveyorWand extends Item implements ILookOverlay {
                 com.hbm_m.client.render.ConveyorWandPreview.clear();
             }
 
-            stack.setTag(null);
+            StackNbt.set(stack, null);
         }
 
         return InteractionResult.sidedSuccess(world.isClientSide); // always eat interactions
@@ -215,10 +221,10 @@ public class ItemConveyorWand extends Item implements ILookOverlay {
     public void inventoryTick(ItemStack stack, Level world, Entity entity, int slot, boolean inHand) {
         if (!(entity instanceof Player player)) return;
 
-        if (!inHand && stack.hasTag()) {
+        if (!inHand && StackNbt.has(stack)) {
             ItemStack held = player.getMainHandItem();
             if (held.isEmpty() || held.getItem() != this) {
-                stack.setTag(null);
+                StackNbt.set(stack, null);
                 if (world.isClientSide) com.hbm_m.client.render.ConveyorWandPreview.clear();
             }
         }
@@ -403,7 +409,10 @@ public class ItemConveyorWand extends Item implements ILookOverlay {
     }
 
     // In creative, auto delete connected conveyors
+    //? if forge {
     @Override
+    //?}
+    // NeoForge: Aufruf ueber BlockStartBreakNeoForge
     public boolean onBlockStartBreak(ItemStack stack, BlockPos pos, Player playerEntity) {
         if (!playerEntity.isShiftKeyDown()) return false;
 
@@ -433,7 +442,11 @@ public class ItemConveyorWand extends Item implements ILookOverlay {
         Direction input = conveyor.getInputDirection(state);
         Direction output = conveyor.getOutputDirection(state);
 
+        //? if forge {
         if (net.minecraftforge.common.ForgeHooks.onBlockBreakEvent(world, player.gameMode.getGameModeForPlayer(), player, pos) == -1) return;
+        //?} else {
+        /*if (net.neoforged.neoforge.common.CommonHooks.fireBlockBreak(world, player.gameMode.getGameModeForPlayer(), player, pos, state).isCanceled()) return;
+        *///?}
 
         state.getBlock().playerWillDestroy(world, pos, state, player);
         if (state.onDestroyedByPlayer(world, pos, player, false, world.getFluidState(pos))) {
@@ -447,7 +460,7 @@ public class ItemConveyorWand extends Item implements ILookOverlay {
 
     @Override
     public void printHook(GuiGraphics guiGraphics, Level world, BlockPos pos) {
-        Player player = net.minecraft.client.Minecraft.getInstance().player;
+        Player player = com.hbm_m.client.ClientAccess.player();
         if (player == null || !player.isShiftKeyDown() || !player.getAbilities().instabuild) return;
 
         Block block = world.getBlockState(pos).getBlock();

@@ -1,5 +1,7 @@
 package com.hbm_m.item.weapon.sedna.impl;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -58,11 +60,20 @@ public class ItemGunNI4NI extends ItemGunBaseNT implements com.hbm_m.item.ICusto
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+        Level level = com.hbm_m.platform.PlatformHooks.tooltipLevel(hbmTooltipCtx);
+    *///?}
         list.add(Component.literal("Now, don't get the wrong idea."));
         list.add(Component.literal("I ").append(Component.literal("fucking hate ").withStyle(ChatFormatting.RED)).append(Component.literal("this game.").withStyle(ChatFormatting.GRAY)));
         list.add(Component.literal("I didn't do this for you, I did it for sea."));
+        //? if < 1.21.1 {
         super.appendHoverText(stack, level, list, flag);
+        //?} else {
+        /*super.appendHoverText(stack, hbmTooltipCtx, list, flag);
+        *///?}
     }
 
     @Override
@@ -99,19 +110,19 @@ public class ItemGunNI4NI extends ItemGunBaseNT implements com.hbm_m.item.ICusto
     }
 
     public static void resetColors(ItemStack stack) {
-        if (!stack.hasTag()) return;
-        stack.getTag().remove("colors");
+        if (!StackNbt.has(stack)) return;
+        StackNbt.tag(stack).remove("colors");
     }
 
     public static void setColors(ItemStack stack, int dark, int light, int grip) {
-        CompoundTag tag = stack.getOrCreateTag();
+        CompoundTag tag = StackNbt.orCreate(stack);
         tag.putIntArray("colors", new int[] {dark, light, grip});
     }
 
     @Nullable
     public static int[] getColors(ItemStack stack) {
-        if (!stack.hasTag() || !stack.getTag().contains("colors")) return null;
-        int[] colors = stack.getTag().getIntArray("colors");
+        if (!StackNbt.has(stack) || !StackNbt.read(stack).contains("colors")) return null;
+        int[] colors = StackNbt.read(stack).getIntArray("colors");
         if (colors.length != 3) return null;
         return colors;
     }

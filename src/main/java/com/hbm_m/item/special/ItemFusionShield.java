@@ -1,5 +1,7 @@
 package com.hbm_m.item.special;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -26,11 +28,11 @@ public class ItemFusionShield extends Item implements ITooltipProvider {
     }
 
     public static long getShieldDamage(ItemStack stack) {
-        return stack.hasTag() ? stack.getTag().getLong("damage") : 0;
+        return StackNbt.has(stack) ? StackNbt.read(stack).getLong("damage") : 0;
     }
 
     public static void setShieldDamage(ItemStack stack, long damage) {
-        stack.getOrCreateTag().putLong("damage", damage);
+        StackNbt.orCreate(stack).putLong("damage", damage);
     }
 
     @Override

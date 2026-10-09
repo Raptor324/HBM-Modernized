@@ -1,5 +1,7 @@
 package com.hbm_m.inventory.gui;
 
+import com.hbm_m.platform.StackNbt;
+
 import com.hbm_m.item.satellite.ItemSatInterface;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.FluidIdentifierControlPacket;
@@ -41,7 +43,7 @@ public class GUIScreenSatCoord extends Screen {
     }
 
     private boolean connected() {
-        return device.hasTag() && device.getTag().getBoolean(ItemSatInterface.KEY_NBT_CONNECTED);
+        return StackNbt.has(device) && StackNbt.read(device).getBoolean(ItemSatInterface.KEY_NBT_CONNECTED);
     }
 
     private EditBox field(int y) {
@@ -99,7 +101,7 @@ public class GUIScreenSatCoord extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float f) {
-        this.renderBackground(g);
+        com.hbm_m.client.GuiCompat.renderBackground(this, g, mouseX, mouseY, f);
 
         g.blit(texture, guiLeft, guiTop, 0, 0, xSize, ySize);
         if (xField.isFocused()) g.blit(texture, guiLeft + 61, guiTop + 16, 0, 126, 54, 18);

@@ -1,5 +1,7 @@
 package com.hbm_m.item.tool;
 
+import com.hbm_m.platform.StackNbt;
+
 import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.entity.ModEntities;
@@ -10,7 +12,11 @@ import com.hbm_m.entity.cart.EntityMinecartPowder;
 import com.hbm_m.entity.cart.EntityMinecartSemtex;
 
 import net.minecraft.core.BlockPos;
+//? if < 1.21.1 {
 import net.minecraft.core.BlockSource;
+//?} else {
+/*import net.minecraft.core.dispenser.BlockSource;
+*///?}
 import net.minecraft.core.Direction;
 import net.minecraft.core.dispenser.DefaultDispenseItemBehavior;
 import net.minecraft.core.dispenser.DispenseItemBehavior;
@@ -85,12 +91,12 @@ public class ItemModMinecart extends Item {
 
         @Override
         public @NotNull ItemStack execute(BlockSource source, ItemStack stack) {
-            Direction enumfacing = source.getBlockState().getValue(DispenserBlock.FACING);
-            Level world = source.getLevel();
-            double x = source.x() + enumfacing.getStepX() * 1.125D;
-            double y = source.y() + enumfacing.getStepY() * 1.125D;
-            double z = source.z() + enumfacing.getStepZ() * 1.125D;
-            BlockPos ipos = source.getPos().relative(enumfacing);
+            Direction enumfacing = com.hbm_m.platform.DispenseHooks.state(source).getValue(DispenserBlock.FACING);
+            Level world = com.hbm_m.platform.DispenseHooks.level(source);
+            double x = com.hbm_m.platform.DispenseHooks.x(source) + enumfacing.getStepX() * 1.125D;
+            double y = com.hbm_m.platform.DispenseHooks.y(source) + enumfacing.getStepY() * 1.125D;
+            double z = com.hbm_m.platform.DispenseHooks.z(source) + enumfacing.getStepZ() * 1.125D;
+            BlockPos ipos = com.hbm_m.platform.DispenseHooks.pos(source).relative(enumfacing);
             BlockState block = world.getBlockState(ipos);
             double yOffset;
 
@@ -106,7 +112,7 @@ public class ItemModMinecart extends Item {
 
             AbstractMinecart entityminecart = createMinecart(world, x, y + yOffset, z, stack);
 
-            if (stack.hasCustomHoverName()) {
+            if (StackNbt.hasCustomName(stack)) {
                 entityminecart.setCustomName(stack.getHoverName());
             }
 
@@ -117,7 +123,7 @@ public class ItemModMinecart extends Item {
 
         @Override
         protected void playSound(BlockSource source) {
-            source.getLevel().levelEvent(1000, source.getPos(), 0);
+            com.hbm_m.platform.DispenseHooks.level(source).levelEvent(1000, com.hbm_m.platform.DispenseHooks.pos(source), 0);
         }
     };
 
@@ -131,7 +137,7 @@ public class ItemModMinecart extends Item {
                 Vec3 hit = ctx.getClickLocation();
                 AbstractMinecart entityminecart = createMinecart(world, hit.x, hit.y, hit.z, stack);
 
-                if (stack.hasCustomHoverName()) {
+                if (StackNbt.hasCustomName(stack)) {
                     entityminecart.setCustomName(stack.getHoverName());
                 }
 

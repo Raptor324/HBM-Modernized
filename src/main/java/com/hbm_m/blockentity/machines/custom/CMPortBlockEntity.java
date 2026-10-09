@@ -30,6 +30,9 @@ public class CMPortBlockEntity extends BaseHbmBlockEntity {
         if (!pos.equals(cachedPosition)) {
             cachedPosition = pos;
             setChanged();
+            //? if neoforge {
+            /*invalidateCapabilities(); // NeoForge-Capability-Cache: Anschluss geaendert
+            *///?}
         }
     }
 
@@ -68,5 +71,20 @@ public class CMPortBlockEntity extends BaseHbmBlockEntity {
         }
         return super.getCapability(cap, side);
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        CustomMachineBlockEntity target = getTarget();
+        if (target != null && target.config != null) {
+            if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER
+                    || cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER
+                    || cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_PROVIDER
+                    || cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_RECEIVER
+                    || cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_CONNECTOR) {
+                return com.hbm_m.platform.HbmCaps.get(target, cap, side);
+            }
+        }
+        return super.getHbmCapability(cap, side);
+    }
+    *///?}
 }

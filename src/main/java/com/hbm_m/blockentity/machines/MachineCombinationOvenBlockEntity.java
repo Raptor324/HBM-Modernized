@@ -140,7 +140,7 @@ public class MachineCombinationOvenBlockEntity extends MachinePollutingBlockEnti
 
                 List<Entity> entities = level.getEntitiesOfClass(Entity.class,
                         new AABB(pos.getX() - 0.5, pos.getY() + 2, pos.getZ() - 0.5, pos.getX() + 1.5, pos.getY() + 4, pos.getZ() + 1.5));
-                for (Entity e : entities) e.setSecondsOnFire(5);
+                for (Entity e : entities) PlatformHooks.setSecondsOnFire(e, 5);
 
                 if (level.getGameTime() % 10 == 0)
                     level.playSound(null, pos.getX(), pos.getY() + 1, pos.getZ(), HbmSoundsNT.get("hbm:weapon.flamethrowerShoot"), SoundSource.BLOCKS, 0.25F, 0.5F);
@@ -275,7 +275,38 @@ public class MachineCombinationOvenBlockEntity extends MachinePollutingBlockEnti
         sided.values().forEach(net.minecraftforge.common.util.LazyOptional::invalidate);
         sided.clear();
     }
-    //?}
+    //?} elif neoforge {
+    /*private final Map<Direction, com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler>> sided = new EnumMap<>(Direction.class);
+
+    /^* Original {@code getAccessibleSlotsFromSide {0, 1}}: nur Slot 0 einfuegbar, nur Slot 1 entnehmbar. ^/
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) {
+            return sided.computeIfAbsent(side, d -> com.hbm_m.platform.LazyCap.of(() -> new net.neoforged.neoforge.items.IItemHandler() {
+                @Override public int getSlots() { return 2; }
+                @Override public @NotNull ItemStack getStackInSlot(int slot) { return inventory.getStackInSlot(slot); }
+                @Override public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
+                    if (slot != SLOT_INPUT || !isItemValidForSlot(slot, stack)) return stack;
+                    return inventory.insertItem(slot, stack, simulate);
+                }
+                @Override public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+                    if (slot != SLOT_OUTPUT) return ItemStack.EMPTY;
+                    return inventory.extractItem(slot, amount, simulate);
+                }
+                @Override public int getSlotLimit(int slot) { return inventory.getSlotLimit(slot); }
+                @Override public boolean isItemValid(int slot, @NotNull ItemStack stack) { return slot == SLOT_INPUT && isItemValidForSlot(slot, stack); }
+            })).cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sided.values().forEach(com.hbm_m.platform.LazyCap::invalidate);
+        sided.clear();
+    }
+    *///?}
 
     // ── Fluid ────────────────────────────────────────────────────────────────
 

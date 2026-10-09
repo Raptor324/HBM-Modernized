@@ -1,5 +1,7 @@
 package com.hbm_m.inventory.gui;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -104,7 +106,7 @@ public class GUIScreenToolAbility extends Screen {
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float f) {
         if (config == null) return;
-        this.renderBackground(g);
+        com.hbm_m.client.GuiCompat.renderBackground(this, g, mouseX, mouseY, f);
 
         // Draw window background
         drawStretchedRect(g, guiLeft, guiTop, 0, 0, xSize, xSize - insetWidth, ySize, 74, 87);
@@ -246,8 +248,13 @@ public class GUIScreenToolAbility extends Screen {
         return !(ability instanceof IToolHarvestAbility && ability != IToolHarvestAbility.NONE && !activePreset.areaAbility.allowsHarvest(activePreset.areaAbilityLevel));
     }
 
+    //? if < 1.21.1 {
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scroll) {
+    //?} else {
+    /*@Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scroll) {
+    *///?}
         if (config == null) return false;
         if (scroll < 0) doPrevPreset(true);
         if (scroll > 0) doNextPreset(true);
@@ -386,7 +393,7 @@ public class GUIScreenToolAbility extends Screen {
     protected void doClose() {
         // A bit messy, but I suppose it works
         ((ItemToolAbility) this.toolStack.getItem()).setConfiguration(toolStack, config);
-        FluidIdentifierControlPacket.sendControl(this.toolStack.getTag());
+        FluidIdentifierControlPacket.sendControl(StackNbt.tag(this.toolStack));
 
         this.minecraft.setScreen(null);
 

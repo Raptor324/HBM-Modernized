@@ -470,7 +470,40 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
                 receiveEnergy(extracted, false);
             }
         });
-        //?}
+        //?} elif neoforge {
+        /*com.hbm_m.platform.HbmCaps.get(source, com.hbm_m.platform.HbmCap.HBM_ENERGY_PROVIDER, side).ifPresent(provider -> {
+            if (!provider.canExtract()) {
+                return;
+            }
+            long toPull = Math.min(pullLimit, provider.getProvideSpeed());
+            long extracted = provider.extractEnergy(toPull, false);
+            if (extracted > 0) {
+                receiveEnergy(extracted, false);
+            }
+        });
+
+        if (!canReceive()) {
+            return;
+        }
+        long feNeeded = Math.min(getMaxEnergyStored() - getEnergyStored(), getReceiveSpeed());
+        if (feNeeded <= 0) {
+            return;
+        }
+        final int fePullLimit = (int) Math.min(Integer.MAX_VALUE, feNeeded);
+
+        com.hbm_m.platform.HbmCaps.get(source, com.hbm_m.platform.HbmCap.ENERGY, side).ifPresent(fe -> {
+            if (!fe.canExtract()) {
+                return;
+            }
+            if (fePullLimit <= 0) {
+                return;
+            }
+            int extracted = fe.extractEnergy(fePullLimit, false);
+            if (extracted > 0) {
+                receiveEnergy(extracted, false);
+            }
+        });
+        *///?}
     }
 
     private void performRadarScan() {

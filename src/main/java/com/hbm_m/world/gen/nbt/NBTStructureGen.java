@@ -71,7 +71,11 @@ public final class NBTStructureGen {
     /** Original {@code GenStructure.getSpawnAtCoords} Gitterteil als Vanilla-Platzierung. */
     public static class GridPlacement extends StructurePlacement {
 
+        //? if < 1.21.1 {
         public static final Codec<GridPlacement> CODEC = RecordCodecBuilder.create(instance ->
+        //?} else {
+        /*public static final com.mojang.serialization.MapCodec<GridPlacement> CODEC = RecordCodecBuilder.mapCodec(instance ->
+        *///?}
                 placementCodec(instance).apply(instance, GridPlacement::new));
 
         public GridPlacement(Vec3i locateOffset, FrequencyReductionMethod method, float frequency, int salt, Optional<ExclusionZone> exclusionZone) {
@@ -119,7 +123,11 @@ public final class NBTStructureGen {
 
     public static class GenStructure extends Structure {
 
+        //? if < 1.21.1 {
         public static final Codec<GenStructure> CODEC = simpleCodec(GenStructure::new);
+        //?} else {
+        /*public static final com.mojang.serialization.MapCodec<GenStructure> CODEC = simpleCodec(GenStructure::new);
+        *///?}
 
         private static final Map<LegacyBiome, WeightedSpawnList> validBiomeCache = new HashMap<>();
 

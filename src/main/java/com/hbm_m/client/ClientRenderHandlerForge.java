@@ -1,3 +1,4 @@
+// neo-pendant: keins noetig - Klasse wird auch auf Forge nirgends angemeldet; Tick/Render laufen ueber ClientModEvents
 //? if forge {
 package com.hbm_m.client;
 

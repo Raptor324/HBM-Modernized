@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.generic;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -55,9 +57,13 @@ public class TrappedBrickBlockEntity extends BlockEntity {
             }
             case ARROW, FLAMING_ARROW -> {
                 int ox = dir == null ? 0 : dir.getStepX(), oz = dir == null ? 0 : dir.getStepZ();
+                //? if < 1.21.1 {
                 Arrow arrow = new Arrow(w, xCoord + 0.5 + ox, yCoord + 0.5, zCoord + 0.5 + oz);
+                //?} else {
+                /*Arrow arrow = new Arrow(w, xCoord + 0.5 + ox, yCoord + 0.5, zCoord + 0.5 + oz, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.ARROW), null);
+                *///?}
                 arrow.setDeltaMovement(ox, 0, oz);
-                if (trap() == Trap.FLAMING_ARROW) arrow.setSecondsOnFire(60);
+                if (trap() == Trap.FLAMING_ARROW) PlatformHooks.setSecondsOnFire(arrow, 60);
                 w.addFreshEntity(arrow);
             }
             case PILLAR -> {

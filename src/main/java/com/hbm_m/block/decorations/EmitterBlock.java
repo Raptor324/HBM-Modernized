@@ -144,7 +144,11 @@ public class EmitterBlock extends BaseEntityBlock implements IToolable {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> tooltip, TooltipFlag flag) {
+    *///?}
         tooltip.add(Component.translatable("tooltip.hbm_m.deco_emitter.screwdriver").withStyle(ChatFormatting.GOLD));
         tooltip.add(Component.translatable("tooltip.hbm_m.deco_emitter.defuser").withStyle(ChatFormatting.GOLD));
         tooltip.add(Component.translatable("tooltip.hbm_m.emitter.hand_drill").withStyle(ChatFormatting.GOLD));
@@ -160,4 +164,8 @@ public class EmitterBlock extends BaseEntityBlock implements IToolable {
     public BlockState mirror(BlockState state, Mirror mirror) {
         return state.rotate(mirror.getRotation(state.getValue(FACING)));
     }
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<EmitterBlock> CODEC = simpleCodec(EmitterBlock::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

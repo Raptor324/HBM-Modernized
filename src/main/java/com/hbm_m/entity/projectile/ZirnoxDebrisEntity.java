@@ -1,5 +1,7 @@
 package com.hbm_m.entity.projectile;
 
+import com.hbm_m.platform.EffectHooks;
+
 import java.util.List;
 
 import com.hbm_m.effect.ModEffects;
@@ -186,7 +188,7 @@ public class ZirnoxDebrisEntity extends Entity {
 
                 int lvl = this.getDebrisType() == DebrisType.ELEMENT ? 7 : 4;
                 for (LivingEntity e : entities) {
-                    e.addEffect(new MobEffectInstance(ModEffects.RADIATION.get(), 60 * 20, lvl));
+                    e.addEffect(new MobEffectInstance(EffectHooks.of(ModEffects.RADIATION), 60 * 20, lvl));
                 }
             }
 

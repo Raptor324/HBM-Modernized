@@ -119,18 +119,34 @@ public class TrinketBlock extends BaseEntityBlock {
     }
 
     @Override
+    //? if < 1.21.1 {
     public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
+    //?} else {
+    /*public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader level, BlockPos pos, BlockState state) {
+    *///?}
         return stackFor(level, pos);
     }
 
+    //? if < 1.21.1 {
     @Override
     public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        dropTrinket(level, pos, player);
+        super.playerWillDestroy(level, pos, state, player);
+    }
+    //?} else {
+    /*@Override
+    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        dropTrinket(level, pos, player);
+        return super.playerWillDestroy(level, pos, state, player);
+    }
+    *///?}
+
+    private void dropTrinket(Level level, BlockPos pos, Player player) {
         if (!player.isCreative() && !level.isClientSide) {
             ItemEntity item = new ItemEntity(level, pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, stackFor(level, pos));
             item.setDeltaMovement(0, 0, 0);
             level.addFreshEntity(item);
         }
-        super.playerWillDestroy(level, pos, state, player);
     }
 
     //? if < 1.21.1 {
@@ -174,4 +190,8 @@ public class TrinketBlock extends BaseEntityBlock {
     public BlockState mirror(BlockState state, Mirror mirror) {
         return state.setValue(ROTATION, mirror.mirror(state.getValue(ROTATION), 16));
     }
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<TrinketBlock> CODEC = com.hbm_m.platform.BlockCodecs.unsupported(TrinketBlock.class);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

@@ -46,10 +46,17 @@ public class EntityShrapnel extends ThrowableProjectile {
         super(ModEntities.SHRAPNEL.get(), thrower, level);
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
         this.entityData.define(TYPE, (byte) 0);
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        builder.define(TYPE, (byte) 0);
+    }
+    *///?}
 
     @Override
     public boolean fireImmune() {

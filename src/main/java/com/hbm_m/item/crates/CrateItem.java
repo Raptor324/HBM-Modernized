@@ -82,8 +82,7 @@ public class CrateItem extends BlockItem implements ITooltipProvider {
                                 List<Component> tooltip, TooltipFlag flag) {
 
         // 1:1 BlockStorageCrate.addInformation: Spinnen und Schloss verbergen den Inhalt
-        CompoundTag root = PlatformHooks.hasItemTag(stack) ? PlatformHooks.getItemTag(stack) : null;
-        CompoundTag be = root != null && root.contains("BlockEntityTag") ? root.getCompound("BlockEntityTag") : null;
+        CompoundTag be = com.hbm_m.platform.BlockEntityItemData.read(stack);
         if (be != null) {
             boolean locked = be.getBoolean("isLocked");
             if (be.getBoolean("spiders")) {
@@ -121,9 +120,8 @@ public class CrateItem extends BlockItem implements ITooltipProvider {
 
     @Override
     public Optional<TooltipComponent> getTooltipImage(ItemStack stack) {
-        CompoundTag root = PlatformHooks.hasItemTag(stack) ? PlatformHooks.getItemTag(stack) : null;
-        if (root != null && root.contains("BlockEntityTag")) {
-            CompoundTag be = root.getCompound("BlockEntityTag");
+        CompoundTag be = com.hbm_m.platform.BlockEntityItemData.read(stack);
+        if (be != null) {
             if (be.getBoolean("isLocked") || be.getBoolean("spiders")) return Optional.empty();
         }
         CrateTooltipData data = readTooltipData(stack);
@@ -134,11 +132,8 @@ public class CrateItem extends BlockItem implements ITooltipProvider {
     }
 
     private @Nullable CrateTooltipData readTooltipData(ItemStack stack) {
-        if (!PlatformHooks.hasItemTag(stack)) return null;
-        CompoundTag tag = PlatformHooks.getItemTag(stack);
-        if (tag == null || !tag.contains("BlockEntityTag")) return null;
-
-        CompoundTag beTag = tag.getCompound("BlockEntityTag");
+        CompoundTag beTag = com.hbm_m.platform.BlockEntityItemData.read(stack);
+        if (beTag == null) return null;
         if (!beTag.contains("inventory")) return null;
 
         CompoundTag inventoryTag = beTag.getCompound("inventory");

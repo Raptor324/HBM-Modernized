@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.RenderBounds;
+
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.MachineRadGenMenu;
@@ -149,7 +151,7 @@ public class MachineRadGenBlockEntity extends BaseMachineBlockEntity implements 
     @Override
     //?}
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
-        return INFINITE_EXTENT_AABB;
+        return RenderBounds.INFINITE;
     }
     public boolean isProcessing(int queue) { return processing[queue] != null; }
     public int getOutput()   { return output; }
@@ -269,5 +271,33 @@ public class MachineRadGenBlockEntity extends BaseMachineBlockEntity implements 
         super.invalidateCaps();
         sidedItems.invalidate();
     }
-    //?}
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: alle 24 Plaetze; Brennstoff gleichmaessig in 0-11, Reste aus 12-23 heraus. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.range(0, 23); }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { if (slot >= 12 || !isItemValidForSlot(slot, stack)) return false;
+                    if (inventory.getStackInSlot(slot).isEmpty()) return true;
+                    int size = inventory.getStackInSlot(slot).getCount();
+                    for (int j = 0; j < 12; j++) {
+                        net.minecraft.world.item.ItemStack s = inventory.getStackInSlot(j);
+                        if (s.isEmpty()) return false;
+                        if (net.minecraft.world.item.ItemStack.isSameItem(s, stack) && s.getCount() < size) return false;
+                    }
+                    return true; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot >= 12; }
+            });
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
 }

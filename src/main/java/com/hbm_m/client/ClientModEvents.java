@@ -300,7 +300,13 @@ public class ClientModEvents {
         // Форсируем честный блендинг ДО Gui.render.
         com.hbm_m.client.render.shader.ShaderBindResync.forceHonestBlendState();
     }
-    //?}
+    //?} elif neoforge {
+    /*@SubscribeEvent
+    public static void onRenderGuiPre(net.neoforged.neoforge.client.event.RenderGuiEvent.Pre event) {
+        // wie Forge: ehrlicher Blend-Zustand vor Gui.render (Vignette mit multiply-Blending)
+        com.hbm_m.client.render.shader.ShaderBindResync.forceHonestBlendState();
+    }
+    *///?}
 
     /**
      * Instanced flush — только {@link com.hbm_m.client.render.culling.InstancedRenderFrame#presentAfterBlockEntities}

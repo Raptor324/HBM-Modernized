@@ -237,6 +237,7 @@ public class InfiniteFluidItem extends Item implements ITooltipProvider {
     }
     //?}
 
+    // neo-pendant: ModCapabilities.registerBatteryItemCaps (RegisterCapabilitiesEvent, Item-Capabilities)
     //? if forge {
     @Override
     public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {

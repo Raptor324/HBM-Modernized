@@ -12,7 +12,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 
 /** 1:1 {@code RendererObjTester.renderTileEntityAt}: Pony "Sunburst" mit Horn, Culling aus. */
-public class ObjTesterRenderer implements BlockEntityRenderer<ObjTesterBlockEntity> {
+public class ObjTesterRenderer implements com.hbm_m.client.render.HbmBerBounds<ObjTesterBlockEntity> {
 
     private static final ResourceLocation EXTRA = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/horse/sunburst.png");
 

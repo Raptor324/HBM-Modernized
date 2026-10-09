@@ -200,7 +200,7 @@ public final class ArcFurnaceRecipes {
 
         // Autogen for furnace recipes
         if (level != null) {
-            Optional<SmeltingRecipe> smelt = level.getRecipeManager().getRecipeFor(RecipeType.SMELTING, new SimpleContainer(stack.copyWithCount(1)), level);
+            Optional<SmeltingRecipe> smelt = com.hbm_m.platform.recipe.RecipeHooks.getRecipeFor(level, RecipeType.SMELTING, stack.copyWithCount(1));
             if (smelt.isPresent()) {
                 ItemStack output = smelt.get().getResultItem(level.registryAccess());
                 if (!output.isEmpty() && (isArcSmeltable(stack) || isArcSmeltable(output))) {

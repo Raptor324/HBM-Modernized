@@ -100,6 +100,31 @@ public class RecipeHooks {
             copy.add("id", copy.get("item"));
             copy.remove("item");
         }
+        // Phase C (P3): 1.20.1-"nbt" (SNBT-String oder Objekt) -> Komponenten. Damage -> minecraft:damage,
+        // BlockStateTag bleibt in custom_data (eigene Leser) und zusaetzlich minecraft:block_state, Rest custom_data.
+        if (copy.has("nbt") && !copy.has("components")) {
+            try {
+                JsonElement nbtJson = copy.remove("nbt");
+                net.minecraft.nbt.CompoundTag nbt = nbtJson.isJsonPrimitive()
+                        ? net.minecraft.nbt.TagParser.parseTag(nbtJson.getAsString())
+                        : (net.minecraft.nbt.CompoundTag) com.mojang.serialization.JsonOps.INSTANCE.convertTo(net.minecraft.nbt.NbtOps.INSTANCE, nbtJson);
+                JsonObject comps = new JsonObject();
+                if (nbt.contains("Damage", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC)) {
+                    comps.addProperty("minecraft:damage", nbt.getInt("Damage"));
+                    nbt.remove("Damage");
+                }
+                if (nbt.contains("BlockStateTag", net.minecraft.nbt.Tag.TAG_COMPOUND)) {
+                    net.minecraft.nbt.CompoundTag bst = nbt.getCompound("BlockStateTag");
+                    JsonObject props = new JsonObject();
+                    for (String k : bst.getAllKeys()) props.addProperty(k, bst.get(k).getAsString());
+                    comps.add("minecraft:block_state", props);
+                }
+                if (!nbt.isEmpty()) comps.addProperty("minecraft:custom_data", nbt.toString());
+                if (comps.size() > 0) copy.add("components", comps);
+            } catch (com.mojang.brigadier.exceptions.CommandSyntaxException | RuntimeException e) {
+                throw new com.google.gson.JsonSyntaxException("Invalid nbt in item stack: " + e.getMessage(), e);
+            }
+        }
         return copy;
     }
     *///?}

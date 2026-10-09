@@ -55,7 +55,7 @@ public class GUICrucibleRecipeSelector extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(g);
+        com.hbm_m.client.GuiCompat.renderBackground(this, g, mouseX, mouseY, partialTick);
         int w = COLS * CELL + 16;
         int h = rows() * CELL + 30;
         g.fill(left, top, left + w, top + h, 0xFF2B2B2B);

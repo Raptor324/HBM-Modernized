@@ -1,5 +1,7 @@
 package com.hbm_m.handler.pollution;
 
+import com.hbm_m.platform.AttributeOps;
+
 import java.util.UUID;
 
 import com.hbm_m.config.ModClothConfig;
@@ -72,12 +74,25 @@ public final class PollutionEvents {
             }
         });
         net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(PollutionEvents::rampantScoutPopulator);
-        //?}
+        //?} elif neoforge {
+        /*// NeoForge: PlayerSleepInBedEvent heisst CanPlayerSleepEvent
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.entity.player.CanPlayerSleepEvent event) -> {
+            if (com.hbm_m.config.MobConfig.rampantGlyphidGuidance()) {
+                BlockPos p = event.getPos();
+                PollutionHandler.targetCoords = new net.minecraft.world.phys.Vec3(p.getX(), p.getY(), p.getZ());
+            }
+        });
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(PollutionEvents::rampantScoutPopulator);
+        *///?}
     }
 
-    //? if forge {
+    //? if forge || neoforge {
     /** 1:1 {@code rampantScoutPopulator}. */
+    //? if forge {
     private static void rampantScoutPopulator(net.minecraftforge.event.level.LevelEvent.PotentialSpawns event) {
+    //?} else {
+    /*private static void rampantScoutPopulator(net.neoforged.neoforge.event.level.LevelEvent.PotentialSpawns event) {
+    *///?}
 
         if (com.hbm_m.config.MobConfig.rampantNaturalScoutSpawn() && event.getLevel() instanceof ServerLevel world && world.dimension() == Level.OVERWORLD
                 && world.canSeeSky(event.getPos()) && !event.isCanceled()) {
@@ -130,17 +145,17 @@ public final class PollutionEvents {
 
         // Original: Operation 1 = MULTIPLY_BASE, Werte 1.0 (doppeltes Leben) und 1.5.
         AttributeInstance health = living.getAttribute(Attributes.MAX_HEALTH);
-        if (health != null && health.getModifier(MAX_HEALTH_ID) == null) {
-            health.addPermanentModifier(new AttributeModifier(
+        if (health != null && com.hbm_m.platform.AttributeHooks.getModifier(health, MAX_HEALTH_ID) == null) {
+            health.addPermanentModifier(com.hbm_m.platform.AttributeHooks.modifier(
                     MAX_HEALTH_ID, "Soot Anger Health Increase", 1D,
-                    AttributeModifier.Operation.MULTIPLY_BASE));
+                    AttributeOps.MULTIPLY_BASE));
         }
 
         AttributeInstance damage = living.getAttribute(Attributes.ATTACK_DAMAGE);
-        if (damage != null && damage.getModifier(ATTACK_DAMAGE_ID) == null) {
-            damage.addPermanentModifier(new AttributeModifier(
+        if (damage != null && com.hbm_m.platform.AttributeHooks.getModifier(damage, ATTACK_DAMAGE_ID) == null) {
+            damage.addPermanentModifier(com.hbm_m.platform.AttributeHooks.modifier(
                     ATTACK_DAMAGE_ID, "Soot Anger Damage Increase", 1.5D,
-                    AttributeModifier.Operation.MULTIPLY_BASE));
+                    AttributeOps.MULTIPLY_BASE));
         }
 
         living.heal(living.getMaxHealth());

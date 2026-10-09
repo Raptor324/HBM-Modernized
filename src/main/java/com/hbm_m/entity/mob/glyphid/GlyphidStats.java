@@ -1,5 +1,7 @@
 package com.hbm_m.entity.mob.glyphid;
 
+import com.hbm_m.platform.EffectHooks;
+
 import com.hbm_m.damagesource.ModDamageTypes;
 
 import net.minecraft.tags.DamageTypeTags;
@@ -113,7 +115,7 @@ public abstract class GlyphidStats {
                 amount *= 15F;
             }
 
-            if (glyphid.hasEffect(com.hbm_m.effect.ModEffects.PHOSPHORUS.get())) {
+            if (glyphid.hasEffect(EffectHooks.of(com.hbm_m.effect.ModEffects.PHOSPHORUS))) {
                 amount *= 1.5F;
             }
 

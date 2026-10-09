@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -79,7 +81,9 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
 
     //? if forge {
     private final LazyOptional<IItemHandler> automationHandler;
-    //?}
+    //?} elif neoforge {
+    /*private final com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler> automationHandler;
+    *///?}
 
     public MachineWatzPowerplantBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.WATZ_POWERPLANT_BE.get(), pos, state, PELLET_SLOTS, 0L, 0L);
@@ -91,7 +95,9 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
         resetSharedTanks();
         //? if forge {
         this.automationHandler = LazyOptional.of(() -> new AutomationHandler(inventory));
-        //?}
+        //?} elif neoforge {
+        /*this.automationHandler = com.hbm_m.platform.LazyCap.of(() -> new AutomationHandler(inventory));
+        *///?}
     }
 
     private static ItemStack[] emptyLocks() {
@@ -451,7 +457,7 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
             if (!locks[i].isEmpty()) {
                 CompoundTag nbt1 = new CompoundTag();
                 nbt1.putByte("slot", (byte) i);
-                locks[i].save(nbt1);
+                com.hbm_m.platform.StackNbt.save(locks[i], nbt1);
                 list.add(nbt1);
             }
         }
@@ -481,7 +487,7 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
         for (int i = 0; i < list.size(); i++) {
             CompoundTag nbt1 = list.getCompound(i);
             byte b0 = nbt1.getByte("slot");
-            if (b0 >= 0 && b0 < locks.length) locks[b0] = ItemStack.of(nbt1);
+            if (b0 >= 0 && b0 < locks.length) locks[b0] = StackNbt.parse(nbt1);
         }
 
         for (int i = 0; i < tanks.length; i++) tanks[i].readFromNBT(nbt, "t" + i);
@@ -626,5 +632,37 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
         @Override public int getSlotLimit(int slot) { return 1; }
         @Override public boolean isItemValid(int slot, @NotNull ItemStack stack) { return inv.isItemValid(slot, stack); }
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER) return automationHandler.cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public @Nullable Object getItemHandler(@Nullable Direction side) {
+        return automationHandler.orElse(null);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        automationHandler.invalidate();
+    }
+
+    /^* Automatisierungszugriff mit den Regeln von {@code isItemValidForSlot} / {@code canExtractItem}. ^/
+    private class AutomationHandler implements net.neoforged.neoforge.items.IItemHandler {
+        private final ModItemStackHandler inv;
+        AutomationHandler(ModItemStackHandler inv) { this.inv = inv; }
+        @Override public int getSlots() { return inv.getSlots(); }
+        @Override public @NotNull ItemStack getStackInSlot(int slot) { return inv.getStackInSlot(slot); }
+        @Override public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) { return inv.insertItem(slot, stack, simulate); }
+        @Override public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+            if (!canExtractItem(inv.getStackInSlot(slot))) return ItemStack.EMPTY;
+            return inv.extractItem(slot, amount, simulate);
+        }
+        @Override public int getSlotLimit(int slot) { return 1; }
+        @Override public boolean isItemValid(int slot, @NotNull ItemStack stack) { return inv.isItemValid(slot, stack); }
+    }
+    *///?}
 }

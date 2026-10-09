@@ -1,5 +1,5 @@
 package com.hbm_m.compat.jei;
-//? if forge {
+//? if forge || neoforge {
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +11,6 @@ import com.hbm_m.inventory.recipes.RotaryFurnaceRecipes.RotaryFurnaceRecipe;
 import com.hbm_m.item.material.ItemScraps;
 import com.hbm_m.lib.RefStrings;
 
-import mezz.jei.api.forge.ForgeTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.IFocusGroup;
@@ -76,7 +75,7 @@ public class RotaryFurnaceJeiCategory extends JeiUniversalRecipeCategory<RotaryF
             int i = inputs.size();
             builder.addSlot(RecipeIngredientRole.INPUT, inPos[i][0], inPos[i][1])
                     .setBackground(itemSlotBackground, -1, -1)
-                    .setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
+                    .setCustomRenderer(JeiFluidTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                     .addFluidStack(recipe.fluid.type(), recipe.fluid.fill());
         }
 

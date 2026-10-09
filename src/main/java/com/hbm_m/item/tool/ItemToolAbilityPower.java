@@ -1,5 +1,7 @@
 package com.hbm_m.item.tool;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 
 import javax.annotation.Nullable;
@@ -36,11 +38,11 @@ public class ItemToolAbilityPower extends ItemToolAbility implements IBatteryIte
     @Override
     public void chargeBattery(ItemStack stack, long i) {
         if (stack.getItem() instanceof ItemToolAbilityPower) {
-            if (stack.hasTag()) {
-                stack.getTag().putLong("charge", stack.getTag().getLong("charge") + i);
+            if (StackNbt.has(stack)) {
+                StackNbt.tag(stack).putLong("charge", StackNbt.read(stack).getLong("charge") + i);
             } else {
-                stack.setTag(new CompoundTag());
-                stack.getTag().putLong("charge", i);
+                StackNbt.set(stack, new CompoundTag());
+                StackNbt.tag(stack).putLong("charge", i);
             }
         }
     }
@@ -48,35 +50,35 @@ public class ItemToolAbilityPower extends ItemToolAbility implements IBatteryIte
     @Override
     public void setCharge(ItemStack stack, long i) {
         if (stack.getItem() instanceof ItemToolAbilityPower) {
-            if (!stack.hasTag()) stack.setTag(new CompoundTag());
-            stack.getTag().putLong("charge", i);
+            if (!StackNbt.has(stack)) StackNbt.set(stack, new CompoundTag());
+            StackNbt.tag(stack).putLong("charge", i);
         }
     }
 
     @Override
     public void dischargeBattery(ItemStack stack, long i) {
         if (stack.getItem() instanceof ItemToolAbilityPower) {
-            if (stack.hasTag()) {
-                stack.getTag().putLong("charge", stack.getTag().getLong("charge") - i);
+            if (StackNbt.has(stack)) {
+                StackNbt.tag(stack).putLong("charge", StackNbt.read(stack).getLong("charge") - i);
             } else {
-                stack.setTag(new CompoundTag());
-                stack.getTag().putLong("charge", this.maxPower - i);
+                StackNbt.set(stack, new CompoundTag());
+                StackNbt.tag(stack).putLong("charge", this.maxPower - i);
             }
 
-            if (stack.getTag().getLong("charge") < 0)
-                stack.getTag().putLong("charge", 0);
+            if (StackNbt.read(stack).getLong("charge") < 0)
+                StackNbt.tag(stack).putLong("charge", 0);
         }
     }
 
     @Override
     public long getCharge(ItemStack stack) {
         if (stack.getItem() instanceof ItemToolAbilityPower) {
-            if (stack.hasTag()) {
-                return stack.getTag().getLong("charge");
+            if (StackNbt.has(stack)) {
+                return StackNbt.read(stack).getLong("charge");
             } else {
-                stack.setTag(new CompoundTag());
-                stack.getTag().putLong("charge", ((ItemToolAbilityPower) stack.getItem()).maxPower);
-                return stack.getTag().getLong("charge");
+                StackNbt.set(stack, new CompoundTag());
+                StackNbt.tag(stack).putLong("charge", ((ItemToolAbilityPower) stack.getItem()).maxPower);
+                return StackNbt.read(stack).getLong("charge");
             }
         }
 
@@ -138,6 +140,7 @@ public class ItemToolAbilityPower extends ItemToolAbility implements IBatteryIte
     }
     //?}
 
+    // neo-pendant: ModCapabilities.registerBatteryItemCaps (RegisterCapabilitiesEvent, Item-Capabilities)
     //? if forge {
     @Override
     public net.minecraftforge.common.capabilities.ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {

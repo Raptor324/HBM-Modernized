@@ -12,7 +12,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.world.phys.AABB;
 
 /** 1:1 {@code RenderWandStructure}: weisser Drahtrahmen des Speicherbereichs oberhalb des Speicherblocks. */
-public class WandStructureRenderer implements BlockEntityRenderer<WandStructureBlockEntity> {
+public class WandStructureRenderer implements com.hbm_m.client.render.HbmBerBounds<WandStructureBlockEntity> {
 
     public WandStructureRenderer(BlockEntityRendererProvider.Context ctx) { }
 

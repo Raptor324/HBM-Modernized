@@ -52,10 +52,17 @@ public class EntityGrenadeBouncyGeneric extends EntityGrenadeBouncyBase implemen
         return new ItemStack(getGrenade());
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
         this.entityData.define(GRENADE, ItemStack.EMPTY);
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        builder.define(GRENADE, ItemStack.EMPTY);
+    }
+    *///?}
 
     @Override
     public void explode() {

@@ -49,13 +49,27 @@ public class LogicBlock extends BaseEntityBlock {
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    //?} else {
+    /*@Override
+    protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return com.hbm_m.platform.BlockUseHooks.item(hbmUse(state, world, pos, player, hand, hit));
+    }
+    private InteractionResult hbmUse(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    *///?}
         if (world.getBlockEntity(pos) instanceof LogicBlockEntity logic && logic.interaction != null) {
             logic.interaction.accept(new Object[] {world, logic, pos.getX(), pos.getY(), pos.getZ(), player, hit.getDirection().get3DDataValue(),
                     (float) (hit.getLocation().x - pos.getX()), (float) (hit.getLocation().y - pos.getY()), (float) (hit.getLocation().z - pos.getZ())});
             return InteractionResult.SUCCESS;
         }
 
+        //? if < 1.21.1 {
         return super.use(state, world, pos, player, hand, hit);
+        //?} else {
+        /*return net.minecraft.world.InteractionResult.PASS;
+        *///?}
     }
-    //?}
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<LogicBlock> CODEC = simpleCodec(LogicBlock::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

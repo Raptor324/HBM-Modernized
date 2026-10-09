@@ -30,7 +30,7 @@ public class ItemNuclearWaste extends LoreTooltipItem {
     public boolean onEntityItemUpdate(ItemStack stack, ItemEntity entity) {
         if (!entity.isInvulnerable()) {
             entity.setInvulnerable(true);
-            //? if forge {
+            //? if forge || neoforge {
             entity.lifespan = Integer.MAX_VALUE;
             //?}
         }

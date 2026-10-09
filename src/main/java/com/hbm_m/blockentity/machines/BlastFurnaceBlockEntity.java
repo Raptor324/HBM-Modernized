@@ -102,7 +102,10 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
     //? if forge {
     private final Map<Direction, LazyOptional<IItemHandler>> sidedItemHandlers = new EnumMap<>(Direction.class);
     private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
-    //?}
+    //?} elif neoforge {
+    /*private final Map<Direction, com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler>> sidedItemHandlers = new EnumMap<>(Direction.class);
+    private com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler> lazyItemHandler = com.hbm_m.platform.LazyCap.empty();
+    *///?}
 
     //? if fabric {
     /*private final Map<Direction, Storage<ItemVariant>> sidedStorages = new EnumMap<>(Direction.class);
@@ -187,7 +190,34 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
         lazyItemHandler.invalidate();
         sidedItemHandlers.values().forEach(LazyOptional::invalidate);
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public void onLoad() {
+        super.onLoad();
+        lazyItemHandler = com.hbm_m.platform.LazyCap.of(() -> itemHandler);
+        sidedItemHandlers.clear();
+        for (Direction direction : Direction.values()) {
+            final Direction dir = direction;
+            sidedItemHandlers.put(dir, com.hbm_m.platform.LazyCap.of(() -> new DirectionalItemHandler(dir)));
+        }
+    }
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER) {
+            if (side == null) return lazyItemHandler.cast();
+            return sidedItemHandlers.getOrDefault(side, lazyItemHandler).cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        lazyItemHandler.invalidate();
+        sidedItemHandlers.values().forEach(com.hbm_m.platform.LazyCap::invalidate);
+    }
+    *///?}
 
     //? if fabric {
     /*@Override
@@ -540,7 +570,37 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
             return itemHandler.isItemValid(slot, stack) && canInsertFromDirection(slot, direction);
         }
     }
-    //?}
+    //?} elif neoforge {
+    /*private class DirectionalItemHandler implements net.neoforged.neoforge.items.IItemHandler {
+        private final Direction direction;
+
+        private DirectionalItemHandler(Direction direction) { this.direction = direction; }
+
+        @Override public int getSlots() { return itemHandler.getSlots(); }
+
+        @Override
+        public @NotNull ItemStack getStackInSlot(int slot) { return itemHandler.getStackInSlot(slot); }
+
+        @Override
+        public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
+            if (!canInsertFromDirection(slot, direction) || !itemHandler.isItemValid(slot, stack)) return stack;
+            return itemHandler.insertItem(slot, stack, simulate);
+        }
+
+        @Override
+        public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+            if (!canExtractFromDirection(slot)) return ItemStack.EMPTY;
+            return itemHandler.extractItem(slot, amount, simulate);
+        }
+
+        @Override public int getSlotLimit(int slot) { return itemHandler.getSlotLimit(slot); }
+
+        @Override
+        public boolean isItemValid(int slot, @NotNull ItemStack stack) {
+            return itemHandler.isItemValid(slot, stack) && canInsertFromDirection(slot, direction);
+        }
+    }
+    *///?}
 
     @Override
     public @Nullable Object getItemHandler(@Nullable net.minecraft.core.Direction side) {

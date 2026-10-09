@@ -71,8 +71,12 @@ public class FogRenderer extends EntityRenderer<EntityFogFX> {
     }
 
     private static void vertex(VertexConsumer vc, Matrix4f m, Matrix3f n, float x, float y, float u, float v, float alpha) {
+        //? if < 1.21.1 {
         vc.vertex(m, x, y, 0).color(0.85F, 0.9F, 0.5F, alpha).uv(u, v).overlayCoords(OverlayTexture.NO_OVERLAY)
                 .uv2(LightTexture.FULL_BRIGHT).normal(n, 0, 1, 0).endVertex();
+        //?} else {
+        /*com.hbm_m.platform.RenderHooks.normal(vc.addVertex(m, x, y, 0).setColor(0.85F, 0.9F, 0.5F, alpha).setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT), n, 0, 1, 0);
+        *///?}
     }
 
     @Override

@@ -53,7 +53,11 @@ public class ItemGrenadeFishing extends ItemGenericGrenade {
      * Schatzchance unter null, also immer ein Fisch (Beutetabelle gameplay/fishing/fish).
      */
     public static ItemStack getRandomLoot(ServerLevel world, Vec3 pos) {
+        //? if < 1.21.1 {
         LootTable table = world.getServer().getLootData().getLootTable(BuiltInLootTables.FISHING_FISH);
+        //?} else {
+        /*LootTable table = world.getServer().reloadableRegistries().getLootTable(BuiltInLootTables.FISHING_FISH);
+        *///?}
         LootParams params = new LootParams.Builder(world).withParameter(LootContextParams.ORIGIN, pos)
                 .withParameter(LootContextParams.TOOL, ItemStack.EMPTY).create(LootContextParamSets.FISHING);
         var list = table.getRandomItems(params);

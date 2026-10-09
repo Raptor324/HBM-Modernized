@@ -1,5 +1,7 @@
 package com.hbm_m.item.tool;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,12 +35,12 @@ public class ItemGuideBook extends Item implements ITooltipProvider {
 
     public static ItemStack make(BookType type) {
         ItemStack stack = new ItemStack(ModItems.BOOK_GUIDE.get());
-        stack.getOrCreateTag().putInt("type", type.ordinal());
+        StackNbt.orCreate(stack).putInt("type", type.ordinal());
         return stack;
     }
 
     public static BookType getType(ItemStack stack) {
-        return BookType.getType(stack.hasTag() ? stack.getTag().getInt("type") : 0);
+        return BookType.getType(StackNbt.has(stack) ? StackNbt.read(stack).getInt("type") : 0);
     }
 
     @Override

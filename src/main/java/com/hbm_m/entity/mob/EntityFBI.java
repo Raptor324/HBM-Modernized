@@ -1,5 +1,7 @@
 package com.hbm_m.entity.mob;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -180,9 +182,18 @@ public class EntityFBI extends Monster implements RangedAttackMob {
     }
 
     @Override
+    //? if < 1.21.1 {
     public @Nullable SpawnGroupData finalizeSpawn(@NotNull ServerLevelAccessor level, @NotNull DifficultyInstance difficulty, @NotNull MobSpawnType reason, @Nullable SpawnGroupData data, @Nullable net.minecraft.nbt.CompoundTag tag) {
+    //?} else {
+    /*public @Nullable SpawnGroupData finalizeSpawn(@NotNull ServerLevelAccessor level, @NotNull DifficultyInstance difficulty, @NotNull MobSpawnType reason, @Nullable SpawnGroupData data) {
+        net.minecraft.nbt.CompoundTag tag = null;
+    *///?}
         this.addRandomArmor();
+        //? if < 1.21.1 {
         return super.finalizeSpawn(level, difficulty, reason, data, tag);
+        //?} else {
+        /*return super.finalizeSpawn(level, difficulty, reason, data);
+        *///?}
     }
 
     /** Original {@code isPotionApplicable}: nie; ohne Helm setzt er stattdessen eine M65 auf. */
@@ -220,6 +231,6 @@ public class EntityFBI extends Monster implements RangedAttackMob {
         List<ItemEntity> items = level().getEntitiesOfClass(ItemEntity.class, new AABB(getX(), getY(), getZ(), getX(), getY(), getZ()).inflate(range, range, range));
 
         for (ItemEntity item : items)
-            item.setSecondsOnFire(10);
+            PlatformHooks.setSecondsOnFire(item, 10);
     }
 }

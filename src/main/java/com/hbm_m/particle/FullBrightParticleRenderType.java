@@ -56,8 +56,8 @@ public class FullBrightParticleRenderType implements ParticleRenderType {
     /*// 1.21.1: ParticleRenderType.begin(Tesselator, TextureManager) возвращает BufferBuilder.
     @Override
     public BufferBuilder begin(Tesselator tesselator, TextureManager textureManager) {
-        savedFogStart = RenderSystem.getShaderFogStart();
-        savedFogEnd = RenderSystem.getShaderFogEnd();
+        // 1.21.1 hat kein end() mehr - Ruecksetzen nach dem Partikel-Pass, siehe ParticleRenderStateNeoForge
+        ParticleRenderStateNeoForge.capture();
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -104,5 +104,5 @@ public class FullBrightParticleRenderType implements ParticleRenderType {
     }
     //?}
     // 1.21.1: ParticleRenderType.end(Tesselator) удалён из интерфейса — сброс RenderSystem-стейта
-    // выполняет движок после flush. Паритет с LongRangeParticleRenderType (else-ветки для end() нет).
+    // (Cull, Blend, Nebel) uebernimmt ParticleRenderStateNeoForge nach dem Partikel-Pass.
 }

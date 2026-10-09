@@ -1,5 +1,11 @@
 package com.hbm_m.handler.ability;
 
+import com.hbm_m.platform.PlatformHooks;
+
+import com.hbm_m.platform.EffectHooks;
+
+import com.hbm_m.platform.StackNbt;
+
 import com.hbm_m.effect.ModEffects;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.sound.HbmSoundsNT;
@@ -117,7 +123,7 @@ public interface IWeaponAbility extends IBaseAbility {
             int duration = durationAtLevel[level];
 
             if (victim instanceof LivingEntity living) {
-                living.addEffect(new MobEffectInstance(ModEffects.PHOSPHORUS.get(), duration * 20, 4));
+                living.addEffect(new MobEffectInstance(EffectHooks.of(ModEffects.PHOSPHORUS), duration * 20, 4));
             }
         }
     };
@@ -134,7 +140,7 @@ public interface IWeaponAbility extends IBaseAbility {
         @Override
         public void onHit(int level, Level world, Player player, Entity victim, Item tool) {
             if (victim instanceof LivingEntity) {
-                victim.setSecondsOnFire(durationAtLevel[level]);
+                PlatformHooks.setSecondsOnFire(victim, durationAtLevel[level]);
             }
         }
     };
@@ -196,8 +202,12 @@ public interface IWeaponAbility extends IBaseAbility {
                     living.spawnAtLocation(new ItemStack(Items.SLIME_BALL, 3), 0.0F);
                 } else if (living instanceof Player p) {
                     ItemStack head = new ItemStack(Items.PLAYER_HEAD);
-                    CompoundTag tag = head.getOrCreateTag();
+                    //? if < 1.21.1 {
+                    CompoundTag tag = StackNbt.orCreate(head);
                     tag.put("SkullOwner", NbtUtils.writeGameProfile(new CompoundTag(), p.getGameProfile()));
+                    //?} else {
+                    /*head.set(net.minecraft.core.component.DataComponents.PROFILE, new net.minecraft.world.item.component.ResolvableProfile(p.getGameProfile()));
+                    *///?}
                     living.spawnAtLocation(head, 0.0F);
                 } else {
                     living.spawnAtLocation(new ItemStack(Items.ROTTEN_FLESH, 3), 0.0F);

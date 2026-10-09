@@ -1,5 +1,7 @@
 package com.hbm_m.block.machines;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -126,12 +128,12 @@ public class MachineStirlingBlock extends DummyableMachineBlock implements com.h
     /** Original {@code new ItemStack(machine_stirling, 1, 1)}. */
     public static ItemStack noCogStack(net.minecraft.world.level.ItemLike item) {
         ItemStack s = new ItemStack(item);
-        s.getOrCreateTag().putBoolean(TAG_NO_COG, true);
+        StackNbt.orCreate(s).putBoolean(TAG_NO_COG, true);
         return s;
     }
 
     public static boolean isNoCog(ItemStack stack) {
-        net.minecraft.nbt.CompoundTag t = stack.getTag();
+        net.minecraft.nbt.CompoundTag t = StackNbt.read(stack);
         return t != null && t.getBoolean(TAG_NO_COG);
     }
 
@@ -151,7 +153,7 @@ public class MachineStirlingBlock extends DummyableMachineBlock implements com.h
         BlockEntity be = builder.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
         if (be instanceof MachineStirlingBlockEntity stirling && !stirling.hasCog()) {
             for (ItemStack s : drops) {
-                if (s.is(asItem())) s.getOrCreateTag().putBoolean(TAG_NO_COG, true);
+                if (s.is(asItem())) StackNbt.orCreate(s).putBoolean(TAG_NO_COG, true);
             }
         }
         return drops;
@@ -192,7 +194,11 @@ public class MachineStirlingBlock extends DummyableMachineBlock implements com.h
 
     /** Original {@code addInformation}: {@code addStandardInfo} (Umschalttaste zeigt {@code .desc}). */
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> list, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+    *///?}
         com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
     }
 }

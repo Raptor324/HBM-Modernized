@@ -47,7 +47,7 @@ public class ChargeBlockEntity extends BaseHbmBlockEntity {
     private void networkPackNT(ServerLevel server, int range) {
         CompoundTag tag = new CompoundTag();
         writeNbtData(tag, null);
-        ClientboundBlockEntityDataPacket packet = ClientboundBlockEntityDataPacket.create(this, be -> tag);
+        ClientboundBlockEntityDataPacket packet = com.hbm_m.platform.BlockHooks.dataPacket(this, tag);
         for (var player : server.getChunkSource().chunkMap.getPlayers(new ChunkPos(worldPosition), false)) {
             if (player.distanceToSqr(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5) <= (double) range * range)
                 player.connection.send(packet);

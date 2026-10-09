@@ -528,5 +528,33 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
         super.invalidateCaps();
         sidedItems.invalidate();
     }
-    //?}
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: alle Slots; Eingaenge gleichmaessig befuellt, Ausgaenge und stumpfe Klingen heraus. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.range(0, 29); }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { if ((slot >= 9 && slot != 27 && slot != 28) || !isItemValidForSlot(slot, stack)) return false;
+                    if (inventory.getStackInSlot(slot).isEmpty()) return true;
+                    int size = inventory.getStackInSlot(slot).getCount();
+                    for (int k = 0; k < 9; k++) {
+                        net.minecraft.world.item.ItemStack s = inventory.getStackInSlot(k);
+                        if (s.isEmpty()) return false;
+                        if (net.minecraft.world.item.ItemStack.isSameItem(s, stack) && s.getCount() < size) return false;
+                    }
+                    return true; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { if (slot >= 9 && slot <= 26) return true; return (slot == 27 || slot == 28) && stack.getMaxDamage() > 0 && stack.getDamageValue() >= stack.getMaxDamage(); }
+            });
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
 }

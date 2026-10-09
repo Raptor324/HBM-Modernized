@@ -17,7 +17,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * Gegenstueck zu {@code LogicBlock.getIcon(IBlockAccess, ...)}: ist eine Tarnung gesetzt, wird deren Modell gezeichnet,
  * sonst das eigene Modell des Logikblocks. Der unsichtbare Logikblock zeichnet nichts.
  */
-public class LogicBlockRenderer implements BlockEntityRenderer<LogicBlockEntity> {
+public class LogicBlockRenderer implements com.hbm_m.client.render.HbmBerBounds<LogicBlockEntity> {
 
     public LogicBlockRenderer(BlockEntityRendererProvider.Context ctx) { }
 

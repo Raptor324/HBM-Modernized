@@ -1,5 +1,5 @@
 package com.hbm_m.compat.jei;
-//? if forge {
+//? if forge || neoforge {
 
 import java.util.Arrays;
 

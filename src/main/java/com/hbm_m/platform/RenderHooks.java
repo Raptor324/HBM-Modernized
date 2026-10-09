@@ -36,7 +36,9 @@ public final class RenderHooks {
         //? if < 1.21.1 {
         com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(buffer.end());
         //?} else {
-        /*com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(buffer.buildOrThrow());
+        /*// Leerer Puffer: 1.20.1 zeichnet einfach nichts, buildOrThrow() wuerde hier werfen.
+        com.mojang.blaze3d.vertex.MeshData mesh = buffer.build();
+        if (mesh != null) com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(mesh);
         *///?}
     }
 
@@ -95,6 +97,18 @@ public final class RenderHooks {
         /*consumer.addVertex(pose.pose(), x, y, z).setColor(r, g, b, a).setNormal(pose, nx, ny, nz);
         *///?}
     }
+
+    /**
+     * Nur 1.21.1: Ersatz fuer das 1.20.1-Kettenglied {@code .normal(Matrix3f, x, y, z)} (das es auf 1.21.1
+     * nicht mehr gibt). Transformiert wie 1.20.1 ohne Normalisierung und gibt den Consumer fuer die Kette
+     * zurueck. Wird von den Stonecutter-Weichen der Vertex-Ketten benutzt (siehe VERSIONPORT.md).
+     */
+    //? if >= 1.21.1 {
+    /*public static VertexConsumer normal(VertexConsumer consumer, org.joml.Matrix3f normalMatrix, float x, float y, float z) {
+        org.joml.Vector3f v = normalMatrix.transform(new org.joml.Vector3f(x, y, z));
+        return consumer.setNormal(v.x(), v.y(), v.z());
+    }
+    *///?}
 
     /**
      * Полноценная вершина: позиция, цвет, текстура, оверлей, свет, нормаль.

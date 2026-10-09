@@ -1,5 +1,7 @@
 package com.hbm_m.item.industrial;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 
 import javax.annotation.Nullable;
@@ -44,9 +46,9 @@ public class ItemBlueprints extends Item implements ITooltipProvider {
     public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         if (world.isClientSide) return InteractionResultHolder.pass(stack);
-        if (!stack.hasTag()) return InteractionResultHolder.pass(stack);
+        if (!StackNbt.has(stack)) return InteractionResultHolder.pass(stack);
 
-        String poolName = stack.getTag().getString("pool");
+        String poolName = StackNbt.read(stack).getString("pool");
 
         if (poolName.startsWith(BlueprintPools.POOL_PREFIX_SECRET)) return InteractionResultHolder.pass(stack);
         if (!player.getInventory().contains(new ItemStack(Items.PAPER))) return InteractionResultHolder.pass(stack);
@@ -85,9 +87,9 @@ public class ItemBlueprints extends Item implements ITooltipProvider {
 
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
-        if (!stack.hasTag() || level == null) return;
+        if (!StackNbt.has(stack) || level == null) return;
 
-        String poolName = stack.getTag().getString("pool");
+        String poolName = StackNbt.read(stack).getString("pool");
         List<Component> pool = BlueprintPools.getPools(level).get(poolName);
 
         if (pool == null || pool.isEmpty()) return;
@@ -105,9 +107,9 @@ public class ItemBlueprints extends Item implements ITooltipProvider {
     public static String grabPool(ItemStack stack) {
         if (stack == null || stack.isEmpty()) return null;
         if (stack.getItem() != ModItems.BLUEPRINTS.get()) return null;
-        if (!stack.hasTag()) return null;
-        if (!stack.getTag().contains("pool")) return null;
-        return stack.getTag().getString("pool");
+        if (!StackNbt.has(stack)) return null;
+        if (!StackNbt.read(stack).contains("pool")) return null;
+        return StackNbt.read(stack).getString("pool");
     }
 
     /** Wie {@link #grabPool}, aber "" statt null (fuer die Pool-Vergleiche der Maschinen). */
@@ -118,8 +120,8 @@ public class ItemBlueprints extends Item implements ITooltipProvider {
 
     public static ItemStack make(String pool) {
         ItemStack stack = new ItemStack(ModItems.BLUEPRINTS.get());
-        stack.setTag(new CompoundTag());
-        stack.getTag().putString("pool", pool);
+        StackNbt.set(stack, new CompoundTag());
+        StackNbt.tag(stack).putString("pool", pool);
         return stack;
     }
 }

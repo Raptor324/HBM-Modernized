@@ -1,5 +1,7 @@
 package com.hbm_m.entity.projectile;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import com.hbm_m.damagesource.ModDamageSources;
 import com.hbm_m.damagesource.ModDamageTypes;
 import com.hbm_m.entity.ModEntities;
@@ -124,7 +126,7 @@ public class EntitySiegeLaser extends ThrowableProjectile {
                 this.discard();
 
                 if (this.incendiary)
-                    entityHit.setSecondsOnFire(3);
+                    PlatformHooks.setSecondsOnFire(entityHit, 3);
 
                 // newExplosion(..., smoking = false): keine Blockzerstoerung
                 if (this.explosive > 0 && !level().isClientSide)
@@ -155,10 +157,17 @@ public class EntitySiegeLaser extends ThrowableProjectile {
         }
     }
 
+    //? if < 1.21.1 {
     @Override
     protected float getGravity() {
         return 0.0F;
     }
+    //?} else {
+    /*@Override
+    protected double getDefaultGravity() {
+        return 0.0F;
+    }
+    *///?}
 
     @Override
     public void addAdditionalSaveData(CompoundTag nbt) {

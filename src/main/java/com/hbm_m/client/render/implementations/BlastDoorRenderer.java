@@ -15,7 +15,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 
 /** 1:1 {@code RenderBlastDoor}: Sockel, Kopfblock, Zahn und bis zu vier Schieber je nach Oeffnungsfortschritt (5 s). */
-public class BlastDoorRenderer implements BlockEntityRenderer<BlastDoorBlockEntity> {
+public class BlastDoorRenderer implements com.hbm_m.client.render.HbmBerBounds<BlastDoorBlockEntity> {
 
     private static SimpleObjModel obj(String n) { return new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/" + n + ".obj")); }
     private static ResourceLocation tex(String n) { return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/" + n + ".png"); }

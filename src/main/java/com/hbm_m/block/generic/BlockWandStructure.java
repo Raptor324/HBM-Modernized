@@ -53,9 +53,15 @@ public class BlockWandStructure extends BaseEntityBlock implements ILookOverlay 
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    //?} else {
+    /*@Override
+    protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return com.hbm_m.platform.BlockUseHooks.item(hbmUse(state, world, pos, player, hand, hit));
+    }
+    private InteractionResult hbmUse(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    *///?}
         return onActivated(world, pos, player, hand);
     }
-    //?}
 
     private InteractionResult onActivated(Level world, BlockPos pos, Player player, InteractionHand hand) {
         if (!(world.getBlockEntity(pos) instanceof WandStructureBlockEntity structure)) return InteractionResult.PASS;
@@ -117,4 +123,8 @@ public class BlockWandStructure extends BaseEntityBlock implements ILookOverlay 
 
         ILookOverlay.printGeneric(guiGraphics, getName(), 0xffff00, 0x404000, text);
     }
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<BlockWandStructure> CODEC = com.hbm_m.platform.BlockCodecs.unsupported(BlockWandStructure.class);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

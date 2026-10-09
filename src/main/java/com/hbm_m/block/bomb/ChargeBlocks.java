@@ -47,6 +47,10 @@ public final class ChargeBlocks {
             }
             return BombReturnCode.UNDEFINED;
         }
+        //? if >= 1.21.1 {
+        /*public static final com.mojang.serialization.MapCodec<Dynamite> CODEC = simpleCodec(Dynamite::new);
+        @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+        *///?}
     }
 
     /** 1:1 {@code BlockChargeMiner}: wie Dynamit, aber ohne Schaden und mit allen Drops. */
@@ -67,11 +71,24 @@ public final class ChargeBlocks {
         }
 
         @Override
+        //? if < 1.21.1 {
         public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> list, TooltipFlag flag) {
+        //?} else {
+        /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+            BlockGetter level = com.hbm_m.platform.PlatformHooks.tooltipLevel(hbmTooltipCtx);
+        *///?}
+            //? if < 1.21.1 {
             super.appendHoverText(stack, level, list, flag);
+            //?} else {
+            /*super.appendHoverText(stack, hbmTooltipCtx, list, flag);
+            *///?}
             list.add(Component.literal("Will drop all blocks.").withStyle(ChatFormatting.BLUE));
             list.add(Component.literal("Does not do damage.").withStyle(ChatFormatting.BLUE));
         }
+        //? if >= 1.21.1 {
+        /*public static final com.mojang.serialization.MapCodec<Miner> CODEC = simpleCodec(Miner::new);
+        @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+        *///?}
     }
 
     /** 1:1 {@code BlockChargeC4}: VNT 15 (Aufloesung 32), keine Drops, Standard-Schaden. */
@@ -95,10 +112,23 @@ public final class ChargeBlocks {
         }
 
         @Override
+        //? if < 1.21.1 {
         public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> list, TooltipFlag flag) {
+        //?} else {
+        /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+            BlockGetter level = com.hbm_m.platform.PlatformHooks.tooltipLevel(hbmTooltipCtx);
+        *///?}
+            //? if < 1.21.1 {
             super.appendHoverText(stack, level, list, flag);
+            //?} else {
+            /*super.appendHoverText(stack, hbmTooltipCtx, list, flag);
+            *///?}
             list.add(Component.literal("Does not drop blocks.").withStyle(ChatFormatting.BLUE));
         }
+        //? if >= 1.21.1 {
+        /*public static final com.mojang.serialization.MapCodec<C4> CODEC = simpleCodec(C4::new);
+        @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+        *///?}
     }
 
     /** 1:1 {@code BlockChargeSemtex}: VNT 10 (Aufloesung 32), alle Drops mit Glueck III, kein Schaden. */
@@ -120,12 +150,25 @@ public final class ChargeBlocks {
         }
 
         @Override
+        //? if < 1.21.1 {
         public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> list, TooltipFlag flag) {
+        //?} else {
+        /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+            BlockGetter level = com.hbm_m.platform.PlatformHooks.tooltipLevel(hbmTooltipCtx);
+        *///?}
+            //? if < 1.21.1 {
             super.appendHoverText(stack, level, list, flag);
+            //?} else {
+            /*super.appendHoverText(stack, hbmTooltipCtx, list, flag);
+            *///?}
             list.add(Component.literal("Will drop all blocks.").withStyle(ChatFormatting.BLUE));
             list.add(Component.literal("Does not do damage.").withStyle(ChatFormatting.BLUE));
             list.add(Component.literal("").withStyle(ChatFormatting.BLUE));
             list.add(Component.literal("Fortune III").withStyle(ChatFormatting.LIGHT_PURPLE));
         }
+        //? if >= 1.21.1 {
+        /*public static final com.mojang.serialization.MapCodec<Semtex> CODEC = simpleCodec(Semtex::new);
+        @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+        *///?}
     }
 }

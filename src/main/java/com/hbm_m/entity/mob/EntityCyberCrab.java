@@ -24,7 +24,9 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.monster.RangedAttackMob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+//? if < 1.21.1 {
 import net.minecraft.world.level.pathfinder.BlockPathTypes;
+//?}
 
 /**
  * 1:1 {@code EntityCyberCrab}: kleine Robo-Krabbe (4 HP) mit Tau-Geschossen (RangedAttack 60-80 Ticks, 15 Bloecke),
@@ -35,7 +37,11 @@ public class EntityCyberCrab extends Monster implements RangedAttackMob, IRadiat
 
     public EntityCyberCrab(EntityType<? extends EntityCyberCrab> type, Level world) {
         super(type, world);
+        //? if < 1.21.1 {
         this.setPathfindingMalus(BlockPathTypes.WATER, -1.0F);
+        //?} else {
+        /*this.setPathfindingMalus(net.minecraft.world.level.pathfinder.PathType.WATER, -1.0F);
+        *///?}
     }
 
     @Override
@@ -121,9 +127,19 @@ public class EntityCyberCrab extends Monster implements RangedAttackMob, IRadiat
     /** {@code dropRareDrop}: 1.7-Formel {@code rand(200) - looting < 5} bei Spielertreffer. */
     protected void dropRareDrop() { }
 
+    //? if < 1.21.1 {
     @Override
     protected void dropCustomDeathLoot(@NotNull DamageSource source, int looting, boolean recentlyHit) {
+    //?} else {
+    /*@Override
+    protected void dropCustomDeathLoot(net.minecraft.server.level.ServerLevel hbmLevel, @NotNull DamageSource source, boolean recentlyHit) {
+        int looting = com.hbm_m.platform.MobHooks.lootingLevel(hbmLevel, source);
+    *///?}
+        //? if < 1.21.1 {
         super.dropCustomDeathLoot(source, looting, recentlyHit);
+        //?} else {
+        /*super.dropCustomDeathLoot(hbmLevel, source, recentlyHit);
+        *///?}
         if (recentlyHit && this.random.nextInt(200) - looting < 5) dropRareDrop();
     }
 }

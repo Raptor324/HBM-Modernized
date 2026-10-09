@@ -25,6 +25,9 @@ public class ItemCustomLore extends Item implements ITooltipProvider {
 
     public ItemCustomLore(Properties properties) {
         super(properties);
+        //? if >= 1.21.1 {
+        /*com.hbm_m.platform.ItemComponentHooks.deferRarity(this, () -> this.rarity);
+        *///?}
     }
 
     @Override
@@ -44,10 +47,12 @@ public class ItemCustomLore extends Item implements ITooltipProvider {
         for (String s : loc.split("\\$")) tooltip.add(Component.literal(s).withStyle(net.minecraft.ChatFormatting.GRAY));
     }
 
+    //? if < 1.21.1 {
     @Override
     public Rarity getRarity(ItemStack stack) {
         return this.rarity != null ? rarity : super.getRarity(stack);
     }
+    //?}
 
     @Override
     public boolean isFoil(ItemStack stack) {

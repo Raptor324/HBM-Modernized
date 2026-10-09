@@ -118,15 +118,27 @@ public final class BeamPronter {
     private static void quad(VertexConsumer vc, Matrix4f m, int r, int g, int b,
                              double x1, double y1, double z1, double x2, double y2, double z2,
                              double x3, double y3, double z3, double x4, double y4, double z4) {
+        //? if < 1.21.1 {
         vc.vertex(m, (float) x1, (float) y1, (float) z1).color(r, g, b, 255).endVertex();
         vc.vertex(m, (float) x2, (float) y2, (float) z2).color(r, g, b, 255).endVertex();
         vc.vertex(m, (float) x3, (float) y3, (float) z3).color(r, g, b, 255).endVertex();
         vc.vertex(m, (float) x4, (float) y4, (float) z4).color(r, g, b, 255).endVertex();
+        //?} else {
+        /*vc.addVertex(m, (float) x1, (float) y1, (float) z1).setColor(r, g, b, 255);
+        vc.addVertex(m, (float) x2, (float) y2, (float) z2).setColor(r, g, b, 255);
+        vc.addVertex(m, (float) x3, (float) y3, (float) z3).setColor(r, g, b, 255);
+        vc.addVertex(m, (float) x4, (float) y4, (float) z4).setColor(r, g, b, 255);
+        *///?}
     }
 
     private static void line(VertexConsumer vc, Matrix4f m, double x1, double y1, double z1, double x2, double y2, double z2, int color) {
         int r = (color >> 16) & 0xFF, g = (color >> 8) & 0xFF, b = color & 0xFF;
+        //? if < 1.21.1 {
         vc.vertex(m, (float) x1, (float) y1, (float) z1).color(r, g, b, 255).endVertex();
         vc.vertex(m, (float) x2, (float) y2, (float) z2).color(r, g, b, 255).endVertex();
+        //?} else {
+        /*vc.addVertex(m, (float) x1, (float) y1, (float) z1).setColor(r, g, b, 255);
+        vc.addVertex(m, (float) x2, (float) y2, (float) z2).setColor(r, g, b, 255);
+        *///?}
     }
 }

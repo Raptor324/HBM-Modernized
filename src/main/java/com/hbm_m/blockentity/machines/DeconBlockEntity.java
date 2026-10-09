@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.EffectHooks;
+
 import java.util.List;
 
 import com.hbm_m.blockentity.ModBlockEntities;
@@ -32,8 +34,13 @@ public class DeconBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity {
 
             for (LivingEntity entity : entities) {
                 HbmLivingProps.incrementRadiation(entity, -0.5F);
+<<<<<<< HEAD
                 entity.removeEffect(ModEffects.RADIATION.get());
                 HbmLivingProps.setCont(entity, new java.util.ArrayList<>());
+=======
+                entity.removeEffect(EffectHooks.of(ModEffects.RADIATION));
+                // TODO(port): HbmLivingProps.getCont(e).clear() - Kontaminationsliste gibt es im Port noch nicht.
+>>>>>>> 5cf60b6108d271636c3d48b21b60db45caf65f6b
             }
         } else {
             RandomSource random = level.getRandom();

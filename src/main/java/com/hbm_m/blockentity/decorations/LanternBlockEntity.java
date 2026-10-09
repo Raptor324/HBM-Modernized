@@ -17,7 +17,7 @@ import net.minecraft.world.phys.AABB;
  * Fuss) 5 s Blindheit. Glyphiden = alle Wesen der Glyphiden-Familie ({@code EntityGlyphid} und Unterarten, im Port an
  * der ID {@code hbm_m:glyphid*} erkannt - die Glyphiden folgen mit der Entity-Runde).
  */
-public class LanternBlockEntity extends BlockEntity {
+public class LanternBlockEntity extends BlockEntity implements com.hbm_m.api.render.RenderBoundsProvider {
 
     public LanternBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.LANTERN.get(), pos, state);
@@ -38,6 +38,6 @@ public class LanternBlockEntity extends BlockEntity {
 
     @Override
     public AABB getRenderBoundingBox() {
-        return new AABB(worldPosition, worldPosition.offset(1, 6, 1));
+        return com.hbm_m.platform.BlockHooks.aabb(worldPosition, worldPosition.offset(1, 6, 1));
     }
 }

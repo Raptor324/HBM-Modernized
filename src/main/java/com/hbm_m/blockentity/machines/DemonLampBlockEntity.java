@@ -15,7 +15,7 @@ import net.minecraft.world.phys.Vec3;
  * 1:1 {@code TileEntityDemonLamp}: jeden Tick 100000 RAD auf alles im Umkreis 25, geteilt durch die Summe der
  * Sprengfestigkeit dazwischen und das Abstandsquadrat; naeher als 2 Bloecke verbrennt man (100 Schaden).
  */
-public class DemonLampBlockEntity extends BlockEntity {
+public class DemonLampBlockEntity extends BlockEntity implements com.hbm_m.api.render.RenderBoundsProvider {
 
     public DemonLampBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.DEMON_LAMP.get(), pos, state);

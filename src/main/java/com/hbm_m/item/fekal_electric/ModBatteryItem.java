@@ -53,6 +53,7 @@ public class ModBatteryItem extends Item implements ITooltipProvider {
         return maxExtract;
     }
 
+    // neo-pendant: ModCapabilities.registerBatteryItemCaps (RegisterCapabilitiesEvent, Item-Capabilities)
     //? if forge {
     @Nullable
     @Override

@@ -15,7 +15,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.world.phys.Vec3;
 
 /** 1:1 {@code RenderEmitter}: gleiche Matrizenfolge, Strahl und Effekte 1-3 ueber {@link BeamPronter}. */
-public class EmitterRenderer implements BlockEntityRenderer<EmitterBlockEntity> {
+public class EmitterRenderer implements com.hbm_m.client.render.HbmBerBounds<EmitterBlockEntity> {
 
     public EmitterRenderer(BlockEntityRendererProvider.Context ctx) { }
 

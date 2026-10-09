@@ -1,4 +1,4 @@
-//? if forge {
+//? if forge || neoforge {
 package com.hbm_m.client.model;
 
 import java.util.List;
@@ -24,7 +24,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+//? if forge {
 import net.minecraftforge.client.model.BakedModelWrapper;
+//?} else {
+/*import net.neoforged.neoforge.client.model.BakedModelWrapper;
+*///?}
 
 /**
  * 1:1 {@code ItemRendererMeteorSword}: das flache Schwertsymbol plus ein eingefaerbter Glanz in zwei Lagen
@@ -42,7 +46,7 @@ import net.minecraftforge.client.model.BakedModelWrapper;
  */
 public class MeteorSwordGlintModel extends BakedModelWrapper<BakedModel> {
 
-    private static final ResourceLocation GLINT = new ResourceLocation(RefStrings.MODID, "textures/misc/glint.png");
+    private static final ResourceLocation GLINT = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/misc/glint.png");
 
     private final Pass guiPass;
     private final Pass handPass;
@@ -107,7 +111,7 @@ public class MeteorSwordGlintModel extends BakedModelWrapper<BakedModel> {
 
             CompositeState state = CompositeState.builder()
                     .setShaderState(RENDERTYPE_GLINT_SHADER)
-                    .setTextureState(new TextureStateShard(GLINT, true, false))
+                    .setTextureState(new TextureStateShard(MeteorSwordGlintModel.GLINT, true, false)) // qualifiziert: 1.21.1 erbt RenderType.GLINT
                     .setWriteMaskState(COLOR_WRITE)
                     .setCullState(NO_CULL)
                     .setDepthTestState(EQUAL_DEPTH_TEST)
@@ -156,7 +160,8 @@ public class MeteorSwordGlintModel extends BakedModelWrapper<BakedModel> {
     }
 
     /** Farben wie in ClientProxy.registerItemRenderer(... new ItemRendererMeteorSword(r, g, b)). */
-    public static void wrapAll(Map<ResourceLocation, BakedModel> models) {
+    // Schluessel: 1.20.1 ResourceLocation (ModelResourceLocation ist Unterklasse), 1.21.1 ModelResourceLocation
+    public static void wrapAll(Map<? super ModelResourceLocation, BakedModel> models) {
         wrap(models, ModItems.METEORITE_SWORD_SEARED, 1.0F, 0.5F, 0.0F);
         wrap(models, ModItems.METEORITE_SWORD_REFORGED, 0.5F, 1.0F, 1.0F);
         wrap(models, ModItems.METEORITE_SWORD_HARDENED, 0.25F, 0.25F, 0.25F);
@@ -170,7 +175,7 @@ public class MeteorSwordGlintModel extends BakedModelWrapper<BakedModel> {
         wrap(models, ModItems.METEORITE_SWORD_BALEFUL, 0.0F, 1.0F, 0.0F);
     }
 
-    private static void wrap(Map<ResourceLocation, BakedModel> models, dev.architectury.registry.registries.RegistrySupplier<? extends Item> item,
+    private static void wrap(Map<? super ModelResourceLocation, BakedModel> models, dev.architectury.registry.registries.RegistrySupplier<? extends Item> item,
                              float r, float g, float b) {
         ModelResourceLocation loc = new ModelResourceLocation(item.getId(), "inventory");
         BakedModel baked = models.get(loc);

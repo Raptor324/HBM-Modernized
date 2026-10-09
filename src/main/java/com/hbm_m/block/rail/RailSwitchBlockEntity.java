@@ -22,21 +22,45 @@ public class RailSwitchBlockEntity extends BlockEntity {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void load(CompoundTag nbt) {
+    //?} else {
+    /*public void loadAdditional(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+    *///?}
+        //? if < 1.21.1 {
         super.load(nbt);
+        //?} else {
+        /*super.loadAdditional(nbt, registries);
+        *///?}
         this.isSwitched = nbt.getBoolean("isSwitched");
     }
 
     @Override
+    //? if < 1.21.1 {
     protected void saveAdditional(CompoundTag nbt) {
+    //?} else {
+    /*protected void saveAdditional(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+    *///?}
+        //? if < 1.21.1 {
         super.saveAdditional(nbt);
+        //?} else {
+        /*super.saveAdditional(nbt, registries);
+        *///?}
         nbt.putBoolean("isSwitched", this.isSwitched);
     }
 
     @Override
+    //? if < 1.21.1 {
     public CompoundTag getUpdateTag() {
+    //?} else {
+    /*public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
+    *///?}
         CompoundTag tag = new CompoundTag();
+        //? if < 1.21.1 {
         saveAdditional(tag);
+        //?} else {
+        /*saveAdditional(tag, registries);
+        *///?}
         return tag;
     }
 

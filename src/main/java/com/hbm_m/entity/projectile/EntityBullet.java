@@ -1,5 +1,7 @@
 package com.hbm_m.entity.projectile;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -126,12 +128,21 @@ public class EntityBullet extends Entity {
         this.setIsCritical(!"chopper".equals(type));
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
         this.entityData.define(CRITICAL, (byte) 0);
         this.entityData.define(TAU, (byte) 0);
         this.entityData.define(CHOPPER, (byte) 0);
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        builder.define(CRITICAL, (byte) 0);
+        builder.define(TAU, (byte) 0);
+        builder.define(CHOPPER, (byte) 0);
+    }
+    *///?}
 
     /** Original {@code setThrowableHeading}: Streuung 0.0075 je Achse mit Zufallsvorzeichen. */
     public void setThrowableHeading(double x, double y, double z, float velocity, float inaccuracy) {
@@ -284,7 +295,7 @@ public class EntityBullet extends Entity {
                         if (damagesource == null) damagesource = ModDamageSources.revolverBullet(this, owner);
 
                         if (fire || this.isOnFire() && !(entityHit instanceof EnderMan)) {
-                            entityHit.setSecondsOnFire(5);
+                            PlatformHooks.setSecondsOnFire(entityHit, 5);
                         }
 
                         if (entityHit.hurt(damagesource, (float) damage)) {
@@ -305,8 +316,14 @@ public class EntityBullet extends Entity {
                                 }
 
                                 if (this.shootingEntity instanceof LivingEntity shooterLiving) {
+                                    //? if < 1.21.1 {
                                     net.minecraft.world.item.enchantment.EnchantmentHelper.doPostHurtEffects(entitylivingbase, this.shootingEntity);
                                     net.minecraft.world.item.enchantment.EnchantmentHelper.doPostDamageEffects(shooterLiving, entitylivingbase);
+                                    //?} else {
+                                    /*// 1.21.1: Dornen- und Angreifer-Effekte in einem Aufruf
+                                    if (this.level() instanceof net.minecraft.server.level.ServerLevel hbmSl)
+                                        net.minecraft.world.item.enchantment.EnchantmentHelper.doPostAttackEffects(hbmSl, entitylivingbase, damagesource);
+                                    *///?}
                                 }
 
                                 if (this.shootingEntity instanceof net.minecraft.server.level.ServerPlayer sp && entityHit != this.shootingEntity && entityHit instanceof Player) {

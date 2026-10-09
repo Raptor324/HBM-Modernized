@@ -285,7 +285,77 @@ public class RBMKBoilerBlockEntity extends RBMKColumnBlockEntity
             return steam().drain(maxDrain, action);
         }
     }
-    //?}
+    //?} elif neoforge {
+    /*/^*
+     * Without this the channel had two tanks that nothing could reach: no pipe, tank or bucket
+     * could put water in and no machine could take steam out, so the column heated up, boiled
+     * nothing, and sat there.
+     *
+     * <p>The original splits the two by direction - {@code getReceivingTanks} is the feed and
+     * {@code getSendingTanks} is the steam, with water subscribed on NEG_Y - so the bottom face
+     * is water-only and the sides are steam-only. A query with no side (buckets, most generic
+     * inspections) gets a combined view that fills the feed and drains the steam, because a
+     * side-less handler that exposed only one of the two would make the other unreachable by
+     * hand.</p>
+     ^/
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER) {
+            if (side == Direction.DOWN) return com.hbm_m.platform.LazyCap.ofObj(waterTank.getCapability()).cast();
+            if (side != null)           return com.hbm_m.platform.LazyCap.ofObj(steamTank.getCapability()).cast();
+            return combinedHandler.cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+
+    private final com.hbm_m.platform.LazyCap<net.neoforged.neoforge.fluids.capability.IFluidHandler>
+            combinedHandler = com.hbm_m.platform.LazyCap.of(FeedAndSteamHandler::new);
+
+    /^* Feed in, steam out - the side-less view of {@link #waterTank} plus {@link #steamTank}. ^/
+    private class FeedAndSteamHandler implements net.neoforged.neoforge.fluids.capability.IFluidHandler {
+
+        private net.neoforged.neoforge.fluids.capability.IFluidHandler feed() {
+            return com.hbm_m.platform.LazyCap.<net.neoforged.neoforge.fluids.capability.IFluidHandler>ofObj(waterTank.getCapability()).orElseThrow(IllegalStateException::new);
+        }
+
+        private net.neoforged.neoforge.fluids.capability.IFluidHandler steam() {
+            return com.hbm_m.platform.LazyCap.<net.neoforged.neoforge.fluids.capability.IFluidHandler>ofObj(steamTank.getCapability()).orElseThrow(IllegalStateException::new);
+        }
+
+        @Override public int getTanks() { return 2; }
+
+        @Override
+        public @org.jetbrains.annotations.NotNull net.neoforged.neoforge.fluids.FluidStack getFluidInTank(int tank) {
+            return tank == 0 ? feed().getFluidInTank(0) : steam().getFluidInTank(0);
+        }
+
+        @Override
+        public int getTankCapacity(int tank) {
+            return tank == 0 ? waterTank.getMaxFill() : steamTank.getMaxFill();
+        }
+
+        @Override
+        public boolean isFluidValid(int tank, @org.jetbrains.annotations.NotNull net.neoforged.neoforge.fluids.FluidStack stack) {
+            return tank == 0 && feed().isFluidValid(0, stack);
+        }
+
+        @Override
+        public int fill(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+            return feed().fill(resource, action);
+        }
+
+        @Override
+        public @org.jetbrains.annotations.NotNull net.neoforged.neoforge.fluids.FluidStack drain(
+                net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+            return steam().drain(resource, action);
+        }
+
+        @Override
+        public @org.jetbrains.annotations.NotNull net.neoforged.neoforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+            return steam().drain(maxDrain, action);
+        }
+    }
+    *///?}
 
     /**
      * {@code cyceCompressor}: each stage swaps the tank to the next steam type and divides the

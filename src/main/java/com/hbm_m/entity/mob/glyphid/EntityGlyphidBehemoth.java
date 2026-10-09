@@ -91,10 +91,19 @@ public class EntityGlyphidBehemoth extends EntityGlyphid {
         }
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void dropCustomDeathLoot(DamageSource source, int looting, boolean recentlyHit) {
+    //?} else {
+    /*@Override
+    protected void dropCustomDeathLoot(net.minecraft.server.level.ServerLevel hbmLevel, DamageSource source, boolean recentlyHit) {
+    *///?}
         this.spawnAtLocation(ItemFluidTank.make(ModItems.GLYPHID_GLAND.get(), ModFluids.SULFURIC_ACID.getSource(), 1), 1);
+        //? if < 1.21.1 {
         super.dropCustomDeathLoot(source, looting, recentlyHit);
+        //?} else {
+        /*super.dropCustomDeathLoot(hbmLevel, source, recentlyHit);
+        *///?}
     }
 
     @Override

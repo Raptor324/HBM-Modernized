@@ -9,10 +9,15 @@ public class HoeSchrabidium extends ModHoe {
 
     public HoeSchrabidium(Tier material) {
         super(material);
+        //? if >= 1.21.1 {
+        /*com.hbm_m.platform.ItemComponentHooks.deferRarity(this, () -> Rarity.RARE);
+        *///?}
     }
 
+    //? if < 1.21.1 {
     @Override
     public Rarity getRarity(ItemStack stack) {
         return Rarity.RARE;
     }
+    //?}
 }

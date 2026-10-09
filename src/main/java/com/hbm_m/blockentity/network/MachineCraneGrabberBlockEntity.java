@@ -129,7 +129,32 @@ public class MachineCraneGrabberBlockEntity extends CraneBaseBlockEntity impleme
                         if (amount <= 0) break;
                     }
                 }
-                //?}
+                //?} elif neoforge {
+                /*net.neoforged.neoforge.items.IItemHandler te = CraneInventoryUtil.inventoryAt(level, pos.relative(outputSide), outputSide.getOpposite());
+                if (te != null) {
+                    for (MovingConveyorItemEntity item : items) {
+                        ItemStack stack = item.getItem();
+                        boolean match = this.matchesFilter(stack);
+                        if (this.isWhitelist && !match || !this.isWhitelist && match) continue;
+
+                        lastGrabbedTick = level.getGameTime();
+                        ItemStack copy = stack.copy();
+                        int toAdd = Math.min(stack.getCount(), amount);
+                        copy.setCount(toAdd);
+                        ItemStack ret = CraneInventoryUtil.addToInventory(te, copy);
+                        int didAdd = toAdd - ret.getCount();
+                        ItemStack left = stack.copy();
+                        left.shrink(didAdd);
+                        if (left.isEmpty()) {
+                            item.discard();
+                        } else {
+                            item.setItem(left);
+                        }
+                        amount -= didAdd;
+                        if (amount <= 0) break;
+                    }
+                }
+                *///?}
             }
         }
 

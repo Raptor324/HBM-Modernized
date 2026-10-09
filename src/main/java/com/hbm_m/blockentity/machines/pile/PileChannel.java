@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines.pile;
 
+import com.hbm_m.platform.StackNbt;
+
 import com.hbm_m.item.machine.ItemPileRodMK2;
 
 import net.minecraft.core.BlockPos;
@@ -102,10 +104,10 @@ public class PileChannel {
 
         BlockPos at = entry.relative(dir, depth);
 
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = StackNbt.tag(stack);
         if (tag != null && tag.contains(ItemPileRodMK2.KEY_NBT_DEPLETION)) {
             tag.remove(ItemPileRodMK2.KEY_NBT_DEPLETION);
-            if (tag.isEmpty()) stack.setTag(null);
+            if (tag.isEmpty()) StackNbt.set(stack, null);
         }
 
         level.addFreshEntity(new ItemEntity(level,
@@ -127,7 +129,7 @@ public class PileChannel {
                 if (rods[i] != null && !rods[i].isEmpty()) {
                     CompoundTag entryTag = new CompoundTag();
                     entryTag.putByte("slot", (byte) i);
-                    rods[i].save(entryTag);
+                    com.hbm_m.platform.StackNbt.save(rods[i], entryTag);
                     list.add(entryTag);
                 }
             }
@@ -159,7 +161,7 @@ public class PileChannel {
                 CompoundTag entryTag = list.getCompound(i);
                 int slot = entryTag.getByte("slot") & 0xFF;
                 if (slot < chan.rods.length) {
-                    chan.rods[slot] = ItemStack.of(entryTag);
+                    chan.rods[slot] = StackNbt.parse(entryTag);
                 }
             }
             chan.heat = nbt.getDouble(name + "heat");

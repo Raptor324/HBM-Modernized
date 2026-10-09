@@ -30,6 +30,10 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
+//? if neoforge {
+/*import net.neoforged.neoforge.client.model.data.ModelData;
+import net.neoforged.neoforge.client.model.data.ModelProperty;
+*///?}
 //? if forge {
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.client.model.data.ModelProperty;
@@ -44,7 +48,8 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder, com.hbm_m.api.energy.PowerBuffer,
         com.hbm_m.api.redstoneoverradio.IRORValueProvider, com.hbm_m.api.redstoneoverradio.IRORInteractive {
 
-    //? if forge {
+    // Phase C: Modelldaten auch auf NeoForge (gleiche API), sonst zeigt der Sockel dort immer alle Teile
+    //? if forge || neoforge {
     public static final ModelProperty<Boolean> HAS_INSERT = new ModelProperty<>();
     /** Original RenderBatterySocket: ein battery_pack zeigt je nach Art den Teil "Battery" oder "Capacitor" mit eigener Textur. */
     public static final ModelProperty<com.hbm_m.item.fekal_electric.ItemBatteryPack.EnumBatteryPack> PACK = new ModelProperty<>();
@@ -245,7 +250,7 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
         return slot == SLOT_BATTERY;
     }
 
-    //? if forge {
+    //? if forge || neoforge {
     @Override
     public ModelData getModelData() {
         ItemStack inserted = inventory.getStackInSlot(0);
@@ -581,7 +586,27 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
         super.invalidateCaps();
         sidedItems.invalidate();
     }
-    //?}
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: Slot {0}; Akkus hinein, nur volle heraus (Original vergleicht den Slot mit mode_input = 0). ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.isFullBattery(stack); }
+            });
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
 
     // ── Redstone-over-Radio (1:1 TileEntityBatterySocket) ──
 

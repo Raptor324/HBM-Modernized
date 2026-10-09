@@ -86,10 +86,17 @@ public class SlagRenderer implements com.hbm_m.client.render.HbmBerBounds<SlagBl
                              float x2, float y2, float z2, float x3, float y3, float z3,
                              float u0, float v0, float u1, float v1, float u2, float v2, float u3, float v3,
                              float r, float g, float b, int light, float nx, float ny, float nz) {
+        //? if < 1.21.1 {
         vc.vertex(m, x0, y0, z0).color(r, g, b, 1F).uv(u0, v0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(n, nx, ny, nz).endVertex();
         vc.vertex(m, x1, y1, z1).color(r, g, b, 1F).uv(u1, v1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(n, nx, ny, nz).endVertex();
         vc.vertex(m, x2, y2, z2).color(r, g, b, 1F).uv(u2, v2).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(n, nx, ny, nz).endVertex();
         vc.vertex(m, x3, y3, z3).color(r, g, b, 1F).uv(u3, v3).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(n, nx, ny, nz).endVertex();
+        //?} else {
+        /*com.hbm_m.platform.RenderHooks.normal(vc.addVertex(m, x0, y0, z0).setColor(r, g, b, 1F).setUv(u0, v0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light), n, nx, ny, nz);
+        com.hbm_m.platform.RenderHooks.normal(vc.addVertex(m, x1, y1, z1).setColor(r, g, b, 1F).setUv(u1, v1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light), n, nx, ny, nz);
+        com.hbm_m.platform.RenderHooks.normal(vc.addVertex(m, x2, y2, z2).setColor(r, g, b, 1F).setUv(u2, v2).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light), n, nx, ny, nz);
+        com.hbm_m.platform.RenderHooks.normal(vc.addVertex(m, x3, y3, z3).setColor(r, g, b, 1F).setUv(u3, v3).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light), n, nx, ny, nz);
+        *///?}
     }
 
     /** Erzeugt einmalig je Material die umgefaerbte Textur (Original: {@code TextureAtlasSpriteMutatable}). */

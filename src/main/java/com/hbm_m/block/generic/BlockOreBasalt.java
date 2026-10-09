@@ -59,10 +59,17 @@ public class BlockOreBasalt extends Block {
         super.stepOn(level, pos, state, entity);
     }
 
+    //? if < 1.21.1 {
     @Override
     public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         super.playerWillDestroy(level, pos, state, player);
     }
+    //?} else {
+    /*@Override
+    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        return super.playerWillDestroy(level, pos, state, player);
+    }
+    *///?}
 
     @Override
     public void destroy(net.minecraft.world.level.LevelAccessor level, BlockPos pos, BlockState state) {

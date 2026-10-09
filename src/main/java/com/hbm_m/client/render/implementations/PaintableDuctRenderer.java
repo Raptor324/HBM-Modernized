@@ -24,7 +24,7 @@ import net.minecraft.world.level.material.Fluids;
  * 1:1 {@code FluidDuctPaintable} als {@code IBlockMultiPass}: Pass 0 = Anstrich (oder Rohr-Grundtextur),
  * Pass 1 = Markierung auf dem Anstrich (ausser Meta 1) bzw. ohne Anstrich die in Fluessigkeitsfarbe getoente Farbschicht.
  */
-public class PaintableDuctRenderer implements BlockEntityRenderer<PaintableDuctBlockEntity> {
+public class PaintableDuctRenderer implements com.hbm_m.client.render.HbmBerBounds<PaintableDuctBlockEntity> {
 
     private static final ResourceLocation BASE = ResourceLocation.fromNamespaceAndPath("hbm_m", "block/fluid_duct_paintable");
     private static final ResourceLocation OVERLAY = ResourceLocation.fromNamespaceAndPath("hbm_m", "block/fluid_duct_paintable_overlay");
@@ -71,8 +71,13 @@ public class PaintableDuctRenderer implements BlockEntityRenderer<PaintableDuctB
                              float nx, float ny, float nz, float... p) {
         float[][] uv = { { 0, 0 }, { 0, 1 }, { 1, 1 }, { 1, 0 } };
         for (int i = 0; i < 4; i++) {
+            //? if < 1.21.1 {
             vc.vertex(m, p[i * 3], p[i * 3 + 1], p[i * 3 + 2]).color(r, g, b, 1F).uv(s.getU(uv[i][0] * 16), s.getV(uv[i][1] * 16))
                     .overlayCoords(overlay).uv2(light).normal(n, nx, ny, nz).endVertex();
+            //?} else {
+            /*// 1.21.1: getU/getV erwarten 0..1 statt 0..16
+            com.hbm_m.platform.RenderHooks.normal(vc.addVertex(m, p[i * 3], p[i * 3 + 1], p[i * 3 + 2]).setColor(r, g, b, 1F).setUv(s.getU(uv[i][0]), s.getV(uv[i][1])).setOverlay(overlay).setLight(light), n, nx, ny, nz);
+            *///?}
         }
     }
 }

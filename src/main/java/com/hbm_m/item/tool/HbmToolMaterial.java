@@ -94,7 +94,21 @@ public enum HbmToolMaterial implements Tier {
     @Override public int getUses() { return uses; }
     @Override public float getSpeed() { return speed; }
     @Override public float getAttackDamageBonus() { return damage; }
+    //? if < 1.21.1 {
     @Override public int getLevel() { return level; }
+    //?} else {
+    /*public int getLevel() { return level; }
+    // 1.21.1: Abbaustufe als Tag der nicht abbaubaren Bloecke (Vanilla-Stufen 0 Holz .. 4 Netherit)
+    @Override public net.minecraft.tags.TagKey<net.minecraft.world.level.block.Block> getIncorrectBlocksForDrops() {
+        return switch (level) {
+            case 0 -> net.minecraft.tags.BlockTags.INCORRECT_FOR_WOODEN_TOOL;
+            case 1 -> net.minecraft.tags.BlockTags.INCORRECT_FOR_STONE_TOOL;
+            case 2 -> net.minecraft.tags.BlockTags.INCORRECT_FOR_IRON_TOOL;
+            case 3 -> net.minecraft.tags.BlockTags.INCORRECT_FOR_DIAMOND_TOOL;
+            default -> net.minecraft.tags.BlockTags.INCORRECT_FOR_NETHERITE_TOOL;
+        };
+    }
+    *///?}
     @Override public int getEnchantmentValue() { return enchantment; }
 
     @Override

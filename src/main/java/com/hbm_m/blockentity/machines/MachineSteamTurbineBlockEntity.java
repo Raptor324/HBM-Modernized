@@ -283,5 +283,81 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
             return drained;
         }
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    protected void setupFluidCapability() {
+        setFluidHandler(new UnifiedFluidHandler(this));
+    }
+
+    private static class UnifiedFluidHandler implements net.neoforged.neoforge.fluids.capability.IFluidHandler {
+        private final MachineSteamTurbineBlockEntity be;
+
+        UnifiedFluidHandler(MachineSteamTurbineBlockEntity be) {
+            this.be = be;
+        }
+
+        @Override
+        public int getTanks() { return 2; }
+
+        @Override
+        public @NotNull net.neoforged.neoforge.fluids.FluidStack getFluidInTank(int tank) {
+            if (tank == 0) {
+                return new net.neoforged.neoforge.fluids.FluidStack(be.tanks[0].getTankType(), be.tanks[0].getFill());
+            }
+            if (tank == 1) {
+                return new net.neoforged.neoforge.fluids.FluidStack(be.tanks[1].getTankType(), be.tanks[1].getFill());
+            }
+            return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        }
+
+        @Override
+        public int getTankCapacity(int tank) {
+            if (tank == 0) return be.tanks[0].getMaxFill();
+            if (tank == 1) return be.tanks[1].getMaxFill();
+            return 0;
+        }
+
+        @Override
+        public boolean isFluidValid(int tank, @NotNull net.neoforged.neoforge.fluids.FluidStack stack) {
+            return tank == 0 && be.acceptsAsSteam(stack.getFluid());
+        }
+
+        @Override
+        public int fill(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty() || !be.acceptsAsSteam(resource.getFluid())) return 0;
+            int space = be.tanks[0].getMaxFill() - be.tanks[0].getFill();
+            int toFill = Math.min(space, resource.getAmount());
+            if (toFill <= 0) return 0;
+            if (action.execute()) {
+                be.tanks[0].fillMb(resource.getFluid(), toFill);
+            }
+            return toFill;
+        }
+
+        @Override
+        public @NotNull net.neoforged.neoforge.fluids.FluidStack drain(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty() || be.tanks[1].getFill() <= 0) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            if (!VanillaFluidEquivalence.sameSubstance(resource.getFluid(), be.tanks[1].getTankType())) {
+                return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            }
+            int toDrain = Math.min(resource.getAmount(), be.tanks[1].getFill());
+            net.neoforged.neoforge.fluids.FluidStack drained = new net.neoforged.neoforge.fluids.FluidStack(be.tanks[1].getTankType(), toDrain);
+            if (action.execute()) {
+                be.tanks[1].drainMb(toDrain);
+            }
+            return drained;
+        }
+
+        @Override
+        public @NotNull net.neoforged.neoforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+            if (maxDrain <= 0 || be.tanks[1].getFill() <= 0) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            int toDrain = Math.min(maxDrain, be.tanks[1].getFill());
+            net.neoforged.neoforge.fluids.FluidStack drained = new net.neoforged.neoforge.fluids.FluidStack(be.tanks[1].getTankType(), toDrain);
+            if (action.execute()) {
+                be.tanks[1].drainMb(toDrain);
+            }
+            return drained;
+        }
+    }
+    *///?}
 }

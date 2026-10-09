@@ -1,5 +1,7 @@
 package com.hbm_m.worldgen;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -163,7 +165,7 @@ public class Meteorite {
                 // Star Blaster
                 world.explode(null, x + 0.5, y + 0.5, z + 0.5, 10F, safe ? Level.ExplosionInteraction.NONE : Level.ExplosionInteraction.TNT);
                 ItemStack stack = new ItemStack(ModItems.GUN_B92.get());
-                stack.setHoverName(Component.literal("§9Star Blaster§r"));
+                StackNbt.setCustomName(stack, Component.literal("§9Star Blaster§r"));
                 ItemEntity blaster = new ItemEntity(world, x + 0.5, y + 0.5, z + 0.5, stack);
                 world.addFreshEntity(blaster);
                 return;

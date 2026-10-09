@@ -8,7 +8,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
 /** 1:1 {@code BlockVendingMachine.TileEntityVendingMachine}: nur Renderbereich (1x2x1). */
-public class VendingMachineBlockEntity extends BlockEntity {
+public class VendingMachineBlockEntity extends BlockEntity implements com.hbm_m.api.render.RenderBoundsProvider {
 
     public VendingMachineBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.VENDING_MACHINE.get(), pos, state);
@@ -16,6 +16,6 @@ public class VendingMachineBlockEntity extends BlockEntity {
 
     @Override
     public AABB getRenderBoundingBox() {
-        return new AABB(worldPosition, worldPosition.offset(1, 2, 1));
+        return com.hbm_m.platform.BlockHooks.aabb(worldPosition, worldPosition.offset(1, 2, 1));
     }
 }

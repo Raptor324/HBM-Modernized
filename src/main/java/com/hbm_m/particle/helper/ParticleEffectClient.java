@@ -157,6 +157,9 @@ public final class ParticleEffectClient {
 
             case "vanilla" -> {
                 ParticleOptions opt = vanillaByName(data.getString("mode"));
+                //? if >= 1.21.1 {
+                /*if (opt == null) opt = mobSpellOption(data.getString("mode"), data.getDouble("mX"), data.getDouble("mY"), data.getDouble("mZ"));
+                *///?}
                 if (opt != null) world.addParticle(opt, x, y, z, data.getDouble("mX"), data.getDouble("mY"), data.getDouble("mZ"));
             }
 
@@ -691,8 +694,13 @@ public final class ParticleEffectClient {
             Map.entry("bubble", ParticleTypes.BUBBLE), Map.entry("suspended", ParticleTypes.UNDERWATER),
             Map.entry("depthsuspend", ParticleTypes.MYCELIUM), Map.entry("townaura", ParticleTypes.MYCELIUM),
             Map.entry("crit", ParticleTypes.CRIT), Map.entry("magicCrit", ParticleTypes.ENCHANTED_HIT),
+            //? if < 1.21.1 {
             Map.entry("smoke", ParticleTypes.SMOKE), Map.entry("mobSpell", ParticleTypes.ENTITY_EFFECT),
             Map.entry("mobSpellAmbient", ParticleTypes.AMBIENT_ENTITY_EFFECT), Map.entry("spell", ParticleTypes.EFFECT),
+            //?} else {
+            /*// mobSpell/mobSpellAmbient: auf 1.21.1 steckt die Farbe in der Option, siehe mobSpellOption
+            Map.entry("smoke", ParticleTypes.SMOKE), Map.entry("spell", ParticleTypes.EFFECT),
+            *///?}
             Map.entry("instantSpell", ParticleTypes.INSTANT_EFFECT), Map.entry("witchMagic", ParticleTypes.WITCH),
             Map.entry("note", ParticleTypes.NOTE), Map.entry("portal", ParticleTypes.PORTAL),
             Map.entry("enchantmenttable", ParticleTypes.ENCHANT), Map.entry("explode", ParticleTypes.POOF),
@@ -706,6 +714,18 @@ public final class ParticleEffectClient {
             Map.entry("angryVillager", ParticleTypes.ANGRY_VILLAGER), Map.entry("happyVillager", ParticleTypes.HAPPY_VILLAGER),
             Map.entry("hugeexplosion", ParticleTypes.EXPLOSION_EMITTER), Map.entry("largeexplode", ParticleTypes.EXPLOSION),
             Map.entry("fireworksSpark", ParticleTypes.FIREWORK));
+
+    //? if >= 1.21.1 {
+    /*/^* 1.20.1: ENTITY_EFFECT/AMBIENT_ENTITY_EFFECT faerben sich ueber die Geschwindigkeit (r, g, b), ambient mit Alpha 0.15. ^/
+    private static ParticleOptions mobSpellOption(String name, double r, double g, double b) {
+        float a;
+        if (name.equals("mobSpell")) a = 1.0F;
+        else if (name.equals("mobSpellAmbient")) a = 0.15F;
+        else return null;
+        return net.minecraft.core.particles.ColorParticleOption.create(ParticleTypes.ENTITY_EFFECT,
+                net.minecraft.util.FastColor.ARGB32.colorFromFloat(a, (float) r, (float) g, (float) b));
+    }
+    *///?}
 
     /** 1.7.10-Partikelnamen fuer {@code world.spawnParticle(name, ...)}. */
     public static ParticleOptions vanillaByName(String name) {

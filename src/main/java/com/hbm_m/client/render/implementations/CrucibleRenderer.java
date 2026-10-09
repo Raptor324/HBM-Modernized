@@ -56,10 +56,17 @@ public class CrucibleRenderer implements com.hbm_m.client.render.HbmBerBounds<Ma
             org.joml.Matrix4f m = ps.last().pose();
             org.joml.Matrix3f n = ps.last().normal();
             int full = 0xF000F0;
+            //? if < 1.21.1 {
             vc.vertex(m, -1, h, -1).color(1F, 1F, 1F, 1F).uv(0, 0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(full).normal(n, 0, 1, 0).endVertex();
             vc.vertex(m, -1, h, 1).color(1F, 1F, 1F, 1F).uv(0, 1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(full).normal(n, 0, 1, 0).endVertex();
             vc.vertex(m, 1, h, 1).color(1F, 1F, 1F, 1F).uv(1, 1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(full).normal(n, 0, 1, 0).endVertex();
             vc.vertex(m, 1, h, -1).color(1F, 1F, 1F, 1F).uv(1, 0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(full).normal(n, 0, 1, 0).endVertex();
+            //?} else {
+            /*com.hbm_m.platform.RenderHooks.normal(vc.addVertex(m, -1, h, -1).setColor(1F, 1F, 1F, 1F).setUv(0, 0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(full), n, 0, 1, 0);
+            com.hbm_m.platform.RenderHooks.normal(vc.addVertex(m, -1, h, 1).setColor(1F, 1F, 1F, 1F).setUv(0, 1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(full), n, 0, 1, 0);
+            com.hbm_m.platform.RenderHooks.normal(vc.addVertex(m, 1, h, 1).setColor(1F, 1F, 1F, 1F).setUv(1, 1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(full), n, 0, 1, 0);
+            com.hbm_m.platform.RenderHooks.normal(vc.addVertex(m, 1, h, -1).setColor(1F, 1F, 1F, 1F).setUv(1, 0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(full), n, 0, 1, 0);
+            *///?}
         }
 
         ps.popPose();

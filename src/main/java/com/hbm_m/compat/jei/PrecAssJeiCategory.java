@@ -38,7 +38,7 @@ import net.minecraft.world.level.material.Fluids;
 /**
  * JEI port of {@code PrecAssRecipeHandler} (extends {@code NEIGenericRecipeHandler}).
  */
-//? if forge {
+//? if forge || neoforge {
 public class PrecAssJeiCategory extends JeiGenericRecipeCategory<PrecAssRecipe> {
 
     public static final RecipeType<PrecAssRecipe> RECIPE_TYPE =

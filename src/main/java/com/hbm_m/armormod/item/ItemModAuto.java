@@ -1,5 +1,7 @@
 package com.hbm_m.armormod.item;
 
+import com.hbm_m.platform.EffectHooks;
+
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -43,7 +45,7 @@ public class ItemModAuto extends ItemArmorMod {
                 ArmorModificationHelper.removeMod(armor, ArmorModificationHelper.extra);
                 entity.level().playSound(null, entity.getX(), entity.getY(), entity.getZ(), com.hbm_m.sound.HbmSoundsNT.get("hbm:item.syringe"), net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F);
                 HbmLivingProps.setDigamma(entity, HbmLivingProps.getDigamma(entity) - 5F);
-                entity.addEffect(new MobEffectInstance(com.hbm_m.effect.ModEffects.STABILITY.get(), 60 * 20, 0));
+                entity.addEffect(new MobEffectInstance(EffectHooks.of(com.hbm_m.effect.ModEffects.STABILITY), 60 * 20, 0));
                 entity.heal(20F);
             }
         }

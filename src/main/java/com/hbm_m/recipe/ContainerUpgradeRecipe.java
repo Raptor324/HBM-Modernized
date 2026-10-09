@@ -1,5 +1,7 @@
 package com.hbm_m.recipe;
 
+import com.hbm_m.platform.StackNbt;
+
 import com.google.gson.JsonObject;
 import com.hbm_m.block.machines.MachineMassStorageBlock;
 import com.hbm_m.block.machines.crates.BaseCrateBlock;
@@ -53,14 +55,39 @@ public class ContainerUpgradeRecipe extends ShapedRecipe {
         }
         return null;
     }
-    //?}
+    //?} else {
+    /*public ContainerUpgradeRecipe(ShapedRecipe base) {
+        super(base.getGroup(), base.category(), base.pattern, base.getResultItem(null), base.showNotification());
+    }
+
+    @Override
+    public ItemStack assemble(net.minecraft.world.item.crafting.CraftingInput inv, net.minecraft.core.HolderLookup.Provider registries) {
+        ItemStack result = super.assemble(inv, registries);
+        ItemStack source = firstContainer(inv);
+        if (source == null) return result;
+        // setTag(copy): alle Daten der Vorlage, nichts vom Rezeptergebnis
+        result = source.transmuteCopy(result.getItem(), result.getCount());
+        trim(result);
+        return result;
+    }
+
+    // Original getFirstContainer: Gitter zeilenweise, erste Kiste oder erster Massenspeicher.
+    private static ItemStack firstContainer(net.minecraft.world.item.crafting.CraftingInput inv) {
+        for (int i = 0; i < inv.size(); i++) {
+            ItemStack stack = inv.getItem(i);
+            if (stack.isEmpty()) continue;
+            Block block = Block.byItem(stack.getItem());
+            if (block instanceof BaseCrateBlock || block instanceof MachineMassStorageBlock) return stack;
+        }
+        return null;
+    }
+    *///?}
 
     /** Kisteninventar ({@code BlockEntityTag.inventory}) auf die Platzzahl des Ergebnisses kuerzen. */
     private static void trim(ItemStack result) {
         if (!(result.getItem() instanceof CrateItem crate)) return;
-        CompoundTag root = result.getTag();
-        if (root == null || !root.contains("BlockEntityTag", Tag.TAG_COMPOUND)) return;
-        CompoundTag be = root.getCompound("BlockEntityTag");
+        CompoundTag be = com.hbm_m.platform.BlockEntityItemData.read(result);
+        if (be == null) return;
         if (!be.contains("inventory", Tag.TAG_COMPOUND)) return;
         CompoundTag inventory = be.getCompound("inventory");
         int size = crate.getTotalSlots();
@@ -74,6 +101,8 @@ public class ContainerUpgradeRecipe extends ShapedRecipe {
             }
             inventory.put("Items", kept);
         }
+        // 1.21.1: BLOCK_ENTITY_DATA ist eine Kopie -> zurueckschreiben (1.20.1: lebender Tag, nichts zu tun)
+        com.hbm_m.platform.BlockEntityItemData.writeBack(result, be);
     }
 
     @Override
@@ -100,6 +129,21 @@ public class ContainerUpgradeRecipe extends ShapedRecipe {
         public void toNetwork(FriendlyByteBuf buf, ContainerUpgradeRecipe recipe) {
             RecipeSerializer.SHAPED_RECIPE.toNetwork(buf, recipe);
         }
-        //?}
+        //?} else {
+        /*private static final com.mojang.serialization.MapCodec<ContainerUpgradeRecipe> CODEC =
+                ShapedRecipe.Serializer.CODEC.xmap(ContainerUpgradeRecipe::new, r -> r);
+        private static final net.minecraft.network.codec.StreamCodec<net.minecraft.network.RegistryFriendlyByteBuf, ContainerUpgradeRecipe> STREAM_CODEC =
+                ShapedRecipe.Serializer.STREAM_CODEC.map(ContainerUpgradeRecipe::new, r -> r);
+
+        @Override
+        public com.mojang.serialization.MapCodec<ContainerUpgradeRecipe> codec() {
+            return CODEC;
+        }
+
+        @Override
+        public net.minecraft.network.codec.StreamCodec<net.minecraft.network.RegistryFriendlyByteBuf, ContainerUpgradeRecipe> streamCodec() {
+            return STREAM_CODEC;
+        }
+        *///?}
     }
 }

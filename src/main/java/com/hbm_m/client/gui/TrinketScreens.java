@@ -48,7 +48,7 @@ public final class TrinketScreens {
 
         @Override
         public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-            renderBackground(g);
+            com.hbm_m.client.GuiCompat.renderBackground(this, g, mouseX, mouseY, partialTick);
 
             double sizeX = 300, sizeY = 150;
             double left = (this.width - sizeX) / 2;

@@ -188,7 +188,11 @@ public abstract class EntityBurrowingSwingingBase extends EntityBurrowingBase {
         }
 
         if (!this.canSupportMovement() && !this.wasNearGround) {
+            //? if < 1.21.1 {
             this.setDeltaMovement(this.getDeltaMovement().add(0, -this.getGravity(), 0));
+            //?} else {
+            /*this.setDeltaMovement(this.getDeltaMovement().add(0, -this.hbmGravity(), 0));
+            *///?}
         }
 
         this.aggroCooldown--;
@@ -242,9 +246,16 @@ public abstract class EntityBurrowingSwingingBase extends EntityBurrowingBase {
         }
     }
 
+    //? if < 1.21.1 {
     protected double getGravity() {
         return 0.01;
     }
+    //?} else {
+    /*// 1.21.1: Entity.getGravity() ist final - eigener Name, gleiche Logik
+    protected double hbmGravity() {
+        return 0.01;
+    }
+    *///?}
 
     protected int getAggroCooldown() {
         return 20;
@@ -270,8 +281,17 @@ public abstract class EntityBurrowingSwingingBase extends EntityBurrowingBase {
 
     @Nullable
     @Override
+    //? if < 1.21.1 {
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData data, @Nullable CompoundTag tag) {
+    //?} else {
+    /*public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData data) {
+        net.minecraft.nbt.CompoundTag tag = null;
+    *///?}
         this.spawnPoint = new BlockPos(Mth.floor(this.getX()), Mth.floor(this.getY()), Mth.floor(this.getZ()));
+        //? if < 1.21.1 {
         return super.finalizeSpawn(level, difficulty, reason, data, tag);
+        //?} else {
+        /*return super.finalizeSpawn(level, difficulty, reason, data);
+        *///?}
     }
 }

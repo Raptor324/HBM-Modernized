@@ -1,5 +1,7 @@
 package com.hbm_m.inventory.fluid.tank;
 
+import com.hbm_m.platform.StackNbt;
+
 import com.hbm_m.inventory.FluidContainerRegistry;
 
 import net.minecraft.network.chat.Component;
@@ -25,7 +27,7 @@ public class FluidLoaderRegistry implements FluidTank.LoadingHandler {
 
         if (full != null && tank.getFill() - FluidContainerRegistry.getFluidContent(full, type) >= 0) {
 
-            Component name = slots[in].hasCustomHoverName() ? slots[in].getHoverName() : null;
+            Component name = StackNbt.hasCustomName(slots[in]) ? slots[in].getHoverName() : null;
             ItemStack outStack = slots[out];
 
             if (outStack == null || outStack.isEmpty()) {
@@ -35,7 +37,7 @@ public class FluidLoaderRegistry implements FluidTank.LoadingHandler {
                 slots[in].shrink(1);
                 if (slots[in].isEmpty()) slots[in] = ItemStack.EMPTY;
 
-                if (name != null) slots[out].setHoverName(name);
+                if (name != null) StackNbt.setCustomName(slots[out], name);
                 return true;
 
             } else if (FluidContainerRegistry.isItemEqual(outStack, full) && outStack.getCount() < outStack.getMaxStackSize()) {
@@ -45,7 +47,7 @@ public class FluidLoaderRegistry implements FluidTank.LoadingHandler {
                 if (slots[in].isEmpty()) slots[in] = ItemStack.EMPTY;
                 slots[out].grow(1);
 
-                if (name != null) slots[out].setHoverName(name);
+                if (name != null) StackNbt.setCustomName(slots[out], name);
                 return true;
             }
         }
@@ -65,7 +67,7 @@ public class FluidLoaderRegistry implements FluidTank.LoadingHandler {
         if (amount > 0 && tank.getFill() + amount <= tank.getMaxFill()) {
 
             ItemStack emptyContainer = FluidContainerRegistry.getEmptyContainer(slots[in]);
-            Component name = slots[in].hasCustomHoverName() ? slots[in].getHoverName() : null;
+            Component name = StackNbt.hasCustomName(slots[in]) ? slots[in].getHoverName() : null;
             ItemStack outStack = slots[out];
 
             if (outStack == null || outStack.isEmpty()) {
@@ -73,7 +75,7 @@ public class FluidLoaderRegistry implements FluidTank.LoadingHandler {
                 tank.setFill(tank.getFill() + amount);
                 slots[out] = emptyContainer == null ? ItemStack.EMPTY : emptyContainer;
 
-                if (emptyContainer != null && name != null) slots[out].setHoverName(name);
+                if (emptyContainer != null && name != null) StackNbt.setCustomName(slots[out], name);
 
                 slots[in].shrink(1);
                 if (slots[in].isEmpty()) slots[in] = ItemStack.EMPTY;
@@ -86,7 +88,7 @@ public class FluidLoaderRegistry implements FluidTank.LoadingHandler {
 
                 if (emptyContainer != null) {
                     slots[out].grow(1);
-                    if (name != null) slots[out].setHoverName(name);
+                    if (name != null) StackNbt.setCustomName(slots[out], name);
                 }
             }
 

@@ -205,7 +205,47 @@ public class BlockExplosionDefense {
             }
         }
     }
-    //?}
+    //?} elif neoforge {
+    /*@net.neoforged.fml.common.EventBusSubscriber(
+            modid = "hbm_m",
+            value = net.neoforged.api.distmarker.Dist.CLIENT
+    )
+    public static final class NeoForgeClientHooks {
+        private NeoForgeClientHooks() {}
+
+        @net.neoforged.bus.api.SubscribeEvent
+        public static void onItemTooltip(net.neoforged.neoforge.event.entity.player.ItemTooltipEvent event) {
+            ItemStack stack = event.getItemStack();
+
+            // Проверяем, это ли BlockItem (блок в виде предмета)
+            if (!(stack.getItem() instanceof net.minecraft.world.item.BlockItem blockItem)) {
+                return;
+            }
+
+            // Получаем блок из предмета
+            var block = blockItem.getBlock();
+
+            // Bloecke des Originals mit ItemBlockBlastInfo zeigen dort schon "Blast Resistance" (1:1) -
+            // keine zweite, abweichende Zeile.
+            if (com.hbm_m.item.block.ItemBlockBlastInfo.has(block)) {
+                return;
+            }
+
+            // Проверяем, это ли один из наших модульных блоков
+            if (isModularBlock(block)) {
+                // Определяем коэффициент защиты по типу блока
+                float defenseValue = getDefenseValueForBlock(block);
+
+                // Добавляем локализованную строку в тултип
+                if (defenseValue >= 10_000.0F) {
+                    event.getToolTip().add(Component.translatable("tooltip.hbm_m.explosion_defense.unbreakable"));
+                } else if (defenseValue > 0) {
+                    event.getToolTip().add(Component.translatable("tooltip.hbm_m.explosion_defense.value", String.format("%.0f", defenseValue)));
+                }
+            }
+        }
+    }
+    *///?}
 
     /**
      *  Проверка: это ли один из наших модульных блоков

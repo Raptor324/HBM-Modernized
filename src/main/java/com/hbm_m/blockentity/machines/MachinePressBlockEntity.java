@@ -148,7 +148,34 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         super.invalidateCaps();
         sidedItems.invalidate();
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        // Пресс НЕ является частью энергетической сети и не должен цепляться проводами/заряжаться.
+        if (cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_PROVIDER
+                || cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_RECEIVER
+                || cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_CONNECTOR
+                || cap == com.hbm_m.platform.HbmCap.ENERGY) {
+            return com.hbm_m.platform.LazyCap.empty();
+        }
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    /^* Original: alle Seiten {0, 1, 2, 3}, einfuegen nach isItemValidForSlot, entnehmen nur den Ausgang. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(Direction side) { return new int[] { 0, 1, 2, 3 }; }
+                @Override public boolean canInsert(int slot, ItemStack stack, Direction side) { return isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, ItemStack stack, Direction side) { return slot == OUTPUT_SLOT; }
+            });
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
 
 
     

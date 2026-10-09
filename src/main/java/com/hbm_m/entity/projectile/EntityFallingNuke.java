@@ -65,10 +65,17 @@ public class EntityFallingNuke extends Entity {
         return this.entityData.get(META);
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
         this.entityData.define(META, (byte) 0);
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        builder.define(META, (byte) 0);
+    }
+    *///?}
 
     @Override
     public void tick() {

@@ -30,7 +30,7 @@ import java.util.Map;
  * <p>Der Kopf dreht sich nur, solange das Feld laeuft - im Original haengt die Drehung an derselben
  * Bedingung wie die Kugel und ist damit die Anzeige, ob die Anlage arbeitet.</p>
  */
-public class ForceFieldRenderer implements BlockEntityRenderer<ForceFieldBlockEntity> {
+public class ForceFieldRenderer implements com.hbm_m.client.render.HbmBerBounds<ForceFieldBlockEntity> {
 
     private static final String MODEL_BASE = "models/forcefield/forcefield_base.obj";
     private static final String MODEL_TOP = "models/forcefield/forcefield_top.obj";

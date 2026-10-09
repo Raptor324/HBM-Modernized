@@ -1,5 +1,7 @@
 package com.hbm_m.item.crates;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Random;
@@ -88,7 +90,7 @@ public final class HeldCrate {
             @Override
             public Component getDisplayName() {
                 // InventoryCrate.getInventoryName: umbenannte Kiste behaelt ihren Namen
-                return stack.hasCustomHoverName() ? stack.getHoverName() : crate.getDisplayName();
+                return StackNbt.hasCustomName(stack) ? stack.getHoverName() : crate.getDisplayName();
             }
 
             @Override

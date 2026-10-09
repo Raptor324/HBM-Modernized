@@ -84,4 +84,8 @@ public class DFCCoreBlock extends BaseEntityBlock {
         return InteractionResult.sidedSuccess(level.isClientSide());
     }
     *///?}
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<DFCCoreBlock> CODEC = simpleCodec(DFCCoreBlock::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

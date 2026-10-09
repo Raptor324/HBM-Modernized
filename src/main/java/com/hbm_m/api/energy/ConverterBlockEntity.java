@@ -64,7 +64,39 @@ public class ConverterBlockEntity extends BaseHbmBlockEntity implements IEnergyR
         if (cap == ModCapabilities.HBM_ENERGY_CONNECTOR) return hbmProviderCap.cast();
         return super.getCapability(cap, side);
     }
-    //?}
+    //?} elif neoforge {
+    /*private final HbmForgeWrapper forgeWrapper = new HbmForgeWrapper(this);
+    private com.hbm_m.platform.LazyCap<net.neoforged.neoforge.energy.IEnergyStorage> forgeCap = com.hbm_m.platform.LazyCap.of(() -> forgeWrapper);
+    private final com.hbm_m.platform.LazyCap<IEnergyProvider> hbmProviderCap = com.hbm_m.platform.LazyCap.of(() -> this);
+    private final com.hbm_m.platform.LazyCap<IEnergyReceiver> hbmReceiverCap = com.hbm_m.platform.LazyCap.of(() -> this);
+
+    public HbmForgeWrapper getForgeWrapper() {
+        return forgeWrapper;
+    }
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        if (!forgeCap.isPresent()) {
+            forgeCap = com.hbm_m.platform.LazyCap.of(() -> forgeWrapper);
+        }
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        forgeCap.invalidate();
+    }
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ENERGY) return forgeCap.cast();
+        if (cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_PROVIDER) return hbmProviderCap.cast();
+        if (cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_RECEIVER) return hbmReceiverCap.cast();
+        if (cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_CONNECTOR) return hbmProviderCap.cast();
+        return super.getHbmCapability(cap, side);
+    }
+    *///?}
 
     private Integer lockedMode = null;
 

@@ -1,5 +1,7 @@
 package com.hbm_m.inventory.recipes;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -171,7 +173,7 @@ public final class LegacyStacks {
             if (item != Items.AIR) {
                 ItemStack stack = new ItemStack(item, stacksize);
                 if (array.size() > 4) {
-                    try { stack.setTag(net.minecraft.nbt.TagParser.parseTag(array.get(3).getAsString())); } catch (Exception ignored) { }
+                    try { StackNbt.set(stack, net.minecraft.nbt.TagParser.parseTag(array.get(3).getAsString())); } catch (Exception ignored) { }
                 }
                 float chance = array.get(array.size() - 1).getAsFloat();
                 return new ChanceStack(stack, chance);

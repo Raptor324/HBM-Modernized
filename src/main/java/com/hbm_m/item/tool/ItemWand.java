@@ -1,5 +1,7 @@
 package com.hbm_m.item.tool;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 
 import javax.annotation.Nullable;
@@ -46,7 +48,7 @@ public class ItemWand extends Item implements ITooltipProvider {
         list.add(Component.literal("(Set positions with right click,"));
         list.add(Component.literal("set block with shift-right click!)"));
 
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = StackNbt.tag(stack);
         if (tag != null && !(tag.getInt("x") == 0 && tag.getInt("y") == 0 && tag.getInt("z") == 0)) {
             list.add(Component.literal("Pos: " + tag.getInt("x") + ", " + tag.getInt("y") + ", " + tag.getInt("z")));
         } else {
@@ -63,7 +65,7 @@ public class ItemWand extends Item implements ITooltipProvider {
         Level world = ctx.getLevel();
         Player player = ctx.getPlayer();
         BlockPos pos = ctx.getClickedPos();
-        CompoundTag tag = stack.getOrCreateTag();
+        CompoundTag tag = StackNbt.orCreate(stack);
 
         if (player != null && player.isShiftKeyDown()) {
             tag.put("state", NbtUtils.writeBlockState(world.getBlockState(pos)));
@@ -113,7 +115,7 @@ public class ItemWand extends Item implements ITooltipProvider {
     @Override
     public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        CompoundTag tag = stack.getOrCreateTag();
+        CompoundTag tag = StackNbt.orCreate(stack);
 
         if (player.isShiftKeyDown()) {
             tag.remove("state");

@@ -99,5 +99,16 @@ public class ItemChainsaw extends ItemToolAbilityFueled implements IAnimatedItem
             }
         });
     }
-    //?}
+    //?} elif neoforge {
+    /*/^* Original ClientProxy: eigener Itemrenderer (ItemRenderChainsaw) ueber den Waffen-BEWLR. ^/
+    @Override
+    public void initializeClient(java.util.function.Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
+        consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
+            @Override
+            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return com.hbm_m.client.weapon.GunItemRenderer.INSTANCE;
+            }
+        });
+    }
+    *///?}
 }

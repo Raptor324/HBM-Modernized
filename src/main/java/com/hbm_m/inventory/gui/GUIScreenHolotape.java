@@ -36,7 +36,7 @@ public class GUIScreenHolotape extends Screen {
         if (this.holo == null)
             return;
 
-        this.renderBackground(g);
+        com.hbm_m.client.GuiCompat.renderBackground(this, g, mouseX, mouseY, f);
 
         double sizeX = 300;
         double sizeY = 150;

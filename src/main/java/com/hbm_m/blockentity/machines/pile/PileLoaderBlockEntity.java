@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines.pile;
 
+import com.hbm_m.platform.StackNbt;
+
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.machines.pile.PileBlock;
 import com.hbm_m.block.machines.pile.PileBlockType;
@@ -250,10 +252,10 @@ public class PileLoaderBlockEntity extends LoadedMachineBlockEntity
         tag.putInt("chanNum", chanNum);
 
         if (!stack.isEmpty()) {
-            tag.put("stack", stack.save(new CompoundTag()));
+            tag.put("stack", com.hbm_m.platform.StackNbt.save(stack, new CompoundTag()));
         }
         if (!channelStack.isEmpty()) {
-            tag.put("chanStack", channelStack.save(new CompoundTag()));
+            tag.put("chanStack", com.hbm_m.platform.StackNbt.save(channelStack, new CompoundTag()));
         }
         tag.putDouble("chanDepletion", channelDepletion);
         tag.putDouble("chanTemp", channelTemp);
@@ -268,8 +270,8 @@ public class PileLoaderBlockEntity extends LoadedMachineBlockEntity
         wasRedstone = tag.getBoolean("wasRedstone");
         chanNum = tag.getInt("chanNum");
 
-        stack = tag.contains("stack") ? ItemStack.of(tag.getCompound("stack")) : ItemStack.EMPTY;
-        channelStack = tag.contains("chanStack") ? ItemStack.of(tag.getCompound("chanStack")) : ItemStack.EMPTY;
+        stack = tag.contains("stack") ? StackNbt.parse(tag.getCompound("stack")) : ItemStack.EMPTY;
+        channelStack = tag.contains("chanStack") ? StackNbt.parse(tag.getCompound("chanStack")) : ItemStack.EMPTY;
         channelDepletion = tag.getDouble("chanDepletion");
         channelTemp = tag.getDouble("chanTemp");
     }
@@ -303,5 +305,34 @@ public class PileLoaderBlockEntity extends LoadedMachineBlockEntity
         super.invalidateCaps();
         automation.invalidate();
     }
-    //?}
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: Slot {0}, nur ladbare Meilerstaebe hinein (einer), nichts heraus. ^/
+    private final com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler> automation =
+            com.hbm_m.platform.LazyCap.of(() -> new net.neoforged.neoforge.items.IItemHandler() {
+                @Override public int getSlots() { return 1; }
+                @Override public @org.jetbrains.annotations.NotNull ItemStack getStackInSlot(int slot) { return stack; }
+                @Override public @org.jetbrains.annotations.NotNull ItemStack insertItem(int slot, @org.jetbrains.annotations.NotNull ItemStack in, boolean simulate) {
+                    if (slot != 0 || !stack.isEmpty() || !isItemLoadable(in)) return in;
+                    if (!simulate) { stack = in.copyWithCount(1); setChanged(); }
+                    ItemStack rest = in.copy();
+                    rest.shrink(1);
+                    return rest;
+                }
+                @Override public @org.jetbrains.annotations.NotNull ItemStack extractItem(int slot, int amount, boolean simulate) { return ItemStack.EMPTY; }
+                @Override public int getSlotLimit(int slot) { return 1; }
+                @Override public boolean isItemValid(int slot, @org.jetbrains.annotations.NotNull ItemStack in) { return isItemLoadable(in); }
+            });
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return automation.cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        automation.invalidate();
+    }
+    *///?}
 }

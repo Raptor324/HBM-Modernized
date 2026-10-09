@@ -38,6 +38,7 @@ public abstract class EntityUFOBase extends FlyingMob implements Enemy {
         super(type, world);
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
@@ -46,6 +47,16 @@ public abstract class EntityUFOBase extends FlyingMob implements Enemy {
         this.entityData.define(WY, 0);
         this.entityData.define(WZ, 0);
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        //XYZ
+        builder.define(WX, 0);
+        builder.define(WY, 0);
+        builder.define(WZ, 0);
+    }
+    *///?}
 
     @Override
     protected void customServerAiStep() {

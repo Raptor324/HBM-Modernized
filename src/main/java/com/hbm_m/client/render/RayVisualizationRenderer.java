@@ -1,4 +1,4 @@
-//? if forge {
+//? if forge || neoforge {
 package com.hbm_m.client.render;
 
 import com.hbm_m.util.explosions.nuclear.CraterGenerator;
@@ -9,15 +9,26 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
+//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+//?} else {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+*///?}
 import org.joml.Matrix4f;
 
 import java.util.List;
 
+//? if forge {
 @Mod.EventBusSubscriber(modid = "hbm_m", bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+//?} else {
+/*@EventBusSubscriber(modid = "hbm_m", bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
+*///?}
 public class RayVisualizationRenderer {
 
     // ОПТИМИЗАЦИЯ: Рисуем каждый 5-й луч
@@ -31,7 +42,11 @@ public class RayVisualizationRenderer {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES) return;
 
         Minecraft mc = Minecraft.getInstance();
+        //? if forge {
         if (mc == null || !mc.options.renderDebug || mc.level == null || mc.player == null) return;
+        //?} else {
+        /*if (mc == null || !mc.getDebugOverlay().showDebugScreen() || mc.level == null || mc.player == null) return;
+        *///?}
 
         List<CraterGenerator.RayData> rays = CraterGenerator.getAllDebugRays();
         if (rays.isEmpty()) return;
@@ -73,8 +88,13 @@ public class RayVisualizationRenderer {
                 z2 = (float) (ray.startZ + ray.dirZ * 100.0);
             }
 
+            //? if forge {
             consumer.vertex(matrix, x1, y1, z1).color(0.0f, 1.0f, 1.0f, rayAlpha).normal(0, 1, 0).endVertex();
             consumer.vertex(matrix, x2, y2, z2).color(0.0f, 1.0f, 1.0f, rayAlpha).normal(0, 1, 0).endVertex();
+            //?} else {
+            /*consumer.addVertex(matrix, x1, y1, z1).setColor(0.0f, 1.0f, 1.0f, rayAlpha).setNormal(0, 1, 0);
+            consumer.addVertex(matrix, x2, y2, z2).setColor(0.0f, 1.0f, 1.0f, rayAlpha).setNormal(0, 1, 0);
+            *///?}
         }
 
         poseStack.popPose();

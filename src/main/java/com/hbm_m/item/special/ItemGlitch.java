@@ -1,5 +1,7 @@
 package com.hbm_m.item.special;
 
+import com.hbm_m.platform.ItemHooks;
+
 import java.util.List;
 
 import javax.annotation.Nullable;
@@ -63,7 +65,7 @@ public class ItemGlitch extends Item implements IBatteryItem, ITooltipProvider {
     @Override
     public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        stack.hurtAndBreak(5, player, p -> p.broadcastBreakEvent(hand));
+        ItemHooks.hurtAndBreak(stack, 5, player, hand);
 
         if (!world.isClientSide)
             switch (player.getRandom().nextInt(31)) {

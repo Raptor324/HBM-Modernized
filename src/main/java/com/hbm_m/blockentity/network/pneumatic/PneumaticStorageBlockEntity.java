@@ -171,7 +171,7 @@ public abstract class PneumaticStorageBlockEntity extends BaseMachineBlockEntity
         super.setRemoved();
     }
 
-    //? if forge {
+    //? if forge || neoforge {
     @Override
     public void onChunkUnloaded() {
         super.onChunkUnloaded();

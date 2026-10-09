@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.network;
 
+import com.hbm_m.platform.RenderBounds;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -144,7 +146,7 @@ public class PipeAnchorBlockEntity extends BaseHbmBlockEntity implements IFluidP
         super.setRemoved();
     }
 
-    //? if forge {
+    //? if forge || neoforge {
     @Override
     public void onChunkUnloaded() {
         if (node != null) node.expired = true;
@@ -154,7 +156,7 @@ public class PipeAnchorBlockEntity extends BaseHbmBlockEntity implements IFluidP
 
     @Override
     public AABB getRenderBoundingBox() {
-        return INFINITE_EXTENT_AABB;
+        return RenderBounds.INFINITE;
     }
 
     @Override

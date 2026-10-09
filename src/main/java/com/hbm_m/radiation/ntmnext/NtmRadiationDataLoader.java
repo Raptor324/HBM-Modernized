@@ -57,14 +57,14 @@ final class NtmRadiationDataLoader {
         RadiationShielding.clear();
         RadiationSources.clear();
 
-        rm.getResource(new ResourceLocation(MainRegistry.MOD_ID, ROOT + "/config.json"))
+        rm.getResource(ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, ROOT + "/config.json"))
                 .ifPresent(r -> readJson(r, "config", NtmRadiationDataLoader::applyConfig));
 
         forEachJson(
                 rm,
                 ROOT + "/settings",
                 (id, json) -> {
-                    ResourceLocation dim = new ResourceLocation(id.getNamespace(), id.getPath());
+                    ResourceLocation dim = ResourceLocation.fromNamespaceAndPath(id.getNamespace(), id.getPath());
                     RadiationSettings.BY_DIMENSION.put(dim, parseSettings(json));
                 });
 
@@ -337,7 +337,11 @@ final class NtmRadiationDataLoader {
 
     private static Optional<StatePropertiesPredicate> parseState(JsonObject json) {
         if (!json.has("state")) return Optional.empty();
+        //? if < 1.21.1 {
         return Optional.of(StatePropertiesPredicate.fromJson(json.get("state")));
+        //?} else {
+        /*return Optional.of(StatePropertiesPredicate.CODEC.parse(com.mojang.serialization.JsonOps.INSTANCE, json.get("state")).getOrThrow(com.google.gson.JsonParseException::new));
+        *///?}
     }
 
     /** "ns:id", "#ns:tag" oder eine Liste davon. */
@@ -391,7 +395,7 @@ final class NtmRadiationDataLoader {
             ResourceLocation file = e.getKey();
             String path = file.getPath();
             String rel = path.substring(dir.length() + 1, path.length() - ".json".length());
-            ResourceLocation id = new ResourceLocation(file.getNamespace(), rel);
+            ResourceLocation id = ResourceLocation.fromNamespaceAndPath(file.getNamespace(), rel);
             readJson(e.getValue(), file.toString(), json -> handler.accept(id, json));
         }
     }

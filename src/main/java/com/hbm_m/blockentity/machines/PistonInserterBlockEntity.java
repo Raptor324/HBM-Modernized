@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.StackNbt;
+
 import com.hbm_m.api.block.IInsertable;
 import com.hbm_m.block.machines.PistonInserterBlock;
 import com.hbm_m.blockentity.ModBlockEntities;
@@ -103,7 +105,7 @@ public class PistonInserterBlockEntity extends com.hbm_m.blockentity.BaseHbmBloc
         nbt.putBoolean("state", lastState); //saved so loading into a world doesn't cause issues
         if (!this.slot.isEmpty()) {
             CompoundTag stack = new CompoundTag();
-            slot.save(stack);
+            com.hbm_m.platform.StackNbt.save(slot, stack);
             nbt.put("stack", stack);
         }
     }
@@ -114,7 +116,7 @@ public class PistonInserterBlockEntity extends com.hbm_m.blockentity.BaseHbmBloc
         this.extend = nbt.getInt("extend");
         this.isRetracting = nbt.getBoolean("retract");
         this.lastState = nbt.getBoolean("state");
-        this.slot = nbt.contains("stack") ? ItemStack.of(nbt.getCompound("stack")) : ItemStack.EMPTY;
+        this.slot = nbt.contains("stack") ? StackNbt.parse(nbt.getCompound("stack")) : ItemStack.EMPTY;
         // Client: wie deserialize (Zielwert, 2 Ticks interpolieren)
         this.syncExtend = this.extend;
         this.turnProgress = 2;

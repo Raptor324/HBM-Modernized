@@ -1,5 +1,9 @@
 package com.hbm_m.blockentity.machines.custom;
 
+import com.hbm_m.platform.RenderBounds;
+
+import com.hbm_m.platform.StackNbt;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -321,7 +325,7 @@ public class CustomMachineBlockEntity extends MachinePollutingBlockEntity
         for (int i = 0; i < recipe.outputItems.length; i++) {
             ItemStack out = slot(i + 16);
             ItemStack key = recipe.outputItems[i].stack();
-            if (!out.isEmpty() && !ItemStack.isSameItemSameTags(out, key)) return false;
+            if (!out.isEmpty() && !StackNbt.sameItemSameTags(out, key)) return false;
             if (!out.isEmpty() && out.getCount() + key.getCount() > out.getMaxStackSize()) return false;
         }
         return true;
@@ -481,7 +485,43 @@ public class CustomMachineBlockEntity extends MachinePollutingBlockEntity
         @Override public int getSlotLimit(int slot) { return 64; }
         @Override public boolean isItemValid(int slot, @NotNull ItemStack stack) { int r = real(slot); return r >= 0 && isValidInput(r, stack); }
     }
-    //?}
+    //?} elif neoforge {
+    /*private final com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler> automationHandler =
+            com.hbm_m.platform.LazyCap.of(AutomationHandler::new);
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER) return automationHandler.cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        automationHandler.invalidate();
+    }
+
+    private class AutomationHandler implements net.neoforged.neoforge.items.IItemHandler {
+        private int real(int slot) {
+            int[] acc = getAccessibleSlots();
+            return slot >= 0 && slot < acc.length ? acc[slot] : -1;
+        }
+        @Override public int getSlots() { return getAccessibleSlots().length; }
+        @Override public @NotNull ItemStack getStackInSlot(int slot) { int r = real(slot); return r < 0 ? ItemStack.EMPTY : inventory.getStackInSlot(r); }
+        @Override public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
+            int r = real(slot);
+            if (r < 0 || !isValidInput(r, stack)) return stack;
+            return inventory.insertItem(r, stack, simulate);
+        }
+        @Override public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+            int r = real(slot);
+            if (r < 16 || r > 21) return ItemStack.EMPTY;
+            return inventory.extractItem(r, amount, simulate);
+        }
+        @Override public int getSlotLimit(int slot) { return 64; }
+        @Override public boolean isItemValid(int slot, @NotNull ItemStack stack) { int r = real(slot); return r >= 0 && isValidInput(r, stack); }
+    }
+    *///?}
 
     // ─── Strom ──────────────────────────────────────────────────────────────
 
@@ -621,6 +661,6 @@ public class CustomMachineBlockEntity extends MachinePollutingBlockEntity
 
     @Override
     public AABB getRenderBoundingBox() {
-        return INFINITE_EXTENT_AABB;
+        return RenderBounds.INFINITE;
     }
 }

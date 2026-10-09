@@ -1,4 +1,4 @@
-//? if forge {
+//? if forge || neoforge {
 package com.hbm_m.client.render.item;
 
 import com.hbm_m.block.machines.MachineStirlingBlock;
@@ -78,7 +78,7 @@ public class AnimatedMachineItemRenderer extends BlockEntityWithoutLevelRenderer
                         cog ? (float) (time % 3600 * 0.1F) : 0F, cog);
             }
             case "sawmill" -> {
-                boolean blade = !(stack.hasTag() && stack.getTag().getBoolean(com.hbm_m.block.machines.MachineSawmillBlock.NO_BLADE));
+                boolean blade = !(com.hbm_m.platform.StackNbt.has(stack) && com.hbm_m.platform.StackNbt.read(stack).getBoolean(com.hbm_m.block.machines.MachineSawmillBlock.NO_BLADE));
                 ps.translate(0.5, 0, 0.5);
                 SawmillRenderer.renderCommon(ps, buf.getBuffer(RenderType.entityCutout(SawmillRenderer.TEX)), light,
                         blade ? (float) (time % 3600 * 0.1F) : 0F, blade);

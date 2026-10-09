@@ -1,4 +1,4 @@
-//? if forge {
+//? if forge || neoforge {
 package com.hbm_m.client.compat.itemtransformhelper;
 
 import com.hbm_m.lib.RefStrings;
@@ -8,8 +8,13 @@ import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemDisplayContext;
+//? if forge {
 import net.minecraftforge.client.model.BakedModelWrapper;
 import net.minecraftforge.fml.ModList;
+//?} else {
+/*import net.neoforged.neoforge.client.model.BakedModelWrapper;
+import net.neoforged.fml.ModList;
+*///?}
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
@@ -48,10 +53,11 @@ public final class ItemTransformHelperCompat {
     /**
      * Run on {@link net.minecraftforge.client.event.ModelEvent.BakingCompleted} (LOWEST), after ITH.
      */
-    public static void installDisplayTransformGuards(Map<ResourceLocation, BakedModel> models) {
-        Map<ResourceLocation, BakedModel> replacements = new HashMap<>();
-        for (Map.Entry<ResourceLocation, BakedModel> entry : models.entrySet()) {
-            if (!RefStrings.MODID.equals(entry.getKey().getNamespace())) {
+    // Schluesseltyp generisch: 1.20.1 ResourceLocation, 1.21.1 ModelResourceLocation (kein RL mehr).
+    public static <K> void installDisplayTransformGuards(Map<K, BakedModel> models) {
+        Map<K, BakedModel> replacements = new HashMap<>();
+        for (Map.Entry<K, BakedModel> entry : models.entrySet()) {
+            if (!RefStrings.MODID.equals(com.hbm_m.platform.PlatformHooks.getModelId(entry.getKey()).getNamespace())) {
                 continue;
             }
             BakedModel baked = entry.getValue();

@@ -24,7 +24,7 @@ import net.minecraft.world.item.ItemStack;
  * 1:1 {@code RenderPrecAss}: Modell {@code assembly_machine.obj} mit Praezisionstextur. Sockel, Geruest (nur mit Block
  * darueber), drehender Ring, vier Arme mit Schlagbolzen und das Rezeptsymbol in der Mitte (bis 35 Bloecke).
  */
-public class MachinePrecAssRenderer implements BlockEntityRenderer<MachinePrecAssBlockEntity> {
+public class MachinePrecAssRenderer implements com.hbm_m.client.render.HbmBerBounds<MachinePrecAssBlockEntity> {
 
     public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/machines/precass.obj"));
     public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/precass.png");

@@ -18,6 +18,7 @@ public class ModArmor extends ArmorItem {
 
     //? if forge {
     @Override
+    //?}
     public String getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot, String type) {
         if (stack.getItem() == ModItems.JACKT.get()) {
             return "hbm_m:textures/armor/jackt.png";
@@ -27,5 +28,14 @@ public class ModArmor extends ArmorItem {
         }
         return null;
     }
-    //?}
+
+    //? if neoforge {
+    /*/^* NeoForge: Textur ueber die String-Variante (1.20.1 Forge {@code getArmorTexture(.., String type)}). ^/
+    @Override
+    public net.minecraft.resources.ResourceLocation getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot,
+            net.minecraft.world.item.ArmorMaterial.Layer layer, boolean innerModel) {
+        String tex = this.getArmorTexture(stack, entity, slot, (String) null);
+        return tex == null ? null : net.minecraft.resources.ResourceLocation.parse(tex);
+    }
+    *///?}
 }

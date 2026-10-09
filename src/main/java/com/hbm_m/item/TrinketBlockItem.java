@@ -1,5 +1,7 @@
 package com.hbm_m.item;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -28,12 +30,12 @@ public class TrinketBlockItem extends BlockItem {
     }
 
     public static int getType(ItemStack stack) {
-        return stack.getTag() != null ? Math.abs(stack.getTag().getInt("type")) : 0;
+        return StackNbt.read(stack) != null ? Math.abs(StackNbt.read(stack).getInt("type")) : 0;
     }
 
     public static ItemStack make(Item item, int type) {
         ItemStack stack = new ItemStack(item);
-        stack.getOrCreateTag().putInt("type", type);
+        StackNbt.orCreate(stack).putInt("type", type);
         return stack;
     }
 
@@ -51,7 +53,11 @@ public class TrinketBlockItem extends BlockItem {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> tooltip, TooltipFlag flag) {
+    *///?}
         if (kind() == TrinketBlock.Kind.PLUSHIE) {
             PlushieType type = TrinketTypes.safe(PlushieType.class, getType(stack));
             if (type.inscription != null) tooltip.add(Component.literal(type.inscription));
@@ -68,5 +74,15 @@ public class TrinketBlockItem extends BlockItem {
             }
         });
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public void initializeClient(Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
+        consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
+            @Override
+            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return com.hbm_m.client.render.item.TrinketItemRenderer.instance();
+            }
+        });
+    }
+    *///?}
 }

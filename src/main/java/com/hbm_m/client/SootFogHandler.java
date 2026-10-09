@@ -1,4 +1,4 @@
-//? if forge {
+//? if forge || neoforge {
 package com.hbm_m.client;
 
 import com.hbm_m.config.RadiationConfig;
@@ -8,12 +8,21 @@ import com.hbm_m.network.PollutionSyncPacket;
 import com.mojang.blaze3d.shaders.FogShape;
 
 import net.minecraft.client.Minecraft;
+//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+//?} else {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.ViewportEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+*///?}
 
 /**
  * 1:1 {@code ModEventHandlerRenderer.worldTick/thickenFog/tintFog} (Smog-Teil): der synchronisierte Russwert
@@ -22,7 +31,11 @@ import net.minecraftforge.fml.common.Mod;
  * Abweichung: das Original fuehrt {@code renderSoot} im serverseitigen WorldTickEvent nach (nur Einzelspieler),
  * hier im Client-Tick.
  */
+//? if forge {
 @Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, value = Dist.CLIENT)
+//?} else {
+/*@EventBusSubscriber(modid = MainRegistry.MOD_ID, value = Dist.CLIENT)
+*///?}
 public final class SootFogHandler {
 
     private SootFogHandler() { }
@@ -30,9 +43,15 @@ public final class SootFogHandler {
     static float renderSoot = 0;
 
     @SubscribeEvent
+    //? if forge {
     public static void worldTick(TickEvent.ClientTickEvent event) {
 
         if (event.phase == TickEvent.Phase.START && RadiationConfig.enableSootFog) {
+    //?} else {
+    /*public static void worldTick(ClientTickEvent.Pre event) {
+
+        if (RadiationConfig.enableSootFog) {
+    *///?}
 
             float step = 0.05F;
             float soot = PollutionSyncPacket.pollution[PollutionType.SOOT.ordinal()];

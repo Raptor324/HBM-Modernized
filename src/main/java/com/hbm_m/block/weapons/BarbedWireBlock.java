@@ -1,5 +1,9 @@
 package com.hbm_m.block.weapons;
 
+import com.hbm_m.platform.PlatformHooks;
+
+import com.hbm_m.platform.EffectHooks;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.Entity;
@@ -45,7 +49,7 @@ public class BarbedWireBlock extends Block {
 
         if (self == com.hbm_m.block.ModBlocks.BARBED_WIRE_FIRE.get()) {
             ent.hurt(level.damageSources().cactus(), 2.0F);
-            ent.setSecondsOnFire(1);
+            PlatformHooks.setSecondsOnFire(ent, 1);
         }
 
         if (self == com.hbm_m.block.ModBlocks.BARBED_WIRE_POISON.get()) {
@@ -73,7 +77,7 @@ public class BarbedWireBlock extends Block {
         if (self == com.hbm_m.block.ModBlocks.BARBED_WIRE_ULTRADEATH.get()) {
             ent.hurt(com.hbm_m.damagesource.ModDamageSources.create(level, com.hbm_m.damagesource.ModDamageTypes.PC), 5.0F);
             if (ent instanceof LivingEntity living)
-                living.addEffect(new net.minecraft.world.effect.MobEffectInstance(com.hbm_m.effect.ModEffects.RADIATION.get(), 5 * 20, 9));
+                living.addEffect(new net.minecraft.world.effect.MobEffectInstance(EffectHooks.of(com.hbm_m.effect.ModEffects.RADIATION), 5 * 20, 9));
         }
     }
 

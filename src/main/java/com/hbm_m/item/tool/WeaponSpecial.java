@@ -1,5 +1,13 @@
 package com.hbm_m.item.tool;
 
+import com.hbm_m.platform.PlatformHooks;
+
+import com.hbm_m.platform.AttributeOps;
+
+import com.hbm_m.platform.ItemHooks;
+
+import com.hbm_m.platform.EffectHooks;
+
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
@@ -62,11 +70,20 @@ public class WeaponSpecial extends SwordItem implements ITooltipProvider {
 
     public WeaponSpecial(HbmToolMaterial material, Properties properties) {
         // ItemSword (1.7.10): 4 + Schadensbonus des Materials
+        //? if < 1.21.1 {
         super(material, 4, -2.4F, properties);
+        //?} else {
+        /*super(material, properties); // Attribute: getDefaultAttributeModifiers(ItemStack)
+        com.hbm_m.platform.ItemComponentHooks.deferRarity(this, this::hbmRarity);
+        *///?}
     }
 
+    //? if < 1.21.1 {
     @Override
     public @NotNull Rarity getRarity(@NotNull ItemStack stack) {
+    //?} else {
+    /*private @NotNull Rarity hbmRarity() {
+    *///?}
         if (this == ModItems.SCHRABIDIUM_HAMMER.get()) {
             return Rarity.RARE;
         }
@@ -113,7 +130,7 @@ public class WeaponSpecial extends SwordItem implements ITooltipProvider {
             if (!world.isClientSide) {
                 world.explode(null, entity.getX(), entity.getY(), entity.getZ(), 7.5F, true, Level.ExplosionInteraction.TNT);
             }
-            stack.hurtAndBreak(505, entityPlayer, e -> e.broadcastBreakEvent(EquipmentSlot.MAINHAND));
+            ItemHooks.hurtAndBreak(stack, 505, entityPlayer, EquipmentSlot.MAINHAND);
         }
 
         if (this == ModItems.SHIMMER_SLEDGE.get()) {
@@ -134,7 +151,7 @@ public class WeaponSpecial extends SwordItem implements ITooltipProvider {
 
         if (this == ModItems.LEAD_GAVEL.get()) {
             sound(world, entity, HbmSoundsNT.get("hbm:weapon.whack"), 3.0F, 1.F);
-            entity.addEffect(new MobEffectInstance(ModEffects.LEAD.get(), 15 * 20, 4));
+            entity.addEffect(new MobEffectInstance(EffectHooks.of(ModEffects.LEAD), 15 * 20, 4));
         }
 
         if (this == ModItems.DIAMOND_GAVEL.get()) {
@@ -211,9 +228,21 @@ public class WeaponSpecial extends SwordItem implements ITooltipProvider {
         return InteractionResult.PASS;
     }
 
+    //? if < 1.21.1 {
     @Override
     public @NotNull Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(@NotNull EquipmentSlot slot) {
         Multimap<Attribute, AttributeModifier> base = super.getDefaultAttributeModifiers(slot);
+    //?} else {
+    /*@Override
+    public net.minecraft.world.item.component.ItemAttributeModifiers getDefaultAttributeModifiers(@NotNull ItemStack stack) {
+        return com.hbm_m.platform.AttributeHooks.fromSlots(this::hbmSlotModifiers);
+    }
+
+    private Multimap<net.minecraft.core.Holder<Attribute>, AttributeModifier> hbmSlotModifiers(EquipmentSlot slot) {
+        // 1.20.1 SwordItem(material, 4, -2.4F): Grundwerte des Schwerts
+        Multimap<net.minecraft.core.Holder<Attribute>, AttributeModifier> base = com.hbm_m.platform.AttributeHooks.forSlot(
+                SwordItem.createAttributes(getTier(), 4, -2.4F), slot);
+    *///?}
         if (slot != EquipmentSlot.MAINHAND) return base;
 
         double speed = 0;
@@ -222,9 +251,13 @@ public class WeaponSpecial extends SwordItem implements ITooltipProvider {
         if (this == ModItems.WRENCH_FLIPPED.get()) speed = -0.1;
         if (speed == 0) return base;
 
+        //? if < 1.21.1 {
         ImmutableMultimap.Builder<Attribute, AttributeModifier> builder = ImmutableMultimap.builder();
+        //?} else {
+        /*ImmutableMultimap.Builder<net.minecraft.core.Holder<Attribute>, AttributeModifier> builder = ImmutableMultimap.builder();
+        *///?}
         builder.putAll(base);
-        builder.put(Attributes.MOVEMENT_SPEED, new AttributeModifier(WEAPON_MODIFIER, "Weapon modifier", speed, AttributeModifier.Operation.MULTIPLY_BASE));
+        builder.put(Attributes.MOVEMENT_SPEED, PlatformHooks.attributeModifier(WEAPON_MODIFIER, "Weapon modifier", speed, AttributeOps.MULTIPLY_BASE));
         return builder.build();
     }
 
@@ -299,6 +332,7 @@ public class WeaponSpecial extends SwordItem implements ITooltipProvider {
     }
 
     /** BEWLR fuer die 1.7-IItemRenderer (ItemRenderGavel/Shim/RedstoneSword); greift nur bei builtin/entity-Itemmodellen. */
+    //? if forge {
     @Override
     public void initializeClient(java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> consumer) {
         consumer.accept(new net.minecraftforge.client.extensions.common.IClientItemExtensions() {
@@ -308,4 +342,15 @@ public class WeaponSpecial extends SwordItem implements ITooltipProvider {
             }
         });
     }
+    //?} elif neoforge {
+    /*@Override
+    public void initializeClient(java.util.function.Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
+        consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
+            @Override
+            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return com.hbm_m.client.weapon.GunItemRenderer.INSTANCE;
+            }
+        });
+    }
+    *///?}
 }

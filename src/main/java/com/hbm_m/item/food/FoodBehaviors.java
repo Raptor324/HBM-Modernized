@@ -1,5 +1,9 @@
 package com.hbm_m.item.food;
 
+import com.hbm_m.platform.PlatformHooks;
+
+import com.hbm_m.platform.EffectHooks;
+
 import com.hbm_m.effect.ModEffects;
 import com.hbm_m.explosion.ExplosionNukeSmall;
 import com.hbm_m.extprop.HbmLivingProps;
@@ -31,8 +35,19 @@ public final class FoodBehaviors {
     private FoodBehaviors() {}
 
     private static void eff(Player p, MobEffect e, int ticks, int amp) {
+        //? if < 1.21.1 {
+        p.addEffect(new MobEffectInstance(e, ticks, amp));
+        //?} else {
+        /*p.addEffect(new MobEffectInstance(net.minecraft.core.registries.BuiltInRegistries.MOB_EFFECT.wrapAsHolder(e), ticks, amp));
+        *///?}
+    }
+
+    //? if >= 1.21.1 {
+    /*// 1.21.1: Vanilla-MobEffects sind Holder
+    private static void eff(Player p, net.minecraft.core.Holder<MobEffect> e, int ticks, int amp) {
         p.addEffect(new MobEffectInstance(e, ticks, amp));
     }
+    *///?}
 
     // ------------------------------------------------------------------ ItemLemon
 
@@ -130,7 +145,7 @@ public final class FoodBehaviors {
         eff(player, MobEffects.CONFUSION, 30 * 20, 0);
         eff(player, MobEffects.HUNGER, 3 * 60 * 20, 4);
         eff(player, MobEffects.WITHER, 3 * 20, 0);
-        player.setSecondsOnFire(5 * 20);
+        PlatformHooks.setSecondsOnFire(player, 5 * 20);
         Vec3 m = player.getDeltaMovement();
         player.setDeltaMovement(m.x, 2, m.z);
         player.hurtMarked = true;
@@ -151,7 +166,9 @@ public final class FoodBehaviors {
             if (st.isEmpty()) continue;
             //? if forge {
             st.getCapability(com.hbm_m.capability.ModCapabilities.HBM_ENERGY_RECEIVER).ifPresent(cap -> cap.receiveEnergy(Long.MAX_VALUE, false));
-            //?}
+            //?} elif neoforge {
+            /*com.hbm_m.platform.HbmCaps.item(st, com.hbm_m.platform.HbmCap.HBM_ENERGY_RECEIVER).ifPresent(cap -> cap.receiveEnergy(Long.MAX_VALUE, false));
+            *///?}
         }
     }
 
@@ -171,7 +188,7 @@ public final class FoodBehaviors {
             player.removeEffect(MobEffects.POISON);
             player.removeEffect(MobEffects.WEAKNESS);
             player.removeEffect(MobEffects.WITHER);
-            player.removeEffect(ModEffects.RADIATION.get());
+            player.removeEffect(EffectHooks.of(ModEffects.RADIATION));
         }
         if (item == ModItems.PLAN_C.get()) {
             for (int i = 0; i < 10; i++) {
@@ -193,8 +210,12 @@ public final class FoodBehaviors {
             eff(player, MobEffects.WEAKNESS, 10 * 60 * 20, 2);
             eff(player, MobEffects.DIG_SLOWDOWN, 10 * 60 * 20, 2);
             eff(player, MobEffects.POISON, 5 * 20, 2);
-            MobEffectInstance e = new MobEffectInstance(ModEffects.POTION_SICKNESS.get(), 10 * 60 * 20);
+            MobEffectInstance e = new MobEffectInstance(EffectHooks.of(ModEffects.POTION_SICKNESS), 10 * 60 * 20);
+            //? if < 1.21.1 {
             e.setCurativeItems(new java.util.ArrayList<>());
+            //?} else {
+            /*e.getCures().clear();
+            *///?}
             player.addEffect(e);
         }
         if (item == ModItems.XANAX.get()) {

@@ -1,5 +1,7 @@
 package com.hbm_m.extprop;
 
+import com.hbm_m.platform.AttributeOps;
+
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.config.RadiationConfig;
 import com.hbm_m.damagesource.ModDamageSources;
@@ -272,9 +274,9 @@ public final class HbmLivingProps {
         float healthMod = (float) Math.pow(0.5, digamma) - 1F;
         var attr = entity.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH);
         if (attr != null) {
-            attr.removeModifier(DIGAMMA_UUID);
-            attr.addTransientModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(DIGAMMA_UUID, "digamma", healthMod,
-                    net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.MULTIPLY_TOTAL));
+            com.hbm_m.platform.AttributeHooks.removeModifier(attr, DIGAMMA_UUID);
+            attr.addTransientModifier(com.hbm_m.platform.AttributeHooks.modifier(DIGAMMA_UUID, "digamma", healthMod,
+                    AttributeOps.MULTIPLY_TOTAL));
         }
 
         if (entity.getHealth() > entity.getMaxHealth() && entity.getMaxHealth() > 0) {

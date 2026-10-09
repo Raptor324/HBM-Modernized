@@ -40,7 +40,11 @@ public class ItemWandS extends Item {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+    *///?}
         list.add(Component.literal("Creative-only item"));
         list.add(Component.literal("\"Replication breeds decadence\""));
         list.add(Component.literal("(Saves an area defined by two right-clicks,"));

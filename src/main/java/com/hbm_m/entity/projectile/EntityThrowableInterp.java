@@ -59,7 +59,11 @@ public abstract class EntityThrowableInterp extends EntityThrowableNT {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void lerpTo(double x, double y, double z, float yaw, float pitch, int theNumberThree, boolean teleport) {
+    //?} else {
+    /*public void lerpTo(double x, double y, double z, float yaw, float pitch, int theNumberThree) {
+    *///?}
         this.syncPosX = x;
         this.syncPosY = y;
         this.syncPosZ = z;

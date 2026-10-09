@@ -216,4 +216,8 @@ public class ICFControllerBlock extends BaseEntityBlock {
         return interact(level, pos, player);
     }
     *///?}
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<ICFControllerBlock> CODEC = simpleCodec(ICFControllerBlock::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

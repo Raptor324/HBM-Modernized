@@ -179,7 +179,11 @@ public abstract class BlockChargeBase extends BaseEntityBlock implements IBomb, 
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> list, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+    *///?}
         list.add(Component.literal("Right-click to change timer.").withStyle(ChatFormatting.YELLOW));
         list.add(Component.literal("Sneak-click to arm.").withStyle(ChatFormatting.YELLOW));
         list.add(Component.literal("Can only be disarmed and removed with defuser.").withStyle(ChatFormatting.RED));

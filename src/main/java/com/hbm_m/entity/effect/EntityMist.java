@@ -1,5 +1,7 @@
 package com.hbm_m.entity.effect;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import java.util.List;
 
 import com.hbm_m.damagesource.ModDamageSources;
@@ -183,7 +185,7 @@ public class EntityMist extends Entity {
             hurtIgnoreIFrame(e, ModDamageSources.create(level, ModDamageTypes.BOIL), 0.2F + (type.temperature - 100) * 0.02F);
 
             if (type.temperature >= 500) {
-                e.setSecondsOnFire(10); //afterburn for 10 seconds
+                PlatformHooks.setSecondsOnFire(e, 10); //afterburn for 10 seconds
             }
         }
         if (type.temperature < -20) {

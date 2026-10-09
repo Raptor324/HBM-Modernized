@@ -66,7 +66,11 @@ public class ItemPACoil extends Item {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> tooltip, TooltipFlag flag) {
+    *///?}
         // 1:1 Original addInformation: blaue Beschriftung, Wert nach RESET weiss, drei rote Warnzeilen
         tooltip.add(Component.literal("Quadrupole operational range: ").withStyle(ChatFormatting.BLUE)
                 .append(Component.literal(String.format(java.util.Locale.US, "%,d", type.quadMin) + " - " + String.format(java.util.Locale.US, "%,d", type.quadMax)).withStyle(ChatFormatting.WHITE)));

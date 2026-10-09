@@ -42,11 +42,19 @@ public class SeatDummyEntity extends Entity {
         this.entityData.set(SEAT_INDEX, index);
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
         this.entityData.define(TRAIN_ID, 0);
         this.entityData.define(SEAT_INDEX, 0);
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        builder.define(TRAIN_ID, 0);
+        builder.define(SEAT_INDEX, 0);
+    }
+    *///?}
 
     @Override protected void addAdditionalSaveData(@NotNull CompoundTag nbt) { }
     @Override public boolean shouldBeSaved() { return false; }
@@ -74,7 +82,11 @@ public class SeatDummyEntity extends Entity {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void lerpTo(double posX, double posY, double posZ, float yaw, float pitch, int turnProg, boolean teleport) {
+    //?} else {
+    /*public void lerpTo(double posX, double posY, double posZ, float yaw, float pitch, int turnProg) {
+    *///?}
         this.trainX = posX;
         this.trainY = posY;
         this.trainZ = posZ;

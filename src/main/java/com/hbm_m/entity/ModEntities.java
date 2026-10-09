@@ -381,7 +381,7 @@ public class ModEntities {
             ENTITY_TYPES.register("entity_grenade_universal",
                     () -> EntityType.Builder.<com.hbm_m.entity.grenade.EntityGrenadeUniversal>of(com.hbm_m.entity.grenade.EntityGrenadeUniversal::new, MobCategory.MISC)
                             .sized(0.25F, 0.25F).clientTrackingRange(16).updateInterval(1)
-                            //? if forge {
+                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
                             //?}
                             .build("entity_grenade_universal"));
@@ -391,7 +391,7 @@ public class ModEntities {
             ENTITY_TYPES.register("entity_fire_lingering",
                     () -> EntityType.Builder.<com.hbm_m.entity.effect.EntityFireLingering>of(com.hbm_m.entity.effect.EntityFireLingering::new, MobCategory.MISC)
                             .sized(0.1F, 0.1F).clientTrackingRange(16).updateInterval(1)
-                            //? if forge {
+                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
                             //?}
                             .build("entity_fire_lingering"));
@@ -401,7 +401,7 @@ public class ModEntities {
             ENTITY_TYPES.register("entity_bullet_mk4",
                     () -> EntityType.Builder.<com.hbm_m.entity.projectile.EntityBulletBaseMK4>of(com.hbm_m.entity.projectile.EntityBulletBaseMK4::new, MobCategory.MISC)
                             .sized(0.5F, 0.5F).clientTrackingRange(16).updateInterval(1).fireImmune()
-                            //? if forge {
+                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
                             //?}
                             .build("entity_bullet_mk4"));
@@ -409,7 +409,7 @@ public class ModEntities {
             ENTITY_TYPES.register("entity_bullet_mk4_cl",
                     () -> EntityType.Builder.<com.hbm_m.entity.projectile.EntityBulletBaseMK4CL>of(com.hbm_m.entity.projectile.EntityBulletBaseMK4CL::new, MobCategory.MISC)
                             .sized(0.5F, 0.5F).clientTrackingRange(16).updateInterval(1).fireImmune()
-                            //? if forge {
+                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
                             //?}
                             .build("entity_bullet_mk4_cl"));
@@ -417,7 +417,7 @@ public class ModEntities {
             ENTITY_TYPES.register("entity_beam_mk4",
                     () -> EntityType.Builder.<com.hbm_m.entity.projectile.EntityBulletBeamBase>of(com.hbm_m.entity.projectile.EntityBulletBeamBase::new, MobCategory.MISC)
                             .sized(0.5F, 0.5F).clientTrackingRange(16).updateInterval(1).fireImmune()
-                            //? if forge {
+                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
                             //?}
                             .build("entity_beam_mk4"));
@@ -537,7 +537,7 @@ public class ModEntities {
                                     com.hbm_m.entity.item.EntityBoatRubber::new, MobCategory.MISC)
                             .sized(1.5F, 0.6F).clientTrackingRange(16)
                             .updateInterval(1)
-                            //? if forge {
+                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
                             //?}
                             .build("boat_rubber"));
@@ -673,7 +673,7 @@ public class ModEntities {
                                     com.hbm_m.entity.cart.EntityMinecartCrate::new, MobCategory.MISC)
                             .sized(0.98F, 0.7F).clientTrackingRange(16)
                             .updateInterval(1)
-                            //? if forge {
+                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
                             //?}
                             .build("entity_ntm_cart_crate"));
@@ -683,7 +683,7 @@ public class ModEntities {
                                     com.hbm_m.entity.cart.EntityMinecartDestroyer::new, MobCategory.MISC)
                             .sized(0.98F, 0.7F).clientTrackingRange(16)
                             .updateInterval(1)
-                            //? if forge {
+                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
                             //?}
                             .build("entity_ntm_cart_destroyer"));
@@ -693,7 +693,7 @@ public class ModEntities {
                                     com.hbm_m.entity.cart.EntityMinecartOre::new, MobCategory.MISC)
                             .sized(0.98F, 0.7F).clientTrackingRange(16)
                             .updateInterval(1)
-                            //? if forge {
+                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
                             //?}
                             .build("entity_ntm_cart_ore"));
@@ -703,7 +703,7 @@ public class ModEntities {
                                     com.hbm_m.entity.cart.EntityMinecartPowder::new, MobCategory.MISC)
                             .sized(0.98F, 0.7F).clientTrackingRange(16)
                             .updateInterval(1)
-                            //? if forge {
+                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
                             //?}
                             .build("entity_ntm_cart_powder"));
@@ -713,7 +713,7 @@ public class ModEntities {
                                     com.hbm_m.entity.cart.EntityMinecartSemtex::new, MobCategory.MISC)
                             .sized(0.98F, 0.7F).clientTrackingRange(16)
                             .updateInterval(1)
-                            //? if forge {
+                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
                             //?}
                             .build("entity_ntm_cart_semtex"));
@@ -730,7 +730,7 @@ public class ModEntities {
                     () -> EntityType.Builder.<com.hbm_m.entity.train.SeatDummyEntity>of(
                                     com.hbm_m.entity.train.SeatDummyEntity::new, MobCategory.MISC)
                             .sized(0.5F, 0.1F).clientTrackingRange(16).updateInterval(1).noSummon()
-                            //? if forge {
+                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
                             //?}
                             .build("entity_ntm_seat_dummy"));
@@ -739,7 +739,7 @@ public class ModEntities {
                     () -> EntityType.Builder.<com.hbm_m.entity.train.BoundingBoxDummyEntity>of(
                                     com.hbm_m.entity.train.BoundingBoxDummyEntity::new, MobCategory.MISC)
                             .sized(1F, 1F).clientTrackingRange(16).updateInterval(1).noSummon()
-                            //? if forge {
+                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
                             //?}
                             .build("entity_ntm_bounding_dummy"));
@@ -748,7 +748,7 @@ public class ModEntities {
                     () -> EntityType.Builder.<com.hbm_m.entity.train.TrainCargoTram>of(
                                     com.hbm_m.entity.train.TrainCargoTram::new, MobCategory.MISC)
                             .sized(5F, 2F).clientTrackingRange(16).updateInterval(1)
-                            //? if forge {
+                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
                             //?}
                             .build("entity_ntm_cargo_tram"));
@@ -757,7 +757,7 @@ public class ModEntities {
                     () -> EntityType.Builder.<com.hbm_m.entity.train.TrainCargoTramTrailer>of(
                                     com.hbm_m.entity.train.TrainCargoTramTrailer::new, MobCategory.MISC)
                             .sized(5F, 2F).clientTrackingRange(16).updateInterval(1)
-                            //? if forge {
+                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
                             //?}
                             .build("entity_ntm_cargo_tram_trailer"));
@@ -795,7 +795,7 @@ public class ModEntities {
                     () -> EntityType.Builder.<com.hbm_m.entity.projectile.EntityBulletBaseNT>of(
                                     com.hbm_m.entity.projectile.EntityBulletBaseNT::new, MobCategory.MISC)
                             .sized(0.5F, 0.5F).clientTrackingRange(16).updateInterval(1)
-                            //? if forge {
+                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
                             //?}
                             .build("entity_bullet_mk3"));
@@ -1098,7 +1098,7 @@ public class ModEntities {
                     () -> EntityType.Builder.<com.hbm_m.entity.logic.EntityWaypoint>of(com.hbm_m.entity.logic.EntityWaypoint::new, MobCategory.MISC)
                             .sized(0.5F, 0.5F).fireImmune().noSummon()
                             .clientTrackingRange(16).updateInterval(1)
-                            //? if forge {
+                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
                             //?}
                             .build("waypoint"));
@@ -1167,7 +1167,7 @@ public class ModEntities {
                             
                             .clientTrackingRange(64)
                             .updateInterval(1)
-                            //? if forge {
+                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
                             //?}
                             .build("entity_mist"));
@@ -1197,7 +1197,7 @@ public class ModEntities {
                             .sized(0.75F, 0.75F)
                             .clientTrackingRange(16)
                             .updateInterval(1)
-                            //? if forge {
+                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
                             //?}
                             .build("delivery_drone"));
@@ -1209,7 +1209,7 @@ public class ModEntities {
                             .sized(0.75F, 0.75F)
                             .clientTrackingRange(16)
                             .updateInterval(1)
-                            //? if forge {
+                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
                             //?}
                             .build("request_drone"));

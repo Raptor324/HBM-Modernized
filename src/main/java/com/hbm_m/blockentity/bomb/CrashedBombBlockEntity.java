@@ -14,7 +14,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
 /** 1:1 {@code TileEntityCrashedBomb}: alle 2 Ticks Strahlung auf Lebewesen, linear abfallend bis zum Radius. */
-public class CrashedBombBlockEntity extends BlockEntity {
+public class CrashedBombBlockEntity extends BlockEntity implements com.hbm_m.api.render.RenderBoundsProvider {
 
     public CrashedBombBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.CRASHED_BOMB.get(), pos, state);

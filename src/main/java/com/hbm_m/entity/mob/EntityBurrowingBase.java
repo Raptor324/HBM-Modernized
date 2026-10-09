@@ -40,10 +40,18 @@ public abstract class EntityBurrowingBase extends PathfinderMob {
     }
 
     /** Grabende Wesen drehen sich mit der Bewegung, daher Augenhoehe in der Mitte. */
+    //? if < 1.21.1 {
     @Override
     protected float getStandingEyeHeight(Pose pose, EntityDimensions dimensions) {
         return dimensions.height * 0.5F;
     }
+    //?} else {
+    /*@Override
+    public EntityDimensions getDefaultDimensions(Pose pose) {
+        EntityDimensions dimensions = super.getDefaultDimensions(pose);
+        return dimensions.withEyeHeight(dimensions.height() * 0.5F);
+    }
+    *///?}
 
     @Override
     public boolean hurt(DamageSource source, float amount) {

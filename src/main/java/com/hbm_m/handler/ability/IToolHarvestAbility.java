@@ -1,5 +1,7 @@
 package com.hbm_m.handler.ability;
 
+import com.hbm_m.platform.ItemHooks;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -47,7 +49,7 @@ public interface IToolHarvestAbility extends IBaseAbility {
             // Emulate the block breaking without drops
             world.removeBlock(pos, false);
             ItemStack stack = player.getMainHandItem();
-            if (!stack.isEmpty()) stack.hurtAndBreak(1, player, p -> p.broadcastBreakEvent(net.minecraft.world.InteractionHand.MAIN_HAND));
+            if (!stack.isEmpty()) ItemHooks.hurtAndBreak(stack, 1, player, net.minecraft.world.InteractionHand.MAIN_HAND);
         } else if (player instanceof ServerPlayer sp) {
             // Break the block conventionally
             ItemToolAbility.standardDigPost(world, pos, sp);
@@ -106,13 +108,21 @@ public interface IToolHarvestAbility extends IBaseAbility {
         @Override
         public void preHarvestAll(int level, Level world, Player player) {
             ItemStack stack = player.getMainHandItem();
+            //? if < 1.21.1 {
             if (!stack.isEmpty()) EnchantmentUtil.addEnchantment(stack, Enchantments.BLOCK_FORTUNE, powerAtLevel[level]);
+            //?} else {
+            /*if (!stack.isEmpty()) EnchantmentUtil.addEnchantment(stack, EnchantmentUtil.FORTUNE, powerAtLevel[level]);
+            *///?}
         }
 
         @Override
         public void postHarvestAll(int level, Level world, Player player) {
             ItemStack stack = player.getMainHandItem();
+            //? if < 1.21.1 {
             if (!stack.isEmpty()) EnchantmentUtil.removeEnchantment(stack, Enchantments.BLOCK_FORTUNE);
+            //?} else {
+            /*if (!stack.isEmpty()) EnchantmentUtil.removeEnchantment(stack, EnchantmentUtil.FORTUNE);
+            *///?}
         }
     };
 
@@ -131,7 +141,7 @@ public interface IToolHarvestAbility extends IBaseAbility {
 
             for (int i = 0; i < drops.size(); i++) {
                 ItemStack stack = drops.get(i).copy();
-                Optional<SmeltingRecipe> recipe = world.getRecipeManager().getRecipeFor(RecipeType.SMELTING, new SimpleContainer(stack), world);
+                Optional<SmeltingRecipe> recipe = com.hbm_m.platform.recipe.RecipeHooks.getRecipeFor(world, RecipeType.SMELTING, stack);
 
                 if (recipe.isPresent()) {
                     ItemStack result = recipe.get().getResultItem(world.registryAccess()).copy();

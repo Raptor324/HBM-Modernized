@@ -13,7 +13,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 
 /** 1:1 {@code RenderLantern}: Mast mit Textur, Leuchtkoerper untexturiert voll hell und flackernd (0.9-1.0, gelblich). */
-public class LanternRenderer implements BlockEntityRenderer<LanternBlockEntity> {
+public class LanternRenderer implements com.hbm_m.client.render.HbmBerBounds<LanternBlockEntity> {
 
     public static final SimpleObjModel LANTERN = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/lantern.obj"));
     public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/lantern.png");

@@ -23,7 +23,7 @@ import net.minecraft.world.inventory.InventoryMenu;
  * Bewehrung als Quader 0..progress/1000 mit {@code concrete_liquid}, hoechstens {@code RENDER_REBAR_LIMIT}
  * Bloecke pro Bild.
  */
-public class RebarRenderer implements BlockEntityRenderer<RebarBlockEntity> {
+public class RebarRenderer implements com.hbm_m.client.render.HbmBerBounds<RebarBlockEntity> {
 
     private static final ResourceLocation CONCRETE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/concrete_liquid");
 
@@ -51,7 +51,11 @@ public class RebarRenderer implements BlockEntityRenderer<RebarBlockEntity> {
         float u0 = sprite.getU0(), u1 = sprite.getU1();
         float v0 = sprite.getV0(), v1 = sprite.getV1();
         // Seiten: wie renderStandardBlock nur der untere Teil der Textur
+        //? if < 1.21.1 {
         float vh = sprite.getV(16 - h * 16);
+        //?} else {
+        /*float vh = sprite.getV(1 - h); // 1.21.1: 0..1 statt 0..16
+        *///?}
 
         // oben
         quad(buf, m, n, light, 0, 1, 0,
@@ -104,6 +108,10 @@ public class RebarRenderer implements BlockEntityRenderer<RebarBlockEntity> {
 
     private static void vertex(VertexConsumer buf, Matrix4f m, Matrix3f n, int light, float nx, float ny, float nz,
                                float x, float y, float z, float u, float v) {
+        //? if < 1.21.1 {
         buf.vertex(m, x, y, z).color(1F, 1F, 1F, 1F).uv(u, v).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(n, nx, ny, nz).endVertex();
+        //?} else {
+        /*com.hbm_m.platform.RenderHooks.normal(buf.addVertex(m, x, y, z).setColor(1F, 1F, 1F, 1F).setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light), n, nx, ny, nz);
+        *///?}
     }
 }

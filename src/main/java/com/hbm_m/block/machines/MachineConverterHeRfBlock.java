@@ -40,7 +40,7 @@ public class MachineConverterHeRfBlock extends BaseEntityBlock implements com.hb
         if (!(world.getBlockEntity(pos) instanceof MachineConverterHeRfBlockEntity converter)) return;
         List<Component> text = new ArrayList<>();
         text.add(Component.literal(ChatFormatting.GREEN + "-> " + ChatFormatting.RESET + com.hbm_m.util.BobMathUtil.getShortNumber(converter.power) + "HE"));
-        //? if forge {
+        //? if forge || neoforge {
         text.add(Component.literal(ChatFormatting.RED + "<- " + ChatFormatting.RESET + com.hbm_m.util.BobMathUtil.getShortNumber(converter.storage.getEnergyStored()) + "RF"));
         //?}
         com.hbm_m.interfaces.ILookOverlay.printGeneric(g, Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);

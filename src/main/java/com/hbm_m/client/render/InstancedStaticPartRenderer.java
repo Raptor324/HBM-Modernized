@@ -602,6 +602,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         flush(RenderSystem.getProjectionMatrix());
     }
 
+    // neo-pendant: keins noetig - diese Ueberladung ruft niemand auf (flush() / flush(Matrix4f) gelten ueberall)
     //? if forge {
     public void flush(net.minecraftforge.client.event.RenderLevelStageEvent event) {
         flush(event.getProjectionMatrix());

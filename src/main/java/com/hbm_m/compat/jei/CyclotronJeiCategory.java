@@ -15,7 +15,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
-//? if forge {
+//? if forge || neoforge {
 /**
  * JEI-категория циклотрона ({@code hbm_m:cyclotron}).
  *

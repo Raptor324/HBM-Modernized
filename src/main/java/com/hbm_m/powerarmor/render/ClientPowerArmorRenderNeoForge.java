@@ -83,6 +83,9 @@ public final class ClientPowerArmorRenderNeoForge {
         raw.addLayer(new AJROPowerArmorLayer(raw));
         raw.addLayer(new BismuthPowerArmorLayer(raw));
         raw.addLayer(new DNTPowerArmorLayer(raw));
+        // wie ClientPowerArmorRenderForge: OBJ-Ruestungen und Zubehoer (Brille, Hut, Umhaenge ...)
+        raw.addLayer(new com.hbm_m.client.render.armor.ObjArmorLayer(raw));
+        raw.addLayer(new com.hbm_m.client.render.armor.ArmorAccessoryLayer(raw));
         raw.addLayer(new GasMaskLayer(raw));
     }
 

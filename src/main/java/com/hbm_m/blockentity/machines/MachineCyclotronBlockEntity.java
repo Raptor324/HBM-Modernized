@@ -401,5 +401,34 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
     private net.minecraftforge.items.IItemHandler itemAccess(int[] slots) {
         return com.hbm_m.blockentity.SidedItemAccess.fixed(() -> inventory, slots, (slot, stack) -> slot < SLOT_OUTPUT_START && isItemValidForSlot(slot, stack), (slot, stack) -> slot >= SLOT_OUTPUT_START && slot < SLOT_OUTPUT_END_EXCLUSIVE);
     }
-    //?}
+    //?} elif neoforge {
+    /*/^* Original: die drei Zellen jeder Seite fuehren Eingang/Ziel der Spur 0/1/2 plus alle Ausgaenge; sonst nur Ausgaenge. ^/
+    @Override
+    public net.neoforged.neoforge.items.IItemHandler getConditionalItemHandler(net.minecraft.core.BlockPos part, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        for (net.minecraft.core.Direction dir : new net.minecraft.core.Direction[] {
+                net.minecraft.core.Direction.NORTH, net.minecraft.core.Direction.SOUTH,
+                net.minecraft.core.Direction.WEST, net.minecraft.core.Direction.EAST }) {
+            net.minecraft.core.Direction rot = dir.getClockWise(); // ForgeDirection.getRotation(UP)
+            net.minecraft.core.BlockPos mid = worldPosition.relative(dir, 2);
+            net.minecraft.core.BlockPos a = mid.relative(rot), b = mid.relative(rot, -1);
+            if (part.getX() == a.getX() && part.getZ() == a.getZ()) return itemAccess(new int[] {0, 3, 6, 7, 8});
+            if (part.getX() == mid.getX() && part.getZ() == mid.getZ()) return itemAccess(new int[] {1, 4, 6, 7, 8});
+            if (part.getX() == b.getX() && part.getZ() == b.getZ()) return itemAccess(new int[] {2, 5, 6, 7, 8});
+        }
+        return itemAccess(new int[] {6, 7, 8});
+    }
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) {
+            net.neoforged.neoforge.items.IItemHandler h = itemAccess(new int[] { });
+            return com.hbm_m.platform.LazyCap.of(() -> h).cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+
+    private net.neoforged.neoforge.items.IItemHandler itemAccess(int[] slots) {
+        return com.hbm_m.blockentity.SidedItemAccess.fixed(() -> inventory, slots, (slot, stack) -> slot < SLOT_OUTPUT_START && isItemValidForSlot(slot, stack), (slot, stack) -> slot >= SLOT_OUTPUT_START && slot < SLOT_OUTPUT_END_EXCLUSIVE);
+    }
+    *///?}
 }

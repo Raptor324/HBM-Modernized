@@ -268,9 +268,15 @@ public final class DFCRenderers {
                         { 0.0F, f3, 1.0F * f4 },
                         { -0.866F * f4, f3, -0.5F * f4 } };
                 for (int k = 0; k < 3; k++) {
+                    //? if < 1.21.1 {
                     vc.vertex(m, 0F, 0F, 0F).color(r, g, b, 1F).endVertex();
                     vc.vertex(m, rim[k][0], rim[k][1], rim[k][2]).color(r, g, b, 0F).endVertex();
                     vc.vertex(m, rim[k + 1][0], rim[k + 1][1], rim[k + 1][2]).color(r, g, b, 0F).endVertex();
+                    //?} else {
+                    /*vc.addVertex(m, 0F, 0F, 0F).setColor(r, g, b, 1F);
+                    vc.addVertex(m, rim[k][0], rim[k][1], rim[k][2]).setColor(r, g, b, 0F);
+                    vc.addVertex(m, rim[k + 1][0], rim[k + 1][1], rim[k + 1][2]).setColor(r, g, b, 0F);
+                    *///?}
                 }
                 ps.scale(0.999F, 0.999F, 0.999F);
             }

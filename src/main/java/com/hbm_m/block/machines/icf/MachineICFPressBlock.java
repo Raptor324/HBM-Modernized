@@ -79,9 +79,17 @@ public class MachineICFPressBlock extends BaseEntityBlock {
 
     /** Original {@code addInformation}: alle {@code .desc}-Zeilen gelb, ohne Umschalttaste. */
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(net.minecraft.world.item.ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.BlockGetter level,
                                 java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(net.minecraft.world.item.ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    *///?}
         for (String s : net.minecraft.client.resources.language.I18n.get(getDescriptionId() + ".desc").split(java.util.regex.Pattern.quote("$")))
             list.add(net.minecraft.network.chat.Component.literal(s).withStyle(net.minecraft.ChatFormatting.YELLOW));
     }
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineICFPressBlock> CODEC = simpleCodec(MachineICFPressBlock::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

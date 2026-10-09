@@ -41,8 +41,12 @@ public class ItemPlateFuel extends Item {
 
     /** 1:1 {@code ItemPlateFuel.addInformation}. */
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @org.jetbrains.annotations.Nullable Level level,
                                 java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    *///?}
         list.add(net.minecraft.network.chat.Component.literal("[Research Reactor Plate Fuel]").withStyle(net.minecraft.ChatFormatting.YELLOW));
         list.add(net.minecraft.network.chat.Component.literal("   " + getFunctionDesc()).withStyle(net.minecraft.ChatFormatting.DARK_AQUA));
         list.add(net.minecraft.network.chat.Component.literal("   Yield of " + com.hbm_m.util.BobMathUtil.getShortNumber(lifeTime) + " events").withStyle(net.minecraft.ChatFormatting.DARK_AQUA));

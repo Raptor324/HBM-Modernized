@@ -1,5 +1,7 @@
 package com.hbm_m.item.special;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -64,7 +66,7 @@ public class ItemChopper extends Item implements ITooltipProvider {
             Entity entity = spawnCreature(world, p.getX() + 0.5D, p.getY() + offset, p.getZ() + 0.5D);
 
             if (entity != null) {
-                if (entity instanceof Mob mob && stack.hasCustomHoverName()) {
+                if (entity instanceof Mob mob && StackNbt.hasCustomName(stack)) {
                     mob.setCustomName(stack.getHoverName());
                 }
 
@@ -98,7 +100,7 @@ public class ItemChopper extends Item implements ITooltipProvider {
                     Entity entity = spawnCreature(world, pos.getX(), pos.getY(), pos.getZ());
 
                     if (entity != null) {
-                        if (entity instanceof Mob mob && stack.hasCustomHoverName()) {
+                        if (entity instanceof Mob mob && StackNbt.hasCustomName(stack)) {
                             mob.setCustomName(stack.getHoverName());
                         }
 
@@ -138,7 +140,11 @@ public class ItemChopper extends Item implements ITooltipProvider {
             entity.yHeadRot = entity.getYRot();
             entity.yBodyRot = entity.getYRot();
             if (world instanceof ServerLevel sl)
+                //? if < 1.21.1 {
                 entity.finalizeSpawn(sl, sl.getCurrentDifficultyAt(entity.blockPosition()), MobSpawnType.SPAWN_EGG, null, null);
+                //?} else {
+                /*entity.finalizeSpawn(sl, sl.getCurrentDifficultyAt(entity.blockPosition()), MobSpawnType.SPAWN_EGG, null);
+                *///?}
             world.addFreshEntity(entity);
         }
 

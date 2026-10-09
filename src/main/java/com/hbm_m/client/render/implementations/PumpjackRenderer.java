@@ -141,12 +141,21 @@ public class PumpjackRenderer implements com.hbm_m.client.render.HbmBerBounds<Ma
     static void quad(VertexConsumer vc, Matrix4f m, float r, float g, float b,
                      double x1, double y1, double z1, double x2, double y2, double z2,
                      double x3, double y3, double z3, double x4, double y4, double z4) {
+        //? if < 1.21.1 {
         vc.vertex(m, (float) x1, (float) y1, (float) z1).color(r, g, b, 1F).endVertex();
         vc.vertex(m, (float) x2, (float) y2, (float) z2).color(r, g, b, 1F).endVertex();
         vc.vertex(m, (float) x3, (float) y3, (float) z3).color(r, g, b, 1F).endVertex();
         vc.vertex(m, (float) x1, (float) y1, (float) z1).color(r, g, b, 1F).endVertex();
         vc.vertex(m, (float) x3, (float) y3, (float) z3).color(r, g, b, 1F).endVertex();
         vc.vertex(m, (float) x4, (float) y4, (float) z4).color(r, g, b, 1F).endVertex();
+        //?} else {
+        /*vc.addVertex(m, (float) x1, (float) y1, (float) z1).setColor(r, g, b, 1F);
+        vc.addVertex(m, (float) x2, (float) y2, (float) z2).setColor(r, g, b, 1F);
+        vc.addVertex(m, (float) x3, (float) y3, (float) z3).setColor(r, g, b, 1F);
+        vc.addVertex(m, (float) x1, (float) y1, (float) z1).setColor(r, g, b, 1F);
+        vc.addVertex(m, (float) x3, (float) y3, (float) z3).setColor(r, g, b, 1F);
+        vc.addVertex(m, (float) x4, (float) y4, (float) z4).setColor(r, g, b, 1F);
+        *///?}
     }
 
     @Override public boolean shouldRenderOffScreen(MachinePumpjackBlockEntity be) { return true; }

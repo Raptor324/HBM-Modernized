@@ -86,7 +86,7 @@ public class LootGenerator {
     }
 
     private static ItemStack stack(String id, int count) {
-        return BuiltInRegistries.ITEM.getOptional(new ResourceLocation("hbm_m", id)).map(i -> new ItemStack(i, count)).orElse(ItemStack.EMPTY);
+        return BuiltInRegistries.ITEM.getOptional(ResourceLocation.fromNamespaceAndPath("hbm_m", id)).map(i -> new ItemStack(i, count)).orElse(ItemStack.EMPTY);
     }
 
     public static void addItemWithDeviation(DecoLootBlockEntity loot, RandomSource rand, ItemStack stack, double x, double y, double z) {

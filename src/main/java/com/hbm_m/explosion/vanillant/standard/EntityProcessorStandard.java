@@ -51,7 +51,9 @@ public class EntityProcessorStandard implements IEntityProcessor {
         List<Entity> entities = level.getEntities(allowSelfDamage ? null : explosion.exploder, new AABB(minX, minY, minZ, maxX, maxY, maxZ));
         //? if forge {
         ForgeEventFactory.onExplosionDetonate(level, explosion.compat, entities, size);
-        //?}
+        //?} elif neoforge {
+        /*net.neoforged.neoforge.event.EventHooks.onExplosionDetonate(level, explosion.compat, entities, size);
+        *///?}
         Vec3 vec3 = new Vec3(x, y, z);
 
         for (Entity entity : entities) {

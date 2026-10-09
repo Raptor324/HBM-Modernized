@@ -98,7 +98,13 @@ public class MachineRadarBakedModel extends AbstractMultipartBakedModel implemen
     public ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand, ModelData data) {
         return ChunkRenderTypeSet.of(RenderType.cutout());
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public net.neoforged.neoforge.client.ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand,
+            net.neoforged.neoforge.client.model.data.ModelData data) {
+        return net.neoforged.neoforge.client.ChunkRenderTypeSet.of(RenderType.cutout());
+    }
+    *///?}
 
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {

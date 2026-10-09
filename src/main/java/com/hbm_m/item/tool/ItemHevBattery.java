@@ -63,7 +63,11 @@ public class ItemHevBattery extends BlockItem {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+    *///?}
         list.add(Component.literal("Charges all worn armor pieces by " + BobMathUtil.getShortNumber(CHARGE) + "HE").withStyle(ChatFormatting.YELLOW));
         list.add(Component.literal("[Requires full electric set to be worn]"));
     }

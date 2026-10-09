@@ -12,7 +12,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 //? if forge {
 import net.minecraftforge.items.SlotItemHandler;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.neoforge.items.SlotItemHandler;
+*///?}
 
 public class MachineSolderingStationMenu extends AbstractContainerMenu {
 
@@ -29,7 +31,8 @@ public class MachineSolderingStationMenu extends AbstractContainerMenu {
         super(ModMenuTypes.SOLDERING_STATION_MENU.get(), id);
         this.blockEntity = be;
 
-        //? if forge {
+        // NeoForge: gleiche SlotItemHandler-API (ModItemStackHandler ist dort IItemHandler)
+        //? if forge || neoforge {
         var h = be.getItemHandler();
         // ── Machine slots (0-10) ─────────────────────────────────────────────
         // Inputs row 1 — toppings (slots 0-2)

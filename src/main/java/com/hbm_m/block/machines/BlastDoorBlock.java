@@ -141,11 +141,22 @@ public class BlastDoorBlock extends BaseEntityBlock implements IBomb {
         }
 
         @Override
+        //? if < 1.21.1 {
         public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) { return new ItemStack(ModBlocks.BLAST_DOOR.get()); }
+        //?} else {
+        /*public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader level, BlockPos pos, BlockState state) { return new ItemStack(ModBlocks.BLAST_DOOR.get()); }
+        *///?}
 
         //? if < 1.21.1 {
         @Override
         public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        //?} else {
+        /*@Override
+        protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+            return com.hbm_m.platform.BlockUseHooks.item(hbmUse(state, world, pos, player, hand, hit));
+        }
+        private InteractionResult hbmUse(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        *///?}
             if (world.isClientSide) return InteractionResult.SUCCESS;
             ItemStack held = player.getItemInHand(hand);
             if (!held.isEmpty() && (held.getItem() instanceof ItemLock || held.is(ModItems.KEY_KIT.get()))) return InteractionResult.PASS;
@@ -155,7 +166,6 @@ public class BlastDoorBlock extends BaseEntityBlock implements IBomb {
             }
             return InteractionResult.SUCCESS;
         }
-        //?}
 
         @Override
         public BombReturnCode explode(Level world, BlockPos pos) {
@@ -185,14 +195,30 @@ public class BlastDoorBlock extends BaseEntityBlock implements IBomb {
         public void setTarget(BlockPos t) { this.target = t.immutable(); setChanged(); }
 
         @Override
+        //? if < 1.21.1 {
         public void load(CompoundTag nbt) {
+        //?} else {
+        /*public void loadAdditional(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        *///?}
+            //? if < 1.21.1 {
             super.load(nbt);
+            //?} else {
+            /*super.loadAdditional(nbt, registries);
+            *///?}
             target = nbt.contains("tx") ? new BlockPos(nbt.getInt("tx"), nbt.getInt("ty"), nbt.getInt("tz")) : null;
         }
 
         @Override
+        //? if < 1.21.1 {
         protected void saveAdditional(CompoundTag nbt) {
+        //?} else {
+        /*protected void saveAdditional(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        *///?}
+            //? if < 1.21.1 {
             super.saveAdditional(nbt);
+            //?} else {
+            /*super.saveAdditional(nbt, registries);
+            *///?}
             if (target != null) { nbt.putInt("tx", target.getX()); nbt.putInt("ty", target.getY()); nbt.putInt("tz", target.getZ()); }
         }
     }

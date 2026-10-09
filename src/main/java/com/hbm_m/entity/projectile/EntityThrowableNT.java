@@ -226,7 +226,11 @@ public abstract class EntityThrowableNT extends Entity {
 
             if (mop != null) {
                 if (mop instanceof BlockHitResult bhr && this.level().getBlockState(bhr.getBlockPos()).is(Blocks.NETHER_PORTAL)) {
+                    //? if < 1.21.1 {
                     this.handleInsidePortal(bhr.getBlockPos());
+                    //?} else {
+                    /*this.setAsInsidePortal((net.minecraft.world.level.block.Portal) Blocks.NETHER_PORTAL, bhr.getBlockPos());
+                    *///?}
                 } else {
                     this.onImpact(mop);
                 }

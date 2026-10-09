@@ -1,5 +1,7 @@
 package com.hbm_m.block.generic;
 
+import com.hbm_m.platform.EffectHooks;
+
 import java.util.function.Supplier;
 
 import com.hbm_m.block.ModBlocks;
@@ -41,7 +43,7 @@ public class BlockSellafield extends Block {
     @Override
     public void stepOn(Level world, BlockPos pos, BlockState state, Entity entity) {
         if (entity instanceof LivingEntity living)
-            living.addEffect(new MobEffectInstance(ModEffects.RADIATION.get(), 30 * 20, level < 5 ? level : level * 2));
+            living.addEffect(new MobEffectInstance(EffectHooks.of(ModEffects.RADIATION), 30 * 20, level < 5 ? level : level * 2));
         super.stepOn(world, pos, state, entity);
     }
 

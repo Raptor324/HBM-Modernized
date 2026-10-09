@@ -1,5 +1,7 @@
 package com.hbm_m.config;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -51,11 +53,14 @@ public final class CustomMachineConfigJSON {
     public static final List<MachineConfiguration> niceList = new ArrayList<>();
     /** Werkbankrezepte der Steuerungen; werden beim Serverstart in den RecipeManager gelegt. */
     public static final List<ShapedRecipe> controllerRecipes = new ArrayList<>();
+    /** IDs zu {@link #controllerRecipes} (gleicher Index); 1.21.1 braucht sie fuer RecipeHolder. */
+    public static final List<ResourceLocation> controllerRecipeIds = new ArrayList<>();
 
     public static void initialize() {
         customMachines.clear();
         niceList.clear();
         controllerRecipes.clear();
+        controllerRecipeIds.clear();
 
         File folder = ConfigPaths.configRoot().toFile();
         if (!folder.exists()) folder.mkdirs();
@@ -228,8 +233,9 @@ public final class CustomMachineConfigJSON {
             }
         }
         ItemStack stack = ModItems.CUSTOM_MACHINE.get().getDefaultInstance();
-        stack.getOrCreateTag().putString("machineType", configuration.unlocalizedName);
+        StackNbt.orCreate(stack).putString("machineType", configuration.unlocalizedName);
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath("hbm_m", "custom_machine/" + index + "_" + configuration.unlocalizedName.toLowerCase(java.util.Locale.US).replaceAll("[^a-z0-9_.-]", "_"));
+        controllerRecipeIds.add(id);
         //? if < 1.21.1 {
         return new ShapedRecipe(id, "", CraftingBookCategory.MISC, w, h, grid, stack);
         //?} else {
@@ -315,7 +321,9 @@ public final class CustomMachineConfigJSON {
     public static String languageCode() {
         //? if forge {
         if (net.minecraftforge.fml.loading.FMLEnvironment.dist.isClient()) return com.hbm_m.client.util.ClientLang.code();
-        //?}
+        //?} elif neoforge {
+        /*if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) return com.hbm_m.client.util.ClientLang.code();
+        *///?}
         return "en_us";
     }
 

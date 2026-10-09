@@ -41,7 +41,11 @@ public final class ForgottenBricks {
         @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> b) { b.add(META); }
 
         @Override
+        //? if < 1.21.1 {
         public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
+        //?} else {
+        /*public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader level, BlockPos pos, BlockState state) {
+        *///?}
             return JungleBricks.stack(asItem(), "meta", Integer.toString(state.getValue(META)));
         }
 
@@ -83,7 +87,11 @@ public final class ForgottenBricks {
         @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> b) { b.add(META); }
 
         @Override
+        //? if < 1.21.1 {
         public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
+        //?} else {
+        /*public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader level, BlockPos pos, BlockState state) {
+        *///?}
             return JungleBricks.stack(asItem(), "meta", Integer.toString(state.getValue(META)));
         }
 

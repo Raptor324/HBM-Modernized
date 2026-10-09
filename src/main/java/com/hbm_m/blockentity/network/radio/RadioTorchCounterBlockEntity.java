@@ -73,7 +73,29 @@ public class RadioTorchCounterBlockEntity extends BaseMachineBlockEntity impleme
             if (be.lastCount[i] != count) level.sendBlockUpdated(pos, state, state, 2);
             be.lastCount[i] = count;
         }
-        //?}
+        //?} elif neoforge {
+        /*net.neoforged.neoforge.items.IItemHandler handler = com.hbm_m.platform.HbmCaps.get(sourceBe, com.hbm_m.platform.HbmCap.ITEM_HANDLER, facing).orElse(null);
+        if (handler == null) return;
+
+        for (int i = 0; i < SLOT_COUNT; i++) {
+            if (be.channel[i] == null || be.channel[i].isEmpty()) continue;
+            ItemStack pattern = be.inventory.getStackInSlot(i);
+            if (pattern.isEmpty()) continue;
+
+            int count = 0;
+            for (int j = 0; j < handler.getSlots(); j++) {
+                ItemStack stack = handler.getStackInSlot(j);
+                if (!stack.isEmpty() && be.matcher.isValidForFilter(pattern, i, stack)) count += stack.getCount();
+            }
+
+            if (be.polling || be.lastCount[i] != count) {
+                RTTYNetwork.broadcast(level, be.channel[i], String.valueOf(count));
+            }
+            // Original networkPackNT: der Zaehlstand geht an den Client (Blick-Anzeige "Signal n")
+            if (be.lastCount[i] != count) level.sendBlockUpdated(pos, state, state, 2);
+            be.lastCount[i] = count;
+        }
+        *///?}
     }
 
     public ModulePatternMatcher getMatcher() { return matcher; }

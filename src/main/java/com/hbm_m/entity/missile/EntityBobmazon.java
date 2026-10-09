@@ -1,5 +1,7 @@
 package com.hbm_m.entity.missile;
 
+import com.hbm_m.platform.StackNbt;
+
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.explosion.ExplosionLarge;
 import com.hbm_m.sound.HbmSoundsNT;
@@ -35,10 +37,17 @@ public class EntityBobmazon extends Entity {
         this(ModEntities.BOBMAZON.get(), world);
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
         this.entityData.define(DATA_16, 0);
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        builder.define(DATA_16, 0);
+    }
+    *///?}
 
     @Override
     public void tick() {
@@ -88,13 +97,13 @@ public class EntityBobmazon extends Entity {
 
     @Override
     protected void readAdditionalSaveData(CompoundTag nbt) {
-        this.payload = ItemStack.of(nbt.getCompound("payload"));
+        this.payload = StackNbt.parse(nbt.getCompound("payload"));
     }
 
     @Override
     protected void addAdditionalSaveData(CompoundTag nbt) {
         CompoundTag nbt1 = new CompoundTag();
-        payload.save(nbt1);
+        StackNbt.save(payload, nbt1);
         nbt.put("payload", nbt1);
     }
 

@@ -108,7 +108,11 @@ public class DungeonSpawnerBlockEntity extends BaseHbmBlockEntity {
                         mob.moveTo(x + 0.5 + vec.xCoord, y - 5, z + 0.5 + vec.zCoord, i * 36F, 0);
                         if (mob.checkSpawnRules(world, MobSpawnType.EVENT) && mob.checkSpawnObstruction(world)) {
                             if (world instanceof ServerLevel server) {
+                                //? if < 1.21.1 {
                                 mob.finalizeSpawn(server, server.getCurrentDifficultyAt(mob.blockPosition()), MobSpawnType.EVENT, null, null);
+                                //?} else {
+                                /*mob.finalizeSpawn(server, server.getCurrentDifficultyAt(mob.blockPosition()), MobSpawnType.EVENT, null);
+                                *///?}
                             }
                             world.addFreshEntity(mob);
                             break;

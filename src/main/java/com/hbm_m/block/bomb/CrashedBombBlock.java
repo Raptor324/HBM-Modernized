@@ -148,4 +148,8 @@ public class CrashedBombBlock extends BaseEntityBlock implements IBomb {
         data.putBoolean("balefire", balefire);
         IParticleCreator.sendPacket(world, x + 0.5, y + 0.5, z + 0.5, 250, data);
     }
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<CrashedBombBlock> CODEC = com.hbm_m.platform.BlockCodecs.unsupported(CrashedBombBlock.class);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

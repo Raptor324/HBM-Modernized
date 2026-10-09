@@ -1,5 +1,7 @@
 package com.hbm_m.powerarmor;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -42,19 +44,19 @@ public class ModArmorFSBFueled extends ModArmorFSB implements IFillableItem {
 
     @Override
     public int getFill(ItemStack stack) {
-        if (stack.getTag() == null) {
-            stack.setTag(new CompoundTag());
+        if (StackNbt.read(stack) == null) {
+            StackNbt.set(stack, new CompoundTag());
             setFill(stack, maxFuel);
             return maxFuel;
         }
-        return stack.getTag().getInt("fuel");
+        return StackNbt.read(stack).getInt("fuel");
     }
 
     public void setFill(ItemStack stack, int fill) {
-        if (stack.getTag() == null) {
-            stack.setTag(new CompoundTag());
+        if (StackNbt.read(stack) == null) {
+            StackNbt.set(stack, new CompoundTag());
         }
-        stack.getTag().putInt("fuel", fill);
+        StackNbt.tag(stack).putInt("fuel", fill);
     }
 
     public int getMaxFill(ItemStack stack) {
@@ -86,11 +88,11 @@ public class ModArmorFSBFueled extends ModArmorFSB implements IFillableItem {
     //? if forge {
     @Override
     @SuppressWarnings("removal")
+    //?}
     public void onArmorTick(ItemStack stack, Level world, Player player) {
         super.onArmorTick(stack, world, player);
         armorTick(stack, world, player);
     }
-    //?}
 
     protected void armorTick(ItemStack stack, Level world, Player player) {
         if (this.drain > 0 && ModArmorFSB.hasFSBArmor(player) && !player.getAbilities().instabuild && world.getGameTime() % 10 == 0) {

@@ -1,5 +1,7 @@
 package com.hbm_m.block.machines;
 
+import com.hbm_m.platform.StackNbt;
+
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.bomb.IBomb;
@@ -70,13 +72,21 @@ public class CompactLauncherBlock extends DummyableMachineBlock implements IBomb
     @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
         super.setPlacedBy(level, pos, state, placer, stack);
-        if (stack.hasCustomHoverName() && level.getBlockEntity(pos) instanceof CustomLauncherBlockEntity be) {
+        if (StackNbt.hasCustomName(stack) && level.getBlockEntity(pos) instanceof CustomLauncherBlockEntity be) {
             be.setCustomName(stack.getHoverName().getString());
         }
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    //?} else {
+    /*@Override
+    protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return com.hbm_m.platform.BlockUseHooks.item(hbmUse(state, level, pos, player, hand, hit));
+    }
+    private InteractionResult hbmUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    *///?}
         if (player.isShiftKeyDown()) return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.PASS; // Original: Client true, Server geschlichen false
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof CustomLauncherBlockEntity be) {
             MenuRegistry.openExtendedMenu((ServerPlayer) player, be, buf -> buf.writeBlockPos(pos));

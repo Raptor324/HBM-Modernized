@@ -1,5 +1,9 @@
 package com.hbm_m.handler;
 
+import com.hbm_m.platform.PlatformHooks;
+
+import com.hbm_m.platform.StackNbt;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -83,7 +87,7 @@ public final class EntityEffectHandlerExtra {
         // only sets players on fire so mod compatibility doesnt die
         if (com.hbm_m.config.GeneralConfig.enable528 && ModClothConfig.get().enable528NetherBurn && entity instanceof Player && !entity.fireImmune()
                 && entity.level().dimensionType().ultraWarm()) {
-            entity.setSecondsOnFire(5);
+            PlatformHooks.setSecondsOnFire(entity, 5);
         }
     }
 
@@ -163,8 +167,8 @@ public final class EntityEffectHandlerExtra {
             // only affect unstackables (e.g. tools and armor) so that the NBT tag's stack restrictions isn't noticeable
             if (!stack.isEmpty() && stack.getMaxStackSize() == 1) {
                 if (contagion > 0) {
-                    stack.getOrCreateTag().putBoolean("ntmContagion", true);
-                } else if (stack.hasTag() && stack.getTag().getBoolean("ntmContagion")) {
+                    StackNbt.orCreate(stack).putBoolean("ntmContagion", true);
+                } else if (StackNbt.has(stack) && StackNbt.read(stack).getBoolean("ntmContagion")) {
                     if (!bacteriaProtected(player)) HbmLivingProps.setContagion(player, 3 * hour);
                 }
             }
@@ -183,7 +187,7 @@ public final class EntityEffectHandlerExtra {
                         }
                     }
                     if (ent instanceof ItemEntity item) {
-                        item.getItem().getOrCreateTag().putBoolean("ntmContagion", true);
+                        StackNbt.orCreate(item.getItem()).putBoolean("ntmContagion", true);
                     }
                 }
             }

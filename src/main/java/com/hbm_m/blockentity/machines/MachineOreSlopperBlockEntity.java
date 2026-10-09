@@ -406,7 +406,38 @@ public class MachineOreSlopperBlockEntity extends BaseMachineBlockEntity impleme
         sided.values().forEach(net.minecraftforge.common.util.LazyOptional::invalidate);
         sided.clear();
     }
-    //?}
+    //?} elif neoforge {
+    /*private final Map<Direction, com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler>> sided = new EnumMap<>(Direction.class);
+
+    /^* Original {@code slot_access {2..8}}: Slot 2 einfuegbar, 3-8 entnehmbar. ^/
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) {
+            return sided.computeIfAbsent(side, d -> com.hbm_m.platform.LazyCap.of(() -> new net.neoforged.neoforge.items.IItemHandler() {
+                @Override public int getSlots() { return 7; }
+                @Override public @NotNull ItemStack getStackInSlot(int slot) { return inventory.getStackInSlot(slot + SLOT_INPUT); }
+                @Override public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
+                    if (slot != 0 || stack.getItem() != ModItems.BEDROCK_ORE_BASE.get()) return stack;
+                    return inventory.insertItem(SLOT_INPUT, stack, simulate);
+                }
+                @Override public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+                    if (slot == 0) return ItemStack.EMPTY;
+                    return inventory.extractItem(slot + SLOT_INPUT, amount, simulate);
+                }
+                @Override public int getSlotLimit(int slot) { return inventory.getSlotLimit(slot + SLOT_INPUT); }
+                @Override public boolean isItemValid(int slot, @NotNull ItemStack stack) { return slot == 0 && stack.getItem() == ModItems.BEDROCK_ORE_BASE.get(); }
+            })).cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sided.values().forEach(com.hbm_m.platform.LazyCap::invalidate);
+        sided.clear();
+    }
+    *///?}
 
     // ── Fluid ────────────────────────────────────────────────────────────────
 

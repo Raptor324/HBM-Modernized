@@ -42,7 +42,9 @@ import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+//? if forge {
 import net.minecraftforge.common.IPlantable;
+//?}
 
 /**
  * 1:1 {@code TileEntityMachineAutosaw}: ein drehender Saegearm. Im Suchmodus dreht er sich um 1 Grad pro Tick und
@@ -515,7 +517,15 @@ public class MachineAutosawBlockEntity extends com.hbm_m.blockentity.BaseHbmBloc
 
     private static boolean canSupportSapling(Level world, int x, int y, int z) {
         BlockPos p = new BlockPos(x, y, z);
+        //? if forge {
         return world.getBlockState(p).canSustainPlant(world, p, Direction.UP, (IPlantable) Blocks.OAK_SAPLING);
+        //?} else {
+        /*// NeoForge: TriState statt IPlantable; DEFAULT = Forge-Standard fuer PlantType.PLAINS (Erde-Tag oder Ackerland)
+        BlockState soil = world.getBlockState(p);
+        net.neoforged.neoforge.common.util.TriState t = soil.canSustainPlant(world, p, Direction.UP, Blocks.OAK_SAPLING.defaultBlockState());
+        if (!t.isDefault()) return t.isTrue();
+        return soil.is(net.minecraft.tags.BlockTags.DIRT) || soil.getBlock() instanceof net.minecraft.world.level.block.FarmBlock;
+        *///?}
     }
 
     @Override public FluidTank[] getAllTanks() { return new FluidTank[] { tank }; }

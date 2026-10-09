@@ -74,7 +74,11 @@ public abstract class EntityRailCarBase extends Entity {
         super(type, world);
     }
 
+    //? if < 1.21.1 {
     @Override protected void defineSynchedData() { }
+    //?} else {
+    /*@Override protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) { }
+    *///?}
     @Override protected void readAdditionalSaveData(@NotNull CompoundTag nbt) { }
     @Override protected void addAdditionalSaveData(@NotNull CompoundTag nbt) { }
 
@@ -389,7 +393,11 @@ public abstract class EntityRailCarBase extends Entity {
 
     /** Original {@code setPositionAndRotation2}. */
     @Override
+    //? if < 1.21.1 {
     public void lerpTo(double posX, double posY, double posZ, float yaw, float pitch, int turnProg, boolean teleport) {
+    //?} else {
+    /*public void lerpTo(double posX, double posY, double posZ, float yaw, float pitch, int turnProg) {
+    *///?}
         this.trainX = posX;
         this.trainY = posY;
         this.trainZ = posZ;

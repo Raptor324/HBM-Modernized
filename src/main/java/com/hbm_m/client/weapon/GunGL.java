@@ -62,7 +62,7 @@ public final class GunGL {
     public static final int GL_QUADS = 7;
     public static final int GL_TRIANGLES = 4;
 
-    public static final ResourceLocation WHITE = new ResourceLocation("minecraft", "textures/misc/white.png");
+    public static final ResourceLocation WHITE = ResourceLocation.fromNamespaceAndPath("minecraft", "textures/misc/white.png");
 
     private static PoseStack pose = new PoseStack();
     private static MultiBufferSource buffers;

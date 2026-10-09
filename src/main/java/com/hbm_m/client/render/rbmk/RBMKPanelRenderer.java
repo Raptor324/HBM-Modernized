@@ -31,7 +31,7 @@ import java.util.Map;
  * is reproduced by {@link #facingAngle(Direction)}.</p>
  */
 public abstract class RBMKPanelRenderer<T extends RBMKPanelDeviceBlockEntity>
-        implements BlockEntityRenderer<T> {
+        implements com.hbm_m.client.render.HbmBerBounds<T> {
 
     /** Original: {@code RenderArcFurnace.fullbright(true)} - lightmap pinned to maximum. */
     protected static final int FULLBRIGHT = LightTexture.FULL_BRIGHT;

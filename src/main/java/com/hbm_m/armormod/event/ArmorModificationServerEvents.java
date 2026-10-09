@@ -50,6 +50,34 @@ public class ArmorModificationServerEvents {
 }
 //?}
 
+//? if neoforge {
+/*@net.neoforged.fml.common.EventBusSubscriber(modid = RefStrings.MODID)
+public class ArmorModificationServerEvents {
+
+    private static final Set<UUID> playersToUpdate = new HashSet<>();
+
+    @net.neoforged.bus.api.SubscribeEvent
+    public static void onEquipmentChange(net.neoforged.neoforge.event.entity.living.LivingEquipmentChangeEvent event) {
+        if (event.getSlot().getType() == EquipmentSlot.Type.HUMANOID_ARMOR && event.getEntity() instanceof Player) {
+            playersToUpdate.add(event.getEntity().getUUID());
+        }
+    }
+
+    @net.neoforged.bus.api.SubscribeEvent
+    public static void onServerTick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event) {
+        if (!playersToUpdate.isEmpty()) {
+            for (UUID playerUUID : playersToUpdate.toArray(new UUID[0])) {
+                ServerPlayer player = event.getServer().getPlayerList().getPlayer(playerUUID);
+                if (player != null && player.getHealth() > player.getMaxHealth()) {
+                    player.setHealth(player.getMaxHealth());
+                }
+            }
+            playersToUpdate.clear();
+        }
+    }
+}
+*///?}
+
 //? if fabric {
 /*import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import com.hbm_m.platform.PlatformHooks;

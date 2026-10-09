@@ -32,7 +32,7 @@ import net.minecraft.world.item.ItemStack;
  * <p>Data-driven: рецепты читаются напрямую из {@code RecipeManager} (JSON {@code hbm_m:cracking_tower}),
  * ранее — статический {@code CrackingTowerRecipes}.</p>
  */
-//? if forge {
+//? if forge || neoforge {
 public class CrackingTowerJeiCategory extends JeiGenericRecipeCategory<CrackingTowerRecipe> {
 
     public static final RecipeType<CrackingTowerRecipe> RECIPE_TYPE =

@@ -41,7 +41,9 @@ public class CableDiodeBlockEntity extends BaseHbmBlockEntity implements IEnergy
 
     //? if forge {
     private final LazyOptional<IEnergyReceiver> receiverCap = LazyOptional.of(() -> this);
-    //?}
+    //?} elif neoforge {
+    /*private final com.hbm_m.platform.LazyCap<IEnergyReceiver> receiverCap = com.hbm_m.platform.LazyCap.of(() -> this);
+    *///?}
 
     public CableDiodeBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.CABLE_DIODE.get(), pos, state);
@@ -153,5 +155,17 @@ public class CableDiodeBlockEntity extends BaseHbmBlockEntity implements IEnergy
         super.invalidateCaps();
         receiverCap.invalidate();
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_RECEIVER && (side == null || side != getDir())) return receiverCap.cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        receiverCap.invalidate();
+    }
+    *///?}
 }

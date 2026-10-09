@@ -1,5 +1,7 @@
 package com.hbm_m.entity.mob;
 
+import com.hbm_m.platform.EffectHooks;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,19 +56,29 @@ public class EntityTaintCrab extends EntityCyberCrab {
         List<LivingEntity> near = level().getEntitiesOfClass(LivingEntity.class, new AABB(getX() - 5, getY() - 5, getZ() - 5, getX() + 5, getY() + 5, getZ() + 5));
 
         for (LivingEntity e : near) {
-            if (!(e instanceof EntityCyberCrab)) e.addEffect(new MobEffectInstance(ModEffects.RADIATION.get(), 10, 15));
+            if (!(e instanceof EntityCyberCrab)) e.addEffect(new MobEffectInstance(EffectHooks.of(ModEffects.RADIATION), 10, 15));
         }
 
         super.aiStep();
     }
 
     /** Original {@code getDropItem} coil_copper, 0-2 (+ Pluenderung). */
+    //? if < 1.21.1 {
     @Override
     protected void dropCustomDeathLoot(@NotNull DamageSource source, int looting, boolean recentlyHit) {
+    //?} else {
+    /*@Override
+    protected void dropCustomDeathLoot(net.minecraft.server.level.ServerLevel hbmLevel, @NotNull DamageSource source, boolean recentlyHit) {
+        int looting = com.hbm_m.platform.MobHooks.lootingLevel(hbmLevel, source);
+    *///?}
         int j = this.random.nextInt(3);
         if (looting > 0) j += this.random.nextInt(looting + 1);
         for (int k = 0; k < j; ++k) this.spawnAtLocation(ModItems.COIL_COPPER.get(), 1);
+        //? if < 1.21.1 {
         super.dropCustomDeathLoot(source, looting, recentlyHit);
+        //?} else {
+        /*super.dropCustomDeathLoot(hbmLevel, source, recentlyHit);
+        *///?}
     }
 
     @Override

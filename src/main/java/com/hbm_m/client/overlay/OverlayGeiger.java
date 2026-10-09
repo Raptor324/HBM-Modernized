@@ -119,6 +119,7 @@ public class OverlayGeiger {
         }
     }
 
+    // neo-pendant: ClientSetup.onRegisterGuiOverlays (neoforge-Zweig)
     //? if forge {
     public static void onRenderOverlay(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
         render(guiGraphics, partialTick, screenWidth, screenHeight);

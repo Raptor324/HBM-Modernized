@@ -58,8 +58,13 @@ public abstract class EntityGrenadeBouncyBase extends Entity {
         this.setPos(x, y, z);
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() { }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) { }
+    *///?}
 
     /** {@code func_70182_d} */
     protected float getThrowSpeed() {

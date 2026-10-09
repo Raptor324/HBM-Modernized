@@ -79,7 +79,13 @@ public class MachineFluidTankBakedModel extends AbstractMultipartBakedModel impl
     public ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand, ModelData data) {
         return ChunkRenderTypeSet.of(RenderType.cutoutMipped());
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public net.neoforged.neoforge.client.ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand,
+            net.neoforged.neoforge.client.model.data.ModelData data) {
+        return net.neoforged.neoforge.client.ChunkRenderTypeSet.of(RenderType.cutoutMipped());
+    }
+    *///?}
 
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {

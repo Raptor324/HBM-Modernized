@@ -1,4 +1,4 @@
-//? if forge {
+//? if forge || neoforge {
 package com.hbm_m.client;
 
 import com.hbm_m.item.special.ItemHot;
@@ -7,7 +7,11 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.item.ItemStack;
+//? if forge {
 import net.minecraftforge.client.IItemDecorator;
+//?} else {
+/*import net.neoforged.neoforge.client.IItemDecorator;
+*///?}
 
 /**
  * Original {@code ItemRendererHot} (nur ItemRenderType.INVENTORY): legt das "_hot"-Symbol mit Deckkraft = Hitze

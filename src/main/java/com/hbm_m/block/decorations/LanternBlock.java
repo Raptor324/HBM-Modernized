@@ -50,4 +50,8 @@ public class LanternBlock extends DummyableMachineBlock {
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return level.isClientSide ? null : createTickerHelper(type, ModBlockEntities.LANTERN.get(), LanternBlockEntity::serverTick);
     }
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<LanternBlock> CODEC = simpleCodec(LanternBlock::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

@@ -15,7 +15,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.state.BlockState;
 
 /** 1:1 {@code RenderVendingMachine}: Teil "Soda" bzw. "Obamna" (Snacks), nur wenn der Oberteil steht, ohne Culling. */
-public class VendingMachineRenderer implements BlockEntityRenderer<VendingMachineBlockEntity> {
+public class VendingMachineRenderer implements com.hbm_m.client.render.HbmBerBounds<VendingMachineBlockEntity> {
 
     public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/machines/vending_machine.obj"));
     public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/machines/vending_machine.png");

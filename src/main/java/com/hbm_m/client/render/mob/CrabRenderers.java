@@ -67,7 +67,13 @@ public final class CrabRenderers {
         }
 
         @Override
+        //? if < 1.21.1 {
         public void renderToBuffer(PoseStack ps, VertexConsumer vc, int light, int overlay, float r, float g, float b, float a) {
+        //?} else {
+        /*public void renderToBuffer(PoseStack ps, VertexConsumer vc, int light, int overlay, int hbmColor) {
+            float r = net.minecraft.util.FastColor.ARGB32.red(hbmColor) / 255F, g = net.minecraft.util.FastColor.ARGB32.green(hbmColor) / 255F;
+            float b = net.minecraft.util.FastColor.ARGB32.blue(hbmColor) / 255F, a = net.minecraft.util.FastColor.ARGB32.alpha(hbmColor) / 255F;
+        *///?}
             ps.pushPose();
             if (taint) ps.mulPose(Axis.YN.rotationDegrees(90));
             ps.mulPose(Axis.ZP.rotationDegrees(180));

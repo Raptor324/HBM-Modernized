@@ -1,5 +1,7 @@
 package com.hbm_m.entity.train;
 
+import com.hbm_m.platform.StackNbt;
+
 import org.jetbrains.annotations.NotNull;
 
 import net.minecraft.nbt.CompoundTag;
@@ -32,11 +34,19 @@ public abstract class EntityRailCarCargo extends EntityRailCarBase implements Co
         return s;
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(OCCUPIED_SLOTS, 0);
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(OCCUPIED_SLOTS, 0);
+    }
+    *///?}
 
     public int getOccupiedSlots() {
         return this.entityData.get(OCCUPIED_SLOTS);
@@ -144,7 +154,7 @@ public abstract class EntityRailCarCargo extends EntityRailCarBase implements Co
             if (!this.slots[i].isEmpty()) {
                 CompoundTag nbttagcompound1 = new CompoundTag();
                 nbttagcompound1.putByte("Slot", (byte) i);
-                this.slots[i].save(nbttagcompound1);
+                StackNbt.save(this.slots[i], nbttagcompound1);
                 nbttaglist.add(nbttagcompound1);
             }
         }
@@ -163,7 +173,7 @@ public abstract class EntityRailCarCargo extends EntityRailCarBase implements Co
             int j = nbttagcompound1.getByte("Slot") & 255;
 
             if (j >= 0 && j < this.slots.length) {
-                this.slots[j] = ItemStack.of(nbttagcompound1);
+                this.slots[j] = StackNbt.parse(nbttagcompound1);
             }
         }
 

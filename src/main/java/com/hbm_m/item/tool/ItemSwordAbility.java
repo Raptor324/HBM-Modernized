@@ -1,5 +1,13 @@
 package com.hbm_m.item.tool;
 
+import com.hbm_m.platform.AttributeHooks;
+
+import com.hbm_m.platform.PlatformHooks;
+
+import com.hbm_m.platform.AttributeOps;
+
+import com.hbm_m.platform.ItemHooks;
+
 import java.util.List;
 
 import javax.annotation.Nullable;
@@ -50,9 +58,16 @@ public class ItemSwordAbility extends SwordItem implements ITooltipProvider {
 
     /** Fuer Unterklassen, die ihre Haltbarkeit selbst setzen (Akku, unzerstoerbar). */
     protected ItemSwordAbility(float damage, double movement, Tier material, Properties prepared, boolean preparedMarker) {
+        //? if < 1.21.1 {
         super(material, 0, -2.4F, prepared);
+        //?} else {
+        /*super(material, prepared); // Attribute: getDefaultAttributeModifiers(ItemStack)
+        *///?}
         this.damage = damage;
         this.movement = movement;
+        //? if >= 1.21.1 {
+        /*com.hbm_m.platform.ItemComponentHooks.deferRarity(this, () -> this.rarity != Rarity.COMMON ? this.rarity : null);
+        *///?}
     }
 
     public ItemSwordAbility addAbility(IWeaponAbility weaponAbility, int level) {
@@ -66,10 +81,12 @@ public class ItemSwordAbility extends SwordItem implements ITooltipProvider {
         return this;
     }
 
+    //? if < 1.21.1 {
     @Override
     public Rarity getRarity(ItemStack stack) {
         return this.rarity != Rarity.COMMON ? this.rarity : super.getRarity(stack);
     }
+    //?}
 
     @Override
     public boolean hurtEnemy(ItemStack stack, LivingEntity victim, LivingEntity attacker) {
@@ -84,19 +101,29 @@ public class ItemSwordAbility extends SwordItem implements ITooltipProvider {
                     ability.onHit(level, attacker.level(), player, victim, this));
         }
 
-        stack.hurtAndBreak(1, attacker, e -> e.broadcastBreakEvent(EquipmentSlot.MAINHAND));
+        ItemHooks.hurtAndBreak(stack, 1, attacker, EquipmentSlot.MAINHAND);
 
         return true;
     }
 
     @Override
     @SuppressWarnings("deprecation")
+    //? if < 1.21.1 {
     public Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(EquipmentSlot slot) {
         if (slot != EquipmentSlot.MAINHAND) return super.getDefaultAttributeModifiers(slot);
         ImmutableMultimap.Builder<Attribute, AttributeModifier> builder = ImmutableMultimap.builder();
-        builder.put(Attributes.ATTACK_DAMAGE, new AttributeModifier(BASE_ATTACK_DAMAGE_UUID, "Tool modifier", this.damage, AttributeModifier.Operation.ADDITION));
-        builder.put(Attributes.ATTACK_SPEED, new AttributeModifier(BASE_ATTACK_SPEED_UUID, "Weapon modifier", -2.4F, AttributeModifier.Operation.ADDITION));
-        builder.put(Attributes.MOVEMENT_SPEED, new AttributeModifier(BASE_ATTACK_DAMAGE_UUID, "Tool modifier", movement, AttributeModifier.Operation.MULTIPLY_BASE));
+    //?} else {
+    /*public net.minecraft.world.item.component.ItemAttributeModifiers getDefaultAttributeModifiers(ItemStack stack) {
+        return com.hbm_m.platform.AttributeHooks.fromSlots(this::hbmSlotModifiers);
+    }
+
+    private Multimap<net.minecraft.core.Holder<Attribute>, AttributeModifier> hbmSlotModifiers(EquipmentSlot slot) {
+        if (slot != EquipmentSlot.MAINHAND) return ImmutableMultimap.of();
+        ImmutableMultimap.Builder<net.minecraft.core.Holder<Attribute>, AttributeModifier> builder = ImmutableMultimap.builder();
+    *///?}
+        builder.put(Attributes.ATTACK_DAMAGE, AttributeHooks.modifier(AttributeHooks.BASE_ATTACK_DAMAGE_UUID, "Tool modifier", this.damage, AttributeOps.ADDITION));
+        builder.put(Attributes.ATTACK_SPEED, AttributeHooks.modifier(AttributeHooks.BASE_ATTACK_SPEED_UUID, "Weapon modifier", -2.4F, AttributeOps.ADDITION));
+        builder.put(Attributes.MOVEMENT_SPEED, AttributeHooks.modifier(AttributeHooks.BASE_ATTACK_DAMAGE_UUID, "Tool modifier", movement, AttributeOps.MULTIPLY_BASE));
         return builder.build();
     }
 
@@ -110,6 +137,7 @@ public class ItemSwordAbility extends SwordItem implements ITooltipProvider {
     }
 
     /** BEWLR fuer die 1.7-IItemRenderer (ItemRenderGavel/Shim/RedstoneSword); greift nur bei builtin/entity-Itemmodellen. */
+    //? if forge {
     @Override
     public void initializeClient(java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> consumer) {
         consumer.accept(new net.minecraftforge.client.extensions.common.IClientItemExtensions() {
@@ -119,4 +147,15 @@ public class ItemSwordAbility extends SwordItem implements ITooltipProvider {
             }
         });
     }
+    //?} elif neoforge {
+    /*@Override
+    public void initializeClient(java.util.function.Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
+        consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
+            @Override
+            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return com.hbm_m.client.weapon.GunItemRenderer.INSTANCE;
+            }
+        });
+    }
+    *///?}
 }

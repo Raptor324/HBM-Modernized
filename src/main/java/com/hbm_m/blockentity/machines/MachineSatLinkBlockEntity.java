@@ -96,12 +96,16 @@ public class MachineSatLinkBlockEntity extends BaseHbmBlockEntity implements IRO
         CompoundTag tag = new CompoundTag();
         tag.putBoolean("connected", connected);
         tag.putInt("freq", freq);
+<<<<<<< HEAD
         net.minecraft.nbt.ListTag lines = new net.minecraft.nbt.ListTag();
         for (net.minecraft.network.chat.Component line : info) {
             lines.add(net.minecraft.nbt.StringTag.valueOf(net.minecraft.network.chat.Component.Serializer.toJson(line)));
         }
         tag.put("info", lines);
         ClientboundBlockEntityDataPacket packet = ClientboundBlockEntityDataPacket.create(this, be -> tag);
+=======
+        ClientboundBlockEntityDataPacket packet = com.hbm_m.platform.BlockHooks.dataPacket(this, tag);
+>>>>>>> 5cf60b6108d271636c3d48b21b60db45caf65f6b
         for (var player : server.getChunkSource().chunkMap.getPlayers(new ChunkPos(worldPosition), false)) {
             if (player.distanceToSqr(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5) <= (double) range * range)
                 player.connection.send(packet);

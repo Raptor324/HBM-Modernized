@@ -164,7 +164,11 @@ public class SimpleObjModel {
         Matrix4f m = pose.last().pose();
         for (float[] tri : tris) {
             for (int v = 0; v < 3; v++) {
+                //? if < 1.21.1 {
                 vc.vertex(m, tri[v * 8], tri[v * 8 + 1], tri[v * 8 + 2]).color(r, g, b, a).endVertex();
+                //?} else {
+                /*vc.addVertex(m, tri[v * 8], tri[v * 8 + 1], tri[v * 8 + 2]).setColor(r, g, b, a);
+                *///?}
             }
         }
     }
@@ -193,7 +197,11 @@ public class SimpleObjModel {
             }
             for (int k = 1; k + 1 < poly.size(); k++) {
                 for (float[] p : new float[][] { poly.get(0), poly.get(k), poly.get(k + 1) }) {
+                    //? if < 1.21.1 {
                     vc.vertex(m, p[0], p[1], p[2]).color(r, g, b, a).endVertex();
+                    //?} else {
+                    /*vc.addVertex(m, p[0], p[1], p[2]).setColor(r, g, b, a);
+                    *///?}
                 }
             }
         }
@@ -254,7 +262,11 @@ public class SimpleObjModel {
         for (List<float[]> tris : parts.values()) {
             for (float[] tri : tris) {
                 for (int v = 0; v < 3; v++) {
+                    //? if < 1.21.1 {
                     vc.vertex(m, tri[v * 8], tri[v * 8 + 1], tri[v * 8 + 2]).color(r, g, b, a).endVertex();
+                    //?} else {
+                    /*vc.addVertex(m, tri[v * 8], tri[v * 8 + 1], tri[v * 8 + 2]).setColor(r, g, b, a);
+                    *///?}
                 }
             }
         }

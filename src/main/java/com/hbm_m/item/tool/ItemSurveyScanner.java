@@ -97,7 +97,19 @@ public class ItemSurveyScanner extends Item {
                 && player.getInventory().contains(new ItemStack(ModItems.ENTANGLEMENT_KIT.get()))) {
             if (world instanceof ServerLevel server) {
                 ServerLevel end = server.getServer().getLevel(Level.END);
+                //? if < 1.21.1 {
                 if (end != null) player.changeDimension(end);
+                //?} else {
+                /*// 1.21.1: Ziel wie der Vanilla-Endportal-Uebergang (Obsidianplattform am End-Spawnpunkt)
+                if (end != null) {
+                    net.minecraft.world.phys.Vec3 v = ServerLevel.END_SPAWN_POINT.getBottomCenter();
+                    net.minecraft.world.level.levelgen.feature.EndPlatformFeature.createEndPlatform(end, net.minecraft.core.BlockPos.containing(v).below(), true);
+                    if (player instanceof net.minecraft.server.level.ServerPlayer) v = v.subtract(0.0, 1.0, 0.0);
+                    player.changeDimension(new net.minecraft.world.level.portal.DimensionTransition(end, v, player.getDeltaMovement(),
+                            net.minecraft.core.Direction.WEST.toYRot(), player.getXRot(),
+                            net.minecraft.world.level.portal.DimensionTransition.PLAY_PORTAL_SOUND.then(net.minecraft.world.level.portal.DimensionTransition.PLACE_PORTAL_TICKET)));
+                }
+                *///?}
             }
             return InteractionResult.sidedSuccess(world.isClientSide);
         }

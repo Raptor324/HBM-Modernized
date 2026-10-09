@@ -73,8 +73,12 @@ public class CombinationOvenRenderer implements com.hbm_m.client.render.HbmBerBo
     }
 
     private static void vertex(VertexConsumer vc, org.joml.Matrix4f m, org.joml.Matrix3f n, float x, float y, float u, float v) {
+        //? if < 1.21.1 {
         vc.vertex(m, x, y, 0).color(1F, 1F, 1F, 1F).uv(u, v).overlayCoords(OverlayTexture.NO_OVERLAY)
                 .uv2(240, 240).normal(n, 0F, 1F, 0F).endVertex();
+        //?} else {
+        /*com.hbm_m.platform.RenderHooks.normal(vc.addVertex(m, x, y, 0).setColor(1F, 1F, 1F, 1F).setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY).setUv2(240, 240), n, 0F, 1F, 0F);
+        *///?}
     }
 
     @Override public boolean shouldRenderOffScreen(MachineCombinationOvenBlockEntity te) { return true; }

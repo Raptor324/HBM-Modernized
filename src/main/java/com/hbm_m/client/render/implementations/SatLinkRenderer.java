@@ -19,7 +19,7 @@ import net.minecraft.resources.ResourceLocation;
  * 1:1 {@code RenderSatLink}: Sockel, Drehkranz (Drehung rot) und Schuessel (Neigung lift um Hoehe 7.375) aus
  * {@code satlink.obj}; das Modell liegt in der Mitte der 2x2-Flaeche.
  */
-public class SatLinkRenderer implements BlockEntityRenderer<MachineSatLinkBlockEntity> {
+public class SatLinkRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineSatLinkBlockEntity> {
 
     private static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/machines/satlink.obj"));
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/satlink.png");

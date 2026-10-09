@@ -92,7 +92,11 @@ public abstract class EntityDroneBase extends Entity {
 
     /** Original {@code setPositionAndRotation2}: Zielposition merken, ueber {@code steps} Ticks hinterherziehen. */
     @Override
+    //? if < 1.21.1 {
     public void lerpTo(double x, double y, double z, float yRot, float xRot, int steps, boolean teleport) {
+    //?} else {
+    /*public void lerpTo(double x, double y, double z, float yRot, float xRot, int steps) {
+    *///?}
         this.syncPosX = x;
         this.syncPosY = y;
         this.syncPosZ = z;

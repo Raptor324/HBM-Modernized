@@ -15,5 +15,9 @@ public interface IConditionalInvAccess {
     /** Item-Handler fuer genau diese Zelle und Seite; {@code null} heisst: kein Zugriff. */
     @Nullable
     net.minecraftforge.items.IItemHandler getConditionalItemHandler(BlockPos part, @Nullable Direction side);
-    //?}
+    //?} elif neoforge {
+    /*/^* Item-Handler fuer genau diese Zelle und Seite; {@code null} heisst: kein Zugriff. ^/
+    @Nullable
+    net.neoforged.neoforge.items.IItemHandler getConditionalItemHandler(BlockPos part, @Nullable Direction side);
+    *///?}
 }

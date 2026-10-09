@@ -21,7 +21,14 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import com.hbm_m.main.MainRegistry;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import com.hbm_m.main.MainRegistry;
+*///?}
 
 /**
  * Die QMAW-Teile aus {@code ModEventHandlerClient} (1.7.10): Tooltipzeile "[ F1 fuer Hilfe ]" bei
@@ -31,7 +38,9 @@ import com.hbm_m.main.MainRegistry;
  */
 //? if forge {
 @Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
-//?}
+//?} elif neoforge {
+/*@EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+*///?}
 public final class QMAWClient {
 
     private QMAWClient() { }
@@ -49,7 +58,17 @@ public final class QMAWClient {
     public static void onRegisterReloadListeners(RegisterClientReloadListenersEvent event) {
         event.registerReloadListener(new QMAWLoader());
     }
-    //?}
+    //?} elif neoforge {
+    /*@SubscribeEvent
+    public static void onClientSetup(FMLClientSetupEvent event) {
+        init();
+    }
+
+    @SubscribeEvent
+    public static void onRegisterReloadListeners(RegisterClientReloadListenersEvent event) {
+        event.registerReloadListener(new QMAWLoader());
+    }
+    *///?}
 
     public static void init() {
         //? if < 1.21.1 {

@@ -1,5 +1,9 @@
 package com.hbm_m.entity.projectile;
 
+import com.hbm_m.platform.PlatformHooks;
+
+import com.hbm_m.platform.EffectHooks;
+
 import javax.annotation.Nullable;
 
 import com.hbm_m.block.bomb.BlockDetonatable;
@@ -349,10 +353,10 @@ public class EntityBulletBaseNT extends EntityThrowableInterp {
     }
 
     private void onEntityHurt(Entity e) {
-        if (config.incendiary > 0 && !level().isClientSide) e.setSecondsOnFire(config.incendiary);
+        if (config.incendiary > 0 && !level().isClientSide) PlatformHooks.setSecondsOnFire(e, config.incendiary);
 
         if (config.leadChance > 0 && !level().isClientSide && level().random.nextInt(100) < config.leadChance && e instanceof LivingEntity living)
-            living.addEffect(new MobEffectInstance(ModEffects.LEAD.get(), 10 * 20, 0));
+            living.addEffect(new MobEffectInstance(EffectHooks.of(ModEffects.LEAD), 10 * 20, 0));
 
         if (e instanceof LivingEntity living && config.effects != null && !config.effects.isEmpty() && !level().isClientSide) {
             for (MobEffectInstance effect : config.effects) living.addEffect(new MobEffectInstance(effect));

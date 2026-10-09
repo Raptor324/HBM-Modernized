@@ -144,7 +144,11 @@ public final class TomRenderers {
         }
 
         private static void vertex(VertexConsumer vc, Matrix4f m, float x, float y, float z, float u, float v, float a) {
+            //? if < 1.21.1 {
             vc.vertex(m, x, y, z).color(1F, 1F, 1F, a).uv(u, v).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(LightTexture.FULL_BRIGHT).normal(0, 1, 0).endVertex();
+            //?} else {
+            /*vc.addVertex(m, x, y, z).setColor(1F, 1F, 1F, a).setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(0, 1, 0);
+            *///?}
         }
 
         @Override

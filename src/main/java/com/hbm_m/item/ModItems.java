@@ -1,5 +1,7 @@
 package com.hbm_m.item;
 
+import com.hbm_m.platform.EffectHooks;
+
 import static com.hbm_m.lib.RefStrings.MODID;
 
 import java.util.List;
@@ -217,7 +219,7 @@ public class ModItems {
     public static final RegistrySupplier<Item> NCRPA_PLATE = ITEMS.register("ncrpa_plate", () -> new com.hbm_m.powerarmor.ArmorNCRPA(ModArmorMaterials.AJR, ArmorItem.Type.CHESTPLATE, new Item.Properties(), "hbm_m:textures/armor/starmetal_1.png", 2500000L, 10000L, 2000L, 25L).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) NCRPA_HELMET.get()));
     public static final RegistrySupplier<Item> NCRPA_LEGS = ITEMS.register("ncrpa_legs", () -> new com.hbm_m.powerarmor.ArmorNCRPA(ModArmorMaterials.AJR, ArmorItem.Type.LEGGINGS, new Item.Properties(), "hbm_m:textures/armor/starmetal_2.png", 2500000L, 10000L, 2000L, 25L).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) NCRPA_HELMET.get()));
     public static final RegistrySupplier<Item> NCRPA_BOOTS = ITEMS.register("ncrpa_boots", () -> new com.hbm_m.powerarmor.ArmorNCRPA(ModArmorMaterials.AJR, ArmorItem.Type.BOOTS, new Item.Properties(), "hbm_m:textures/armor/starmetal_1.png", 2500000L, 10000L, 2000L, 25L).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) NCRPA_HELMET.get()));
-    public static final RegistrySupplier<Item> BJ_HELMET = ITEMS.register("bj_helmet", () -> new com.hbm_m.powerarmor.ArmorBJ(ModArmorMaterials.BJ, ArmorItem.Type.HELMET, new Item.Properties(), "hbm_m:textures/armor/starmetal_1.png", 10000000L, 10000L, 1000L, 100L).enableVATS(true).enableThermalSight(true).setHasGeigerSound(true).setHasHardLanding(true).addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.MOVEMENT_SPEED, 20, 1)).addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.JUMP, 20, 0)).addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.SATURATION, 20, 0)).addEffect(new net.minecraft.world.effect.MobEffectInstance(com.hbm_m.effect.ModEffects.RADX.get(), 20, 0)).setStep("hbm:step.metal").setJump("hbm:step.iron_jump").setFall("hbm:step.iron_land").setRadResist(1D /*90%%*/));
+    public static final RegistrySupplier<Item> BJ_HELMET = ITEMS.register("bj_helmet", () -> new com.hbm_m.powerarmor.ArmorBJ(ModArmorMaterials.BJ, ArmorItem.Type.HELMET, new Item.Properties(), "hbm_m:textures/armor/starmetal_1.png", 10000000L, 10000L, 1000L, 100L).enableVATS(true).enableThermalSight(true).setHasGeigerSound(true).setHasHardLanding(true).addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.MOVEMENT_SPEED, 20, 1)).addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.JUMP, 20, 0)).addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.SATURATION, 20, 0)).addEffect(new net.minecraft.world.effect.MobEffectInstance(EffectHooks.of(com.hbm_m.effect.ModEffects.RADX), 20, 0)).setStep("hbm:step.metal").setJump("hbm:step.iron_jump").setFall("hbm:step.iron_land").setRadResist(1D /*90%%*/));
     public static final RegistrySupplier<Item> BJ_PLATE = ITEMS.register("bj_plate", () -> new com.hbm_m.powerarmor.ArmorBJ(ModArmorMaterials.BJ, ArmorItem.Type.CHESTPLATE, new Item.Properties(), "hbm_m:textures/armor/starmetal_1.png", 10000000L, 10000L, 1000L, 100L).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) BJ_HELMET.get()));
     public static final RegistrySupplier<Item> BJ_PLATE_JETPACK = ITEMS.register("bj_plate_jetpack", () -> new com.hbm_m.powerarmor.ArmorBJJetpack(ModArmorMaterials.BJ, ArmorItem.Type.CHESTPLATE, new Item.Properties(), "hbm_m:textures/armor/starmetal_1.png", 10000000L, 10000L, 1000L, 100L).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) BJ_HELMET.get()));
     public static final RegistrySupplier<Item> BJ_LEGS = ITEMS.register("bj_legs", () -> new com.hbm_m.powerarmor.ArmorBJ(ModArmorMaterials.BJ, ArmorItem.Type.LEGGINGS, new Item.Properties(), "hbm_m:textures/armor/starmetal_2.png", 10000000L, 10000L, 1000L, 100L).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) BJ_HELMET.get()));
@@ -1846,7 +1848,7 @@ public class ModItems {
             () -> new ItemBlades(new Item.Properties(), 200));
 
     public static final RegistrySupplier<Item> BLADE_TITANIUM = ITEMS.register("blade_titanium",
-            () -> new ItemBlades(new Item.Properties(), 350));
+            () -> new Item(new Item.Properties())); // Original: einfaches Item (Turbinenschaufel, stapelbar), keine Schredderklinge
 
     public static final RegistrySupplier<Item> BLADE_ALLOY = ITEMS.register("blade_alloy",
             () -> new ItemBlades(new Item.Properties(), 700));

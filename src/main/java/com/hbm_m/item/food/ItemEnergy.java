@@ -67,7 +67,7 @@ public class ItemEnergy extends Item {
         return this;
     }
 
-    //? if forge {
+    //? if forge || neoforge {
     @Override
     public boolean hasCraftingRemainingItem(ItemStack stack) {
         return craftingContainer && container != null;
@@ -84,8 +84,19 @@ public class ItemEnergy extends Item {
     }
 
     private static void eff(Player p, MobEffect e, int ticks, int amp) {
+        //? if < 1.21.1 {
+        p.addEffect(new MobEffectInstance(e, ticks, amp));
+        //?} else {
+        /*p.addEffect(new MobEffectInstance(net.minecraft.core.registries.BuiltInRegistries.MOB_EFFECT.wrapAsHolder(e), ticks, amp));
+        *///?}
+    }
+
+    //? if >= 1.21.1 {
+    /*// 1.21.1: Vanilla-MobEffects sind Holder
+    private static void eff(Player p, net.minecraft.core.Holder<MobEffect> e, int ticks, int amp) {
         p.addEffect(new MobEffectInstance(e, ticks, amp));
     }
+    *///?}
 
     private static boolean isFakePlayer(Player player) {
         //? if forge {
@@ -227,7 +238,11 @@ public class ItemEnergy extends Item {
     }
 
     @Override
+    //? if < 1.21.1 {
     public int getUseDuration(ItemStack stack) {
+    //?} else {
+    /*public int getUseDuration(ItemStack stack, net.minecraft.world.entity.LivingEntity hbmUser) {
+    *///?}
         return 32;
     }
 
@@ -246,7 +261,11 @@ public class ItemEnergy extends Item {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+    *///?}
         String line = null;
         if (is(ModItems.CAN_SMART)) line = "Cheap and full of bubbles";
         if (is(ModItems.CAN_CREATURE)) line = "Basically gasoline in a tin can";

@@ -2,7 +2,6 @@ package com.hbm_m.render.anim;
 
 import com.hbm_m.client.weapon.GunGL;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -54,7 +53,7 @@ public class HbmAnimations {
     public static Animation getRelevantAnim() { return getRelevantAnim(0); }
 
     public static Animation getRelevantAnim(int index) {
-        Player player = Minecraft.getInstance().player;
+        Player player = com.hbm_m.client.ClientAccess.player();
         if (player == null) return null;
         int slot = player.getInventory().selected;
         ItemStack stack = player.getMainHandItem();

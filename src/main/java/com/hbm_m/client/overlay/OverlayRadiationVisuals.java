@@ -80,6 +80,7 @@ public class OverlayRadiationVisuals {
         }
     }
 
+    // neo-pendant: ClientSetup.onRegisterGuiOverlays (neoforge-Zweig)
     //? if forge {
     public static final IGuiOverlay RADIATION_PIXELS_OVERLAY = (gui, guiGraphics, partialTick, width, height) ->
             render(guiGraphics, partialTick, width, height);

@@ -47,7 +47,7 @@ public class MachineCraneBoxerBlock extends CraneBaseBlock implements IEnterable
     public void onItemEnter(Level level, BlockPos pos, MovingConveyorItemEntity entity) {
         entity.discard();
         if (!(level.getBlockEntity(pos) instanceof MachineCraneBoxerBlockEntity boxer)) return;
-        //? if forge {
+        //? if forge || neoforge {
         ItemStack remainder = com.hbm_m.blockentity.network.CraneInventoryUtil.addToInventory(boxer.getInventory(), entity.getItem().copy());
         if (!remainder.isEmpty()) level.addFreshEntity(new ItemEntity(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, remainder.copy()));
         //?}
@@ -57,7 +57,7 @@ public class MachineCraneBoxerBlock extends CraneBaseBlock implements IEnterable
     @Override
     public void onPackageEnter(Level level, BlockPos pos, MovingConveyorPackageEntity entity) {
         if (!(level.getBlockEntity(pos) instanceof MachineCraneBoxerBlockEntity boxer)) return;
-        //? if forge {
+        //? if forge || neoforge {
         for (ItemStack stack : entity.getContents()) {
             if (stack.isEmpty()) continue;
             ItemStack remainder = com.hbm_m.blockentity.network.CraneInventoryUtil.addToInventory(boxer.getInventory(), stack.copy());
@@ -71,7 +71,7 @@ public class MachineCraneBoxerBlock extends CraneBaseBlock implements IEnterable
 
     @Override
     public int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
-        //? if forge {
+        //? if forge || neoforge {
         if (level.getBlockEntity(pos) instanceof MachineCraneBoxerBlockEntity be) return com.hbm_m.blockentity.network.CraneInventoryUtil.comparator(be.getInventory());
         //?}
         return 0;

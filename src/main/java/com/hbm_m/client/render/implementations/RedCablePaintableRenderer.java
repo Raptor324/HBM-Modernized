@@ -22,7 +22,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * </ul>
  * Das Overlay ist wie im Original ein alphagetesteter Wuerfel (Cutout) mit Blocklicht.
  */
-public class RedCablePaintableRenderer implements BlockEntityRenderer<RedCablePaintableBlockEntity> {
+public class RedCablePaintableRenderer implements com.hbm_m.client.render.HbmBerBounds<RedCablePaintableBlockEntity> {
 
     private static final ResourceLocation BASE_TEX = rl("hbm_m", "block/red_cable_base");
     private static final ResourceLocation OVERLAY_TEX = rl("hbm_m", "block/red_cable_overlay");

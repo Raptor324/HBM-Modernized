@@ -93,5 +93,13 @@ public final class OverlayJetpackFuel {
         int rows = render(g, w, h, gui.leftHeight);
         gui.leftHeight += rows * 4;
     };
-    //?}
+    //?} elif neoforge {
+    /*/^* NeoForge-Gegenstueck zu OVERLAY (Ebene ueber ARMOR_LEVEL, in ClientSetup angemeldet). ^/
+    public static void renderNeo(GuiGraphics g, int w, int h) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.options.hideGui || mc.player == null || mc.player.isCreative() || mc.player.isSpectator()) return;
+        int rows = render(g, w, h, mc.gui.leftHeight);
+        mc.gui.leftHeight += rows * 4;
+    }
+    *///?}
 }

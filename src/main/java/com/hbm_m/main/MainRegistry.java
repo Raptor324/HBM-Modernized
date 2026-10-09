@@ -77,6 +77,7 @@ public final class MainRegistry {
         ModEntities.init();
         ModExplosionParticles.init();
         ModSounds.init();
+        ModPaintings.init();
         ModItems.init();
         com.hbm_m.advancement.ModStats.init();
         //? if neoforge {

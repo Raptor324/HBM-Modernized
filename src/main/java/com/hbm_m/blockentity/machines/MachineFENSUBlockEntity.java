@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.RenderBounds;
+
 import com.hbm_m.api.energy.Nodespace;
 import com.hbm_m.api.network.NodeDirPos;
 import com.hbm_m.blockentity.ModBlockEntities;
@@ -158,6 +160,6 @@ public class MachineFENSUBlockEntity extends MachineBatteryBlockEntity {
 
     @Override
     public AABB getRenderBoundingBox() {
-        return INFINITE_EXTENT_AABB;
+        return RenderBounds.INFINITE;
     }
 }

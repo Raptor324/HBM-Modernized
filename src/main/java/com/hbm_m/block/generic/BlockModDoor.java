@@ -23,19 +23,29 @@ import net.minecraft.world.phys.BlockHitResult;
 public class BlockModDoor extends DoorBlock {
 
     public BlockModDoor(Properties props) {
+        //? if < 1.21.1 {
         super(props, BlockSetType.IRON);
+        //?} else {
+        /*super(BlockSetType.IRON, props);
+        *///?}
     }
 
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    //?} else {
+    /*@Override
+    protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return com.hbm_m.platform.BlockUseHooks.item(hbmUse(state, world, pos, player, hand, hit));
+    }
+    private InteractionResult hbmUse(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    *///?}
         state = state.cycle(OPEN);
         world.setBlock(pos, state, 10);
         playOpenSound(world, pos);
         world.gameEvent(player, this.isOpen(state) ? GameEvent.BLOCK_OPEN : GameEvent.BLOCK_CLOSE, pos);
         return InteractionResult.sidedSuccess(world.isClientSide);
     }
-    //?}
 
     @Override
     public void setOpen(Entity entity, Level world, BlockState state, BlockPos pos, boolean open) {

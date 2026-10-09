@@ -1,5 +1,7 @@
 package com.hbm_m.item.tool;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 
 import javax.annotation.Nullable;
@@ -42,10 +44,10 @@ public class ItemRTTYPager extends Item implements IItemControlReceiver, IToolti
 
     @Override
     public void inventoryTick(ItemStack stack, Level world, Entity entity, int slot, boolean held) {
-        if (!stack.hasTag() || !stack.getTag().contains(KEY_CHANNEL)) return;
+        if (!StackNbt.has(stack) || !StackNbt.read(stack).contains(KEY_CHANNEL)) return;
         if (!(entity instanceof ServerPlayer player) || world.isClientSide) return;
 
-        String channelFreq = stack.getTag().getString(KEY_CHANNEL);
+        String channelFreq = StackNbt.read(stack).getString(KEY_CHANNEL);
         RTTYNetwork.RttyChannel chan = RTTYNetwork.listen(world, channelFreq);
 
         if (chan != null && chan.timeStamp >= world.getGameTime() - 1) {
@@ -76,18 +78,18 @@ public class ItemRTTYPager extends Item implements IItemControlReceiver, IToolti
 
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
-        if (!stack.hasTag() || !stack.getTag().contains(KEY_CHANNEL) || stack.getTag().getString(KEY_CHANNEL).isEmpty()) {
+        if (!StackNbt.has(stack) || !StackNbt.read(stack).contains(KEY_CHANNEL) || StackNbt.read(stack).getString(KEY_CHANNEL).isEmpty()) {
             list.add(Component.literal("No channel set!").withStyle(ChatFormatting.RED));
         } else {
-            list.add(Component.literal("Channel: " + stack.getTag().getString(KEY_CHANNEL)).withStyle(ChatFormatting.YELLOW));
+            list.add(Component.literal("Channel: " + StackNbt.read(stack).getString(KEY_CHANNEL)).withStyle(ChatFormatting.YELLOW));
         }
     }
 
     @Override
     public void receiveControl(ItemStack stack, CompoundTag data) {
         if (data.contains("chan")) {
-            if (!stack.hasTag()) stack.setTag(new CompoundTag());
-            stack.getTag().putString(KEY_CHANNEL, data.getString(KEY_CHANNEL));
+            if (!StackNbt.has(stack)) StackNbt.set(stack, new CompoundTag());
+            StackNbt.tag(stack).putString(KEY_CHANNEL, data.getString(KEY_CHANNEL));
         }
     }
 }

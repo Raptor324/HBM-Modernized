@@ -1,5 +1,7 @@
 package com.hbm_m.entity.item;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -76,14 +78,14 @@ public class EntityParachuteCrate extends Entity {
         items.clear();
         ListTag list = nbt.getList("items", Tag.TAG_COMPOUND);
         for (int i = 0; i < list.size(); i++) {
-            items.add(ItemStack.of(list.getCompound(i)));
+            items.add(StackNbt.parse(list.getCompound(i)));
         }
     }
 
     @Override
     protected void addAdditionalSaveData(@NotNull CompoundTag nbt) {
         ListTag list = new ListTag();
-        for (ItemStack stack : items) list.add(stack.save(new CompoundTag()));
+        for (ItemStack stack : items) list.add(StackNbt.save(stack, new CompoundTag()));
         nbt.put("items", list);
     }
 }

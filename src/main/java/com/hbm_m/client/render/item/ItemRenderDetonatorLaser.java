@@ -2,7 +2,7 @@
 package com.hbm_m.client.render.item;
 
 import com.hbm_m.client.ClientRenderHandler;
-//? if forge {
+//? if forge || neoforge {
 import com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat;
 //?}
 import com.hbm_m.client.model.MissileBakedModel;
@@ -52,18 +52,13 @@ public class ItemRenderDetonatorLaser extends BlockEntityWithoutLevelRenderer {
     public void renderByItem(ItemStack stack, ItemDisplayContext displayContext, PoseStack poseStack,
                              MultiBufferSource buffer, int packedLight, int packedOverlay) {
         BakedModel displayModel = MissileRenderHelper.resolveBakedModel(stack);
-        //? if forge {
+        // Phase C: Anzeige-Waechter (ItemTransformHelperCompat) laufen jetzt auch auf NeoForge -> gleicher Pfad
+        //? if forge || neoforge {
         MissileBakedModel model = ItemTransformHelperCompat.unwrapMissileDelegate(displayModel);
         if (model == null) {
             return;
         }
         //?}
-        //? if neoforge {
-        /*MissileBakedModel model = displayModel instanceof MissileBakedModel m ? m : null;
-        if (model == null) {
-            return;
-        }
-        *///?}
 
         if (displayContext == ItemDisplayContext.GUI) {
             Lighting.setupFor3DItems();
@@ -74,17 +69,11 @@ public class ItemRenderDetonatorLaser extends BlockEntityWithoutLevelRenderer {
                 || displayContext == ItemDisplayContext.THIRD_PERSON_LEFT_HAND;
         poseStack.translate(0.5F, 0.5F, 0.5F);
         
-        //? if forge {
+        //? if forge || neoforge {
         ItemTransformHelperCompat.resolveDisplayTransforms(displayModel, model)
                 .getTransform(displayContext)
                 .apply(leftHand, poseStack);
         //?}
-        //? if neoforge {
-        /*/// applyTransform у MissileBakedModel — no-op (display применяет сам BEWLR),
-        /// поэтому применяем JSON display напрямую, как в фордж-ветке через resolveDisplayTransforms.
-        model.getBewlrDisplayTransforms().getTransform(displayContext)
-                .apply(leftHand, poseStack);
-        *///?}
         poseStack.scale(BASE_MESH_SCALE, BASE_MESH_SCALE, BASE_MESH_SCALE);
 
         MissileRenderHelper.bindBlockAtlas();

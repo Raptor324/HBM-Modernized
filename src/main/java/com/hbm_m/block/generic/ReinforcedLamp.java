@@ -60,7 +60,11 @@ public class ReinforcedLamp extends Block {
     }
 
     @Override
+    //? if < 1.21.1 {
     public ItemStack getCloneItemStack(BlockGetter world, BlockPos pos, BlockState state) {
+    //?} else {
+    /*public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader world, BlockPos pos, BlockState state) {
+    *///?}
         return new ItemStack(getOff());
     }
 }

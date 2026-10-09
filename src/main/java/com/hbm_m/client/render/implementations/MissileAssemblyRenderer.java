@@ -19,7 +19,7 @@ import net.minecraft.resources.ResourceLocation;
  * 1:1 {@code RenderMissileAssembly}: Das Grundgeruest kommt als Blockmodell, hier folgen die Stuetzstreben (je nach
  * Raketenlaenge jede bzw. jede zweite Einheit links und rechts) und die liegende, halbfertige Rakete auf 1.5 Bloecken.
  */
-public class MissileAssemblyRenderer implements BlockEntityRenderer<MissileAssemblyBlockEntity> {
+public class MissileAssemblyRenderer implements com.hbm_m.client.render.HbmBerBounds<MissileAssemblyBlockEntity> {
 
     private static final ResourceLocation STRUT_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/strut.png");
     private static SimpleObjModel strut;

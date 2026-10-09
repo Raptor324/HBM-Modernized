@@ -75,7 +75,7 @@ public class PneumoStorageClutterBlock extends PneumaticStorageBlockBase {
             boolean any = false;
             for (int i = 0; i < inv.getInventory().getSlots(); i++) if (!inv.getInventory().getStackInSlot(i).isEmpty()) any = true;
             if (any) {
-                inv.saveToItem(drop);
+                com.hbm_m.platform.BlockHooks.saveToItem(inv, drop);
                 net.minecraft.nbt.CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(drop);
                 if (tag != null && sizeOf(tag) > 6000) {
                     player.sendSystemMessage(net.minecraft.network.chat.Component.literal("Warning: Container NBT exceeds 6kB, contents will be ejected!")
@@ -104,4 +104,8 @@ public class PneumoStorageClutterBlock extends PneumaticStorageBlockBase {
         super.onRemove(state, level, pos, newState, isMoving);
         if (pos.equals(KEEP.get())) KEEP.remove();
     }
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<PneumoStorageClutterBlock> CODEC = simpleCodec(PneumoStorageClutterBlock::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

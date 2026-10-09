@@ -1,5 +1,7 @@
 package com.hbm_m.item.missile;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -37,7 +39,17 @@ public class ItemCustomMissile extends Item {
             }
         });
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public void initializeClient(java.util.function.Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
+        consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
+            @Override
+            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return com.hbm_m.client.render.item.ItemRenderMissileCustom.INSTANCE;
+            }
+        });
+    }
+    *///?}
 
     public static ItemStack buildMissile(Item chip, Item warhead, Item fuselage, @Nullable Item stability, Item thruster) {
         return buildMissile(new ItemStack(chip), new ItemStack(warhead), new ItemStack(fuselage), stability == null ? null : new ItemStack(stability), new ItemStack(thruster));
@@ -54,13 +66,13 @@ public class ItemCustomMissile extends Item {
     }
 
     private static void write(ItemStack stack, String key, Item item) {
-        stack.getOrCreateTag().putString(key, BuiltInRegistries.ITEM.getKey(item).toString());
+        StackNbt.orCreate(stack).putString(key, BuiltInRegistries.ITEM.getKey(item).toString());
     }
 
     @Nullable
     public static ItemCustomMissilePart read(ItemStack stack, String key) {
-        if (!stack.hasTag() || !stack.getTag().contains(key)) return null;
-        ResourceLocation rl = ResourceLocation.tryParse(stack.getTag().getString(key));
+        if (!StackNbt.has(stack) || !StackNbt.read(stack).contains(key)) return null;
+        ResourceLocation rl = ResourceLocation.tryParse(StackNbt.read(stack).getString(key));
         if (rl == null) return null;
         return BuiltInRegistries.ITEM.get(rl) instanceof ItemCustomMissilePart p ? p : null;
     }
@@ -75,8 +87,12 @@ public class ItemCustomMissile extends Item {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
-        if (!stack.hasTag()) return;
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+    *///?}
+        if (!StackNbt.has(stack)) return;
 
         try {
             ItemCustomMissilePart chip = read(stack, "chip");

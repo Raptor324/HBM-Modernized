@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
@@ -167,7 +169,7 @@ public class MachineSatDockBlockEntity extends BaseMachineBlockEntity {
                 if (!s.isEmpty()) {
                     for (int j = 0; j < chest.getContainerSize(); j++) {
                         ItemStack c = chest.getItem(j);
-                        if (!c.isEmpty() && ItemStack.isSameItemSameTags(c, s) && c.getCount() < c.getMaxStackSize()) {
+                        if (!c.isEmpty() && StackNbt.sameItemSameTags(c, s) && c.getCount() < c.getMaxStackSize()) {
                             s.shrink(1);
                             if (s.isEmpty()) inventory.setStackInSlot(i, ItemStack.EMPTY);
                             c.grow(1);
@@ -243,5 +245,25 @@ public class MachineSatDockBlockEntity extends BaseMachineBlockEntity {
         super.invalidateCaps();
         sidedItems.invalidate();
     }
-    //?}
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: Slots {0-14}; nichts hinein (nur der Chip-Platz 15 waere gueltig), alles heraus. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.range(0, 14); }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return false; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return true; }
+            });
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
 }

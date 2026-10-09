@@ -64,10 +64,17 @@ public class OrbitalStrikeRenderer<T extends Entity> extends EntityRenderer<T> {
     }
 
     private static void quad(VertexConsumer vc, Matrix4f m, Vec3 a, Vec3 b, float f, float r, float g, float bl) {
+        //? if < 1.21.1 {
         vc.vertex(m, (float) a.x * f, 250F, (float) a.z * f).color(r, g, bl, 1F).endVertex();
         vc.vertex(m, (float) a.x * f, 0F, (float) a.z * f).color(r, g, bl, 1F).endVertex();
         vc.vertex(m, (float) b.x * f, 0F, (float) b.z * f).color(r, g, bl, 1F).endVertex();
         vc.vertex(m, (float) b.x * f, 250F, (float) b.z * f).color(r, g, bl, 1F).endVertex();
+        //?} else {
+        /*vc.addVertex(m, (float) a.x * f, 250F, (float) a.z * f).setColor(r, g, bl, 1F);
+        vc.addVertex(m, (float) a.x * f, 0F, (float) a.z * f).setColor(r, g, bl, 1F);
+        vc.addVertex(m, (float) b.x * f, 0F, (float) b.z * f).setColor(r, g, bl, 1F);
+        vc.addVertex(m, (float) b.x * f, 250F, (float) b.z * f).setColor(r, g, bl, 1F);
+        *///?}
     }
 
     private void renderOrb(T entity, float interp, PoseStack pose, MultiBufferSource buffers) {

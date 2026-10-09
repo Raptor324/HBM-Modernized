@@ -47,6 +47,11 @@ public class MachineCraneUnboxerBlock extends CraneBaseBlock implements IEnterab
         //? if forge {
         net.minecraftforge.items.IItemHandler view = new com.hbm_m.blockentity.network.CraneInventoryUtil.SlotView(unboxer.getInventory(),
                 new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 });
+        //?} elif neoforge {
+        /*net.neoforged.neoforge.items.IItemHandler view = new com.hbm_m.blockentity.network.CraneInventoryUtil.SlotView(unboxer.getInventory(),
+                new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 });
+        *///?}
+        //? if forge || neoforge {
         for (ItemStack stack : entity.getContents()) {
             if (stack.isEmpty()) continue;
             ItemStack remainder = com.hbm_m.blockentity.network.CraneInventoryUtil.addToInventory(view, stack.copy());
@@ -60,7 +65,7 @@ public class MachineCraneUnboxerBlock extends CraneBaseBlock implements IEnterab
 
     @Override
     public int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
-        //? if forge {
+        //? if forge || neoforge {
         if (level.getBlockEntity(pos) instanceof MachineCraneUnboxerBlockEntity be) return com.hbm_m.blockentity.network.CraneInventoryUtil.comparator(be.getInventory());
         //?}
         return 0;

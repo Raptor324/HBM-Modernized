@@ -105,7 +105,11 @@ public class ItemCustomMissilePart extends Item {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+    *///?}
 
         if (title != null) list.add(Component.literal("\"" + title + "\"").withStyle(ChatFormatting.DARK_PURPLE));
 

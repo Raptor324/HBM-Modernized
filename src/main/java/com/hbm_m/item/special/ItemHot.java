@@ -1,5 +1,7 @@
 package com.hbm_m.item.special;
 
+import com.hbm_m.platform.StackNbt;
+
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
@@ -32,14 +34,14 @@ public class ItemHot extends Item {
     @Override
     public void inventoryTick(ItemStack stack, Level world, Entity entity, int slot, boolean selected) {
 
-        if (!world.isClientSide && stack.hasTag()) {
+        if (!world.isClientSide && StackNbt.has(stack)) {
 
-            int h = stack.getTag().getInt("heat");
+            int h = StackNbt.read(stack).getInt("heat");
 
             if (h > 0) {
-                stack.getTag().putInt("heat", h - 1);
+                StackNbt.tag(stack).putInt("heat", h - 1);
             } else {
-                stack.setTag(null);
+                StackNbt.set(stack, null);
             }
         }
     }
@@ -49,10 +51,10 @@ public class ItemHot extends Item {
         if (!(stack.getItem() instanceof ItemHot))
             return stack;
 
-        if (!stack.hasTag())
-            stack.setTag(new CompoundTag());
+        if (!StackNbt.has(stack))
+            StackNbt.set(stack, new CompoundTag());
 
-        stack.getTag().putInt("heat", getMaxHeat(stack));
+        StackNbt.tag(stack).putInt("heat", getMaxHeat(stack));
         return stack;
     }
 
@@ -61,10 +63,10 @@ public class ItemHot extends Item {
         if (!(stack.getItem() instanceof ItemHot))
             return stack;
 
-        if (!stack.hasTag())
-            stack.setTag(new CompoundTag());
+        if (!StackNbt.has(stack))
+            StackNbt.set(stack, new CompoundTag());
 
-        stack.getTag().putInt("heat", (int) (d * getMaxHeat(stack)));
+        StackNbt.tag(stack).putInt("heat", (int) (d * getMaxHeat(stack)));
         return stack;
     }
 
@@ -73,10 +75,10 @@ public class ItemHot extends Item {
         if (!(stack.getItem() instanceof ItemHot))
             return 0;
 
-        if (!stack.hasTag())
+        if (!StackNbt.has(stack))
             return 0;
 
-        int h = stack.getTag().getInt("heat");
+        int h = StackNbt.read(stack).getInt("heat");
 
         return (double) h / (double) heat;
     }

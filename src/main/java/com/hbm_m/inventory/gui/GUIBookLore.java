@@ -1,5 +1,7 @@
 package com.hbm_m.inventory.gui;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,8 +46,8 @@ public class GUIBookLore extends Screen {
 
     public GUIBookLore(ItemStack stack) {
         super(Component.empty());
-        if (!stack.hasTag()) return;
-        this.tag = stack.getTag();
+        if (!StackNbt.has(stack)) return;
+        this.tag = StackNbt.tag(stack);
         this.key = tag.getString("k");
         if (key.isEmpty()) return;
 
@@ -67,7 +69,7 @@ public class GUIBookLore extends Screen {
 
     @Override
     public void render(GuiGraphics g, int i, int j, float f) {
-        this.renderBackground(g);
+        com.hbm_m.client.GuiCompat.renderBackground(this, g, i, j, f);
         this.drawGuiContainerBackgroundLayer(g, f, i, j);
         this.drawGuiContainerForegroundLayer(g, i, j);
     }

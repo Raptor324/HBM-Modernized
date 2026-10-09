@@ -1,5 +1,7 @@
 package com.hbm_m.block.gas;
 
+import com.hbm_m.platform.EffectHooks;
+
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.effect.ModEffects;
 import com.hbm_m.extprop.HbmLivingProps;
@@ -34,7 +36,7 @@ public class BlockGasMeltdown extends BlockGasBase {
     @Override
     protected void affect(LivingEntity living) {
         ContaminationUtil.contaminate(living, HazardType.RADIATION, ContaminationType.CREATIVE, 0.5F);
-        living.addEffect(new MobEffectInstance(ModEffects.RADIATION.get(), 60 * 20, 2));
+        living.addEffect(new MobEffectInstance(EffectHooks.of(ModEffects.RADIATION), 60 * 20, 2));
 
         if (ArmorRegistry.hasProtection(living, 3, HazardClass.PARTICLE_FINE)) {
             damageWornFilter(living);

@@ -47,10 +47,17 @@ public class FurnaceSteelRenderer implements com.hbm_m.client.render.HbmBerBound
             Matrix4f m = ps.last().pose();
             for (int i = 0; i < 4; i++) {
                 float x = 1 + i * 0.0625F;
+                //? if < 1.21.1 {
                 vc.vertex(m, x, 1, -1).color(r, g, b, a).endVertex();
                 vc.vertex(m, x, 1, 1).color(r, g, b, a).endVertex();
                 vc.vertex(m, x, 0.5F, 1).color(r, g, b, a).endVertex();
                 vc.vertex(m, x, 0.5F, -1).color(r, g, b, a).endVertex();
+                //?} else {
+                /*vc.addVertex(m, x, 1, -1).setColor(r, g, b, a);
+                vc.addVertex(m, x, 1, 1).setColor(r, g, b, a);
+                vc.addVertex(m, x, 0.5F, 1).setColor(r, g, b, a);
+                vc.addVertex(m, x, 0.5F, -1).setColor(r, g, b, a);
+                *///?}
             }
         }
 

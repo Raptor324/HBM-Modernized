@@ -1,5 +1,7 @@
 package com.hbm_m.item.tool;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -99,24 +101,28 @@ public class ItemRebarPlacer extends Item {
     }
 
     @Override
+    //? if < 1.21.1 {
     public int getUseDuration(ItemStack stack) {
+    //?} else {
+    /*public int getUseDuration(ItemStack stack, net.minecraft.world.entity.LivingEntity hbmUser) {
+    *///?}
         return 1;
     }
 
     // if the placer isn't equipped or no concrete is loaded, forget the cached position
     @Override
     public void inventoryTick(ItemStack stack, Level world, Entity entity, int slot, boolean held) {
-        if (stack.hasTag() && stack.getTag().contains("pos")) {
+        if (StackNbt.has(stack) && StackNbt.read(stack).contains("pos")) {
             ItemStack[] stacks = HeldItemInventory.readStacksFromNBT(stack, 1);
             ItemStack theConk = stacks == null ? null : stacks[0];
 
             if (!held || theConk == null) {
-                stack.getTag().remove("pos");
+                StackNbt.tag(stack).remove("pos");
                 return;
             }
 
             if (!isValidConk(theConk)) {
-                stack.getTag().remove("pos");
+                StackNbt.tag(stack).remove("pos");
             }
         }
     }
@@ -147,8 +153,8 @@ public class ItemRebarPlacer extends Item {
         if (world.isClientSide) return InteractionResult.SUCCESS;
         if (player == null) return InteractionResult.PASS;
 
-        if (!stack.hasTag()) {
-            stack.setTag(new CompoundTag());
+        if (!StackNbt.has(stack)) {
+            StackNbt.set(stack, new CompoundTag());
             HeldItemInventory.addStacksToNBT(stack, new ItemStack(ModBlocks.CONCRETE_REBAR.get()));
         }
         ItemStack[] stacks = HeldItemInventory.readStacksFromNBT(stack, 1);
@@ -164,8 +170,8 @@ public class ItemRebarPlacer extends Item {
         Direction dir = ctx.getClickedFace();
         BlockPos clicked = ctx.getClickedPos();
 
-        if (!stack.getTag().contains("pos")) {
-            stack.getTag().putIntArray("pos", new int[] {clicked.getX() + dir.getStepX(), clicked.getY() + dir.getStepY(), clicked.getZ() + dir.getStepZ()});
+        if (!StackNbt.read(stack).contains("pos")) {
+            StackNbt.tag(stack).putIntArray("pos", new int[] {clicked.getX() + dir.getStepX(), clicked.getY() + dir.getStepY(), clicked.getZ() + dir.getStepZ()});
         } else {
             Item rebarItem = ModBlocks.REBAR.get().asItem();
             int rebarLeft = 0;
@@ -173,11 +179,11 @@ public class ItemRebarPlacer extends Item {
 
             if (rebarLeft <= 0) {
                 player.sendSystemMessage(prefix().append(Component.literal("Out of rebar!").withStyle(ChatFormatting.RED)));
-                stack.getTag().remove("pos");
+                StackNbt.tag(stack).remove("pos");
                 return InteractionResult.SUCCESS;
             }
 
-            int[] pos = stack.getTag().getIntArray("pos");
+            int[] pos = StackNbt.read(stack).getIntArray("pos");
             int iX = clicked.getX() + dir.getStepX();
             int iY = clicked.getY() + dir.getStepY();
             int iZ = clicked.getZ() + dir.getStepZ();
@@ -222,7 +228,7 @@ public class ItemRebarPlacer extends Item {
 
             player.sendSystemMessage(prefix().append(Component.literal("Placed " + rebarUsed + " rebar!").withStyle(ChatFormatting.GREEN)));
 
-            stack.getTag().remove("pos");
+            StackNbt.tag(stack).remove("pos");
             player.inventoryMenu.broadcastChanges();
         }
 

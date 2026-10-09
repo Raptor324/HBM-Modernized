@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -219,7 +221,7 @@ public class MachineTurbofanBlockEntity extends com.hbm_m.blockentity.MachinePol
 
             for (Entity e : world.getEntitiesOfClass(Entity.class, zone(pos, dir, rot, -3.5, -19.5))) {
                 if (this.afterburner > 0) {
-                    e.setSecondsOnFire(5);
+                    PlatformHooks.setSecondsOnFire(e, 5);
                     e.hurt(world.damageSources().onFire(), 5F);
                 }
                 push(e, dir);

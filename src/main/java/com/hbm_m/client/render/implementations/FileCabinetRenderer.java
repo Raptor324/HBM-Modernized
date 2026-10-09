@@ -15,7 +15,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.state.BlockState;
 
 /** 1:1 {@code RenderFileCabinet}: Korpus, untere und obere Schublade je um 0.6875 * Auszug nach vorn. */
-public class FileCabinetRenderer implements BlockEntityRenderer<FileCabinetBlockEntity> {
+public class FileCabinetRenderer implements com.hbm_m.client.render.HbmBerBounds<FileCabinetBlockEntity> {
 
     public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/file_cabinet.obj"));
     public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/file_cabinet.png");

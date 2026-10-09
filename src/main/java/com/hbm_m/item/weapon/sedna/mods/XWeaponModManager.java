@@ -1,5 +1,7 @@
 package com.hbm_m.item.weapon.sedna.mods;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -74,8 +76,8 @@ public class XWeaponModManager {
     public static final int ID_ENGINE_TURBO = 229;
 
     public static ItemStack[] getUpgradeItems(ItemStack stack, int cfg) {
-        if (!stack.hasTag()) return new ItemStack[0];
-        int[] modIds = stack.getTag().getIntArray(KEY_MOD_LIST + cfg);
+        if (!StackNbt.has(stack)) return new ItemStack[0];
+        int[] modIds = StackNbt.read(stack).getIntArray(KEY_MOD_LIST + cfg);
         if (modIds.length == 0) return new ItemStack[0];
         ItemStack[] mods = new ItemStack[modIds.length];
         for (int i = 0; i < mods.length; i++) {
@@ -90,8 +92,8 @@ public class XWeaponModManager {
     }
 
     public static boolean hasUpgrade(ItemStack stack, int cfg, int id) {
-        if (!stack.hasTag()) return false;
-        int[] modIds = stack.getTag().getIntArray(KEY_MOD_LIST + cfg);
+        if (!StackNbt.has(stack)) return false;
+        int[] modIds = StackNbt.read(stack).getIntArray(KEY_MOD_LIST + cfg);
         for (int modId : modIds) {
             if (modId == id) return true;
         }
@@ -157,24 +159,25 @@ public class XWeaponModManager {
         if (toInstall.isEmpty()) return;
         toInstall.sort(modSorter);
 
-        CompoundTag tag = stack.getOrCreateTag();
+        CompoundTag tag = StackNbt.orCreate(stack);
         int[] modIds = new int[toInstall.size()];
         for (int i = 0; i < modIds.length; i++) {
             IWeaponMod mod = toInstall.get(i);
             modIds[i] = idToMod.inverse().get(mod);
             onInstallStack(stack, modToStack.get(mod), cfg);
         }
-        tag.putIntArray(KEY_MOD_LIST + cfg, modIds);
+        // 1.21.1: onInstallStack ersetzt die custom_data-Komponente -> Tag hier neu holen (1.20.1: dasselbe Objekt)
+        StackNbt.orCreate(stack).putIntArray(KEY_MOD_LIST + cfg, modIds);
         restoreMagState(stack, cfg);
     }
 
     /** Wipes all mods from the gun */
     public static void uninstall(ItemStack stack, int cfg) {
-        if (stack != null && stack.hasTag()) {
+        if (stack != null && StackNbt.has(stack)) {
             for (ItemStack mod : getUpgradeItems(stack, cfg)) {
                 XWeaponModManager.onUninstallStack(stack, mod, cfg);
             }
-            stack.getTag().remove(KEY_MOD_LIST + cfg);
+            StackNbt.tag(stack).remove(KEY_MOD_LIST + cfg);
         }
     }
 
@@ -203,7 +206,7 @@ public class XWeaponModManager {
         IWeaponMod newMod = modFromStack(gun, mod, cfg);
         if (newMod == null) return false; //if there's just no mod applicable
 
-        if (checkMutex && gun.hasTag()) for (int i : gun.getTag().getIntArray(KEY_MOD_LIST + cfg)) {
+        if (checkMutex && StackNbt.has(gun)) for (int i : StackNbt.read(gun).getIntArray(KEY_MOD_LIST + cfg)) {
             IWeaponMod iMod = idToMod.get(i);
             if (iMod != null) for (String mutex0 : newMod.getSlots()) for (String mutex1 : iMod.getSlots()) {
                 if (mutex0.equals(mutex1)) return false; //if any of the mod's slots are already taken
@@ -220,9 +223,9 @@ public class XWeaponModManager {
      * stack causes the base value to be returned. */
     public static <T> T eval(T base, ItemStack stack, String key, Object parent, int cfg) {
         if (stack == null || stack.isEmpty()) return base;
-        if (!stack.hasTag()) return base;
+        if (!StackNbt.has(stack)) return base;
 
-        for (int i : stack.getTag().getIntArray(KEY_MOD_LIST + cfg)) {
+        for (int i : StackNbt.read(stack).getIntArray(KEY_MOD_LIST + cfg)) {
             IWeaponMod mod = idToMod.get(i);
             if (mod != null) base = mod.eval(base, stack, key, parent);
         }

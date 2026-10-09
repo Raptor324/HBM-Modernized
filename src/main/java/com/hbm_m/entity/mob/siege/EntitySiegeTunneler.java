@@ -1,5 +1,9 @@
 package com.hbm_m.entity.mob.siege;
 
+import com.hbm_m.platform.PlatformHooks;
+
+import com.hbm_m.platform.AttributeOps;
+
 import java.util.UUID;
 
 import javax.annotation.Nullable;
@@ -88,14 +92,20 @@ public class EntitySiegeTunneler extends EntityBurrowingSwingingBase {
         super.defineSynchedData();
         this.entityData.define(TIER, 0);
     }
-    //?}
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(TIER, 0);
+    }
+    *///?}
 
     public void setTier(SiegeTier tier) {
         this.entityData.set(TIER, tier.id);
 
         AttributeInstance attack = this.getAttribute(Attributes.ATTACK_DAMAGE);
-        attack.removeModifier(TIER_DAMAGE_UUID);
-        attack.addPermanentModifier(new AttributeModifier(TIER_DAMAGE_UUID, "Tier Damage Mod", tier.damageMod, AttributeModifier.Operation.MULTIPLY_BASE));
+        com.hbm_m.platform.MobHooks.removeModifier(attack, TIER_DAMAGE_UUID);
+        attack.addPermanentModifier(PlatformHooks.attributeModifier(TIER_DAMAGE_UUID, "Tier Damage Mod", tier.damageMod, AttributeOps.MULTIPLY_BASE));
         this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(tier.health * 0.5);
         this.setHealth(this.getMaxHealth());
     }
@@ -120,8 +130,16 @@ public class EntitySiegeTunneler extends EntityBurrowingSwingingBase {
 
     @Nullable
     @Override
+    //? if < 1.21.1 {
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData data, @Nullable CompoundTag tag) {
+    //?} else {
+    /*public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData data) {
+    *///?}
         this.setTier(SiegeTier.tiers[random.nextInt(SiegeTier.getLength())]);
+        //? if < 1.21.1 {
         return super.finalizeSpawn(level, difficulty, reason, data, tag);
+        //?} else {
+        /*return super.finalizeSpawn(level, difficulty, reason, data);
+        *///?}
     }
 }

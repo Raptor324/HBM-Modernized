@@ -95,7 +95,7 @@ public class EntityRequestDrone extends EntityDroneBase {
         Vec3 from = position();
         Vec3 to = from.subtract(0, 4, 0);
         //? if < 1.21.1 {
-        BlockHitResult hit = level().clip(new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null));
+        BlockHitResult hit = level().clip(new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, (net.minecraft.world.entity.Entity) null));
         //?} else {
         /*BlockHitResult hit = level().clip(new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, (net.minecraft.world.entity.Entity) null));
         *///?}
