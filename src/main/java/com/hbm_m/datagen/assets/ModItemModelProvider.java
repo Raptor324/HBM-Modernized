@@ -181,6 +181,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.FUEL_TANK_LARGE);
         simpleItem(ModItems.MISSILE_ASSEMBLY);
         simpleItem(ModItems.MISSILE_SOYUZ_LANDER);
+        simpleItem(ModItems.MISSILE_LAMBDA);
         simpleItem(ModItems.NEUTRON_REFLECTOR);
         simpleItem(ModItems.SAT_BASE);
         simpleItem(ModItems.SAT_LASER);
@@ -368,6 +369,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.SHELL_ALUMINUM);
         simpleItem(ModItems.SHELL_TITANIUM);
         simpleItem(ModItems.MALACHITE_CHUNK);
+        simpleItem(ModItems.ILMENITE_CHUNK);
         simpleItem(ModItems.CRYOLITE_CHUNK);
         simpleItem(ModItems.CANNED_ASBESTOS);
         simpleItem(ModItems.CANNED_ASS);
@@ -1621,6 +1623,11 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.SATELLITE_RELAY,
                 ModItems.SATELLITE_DETECTOR,
                 ModItems.SATELLITE_RAY_SCAN,
+                ModItems.SATELLITE_SCIENCE,
+                ModItems.SATELLITE_SCIENCE_ASSEMBLER,
+                ModItems.SATELLITE_SCIENCE_SENSOR,
+                ModItems.ORBITAL_ASSEMBLY_CRYSTAL_CIRCUIT,
+                ModItems.CIRCUIT_CRYSTAL,
                 ModItems.COAL_ETERNAL,
                 ModItems.FUEL_ADDITIVE_ANTIKNOCK,
                 ModItems.FUEL_ADDITIVE_DEICER,
@@ -2416,6 +2423,8 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.PILE_ROD_MK2_PU239,
                 ModItems.PILE_ROD_RGP,
                 ModItems.PILE_ROD_WASTE,
+                ModItems.PILE_ROD_THORIUM,
+                ModItems.PILE_ROD_THORIUM_FUEL,
                 ModItems.UPGRADE_RADIUS,
                 ModItems.UPGRADE_HEALTH,
                 ModItems.WASTE_NATURAL_URANIUM,

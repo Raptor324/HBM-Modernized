@@ -178,10 +178,21 @@ public final class PressRecipeGenerator {
                 .material(ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.INGOT))
                 .save(writer, "wire_aluminium");
 
-        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.CARBON, MaterialShape.WIRE, 8))
+        // Original PressRecipes Drahtschleife: Pb, Zr und Stahl haben WIRE-Autogen + Barren (Kohlenstoff hat keinen Barren)
+        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.LEAD, MaterialShape.WIRE, 8))
                 .stamp(ModTags.Items.STAMPS_WIRE)
                 .material(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
-                .save(writer, "wire_carbon");
+                .save(writer, "wire_lead");
+
+        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.ZIRCONIUM, MaterialShape.WIRE, 8))
+                .stamp(ModTags.Items.STAMPS_WIRE)
+                .material(ModMaterialItems.item(ModMaterials.ZIRCONIUM, MaterialShape.INGOT))
+                .save(writer, "wire_zirconium");
+
+        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.STEEL, MaterialShape.WIRE, 8))
+                .stamp(ModTags.Items.STAMPS_WIRE)
+                .material(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
+                .save(writer, "wire_steel");
 
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.WIRE_FINE.get(), 8))
                 .stamp(ModTags.Items.STAMPS_WIRE)

@@ -39,7 +39,7 @@ import net.minecraft.world.phys.Vec3;
  * <p><b>Abweichungen:</b> Die Sonderfaelle des Originals fuer seine eigenen Krabbenarten
  * (Taint-, Tesla- und Cyberkrabbe werden geheilt statt getroffen) entfallen, weil es diese Kreaturen
  * im Port nicht gibt. Ozelots bleiben wie im Original verschont, Creeper werden gezuendet. Der
- * Meteoritenakku unter der Spule, der sie im Original gratis speist, ist ebenfalls nicht portiert.</p>
+ * Meteoritenakku unter der Spule speist sie wie im Original gratis.</p>
  */
 public class TeslaBlockEntity extends BaseMachineBlockEntity {
 
@@ -64,6 +64,9 @@ public class TeslaBlockEntity extends BaseMachineBlockEntity {
 
         be.ensureNetworkInitialized();
         be.targets.clear();
+
+        // Original: ein Meteoritenakku direkt unter der Spule speist sie gratis
+        if (level.getBlockState(pos.below()).is(com.hbm_m.block.ModBlocks.METEOR_BATTERY.get())) be.setEnergyStored(MAX_POWER);
 
         if (be.getEnergyStored() >= POWER_PER_ZAP) {
             be.setEnergyStored(be.getEnergyStored() - POWER_PER_ZAP);

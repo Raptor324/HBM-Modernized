@@ -100,6 +100,7 @@ public final class MainRegistry {
         com.hbm_m.radiation.ntmnext.RadiationSystemSelector.init();
         com.hbm_m.handler.pollution.PollutionEvents.init();
         com.hbm_m.satellite.RayScanEvents.init();
+        com.hbm_m.satellite.SatelliteManager.initTicking();
         ModEventHandler.register();
         // Опциональный Curios: слушатели вешаются только при наличии мода,
         // иначе классы Curios API вообще не загружаются (NoClassDefFoundError).

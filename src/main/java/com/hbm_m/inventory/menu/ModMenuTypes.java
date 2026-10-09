@@ -162,6 +162,14 @@ public class ModMenuTypes {
             MENUS.register("precass_menu", () -> MenuRegistry.ofExtended(MachinePrecAssMenu::new));
     public static final RegistrySupplier<MenuType<com.hbm_m.inventory.menu.MachinePUREXMenu>> PUREX_MENU =
             MENUS.register("purex_menu", () -> MenuRegistry.ofExtended(com.hbm_m.inventory.menu.MachinePUREXMenu::new));
+    public static final RegistrySupplier<MenuType<com.hbm_m.inventory.menu.MachineSuperComputerMenu>> SUPERCOMPUTER_MENU =
+            MENUS.register("supercomputer_menu", () -> MenuRegistry.ofExtended(com.hbm_m.inventory.menu.MachineSuperComputerMenu::new));
+    public static final RegistrySupplier<MenuType<com.hbm_m.inventory.menu.LaunchpadLambdaMenu>> LAUNCHPAD_LAMBDA_MENU =
+            MENUS.register("launchpad_lambda_menu", () -> MenuRegistry.ofExtended(com.hbm_m.inventory.menu.LaunchpadLambdaMenu::new));
+    public static final RegistrySupplier<MenuType<com.hbm_m.inventory.menu.MachineTapeDriveMenu>> TAPE_DRIVE_MENU =
+            MENUS.register("tape_drive_menu", () -> MenuRegistry.ofExtended(com.hbm_m.inventory.menu.MachineTapeDriveMenu::new));
+    public static final RegistrySupplier<MenuType<com.hbm_m.inventory.menu.MachineRockMillMenu>> ROCKMILL_MENU =
+            MENUS.register("rockmill_menu", () -> MenuRegistry.ofExtended(com.hbm_m.inventory.menu.MachineRockMillMenu::new));
 
     public static final RegistrySupplier<MenuType<MachineCentrifugeMenu>> CENTRIFUGE_MENU =
             MENUS.register("centrifuge_menu", () -> MenuRegistry.ofExtended(MachineCentrifugeMenu::new));

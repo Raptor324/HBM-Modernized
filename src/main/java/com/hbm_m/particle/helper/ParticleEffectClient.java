@@ -423,7 +423,7 @@ public final class ParticleEffectClient {
 
     private static void exhaust(ClientLevel world, Player player, RandomSource rand, CompoundTag data, double x, double y, double z) {
         String mode = data.getString("mode");
-        if (!"soyuz".equals(mode) && !"meteor".equals(mode)) return;
+        if (!"soyuz".equals(mode) && !"lambda".equals(mode) && !"meteor".equals(mode)) return;
         if (new Vec3(player.getX() - x, player.getY() - y, player.getZ() - z).length() > 350) return;
         int count = Math.max(1, data.getInt("count"));
         double width = data.getDouble("width");
@@ -431,6 +431,10 @@ public final class ParticleEffectClient {
             if ("soyuz".equals(mode)) {
                 ParticleRocketFlameNT fx = new ParticleRocketFlameNT(world, x + rand.nextGaussian() * width, y, z + rand.nextGaussian() * width);
                 fx.yd = -0.75 + rand.nextDouble() * 0.5;
+                ParticleEngineNT.INSTANCE.add(fx);
+            } else if ("lambda".equals(mode)) {
+                ParticleRocketFlameNT fx = new ParticleRocketFlameNT(world, x + rand.nextGaussian() * width, y, z + rand.nextGaussian() * width).setScale(1.5F);
+                fx.yd = -1 + rand.nextDouble() * 0.25;
                 ParticleEngineNT.INSTANCE.add(fx);
             } else {
                 ParticleEngineNT.INSTANCE.add(new ParticleRocketFlameNT(world, x + rand.nextGaussian() * width, y + rand.nextGaussian() * width, z + rand.nextGaussian() * width));

@@ -22,7 +22,7 @@ import java.util.function.Consumer;
  * <p><b>Упрощение для data-driven:</b> вместо того, чтобы плодить дубликаты с двумя
  * tag-кандидатами ({@code powders/X} и {@code dusts/X}), генератор создаёт ОДИН рецепт
  * на каждый {@code addLegacy*}-вызов, используя {@code forge:powders/<element>} для тегов.
- * Item-входы (strontium_powder, mercury_ingot, etc.) берутся напрямую из реестра по id;
+ * Item-входы (strontium_powder, nugget_mercury, etc.) берутся напрямую из реестра по id;
  * если предмета нет — рецепт пропускается (поведение оригинала).</p>
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.</p>
@@ -42,7 +42,7 @@ public final class CyclotronRecipeGenerator {
         tag(writer, "li_phosphorus",  "part_lithium", "phosphorus", 50, "sulfur");
         tag(writer, "li_iron",        "part_lithium", "iron",       50, "cobalt_powder");
         item(writer, "li_strontium", "part_lithium",  "strontium_powder",            50, "zirconium_powder");
-        tag(writer, "li_gold",        "part_lithium", "gold",       50, "mercury_ingot");
+        tag(writer, "li_gold",        "part_lithium", "gold",       50, "nugget_mercury");
         tag(writer, "li_polonium",    "part_lithium", "polonium",   50, "astatine_powder");
         tag(writer, "li_lanthanium",  "part_lithium", "lanthanium", 50, "cerium_powder");
         tag(writer, "li_actinium",    "part_lithium", "actinium",   50, "thorium_powder");
@@ -63,12 +63,12 @@ public final class CyclotronRecipeGenerator {
         // ═══════════════════════════════════════════════════════════════════
         // PART_CARBON — amatProduced = 10
         // ═══════════════════════════════════════════════════════════════════
-        tag(writer, "ca_boron",    "part_carbon", "boron",     10, "aluminium_powder");
+        tag(writer, "ca_boron",    "part_carbon", "boron",     10, "aluminum_powder");
         tag(writer, "ca_sulfur",   "part_carbon", "sulfur",    10, "titanium_powder");
         tag(writer, "ca_titanium", "part_carbon", "titanium",  10, "cobalt_powder");
         item(writer, "ca_caesium", "part_carbon",  "caesium_powder",     10, "lanthanium_powder");
         item(writer, "ca_neodymium", "part_carbon", "neodymium_powder",  10, "gold_powder");
-        item(writer, "ca_mercury", "part_carbon",  "mercury_ingot",      10, "polonium_powder");
+        item(writer, "ca_mercury", "part_carbon",  "nugget_mercury",      10, "polonium_powder");
         tag(writer, "ca_lead",     "part_carbon", "lead",      10, "ra226_powder");
         item(writer, "ca_astatine","part_carbon",  "astatine_powder",     10, "actinium_powder");
 

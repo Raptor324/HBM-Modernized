@@ -33,7 +33,7 @@ public class DeconBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity {
             for (LivingEntity entity : entities) {
                 HbmLivingProps.incrementRadiation(entity, -0.5F);
                 entity.removeEffect(ModEffects.RADIATION.get());
-                // TODO(port): HbmLivingProps.getCont(e).clear() - Kontaminationsliste gibt es im Port noch nicht.
+                HbmLivingProps.setCont(entity, new java.util.ArrayList<>());
             }
         } else {
             RandomSource random = level.getRandom();

@@ -2284,6 +2284,10 @@ public final class RestportLang {
         e("item.hbm_m.pile_rod_mk2_rgp.desc", "Reactor-grade plutonium rod, mainly plutonium-239 with plutonium-240 impurities.", "Стержень реакторного плутония. Состоит преимущественно из плутония-239 с примесями плутония-240.");
         e("item.hbm_m.pile_rod_mk2_waste", "Chicago Pile Nuclear Waste Rod", "Топливный стержень Чикагской поленницы (Ядерные отходы)");
         e("item.hbm_m.pile_rod_mk2_waste.desc", "Highly reactive end product from leaving a Chicago Pile fuel rod in the reactor for too long.", "Опасный конечный продукт, получаемый при сильном передерживании стержня в активной зоне.");
+        e("item.hbm_m.pile_rod_mk2_thorium", "Chicago Pile Natural Thorium Rod", "Стержень Чикагской поленницы (Природный торий)");
+        e("item.hbm_m.pile_rod_mk2_thorium.desc", "Basic breeding target for making thorium fuel.", "Основная цель воспроизводства для получения ториевого топлива.");
+        e("item.hbm_m.pile_rod_mk2_thorium_fuel", "Chicago Pile Thorium Fuel Rod", "Стержень Чикагской поленницы (Топливный торий)");
+        e("item.hbm_m.pile_rod_mk2_thorium_fuel.desc", "Thorium Fuel bred from natural Thorium.", "Ториевое топливо, получаемое из природного тория.");
         e("item.hbm_m.pile_rod_mk2_zr", "Chicago Pile Zirconium Rod", "Технологический стержень Чикагской поленницы (Цирконий)");
         e("item.hbm_m.pile_rod_mk2_zr.desc", "Inert zirconium rod which is transparent to neutrons. Ideal for pushing other rods safely out of the reactor.", "Инертный циркониевый стержень, пропускающий нейтроны. Применяется для безопасного выталкивания других стержней.");
         e("item.hbm_m.pile_rod_plutonium", "Chicago Pile Plutonium Rod (LEGACY)", "Chicago Pile Plutonium Rod (LEGACY)");

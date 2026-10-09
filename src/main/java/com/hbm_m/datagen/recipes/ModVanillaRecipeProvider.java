@@ -1518,19 +1518,8 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .unlockedBy(getHasName(ModItems.RANGEFINDER.get()), has(ModItems.RANGEFINDER.get()))
                 .save(writer, recipeId("crafting/designator_range"));
 
-        // TODO: временная заглушка — заменить на литьё из плутония, когда переработка будет портирована
-        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModMaterialItems.item(ModMaterials.PLUTONIUM, MaterialShape.BILLET))
-                .requires(ModMaterialItems.item(ModMaterials.URANIUM, MaterialShape.INGOT), 6)
-                .requires(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT), 3)
-                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.URANIUM, MaterialShape.INGOT)), has(ModMaterialItems.item(ModMaterials.URANIUM, MaterialShape.INGOT)))
-                .save(writer, recipeId("crafting/billet_plutonium_stub"));
 
-        // TODO: временная заглушка — заменить на ass.mancore в сборочной машине
-        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.FAT_MAN_CORE.get())
-                .requires(ModMaterialItems.item(ModMaterials.PLUTONIUM, MaterialShape.BILLET), 1)
-                .requires(ModMaterialItems.item(ModMaterials.BERYLLIUM, MaterialShape.INGOT), 2)
-                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.PLUTONIUM, MaterialShape.BILLET)), has(ModMaterialItems.item(ModMaterials.PLUTONIUM, MaterialShape.BILLET)))
-                .save(writer, recipeId("crafting/fat_man_core_stub"));
+        // (Stub-Rezepte billet_plutonium_stub und fat_man_core_stub entfernt: Plutonium kommt jetzt aus dem PUREX, der Kern aus ass.mancore)
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.CRT_DISPLAY.get(), 4)
                 .pattern(" # ")
@@ -2501,6 +2490,8 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .save(writer, recipeId("crafting/limestone_cement"));
 
         registerSmelting(writer, ModItems.FIRECLAY_BALL.get(), ModItems.FIREBRICK.get(), 0.1F, 100, "firebrick_smelting");
+        // Original SmeltingRecipes.java:125: Kies -> Bruchstein
+        registerSmelting(writer, Items.GRAVEL, Items.COBBLESTONE, 0.0F, 200, "gravel_to_cobblestone_smelting");
     }
 
     //переплавка порошков -  ИСПРАВЛЕННАЯ ВЕРСИЯ
@@ -2621,7 +2612,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         buildStamp(writer, ModItems.STAMP_STEEL_FLAT.get(), ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT), "stamp_steel_flat");
         buildStamp(writer, ModItems.STAMP_TITANIUM_FLAT.get(), ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.INGOT), "stamp_titanium_flat");
         buildStamp(writer, ModItems.STAMP_OBSIDIAN_FLAT.get(), Blocks.OBSIDIAN.asItem(), "stamp_obsidian_flat");
-        buildStamp(writer, ModItems.STAMP_DESH_FLAT.get(), ModMaterialItems.item(ModMaterials.DESH, MaterialShape.INGOT), "stamp_desh_flat");
+        // stamp_desh_flat: eigenes Original-Muster BDB/DSD/BDB mit Ferrouran, siehe OrigCraftingRecipeGenerator.part16
     }
 
     //крафты гранат

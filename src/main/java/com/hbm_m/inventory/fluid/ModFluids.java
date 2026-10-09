@@ -263,6 +263,8 @@ public class ModFluids {
 
     // Salt solutions
     public static final FluidEntry CALCIUM_SOLUTION = registerFluid("calcium_solution", 0x808080);
+    /** Original Fluids.TITANIUM_TETRACHLORIDE (ID 156): Ilmenit-Aufbereitung zu Titan. */
+    public static final FluidEntry TITANIUM_TETRACHLORIDE = registerFluid("titanium_tetrachloride", 0xDBF796);
     public static final FluidEntry CALCIUM_CHLORIDE = registerFluid("calcium_chloride", 0x808080);
     public static final FluidEntry POTASSIUM_CHLORIDE = registerFluid("potassium_chloride", 0x808080);
     public static final FluidEntry CHLOROCALCITE_SOLUTION = registerFluid("chlorocalcite_solution", 0x808080);

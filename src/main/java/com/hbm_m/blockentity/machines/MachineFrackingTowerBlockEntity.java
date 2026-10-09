@@ -248,6 +248,14 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
         entity.chargeFromBatterySlot(SLOT_BATTERY);
         entity.updateUpgrades();
         entity.processFluidContainers();
+
+        // Original TileEntityOilDrillBase: Nachbrenner verbrennt pro Stufe 10 mB Erdgas je Tick zu 5 HE/mB
+        int abLevel = entity.upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.AFTERBURN);
+        int toBurn = Math.min(entity.gasTank.getFluidAmountMb(), abLevel * 10);
+        if (toBurn > 0) {
+            entity.gasTank.drainInternal(toBurn);
+            entity.energy = Math.min(entity.getMaxEnergyStored(), entity.energy + toBurn * 5L);
+        }
         
         // Проверка условий для работы
         if (!entity.canOperate()) {
@@ -469,9 +477,7 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
      * Применение эффекта Afterburner апгрейда.
      */
     protected void applyAfterburnerEffect(BlockPos pos) {
-        // Дополнительный урон и бонусы от afterburner
-        // Уровень эффекта: level * 10 урона, level * 50% шанс
-        // TODO: Реализовать эффекты урона и частиц
+        // Der Nachbrenner wirkt wie im Original nur ueber die Gasverbrennung im Tick (siehe tick()), nicht pro Bohrvorgang.
     }
 
     //=====================================================================================//

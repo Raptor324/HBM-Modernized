@@ -565,6 +565,10 @@ public class ClientSetup {
         MenuRegistry.registerScreenFactory(ModMenuTypes.TURBOFAN_MENU.get(), com.hbm_m.inventory.gui.GUIMachineTurbofan::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.FUNNEL_MENU.get(), com.hbm_m.inventory.gui.GUIMachineFunnel::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.PUREX_MENU.get(), com.hbm_m.inventory.gui.GUIMachinePUREX::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.SUPERCOMPUTER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineSuperComputer::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.LAUNCHPAD_LAMBDA_MENU.get(), com.hbm_m.inventory.gui.GUILaunchpadLambda::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.TAPE_DRIVE_MENU.get(), com.hbm_m.inventory.gui.GUITapeDrive::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.ROCKMILL_MENU.get(), com.hbm_m.inventory.gui.GUIMachineRockMill::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.PRECASS_MENU.get(), com.hbm_m.inventory.gui.GUIMachinePrecAss::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.WOOD_BURNER_MENU.get(), GUIMachineWoodBurner::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.TURRET_MENU.get(), com.hbm_m.inventory.gui.GUITurret::new);
@@ -644,6 +648,8 @@ public class ClientSetup {
     private static void registerRenderersCommon() {
 
         ModEntities.SOYUZ.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.implementations.SoyuzEntityRenderer::new));
+        ModEntities.ROCKET_LAMBDA.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.entity.LambdaRocketRenderer::new));
+        ModEntities.SATELLITE_POD.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.entity.SatellitePodRenderer::new));
         ModEntities.SOYUZ_CAPSULE.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.implementations.SoyuzCapsuleEntityRenderer::new));
         ModEntities.ARTILLERY_SHELL.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.projectile.RenderArtilleryShell::new));
         ModEntities.ARTILLERY_ROCKET.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.projectile.RenderArtilleryRocket::new));
@@ -785,6 +791,10 @@ public class ClientSetup {
             BlockEntityRenderers.register(ModBlockEntities.MACHINE_PUMP_STEAM_BE.get(), com.hbm_m.client.render.implementations.PumpRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.MACHINE_PUMP_ELECTRIC_BE.get(), com.hbm_m.client.render.implementations.PumpRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.PUREX_BE.get(), com.hbm_m.client.render.implementations.PurexRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.SUPERCOMPUTER_BE.get(), com.hbm_m.client.render.implementations.SuperComputerRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.LAUNCHPAD_LAMBDA_BE.get(), com.hbm_m.client.render.implementations.LaunchpadLambdaRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.TAPE_DRIVE_BE.get(), com.hbm_m.client.render.implementations.TapeDriveRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.ROCKMILL_BE.get(), com.hbm_m.client.render.implementations.RockMillRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.PRECASS_BE.get(), com.hbm_m.client.render.implementations.MachinePrecAssRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.SOYUZ_STRUCT_BE.get(), com.hbm_m.client.render.implementations.StructSoyuzCoreRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.RADGEN_BE.get(), com.hbm_m.client.render.implementations.RadGenRenderer::new);
@@ -830,6 +840,8 @@ public class ClientSetup {
             BlockEntityRenderers.register(ModBlockEntities.RED_CABLE_PAINTABLE_BE.get(), com.hbm_m.client.render.implementations.RedCablePaintableRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.FLUID_DUCT_PAINTABLE.get(), com.hbm_m.client.render.implementations.PaintableDuctRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.PIPE_ANCHOR.get(), com.hbm_m.client.render.implementations.PipeAnchorRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.PIPE_ANCHOR_EXHAUST.get(), ctx -> new com.hbm_m.client.render.implementations.PipeAnchorRenderer<>(ctx, com.hbm_m.client.render.implementations.PipeAnchorRenderer.TEX_EXHAUST));
+            BlockEntityRenderers.register(ModBlockEntities.PIPE_ANCHOR_PNEUMATIC.get(), ctx -> new com.hbm_m.client.render.implementations.PipeAnchorRenderer<>(ctx, com.hbm_m.client.render.implementations.PipeAnchorRenderer.TEX_PNEUMATIC));
             BlockEntityRenderers.register(ModBlockEntities.BLAST_DOOR.get(), com.hbm_m.client.render.implementations.BlastDoorRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.STRUCT_WATZ_CORE.get(), com.hbm_m.client.render.implementations.StructWatzCoreRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.ICF_STRUCT_BE.get(), com.hbm_m.client.render.implementations.ICFStructRenderer::new);

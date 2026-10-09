@@ -184,6 +184,25 @@ public class ModEntities {
                             .updateInterval(1)
                             .build("soyuz"));
 
+    /** 1:1 {@code EntityRocketLambda}: Lambda-Rakete der Lambda-Startrampe. */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.missile.LambdaRocketEntity>> ROCKET_LAMBDA =
+            ENTITY_TYPES.register("rocket_lambda",
+                    () -> EntityType.Builder.<com.hbm_m.entity.missile.LambdaRocketEntity>of(com.hbm_m.entity.missile.LambdaRocketEntity::new, MobCategory.MISC)
+                            .sized(1.0F, 10.0F)
+                            .clientTrackingRange(512)
+                            .updateInterval(1)
+                            .build("rocket_lambda"));
+
+    /** 1:1 {@code EntitySatellitePod}: Landekapsel fuer abgerufene Satellitenfracht. */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.missile.SatellitePodEntity>> SATELLITE_POD =
+            ENTITY_TYPES.register("satellite_pod",
+                    () -> EntityType.Builder.<com.hbm_m.entity.missile.SatellitePodEntity>of(com.hbm_m.entity.missile.SatellitePodEntity::new, MobCategory.MISC)
+                            .sized(0.95F, 5.25F)
+                            .fireImmune()
+                            .clientTrackingRange(256)
+                            .updateInterval(1)
+                            .build("satellite_pod"));
+
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.missile.SoyuzCapsuleEntity>> SOYUZ_CAPSULE =
             ENTITY_TYPES.register("soyuz_capsule",
                     () -> EntityType.Builder.<com.hbm_m.entity.missile.SoyuzCapsuleEntity>of(com.hbm_m.entity.missile.SoyuzCapsuleEntity::new, MobCategory.MISC)

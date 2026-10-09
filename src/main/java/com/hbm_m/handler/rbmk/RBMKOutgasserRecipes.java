@@ -88,6 +88,10 @@ public class RBMKOutgasserRecipes {
         put(Blocks.COAL_BLOCK.asItem(),
                 new ItemStack(ModItems.OIL_TAR_COAL.get(), 9),                               syngas, 500);
 
+        // Original OutgasserRecipes l.57: PVC -> C4 + Kolloid
+        put(ModMaterialItems.item(ModMaterials.PVC, MaterialShape.INGOT),
+                new ItemStack(ModMaterialItems.item(ModMaterials.C4, MaterialShape.INGOT)), ModFluids.COLLOID.getSource(), 250);
+
         // --- the tars themselves gas off further ---
         put(ModItems.OIL_TAR_COAL.get(), ItemStack.EMPTY, ModFluids.COALOIL.getSource(),      100);
         put(ModItems.OIL_TAR_WAX.get(),  ItemStack.EMPTY, ModFluids.RADIOSOLVENT.getSource(), 100);

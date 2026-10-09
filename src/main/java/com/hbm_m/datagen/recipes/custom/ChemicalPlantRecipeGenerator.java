@@ -43,6 +43,14 @@ public final class ChemicalPlantRecipeGenerator {
                 .addFluidOutput(ModFluids.HYDROGEN.getSource(), 500)
                 .save(writer, "chemplant/hydrogencoke");
 
+        // chem.ticl4
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(60, 500)
+                .addItemInput(ore("oredict/ingot/ilmenite"), 4)
+                .addItemInput(ore("oredict/gem/any_coke"), 1)
+                .addFluidInput(ModFluids.CHLORINE.getSource(), 500)
+                .addFluidOutput(ModFluids.TITANIUM_TETRACHLORIDE.getSource(), 4000)
+                .save(writer, "chemplant/ticl4");
+
         // chem.oxygen
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(20, 400)
                 .addFluidInput(ModFluids.AIR.getSource(), 8000)

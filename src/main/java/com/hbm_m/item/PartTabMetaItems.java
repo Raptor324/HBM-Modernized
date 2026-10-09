@@ -287,6 +287,8 @@ public final class PartTabMetaItems {
                 "Heavy Duty Element", "Элемент повышенной прочности", "heavy_duty_element", null, 0, null, false, plain()));
         add(new Entry("part_generic_glass_polarized", "part_generic",
                 "Polarized Lens", "Поляризованная линза", "glass_polarized", null, 0, null, false, plain()));
+        add(new Entry("part_generic_alclad", "part_generic",
+                "Aviation Grade Sheeting", "Авиационное листовое покрытие", "plate_alclad_generic", null, 0, null, false, plain()));
 
         // ── 4573 parts_legendary (ItemEnumMulti EnumLegendaryType, multiName=false —
         //    все меты называются одинаково, текстуры свои) ──────────────────────────────
@@ -641,6 +643,7 @@ public final class PartTabMetaItems {
                 {"plastic", "Plastic Panels", "Пластиковые панели"},
                 {"gold_dust", "Ultra Fine Gold Dust", "Сверхтонкая золотая пыль"},
                 {"degenerate_matter", "Degenerate Matter", "Вырожденная материя"},
+                {"cmb_tubes", "CMB Structural Elements", "Конструкционные элементы из CMB"},
         };
         for (String[] m : expensive) {
             add(new Entry("item_expensive_" + m[0], "item_expensive", m[1], m[2], null, null, 0, null, false,

@@ -1,6 +1,7 @@
 package com.hbm_m.client.render.implementations;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
+import com.hbm_m.api.fluids.IPipelineBase;
 import com.hbm_m.blockentity.network.PipeAnchorBlockEntity;
 import com.hbm_m.client.render.SimpleObjModel;
 import com.hbm_m.inventory.fluid.ModFluids;
@@ -22,16 +23,22 @@ import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.Vec3;
 
 /** 1:1 {@code RenderPipeAnchor}: Anker nach Anbringseite gedreht, Leitung (in aufgehellter Fluessigkeitsfarbe) nur vom "dominanten" Anker. */
-public class PipeAnchorRenderer implements BlockEntityRenderer<PipeAnchorBlockEntity> {
+public class PipeAnchorRenderer<T extends BlockEntity & IPipelineBase> implements BlockEntityRenderer<T> {
 
     public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/network/pipe_anchor.obj"));
     public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/network/pipe_anchor.png");
+    public static final ResourceLocation TEX_EXHAUST = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/network/pipe_anchor_exhaust.png");
+    public static final ResourceLocation TEX_PNEUMATIC = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/network/pipe_anchor_pneumatic.png");
 
-    public PipeAnchorRenderer(BlockEntityRendererProvider.Context ctx) {}
+    private final ResourceLocation texture;
+
+    public PipeAnchorRenderer(BlockEntityRendererProvider.Context ctx) { this(ctx, TEX); }
+
+    public PipeAnchorRenderer(BlockEntityRendererProvider.Context ctx, ResourceLocation texture) { this.texture = texture; }
 
     @Override
-    public void render(PipeAnchorBlockEntity te, float pt, PoseStack ps, MultiBufferSource buf, int light, int overlay) {
-        VertexConsumer vc = buf.getBuffer(RenderType.entityCutout(TEX));
+    public void render(T te, float pt, PoseStack ps, MultiBufferSource buf, int light, int overlay) {
+        VertexConsumer vc = buf.getBuffer(RenderType.entityCutout(texture));
         ps.pushPose();
         ps.translate(0.5, 0.5, 0.5);
 
@@ -50,7 +57,7 @@ public class PipeAnchorRenderer implements BlockEntityRenderer<PipeAnchorBlockEn
 
         for (BlockPos p : te.getConnected()) {
             BlockEntity tile = te.getLevel().getBlockEntity(p);
-            if (!(tile instanceof PipeAnchorBlockEntity other) || te.getFluidType() != other.getFluidType()) continue;
+            if (!(tile instanceof IPipelineBase other) || te.getNetworkType() != other.getNetworkType()) continue;
             Vec3 a = te.getConnectionPoint(), b = other.getConnectionPoint();
             if (!isDominant(a, b)) continue;
             double dX = b.x - a.x, dY = b.y - a.y, dZ = b.z - a.z;
@@ -66,10 +73,11 @@ public class PipeAnchorRenderer implements BlockEntityRenderer<PipeAnchorBlockEn
             ps.pushPose();
             ps.scale(1, (float) length, 1);
             ps.translate(0, -0.5, 0);
-            Fluid f = te.getFluidType() == Fluids.EMPTY ? ModFluids.NONE.getSource() : te.getFluidType();
-            int c = HbmFluidRegistry.getTintColor(f);
+            // Original: nur der Fluessigkeits-Anker faerbt die Leitung, alle anderen bleiben weiss
+            Fluid f = te instanceof PipeAnchorBlockEntity fa ? (fa.getFluidType() == Fluids.EMPTY ? ModFluids.NONE.getSource() : fa.getFluidType()) : null;
+            int c = f == null ? 0xFFFFFF : HbmFluidRegistry.getTintColor(f);
             int r = c >> 16 & 255, g = c >> 8 & 255, bl = c & 255;
-            r = (int) (r + (255 - r) * 0.25D); g = (int) (g + (255 - g) * 0.25D); bl = (int) (bl + (255 - bl) * 0.25D);
+            if (f != null) { r = (int) (r + (255 - r) * 0.25D); g = (int) (g + (255 - g) * 0.25D); bl = (int) (bl + (255 - bl) * 0.25D); }
             MODEL.renderPartTinted("Pipe", ps, vc, light, r / 255F, g / 255F, bl / 255F);
             ps.popPose();
 
@@ -93,6 +101,6 @@ public class PipeAnchorRenderer implements BlockEntityRenderer<PipeAnchorBlockEn
         return false;
     }
 
-    @Override public boolean shouldRenderOffScreen(PipeAnchorBlockEntity te) { return true; }
+    @Override public boolean shouldRenderOffScreen(T te) { return true; }
     @Override public int getViewDistance() { return 256; }
 }

@@ -1,0 +1,10 @@
+{
+  "parent": "minecraft:block/block",
+  "loader": "forge:obj",
+  "model": "hbm_m:models/item/pipe_anchor_item.obj",
+  "flip_v": true,
+  "textures": {
+    "texture": "hbm_m:block/pipe_anchor_pneumatic_model",
+    "particle": "hbm_m:block/pipe_anchor_pneumatic_model"
+  }
+}

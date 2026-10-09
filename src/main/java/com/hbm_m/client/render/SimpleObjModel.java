@@ -115,6 +115,28 @@ public class SimpleObjModel {
         for (String part : parts.keySet()) renderPartEntity(part, pose, vc, light, overlay, r, g, b, a);
     }
 
+    /**
+     * Teil mit verschobener Texturkoordinate u (Original {@code glMatrixMode(GL_TEXTURE); glTranslatef(du, 0, 0)}),
+     * fuer Lauflichter. Die Textur muss wiederholend gesampelt werden (normale Modelltexturen tun das).
+     */
+    public void renderPartShiftedU(String part, PoseStack pose, VertexConsumer vc, int light, float r, float g, float b, float du) {
+        ensureLoaded();
+        List<float[]> tris = parts.get(part);
+        if (tris == null) return;
+        Matrix4f m = pose.last().pose();
+        org.joml.Matrix3f n = pose.last().normal();
+        org.joml.Vector3f normal = new org.joml.Vector3f();
+        int cr = (int) (r * 255), cg = (int) (g * 255), cb = (int) (b * 255);
+        for (float[] tri : tris) {
+            for (int pass = 0; pass < 4; pass++) {
+                int base = Math.min(pass, 2) * 8;
+                normal.set(tri[base + 5], tri[base + 6], tri[base + 7]).mul(n);
+                RenderHooks.vertexFull(vc, m, tri[base], tri[base + 1], tri[base + 2], cr, cg, cb, 255,
+                        tri[base + 3] + du, 1F - tri[base + 4], net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, light, normal.x, normal.y, normal.z);
+            }
+        }
+    }
+
     /** Fuer Wesenmodelle: Teil mit Overlay (Treffer-Rot) und Farbe samt Alpha. */
     public void renderPartEntity(String part, PoseStack pose, VertexConsumer vc, int light, int overlay, float r, float g, float b, float a) {
         ensureLoaded();
@@ -172,6 +194,54 @@ public class SimpleObjModel {
             for (int k = 1; k + 1 < poly.size(); k++) {
                 for (float[] p : new float[][] { poly.get(0), poly.get(k), poly.get(k + 1) }) {
                     vc.vertex(m, p[0], p[1], p[2]).color(r, g, b, a).endVertex();
+                }
+            }
+        }
+    }
+
+    /**
+     * Texturiertes Teil mit Schnittebene (Ersatz fuer {@code glClipPlane(GL_CLIP_PLANE0, {a, b, c, d})}): Die Ebene
+     * gilt im Koordinatensystem von {@code pose} (dort, wo das Original {@code glClipPlane} aufruft); {@code local} ist
+     * die danach folgende Verschiebung/Drehung des Teils. Erhalten bleibt alles mit {@code a*x + b*y + c*z + d >= 0}.
+     */
+    public void renderPartClipped(String part, PoseStack pose, Matrix4f local, VertexConsumer vc, int light,
+                                  float a, float b, float c, float d) {
+        ensureLoaded();
+        List<float[]> tris = parts.get(part);
+        if (tris == null) return;
+        Matrix4f m = pose.last().pose();
+        Matrix3f n = pose.last().normal();
+        Matrix3f ln = new Matrix3f(local).invert().transpose();
+        org.joml.Vector4f p4 = new org.joml.Vector4f();
+        Vector3f nv = new Vector3f();
+        float[][] in = new float[3][];
+        List<float[]> poly = new ArrayList<>(4);
+        for (float[] tri : tris) {
+            for (int v = 0; v < 3; v++) {
+                int o = v * 8;
+                p4.set(tri[o], tri[o + 1], tri[o + 2], 1F).mul(local);
+                nv.set(tri[o + 5], tri[o + 6], tri[o + 7]).mul(ln);
+                in[v] = new float[] { p4.x, p4.y, p4.z, tri[o + 3], tri[o + 4], nv.x, nv.y, nv.z };
+            }
+            poly.clear();
+            for (int v = 0; v < 3; v++) {
+                float[] cur = in[v], nxt = in[(v + 1) % 3];
+                float dc = a * cur[0] + b * cur[1] + c * cur[2] + d;
+                float dn = a * nxt[0] + b * nxt[1] + c * nxt[2] + d;
+                if (dc >= 0) poly.add(cur);
+                if ((dc >= 0) != (dn >= 0)) {
+                    float t = dc / (dc - dn);
+                    float[] cut = new float[8];
+                    for (int k = 0; k < 8; k++) cut[k] = cur[k] + (nxt[k] - cur[k]) * t;
+                    poly.add(cut);
+                }
+            }
+            for (int k = 1; k + 1 < poly.size(); k++) {
+                float[][] fan = { poly.get(0), poly.get(k), poly.get(k + 1), poly.get(k + 1) };
+                for (float[] p : fan) {
+                    nv.set(p[5], p[6], p[7]).mul(n);
+                    RenderHooks.vertexFull(vc, m, p[0], p[1], p[2], 255, 255, 255, 255,
+                            p[3], 1F - p[4], OverlayTexture.NO_OVERLAY, light, nv.x, nv.y, nv.z);
                 }
             }
         }

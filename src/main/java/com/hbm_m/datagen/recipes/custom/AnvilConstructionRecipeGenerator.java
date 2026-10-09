@@ -665,6 +665,15 @@ public final class AnvilConstructionRecipeGenerator {
                 .output(stack("hbm_m:machine_blast_furnace", 1))
                 .save(writer, "anvil/construction/machine_blast_furnace");
 
+        // Stufe 2, CONSTRUCTION (Original AnvilRecipes l.228: Steinmuehle)
+        AnvilRecipeBuilder.construction(2, 62, OverlayType.CONSTRUCTION)
+                .input(ore("oredict/stone"), 16)
+                .input(ore("oredict/plate/steel"), 4)
+                .input(ore("oredict/ntmpipe/copper"), 1)
+                .input(Ingredient.of(item("hbm_m:motor")), 1, true)
+                .output(stack("hbm_m:machine_rockmill", 1))
+                .save(writer, "anvil/construction/machine_rockmill");
+
         // Stufe 2, CONSTRUCTION [Fassungen: expensive]
         ConfigRecipes.variants(writer)
                 .base(w -> AnvilRecipeBuilder.construction(2, 63, OverlayType.CONSTRUCTION)

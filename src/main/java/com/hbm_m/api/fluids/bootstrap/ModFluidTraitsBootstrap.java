@@ -248,6 +248,7 @@ public final class ModFluidTraitsBootstrap {
         t(ModFluids.POTASSIUM_CHLORIDE, null, LQ, NOCON, new FT_Corrosive(60));
         t(ModFluids.CALCIUM_CHLORIDE, null, LQ, NOCON, new FT_Corrosive(60));
         t(ModFluids.CALCIUM_SOLUTION, null, LQ, NOCON, new FT_Corrosive(60));
+        t(ModFluids.TITANIUM_TETRACHLORIDE, null, LQ);
         t(ModFluids.LYE, null, new FT_Corrosive(40), LQ);
         t(ModFluids.SODIUM_ALUMINATE, null, new FT_Corrosive(30), LQ);
         t(ModFluids.BAUXITE_SOLUTION, null, new FT_Corrosive(40), LQ, VIS);

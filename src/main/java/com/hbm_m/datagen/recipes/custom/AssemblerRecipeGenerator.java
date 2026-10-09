@@ -35,7 +35,7 @@ public final class AssemblerRecipeGenerator {
         registerElectronics(writer);
         registerCastPlateRecipes(writer);
         registerMissileRecipes(writer);
-        registerAccelerators(writer);
+        // registerAccelerators: entfernt - erzeugte den Platzhalterblock "source"; die echte Quelle (pa_source) kommt aus assembler/source.json
         registerSpace(writer);
         registerGapMachines(writer);
     }

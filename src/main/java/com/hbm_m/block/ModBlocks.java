@@ -2753,6 +2753,12 @@ public class ModBlocks {
     /** R7j: 1:1 FluidPipeAnchor. */
     public static final RegistrySupplier<Block> PIPE_ANCHOR = registerBlock("pipe_anchor",
             () -> new com.hbm_m.block.network.PipeAnchorBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).requiresCorrectToolForDrops().noOcclusion().sound(com.hbm_m.sound.ModSoundTypes.PIPE)));
+    /** 1:1 ExhaustPipeAnchor (Abgas-Rohranker). */
+    public static final RegistrySupplier<Block> PIPE_ANCHOR_EXHAUST = registerBlock("pipe_anchor_exhaust",
+            () -> new com.hbm_m.block.network.ExhaustPipeAnchorBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).requiresCorrectToolForDrops().noOcclusion().sound(com.hbm_m.sound.ModSoundTypes.PIPE)));
+    /** 1:1 PneumoPipeAnchor (pneumatischer Rohranker). */
+    public static final RegistrySupplier<Block> PIPE_ANCHOR_PNEUMATIC = registerBlock("pipe_anchor_pneumatic",
+            () -> new com.hbm_m.block.network.PneumaticPipeAnchorBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).requiresCorrectToolForDrops().noOcclusion().sound(com.hbm_m.sound.ModSoundTypes.PIPE)));
     /** R7g: 1:1 FluidSwitch. */
     public static final RegistrySupplier<Block> FLUID_SWITCH = registerBlock("fluid_switch",
             () -> new com.hbm_m.block.machines.FluidValveBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).requiresCorrectToolForDrops().sound(SoundType.STONE), com.hbm_m.block.machines.FluidValveBlock.Mode.SWITCH));
@@ -3561,6 +3567,18 @@ public class ModBlocks {
             () -> new com.hbm_m.block.machines.MachinePrecAssBlock(BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion().isSuffocating((st, w, p) -> false).strength(5.0F, 18.0F).sound(SoundType.STONE)));
     public static final RegistrySupplier<Block> PUREX = registerBlock("purex",
             () -> new com.hbm_m.block.machines.MachinePUREXBlock(BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion().strength(5.0F, 18.0F).sound(SoundType.STONE)));
+    /** 1:1 MachineSuperComputer (Original: Haerte 5, Widerstand 30). */
+    public static final RegistrySupplier<Block> MACHINE_SUPERCOMPUTER = registerBlock("machine_supercomputer",
+            () -> new com.hbm_m.block.machines.MachineSuperComputerBlock(BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion().isSuffocating((st, w, p) -> false).strength(5.0F, 30.0F).sound(SoundType.METAL)));
+    /** 1:1 LaunchpadLambda (Original: Haerte 5, Widerstand 10). */
+    public static final RegistrySupplier<Block> LAUNCHPAD_LAMBDA = registerBlock("launchpad_lambda",
+            () -> new com.hbm_m.block.machines.LaunchpadLambdaBlock(BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion().isSuffocating((st, w, p) -> false).strength(5.0F, 10.0F).sound(SoundType.METAL)));
+    /** 1:1 MachineTapeDrive (Original: Haerte 5, Widerstand 10). */
+    public static final RegistrySupplier<Block> MACHINE_TAPE_DRIVE = registerBlock("machine_tape_drive",
+            () -> new com.hbm_m.block.machines.MachineTapeDriveBlock(BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion().strength(5.0F, 10.0F).sound(SoundType.METAL)));
+    /** 1:1 MachineRockMill (Original: Haerte 5, Widerstand 100). */
+    public static final RegistrySupplier<Block> MACHINE_ROCKMILL = registerBlock("machine_rockmill",
+            () -> new com.hbm_m.block.machines.MachineRockMillBlock(BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion().isSuffocating((st, w, p) -> false).strength(5.0F, 100.0F).sound(SoundType.STONE)));
 
     public static final RegistrySupplier<Block> INDUSTRIAL_GENERATOR = registerBlock("industrial_generator",
             () -> new com.hbm_m.block.machines.MachineIndustrialGeneratorBlock(BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion().strength(5.0F, 6.0F).sound(SoundType.STONE)));
