@@ -1,6 +1,6 @@
 {
   "loader": "forge:obj",
-  "model": "hbm_m:models/machines/launchpad_lambda.obj",
+  "model": "hbm_m:models/block/machines/launchpad_lambda_item.obj",
   "flip_v": true,
   "render_type": "minecraft:cutout",
   "textures": { "default": "hbm_m:block/machine/launchpad_lambda", "particle": "hbm_m:block/machine/launchpad_lambda" },

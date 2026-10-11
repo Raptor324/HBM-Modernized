@@ -269,7 +269,9 @@ public final class ModMaterialItems {
                 // diese haben im Original zusaetzlich .desc.P11 (Polaroid 11)
                 || (mat == ModMaterials.NEPTUNIUM && shape == MaterialShape.INGOT)
                 || (mat == ModMaterials.LANTHANIUM && shape == MaterialShape.INGOT)
-                || (mat == ModMaterials.TANTALIUM && (shape == MaterialShape.INGOT || shape == MaterialShape.POWDER))) {
+                || (mat == ModMaterials.TANTALIUM && (shape == MaterialShape.INGOT || shape == MaterialShape.POWDER))
+                || (mat == ModMaterials.CHARRED && shape == MaterialShape.CRYSTAL)
+                || (mat == ModMaterials.HORN && shape == MaterialShape.CRYSTAL)) {
             return new com.hbm_m.item.ItemCustomLore(props);
         }
         // Лор-строки оригинала (desc в 1.7.10) для материалов.

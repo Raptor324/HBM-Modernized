@@ -1390,6 +1390,10 @@ public class ClientSetup {
         for (MissileItemModelDefinitions.Definition definition : MissileItemModelDefinitions.all()) {
             ResourceLocation meshId = MissileRenderHelper.meshModelId(
                     ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, definition.itemPath()));
+            // vJ2: nur vorhandene Zusatzmodelle anmelden (sonst je Rakete 'Unable to load model' fuer models/missile_*.json;
+            // resolveBakedModel faellt ohnehin auf das Itemmodell zurueck)
+            if (Minecraft.getInstance().getResourceManager().getResource(ResourceLocation.fromNamespaceAndPath(
+                    meshId.getNamespace(), "models/" + meshId.getPath() + ".json")).isEmpty()) continue;
             PlatformHooks.registerAdditionalModel(event, meshId);
         }
 

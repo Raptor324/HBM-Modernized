@@ -123,7 +123,7 @@ public class PneumaticPipeAnchorBlockEntity extends BaseHbmBlockEntity implement
         super.setRemoved();
     }
 
-    //? if forge {
+    //? if forge || neoforge {
     @Override
     public void onChunkUnloaded() {
         if (node != null) node.expired = true;
@@ -133,7 +133,7 @@ public class PneumaticPipeAnchorBlockEntity extends BaseHbmBlockEntity implement
 
     @Override
     public AABB getRenderBoundingBox() {
-        return INFINITE_EXTENT_AABB;
+        return com.hbm_m.platform.RenderBounds.INFINITE;
     }
 
     @Override

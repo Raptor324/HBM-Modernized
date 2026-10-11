@@ -979,9 +979,7 @@ public class ModItems {
     public static final RegistrySupplier<Item> BORAX = ITEMS.register("borax",
             () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> DUST = ITEMS.register("dust",
-            () -> new LoreTooltipItem(List.of(
-                    Component.translatable("tooltip.hbm_m.dust.desc1").withStyle(ChatFormatting.GRAY)),
-                    new Item.Properties()));
+            () -> new com.hbm_m.item.ItemCustomLore(new Item.Properties())); // Original ItemCustomLore (.desc / .desc.P11)
     public static final RegistrySupplier<Item> DUST_TINY = ITEMS.register("dust_tiny",
             () -> new Item(new Item.Properties()));
     /** 1.7.10 ModItems.fallout вЂ” РєСѓС‡РєР° РѕСЃР°РґРєРѕРІ. */
@@ -3218,9 +3216,7 @@ public class ModItems {
     public static final RegistrySupplier<Item> GEM_RAD = ITEMS.register("gem_rad", () -> new Item(new Item.Properties().rarity(net.minecraft.world.item.Rarity.UNCOMMON))); // gem_rad: uncommon в оригинале (setRarity)
     public static final RegistrySupplier<Item> GEM_SODALITE = ITEMS.register("gem_sodalite", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> GEM_TANTALIUM = ITEMS.register("gem_tantalium",
-            () -> new LoreTooltipItem(List.of(
-                    Component.translatable("tooltip.hbm_m.tantalum_polycrystal.desc1").withStyle(ChatFormatting.GRAY)),
-                    new Item.Properties()));
+            () -> new com.hbm_m.item.ItemCustomLore(new Item.Properties())); // Original ItemCustomLore (.desc / .desc.P11)
     // Ориг.: ItemCustomLore().setRarity(EnumRarity.uncommon) — в 1.7.10 uncommon = ЖЁЛТЫЙ
     // (vanilla Rarity.UNCOMMON современного MC тоже жёлтый).
     public static final RegistrySupplier<Item> GEM_VOLCANIC = ITEMS.register("gem_volcanic",

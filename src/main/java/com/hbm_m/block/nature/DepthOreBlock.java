@@ -66,10 +66,9 @@ public class DepthOreBlock extends Block {
     }
     *///?}
 
+    /** 1:1 BlockDepth.addInformation: eine gelbe Zeile "trait.tile.depth". */
     private static void addDepthOreTooltip(List<Component> tooltip) {
-        tooltip.add(Component.translatable("tooltip.hbm_m.depthstone.line1")
-                .withStyle(ChatFormatting.YELLOW));
-        tooltip.add(Component.translatable("tooltip.hbm_m.depthstone.line4")
+        tooltip.add(Component.translatable("trait.tile.depth")
                 .withStyle(ChatFormatting.YELLOW));
     }
 
@@ -87,29 +86,7 @@ public class DepthOreBlock extends Block {
         return 0.0F;
     }
 
-    //? if forge {
-    @Override
-    public void onBlockExploded(BlockState state, Level level, BlockPos pos, Explosion explosion) {
-        explodeDropAndRemove(level, pos);
-    }
-    //?}
-
-    //? if neoforge {
-    /*@Override
-    public void onBlockExploded(BlockState state, Level level, BlockPos pos, Explosion explosion) {
-        explodeDropAndRemove(level, pos);
-    }
-    *///?}
-
-    //? if fabric {
-    /*@Override
-    public void wasExploded(Level level, BlockPos pos, Explosion explosion) {
-        explodeDropAndRemove(level, pos);
-    }
-    *///?}
-
-    private void explodeDropAndRemove(Level level, BlockPos pos) {
-        popResource(level, pos, new ItemStack(this));
-        level.removeBlock(pos, false);
-    }
+    // vJ2: Original BlockDepth/BlockDepthOre ueberschreiben das Sprengverhalten nicht: die Explosion laesst die normale
+    // Beute fallen (getItemDropped/quantityDropped -> hier die Loot-Tabelle mit survives_explosion/explosion_decay) und
+    // entfernt den Block. Frueher fiel hier immer der Block selbst heraus.
 }

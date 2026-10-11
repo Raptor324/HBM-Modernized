@@ -1,6 +1,6 @@
 package com.hbm_m.armormod.event;
 
-//? if forge {
+//? if forge || neoforge {
 import com.hbm_m.armormod.util.ArmorModificationHelper;
 import com.hbm_m.entity.projectile.EntityBulletBaseMK4;
 import com.hbm_m.inventory.ComparableStack;
@@ -17,15 +17,24 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
+//? if forge {
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+//?} else {
+/*import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+*///?}
 
 /**
  * 1:1 {@code ModEventHandler.onPlayerPunch}: Mit dem ballistischen Handschuh als Servo-Mod im Brustteil feuert ein
  * Faustschlag (ohne Waffe in der Hand) eine Ladung 12-Gauge-Munition aus dem Inventar ab.
  */
+//? if forge {
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+//?} else {
+/*@net.neoforged.fml.common.EventBusSubscriber(modid = RefStrings.MODID)
+*///?}
 public class BallisticGauntletHandler {
 
     @SubscribeEvent
@@ -37,7 +46,11 @@ public class BallisticGauntletHandler {
         if (chestplate.isEmpty() || !ArmorModificationHelper.hasMods(chestplate)) return;
 
         ItemStack held = player.getMainHandItem();
+        //? if < 1.21.1 {
         if (!held.isEmpty() && held.getAttributeModifiers(EquipmentSlot.MAINHAND).containsKey(Attributes.ATTACK_DAMAGE)) return;
+        //?} else {
+        /*if (!held.isEmpty() && com.hbm_m.platform.AttributeHooks.forSlot(held.getAttributeModifiers(), EquipmentSlot.MAINHAND).containsKey(Attributes.ATTACK_DAMAGE)) return;
+        *///?}
 
         ItemStack servo = ArmorModificationHelper.pryMods(chestplate)[ArmorModificationHelper.servos];
         if (servo == null || servo.isEmpty() || servo.getItem() != ModItems.BALLISTIC_GAUNTLET.get()) return;

@@ -1,72 +1,16 @@
 {
-  "parent": "hbm_m:block/turret_friendly",
+  "parent": "minecraft:builtin/entity",
   "display": {
-    "gui": {
+    "firstperson_lefthand": {
       "rotation": [
-        30,
+        0,
         225,
         0
       ],
-      "translation": [
-        0.0,
-        3.5,
-        0.0
-      ],
       "scale": [
-        0.2778,
-        0.2778,
-        0.2778
-      ]
-    },
-    "fixed": {
-      "rotation": [
-        0,
-        180,
-        0
-      ],
-      "translation": [
-        0.0,
-        3.5,
-        0.0
-      ],
-      "scale": [
-        0.2778,
-        0.2778,
-        0.2778
-      ]
-    },
-    "thirdperson_righthand": {
-      "rotation": [
-        0,
-        45,
-        0
-      ],
-      "translation": [
-        0.0,
-        2.45,
-        0.0
-      ],
-      "scale": [
-        0.1945,
-        0.1945,
-        0.1945
-      ]
-    },
-    "thirdperson_lefthand": {
-      "rotation": [
-        0,
-        45,
-        0
-      ],
-      "translation": [
-        0.0,
-        2.45,
-        0.0
-      ],
-      "scale": [
-        0.1945,
-        0.1945,
-        0.1945
+        0.4,
+        0.4,
+        0.4
       ]
     },
     "firstperson_righthand": {
@@ -75,66 +19,75 @@
         45,
         0
       ],
-      "translation": [
-        0.0,
-        2.45,
-        0.0
-      ],
       "scale": [
-        0.1945,
-        0.1945,
-        0.1945
+        0.4,
+        0.4,
+        0.4
       ]
     },
-    "firstperson_lefthand": {
-      "rotation": [
-        0,
-        45,
-        0
-      ],
-      "translation": [
-        0.0,
-        2.45,
-        0.0
-      ],
+    "fixed": {
       "scale": [
-        0.1945,
-        0.1945,
-        0.1945
+        0.5,
+        0.5,
+        0.5
       ]
     },
     "ground": {
-      "rotation": [
-        0,
-        0,
-        0
+      "scale": [
+        0.25,
+        0.25,
+        0.25
       ],
       "translation": [
-        0.0,
-        1.75,
-        0.0
-      ],
-      "scale": [
-        0.1389,
-        0.1389,
-        0.1389
+        0,
+        3,
+        0
       ]
     },
-    "head": {
+    "gui": {
       "rotation": [
-        0,
-        0,
+        30,
+        225,
         0
       ],
-      "translation": [
-        0.0,
-        1.75,
-        0.0
+      "scale": [
+        0.625,
+        0.625,
+        0.625
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        75,
+        45,
+        0
       ],
       "scale": [
-        0.1389,
-        0.1389,
-        0.1389
+        0.375,
+        0.375,
+        0.375
+      ],
+      "translation": [
+        0,
+        2.5,
+        0
+      ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [
+        75,
+        45,
+        0
+      ],
+      "scale": [
+        0.375,
+        0.375,
+        0.375
+      ],
+      "translation": [
+        0,
+        2.5,
+        0
       ]
     }
   }

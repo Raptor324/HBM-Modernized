@@ -38,7 +38,7 @@ import net.minecraft.world.level.material.Fluids;
 /**
  * JEI port of {@code RockMillRecipeHandler} (extends {@code NEIGenericRecipeHandler}).
  */
-//? if forge {
+//? if forge || neoforge {
 public class RockMillJeiCategory extends JeiGenericRecipeCategory<RockMillRecipe> {
 
     public static final RecipeType<RockMillRecipe> RECIPE_TYPE =

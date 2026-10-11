@@ -136,7 +136,7 @@ public final class GunGL {
     public static void pushMatrix() { pose.pushPose(); }
     public static void popMatrix() { pose.popPose(); }
     public static void translate(double x, double y, double z) { pose.translate(x, y, z); }
-    public static void scale(double x, double y, double z) { pose.scale((float) x, (float) y, (float) z); }
+    public static void scale(double x, double y, double z) { com.hbm_m.client.render.item.OrigInventoryTransform.scaleSafe(pose, (float) x, (float) y, (float) z); } // vJ: Normalen bei Spiegelung
 
     /** {@code glRotate(angle, x, y, z)}: Drehung um eine beliebige Achse (Grad, rechte Hand wie OpenGL). */
     public static void rotate(double angle, double x, double y, double z) {

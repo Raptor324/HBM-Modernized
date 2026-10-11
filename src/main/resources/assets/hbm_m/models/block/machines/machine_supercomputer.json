@@ -6,7 +6,7 @@
   "children": {
     "computer": {
       "loader": "forge:obj",
-      "model": "hbm_m:models/machines/supercomputer.obj",
+      "model": "hbm_m:models/block/machines/supercomputer_item.obj",
       "flip_v": true,
       "render_type": "minecraft:cutout",
       "textures": { "default": "hbm_m:block/machine/supercomputer" },
@@ -14,7 +14,7 @@
     },
     "lights": {
       "loader": "forge:obj",
-      "model": "hbm_m:models/machines/supercomputer.obj",
+      "model": "hbm_m:models/block/machines/supercomputer_item.obj",
       "flip_v": true,
       "render_type": "minecraft:cutout",
       "textures": { "default": "hbm_m:block/machine/supercomputer_scan" },

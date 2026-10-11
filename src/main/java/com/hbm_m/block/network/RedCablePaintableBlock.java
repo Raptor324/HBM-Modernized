@@ -136,7 +136,8 @@ public class RedCablePaintableBlock extends BaseEntityBlock implements com.hbm_m
     }
 
     private void addTooltip(List<Component> tooltip) {
-        tooltip.add(Component.translatable("tooltip.hbm_m.paintable").withStyle(ChatFormatting.GRAY));
+        // 1:1 BlockCablePaintable.addInformation: addStandardInfo (Umschalttaste zeigt .desc)
+        com.hbm_m.util.StandardInfo.add(tooltip, getDescriptionId() + ".desc");
     }
 
     //? if < 1.21.1 {

@@ -147,14 +147,39 @@ public class BarrelTankBlock extends BaseEntityBlock implements com.hbm_m.interf
     public void appendHoverText(@NotNull ItemStack stack, @NotNull Item.TooltipContext ctx, @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
         super.appendHoverText(stack, ctx, tooltip, flag);
     *///?}
-        if (tooltipInfo == null) return;
-
-        tooltip.add(Component.translatable("tooltip.hbm_m.barrel.capacity", tooltipInfo.capacityMb())
-                .withStyle(ChatFormatting.AQUA));
-        tooltip.add(storageLine(tooltipInfo.canStoreHot(), "tooltip.hbm_m.barrel.hot"));
-        tooltip.add(storageLine(tooltipInfo.canStoreCorrosive(), "tooltip.hbm_m.barrel.corrosive"));
-        tooltip.add(storageLine(tooltipInfo.canStoreHighlyCorrosive(), "tooltip.hbm_m.barrel.highly_corrosive"));
-        tooltip.add(storageLine(tooltipInfo.canStoreAntimatter(), "tooltip.hbm_m.barrel.antimatter"));
+        // 1:1 BlockFluidBarrel.addInformation: feste englische Zeilen je Fass (Eisenfass, Orbus, Grosstank: keine)
+        if (this == com.hbm_m.block.ModBlocks.BARREL_PLASTIC.get()) {
+            tooltip.add(Component.literal("Capacity: 12,000mB").withStyle(ChatFormatting.AQUA));
+            tooltip.add(Component.literal("Cannot store hot fluids").withStyle(ChatFormatting.YELLOW));
+            tooltip.add(Component.literal("Cannot store corrosive fluids").withStyle(ChatFormatting.YELLOW));
+            tooltip.add(Component.literal("Cannot store antimatter").withStyle(ChatFormatting.YELLOW));
+        }
+        if (this == com.hbm_m.block.ModBlocks.BARREL_CORRODED.get()) {
+            tooltip.add(Component.literal("Capacity: 6,000mB").withStyle(ChatFormatting.AQUA));
+            tooltip.add(Component.literal("Can store hot fluids").withStyle(ChatFormatting.GREEN));
+            tooltip.add(Component.literal("Can store highly corrosive fluids").withStyle(ChatFormatting.GREEN));
+            tooltip.add(Component.literal("Cannot store antimatter").withStyle(ChatFormatting.YELLOW));
+            tooltip.add(Component.literal("Leaky").withStyle(ChatFormatting.RED));
+        }
+        if (this == com.hbm_m.block.ModBlocks.BARREL_STEEL.get()) {
+            tooltip.add(Component.literal("Capacity: 16,000mB").withStyle(ChatFormatting.AQUA));
+            tooltip.add(Component.literal("Can store hot fluids").withStyle(ChatFormatting.GREEN));
+            tooltip.add(Component.literal("Can store corrosive fluids").withStyle(ChatFormatting.GREEN));
+            tooltip.add(Component.literal("Cannot store highly corrosive fluids properly").withStyle(ChatFormatting.YELLOW));
+            tooltip.add(Component.literal("Cannot store antimatter").withStyle(ChatFormatting.YELLOW));
+        }
+        if (this == com.hbm_m.block.ModBlocks.BARREL_ANTIMATTER.get()) {
+            tooltip.add(Component.literal("Capacity: 16,000mB").withStyle(ChatFormatting.AQUA));
+            tooltip.add(Component.literal("Can store hot fluids").withStyle(ChatFormatting.GREEN));
+            tooltip.add(Component.literal("Can store highly corrosive fluids").withStyle(ChatFormatting.GREEN));
+            tooltip.add(Component.literal("Can store antimatter").withStyle(ChatFormatting.GREEN));
+        }
+        if (this == com.hbm_m.block.ModBlocks.BARREL_TCALLOY.get()) {
+            tooltip.add(Component.literal("Capacity: 24,000mB").withStyle(ChatFormatting.AQUA));
+            tooltip.add(Component.literal("Can store hot fluids").withStyle(ChatFormatting.GREEN));
+            tooltip.add(Component.literal("Can store highly corrosive fluids").withStyle(ChatFormatting.GREEN));
+            tooltip.add(Component.literal("Cannot store antimatter").withStyle(ChatFormatting.YELLOW));
+        }
     }
 
     private static Component storageLine(boolean can, String baseKey) {

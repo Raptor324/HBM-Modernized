@@ -56,13 +56,13 @@ public class ItemRadarLinker extends Item implements ITooltipProvider {
     @Override
     public void appendHbmTooltip(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
         CompoundTag tag = PlatformHooks.getItemTag(stack);
+        // 1:1 ItemCoordinateBase.addInformation (includeY = true)
         if (tag != null && tag.contains("xCoord")) {
-            tooltip.add(Component.translatable("tooltip.hbm_m.radar_linker.linked"));
-            tooltip.add(Component.literal("X: " + tag.getInt("xCoord")).withStyle(ChatFormatting.GRAY));
-            tooltip.add(Component.literal("Y: " + tag.getInt("yCoord")).withStyle(ChatFormatting.GRAY));
-            tooltip.add(Component.literal("Z: " + tag.getInt("zCoord")).withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.literal("X: " + tag.getInt("xCoord")));
+            tooltip.add(Component.literal("Y: " + tag.getInt("yCoord")));
+            tooltip.add(Component.literal("Z: " + tag.getInt("zCoord")));
         } else {
-            tooltip.add(Component.translatable("tooltip.hbm_m.radar_linker.not_linked"));
+            tooltip.add(Component.literal("No position set!").withStyle(ChatFormatting.RED));
         }
     }
 

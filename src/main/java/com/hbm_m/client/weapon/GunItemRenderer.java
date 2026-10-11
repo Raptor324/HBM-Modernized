@@ -60,7 +60,7 @@ public class GunItemRenderer extends BlockEntityWithoutLevelRenderer {
             case GUI -> {
                 // 1.7.10-Inventar: Pixelraum 0..16 mit Y nach unten
                 ps.translate(-0.5, 0.5, 0);
-                ps.scale(1F / 16F, -1F / 16F, 1F / 16F);
+                com.hbm_m.client.render.item.OrigInventoryTransform.scaleSafe(ps, 1F / 16F, -1F / 16F, 1F / 16F); // vJ: Normalen
                 renderer.renderItem(ItemRenderType.INVENTORY, stack);
             }
             case THIRD_PERSON_RIGHT_HAND, THIRD_PERSON_LEFT_HAND -> {

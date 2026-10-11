@@ -343,11 +343,13 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         );
 
 
+        // vJ2: Original BlockDepthOre ore_depth_cinnebar: quantityDropped 2 + rand(3) = 2..4,
+        // Glueck wie quantityDroppedWithBonus = n * (max(rand(fortune + 2) - 1, 0) + 1) = addOreBonusCount
         dropOreType2(
                 ModBlocks.DEPTH_CINNABAR.get(),
                 ModBlocks.DEPTH_CINNABAR.get(),
                 ModItems.CINNEBAR.get(),
-                3.0f, 5.0f
+                2.0f, 4.0f
         );
 
         dropOreType2(
@@ -374,6 +376,13 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 ModBlocks.DEPTH_ZIRCONIUM.get(),
                 ModItems.ZIRCONIUM_SHARP.get(),
                 3.0f, 5.0f
+        );
+        // vJ2: Original BlockDepthOre ore_depth_nether_neodymium -> fragment_neodymium, quantityDropped 2 + rand(2)
+        dropOreType2(
+                ModBlocks.DEPTH_NETHER_NEODYMIUM.get(),
+                ModBlocks.DEPTH_NETHER_NEODYMIUM.get(),
+                ModItems.FRAGMENT_NEODYMIUM.get(),
+                2.0f, 3.0f
         );
         // Original BlockOre.quantityDropped: 2 + rand(3)
         dropOreType2(

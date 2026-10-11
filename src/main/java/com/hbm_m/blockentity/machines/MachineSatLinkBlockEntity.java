@@ -96,16 +96,12 @@ public class MachineSatLinkBlockEntity extends BaseHbmBlockEntity implements IRO
         CompoundTag tag = new CompoundTag();
         tag.putBoolean("connected", connected);
         tag.putInt("freq", freq);
-<<<<<<< HEAD
         net.minecraft.nbt.ListTag lines = new net.minecraft.nbt.ListTag();
         for (net.minecraft.network.chat.Component line : info) {
-            lines.add(net.minecraft.nbt.StringTag.valueOf(net.minecraft.network.chat.Component.Serializer.toJson(line)));
+            lines.add(net.minecraft.nbt.StringTag.valueOf(com.hbm_m.platform.PlatformHooks.componentToJson(line, server.registryAccess())));
         }
         tag.put("info", lines);
-        ClientboundBlockEntityDataPacket packet = ClientboundBlockEntityDataPacket.create(this, be -> tag);
-=======
         ClientboundBlockEntityDataPacket packet = com.hbm_m.platform.BlockHooks.dataPacket(this, tag);
->>>>>>> 5cf60b6108d271636c3d48b21b60db45caf65f6b
         for (var player : server.getChunkSource().chunkMap.getPlayers(new ChunkPos(worldPosition), false)) {
             if (player.distanceToSqr(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5) <= (double) range * range)
                 player.connection.send(packet);
@@ -120,7 +116,7 @@ public class MachineSatLinkBlockEntity extends BaseHbmBlockEntity implements IRO
             net.minecraft.nbt.ListTag lines = tag.getList("info", 8);
             java.util.List<net.minecraft.network.chat.Component> parsed = new java.util.ArrayList<>();
             for (int i = 0; i < lines.size(); i++) {
-                net.minecraft.network.chat.Component line = net.minecraft.network.chat.Component.Serializer.fromJson(lines.getString(i));
+                net.minecraft.network.chat.Component line = com.hbm_m.platform.PlatformHooks.parseComponentJson(lines.getString(i), level != null ? level.registryAccess() : null);
                 if (line != null) parsed.add(line);
             }
             this.info = parsed;

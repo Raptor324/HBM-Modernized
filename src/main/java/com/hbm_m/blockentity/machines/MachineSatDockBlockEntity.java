@@ -120,7 +120,7 @@ public class MachineSatDockBlockEntity extends BaseMachineBlockEntity {
         ItemStack rest = stack.copy();
         for (int i = 0; i < 15 && !rest.isEmpty(); i++) {
             ItemStack s = slot(i);
-            if (!s.isEmpty() && ItemStack.isSameItemSameTags(s, rest) && s.getCount() < s.getMaxStackSize()) {
+            if (!s.isEmpty() && StackNbt.sameItemSameTags(s, rest) && s.getCount() < s.getMaxStackSize()) {
                 int toAdd = Math.min(s.getMaxStackSize() - s.getCount(), rest.getCount());
                 s.grow(toAdd);
                 rest.shrink(toAdd);

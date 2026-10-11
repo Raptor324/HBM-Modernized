@@ -38,7 +38,7 @@ import net.minecraft.world.level.material.Fluids;
 /**
  * JEI port of {@code SuperComputerRecipeHandler} (extends {@code NEIGenericRecipeHandler}).
  */
-//? if forge {
+//? if forge || neoforge {
 public class SuperComputerJeiCategory extends JeiGenericRecipeCategory<SuperComputerRecipe> {
 
     public static final RecipeType<SuperComputerRecipe> RECIPE_TYPE =

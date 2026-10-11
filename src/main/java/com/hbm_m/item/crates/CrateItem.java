@@ -98,37 +98,42 @@ public class CrateItem extends BlockItem implements ITooltipProvider {
             }
         }
 
-        CrateTooltipData data = readTooltipData(stack);
-        if (data == null) return;
-
-        int occupiedSlots = data.occupiedSlots();
-
-        if (data.totalRows() > PREVIEW_LIMIT) {
-            int remaining = data.totalRows() - PREVIEW_LIMIT;
-            tooltip.add(Component.literal(" ...and " + remaining + " more")
-                    .withStyle(getFillColor(occupiedSlots)));
+        // 1:1 Inhaltsliste: "Contains:" + bis zu 10 Stapel (Slot-Reihenfolge) + "...and N more."
+        if (be == null || !be.contains("inventory")) return;
+        ModItemStackHandler handler = new ModItemStackHandler(totalSlots) {
+            @Override
+            protected void onContentsChanged(int slot) {}
+        };
+        //? if < 1.21.1 {
+        handler.deserializeNBT(be.getCompound("inventory"));
+        //?} else {
+        /*handler.deserializeNBT(PlatformHooks.clientProvider(), be.getCompound("inventory"));
+        *///?}
+        List<Component> contents = new ArrayList<>();
+        int amount = 0;
+        for (int i = 0; i < handler.getSlots(); i++) {
+            ItemStack content = handler.getStackInSlot(i);
+            if (!content.isEmpty()) {
+                amount++;
+                if (contents.size() < 10) {
+                    contents.add(Component.literal(" - ").append(content.getHoverName()).append(content.getCount() > 1 ? (" x" + content.getCount()) : "").withStyle(ChatFormatting.AQUA));
+                }
+            }
         }
-
-        if (occupiedSlots == 0) {
-            tooltip.add(Component.literal(" [Empty]")
-                    .withStyle(ChatFormatting.GRAY));
-        } else {
-            tooltip.add(Component.literal(" " + occupiedSlots + "/" + totalSlots + " slots used")
-                    .withStyle(getFillColor(occupiedSlots)));
+        if (!contents.isEmpty()) {
+            tooltip.add(Component.literal("Contains:").withStyle(ChatFormatting.AQUA));
+            tooltip.addAll(contents);
+            amount -= contents.size();
+            if (amount > 0) {
+                tooltip.add(Component.literal("...and " + amount + " more.").withStyle(ChatFormatting.AQUA));
+            }
         }
     }
 
+    /** Original zeigt den Inhalt nur als Text (siehe appendHbmTooltip); keine Bildvorschau. */
     @Override
     public Optional<TooltipComponent> getTooltipImage(ItemStack stack) {
-        CompoundTag be = com.hbm_m.platform.BlockEntityItemData.read(stack);
-        if (be != null) {
-            if (be.getBoolean("isLocked") || be.getBoolean("spiders")) return Optional.empty();
-        }
-        CrateTooltipData data = readTooltipData(stack);
-        if (data == null || data.previewEntries().isEmpty()) {
-            return Optional.empty();
-        }
-        return Optional.of(new CrateContentsTooltipComponent(data.previewEntries()));
+        return Optional.empty();
     }
 
     private @Nullable CrateTooltipData readTooltipData(ItemStack stack) {

@@ -13,7 +13,7 @@ import net.minecraft.world.level.block.Block;
 public class AnimatedBlockItem extends BlockItem {
 
     /** Registrierungsnamen der einfachen Bloecke mit animiertem Gegenstand. */
-    public static final Set<String> NAMES = Set.of("autosaw", "thresher"); // Stirling ist jetzt Mehrblock (MultiblockBlockItem)
+    public static final Set<String> NAMES = Set.of("autosaw", "thresher", "turret_sentry"); // vJ: Sentry-Icon 1:1 RenderTurretSentry#getRenderer // Stirling ist jetzt Mehrblock (MultiblockBlockItem)
 
     public AnimatedBlockItem(Block block, Properties properties) {
         super(block, properties);

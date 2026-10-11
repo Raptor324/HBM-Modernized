@@ -1,7 +1,6 @@
 package com.hbm_m.extprop;
 
 import java.util.Map;
-import java.util.WeakHashMap;
 
 import com.hbm_m.armormod.util.ArmorModificationHelper;
 import com.hbm_m.handler.EnumKeybind;
@@ -29,7 +28,14 @@ public final class HbmPlayerProps {
 
     public static final String KEY = "HbmPlayerProps";
 
-    private static final Map<Player, HbmPlayerProps> CACHE = new WeakHashMap<>();
+    /**
+     * Ein Objekt je Spielerinstanz wie im Original (IExtendedEntityProperties). Schluessel nach Identitaet
+     * (MapMaker.weakKeys vergleicht mit ==): Entity.equals/hashCode gehen ueber die Entity-ID, und im
+     * Einzelspieler haben LocalPlayer und ServerPlayer dieselbe ID - mit WeakHashMap teilten sich Client
+     * und Server ein Objekt (u.a. zaehlte grenadeDeployment doppelt, und der Client-Wurf setzte es vor dem
+     * Server-Wurf zurueck: Universalgranaten warfen im Kreativmodus nie). Nebenlaeufig, da beide Threads zugreifen.
+     */
+    private static final Map<Player, HbmPlayerProps> CACHE = new com.google.common.collect.MapMaker().weakKeys().makeMap();
 
     public final Player player;
 

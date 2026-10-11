@@ -1243,7 +1243,11 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModel(ModBlocks.SOYUZ_LAUNCHER);
         blockItemFromBlockModel(ModBlocks.DECO_SOYUZ_ROCKET);
         // Original ItemCustomMissilePart: Symbol je Teiltyp (mp_thruster/mp_fuselage/...), Chips eigene
-        com.hbm_m.item.missile.MissilePartItems.ICONS.forEach((id, icon) -> withExistingParent(id, "item/generated").texture("layer0", modLoc("item/" + icon)));
+        // vJ: Teile mit MissilePart-Eintrag zeichnet das Original per ItemRenderMissilePart als OBJ -> builtin/entity
+        com.hbm_m.item.missile.MissilePartItems.ICONS.forEach((id, icon) -> {
+            if (com.hbm_m.item.missile.MissilePartItems.RENDER.containsKey(id)) builtinEntityItem(id);
+            else withExistingParent(id, "item/generated").texture("layer0", modLoc("item/" + icon));
+        });
         builtinEntityItem("missile_custom");
         // Baukastengranate (ItemRenderGrenade per BEWLR) und ihre Teile
         // ItemCrucible (ItemRenderCrucible per BEWLR)

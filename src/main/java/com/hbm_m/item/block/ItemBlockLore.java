@@ -26,6 +26,8 @@ public final class ItemBlockLore {
     public static Rarity getRarity(String name) {
         if ("gravel_diamond".equals(name)) return Rarity.RARE;
         if ("block_euphemium".equals(name) || "block_euphemium_cluster".equals(name)) return Rarity.EPIC;
+        // Original ItemOreBlock.getRarity: uncommon (ore_australium, ore_rare, ore_gneiss_rare, block_australium)
+        if ("australium_ore".equals(name) || "ore_rare".equals(name) || "gneiss_rare_ore".equals(name) || "block_australium".equals(name)) return Rarity.UNCOMMON;
         return null;
     }
 
@@ -44,6 +46,13 @@ public final class ItemBlockLore {
 
         if (block == ModBlocks.METEOR_BATTERY.get()) {
             list.add(Component.literal("Provides infinite charge to tesla coils"));
+        }
+
+        // Original ItemOreBlock.addInformation
+        if (block == ModBlocks.AUSTRALIUM_ORE.get()) {
+            list.add(Component.literal("Australium ore"));
+            list.add(Component.literal("Deposit location: X:-400; Z:-400"));
+            list.add(Component.literal("Estimated quantity: 490"));
         }
 
         if (block == ModBlocks.GRAVEL_DIAMOND.get()) {

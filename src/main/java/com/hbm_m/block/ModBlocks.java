@@ -885,7 +885,7 @@ public class ModBlocks {
             () -> new com.hbm_m.block.generic.CrateBlocks.Supply(BlockProps.copy(Blocks.OAK_PLANKS).strength(5.0F, 6.0F).sound(SoundType.WOOD), com.hbm_m.block.generic.CrateBlocks.Supply.Kind.WEAPON));
 
     public static final RegistrySupplier<Block> CONCRETE_COLORED_EXT_HAZARD = registerBlock("concrete_colored_ext_hazard",
-            () -> new Block(BlockProps.copy(Blocks.STONE).isValidSpawn((st, lvl, pos, type) -> false).strength(15F, 84.0F).sound(SoundType.STONE).requiresCorrectToolForDrops()));
+            () -> new com.hbm_m.block.generic.BlockNoSpawn(BlockProps.copy(Blocks.STONE).isValidSpawn((st, lvl, pos, type) -> false).strength(15F, 84.0F).sound(SoundType.STONE).requiresCorrectToolForDrops()));
     /** concrete_hazard: doppelte Port-ID von concrete_colored_ext@HAZARD (Umleitung in ForgeMainEvents.LEGACY_IDS). */
     public static final RegistrySupplier<Block> CONCRETE_HAZARD = CONCRETE_COLORED_EXT_HAZARD;
     public static final RegistrySupplier<Block> CONCRETE_HAZARD_STAIRS = registerBlock("concrete_hazard_stairs",
@@ -895,7 +895,7 @@ public class ModBlocks {
             () -> new SlabBlock(BlockProps.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
 
     public static final RegistrySupplier<Block> BRICK_CONCRETE = registerBlock("brick_concrete",
-            () -> new Block(BlockProps.copy(Blocks.STONE).isValidSpawn((st, lvl, pos, type) -> false).requiresCorrectToolForDrops().strength(15.0F, 96.0F)));
+            () -> new com.hbm_m.block.generic.BlockNoSpawn(BlockProps.copy(Blocks.STONE).isValidSpawn((st, lvl, pos, type) -> false).requiresCorrectToolForDrops().strength(15.0F, 96.0F)));
     public static final RegistrySupplier<Block> BRICK_CONCRETE_STAIRS = registerBlock("brick_concrete_stairs",
             () -> new StairBlock(ModBlocks.BRICK_CONCRETE.get().defaultBlockState(),
                     BlockProps.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE).strength(15.0F, 96.0F)));
@@ -911,7 +911,7 @@ public class ModBlocks {
             () -> new SlabBlock(BlockProps.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
 
     public static final RegistrySupplier<Block> CONCRETE  = registerBlock("concrete",
-            () -> new Block(BlockProps.copy(Blocks.STONE).isValidSpawn((st, lvl, pos, type) -> false).requiresCorrectToolForDrops().strength(15.0F, 84.0F)));
+            () -> new com.hbm_m.block.generic.BlockNoSpawn(BlockProps.copy(Blocks.STONE).isValidSpawn((st, lvl, pos, type) -> false).requiresCorrectToolForDrops().strength(15.0F, 84.0F)));
     public static final RegistrySupplier<Block> CONCRETE_STAIRS = registerBlock("concrete_stairs",
             () -> new StairBlock(ModBlocks.CONCRETE.get().defaultBlockState(),
                     BlockProps.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE).strength(15.0F, 84.0F)));
@@ -1467,7 +1467,7 @@ public class ModBlocks {
             () -> new Block(BlockProps.copy(Blocks.STONE).requiresCorrectToolForDrops().strength(15.0F, 72.0F)));
 
     public static final RegistrySupplier<Block> CONCRETE_ASBESTOS = registerBlock("concrete_asbestos",
-            () -> new Block(BlockProps.copy(Blocks.STONE).isValidSpawn((st, lvl, pos, type) -> false).requiresCorrectToolForDrops().strength(15.0F, 90.0F)));
+            () -> new com.hbm_m.block.generic.BlockNoSpawn(BlockProps.copy(Blocks.STONE).isValidSpawn((st, lvl, pos, type) -> false).requiresCorrectToolForDrops().strength(15.0F, 90.0F)));
 
     public static final RegistrySupplier<Block> CONCRETE_BLACK = registerBlock("concrete_black",
             () -> new Block(BlockProps.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
@@ -1479,37 +1479,37 @@ public class ModBlocks {
             () -> new Block(BlockProps.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
 
     public static final RegistrySupplier<Block> CONCRETE_COLORED_EXT_BRONZE = registerBlock("concrete_colored_ext_bronze",
-            () -> new Block(BlockProps.copy(Blocks.STONE).isValidSpawn((st, lvl, pos, type) -> false).strength(15F, 84.0F).sound(SoundType.STONE).requiresCorrectToolForDrops()));
+            () -> new com.hbm_m.block.generic.BlockNoSpawn(BlockProps.copy(Blocks.STONE).isValidSpawn((st, lvl, pos, type) -> false).strength(15F, 84.0F).sound(SoundType.STONE).requiresCorrectToolForDrops()));
     /** concrete_colored_bronze: doppelte Port-ID von concrete_colored_ext@BRONZE (Umleitung in ForgeMainEvents.LEGACY_IDS). */
     public static final RegistrySupplier<Block> CONCRETE_COLORED_BRONZE = CONCRETE_COLORED_EXT_BRONZE;
 
     public static final RegistrySupplier<Block> CONCRETE_COLORED_EXT_INDIGO = registerBlock("concrete_colored_ext_indigo",
-            () -> new Block(BlockProps.copy(Blocks.STONE).isValidSpawn((st, lvl, pos, type) -> false).strength(15F, 84.0F).sound(SoundType.STONE).requiresCorrectToolForDrops()));
+            () -> new com.hbm_m.block.generic.BlockNoSpawn(BlockProps.copy(Blocks.STONE).isValidSpawn((st, lvl, pos, type) -> false).strength(15F, 84.0F).sound(SoundType.STONE).requiresCorrectToolForDrops()));
     /** concrete_colored_indigo: doppelte Port-ID von concrete_colored_ext@INDIGO (Umleitung in ForgeMainEvents.LEGACY_IDS). */
     public static final RegistrySupplier<Block> CONCRETE_COLORED_INDIGO = CONCRETE_COLORED_EXT_INDIGO;
 
     public static final RegistrySupplier<Block> CONCRETE_COLORED_EXT_MACHINE = registerBlock("concrete_colored_ext_machine",
-            () -> new Block(BlockProps.copy(Blocks.STONE).isValidSpawn((st, lvl, pos, type) -> false).strength(15F, 84.0F).sound(SoundType.STONE).requiresCorrectToolForDrops()));
+            () -> new com.hbm_m.block.generic.BlockNoSpawn(BlockProps.copy(Blocks.STONE).isValidSpawn((st, lvl, pos, type) -> false).strength(15F, 84.0F).sound(SoundType.STONE).requiresCorrectToolForDrops()));
     /** concrete_colored_machine: doppelte Port-ID von concrete_colored_ext@MACHINE (Umleitung in ForgeMainEvents.LEGACY_IDS). */
     public static final RegistrySupplier<Block> CONCRETE_COLORED_MACHINE = CONCRETE_COLORED_EXT_MACHINE;
 
     public static final RegistrySupplier<Block> CONCRETE_COLORED_EXT_MACHINE_STRIPE = registerBlock("concrete_colored_ext_machine_stripe",
-            () -> new Block(BlockProps.copy(Blocks.STONE).strength(15F, 84.0F).sound(SoundType.STONE).requiresCorrectToolForDrops()));
+            () -> new com.hbm_m.block.generic.BlockNoSpawn(BlockProps.copy(Blocks.STONE).strength(15F, 84.0F).sound(SoundType.STONE).requiresCorrectToolForDrops()));
     /** concrete_colored_machine_stripe: doppelte Port-ID von concrete_colored_ext@MACHINE_STRIPE (Umleitung in ForgeMainEvents.LEGACY_IDS). */
     public static final RegistrySupplier<Block> CONCRETE_COLORED_MACHINE_STRIPE = CONCRETE_COLORED_EXT_MACHINE_STRIPE;
 
     public static final RegistrySupplier<Block> CONCRETE_COLORED_EXT_PINK = registerBlock("concrete_colored_ext_pink",
-            () -> new Block(BlockProps.copy(Blocks.STONE).strength(15F, 84.0F).sound(SoundType.STONE).requiresCorrectToolForDrops()));
+            () -> new com.hbm_m.block.generic.BlockNoSpawn(BlockProps.copy(Blocks.STONE).strength(15F, 84.0F).sound(SoundType.STONE).requiresCorrectToolForDrops()));
     /** concrete_colored_pink: doppelte Port-ID von concrete_colored_ext@PINK (Umleitung in ForgeMainEvents.LEGACY_IDS). */
     public static final RegistrySupplier<Block> CONCRETE_COLORED_PINK = CONCRETE_COLORED_EXT_PINK;
 
     public static final RegistrySupplier<Block> CONCRETE_COLORED_EXT_PURPLE = registerBlock("concrete_colored_ext_purple",
-            () -> new Block(BlockProps.copy(Blocks.STONE).strength(15F, 84.0F).sound(SoundType.STONE).requiresCorrectToolForDrops()));
+            () -> new com.hbm_m.block.generic.BlockNoSpawn(BlockProps.copy(Blocks.STONE).strength(15F, 84.0F).sound(SoundType.STONE).requiresCorrectToolForDrops()));
     /** concrete_colored_purple: doppelte Port-ID von concrete_colored_ext@PURPLE (Umleitung in ForgeMainEvents.LEGACY_IDS). */
     public static final RegistrySupplier<Block> CONCRETE_COLORED_PURPLE = CONCRETE_COLORED_EXT_PURPLE;
 
     public static final RegistrySupplier<Block> CONCRETE_COLORED_EXT_SAND = registerBlock("concrete_colored_ext_sand",
-            () -> new Block(BlockProps.copy(Blocks.STONE).strength(15F, 84.0F).sound(SoundType.STONE).requiresCorrectToolForDrops()));
+            () -> new com.hbm_m.block.generic.BlockNoSpawn(BlockProps.copy(Blocks.STONE).strength(15F, 84.0F).sound(SoundType.STONE).requiresCorrectToolForDrops()));
     /** concrete_colored_sand: doppelte Port-ID von concrete_colored_ext@SAND (Umleitung in ForgeMainEvents.LEGACY_IDS). */
     public static final RegistrySupplier<Block> CONCRETE_COLORED_SAND = CONCRETE_COLORED_EXT_SAND;
 
@@ -1544,7 +1544,7 @@ public class ModBlocks {
             () -> new Block(BlockProps.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
 
     public static final RegistrySupplier<Block> CONCRETE_REBAR = registerBlock("concrete_rebar",
-            () -> new Block(BlockProps.copy(Blocks.STONE).isValidSpawn((st, lvl, pos, type) -> false).requiresCorrectToolForDrops().strength(50.0F, 144.0F)));
+            () -> new com.hbm_m.block.generic.BlockNoSpawn(BlockProps.copy(Blocks.STONE).isValidSpawn((st, lvl, pos, type) -> false).requiresCorrectToolForDrops().strength(50.0F, 144.0F)));
 
     public static final RegistrySupplier<Block> CONCRETE_REBAR_ALT = registerBlock("concrete_rebar_alt",
             () -> new Block(BlockProps.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
@@ -2134,7 +2134,7 @@ public class ModBlocks {
             () -> new Block(BlockProps.copy(Blocks.DEEPSLATE).strength(5.0f, 5.0f).requiresCorrectToolForDrops()));
 
     public static final RegistrySupplier<Block> ALEXANDRITE_ORE = registerBlock("alexandrite_ore",
-            () -> new Block(BlockProps.copy(Blocks.STONE).requiresCorrectToolForDrops().strength(-1.0F, 6.0F)));
+            () -> new com.hbm_m.block.nature.DepthOreBlock(BlockProps.copy(Blocks.STONE).requiresCorrectToolForDrops().strength(-1.0F, 6.0F))); // Original BlockDepthOre
 
     public static final RegistrySupplier<Block> COLTAN_ORE = registerBlock("coltan_ore", // 1:1 BlockOre (Original-Klasse; Drops in ModBlockLootTableProvider)
             () -> new BlockOre(BlockProps.copy(Blocks.STONE).requiresCorrectToolForDrops().strength(15.0F, 6.0F)));
@@ -2192,7 +2192,7 @@ public class ModBlocks {
 
     /** Порт {@code ore_depth_nether_neodymium} (глубинные залежи у дна/потолка ада). */
     public static final RegistrySupplier<Block> DEPTH_NETHER_NEODYMIUM = registerBlock("depth_nether_neodymium",
-            () -> new Block(BlockProps.copy(Blocks.NETHERRACK).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
+            () -> new com.hbm_m.block.nature.DepthOreBlock(BlockProps.copy(Blocks.NETHERRACK).strength(-1.0F, 6.0F).requiresCorrectToolForDrops())); // Original BlockDepthOre (unzerstoerbar, nur Sprengung)
 
     /** Порт {@code ore_australium} (секретная руда). */
     public static final RegistrySupplier<Block> AUSTRALIUM_ORE = registerBlock("australium_ore",

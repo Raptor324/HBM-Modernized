@@ -96,6 +96,30 @@ public class ItemCustomMissilePart extends Item {
         this.witty = witty;
     }
 
+    // vJ: Original ItemRenderMissilePart (OBJ des Teils als Icon); greift nur bei builtin/entity-Itemmodell (Chips flach)
+    //? if forge {
+    @Override
+    public void initializeClient(java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> consumer) {
+        consumer.accept(new net.minecraftforge.client.extensions.common.IClientItemExtensions() {
+            @Override
+            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return com.hbm_m.client.render.item.ItemRenderMissilePart.instance();
+            }
+        });
+    }
+    //?} elif neoforge {
+    /*@SuppressWarnings("removal")
+    @Override
+    public void initializeClient(java.util.function.Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
+        consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
+            @Override
+            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return com.hbm_m.client.render.item.ItemRenderMissilePart.instance();
+            }
+        });
+    }
+    *///?}
+
     private static MutableComponent line(String key, Component value) {
         return Component.translatable(key).withStyle(ChatFormatting.BOLD).append(Component.literal(": ").withStyle(ChatFormatting.BOLD)).append(value.copy().withStyle(s -> s.withBold(false)));
     }

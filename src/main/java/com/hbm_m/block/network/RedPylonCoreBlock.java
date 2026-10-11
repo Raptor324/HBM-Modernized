@@ -172,6 +172,8 @@ public abstract class RedPylonCoreBlock extends BaseEntityBlock {
                 .append(Component.translatable(getTypeKey()).withStyle(ChatFormatting.YELLOW)).withStyle(ChatFormatting.GOLD));
         tooltip.add(Component.translatable("tooltip.hbm_m.connection_range")
                 .append(Component.literal(getRange() + "m").withStyle(ChatFormatting.YELLOW)).withStyle(ChatFormatting.GOLD));
+        // Original PylonLarge.addInformation: dritte Zeile
+        if (this instanceof RedPylonLargeBlock) tooltip.add(Component.literal("This pylon requires a substation!").withStyle(ChatFormatting.GOLD));
     }
 
     //? if < 1.21.1 {

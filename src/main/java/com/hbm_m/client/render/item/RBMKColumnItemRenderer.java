@@ -68,7 +68,19 @@ public class RBMKColumnItemRenderer extends BlockEntityWithoutLevelRenderer {
         }
 
         boolean column = be instanceof RBMKColumnBlockEntity;
-        if (!column && !(be instanceof com.hbm_m.blockentity.machines.MachineRbmkConsoleBlockEntity)) {
+        // vJ: Inventar 1:1 renderInventoryBlock des Originals (eigener Pfad statt Welt-BER)
+        if (displayContext == ItemDisplayContext.GUI) {
+            String id = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath();
+            RBMKColumnInventoryRender.Kind kind = RBMKColumnInventoryRender.kind(id);
+            if (kind != null) {
+                poseStack.pushPose();
+                RBMKColumnInventoryRender.applyGuiBlockTransform(poseStack);
+                RBMKColumnInventoryRender.render(id, kind, poseStack, buffer, packedLight);
+                poseStack.popPose();
+                return;
+            }
+        }
+        if (!column &&!(be instanceof com.hbm_m.blockentity.machines.MachineRbmkConsoleBlockEntity)) {
             // vI: Dampfein-/-auslass sind im Original einfache Bloecke (RBMKInlet/RBMKOutlet) ohne Saeulenrenderer ->
             // Blockmodell zeichnen statt nichts (Icon war leer).
             poseStack.pushPose();

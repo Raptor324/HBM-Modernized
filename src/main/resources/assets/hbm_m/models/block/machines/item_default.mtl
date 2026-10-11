@@ -1,0 +1,7 @@
+# vJ: Material fuer Item-Icons aus models/machines/*.obj (Forge-OBJ braucht usemtl, sonst 0 Flaechen)
+newmtl default
+Ns 20.0
+d 1.0
+illum 2
+Kd 1.0 1.0 1.0
+map_Kd #default

@@ -150,6 +150,21 @@ public final class JungleBricks {
 
         @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> b) { b.add(GLYPH); }
 
+        /** 1:1 {@code ItemGlyphBlock.addInformation}: Name der Glyphe je Metadatum. */
+        private static final String[] GLYPH_NAMES = { "Hourglass", "Eye", "'Pillar'", "IOI", "Delta", "VTPC", "Cool S", "Trefoil",
+                "Pony", "Sparkle", "PiP", "Triangles", "Linux Mint", "13", "Digamma", "Celestial Altar" };
+
+        @Override
+        //? if < 1.21.1 {
+        public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+        //?} else {
+        /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+        *///?}
+            int meta = 0;
+            try { String v = stateOf(stack, "glyph"); if (!v.isEmpty()) meta = Integer.parseInt(v); } catch (NumberFormatException ignored) { }
+            if (meta >= 0 && meta < GLYPH_NAMES.length) list.add(net.minecraft.network.chat.Component.literal(GLYPH_NAMES[meta]));
+        }
+
         @Override
         //? if < 1.21.1 {
         public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
@@ -202,6 +217,19 @@ public final class JungleBricks {
         }
 
         @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> b) { b.add(TRAP); }
+
+        /** 1:1 {@code ItemTrapBlock.addInformation}: {@code Trap.get(meta).toString()} (Enum-Name). */
+        @Override
+        //? if < 1.21.1 {
+        public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+        //?} else {
+        /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+        *///?}
+            String v = stateOf(stack, "trap");
+            Trap trap = Trap.get(0);
+            for (Trap t : Trap.values()) if (t.getSerializedName().equals(v)) trap = t;
+            list.add(net.minecraft.network.chat.Component.literal(trap.toString()));
+        }
         @Override public RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; }
 
         @Nullable @Override

@@ -47,8 +47,8 @@ public final class MissileRenderRegistry {
         register(ModItems.MISSILE_INFERNO, MissileTextures.MISSILE_HUGE_INC, RenderMissileType.TYPE_TIER3);
         register(ModItems.MISSILE_RAIN, MissileTextures.MISSILE_HUGE_CL, RenderMissileType.TYPE_TIER3);
         register(ModItems.MISSILE_DRILL, MissileTextures.MISSILE_HUGE_BU, RenderMissileType.TYPE_TIER3);
-        register(ModItems.MISSILE_9M723, MissileTextures.MISSILE_9M723, RenderMissileType.TYPE_TIER3);
-        register(ModItems.MISSILE_9M723_BUSTER, MissileTextures.MISSILE_9M723_BU, RenderMissileType.TYPE_TIER3);
+        register(ModItems.MISSILE_9M723, MissileTextures.MISSILE_9M723, RenderMissileType.TYPE_TIER1); // vJ2: 9M723-OBJ ist massstabsgetreu (6.5 hoch, wie Tier 1/2) -> Tier-1-Inventarmassstab, sonst ~7 px
+        register(ModItems.MISSILE_9M723_BUSTER, MissileTextures.MISSILE_9M723_BU, RenderMissileType.TYPE_TIER1); // vJ2: 9M723-OBJ ist massstabsgetreu (6.5 hoch, wie Tier 1/2) -> Tier-1-Inventarmassstab, sonst ~7 px
         register(ModItems.MISSILE_TOPOL, MissileTextures.MISSILE_TOPOL, RenderMissileType.TYPE_NUCLEAR);
 
         register(ModItems.MISSILE_NUCLEAR, MissileTextures.MISSILE_ATLAS_NUCLEAR, RenderMissileType.TYPE_NUCLEAR);

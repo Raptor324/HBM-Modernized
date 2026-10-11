@@ -65,6 +65,11 @@ public class AnimatedMachineItemRenderer extends BlockEntityWithoutLevelRenderer
     @Override
     public void renderByItem(ItemStack stack, ItemDisplayContext ctx, PoseStack ps, MultiBufferSource buf, int light, int overlay) {
         String id = BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath();
+        // vJ: Geschuetztuerme 1:1 ItemRenderLibrary (eigene Inventarkette, daher vor der Display-Transformation)
+        if (TurretItemRenderer.handles(id)) {
+            TurretItemRenderer.render(id, stack, ctx, ps, buf, light);
+            return;
+        }
         double time = System.currentTimeMillis();
 
         ps.pushPose();
