@@ -25,7 +25,7 @@ import net.minecraft.world.phys.AABB;
  *
  * Поля linked/refX/refY/refZ/range/entries синкаются через getUpdateTag.
  */
-public class MachineRadarScreenBlockEntity extends BlockEntity {
+public class MachineRadarScreenBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity {
 
     private static final int MAP_SYNC_SLICES = 5;
     private boolean fullMapSyncPending = true;
@@ -200,8 +200,7 @@ public class MachineRadarScreenBlockEntity extends BlockEntity {
     }
 
     @Override
-    public CompoundTag getUpdateTag() {
-        CompoundTag tag = super.getUpdateTag();
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         tag.putBoolean("linked", linked);
         tag.putInt("refX", refX);
         tag.putInt("refY", refY);
@@ -232,12 +231,13 @@ public class MachineRadarScreenBlockEntity extends BlockEntity {
             int[] e = entries.get(i);
             tag.putIntArray("e" + i, e);
         }
-        return tag;
+        if (heightMap != null && heightMap.length == MachineRadarBlockEntity.MAP_LENGTH) {
+            tag.putByteArray("height_map", Arrays.copyOf(heightMap, MachineRadarBlockEntity.MAP_LENGTH));
+        }
     }
 
     @Override
-    public void handleUpdateTag(CompoundTag tag) {
-        super.handleUpdateTag(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         linked = tag.getBoolean("linked");
         refX = tag.getInt("refX");
         refY = tag.getInt("refY");
@@ -271,6 +271,12 @@ public class MachineRadarScreenBlockEntity extends BlockEntity {
         } else if (!showMap && heightMap != null) {
             Arrays.fill(heightMap, (byte) 0);
         }
+        if (tag.contains("height_map")) {
+            byte[] savedMap = tag.getByteArray("height_map");
+            if (savedMap.length == MachineRadarBlockEntity.MAP_LENGTH) {
+                heightMap = savedMap.clone();
+            }
+        }
         entries.clear();
         int count = tag.getInt("count");
         for (int i = 0; i < count; i++) {
@@ -278,56 +284,9 @@ public class MachineRadarScreenBlockEntity extends BlockEntity {
         }
     }
 
+    //? if forge {
     @Override
-    public ClientboundBlockEntityDataPacket getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
-    }
-
-    @Override
-    public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt) {
-        super.onDataPacket(net, pkt);
-        if (PlatformHooks.getItemTag(pkt) != null) {
-            handleUpdateTag(PlatformHooks.getItemTag(pkt));
-        }
-    }
-
-    @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.putBoolean("linked", linked);
-        tag.putInt("refX", refX);
-        tag.putInt("refY", refY);
-        tag.putInt("refZ", refZ);
-        tag.putInt("range", range);
-        tag.putBoolean("show_map", showMap);
-        if (heightMap != null && heightMap.length == MachineRadarBlockEntity.MAP_LENGTH) {
-            // IOWorker пишет chunk NBT на отдельном потоке, а экран обновляет карту
-            // из радара каждые 5 тиков. Передаём только снимок массива.
-            tag.putByteArray("height_map", Arrays.copyOf(heightMap, MachineRadarBlockEntity.MAP_LENGTH));
-        }
-    }
-
-    @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        linked = tag.getBoolean("linked");
-        refX = tag.getInt("refX");
-        refY = tag.getInt("refY");
-        refZ = tag.getInt("refZ");
-        range = tag.getInt("range");
-        showMap = tag.getBoolean("show_map");
-        if (tag.contains("height_map")) {
-            byte[] savedMap = tag.getByteArray("height_map");
-            if (savedMap.length == MachineRadarBlockEntity.MAP_LENGTH) {
-                // clone() обязателен: массив принадлежит ByteArrayTag загруженного
-                // chunk NBT. Без копии receiveFromRadar правил бы тот же массив,
-                // который IOWorker сериализует в другом потоке.
-                heightMap = savedMap.clone();
-            }
-        }
-    }
-
-    @Override
+    //?}
     public AABB getRenderBoundingBox() {
         return new AABB(
                 worldPosition.getX() - 1,

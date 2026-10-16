@@ -62,10 +62,17 @@ public class BlockAbsorber extends Block {
         builder.add(TIER);
     }
 
+    //? if < 1.21.1 {
     @Override
     public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
         return BlockAbsorberItem.forTier(this, state.getValue(TIER));
     }
+    //?} else {
+    /*@Override
+    public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader level, BlockPos pos, BlockState state) {
+        return BlockAbsorberItem.forTier(this, state.getValue(TIER));
+    }
+    *///?}
 
     @Override
     public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {

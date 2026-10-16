@@ -5,6 +5,7 @@ import com.hbm_m.blockentity.machines.MachineCentrifugeBlockEntity;
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.packet.PacketSyncEnergy;
+import com.hbm_m.platform.DummyItemStackHandler;
 import com.hbm_m.platform.ModItemStackHandler;
 
 import net.minecraft.network.FriendlyByteBuf;
@@ -51,7 +52,8 @@ public class MachineCentrifugeMenu extends AbstractContainerMenu implements ILon
     }
 
     public MachineCentrifugeMenu(int containerId, Inventory playerInventory, MachineCentrifugeBlockEntity blockEntity) {
-        this(containerId, playerInventory, blockEntity, blockEntity.getContainerData());
+        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустые данные
+        this(containerId, playerInventory, blockEntity, blockEntity != null ? blockEntity.getContainerData() : new SimpleContainerData(2));
     }
 
     public MachineCentrifugeMenu(int containerId, Inventory playerInventory, MachineCentrifugeBlockEntity blockEntity, ContainerData data) {
@@ -66,7 +68,11 @@ public class MachineCentrifugeMenu extends AbstractContainerMenu implements ILon
 
         addDataSlots(data);
 
-        ModItemStackHandler itemHandler = this.blockEntity.getInventory();
+        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
+        // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
+        ModItemStackHandler itemHandler = this.blockEntity != null
+                ? this.blockEntity.getInventory()
+                : new DummyItemStackHandler(MACHINE_SLOTS);
         this.machineInventory = new HandlerContainer(itemHandler);
 
         // battery
@@ -108,6 +114,11 @@ public class MachineCentrifugeMenu extends AbstractContainerMenu implements ILon
         if (blockEntity instanceof MachineCentrifugeBlockEntity centrifuge) {
             return centrifuge;
         }
+        // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (playerInventory.player.level().isClientSide) {
+            return null;
+        }
         throw new IllegalStateException("BlockEntity is not a Centrifuge");
     }
 
@@ -137,12 +148,13 @@ public class MachineCentrifugeMenu extends AbstractContainerMenu implements ILon
 
     @Override
     public long getEnergyStatic() {
-        return blockEntity.getEnergyStored();
+        // тайл может отсутствовать на клиенте (реплей Flashback)
+        return blockEntity != null ? blockEntity.getEnergyStored() : 0L;
     }
 
     @Override
     public long getMaxEnergyStatic() {
-        return blockEntity.getMaxEnergyStored();
+        return blockEntity != null ? blockEntity.getMaxEnergyStored() : 0L;
     }
 
     @Override
@@ -222,6 +234,9 @@ public class MachineCentrifugeMenu extends AbstractContainerMenu implements ILon
 
     @Override
     public boolean stillValid(Player player) {
+        if (blockEntity == null) {
+            return false; // тайл может отсутствовать на клиенте (реплей Flashback)
+        }
         return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()), player, ModBlocks.CENTRIFUGE.get());
     }
 

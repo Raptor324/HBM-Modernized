@@ -1,0 +1,14 @@
+{
+  "structures": [
+    {
+      "structure": "hbm_m:tower_base",
+      "weight": 1
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "salt": 1099242530,
+    "spacing": 40,
+    "separation": 9
+  }
+}

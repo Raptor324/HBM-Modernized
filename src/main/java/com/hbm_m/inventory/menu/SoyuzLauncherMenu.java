@@ -8,6 +8,7 @@ import com.hbm_m.blockentity.machines.SoyuzLauncherBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
+import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
@@ -34,16 +35,27 @@ public class SoyuzLauncherMenu extends AbstractContainerMenu {
     private final ContainerData data;
 
     public SoyuzLauncherMenu(int id, Inventory inv, FriendlyByteBuf extraData) {
-        this(id, inv, (SoyuzLauncherBlockEntity) inv.player.level().getBlockEntity(extraData.readBlockPos()),
-                new SimpleContainerData(5));
+        this(id, inv, getBlockEntity(inv, extraData), new SimpleContainerData(5));
+    }
+
+    private static SoyuzLauncherBlockEntity getBlockEntity(Inventory inv, FriendlyByteBuf extraData) {
+        BlockEntity blockEntity = inv.player.level().getBlockEntity(extraData.readBlockPos());
+        if (blockEntity instanceof SoyuzLauncherBlockEntity launcher) return launcher;
+        // На клиенте тайл может отсутствовать (реплей Flashback) — возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (inv.player.level().isClientSide) return null;
+        throw new IllegalStateException("BlockEntity is not a SoyuzLauncherBlockEntity");
     }
 
     public SoyuzLauncherMenu(int id, Inventory inv, BlockEntity entity, ContainerData data) {
         super(ModMenuTypes.SOYUZ_LAUNCHER_MENU.get(), id);
-        this.blockEntity = (SoyuzLauncherBlockEntity) entity;
+        this.blockEntity = entity instanceof SoyuzLauncherBlockEntity launcher ? launcher : null;
         this.data = data;
 
-        var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
+        // тайл может отсутствовать на клиенте (реплей Flashback) — подставляем пустую заглушку
+        var container = this.blockEntity != null
+                ? new ModItemStackHandlerContainer(this.blockEntity.getInventory(), this.blockEntity::setChanged)
+                : new ModItemStackHandlerContainer(new DummyItemStackHandler(SoyuzLauncherBlockEntity.SLOT_COUNT), () -> {});
 
         // Rocket
         addSlot(new Slot(container, SoyuzLauncherBlockEntity.SLOT_ROCKET, 62, 18) {
@@ -114,7 +126,8 @@ public class SoyuzLauncherMenu extends AbstractContainerMenu {
     }
 
     public long getMaxEnergyStored() {
-        return blockEntity.getMaxEnergyStored();
+        // тайл может отсутствовать на клиенте (реплей Flashback)
+        return blockEntity != null ? blockEntity.getMaxEnergyStored() : 0L;
     }
 
     public int getMode() {
@@ -177,6 +190,10 @@ public class SoyuzLauncherMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(@NotNull Player player) {
+        // тайл может отсутствовать на клиенте (реплей Flashback)
+        if (blockEntity == null) {
+            return false;
+        }
         return stillValid(ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos()),
                 player, ModBlocks.SOYUZ_LAUNCHER.get());
     }

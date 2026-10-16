@@ -16,6 +16,7 @@ import com.hbm_m.api.fluids.IFluidPipeMK2;
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.api.network.UniNodespace;
 import com.hbm_m.block.machines.FluidDuctBlock;
+import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.client.render.DoorChunkInvalidationHelper;
 
@@ -24,11 +25,9 @@ import com.hbm_m.client.render.DoorChunkInvalidationHelper;
 *///?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
-import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
@@ -41,7 +40,7 @@ import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
  //?}
 
-/**
+ /**
  * BlockEntity трубы. Хранит тип жидкости и управляет MK2 узлом в UniNodespace.
  * <p>
  * Визуал оверлея (neo / colored / silver): в Forge OBJ MTL задаётся {@code forge_TintIndex 1} для слоя
@@ -57,8 +56,9 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
  *    и регистрирует их как providers/receivers в сети трубы.
  *  - Фактический перенос жидкостей выполняется FluidNet.update() (в UniNodespace.updateNodespace()).
  */
+
 @SuppressWarnings("UnstableApiUsage")
-public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
+public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPipeMK2 {
 
     private static final String NBT_FLUID_TYPE = "FluidType";
 
@@ -227,7 +227,8 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
     // =====================================================================================
     // Tick — регистрация Forge-машин в сети
     // =====================================================================================
-
+    
+    
     private void clientTick(Level level, BlockPos pos) {
         if (clientVisualRefreshTicks <= 0) {
             return;
@@ -247,21 +248,6 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
         }
         if (!(level instanceof ServerLevel serverLevel)) return;
 
-        // === DEBUG: статус трубы раз в 2 секунды (удалить после отладки) ===
-        if (level.getGameTime() % 40 == 0) {
-            String typeStr = entity.fluidType == net.minecraft.world.level.material.Fluids.EMPTY
-                ? "EMPTY (труба не покрашена идентификатором!)"
-                : net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(entity.fluidType).toString();
-            int connectedSides = 0;
-            for (Direction d : Direction.values()) {
-                if (state.getValue(FluidDuctBlock.PROPERTY_BY_DIRECTION.get(d))) connectedSides++;
-            }
-            // org.slf4j.LoggerFactory.getLogger("FluidDuctDBG")
-            //     .info("[tick] pos={} fluidType={} connectedSides={} hasNode={}",
-            //         pos, typeStr, connectedSides, entity.node != null && !entity.node.isExpired());
-        }
-        // === END DEBUG ===
-
         if (entity.fluidType == Fluids.EMPTY) return;
 
         // Восстановить узел, если потерялся
@@ -275,10 +261,6 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
             BlockPos neighborPos = pos.relative(dir);
             BlockEntity neighbor = level.getBlockEntity(neighborPos);
 
-            // === DEBUG (удалить после отладки) ===
-            boolean shouldLogThis = level.getGameTime() % 40 == 0;
-            // === END DEBUG ===
-
             // Пропускаем другие трубы (они сами обслуживают свои узлы)
             if (neighbor == null || neighbor instanceof FluidDuctBlockEntity) continue;
             // Пропускаем машины, реализующие MK2 напрямую (они вызывают trySubscribe/tryProvide сами)
@@ -287,14 +269,6 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
             // Проверяем, что у соседа есть IFluidHandler на нашей стороне
             Direction sideOfNeighborFacingDuct = dir.getOpposite();
             boolean hasFluidHandler = checkNeighborFluidHandler(level, neighbor, sideOfNeighborFacingDuct);
-
-            // === DEBUG ===
-            if (shouldLogThis) {
-                // org.slf4j.LoggerFactory.getLogger("FluidDuctDBG")
-                //     .info("  neighbor at {} dir={} class={} hasHandler={}",
-                //         neighborPos, dir, neighbor.getClass().getSimpleName(), hasFluidHandler);
-            }
-            // === END DEBUG ===
 
             if (!hasFluidHandler) {
                 entity.adapterCache.remove(dir);
@@ -325,6 +299,11 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
         //? if fabric {
         /*return FluidStorage.SIDED.find(level, neighbor.getBlockPos(), neighbor.getBlockState(), neighbor, side) != null;
         *///?}
+        //? if neoforge {
+        /*// NeoForge 1.21.1: FluidHandler.BLOCK через level.getCapability (BlockEntity.getCapability убран).
+        return level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.BLOCK,
+                neighbor.getBlockPos(), neighbor.getBlockState(), neighbor, side) != null;
+        *///?}
     }
 
     // =====================================================================================
@@ -348,8 +327,7 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
     // =====================================================================================
 
     @Override
-    protected void saveAdditional(@NotNull CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
         ResourceLocation loc = BuiltInRegistries.FLUID.getKey(fluidType);
         if (loc != null) {
             tag.putString(NBT_FLUID_TYPE, loc.toString());
@@ -357,9 +335,8 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
     }
 
     @Override
-    public void load(@NotNull CompoundTag tag) {
+    protected void readNbtData(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
         Fluid before = this.fluidType;
-        super.load(tag);
         if (tag.contains(NBT_FLUID_TYPE)) {
             Fluid f = BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(tag.getString(NBT_FLUID_TYPE)));
             this.fluidType = f != null ? f : Fluids.EMPTY;
@@ -370,23 +347,7 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
         }
     }
 
-    // =====================================================================================
-    // Client sync
-    // =====================================================================================
-
-    @Override
-    public CompoundTag getUpdateTag() {
-        CompoundTag tag = super.getUpdateTag();
-        saveAdditional(tag);
-        return tag;
-    }
-
-    @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
-    }
-
-    /**
+   /**
      * Триггер перестройки tint-меша после смены типа жидкости на клиенте.
      * Embeddium/Sodium кэшируют chunk quads — нужно явное расписание.
      */
@@ -398,9 +359,4 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
         level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_IMMEDIATE);
         DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
     }
-
-    // =====================================================================================
-    // Capabilities — duct не экспонирует IFluidHandler напрямую.
-    // Взаимодействие с Forge-машинами идёт через ForgeFluidHandlerAdapter в tick().
-    // =====================================================================================
 }

@@ -30,7 +30,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
+//? if forge {
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
+//?}
 import dev.architectury.registry.menu.MenuRegistry;
 
 public class MachineLiquefactorBlock extends BaseEntityBlock implements IMultiblockController {
@@ -45,11 +47,24 @@ public class MachineLiquefactorBlock extends BaseEntityBlock implements IMultibl
     @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> b) { b.add(FACING); }
     @Nullable @Override public BlockState getStateForPlacement(BlockPlaceContext c) { return this.defaultBlockState().setValue(FACING, c.getHorizontalDirection().getOpposite()); }
     @Override public void onRemove(BlockState s, Level l, BlockPos p, BlockState ns, boolean m) {
-        if (s.getBlock() != ns.getBlock()) { BlockEntity be = l.getBlockEntity(p); if (be != null) be.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(h -> { for (int i = 0; i < h.getSlots(); i++) Containers.dropItemStack(l, p.getX(), p.getY(), p.getZ(), h.getStackInSlot(i)); }); }
+        if (s.getBlock() != ns.getBlock() && l.getBlockEntity(p) instanceof com.hbm_m.blockentity.BaseMachineBlockEntity machine) {
+            machine.dropInventoryContents();
+        }
         super.onRemove(s, l, p, ns, m);
     }
     @Nullable @Override public BlockEntity newBlockEntity(BlockPos p, BlockState s) { return new MachineLiquefactorBlockEntity(p, s); }
+    //? if < 1.21.1 {
     @Override public InteractionResult use(BlockState s, Level l, BlockPos p, Player pl, InteractionHand h, BlockHitResult r) {
+        return openMenu(s, l, p, pl, h, r);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState s, Level l, BlockPos p, Player pl, BlockHitResult r) {
+        return openMenu(s, l, p, pl, InteractionHand.MAIN_HAND, r);
+    }
+    *///?}
+
+    private InteractionResult openMenu(BlockState s, Level l, BlockPos p, Player pl, InteractionHand h, BlockHitResult r) {
         if (!l.isClientSide() && l.getBlockEntity(p) instanceof MenuProvider mp) MenuRegistry.openExtendedMenu((ServerPlayer) pl, mp, buf -> buf.writeBlockPos(p));
         return InteractionResult.sidedSuccess(l.isClientSide());
     }
@@ -66,4 +81,13 @@ public class MachineLiquefactorBlock extends BaseEntityBlock implements IMultibl
     public PartRole getPartRole(BlockPos localOffset) {
         return structureHelper.resolvePartRole(localOffset, this);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineLiquefactorBlock> CODEC = simpleCodec(MachineLiquefactorBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

@@ -40,7 +40,7 @@ public class MachinePressMenu extends AbstractContainerMenu {
         this.addSlot(new FuelSlot(container, 0, 26, 53));
         this.addSlot(new StampSlot(container, 1, 80, 17));
         this.addSlot(new MaterialSlot(container, 2, 80, 53));
-        this.addSlot(new OutputSlot(container, 3, 139, 34));
+        this.addSlot(new OutputSlot(container, 3, 140, 35));
 
         addDataSlots(data);
     }

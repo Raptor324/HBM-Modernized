@@ -7,6 +7,7 @@ import com.hbm_m.powerarmor.layer.AJROPowerArmorLayer;
 import com.hbm_m.powerarmor.layer.AJRPowerArmorLayer;
 import com.hbm_m.powerarmor.layer.BismuthPowerArmorLayer;
 import com.hbm_m.powerarmor.layer.DNTPowerArmorLayer;
+import com.hbm_m.client.render.GasMaskLayer;
 import com.hbm_m.powerarmor.layer.T51PowerArmorLayer;
 
 import net.minecraft.client.renderer.entity.ArmorStandRenderer;
@@ -17,29 +18,11 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
-import net.minecraftforge.client.event.ModelEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class ClientPowerArmorRenderForge {
-
-    @SubscribeEvent
-    public static void onRegisterGeometryLoaders(ModelEvent.RegisterGeometryLoaders event) {
-        event.register("t51_armor_parts", new T51ArmorModelLoader());
-        event.register("ajr_armor_parts", new AJRArmorModelLoader());
-        event.register("bismuth_armor_parts", new BismuthArmorModelLoader());
-        event.register("dnt_armor_parts", new DNTArmorModelLoader());
-    }
-
-    @SubscribeEvent
-    public static void onRegisterAdditionalModels(ModelEvent.RegisterAdditional event) {
-        event.register(ClientPowerArmorRender.T51_MODEL_BAKED);
-        event.register(ClientPowerArmorRender.AJR_MODEL_BAKED);
-        event.register(ClientPowerArmorRender.AJRO_MODEL_BAKED);
-        event.register(ClientPowerArmorRender.BISMUTH_MODEL_BAKED);
-        event.register(ClientPowerArmorRender.DNT_MODEL_BAKED);
-    }
 
     @SubscribeEvent
     public static void onAddLayers(EntityRenderersEvent.AddLayers event) {
@@ -93,6 +76,7 @@ public final class ClientPowerArmorRenderForge {
         accessor.hbm_m$getLayers().add(new AJROPowerArmorLayer((LivingEntityRenderer) renderer));
         accessor.hbm_m$getLayers().add(new BismuthPowerArmorLayer((LivingEntityRenderer) renderer));
         accessor.hbm_m$getLayers().add(new DNTPowerArmorLayer((LivingEntityRenderer) renderer));
+        accessor.hbm_m$getLayers().add(new GasMaskLayer((LivingEntityRenderer) renderer));
     }
 
     private ClientPowerArmorRenderForge() {}

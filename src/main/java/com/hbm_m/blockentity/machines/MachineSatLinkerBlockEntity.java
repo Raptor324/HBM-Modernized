@@ -3,6 +3,7 @@ package com.hbm_m.blockentity.machines;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.MachineSatLinkerMenu;
 import com.hbm_m.item.ISatChip;
@@ -27,7 +28,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * frequency onto slot 1 (so a designator can be matched to a payload before launch); slot 2
  * assigns a fresh random unused frequency to whatever chip is placed there.
  */
-public class MachineSatLinkerBlockEntity extends BlockEntity implements MenuProvider {
+public class MachineSatLinkerBlockEntity extends BaseHbmBlockEntity implements MenuProvider {
 
     public static final int SLOT_COPY_SOURCE = 0;
     public static final int SLOT_COPY_TARGET = 1;
@@ -70,17 +71,19 @@ public class MachineSatLinkerBlockEntity extends BlockEntity implements MenuProv
         }
     }
 
+    
+    // (устраняет вложенный stonecutter-баг в load())
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.put("inventory", inventory.serializeNBT());
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
+        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(inventory, registries));
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         if (tag.contains("inventory")) {
-            inventory.deserializeNBT(tag.getCompound("inventory"));
+            com.hbm_m.platform.ItemStackSerialization.deserialize(inventory, tag.getCompound("inventory"), registries);
         }
     }
 

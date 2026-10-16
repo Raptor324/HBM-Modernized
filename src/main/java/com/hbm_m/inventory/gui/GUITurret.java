@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.inventory.menu.TurretMenu;
 import com.hbm_m.network.TurretControlPacket;
@@ -35,7 +36,9 @@ public class GUITurret extends AbstractContainerScreen<TurretMenu> {
 
     public GUITurret(TurretMenu pMenu, Inventory pPlayerInventory, Component pTitle) {
         super(pMenu, pPlayerInventory, pTitle);
-        this.texture = pMenu.blockEntity.getGuiTexture();
+        // тайл может отсутствовать в реплее Flashback
+        this.texture = pMenu.blockEntity != null ? pMenu.blockEntity.getGuiTexture()
+                : ResourceLocation.fromNamespaceAndPath("hbm_m", "textures/gui/gui_turret.png");
         this.imageWidth = 176;
         this.imageHeight = 222;
     }
@@ -65,12 +68,13 @@ public class GUITurret extends AbstractContainerScreen<TurretMenu> {
     private static final int MODE_BTN_Y = BTN_Y_START + 5 * (BTN_SIZE + 2) + 4;
 
     private boolean isArty() {
-        return menu.blockEntity.getStats() == com.hbm_m.blockentity.machines.TurretStats.ARTY;
+        // тайл может отсутствовать в реплее Flashback
+        return menu.blockEntity != null && menu.blockEntity.getStats() == com.hbm_m.blockentity.machines.TurretStats.ARTY;
     }
 
     @Override
     public void render(GuiGraphics gui, int mouseX, int mouseY, float delta) {
-        this.renderBackground(gui);
+        GuiCompat.renderBackground(this, gui, mouseX, mouseY, delta);
         super.render(gui, mouseX, mouseY, delta);
         renderToggleButtons(gui, mouseX, mouseY);
         if (isArty()) renderModeButton(gui);
@@ -78,6 +82,8 @@ public class GUITurret extends AbstractContainerScreen<TurretMenu> {
     }
 
     private void renderModeButton(GuiGraphics gui) {
+        // тайл может отсутствовать в реплее Flashback
+        if (menu.blockEntity == null) return;
         int x = this.leftPos + BTN_X;
         int y = this.topPos + MODE_BTN_Y;
         gui.fill(x, y, x + BTN_SIZE * 3, y + BTN_SIZE, 0xFF000000);
@@ -87,6 +93,8 @@ public class GUITurret extends AbstractContainerScreen<TurretMenu> {
     }
 
     private boolean isButtonActive(int index) {
+        // тайл может отсутствовать в реплее Flashback
+        if (menu.blockEntity == null) return false;
         return switch (index) {
             case 0 -> menu.blockEntity.isOn();
             case 1 -> menu.blockEntity.isTargetingPlayers();
@@ -111,6 +119,8 @@ public class GUITurret extends AbstractContainerScreen<TurretMenu> {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        // тайл может отсутствовать в реплее Flashback
+        if (menu.blockEntity == null) return super.mouseClicked(mouseX, mouseY, button);
         for (int i = 0; i < BTN_LABELS.length; i++) {
             int x = BTN_X;
             int y = BTN_Y_START + i * (BTN_SIZE + 2);

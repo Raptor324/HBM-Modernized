@@ -54,16 +54,6 @@ import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 //?}
 
-//? if fabric {
-/*import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
-import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
-import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
-import net.fabricmc.fabric.api.transfer.v1.storage.StorageView;
-import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
-import team.reborn.energy.api.EnergyStorage;
-*///?}
-
 /**
  * Chemical Plant BlockEntity - порт с 1.7.10.
  * 22 слота, 6 FluidTank (3 input, 3 output), энергия.
@@ -99,11 +89,6 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
     private final FluidTank[] inputTanks = new FluidTank[3];
     private final FluidTank[] outputTanks = new FluidTank[3];
     private boolean tanksDirty = false;
-
-    //? if forge {
-    private final LazyOptional<IFluidHandler>[] inputTankHandlers = new LazyOptional[3];
-    private final LazyOptional<IFluidHandler>[] outputTankHandlers = new LazyOptional[3];
-    //?}
 
     private MachineModuleChemplant module;
     private final UpgradeManager upgradeManager = new UpgradeManager();
@@ -160,13 +145,15 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
             //?}
     public AABB getRenderBoundingBox() {
         BlockState state = getBlockState();
+        BlockPos p1 = worldPosition.offset(-1, 0, -1);
+        BlockPos p2 = worldPosition.offset(2, 3, 2);
         if (!(state.getBlock() instanceof MachineChemicalPlantBlock block)) {
-            return new AABB(worldPosition.offset(-1, 0, -1), worldPosition.offset(2, 3, 2));
+            return new AABB(p1.getX(), p1.getY(), p1.getZ(), p2.getX(), p2.getY(), p2.getZ());
         }
         var structureHelper = block.getStructureHelper();
         var structureMap = structureHelper.getStructureMap();
         if (structureMap == null || structureMap.isEmpty()) {
-            return new AABB(worldPosition.offset(-1, 0, -1), worldPosition.offset(2, 3, 2));
+            return new AABB(p1.getX(), p1.getY(), p1.getZ(), p2.getX(), p2.getY(), p2.getZ());
         }
         int minX = 0, minY = 0, minZ = 0;
         int maxX = 0, maxY = 0, maxZ = 0;
@@ -207,10 +194,6 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
                     tanksDirty = true;
                 }
             };
-            //? if forge {
-            inputTankHandlers[i] = inputTanks[i].getCapability();
-            outputTankHandlers[i] = outputTanks[i].getCapability();
-            //?}
         }
 
         this.module = new MachineModuleChemplant(
@@ -491,33 +474,11 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
         if (slot >= SLOT_SOLID_OUTPUT_START && slot <= SLOT_SOLID_OUTPUT_END) {
             return false;
         }
-        if (slot >= SLOT_FLUID_INPUT_START && slot <= SLOT_FLUID_INPUT_END) {
-            //? if forge {
-            return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-            //?} else {
-            /*return FluidStorage.ITEM.find(stack, null) != null;
-             *///?}
-        }
-        if (slot >= SLOT_FLUID_OUTPUT_START && slot <= SLOT_FLUID_OUTPUT_END) {
-            //? if forge {
-            return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-            //?} else {
-            /*return FluidStorage.ITEM.find(stack, null) != null;
-             *///?}
-        }
-        if (slot >= SLOT_FLUID_INPUT_EMPTY_START && slot <= SLOT_FLUID_INPUT_EMPTY_END) {
-            //? if forge {
-            return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-            //?} else {
-            /*return FluidStorage.ITEM.find(stack, null) != null;
-             *///?}
-        }
-        if (slot >= SLOT_FLUID_OUTPUT_EMPTY_START && slot <= SLOT_FLUID_OUTPUT_EMPTY_END) {
-            //? if forge {
-            return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-            //?} else {
-            /*return FluidStorage.ITEM.find(stack, null) != null;
-             *///?}
+        if ((slot >= SLOT_FLUID_INPUT_START && slot <= SLOT_FLUID_INPUT_END) ||
+            (slot >= SLOT_FLUID_OUTPUT_START && slot <= SLOT_FLUID_OUTPUT_END) ||
+            (slot >= SLOT_FLUID_INPUT_EMPTY_START && slot <= SLOT_FLUID_INPUT_EMPTY_END) ||
+            (slot >= SLOT_FLUID_OUTPUT_EMPTY_START && slot <= SLOT_FLUID_OUTPUT_EMPTY_END)) {
+            return com.hbm_m.platform.PlatformHooks.isFluidContainer(stack);
         }
         return true;
     }
@@ -554,10 +515,15 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
 
     /**
      * Клиентский звук BER, приращение {@code anim} и жидкость.
-     * {@code progress} синхронизируется через ContainerData и стабильнее однотick {@code didProcess}.
+     * Аналог {@code isProgressing} из 1.7.10: эффекты идут только когда крафт
+     * реально продвигается в этом тике (didProcess). Прогресс в одиночку не
+     * запускает эффекты — иначе при паузе из-за нехватки энергии звук/анимация
+     * продолжаются, что противоречит поведению оригинала.
+     * Синхронизация didProcess при переходе true→false гарантируется в
+     * {@link com.hbm_m.module.machine.MachineModuleChemplant#updateAndGetDirty}.
      */
     public boolean isChemplantEffectsActive() {
-        return module.getProgressInt() > 0 || module.getDidProcess();
+        return module.getDidProcess();
     }
 
     @Nullable
@@ -599,8 +565,8 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         for (int i = 0; i < 3; i++) {
             tag.put("inputTank" + i, inputTanks[i].writeNBT(new CompoundTag()));
             tag.put("outputTank" + i, outputTanks[i].writeNBT(new CompoundTag()));
@@ -611,8 +577,8 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         for (int i = 0; i < 3; i++) {
             if (tag.contains("inputTank" + i)) inputTanks[i].readNBT(tag.getCompound("inputTank" + i));
             if (tag.contains("outputTank" + i)) outputTanks[i].readNBT(tag.getCompound("outputTank" + i));
@@ -632,32 +598,21 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
     }
 
     //? if forge {
-    private LazyOptional<IFluidHandler> combinedFluidHandler = LazyOptional.empty();
     private static final LazyOptional<?> EMPTY_CAP = LazyOptional.empty();
 
     @Override
-    public void onLoad() {
-        super.onLoad();
-        combinedFluidHandler = LazyOptional.of(() -> new CombinedChemPlantFluidHandler(this));
+    protected void setupFluidCapability() {
+        setFluidHandler(new CombinedChemPlantFluidHandler(this));
     }
 
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.FLUID_HANDLER) {
-            if (side == null || side.getAxis().isHorizontal()) return combinedFluidHandler.cast();
-            return (LazyOptional<T>) EMPTY_CAP;
+            // Только горизонтальные стороны (и null) получают объединённый обработчик;
+            // вертикальные стороны ничего не отдают.
+            if (side != null && !side.getAxis().isHorizontal()) return (LazyOptional<T>) EMPTY_CAP;
         }
         return super.getCapability(cap, side);
-    }
-
-    @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        combinedFluidHandler.invalidate();
-        for (int i = 0; i < 3; i++) {
-            inputTankHandlers[i].invalidate();
-            outputTankHandlers[i].invalidate();
-        }
     }
 
     private static class CombinedChemPlantFluidHandler implements net.minecraftforge.fluids.capability.IFluidHandler {
@@ -748,60 +703,21 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
 
     //?}
 
-    //? if fabric {
-    /*@SuppressWarnings("UnstableApiUsage")
-    @Nullable
-    public net.fabricmc.fabric.api.transfer.v1.storage.Storage<net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant> getFluidStorage(@Nullable Direction side) {
-        return new ChemPlantFabricFluidStorage(this);
-    }
+    // Энергопорты мультиблока: позиции фантомов структуры, ранее регистрировавшиеся блоком.
+    // Ядро (worldPosition) подписывается в BaseMachineBlockEntity.ensureNetworkInitialized().
+    @Override
+    protected BlockPos[] getExtraEnergyPorts() {
+        if (level == null || level.isClientSide) return new BlockPos[0];
+        if (!(getBlockState().getBlock() instanceof com.hbm_m.block.machines.MachineChemicalPlantBlock block)) return new BlockPos[0];
 
-    @SuppressWarnings("UnstableApiUsage")
-    private static class ChemPlantFabricFluidStorage implements net.fabricmc.fabric.api.transfer.v1.storage.Storage<net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant> {
-        private final MachineChemicalPlantBlockEntity be;
-        ChemPlantFabricFluidStorage(MachineChemicalPlantBlockEntity be) { this.be = be; }
+        var helper = block.getStructureHelper();
+        Direction facing = getBlockState().getValue(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING);
 
-        @Override
-        public long insert(net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant resource, long maxAmount,
-                           net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext transaction) {
-            if (resource.isBlank() || maxAmount <= 0) return 0;
-            int bound = be.getActiveFluidInputSlotCount();
-            for (int i = 0; i < bound; i++) {
-                FluidTank tank = be.inputTanks[i];
-                Fluid configured = tank.getConfiguredFluid();
-                if (configured == Fluids.EMPTY || configured == ModFluids.NONE.getSource()) continue;
-                if (!com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(configured, resource.getFluid())) continue;
-                long spaceMb = tank.getCapacityMb() - tank.getFluidAmountMb();
-                if (spaceMb <= 0) continue;
-                long dropletsToFill = Math.min(maxAmount, spaceMb * 81L);
-                if (dropletsToFill <= 0) continue;
-                long inserted = tank.getStorage().insert(resource, dropletsToFill, transaction);
-                if (inserted > 0) be.setChanged();
-                return inserted;
+        java.util.List<BlockPos> ports = new java.util.ArrayList<>();
+        for (BlockPos localPos : helper.getStructureMap().keySet()) {
+            if (block.getPartRole(localPos).canReceiveEnergy()) {
+                ports.add(helper.getRotatedPos(worldPosition, localPos, facing));
             }
-            return 0;
         }
-
-        @Override
-        public long extract(net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant resource, long maxAmount,
-                            net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext transaction) {
-            if (resource.isBlank() || maxAmount <= 0) return 0;
-            for (int i = 0; i < 3; i++) {
-                FluidTank tank = be.outputTanks[i];
-                if (tank.isEmpty()) continue;
-                if (!com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(tank.getStoredFluid(), resource.getFluid())) continue;
-                long availableDroplets = (long) tank.getFluidAmountMb() * 81L;
-                long dropletsToExtract = Math.min(maxAmount, availableDroplets);
-                if (dropletsToExtract <= 0) continue;
-                long extracted = tank.getStorage().extract(resource, dropletsToExtract, transaction);
-                if (extracted > 0) be.setChanged();
-                return extracted;
-            }
-            return 0;
-        }
-
-        @Override public java.util.Iterator<net.fabricmc.fabric.api.transfer.v1.storage.StorageView<net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant>> iterator() {
-            return java.util.Collections.emptyIterator();
-        }
-    }
-    *///?}
-}
+        return ports.toArray(new BlockPos[0]);
+    }}

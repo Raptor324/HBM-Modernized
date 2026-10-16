@@ -9,7 +9,6 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineBreederBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
-import com.hbm_m.multiblock.MultiblockSideTuples;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 import dev.architectury.registry.menu.MenuRegistry;
@@ -51,58 +50,34 @@ public class MachineBreederBlock extends BaseEntityBlock implements IMultiblockC
         this.structureHelper = defineStructureNew();
     }
 
+    /**
+     * GIT {@code MachineReactorBreeding.getDimensions()} = {@code {2,0,0,0,0,0}} /
+     * {@code getOffset()} = {@code 0} (1.7.10 {@code BlockDummyable} format): a 1x1 footprint
+     * column with the core at the bottom and 2 dummy blocks stacked directly above it (3 blocks
+     * tall total - see the original's {@code getRenderBoundingBox()}, which spans
+     * {@code yCoord..yCoord+3}). No fluid/energy side connectors are needed since there are no
+     * neighboring cells in a 1x1 footprint; the controller draws power purely from the wired
+     * HBM/FE energy network (no item/fluid capability of its own).
+     */
     private static MultiblockStructureHelper defineStructureNew() {
-        // GIT MachineFusionBreeder: 3×5×4 + corner fluid proxies at y=0
-        String[] layer0 = {
-            "OOO",
-            "BOB",
-            "BCB",
-            "OOO",
-            "OOO"
-        };
-        String[] layer1 = {
-            "OOO",
-            "OOO",
-            "OOO",
-            "OOO",
-            "OOO"
-        };
-        String[] layer2 = {
-            "OOO",
-            "OOO",
-            "OOO",
-            "OOO",
-            "OOO"
-        };
-        String[] layer3 = {
-            "OOO",
-            "OOO",
-            "OOO",
-            "OOO",
-            "OOO"
-        };
+        String[] layer0 = { "C" };
+        String[] layer1 = { "O" };
+        String[] layer2 = { "O" };
 
         Map<Character, PartRole> roleMap = Map.of(
             'C', PartRole.CONTROLLER,
-            'O', PartRole.DEFAULT,
-            'B', PartRole.UNIVERSAL_CONNECTOR
+            'O', PartRole.DEFAULT
         );
 
         Map<Character, Supplier<BlockState>> symbolMap = Map.of();
 
-        Map<Character, boolean[]> fluidSideMap = Map.of(
-            'B', MultiblockSideTuples.fluid(true, true, true, true, true, false),
-            'C', MultiblockSideTuples.fluid(true, true, true, true, true, false)
-        );
-
-        return MultiblockStructureHelper.createFromLayersWithRolesAndSides(
-            new String[][]{layer0, layer1, layer2, layer3},
+        return MultiblockStructureHelper.createFromLayersWithRoles(
+            new String[][]{layer0, layer1, layer2},
             symbolMap,
             () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
             roleMap,
             null,
-            null,
-            fluidSideMap
+            null
         );
     }
 
@@ -162,8 +137,19 @@ public class MachineBreederBlock extends BaseEntityBlock implements IMultiblockC
         return Shapes.empty();
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return openMenu(state, level, pos, player, hand, hit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+    }
+    *///?}
+
+    private InteractionResult openMenu(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MenuProvider menu) {
@@ -200,4 +186,13 @@ public class MachineBreederBlock extends BaseEntityBlock implements IMultiblockC
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(FACING);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineBreederBlock> CODEC = simpleCodec(MachineBreederBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

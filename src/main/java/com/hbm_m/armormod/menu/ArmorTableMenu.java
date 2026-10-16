@@ -1,5 +1,7 @@
 package com.hbm_m.armormod.menu;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.armormod.util.ArmorModificationHelper;
 import com.hbm_m.block.ModBlocks;
@@ -32,7 +34,7 @@ public class ArmorTableMenu extends AbstractContainerMenu {
     private final ContainerLevelAccess access;
     private final Player player;
 
-    /** Как в 1.7.10 {@code ContainerArmorTable}: слоты модов 0..8, центральная броня — 9. */
+    /** РљР°Рє РІ 1.7.10 {@code ContainerArmorTable}: СЃР»РѕС‚С‹ РјРѕРґРѕРІ 0..8, С†РµРЅС‚СЂР°Р»СЊРЅР°СЏ Р±СЂРѕРЅСЏ вЂ” 9. */
     public static final int MOD_SLOTS = ArmorModificationHelper.MOD_SLOTS;
     public static final int SLOT_ARMOR_IN = MOD_SLOTS;
 
@@ -54,7 +56,7 @@ public class ArmorTableMenu extends AbstractContainerMenu {
         this.player = pPlayerInventory.player;
         this.access = ContainerLevelAccess.create(pPlayerInventory.player.level(), pPos);
 
-        // Слоты 0-8: моды (как ContainerArmorTable.UpgradeSlot)
+        // РЎР»РѕС‚С‹ 0-8: РјРѕРґС‹ (РєР°Рє ContainerArmorTable.UpgradeSlot)
         this.addSlot(new ModificationSlot(modsInventory, ArmorModificationHelper.helmet_only, 26, 27));
         this.addSlot(new ModificationSlot(modsInventory, ArmorModificationHelper.plate_only, 62, 27));
         this.addSlot(new ModificationSlot(modsInventory, ArmorModificationHelper.legs_only, 98, 27));
@@ -65,7 +67,7 @@ public class ArmorTableMenu extends AbstractContainerMenu {
         this.addSlot(new ModificationSlot(modsInventory, ArmorModificationHelper.extra, 26, 99));
         this.addSlot(new ModificationSlot(modsInventory, ArmorModificationHelper.battery, 8, 63));
 
-        // Слот 9: центральная броня
+        // РЎР»РѕС‚ 9: С†РµРЅС‚СЂР°Р»СЊРЅР°СЏ Р±СЂРѕРЅСЏ
         this.addSlot(new CentralArmorSlot(armorInventory, 0, 44, 63));
 
         addPlayerArmorSlots(pPlayerInventory);
@@ -117,7 +119,7 @@ public class ArmorTableMenu extends AbstractContainerMenu {
         }
     }
 
-    /** Как в 1.7.10 onPickupFromSlot центральной брони: убрать предметы модов из стола, NBT брони не трогаем. */
+    /** РљР°Рє РІ 1.7.10 onPickupFromSlot С†РµРЅС‚СЂР°Р»СЊРЅРѕР№ Р±СЂРѕРЅРё: СѓР±СЂР°С‚СЊ РїСЂРµРґРјРµС‚С‹ РјРѕРґРѕРІ РёР· СЃС‚РѕР»Р°, NBT Р±СЂРѕРЅРё РЅРµ С‚СЂРѕРіР°РµРј. */
     private void absorbModItemsFromTable(ItemStack armorStack) {
         if (armorStack.isEmpty()) {
             return;
@@ -141,7 +143,7 @@ public class ArmorTableMenu extends AbstractContainerMenu {
             itemstack = sourceStack.copy();
 
             if (pIndex < MOD_SLOTS) {
-                // Мод из стола -> инвентарь игрока
+                // РњРѕРґ РёР· СЃС‚РѕР»Р° -> РёРЅРІРµРЅС‚Р°СЂСЊ РёРіСЂРѕРєР°
                 if (!this.moveItemStackTo(sourceStack, PLAYER_INVENTORY_START, PLAYER_HOTBAR_END + 1, true)) {
                     return ItemStack.EMPTY;
                 }
@@ -283,11 +285,11 @@ public class ArmorTableMenu extends AbstractContainerMenu {
         public void set(ItemStack pStack) {
             ItemStack oldStack = this.getItem();
             if (!ArmorTableMenu.this.player.level().isClientSide && !oldStack.isEmpty()
-                    && (pStack.isEmpty() || !ItemStack.isSameItemSameTags(oldStack, pStack))) {
+                    && (pStack.isEmpty() || !PlatformHooks.isSameItemSameTags(oldStack, pStack))) {
                 ArmorModificationHelper.flushTableToArmor(oldStack, ArmorTableMenu.this.modsInventory, ArmorTableMenu.this.player);
             }
 
-            // Как 1.7.10 putStack: сначала загрузить моды в стол, потом положить броню
+            // РљР°Рє 1.7.10 putStack: СЃРЅР°С‡Р°Р»Р° Р·Р°РіСЂСѓР·РёС‚СЊ РјРѕРґС‹ РІ СЃС‚РѕР», РїРѕС‚РѕРј РїРѕР»РѕР¶РёС‚СЊ Р±СЂРѕРЅСЋ
             if (!pStack.isEmpty()) {
                 ArmorModificationHelper.loadModsIntoTable(pStack, ArmorTableMenu.this.modsInventory);
             }

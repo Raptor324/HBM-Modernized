@@ -2,7 +2,6 @@ package com.hbm_m.main;
 
 import org.slf4j.Logger;
 
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.api.fluids.bootstrap.ModFluidTraitsBootstrap;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.doors.DoorDeclRegistry;
@@ -29,11 +28,7 @@ import com.hbm_m.powerarmor.PowerArmorHandlers;
 import com.hbm_m.powerarmor.resist.DamageResistanceHandler;
 import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.radiation.PlayerHandler;
-import com.hbm_m.recipe.CentrifugeRecipes;
-import com.hbm_m.recipe.ChemicalPlantRecipes;
-import com.hbm_m.recipe.CyclotronRecipes;
 import com.hbm_m.recipe.ModRecipes;
-import com.hbm_m.recipe.CrystallizerRecipes;
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.world.biome.ModBiomes;
 import com.mojang.logging.LogUtils;
@@ -62,6 +57,17 @@ public final class MainRegistry {
     public static void init() {
         LOGGER.info("Initializing {}", RefStrings.NAME);
 
+        //? if neoforge {
+        /*// NeoForge 1.21+: регистрация сетевых пейлоадов обязана произойти ДО фазы
+        // NetworkRegistry.setup() → RegisterPayloadHandlersEvent, которая выполняется
+        // ПОСЛЕ конструкторов модов, но ДО FMLCommonSetupEvent/FMLClientSetupEvent.
+        // Architectury добавляет слушатель RegisterPayloadHandlersEvent в момент вызова
+        // registerReceiver, поэтому поздняя регистрация из common/client setup молча
+        // не срабатывает → S2C-пакеты (радиация, гейгер, дебаг-рендер) не доходят до клиента.
+        ModPacketHandler.register();
+        ModPacketHandler.registerClientReceivers();
+        *///?}
+
         // Registries (common)
         DoorDeclRegistry.init();
         ModBiomes.init();
@@ -70,6 +76,9 @@ public final class MainRegistry {
         ModExplosionParticles.init();
         ModSounds.init();
         ModItems.init();
+        //? if neoforge {
+        /*com.hbm_m.item.tools_and_armor.ModArmorMaterialsAccess.init();
+        *///?}
         ModMenuTypes.init();
         ModCreativeTabs.init();
         ModParticleTypes.init();
@@ -94,16 +103,28 @@ public final class MainRegistry {
         LifecycleEvent.SETUP.register(MainRegistry::commonSetup);
 
         TickEvent.SERVER_POST.register(server -> {
-            EnergyNetworkManager.get(server.overworld()).tick();
+            // 1. Защита от фейковых/недогруженных серверов (Flashback)
+            if (server == null) {
+                return; 
+            }
+            
+            // 2. Защита от отсутствующего измерения
+            ServerLevel level = server.overworld();
+            if (level == null) {
+                return;
+            }
+            // Энергосеть: сначала обновляем подписки машин, затем узлы и распределение —
+            // единая точка тика для PowerNet и жидкостей
+            com.hbm_m.api.energy.EnergySubscriptions.tickAll(server);
             com.hbm_m.api.network.UniNodespace.updateNodespace(server);
             // Process RBMK neutron streams for every loaded server level
-            for (ServerLevel level : server.getAllLevels()) {
-                NeutronNodeWorld.tick(level);
+            for (ServerLevel lvl : server.getAllLevels()) {
+                if (lvl != null) {
+                    NeutronNodeWorld.tick(lvl);
+                }
             }
-        });
-
-        LifecycleEvent.SERVER_LEVEL_LOAD.register((ServerLevel level) -> {
-            EnergyNetworkManager.get(level).rebuildAllNetworks();
+            // Отложенный фикс соединений решёток/паней после спавна структур
+            com.hbm_m.worldgen.StructureConnectionFixProcessor.tickIfReady(server);
         });
 
         LifecycleEvent.SERVER_LEVEL_UNLOAD.register((ServerLevel level) -> {
@@ -120,25 +141,28 @@ public final class MainRegistry {
         com.hbm_m.handler.HTTPHandler.loadStats();
         ModPacketHandler.register();
         com.hbm_m.handler.HazmatRegistry.registerHazmats();
+        com.hbm_m.handler.ArmorRegistryInit.init();
         HazardRegistry.registerItems();
+        com.hbm_m.event.LungGasHandler.init();
         com.hbm_m.config.FalloutConfigJSON.initialize();
         DamageResistanceHandler.initArmorStats();
         com.hbm_m.blockentity.machines.LaunchPadBaseBlockEntity.registerLaunchables();
         com.hbm_m.satellite.Satellite.register();
 
-        CentrifugeRecipes.registerRecipes();
-        CyclotronRecipes.registerRecipes();
-        com.hbm_m.inventory.recipes.ArcWelderRecipes.registerDefaults();
-        com.hbm_m.recipe.CrucibleSmeltingRecipes.registerDefaults();
-        com.hbm_m.recipe.MoltenAlloyRecipes.registerDefaults();
-        com.hbm_m.inventory.recipes.SolderingRecipes.registerDefaults();
+        // Диагностика загрузки рецептов на 1.21.1 — запускается ПОСЛЕ RegisterEvent.
+        //? if >= 1.21.1 {
+        /*com.hbm_m.recipe.ModRecipes.debugRecipeSerializerRegistry();
+        *///?}
+
+        // CentrifugeRecipes.registerRecipes();
+        // Рецепты Cyclotron, CrucibleSmelting, MoltenAlloy, ArcWelder и Soldering теперь data-driven (JSON)
+        // — статические реестры (ArcWelderRecipes.registerDefaults / SolderingRecipes.registerDefaults) удалены.
 
         // На Fabric DeferredRegister жидкостей ещё не заполнил BuiltInRegistries на момент SETUP
         // (см. FabricEntrypoint#registerFluidDependentSetupWhenReady).
         
         //? if forge || neoforge {
-        ChemicalPlantRecipes.registerRecipes();
-        CrystallizerRecipes.registerDefaults();
+        // Рецепты Crystallizer теперь data-driven (JSON), CrystallizerRecipes.registerDefaults удалён.
         ModFluidTraitsBootstrap.registerAll();
         //?}
 

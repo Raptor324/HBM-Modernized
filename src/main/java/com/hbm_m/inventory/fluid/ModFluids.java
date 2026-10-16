@@ -130,6 +130,10 @@ public class ModFluids {
     public static final FluidEntry WATER = registerFluid("water", 0x3333FF);
     public static final FluidEntry AIR = registerGas("air", 0xE7EAEB);
 
+    // Blast furnace fluids (airblast speed booster / flue gas output)
+    public static final FluidEntry AIRBLAST = registerGas("airblast", 0xE7EAEB);
+    public static final FluidEntry FLUE = registerGas("flue", 0x4A4A4A);
+
     // Oils and petroleum products
     public static final FluidEntry CRUDE_OIL = registerHeavyFluid("crude_oil", 0x020202);
     public static final FluidEntry PETROLEUM = registerFluid("petroleum", 0x7cb7c9);
@@ -353,7 +357,9 @@ public class ModFluids {
     }
     //?}
 
-    //? if fabric {
+    // На Fabric и NeoForge параметр mod-bus не нужен: Architectury DeferredRegister
+    // сам резолвит шину по mod id. Подключается из FabricEntrypoint / NeoForgeEntrypoint.
+    //? if fabric || neoforge {
     /*public static void register() {
         FLUIDS.register();
     }

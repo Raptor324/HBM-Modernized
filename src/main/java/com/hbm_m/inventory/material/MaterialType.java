@@ -41,7 +41,8 @@ public enum MaterialType {
     ARSENIC     (50002,"arsenic",     0x8B7FBF, null),
     TECHNETIUM  (50003,"technetium",  0x66AACC, null),
     REDSTONE    (50004,"redstone",    0xC02020, null),
-    MINGRADE    (50005,"mingrade",    0xB56A3A, null);
+    MINGRADE    (50005,"mingrade",    0xB56A3A, null),
+    CADMIUM     (50006,"cadmium",     0xB0B0C0, null);
 
     public final int    id;
     public final String name;

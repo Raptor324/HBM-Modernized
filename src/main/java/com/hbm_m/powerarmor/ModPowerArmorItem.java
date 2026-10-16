@@ -34,7 +34,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ArmorMaterial;
+import com.hbm_m.item.tools_and_armor.ModArmorMaterials;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 //? if forge {
@@ -50,7 +50,7 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
     private static final String TAG_GEIGER_CHECK_TICK = "hbm_geiger_check_tick";
     private final PowerArmorSpecs specs;
 
-    public ModPowerArmorItem(ArmorMaterial material, Type type, Properties properties, PowerArmorSpecs specs) {
+    public ModPowerArmorItem(ModArmorMaterials material, Type type, Properties properties, PowerArmorSpecs specs) {
         // NOTE: the texture passed to the base class is not used on Forge because we override getArmorTexture()
         // below. Keep this value generic to avoid hard-coding a specific armor set (e.g. T51) into the base class.
         super(material, type, properties, MainRegistry.MOD_ID + ":textures/block/armor/power_armor.png",
@@ -172,7 +172,50 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
     }
     //?}
 
-    private void copyRotations(HumanoidModel<?> source, HumanoidModel<?> target) {
+    /**
+     * NeoForge 1.21.1: клиентские расширения — подменяем ванильную модель брони
+     * на "пустую" (PowerArmorEmptyModel), чтобы HumanoidArmorLayer не рисовал
+     * ванильную текстуру поверх OBJ-слоёв.
+     */
+    //? if neoforge {
+    /*public static net.neoforged.neoforge.client.extensions.common.IClientItemExtensions createNeoForgeClientExtensions() {
+        return new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
+            private PowerArmorEmptyModel model;
+
+            @Override
+            public HumanoidModel<?> getHumanoidArmorModel(LivingEntity livingEntity, ItemStack itemStack,
+                    EquipmentSlot equipmentSlot, HumanoidModel<?> original) {
+                if (this.model == null) {
+                    ModelPart layer = Minecraft.getInstance().getEntityModels().bakeLayer(ModModelLayers.POWER_ARMOR);
+                    this.model = new PowerArmorEmptyModel(layer);
+                }
+
+                this.model.setAllVisible(false);
+                switch (equipmentSlot) {
+                    case HEAD -> this.model.head.visible = true;
+                    case CHEST -> {
+                        this.model.body.visible = true;
+                        this.model.rightArm.visible = true;
+                        this.model.leftArm.visible = true;
+                    }
+                    case LEGS, FEET -> {
+                        this.model.rightLeg.visible = true;
+                        this.model.leftLeg.visible = true;
+                    }
+                    default -> {}
+                }
+
+                this.model.crouching = original.crouching;
+                this.model.riding = original.riding;
+                this.model.young = original.young;
+                copyRotations(original, this.model);
+                return this.model;
+            }
+        };
+    }
+    *///?}
+
+    private static void copyRotations(HumanoidModel<?> source, HumanoidModel<?> target) {
         target.head.copyFrom(source.head);
         target.body.copyFrom(source.body);
         target.rightArm.copyFrom(source.rightArm);
@@ -181,10 +224,17 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
         target.leftLeg.copyFrom(source.leftLeg);
     }
 
+    //? if forge {
     @Override
     public net.minecraft.sounds.SoundEvent getEquipSound() {
         return net.minecraft.sounds.SoundEvents.EMPTY;
     }
+    //?} elif neoforge {
+    /*@Override
+    public net.minecraft.core.Holder<net.minecraft.sounds.SoundEvent> getEquipSound() {
+        return net.minecraft.core.Holder.direct(net.minecraft.sounds.SoundEvents.EMPTY);
+    }
+    *///?}
 
     /**
      * Переопределяем методы для корректного отображения энергии в тултипе с учетом модификаторов

@@ -900,12 +900,14 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
         return active;
     }
 
+    
+    // (кастомный лёгкий getUpdateTag/handleUpdateTag ниже сохранён как есть)
     @Override
-    public void saveAdditional(CompoundTag tag) {
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         // Никакого snapshot.copy()/merge: в 1.20.1 chunk NBT собирается на главном
         // потоке, а побайтная запись уже уходит в IOWorker. Глубокое копирование
         // 40 КБ дерева и побайтный merge обратно — чистый расход главного потока.
-        super.saveAdditional(tag);
+        super.writeNbtData(tag, registries);
         tag.putInt("progress", progress);
         tag.putInt("max_progress", maxProgress);
         tag.putBoolean("active", active);
@@ -950,8 +952,8 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         progress = tag.getInt("progress");
         maxProgress = tag.getInt("max_progress");
         if (maxProgress <= 0) {
@@ -972,17 +974,32 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
         showMap = tag.getBoolean("show_map");
         jammed = tag.getBoolean("jammed");
 
-        // Карта: с диска — целиком, из сети — инкрементальный слайс (см. getUpdateTag).
+        // Полная карта с диска
         if (tag.contains("map")) {
             byte[] saved = tag.getByteArray("map");
             if (saved != null && saved.length == MAP_LENGTH) {
-                // clone() обязателен: getByteArray() возвращает массив, которым владеет
-                // ByteArrayTag загруженного chunk NBT. Без копии тик радара продолжал бы
-                // менять массив, который IOWorker пишет на диск в другом потоке.
+                if (map == null || map.length != MAP_LENGTH) {
+                    map = new byte[MAP_LENGTH];
+                }
                 map = saved.clone();
             }
         }
-        if (tag.contains("mapSliceIdx")) {
+        
+        // Синхронизация слайсов карты по сети (поддержка пакетов обоих версий)
+        if (tag.contains("mapSlices")) {
+            int start = tag.getInt("mapSliceStart");
+            byte[] slices = tag.getByteArray("mapSlices");
+            int count = Math.min(tag.getInt("mapSliceCount"), slices.length / MAP_SLICE_SIZE);
+            if (start >= 0 && start < MAP_SLICES && count > 0) {
+                if (map == null || map.length != MAP_LENGTH) {
+                    map = new byte[MAP_LENGTH];
+                }
+                for (int i = 0; i < count; i++) {
+                    int slice = (start + i) % MAP_SLICES;
+                    System.arraycopy(slices, i * MAP_SLICE_SIZE, map, slice * MAP_SLICE_SIZE, MAP_SLICE_SIZE);
+                }
+            }
+        } else if (tag.contains("mapSliceIdx")) {
             int idx = tag.getInt("mapSliceIdx");
             byte[] slice = tag.getByteArray("mapSlice");
             if (slice != null && idx >= 0 && idx * MAP_SLICE_SIZE + slice.length <= MAP_LENGTH) {
@@ -992,6 +1009,7 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
                 System.arraycopy(slice, 0, map, idx * MAP_SLICE_SIZE, slice.length);
             }
         }
+
         if (tag.getBoolean("mapClear")) {
             if (map == null || map.length != MAP_LENGTH) {
                 map = new byte[MAP_LENGTH];
@@ -1030,6 +1048,7 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
      * Лёгкий сетевой синк: без инвентаря и полной карты (40 КБ).
      * Карта — несколько последовательных инкрементальных слайсов по 100 байт.
      */
+    //? if < 1.21.1 {
     @Override
     public CompoundTag getUpdateTag() {
         CompoundTag tag = new CompoundTag();
@@ -1086,7 +1105,68 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
         }
         return tag;
     }
+    //?} else {
+    /*@Override
+    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
 
+        CompoundTag tag = new CompoundTag();
+        tag.putLong("energy", getEnergyStored());
+        tag.putBoolean("active", active);
+        tag.putBoolean("scan_missiles", scanMissiles);
+        tag.putBoolean("scan_shells", scanShells);
+        tag.putBoolean("scan_players", scanPlayers);
+        tag.putBoolean("smart_mode", smartMode);
+        tag.putBoolean("red_mode", redMode);
+        tag.putBoolean("show_map", showMap);
+        tag.putBoolean("jammed", jammed);
+
+        ListTag contacts = new ListTag();
+        for (int[] entry : nearbyMissiles) {
+            if (entry == null || entry.length < 5) {
+                continue;
+            }
+            CompoundTag contactTag = new CompoundTag();
+            contactTag.putInt("x", entry[0]);
+            contactTag.putInt("y", entry[1]);
+            contactTag.putInt("z", entry[2]);
+            contactTag.putInt("v", entry[3]);
+            contactTag.putInt("t", entry[4]);
+            contactTag.putInt("m", entry.length >= 6 ? entry[5] : 0);
+            contactTag.putInt("eid", entry.length >= 7 ? entry[6] : -1);
+            contacts.add(contactTag);
+        }
+        tag.put("contacts", contacts);
+
+        if (showMap && level != null && !level.isClientSide && mapSliceReady && map != null) {
+            int count = Math.min(mapSyncSliceCount, MAP_SYNC_MAX_SLICES);
+            byte[] slices = new byte[count * MAP_SLICE_SIZE];
+            for (int i = 0; i < count; i++) {
+                int slice = (mapSyncStartIndex + i) % MAP_SLICES;
+                System.arraycopy(map, slice * MAP_SLICE_SIZE, slices,
+                        i * MAP_SLICE_SIZE, MAP_SLICE_SIZE);
+            }
+            tag.putInt("mapSliceStart", mapSyncStartIndex);
+            tag.putInt("mapSliceCount", count);
+            tag.putByteArray("mapSlices", slices);
+            mapSyncSliceCount -= count;
+            if (mapSyncSliceCount > 0) {
+                mapSyncStartIndex = (mapSyncStartIndex + count) % MAP_SLICES;
+            }
+            if (mapSyncSliceCount <= 0) {
+                mapSyncSliceCount = 0;
+                mapSliceReady = false;
+            }
+        }
+        if (clearPulse) {
+            tag.putBoolean("mapClear", true);
+            clearPulse = false;
+        }
+        return tag;
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void handleUpdateTag(CompoundTag tag) {
         if (tag.contains("energy")) {
@@ -1155,6 +1235,9 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
             handleUpdateTag(PlatformHooks.getItemTag(pkt));
         }
     }
+    //?}
+    // На 1.21.1 neoforge handleUpdateTag(CompoundTag)/onDataPacket(Connection,pkt) удалены —
+    // клиентский sync идёт через getUpdateTag -> loadWithComponents -> loadAdditional (см. выше).
 
     /** Публичная обёртка над {@link #isItemValidForSlot} для слотов меню. */
     public boolean canPlaceItemInSlot(int slot, ItemStack stack) {
@@ -1192,10 +1275,13 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
             return true;
         }
         //? if forge {
-        return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
+        return com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack).isPresent();
         //?}
         //? if fabric {
         /*return teamreborn.energy.api.EnergyStorage.ITEM.find(stack, null) != null;
+        *///?}
+        //? if neoforge {
+        /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
         *///?}
     }
 
@@ -1203,4 +1289,23 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
         return MachineRadarMenu.create(id, inventory, this);
     }
-}
+
+    // Большой радар (MachineLargeRadarBlock) регистрировал ENERGY-части структуры;
+    // обычный радар узлов частей не создавал. Ядро подписывается базовым классом.
+    @Override
+    protected BlockPos[] getExtraEnergyPorts() {
+        if (level == null || level.isClientSide) return new BlockPos[0];
+        if (!(getBlockState().getBlock() instanceof com.hbm_m.block.machines.MachineLargeRadarBlock block)) {
+            return new BlockPos[0];
+        }
+        var helper = block.getStructureHelper();
+        Direction facing = getBlockState().getValue(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING);
+
+        java.util.List<BlockPos> ports = new java.util.ArrayList<>();
+        for (BlockPos localPos : helper.getStructureMap().keySet()) {
+            if (block.getPartRole(localPos).canReceiveEnergy()) {
+                ports.add(helper.getRotatedPos(worldPosition, localPos, facing));
+            }
+        }
+        return ports.toArray(new BlockPos[0]);
+    }}

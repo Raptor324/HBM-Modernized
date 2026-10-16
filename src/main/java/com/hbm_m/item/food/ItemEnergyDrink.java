@@ -19,60 +19,51 @@ public class ItemEnergyDrink extends Item {
 
 
 
-    public static final FoodProperties CAN_BEPIS = new FoodProperties.Builder()
-            .nutrition(4).saturationMod(0.4F)
-            .effect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 450), 1F)
-            .alwaysEat()
-            .build();
+    private static FoodProperties.Builder makeAlwaysEat(FoodProperties.Builder builder) {
+        //? if < 1.21.1 {
+        return builder.alwaysEat();
+        //?} else {
+        /*return builder.alwaysEdible();
+        *///?}
+    }
 
-    public static final FoodProperties CAN_BREEN = new FoodProperties.Builder()
-            .nutrition(3).saturationMod(0.3F)
-            .effect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 300), 1F)
-            .alwaysEat()
-            .build();
+    public static final FoodProperties CAN_BEPIS = com.hbm_m.platform.PlatformHooks.addFoodEffect(
+            makeAlwaysEat(com.hbm_m.platform.PlatformHooks.foodBuilder(4, 0.4F)),
+            MobEffects.MOVEMENT_SPEED, 450, 1F).build();
 
-    public static final FoodProperties CAN_CREATURE = new FoodProperties.Builder()
-            .nutrition(5).saturationMod(0.5F)
-            .effect(new MobEffectInstance(MobEffects.REGENERATION, 225), 1F)
-            .effect(new MobEffectInstance(MobEffects.ABSORPTION, 225), 1F)
-            .alwaysEat()
-            .build();
+    public static final FoodProperties CAN_BREEN = com.hbm_m.platform.PlatformHooks.addFoodEffect(
+            makeAlwaysEat(com.hbm_m.platform.PlatformHooks.foodBuilder(3, 0.3F)),
+            MobEffects.DAMAGE_RESISTANCE, 300, 1F).build();
 
-    public static final FoodProperties CAN_LUNA = new FoodProperties.Builder()
-            .nutrition(6).saturationMod(0.6F)
-            .effect(new MobEffectInstance(MobEffects.NIGHT_VISION, 225), 1F)
-            .alwaysEat()
-            .build();
+    public static final FoodProperties CAN_CREATURE = com.hbm_m.platform.PlatformHooks.addFoodEffect(
+            com.hbm_m.platform.PlatformHooks.addFoodEffect(
+                    makeAlwaysEat(com.hbm_m.platform.PlatformHooks.foodBuilder(5, 0.5F)),
+                    MobEffects.REGENERATION, 225, 1F),
+            MobEffects.ABSORPTION, 225, 1F).build();
 
-    public static final FoodProperties CAN_MRSUGAR = new FoodProperties.Builder()
-            .nutrition(4).saturationMod(0.3F)
-            .effect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 180), 1F)
-            .alwaysEat()
-            .build();
+    public static final FoodProperties CAN_LUNA = com.hbm_m.platform.PlatformHooks.addFoodEffect(
+            makeAlwaysEat(com.hbm_m.platform.PlatformHooks.foodBuilder(6, 0.6F)),
+            MobEffects.NIGHT_VISION, 225, 1F).build();
 
-    public static final FoodProperties CAN_MUG = new FoodProperties.Builder()
-            .nutrition(3).saturationMod(0.35F)
-            .effect(new MobEffectInstance(MobEffects.DIG_SPEED, 225), 1F)
-            .alwaysEat()
-            .build();
+    public static final FoodProperties CAN_MRSUGAR = com.hbm_m.platform.PlatformHooks.addFoodEffect(
+            makeAlwaysEat(com.hbm_m.platform.PlatformHooks.foodBuilder(4, 0.3F)),
+            MobEffects.MOVEMENT_SPEED, 180, 1F).build();
 
-    public static final FoodProperties CAN_OVERCHARGE = new FoodProperties.Builder()
-            .nutrition(7).saturationMod(0.7F)
-            .effect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 180), 1F)
-            .alwaysEat()
-            .build();
+    public static final FoodProperties CAN_MUG = com.hbm_m.platform.PlatformHooks.addFoodEffect(
+            makeAlwaysEat(com.hbm_m.platform.PlatformHooks.foodBuilder(3, 0.35F)),
+            MobEffects.DIG_SPEED, 225, 1F).build();
 
-    public static final FoodProperties CAN_REDBOMB = new FoodProperties.Builder()
-            .nutrition(5).saturationMod(0.5F)
-            .effect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 225), 1F)
-            .alwaysEat()
-            .build();
+    public static final FoodProperties CAN_OVERCHARGE = com.hbm_m.platform.PlatformHooks.addFoodEffect(
+            makeAlwaysEat(com.hbm_m.platform.PlatformHooks.foodBuilder(7, 0.7F)),
+            MobEffects.DAMAGE_BOOST, 180, 1F).build();
 
-    public static final FoodProperties CAN_SMART = new FoodProperties.Builder()
-            .nutrition(4).saturationMod(0.35F)
-            .effect(new MobEffectInstance(MobEffects.JUMP, 270), 1F)
-            .alwaysEat()
-            .build();
+    public static final FoodProperties CAN_REDBOMB = com.hbm_m.platform.PlatformHooks.addFoodEffect(
+            makeAlwaysEat(com.hbm_m.platform.PlatformHooks.foodBuilder(5, 0.5F)),
+            MobEffects.FIRE_RESISTANCE, 225, 1F).build();
+
+    public static final FoodProperties CAN_SMART = com.hbm_m.platform.PlatformHooks.addFoodEffect(
+            makeAlwaysEat(com.hbm_m.platform.PlatformHooks.foodBuilder(4, 0.35F)),
+            MobEffects.JUMP, 270, 1F).build();
 
     public ItemEnergyDrink(Properties properties) {
         super(properties);

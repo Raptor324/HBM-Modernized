@@ -1,5 +1,6 @@
 package com.hbm_m.item.fekal_electric;
 
+import com.hbm_m.item.ITooltipProvider;
 import com.hbm_m.platform.PlatformHooks;
 
 import java.util.List;
@@ -15,7 +16,7 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 
-public class MachineBatteryBlockItem extends BlockItem {
+public class MachineBatteryBlockItem extends BlockItem implements ITooltipProvider {
 
     private final long maxPower; // Меняем int на long
 
@@ -25,7 +26,7 @@ public class MachineBatteryBlockItem extends BlockItem {
     }
 
     @Override
-    public void appendHoverText(ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltip, TooltipFlag pFlag) {
+    public void appendHbmTooltip(ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltip, TooltipFlag pFlag) {
         // Используем long для вычислений
         // Если у тебя есть утилита EnergyFormatter.format(long), лучше использовать её для красивых чисел (1M, 1G и т.д.)
 
@@ -35,7 +36,15 @@ public class MachineBatteryBlockItem extends BlockItem {
 
         // Читаем энергию из NBT
         if (PlatformHooks.hasItemTag(pStack)) {
+            // BlockEntityTag на 1.20.1 — NBT-подтег (getTagElement); на 1.21.1 — тот же ключ
+            // "BlockEntityTag" внутри CUSTOM_DATA (BlockItem пишет туда BE-данные при placement-копии).
+            //? if < 1.21.1 {
             CompoundTag blockEntityTag = pStack.getTagElement("BlockEntityTag");
+            //?} else {
+            /*CompoundTag custom = PlatformHooks.getItemTag(pStack);
+            CompoundTag blockEntityTag = custom != null && custom.contains("BlockEntityTag")
+                    ? custom.getCompound("BlockEntityTag") : null;
+            *///?}
             // Важно: в MachineBatteryBlockEntity мы сохраняем как "Energy" (с большой буквы), проверь это!
             // В старом коде было "Energy", здесь "energy". Лучше проверять оба варианта или привести к одному.
             if (blockEntityTag != null) {
@@ -52,6 +61,5 @@ public class MachineBatteryBlockItem extends BlockItem {
             }
         }
 
-        super.appendHoverText(pStack, pLevel, pTooltip, pFlag);
     }
 }

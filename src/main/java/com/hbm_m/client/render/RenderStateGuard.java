@@ -1,14 +1,5 @@
 package com.hbm_m.client.render;
 
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
-
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.client.renderer.GameRenderer;
@@ -37,11 +28,14 @@ import org.lwjgl.opengl.GL30;
  * пересвязываем block atlas в большинстве путей), shader uniforms (это уже
  * за пределами «GL state» — управляется самими шейдерами).
  */
+
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public final class RenderStateGuard implements AutoCloseable {
 
     private final int previousVao;

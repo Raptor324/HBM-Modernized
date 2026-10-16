@@ -14,7 +14,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 
-public class MukeCloudParticle extends ParticleNT {
+public class MukeCloudParticle extends ParticleNT implements FarCapableParticle {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             RefStrings.MODID, "textures/particle/explosion.png");
@@ -81,16 +81,21 @@ public class MukeCloudParticle extends ParticleNT {
         this.alpha = 1F;
         this.quadSize = 3F;
 
-        Vec3 camPos = camera.getPosition();
-        float pX = (float) (Mth.lerp(partialTicks, this.xo, this.x) - camPos.x);
-        float pY = (float) (Mth.lerp(partialTicks, this.yo, this.y) - camPos.y);
-        float pZ = (float) (Mth.lerp(partialTicks, this.zo, this.z) - camPos.z);
+        Vec3 off = virtualizedOffset(
+                Mth.lerp(partialTicks, this.xo, this.x),
+                Mth.lerp(partialTicks, this.yo, this.y),
+                Mth.lerp(partialTicks, this.zo, this.z),
+                camera);
+        float pX = (float) off.x;
+        float pY = (float) off.y;
+        float pZ = (float) off.z;
 
-        Vector3f left = new Vector3f(camera.getLeftVector()).mul(quadSize);
-        Vector3f up = new Vector3f(camera.getUpVector()).mul(quadSize);
+        // Fallback-виртуализация: сжатие размера вместе со смещением (см. ParticleNT.virtualScale).
+        float vScale = virtualScale(Mth.lerp(partialTicks, this.xo, this.x), Mth.lerp(partialTicks, this.yo, this.y), Mth.lerp(partialTicks, this.zo, this.z), camera);
+        Vector3f left = new Vector3f(camera.getLeftVector()).mul(quadSize * vScale);
+        Vector3f up = new Vector3f(camera.getUpVector()).mul(quadSize * vScale);
 
-        VertexConsumer consumer = net.minecraft.client.Minecraft.getInstance()
-                .renderBuffers().bufferSource()
+        VertexConsumer consumer = ParticleEngineNT.buffer()
                 .getBuffer(getRenderType());
 
         ImmediateVertexWriter.billboardQuad(consumer, null, pX, pY, pZ, left, up,
@@ -102,7 +107,14 @@ public class MukeCloudParticle extends ParticleNT {
     }
 
     @Override
+    public net.minecraft.resources.ResourceLocation hbm$getFarTexture() {
+        return getTexture();
+    }
+
+    @Override
     public RenderType getRenderType() {
-        return ClientRenderHandler.CustomRenderTypes.NUKE_CLOUDS.apply(getTexture());
+        return ClientRenderHandler.CustomRenderTypes.nukeClouds(getTexture());
     }
 }
+
+

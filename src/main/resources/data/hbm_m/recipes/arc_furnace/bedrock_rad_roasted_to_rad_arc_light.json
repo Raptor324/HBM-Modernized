@@ -1,0 +1,12 @@
+{
+  "type": "hbm_m:arc_furnace",
+  "ingredient": {
+    "item": "hbm_m:bedrock_ore_rad_roasted_light"
+  },
+  "count": 1,
+  "result": {
+    "item": "hbm_m:bedrock_ore_rad_arc_light",
+    "count": 4
+  },
+  "duration": 100
+}

@@ -4,6 +4,8 @@ import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineArcWelderMenu;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.recipe.ArcWelderRecipe;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -60,16 +62,16 @@ public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity {
             if (got > 0) be.energy += got;
         });
 
-        var recipe = com.hbm_m.inventory.recipes.ArcWelderRecipes.getRecipe(
-                be.inventory.getStackInSlot(SLOT_IN1),
-                be.inventory.getStackInSlot(SLOT_IN2),
-                be.inventory.getStackInSlot(SLOT_IN3));
+        // Data-driven поиск рецепта: итерируем ArcWelderRecipe из RecipeManager (заменяет статику ArcWelderRecipes).
+        ArcWelderRecipe recipe = findArcWelderRecipe(level, be);
         if (recipe != null) {
-            be.processTime  = recipe.duration;
-            be.consumption  = recipe.consumption;
+            be.processTime  = recipe.getDuration();
+            be.consumption  = recipe.getConsumption();
         }
-        boolean hasRecipe  = recipe != null && (recipe.fluid == null || recipe.fluid.satisfiedBy(be.tank));
-        boolean canProcess = hasRecipe && be.energy >= be.consumption && be.canOutput();
+        // matchesFluid на ArcWelderRecipe заменяет прежний recipe.fluid.satisfiedBy(tank) (теперь FluidStack-based).
+        boolean hasRecipe  = recipe != null && recipe.matchesFluid(be.tank);
+        boolean canProcess = hasRecipe && be.energy >= be.consumption
+                && be.canOutput(recipe.getOutput());
 
         if (canProcess) {
             be.progress++;
@@ -77,20 +79,68 @@ public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity {
 
             if (be.progress >= be.processTime) {
                 be.progress = 0;
-                // be.processRecipe(...);
+                be.processRecipe(recipe);
                 be.setChanged();
             }
-        } else {
+        } else if (recipe == null || be.energy < be.consumption) {
             be.progress = 0;
         }
 
         level.sendBlockUpdated(pos, state, state, 3);
     }
 
+    /** Verbraucht die passenden Eingangs-Slots + ggf. Fluid und legt das Ergebnis in SLOT_OUT ab. */
+    private void processRecipe(ArcWelderRecipe recipe) {
+        int[] inputSlots = { SLOT_IN1, SLOT_IN2, SLOT_IN3 };
+        // Поглощение зеркалит matchesInputs: каждый требуемый ингредиент снимается со своего слота.
+        boolean[] consumed = new boolean[recipe.getInputs().length];
+
+        for (int slot : inputSlots) {
+            ItemStack stack = inventory.getStackInSlot(slot);
+            if (stack.isEmpty()) continue;
+            for (int i = 0; i < recipe.getInputs().length; i++) {
+                if (consumed[i]) continue;
+                if (recipe.getInputs()[i].test(stack) && stack.getCount() >= recipe.getInputCount(i)) {
+                    inventory.extractItem(slot, recipe.getInputCount(i), false);
+                    consumed[i] = true;
+                    break;
+                }
+            }
+        }
+
+        recipe.consumeFluid(tank);
+
+        ItemStack result = recipe.getOutput();
+        ItemStack existing = inventory.getStackInSlot(SLOT_OUT);
+        if (existing.isEmpty()) {
+            inventory.setStackInSlot(SLOT_OUT, result);
+        } else if (com.hbm_m.platform.PlatformHooks.isSameItemSameTags(existing, result)) {
+            existing.grow(result.getCount());
+        }
+    }
+
     public boolean canOutput() {
+        return canOutput(null);
+    }
+
+    /** Empty output slot is always fine; a filled one must match the pending recipe's result and have room to grow. */
+    private boolean canOutput(ItemStack result) {
         ItemStack out = inventory.getStackInSlot(SLOT_OUT);
-        // null-output is always ok; filled output must match and have room
-        return out.isEmpty();
+        if (out.isEmpty()) return true;
+        if (result == null) return false;
+        return com.hbm_m.platform.PlatformHooks.isSameItemSameTags(out, result) && out.getCount() + result.getCount() <= out.getMaxStackSize();
+    }
+
+    /** Data-driven поиск ArcWelderRecipe по 3 входным слотам (заменяет статический ArcWelderRecipes.getRecipe). */
+    @org.jetbrains.annotations.Nullable
+    private static ArcWelderRecipe findArcWelderRecipe(Level level, MachineArcWelderBlockEntity be) {
+        ItemStack s0 = be.inventory.getStackInSlot(SLOT_IN1);
+        ItemStack s1 = be.inventory.getStackInSlot(SLOT_IN2);
+        ItemStack s2 = be.inventory.getStackInSlot(SLOT_IN3);
+        for (ArcWelderRecipe recipe : RecipeHooks.getAllRecipes(level, ArcWelderRecipe.Type.INSTANCE)) {
+            if (recipe.matchesInputs(s0, s1, s2)) return recipe;
+        }
+        return null;
     }
 
     // ─── Progress helpers (for GUI) ───────────────────────────────────────────
@@ -124,16 +174,16 @@ public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity {
     // ─── NBT ──────────────────────────────────────────────────────────────────
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("progress",    progress);
         tag.putInt("processTime", processTime);
         tank.writeToNBT(tag, "tank");
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         progress    = tag.getInt("progress");
         processTime = tag.getInt("processTime");
         if (processTime <= 0) processTime = 200;

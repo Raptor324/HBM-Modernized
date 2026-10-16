@@ -1,0 +1,49 @@
+{
+  "variants": {
+    "facing=north,bend=straight": {
+      "model": "hbm_m:block/network/conveyor_double"
+    },
+    "facing=north,bend=left": {
+      "model": "hbm_m:block/network/conveyor_double_curve_left"
+    },
+    "facing=north,bend=right": {
+      "model": "hbm_m:block/network/conveyor_double_curve_right"
+    },
+    "facing=east,bend=straight": {
+      "model": "hbm_m:block/network/conveyor_double",
+      "y": 90
+    },
+    "facing=east,bend=left": {
+      "model": "hbm_m:block/network/conveyor_double_curve_left",
+      "y": 90
+    },
+    "facing=east,bend=right": {
+      "model": "hbm_m:block/network/conveyor_double_curve_right",
+      "y": 90
+    },
+    "facing=south,bend=straight": {
+      "model": "hbm_m:block/network/conveyor_double",
+      "y": 180
+    },
+    "facing=south,bend=left": {
+      "model": "hbm_m:block/network/conveyor_double_curve_left",
+      "y": 180
+    },
+    "facing=south,bend=right": {
+      "model": "hbm_m:block/network/conveyor_double_curve_right",
+      "y": 180
+    },
+    "facing=west,bend=straight": {
+      "model": "hbm_m:block/network/conveyor_double",
+      "y": 270
+    },
+    "facing=west,bend=left": {
+      "model": "hbm_m:block/network/conveyor_double_curve_left",
+      "y": 270
+    },
+    "facing=west,bend=right": {
+      "model": "hbm_m:block/network/conveyor_double_curve_right",
+      "y": 270
+    }
+  }
+}

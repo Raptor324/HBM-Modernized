@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.blockentity.machines.MachineSilexBlockEntity;
 import com.hbm_m.inventory.menu.MachineSilexMenu;
@@ -30,6 +31,8 @@ public class GUIMachineSilex extends GuiInfoScreen<MachineSilexMenu> {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
+        // тайл может отсутствовать в реплее Flashback
+        if (silex == null) return;
 
         int power = (int) (silex.getEnergyStored() * 52L / Math.max(silex.getMaxEnergyStored(), 1L));
         if (power > 52) {
@@ -60,9 +63,11 @@ public class GUIMachineSilex extends GuiInfoScreen<MachineSilexMenu> {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
+        // тайл может отсутствовать в реплее Flashback
+        if (silex != null) {
         drawElectricityInfo(guiGraphics, mouseX, mouseY,
             152, 18, 16, 52,
             silex.getEnergyStored(), silex.getMaxEnergyStored());
@@ -72,6 +77,7 @@ public class GUIMachineSilex extends GuiInfoScreen<MachineSilexMenu> {
             this.leftPos + 78, this.topPos + 67,
                 Component.literal("Progress:"),
                 Component.literal("   " + silex.getProgress() + " / " + silex.getMaxProgress()));
+        }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }

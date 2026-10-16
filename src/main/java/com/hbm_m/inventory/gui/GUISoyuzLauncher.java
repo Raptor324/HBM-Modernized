@@ -38,6 +38,8 @@ public class GUISoyuzLauncher extends AbstractContainerScreen<SoyuzLauncherMenu>
         guiGraphics.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
 
         SoyuzLauncherBlockEntity be = menu.getBlockEntity();
+        // тайл может отсутствовать в реплее Flashback
+        if (be == null) return;
 
         int powerHeight = (int) Math.min(34, menu.getMaxEnergyStored() > 0
                 ? menu.getEnergyStored() * 34 / menu.getMaxEnergyStored() : 0);
@@ -130,7 +132,10 @@ public class GUISoyuzLauncher extends AbstractContainerScreen<SoyuzLauncherMenu>
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         boolean result = super.mouseClicked(mouseX, mouseY, button);
 
-        var pos = menu.getBlockEntity().getBlockPos();
+        // тайл может отсутствовать в реплее Flashback
+        SoyuzLauncherBlockEntity clickBe = menu.getBlockEntity();
+        if (clickBe == null) return result;
+        var pos = clickBe.getBlockPos();
 
         if (inRegion(mouseX, mouseY, 88, 17)) {
             playClick();

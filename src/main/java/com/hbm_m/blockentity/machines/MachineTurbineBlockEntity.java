@@ -68,7 +68,6 @@ public class MachineTurbineBlockEntity extends BaseMachineBlockEntity implements
     private boolean active = false;
 
     //? if forge {
-    private LazyOptional<IFluidHandler> steamInputHandler = LazyOptional.empty();
     private LazyOptional<IFluidHandler> spentOutputHandler = LazyOptional.empty();
     //?}
 
@@ -233,8 +232,8 @@ public class MachineTurbineBlockEntity extends BaseMachineBlockEntity implements
     // ── NBT ─────────────────────────────────────────────────────────────────
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("progress", progress);
         tag.putInt("max_progress", maxProgress);
         tag.putBoolean("active", active);
@@ -243,8 +242,8 @@ public class MachineTurbineBlockEntity extends BaseMachineBlockEntity implements
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         progress    = tag.getInt("progress");
         maxProgress = tag.getInt("max_progress");
         if (maxProgress <= 0) maxProgress = DEFAULT_MAX_PROGRESS;
@@ -269,6 +268,9 @@ public class MachineTurbineBlockEntity extends BaseMachineBlockEntity implements
                 //?}
                 //? if fabric {
                 /*yield net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage.ITEM.find(stack, null) != null;
+                *///?}
+                //? if neoforge {
+                /*yield stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM) != null;
                 *///?}
             }
             case SLOT_BATTERY -> stack.getItem() instanceof ItemCreativeBattery
@@ -300,15 +302,16 @@ public class MachineTurbineBlockEntity extends BaseMachineBlockEntity implements
     //? if forge {
     @Override
     protected void setupFluidCapability() {
-        steamInputHandler  = LazyOptional.of(() -> new SteamInputHandler(this));
+        // Steam input — обработчик по умолчанию — через базовый fluidHandlerOpt.
+        setFluidHandler(new SteamInputHandler(this));
         spentOutputHandler = LazyOptional.of(() -> new SpentOutputHandler(this));
     }
 
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.FLUID_HANDLER) {
-            if (side == Direction.UP) return spentOutputHandler.cast();
-            return steamInputHandler.cast();
+        // UP = spent output; остальные стороны (steam input) отдаёт базовый fluidHandlerOpt.
+        if (cap == ForgeCapabilities.FLUID_HANDLER && side == Direction.UP) {
+            return spentOutputHandler.cast();
         }
         return super.getCapability(cap, side);
     }
@@ -316,7 +319,6 @@ public class MachineTurbineBlockEntity extends BaseMachineBlockEntity implements
     @Override
     public void invalidateCaps() {
         super.invalidateCaps();
-        steamInputHandler.invalidate();
         spentOutputHandler.invalidate();
     }
 

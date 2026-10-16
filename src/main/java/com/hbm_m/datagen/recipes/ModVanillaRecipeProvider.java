@@ -30,6 +30,7 @@ import net.minecraft.data.recipes.RecipeCategory;
 import net.minecraft.data.recipes.RecipeProvider;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
 import net.minecraft.data.recipes.ShapelessRecipeBuilder;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.data.recipes.SimpleCookingRecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
@@ -69,10 +70,268 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         registerMeteoriteSword(writer);
         registerBilletNuggetPairs(writer);
         registerTurretRecipes(writer);
+        registerRbmkFuelRecipes(writer);
+        registerBookOfWagons(writer);
+    }
+
+    /**
+     * RBMK fuel chain - 1:1 in structure to the original's {@code RodRecipes.addRBMKRod}/
+     * {@code addPellet} (empty casing + 8 loaded units -&gt; rod), adapted to this port's item
+     * model: the original loaded rods directly from ore-dict billets; this port has an explicit
+     * pellet item as the rod's stated precursor (see {@code RBMKPelletItem}'s class doc), so each
+     * pellet is first crafted from the matching billet (1:1), then 8 pellets + the empty casing
+     * assemble into the rod (matching the original's 8-billet loading pattern exactly, just with
+     * the pellet as the intermediate unit). The empty casing recipe (zirconium + rod_quad_empty)
+     * is a 1:1 port of the original's own {@code rbmk_fuel_empty} recipe.
+     */
+    /**
+     * Книга Вагонов ({@code book_of_}): «золотой» рецепт из оригинала (B = осколок яйца
+     * белфайра, G = золотой слиток, A = книга). В 1.7.10 он регистрировался только при
+     * включённом LBSM-конфиге; здесь он безусловный, поскольку шуточный рецепт из 8
+     * страниц ({@code page_of_}, предмет не портирован) недоступен — иначе книга была бы
+     * получаема только через лут Красной комнаты.
+     */
+    private void registerBookOfWagons(Consumer<FinishedRecipe> writer) {
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.BOOK_OF_.get())
+                .pattern("BGB")
+                .pattern("GAG")
+                .pattern("BGB")
+                .define('B', ModItems.EGG_BALEFIRE_SHARD.get())
+                .define('G', Items.GOLD_INGOT)
+                .define('A', Items.BOOK)
+                .unlockedBy(getHasName(ModItems.EGG_BALEFIRE_SHARD.get()), has(ModItems.EGG_BALEFIRE_SHARD.get()))
+                .save(writer, recipeId("crafting/book_of_wagons"));
+    }
+
+    private void registerRbmkFuelRecipes(Consumer<FinishedRecipe> writer) {
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.RBMK_FUEL_EMPTY.get())
+                .pattern("ZRZ")
+                .pattern("Z Z")
+                .pattern("ZRZ")
+                .define('Z', ModItems.getIngot(ModIngots.ZIRCONIUM).get())
+                .define('R', ModItems.ROD_QUAD_EMPTY.get())
+                .unlockedBy(getHasName(ModItems.ROD_QUAD_EMPTY.get()), has(ModItems.ROD_QUAD_EMPTY.get()))
+                .save(writer, recipeId("crafting/rbmk_fuel_empty"));
+
+        rbmkPellet(writer, ModItems.RBMK_PELLET_UEU, ModItems.BILLET_URANIUM);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_MEU, ModItems.BILLET_URANIUM_FUEL);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_HEU233, ModItems.BILLET_U233);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_HEU235, ModItems.BILLET_U235);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_UZH, ModItems.BILLET_UZH);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_THMEU, ModItems.BILLET_THORIUM_FUEL);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_LEP, ModItems.BILLET_PLUTONIUM_FUEL);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_MEP, ModItems.BILLET_PU_MIX);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_HEP, ModItems.BILLET_PU239);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_HEP241, ModItems.BILLET_PU241);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_LEA, ModItems.BILLET_AMERICIUM_FUEL);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_MEA, ModItems.BILLET_AM_MIX);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_HEA241, ModItems.BILLET_AM241);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_HEA242, ModItems.BILLET_AM242);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_MEN, ModItems.BILLET_NEPTUNIUM_FUEL);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_HEN, ModItems.BILLET_NEPTUNIUM);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_MOX, ModItems.BILLET_MOX_FUEL);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_LES, ModItems.BILLET_LES);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_MES, ModItems.BILLET_SCHRABIDIUM_FUEL);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_HES, ModItems.BILLET_HES);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_LEAUS, ModItems.BILLET_AUSTRALIUM_LESSER);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_HEAUS, ModItems.BILLET_AUSTRALIUM_GREATER);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_PO210BE, ModItems.BILLET_PO210BE);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_RA226BE, ModItems.BILLET_RA226BE);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_PU238BE, ModItems.BILLET_PU238BE);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_BALEFIRE_GOLD, ModItems.BILLET_BALEFIRE_GOLD);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_FLASHLEAD, ModItems.BILLET_FLASHLEAD);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_ZFB_BISMUTH, ModItems.BILLET_ZFB_BISMUTH);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_ZFB_PU241, ModItems.BILLET_ZFB_PU241);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_ZFB_AM_MIX, ModItems.BILLET_ZFB_AM_MIX);
+
+        rbmkRod(writer, ModItems.RBMK_FUEL_UEU, ModItems.RBMK_PELLET_UEU);
+        rbmkRod(writer, ModItems.RBMK_FUEL_MEU, ModItems.RBMK_PELLET_MEU);
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEU233, ModItems.RBMK_PELLET_HEU233);
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEU235, ModItems.RBMK_PELLET_HEU235);
+        rbmkRod(writer, ModItems.RBMK_FUEL_UZH, ModItems.RBMK_PELLET_UZH);
+        rbmkRod(writer, ModItems.RBMK_FUEL_THMEU, ModItems.RBMK_PELLET_THMEU);
+        rbmkRod(writer, ModItems.RBMK_FUEL_LEP, ModItems.RBMK_PELLET_LEP);
+        rbmkRod(writer, ModItems.RBMK_FUEL_MEP, ModItems.RBMK_PELLET_MEP);
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEP, ModItems.RBMK_PELLET_HEP);
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEP_ALT, ModItems.RBMK_PELLET_HEP);
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEP241, ModItems.RBMK_PELLET_HEP241);
+        rbmkRod(writer, ModItems.RBMK_FUEL_LEA, ModItems.RBMK_PELLET_LEA);
+        rbmkRod(writer, ModItems.RBMK_FUEL_MEA, ModItems.RBMK_PELLET_MEA);
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEA241, ModItems.RBMK_PELLET_HEA241);
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEA242, ModItems.RBMK_PELLET_HEA242);
+        rbmkRod(writer, ModItems.RBMK_FUEL_MEN, ModItems.RBMK_PELLET_MEN);
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEN, ModItems.RBMK_PELLET_HEN);
+        rbmkRod(writer, ModItems.RBMK_FUEL_MOX, ModItems.RBMK_PELLET_MOX);
+        rbmkRod(writer, ModItems.RBMK_FUEL_LES, ModItems.RBMK_PELLET_LES);
+        rbmkRod(writer, ModItems.RBMK_FUEL_MES, ModItems.RBMK_PELLET_MES);
+        rbmkRod(writer, ModItems.RBMK_FUEL_HES, ModItems.RBMK_PELLET_HES);
+        rbmkRod(writer, ModItems.RBMK_FUEL_LEAUS, ModItems.RBMK_PELLET_LEAUS);
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEAUS, ModItems.RBMK_PELLET_HEAUS);
+        rbmkRod(writer, ModItems.RBMK_FUEL_PO210BE, ModItems.RBMK_PELLET_PO210BE);
+        rbmkRod(writer, ModItems.RBMK_FUEL_RA226BE, ModItems.RBMK_PELLET_RA226BE);
+        rbmkRod(writer, ModItems.RBMK_FUEL_PU238BE, ModItems.RBMK_PELLET_PU238BE);
+        rbmkRod(writer, ModItems.RBMK_FUEL_BALEFIRE_GOLD, ModItems.RBMK_PELLET_BALEFIRE_GOLD);
+        rbmkRod(writer, ModItems.RBMK_FUEL_FLASHLEAD, ModItems.RBMK_PELLET_FLASHLEAD);
+        rbmkRod(writer, ModItems.RBMK_FUEL_BALEFIRE, ModItems.RBMK_PELLET_BALEFIRE);
+        rbmkRod(writer, ModItems.RBMK_FUEL_ZFB_BISMUTH, ModItems.RBMK_PELLET_ZFB_BISMUTH);
+        rbmkRod(writer, ModItems.RBMK_FUEL_ZFB_PU241, ModItems.RBMK_PELLET_ZFB_PU241);
+        rbmkRod(writer, ModItems.RBMK_FUEL_ZFB_AM_MIX, ModItems.RBMK_PELLET_ZFB_AM_MIX);
+        rbmkRod(writer, ModItems.RBMK_FUEL_LEU235, ModItems.RBMK_PELLET_LEU235);
+    }
+
+    private void rbmkPellet(Consumer<FinishedRecipe> writer, RegistrySupplier<Item> pellet, RegistrySupplier<Item> billet) {
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, pellet.get())
+                .requires(billet.get())
+                .unlockedBy(getHasName(billet.get()), has(billet.get()))
+                .save(writer, recipeId("crafting/" + pellet.getId().getPath()));
+    }
+
+    private void rbmkRod(Consumer<FinishedRecipe> writer, RegistrySupplier<Item> rod, RegistrySupplier<Item> pellet) {
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, rod.get())
+                .requires(ModItems.RBMK_FUEL_EMPTY.get())
+                .requires(pellet.get(), 8)
+                .unlockedBy(getHasName(pellet.get()), has(pellet.get()))
+                .save(writer, recipeId("crafting/" + rod.getId().getPath()));
     }
 
     //Sentry-Turret + MVP-Munition (Original-Rezept aus WeaponRecipes.java, GUNMETAL.mechanism() -> generisches PART_MECHANISM)
     private void registerTurretRecipes(Consumer<FinishedRecipe> writer) {
+
+        // ── Противогазы (1.7.10 ArmorRecipes) ──────────────────────────────────
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.GAS_MASK.get())
+                .pattern("PPP")
+                .pattern("GPG")
+                .pattern(" F ")
+                .define('P', ModItems.PLATE_STEEL.get())
+                .define('G', Items.GLASS_PANE)
+                .define('F', ModItems.PLATE_IRON.get())
+                .unlockedBy(getHasName(ModItems.PLATE_STEEL.get()), has(ModItems.PLATE_STEEL.get()))
+                .save(writer, recipeId("crafting/gas_mask"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.GAS_MASK_M65.get())
+                .pattern("PPP")
+                .pattern("GPG")
+                .pattern(" F ")
+                .define('P', ModItems.getIngot(ModIngots.RUBBER).get())
+                .define('G', Items.GLASS_PANE)
+                .define('F', ModItems.PLATE_IRON.get())
+                .unlockedBy(getHasName(ModItems.getIngot(ModIngots.RUBBER).get()), has(ModItems.getIngot(ModIngots.RUBBER).get()))
+                .save(writer, recipeId("crafting/gas_mask_m65"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.GAS_MASK_OLDE.get())
+                .pattern("PPP")
+                .pattern("GPG")
+                .pattern(" F ")
+                .define('P', Items.LEATHER)
+                .define('G', Items.GLASS_PANE)
+                .define('F', Items.IRON_INGOT)
+                .unlockedBy(getHasName(Items.LEATHER), has(Items.LEATHER))
+                .save(writer, recipeId("crafting/gas_mask_olde"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.GAS_MASK_MONO.get())
+                .pattern(" P ")
+                .pattern("PPP")
+                .pattern(" F ")
+                .define('P', ModItems.getIngot(ModIngots.RUBBER).get())
+                .define('F', ModItems.PLATE_IRON.get())
+                .unlockedBy(getHasName(ModItems.getIngot(ModIngots.RUBBER).get()), has(ModItems.getIngot(ModIngots.RUBBER).get()))
+                .save(writer, recipeId("crafting/gas_mask_mono"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.MASK_RAG.get())
+                .pattern("RRR")
+                .define('R', ModItems.RAG_DAMP.get())
+                .unlockedBy(getHasName(ModItems.RAG_DAMP.get()), has(ModItems.RAG_DAMP.get()))
+                .save(writer, recipeId("crafting/mask_rag"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.MASK_PISS.get())
+                .pattern("RRR")
+                .define('R', ModItems.RAG_PISS.get())
+                .unlockedBy(getHasName(ModItems.RAG_PISS.get()), has(ModItems.RAG_PISS.get()))
+                .save(writer, recipeId("crafting/mask_piss"));
+
+        // ── Фильтры (1.7.10 ConsumableRecipes) ────────────────────────────────
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.GAS_MASK_FILTER.get())
+                .pattern("I")
+                .pattern("F")
+                .define('I', ModItems.PLATE_IRON.get())
+                .define('F', ModItems.FILTER_COAL.get())
+                .unlockedBy(getHasName(ModItems.FILTER_COAL.get()), has(ModItems.FILTER_COAL.get()))
+                .save(writer, recipeId("crafting/gas_mask_filter"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.GAS_MASK_FILTER_MONO.get())
+                .pattern("ZZZ")
+                .pattern("ZCZ")
+                .pattern("ZZZ")
+                .define('Z', ModItems.NUGGET_ZIRCONIUM.get())
+                .define('C', ModItems.CATALYST_CLAY.get())
+                .unlockedBy(getHasName(ModItems.CATALYST_CLAY.get()), has(ModItems.CATALYST_CLAY.get()))
+                .save(writer, recipeId("crafting/gas_mask_filter_mono"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.GAS_MASK_FILTER_COMBO.get())
+                .pattern("ZCZ")
+                .pattern("CFC")
+                .pattern("ZCZ")
+                .define('Z', ModItems.getIngot(ModIngots.ZIRCONIUM).get())
+                .define('C', ModItems.CATALYST_CLAY.get())
+                .define('F', ModItems.GAS_MASK_FILTER.get())
+                .unlockedBy(getHasName(ModItems.GAS_MASK_FILTER.get()), has(ModItems.GAS_MASK_FILTER.get()))
+                .save(writer, recipeId("crafting/gas_mask_filter_combo"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.GAS_MASK_FILTER_RAG.get())
+                .pattern("I")
+                .pattern("F")
+                .define('I', Items.IRON_INGOT)
+                .define('F', ModItems.RAG_DAMP.get())
+                .unlockedBy(getHasName(ModItems.RAG_DAMP.get()), has(ModItems.RAG_DAMP.get()))
+                .save(writer, recipeId("crafting/gas_mask_filter_rag"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.GAS_MASK_FILTER_PISS.get())
+                .pattern("I")
+                .pattern("F")
+                .define('I', Items.IRON_INGOT)
+                .define('F', ModItems.RAG_PISS.get())
+                .unlockedBy(getHasName(ModItems.RAG_PISS.get()), has(ModItems.RAG_PISS.get()))
+                .save(writer, recipeId("crafting/gas_mask_filter_piss"));
+
+        // ── Крепления противогазов к шлемам (1.7.10 ConsumableRecipes) ────────
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.ATTACHMENT_MASK.get())
+                .pattern("DID")
+                .pattern("IGI")
+                .pattern(" F ")
+                .define('D', ModItems.DUCTTAPE.get())
+                .define('I', ModItems.getIngot(ModIngots.RUBBER).get())
+                .define('G', Items.GLASS_PANE)
+                .define('F', ModItems.PLATE_IRON.get())
+                .unlockedBy(getHasName(ModItems.DUCTTAPE.get()), has(ModItems.DUCTTAPE.get()))
+                .save(writer, recipeId("crafting/attachment_mask"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.ATTACHMENT_MASK_MONO.get())
+                .pattern(" D ")
+                .pattern("DID")
+                .pattern(" F ")
+                .define('D', ModItems.DUCTTAPE.get())
+                .define('I', ModItems.getIngot(ModIngots.RUBBER).get())
+                .define('F', ModItems.PLATE_IRON.get())
+                .unlockedBy(getHasName(ModItems.DUCTTAPE.get()), has(ModItems.DUCTTAPE.get()))
+                .save(writer, recipeId("crafting/attachment_mask_mono"));
+
+        // ── Лекарства (1.7.10 ConsumableRecipes / CraftingManager) ────────────
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.SIOX.get(), 8)
+                .requires(ModItems.getPowders(ModPowders.COAL).get())
+                .requires(ModItems.getPowder(ModIngots.ASBESTOS).get())
+                .requires(Items.GOLD_NUGGET)
+                .unlockedBy(getHasName(Items.GOLD_NUGGET), has(Items.GOLD_NUGGET))
+                .save(writer, recipeId("crafting/siox"));
+
+        // pill_herbal (1.7.10: угольная пыль + ядовитая картошка + адский нарост + наперстянка;
+        // наперстянка в порт не перенесена — опущена)
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.PILL_HERBAL.get())
+                .requires(ModItems.getPowders(ModPowders.COAL).get())
+                .requires(Items.POISONOUS_POTATO)
+                .requires(Items.NETHER_WART)
+                .unlockedBy(getHasName(Items.NETHER_WART), has(Items.NETHER_WART))
+                .save(writer, recipeId("crafting/pill_herbal"));
+
         ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModBlocks.TURRET_SENTRY.get())
                 .pattern("PPL")
                 .pattern(" MD")
@@ -345,6 +604,89 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .define('@', ModItems.COIL_COPPER_TORUS.get())
                 .unlockedBy(getHasName(ModItems.COIL_COPPER_TORUS.get()), has(ModItems.COIL_COPPER_TORUS.get()))
                 .save(writer, recipeId("crafting/motor2"));
+
+        // ══════════ Сеть длинной ЛЭП (порт рецептов CraftingManager 1.7.10) ══════════
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.WIRING_RED_COPPER.get())
+                .pattern("PPP").pattern("PIP").pattern("PPP")
+                .define('P', ModItems.PLATE_STEEL.get())
+                .define('I', ModItems.getIngot(com.hbm_m.item.tags_and_tiers.ModIngots.STEEL).get())
+                .unlockedBy(getHasName(ModItems.PLATE_STEEL.get()), has(ModItems.PLATE_STEEL.get()))
+                .save(writer, recipeId("crafting/wiring_red_copper"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RED_WIRE_COATED.get(), 16)
+                .pattern("WRW").pattern("RIR").pattern("WRW")
+                .define('W', ModItems.PLATE_POLYMER.get())
+                .define('I', ModItems.getIngot(com.hbm_m.item.tags_and_tiers.ModIngots.RED_COPPER).get())
+                .define('R', ModItems.WIRE_RED_COPPER.get())
+                .unlockedBy(getHasName(ModItems.WIRE_RED_COPPER.get()), has(ModItems.WIRE_RED_COPPER.get()))
+                .save(writer, recipeId("crafting/red_wire_coated"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RED_CONNECTOR.get(), 4)
+                .pattern("C").pattern("I").pattern("S")
+                .define('C', ModItems.COIL_COPPER.get())
+                .define('I', ModItems.PLATE_POLYMER.get())
+                .define('S', ModItems.getIngot(com.hbm_m.item.tags_and_tiers.ModIngots.STEEL).get())
+                .unlockedBy(getHasName(ModItems.COIL_COPPER.get()), has(ModItems.COIL_COPPER.get()))
+                .save(writer, recipeId("crafting/red_connector"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RED_CONNECTOR_SUPER.get(), 2)
+                .pattern("CCC").pattern("III").pattern(" S ")
+                .define('C', ModItems.COIL_COPPER.get())
+                .define('I', ModItems.PLATE_POLYMER.get())
+                .define('S', ModItems.getIngot(com.hbm_m.item.tags_and_tiers.ModIngots.ADVANCED_ALLOY).get())
+                .unlockedBy(getHasName(ModItems.COIL_COPPER.get()), has(ModItems.COIL_COPPER.get()))
+                .save(writer, recipeId("crafting/red_connector_super"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RED_PYLON.get(), 4)
+                .pattern("CWC").pattern("PWP").pattern(" S ")
+                .define('C', ModItems.COIL_COPPER.get())
+                .define('W', ItemTags.PLANKS)
+                .define('P', ModItems.PLATE_POLYMER.get())
+                .define('S', Blocks.COBBLESTONE)
+                .unlockedBy(getHasName(ModItems.COIL_COPPER.get()), has(ModItems.COIL_COPPER.get()))
+                .save(writer, recipeId("crafting/red_pylon"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RED_PYLON_STEEL.get(), 4)
+                .pattern("CWC").pattern("PWP").pattern(" S ")
+                .define('C', ModItems.COIL_COPPER.get())
+                .define('W', ModItems.PIPE_STEEL.get())
+                .define('P', ModItems.PLATE_POLYMER.get())
+                .define('S', Blocks.COBBLESTONE)
+                .unlockedBy(getHasName(ModItems.PIPE_STEEL.get()), has(ModItems.PIPE_STEEL.get()))
+                .save(writer, recipeId("crafting/red_pylon_steel"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RED_PYLON_MEDIUM_WOOD.get(), 2)
+                .pattern("CCW").pattern("IIW").pattern("  S")
+                .define('C', ModItems.COIL_COPPER.get())
+                .define('W', ItemTags.PLANKS)
+                .define('I', ModItems.PLATE_POLYMER.get())
+                .define('S', Blocks.COBBLESTONE)
+                .unlockedBy(getHasName(ModItems.COIL_COPPER.get()), has(ModItems.COIL_COPPER.get()))
+                .save(writer, recipeId("crafting/red_pylon_medium_wood"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RED_PYLON_MEDIUM_STEEL.get(), 2)
+                .pattern("CCW").pattern("IIW").pattern("  S")
+                .define('C', ModItems.COIL_COPPER.get())
+                .define('W', ModItems.PIPE_STEEL.get())
+                .define('I', ModItems.PLATE_POLYMER.get())
+                .define('S', Blocks.COBBLESTONE)
+                .unlockedBy(getHasName(ModItems.PIPE_STEEL.get()), has(ModItems.PIPE_STEEL.get()))
+                .save(writer, recipeId("crafting/red_pylon_medium_steel"));
+
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModBlocks.RED_PYLON_MEDIUM_WOOD_TRANSFORMER.get())
+                .requires(ModBlocks.RED_PYLON_MEDIUM_WOOD.get())
+                .requires(ModItems.PLATE_POLYMER.get())
+                .requires(ModItems.COIL_COPPER.get())
+                .unlockedBy(getHasName(ModItems.COIL_COPPER.get()), has(ModItems.COIL_COPPER.get()))
+                .save(writer, recipeId("crafting/red_pylon_medium_wood_transformer"));
+
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModBlocks.RED_PYLON_MEDIUM_STEEL_TRANSFORMER.get())
+                .requires(ModBlocks.RED_PYLON_MEDIUM_STEEL.get())
+                .requires(ModItems.PLATE_POLYMER.get())
+                .requires(ModItems.COIL_COPPER.get())
+                .unlockedBy(getHasName(ModItems.COIL_COPPER.get()), has(ModItems.COIL_COPPER.get()))
+                .save(writer, recipeId("crafting/red_pylon_medium_steel_transformer"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.MOTOR_DESH.get(), 2)
                 .pattern("@$@")

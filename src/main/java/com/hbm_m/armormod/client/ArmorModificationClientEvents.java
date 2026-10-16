@@ -32,7 +32,11 @@ public class ArmorModificationClientEvents {
     //?}
 
     public static void init() {
+        //? if < 1.21.1 {
         ClientTooltipEvent.ITEM.register(ArmorModificationClientEvents::onArmorTooltip);
+        //?} else {
+        /*ClientTooltipEvent.ITEM.register((stack, tooltip, context, flag) -> onArmorTooltip(stack, tooltip, flag));
+        *///?}
     }
 
     private static void onArmorTooltip(ItemStack stack, List<Component> tooltip, TooltipFlag flag) {

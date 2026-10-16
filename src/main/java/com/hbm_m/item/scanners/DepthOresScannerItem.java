@@ -1,5 +1,6 @@
 package com.hbm_m.item.scanners;
 
+import com.hbm_m.item.ITooltipProvider;
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -20,13 +21,13 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 
-public class DepthOresScannerItem extends Item {
+public class DepthOresScannerItem extends Item implements ITooltipProvider {
 
     public DepthOresScannerItem(Properties properties) {
         super(properties.stacksTo(1));
     }
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, @Nullable List<Component> tooltip, TooltipFlag flag) {
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, @Nullable List<Component> tooltip, TooltipFlag flag) {
         if (tooltip == null) return;
         tooltip.add(Component.translatable("tooltip.hbm_m.depth_ores_scanner.scans_chunks").withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.translatable("tooltip.hbm_m.depth_ores_scanner.deep_clusters").withStyle(ChatFormatting.GRAY));

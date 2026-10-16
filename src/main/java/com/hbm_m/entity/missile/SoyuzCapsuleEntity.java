@@ -2,6 +2,7 @@ package com.hbm_m.entity.missile;
 
 import java.util.List;
 
+import com.hbm_m.platform.PlatformHooks;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -58,9 +59,18 @@ public class SoyuzCapsuleEntity extends Entity {
         }
     }
 
+    //? if < 1.21.1 {
+
     @Override
     protected void defineSynchedData() {
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+
+    
+    }
+    *///?}
 
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {
@@ -69,7 +79,7 @@ public class SoyuzCapsuleEntity extends Entity {
             CompoundTag itemTag = list.getCompound(i);
             int slot = itemTag.getInt("Slot");
             if (slot >= 0 && slot < payload.size()) {
-                payload.set(slot, ItemStack.of(itemTag));
+                payload.set(slot, PlatformHooks.itemStackOf(itemTag, PlatformHooks.bestEffortProvider()));
             }
         }
     }
@@ -82,7 +92,7 @@ public class SoyuzCapsuleEntity extends Entity {
             if (!stack.isEmpty()) {
                 CompoundTag itemTag = new CompoundTag();
                 itemTag.putInt("Slot", i);
-                stack.save(itemTag);
+                PlatformHooks.saveItemStack(stack, itemTag, PlatformHooks.bestEffortProvider());
                 list.add(itemTag);
             }
         }

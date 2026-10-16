@@ -1,52 +1,29 @@
 package com.hbm_m.client.render.implementations;
 
-
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
+import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
-import com.hbm_m.block.machines.MachinePressBlock;
 import com.hbm_m.blockentity.machines.MachinePressBlockEntity;
 import com.hbm_m.client.model.PressBakedModel;
 import com.hbm_m.client.render.AbstractPartBasedRenderer;
-import com.hbm_m.client.render.MeshRenderCache;
-import com.hbm_m.client.render.InstancedStaticPartRenderer;
-import com.hbm_m.client.render.LegacyAnimator;
-import com.hbm_m.client.render.ObjModelVboBuilder;
-import com.hbm_m.client.render.RenderDistanceHelper;
-import com.hbm_m.client.render.SingleMeshVboRenderer;
-import com.hbm_m.client.render.culling.OcclusionCullingHelper;
-import com.hbm_m.client.render.shader.IrisRenderBatch;
-import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
-import com.hbm_m.config.ModClothConfig;
-import com.hbm_m.main.MainRegistry;
-import com.mojang.blaze3d.systems.RenderSystem;
+import com.hbm_m.client.render.machine.MachineRenderApi;
+import com.hbm_m.client.render.machine.MachineRenderers;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.phys.AABB;
-//? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
-public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePressBlockEntity, PressBakedModel> {
+
+/**
+ * Пресс на фабрике {@link MachineRenderers}: Base — статическая часть, Head —
+ * анимированная; штамп и заготовка — immediate-хук (предметы, не OBJ).
+ * Геометрия берётся из multipart-модели blockstate (hbm_m:press_loader).
+ */
+public final class MachinePressRenderer {
 
     private static final String HEAD_PART = "Head";
 
@@ -56,139 +33,52 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
     private static final float WORKPIECE_SCALE = 0.55F;
     private static final float STAMP_SCALE = 0.65F;
 
-    private MachinePressVboRenderer gpuRenderer;
-    private PressBakedModel cachedModel;
-
-    private static volatile InstancedStaticPartRenderer instancedHead;
-    private static volatile boolean instancerInitialized = false;
-
-    public MachinePressRenderer(BlockEntityRendererProvider.Context ctx) {}
-
-    @Override
-    protected PressBakedModel getModelType(BakedModel rawModel) {
-        return rawModel instanceof PressBakedModel pressModel ? pressModel : null;
+    public static void register() {
+        MachineRenderers.machine("press", com.hbm_m.blockentity.ModBlockEntities.PRESS_BE.get(),
+                MachinePressBlockEntity.class)
+            .part("Base")
+            .part(HEAD_PART, MachinePressRenderer::animateHead)
+            .hook(MachinePressRenderer::renderItems)
+            .register();
     }
 
-    @Override
-    protected Direction getFacing(MachinePressBlockEntity blockEntity) {
-        return blockEntity.getBlockState().getValue(MachinePressBlock.FACING);
-    }
+    private MachinePressRenderer() {}
 
-    @Override
-    protected void renderParts(MachinePressBlockEntity blockEntity, PressBakedModel model,
-                               LegacyAnimator animator, float partialTick, int packedLight,
-                               int packedOverlay, PoseStack poseStack, MultiBufferSource bufferSource) {
-        BlockPos blockPos = blockEntity.getBlockPos();
-        AABB bounds = blockEntity.getRenderBoundingBox();
+    // ── Анимация головы: смещение по прогрессу прессования ─────────────
 
-        var minecraft = Minecraft.getInstance();
-        if (minecraft.level == null || !OcclusionCullingHelper.shouldRender(blockPos, minecraft.level, bounds)) {
-            return;
-        }
-
-        float staticFade = RenderDistanceHelper.computeStaticFade(blockEntity);
-        if (staticFade < 0) return;
-        SingleMeshVboRenderer.setFadeAlpha(staticFade);
-
-        int blockLight = LightTexture.block(packedLight);
-        int skyLight = LightTexture.sky(packedLight);
-        int dynamicLight = LightTexture.pack(blockLight, skyLight);
-
-        Matrix4f headTransform = renderWithVbo(blockEntity, model, poseStack, dynamicLight, partialTick, blockPos, bufferSource);
-
-        renderStampItem(blockEntity, poseStack, bufferSource, dynamicLight, packedOverlay, headTransform);
-        renderWorkpiece(blockEntity, model, poseStack, bufferSource, dynamicLight, packedOverlay);
-    }
-
-    private Matrix4f renderWithVbo(MachinePressBlockEntity blockEntity, PressBakedModel model,
-                               PoseStack poseStack, int packedLight, float partialTick, BlockPos blockPos,
-                               MultiBufferSource bufferSource) {
-        if (!instancerInitialized) {
-            initializeInstancedHead(model);
-        }
-
-        if (cachedModel != model || gpuRenderer == null) {
-            cachedModel = model;
-            gpuRenderer = new MachinePressVboRenderer(model);
-        }
-
-        // Base рендерится через BlockState/BakedModel (запечён в чанк Embeddium/Sodium)
-
-        float animFade = RenderDistanceHelper.computeAnimatedFade(blockPos);
-        if (animFade < 0) return null;
-        float savedFade = SingleMeshVboRenderer.getFadeAlpha();
-        SingleMeshVboRenderer.setFadeAlpha(Math.min(savedFade, animFade));
-        Matrix4f headTransform = buildHeadTransform(model, blockEntity, partialTick, false);
-        boolean useInstancedHead = instancedHead != null && instancedHead.isInitialized();
-        boolean useBatching = ModClothConfig.useInstancedBatching() && animFade >= 0.99f;
-        boolean inShadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
-        if (useBatching && !inShadowPass && useInstancedHead) {
-            //? if fabric {
-            /*// Под Iris addInstance() сразу рисует через drawSingleWithIrisExtended и ждёт
-            // активный IrisRenderBatch (см. InstancedStaticPartRenderer). Без обёртки —
-            // «standalone» путь к шейдеру пакета, голова то есть то пропадает.
-            if (ShaderCompatibilityDetector.isExternalShaderActive()) {
-                try (IrisRenderBatch ignored = IrisRenderBatch.begin(false, RenderSystem.getProjectionMatrix())) {
-                    poseStack.pushPose();
-                    poseStack.last().pose().mul(headTransform);
-                    instancedHead.addInstance(poseStack, packedLight, blockPos, blockEntity, bufferSource);
-                    poseStack.popPose();
-                }
-            } else {
-                poseStack.pushPose();
-                poseStack.last().pose().mul(headTransform);
-                instancedHead.addInstance(poseStack, packedLight, blockPos, blockEntity, bufferSource);
-                poseStack.popPose();
-            }
-            *///?} else {
-            poseStack.pushPose();
-            poseStack.last().pose().mul(headTransform);
-            instancedHead.addInstance(poseStack, packedLight, blockPos, blockEntity, bufferSource);
-            poseStack.popPose();
-            //?}
-        } else {
-            // Under Iris/Oculus, the per-part extended-shader path is extremely sensitive to
-            // apply()/clear() frequency. When instancing is disabled, we open an IrisRenderBatch
-            // session so the head draw shares one apply()/clear() with other parts in this pass.
-            //? if forge {
-            boolean useIrisBatch = ShaderCompatibilityDetector.isExternalShaderActive() && (!useBatching || inShadowPass);
-            //?}
-            //? if fabric {
-            /*boolean useIrisBatch = ShaderCompatibilityDetector.isExternalShaderActive();
-            *///?}
-            if (useIrisBatch) {
-                try (IrisRenderBatch batch = IrisRenderBatch.begin(inShadowPass, RenderSystem.getProjectionMatrix())) {
-                    gpuRenderer.renderAnimatedHead(poseStack, packedLight, headTransform, blockPos, blockEntity, bufferSource);
-                }
-            } else {
-                gpuRenderer.renderAnimatedHead(poseStack, packedLight, headTransform, blockPos, blockEntity, bufferSource);
-            }
-        }
-        SingleMeshVboRenderer.setFadeAlpha(savedFade);
-        return headTransform;
-    }
-
-    private Matrix4f buildHeadTransform(PressBakedModel model, MachinePressBlockEntity blockEntity,
-                                        float partialTick, boolean freezeAnimation) {
+    private static boolean animateHead(MachinePressBlockEntity blockEntity, float partialTick,
+                                       long gameTime, PoseStack pose) {
+        PressBakedModel model = pressModel(blockEntity);
+        if (model == null) return false;
         Vector3f rest = model.getHeadRestOffset();
         float travel = model.getHeadTravelDistance();
-        float progress = freezeAnimation ? 0.0F : blockEntity.getPressAnimationProgress(partialTick);
+        float progress = blockEntity.getPressAnimationProgress(partialTick);
         float effectiveTravel = Math.max(0.0F, travel - PIXEL);
         float offsetY = rest.y() - (progress * effectiveTravel);
-        return new Matrix4f()
-            .translate(rest.x(), offsetY, rest.z())
-            .scale(HEAD_SCALE, HEAD_SCALE, HEAD_SCALE);
+        pose.translate(rest.x(), offsetY, rest.z());
+        pose.scale(HEAD_SCALE, HEAD_SCALE, HEAD_SCALE);
+        return true;
     }
 
+    private static @Nullable PressBakedModel pressModel(MachinePressBlockEntity blockEntity) {
+        BakedModel raw = Minecraft.getInstance().getBlockRenderer()
+                .getBlockModel(blockEntity.getBlockState());
+        return AbstractPartBasedRenderer.unwrapFabricForwardingModels(raw) instanceof PressBakedModel p ? p : null;
+    }
 
-    private void renderWorkpiece(
-            MachinePressBlockEntity blockEntity,
-            PressBakedModel model,
-            PoseStack poseStack,
-            MultiBufferSource bufferSource,
-            int packedLight,
-            int packedOverlay
-    ) {
+    // ── Хук: штамп на голове + заготовка на столе (предметы) ───────────
+
+    private static void renderItems(MachinePressBlockEntity blockEntity, float partialTick,
+                                    PoseStack poseStack, MultiBufferSource bufferSource,
+                                    int packedLight, int packedOverlay, MachineRenderApi api) {
+        renderWorkpiece(blockEntity, poseStack, bufferSource, packedLight, packedOverlay);
+
+        Matrix4f headTransform = api.partTransform(HEAD_PART);
+        renderStampItem(blockEntity, poseStack, bufferSource, packedLight, packedOverlay, headTransform);
+    }
+
+    private static void renderWorkpiece(MachinePressBlockEntity blockEntity, PoseStack poseStack,
+                                        MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
         ItemStack stack = blockEntity.getMaterialStack();
         if (stack.isEmpty()) {
             return;
@@ -197,7 +87,7 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
         var mc = Minecraft.getInstance();
 
         poseStack.pushPose();
-        // Локальное (0, 0) здесь - центр блока после setupBlockTransform
+        // Локальное (0, 0) здесь - центр блока после блочного трансформа
         poseStack.translate(0.32F, WORKPIECE_HEIGHT, 0.32F);
         poseStack.mulPose(Axis.XP.rotationDegrees(90.0F));
 
@@ -220,14 +110,9 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
         poseStack.popPose();
     }
 
-    private void renderStampItem(
-            MachinePressBlockEntity blockEntity,
-            PoseStack poseStack,
-            MultiBufferSource bufferSource,
-            int packedLight,
-            int packedOverlay,
-            Matrix4f headTransform
-    ) {
+    private static void renderStampItem(MachinePressBlockEntity blockEntity, PoseStack poseStack,
+                                        MultiBufferSource bufferSource, int packedLight, int packedOverlay,
+                                        @Nullable Matrix4f headTransform) {
         ItemStack stamp = blockEntity.getStampStack();
         if (stamp.isEmpty() || headTransform == null) {
             return;
@@ -262,47 +147,4 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
         poseStack.popPose();
         poseStack.popPose();
     }
-
-    private static synchronized void initializeInstancedHead(PressBakedModel model) {
-        if (instancerInitialized) {
-            return;
-        }
-        try {
-            BakedModel headModel = model.getPart(HEAD_PART);
-            instancedHead = null;
-            if (headModel != null) {
-                var headData = ObjModelVboBuilder.buildSinglePart(headModel, HEAD_PART);
-                if (headData != null) {
-                    var headQuads = MeshRenderCache.getOrCompile("press_head", headModel);
-                    InstancedStaticPartRenderer candidate = new InstancedStaticPartRenderer(headData, headQuads);
-                    candidate.setMdiTraceTag("Press/" + HEAD_PART);
-                    if (candidate.isInitialized()) {
-                        instancedHead = candidate;
-                    } else {
-                        MainRegistry.LOGGER.warn("MachinePressRenderer: instancedHead couldn't initialize, using fallback");
-                        candidate.cleanup();
-                    }
-                }
-            }
-        } catch (Exception e) {
-            MainRegistry.LOGGER.error("Failed to initialize press instanced renderer", e);
-            instancedHead = null;
-        } finally {
-            instancerInitialized = true;
-        }
-    }
-
-    public static void flushInstancedBatches(org.joml.Matrix4f projectionMatrix) {
-        if (instancedHead != null) instancedHead.flush(projectionMatrix);
-    }
-
-    public static void clearCaches() {
-        if (instancedHead != null) {
-            instancedHead.cleanup();
-            instancedHead = null;
-        }
-        instancerInitialized = false;
-    }
 }
-
-

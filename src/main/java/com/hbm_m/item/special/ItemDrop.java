@@ -1,5 +1,6 @@
 package com.hbm_m.item.special;
 
+import com.hbm_m.item.ITooltipProvider;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.effect.BlackHoleEntity;
@@ -18,7 +19,7 @@ import java.util.List;
 /**
  * Опасные предметы при падении на землю (порт {@code com.hbm.item.special.ItemDrop}).
  */
-public class ItemDrop extends Item {
+public class ItemDrop extends Item implements ITooltipProvider {
 
     public ItemDrop(Properties properties) {
         super(properties);
@@ -57,8 +58,7 @@ public class ItemDrop extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
 
         if (stack.is(ModItems.PELLET_ANTIMATTER.get())) {
             tooltip.add(Component.literal("Very heavy antimatter cluster."));

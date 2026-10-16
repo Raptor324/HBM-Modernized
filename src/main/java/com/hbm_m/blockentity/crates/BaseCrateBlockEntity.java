@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.machines.crates.CrateValidation;
+import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.platform.ModItemStackHandler;
 
 import net.minecraft.core.BlockPos;
@@ -34,7 +35,7 @@ import net.minecraft.world.phys.Vec3;
  * {@code WeightedRandomChestContent.generateChestContents}; современный эквивалент —
  * JSON лут-таблица, назначаемая {@link com.hbm_m.worldgen.StructureLootProcessor}.</p>
  */
-public abstract class BaseCrateBlockEntity extends BlockEntity implements MenuProvider {
+public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements MenuProvider {
 
     protected final ModItemStackHandler itemHandler;
 
@@ -61,27 +62,29 @@ public abstract class BaseCrateBlockEntity extends BlockEntity implements MenuPr
 
     // Forge item handler capabilities removed for Fabric compilation.
 
+    
+    // (устраняет вложенный stonecutter-баг в load())
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         if (this.lootTable != null) {
             tag.putString("LootTable", this.lootTable.toString());
             if (this.lootTableSeed != 0L) {
                 tag.putLong("LootTableSeed", this.lootTableSeed);
             }
         }
-        tag.put("inventory", itemHandler.serializeNBT());
+        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(itemHandler, registries));
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         if (tag.contains("LootTable", 8)) {
             this.lootTable = ResourceLocation.parse(tag.getString("LootTable"));
             this.lootTableSeed = tag.getLong("LootTableSeed");
         }
         if (tag.contains("inventory")) {
-            itemHandler.deserializeNBT(tag.getCompound("inventory"));
+            com.hbm_m.platform.ItemStackSerialization.deserialize(itemHandler, tag.getCompound("inventory"), registries);
         }
     }
 
@@ -95,11 +98,23 @@ public abstract class BaseCrateBlockEntity extends BlockEntity implements MenuPr
     }
 
     public void saveToItem(ItemStack stack) {
+        //? if < 1.21.1 {
         CompoundTag tag = new CompoundTag();
         this.saveAdditional(tag);
         if (!tag.isEmpty()) {
             stack.addTagElement("BlockEntityTag", tag);
         }
+        //?} else {
+        /*// 1.21.1: addTagElement/saveAdditional(CompoundTag) удалены — сохраняем через DataComponents.
+        // level.holderLookup() без аргументов и HolderLookup.direct() удалены в 1.21.1 —
+        // берём registryAccess() из level (this.level всегда доступен у размещённого BE).
+        net.minecraft.core.HolderLookup.Provider registries = this.level.registryAccess();
+        CompoundTag tag = this.saveWithoutMetadata(registries);
+        if (!tag.isEmpty()) {
+            stack.set(net.minecraft.core.component.DataComponents.BLOCK_ENTITY_DATA,
+                    net.minecraft.world.item.component.CustomData.of(tag));
+        }
+        *///?}
     }
 
     public ModItemStackHandler getItemHandler() {
@@ -122,7 +137,13 @@ public abstract class BaseCrateBlockEntity extends BlockEntity implements MenuPr
         if (this.level == null || this.level.isClientSide() || !(this.level instanceof ServerLevel serverLevel)) {
             return;
         }
+        //? if < 1.21.1 {
         LootTable table = serverLevel.getServer().getLootData().getLootTable(this.lootTable);
+        //?} else {
+        /*// 1.21.1: getLootData() → reloadableRegistries(); ключ лут-таблицы теперь ResourceKey<LootTable>.
+        LootTable table = serverLevel.getServer().reloadableRegistries().getLootTable(
+                net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.LOOT_TABLE, this.lootTable));
+        *///?}
         if (table == LootTable.EMPTY) {
             // Таблица не найдена — очищаем ссылку, чтобы не пытаться повторно.
             this.lootTable = null;

@@ -1,5 +1,6 @@
 package com.hbm_m.item.tool;
 
+import com.hbm_m.item.ITooltipProvider;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -29,7 +30,7 @@ import net.minecraft.world.level.Level;
  * <p>ПКМ — перебор доступных эффектов (сейчас только скелетонизация, список расширяем).
  * ЛКМ по сущности — ваншот удар с применением выбранного эффекта к трупу.</p>
  */
-public class ConfettiTesterItem extends Item {
+public class ConfettiTesterItem extends Item implements ITooltipProvider {
 
     private static final String NBT_EFFECT = "ConfettiEffect";
 
@@ -98,7 +99,7 @@ public class ConfettiTesterItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         EffectEntry effect = EFFECTS[getEffectIndex(stack)];
         tooltip.add(Component.literal("Effect: " + effect.name).withStyle(ChatFormatting.YELLOW));
         tooltip.add(Component.literal("RMB: cycle effect").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));

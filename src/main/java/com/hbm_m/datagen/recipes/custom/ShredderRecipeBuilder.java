@@ -1,69 +1,54 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import java.util.function.Consumer;
-
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-// Билдер рецептов для ShredderRecipe.
-// Позволяет легко создавать рецепты для шреддера (один вход -> один выход).
-// Используется в классе генерации данных ModRecipeProvider.
 import com.google.gson.JsonObject;
 import com.hbm_m.recipe.ShredderRecipe;
 
-import net.minecraft.advancements.Advancement;
-import net.minecraft.advancements.CriterionTriggerInstance;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.data.recipes.FinishedRecipe;
-import net.minecraft.data.recipes.RecipeBuilder;
-import net.minecraft.resources.ResourceLocation;
+import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
-public class ShredderRecipeBuilder implements RecipeBuilder {
+public class ShredderRecipeBuilder extends BaseRecipeBuilder<ShredderRecipeBuilder> {
+
     private final Ingredient input;
     private final ItemStack output;
-    private final Advancement.Builder advancement = Advancement.Builder.advancement();
 
     private ShredderRecipeBuilder(Ingredient input, ItemStack output) {
         this.input = input;
         this.output = output;
     }
 
-    /**
-     * Создает новый билдер рецепта для шреддера.
-     * @param input Ингредиент (вход)
-     * @param output Результат (выход)
-     */
     public static ShredderRecipeBuilder shredderRecipe(Ingredient input, ItemStack output) {
         return new ShredderRecipeBuilder(input, output);
     }
 
-    /**
-     * Удобный метод для создания рецепта с одним предметом на входе.
-     */
     public static ShredderRecipeBuilder shredderRecipe(Item input, ItemStack output) {
         return new ShredderRecipeBuilder(Ingredient.of(input), output);
     }
 
-    /**
-     * Удобный метод для создания рецепта с одним предметом на входе и выходе.
-     */
     public static ShredderRecipeBuilder shredderRecipe(Item input, Item output, int count) {
         return new ShredderRecipeBuilder(Ingredient.of(input), new ItemStack(output, count));
     }
 
-    @Override
-    public RecipeBuilder unlockedBy(@NotNull String pCriterionName, @NotNull CriterionTriggerInstance pCriterionTrigger) {
-        this.advancement.addCriterion(pCriterionName, pCriterionTrigger);
-        return this;
+    /**
+     * Ленивый вариант: вход и выход передаются как {@link RegistrySupplier} (а не {@code .get()}).
+     * {@code .get()} вызывается только здесь, в момент постройки рецепта; в datagen-время регистры
+     * уже заполнены, поэтому это безопасно даже на 1.21.1-neoforge (предмет resolвится один раз
+     * на стороне билдера, а не остаётся «голым» в коде генератора).
+     */
+    public static ShredderRecipeBuilder shredderRecipe(RegistrySupplier<Item> input, RegistrySupplier<Item> output, int count) {
+        return new ShredderRecipeBuilder(Ingredient.of(input.get()), new ItemStack(output.get(), count));
     }
 
-    @Override
-    public RecipeBuilder group(@Nullable String pGroupName) {
-        return this;
+    /** Ленивый выход: {@code output.get()} resolutions задержан до момента постройки датагеном JSON. */
+    public static ShredderRecipeBuilder shredderRecipe(Item input, RegistrySupplier<Item> output, int count) {
+        return new ShredderRecipeBuilder(Ingredient.of(input), new ItemStack(output.get(), count));
+    }
+
+    /** Ленивый выход с одной единицей (короткая форма для {@code shredder_recipe(item -> 1 powder)}). */
+    public static ShredderRecipeBuilder shredderRecipe(Item input, RegistrySupplier<Item> output) {
+        return shredderRecipe(input, output, 1);
     }
 
     @Override
@@ -72,68 +57,15 @@ public class ShredderRecipeBuilder implements RecipeBuilder {
     }
 
     @Override
-    public void save(@NotNull Consumer<FinishedRecipe> pFinishedRecipeConsumer, @NotNull ResourceLocation pRecipeId) {
-        pFinishedRecipeConsumer.accept(new Result(pRecipeId, this));
+    protected void serializeRecipeData(JsonObject json) {
+        json.add("ingredient", this.input.toJson());
+        // Унифицированная сериализация ItemStack -> { "item", "count"? } (count только если > 1).
+        json.add("result", stackToJson(this.output));
     }
 
-    /**
-     * Overrides the vanilla {@code RecipeBuilder.save(Consumer, String)} default, which resolves a
-     * bare path string to the {@code minecraft} namespace (via {@code new ResourceLocation(path)}).
-     * Every shredder recipe must live under {@code hbm_m:...} instead.
-     */
     @Override
-    public void save(@NotNull Consumer<FinishedRecipe> pFinishedRecipeConsumer, @NotNull String pPath) {
-        save(pFinishedRecipeConsumer, ResourceLocation.fromNamespaceAndPath("hbm_m", pPath));
-    }
-
-    // Внутренний класс для сериализации
-    private static class Result implements FinishedRecipe {
-
-        private final ResourceLocation id;
-        private final ShredderRecipeBuilder builder;
-
-        public Result(ResourceLocation id, ShredderRecipeBuilder builder) {
-            this.id = id;
-            this.builder = builder;
-        }
-
-        @Override
-        public void serializeRecipeData(@NotNull JsonObject pJson) {
-            // Сериализуем входной ингредиент
-            pJson.add("ingredient", this.builder.input.toJson());
-
-            // Сериализуем выходной предмет
-            JsonObject resultJson = new JsonObject();
-            resultJson.addProperty("item", BuiltInRegistries.ITEM.getKey(this.builder.output.getItem()).toString());
-            if (this.builder.output.getCount() > 1) {
-                resultJson.addProperty("count", this.builder.output.getCount());
-            }
-            pJson.add("result", resultJson);
-        }
-
-        @Override
-        public ResourceLocation getId() {
-            return this.id;
-        }
-
-        @Override
-        public RecipeSerializer<?> getType() {
-            return ShredderRecipe.Serializer.INSTANCE;
-        }
-
-        @Nullable
-        @Override
-        public JsonObject serializeAdvancement() {
-            // Всегда возвращаем null, так как мы не хотим генерировать ачивку
-            return null;
-        }
-
-        @Nullable
-        @Override
-        public ResourceLocation getAdvancementId() {
-            // Всегда возвращаем null
-            return null;
-        }
+    protected RecipeSerializer<?> getType() {
+        return ShredderRecipe.Serializer.INSTANCE;
     }
 }
 //?}

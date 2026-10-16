@@ -9,15 +9,6 @@ import org.lwjgl.opengl.GL33;
 import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.glfw.GLFW;
 
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
-
 /**
  * Static GL compatibility helpers for instanced rendering.
  * <p>
@@ -25,11 +16,14 @@ import net.fabricmc.api.Environment;
  * renderer focused on batching logic. All methods are stateless and
  * thread-safe (they only query/call GL entry points).
  */
+
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public final class InstancedGlCompat {
 
     private InstancedGlCompat() {}

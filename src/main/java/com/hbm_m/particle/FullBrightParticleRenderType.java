@@ -34,6 +34,7 @@ public class FullBrightParticleRenderType implements ParticleRenderType {
         return "full_bright_particle";
     }
 
+    //? if < 1.21.1 {
     @Override
     public void begin(BufferBuilder buffer, TextureManager textureManager) {
         savedFogStart = RenderSystem.getShaderFogStart();
@@ -51,6 +52,26 @@ public class FullBrightParticleRenderType implements ParticleRenderType {
 
         IrisBufferHelper.beginWithoutExtending(buffer, VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
     }
+    //?} else {
+    /*// 1.21.1: ParticleRenderType.begin(Tesselator, TextureManager) возвращает BufferBuilder.
+    @Override
+    public BufferBuilder begin(Tesselator tesselator, TextureManager textureManager) {
+        savedFogStart = RenderSystem.getShaderFogStart();
+        savedFogEnd = RenderSystem.getShaderFogEnd();
+
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.depthMask(false);
+        RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
+        RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_PARTICLES);
+        disableParticleFog();
+        RenderSystem.enableDepthTest();
+        RenderSystem.depthFunc(515);
+        RenderSystem.disableCull();
+
+        return tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+    }
+    *///?}
 
     private static void disableParticleFog() {
         RenderSystem.setShaderFogStart(NO_FOG_START);
@@ -70,6 +91,7 @@ public class FullBrightParticleRenderType implements ParticleRenderType {
         }
     }
 
+    //? if < 1.21.1 {
     @Override
     public void end(Tesselator tesselator) {
         tesselator.end();
@@ -80,4 +102,7 @@ public class FullBrightParticleRenderType implements ParticleRenderType {
         RenderSystem.setShaderFogStart(savedFogStart);
         RenderSystem.setShaderFogEnd(savedFogEnd);
     }
+    //?}
+    // 1.21.1: ParticleRenderType.end(Tesselator) удалён из интерфейса — сброс RenderSystem-стейта
+    // выполняет движок после flush. Паритет с LongRangeParticleRenderType (else-ветки для end() нет).
 }

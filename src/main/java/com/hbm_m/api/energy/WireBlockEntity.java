@@ -1,7 +1,5 @@
 package com.hbm_m.api.energy;
 
-import com.hbm_m.interfaces.IEnergyConnector;
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -12,6 +10,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import com.hbm_m.blockentity.ModBlockEntities;
 //? if forge {
 import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.interfaces.IEnergyConnector;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import org.jetbrains.annotations.NotNull;
@@ -20,43 +19,39 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * BlockEntity для провода.
- * Это "тупой" коннектор - не хранит энергию, только соединяет блоки в сеть.
+ * Проводник энергосети: создает узел (PowerNode) в UniNodespace, энергии не хранит.
+ * Аналог TileEntityCableBaseNT из 1.7.10.
  */
-public class WireBlockEntity extends BlockEntity implements IEnergyConnector {
+public class WireBlockEntity extends BlockEntity implements PowerConductor {
 
     //? if forge {
     private final LazyOptional<IEnergyConnector> hbmConnector = LazyOptional.of(() -> this);
-     //?}
+    //?}
 
     public WireBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.WIRE_BE.get(), pos, state);
     }
 
-    /**
-     * Периодически проверяем, есть ли мы в сети.
-     * Это нужно на случай если провод был размещён раньше соседних машин.
-     */
     public static void tick(Level level, BlockPos pos, BlockState state, WireBlockEntity entity) {
         if (level.isClientSide) return;
 
         ServerLevel serverLevel = (ServerLevel) level;
-        EnergyNetworkManager manager = EnergyNetworkManager.get(serverLevel);
-
-        // ПРОВЕРКА КАЖДЫЙ ТИК (для надежности, но можно оптимизировать boolean флагом initialized)
-        // hasNode - быстрая операция (проверка HashMap), так что это не ударит по TPS.
-        if (!manager.hasNode(pos)) {
-            manager.addNode(pos);
+        if (Nodespace.getNode(serverLevel, pos) == null) {
+            Nodespace.createNode(serverLevel, entity.createNode(pos));
         }
     }
 
-    // --- IEnergyConnector ---
+    private void destroyOwnNode() {
+        if (this.level != null && !this.level.isClientSide) {
+            Nodespace.destroyNode((ServerLevel) this.level, this.getBlockPos());
+        }
+    }
+
     @Override
     public boolean canConnectEnergy(Direction side) {
-        // Провод соединяется со всех сторон
         return true;
     }
 
-    // --- Capabilities ---
     //? if forge {
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
@@ -75,30 +70,21 @@ public class WireBlockEntity extends BlockEntity implements IEnergyConnector {
     @Override
     public void onChunkUnloaded() {
         super.onChunkUnloaded();
-        // [ВАЖНО!] Также сообщаем при выгрузке чанка
-        if (this.level != null && !this.level.isClientSide) {
-            EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
-        }
+        destroyOwnNode();
     }
     //?}
 
     @Override
     public void setRemoved() {
         super.setRemoved();
-        // [ВАЖНО!] Сообщаем сети, что мы удалены
-        if (this.level != null && !this.level.isClientSide) {
-            EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
-        }
+        destroyOwnNode();
         //? if forge {
         hbmConnector.invalidate();
-         //?}
+        //?}
     }
 
-    // И при загрузке/установке блока:
     @Override
     public void setLevel(Level pLevel) {
         super.setLevel(pLevel);
-
     }
 }
-

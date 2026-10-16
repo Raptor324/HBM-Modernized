@@ -4,8 +4,8 @@ import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineSolderingStationMenu;
-import com.hbm_m.inventory.recipes.SolderingRecipes;
-import com.hbm_m.inventory.recipes.SolderingRecipes.SolderingRecipe;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.recipe.SolderingRecipe;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -14,6 +14,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -81,15 +82,14 @@ public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity {
             if (got > 0) be.energy += got;
         });
 
-        var recipe = SolderingRecipes.getRecipe(
-                be.inventory.getStackInSlot(SLOT_TOP0), be.inventory.getStackInSlot(SLOT_TOP1), be.inventory.getStackInSlot(SLOT_TOP2),
-                be.inventory.getStackInSlot(SLOT_PCB0), be.inventory.getStackInSlot(SLOT_PCB1),
-                be.inventory.getStackInSlot(SLOT_SOLDER));
+        // Data-driven поиск рецепта: итерируем SolderingRecipe из RecipeManager (заменяет статику SolderingRecipes).
+        SolderingRecipe recipe = findSolderingRecipe(level, be);
         if (recipe != null) {
-            be.processTime  = recipe.duration;
-            be.consumption  = recipe.consumption;
+            be.processTime  = recipe.getDuration();
+            be.consumption  = recipe.getConsumption();
         }
-        boolean hasRecipe  = recipe != null && (recipe.fluid == null || recipe.fluid.satisfiedBy(be.tank));
+        // matchesFluid на SolderingRecipe заменяет прежний recipe.fluid.satisfiedBy(tank) (FluidStack-based).
+        boolean hasRecipe  = recipe != null && recipe.matchesFluid(be.tank);
         boolean canProcess = hasRecipe && be.canProcess();
 
         if (canProcess) {
@@ -99,12 +99,13 @@ public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity {
                 be.progress = 0;
                 be.consumeItems(recipe);
                 ItemStack out = be.inventory.getStackInSlot(SLOT_OUT);
+                ItemStack recipeOut = recipe.getOutput();
                 if (out.isEmpty()) {
-                    be.inventory.setStackInSlot(SLOT_OUT, recipe.output.copy());
+                    be.inventory.setStackInSlot(SLOT_OUT, recipeOut.copy());
                 } else {
-                    out.grow(recipe.output.getCount());
+                    out.grow(recipeOut.getCount());
                 }
-                if (recipe.fluid != null) recipe.fluid.consume(be.tank);
+                recipe.consumeFluid(be.tank); // no-op, если требования по жидкости нет
                 be.setChanged();
             }
         } else {
@@ -115,18 +116,35 @@ public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity {
     }
 
     private void consumeItems(SolderingRecipe recipe) {
-        consumeGroup(recipe.toppings, SLOT_TOP0, SLOT_TOP2 + 1);
-        consumeGroup(recipe.pcb,      SLOT_PCB0, SLOT_PCB1 + 1);
-        consumeGroup(recipe.solder,   SLOT_SOLDER, SLOT_SOLDER + 1);
+        // Поглощаем по одной группе за раз: toppings (3 слота), pcb (2), solder (1).
+        consumeGroup(recipe.getToppings(), recipe.getToppingCounts(), SLOT_TOP0, SLOT_TOP2 + 1);
+        consumeGroup(recipe.getPcb(),      recipe.getPcbCounts(),      SLOT_PCB0, SLOT_PCB1 + 1);
+        consumeGroup(recipe.getSolder(),   recipe.getSolderCounts(),   SLOT_SOLDER, SLOT_SOLDER + 1);
     }
 
-    private void consumeGroup(SolderingRecipes.SolderingIngredient[] required, int from, int to) {
-        for (SolderingRecipes.SolderingIngredient ing : required) {
+    private void consumeGroup(Ingredient[] required, int[] counts, int from, int to) {
+        for (int g = 0; g < required.length; g++) {
+            Ingredient ing = required[g];
+            int need = counts[g];
+            // Перебираем слоты группы, ищем стак, проходящий ingredient.test() с нужным countом.
             for (int i = from; i < to; i++) {
                 ItemStack s = inventory.getStackInSlot(i);
-                if (ing.matches(s)) { s.shrink(ing.count()); break; }
+                if (ing.test(s) && s.getCount() >= need) { s.shrink(need); break; }
             }
         }
+    }
+
+    /** Data-driven поиск SolderingRecipe по 6 слотам машины (заменяет статический SolderingRecipes.getRecipe). */
+    @org.jetbrains.annotations.Nullable
+    private static SolderingRecipe findSolderingRecipe(Level level, MachineSolderingStationBlockEntity be) {
+        for (SolderingRecipe recipe : RecipeHooks.getAllRecipes(level, SolderingRecipe.Type.INSTANCE)) {
+            if (recipe.matches(be.inventory.getStackInSlot(SLOT_TOP0), be.inventory.getStackInSlot(SLOT_TOP1), be.inventory.getStackInSlot(SLOT_TOP2),
+                              be.inventory.getStackInSlot(SLOT_PCB0), be.inventory.getStackInSlot(SLOT_PCB1),
+                              be.inventory.getStackInSlot(SLOT_SOLDER))) {
+                return recipe;
+            }
+        }
+        return null;
     }
 
     public boolean canProcess() {
@@ -153,19 +171,32 @@ public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity {
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == SLOT_OUT) return false;
+        Level level = getLevel();
+        if (level == null) return true; // пока нет level — позволяем всё (поведение при отсутствии рецептов).
+        Ingredient[] group;
         if (slot < 3) {
-            if (SolderingRecipes.toppings.isEmpty()) return true;
-            return SolderingRecipes.toppings.stream().anyMatch(i -> i.test(stack));
+            group = collectGroup(level, SolderingRecipe::getToppings);
+        } else if (slot < SLOT_SOLDER) {
+            group = collectGroup(level, SolderingRecipe::getPcb);
+        } else if (slot == SLOT_SOLDER) {
+            group = collectGroup(level, SolderingRecipe::getSolder);
+        } else {
+            return true;
         }
-        if (slot < SLOT_SOLDER) {
-            if (SolderingRecipes.pcb.isEmpty()) return true;
-            return SolderingRecipes.pcb.stream().anyMatch(i -> i.test(stack));
+        if (group.length == 0) return true; // нет рецептов на эту группу — позволяем всё (как в оригинале).
+        for (Ingredient ing : group) {
+            if (ing.test(stack)) return true;
         }
-        if (slot == SLOT_SOLDER) {
-            if (SolderingRecipes.solder.isEmpty()) return true;
-            return SolderingRecipes.solder.stream().anyMatch(i -> i.test(stack));
+        return false;
+    }
+
+    /** Собирает все ingredient-ы заданной группы по всем data-driven рецептам (заменяет SolderingRecipes.toppings/pcb/solder). */
+    private static Ingredient[] collectGroup(Level level, java.util.function.Function<SolderingRecipe, Ingredient[]> pick) {
+        java.util.List<Ingredient> out = new java.util.ArrayList<>();
+        for (SolderingRecipe recipe : RecipeHooks.getAllRecipes(level, SolderingRecipe.Type.INSTANCE)) {
+            for (Ingredient ing : pick.apply(recipe)) out.add(ing);
         }
-        return true;
+        return out.toArray(new Ingredient[0]);
     }
 
     // ─── MenuProvider ─────────────────────────────────────────────────────────
@@ -183,8 +214,8 @@ public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity {
     // ─── NBT ──────────────────────────────────────────────────────────────────
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("progress",    progress);
         tag.putInt("processTime", processTime);
         tag.putBoolean("collision", collisionPrevention);
@@ -192,8 +223,8 @@ public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity {
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         progress            = tag.getInt("progress");
         processTime         = tag.getInt("processTime");
         if (processTime <= 0) processTime = 200;

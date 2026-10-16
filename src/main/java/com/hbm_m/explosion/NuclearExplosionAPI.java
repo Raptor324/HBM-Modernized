@@ -124,4 +124,28 @@ public final class NuclearExplosionAPI {
         }
     }
 
+    /**
+     * Запуск большой ядерной бомбы с явным радиусом (Gadget/Boy/Mike/Tsar).
+     */
+    public static EntityNukeExplosionMK5 startLargeNuke(Level level, double x, double y, double z, int radius) {
+        NuclearExplosionConfig cfg = NuclearExplosionConfig.builder(Math.max(1, radius))
+                .fallout(true)
+                .radiation(true)
+                .mushroomType(0)
+                .build();
+        return start(level, x, y, z, cfg);
+    }
+
+    /**
+     * Запуск большого взрыва БЕЗ радиации и осадков (мина N2).
+     */
+    public static EntityNukeExplosionMK5 startLargeNukeNoRad(Level level, double x, double y, double z, int radius) {
+        NuclearExplosionConfig cfg = NuclearExplosionConfig.builder(Math.max(1, radius))
+                .fallout(false)
+                .radiation(false)
+                .mushroomType(0)
+                .build();
+        return start(level, x, y, z, cfg);
+    }
+
 }

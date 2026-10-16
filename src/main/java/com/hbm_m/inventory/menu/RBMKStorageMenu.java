@@ -36,21 +36,23 @@ public class RBMKStorageMenu extends AbstractContainerMenu {
         for (int i = 0; i < RBMKStorageBlockEntity.SLOTS; i++)
             container.setItem(i, be.slots[i].copy());
 
-        // 12 slots in 2 rows of 6, centred
-        for (int i = 0; i < 12; i++) {
-            int row = i / 6;
-            int col = i % 6;
-            addSlot(new Slot(container, i, 8 + col * 18, 18 + row * 18) {
-                @Override public boolean mayPlace(ItemStack s) { return s.getItem() instanceof RBMKRodItem; }
-            });
+        // 12 slots in a 3-row x 4-column grid (1:1 port of ContainerRBMKStorage),
+        // matching the vertical-column layout baked into gui_rbmk_storage.png.
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 4; j++) {
+                int index = i + j * 3;
+                addSlot(new Slot(container, index, 32 + 32 * j, 29 + 16 * i) {
+                    @Override public boolean mayPlace(ItemStack s) { return s.getItem() instanceof RBMKRodItem; }
+                });
+            }
         }
 
         // Player inventory (3 rows) + hotbar
         for (int row = 0; row < 3; row++)
             for (int col = 0; col < 9; col++)
-                addSlot(new Slot(inv, col + row * 9 + 9, 8 + col * 18, 76 + row * 18));
+                addSlot(new Slot(inv, col + row * 9 + 9, 8 + col * 18, 104 + row * 18));
         for (int col = 0; col < 9; col++)
-            addSlot(new Slot(inv, col, 8 + col * 18, 134));
+            addSlot(new Slot(inv, col, 8 + col * 18, 162));
     }
 
     private static RBMKStorageBlockEntity getBlockEntity(Inventory inv, FriendlyByteBuf buf) {

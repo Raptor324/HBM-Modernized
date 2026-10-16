@@ -1,4 +1,5 @@
 package com.hbm_m.item.grenades_and_activators;
+import com.hbm_m.item.ITooltipProvider;
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -22,7 +23,7 @@ import net.minecraft.world.level.Level;
 
 import dev.architectury.registry.registries.RegistrySupplier;
 
-public class GrenadeItem extends Item {
+public class GrenadeItem extends Item implements ITooltipProvider {
     
     private final GrenadeType grenadeType;
     private final RegistrySupplier<EntityType<GrenadeProjectileEntity>> entityType;
@@ -33,8 +34,7 @@ public class GrenadeItem extends Item {
         this.entityType = entityType;
     }
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
 
         // Общая первая строка для всех гранат
         tooltip.add(Component.translatable("tooltip.hbm_m.grenade.common.line1")

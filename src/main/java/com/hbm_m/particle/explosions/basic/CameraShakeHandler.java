@@ -1,7 +1,25 @@
 package com.hbm_m.particle.explosions.basic;
 
+import com.hbm_m.lib.RefStrings;
+
 import net.minecraft.client.Minecraft;
 import dev.architectury.event.events.client.ClientTickEvent;
+
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.ViewportEvent;
+import net.minecraftforge.client.event.RenderGuiEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.ViewportEvent;
+import net.neoforged.neoforge.client.event.RenderGuiEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+*///?}
 
 /**
  *  ОБРАБОТЧИК ТРЯСКИ КАМЕРЫ И GUI
@@ -11,10 +29,8 @@ import dev.architectury.event.events.client.ClientTickEvent;
  */
 public class CameraShakeHandler {
 
-    // ┌─────────────────────────────────────────────────────────────┐
-    // │ ПАРАМЕТРЫ ТРЯСКИ                                            │
-    // └─────────────────────────────────────────────────────────────┘
 
+    // ПАРАМЕТРЫ ТРЯСКИ
     private static float shakeIntensity = 0.0F;
     private static int shakeDuration = 0;
 
@@ -28,7 +44,6 @@ public class CameraShakeHandler {
     private static float targetOffsetY = 0.0F;
     private static float targetOffsetRoll = 0.0F;
 
-    //  УВЕЛИЧЕНА АМПЛИТУДА: было 5.0F, стало 12.0F
     private static final float VISUAL_MULTIPLIER = 12.0F;
 
     //  МНОЖИТЕЛЬ ДЛЯ GUI (меньше чем для камеры, чтобы не было слишком сильно)
@@ -129,19 +144,20 @@ public class CameraShakeHandler {
 
     // --- Loader-specific hooks ---
     //
-    // Forge provides direct camera+GUI hooks via events (ViewportEvent / RenderGuiEvent).
-    // On Fabric these hooks are not available here; we keep the core shake state/tick
-    // loader-agnostic so it can be driven by client tick, and optionally integrated
-    // via mixins or platform hooks later.
+    // Forge/NeoForge: direct camera + GUI hooks via ViewportEvent / RenderGuiEvent.
 
     //? if forge {
-    @net.minecraftforge.fml.common.Mod.EventBusSubscriber(
-            modid = com.hbm_m.lib.RefStrings.MODID,
-            value = net.minecraftforge.api.distmarker.Dist.CLIENT
-    )
-    public static final class ForgeHooks {
-        @net.minecraftforge.eventbus.api.SubscribeEvent
-        public static void onCameraSetup(net.minecraftforge.client.event.ViewportEvent.ComputeCameraAngles event) {
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    @Mod.EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT)
+    //?} elif neoforge {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    @EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT)
+    *///?}
+    public static final class ShakeHooks {
+
+        /** Применяет смещения yaw/pitch/roll камеры при активной тряске. */
+        @SubscribeEvent
+        public static void onCameraSetup(ViewportEvent.ComputeCameraAngles event) {
             if (shakeIntensity > 0.0F || Math.abs(shakeOffsetX) > 0.01F) {
                 event.setYaw(event.getYaw() + shakeOffsetX);
                 event.setPitch(event.getPitch() + shakeOffsetY);
@@ -149,10 +165,11 @@ public class CameraShakeHandler {
             }
         }
 
-        @net.minecraftforge.eventbus.api.SubscribeEvent(priority = net.minecraftforge.eventbus.api.EventPriority.HIGHEST)
-        public static void onRenderGuiPre(net.minecraftforge.client.event.RenderGuiEvent.Pre event) {
+        /** HIGHEST: push PoseStack и сдвиг/наклон GUI до отрисовки элементов. */
+        @SubscribeEvent(priority = EventPriority.HIGHEST)
+        public static void onRenderGuiPre(RenderGuiEvent.Pre event) {
             if (shakeIntensity > 0.0F || Math.abs(shakeOffsetX) > 0.01F) {
-                com.mojang.blaze3d.vertex.PoseStack poseStack = event.getGuiGraphics().pose();
+                var poseStack = event.getGuiGraphics().pose();
                 poseStack.pushPose();
 
                 float guiOffsetX = shakeOffsetX * GUI_MULTIPLIER;
@@ -170,13 +187,13 @@ public class CameraShakeHandler {
             }
         }
 
-        @net.minecraftforge.eventbus.api.SubscribeEvent(priority = net.minecraftforge.eventbus.api.EventPriority.LOWEST)
-        public static void onRenderGuiPost(net.minecraftforge.client.event.RenderGuiEvent.Post event) {
+        /** LOWEST: pop PoseStack после отрисовки всех элементов GUI. */
+        @SubscribeEvent(priority = EventPriority.LOWEST)
+        public static void onRenderGuiPost(RenderGuiEvent.Post event) {
             if (shakeIntensity > 0.0F || Math.abs(shakeOffsetX) > 0.01F) {
-                com.mojang.blaze3d.vertex.PoseStack poseStack = event.getGuiGraphics().pose();
+                var poseStack = event.getGuiGraphics().pose();
                 poseStack.popPose();
             }
         }
     }
-    //?}
 }

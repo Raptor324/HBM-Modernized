@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.blockentity.machines.MachineCrucibleBlockEntity;
 import com.hbm_m.inventory.menu.MachineCrucibleMenu;
@@ -88,7 +89,7 @@ public class GUIMachineCrucible extends GuiInfoScreen<MachineCrucibleMenu> {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float delta) {
-        this.renderBackground(g);
+        GuiCompat.renderBackground(this, g, mouseX, mouseY, delta);
         super.render(g, mouseX, mouseY, delta);
         this.renderTooltip(g, mouseX, mouseY);
 

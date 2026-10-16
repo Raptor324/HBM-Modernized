@@ -27,17 +27,35 @@ public class RadawayEffect extends MobEffect {
         super(category, color);
     }
 
+    //? if < 1.21.1 {
     @Override
     public void applyEffectTick(@NotNull LivingEntity entity, int amplifier) {
         if (entity instanceof Player player && !entity.level().isClientSide()) {
             PlayerHandler.decrementPlayerRads(player, (amplifier + 1) * RADAWAY_POWER);
         }
     }
+    //?} else {
+    /*@Override
+    public boolean applyEffectTick(@NotNull LivingEntity entity, int amplifier) {
+        if (entity instanceof Player player && !entity.level().isClientSide()) {
+            PlayerHandler.decrementPlayerRads(player, (amplifier + 1) * RADAWAY_POWER);
+        }
+        return true;
+    }
+    *///?}
 
+    //? if < 1.21.1 {
     @Override
     public boolean isDurationEffectTick(int duration, int amplifier) {
         return true;
     }
+    //?} else {
+    /*// 1.21.1: isDurationEffectTick переименован в shouldApplyEffectTickThisTick.
+    @Override
+    public boolean shouldApplyEffectTickThisTick(int duration, int amplifier) {
+        return true;
+    }
+    *///?}
 
     // На Fabric рендеринг делается через Mixin (см. MixinEffectRenderingInventoryScreen,
     // MixinGui) — они вызывают RadawayEffectRenderer напрямую.

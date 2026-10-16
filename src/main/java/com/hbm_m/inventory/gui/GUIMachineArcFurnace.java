@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.blockentity.machines.MachineArcFurnaceBlockEntity;
 import com.hbm_m.inventory.menu.MachineArcFurnaceMenu;
@@ -72,6 +73,7 @@ public class GUIMachineArcFurnace extends GuiInfoScreen<MachineArcFurnaceMenu> {
 
     private void renderTanks(GuiGraphics guiGraphics, int x, int y) {
         MachineArcFurnaceBlockEntity be = menu.getBlockEntity();
+        if (be == null) return; // тайл может отсутствовать в реплее Flashback
         be.getTank1().renderTank(guiGraphics, x + TANK1_X, y + TANK1_Y, TANK_WIDTH, TANK_HEIGHT);
         be.getTank2().renderTank(guiGraphics, x + TANK2_X, y + TANK2_Y, TANK_WIDTH, TANK_HEIGHT);
     }
@@ -89,7 +91,7 @@ public class GUIMachineArcFurnace extends GuiInfoScreen<MachineArcFurnaceMenu> {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        renderBackground(guiGraphics);
+        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, delta);
         super.render(guiGraphics, mouseX, mouseY, delta);
         renderTooltip(guiGraphics, mouseX, mouseY);
         renderCustomTooltips(guiGraphics, mouseX, mouseY);
@@ -103,6 +105,7 @@ public class GUIMachineArcFurnace extends GuiInfoScreen<MachineArcFurnaceMenu> {
 
     private void renderCustomTooltips(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         MachineArcFurnaceBlockEntity be = menu.getBlockEntity();
+        if (be == null) return; // тайл может отсутствовать в реплее Flashback
         int x = (width - imageWidth) / 2;
         int y = (height - imageHeight) / 2;
 

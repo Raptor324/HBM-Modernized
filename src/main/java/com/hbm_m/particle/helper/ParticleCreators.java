@@ -14,7 +14,7 @@ public final class ParticleCreators {
         CREATORS.put("vomit", new VomitParticleCreator());
         CREATORS.put("skeleton", new SkeletonCreator());
         CREATORS.put("ashes", new AshesCreator());
-        CREATORS.put("explosionLarge", new ExplosionCreator());
+        CREATORS.put("explosionLarge", new ExplosionClientCreator());
     }
 
     public static Map<String, IParticleCreator> particleCreators() {

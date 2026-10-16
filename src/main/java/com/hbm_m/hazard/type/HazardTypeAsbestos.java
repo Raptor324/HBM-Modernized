@@ -4,7 +4,10 @@ import java.util.List;
 
 import com.hbm_m.config.RadiationConfig;
 import com.hbm_m.extprop.HbmLivingProps;
+import com.hbm_m.handler.ArmorRegistry;
+import com.hbm_m.handler.HazardClass;
 import com.hbm_m.hazard.modifier.HazardModifier;
+import com.hbm_m.util.ArmorUtil;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -21,7 +24,11 @@ public class HazardTypeAsbestos extends HazardTypeBase {
             return;
         }
 
-        HbmLivingProps.incrementAsbestos(target, (int) Math.min(level, 10));
+        if (!ArmorRegistry.hasProtection(target, 3, HazardClass.PARTICLE_FINE)) {
+            HbmLivingProps.incrementAsbestos(target, (int) Math.min(level, 10));
+        } else {
+            ArmorUtil.damageGasMaskFilter(target, (int) level);
+        }
     }
 
     @Override

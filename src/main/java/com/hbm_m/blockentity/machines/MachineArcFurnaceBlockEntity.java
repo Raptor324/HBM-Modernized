@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -9,6 +11,7 @@ import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineArcFurnaceMenu;
 import com.hbm_m.recipe.ArcFurnaceRecipe;
+import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.recipe.ModRecipes;
 
 import net.minecraft.core.BlockPos;
@@ -19,7 +22,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -70,14 +72,9 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity {
 
     //? if forge {
     @Override
-    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
-            net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable net.minecraft.core.Direction side) {
-        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
-            // Kombinierter Handler waere sauberer, aber fuer diese vereinfachte Maschine reicht
-            // es, den ersten (Haupt-)Tank fuer aussenliegende Pumpen/Rohre zu exponieren.
-            return tank1.getCapability().cast();
-        }
-        return super.getCapability(cap, side);
+    protected void setupFluidCapability() {
+        // Экспонируем главный бак (tank1) для внешних насосов/труб через базовый fluidHandlerOpt.
+        setFluidHandler(tank1);
     }
     //?}
 
@@ -118,8 +115,7 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity {
         ItemStack input = inventory.getStackInSlot(SLOT_INPUT);
         if (input.isEmpty()) return null;
 
-        RecipeType type = (RecipeType) ArcFurnaceRecipe.Type.INSTANCE;
-        List<ArcFurnaceRecipe> recipes = level.getRecipeManager().getAllRecipesFor(type);
+        List<ArcFurnaceRecipe> recipes = RecipeHooks.getAllRecipes(level, ArcFurnaceRecipe.Type.INSTANCE);
         for (ArcFurnaceRecipe recipe : recipes) {
             if (recipe.matchesInput(input)) {
                 return recipe;
@@ -136,7 +132,7 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity {
             ItemStack outSlot = inventory.getStackInSlot(SLOT_OUTPUT);
             ItemStack out = recipe.getOutput();
             if (!outSlot.isEmpty()) {
-                if (!ItemStack.isSameItemSameTags(outSlot, out)) return false;
+                if (!PlatformHooks.isSameItemSameTags(outSlot, out)) return false;
                 if (outSlot.getCount() + out.getCount() > outSlot.getMaxStackSize()) return false;
             }
         }
@@ -180,8 +176,8 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity {
     // ==================== NBT ====================
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("progress", progressTicks);
         tag.putInt("duration", currentDuration);
         tank1.writeToNBT(tag, "tank1");
@@ -189,8 +185,8 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity {
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         progressTicks = tag.getInt("progress");
         currentDuration = tag.contains("duration") ? Math.max(1, tag.getInt("duration")) : 1;
         tank1.readFromNBT(tag, "tank1");
@@ -213,7 +209,7 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity {
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == SLOT_INPUT) {
             if (level == null) return true;
-            List<ArcFurnaceRecipe> recipes = level.getRecipeManager().getAllRecipesFor(ArcFurnaceRecipe.Type.INSTANCE);
+            List<ArcFurnaceRecipe> recipes = RecipeHooks.getAllRecipes(level, ArcFurnaceRecipe.Type.INSTANCE);
             for (ArcFurnaceRecipe recipe : recipes) {
                 if (recipe.matchesInput(stack)) return true;
             }
@@ -235,7 +231,10 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity {
     public AABB getRenderBoundingBox() {
         BlockState state = getBlockState();
         if (!(state.getBlock() instanceof com.hbm_m.block.machines.MachineArcFurnaceBlock block)) {
-            return new AABB(worldPosition.offset(-1, 0, -1), worldPosition.offset(2, 2, 2));
+            return new AABB(
+                worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1,
+                worldPosition.getX() + 2, worldPosition.getY() + 2, worldPosition.getZ() + 2
+            );
         }
         Direction facing = state.getValue(com.hbm_m.block.machines.MachineArcFurnaceBlock.FACING);
         return block.getStructureHelper().getRenderBoundingBox(worldPosition, facing, 0.0);

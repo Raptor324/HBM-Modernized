@@ -8,6 +8,7 @@ import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.packet.PacketSyncEnergy;
+import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -59,7 +60,11 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
 
         addDataSlots(data);
 
-        this.machineInventory = new ModItemStackHandlerContainer(this.blockEntity.getInventory(), this.blockEntity::setChanged);
+        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
+        // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
+        this.machineInventory = new ModItemStackHandlerContainer(
+                this.blockEntity != null ? this.blockEntity.getInventory() : new DummyItemStackHandler(MACHINE_SLOTS),
+                this.blockEntity != null ? this.blockEntity::setChanged : null);
 
         // Enrichment product outputs (2x2 grid), auto-filled only.
         int[][] outputPos = { {71, 53}, {89, 53}, {71, 71}, {89, 71} };
@@ -78,15 +83,17 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
         this.addSlot(new Slot(machineInventory, BATTERY_SLOT, 182, 71) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                boolean hbm = stack.getCapability(com.hbm_m.capability.ModCapabilities.HBM_ENERGY_PROVIDER)
+                boolean hbm = com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack)
                         .map(provider -> provider.canExtract())
                         .orElse(false);
                 if (hbm) return true;
                 //? if forge {
-                return stack.getCapability(ForgeCapabilities.ENERGY)
+                return com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack)
                         .map(storage -> storage.canExtract())
                         .orElse(false);
-                //?} else {
+                //?} elif neoforge {
+                /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
+                *///?} else {
                 /*return false;
                 *///?}
             }
@@ -132,6 +139,11 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
         if (blockEntity instanceof MachineGasCentrifugeBlockEntity gasCentrifuge) {
             return gasCentrifuge;
         }
+        // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (playerInventory.player.level().isClientSide) {
+            return null;
+        }
         throw new IllegalStateException("BlockEntity is not a Gas Centrifuge");
     }
 
@@ -165,12 +177,13 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
 
     @Override
     public long getEnergyStatic() {
-        return blockEntity.getEnergyStored();
+        // тайл может отсутствовать на клиенте (реплей Flashback)
+        return blockEntity != null ? blockEntity.getEnergyStored() : 0L;
     }
 
     @Override
     public long getMaxEnergyStatic() {
-        return blockEntity.getMaxEnergyStored();
+        return blockEntity != null ? blockEntity.getMaxEnergyStored() : 0L;
     }
 
     @Override
@@ -225,14 +238,16 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
                 return ItemStack.EMPTY;
             }
         } else {
-            boolean isBattery = slotStack.getCapability(com.hbm_m.capability.ModCapabilities.HBM_ENERGY_PROVIDER)
+            boolean isBattery = com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(slotStack)
                     .map(provider -> provider.canExtract())
                     .orElse(false);
             //? if forge {
-            isBattery = isBattery || slotStack.getCapability(ForgeCapabilities.ENERGY)
+            isBattery = isBattery || com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(slotStack)
                     .map(storage -> storage.canExtract())
                     .orElse(false);
-            //?}
+            //?} elif neoforge {
+            /*isBattery = isBattery || slotStack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
+            *///?}
 
             if (isBattery) {
                 if (!this.moveItemStackTo(slotStack, BATTERY_SLOT, BATTERY_SLOT + 1, false)) {
@@ -263,6 +278,9 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
 
     @Override
     public boolean stillValid(Player player) {
+        if (blockEntity == null) {
+            return false; // тайл может отсутствовать на клиенте (реплей Flashback)
+        }
         return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()), player, ModBlocks.GAS_CENTRIFUGE.get());
     }
 }

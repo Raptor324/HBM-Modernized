@@ -1,5 +1,6 @@
 package com.hbm_m.item.special;
 
+import com.hbm_m.item.ITooltipProvider;
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -15,7 +16,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 
-public class ItemDigamma extends Item {
+public class ItemDigamma extends Item implements ITooltipProvider {
 
 	/** Ticks until half-life / rate at which Digamma radiation is applied each tick. */
 	private final int digamma;
@@ -43,8 +44,7 @@ public class ItemDigamma extends Item {
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-		super.appendHoverText(stack, level, tooltip, flag);
+	public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
 
 		float halfLifeSeconds = digamma / 20F;
 		float drxPerSecond = ((int) ((1000F / digamma) * 200F)) / 10F;

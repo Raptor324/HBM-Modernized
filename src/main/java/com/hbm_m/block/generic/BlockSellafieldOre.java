@@ -38,6 +38,7 @@ public class BlockSellafieldOre extends BlockSellafieldSlaked {
         return Collections.singletonList(new ItemStack(dropItem.get()));
     }
 
+    //? if < 1.21.1 {
     @Override
     public int getExpDrop(BlockState state, LevelReader level, RandomSource random, BlockPos pos, int fortune, int silkTouch) {
         if (silkTouch > 0 || minXp <= 0) {
@@ -45,6 +46,17 @@ public class BlockSellafieldOre extends BlockSellafieldSlaked {
         }
         return random.nextInt(maxXp - minXp + 1) + minXp;
     }
+    //?} else {
+    /*// 1.21.1 (neoforge): Block.getExpDrop удалён из Block — опыт руды обрабатывается
+    // через DropExperienceBlock с IntProvider. Метод оставлен как обычный public
+    // (без @Override) — сигнатура валидна, но ванильным механизмом не вызывается.
+    public int getExpDrop(BlockState state, LevelReader level, RandomSource random, BlockPos pos, int fortuneLevel, boolean dropFromExplosion) {
+        if (dropFromExplosion || minXp <= 0) {
+            return 0;
+        }
+        return random.nextInt(maxXp - minXp + 1) + minXp;
+    }
+    *///?}
 
     public static BlockSellafieldOre diamondOre(Properties properties) {
         return new BlockSellafieldOre(properties, () -> Items.DIAMOND, 3, 7);

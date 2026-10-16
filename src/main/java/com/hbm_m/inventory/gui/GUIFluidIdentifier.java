@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 
 import java.util.ArrayList;
@@ -108,7 +109,7 @@ public class GUIFluidIdentifier extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(guiGraphics);
+        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         guiGraphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(TEXTURE, guiLeft, guiTop, 0, 0, X_SIZE, Y_SIZE);
 
@@ -171,7 +172,7 @@ public class GUIFluidIdentifier extends Screen {
             }
         }
 
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        GuiCompat.renderWidgetsOnly(this, guiGraphics, mouseX, mouseY, partialTick);
     }
 
     @Override

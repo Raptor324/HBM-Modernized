@@ -10,6 +10,9 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
+//? if >= 1.21.1 {
+/*import net.minecraft.core.Holder;
+*///?}
 
 import java.util.List;
 
@@ -26,15 +29,35 @@ public class ItemModHealth extends ItemArmorMod {
 
     @Override
     public List<Component> getEffectTooltipLines() {
+        //? if < 1.21.1 {
         return List.of(Component.literal("+" + this.health + " " + Component.translatable(Attributes.MAX_HEALTH.getDescriptionId()).getString()).withStyle(ChatFormatting.RED));
+        //?} else {
+        /*return List.of(Component.literal("+" + this.health + " " + Component.translatable(Attributes.MAX_HEALTH.value().getDescriptionId()).getString()).withStyle(ChatFormatting.RED));
+        *///?}
     }
 
     @Override
-    public Multimap<Attribute, AttributeModifier> getModifiers(ItemStack armor) {
-        Multimap<Attribute, AttributeModifier> multimap = HashMultimap.create();
+    public Multimap<
+            //? if < 1.21.1 {
+            Attribute//?} else {
+            /*Holder<Attribute>*///?}
+            , AttributeModifier> getModifiers(ItemStack armor) {
+        Multimap<
+                //? if < 1.21.1 {
+                Attribute//?} else {
+                /*Holder<Attribute>*///?}
+                , AttributeModifier> multimap = HashMultimap.create();
         multimap.put(
             Attributes.MAX_HEALTH,
-            createModifier(armor, Attributes.MAX_HEALTH, "HBM Armor Mod Health", this.health, AttributeModifier.Operation.ADDITION)
+            createModifier(armor,
+                    //? if < 1.21.1 {
+                    Attributes.MAX_HEALTH//?} else {
+                    /*Attributes.MAX_HEALTH.value()*///?}
+                    , "HBM Armor Mod Health", this.health,
+                    //? if < 1.21.1 {
+                    AttributeModifier.Operation.ADDITION//?} else {
+                    /*AttributeModifier.Operation.ADD_VALUE*///?}
+            )
         );
 
         return multimap;

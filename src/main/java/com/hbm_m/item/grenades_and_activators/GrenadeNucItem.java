@@ -1,6 +1,7 @@
 package com.hbm_m.item.grenades_and_activators;
 
 
+import com.hbm_m.item.ITooltipProvider;
 import java.util.List;
 import com.hbm_m.entity.grenades.GrenadeNucProjectileEntity;
 import net.minecraft.ChatFormatting;
@@ -20,14 +21,14 @@ import net.minecraft.world.level.Level;
 
 import dev.architectury.registry.registries.RegistrySupplier;
 
-public class GrenadeNucItem extends Item {
+public class GrenadeNucItem extends Item implements ITooltipProvider {
 
     @SuppressWarnings("unused")
     public GrenadeNucItem(Properties properties, RegistrySupplier<? extends EntityType<?>> grenadeNucProjectile) {
         super(properties);
     }
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, @Nullable List<Component> tooltip, TooltipFlag flag) {
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, @Nullable List<Component> tooltip, TooltipFlag flag) {
         if (tooltip == null) return;
 
         // 1. Тёмно-красный

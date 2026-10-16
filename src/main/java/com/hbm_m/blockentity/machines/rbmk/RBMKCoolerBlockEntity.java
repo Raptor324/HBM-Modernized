@@ -69,16 +69,17 @@ public class RBMKCoolerBlockEntity extends RBMKColumnBlockEntity {
     @Override public RBMKType getRBMKType()      { return RBMKType.OTHER; }
     @Override public ColumnType getConsoleType() { return ColumnType.COOLER; }
 
+    
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         coldTank.writeToNBT(tag, "t0");
         hotTank.writeToNBT(tag, "t1");
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         coldTank.readFromNBT(tag, "t0");
         hotTank.readFromNBT(tag, "t1");
     }

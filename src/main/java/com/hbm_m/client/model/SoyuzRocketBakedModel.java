@@ -13,7 +13,9 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
 import net.minecraftforge.client.model.data.ModelData;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.neoforge.client.model.data.ModelData;
+*///?}
 
 /**
  * Baked model for the decorative Soyuz rocket (soyuz.obj, ~52 blocks tall,
@@ -45,7 +47,7 @@ public class SoyuzRocketBakedModel extends AbstractMultipartBakedModel {
         return part != null ? part.getQuads(state, side, rand) : List.of();
     }
 
-    //? if forge {
+    //? if forge || neoforge {
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
                                      RandomSource rand, ModelData modelData, @Nullable net.minecraft.client.renderer.RenderType renderType) {

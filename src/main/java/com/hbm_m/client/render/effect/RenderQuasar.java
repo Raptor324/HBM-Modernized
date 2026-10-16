@@ -10,7 +10,7 @@ import net.minecraft.resources.ResourceLocation;
  */
 public class RenderQuasar extends RenderBlackHole<BlackHoleEntity> {
 
-    private static final ResourceLocation QUASAR_DISC = RefStrings.resourceLocation("textures/entity/bhole_d.png");
+    private static final ResourceLocation QUASAR_DISC = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/entity/bhole_d.png");
 
     public RenderQuasar(EntityRendererProvider.Context context) {
         super(context);

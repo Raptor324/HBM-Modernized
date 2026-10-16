@@ -5,7 +5,6 @@ import java.util.function.Supplier;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineChungusBlockEntity;
@@ -147,18 +146,6 @@ public class MachineChungusBlock extends BaseEntityBlock implements IMultiblockC
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
             Direction facing = state.getValue(FACING);
             structureHelper.placeStructure(level, pos, facing, this);
-
-            EnergyNetworkManager.get((ServerLevel) level).addNode(pos);
-
-            // Alle Strukturblöcke registrieren (nicht nur Connector-Rollen), damit die Maschine eine
-            // durchgehende physische Kette im EnergyNetworkManager bildet (der Netzwerke rein über
-            // direkte Block-Nachbarschaft bildet). Bei Chungus liegt der Energie-Connector bis zu
-            // 10 Blöcke vom Controller entfernt - ohne die dazwischenliegenden Knoten würden
-            // Controller und Connector in zwei isolierten Netzwerken landen.
-            for (BlockPos gridPos : structureHelper.getStructureMap().keySet()) {
-                BlockPos worldPos = structureHelper.getRotatedPos(pos, gridPos, facing);
-                EnergyNetworkManager.get((ServerLevel) level).addNode(worldPos);
-            }
         }
     }
 
@@ -166,13 +153,6 @@ public class MachineChungusBlock extends BaseEntityBlock implements IMultiblockC
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (state.getBlock() != newState.getBlock() && !level.isClientSide()) {
             Direction facing = state.getValue(FACING);
-
-            EnergyNetworkManager.get((ServerLevel) level).removeNode(pos);
-
-            for (BlockPos gridPos : structureHelper.getStructureMap().keySet()) {
-                BlockPos worldPos = structureHelper.getRotatedPos(pos, gridPos, facing);
-                EnergyNetworkManager.get((ServerLevel) level).removeNode(worldPos);
-            }
 
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof MachineChungusBlockEntity chungus) {
@@ -190,8 +170,19 @@ public class MachineChungusBlock extends BaseEntityBlock implements IMultiblockC
         return new MachineChungusBlockEntity(pos, state);
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return handleUse(state, level, pos, player, hand, hit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        return handleUse(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+    }
+    *///?}
+
+    private InteractionResult handleUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide()) {
             if (level.getBlockEntity(pos) instanceof MachineChungusBlockEntity chungus) {
                 boolean nowOperational = chungus.toggleOperational();
@@ -237,4 +228,13 @@ public class MachineChungusBlock extends BaseEntityBlock implements IMultiblockC
     public PartRole getPartRole(BlockPos localOffset) {
         return structureHelper.resolvePartRole(localOffset, this);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineChungusBlock> CODEC = simpleCodec(MachineChungusBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

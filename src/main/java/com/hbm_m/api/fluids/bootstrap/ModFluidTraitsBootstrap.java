@@ -125,7 +125,7 @@ public final class ModFluidTraitsBootstrap {
         t(ModFluids.HEAVYOIL, null, LQ, VIS, P_OIL);
         t(ModFluids.BITUMEN, null, LQ, VIS, P_OIL);
         t(ModFluids.SMEAR, null, LQ, VIS, P_OIL);
-        t(ModFluids.HEATINGOIL, null, LQ, VIS, P_OIL);
+        t(ModFluids.HEATINGOIL, null, LQ, VIS, P_OIL, new FT_Flammable(150_000));
         t(ModFluids.LUBRICANT, null, LQ, P_OIL);
         t(ModFluids.CRACKOIL, null, LQ, VIS, P_OIL);
         t(ModFluids.COALOIL, null, LQ, VIS, P_OIL);
@@ -143,8 +143,10 @@ public final class ModFluidTraitsBootstrap {
         t(ModFluids.DIESEL_REFORM, null, LQ, P_FUEL);
         t(ModFluids.GASOLINE, null, LQ, P_FUEL);
         t(ModFluids.GASOLINE_LEADED, null, LQ, P_FUEL_LEADED);
-        t(ModFluids.KEROSENE, null, LQ, P_FUEL);
-        t(ModFluids.KEROSENE_REFORM, null, LQ, P_FUEL);
+        // AERO-Grade: 1:1-Vorbedingung fuer den Turbofan (nur AERO-Combustibles verbrennt er, siehe
+        // TileEntityMachineTurbofan im Original).
+        t(ModFluids.KEROSENE, null, LQ, P_FUEL, new FT_Combustible(FuelGrade.AERO, 4_000));
+        t(ModFluids.KEROSENE_REFORM, null, LQ, P_FUEL, new FT_Combustible(FuelGrade.AERO, 4_000));
         t(ModFluids.HEAVYOIL_VACUUM, null, LQ, VIS, P_OIL);
         t(ModFluids.LIGHTOIL, null, LQ, P_FUEL);
         t(ModFluids.LIGHTOIL_CRACK, null, LQ, P_FUEL);
@@ -157,7 +159,13 @@ public final class ModFluidTraitsBootstrap {
         t(ModFluids.RECLAIMED, null, LQ, VIS, P_FUEL);
         t(ModFluids.PETROIL, null, LQ, P_FUEL);
         t(ModFluids.PETROIL_LEADED, null, LQ, P_FUEL_LEADED);
-        t(ModFluids.GAS, null, GAS, P_GAS);
+        // GAS/SYNGAS/REFORMGAS/OXYHYDROGEN never had FT_Combustible in the 1.7.10 original either (confirmed
+        // via decompile + the original dev's own "redundant restriction that does nothing at best and at worst
+        // breaks shit" comment in ContainerMachineTurbineGas) - meaning TileEntityMachineTurbineGas.hasAcceptableFuel()
+        // was permanently false and the Gas Turbine could never actually run. Values below are invented (no
+        // 1:1 source) so the ported Gas Turbine is an actually-functional generator, consistent with the
+        // Industrial Generator precedent (built a real generator from originally-dead code, per user request).
+        t(ModFluids.GAS, null, GAS, P_GAS, new FT_Combustible(FuelGrade.GAS, 150_000));
         t(ModFluids.GAS_COKER, null, GAS, P_GAS);
         t(ModFluids.PETROLEUM, null, GAS, P_GAS);
         t(ModFluids.LPG, null, P_LIQUID_GAS);
@@ -170,8 +178,8 @@ public final class ModFluidTraitsBootstrap {
         t(ModFluids.XYLENE, null, LQ, VIS, P_FUEL);
         t(ModFluids.COALGAS, null, LQ, P_FUEL);
         t(ModFluids.COALGAS_LEADED, null, LQ, P_FUEL_LEADED);
-        t(ModFluids.SYNGAS, null, GAS);
-        t(ModFluids.REFORMGAS, null, GAS, P_GAS);
+        t(ModFluids.SYNGAS, null, GAS, new FT_Combustible(FuelGrade.GAS, 300_000));
+        t(ModFluids.REFORMGAS, null, GAS, P_GAS, new FT_Combustible(FuelGrade.GAS, 500_000));
         t(ModFluids.SOURGAS, null, GAS, new FT_Corrosive(10), new FT_Poison(false, 1), P_GAS);
         t(ModFluids.HEATINGOIL_VACUUM, null, LQ, VIS, P_OIL);
         t(ModFluids.ETHANOL, null, LQ, P_FUEL);
@@ -181,7 +189,7 @@ public final class ModFluidTraitsBootstrap {
         t(ModFluids.SUNFLOWEROIL, null, LQ, P_FUEL);
         t(ModFluids.SOLVENT, null, LQ, new FT_Corrosive(30));
         t(ModFluids.RADIOSOLVENT, null, LQ, new FT_Corrosive(50));
-        t(ModFluids.OXYHYDROGEN, null, GAS);
+        t(ModFluids.OXYHYDROGEN, null, GAS, new FT_Combustible(FuelGrade.GAS, 60_000));
 
         t(ModFluids.DEUTERIUM, null, new FT_Flammable(5_000), new FT_Combustible(FuelGrade.HIGH, 10_000), GAS);
         t(ModFluids.TRITIUM, null, new FT_Flammable(5_000), new FT_Combustible(FuelGrade.HIGH, 10_000), GAS, new FT_VentRadiation(0.001F));

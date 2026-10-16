@@ -11,7 +11,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.google.common.collect.ImmutableMap;
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineAssemblerBlockEntity;
@@ -185,32 +184,14 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
         return builder.build();
     }
 
-    //  ДОБАВЛЕНО: Регистрация в энергосети
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
 
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            BlockPos core = placeMultiblockStructure(level, pos, state);
-            if (core == null) {
-                return;
-            }
-            Direction facing = state.getValue(FACING);
-            //  Регистрируем контроллер (IEnergyReceiver)
-            EnergyNetworkManager.get((ServerLevel) level).addNode(core);
-
-            //  Регистрируем энергетические коннекторы
-            for (BlockPos localPos : getStructureHelper().getStructureMap().keySet()) {
-                if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
-                    BlockPos worldPos = getStructureHelper().getRotatedPos(core, localPos, facing);
-                    EnergyNetworkManager.get((ServerLevel) level).addNode(worldPos);
-                }
-            }
+            placeMultiblockStructure(level, pos, state);
         }
     }
-
-    //  ДОБАВЛЕНО: Удаление из энергосети
-
     @Override
     public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
         return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
@@ -223,14 +204,6 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
                 MultiblockStructureHelper helper = getStructureHelper();
                 Direction facing = state.getValue(FACING);
 
-                // Удаляем из энергосети (этот код у нас уже правильный)
-                for (BlockPos localPos : helper.getStructureMap().keySet()) {
-                    if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
-                        BlockPos worldPos = helper.getRotatedPos(pos, localPos, facing);
-                        EnergyNetworkManager.get((ServerLevel) level).removeNode(worldPos);
-                    }
-                }
-                
                 BlockEntity blockEntity = level.getBlockEntity(pos);
                 if (blockEntity instanceof com.hbm_m.blockentity.BaseMachineBlockEntity be) {
                     be.dropInventoryContents();
@@ -242,8 +215,19 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
+        return openMenu(state, level, pos, player, hand, hit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull BlockHitResult hit) {
+        return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+    }
+    *///?}
+
+    private InteractionResult openMenu(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
         if (!level.isClientSide) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MenuProvider) {
@@ -289,4 +273,13 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
     protected void createBlockStateDefinition(@NotNull StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(FACING);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineAssemblerBlock> CODEC = simpleCodec(MachineAssemblerBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

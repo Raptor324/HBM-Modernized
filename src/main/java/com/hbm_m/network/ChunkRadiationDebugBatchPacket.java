@@ -50,7 +50,14 @@ public class ChunkRadiationDebugBatchPacket implements S2CPacket {
 
     public static void handle(ChunkRadiationDebugBatchPacket msg, PacketContext context) {
         // context.queue() уже на клиентском главном потоке — DistExecutor не нужен
-        context.queue(() -> ClientRadiationData.updateRadiationData(msg.dimension, msg.radiationData));
+        context.queue(() -> {
+            if (com.hbm_m.config.ModClothConfig.get().enableDebugLogging && !msg.radiationData.isEmpty()) {
+                com.hbm_m.main.MainRegistry.LOGGER.debug(
+                        "CLIENT: Received ChunkRadiationDebugBatchPacket. Dim: {}, chunks: {}",
+                        msg.dimension, msg.radiationData.size());
+            }
+            ClientRadiationData.updateRadiationData(msg.dimension, msg.radiationData);
+        });
     }
 
     // ── Send helper ───────────────────────────────────────────────────────────

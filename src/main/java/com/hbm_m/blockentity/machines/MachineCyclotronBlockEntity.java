@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import java.util.Map;
 
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
@@ -9,14 +11,17 @@ import com.hbm_m.inventory.UpgradeManager;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineCyclotronMenu;
+import com.hbm_m.item.ModItems;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType;
-import com.hbm_m.recipe.CyclotronRecipes;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.recipe.CyclotronRecipe;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.Level;
@@ -116,10 +121,19 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot >= SLOT_INPUT_START && slot < SLOT_INPUT_END_EXCLUSIVE) {
-            return CyclotronRecipes.isValidInput(stack);
+            // Рецепты data-driven — валидация по всем CyclotronRecipe через RecipeManager (RecipeHooks).
+            if (stack == null || stack.isEmpty() || level == null) return false;
+            for (CyclotronRecipe r : RecipeHooks.getAllRecipes(level, CyclotronRecipe.Type.INSTANCE)) {
+                if (r.getInput().test(stack)) return true;
+            }
+            return false;
         }
         if (slot >= SLOT_TARGET_START && slot < SLOT_TARGET_END_EXCLUSIVE) {
-            return CyclotronRecipes.isValidTarget(stack);
+            if (stack == null || stack.isEmpty() || level == null) return false;
+            for (CyclotronRecipe r : RecipeHooks.getAllRecipes(level, CyclotronRecipe.Type.INSTANCE)) {
+                if (r.getTarget().test(stack)) return true;
+            }
+            return false;
         }
         if (slot == SLOT_BATTERY) {
             return isCyclotronBatteryCandidate(stack);
@@ -164,12 +178,13 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
         for (int lane = 0; lane < 3; lane++) {
             ItemStack input = inventory.getStackInSlot(SLOT_INPUT_START + lane);
             ItemStack target = inventory.getStackInSlot(SLOT_TARGET_START + lane);
-            CyclotronRecipes.Output result = CyclotronRecipes.getOutput(target, input);
-            if (result == null) {
+            // Рецепты data-driven — поиск по двум стекам через RecipeManager (RecipeHooks).
+            CyclotronRecipe recipe = findCyclotronRecipe(target, input);
+            if (recipe == null) {
                 continue;
             }
 
-            ItemStack out = result.output();
+            ItemStack out = recipe.getOutput();
             if (out.isEmpty()) {
                 continue;
             }
@@ -179,7 +194,7 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
                 return true;
             }
 
-            if (!ItemStack.isSameItemSameTags(existing, out)) {
+            if (!PlatformHooks.isSameItemSameTags(existing, out)) {
                 continue;
             }
 
@@ -200,12 +215,13 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
 
             ItemStack input = inventory.getStackInSlot(inputSlot);
             ItemStack target = inventory.getStackInSlot(targetSlot);
-            CyclotronRecipes.Output result = CyclotronRecipes.getOutput(target, input);
-            if (result == null) {
+            // Рецепты data-driven — поиск по двум стекам через RecipeManager (RecipeHooks).
+            CyclotronRecipe recipe = findCyclotronRecipe(target, input);
+            if (recipe == null) {
                 continue;
             }
 
-            ItemStack out = result.output().copy();
+            ItemStack out = recipe.getOutput();
             if (out.isEmpty()) {
                 continue;
             }
@@ -214,7 +230,7 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
             if (existing.isEmpty()) {
                 inventory.setStackInSlot(outputSlot, out);
             } else {
-                if (!ItemStack.isSameItemSameTags(existing, out)) {
+                if (!PlatformHooks.isSameItemSameTags(existing, out)) {
                     continue;
                 }
                 int max = Math.min(existing.getMaxStackSize(), inventory.getSlotLimit(outputSlot));
@@ -227,12 +243,29 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
 
             inventory.extractItem(inputSlot, 1, false);
             inventory.extractItem(targetSlot, 1, false);
-            tanks[TANK_AMAT].setFill(tanks[TANK_AMAT].getFill() + result.amatProduced());
+            tanks[TANK_AMAT].setFill(tanks[TANK_AMAT].getFill() + recipe.getAmatProduced());
         }
 
         if (tanks[TANK_AMAT].getFill() > tanks[TANK_AMAT].getMaxFill()) {
             tanks[TANK_AMAT].setFill(tanks[TANK_AMAT].getMaxFill());
         }
+    }
+
+    /**
+     * Линейный поиск {@link CyclotronRecipe} по паре target+input. Замена удалённому
+     * {@code CyclotronRecipes.getOutput(target, input)} — рецепты теперь data-driven (JSON),
+     * источник правды {@code RecipeManager}, доступ кросс-версионный через {@link RecipeHooks}.
+     */
+    private CyclotronRecipe findCyclotronRecipe(ItemStack target, ItemStack input) {
+        if (target == null || input == null || target.isEmpty() || input.isEmpty() || level == null) {
+            return null;
+        }
+        for (CyclotronRecipe r : RecipeHooks.getAllRecipes(level, CyclotronRecipe.Type.INSTANCE)) {
+            if (r.matches(target, input)) {
+                return r;
+            }
+        }
+        return null;
     }
 
     private void chargeFromBattery() {
@@ -268,19 +301,48 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
         return fromDir != null;
     }
 
+    // ═══ Шутливые «заглушки» (plugs) из оригинала: битовый флаг + шуточные предметы ═══
+
+    /** Битовый флаг установленных заглушек (порт {@code plugs} из TileEntityMachineCyclotron). */    private byte plugs;
+
+    public void setPlug(int index) {
+        this.plugs |= (byte) (1 << index);
+        this.setChanged();
+    }
+
+    public boolean getPlug(int index) {
+        return (this.plugs & (1 << index)) > 0;
+    }
+
+    /**
+     * Предмет-заглушка по индексу (1:1 с оригиналом): порошок белфайра, книга Вагонов,
+     * алмазная кувалда, монета Маскомэна. Устанавливаются ПКМ по блоку циклотрона.
+     */
+    public static Item getItemForPlug(int i) {
+        switch(i) {
+        case 0: return ModItems.POWDER_BALEFIRE.get();
+        case 1: return ModItems.BOOK_OF_.get();
+        case 2: return ModItems.DIAMOND_GAVEL.get();
+        case 3: return ModItems.COIN_MASKMAN.get();
+        }
+        return null;
+    }
+
     @Override
-    protected void saveAdditional(net.minecraft.nbt.CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("progress", this.progress);
+        tag.putByte("plugs", this.plugs);
         for (int i = 0; i < tanks.length; i++) {
             tanks[i].writeToNBT(tag, "t" + i);
         }
     }
 
     @Override
-    public void load(net.minecraft.nbt.CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         this.progress = tag.getInt("progress");
+        this.plugs = tag.getByte("plugs");
         for (int i = 0; i < tanks.length; i++) {
             tanks[i].readFromNBT(tag, "t" + i);
         }
@@ -295,7 +357,9 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
         BlockState state = getBlockState();
         if (!(state.getBlock() instanceof com.hbm_m.block.machines.MachineCyclotronBlock block)) {
-            return new net.minecraft.world.phys.AABB(worldPosition.offset(-2, 0, -2), worldPosition.offset(3, 4, 3));
+            BlockPos p1 = worldPosition.offset(-2, 0, -2);
+            BlockPos p2 = worldPosition.offset(3, 4, 3);
+            return new net.minecraft.world.phys.AABB(p1.getX(), p1.getY(), p1.getZ(), p2.getX(), p2.getY(), p2.getZ());
         }
         net.minecraft.core.Direction facing = state.getValue(com.hbm_m.block.machines.MachineCyclotronBlock.FACING);
         return block.getStructureHelper().getRenderBoundingBox(worldPosition, facing, 0.0);

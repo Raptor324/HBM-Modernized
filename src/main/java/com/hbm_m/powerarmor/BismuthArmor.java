@@ -4,13 +4,13 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.item.ArmorMaterial;
+import com.hbm_m.item.tools_and_armor.ModArmorMaterials;
 import net.minecraft.world.item.ItemStack;
 
 /**
  * Bismuth Power Armor (ported from 1.7.10 ArmorBismuth/ArmorFSB).
  *
- * Original gameplay highlights:
+ * Originаl gameplay highlights:
  * - Full set potion buffs: Jump VII, Speed VII, Regeneration II, Night Vision
  * - 3 dashes
  * - Full set resist profile:
@@ -53,7 +53,7 @@ public class BismuthArmor extends ModPowerArmorItem {
             .setJumpSound("hbm_m:step.iron_jump")
             .setFallSound("hbm_m:step.iron_land");
 
-    public BismuthArmor(ArmorMaterial material, Type type, Properties properties) {
+    public BismuthArmor(ModArmorMaterials material, Type type, Properties properties) {
         super(material, type, properties, BISMUTH_SPECS);
     }
 
@@ -62,11 +62,10 @@ public class BismuthArmor extends ModPowerArmorItem {
      * Иначе ванильный armor renderer пытается грузить несуществующие файлы и спамит WARN в лог.
      * (Forge/NeoForge: IForgeItem#getArmorTexture; на Fabric рендер через свои хуки.)
      */
-    //? if !fabric {
+    //? if forge {
     @Override
     public String getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot, String type) {
         return "hbm_m:textures/block/armor/bismuth.png";
     }
     //?}
 }
-

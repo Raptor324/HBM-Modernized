@@ -1,0 +1,7 @@
+{
+  "textures": {
+    "particle": "minecraft:block/smooth_stone"
+  },
+  "elements": [],
+  "display": {}
+}

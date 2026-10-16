@@ -1,0 +1,15 @@
+# Базовая библиотека материалов HBM для OBJ без собственного .mtl.
+# map_Kd через "#ключ" — текстура берётся из "textures" JSON-обёртки модели.
+# Нужна, чтобы OBJ со строками usemtl не падали при загрузке (NoSuchElementException).
+
+newmtl Material.001
+Kd 1.000 1.000 1.000
+map_Kd #default
+
+newmtl m_2d342b16-8f2e-5231-80ae-92eafddb5779
+Kd 1.000 1.000 1.000
+map_Kd #surface
+
+newmtl m_bf2d8415-1140-6651-2d4b-44fa28d981c3
+Kd 1.000 1.000 1.000
+map_Kd #surface

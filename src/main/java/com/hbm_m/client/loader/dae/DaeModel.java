@@ -39,7 +39,7 @@ public class DaeModel {
     public static final Collection<DaeModel> allModels = Collections.synchronizedCollection(new ArrayList<>());
 
     public DaeModel(String path) {
-        this(RefStrings.resourceLocation(path));
+        this(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, path));
     }
 
     public DaeModel(ResourceLocation resource) {
@@ -357,7 +357,7 @@ public class DaeModel {
 
     private ResourceLocation resolveTexture(String path) {
         if(path == null || path.isBlank()) {
-            return RefStrings.resourceLocation("textures/models/missing");
+            return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/missing");
         }
         if(path.startsWith("file://")) path = path.substring("file://".length());
         String clean = path.replace('\\', '/').trim();
@@ -383,7 +383,7 @@ public class DaeModel {
 
         int dot = clean.lastIndexOf('.');
         if(dot >= 0) clean = clean.substring(0, dot);
-        return RefStrings.resourceLocation(clean);
+        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, clean);
     }
 
     // ---------------------------------------------------------------- scene

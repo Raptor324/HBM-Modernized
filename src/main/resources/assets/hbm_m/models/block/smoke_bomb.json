@@ -1,9 +1,0 @@
-{
-	"parent": "block/orientable",
-	"textures": {
-		"top": "hbm_m:block/smoke_bomb_top",
-		"front": "hbm_m:block/smoke_bomb_side",
-		"side": "hbm_m:block/smoke_bomb_side",
-		"bottom": "hbm_m:block/smoke_bomb_top"
-	}
-}

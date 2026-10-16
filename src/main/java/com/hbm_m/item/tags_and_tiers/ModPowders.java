@@ -9,7 +9,6 @@ import java.util.Map;
 
 public enum ModPowders {
 
-
     IRON("iron",
             "ru_ru", "Железный порошок",
             "en_us", "Iron Powder"),
@@ -35,12 +34,28 @@ public enum ModPowders {
             "en_us", "Limestone Powder"),
 
     ALUMINUM("aluminum",
-                      "ru_ru", "",
-                      "en_us", "Aluminum Powder");
+            "ru_ru", "Алюминиевый порошок",
+            "en_us", "Aluminum Powder"),
 
+    COPPER("copper",
+            "ru_ru", "Медный порошок",
+            "en_us", "Copper Powder"),
 
+    DIAMOND("diamond",
+            "ru_ru", "Алмазная пыль",
+            "en_us", "Diamond Powder"),
 
-    // Чтобы добавить новый слиток, просто добавьте новую запись с его переводами
+    EMERALD("emerald",
+            "ru_ru", "Изумрудная пыль",
+            "en_us", "Emerald Powder"),
+
+    LAPIS("lapis",
+            "ru_ru", "Лазуритовая пыль",
+            "en_us", "Lapis Powder"),
+
+    QUARTZ("quartz",
+            "ru_ru", "Кварцевый порошок",
+            "en_us", "Quartz Powder");
 
     private final String name;
     private final Map<String, String> translations;
@@ -64,7 +79,6 @@ public enum ModPowders {
             String translation = translationPairs[i + 1];
             translationMap.put(locale, translation);
         }
-        // Делаем карту неизменяемой после создания
         this.translations = Collections.unmodifiableMap(translationMap);
     }
 

@@ -1,5 +1,6 @@
 package com.hbm_m.item.liquids;
 
+import com.hbm_m.item.ITooltipProvider;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -35,7 +36,7 @@ import net.minecraft.world.level.material.Fluid;
 /**
  * Fluid Duct — places the matching {@link FluidDuctBlock} style; fluid type in NBT for tint/transport.
  */
-public class FluidDuctItem extends Item {
+public class FluidDuctItem extends Item implements ITooltipProvider {
 
     public static final String NBT_FLUID_TYPE = "FluidType";
 
@@ -64,8 +65,7 @@ public class FluidDuctItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
 
         FluidStack fluid = getFluidType(stack);
         if (!fluid.isEmpty()) {

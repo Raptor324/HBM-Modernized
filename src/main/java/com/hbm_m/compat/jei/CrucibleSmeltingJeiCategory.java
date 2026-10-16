@@ -2,6 +2,7 @@ package com.hbm_m.compat.jei;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.recipe.CrucibleSmeltingRecipe;
 
 import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
@@ -15,12 +16,15 @@ import mezz.jei.api.recipe.category.IRecipeCategory;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
-import java.util.List;
-
 /**
- * JEI category for crucible smelting recipes.
+ * JEI-категория тигель-плавки ({@code hbm_m:crucible_smelting}).
  *
- * Slot layout (identical to legacy NEI CrucibleSmeltingHandler):
+ * <p>Работает напрямую с data-driven {@link CrucibleSmeltingRecipe} (JSON) — без промежуточной
+ * {@code *JeiRecipe}-обёртки. Тигель плавит предметный вход ({@link CrucibleSmeltingRecipe#getInput()})
+ * в расплавленный материал — рецептов с предметным {@code output} нет, поэтому единственный показываемый
+ * слот входа — input ingredient; затем изображается тигель-катализатор.</p>
+ *
+ * <p>Slot layout (как у legacy NEI CrucibleSmeltingHandler):</p>
  * <pre>
  *                         [o0][o1][o2]   y= 6
  *   [input]  [→]  [cruc]  [o3][o4][o5]  y=24  (input@48, crucible@75)
@@ -28,19 +32,15 @@ import java.util.List;
  * </pre>
  * Transfer rect (legacy): Rectangle(65, 23, 36, 18)
  */
-public class CrucibleSmeltingJeiCategory implements IRecipeCategory<CrucibleSmeltingJeiRecipe> {
+public class CrucibleSmeltingJeiCategory implements IRecipeCategory<CrucibleSmeltingRecipe> {
 
-    public static final RecipeType<CrucibleSmeltingJeiRecipe> RECIPE_TYPE =
-            RecipeType.create(RefStrings.MODID, "crucible_smelting", CrucibleSmeltingJeiRecipe.class);
+    public static final RecipeType<CrucibleSmeltingRecipe> RECIPE_TYPE =
+            RecipeType.create(RefStrings.MODID, "crucible_smelting", CrucibleSmeltingRecipe.class);
 
     static final int INPUT_X     = 48;
     static final int INPUT_Y     = 24;
     static final int CRUCIBLE_X  = 75;
     static final int CRUCIBLE_Y  = 42;
-    static final int OUTPUT_X0   = 102;
-    static final int OUTPUT_Y0   =   6;
-    static final int GRID_STEP   =  18;
-    static final int MAX_OUTPUTS =   6; // 3-wide × 2-tall
 
     private static final int BG_WIDTH  = 156;
     private static final int BG_HEIGHT =  60;
@@ -49,14 +49,14 @@ public class CrucibleSmeltingJeiCategory implements IRecipeCategory<CrucibleSmel
     private final IDrawable icon;
 
     public CrucibleSmeltingJeiCategory(IGuiHelper guiHelper) {
-        // Blank until gui_jei_crucible_smelting.png is supplied under textures/gui/jei/
+        // Без текстурного фона — blank (как в оригинальной категории).
         this.background = guiHelper.createBlankDrawable(BG_WIDTH, BG_HEIGHT);
         this.icon = guiHelper.createDrawableIngredient(
                 VanillaTypes.ITEM_STACK, new ItemStack(ModBlocks.CRUCIBLE.get()));
     }
 
     @Override
-    public RecipeType<CrucibleSmeltingJeiRecipe> getRecipeType() { return RECIPE_TYPE; }
+    public RecipeType<CrucibleSmeltingRecipe> getRecipeType() { return RECIPE_TYPE; }
 
     @Override
     public Component getTitle() {
@@ -73,24 +73,16 @@ public class CrucibleSmeltingJeiCategory implements IRecipeCategory<CrucibleSmel
     public IDrawable getIcon() { return icon; }
 
     @Override
-    public void setRecipe(IRecipeLayoutBuilder builder, CrucibleSmeltingJeiRecipe recipe, IFocusGroup focuses) {
-        // Single input
+    public void setRecipe(IRecipeLayoutBuilder builder, CrucibleSmeltingRecipe recipe, IFocusGroup focuses) {
+        // Вход — ingredient (предмет, который плавится). Берётся напрямую из data-driven рецепта.
         builder.addSlot(RecipeIngredientRole.INPUT, INPUT_X, INPUT_Y)
-                .addItemStack(recipe.getInput());
+                .addIngredients(recipe.getInput());
 
-        // Crucible catalyst
+        // Тигель — катализатор.
         builder.addSlot(RecipeIngredientRole.CATALYST, CRUCIBLE_X, CRUCIBLE_Y)
                 .addItemStack(new ItemStack(ModBlocks.CRUCIBLE.get()));
 
-        // Outputs — 3×2 grid
-        List<ItemStack> outputs = recipe.getOutputs();
-        for (int i = 0; i < Math.min(outputs.size(), MAX_OUTPUTS); i++) {
-            int col = i % 3;
-            int row = i / 3;
-            builder.addSlot(RecipeIngredientRole.OUTPUT,
-                            OUTPUT_X0 + col * GRID_STEP,
-                            OUTPUT_Y0 + row * GRID_STEP)
-                    .addItemStack(outputs.get(i));
-        }
+        // Предметных выходов нет — плавка даёт расплавленный материал (in-memory, не data-driven).
+        // Оригинальный layout预留ал 3×2 outputs-сетку, но для JSON-recipe без item-выхода слотов не добавляем.
     }
 }

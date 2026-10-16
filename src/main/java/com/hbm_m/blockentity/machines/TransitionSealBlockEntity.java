@@ -2,6 +2,7 @@ package com.hbm_m.blockentity.machines;
 
 import com.hbm_m.block.UniversalMachinePartBlock;
 import com.hbm_m.block.machines.TransitionSealBlock;
+import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.sound.ModSounds;
 
@@ -22,7 +23,7 @@ import net.minecraft.world.phys.AABB;
  * clip runs exactly 24 seconds, i.e. 480 ticks, with the frame ring spaced around the
  * core.
  */
-public class TransitionSealBlockEntity extends BlockEntity {
+public class TransitionSealBlockEntity extends BaseHbmBlockEntity {
 
     /** The transition_seal.dae clip is exactly 24 seconds long (577 LINEAR keyframes at 1/24 s). */
     public static final float DURATION_TICKS = 24F * 20F;
@@ -98,9 +99,14 @@ public class TransitionSealBlockEntity extends BlockEntity {
         return level.hasNeighborSignal(pos);
     }
 
+    //? if forge {
     @Override
+    //?}
     public AABB getRenderBoundingBox() {
-        return new AABB(worldPosition, worldPosition.offset(0, 24, 0)).inflate(13);
+        // AABB(BlockPos, BlockPos) не существует — собираем через double-конструктор (версионно-инвариантно).
+        BlockPos top = worldPosition.offset(0, 24, 0);
+        return new AABB(worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(),
+                top.getX(), top.getY(), top.getZ()).inflate(13);
     }
 
     // Animation state
@@ -162,16 +168,19 @@ public class TransitionSealBlockEntity extends BlockEntity {
         }
     }
 
+    
+    // (RenderBoundsProvider уже реализован в BaseHbmBlockEntity; собственный
+    // getRenderBoundingBox сохранён — AABB двери 26x24 больше дефолтного)
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putFloat("animTicks", animTicks);
         tag.putBoolean("prevPowered", prevPowered);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         animTicks = tag.getFloat("animTicks");
         prevPowered = tag.getBoolean("prevPowered");
     }

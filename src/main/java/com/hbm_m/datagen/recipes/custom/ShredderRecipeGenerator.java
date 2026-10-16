@@ -4,14 +4,14 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.tags_and_tiers.ModPowders;
-import com.hbm_m.lib.RefStrings;
 import dev.architectury.registry.registries.RegistrySupplier;
-import net.minecraft.world.item.Item;
 import net.minecraft.advancements.critereon.InventoryChangeTrigger;
 import net.minecraft.data.recipes.FinishedRecipe;
+import net.minecraft.data.recipes.RecipeCategory;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
 import net.minecraft.data.recipes.ShapelessRecipeBuilder;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.data.recipes.SimpleCookingRecipeBuilder;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -23,6 +23,10 @@ import java.util.function.Function;
 
 /**
  * Generates shredder recipes, including block conversions and powder automation.
+ *
+ * <p>Использует {@code save(writer, "id")} из {@link BaseRecipeBuilder} и статический
+ * {@link BaseRecipeBuilder#resLoc(String)} для ванильных билдеров — Stonecutter-блоки
+ * с {@code ResourceLocation} больше не нужны.</p>
  */
 public final class ShredderRecipeGenerator {
 
@@ -81,108 +85,61 @@ public final class ShredderRecipeGenerator {
                 .save(writer, "brick_to_clay");
         if (ModItems.getPowders(ModPowders.LIMESTONE) != null) {
             ShredderRecipeBuilder.shredderRecipe(ModItems.LIMESTONE.get(),
-                            new ItemStack(ModItems.getPowders(ModPowders.LIMESTONE).get(), 1))
-                    .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/limestone_to_powder"));
+                            ModItems.getPowders(ModPowders.LIMESTONE), 1)
+                    .save(writer, "shredder/limestone_to_powder");
         }
     }
 
     private static void registerMetalPowders(Consumer<FinishedRecipe> writer) {
-        //  ПРОВЕРКА NULL для ModPowders!
+        //  Передаём powder как RegistrySupplier — .get() вызывается лениво на стороне билдера,
+        //  а не остаётся в коде генератора. Проверки на null сохранены (предмет может быть
+        //  отключён в конфиге).
         if (ModItems.getPowders(ModPowders.IRON) != null) {
-            ShredderRecipeBuilder.shredderRecipe(Items.IRON_INGOT,
-                            new ItemStack(ModItems.getPowders(ModPowders.IRON).get(), 1))
-                    //? if fabric && < 1.21.1 {
-                    /*.save(writer, new ResourceLocation(RefStrings.MODID, "shredder/iron_ingot_to_powder"));
-                    *///?} else {
-                                        .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/iron_ingot_to_powder"));
-                    //?}
-
+            ShredderRecipeBuilder.shredderRecipe(Items.IRON_INGOT, ModItems.getPowders(ModPowders.IRON), 1)
+                    .save(writer, "shredder/iron_ingot_to_powder");
         }
         if (ModItems.getPowders(ModPowders.IRON) != null) {
-            ShredderRecipeBuilder.shredderRecipe(Items.RAW_IRON,
-                            new ItemStack(ModItems.getPowders(ModPowders.IRON).get(), 1))
-                    //? if fabric && < 1.21.1 {
-                    /*.save(writer, new ResourceLocation(RefStrings.MODID, "shredder/iron_ingot_to_powder"));
-                     *///?} else {
-                    .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/raw_iron_to_powder"));
-            //?}
-
+            ShredderRecipeBuilder.shredderRecipe(Items.RAW_IRON, ModItems.getPowders(ModPowders.IRON), 1)
+                    .save(writer, "shredder/raw_iron_to_powder");
         }
         if (ModItems.getPowders(ModPowders.IRON) != null) {
-            ShredderRecipeBuilder.shredderRecipe(Items.RAW_IRON_BLOCK   ,
-                            new ItemStack(ModItems.getPowders(ModPowders.IRON).get(), 8))
-                    //? if fabric && < 1.21.1 {
-                    /*.save(writer, new ResourceLocation(RefStrings.MODID, "shredder/iron_ingot_to_powder"));
-                     *///?} else {
-                    .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/raw_iron_block_to_powder"));
-            //?}
-
+            ShredderRecipeBuilder.shredderRecipe(Items.RAW_IRON_BLOCK, ModItems.getPowders(ModPowders.IRON), 8)
+                    .save(writer, "shredder/raw_iron_block_to_powder");
         }
 
         if (ModItems.getPowders(ModPowders.GOLD) != null) {
-            ShredderRecipeBuilder.shredderRecipe(Items.GOLD_INGOT,
-                            new ItemStack(ModItems.getPowders(ModPowders.GOLD).get(), 1))
-                    //? if fabric && < 1.21.1 {
-                    /*.save(writer, new ResourceLocation(RefStrings.MODID, "shredder/gold_ingot_to_powder"));
-                    *///?} else {
-                                        .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/gold_ingot_to_powder"));
-                    //?}
-
+            ShredderRecipeBuilder.shredderRecipe(Items.GOLD_INGOT, ModItems.getPowders(ModPowders.GOLD), 1)
+                    .save(writer, "shredder/gold_ingot_to_powder");
         }
         if (ModItems.getPowders(ModPowders.GOLD) != null) {
-            ShredderRecipeBuilder.shredderRecipe(Items.RAW_GOLD,
-                            new ItemStack(ModItems.getPowders(ModPowders.GOLD).get(), 1))
-                    //? if fabric && < 1.21.1 {
-                    /*.save(writer, new ResourceLocation(RefStrings.MODID, "shredder/gold_ingot_to_powder"));
-                     *///?} else {
-                    .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/raw_gold_to_powder"));
-            //?}
-
+            ShredderRecipeBuilder.shredderRecipe(Items.RAW_GOLD, ModItems.getPowders(ModPowders.GOLD), 1)
+                    .save(writer, "shredder/raw_gold_to_powder");
         }
         if (ModItems.getPowders(ModPowders.GOLD) != null) {
-            ShredderRecipeBuilder.shredderRecipe(Items.RAW_GOLD_BLOCK,
-                            new ItemStack(ModItems.getPowders(ModPowders.GOLD).get(), 9))
-                    //? if fabric && < 1.21.1 {
-                    /*.save(writer, new ResourceLocation(RefStrings.MODID, "shredder/gold_ingot_to_powder"));
-                     *///?} else {
-                    .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/raw_gold_block_to_powder"));
-            //?}
-
+            ShredderRecipeBuilder.shredderRecipe(Items.RAW_GOLD_BLOCK, ModItems.getPowders(ModPowders.GOLD), 9)
+                    .save(writer, "shredder/raw_gold_block_to_powder");
         }
 
         if (ModItems.COPPER_POWDER != null) {
-            ShredderRecipeBuilder.shredderRecipe(Items.RAW_COPPER,
-                            new ItemStack(ModItems.COPPER_POWDER.get(), 1))
-                    .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/raw_copper_to_powder"));
-            ShredderRecipeBuilder.shredderRecipe(Items.RAW_COPPER_BLOCK,
-                            new ItemStack(ModItems.COPPER_POWDER.get(), 9))
-                    .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/raw_copper_block_to_powder"));
+            ShredderRecipeBuilder.shredderRecipe(Items.RAW_COPPER, ModItems.COPPER_POWDER, 1)
+                    .save(writer, "shredder/raw_copper_to_powder");
+            ShredderRecipeBuilder.shredderRecipe(Items.RAW_COPPER_BLOCK, ModItems.COPPER_POWDER, 9)
+                    .save(writer, "shredder/raw_copper_block_to_powder");
         }
 
         //  Остальные с проверками
         if (ModItems.getPowders(ModPowders.COAL) != null) {
             if (ModItems.COAL_POWDER_TINY != null) {
-                ShredderRecipeBuilder.shredderRecipe(ModItems.getPowders(ModPowders.COAL).get(),
-                                new ItemStack(ModItems.COAL_POWDER_TINY.get(), 9))
-                        //? if fabric && < 1.21.1 {
-                        /*.save(writer, new ResourceLocation(RefStrings.MODID, "shredder/coal_to_small_powder"));
-                        *///?} else {
-                                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/coal_to_small_powder"));
-                        //?}
-
+                ShredderRecipeBuilder.shredderRecipe(
+                                ModItems.getPowders(ModPowders.COAL), ModItems.COAL_POWDER_TINY, 9)
+                        .save(writer, "shredder/coal_to_small_powder");
             }
-            ShredderRecipeBuilder.shredderRecipe(Items.COAL,
-                            new ItemStack(ModItems.getPowders(ModPowders.COAL).get(), 1))
-                    //? if fabric && < 1.21.1 {
-                    /*.save(writer, new ResourceLocation(RefStrings.MODID, "shredder/coal_to_powder"));
-                    *///?} else {
-                                        .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/coal_to_powder"));
-                    //?}
-
+            ShredderRecipeBuilder.shredderRecipe(Items.COAL, ModItems.getPowders(ModPowders.COAL), 1)
+                    .save(writer, "shredder/coal_to_powder");
         }
     }
 
-    /**
+    /*
      * Raw mod ores → matching powder (1.7.10 auto-generated these from ore-dict "ore*" entries).
      */
     private static void registerModRawOreRecipes(Consumer<FinishedRecipe> writer) {
@@ -205,18 +162,13 @@ public final class ShredderRecipeGenerator {
         }
         String name = ingot.getName();
         ShredderRecipeBuilder.shredderRecipe(raw.get(), new ItemStack(powderRegistry.get(), 1))
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/raw_" + name + "_to_powder"));
+                .save(writer, "shredder/raw_" + name + "_to_powder");
     }
 
     private static void generatePowderProcessing(Consumer<FinishedRecipe> writer,
                                                  Function<ItemLike, InventoryChangeTrigger.TriggerInstance> hasItem) {
         ShredderRecipeBuilder.shredderRecipe(ModItems.SCRAP.get(), new ItemStack(ModItems.DUST.get(), 1))
-                //? if fabric && < 1.21.1 {
-                /*.save(writer, new ResourceLocation(RefStrings.MODID, "shredder/scrap_to_dust"));
-                *///?} else {
-                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/scrap_to_dust"));
-                //?}
-
+                .save(writer, "shredder/scrap_to_dust");
 
         //  ЦИКЛ ТОЛЬКО по ВАШЕМУ списку ENABLED_POWDERS!
         for (String powderName : ENABLED_POWDERS) {
@@ -244,104 +196,65 @@ public final class ShredderRecipeGenerator {
 
             // 1. Рецепт Шреддера: Слиток → Порошок (Всегда есть, если мы тут)
             ShredderRecipeBuilder.shredderRecipe(ingotItem, new ItemStack(powderItem, 1))
-                    //? if fabric && < 1.21.1 {
-                    /*.save(writer, new ResourceLocation(RefStrings.MODID, "shredder/" + ingotName + "_powder"));
-                    *///?} else {
-                                        .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/" + ingotName + "_powder"));
-                    //?}
-
+                    .save(writer, "shredder/" + ingotName + "_powder");
 
             // 2. Рецепт Шреддера: Блок → Порошки (ТОЛЬКО ЕСЛИ БЛОК СУЩЕСТВУЕТ)
             if (blockRegistry != null) {
                 ShredderRecipeBuilder.shredderRecipe(blockRegistry.get().asItem(), new ItemStack(powderItem, 9))
-                        //? if fabric && < 1.21.1 {
-                        /*.save(writer, new ResourceLocation(RefStrings.MODID, "shredder/" + ingotName + "_block_powder"));
-                        *///?} else {
-                                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/" + ingotName + "_block_powder"));
-                        //?}
-
+                        .save(writer, "shredder/" + ingotName + "_block_powder");
             }
 
             // Плавка порошка → слиток
-            net.minecraft.data.recipes.SimpleCookingRecipeBuilder.smelting(
+            SimpleCookingRecipeBuilder.smelting(
                             Ingredient.of(powderItem),
-                            net.minecraft.data.recipes.RecipeCategory.MISC,
+                            RecipeCategory.MISC,
                             ingotItem,
                             0.35f,
                             200)
                     .unlockedBy("has_" + ingotName + "_powder", hasItem.apply(powderItem))
-                    //? if fabric && < 1.21.1 {
-                    /*.save(writer, new ResourceLocation(RefStrings.MODID, ingotName + "_powder_smelting"));
-                    *///?} else {
-                                        .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, ingotName + "_powder_smelting"));
-                    //?}
-
+                    .save(writer, BaseRecipeBuilder.resLoc(ingotName + "_powder_smelting"));
 
             // Доменная печь
-            net.minecraft.data.recipes.SimpleCookingRecipeBuilder.blasting(
+            SimpleCookingRecipeBuilder.blasting(
                             Ingredient.of(powderItem),
-                            net.minecraft.data.recipes.RecipeCategory.MISC,
+                            RecipeCategory.MISC,
                             ingotItem,
                             0.35f,
                             100)
                     .unlockedBy("has_" + ingotName + "_powder", hasItem.apply(powderItem))
-                    //? if fabric && < 1.21.1 {
-                    /*.save(writer, new ResourceLocation(RefStrings.MODID, ingotName + "_powder_blasting"));
-                    *///?} else {
-                                        .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, ingotName + "_powder_blasting"));
-                    //?}
-
+                    .save(writer, BaseRecipeBuilder.resLoc(ingotName + "_powder_blasting"));
 
             // Крафт из крошечных порошков
             ModItems.getTinyPowder(ingot).ifPresent(tinyRegistry -> {
                 var tinyItem = tinyRegistry.get();
-                ShapedRecipeBuilder.shaped(net.minecraft.data.recipes.RecipeCategory.MISC, powderItem)
+                ShapedRecipeBuilder.shaped(RecipeCategory.MISC, powderItem)
                         .pattern("TTT")
                         .pattern("TTT")
                         .pattern("TTT")
                         .define('T', tinyItem)
                         .unlockedBy("has_" + ingotName + "_powder_tiny", hasItem.apply(tinyItem))
-                        //? if fabric && < 1.21.1 {
-                        /*.save(writer, new ResourceLocation(RefStrings.MODID, ingotName + "_powder_from_tiny"));
-                        *///?} else {
-                                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, ingotName + "_powder_from_tiny"));
-                        //?}
+                        .save(writer, BaseRecipeBuilder.resLoc(ingotName + "_powder_from_tiny"));
 
-
-                ShapelessRecipeBuilder.shapeless(net.minecraft.data.recipes.RecipeCategory.MISC, tinyItem, 9)
+                ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, tinyItem, 9)
                         .requires(powderItem)
                         .unlockedBy("has_" + ingotName + "_powder", hasItem.apply(powderItem))
-                        //? if fabric && < 1.21.1 {
-                        /*.save(writer, new ResourceLocation(RefStrings.MODID, ingotName + "_tiny_from_powder"));
-                        *///?} else {
-                                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, ingotName + "_tiny_from_powder"));
-                        //?}
-
+                        .save(writer, BaseRecipeBuilder.resLoc(ingotName + "_tiny_from_powder"));
             });
         }
 
         // Общие рецепты пыли
-        ShapedRecipeBuilder.shaped(net.minecraft.data.recipes.RecipeCategory.MISC, ModItems.DUST.get())
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.DUST.get())
                 .pattern("TTT")
                 .pattern("TTT")
                 .pattern("TTT")
                 .define('T', ModItems.DUST_TINY.get())
                 .unlockedBy("has_dust_tiny", hasItem.apply(ModItems.DUST_TINY.get()))
-                //? if fabric && < 1.21.1 {
-                /*.save(writer, new ResourceLocation(RefStrings.MODID, "dust_from_tiny"));
-                *///?} else {
-                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "dust_from_tiny"));
-                //?}
+                .save(writer, BaseRecipeBuilder.resLoc("dust_from_tiny"));
 
-
-        ShapelessRecipeBuilder.shapeless(net.minecraft.data.recipes.RecipeCategory.MISC, ModItems.DUST_TINY.get(), 9)
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.DUST_TINY.get(), 9)
                 .requires(ModItems.DUST.get())
                 .unlockedBy("has_dust", hasItem.apply(ModItems.DUST.get()))
-                //? if fabric && < 1.21.1 {
-                /*.save(writer, new ResourceLocation(RefStrings.MODID, "dust_tiny_from_dust"));
-                *///?} else {
-                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "dust_tiny_from_dust"));
-                //?}
+                .save(writer, BaseRecipeBuilder.resLoc("dust_tiny_from_dust"));
     }
 }
 //?}

@@ -83,10 +83,6 @@ public class MachineSolarBoilerBlockEntity extends BaseMachineBlockEntity implem
     // GUI data
     protected final ContainerData data;
 
-    //? if forge {
-    private LazyOptional<IFluidHandler> fluidHandler = LazyOptional.empty();
-    //?}
-
     public MachineSolarBoilerBlockEntity(BlockPos pos, BlockState state) {
         // No RF energy capacity/receive rate - solar powered
         super(ModBlockEntities.SOLAR_BOILER_BE.get(), pos, state, INVENTORY_SIZE, 0L, 0L);
@@ -317,8 +313,8 @@ public class MachineSolarBoilerBlockEntity extends BaseMachineBlockEntity implem
 
     // --- NBT ---
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         for (int i = 0; i < tanks.length; i++) {
             tanks[i].writeToNBT(tag, "tank_" + i);
         }
@@ -327,8 +323,8 @@ public class MachineSolarBoilerBlockEntity extends BaseMachineBlockEntity implem
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         for (int i = 0; i < tanks.length; i++) {
             tanks[i].readFromNBT(tag, "tank_" + i);
         }
@@ -340,19 +336,7 @@ public class MachineSolarBoilerBlockEntity extends BaseMachineBlockEntity implem
     //? if forge {
     @Override
     protected void setupFluidCapability() {
-        fluidHandler = LazyOptional.of(() -> new SolarBoilerFluidHandler(this));
-    }
-
-    @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.FLUID_HANDLER) return fluidHandler.cast();
-        return super.getCapability(cap, side);
-    }
-
-    @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        fluidHandler.invalidate();
+        setFluidHandler(new SolarBoilerFluidHandler(this));
     }
     //?}
 
@@ -365,8 +349,7 @@ public class MachineSolarBoilerBlockEntity extends BaseMachineBlockEntity implem
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
-        // No GUI for the Solar Boiler - it operates passively.
-        return null;
+        return new com.hbm_m.inventory.menu.MachineSolarBoilerMenu(id, inv, this, data);
     }
 
     @Override

@@ -128,11 +128,22 @@ public class AirstrikeHeavyEntity extends Entity {
         this.setDeltaMovement(this.direction.scale(PLANE_SPEED));
     }
 
+    //? if < 1.21.1 {
+
     @Override
     protected void defineSynchedData() {
         this.entityData.define(TARGET_POS, BlockPos.ZERO);
         this.entityData.define(OWNER_UUID_ACCESSOR, "");
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+
+        builder.define(TARGET_POS, BlockPos.ZERO);
+        builder.define(OWNER_UUID_ACCESSOR, "");
+    
+    }
+    *///?}
 
     @Override
     public void tick() {
@@ -303,11 +314,19 @@ public class AirstrikeHeavyEntity extends Entity {
         tag.putInt("BombsDropped", bombsDropped);  // 🆕 Сохранение счётчика
     }
 
+    //? if < 1.21.1 {
     @NotNull
     @Override
     public Packet<ClientGamePacketListener> getAddEntityPacket() {
         return new net.minecraft.network.protocol.game.ClientboundAddEntityPacket(this);
     }
+    //?} else {
+    /*@NotNull
+    @Override
+    public Packet<ClientGamePacketListener> getAddEntityPacket(net.minecraft.server.level.ServerEntity serverEntity) {
+        return new net.minecraft.network.protocol.game.ClientboundAddEntityPacket(this, serverEntity);
+    }
+    *///?}
 
     @Override public boolean isPickable() { return false; }
     @Override public boolean isPushable() { return false; }

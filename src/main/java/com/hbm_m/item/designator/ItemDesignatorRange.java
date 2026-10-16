@@ -1,5 +1,6 @@
 package com.hbm_m.item.designator;
 
+import com.hbm_m.item.ITooltipProvider;
 import java.util.List;
 
 import com.hbm_m.api.item.IDesignatorItem;
@@ -25,14 +26,14 @@ import net.minecraft.world.phys.Vec3;
  * Range designator: right-click in air to raycast (300 blocks) and set target at looked block.
  * Does not set target when looking at a launch pad. Port from 1.7.10 ItemDesingatorRange.
  */
-public class ItemDesignatorRange extends Item implements IDesignatorItem {
+public class ItemDesignatorRange extends Item implements IDesignatorItem, ITooltipProvider {
 
     public ItemDesignatorRange(Properties properties) {
         super(properties.stacksTo(1));
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
+    public void appendHbmTooltip(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
         if (PlatformHooks.hasItemTag(stack) && PlatformHooks.getItemTag(stack).contains("xCoord")) {
             tooltip.add(Component.translatable("tooltip.hbm_m.designator.target"));
             tooltip.add(Component.literal("X: " + PlatformHooks.getItemTag(stack).getInt("xCoord")).withStyle(ChatFormatting.GRAY));

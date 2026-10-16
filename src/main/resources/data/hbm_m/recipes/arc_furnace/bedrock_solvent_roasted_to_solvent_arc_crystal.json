@@ -1,0 +1,12 @@
+{
+  "type": "hbm_m:arc_furnace",
+  "ingredient": {
+    "item": "hbm_m:bedrock_ore_solvent_roasted_crystal"
+  },
+  "count": 1,
+  "result": {
+    "item": "hbm_m:bedrock_ore_solvent_arc_crystal",
+    "count": 4
+  },
+  "duration": 100
+}

@@ -31,16 +31,28 @@ public class MukeWaveParticle extends ParticleNT {
     public void render(VertexConsumer ignored, Camera camera, float partialTicks, PoseStack levelPoseStack) {
         FogRenderer.setupNoFog();
 
-        Vec3 camPos = camera.getPosition();
-        float pX = (float) (Mth.lerp(partialTicks, this.xo, this.x) - camPos.x);
-        float pY = (float) (Mth.lerp(partialTicks, this.yo, this.y) - camPos.y);
-        float pZ = (float) (Mth.lerp(partialTicks, this.zo, this.z) - camPos.z);
+        Vec3 off = virtualizedOffset(
+                Mth.lerp(partialTicks, this.xo, this.x),
+                Mth.lerp(partialTicks, this.yo, this.y),
+                Mth.lerp(partialTicks, this.zo, this.z),
+                camera);
+        float pX = (float) off.x;
+        float pY = (float) off.y;
+        float pZ = (float) off.z;
 
         this.alpha = Mth.clamp(1F - ((this.age + partialTicks) / (float) this.lifetime), 0F, 1F);
-        float scale = (1F - (float) Math.pow(Math.E, (this.age + partialTicks) * -0.125D)) * waveScale;
+        // Fallback-виртуализация: сжатие размера вместе со смещением (см. ParticleNT.virtualScale).
+        float vScale = virtualScale(
+                Mth.lerp(partialTicks, this.xo, this.x),
+                Mth.lerp(partialTicks, this.yo, this.y),
+                Mth.lerp(partialTicks, this.zo, this.z),
+                camera);
+        float scale = (1F - (float) Math.pow(Math.E, (this.age + partialTicks) * -0.125D)) * waveScale * vScale;
 
-        VertexConsumer consumer = net.minecraft.client.Minecraft.getInstance()
-                .renderBuffers().bufferSource()
+        // Изолированный буфер движка (правило PlainBufferSource): NUKE_FLASH
+        // несёт sortOnUpload=true и не должен регистрироваться в общем
+        // bufferSource под ImmediatelyFast.
+        VertexConsumer consumer = ParticleEngineNT.buffer()
                 .getBuffer(getRenderType());
 
         ImmediateVertexWriter.worldQuad(consumer,

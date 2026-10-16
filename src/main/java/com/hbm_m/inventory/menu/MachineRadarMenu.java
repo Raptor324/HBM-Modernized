@@ -50,6 +50,11 @@ public class MachineRadarMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineRadarBlockEntity radarBlockEntity) {
             return radarBlockEntity;
         }
+        // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (inventory.player.level().isClientSide) {
+            return null;
+        }
         throw new IllegalStateException("No MachineRadarBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":radar_menu");
     }
 

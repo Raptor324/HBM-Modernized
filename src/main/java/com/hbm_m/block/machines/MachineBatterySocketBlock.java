@@ -5,7 +5,6 @@ import java.util.function.Supplier;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.BatterySocketBlockEntity;
@@ -149,19 +148,7 @@ public class MachineBatterySocketBlock extends BaseEntityBlock implements IMulti
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            BlockPos core = placeMultiblockStructure(level, pos, state);
-            if (core == null) {
-                return;
-            }
-            Direction facing = state.getValue(FACING);
-            MultiblockStructureHelper helper = getStructureHelper();
-            EnergyNetworkManager mgr = EnergyNetworkManager.get((ServerLevel) level);
-            mgr.addNode(core);
-            for (BlockPos local : helper.getStructureMap().keySet()) {
-                if (getPartRole(local) == PartRole.ENERGY_CONNECTOR) {
-                    mgr.addNode(helper.getRotatedPos(core, local, facing));
-                }
-            }
+            placeMultiblockStructure(level, pos, state);
         }
     }
 
@@ -176,13 +163,6 @@ public class MachineBatterySocketBlock extends BaseEntityBlock implements IMulti
         if (!state.is(newState.getBlock()) && !level.isClientSide()) {
             MultiblockStructureHelper helper = getStructureHelper();
             Direction facing = state.getValue(FACING);
-            EnergyNetworkManager mgr = EnergyNetworkManager.get((ServerLevel) level);
-            mgr.removeNode(pos);
-            for (BlockPos local : helper.getStructureMap().keySet()) {
-                if (getPartRole(local) == PartRole.ENERGY_CONNECTOR) {
-                    mgr.removeNode(helper.getRotatedPos(pos, local, facing));
-                }
-            }
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof com.hbm_m.blockentity.BaseMachineBlockEntity machine) {
                 machine.dropInventoryContents();
@@ -192,8 +172,19 @@ public class MachineBatterySocketBlock extends BaseEntityBlock implements IMulti
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return openMenu(state, level, pos, player, hand, hit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+    }
+    *///?}
+
+    private InteractionResult openMenu(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider provider) {
             MenuRegistry.openExtendedMenu((ServerPlayer) player, provider, buf -> buf.writeBlockPos(pos));
         }
@@ -225,4 +216,13 @@ public class MachineBatterySocketBlock extends BaseEntityBlock implements IMulti
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return level.isClientSide ? null : createTickerHelper(type, ModBlockEntities.BATTERY_SOCKET_BE.get(), BatterySocketBlockEntity::tick);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineBatterySocketBlock> CODEC = simpleCodec(MachineBatterySocketBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

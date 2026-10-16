@@ -76,14 +76,28 @@ public abstract class NukeBaseBlock extends Block implements EntityBlock, IBomb 
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
+        return openGui(state, level, pos, player, hand, hitResult);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+        return openGui(state, level, pos, player, InteractionHand.MAIN_HAND, hitResult);
+    }
+    *///?}
+
+    private InteractionResult openGui(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
         if (level.isClientSide) return InteractionResult.SUCCESS;
         if (!player.isShiftKeyDown()) {
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof net.minecraft.world.MenuProvider menuProvider) {
-                player.openMenu(menuProvider);
-                
+                // Расширенное меню: передаём позицию BE клиентской фабрике.
+                if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
+                    dev.architectury.registry.menu.MenuRegistry.openExtendedMenu(serverPlayer, menuProvider,
+                            buf -> buf.writeBlockPos(pos));
+                }
             }
             return InteractionResult.CONSUME;
         }

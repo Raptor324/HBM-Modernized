@@ -2,6 +2,7 @@ package com.hbm_m.compat.jei;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.recipe.CyclotronRecipe;
 
 import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
@@ -15,10 +16,17 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
 //? if forge {
-public class CyclotronJeiCategory implements IRecipeCategory<CyclotronJeiRecipe> {
+/**
+ * JEI-категория циклотрона ({@code hbm_m:cyclotron}).
+ *
+ * <p>Работает напрямую с data-driven {@link CyclotronRecipe} (JSON) — без промежуточной
+ * {@code *JeiRecipe}-обёртки. Target/input — {@link CyclotronRecipe#getTarget()} / #{@link CyclotronRecipe#getInput()},
+ * выход — {@link CyclotronRecipe#getOutput()}.</p>
+ */
+public class CyclotronJeiCategory implements IRecipeCategory<CyclotronRecipe> {
 
-    public static final RecipeType<CyclotronJeiRecipe> RECIPE_TYPE =
-            RecipeType.create(RefStrings.MODID, "cyclotron", CyclotronJeiRecipe.class);
+    public static final RecipeType<CyclotronRecipe> RECIPE_TYPE =
+            RecipeType.create(RefStrings.MODID, "cyclotron", CyclotronRecipe.class);
 
     private static final ResourceLocation TEXTURE =
             //? if fabric && < 1.21.1 {
@@ -37,7 +45,7 @@ public class CyclotronJeiCategory implements IRecipeCategory<CyclotronJeiRecipe>
     }
 
     @Override
-    public RecipeType<CyclotronJeiRecipe> getRecipeType() {
+    public RecipeType<CyclotronRecipe> getRecipeType() {
         return RECIPE_TYPE;
     }
 
@@ -58,15 +66,22 @@ public class CyclotronJeiCategory implements IRecipeCategory<CyclotronJeiRecipe>
     }
 
     @Override
-    public void setRecipe(IRecipeLayoutBuilder builder, CyclotronJeiRecipe recipe, mezz.jei.api.recipe.IFocusGroup focuses) {
+    public void setRecipe(IRecipeLayoutBuilder builder, CyclotronRecipe recipe, mezz.jei.api.recipe.IFocusGroup focuses) {
+        // Таргет-слот (что бомбардируем) — slot 0, позиция (17, 34).
         builder.addSlot(RecipeIngredientRole.INPUT, 17, 34)
-                .addItemStacks(recipe.getTargetStacks());
+                .addIngredients(recipe.getTarget());
 
+        // Реактив-слот (чем бомбардируем) — slot 1, позиция (71, 34).
         builder.addSlot(RecipeIngredientRole.INPUT, 71, 34)
-                .addItemStacks(recipe.getInputStacks());
+                .addIngredients(recipe.getInput());
 
-        builder.addSlot(RecipeIngredientRole.OUTPUT, 127, 34)
-                .addItemStack(recipe.getOutput());
+        // Выход — позиция (127, 34). Пустой выход не показываем (фильтр по источнику уже отсеивает
+        // рецепты без result, но на всякий случай — guard).
+        ItemStack output = recipe.getOutput();
+        if (!output.isEmpty()) {
+            builder.addSlot(RecipeIngredientRole.OUTPUT, 127, 34)
+                    .addItemStack(output);
+        }
     }
 }
 //?} else {

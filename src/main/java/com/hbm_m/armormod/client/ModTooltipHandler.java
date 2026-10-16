@@ -34,7 +34,11 @@ public class ModTooltipHandler {
     //?}
 
     public static void init() {
+        //? if < 1.21.1 {
         ClientTooltipEvent.ITEM.register(ModTooltipHandler::onItemTooltip);
+        //?} else {
+        /*ClientTooltipEvent.ITEM.register((stack, tooltip, context, flag) -> onItemTooltip(stack, tooltip, flag));
+        *///?}
     }
 
     private static void onItemTooltip(ItemStack stack, List<Component> tooltip, TooltipFlag flag) {

@@ -5,7 +5,6 @@ import java.util.function.Supplier;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineIndustrialTurbineBlockEntity;
@@ -109,20 +108,7 @@ public class MachineIndustrialTurbineBlock extends BaseEntityBlock implements IM
         super.onPlace(state, level, pos, oldState, isMoving);
 
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            BlockPos core = placeMultiblockStructure(level, pos, state);
-            if (core == null) {
-                return;
-            }
-            Direction facing = state.getValue(FACING);
-            EnergyNetworkManager.get((ServerLevel) level).addNode(core);
-
-            for (BlockPos gridPos : structureHelper.getStructureMap().keySet()) {
-                PartRole role = structureHelper.resolvePartRole(gridPos, this);
-                if (role.canReceiveEnergy()) {
-                    BlockPos worldPos = structureHelper.getRotatedPos(core, gridPos, facing);
-                    EnergyNetworkManager.get((ServerLevel) level).addNode(worldPos);
-                }
-            }
+            placeMultiblockStructure(level, pos, state);
         }
     }
 
@@ -136,13 +122,6 @@ public class MachineIndustrialTurbineBlock extends BaseEntityBlock implements IM
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (state.getBlock() != newState.getBlock() && !level.isClientSide()) {
             Direction facing = state.getValue(FACING);
-
-            EnergyNetworkManager.get((ServerLevel) level).removeNode(pos);
-
-            for (BlockPos gridPos : structureHelper.getStructureMap().keySet()) {
-                BlockPos worldPos = structureHelper.getRotatedPos(pos, gridPos, facing);
-                EnergyNetworkManager.get((ServerLevel) level).removeNode(worldPos);
-            }
 
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof MachineIndustrialTurbineBlockEntity turbine) {
@@ -195,4 +174,13 @@ public class MachineIndustrialTurbineBlock extends BaseEntityBlock implements IM
     public PartRole getPartRole(BlockPos localOffset) {
         return structureHelper.resolvePartRole(localOffset, this);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineIndustrialTurbineBlock> CODEC = simpleCodec(MachineIndustrialTurbineBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

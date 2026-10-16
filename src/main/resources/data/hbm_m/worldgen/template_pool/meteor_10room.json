@@ -1,0 +1,77 @@
+{
+  "fallback": "hbm_m:meteor_roomback",
+  "elements": [
+    {
+      "weight": 1,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "rigid",
+        "location": "hbm_m:meteor/room-basic",
+        "processors": "hbm_m:connection_fix"
+      }
+    },
+    {
+      "weight": 1,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "rigid",
+        "location": "hbm_m:meteor/room-balcony",
+        "processors": "hbm_m:connection_fix"
+      }
+    },
+    {
+      "weight": 1,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "rigid",
+        "location": "hbm_m:meteor/room-dragon",
+        "processors": "hbm_m:connection_fix"
+      }
+    },
+    {
+      "weight": 1,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "rigid",
+        "location": "hbm_m:meteor/room-ladder",
+        "processors": "hbm_m:connection_fix"
+      }
+    },
+    {
+      "weight": 1,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "rigid",
+        "location": "hbm_m:meteor/room-ooze",
+        "processors": "hbm_m:connection_fix"
+      }
+    },
+    {
+      "weight": 1,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "rigid",
+        "location": "hbm_m:meteor/room-split",
+        "processors": "hbm_m:connection_fix"
+      }
+    },
+    {
+      "weight": 1,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "rigid",
+        "location": "hbm_m:meteor/room-stairs",
+        "processors": "hbm_m:connection_fix"
+      }
+    },
+    {
+      "weight": 1,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "rigid",
+        "location": "hbm_m:meteor/room-triple",
+        "processors": "hbm_m:connection_fix"
+      }
+    }
+  ]
+}

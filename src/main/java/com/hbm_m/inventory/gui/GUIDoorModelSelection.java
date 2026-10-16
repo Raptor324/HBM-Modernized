@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 
 import java.util.ArrayList;
@@ -169,7 +170,7 @@ public class GUIDoorModelSelection extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(guiGraphics);
+        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         int localMouseX = toLocalX(mouseX);
         int localMouseY = toLocalY(mouseY);
         guiGraphics.pose().pushPose();
@@ -179,7 +180,7 @@ public class GUIDoorModelSelection extends Screen {
         renderSkinButtons(guiGraphics, localMouseX, localMouseY);
         renderPageButtons(guiGraphics, localMouseX, localMouseY);
         guiGraphics.pose().popPose();
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        GuiCompat.renderWidgetsOnly(this, guiGraphics, mouseX, mouseY, partialTick);
     }
 
     private void renderMenuPanel(GuiGraphics guiGraphics) {

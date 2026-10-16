@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.blockentity.machines.MachineSolderingStationBlockEntity;
 import com.hbm_m.inventory.menu.MachineSolderingStationMenu;
@@ -35,6 +36,8 @@ public class GUIMachineSolderingStation extends GuiInfoScreen<MachineSolderingSt
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1, 1, 1, 1);
         g.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
+        // тайл может отсутствовать в реплее Flashback
+        if (solderer == null) return;
 
         // Collision Prevention indicator (texture at 192, 14 in GUI sheet)
         if (solderer.collisionPrevention)
@@ -63,7 +66,8 @@ public class GUIMachineSolderingStation extends GuiInfoScreen<MachineSolderingSt
     @Override
     protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
         Component title = this.title;
-        g.drawString(font, title, imageWidth / 2 - font.width(title) / 2, 6, 0x404040, false);
+        // Original: xSize / 2 - width / 2 - 18 (offset to make room for the fluid tank icon)
+        g.drawString(font, title, imageWidth / 2 - font.width(title) / 2 - 18, 6, 0x404040, false);
         g.drawString(font, playerInventoryTitle, 8, imageHeight - 96 + 2, 0x404040, false);
     }
 
@@ -71,9 +75,11 @@ public class GUIMachineSolderingStation extends GuiInfoScreen<MachineSolderingSt
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(g);
+        GuiCompat.renderBackground(this, g, mouseX, mouseY, partialTick);
         super.render(g, mouseX, mouseY, partialTick);
 
+        // тайл может отсутствовать в реплее Flashback
+        if (solderer != null) {
         drawElectricityInfo(g, mouseX, mouseY, 152, 18, 16, 52,
                 solderer.getEnergyStored(), solderer.getMaxEnergyStored());
 
@@ -91,6 +97,7 @@ public class GUIMachineSolderingStation extends GuiInfoScreen<MachineSolderingSt
                                 : ChatFormatting.RED   + "OFF")),
                 Component.literal("Prevents no-fluid recipes from being processed"),
                 Component.literal("when fluid is present."));
+        }
 
         this.renderTooltip(g, mouseX, mouseY);
     }
@@ -99,6 +106,8 @@ public class GUIMachineSolderingStation extends GuiInfoScreen<MachineSolderingSt
 
     @Override
     public boolean mouseClicked(double mx, double my, int btn) {
+        // тайл может отсутствовать в реплее Flashback
+        if (solderer == null) return super.mouseClicked(mx, my, btn);
         int bx = leftPos + 5, by = topPos + 66;
         if (mx >= bx && mx < bx + 10 && my > by && my <= by + 10) {
             minecraft.getSoundManager().play(

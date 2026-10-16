@@ -1,5 +1,6 @@
 package com.hbm_m.item.designator;
 
+import com.hbm_m.item.ITooltipProvider;
 import java.util.List;
 
 import com.hbm_m.api.item.IDesignatorItem;
@@ -22,7 +23,7 @@ import net.minecraft.world.phys.Vec3;
  * Manual designator: right-click opens GUI to set target X/Z with buttons.
  * Port from 1.7.10 ItemDesingatorManual. GUI is opened client-side only.
  */
-public class ItemDesignatorManual extends Item implements IDesignatorItem {
+public class ItemDesignatorManual extends Item implements IDesignatorItem, ITooltipProvider {
 
     public ItemDesignatorManual(Properties properties) {
         super(properties.stacksTo(1));
@@ -38,7 +39,7 @@ public class ItemDesignatorManual extends Item implements IDesignatorItem {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
+    public void appendHbmTooltip(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
         if (PlatformHooks.hasItemTag(stack) && PlatformHooks.getItemTag(stack).contains("xCoord")) {
             tooltip.add(Component.translatable("tooltip.hbm_m.designator.target"));
             tooltip.add(Component.literal("X: " + PlatformHooks.getItemTag(stack).getInt("xCoord")).withStyle(ChatFormatting.GRAY));

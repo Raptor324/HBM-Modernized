@@ -70,7 +70,22 @@ public class BlockProcessorStandard implements IBlockProcessor {
 
                     ItemStack toolWith = new ItemStack(Items.DIAMOND_PICKAXE);
                     if (dropFortune > 0) {
+                        //? if < 1.21.1 {
                         toolWith.enchant(Enchantments.BLOCK_FORTUNE, dropFortune);
+                        //?} else {
+                        /*// 1.21.1: BuiltInRegistries.ENCHANTMENT удалён — получаем через RegistryAccess и ResourceKey<Enchantment>.
+                        net.minecraft.world.item.enchantment.Enchantment fortuneEnch =
+                                level.registryAccess()
+                                        .lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT)
+                                        .get(net.minecraft.resources.ResourceKey.create(
+                                                net.minecraft.core.registries.Registries.ENCHANTMENT,
+                                                net.minecraft.resources.ResourceLocation.withDefaultNamespace("fortune")))
+                                        .orElse(null)
+                                        .value();
+                        if (fortuneEnch != null) {
+                            toolWith.enchant(net.minecraft.core.Holder.direct(fortuneEnch), dropFortune);
+                        }
+                        *///?}
                     }
 
                     if (level instanceof ServerLevel serverLevel) {

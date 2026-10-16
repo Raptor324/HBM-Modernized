@@ -29,10 +29,17 @@ public class PowerArmorEmptyModel extends HumanoidModel<LivingEntity> {
         return LayerDefinition.create(meshdefinition, 64, 64);
     }
 
+    //? if < 1.21.1 {
     @Override
     public void renderToBuffer(@NotNull PoseStack poseStack, @NotNull VertexConsumer buffer, int packedLight,
                                int packedOverlay, float red, float green, float blue, float alpha) {
         // Do nothing. The actual model is rendered via AbstractObjArmorLayer to use Forge's OBJ loader.
     }
+    //?} else {
+    /*@Override
+    public void renderToBuffer(@NotNull PoseStack poseStack, @NotNull VertexConsumer buffer, int packedLight,
+                               int packedOverlay, int color) {
+        // Do nothing. The actual model is rendered via AbstractObjArmorLayer to use Forge's OBJ loader.
+    }
+    *///?}
 }
-

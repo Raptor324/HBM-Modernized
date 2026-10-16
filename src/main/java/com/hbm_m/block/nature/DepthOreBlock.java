@@ -14,7 +14,7 @@ import net.minecraft.world.level.Explosion;
 
 //? if neoforge {
 /*import net.minecraft.world.item.Item.TooltipContext;
-import net.minecraft.world.item.tooltip.TooltipType;
+import net.minecraft.world.item.TooltipFlag;
 *///?}
 
 //? if forge {
@@ -51,7 +51,7 @@ public class DepthOreBlock extends Block {
 
     //? if neoforge {
     /*@Override
-    public void appendTooltip(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipType type) {
+    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         addDepthOreTooltip(tooltip);
     }
     *///?}

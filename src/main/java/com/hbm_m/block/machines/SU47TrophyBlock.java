@@ -28,4 +28,13 @@ public class SU47TrophyBlock extends BaseEntityBlock {
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return null;
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<SU47TrophyBlock> CODEC = simpleCodec(SU47TrophyBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

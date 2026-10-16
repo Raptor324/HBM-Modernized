@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.blockentity.machines.MachineTurbineBlockEntity;
 import com.hbm_m.inventory.fluid.ModFluids;
@@ -33,6 +34,8 @@ public class GUIMachineTurbine extends GuiInfoScreen<MachineTurbineMenu> {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
+        // тайл может отсутствовать в реплее Flashback
+        if (turbine == null) return;
 
         Fluid inputFluid = turbine.getTanks()[0].getTankType();
         if (isSameFluid(inputFluid, ModFluids.STEAM.getSource())) {
@@ -67,9 +70,11 @@ public class GUIMachineTurbine extends GuiInfoScreen<MachineTurbineMenu> {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
+        // тайл может отсутствовать в реплее Flashback
+        if (turbine != null) {
         FluidTank[] tanks = turbine.getTanks();
         tanks[0].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 62, this.topPos + 17, 16, 52);
         tanks[1].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 134, this.topPos + 17, 16, 52);
@@ -83,6 +88,7 @@ public class GUIMachineTurbine extends GuiInfoScreen<MachineTurbineMenu> {
                     -16, 68, 16, 16,
                     mouseX, mouseY,
                     Component.literal("Error: Invalid fluid!"));
+        }
         }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);

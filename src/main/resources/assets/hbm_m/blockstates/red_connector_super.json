@@ -1,0 +1,29 @@
+{
+  "variants": {
+    "facing=down": {
+      "model": "hbm_m:block/red_connector_super"
+    },
+    "facing=up": {
+      "model": "hbm_m:block/red_connector_super",
+      "x": 180
+    },
+    "facing=north": {
+      "model": "hbm_m:block/red_connector_super",
+      "x": 270
+    },
+    "facing=south": {
+      "model": "hbm_m:block/red_connector_super",
+      "x": 90
+    },
+    "facing=east": {
+      "model": "hbm_m:block/red_connector_super",
+      "x": 270,
+      "y": 90
+    },
+    "facing=west": {
+      "model": "hbm_m:block/red_connector_super",
+      "x": 270,
+      "y": 270
+    }
+  }
+}

@@ -1,0 +1,6 @@
+newmtl nuke_n2
+Ka 1.000 1.000 1.000
+Kd 1.000 1.000 1.000
+Ks 0.000 0.000 0.000
+d 1.0
+map_Kd hbm_m:block/bomb/nuke_n2

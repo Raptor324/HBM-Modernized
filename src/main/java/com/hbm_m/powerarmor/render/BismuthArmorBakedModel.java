@@ -1,4 +1,3 @@
-//? if forge {
 package com.hbm_m.powerarmor.render;
 
 
@@ -13,21 +12,10 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.world.item.ArmorItem;
 
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
-
 /**
  * Baked model for rendering Bismuth power armor in GUI/hand.
  * Uses the same multipart baked model infrastructure as T51/AJR.
  */
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
 public class BismuthArmorBakedModel extends AbstractArmorBakedModel {
 
     private static final String[] BISMUTH_ORDER = {
@@ -83,5 +71,4 @@ public class BismuthArmorBakedModel extends AbstractArmorBakedModel {
         }
     }
 }
-//?}
 

@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.blockentity.machines.MachinePumpjackBlockEntity;
 import com.hbm_m.inventory.menu.MachinePumpjackMenu;
@@ -31,6 +32,8 @@ public class GUIMachinePumpjack extends GuiInfoScreen<MachinePumpjackMenu> {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
+        // тайл может отсутствовать в реплее Flashback
+        if (pumpjack != null) {
         int power = (int) (pumpjack.getEnergyStored() * 52L / Math.max(pumpjack.getMaxEnergyStored(), 1L));
         if (power > 52) {
             power = 52;
@@ -49,6 +52,7 @@ public class GUIMachinePumpjack extends GuiInfoScreen<MachinePumpjackMenu> {
         }
 
         drawInfoPanel(guiGraphics, 78, 67, PanelType.SMALL_BLUE_INFO);
+        }
     }
 
     @Override
@@ -60,9 +64,11 @@ public class GUIMachinePumpjack extends GuiInfoScreen<MachinePumpjackMenu> {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
+        // тайл может отсутствовать в реплее Flashback
+        if (pumpjack != null) {
         drawElectricityInfo(guiGraphics, mouseX, mouseY,
             152, 18, 16, 52,
             pumpjack.getEnergyStored(), pumpjack.getMaxEnergyStored());
@@ -72,6 +78,7 @@ public class GUIMachinePumpjack extends GuiInfoScreen<MachinePumpjackMenu> {
             this.leftPos + 78, this.topPos + 67,
                 Component.literal("Progress:"),
                 Component.literal("   " + pumpjack.getProgress() + " / " + pumpjack.getMaxProgress()));
+        }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }

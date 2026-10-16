@@ -3,7 +3,6 @@ package com.hbm_m.block.machines;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
@@ -62,28 +61,10 @@ public class MachineLargeRadarBlock extends MachineRadarBlock {
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
-        if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            Direction facing = state.getValue(FACING);
-            for (BlockPos localPos : getStructureHelper().getStructureMap().keySet()) {
-                if (getPartRole(localPos).canReceiveEnergy()) {
-                    BlockPos worldPos = getStructureHelper().getRotatedPos(pos, localPos, facing);
-                    EnergyNetworkManager.get((ServerLevel) level).addNode(worldPos);
-                }
-            }
-        }
     }
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (!state.is(newState.getBlock()) && !level.isClientSide()) {
-            Direction facing = state.getValue(FACING);
-            for (BlockPos localPos : getStructureHelper().getStructureMap().keySet()) {
-                if (getPartRole(localPos).canReceiveEnergy()) {
-                    BlockPos worldPos = getStructureHelper().getRotatedPos(pos, localPos, facing);
-                    EnergyNetworkManager.get((ServerLevel) level).removeNode(worldPos);
-                }
-            }
-        }
         super.onRemove(state, level, pos, newState, isMoving);
     }
 

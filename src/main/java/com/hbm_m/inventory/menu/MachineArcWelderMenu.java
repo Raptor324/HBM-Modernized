@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.menu;
 
 import com.hbm_m.blockentity.machines.MachineArcWelderBlockEntity;
+import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -12,7 +13,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 //? if forge {
 import net.minecraftforge.items.SlotItemHandler;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.neoforge.items.SlotItemHandler;
+*///?}
 
 public class MachineArcWelderMenu extends AbstractContainerMenu {
 
@@ -29,8 +32,8 @@ public class MachineArcWelderMenu extends AbstractContainerMenu {
         super(ModMenuTypes.ARC_WELDER_MENU.get(), id);
         this.blockEntity = be;
 
-        //? if forge {
-        var handler = be.getItemHandler();
+        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку
+        var handler = be != null ? be.getItemHandler() : new DummyItemStackHandler(MACHINE_SLOTS);
         // ── Machine slots (0-7) ──────────────────────────────────────────────
         addSlot(new SlotItemHandler(handler, 0,  17, 36)); // Input 1
         addSlot(new SlotItemHandler(handler, 1,  35, 36)); // Input 2
@@ -42,7 +45,7 @@ public class MachineArcWelderMenu extends AbstractContainerMenu {
         addSlot(new SlotItemHandler(handler, 5,  17, 63)); // Fluid-ID item
         addSlot(new SlotItemHandler(handler, 6,  89, 63)); // Upgrade 1
         addSlot(new SlotItemHandler(handler, 7, 107, 63)); // Upgrade 2
-        //?}
+
 
         // ── Player inventory (8-34) ──────────────────────────────────────────
         for (int row = 0; row < 3; row++)
@@ -62,6 +65,9 @@ public class MachineArcWelderMenu extends AbstractContainerMenu {
         BlockPos pos = buf.readBlockPos();
         BlockEntity be = inv.player.level().getBlockEntity(pos);
         if (be instanceof MachineArcWelderBlockEntity w) return w;
+        // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (inv.player.level().isClientSide) return null;
         throw new IllegalStateException("No MachineArcWelderBlockEntity at " + pos);
     }
 
@@ -69,6 +75,9 @@ public class MachineArcWelderMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
+        if (blockEntity == null) {
+            return false; // тайл может отсутствовать на клиенте (реплей Flashback)
+        }
         return blockEntity.getLevel() == player.level()
             && player.distanceToSqr(blockEntity.getBlockPos().getCenter()) <= 64;
     }

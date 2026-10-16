@@ -5,6 +5,7 @@ import com.hbm_m.blockentity.machines.TurretBaseBlockEntity;
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.network.ModPacketHandler;
+import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
@@ -31,17 +32,30 @@ public class TurretMenu extends AbstractContainerMenu implements ILongEnergyMenu
     private static final int BATTERY_SLOT = 9;
 
     public TurretMenu(int id, Inventory inv, FriendlyByteBuf extraData) {
-        this(id, inv, (TurretBaseBlockEntity) inv.player.level().getBlockEntity(extraData.readBlockPos()));
+        this(id, inv, getBlockEntity(inv, extraData));
+    }
+
+    private static TurretBaseBlockEntity getBlockEntity(Inventory inv, FriendlyByteBuf extraData) {
+        BlockEntity blockEntity = inv.player.level().getBlockEntity(extraData.readBlockPos());
+        if (blockEntity instanceof TurretBaseBlockEntity turret) return turret;
+        // На клиенте тайл может отсутствовать (реплей Flashback) — возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (inv.player.level().isClientSide) return null;
+        throw new IllegalStateException("BlockEntity is not a TurretBaseBlockEntity");
     }
 
     public TurretMenu(int id, Inventory inv, BlockEntity entity) {
         super(ModMenuTypes.TURRET_MENU.get(), id);
 
-        this.blockEntity = (TurretBaseBlockEntity) entity;
+        this.blockEntity = entity instanceof TurretBaseBlockEntity turret ? turret : null;
         this.player = inv.player;
 
-        var handler = this.blockEntity.getInventory();
-        var container = new ModItemStackHandlerContainer(handler, this.blockEntity::setChanged);
+        // тайл может отсутствовать на клиенте (реплей Flashback) — подставляем пустую заглушку
+        var handler = this.blockEntity != null
+                ? this.blockEntity.getInventory()
+                : new DummyItemStackHandler(BATTERY_SLOT + 1);
+        var container = new ModItemStackHandlerContainer(handler,
+                this.blockEntity != null ? this.blockEntity::setChanged : () -> {});
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 3; col++) {
@@ -130,7 +144,8 @@ public class TurretMenu extends AbstractContainerMenu implements ILongEnergyMenu
                 }
                 slot.onQuickCraft(slotStack, itemstack);
             } else if (pIndex >= PLAYER_INV_START && pIndex < PLAYER_INV_END) {
-                if (blockEntity.isAcceptedAmmoPublic(slotStack)) {
+                // тайл может отсутствовать на клиенте (реплей Flashback)
+                if (blockEntity != null && blockEntity.isAcceptedAmmoPublic(slotStack)) {
                     if (!this.moveItemStackTo(slotStack, 0, AMMO_SLOT_COUNT, false)) {
                         return ItemStack.EMPTY;
                     }
@@ -161,6 +176,10 @@ public class TurretMenu extends AbstractContainerMenu implements ILongEnergyMenu
 
     @Override
     public boolean stillValid(Player pPlayer) {
+        // тайл может отсутствовать на клиенте (реплей Flashback)
+        if (blockEntity == null) {
+            return false;
+        }
         return stillValid(ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos()), pPlayer, blockEntity.getBlockState().getBlock());
     }
 

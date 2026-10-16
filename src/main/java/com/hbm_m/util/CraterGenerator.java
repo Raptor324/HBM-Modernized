@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.platform.PlatformHooks;
 import com.hbm_m.util.explosions.nuclear.BlockExplosionDefense;
 
 import net.minecraft.core.BlockPos;
@@ -130,7 +131,6 @@ public class CraterGenerator {
         MainRegistry.LOGGER.debug("[CRATER] Генерация кратера завершена за " + (endTime - startTime) + " мс");
     }
 
-
     private static void collectCraterBlocksOptimized(ServerLevel level, BlockPos centerPos, int searchRadius, int depth,
                                                      float horizontalRadius, float topRemovalRadius,
                                                      float stretchX, float stretchZ, float stretchY,
@@ -139,10 +139,6 @@ public class CraterGenerator {
         double invHorizontalRadiusZ = 1.0 / (horizontalRadius * stretchZ);
         double invDepth = 1.0 / (depth * stretchY);
         double topRemovalRadiusNorm = topRemovalRadius / horizontalRadius;
-
-        int centerX = centerPos.getX();
-        int centerY = centerPos.getY();
-        int centerZ = centerPos.getZ();
 
         for (int y = -depth; y <= REMOVAL_HEIGHT_ABOVE; y++) {
             double normalizedY = Math.abs((double) y) * invDepth;
@@ -184,8 +180,7 @@ public class CraterGenerator {
 
                     if (defenseResult.shouldBreak) {
                         craterBlocksSet.add(checkPos);
-                        distributeBlockToRingsWithOverlap(centerPos, checkPos,
-                                horizontalRadius, rings);
+                        distributeBlockToRingsWithOverlap(centerPos, checkPos, horizontalRadius, rings);
                     }
                 }
             }
@@ -241,8 +236,7 @@ public class CraterGenerator {
                 removeBlocksBatch(level, blockBatch);
             }
 
-            // Обработка волн
-            if (ringIndex == 1) { // Вторая волна: листья убираем, селлафит кладём
+            if (ringIndex == 1) {
                 for (BlockPos pos : currentRing) {
                     BlockState state = level.getBlockState(pos);
                     if (state.is(BlockTags.LEAVES)) {
@@ -251,7 +245,7 @@ public class CraterGenerator {
                 }
                 generateSelafitAtBottom(level, centerPos, currentRing, craterBlocksSet,
                         selafitBlocks, random, craterDepth);
-            } else if (ringIndex >= 2) { // Третья и четвёртая волны - обычная логика
+            } else if (ringIndex >= 2) {
                 generateSelafitAtBottom(level, centerPos, currentRing, craterBlocksSet,
                         selafitBlocks, random, craterDepth);
             }
@@ -318,8 +312,6 @@ public class CraterGenerator {
         }
     }
 
-
-
     private static boolean hasValidGroundBelow(ServerLevel level, BlockPos below) {
         for (int y = -50; y <= 1; y++) {
             BlockPos checkPos = below.above(y);
@@ -365,7 +357,6 @@ public class CraterGenerator {
         MainRegistry.LOGGER.debug("[CRATER] Удалено предметов: " + discardedCount);
     }
 
-
     private static void applyDamageZonesOptimizedV2(ServerLevel level, BlockPos centerPos,
                                                     Block wasteLogBlock, Block wastePlanksBlock,
                                                     Block burnedGrassBlock, Block[] selafitBlocks,
@@ -399,7 +390,7 @@ public class CraterGenerator {
                             Block selafitBlock = selafitBlocks[random.nextInt(selafitBlocks.length)];
                             level.setBlock(checkPos, selafitBlock.defaultBlockState(), 3);
                         } else if (
-                                state.is(Blocks.GRASS) || state.is(Blocks.TALL_GRASS) ||
+                                com.hbm_m.platform.PlatformHooks.isGrassBlock(state) || state.is(Blocks.TALL_GRASS) ||
                                         state.is(Blocks.SEAGRASS) || state.is(Blocks.TALL_SEAGRASS) ||
                                         state.is(Blocks.SNOW) || state.is(Blocks.SNOW_BLOCK)
                         ) {
@@ -419,13 +410,13 @@ public class CraterGenerator {
                         } else if (state.is(BlockTags.PLANKS)) {
                             level.setBlock(checkPos, wastePlanksBlock.defaultBlockState(), 3);
                         } else if (
-                                state.is(Blocks.GRASS) || state.is(Blocks.TALL_GRASS) ||
+                                com.hbm_m.platform.PlatformHooks.isGrassBlock(state) || state.is(Blocks.TALL_GRASS) ||
                                         state.is(Blocks.SEAGRASS) || state.is(Blocks.TALL_SEAGRASS) ||
                                         state.is(Blocks.SNOW) || state.is(Blocks.SNOW_BLOCK) ||
                                         state.is(Blocks.MYCELIUM) || state.is(Blocks.PODZOL)
                         ) {
                             level.removeBlock(checkPos, false);
-                        } else if (state.is(BlockTags.FLOWERS) || state.is(BlockTags.SMALL_FLOWERS)) {
+                        } else if (state.is(BlockTags.SMALL_FLOWERS)) {
                             level.removeBlock(checkPos, false);
                         } else if (state.is(Blocks.GLASS) || state.is(Blocks.GLASS_PANE)) {
                             if (random.nextFloat() < 0.6F) {
@@ -463,7 +454,7 @@ public class CraterGenerator {
             } else if (random.nextFloat() < 0.1F) {
                 level.setBlock(pos, Blocks.FIRE.defaultBlockState(), 3);
             }
-        } else if (state.is(Blocks.GRASS) || state.is(Blocks.TALL_GRASS) ||
+        } else if (com.hbm_m.platform.PlatformHooks.isGrassBlock(state) || state.is(Blocks.TALL_GRASS) ||
                 state.is(Blocks.SEAGRASS) || state.is(Blocks.TALL_SEAGRASS) ||
                 state.is(Blocks.SNOW) || state.is(Blocks.SNOW_BLOCK) ||
                 state.is(Blocks.GRASS_BLOCK) || state.is(Blocks.MYCELIUM) ||
@@ -494,14 +485,14 @@ public class CraterGenerator {
         List<LivingEntity> entitiesZone3 = level.getEntitiesOfClass(LivingEntity.class, zone3Area);
         for (LivingEntity entity : entitiesZone3) {
             entity.hurt(level.damageSources().generic(), ZONE_3_DAMAGE);
-            entity.setSecondsOnFire((int) FIRE_DURATION / 20);
+            PlatformHooks.setSecondsOnFire(entity, (int) FIRE_DURATION / 20);
         }
 
         List<LivingEntity> entitiesZone4 = level.getEntitiesOfClass(LivingEntity.class, zone4Area);
         for (LivingEntity entity : entitiesZone4) {
             if (!entitiesZone3.contains(entity)) {
                 entity.hurt(level.damageSources().generic(), ZONE_4_DAMAGE);
-                entity.setSecondsOnFire((int) FIRE_DURATION / 20);
+                PlatformHooks.setSecondsOnFire(entity, (int) FIRE_DURATION / 20);
             }
         }
     }

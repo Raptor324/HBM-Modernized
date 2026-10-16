@@ -1,6 +1,7 @@
 package com.hbm_m.block.weapons;
 
 import net.minecraft.world.level.block.FallingBlock;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.material.MapColor;
@@ -25,11 +26,11 @@ public class FallingSellafit extends FallingBlock {
      * @param solidBlock Твёрдый блок, в который должен преобразоваться гравитирующий селлафит
      */
     public FallingSellafit(Block solidBlock) {
-        super(Block.Properties.of()
+        super(BlockBehaviour.Properties.of()
                 .mapColor(MapColor.STONE)
                 .sound(SoundType.STONE)
                 .strength(3.0F, 3.0F)
-                .speedFactor(1.0F) // Нормальная скорость падения
+                .speedFactor(1.0F)
         );
         this.solidEquivalent = solidBlock;
     }
@@ -57,4 +58,17 @@ public class FallingSellafit extends FallingBlock {
     public Block getSolidEquivalent() {
         return this.solidEquivalent;
     }
+
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<FallingSellafit> CODEC = com.mojang.serialization.codecs.RecordCodecBuilder.mapCodec(instance -> 
+        instance.group(
+            net.minecraft.core.registries.BuiltInRegistries.BLOCK.byNameCodec().fieldOf("solid_equivalent").forGetter(FallingSellafit::getSolidEquivalent)
+        ).apply(instance, FallingSellafit::new)
+    );
+
+    @Override
+    public com.mojang.serialization.MapCodec<FallingSellafit> codec() {
+        return CODEC;
+    }
+    *///?}
 }

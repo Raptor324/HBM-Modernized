@@ -1,21 +1,12 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
 import java.util.Objects;
-import java.util.function.Consumer;
-
-import org.jetbrains.annotations.NotNull;
-
-import org.jetbrains.annotations.Nullable;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.hbm_m.recipe.PressRecipe;
 
-import net.minecraft.advancements.Advancement;
-import net.minecraft.advancements.CriterionTriggerInstance;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.data.recipes.FinishedRecipe;
-import net.minecraft.data.recipes.RecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
@@ -26,14 +17,10 @@ import net.minecraft.world.level.ItemLike;
 
 /**
  * Builder for {@link PressRecipe} data generation.
- * Mirrors the JSON structure used by the manual press recipe files but provides
- * the same ergonomic API style as {@link AssemblerRecipeBuilder}.
  */
-public class PressRecipeBuilder implements RecipeBuilder {
+public class PressRecipeBuilder extends BaseRecipeBuilder<PressRecipeBuilder> {
 
     private final ItemStack output;
-    private final Advancement.Builder advancement = Advancement.Builder.advancement();
-
     private JsonObject stampJson;
     private JsonObject materialJson;
 
@@ -100,80 +87,37 @@ public class PressRecipeBuilder implements RecipeBuilder {
     }
 
     @Override
-    public RecipeBuilder unlockedBy(@NotNull String pCriterionName, @NotNull CriterionTriggerInstance pCriterionTrigger) {
-        this.advancement.addCriterion(pCriterionName, pCriterionTrigger);
-        return this;
-    }
-
-    @Override
-    public RecipeBuilder group(@Nullable String pGroupName) {
-        return this;
-    }
-
-    @Override
     public Item getResult() {
         return this.output.getItem();
     }
 
     @Override
-    public void save(@NotNull Consumer<FinishedRecipe> pFinishedRecipeConsumer, @NotNull ResourceLocation pRecipeId) {
+    protected void serializeRecipeData(JsonObject json) {
         if (this.stampJson == null) {
-            throw new IllegalStateException("Stamp ingredient is not defined for press recipe " + pRecipeId);
+            throw new IllegalStateException("Stamp ingredient is not defined for press recipe");
         }
         if (this.materialJson == null) {
-            throw new IllegalStateException("Material ingredient is not defined for press recipe " + pRecipeId);
+            throw new IllegalStateException("Material ingredient is not defined for press recipe");
         }
-        pFinishedRecipeConsumer.accept(new Result(pRecipeId, this));
+
+        JsonArray jsonIngredients = new JsonArray();
+        jsonIngredients.add(this.stampJson.deepCopy());
+        jsonIngredients.add(this.materialJson.deepCopy());
+        json.add("ingredients", jsonIngredients);
+
+        JsonObject jsonOutput = new JsonObject();
+        jsonOutput.addProperty("item", Objects.requireNonNull(
+                BuiltInRegistries.ITEM.getKey(this.output.getItem()),
+                "Output item is not registered").toString());
+        if (this.output.getCount() > 1) {
+            jsonOutput.addProperty("count", this.output.getCount());
+        }
+        json.add("output", jsonOutput);
     }
 
-    private static class Result implements FinishedRecipe {
-
-        private final ResourceLocation id;
-        private final PressRecipeBuilder builder;
-
-        private Result(ResourceLocation id, PressRecipeBuilder builder) {
-            this.id = id;
-            this.builder = builder;
-        }
-
-        @Override
-        public void serializeRecipeData(@NotNull JsonObject pJson) {
-            JsonArray jsonIngredients = new JsonArray();
-            jsonIngredients.add(this.builder.stampJson.deepCopy());
-            jsonIngredients.add(this.builder.materialJson.deepCopy());
-            pJson.add("ingredients", jsonIngredients);
-
-            JsonObject jsonOutput = new JsonObject();
-            jsonOutput.addProperty("item", Objects.requireNonNull(
-                    BuiltInRegistries.ITEM.getKey(this.builder.output.getItem()),
-                    "Output item is not registered").toString());
-            if (this.builder.output.getCount() > 1) {
-                jsonOutput.addProperty("count", this.builder.output.getCount());
-            }
-            pJson.add("output", jsonOutput);
-        }
-
-        @Override
-        public ResourceLocation getId() {
-            return this.id;
-        }
-
-        @Override
-        public RecipeSerializer<?> getType() {
-            return PressRecipe.Serializer.INSTANCE;
-        }
-
-        @Nullable
-        @Override
-        public JsonObject serializeAdvancement() {
-            return null;
-        }
-
-        @Nullable
-        @Override
-        public ResourceLocation getAdvancementId() {
-            return null;
-        }
+    @Override
+    protected RecipeSerializer<?> getType() {
+        return PressRecipe.Serializer.INSTANCE;
     }
 }
 //?}

@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
 import com.hbm_m.blockentity.machines.MachineRefineryBlockEntity;
@@ -38,6 +39,8 @@ public class GUIMachineRefinery extends GuiInfoScreen<MachineRefineryMenu> {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight, TEX_WIDTH, TEX_HEIGHT);
+        // тайл может отсутствовать в реплее Flashback
+        if (refinery == null) return;
 
         renderPowerBar(guiGraphics);
         renderInputTankFill(guiGraphics);
@@ -57,7 +60,7 @@ public class GUIMachineRefinery extends GuiInfoScreen<MachineRefineryMenu> {
 
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }
@@ -65,6 +68,8 @@ public class GUIMachineRefinery extends GuiInfoScreen<MachineRefineryMenu> {
     @Override
     protected void renderTooltip(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
         super.renderTooltip(guiGraphics, mouseX, mouseY);
+        // тайл может отсутствовать в реплее Flashback
+        if (refinery == null) return;
 
         FluidTank[] tanks = refinery.getTanks();
         tanks[0].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 30, this.topPos + 27, 21, 104);

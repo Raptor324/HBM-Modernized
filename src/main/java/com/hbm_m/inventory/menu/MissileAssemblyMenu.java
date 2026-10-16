@@ -3,6 +3,7 @@ package com.hbm_m.inventory.menu;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.machines.MissileAssemblyBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
+import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
@@ -21,15 +22,27 @@ public class MissileAssemblyMenu extends AbstractContainerMenu {
     private static final int PLAYER_INV_END = 42;
 
     public MissileAssemblyMenu(int id, Inventory inv, FriendlyByteBuf extraData) {
-        this(id, inv, (MissileAssemblyBlockEntity) inv.player.level().getBlockEntity(extraData.readBlockPos()));
+        this(id, inv, getBlockEntity(inv, extraData));
+    }
+
+    private static MissileAssemblyBlockEntity getBlockEntity(Inventory inv, FriendlyByteBuf extraData) {
+        BlockEntity blockEntity = inv.player.level().getBlockEntity(extraData.readBlockPos());
+        if (blockEntity instanceof MissileAssemblyBlockEntity tile) return tile;
+        // На клиенте тайл может отсутствовать (реплей Flashback) — возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (inv.player.level().isClientSide) return null;
+        throw new IllegalStateException("BlockEntity is not a MissileAssemblyBlockEntity");
     }
 
     public MissileAssemblyMenu(int id, Inventory inv, BlockEntity entity) {
         super(ModMenuTypes.MISSILE_ASSEMBLY_MENU.get(), id);
 
-        this.blockEntity = (MissileAssemblyBlockEntity) entity;
+        this.blockEntity = entity instanceof MissileAssemblyBlockEntity missile ? missile : null;
 
-        var container = new ModItemStackHandlerContainer(this.blockEntity.getInventory(), this.blockEntity::setChanged);
+        // тайл может отсутствовать на клиенте (реплей Flashback) — подставляем пустую заглушку
+        var container = this.blockEntity != null
+                ? new ModItemStackHandlerContainer(this.blockEntity.getInventory(), this.blockEntity::setChanged)
+                : new ModItemStackHandlerContainer(new DummyItemStackHandler(MissileAssemblyBlockEntity.SLOT_OUTPUT + 1), () -> {});
 
         this.addSlot(new Slot(container, MissileAssemblyBlockEntity.SLOT_CHIP, 8, 36));
         this.addSlot(new Slot(container, MissileAssemblyBlockEntity.SLOT_WARHEAD, 26, 36));
@@ -48,14 +61,15 @@ public class MissileAssemblyMenu extends AbstractContainerMenu {
     }
 
     public boolean canBuild() {
-        return blockEntity.canBuild();
+        // тайл может отсутствовать на клиенте (реплей Flashback)
+        return blockEntity != null && blockEntity.canBuild();
     }
 
-    public int chipState() { return blockEntity.chipState(); }
-    public int fuselageState() { return blockEntity.fuselageState(); }
-    public int stabilityState() { return blockEntity.stabilityState(); }
-    public int thrusterState() { return blockEntity.thrusterState(); }
-    public int warheadState() { return blockEntity.warheadState(); }
+    public int chipState() { return blockEntity != null ? blockEntity.chipState() : 0; }
+    public int fuselageState() { return blockEntity != null ? blockEntity.fuselageState() : 0; }
+    public int stabilityState() { return blockEntity != null ? blockEntity.stabilityState() : 0; }
+    public int thrusterState() { return blockEntity != null ? blockEntity.thrusterState() : 0; }
+    public int warheadState() { return blockEntity != null ? blockEntity.warheadState() : 0; }
 
     @Override
     public ItemStack quickMoveStack(Player pPlayer, int pIndex) {
@@ -94,6 +108,10 @@ public class MissileAssemblyMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player pPlayer) {
+        // тайл может отсутствовать на клиенте (реплей Flashback)
+        if (blockEntity == null) {
+            return false;
+        }
         return stillValid(ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos()), pPlayer, ModBlocks.MACHINE_MISSILE_ASSEMBLY.get());
     }
 

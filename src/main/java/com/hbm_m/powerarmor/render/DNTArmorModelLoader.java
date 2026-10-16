@@ -1,4 +1,3 @@
-//? if forge {
 package com.hbm_m.powerarmor.render;
 
 import java.util.HashMap;
@@ -46,5 +45,4 @@ public class DNTArmorModelLoader extends AbstractObjPartModelLoader<DNTArmorBake
         return true;
     }
 }
-//?}
 

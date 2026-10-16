@@ -1,7 +1,7 @@
 package com.hbm_m.interfaces;
 
 /**
- * Block entities that participate in {@link com.hbm_m.api.energy.EnergyNetwork} as dual
+ * Block entities that participate in the energy network as dual
  * provider/receiver with a discrete operating mode (same encoding as {@code MachineBatteryBlockEntity}).
  */
 public interface IEnergyModeHolder {

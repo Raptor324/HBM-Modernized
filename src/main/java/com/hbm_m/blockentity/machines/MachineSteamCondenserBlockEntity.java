@@ -23,12 +23,14 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
+//? if forge {
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
+//?}
 
 public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
 
@@ -37,8 +39,6 @@ public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity imp
     private static final int OUTPUT_CAPACITY = 8_000;
     private final FluidTank inputSteamTank;
     private final FluidTank outputWaterTank;
-
-    private LazyOptional<IFluidHandler> lazyFluidHandler = LazyOptional.empty();
 
     private int age = 0;
     private int waterTimer = 0;
@@ -52,7 +52,9 @@ public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity imp
 
     @Override
     protected void setupFluidCapability() {
-        lazyFluidHandler = LazyOptional.of(() -> new UnifiedFluidHandler(this));
+        //? if forge {
+        setFluidHandler(new UnifiedFluidHandler(this));
+        //?}
     }
 
     @Override
@@ -150,8 +152,8 @@ public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity imp
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         inputSteamTank.writeToNBT(tag, "input_steam");
         outputWaterTank.writeToNBT(tag, "output_water");
         tag.putInt("age", age);
@@ -160,8 +162,8 @@ public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity imp
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         inputSteamTank.readFromNBT(tag, "input_steam");
         outputWaterTank.readFromNBT(tag, "output_water");
         age = tag.getInt("age");
@@ -169,20 +171,7 @@ public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity imp
         throughput = tag.getInt("throughput");
     }
 
-    @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.FLUID_HANDLER) {
-            return lazyFluidHandler.cast();
-        }
-        return super.getCapability(cap, side);
-    }
-
-    @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        lazyFluidHandler.invalidate();
-    }
-
+    //? if forge {
     private static class UnifiedFluidHandler implements IFluidHandler {
         private final MachineSteamCondenserBlockEntity be;
 
@@ -276,4 +265,5 @@ public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity imp
             return result;
         }
     }
+    //?}
 }

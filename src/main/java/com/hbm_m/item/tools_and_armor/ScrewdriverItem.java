@@ -1,5 +1,6 @@
 package com.hbm_m.item.tools_and_armor;
 
+import com.hbm_m.item.ITooltipProvider;
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -26,14 +27,14 @@ import net.minecraft.world.level.block.entity.BlockEntity;
  * Отвертка для настройки дверей и конвертера энергии.
  * ПКМ по двери (контроллеру или любой части) - открывает GUI, дверь не открывается.
  */
-public class ScrewdriverItem extends Item {
+public class ScrewdriverItem extends Item implements ITooltipProvider {
 
     public ScrewdriverItem(Properties properties) {
         super(properties.stacksTo(1));
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.translatable("tooltip." + RefStrings.MODID + ".screwdriver").withStyle(ChatFormatting.GRAY));
     }
 

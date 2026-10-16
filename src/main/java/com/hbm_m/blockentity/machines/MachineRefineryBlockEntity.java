@@ -104,10 +104,6 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
     private int sulfurProgress = 0;
     private boolean isOn = false;
 
-    //? if forge {
-    private LazyOptional<IFluidHandler> fluidHandler = LazyOptional.empty();
-    //?}
-
     public MachineRefineryBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.REFINERY_BE.get(), pos, state,
               INVENTORY_SIZE, ENERGY_CAPACITY, ENERGY_RECEIVE_RATE);
@@ -393,8 +389,8 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         for (int i = 0; i < tanks.length; i++) {
             tanks[i].writeToNBT(tag, "tank_" + i);
         }
@@ -403,8 +399,8 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         for (int i = 0; i < tanks.length; i++) {
             tanks[i].readFromNBT(tag, "tank_" + i);
         }
@@ -442,19 +438,7 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
     //? if forge {
     @Override
     protected void setupFluidCapability() {
-        fluidHandler = LazyOptional.of(() -> new RefineryFluidHandler(this));
-    }
-
-    @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.FLUID_HANDLER) return fluidHandler.cast();
-        return super.getCapability(cap, side);
-    }
-
-    @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        fluidHandler.invalidate();
+        setFluidHandler(new RefineryFluidHandler(this));
     }
     //?}
 
@@ -467,4 +451,22 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
     }
 
     private record RefineryRecipe(Fluid[] outputFluids, int[] outputAmounts, ItemStack solidByproduct) {}
-}
+
+    // Энергопорты мультиблока: позиции фантомов структуры, ранее регистрировавшиеся блоком.
+    // Ядро (worldPosition) подписывается в BaseMachineBlockEntity.ensureNetworkInitialized().
+    @Override
+    protected BlockPos[] getExtraEnergyPorts() {
+        if (level == null || level.isClientSide) return new BlockPos[0];
+        if (!(getBlockState().getBlock() instanceof com.hbm_m.block.machines.MachineRefineryBlock block)) return new BlockPos[0];
+
+        var helper = block.getStructureHelper();
+        Direction facing = getBlockState().getValue(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING);
+
+        java.util.List<BlockPos> ports = new java.util.ArrayList<>();
+        for (BlockPos localPos : helper.getStructureMap().keySet()) {
+            if (helper.resolvePartRole(localPos, block).canReceiveEnergy()) {
+                ports.add(helper.getRotatedPos(worldPosition, localPos, facing));
+            }
+        }
+        return ports.toArray(new BlockPos[0]);
+    }}

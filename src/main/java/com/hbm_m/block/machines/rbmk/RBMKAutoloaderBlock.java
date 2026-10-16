@@ -25,4 +25,13 @@ public class RBMKAutoloaderBlock extends RBMKColumnBlock {
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return createTickerHelper(type, ModBlockEntities.RBMK_AUTOLOADER_BE.get(), RBMKAutoloaderBlockEntity::tick);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<RBMKAutoloaderBlock> CODEC = simpleCodec(RBMKAutoloaderBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

@@ -20,7 +20,7 @@ import net.minecraft.world.level.block.state.BlockState;
 /**
  * Порт {@link com.hbm.tileentity.machine.TileEntityGeiger} (1.7.10).
  */
-public class GeigerCounterBlockEntity extends BlockEntity {
+public class GeigerCounterBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity {
 
     private static final Random RANDOM = new Random();
 

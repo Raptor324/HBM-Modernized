@@ -93,10 +93,14 @@ public class ParticleAshesNT extends ParticleNT {
 
     @Override
     public void render(VertexConsumer consumer, Camera camera, float partialTicks, PoseStack levelPoseStack) {
-        Vec3 camPos = camera.getPosition();
-        float pX = (float) (Mth.lerp(partialTicks, this.xo, this.x) - camPos.x);
-        float pY = (float) (Mth.lerp(partialTicks, this.yo, this.y) - camPos.y);
-        float pZ = (float) (Mth.lerp(partialTicks, this.zo, this.z) - camPos.z);
+        Vec3 off = virtualizedOffset(
+                Mth.lerp(partialTicks, this.xo, this.x),
+                Mth.lerp(partialTicks, this.yo, this.y),
+                Mth.lerp(partialTicks, this.zo, this.z),
+                camera);
+        float pX = (float) off.x;
+        float pY = (float) off.y;
+        float pZ = (float) off.z;
 
         float timeLeft = this.lifetime - (this.age + partialTicks);
         float alpha = timeLeft < FADE_TICKS ? Mth.clamp(timeLeft / FADE_TICKS, 0F, 1F) : 1F;
@@ -107,13 +111,21 @@ public class ParticleAshesNT extends ParticleNT {
         int cb = cr;
         int ca = Mth.clamp((int) (alpha * 255F), 0, 255);
 
+        // Fallback-виртуализация: сжатие размера вместе со смещением (см. ParticleNT.virtualScale).
+        float vScale = virtualScale(
+                Mth.lerp(partialTicks, this.xo, this.x),
+                Mth.lerp(partialTicks, this.yo, this.y),
+                Mth.lerp(partialTicks, this.zo, this.z),
+                camera);
+        float s = this.scale0 * vScale;
+
         if (this.onGround) {
             // Плоский квад на земле: вектор (scale, 0, scale) повёрнут по yaw 4 раза
-            emitGroundQuad(consumer, pX, pY + 0.05F, pZ, this.scale0, this.groundYaw, light, cr, cg, cb, ca);
+            emitGroundQuad(consumer, pX, pY + 0.05F, pZ, s, this.groundYaw, light, cr, cg, cb, ca);
         } else {
             // Билборд к камере + вращение вокруг своей нормали
             float roll = Mth.lerp(partialTicks, this.oRoll, this.roll);
-            emitBillboardQuad(consumer, camera, pX, pY, pZ, this.scale0, roll, light, cr, cg, cb, ca);
+            emitBillboardQuad(consumer, camera, pX, pY, pZ, s, roll, light, cr, cg, cb, ca);
         }
     }
 
@@ -133,11 +145,19 @@ public class ParticleAshesNT extends ParticleNT {
             float u = (i == 0 || i == 1) ? 1F : 0F; // 0,1 -> MaxU; 2,3 -> MinU
             float v = (i == 0 || i == 3) ? 1F : 0F; // 0,3 -> MaxV; 1,2 -> MinV
             // Format = POSITION_COLOR_TEX_LIGHTMAP: position, color, UV0, UV2
+            //? if < 1.21.1 {
             consumer.vertex(pX + rx, pY, pZ + rz)
                     .color(r, g, b, a)
                     .uv(u, v)
                     .uv2(light)
                     .endVertex();
+            //?} else {
+            /*// 1.21.1: vertex->addVertex, color->setColor, uv->setUv, uv2->setLight, endVertex удалён.
+            consumer.addVertex(pX + rx, pY, pZ + rz)
+                    .setColor(r, g, b, a)
+                    .setUv(u, v)
+                    .setLight(light);
+            *///?}
             // повернуть (vx, vz) на +90°: (x,z) -> (-z, x)
             float nx = -vz, nz = vx;
             vx = nx; vz = nz;
@@ -167,11 +187,19 @@ public class ParticleAshesNT extends ParticleNT {
             float oy = left.y * cx + up.y * cyScreen;
             float oz = left.z * cx + up.z * cyScreen;
             // Format = POSITION_COLOR_TEX_LIGHTMAP: position, color, UV0, UV2
+            //? if < 1.21.1 {
             consumer.vertex(pX + ox, pY + oy, pZ + oz)
                     .color(r, g, b, a)
                     .uv(corner[0] * 0.5F + 0.5F, corner[1] * 0.5F + 0.5F)
                     .uv2(light)
                     .endVertex();
+            //?} else {
+            /*// 1.21.1: vertex->addVertex, color->setColor, uv->setUv, uv2->setLight, endVertex удалён.
+            consumer.addVertex(pX + ox, pY + oy, pZ + oz)
+                    .setColor(r, g, b, a)
+                    .setUv(corner[0] * 0.5F + 0.5F, corner[1] * 0.5F + 0.5F)
+                    .setLight(light);
+            *///?}
         }
     }
 

@@ -4,6 +4,7 @@ import com.hbm_m.api.energy.ItemEnergyAccess;
 import com.hbm_m.blockentity.machines.MachineOreSlopperBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -32,7 +33,11 @@ public class MachineOreSlopperMenu extends AbstractContainerMenu {
         super(ModMenuTypes.ORE_SLOPPER_MENU.get(), id);
         this.blockEntity = blockEntity;
 
-        var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
+        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
+        // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
+        var container = new ModItemStackHandlerContainer(
+                blockEntity != null ? blockEntity.getInventory() : new DummyItemStackHandler(MACHINE_SLOT_COUNT),
+                blockEntity != null ? blockEntity::setChanged : null);
 
         // Eingangsslot (bedrock_ore_base) - links im Panel, ueber dem Wassertank-Bereich.
         this.addSlot(new Slot(container, SLOT_INPUT, 44, 37));
@@ -76,6 +81,11 @@ public class MachineOreSlopperMenu extends AbstractContainerMenu {
         BlockEntity blockEntity = inventory.player.level().getBlockEntity(pos);
         if (blockEntity instanceof MachineOreSlopperBlockEntity oreSlopper) {
             return oreSlopper;
+        }
+        // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (inventory.player.level().isClientSide) {
+            return null;
         }
         throw new IllegalStateException("No MachineOreSlopperBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":ore_slopper_menu");
     }

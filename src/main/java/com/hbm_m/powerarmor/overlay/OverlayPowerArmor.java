@@ -69,9 +69,7 @@ public class OverlayPowerArmor {
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
     
         Tesselator tessellator = Tesselator.getInstance();
-        BufferBuilder buffer = tessellator.getBuilder();
-    
-        buffer.begin(com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+        BufferBuilder buffer = com.hbm_m.platform.RenderHooks.beginTesselator(tessellator, com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
     
         for (int i = 0; i < piecesToShow; i++) {
             ItemStack stack = armorPieces[i];
@@ -89,24 +87,24 @@ public class OverlayPowerArmor {
             int top = height - (piecesToShow - 1 - i) * 3;
     
             // Фон
-            buffer.vertex(left - 0.5, top - 0.5, 0).color(0.25f, 0.25f, 0.25f, 1.0f).endVertex();
-            buffer.vertex(left - 0.5, top + 1.5, 0).color(0.25f, 0.25f, 0.25f, 1.0f).endVertex();
-            buffer.vertex(left + 81.5, top + 1.5, 0).color(0.25f, 0.25f, 0.25f, 1.0f).endVertex();
-            buffer.vertex(left + 81.5, top - 0.5, 0).color(0.25f, 0.25f, 0.25f, 1.0f).endVertex();
+            com.hbm_m.platform.RenderHooks.vertexColor(buffer, left - 0.5, top - 0.5, 0, 64, 64, 64, 255);
+            com.hbm_m.platform.RenderHooks.vertexColor(buffer, left - 0.5, top + 1.5, 0, 64, 64, 64, 255);
+            com.hbm_m.platform.RenderHooks.vertexColor(buffer, left + 81.5, top + 1.5, 0, 64, 64, 64, 255);
+            com.hbm_m.platform.RenderHooks.vertexColor(buffer, left + 81.5, top - 0.5, 0, 64, 64, 64, 255);
     
             // Полоска
             if (energyPercent > 0) {
-                float red = 1.0f - energyPercent;
-                float green = energyPercent;
+                int red = (int) ((1.0f - energyPercent) * 255.0f);
+                int green = (int) (energyPercent * 255.0f);
     
-                buffer.vertex(left, top, 0).color(red, green, 0.0f, 1.0f).endVertex();
-                buffer.vertex(left, top + 1, 0).color(red, green, 0.0f, 1.0f).endVertex();
-                buffer.vertex(left + 81 * energyPercent, top + 1, 0).color(red, green, 0.0f, 1.0f).endVertex();
-                buffer.vertex(left + 81 * energyPercent, top, 0).color(red, green, 0.0f, 1.0f).endVertex();
+                com.hbm_m.platform.RenderHooks.vertexColor(buffer, left, top, 0, red, green, 0, 255);
+                com.hbm_m.platform.RenderHooks.vertexColor(buffer, left, top + 1, 0, red, green, 0, 255);
+                com.hbm_m.platform.RenderHooks.vertexColor(buffer, left + 81.0 * energyPercent, top + 1, 0, red, green, 0, 255);
+                com.hbm_m.platform.RenderHooks.vertexColor(buffer, left + 81.0 * energyPercent, top, 0, red, green, 0, 255);
             }
         }
     
-        tessellator.end();
+        com.hbm_m.platform.RenderHooks.drawWithShader(buffer);
         RenderSystem.disableBlend();
     }
 

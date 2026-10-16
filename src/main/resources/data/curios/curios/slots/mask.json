@@ -1,0 +1,6 @@
+{
+	"size": 1,
+	"icon": "curios:slot/empty_necklace_slot",
+	"order": 30,
+	"drop_rule": "ALWAYS_KEEP"
+}

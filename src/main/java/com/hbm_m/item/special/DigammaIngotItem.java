@@ -1,5 +1,6 @@
 package com.hbm_m.item.special;
 
+import com.hbm_m.item.ITooltipProvider;
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -18,7 +19,7 @@ import net.minecraft.world.level.Level;
 /**
  * Digamma Ingot item that emits 1 mDRX/s radiation when held in player inventory.
  */
-public class DigammaIngotItem extends Item {
+public class DigammaIngotItem extends Item implements ITooltipProvider {
 
 	public DigammaIngotItem(Properties properties) {
 		super(properties);
@@ -35,8 +36,7 @@ public class DigammaIngotItem extends Item {
 	}
 
 	@Override
-	public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-		super.appendHoverText(stack, level, tooltip, flag);
+	public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
 
 		tooltip.add(Component.literal("").withStyle(ChatFormatting.GOLD));
 		tooltip.add(Component.translatable("trait.digamma").withStyle(ChatFormatting.RED));

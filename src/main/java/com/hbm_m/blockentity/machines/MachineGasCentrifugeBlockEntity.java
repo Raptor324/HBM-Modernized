@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import java.util.Map;
 
 import org.jetbrains.annotations.NotNull;
@@ -185,24 +187,23 @@ public class MachineGasCentrifugeBlockEntity extends BaseMachineBlockEntity impl
         return isHighSpeed() ? PROCESSING_SPEED_HIGH : PROCESSING_SPEED;
     }
 
-    /** Reads the fluid-identifier item in the ID slot and (re)conforms {@link #tank} to it. */
+    /**
+     * Derives the pseudo-fluid stage directly from whatever real fluid is currently piped into
+     * {@link #tank} (UF6/PUF6/WATZ each map 1:1 to a starting stage, so there's no ambiguity to
+     * resolve). The fluid-identifier item in the ID slot is not needed for this - {@link #tank}
+     * auto-conforms to the first fluid it receives on its own.
+     */
     private void refreshTankTypeFromIdentifier() {
-        ItemStack idStack = inventory.getStackInSlot(SLOT_FLUID_ID);
-        Fluid newType = FluidIdentifierItem.resolvePrimaryForTank(idStack);
-        if (newType == null) return;
-
-        if (tank.getTankType() != newType) {
-            PseudoFluidType pseudo = PseudoFluidType.FLUID_CONVERSIONS.get(newType);
-            if (pseudo != null) {
-                inputTank.setTankType(pseudo);
-                outputTank.setTankType(pseudo.getOutputType());
-                tank.conform(newType);
-            }
+        Fluid realType = tank.getConfiguredFluid();
+        PseudoFluidType pseudo = PseudoFluidType.FLUID_CONVERSIONS.get(realType);
+        if (pseudo != null && inputTank.getTankType() != pseudo) {
+            inputTank.setTankType(pseudo);
+            outputTank.setTankType(pseudo.getOutputType());
         }
     }
 
     /**
-     * Subscribes this receiver directly into any adjacent duct's fluid network — mirrors the
+     * Subscribes this receiver directly into any adjacent duct's fluid network вЂ” mirrors the
      * original 1.7.10 {@code TileEntityMachineGasCent#updateConnections()}, which walked its own
      * exposed neighbor positions and called {@code trySubscribe}. Without this, no duct ever
      * discovers this machine: only dedicated multiblock connector cells auto-register themselves
@@ -250,7 +251,7 @@ public class MachineGasCentrifugeBlockEntity extends BaseMachineBlockEntity impl
         for (int slot = SLOT_OUTPUT_0; slot <= SLOT_OUTPUT_3; slot++) {
             ItemStack existing = inventory.getStackInSlot(slot);
             if (existing.isEmpty()) return true;
-            if (ItemStack.isSameItemSameTags(existing, stack)
+            if (PlatformHooks.isSameItemSameTags(existing, stack)
                     && existing.getCount() + stack.getCount() <= existing.getMaxStackSize()) {
                 return true;
             }
@@ -277,7 +278,7 @@ public class MachineGasCentrifugeBlockEntity extends BaseMachineBlockEntity impl
                 inventory.setStackInSlot(slot, stack);
                 return;
             }
-            if (ItemStack.isSameItemSameTags(existing, stack)
+            if (PlatformHooks.isSameItemSameTags(existing, stack)
                     && existing.getCount() + stack.getCount() <= existing.getMaxStackSize()) {
                 existing.grow(stack.getCount());
                 return;
@@ -415,8 +416,8 @@ public class MachineGasCentrifugeBlockEntity extends BaseMachineBlockEntity impl
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("progress", progress);
         tag.putBoolean("isProgressing", isProgressing);
         tag.putFloat("anim", anim);
@@ -427,8 +428,8 @@ public class MachineGasCentrifugeBlockEntity extends BaseMachineBlockEntity impl
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         progress = tag.getInt("progress");
         isProgressing = tag.getBoolean("isProgressing");
         anim = tag.getFloat("anim");
@@ -437,4 +438,22 @@ public class MachineGasCentrifugeBlockEntity extends BaseMachineBlockEntity impl
         inputTank.readFromNBT(tag, "inputTank");
         outputTank.readFromNBT(tag, "outputTank");
     }
-}
+
+    // Энергопорты мультиблока: позиции фантомов структуры, ранее регистрировавшиеся блоком.
+    // Ядро (worldPosition) подписывается в BaseMachineBlockEntity.ensureNetworkInitialized().
+    @Override
+    protected BlockPos[] getExtraEnergyPorts() {
+        if (level == null || level.isClientSide) return new BlockPos[0];
+        if (!(getBlockState().getBlock() instanceof com.hbm_m.block.machines.MachineGasCentrifugeBlock block)) return new BlockPos[0];
+
+        var helper = block.getStructureHelper();
+        Direction facing = getBlockState().getValue(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING);
+
+        java.util.List<BlockPos> ports = new java.util.ArrayList<>();
+        for (BlockPos localPos : helper.getStructureMap().keySet()) {
+            if (block.getPartRole(localPos).canReceiveEnergy()) {
+                ports.add(helper.getRotatedPos(worldPosition, localPos, facing));
+            }
+        }
+        return ports.toArray(new BlockPos[0]);
+    }}

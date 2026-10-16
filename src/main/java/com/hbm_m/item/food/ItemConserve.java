@@ -3,6 +3,7 @@ package com.hbm_m.item.food;
 // Для того чтобы после употребления консервы в инвентаре появлялась пустая банка,
 // нужно переопределить finishUsingItem (порт {@code com.hbm.items.food.ItemConserve}).
 
+import com.hbm_m.item.ITooltipProvider;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.effect.VortexEntity;
 import com.hbm_m.item.ModItems;
@@ -19,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public class ItemConserve extends Item {
+public class ItemConserve extends Item implements ITooltipProvider {
 
     public ItemConserve(Properties properties) {
         super(properties);
@@ -59,8 +60,7 @@ public class ItemConserve extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         if (stack.is(ModItems.CANNED_BHOLE.get())) {
             tooltip.add(Component.translatable("item.hbm_m.canned_bhole.desc").withStyle(ChatFormatting.GRAY));
         }

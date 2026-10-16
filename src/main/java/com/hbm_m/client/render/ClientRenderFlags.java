@@ -6,51 +6,55 @@ import com.hbm_m.config.ModClothConfig;
  * Per-render-frame snapshot of hot {@link ModClothConfig} rendering flags.
  * Updated once at the start of the block-entity pass to avoid thousands of
  * {@link ModClothConfig#get()} calls when instancing large machine fields.
+ * <p>
+ * Инстансинг/MDI/GPU-bone skinning включаются автоматически и переключателей
+ * в конфиге больше не имеют; единственный ручной резерв —
+ * {@link #forceVanillaImmediate()} (ванильный immediate-путь целиком).
  */
 public final class ClientRenderFlags {
 
-    private static boolean useInstancedBatching;
-    private static boolean gpuBoneSkinning;
     private static boolean enableOcclusionCulling;
-    private static boolean useSlicedLight;
     /** Same default as {@link ModClothConfig#maxInstancedInstancesPerPart} until {@link #onFrameStart()}. */
     private static int maxInstances = 4096;
+    private static boolean forceVanillaImmediate;
 
     private ClientRenderFlags() {}
 
     /** Call from {@link com.hbm_m.client.render.culling.InstancedRenderFrame#onBeforeBlockEntities}. */
     public static void onFrameStart() {
         ModClothConfig cfg = ModClothConfig.get();
-        useInstancedBatching = cfg.useInstancedStaticRendering;
-        gpuBoneSkinning = cfg.gpuBoneSkinning;
         enableOcclusionCulling = cfg.enableOcclusionCulling;
-        useSlicedLight = cfg.useSlicedLight;
         maxInstances = cfg.maxInstancedInstancesPerPart;
+        forceVanillaImmediate = cfg.forceVanillaImmediatePath;
     }
 
+    /**
+     * Instanced batching is always enabled unless the user forces the vanilla
+     * immediate path via {@link ModClothConfig#forceVanillaImmediatePath}.
+     */
     public static boolean useInstancedBatching() {
-        return useInstancedBatching;
+        return !forceVanillaImmediate;
     }
 
+    /**
+     * GPU bone skinning (per-vertex bone id + per-instance base×part matrix) is
+     * applied automatically wherever the engine uses it; no user toggle.
+     */
     public static boolean gpuBoneSkinning() {
-        return gpuBoneSkinning;
+        return true;
     }
 
     public static boolean enableOcclusionCulling() {
         return enableOcclusionCulling;
     }
 
-    /** {@link ModClothConfig#useSlicedLight} — when false, MDI atlas path can batch unsliced parts. */
-    public static boolean useSlicedLight() {
-        return useSlicedLight;
-    }
-
     /**
-     * Read at renderer init (may run before {@link #onFrameStart}); falls back to live config.
+     * Force the vanilla immediate (putBulkData) path for every machine render.
+     * Read live (also safe before {@link #onFrameStart}).
      */
-    public static boolean useSlicedLightForNewRenderer() {
+    public static boolean forceVanillaImmediate() {
         try {
-            return ModClothConfig.get().useSlicedLight;
+            return ModClothConfig.get().forceVanillaImmediatePath;
         } catch (Throwable ignored) {
             return false;
         }

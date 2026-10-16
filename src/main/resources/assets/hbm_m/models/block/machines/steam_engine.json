@@ -1,0 +1,32 @@
+{
+	"textures": {
+		"particle": "hbm_m:block/machine/steam_engine"
+	},
+	"loader": "forge:composite",
+	"children": {
+		"steam_engine_model": {
+			"loader": "forge:obj",
+			"model": "hbm_m:models/block/machines/steam_engine.obj",
+			"flip_v": true,
+			"render_type": "minecraft:cutout",
+			"textures": {
+				"default": "hbm_m:block/machine/steam_engine"
+			}
+		}
+	},
+	"transform": {
+		"translation": [0.5, 0, 0.5],
+		"rotation": [0, 0, 0],
+		"scale": 1.0
+	},
+	"display": {
+		"thirdperson_righthand": { "rotation": [75, 45, 0], "translation": [0.0, 2.5, 0.0], "scale": [0.08, 0.08, 0.08] },
+		"thirdperson_lefthand": { "rotation": [75, 45, 0], "translation": [0.0, 2.5, 0.0], "scale": [0.08, 0.08, 0.08] },
+		"firstperson_righthand": { "rotation": [0, 45, 0], "translation": [0.75, 1.25, 0.0], "scale": [0.08, 0.08, 0.08] },
+		"firstperson_lefthand": { "rotation": [0, 45, 0], "translation": [0.0, 0.0, 0.0], "scale": [0.08, 0.08, 0.08] },
+		"gui": { "rotation": [30, 225, 0], "translation": [0.0, -4.75, 0.0], "scale": [0.0873, 0.0873, 0.0873] },
+		"head": { "rotation": [0, 0, 0], "translation": [0.0, 0.0, 0.0], "scale": [1.0, 1.0, 1.0] },
+		"fixed": { "rotation": [0, 180, 0], "translation": [0.0, 0.0, 0.0], "scale": [0.1091, 0.1091, 0.1091] },
+		"ground": { "rotation": [0, 0, 0], "translation": [0.0, 3.0, 0.0], "scale": [0.0727, 0.0727, 0.0727] }
+	}
+}

@@ -1,5 +1,6 @@
 package com.hbm_m.item.crates;
 
+import com.hbm_m.item.ITooltipProvider;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -27,7 +28,7 @@ import com.hbm_m.platform.ModItemStackHandler;
  * Базовый Item для ящиков HBM с отображением содержимого в тултипе.
  * Показывает первые 10 предметов + индикатор заполненности.
  */
-public class CrateItem extends BlockItem {
+public class CrateItem extends BlockItem implements ITooltipProvider {
 
     private static final int PREVIEW_LIMIT = 10;
     private final int totalSlots;
@@ -38,9 +39,8 @@ public class CrateItem extends BlockItem {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level,
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level,
                                 List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
 
         CrateTooltipData data = readTooltipData(stack);
         if (data == null) return;
@@ -84,7 +84,13 @@ public class CrateItem extends BlockItem {
             @Override
             protected void onContentsChanged(int slot) {}
         };
+        //? if < 1.21.1 {
         handler.deserializeNBT(inventoryTag);
+        //?} else {
+        /*// Tooltip-path — клиентский; провайдер из клиентского Level.
+        // ItemStackHandler.deserializeNBT в 1.21.1 требует HolderLookup.Provider.
+        handler.deserializeNBT(PlatformHooks.clientProvider(), inventoryTag);
+        *///?}
 
         Map<String, GroupData> groups = new LinkedHashMap<>();
         int occupiedSlots = 0;
@@ -121,7 +127,12 @@ public class CrateItem extends BlockItem {
     }
 
     private static String makeGroupingKey(ItemStack stack) {
+        //? if < 1.21.1 {
         CompoundTag keyTag = stack.copy().save(new CompoundTag());
+        //?} else {
+        /*// Tooltip-path — клиентский; провайдер из клиентского Level (1.21.1 требует Provider для save).
+        CompoundTag keyTag = PlatformHooks.safeItemSave(stack.copy(), PlatformHooks.clientProvider());
+        *///?}
         keyTag.remove("Count");
         return keyTag.toString();
     }

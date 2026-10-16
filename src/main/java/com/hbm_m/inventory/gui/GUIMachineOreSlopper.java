@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.blockentity.machines.MachineOreSlopperBlockEntity;
 import com.hbm_m.inventory.menu.MachineOreSlopperMenu;
@@ -56,11 +57,15 @@ public class GUIMachineOreSlopper extends GuiInfoScreen<MachineOreSlopperMenu> {
 
     private void renderTank(GuiGraphics guiGraphics, int x, int y) {
         MachineOreSlopperBlockEntity be = menu.getBlockEntity();
+        // тайл может отсутствовать в реплее Flashback
+        if (be == null) return;
         be.getTank().renderTank(guiGraphics, x + TANK_X, y + TANK_Y, TANK_WIDTH, TANK_HEIGHT);
     }
 
     private void renderProgress(GuiGraphics guiGraphics, int x, int y) {
         MachineOreSlopperBlockEntity be = menu.getBlockEntity();
+        // тайл может отсутствовать в реплее Flashback
+        if (be == null) return;
         int progressPct = (be.getMaxProgress() <= 0) ? 0 : be.getProgressScaled(100);
         if (progressPct > 0) {
             guiGraphics.drawString(this.font, progressPct + "%", x + 100, y + 60, 4210752, false);
@@ -69,13 +74,16 @@ public class GUIMachineOreSlopper extends GuiInfoScreen<MachineOreSlopperMenu> {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        renderBackground(guiGraphics);
+        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, delta);
         super.render(guiGraphics, mouseX, mouseY, delta);
 
         MachineOreSlopperBlockEntity be = menu.getBlockEntity();
+        // тайл может отсутствовать в реплее Flashback
+        if (be != null) {
         drawElectricityInfo(guiGraphics, mouseX, mouseY,
                 152, 18, 16, 16,
                 be.getEnergyStored(), be.getMaxEnergyStored());
+        }
 
         renderTooltip(guiGraphics, mouseX, mouseY);
         renderCustomTooltips(guiGraphics, mouseX, mouseY);
@@ -92,7 +100,7 @@ public class GUIMachineOreSlopper extends GuiInfoScreen<MachineOreSlopperMenu> {
         int x = (width - imageWidth) / 2;
         int y = (height - imageHeight) / 2;
 
-        if (isPointInRect(TANK_X, TANK_Y, TANK_WIDTH, TANK_HEIGHT, mouseX, mouseY)) {
+        if (be != null && isPointInRect(TANK_X, TANK_Y, TANK_WIDTH, TANK_HEIGHT, mouseX, mouseY)) {
             be.getTank().renderTankInfo(guiGraphics, this.font, mouseX, mouseY, x + TANK_X, y + TANK_Y, TANK_WIDTH, TANK_HEIGHT);
         }
     }

@@ -8,7 +8,14 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 
-public class GasCentrifugeRenderer implements BlockEntityRenderer<MachineGasCentrifugeBlockEntity> {
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
+public class GasCentrifugeRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineGasCentrifugeBlockEntity> {
 
     public GasCentrifugeRenderer(BlockEntityRendererProvider.Context context) {
     }

@@ -17,6 +17,7 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.recipe.AnvilRecipe;
 import com.hbm_m.recipe.AssemblerRecipe;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
+import com.hbm_m.platform.recipe.RecipeHooks;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.crafting.Recipe;
@@ -104,19 +105,24 @@ public final class ModRecipeIndex {
     }
 
     private static <T extends Recipe<?>> TypeIndex<T> build(RecipeManager manager, RecipeType<T> type, int observedCount) {
-        @SuppressWarnings({"unchecked", "rawtypes"})
-        List<T> all = new ArrayList<>((List) manager.getAllRecipesFor((RecipeType) type));
+        // id → recipe из единого кросс-версионного хелпера (на 1.21.1 id берётся из RecipeHolder,
+        // т.к. recipe.getId() удалён, а recipe.id == dummy после декода сериализатором).
+        Map<ResourceLocation, T> byIdSource = RecipeHooks.getAllRecipesById(manager, type);
 
         // Stable GUI order: by namespace:path (case-insensitive), tie-breaker by toString.
-        all.sort(Comparator.comparing((T r) -> r.getId().toString().toLowerCase(Locale.ROOT))
-                .thenComparing(r -> r.toString().toLowerCase(Locale.ROOT)));
+        List<Map.Entry<ResourceLocation, T>> sortedEntries = new ArrayList<>(byIdSource.entrySet());
+        sortedEntries.sort(Comparator.comparing((Map.Entry<ResourceLocation, T> e) -> e.getKey().toString().toLowerCase(Locale.ROOT))
+                .thenComparing(e -> e.getValue().toString().toLowerCase(Locale.ROOT)));
 
-        Map<ResourceLocation, T> byId = new java.util.HashMap<>(Math.max(16, all.size() * 2));
+        List<T> all = new ArrayList<>(sortedEntries.size());
+        Map<ResourceLocation, T> byId = new java.util.HashMap<>(Math.max(16, sortedEntries.size() * 2));
         Map<String, List<T>> byPoolMutable = new java.util.HashMap<>();
         Map<String, List<T>> byGroupMutable = new java.util.HashMap<>();
 
-        for (T r : all) {
-            byId.put(r.getId(), r);
+        for (Map.Entry<ResourceLocation, T> e : sortedEntries) {
+            T r = e.getValue();
+            all.add(r);
+            byId.put(e.getKey(), r);
 
             String pool = blueprintPoolOf(r);
             if (pool != null && !pool.isEmpty()) {

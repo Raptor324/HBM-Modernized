@@ -2,6 +2,7 @@ package com.hbm_m.blockentity.machines;
 
 import java.util.List;
 
+import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.damagesource.ModDamageSources;
 import com.hbm_m.util.ContaminationUtil;
@@ -22,7 +23,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.core.particles.ParticleTypes;
 
-public class MachineZirnoxDestroyedBlockEntity extends BlockEntity {
+public class MachineZirnoxDestroyedBlockEntity extends BaseHbmBlockEntity {
 
     private static final float RADS_ON_FIRE = 500_000F;
     private static final float RADS_COOLED = 75_000F;
@@ -104,15 +105,16 @@ public class MachineZirnoxDestroyedBlockEntity extends BlockEntity {
         }
     }
 
+    
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putBoolean("onFire", onFire);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         onFire = tag.getBoolean("onFire");
     }
 }

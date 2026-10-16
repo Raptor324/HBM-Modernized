@@ -5,7 +5,6 @@ import java.util.function.Supplier;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineChemicalPlantBlockEntity;
@@ -124,16 +123,6 @@ public class MachineChemicalPlantBlock extends BaseEntityBlock implements IMulti
             if (core == null) {
                 return;
             }
-            Direction facing = state.getValue(FACING);
-
-            EnergyNetworkManager.get((ServerLevel) level).addNode(core);
-
-            for (BlockPos localPos : structureHelper.getStructureMap().keySet()) {
-                if (getPartRole(localPos).canReceiveEnergy()) {
-                    BlockPos worldPos = structureHelper.getRotatedPos(core, localPos, facing);
-                    EnergyNetworkManager.get((ServerLevel) level).addNode(worldPos);
-                }
-            }
 
             if (level.getBlockEntity(core) instanceof IFrameSupportable frameSupportable) {
                 frameSupportable.checkForFrame();
@@ -146,17 +135,6 @@ public class MachineChemicalPlantBlock extends BaseEntityBlock implements IMulti
         if (!state.is(newState.getBlock())) {
             if (!level.isClientSide()) {
                 Direction facing = state.getValue(FACING);
-                
-                // Remove controller from energy network
-                EnergyNetworkManager.get((ServerLevel) level).removeNode(pos);
-                
-                // Remove energy connector parts from energy network
-                for (BlockPos localPos : structureHelper.getStructureMap().keySet()) {
-                    if (getPartRole(localPos).canReceiveEnergy()) {
-                        BlockPos worldPos = structureHelper.getRotatedPos(pos, localPos, facing);
-                        EnergyNetworkManager.get((ServerLevel) level).removeNode(worldPos);
-                    }
-                }
 
                 BlockEntity be = level.getBlockEntity(pos);
                 if (be instanceof MachineChemicalPlantBlockEntity plant) {
@@ -169,8 +147,19 @@ public class MachineChemicalPlantBlock extends BaseEntityBlock implements IMulti
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return openMenu(state, level, pos, player, hand, hit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+    }
+    *///?}
+
+    private InteractionResult openMenu(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MenuProvider menuProvider) {
@@ -233,4 +222,13 @@ public class MachineChemicalPlantBlock extends BaseEntityBlock implements IMulti
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return createTickerHelper(type, ModBlockEntities.CHEMICAL_PLANT_BE.get(), MachineChemicalPlantBlockEntity::tick);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineChemicalPlantBlock> CODEC = simpleCodec(MachineChemicalPlantBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

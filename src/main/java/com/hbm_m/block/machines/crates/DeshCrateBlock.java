@@ -19,4 +19,13 @@ public class DeshCrateBlock extends BaseCrateBlock {
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new DeshCrateBlockEntity(pos, state);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<DeshCrateBlock> CODEC = simpleCodec(DeshCrateBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

@@ -9,6 +9,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 /*import net.neoforged.neoforge.capabilities.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import com.hbm_m.lib.RefStrings;
 *///?}
 //? if forge {
@@ -38,7 +39,9 @@ public class ModCapabilities {
 //?}
 
 //? if neoforge {
-/*public class ModCapabilities {
+/*import com.hbm_m.blockentity.BaseHbmBlockEntity;
+
+public class ModCapabilities {
     public static final BlockCapability<IEnergyProvider, Direction> HBM_ENERGY_PROVIDER =
         BlockCapability.createSided(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "energy_provider"), IEnergyProvider.class);
 
@@ -54,27 +57,82 @@ public class ModCapabilities {
     public static final ItemCapability<IEnergyReceiver, Void> HBM_ITEM_ENERGY_RECEIVER =
         ItemCapability.createVoid(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "item_energy_receiver"), IEnergyReceiver.class);
 
+    @SuppressWarnings("unchecked")
     public static void register(RegisterCapabilitiesEvent event) {
-        // Fallbacks automatically map your BlockEntity implemented interfaces to capabilities
-        event.registerBlockEntityFallback(HBM_ENERGY_PROVIDER, (be, side) -> be instanceof IEnergyProvider p ? p : null);
-        event.registerBlockEntityFallback(HBM_ENERGY_RECEIVER, (be, side) -> be instanceof IEnergyReceiver r ? r : null);
-        event.registerBlockEntityFallback(HBM_ENERGY_CONNECTOR, (be, side) -> be instanceof IEnergyConnector c ? c : null);
+        for (var supplier : com.hbm_m.blockentity.ModBlockEntities.BLOCK_ENTITIES) {
+            if (!supplier.isPresent()) continue;
+            var type = (BlockEntityType<BlockEntity>) supplier.get();
+
+            // 1. Предметы (ItemHandler)
+            event.registerBlockEntity(
+                Capabilities.ItemHandler.BLOCK, type,
+                (be, side) -> (be instanceof BaseHbmBlockEntity hbm) ? (net.neoforged.neoforge.items.IItemHandler) hbm.getItemHandler(side) : null
+            );
+
+            // 2. Жидкости (FluidHandler)
+            event.registerBlockEntity(
+                Capabilities.FluidHandler.BLOCK, type,
+                (be, side) -> (be instanceof BaseHbmBlockEntity hbm) ? (net.neoforged.neoforge.fluids.capability.IFluidHandler) hbm.getFluidHandler(side) : null
+            );
+
+            // 3. Энергия (EnergyStorage)
+            event.registerBlockEntity(
+                Capabilities.EnergyStorage.BLOCK, type,
+                (be, side) -> {
+                    if (be instanceof com.hbm_m.api.energy.ConverterBlockEntity conv)
+                        return new com.hbm_m.api.energy.HbmForgeWrapper(conv);
+                    return (be instanceof BaseHbmBlockEntity hbm) ? (net.neoforged.neoforge.energy.IEnergyStorage) hbm.getEnergyStorage(side) : null;
+                }
+            );
+
+            // 4. HBM Custom Energy
+            event.registerBlockEntity(HBM_ENERGY_PROVIDER, type, (be, side) -> (be instanceof IEnergyProvider p) ? p : null);
+            event.registerBlockEntity(HBM_ENERGY_RECEIVER, type, (be, side) -> (be instanceof IEnergyReceiver r) ? r : null);
+            event.registerBlockEntity(HBM_ENERGY_CONNECTOR, type, (be, side) -> (be instanceof IEnergyConnector c && c.canConnectEnergy(side)) ? c : null);
+        }
+
+        registerBatteryItemCaps(event);
+    }
+
+    private static void registerBatteryItemCaps(RegisterCapabilitiesEvent event) {
+        for (var supplier : com.hbm_m.item.ModItems.ITEMS) {
+            if (!supplier.isPresent()) continue;
+            net.minecraft.world.item.Item item = supplier.get();
+
+            // Fluid Barrel / Infinite Fluid Barrel: NeoForge-аналог forge initCapabilities.
+            if (item instanceof com.hbm_m.item.liquids.FluidBarrelItem) {
+                event.registerItem(Capabilities.FluidHandler.ITEM,
+                        (stack, ctx) -> new com.hbm_m.item.liquids.FluidBarrelItem.FluidBarrelCapabilityHandler(stack), item);
+                continue;
+            }
+            if (item instanceof com.hbm_m.item.liquids.InfiniteFluidItem infinite) {
+                event.registerItem(Capabilities.FluidHandler.ITEM,
+                        (stack, ctx) -> new com.hbm_m.item.liquids.InfiniteFluidItem.InfiniteFluidCapabilityHandler(
+                                stack, infinite.getTransferRate(), infinite.getFixedFluid()), item);
+                continue;
+            }
+
+            if (!(item instanceof com.hbm_m.item.fekal_electric.ModBatteryItem battery)) continue;
+
+            event.registerItem(HBM_ITEM_ENERGY_PROVIDER, (stack, ctx) ->
+                    new com.hbm_m.api.energy.EnergyCapabilityProvider.ItemEnergyStorage(
+                            stack, battery.getCapacity(), battery.getMaxReceive(), battery.getMaxExtract()), item);
+            event.registerItem(HBM_ITEM_ENERGY_RECEIVER, (stack, ctx) ->
+                    new com.hbm_m.api.energy.EnergyCapabilityProvider.ItemEnergyStorage(
+                            stack, battery.getCapacity(), battery.getMaxReceive(), battery.getMaxExtract()), item);
+
+            event.registerItem(Capabilities.EnergyStorage.ITEM, (stack, ctx) ->
+                    new com.hbm_m.api.energy.LongEnergyWrapper(
+                            new com.hbm_m.api.energy.EnergyCapabilityProvider.ItemEnergyStorage(
+                                    stack, battery.getCapacity(), battery.getMaxReceive(), battery.getMaxExtract()),
+                            com.hbm_m.api.energy.LongEnergyWrapper.BitMode.LOW), item);
+        }
     }
 
     public static boolean hasEnergyComponent(BlockEntity be) {
         return be instanceof IEnergyConnector
             || be instanceof IEnergyProvider
             || be instanceof IEnergyReceiver;
-    }
-}
-*///?}
-
-//? if fabric {
-/*public class ModCapabilities {
-    public static boolean hasEnergyComponent(BlockEntity be) {
-        return be instanceof IEnergyConnector
-                || be instanceof IEnergyProvider
-                || be instanceof IEnergyReceiver;
     }
 }
 *///?}

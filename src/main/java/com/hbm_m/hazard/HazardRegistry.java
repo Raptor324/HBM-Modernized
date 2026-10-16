@@ -28,6 +28,9 @@ public class HazardRegistry {
     /** GIT {@link com.hbm.inventory.OreDictManager} blinding(50F) для шрабидиевых материалов. */
     private static final float BLINDING_SCHRAB = 50.0F;
 
+    /** GIT {@code HazardRegistry.xe135} — Xenon-135 radiation contribution used by {@link com.hbm_m.hazard.modifier.HazardModifierRBMKRadiation}. */
+    public static final float xe135 = 1250.0F;
+
     public static final HazardTypeBase RADIATION = new HazardTypeRadiation();
     public static final HazardTypeBase HOT = new HazardTypeHot();
     public static final HazardTypeBase DIGAMMA = new HazardTypeDigamma();
@@ -258,13 +261,36 @@ public class HazardRegistry {
         HazardSystem.register(Items.TNT_MINECART, new HazardData(
                 new HazardEntry(EXPLOSIVE, 4.0f)));
 
+        // GIT registerRBMK(rbmk_fuel_drx, bf*rod_rbmk, bf*rod_rbmk*100F, true, true, 0, 1F/3F)
+        // — base/target radiation carried over as-is, plus the HOT and DIGAMMA entries and the
+        // depletion/xenon-scaling modifier the plain stub registration below was missing.
         HazardSystem.register(ModItems.RBMK_FUEL_DRX.get(), new HazardData(
-                new HazardEntry(RADIATION, 1200000f)));
+                new HazardEntry(RADIATION, 1_200_000f)
+                        .addMod(new com.hbm_m.hazard.modifier.HazardModifierRBMKRadiation(120_000_000f, true)),
+                new HazardEntry(HOT, 0)
+                        .addMod(new com.hbm_m.hazard.modifier.HazardModifierRBMKHot()),
+                new HazardEntry(DIGAMMA, 1f / 3f)));
 
         HazardSystem.register(URANIUM_INGOTS, new HazardData(
                 new HazardEntry(RADIATION, 0.35f)));
         HazardSystem.register(ALKALI_METALS, new HazardData(
                 new HazardEntry(HYDROACTIVE, 2.0f)));
+
+        // ── Угольная пыль (GIT: dust → COAL at powder=3.0F, tiny=0.3F) ──────────
+        HazardSystem.register(ModItems.getPowders(com.hbm_m.item.tags_and_tiers.ModPowders.COAL).get(), new HazardData(
+                new HazardEntry(COAL, 3.0f)));
+        HazardSystem.register(ModItems.COAL_POWDER_TINY.get(), new HazardData(
+                new HazardEntry(COAL, 0.3f)));
+        HazardSystem.register(ModItems.LIGNITE_POWDER.get(), new HazardData(
+                new HazardEntry(COAL, 3.0f)));
+
+        // ── Асбест (GIT: brick_asbestos 1F, tile_lab_broken 1F, powder_coltan_ore 3F) ──
+        HazardSystem.register(ModBlocks.BRICK_ASBESTOS.get(), new HazardData(
+                new HazardEntry(ASBESTOS, 1.0f)));
+        HazardSystem.register(ModBlocks.TILE_LAB_BROKEN.get(), new HazardData(
+                new HazardEntry(ASBESTOS, 1.0f)));
+        HazardSystem.register(ModItems.POWDER_COLTAN.get(), new HazardData(
+                new HazardEntry(ASBESTOS, 3.0f)));
     }
 
     /** GIT {@link com.hbm.hazard.HazardRegistry#block} (=10) × базовая rad слитка ({@link com.hbm.inventory.OreDictManager} DictFrame). */

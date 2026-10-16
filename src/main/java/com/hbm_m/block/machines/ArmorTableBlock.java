@@ -41,8 +41,19 @@ public class ArmorTableBlock extends BaseEntityBlock {
         return null; 
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(@NotNull BlockState pState, @NotNull Level pLevel, @NotNull BlockPos pPos, @NotNull Player pPlayer, @NotNull InteractionHand pHand, @NotNull BlockHitResult pHit) {
+        return openMenu(pState, pLevel, pPos, pPlayer, pHand, pHit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(@NotNull BlockState pState, @NotNull Level pLevel, @NotNull BlockPos pPos, @NotNull Player pPlayer, @NotNull BlockHitResult pHit) {
+        return openMenu(pState, pLevel, pPos, pPlayer, InteractionHand.MAIN_HAND, pHit);
+    }
+    *///?}
+
+    private InteractionResult openMenu(@NotNull BlockState pState, @NotNull Level pLevel, @NotNull BlockPos pPos, @NotNull Player pPlayer, @NotNull InteractionHand pHand, @NotNull BlockHitResult pHit) {
         if (!pLevel.isClientSide()) {
             // Создаем анонимный MenuProvider
             MenuProvider menuProvider = new MenuProvider() {
@@ -64,4 +75,13 @@ public class ArmorTableBlock extends BaseEntityBlock {
         }
         return InteractionResult.SUCCESS;
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<ArmorTableBlock> CODEC = simpleCodec(ArmorTableBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

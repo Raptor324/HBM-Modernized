@@ -6,7 +6,7 @@
   "children": {
     "prototype_model": {
       "loader": "forge:obj",
-      "model": "hbm_m:models/block/bomb/Prototype.obj",
+      "model": "hbm_m:models/block/bomb/prototype.obj",
       "flip_v": true,
       "textures": {
         "default": "hbm_m:block/bomb/prototype"

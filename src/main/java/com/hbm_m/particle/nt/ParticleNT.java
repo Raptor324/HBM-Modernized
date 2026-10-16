@@ -154,4 +154,52 @@ public abstract class ParticleNT {
     public void setBoundingBox(AABB bb) { this.bb = bb; }
 
     public void remove() { this.dead = true; }
+
+    /**
+     * Смещение относительно камеры с FALLBACK-ВИРТУАЛИЗАЦИЕЙ.
+     *
+     * Когда DH рендерит — возвращается истинное смещение: дальний контент
+     * рисуется в проходе EngineHandler с удлинённой проекцией (нет клипа).
+     * Когда DH НЕ рендерит (не установлен / выключен / завис) — контент за
+     * границей безопасной дистанции приближается к камере (старый виртуальный
+     * рендер) и остаётся видим в ванильной проекции с её коротким far plane.
+     */
+    protected Vec3 virtualizedOffset(double wx, double wy, double wz, Camera camera) {
+        Vec3 camPos = camera.getPosition();
+        double rx = wx - camPos.x;
+        double ry = wy - camPos.y;
+        double rz = wz - camPos.z;
+        boolean dhActive = com.hbm_m.client.compat.dh.DhClientState.isActive();
+        if (!dhActive) {
+            double max = com.hbm_m.client.missile.track.MissileTrackWorldRender.maxSafeRenderDistanceBlocks();
+            double dSq = rx * rx + ry * ry + rz * rz;
+            if (dSq > max * max && dSq > 1.0E-8D) {
+                double s = max / Math.sqrt(dSq);
+                return new Vec3(rx * s, ry * s, rz * s);
+            }
+        }
+        return new Vec3(rx, ry, rz);
+    }
+
+    /**
+     * Коэффициент сжатия виртуализации (1.0 = истинная позиция и размер).
+     *
+     * Виртуализация приближает контент к границе прорисовки; чтобы сохранилась
+     * перспективная иллюзия «объект действительно далеко», угловой размер
+     * должен продолжать уменьшаться с дистанцией → геометрию нужно домножать
+     * на тот же коэффициент max/dist, что и смещение (virtualizedOffset).
+     */
+    protected float virtualScale(double wx, double wy, double wz, Camera camera) {
+        boolean dhActive = com.hbm_m.client.compat.dh.DhClientState.isActive();
+        if (dhActive) return 1.0F;
+        Vec3 camPos = camera.getPosition();
+        double rx = wx - camPos.x, ry = wy - camPos.y, rz = wz - camPos.z;
+        double dSq = rx * rx + ry * ry + rz * rz;
+        double max = com.hbm_m.client.missile.track.MissileTrackWorldRender.maxSafeRenderDistanceBlocks();
+        if (dSq > max * max && dSq > 1.0E-8D) {
+            return (float) (max / Math.sqrt(dSq));
+        }
+        return 1.0F;
+    }
+
 }

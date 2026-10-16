@@ -373,6 +373,26 @@ public class ModEntities {
                             .updateInterval(1)
                             .build("nuke_mk3"));
 
+    // Длительный взрыв солиния («синяя стирка»)
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.logic.EntitySoliniumExplosion>> SOLINIUM_EXPLOSION =
+            ENTITY_TYPES.register("solinium_explosion",
+                    () -> EntityType.Builder.<com.hbm_m.entity.logic.EntitySoliniumExplosion>of(
+                                    com.hbm_m.entity.logic.EntitySoliniumExplosion::new, MobCategory.MISC)
+                            .sized(1.0F, 1.0F)
+                            .clientTrackingRange(256)
+                            .updateInterval(1)
+                            .build("solinium_explosion"));
+
+    // Длительный взрыв бейлфайра
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.logic.EntityBalefireExplosion>> BALEFIRE_EXPLOSION =
+            ENTITY_TYPES.register("balefire_explosion",
+                    () -> EntityType.Builder.<com.hbm_m.entity.logic.EntityBalefireExplosion>of(
+                                    com.hbm_m.entity.logic.EntityBalefireExplosion::new, MobCategory.MISC)
+                            .sized(1.0F, 1.0F)
+                            .clientTrackingRange(256)
+                            .updateInterval(1)
+                            .build("balefire_explosion"));
+
     // Gerald/Horizons orbital strike meteor (see com.hbm_m.satellite.SatelliteHorizons)
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.projectile.TomEntity>> TOM_METEOR =
             ENTITY_TYPES.register("tom_meteor",
@@ -471,6 +491,42 @@ public class ModEntities {
                             .clientTrackingRange(64)
                             .updateInterval(1)
                             .build("entity_mist"));
+
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.conveyor.MovingConveyorItemEntity>> MOVING_CONVEYOR_ITEM =
+            ENTITY_TYPES.register("moving_conveyor_item",
+                    () -> EntityType.Builder.<com.hbm_m.entity.conveyor.MovingConveyorItemEntity>of(
+                                    com.hbm_m.entity.conveyor.MovingConveyorItemEntity::new, MobCategory.MISC)
+                            .sized(0.375F, 0.375F)
+                            .clientTrackingRange(8)
+                            .updateInterval(20)
+                            .build("moving_conveyor_item"));
+
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.conveyor.MovingConveyorPackageEntity>> MOVING_CONVEYOR_PACKAGE =
+            ENTITY_TYPES.register("moving_conveyor_package",
+                    () -> EntityType.Builder.<com.hbm_m.entity.conveyor.MovingConveyorPackageEntity>of(
+                                    com.hbm_m.entity.conveyor.MovingConveyorPackageEntity::new, MobCategory.MISC)
+                            .sized(0.5F, 0.5F)
+                            .clientTrackingRange(8)
+                            .updateInterval(20)
+                            .build("moving_conveyor_package"));
+
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.drone.EntityDeliveryDrone>> DELIVERY_DRONE =
+            ENTITY_TYPES.register("delivery_drone",
+                    () -> EntityType.Builder.<com.hbm_m.entity.drone.EntityDeliveryDrone>of(
+                                    com.hbm_m.entity.drone.EntityDeliveryDrone::new, MobCategory.MISC)
+                            .sized(0.75F, 0.75F)
+                            .clientTrackingRange(10)
+                            .updateInterval(3)
+                            .build("delivery_drone"));
+
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.drone.EntityRequestDrone>> REQUEST_DRONE =
+            ENTITY_TYPES.register("request_drone",
+                    () -> EntityType.Builder.<com.hbm_m.entity.drone.EntityRequestDrone>of(
+                                    com.hbm_m.entity.drone.EntityRequestDrone::new, MobCategory.MISC)
+                            .sized(0.75F, 0.75F)
+                            .clientTrackingRange(10)
+                            .updateInterval(3)
+                            .build("request_drone"));
 
     public static final RegistrySupplier<EntityType<ZirnoxDebrisEntity>> ZIRNOX_DEBRIS =
             ENTITY_TYPES.register("zirnox_debris",

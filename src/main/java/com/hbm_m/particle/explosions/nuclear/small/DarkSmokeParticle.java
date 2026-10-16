@@ -29,7 +29,7 @@ public class DarkSmokeParticle extends AbstractExplosionParticle {
         //  РАЗМЕР: средний-крупный (0.6-1.8)
         this.quadSize = 0.5F + this.random.nextFloat() * 0.9F;
 
-        //  ЦВЕТ: СРЕДНЕ-СЕРЫЙ (светлее чем раньше) 🌫️
+        //  ЦВЕТ: СРЕДНЕ-СЕРЫЙ (светлее чем раньше)
         float grayValue = 0.35F + this.random.nextFloat() * 0.2F; // 0.35-0.55 (было 0.2-0.4)
         this.rCol = grayValue;
         this.gCol = grayValue;

@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.hbm_m.block.machines.anvils.AnvilTier;
+import com.hbm_m.platform.recipe.RecipeHooks;
 //? if fabric {
 /*import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -17,7 +18,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 //?}
 import net.minecraft.client.Minecraft;
-import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -28,7 +28,7 @@ public final class AnvilRecipeManager {
     private AnvilRecipeManager() { }
 
     public static List<AnvilRecipe> getAllRecipes(Level level) {
-        return level.getRecipeManager().getAllRecipesFor(AnvilRecipe.Type.INSTANCE);
+        return RecipeHooks.getAllRecipes(level, AnvilRecipe.Type.INSTANCE);
     }
 
     //? if fabric {
@@ -50,10 +50,9 @@ public final class AnvilRecipeManager {
         }
 
         String lowerQuery = query.toLowerCase(Locale.ROOT);
-        RegistryAccess access = level.registryAccess();
         return recipes.stream()
                 .filter(recipe -> {
-                    ItemStack output = recipe.getResultItem(access);
+                    ItemStack output = recipe.getResultItemSafe();
                     String itemName = output.getHoverName().getString().toLowerCase(Locale.ROOT);
                     return itemName.contains(lowerQuery);
                 })
@@ -61,18 +60,12 @@ public final class AnvilRecipeManager {
     }
 
     public static Optional<AnvilRecipe> findRecipe(Level level, ItemStack slotA, ItemStack slotB, AnvilTier tier) {
-        return level.getRecipeManager()
-                .getAllRecipesFor(AnvilRecipe.Type.INSTANCE)
-                .stream()
+        return RecipeHooks.getAllRecipes(level, AnvilRecipe.Type.INSTANCE).stream()
                 .filter(recipe -> recipe.matches(slotA, slotB) && recipe.canCraftOn(tier))
                 .findFirst();
     }
 
     public static Optional<AnvilRecipe> getRecipe(Level level, ResourceLocation id) {
-        return level.getRecipeManager()
-                .getAllRecipesFor(AnvilRecipe.Type.INSTANCE)
-                .stream()
-                .filter(recipe -> recipe.getId().equals(id))
-                .findFirst();
+        return Optional.ofNullable(RecipeHooks.getAllRecipesById(level, AnvilRecipe.Type.INSTANCE).get(id));
     }
 }

@@ -1,0 +1,29 @@
+{
+  "variants": {
+    "facing=up": {
+      "model": "hbm_m:block/cable_gauge_block"
+    },
+    "facing=down": {
+      "model": "hbm_m:block/cable_gauge_block",
+      "x": 180
+    },
+    "facing=north": {
+      "model": "hbm_m:block/cable_gauge_block",
+      "x": 90
+    },
+    "facing=south": {
+      "model": "hbm_m:block/cable_gauge_block",
+      "x": 270
+    },
+    "facing=east": {
+      "model": "hbm_m:block/cable_gauge_block",
+      "x": 90,
+      "y": 90
+    },
+    "facing=west": {
+      "model": "hbm_m:block/cable_gauge_block",
+      "x": 90,
+      "y": 270
+    }
+  }
+}

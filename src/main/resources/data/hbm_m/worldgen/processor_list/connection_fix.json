@@ -1,0 +1,7 @@
+{
+  "processors": [
+    {
+      "processor_type": "hbm_m:connection_fix_processor"
+    }
+  ]
+}

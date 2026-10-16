@@ -2,6 +2,7 @@ package com.hbm_m.client.render;
 
 import java.nio.Buffer;
 
+import com.hbm_m.client.render.shader.ModShaders;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
@@ -16,26 +17,17 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.platform.RenderHooks;
 import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
 
 /**
  * Vanilla (non-Iris) instanced batch renderer: handles
@@ -46,11 +38,14 @@ import net.fabricmc.api.Environment;
  * class complexity. Holds a reference to the parent renderer
  * for access to shared state (instance buffer, VAO/VBO ids, etc.).
  */
+
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 final class VanillaInstancedBatchRenderer {
 
     private final InstancedStaticPartRenderer parent;
@@ -116,6 +111,34 @@ final class VanillaInstancedBatchRenderer {
         }
         if (uFadeAlpha != null) uFadeAlpha.set(SingleMeshVboRenderer.getFadeAlpha());
         // Sampler0/Sampler2: {@link SingleMeshVboRenderer#prepareBlockLitSamplers} + bindBlockLitSamplerTextures.
+    }
+
+    // ── 1.21.1 view-rotation stripping ────────────────────────────────
+
+    //? if >= 1.21.1 {
+    /*// На 1.21.1 Mojang переносит camera view rotation (R_cam) в projection matrix
+    // RenderLevelStageEvent'а: event.getProjectionMatrix() = P*R_cam. При этом BER
+    // poseStack, из которого addInstance извлекает InstPos/InstRot, тоже несёт R_cam
+    // (mat = R_cam * T(blockPos - cameraPos) * perBELocal — см. комментарий в
+    // SingleMeshVboRenderer.render и fillInstanceCornerLight, где R_cam invert'ится).
+    // Instanced VS собирает modelView = T(InstPos)*R(InstRot) ≡ R_cam*T(d)*localRot,
+    // и если ProjMat = P*R_cam, итог = P*R_cam*R_cam*T(d)*localRot = P*R_cam²*...
+    // → двойная ротация. Симптом: модель "летает" по экрану, корректно только при
+    // yaw=180/0 (где R_cam²≈I). Фикс: stripp'им R_cam из event projection перед upload'ом.
+    //
+    // ВАЖНО: stripp'им ТОЛЬКО event projection (из flushBatchVanilla/flushBatchIris).
+    // RenderSystem.getProjectionMatrix() на 1.21.1 НЕ содержит R_cam (там чистая P) —
+    // его использует renderSingleVanilla и SingleMeshVboRenderer.render (не-instanced BER),
+    // где R_cam применяется один раз через poseStack ModelViewMat. Стриппинг там ломает.
+    private final org.joml.Matrix4f strippedProjection = new org.joml.Matrix4f();
+    private final org.joml.Matrix4f invViewRotTmp = new org.joml.Matrix4f();
+    *///?}
+
+    Matrix4f stripViewRotationForInstanced(Matrix4f projection) {
+        // По ванильному GameRenderer.renderLevel 1.21.1 проекция события — это P*bob
+        // БЕЗ R_cam (R_cam передаётся отдельным аргументом frustumMatrix и живёт в modelViewStack).
+        // Умножение P * R_cam^-1 портило проекцию → instanced-модели летали по экрану.
+        return projection;
     }
 
     /** Re-enable mesh + instance attribs (chunk/MDI passes may disable UV0). */
@@ -199,30 +222,29 @@ final class VanillaInstancedBatchRenderer {
     void uploadSingleInstance(PoseStack poseStack, int packedLight,
                               @Nullable BlockEntity blockEntity) {
         parent.instanceBuffer.clear();
-        Matrix4f mat = poseStack.last().pose();
+        Matrix4f mat = new Matrix4f(RenderSystem.getModelViewMatrix()).mul(poseStack.last().pose());
         mat.getTranslation(parent.posTmp);
         mat.getNormalizedRotation(parent.rotTmp);
 
         BlockPos blockPosForSample = (blockEntity != null) ? blockEntity.getBlockPos() : BlockPos.ZERO;
         if (LightSampleCache.BASE_POSE_SET.get()) {
-            parent.tmpLocalPose.set(LightSampleCache.BASE_POSE.get()).invert().mul(mat);
+            parent.tmpLocalPose.set(LightSampleCache.BASE_POSE.get()).invert().mul(poseStack.last().pose());
         } else {
             var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+            //? if < 1.21.1 {
             parent.tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
-            parent.tmpLocalPose.set(parent.tmpInvViewRot).mul(mat);
+             //?} else {
+            /*parent.tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation()).invert();
+            *///?}
+            parent.tmpLocalPose.set(parent.tmpInvViewRot).mul(poseStack.last().pose());
             parent.tmpLocalPose.m30(parent.tmpLocalPose.m30() - (float) (blockPosForSample.getX() - cam.x));
             parent.tmpLocalPose.m31(parent.tmpLocalPose.m31() - (float) (blockPosForSample.getY() - cam.y));
             parent.tmpLocalPose.m32(parent.tmpLocalPose.m32() - (float) (blockPosForSample.getZ() - cam.z));
         }
         long partHash = System.identityHashCode(parent);
 
-        if (parent.useSlicedLight) {
-            LightSampleCache.getOrSample16(blockEntity, partHash, parent.objBbox, blockPosForSample,
-                                           parent.tmpLocalPose, packedLight, parent.tmpCornerUV);
-        } else {
-            LightSampleCache.getOrSample8(blockEntity, partHash, parent.objBbox, blockPosForSample,
-                                          parent.tmpLocalPose, packedLight, parent.tmpCornerUV);
-        }
+        LightSampleCache.getOrSample8(blockEntity, partHash, parent.objBbox, blockPosForSample,
+                parent.tmpLocalPose, packedLight, parent.tmpCornerUV);
 
         parent.memPutInstanceRecordAtBaseFloat(0);
         ((Buffer) parent.instanceBuffer).position(parent.instanceDataSize);
@@ -233,19 +255,14 @@ final class VanillaInstancedBatchRenderer {
 
     void renderSingleVanilla(PoseStack poseStack, int packedLight, BlockPos blockPos,
                              @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource) {
-        ShaderInstance shader = parent.useSlicedLight ? ModShaders.getBlockLitInstancedSlicedShader()
-                                                     : ModShaders.getBlockLitInstancedShader();
+        ShaderInstance shader = ModShaders.getBlockLitInstancedShader();
         if (shader == null) {
             if (parent.quadsForIris != null && !parent.quadsForIris.isEmpty() && bufferSource != null) {
                 float fade = SingleMeshVboRenderer.getFadeAlpha();
                 VertexConsumer consumer = bufferSource.getBuffer(fade < 0.99f ? RenderType.translucent() : RenderType.solid());
                 PoseStack.Pose pose = poseStack.last();
                 for (BakedQuad quad : parent.quadsForIris) {
-                    //? if forge {
-                    consumer.putBulkData(pose, quad, 1f, 1f, 1f, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
-                    //?} else {
-                    /*consumer.putBulkData(pose, quad, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY);
-                    *///?}
+                    RenderHooks.putBulkData(consumer, pose, quad, 1f, 1f, 1f, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
                 }
             }
             return;
@@ -260,6 +277,9 @@ final class VanillaInstancedBatchRenderer {
             enableVertexAttribsForDraw();
 
             RenderSystem.setShader(() -> shader);
+            // renderSingle вызывается из BER (DoorRenderer) — projection из RenderSystem.getProjectionMatrix()
+            // НЕ содержит R_cam на 1.21.1 (R_cam только в event.getProjectionMatrix()). Stripp'им InstPos/InstRot
+            // из poseStack (тоже с R_cam), но ProjMat — как есть. На 1.20.1 тождественно.
             applyCommonUniforms(shader, RenderSystem.getProjectionMatrix(), new Matrix4f());
             SingleMeshVboRenderer.prepareBlockLitSamplers(shader);
             shader.apply();
@@ -269,7 +289,10 @@ final class VanillaInstancedBatchRenderer {
             RenderSystem.enableDepthTest();
             RenderSystem.depthFunc(GL11.GL_LEQUAL);
             RenderSystem.depthMask(true);
-            GL11.glDisable(GL11.GL_CULL_FACE);
+            // Управляемый вызов: сырой GL11.glDisable(GL_CULL_FACE) не обновлял
+            // кеш GlStateManager, и RenderStateGuard.close() восстанавливал
+            // cull но-опом (кеш считал его всё ещё включённым).
+            RenderSystem.disableCull();
             if (fade < 0.99f) {
                 RenderSystem.enableBlend();
                 RenderSystem.defaultBlendFunc();
@@ -288,12 +311,14 @@ final class VanillaInstancedBatchRenderer {
     // РЕГРЕССИЯ-СТОП: порядок draw — VAO → shader → identity ModelView → prepareSamplers → apply → bind → draw.
     // НЕ менять порядок; НЕ рисовать без bindBlockLitSamplerTextures после apply (белые OBJ).
     void flushBatchVanilla(Matrix4f projectionMatrix) {
+        // 1.21.1: projection из event.getProjectionMatrix() несёт R_cam; instanced VS
+        // собирает modelView из InstPos/InstRot (тоже с R_cam) → двойная ротация. Stripp'им.
+        Matrix4f proj = stripViewRotationForInstanced(projectionMatrix);
         boolean alreadyFlipped = false;
 
         MdiBatchCoordinator coord = MdiBatchCoordinator.active();
         if (coord != null
                 && !parent.storesPerInstancePartBone
-                && !parent.useSlicedLight
                 && parent.atlasVertexBytesRetained != null
                 && parent.atlasIndicesRetained != null
                 && parent.atlasIndexCountRetained > 0
@@ -308,8 +333,7 @@ final class VanillaInstancedBatchRenderer {
             }
         }
 
-        ShaderInstance shader = parent.useSlicedLight ? ModShaders.getBlockLitInstancedSlicedShader()
-                                                     : ModShaders.getBlockLitInstancedShader();
+        ShaderInstance shader = ModShaders.getBlockLitInstancedShader();
         if (shader == null) {
             if (!InstancedStaticPartRenderer.warnedInstancedShaderNullFlush) {
                 InstancedStaticPartRenderer.warnedInstancedShaderNullFlush = true;
@@ -324,19 +348,10 @@ final class VanillaInstancedBatchRenderer {
             parent.instanceBuffer.flip();
         }
 
-        int previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
-        int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
-        boolean cullWasEnabled = GL11.glIsEnabled(GL11.GL_CULL_FACE);
-        boolean depthTestWasEnabled = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
-        boolean depthMaskWasEnabled = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
-        int previousDepthFunc = GL11.glGetInteger(GL11.GL_DEPTH_FUNC);
-        boolean blendWasEnabled = GL11.glIsEnabled(GL11.GL_BLEND);
-        int prevBlendSrcRgb = GL11.glGetInteger(GL14.GL_BLEND_SRC_RGB);
-        int prevBlendDstRgb = GL11.glGetInteger(GL14.GL_BLEND_DST_RGB);
-        int prevBlendSrcAlpha = GL11.glGetInteger(GL14.GL_BLEND_SRC_ALPHA);
-        int prevBlendDstAlpha = GL11.glGetInteger(GL14.GL_BLEND_DST_ALPHA);
-
-        try {
+        // RenderStateGuard снимает и симметрично восстанавливает VAO,
+        // ARRAY_BUFFER, cull, depth test/mask/func и blend+blendFunc —
+        // ровно тот набор, который раньше снапшотился вручную ниже.
+        try (RenderStateGuard ignored = RenderStateGuard.snapshot()) {
             float minFade = 1f;
             for (int i = 0; i < parent.instanceCount; i++) {
                 float fa = parent.instanceBuffer.get(i * parent.instanceDataSize + parent.instanceFadeFloatOffset);
@@ -359,7 +374,7 @@ final class VanillaInstancedBatchRenderer {
 
             RenderSystem.setShader(() -> shader);
             // Identity ModelView: instanced VS берёт позу из InstPos/InstRot. НЕ подставлять poseStack.last() — ломает batch.
-            applyCommonUniforms(shader, projectionMatrix, new Matrix4f());
+            applyCommonUniforms(shader, proj, new Matrix4f());
             // Текстуры: prepare → apply → bind (см. SingleMeshVboRenderer «РЕГРЕССИЯ-СТОП»). Только apply() = белые модели.
             SingleMeshVboRenderer.prepareBlockLitSamplers(shader);
             shader.apply();
@@ -374,17 +389,6 @@ final class VanillaInstancedBatchRenderer {
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error during instanced flush (vanilla)", e);
         } finally {
-            GL30.glBindVertexArray(previousVao);
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
-            RenderSystem.depthMask(depthMaskWasEnabled);
-            RenderSystem.depthFunc(previousDepthFunc);
-            if (depthTestWasEnabled) RenderSystem.enableDepthTest();
-            else RenderSystem.disableDepthTest();
-            if (cullWasEnabled) RenderSystem.enableCull();
-            else RenderSystem.disableCull();
-            RenderSystem.blendFuncSeparate(prevBlendSrcRgb, prevBlendDstRgb, prevBlendSrcAlpha, prevBlendDstAlpha);
-            if (blendWasEnabled) RenderSystem.enableBlend();
-            else RenderSystem.disableBlend();
             RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
             RenderSystem.setShaderTexture(0, net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS);
         }

@@ -4,16 +4,18 @@ import com.hbm_m.explosion.vanillant.ExplosionVNT;
 import com.hbm_m.explosion.vanillant.interfaces.ICustomDamageHandler;
 import com.hbm_m.explosion.vanillant.interfaces.IEntityProcessor;
 import com.hbm_m.explosion.vanillant.interfaces.IEntityRangeMutator;
+import com.hbm_m.platform.PlatformHooks;
+
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageSources;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.enchantment.ProtectionEnchantment;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+
 //? if forge {
 import net.minecraftforge.event.ForgeEventFactory;
 //?}
@@ -21,7 +23,7 @@ import net.minecraftforge.event.ForgeEventFactory;
 import java.util.HashMap;
 import java.util.List;
 
-@Deprecated // an inferior version to the cross processors, so there is no actual reason to ever use this one
+@Deprecated
 public class EntityProcessorStandard implements IEntityProcessor {
 
     protected IEntityRangeMutator range;
@@ -73,7 +75,7 @@ public class EntityProcessorStandard implements IEntityProcessor {
                     double knockback;
 
                     if (entity instanceof LivingEntity livingEntity) {
-                        knockback = ProtectionEnchantment.getExplosionKnockbackAfterDampener(livingEntity, density);
+                        knockback = PlatformHooks.getExplosionKnockbackAfterDampener(livingEntity, density);
                     } else {
                         knockback = density;
                     }

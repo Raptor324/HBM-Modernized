@@ -92,17 +92,18 @@ public class RBMKBoilerBlockEntity extends RBMKColumnBlockEntity implements Menu
         return d;
     }
 
+    
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         waterTank.writeToNBT(tag, "water");
         steamTank.writeToNBT(tag, "steam");
         tag.putInt("steamGrade", steamGrade);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         waterTank.readFromNBT(tag, "water");
         steamTank.readFromNBT(tag, "steam");
         steamGrade = tag.getInt("steamGrade");

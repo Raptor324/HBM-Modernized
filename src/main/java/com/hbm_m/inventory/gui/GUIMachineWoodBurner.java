@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.inventory.menu.MachineWoodBurnerMenu;
 import com.hbm_m.main.MainRegistry; // ЗАМЕНИ НА СВОЙ КЛАСС
@@ -69,7 +70,7 @@ public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBur
 
         int energyHeight = menu.getEnergyScaled(34);
         if (energyHeight > 0) {
-            gui.blit(TEXTURE, x + 143, y + 18 + 34 - energyHeight, 176, 34 - energyHeight, 16, energyHeight); // Energy bar
+            gui.blit(TEXTURE, x + 143, y + 18 + 34 - energyHeight, 176, 52 - energyHeight, 16, energyHeight); // Energy bar
         }
 
         if (!menu.isEnabled()) {
@@ -79,7 +80,7 @@ public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBur
 
     @Override
     public void render(GuiGraphics gui, int mouseX, int mouseY, float delta) {
-        this.renderBackground(gui);
+        GuiCompat.renderBackground(this, gui, mouseX, mouseY, delta);
         super.render(gui, mouseX, mouseY, delta);
         this.renderTooltip(gui, mouseX, mouseY);
     }
@@ -138,9 +139,13 @@ public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBur
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (isMouseOver(mouseX, mouseY, 53, 17, 16, 16)) {
             // Отправка пакета на сервер для переключения 'enabled'
-            ModPacketHandler.sendToServer(ModPacketHandler.TOGGLE_WOOD_BURNER,
-                new ToggleWoodBurnerPacket(menu.blockEntity.getBlockPos()));
-            return true;
+            // тайл может отсутствовать в реплее Flashback
+            if (menu.blockEntity != null) {
+                ModPacketHandler.sendToServer(ModPacketHandler.TOGGLE_WOOD_BURNER,
+                    new ToggleWoodBurnerPacket(menu.blockEntity.getBlockPos()));
+                return true;
+            }
+            return super.mouseClicked(mouseX, mouseY, button);
         }
         return super.mouseClicked(mouseX, mouseY, button);
     }

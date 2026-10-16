@@ -2,13 +2,19 @@ package com.hbm_m.compat.jei;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.recipe.CrystallizerRecipe;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
 //? if forge {
+import dev.architectury.fluid.FluidStack;
 import mezz.jei.api.constants.VanillaTypes;
+//? if forge {
 import mezz.jei.api.forge.ForgeTypes;
+//?} elif neoforge {
+/*import mezz.jei.api.neoforge.NeoForgeTypes;
+*///?}
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.helpers.IGuiHelper;
@@ -16,10 +22,18 @@ import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
 
-public class CrystallizerJeiCategory implements IRecipeCategory<CrystallizerJeiRecipe> {
+/**
+ * JEI-категория рудного окислителя ({@code hbm_m:crystallizer}).
+ *
+ * <p>Работает напрямую с data-driven {@link CrystallizerRecipe} (JSON) — без промежуточной
+ * {@code *JeiRecipe}-обёртки. Вход/выход берутся из {@link CrystallizerRecipe#getInput()},
+ * {@link CrystallizerRecipe#getOutput()}, кислота — из {@link CrystallizerRecipe#getAcid()}
+ * (Architectury {@link FluidStack}, mB).</p>
+ */
+public class CrystallizerJeiCategory implements IRecipeCategory<CrystallizerRecipe> {
 
-    public static final RecipeType<CrystallizerJeiRecipe> RECIPE_TYPE =
-            RecipeType.create(RefStrings.MODID, "crystallizer", CrystallizerJeiRecipe.class);
+    public static final RecipeType<CrystallizerRecipe> RECIPE_TYPE =
+            RecipeType.create(RefStrings.MODID, "crystallizer", CrystallizerRecipe.class);
 
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_crystallizer.png");
@@ -34,28 +48,28 @@ public class CrystallizerJeiCategory implements IRecipeCategory<CrystallizerJeiR
                 new ItemStack(ModBlocks.CRYSTALLIZER.get()));
     }
 
-    @Override public RecipeType<CrystallizerJeiRecipe> getRecipeType() { return RECIPE_TYPE; }
+    @Override public RecipeType<CrystallizerRecipe> getRecipeType() { return RECIPE_TYPE; }
     @Override public Component getTitle() { return Component.translatable("container.hbm_m.crystallizer"); }
     @Override @SuppressWarnings("removal") public IDrawable getBackground() { return background; }
     @Override public IDrawable getIcon()       { return icon; }
 
     @Override
-    public void setRecipe(IRecipeLayoutBuilder builder, CrystallizerJeiRecipe recipe,
+    public void setRecipe(IRecipeLayoutBuilder builder, CrystallizerRecipe recipe,
                           mezz.jei.api.recipe.IFocusGroup focuses) {
-        // Input — slot 0 at (62, 45) in the GUI
-        if (!recipe.getInputs().isEmpty())
-            builder.addSlot(RecipeIngredientRole.INPUT, 62, 45)
-                    .addItemStacks(recipe.getInputs());
+        // Input — slot 0 at (62, 45) в GUI; показываем все стаки ingredient.
+        builder.addSlot(RecipeIngredientRole.INPUT, 62, 45)
+                .addIngredients(recipe.getInput());
 
-        // Output — slot 2 at (113, 45)
+        // Output — slot 2 at (113, 45).
         builder.addSlot(RecipeIngredientRole.OUTPUT, 113, 45)
                 .addItemStack(recipe.getOutput());
 
-        // Fluid input — slot 3 at (17, 18), show acid requirement
-        if (!recipe.getAcid().isEmpty()) {
+        // Fluid input — slot 3 at (17, 18), показываем требования по кислоте (если задана).
+        FluidStack acid = recipe.getAcid();
+        if (acid != null && !acid.isEmpty()) {
             builder.addSlot(RecipeIngredientRole.INPUT, 17, 18)
                     .setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
-                    .addFluidStack(recipe.getAcid().getFluid(), recipe.getAcid().getAmount());
+                    .addFluidStack(acid.getFluid(), acid.getAmount());
         }
     }
 }

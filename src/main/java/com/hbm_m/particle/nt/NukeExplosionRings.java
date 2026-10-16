@@ -27,7 +27,7 @@ import net.minecraft.world.phys.Vec3;
  * Портировано из explosiveideas (NukeExplosionEmitterParticle), без вспышки и тряски камеры.
  * Все эффекты затухают со временем; рендер только на клиенте.
  */
-public class NukeExplosionRings extends ParticleNT {
+public class NukeExplosionRings extends ParticleNT implements FarCapableParticle {
 
     //? if fabric && < 1.21.1 {
     /*private static final ResourceLocation TEXTURE_FLARE = new ResourceLocation(RefStrings.MODID, "textures/particle/nuke_explosion_flare.png");
@@ -161,16 +161,19 @@ public class NukeExplosionRings extends ParticleNT {
         if (!initialized) return;
 
         FogRenderer.setupNoFog();
-        Vec3 camPos = camera.getPosition();
+        Vec3 centerOffset = virtualizedOffset(this.x, this.y, this.z, camera);
+        // Fallback-виртуализация: сжатие размеров вместе со смещением (см. ParticleNT.virtualScale).
+        float vScale = virtualScale(this.x, this.y, this.z, camera);
         PoseStack localPose = new PoseStack();
-        localPose.translate(this.x - camPos.x, this.y - camPos.y, this.z - camPos.z);
+        localPose.translate(centerOffset.x, centerOffset.y, centerOffset.z);
+        localPose.scale(vScale, vScale, vScale);
         Matrix4f matrix = localPose.last().pose();
 
-        MultiBufferSource.BufferSource buffer = Minecraft.getInstance().renderBuffers().bufferSource();
+        MultiBufferSource.BufferSource buffer = ParticleEngineNT.buffer();
 
-        renderRings(buffer.getBuffer(ClientRenderHandler.CustomRenderTypes.NUKE_CLOUDS.apply(TEXTURE_FLARE)), matrix, camera, partialTicks, RingType.FLARE);
-        renderRings(buffer.getBuffer(ClientRenderHandler.CustomRenderTypes.NUKE_CLOUDS.apply(TEXTURE_FIRE)), matrix, camera, partialTicks, RingType.FIRE);
-        renderRings(buffer.getBuffer(ClientRenderHandler.CustomRenderTypes.NUKE_CLOUDS.apply(TEXTURE_SMOKE)), matrix, camera, partialTicks, RingType.SMOKE);
+        renderRings(buffer.getBuffer(ClientRenderHandler.CustomRenderTypes.nukeClouds(TEXTURE_FLARE)), matrix, camera, partialTicks, RingType.FLARE);
+        renderRings(buffer.getBuffer(ClientRenderHandler.CustomRenderTypes.nukeClouds(TEXTURE_FIRE)), matrix, camera, partialTicks, RingType.FIRE);
+        renderRings(buffer.getBuffer(ClientRenderHandler.CustomRenderTypes.nukeClouds(TEXTURE_SMOKE)), matrix, camera, partialTicks, RingType.SMOKE);
     }
 
     private void renderRings(VertexConsumer consumer, Matrix4f matrix, Camera camera, float partialTicks, RingType type) {
@@ -190,6 +193,8 @@ public class NukeExplosionRings extends ParticleNT {
             float posX = (float) (r.posX - this.x + r.motionX * ageF);
             float posY = (float) (r.posY - this.y + r.motionY * ageF);
             float posZ = (float) (r.posZ - this.z + r.motionZ * ageF);
+
+            // Окклюзия — попиксельно в шейдере nuke_cloud (DhOcclusionGpu).
 
             Vector3f l = new Vector3f(leftV).mul(scaleNow);
             Vector3f u = new Vector3f(upV).mul(scaleNow);
@@ -222,8 +227,10 @@ public class NukeExplosionRings extends ParticleNT {
     }
 
     @Override
+    public net.minecraft.resources.ResourceLocation hbm$getFarTexture() { return TEXTURE_FLARE; }
+
     public RenderType getRenderType() {
-        return ClientRenderHandler.CustomRenderTypes.NUKE_CLOUDS.apply(TEXTURE_FLARE);
+        return ClientRenderHandler.CustomRenderTypes.nukeClouds(TEXTURE_FLARE);
     }
 
     private enum RingType { FLARE, FIRE, SMOKE }
@@ -253,3 +260,5 @@ public class NukeExplosionRings extends ParticleNT {
         }
     }
 }
+
+

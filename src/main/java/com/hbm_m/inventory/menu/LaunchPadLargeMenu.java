@@ -19,6 +19,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.DummyItemStackHandler;
 import com.hbm_m.platform.ModItemStackHandler;
 
 /**
@@ -58,7 +59,11 @@ public class LaunchPadLargeMenu extends AbstractContainerMenu implements ILongEn
         this.level = inv.player.level();
         this.player = inv.player;
 
-        Container machineContainer = new HandlerContainer(blockEntity.getInventory());
+        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
+        // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
+        Container machineContainer = new HandlerContainer(blockEntity != null
+                ? blockEntity.getInventory()
+                : new DummyItemStackHandler(MACHINE_SLOTS));
 
         // Слоты машины - координаты соответствуют старому GUI
         // Missile
@@ -112,6 +117,11 @@ public class LaunchPadLargeMenu extends AbstractContainerMenu implements ILongEn
         if (be instanceof LaunchPadBaseBlockEntity launchPad) {
             return launchPad;
         }
+        // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (inv.player.level().isClientSide) {
+            return null;
+        }
         throw new IllegalStateException("No LaunchPadBaseBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":launch_pad_large_menu");
     }
 
@@ -132,12 +142,13 @@ public class LaunchPadLargeMenu extends AbstractContainerMenu implements ILongEn
 
     @Override
     public long getEnergyStatic() {
-        return blockEntity.getEnergyStored();
+        // тайл может отсутствовать на клиенте (реплей Flashback)
+        return blockEntity != null ? blockEntity.getEnergyStored() : 0L;
     }
 
     @Override
     public long getMaxEnergyStatic() {
-        return blockEntity.getMaxEnergyStored();
+        return blockEntity != null ? blockEntity.getMaxEnergyStored() : 0L;
     }
 
     @Override

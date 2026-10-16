@@ -135,6 +135,10 @@ public abstract class BaseCrateMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(@NotNull Player player) {
+        // тайл может отсутствовать на клиенте (реплей Flashback): подменный тайл не привязан к миру
+        if (blockEntity.getLevel() == null) {
+            return false;
+        }
         return stillValid(
                 ContainerLevelAccess.create(level, blockEntity.getBlockPos()),
                 player,

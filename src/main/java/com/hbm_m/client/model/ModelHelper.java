@@ -16,7 +16,9 @@ import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 //? if forge {
 import net.minecraftforge.client.model.pipeline.QuadBakingVertexConsumer;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.neoforge.client.model.pipeline.QuadBakingVertexConsumer;
+*///?}
 
 public class ModelHelper {
 
@@ -52,8 +54,11 @@ public class ModelHelper {
         float x1 = to.x() / 16f,   y1 = to.y() / 16f,   z1 = to.z() / 16f;
 
         UVBox uv = spec.box();
-        float u0 = sprite.getU(uv.u0), v0 = sprite.getV(uv.v0);
-        float u1 = sprite.getU(uv.u1), v1 = sprite.getV(uv.v1);
+        // UVBox в текселях 0..16; getU/getV на 1.21.1 ждут 0..1, поэтому ремапим сами.
+        float u0 = net.minecraft.util.Mth.lerp(uv.u0() / 16f, sprite.getU0(), sprite.getU1());
+        float v0 = net.minecraft.util.Mth.lerp(uv.v0() / 16f, sprite.getV0(), sprite.getV1());
+        float u1 = net.minecraft.util.Mth.lerp(uv.u1() / 16f, sprite.getU0(), sprite.getU1());
+        float v1 = net.minecraft.util.Mth.lerp(uv.v1() / 16f, sprite.getV0(), sprite.getV1());
 
         switch (direction) {
             case DOWN  -> putVertices(builder, normal, spec.rotate90(),
@@ -77,6 +82,47 @@ public class ModelHelper {
         }
         return builder.getQuad();
         //?}
+
+        //? if neoforge {
+        /*// NeoForge 1.21.1: QuadBakingVertexConsumer — самостоятельный класс (не Buffered),
+        // использует 1.21 VertexConsumer API (addVertex/setUv/setNormal вместо vertex().endVertex()).
+        // Логика полностью зеркальна forge-ветке.
+        QuadBakingVertexConsumer builder = new QuadBakingVertexConsumer();
+        builder.setSprite(sprite);
+        builder.setDirection(direction);
+        builder.setHasAmbientOcclusion(true);
+
+        Vector3f normal = direction.step();
+        float x0 = from.x() / 16f, y0 = from.y() / 16f, z0 = from.z() / 16f;
+        float x1 = to.x() / 16f, y1 = to.y() / 16f, z1 = to.z() / 16f;
+        // UVBox в текселях 0..16; setUv ждёт атласные UV, поэтому ремапим через спрайт.
+        float u0 = net.minecraft.util.Mth.lerp(spec.box().u0() / 16f, sprite.getU0(), sprite.getU1());
+        float u1 = net.minecraft.util.Mth.lerp(spec.box().u1() / 16f, sprite.getU0(), sprite.getU1());
+        float v0 = net.minecraft.util.Mth.lerp(spec.box().v0() / 16f, sprite.getV0(), sprite.getV1());
+        float v1 = net.minecraft.util.Mth.lerp(spec.box().v1() / 16f, sprite.getV0(), sprite.getV1());
+
+        switch (direction) {
+            case DOWN  -> putVertices(builder, normal, spec.rotate90(),
+                                    new float[]{x0, y0, z1, u0, v1}, new float[]{x0, y0, z0, u0, v0},
+                                    new float[]{x1, y0, z0, u1, v0}, new float[]{x1, y0, z1, u1, v1});
+            case UP    -> putVertices(builder, normal, spec.rotate90(),
+                                    new float[]{x0, y1, z0, u0, v0}, new float[]{x0, y1, z1, u0, v1},
+                                    new float[]{x1, y1, z1, u1, v1}, new float[]{x1, y1, z0, u1, v0});
+            case NORTH -> putVertices(builder, normal, spec.rotate90(),
+                                    new float[]{x0, y1, z0, u0, v0}, new float[]{x1, y1, z0, u1, v0},
+                                    new float[]{x1, y0, z0, u1, v1}, new float[]{x0, y0, z0, u0, v1});
+            case SOUTH -> putVertices(builder, normal, spec.rotate90(),
+                                    new float[]{x0, y0, z1, u0, v1}, new float[]{x1, y0, z1, u1, v1},
+                                    new float[]{x1, y1, z1, u1, v0}, new float[]{x0, y1, z1, u0, v0});
+            case WEST  -> putVertices(builder, normal, spec.rotate90(),
+                                    new float[]{x0, y0, z1, u0, v1}, new float[]{x0, y1, z1, u0, v0},
+                                    new float[]{x0, y1, z0, u1, v0}, new float[]{x0, y0, z0, u1, v1});
+            case EAST  -> putVertices(builder, normal, spec.rotate90(),
+                                    new float[]{x1, y0, z0, u0, v1}, new float[]{x1, y1, z0, u0, v0},
+                                    new float[]{x1, y1, z1, u1, v0}, new float[]{x1, y0, z1, u1, v1});
+        }
+        return builder.bakeQuad();
+        *///?}
     }
 
     //? if forge {
@@ -98,6 +144,26 @@ public class ModelHelper {
         builder.vertex(x, y, z).uv(u, v).uv2(0, 0).normal(normal.x(), normal.y(), normal.z()).color(-1).endVertex();
     }
     //?}
+
+    //? if neoforge {
+    /*private static void putVertices(QuadBakingVertexConsumer builder, Vector3f normal, boolean rotate, float[] v1, float[] v2, float[] v3, float[] v4) {
+        if (!rotate) {
+            putVertex(builder, normal, v1[0], v1[1], v1[2], v1[3], v1[4]);
+            putVertex(builder, normal, v2[0], v2[1], v2[2], v2[3], v2[4]);
+            putVertex(builder, normal, v3[0], v3[1], v3[2], v3[3], v3[4]);
+            putVertex(builder, normal, v4[0], v4[1], v4[2], v4[3], v4[4]);
+        } else {
+            putVertex(builder, normal, v1[0], v1[1], v1[2], v2[3], v2[4]);
+            putVertex(builder, normal, v2[0], v2[1], v2[2], v3[3], v3[4]);
+            putVertex(builder, normal, v3[0], v3[1], v3[2], v4[3], v4[4]);
+            putVertex(builder, normal, v4[0], v4[1], v4[2], v1[3], v1[4]);
+        }
+    }
+
+    private static void putVertex(QuadBakingVertexConsumer builder, Vector3f normal, float x, float y, float z, float u, float v) {
+        builder.addVertex(x, y, z).setColor(-1, -1, -1, -1).setUv(u, v).setUv2(0, 0).setNormal(normal.x(), normal.y(), normal.z());
+    }
+    *///?}
 
     /** Position: первые 3 int (x,y,z). Normal: последний int вершины (Embeddium=8 ints/vertex, Vanilla=9). */
     private static final int POSITION_OFFSET = 0;

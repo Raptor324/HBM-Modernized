@@ -27,12 +27,25 @@ public class GiveTemplateC2SPacket implements C2SPacket {
     // ── Serialization ─────────────────────────────────────────────────────────
 
     public static GiveTemplateC2SPacket decode(FriendlyByteBuf buf) {
+        //? if < 1.21.1 {
         return new GiveTemplateC2SPacket(buf.readItem());
+        //?} else {
+        /*// 1.21.1: FriendlyByteBuf.readItem удалён — используем ItemStack.OPTIONAL_STREAM_CODEC
+        // (нужен RegistryFriendlyByteBuf; ModPacketHandler уже создаёт именно его на neoforge).
+        return new GiveTemplateC2SPacket(
+            net.minecraft.world.item.ItemStack.OPTIONAL_STREAM_CODEC.decode(
+                (net.minecraft.network.RegistryFriendlyByteBuf) buf));
+        *///?}
     }
 
     @Override
     public void write(FriendlyByteBuf buf) {
+        //? if < 1.21.1 {
         buf.writeItem(recipeOutput);
+        //?} else {
+        /*net.minecraft.world.item.ItemStack.OPTIONAL_STREAM_CODEC.encode(
+            (net.minecraft.network.RegistryFriendlyByteBuf) buf, recipeOutput);
+        *///?}
     }
 
     // ── Handler ───────────────────────────────────────────────────────────────

@@ -5,8 +5,8 @@ import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 //?} elif neoforge {
 /*import net.neoforged.fml.ModList;
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;*/
-//?}
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+*///?}
 
 /**
  * Точка входа совместимости с Create. Forge-only: Create существует только под
@@ -35,7 +35,12 @@ public final class CreateCompat {
     /** Слушатель FMLCommonSetupEvent. Безопасен без Create. */
     public static void commonSetup(FMLCommonSetupEvent event) {
         if (!isLoaded()) return;
-        event.enqueueWork(CreateDoorRegistrar::register);
+        event.enqueueWork(() -> {
+            CreateDoorRegistrar.register();
+            // Взаимная "приклеенность" блоков мультиблоков: BFS сборки Create/Aeronautics
+            // захватывает весь станок, задев хотя бы один его блок (как факелы к опоре).
+            HbmMultiblockMovementChecks.register();
+        });
     }
 }
 //?}

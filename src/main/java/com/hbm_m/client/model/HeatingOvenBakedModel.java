@@ -70,6 +70,10 @@ public class HeatingOvenBakedModel extends AbstractMultipartBakedModel implement
         return getQuads(state, side, rand, ModelData.EMPTY, null);
         //?}
 
+        //? if neoforge {
+        /*return super.getQuads(state, side, rand);
+        *///?}
+
         //? if fabric {
         /*// ITEM RENDER (Inventory/Hand)
         if (state == null) {

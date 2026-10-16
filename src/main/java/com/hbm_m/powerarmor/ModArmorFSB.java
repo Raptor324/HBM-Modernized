@@ -15,8 +15,9 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
+import com.hbm_m.item.tools_and_armor.ModArmorMaterials;
+import com.hbm_m.item.tools_and_armor.ModArmorMaterialsAccess;
 import net.minecraft.world.item.ArmorItem;
-import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -55,8 +56,12 @@ public class ModArmorFSB extends ArmorItem {
     private static final String TAG_FSB_HAS_SET = "hbm_fsb_has_set";
     private static final int FSB_CACHE_DURATION = 5;
 
-    public ModArmorFSB(ArmorMaterial material, Type type, Properties properties, String texture) {
+    public ModArmorFSB(ModArmorMaterials material, Type type, Properties properties, String texture) {
+        //? if forge {
         super(material, type, properties.stacksTo(1));
+        //?} elif neoforge {
+        /*super(ModArmorMaterialsAccess.holder(material), type, properties.stacksTo(1));
+        *///?}
         this.texture = texture;
     }
 

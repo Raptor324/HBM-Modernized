@@ -13,6 +13,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.resources.ResourceLocation;
 
 public class ModCreativeTabs {
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS =
@@ -34,7 +35,7 @@ public class ModCreativeTabs {
         //? if forge || neoforge {
         return CreativeModeTab.builder()
 
-                .withTabsBefore(RefStrings.resourceLocation(previousTabId));
+                .withTabsBefore(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, previousTabId));
 
         //?} else {
 
@@ -54,7 +55,7 @@ public class ModCreativeTabs {
 
                     .icon(() -> new ItemStack(ModItems.getIngot(ModIngots.URANIUM).get()))
 
-                    .displayItems((params, output) -> CreativeModeTabEventHandler.populateResourceTab(output::accept))
+                    .displayItems((params, output) -> CreativeModeTabEventHandler.populateResourceTab(CreativeModeTabEventHandler.deduplicated(output::accept)))
 
                     .build());
 
@@ -68,7 +69,7 @@ public class ModCreativeTabs {
 
                     .icon(() -> new ItemStack(ModItems.CREATIVE_BATTERY.get()))
 
-                    .displayItems((params, output) -> CreativeModeTabEventHandler.populateFuelTab(output::accept))
+                    .displayItems((params, output) -> CreativeModeTabEventHandler.populateFuelTab(CreativeModeTabEventHandler.deduplicated(output::accept)))
 
                     .build());
 
@@ -82,7 +83,7 @@ public class ModCreativeTabs {
 
                     .icon(() -> new ItemStack(ModItems.ASSEMBLY_TEMPLATE.get()))
 
-                    .displayItems((params, output) -> CreativeModeTabEventHandler.populateTemplatesTab(output::accept))
+                    .displayItems((params, output) -> CreativeModeTabEventHandler.populateTemplatesTab(CreativeModeTabEventHandler.deduplicated(output::accept)))
 
                     .build());
 
@@ -96,7 +97,7 @@ public class ModCreativeTabs {
 
                     .icon(() -> new ItemStack(ModBlocks.URANIUM_ORE.get()))
 
-                    .displayItems((params, output) -> CreativeModeTabEventHandler.populateOresTab(output::accept))
+                    .displayItems((params, output) -> CreativeModeTabEventHandler.populateOresTab(CreativeModeTabEventHandler.deduplicated(output::accept)))
 
                     .build());
 
@@ -110,7 +111,7 @@ public class ModCreativeTabs {
 
                     .icon(() -> new ItemStack(ModBlocks.CONCRETE_HAZARD.get()))
 
-                    .displayItems((params, output) -> CreativeModeTabEventHandler.populateBuildingTab(output::accept))
+                    .displayItems((params, output) -> CreativeModeTabEventHandler.populateBuildingTab(CreativeModeTabEventHandler.deduplicated(output::accept)))
 
                     .build());
 
@@ -124,7 +125,7 @@ public class ModCreativeTabs {
 
                     .icon(() -> new ItemStack(ModBlocks.MACHINE_ASSEMBLER.get()))
 
-                    .displayItems((params, output) -> CreativeModeTabEventHandler.populateMachinesTab(output::accept))
+                    .displayItems((params, output) -> CreativeModeTabEventHandler.populateMachinesTab(CreativeModeTabEventHandler.deduplicated(output::accept)))
 
                     .build());
 
@@ -140,7 +141,7 @@ public class ModCreativeTabs {
 
                         .icon(() -> new ItemStack(NukeTab.getTabIconItem()))
 
-                        .displayItems((params, output) -> CreativeModeTabEventHandler.populateNukeTab(output::accept));
+                        .displayItems((params, output) -> CreativeModeTabEventHandler.populateNukeTab(CreativeModeTabEventHandler.deduplicated(output::accept)));
 
                 NukeTab.applyBackgroundTexture(builder);
 
@@ -158,7 +159,7 @@ public class ModCreativeTabs {
 
                     .icon(() -> new ItemStack(ModItems.GRENADE_IF.get()))
 
-                    .displayItems((params, output) -> CreativeModeTabEventHandler.populateWeaponsTab(output::accept))
+                    .displayItems((params, output) -> CreativeModeTabEventHandler.populateWeaponsTab(CreativeModeTabEventHandler.deduplicated(output::accept)))
 
                     .build());
 
@@ -172,7 +173,7 @@ public class ModCreativeTabs {
 
                     .icon(() -> new ItemStack(MissileTab.getTabIconItem()))
 
-                    .displayItems((params, output) -> CreativeModeTabEventHandler.populateMissilesTab(output::accept))
+                    .displayItems((params, output) -> CreativeModeTabEventHandler.populateMissilesTab(CreativeModeTabEventHandler.deduplicated(output::accept)))
 
                     .build());
 
@@ -186,7 +187,7 @@ public class ModCreativeTabs {
 
                     .icon(() -> new ItemStack(ModItems.PLATE_DESH.get()))
 
-                    .displayItems((params, output) -> CreativeModeTabEventHandler.populateSparepartsTab(output::accept))
+                    .displayItems((params, output) -> CreativeModeTabEventHandler.populateSparepartsTab(CreativeModeTabEventHandler.deduplicated(output::accept)))
 
                     .build());
 
@@ -200,7 +201,7 @@ public class ModCreativeTabs {
 
                     .icon(() -> new ItemStack(ModItems.RADAWAY.get()))
 
-                    .displayItems((params, output) -> CreativeModeTabEventHandler.populateConsumablesTab(output::accept))
+                    .displayItems((params, output) -> CreativeModeTabEventHandler.populateConsumablesTab(CreativeModeTabEventHandler.deduplicated(output::accept)))
 
                     .build());
 
@@ -217,7 +218,7 @@ public class ModCreativeTabs {
 
 //                     .icon(() -> new ItemStack(ModBlocks.BROADCASTER.get()))
 
-//                     .displayItems((params, output) -> CreativeModeTabEventHandler.populateDevItemsTab(output::accept))
+//                     .displayItems((params, output) -> CreativeModeTabEventHandler.populateDevItemsTab(CreativeModeTabEventHandler.deduplicated(output::accept)))
 
 //                     .build());
 

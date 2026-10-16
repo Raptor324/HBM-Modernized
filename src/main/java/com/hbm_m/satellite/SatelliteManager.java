@@ -10,8 +10,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 
 /**
  * Frequency -> orbited {@link Satellite} registry. Port of legacy
- * {@code com.hbm.saveddata.SatelliteSavedData}, modeled on this codebase's
- * {@link com.hbm_m.api.energy.EnergyNetworkManager} SavedData pattern.
+ * {@code com.hbm.saveddata.SatelliteSavedData}, using the vanilla SavedData pattern.
  */
 public class SatelliteManager extends SavedData {
 
@@ -23,11 +22,22 @@ public class SatelliteManager extends SavedData {
     }
 
     public static SatelliteManager get(ServerLevel level) {
+        //? if < 1.21.1 {
         return level.getDataStorage().computeIfAbsent(
-                (nbt) -> load(nbt),
+                SatelliteManager::load,
                 SatelliteManager::new,
                 DATA_NAME
         );
+        //?} else {
+        /*return level.getDataStorage().computeIfAbsent(
+                new net.minecraft.world.level.saveddata.SavedData.Factory<>(
+                        SatelliteManager::new,
+                        (nbt, provider) -> load(nbt),
+                        null
+                ),
+                DATA_NAME
+        );
+        *///?}
     }
 
     private static SatelliteManager load(CompoundTag nbt) {
@@ -52,7 +62,6 @@ public class SatelliteManager extends SavedData {
         return byFrequency.get(freq);
     }
 
-    /** Registers a satellite in orbit at the given frequency and fires {@link Satellite#onOrbit}. */
     public void orbit(ServerLevel level, int freq, Item item, double x, double y, double z) {
         int id = Satellite.getIDFromItem(item);
         Satellite sat = Satellite.create(id);
@@ -64,8 +73,13 @@ public class SatelliteManager extends SavedData {
         setDirty();
     }
 
+    //? if < 1.21.1 {
     @Override
     public CompoundTag save(CompoundTag nbt) {
+    //?} else {
+    /*@Override
+    public CompoundTag save(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider provider) {
+    *///?}
         nbt.putInt("satCount", byFrequency.size());
         int i = 0;
         for (Map.Entry<Integer, Satellite> entry : byFrequency.entrySet()) {

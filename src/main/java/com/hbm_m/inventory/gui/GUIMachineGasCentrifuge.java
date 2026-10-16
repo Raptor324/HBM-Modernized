@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
 import com.hbm_m.client.gui.FluidGuiRendering;
@@ -6,7 +7,6 @@ import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.menu.MachineGasCentrifugeMenu;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.PseudoFluidTank;
-import com.hbm_m.recipe.PseudoFluidType;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import dev.architectury.fluid.FluidStack;
@@ -104,15 +104,17 @@ public class GUIMachineGasCentrifuge extends GuiInfoScreen<MachineGasCentrifugeM
         }
 
         var blockEntity = menu.getBlockEntity();
-        Fluid realFluid = blockEntity.getTank().getStoredFluid();
-        renderPseudoTank(guiGraphics, INPUT_TANK_X, blockEntity.getInputTank(), realFluid);
-        renderPseudoTank(guiGraphics, OUTPUT_TANK_X, blockEntity.getOutputTank(), realFluid);
+        if (blockEntity != null) { // тайл может отсутствовать в реплее Flashback
+            Fluid realFluid = blockEntity.getTank().getStoredFluid();
+            renderPseudoTank(guiGraphics, INPUT_TANK_X, blockEntity.getInputTank(), realFluid);
+            renderPseudoTank(guiGraphics, OUTPUT_TANK_X, blockEntity.getOutputTank(), realFluid);
+        }
     }
 
     /** Renders a pseudo-fluid tank's fill level using the real piped fluid's texture/tint,
      *  matching the original's behavior of always binding {@code gasCent.tank}'s texture. */
     private void renderPseudoTank(GuiGraphics guiGraphics, int relX, PseudoFluidTank tank, Fluid realFluid) {
-        if (tank.getTankType() == PseudoFluidType.NONE || tank.getFill() <= 0) return;
+        if (tank.getFill() <= 0) return;
         if (realFluid == null || realFluid == Fluids.EMPTY || realFluid == ModFluids.NONE.getSource()) return;
 
         int filled = (int) ((long) tank.getFill() * TANK_HEIGHT / tank.getMaxFill());
@@ -145,7 +147,7 @@ public class GUIMachineGasCentrifuge extends GuiInfoScreen<MachineGasCentrifugeM
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        renderBackground(guiGraphics);
+        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, delta);
         super.render(guiGraphics, mouseX, mouseY, delta);
         renderTooltip(guiGraphics, mouseX, mouseY);
 
@@ -156,16 +158,17 @@ public class GUIMachineGasCentrifuge extends GuiInfoScreen<MachineGasCentrifugeM
                 menu.getMaxEnergyLong());
 
         var blockEntity = menu.getBlockEntity();
+        if (blockEntity != null) { // тайл может отсутствовать в реплее Flashback
+            drawCustomInfoStat(guiGraphics, mouseX, mouseY,
+                    INPUT_TANK_X, TANK_Y, TANK_WIDTH, TANK_HEIGHT,
+                    mouseX, mouseY,
+                    tankTooltip(blockEntity.getInputTank()));
 
-        drawCustomInfoStat(guiGraphics, mouseX, mouseY,
-                INPUT_TANK_X, TANK_Y, TANK_WIDTH, TANK_HEIGHT,
-                mouseX, mouseY,
-                tankTooltip(blockEntity.getInputTank()));
-
-        drawCustomInfoStat(guiGraphics, mouseX, mouseY,
-                OUTPUT_TANK_X, TANK_Y, TANK_WIDTH, TANK_HEIGHT,
-                mouseX, mouseY,
-                tankTooltip(blockEntity.getOutputTank()));
+            drawCustomInfoStat(guiGraphics, mouseX, mouseY,
+                    OUTPUT_TANK_X, TANK_Y, TANK_WIDTH, TANK_HEIGHT,
+                    mouseX, mouseY,
+                    tankTooltip(blockEntity.getOutputTank()));
+        }
 
         drawInfoPanel(guiGraphics, INFO_X, INFO_ENRICHMENT_Y, PanelType.LARGE_GREEN_INFO);
         drawCustomInfoStat(guiGraphics, mouseX, mouseY,

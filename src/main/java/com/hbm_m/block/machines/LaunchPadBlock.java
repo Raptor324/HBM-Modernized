@@ -6,7 +6,6 @@ import java.util.function.Supplier;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.bomb.IBomb;
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.LaunchPadBaseBlockEntity;
@@ -74,18 +73,7 @@ public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockContro
     public void onPlace(BlockState pState, Level pLevel, BlockPos pPos, BlockState pOldState, boolean pIsMoving) {
         super.onPlace(pState, pLevel, pPos, pOldState, pIsMoving);
         if (!pLevel.isClientSide() && !pState.is(pOldState.getBlock())) {
-            MultiblockStructureHelper helper = getStructureHelper();
-            BlockPos core = placeMultiblockStructure(pLevel, pPos, pState);
-            if (core == null) {
-                return;
-            }
-            Direction facing = pState.getValue(FACING);
-            for (BlockPos localPos : helper.getStructureMap().keySet()) {
-                if (getPartRole(localPos) == PartRole.UNIVERSAL_CONNECTOR) {
-                    BlockPos worldPos = helper.getRotatedPos(core, localPos, facing);
-                    EnergyNetworkManager.get((ServerLevel) pLevel).addNode(worldPos);
-                }
-            }
+            placeMultiblockStructure(pLevel, pPos, pState);
         }
     }
 
@@ -102,12 +90,6 @@ public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockContro
             if (!level.isClientSide()) {
                 MultiblockStructureHelper helper = getStructureHelper();
                 Direction facing = state.getValue(FACING);
-                for (BlockPos localPos : helper.getStructureMap().keySet()) {
-                    if (getPartRole(localPos) == PartRole.UNIVERSAL_CONNECTOR) {
-                        BlockPos worldPos = helper.getRotatedPos(pos, localPos, facing);
-                        EnergyNetworkManager.get((ServerLevel) level).removeNode(worldPos);
-                    }
-                }
 
                 BlockEntity blockEntity = level.getBlockEntity(pos);
                 if (blockEntity instanceof LaunchPadBaseBlockEntity launchPadBe) {
@@ -166,8 +148,19 @@ public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockContro
         return createTickerHelper(pType, ModBlockEntities.LAUNCH_PAD_BE.get(), LaunchPadBlockEntity::tick);
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
+        return openMenu(pState, pLevel, pPos, pPlayer, pHand, pHit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, BlockHitResult pHit) {
+        return openMenu(pState, pLevel, pPos, pPlayer, InteractionHand.MAIN_HAND, pHit);
+    }
+    *///?}
+
+    private InteractionResult openMenu(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
         if (!pLevel.isClientSide()) {
             if (pLevel.getBlockEntity(pPos) instanceof MenuProvider provider) {
                 MenuRegistry.openExtendedMenu((ServerPlayer) pPlayer, provider, buf -> buf.writeBlockPos(pPos));
@@ -276,4 +269,13 @@ public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockContro
     public boolean propagatesSkylightDown(BlockState pState, BlockGetter pLevel, BlockPos pPos) {
         return true;
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<LaunchPadBlock> CODEC = simpleCodec(LaunchPadBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

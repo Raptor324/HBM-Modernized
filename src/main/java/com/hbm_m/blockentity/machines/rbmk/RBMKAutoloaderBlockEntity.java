@@ -2,6 +2,7 @@ package com.hbm_m.blockentity.machines.rbmk;
 
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.handler.rbmk.RBMKNeutronHandler.RBMKType;
+import com.hbm_m.inventory.menu.RBMKAutoloaderMenu;
 import com.hbm_m.item.rbmk.RBMKRodItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -75,20 +76,21 @@ public class RBMKAutoloaderBlockEntity extends RBMKColumnBlockEntity implements 
     }
 
     @Override public Component getDisplayName() { return Component.translatable("block.hbm_m.rbmk_autoloader"); }
-    @Override public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) { return null; } // TODO: dedicated menu
+    @Override public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) { return new RBMKAutoloaderMenu(id, inv, this); }
     @Override public RBMKType getRBMKType()      { return RBMKType.OTHER; }
     @Override public ColumnType getConsoleType() { return ColumnType.STORAGE; }
 
-    //? if < 1.21.1 {
+    
+    // (консолидировала задвоенные stonecutter-кластеры save/load)
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         ListTag list = new ListTag();
         for (int i = 0; i < SLOTS; i++) {
             if (!slots[i].isEmpty()) {
                 CompoundTag s = new CompoundTag();
                 s.putByte("s", (byte) i);
-                s.put("item", safeItemSave(slots[i]));
+                s.put("item", com.hbm_m.platform.PlatformHooks.safeItemSave(slots[i], registries));
                 list.add(s);
             }
         }
@@ -96,45 +98,16 @@ public class RBMKAutoloaderBlockEntity extends RBMKColumnBlockEntity implements 
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         for (int i = 0; i < SLOTS; i++) slots[i] = ItemStack.EMPTY;
         ListTag list = tag.getList("slots", 10);
         for (int i = 0; i < list.size(); i++) {
             CompoundTag s = list.getCompound(i);
             int idx = s.getByte("s") & 0xFF;
             if (idx < SLOTS && s.contains("item"))
-                slots[idx] = ItemStack.of(s.getCompound("item"));
+                slots[idx] = com.hbm_m.platform.PlatformHooks.itemStackOf(s.getCompound("item"), registries);
         }
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        ListTag list = new ListTag();
-        for (int i = 0; i < SLOTS; i++) {
-            if (!slots[i].isEmpty()) {
-                CompoundTag s = new CompoundTag();
-                s.putByte("s", (byte) i);
-                s.put("item", safeItemSave(slots[i], registries));
-                list.add(s);
-            }
-        }
-        tag.put("slots", list);
-    }
-
-    @Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        for (int i = 0; i < SLOTS; i++) slots[i] = ItemStack.EMPTY;
-        ListTag list = tag.getList("slots", 10);
-        for (int i = 0; i < list.size(); i++) {
-            CompoundTag s = list.getCompound(i);
-            int idx = s.getByte("s") & 0xFF;
-            if (idx < SLOTS && s.contains("item"))
-                slots[idx] = ItemStack.parseOptional(registries, s.getCompound("item"));
-        }
-    }
-    *///?}
 }
 

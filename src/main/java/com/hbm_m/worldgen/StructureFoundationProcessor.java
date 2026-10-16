@@ -1,6 +1,9 @@
 package com.hbm_m.worldgen;
 
 import com.mojang.serialization.Codec;
+//? if >= 1.21.1 {
+/*import com.mojang.serialization.MapCodec;
+*///?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.LevelAccessor;
@@ -13,7 +16,11 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 
 public class StructureFoundationProcessor extends StructureProcessor {
 
+    //? if < 1.21.1 {
     public static final Codec<StructureFoundationProcessor> CODEC = Codec.unit(StructureFoundationProcessor::new);
+    //?} else {
+    /*public static final MapCodec<StructureFoundationProcessor> CODEC = MapCodec.unit(StructureFoundationProcessor::new);
+    *///?}
 
     @Override
     protected StructureProcessorType<?> getType() {

@@ -46,7 +46,7 @@ public final class ConfigSchema {
         // ── SERVER: общие ───────────────────────────────────────────
         reg(ConfigField.bool("enableRadiation", ConfigSide.SERVER, ApplyMode.LIVE, "general").withComment("Enables / disables global radiation system"));
         reg(ConfigField.bool("enableChunkRads", ConfigSide.SERVER, ApplyMode.LIVE, "general"));
-        reg(ConfigField.bool("enableMOTD", ConfigSide.SERVER, ApplyMode.LIVE, "general"));
+        reg(ConfigField.bool("enableMOTD", ConfigSide.CLIENT, ApplyMode.LIVE, "general"));
 
         // ── SERVER: эффекты мира ────────────────────────────────────
         reg(ConfigField.bool("enableRadFogEffect", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects"));
@@ -122,6 +122,7 @@ public final class ConfigSchema {
         reg(ConfigField.bool("enableChunkLoading", ConfigSide.SERVER, ApplyMode.LIVE, "explosions"));
         reg(ConfigField.integer("explosionAlgorithm", ConfigSide.SERVER, ApplyMode.LIVE, "explosions", 0, 2));
         reg(ConfigField.integer("limitExplosionLifespan", ConfigSide.SERVER, ApplyMode.LIVE, "explosions", 0, 3600));
+        reg(ConfigField.bool("enableNukeNBTSaving", ConfigSide.SERVER, ApplyMode.LIVE, "explosions"));
 
         // ── SERVER: сетевая трассировка ракет ───────────────────────
         reg(ConfigField.bool("enableMissileNetworkTrack", ConfigSide.SERVER, ApplyMode.LIVE, "missile_track"));
@@ -138,10 +139,9 @@ public final class ConfigSchema {
         reg(ConfigField.integer("modelStaticRenderDistance", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", 1, 20));
         reg(ConfigField.bool("enableOcclusionCulling", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         reg(ConfigField.bool("instanceVboOrphanBeforeUpload", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
-        reg(ConfigField.bool("useInstancedStaticRendering", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
-        reg(ConfigField.bool("gpuBoneSkinning", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
-        reg(ConfigField.bool("useSlicedLight", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
-        reg(ConfigField.bool("useMultiDrawIndirect", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        // Инстансинг/MDI/GPU-bone skinning всегда включены; forceVanillaImmediatePath — резервный
+        // ручной перевод всех OBJ-станков на ванильный immediate-путь (putBulkData).
+        reg(ConfigField.bool("forceVanillaImmediatePath", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         reg(ConfigField.bool("mdiDebugLogDispatch", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         reg(ConfigField.bool("mdiVerboseSubdraws", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         // Размер буферов инстансинга фиксируется при создании рендерера → reload ресурсов

@@ -25,7 +25,7 @@ import java.util.List;
  * non-channel ICrucibleAcceptor (e.g. a foundry outlet); if none accepts,
  * the content is equalized/swapped with ALL neighbouring channels.
  */
-public class MachineFoundryChannelBlockEntity extends BlockEntity implements ICrucibleAcceptor {
+public class MachineFoundryChannelBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements ICrucibleAcceptor {
 
     public static final int CAPACITY = MaterialStack.MB_PER_INGOT * 2;
 
@@ -188,28 +188,21 @@ public class MachineFoundryChannelBlockEntity extends BlockEntity implements ICr
 
     /* ── NBT / sync ─────────────────────────────────────────────────────── */
 
+    
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         if (type != null) tag.putString("mat_type", type.name);
         tag.putInt("mat_amount", amount);
         tag.putInt("lastFlow", lastFlow);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         if (tag.contains("mat_type")) type = MaterialType.byName(tag.getString("mat_type"));
         else type = null;
         amount   = tag.getInt("mat_amount");
         lastFlow = tag.getInt("lastFlow");
-    }
-
-    @Override
-    public CompoundTag getUpdateTag() { CompoundTag t = super.getUpdateTag(); saveAdditional(t); return t; }
-
-    @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
     }
 }

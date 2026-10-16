@@ -250,6 +250,7 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
         return helper.getSpecificCollisionShape(gridPos, facing);
     }
 
+    //? if < 1.21.1 {
     @Override
     public boolean isPathfindable(BlockState state, BlockGetter level, BlockPos pos, PathComputationType type) {
         return switch (type) {
@@ -257,6 +258,15 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
             default -> false;
         };
     }
+    //?} else {
+    /*@Override
+    protected boolean isPathfindable(BlockState state, PathComputationType type) {
+        return switch (type) {
+            case LAND, AIR -> state.getValue(PASSABLE);
+            default -> false;
+        };
+    }
+    *///?}
 
     @Override
     public void neighborChanged(BlockState pState, Level pLevel, BlockPos pPos, Block pBlock, BlockPos pFromPos, boolean pIsMoving) {
@@ -284,6 +294,7 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
         }
     }
 
+    //? if < 1.21.1 {
     public boolean isLadder(BlockState pState, LevelReader pLevel, BlockPos pPos, LivingEntity pEntity) {
         if (pLevel instanceof Level level && level.getBlockEntity(pPos) instanceof IMultiblockPart part) {
             PartRole role = part.getPartRole();
@@ -313,6 +324,12 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
         
         return isFullBlockInGrid(level, pos) ? Shapes.block() : Shapes.empty();
     }
+    //?} else {
+    /*@Override
+    protected VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
+        return Shapes.empty();
+    }
+    *///?}
 
     private boolean isFullBlockInGrid(BlockGetter level, BlockPos pos) {
         if (level.getBlockEntity(pos) instanceof IMultiblockPart part) {
@@ -334,8 +351,19 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
         return true; 
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
+        return hbmOnUse(pState, pLevel, pPos, pPlayer, pHand, pHit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, BlockHitResult pHit) {
+        return hbmOnUse(pState, pLevel, pPos, pPlayer, InteractionHand.MAIN_HAND, pHit);
+    }
+    *///?}
+
+    private InteractionResult hbmOnUse(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
         if (pLevel.getBlockEntity(pPos) instanceof IMultiblockPart part) {
             BlockPos controllerPos = part.getControllerPos();
             if (controllerPos == null) {
@@ -351,7 +379,11 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
                 if (ctrlBe instanceof DoorBlockEntity && hasScrewdriver(pPlayer)) {
                     return InteractionResult.sidedSuccess(pLevel.isClientSide());
                 }
+                //? if < 1.21.1 {
                 return controllerState.use(pLevel, pPlayer, pHand, pHit.withPosition(controllerPos));
+                //?} else {
+                /*return controllerState.useWithoutItem(pLevel, pPlayer, pHit.withPosition(controllerPos));
+                *///?}
             } else {
                 if (!pLevel.isClientSide()) {
                     pLevel.setBlock(pPos, Blocks.AIR.defaultBlockState(), 3);
@@ -372,6 +404,16 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
     @Override
     public void onRemove(BlockState pState, Level pLevel, BlockPos pPos, BlockState pNewState, boolean pIsMoving) {
         if (!pState.is(pNewState.getBlock())) {
+            // Перенос блока движком сборки (Create/Sable): это НЕ разрушение.
+            // Каскад destroyStructure + destroyBlock(controllerPos) здесь = дюп станка:
+            // движок уже сохранил state+NBT и вернёт структуру на месте разборки.
+            if (!pLevel.isClientSide() && com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {
+                com.hbm_m.main.MainRegistry.LOGGER.info(
+                    "[HBM] каскад разрушения части подавлен (окно сборки контрапшена), часть {}",
+                    pPos.toShortString());
+                super.onRemove(pState, pLevel, pPos, pNewState, pIsMoving);
+                return;
+            }
             if (pLevel.getBlockEntity(pPos) instanceof IMultiblockPart partBe) {
                 BlockPos controllerPos = partBe.getControllerPos();
                 if (controllerPos != null && !pLevel.isClientSide()) {
@@ -391,6 +433,7 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
         super.onRemove(pState, pLevel, pPos, pNewState, pIsMoving);
     }
 
+    //? if < 1.21.1 {
     @Override
     public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof IMultiblockPart partBe) {
@@ -417,6 +460,34 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
         }
         return ItemStack.EMPTY;
     }
+    //?} else {
+    /*@Override
+    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof IMultiblockPart partBe) {
+            BlockPos controllerPos = partBe.getControllerPos();
+            if (controllerPos != null) {
+                BlockState controllerState = level.getBlockState(controllerPos);
+                if (controllerState.getBlock() instanceof IMultiblockController) {
+                    boolean dropController = !player.getAbilities().instabuild;
+                    level.destroyBlock(controllerPos, dropController);
+                }
+            }
+        }
+        return super.playerWillDestroy(level, pos, state, player);
+    }
+
+    @Override
+    public ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState state) {
+        if (level.getBlockEntity(pos) instanceof IMultiblockPart part) {
+            BlockPos controllerPos = part.getControllerPos();
+            if (controllerPos != null) {
+                BlockState controllerState = level.getBlockState(controllerPos);
+                return controllerState.getBlock().getCloneItemStack(level, controllerPos, controllerState);
+            }
+        }
+        return ItemStack.EMPTY;
+    }
+    *///?}
 
     @Override
     public float getDestroyProgress(BlockState pState, Player pPlayer, BlockGetter pLevel, BlockPos pPos) {
@@ -516,4 +587,9 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
         }
         return 0;
     }
+
+    //? if > 1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<UniversalMachinePartBlock> CODEC = simpleCodec(UniversalMachinePartBlock::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

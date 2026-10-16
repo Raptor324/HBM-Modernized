@@ -241,11 +241,9 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
             .location())).ifPresent(set -> set.remove(chunk.getPos()));
         }
     }
-    //?}
-
-    // FABRIC АЛЬТЕРНАТИВА ВЫЗЫВАЕТСЯ ИЗ МЕНЕДЖЕРА
-    //? if fabric {
-    /*public void receiveChunkUnloadFabric(LevelChunk chunk) {
+    //?} else {
+    /*// ВЫЗЫВАЕТСЯ ИЗ МЕНЕДЖЕРА ДЛЯ NEOFORGE / FABRIC
+    public void receiveChunkUnload(LevelChunk chunk) {
         if (!chunk.getLevel().isClientSide()) {
             Optional.ofNullable(activeChunksByDimension.get(chunk.getLevel().dimension()
                     .location())).ifPresent(set -> set.remove(chunk.getPos()));
@@ -428,7 +426,11 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
 
                     if (state.is(Blocks.GRASS_BLOCK)) {
                         level.setBlock(blockPos, ModBlocks.WASTE_GRASS.get().defaultBlockState(), 2);
+                    //? if < 1.21.1 {
                     } else if (state.is(Blocks.GRASS)) {
+                    //?} else {
+                    /*} else if (state.is(Blocks.SHORT_GRASS)) {
+                    *///?}
                         level.setBlock(blockPos, Blocks.AIR.defaultBlockState(), 2);
                     } else if (state.is(BlockTags.LEAVES) && !state.is(ModBlocks.WASTE_LEAVES.get())) {
                         if (level.random.nextInt(7) <= 5) {
@@ -466,5 +468,4 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
         }
     }
     //?}
-
 }

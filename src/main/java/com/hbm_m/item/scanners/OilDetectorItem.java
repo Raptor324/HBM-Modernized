@@ -1,5 +1,6 @@
 package com.hbm_m.item.scanners;
 
+import com.hbm_m.item.ITooltipProvider;
 import com.hbm_m.sound.ModSounds;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -18,13 +19,13 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public class OilDetectorItem extends Item {
+public class OilDetectorItem extends Item implements ITooltipProvider {
 
     public OilDetectorItem(Properties properties) {
         super(properties.stacksTo(1));
     }
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, @Nullable List<Component> tooltip, TooltipFlag flag) {
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, @Nullable List<Component> tooltip, TooltipFlag flag) {
         if (tooltip == null) return;
         tooltip.add(Component.translatable("tooltip.hbm_m.oil_detector.scans_chunks")
                 .withStyle(ChatFormatting.GRAY));

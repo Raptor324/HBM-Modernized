@@ -8,6 +8,7 @@ import com.hbm_m.lib.RefStrings;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.liquids.FluidBarrelItem;
 import com.hbm_m.item.tags_and_tiers.ModTags;
+import com.hbm_m.platform.DummyItemStackHandler;
 
 import dev.architectury.fluid.FluidStack;
 import net.minecraft.core.BlockPos;
@@ -36,7 +37,11 @@ public class MachineZirnoxMenu extends AbstractContainerMenu {
     public MachineZirnoxMenu(int id, Inventory inventory, MachineZirnoxBlockEntity blockEntity) {
         super(ModMenuTypes.ZIRNOX_MENU.get(), id);
         this.blockEntity = blockEntity;
-        this.machineContainer = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
+        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
+        // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
+        this.machineContainer = new ModItemStackHandlerContainer(
+                blockEntity != null ? blockEntity.getInventory() : new DummyItemStackHandler(MACHINE_SLOT_COUNT),
+                blockEntity != null ? blockEntity::setChanged : null);
 
         // Rods
         this.addSlot(new Slot(machineContainer, 0, 26, 16));
@@ -90,6 +95,11 @@ public class MachineZirnoxMenu extends AbstractContainerMenu {
         BlockEntity blockEntity = inventory.player.level().getBlockEntity(pos);
         if (blockEntity instanceof MachineZirnoxBlockEntity zirnoxBlockEntity) {
             return zirnoxBlockEntity;
+        }
+        // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (inventory.player.level().isClientSide) {
+            return null;
         }
         throw new IllegalStateException("No MachineZirnoxBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":zirnox_menu");
     }

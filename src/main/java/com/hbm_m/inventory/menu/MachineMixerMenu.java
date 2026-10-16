@@ -4,6 +4,7 @@ import com.hbm_m.blockentity.machines.MachineMixerBlockEntity;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -40,22 +41,28 @@ public class MachineMixerMenu extends AbstractContainerMenu {
         this.blockEntity = blockEntity;
         this.data = data;
 
+        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
+        // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
         ModItemStackHandlerContainer machineInventory =
-                new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
+                new ModItemStackHandlerContainer(
+                        blockEntity != null ? blockEntity.getInventory() : new DummyItemStackHandler(MACHINE_SLOTS),
+                        blockEntity != null ? blockEntity::setChanged : null);
 
         // Battery slot, positioned over the battery icon under input tank A.
         this.addSlot(new Slot(machineInventory, SLOT_BATTERY, 23, 95) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                boolean hbm = stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER)
+                boolean hbm = com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack)
                         .map(provider -> provider.canExtract())
                         .orElse(false);
                 if (hbm) return true;
                 //? if forge {
-                return stack.getCapability(ForgeCapabilities.ENERGY)
+                return com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack)
                         .map(storage -> storage.canExtract())
                         .orElse(false);
-                //?} else {
+                //?} elif neoforge {
+                /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
+                *///?} else {
                 /*return false;
                 *///?}
             }
@@ -83,6 +90,11 @@ public class MachineMixerMenu extends AbstractContainerMenu {
         BlockEntity blockEntity = inventory.player.level().getBlockEntity(pos);
         if (blockEntity instanceof MachineMixerBlockEntity mixerBlockEntity) {
             return mixerBlockEntity;
+        }
+        // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (inventory.player.level().isClientSide) {
+            return null;
         }
         throw new IllegalStateException("No MachineMixerBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":mixer_menu");
     }
@@ -118,14 +130,16 @@ public class MachineMixerMenu extends AbstractContainerMenu {
                 return ItemStack.EMPTY;
             }
         } else {
-            boolean isBattery = slotStack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER)
+            boolean isBattery = com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(slotStack)
                     .map(provider -> provider.canExtract())
                     .orElse(false);
             //? if forge {
-            isBattery = isBattery || slotStack.getCapability(ForgeCapabilities.ENERGY)
+            isBattery = isBattery || com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(slotStack)
                     .map(storage -> storage.canExtract())
                     .orElse(false);
-            //?}
+            //?} elif neoforge {
+            /*isBattery = isBattery || slotStack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
+            *///?}
 
             if (isBattery) {
                 if (!this.moveItemStackTo(slotStack, SLOT_BATTERY, SLOT_BATTERY + 1, false)) {

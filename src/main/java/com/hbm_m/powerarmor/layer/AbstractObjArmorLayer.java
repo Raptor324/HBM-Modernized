@@ -12,6 +12,8 @@ import org.jetbrains.annotations.NotNull;
 import com.hbm_m.client.model.AbstractMultipartBakedModel;
 import com.hbm_m.interfaces.IArmorLayerConfig;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.platform.PlatformHooks;
+
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
@@ -84,9 +86,8 @@ public abstract class AbstractObjArmorLayer<T extends LivingEntity, M extends Hu
         if (!config.isItemValid(stack)) return;
 
         ModelResourceLocation modelLocation = config.getBakedModelLocation();
-        BakedModel baked = MODEL_CACHE.computeIfAbsent(modelLocation, loc ->
-            Minecraft.getInstance().getModelManager().getModel(loc)
-        );
+        BakedModel baked = MODEL_CACHE.computeIfAbsent(modelLocation,
+            loc -> PlatformHooks.getItemModel(Minecraft.getInstance().getModelManager(), PlatformHooks.getModelId(loc)));
 
         if (baked == Minecraft.getInstance().getModelManager().getMissingModel()) return;
         if (!(baked instanceof AbstractMultipartBakedModel multipart)) return;
@@ -254,6 +255,7 @@ public abstract class AbstractObjArmorLayer<T extends LivingEntity, M extends Hu
                 nx = 0.0F; ny = 1.0F; nz = 0.0F;
             }
 
+            //? if < 1.21.1 {
             builder.vertex(posMatrix, x, y, z)
                    .color(r, g, b, a)
                    .uv(u, v)
@@ -261,6 +263,14 @@ public abstract class AbstractObjArmorLayer<T extends LivingEntity, M extends Hu
                    .uv2(light)
                    .normal(normalMatrix, nx, ny, nz)
                    .endVertex();
+            //?} else {
+            /*builder.addVertex(posMatrix, x, y, z)
+                   .setColor(r, g, b, a)
+                   .setUv(u, v)
+                   .setOverlay(overlay)
+                   .setLight(light)
+                   .setNormal(pose, nx, ny, nz);
+            *///?}
         }
     }
 

@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "item": "hbm_m:uranium_ingot"
+      "id": "hbm_m:uranium_ingot"
     },
     "title": {
       "translate": "advancements.hbm_m.radiation_1000.title"

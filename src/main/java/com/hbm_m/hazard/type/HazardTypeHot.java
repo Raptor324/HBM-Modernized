@@ -21,7 +21,7 @@ public class HazardTypeHot extends HazardTypeBase {
         }
 
         if (!target.isInWaterOrRain() && level > 0) {
-            target.setSecondsOnFire((int) Math.ceil(level));
+            com.hbm_m.platform.PlatformHooks.setSecondsOnFire(target, (int) Math.ceil(level));
         }
     }
 

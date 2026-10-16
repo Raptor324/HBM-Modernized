@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "item": "hbm_m:geiger_counter"
+      "id": "hbm_m:geiger_counter"
     },
     "title": {
       "translate": "advancements.hbm_m.radiation_200.title"

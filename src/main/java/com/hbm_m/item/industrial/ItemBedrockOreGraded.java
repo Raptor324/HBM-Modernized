@@ -1,5 +1,6 @@
 package com.hbm_m.item.industrial;
 
+import com.hbm_m.item.ITooltipProvider;
 import java.util.List;
 import java.util.Locale;
 
@@ -23,7 +24,7 @@ import net.minecraft.world.level.Level;
  * den jeweiligen Rezept-Registrierungen (Centrifuge/Crystallizer/Combination Oven/Arc Furnace), nicht
  * hier - dieser Enum traegt nur Anzeige-Metadaten, exakt wie im Original.
  */
-public class ItemBedrockOreGraded extends Item {
+public class ItemBedrockOreGraded extends Item implements ITooltipProvider {
 
     public enum Trait {
         ROASTED, ARC, WASHED, CENTRIFUGED, SULFURIC, SOLVENT, RAD;
@@ -98,7 +99,7 @@ public class ItemBedrockOreGraded extends Item {
     }
 
     @Override
-    public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level,
+    public void appendHbmTooltip(@NotNull ItemStack stack, @Nullable Level level,
                                  @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
         for (Trait trait : grade.traits) {
             tooltip.add(Component.translatable(trait.langKey()));

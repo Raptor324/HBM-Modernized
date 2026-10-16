@@ -31,10 +31,9 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 *///?}
 
 /**
@@ -76,14 +75,9 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
     private final FluidTank spentSteamTank;
 
     //? if forge {
-    private LazyOptional<IFluidHandler> lazySteamHandler;
     private LazyOptional<IFluidHandler> lazySpentHandler;
     //?}
 
-    //? if fabric {
-    /*private final Storage<FluidVariant> steamStorage;
-    private final Storage<FluidVariant> spentStorage;
-    *///?}
 
     private boolean isActive = false;
     private float anim = 0.0F;
@@ -100,13 +94,8 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
         this.spentSteamTank = new FluidTank(ModFluids.SPENTSTEAM.getSource(), SPENT_STEAM_CAPACITY);
 
         //? if forge {
-        this.lazySteamHandler = LazyOptional.empty();
         this.lazySpentHandler = LazyOptional.empty();
         //?}
-        //? if fabric {
-        /*this.steamStorage = new TankStorage(steamTank, true, false);
-        this.spentStorage = new TankStorage(spentSteamTank, false, true);
-        *///?}
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineIndustrialTurbineBlockEntity be) {
@@ -265,11 +254,9 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
 
     private static final String TURBINE_LOOP_SOUND_FACTORY = "com.hbm_m.client.sound.TurbineLoopSoundFactory";
 
-    //? if forge {
+    //? if forge || neoforge {
     @OnlyIn(Dist.CLIENT)
     //?}
-    //? if fabric {
-    /*@Environment(EnvType.CLIENT)*///?}
     private Object createLoopingSoundReflect(SoundEvent sound) {
         try {
             return Class.forName(TURBINE_LOOP_SOUND_FACTORY)
@@ -287,8 +274,8 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
     // --- NBT ---
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         steamTank.writeToNBT(tag, "steam");
         spentSteamTank.writeToNBT(tag, "spent");
         tag.putBoolean("active", isActive);
@@ -300,8 +287,8 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         steamTank.readFromNBT(tag, "steam");
         spentSteamTank.readFromNBT(tag, "spent");
         isActive = tag.getBoolean("active");
@@ -317,24 +304,23 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
     //? if forge {
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.FLUID_HANDLER) {
-            // UP = spent output, остальное = steam input
-            if (side == Direction.UP) return lazySpentHandler.cast();
-            return lazySteamHandler.cast();
+        // UP = spent output; остальные стороны (steam input) отдаёт базовый fluidHandlerOpt.
+        if (cap == ForgeCapabilities.FLUID_HANDLER && side == Direction.UP) {
+            return lazySpentHandler.cast();
         }
         return super.getCapability(cap, side);
     }
 
     @Override
     protected void setupFluidCapability() {
-        lazySteamHandler = LazyOptional.of(() -> new SteamInputHandler(this));
+        // Steam input — обработчик по умолчанию — через базовый fluidHandlerOpt.
+        setFluidHandler(new SteamInputHandler(this));
         lazySpentHandler = LazyOptional.of(() -> new SpentSteamOutputHandler(this));
     }
 
     @Override
     public void invalidateCaps() {
         super.invalidateCaps();
-        lazySteamHandler.invalidate();
         lazySpentHandler.invalidate();
     }
 
@@ -443,91 +429,29 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
     }
     //?}
 
-    //? if fabric {
-    /*@Nullable
-    public Storage<FluidVariant> getFluidStorage(@Nullable Direction side) {
-        // UP: spent out, иначе steam in
-        if (side == Direction.UP) return spentStorage;
-        return steamStorage;
-    }
-    *///?}
-
 
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
         return new net.minecraft.world.phys.AABB(
-                worldPosition.offset(-2, -1, -4),
-                worldPosition.offset(3, 4, 8)
+            worldPosition.getX() - 2, worldPosition.getY() - 1, worldPosition.getZ() - 4,
+            worldPosition.getX() + 3, worldPosition.getY() + 4, worldPosition.getZ() + 8
         );
     }
 
-    //? if fabric {
-    /*@SuppressWarnings("UnstableApiUsage")
-    private static final class TankStorage extends SnapshotParticipant<TankStorage.Snapshot>
-            implements SingleSlotStorage<FluidVariant> {
+    // Энергопорты мультиблока: позиции фантомов структуры, ранее регистрировавшиеся блоком.
+    // Ядро (worldPosition) подписывается в BaseMachineBlockEntity.ensureNetworkInitialized().
+    @Override
+    protected BlockPos[] getExtraEnergyPorts() {
+        if (level == null || level.isClientSide) return new BlockPos[0];
+        if (!(getBlockState().getBlock() instanceof com.hbm_m.block.machines.MachineIndustrialTurbineBlock block)) return new BlockPos[0];
 
-        private static final long DROPLETS_PER_MB = 81L;
+        var helper = block.getStructureHelper();
+        Direction facing = getBlockState().getValue(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING);
 
-        private final FluidTank tank;
-        private final boolean allowInsert;
-        private final boolean allowExtract;
-
-        private TankStorage(FluidTank tank, boolean allowInsert, boolean allowExtract) {
-            this.tank = tank;
-            this.allowInsert = allowInsert;
-            this.allowExtract = allowExtract;
-        }
-
-        @Override
-        public long insert(FluidVariant resource, long maxAmount, TransactionContext transaction) {
-            if (!allowInsert) return 0;
-            if (resource.isBlank() || maxAmount <= 0) return 0;
-
-            long spaceMb = tank.getMaxFill() - tank.getFill();
-            if (spaceMb <= 0) return 0;
-
-            if (tank.getFill() > 0 && tank.getTankType() != resource.getFluid()) {
-                return 0;
+        java.util.List<BlockPos> ports = new java.util.ArrayList<>();
+        for (BlockPos localPos : helper.getStructureMap().keySet()) {
+            if (helper.resolvePartRole(localPos, block).canReceiveEnergy()) {
+                ports.add(helper.getRotatedPos(worldPosition, localPos, facing));
             }
-
-            long toFillMb = Math.min(spaceMb, maxAmount / DROPLETS_PER_MB);
-            if (toFillMb <= 0) return 0;
-
-            updateSnapshots(transaction);
-            if (tank.getTankType() == net.minecraft.world.level.material.Fluids.EMPTY) {
-                tank.setTankType(resource.getFluid());
-            }
-            tank.fill(tank.getFill() + (int) toFillMb);
-            return toFillMb * DROPLETS_PER_MB;
         }
-
-        @Override
-        public long extract(FluidVariant resource, long maxAmount, TransactionContext transaction) {
-            if (!allowExtract) return 0;
-            if (resource.isBlank() || maxAmount <= 0) return 0;
-            if (tank.getFill() <= 0) return 0;
-            if (tank.getTankType() != resource.getFluid()) return 0;
-
-            long toDrainMb = Math.min(tank.getFill(), (int) (maxAmount / DROPLETS_PER_MB));
-            if (toDrainMb <= 0) return 0;
-
-            updateSnapshots(transaction);
-            tank.fill(tank.getFill() - (int) toDrainMb);
-            return toDrainMb * DROPLETS_PER_MB;
-        }
-
-        @Override public boolean isResourceBlank() { return tank.getFill() <= 0 || tank.getTankType() == net.minecraft.world.level.material.Fluids.EMPTY; }
-        @Override public FluidVariant getResource() { return isResourceBlank() ? FluidVariant.blank() : FluidVariant.of(tank.getTankType()); }
-        @Override public long getAmount() { return (long) tank.getFill() * DROPLETS_PER_MB; }
-        @Override public long getCapacity() { return (long) tank.getMaxFill() * DROPLETS_PER_MB; }
-
-        @Override protected Snapshot createSnapshot() { return new Snapshot(tank.getTankType(), tank.getFill()); }
-        @Override protected void readSnapshot(Snapshot snapshot) {
-            tank.setTankType(snapshot.type);
-            tank.fill(snapshot.amountMb);
-        }
-        @Override protected void onFinalCommit() {}
-
-        private record Snapshot(net.minecraft.world.level.material.Fluid type, int amountMb) {}
-    }
-    *///?}
-}
+        return ports.toArray(new BlockPos[0]);
+    }}

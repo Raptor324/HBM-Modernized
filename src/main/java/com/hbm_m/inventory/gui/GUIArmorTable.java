@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,7 +31,7 @@ public class GUIArmorTable extends AbstractContainerScreen<ArmorTableMenu> {
 
 
     private static final int SIDE_PANEL_WIDTH = 22;
-    private static final int SIDE_PANEL_HEIGHT = 80;
+    private static final int SIDE_PANEL_HEIGHT = 100;
     private static final int SIDE_PANEL_U = 176;
     private static final int SIDE_PANEL_V = 96;
 
@@ -80,7 +81,7 @@ public class GUIArmorTable extends AbstractContainerScreen<ArmorTableMenu> {
      */
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
-        renderBackground(guiGraphics);
+        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTicks);
         super.render(guiGraphics, mouseX, mouseY, partialTicks);
         // Отдельно вызываем рендер наших кастомных подсказок, чтобы они были поверх всего.
         // Переопределяем рендер подсказок, чтобы они были поверх всего.

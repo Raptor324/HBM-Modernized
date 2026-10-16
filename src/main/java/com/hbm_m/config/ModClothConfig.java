@@ -45,6 +45,10 @@ public class ModClothConfig {
     public float craterBiomeOuterRad = 0.5F;
     /** Множитель RAD/s в crater биомах в воде/под дождём (1.7.10 WorldConfig.craterBiomeWaterMult). */
     public float craterBiomeWaterMult = 5F;
+    /** Фоновая радиация в Незере, RAD/s (1.7.10 RadiationConfig.hellRad, floor поверх чанковой). 0 = выключено. */
+    public float netherAmbientRad = 0.1F;
+    /** Множитель адского фона в Базальтовых дельтах (0.1 × 10 = 1.0 RAD/s по умолчанию). */
+    public float basaltDeltasRadMult = 10F;
 
     // ════════════════════════════════════════════════════════════════
     // Оружие / падение предметов
@@ -115,23 +119,25 @@ public class ModClothConfig {
     public int missileTrackMaxRangeBlocks = 0;
     public int missileTrackInterval = 1;
 
+    /**
+     * DH-мост: рендер дальних ракет/гриба внутри DH FBO через DhApiBeforeApplyShaderRenderEvent.
+     * Выключите для A/B-теста артефактов (просвечивание пещер, порядок листвы и т.п.):
+     * если артефакты остаются без моста — их источник сам DH, а не HBM.
+     */
+    public boolean enableDhRenderBridge = true;
+
     /** CPU voxel ray-march окклюзии в OcclusionCullingHelper (frustum vanilla + raycast по блокам). Выключите, если модели рендерятся некорректно. */
     public boolean enableOcclusionCulling = false;
 
     /** Перед заливкой instance VBO вызывать glBufferData(..., NULL) того же размера — orphaning буфера. */
     public boolean instanceVboOrphanBeforeUpload = true;
 
-    /** Instanced batch для OBJ-частей. Flush только в AFTER_BLOCK_ENTITIES. Нарушение контракта → белые модели при true. */
-    public boolean useInstancedStaticRendering = true;
-
-    /** Advanced assembler: при vanilla instanced использовать addInstanceGpuBones (матрица base×part на CPU). */
-    public boolean gpuBoneSkinning = true;
-
-    /** 2×4×2 sliced light probes (16 UV). Несовместимо с useMultiDrawIndirect. */
-    public boolean useSlicedLight = false;
-
-    /** Аггрегация instanced draw в один батч по общему атласу: один glMultiDrawElementsIndirect на flush. */
-    public boolean useMultiDrawIndirect = true;
+    /**
+     * Инстансинг, MDI и GPU-bone skinning включаются автоматически (переключателей больше нет).
+     * Резервный тумблер: принудительно рисовать все OBJ-станки ванильным immediate-путём
+     * (putBulkData) — если наш VBO-рендер сломался (белые/невидимые модели, артефакты).
+     */
+    public boolean forceVanillaImmediatePath = false;
 
     /** После каждого MDI-dispatch: одна строка INFO (число sub-draw, инстансов, атлас). */
     public boolean mdiDebugLogDispatch = false;
@@ -216,10 +222,12 @@ public class ModClothConfig {
     public int falloutDelay = 4;
     /** Включить принудительную прогрузку чанков взрывом (chunk ticket). Ориг. ключ: 6.05_enableChunkLoading = true */
     public boolean enableChunkLoading = true;
-    /** Алгоритм взрыва: 0 = Legacy, 1 = Threaded DDA, 2 = Threaded DDA с накоплением урона. Ориг. ключ: 6.06_explosionAlgorithm = 2 */
-    public int explosionAlgorithm = 2;
+    /** Алгоритм взрыва: 0 = Legacy (однопоточный), 1/2 = многопоточный движок с той же энергомоделью Legacy (идентичны). Ориг. ключ: 6.06_explosionAlgorithm (в 1.7.10 дефолт 2, но фактически всегда работал Legacy). */
+    public int explosionAlgorithm = 0;
     /** Лимит жизни невыгруженного взрыва в секундах; 0 = без лимита (ориг. BombConfig.limitExplosionLifespan, ключ 6.00). */
     public int limitExplosionLifespan = 0;
+    /** Сохранять состояние взрыва MK5 в NBT — после перезахода взрыв продолжается с места остановки (ориг. BombConfig.enableNukeNBTSaving). */
+    public boolean enableNukeNBTSaving = true;
 
     // ════════════════════════════════════════════════════════════════
     // Тепловизор
@@ -291,6 +299,6 @@ public class ModClothConfig {
 
     /** Использовать батчинг для статических частей (frame, Base). При проблемах отключите. */
     public static boolean useInstancedBatching() {
-        return INSTANCE.useInstancedStaticRendering;
+        return !INSTANCE.forceVanillaImmediatePath;
     }
 }

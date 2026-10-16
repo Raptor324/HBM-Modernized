@@ -61,17 +61,18 @@ public class RBMKOutgasserBlockEntity extends RBMKColumnBlockEntity
     @Override public RBMKType getRBMKType()      { return RBMKType.OUTGASSER; }
     @Override public ColumnType getConsoleType() { return ColumnType.OUTGASSER; }
 
+    
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        if (!rodSlot.isEmpty()) tag.put("rodSlot", safeItemSave(rodSlot));
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
+        if (!rodSlot.isEmpty()) tag.put("rodSlot", com.hbm_m.platform.PlatformHooks.safeItemSave(rodSlot, registries));
         tag.putDouble("fluxBuffer", fluxBuffer);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        if (tag.contains("rodSlot")) rodSlot = ItemStack.of(tag.getCompound("rodSlot"));
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
+        if (tag.contains("rodSlot")) rodSlot = com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("rodSlot"), registries);
         fluxBuffer = tag.getDouble("fluxBuffer");
     }
 }

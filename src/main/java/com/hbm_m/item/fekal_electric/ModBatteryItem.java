@@ -1,5 +1,6 @@
 package com.hbm_m.item.fekal_electric;
 
+import com.hbm_m.item.ITooltipProvider;
 import java.util.List;
 
 import org.jetbrains.annotations.NotNull;
@@ -23,7 +24,7 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 //?}
 
-public class ModBatteryItem extends Item {
+public class ModBatteryItem extends Item implements ITooltipProvider {
     protected final long capacity;
     protected final long maxReceive;
     protected final long maxExtract;
@@ -131,7 +132,7 @@ public class ModBatteryItem extends Item {
     }
 
     @Override
-    public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
+    public void appendHbmTooltip(@NotNull ItemStack stack, @Nullable Level level, @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
         ItemEnergyAccess.getHbmProvider(stack)
                 .ifPresent(energy -> addEnergyTooltip(tooltip, energy.getEnergyStored(), energy.getMaxEnergyStored(), ChatFormatting.AQUA));
 
@@ -150,7 +151,6 @@ public class ModBatteryItem extends Item {
             tooltip.add(Component.translatable("tooltip.hbm_m.battery.discharge_rate",
                     EnergyFormatter.format(maxExtract)).withStyle(ChatFormatting.GOLD));
         }
-        super.appendHoverText(stack, level, tooltip, flag);
     }
 
     private void addEnergyTooltip(List<Component> tooltip, long stored, long max, ChatFormatting color) {

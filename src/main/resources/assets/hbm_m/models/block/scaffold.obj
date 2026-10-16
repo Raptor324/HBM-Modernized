@@ -1,7 +1,7 @@
 # Blender 4.4.3
 # www.blender.org
-mtllib scaffold.mtl
 o Cube_Cube.001
+mtllib hbm_base.mtl
 v -0.375000 0.000000 0.500000
 v -0.375000 1.000000 0.500000
 v -0.375000 -0.000000 -0.500000

@@ -1,0 +1,22 @@
+{
+  "display": {
+    "icon": {
+      "id": "hbm_m:key_red"
+    },
+    "title": {
+      "translate": "advancements.hbm_m.red_room.title"
+    },
+    "description": {
+      "translate": "advancements.hbm_m.red_room.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "opened_red_room": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

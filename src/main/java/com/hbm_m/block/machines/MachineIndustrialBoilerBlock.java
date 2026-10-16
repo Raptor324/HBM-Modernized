@@ -5,7 +5,6 @@ import java.util.function.Supplier;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineIndustrialBoilerBlockEntity;
@@ -118,20 +117,7 @@ public class MachineIndustrialBoilerBlock extends BaseEntityBlock implements IMu
         super.onPlace(state, level, pos, oldState, isMoving);
 
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            BlockPos core = placeMultiblockStructure(level, pos, state);
-            if (core == null) {
-                return;
-            }
-            Direction facing = state.getValue(FACING);
-            EnergyNetworkManager.get((ServerLevel) level).addNode(core);
-
-            for (BlockPos gridPos : structureHelper.getStructureMap().keySet()) {
-                PartRole role = structureHelper.resolvePartRole(gridPos, this);
-                if (role.canReceiveEnergy()) {
-                    BlockPos worldPos = structureHelper.getRotatedPos(core, gridPos, facing);
-                    EnergyNetworkManager.get((ServerLevel) level).addNode(worldPos);
-                }
-            }
+            placeMultiblockStructure(level, pos, state);
         }
     }
 
@@ -145,16 +131,6 @@ public class MachineIndustrialBoilerBlock extends BaseEntityBlock implements IMu
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (state.getBlock() != newState.getBlock() && !level.isClientSide()) {
             Direction facing = state.getValue(FACING);
-
-            EnergyNetworkManager.get((ServerLevel) level).removeNode(pos);
-
-            for (BlockPos gridPos : structureHelper.getStructureMap().keySet()) {
-                PartRole role = structureHelper.resolvePartRole(gridPos, this);
-                if (role.canReceiveEnergy()) {
-                    BlockPos worldPos = structureHelper.getRotatedPos(pos, gridPos, facing);
-                    EnergyNetworkManager.get((ServerLevel) level).removeNode(worldPos);
-                }
-            }
 
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof com.hbm_m.blockentity.BaseMachineBlockEntity be) {
@@ -172,8 +148,19 @@ public class MachineIndustrialBoilerBlock extends BaseEntityBlock implements IMu
         return new MachineIndustrialBoilerBlockEntity(pos, state);
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return openMenu(state, level, pos, player, hand, hit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+    }
+    *///?}
+
+    private InteractionResult openMenu(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide()) {
             if (level.getBlockEntity(pos) instanceof MenuProvider provider) {
                 MenuRegistry.openExtendedMenu((ServerPlayer) player, provider, buf -> buf.writeBlockPos(pos));
@@ -217,4 +204,13 @@ public class MachineIndustrialBoilerBlock extends BaseEntityBlock implements IMu
     public PartRole getPartRole(BlockPos localOffset) {
         return structureHelper.resolvePartRole(localOffset, this);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineIndustrialBoilerBlock> CODEC = simpleCodec(MachineIndustrialBoilerBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

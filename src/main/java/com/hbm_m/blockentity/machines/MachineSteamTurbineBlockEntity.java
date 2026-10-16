@@ -13,6 +13,7 @@ import com.hbm_m.interfaces.IEnergyModeHolder;
 import com.hbm_m.interfaces.IItemFluidIdentifier;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -58,10 +59,6 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
     private int progress = 0;
     private static final int MAX_PROGRESS = 200;
     private boolean active = false;
-
-    //? if forge {
-    private LazyOptional<IFluidHandler> fluidHandler = LazyOptional.empty();
-    //?}
 
     public MachineSteamTurbineBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.STEAM_TURBINE_BE.get(), pos, state, INVENTORY_SIZE, 1_000_000L, 0L, 50_000L);
@@ -155,8 +152,8 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
     }
 
     @Override
-    protected void saveAdditional(net.minecraft.nbt.CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("progress", progress);
         tag.putBoolean("active", active);
         tanks[0].writeToNBT(tag, "input");
@@ -164,8 +161,8 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
     }
 
     @Override
-    public void load(net.minecraft.nbt.CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         progress = tag.getInt("progress");
         active = tag.getBoolean("active");
         tanks[0].readFromNBT(tag, "input");
@@ -193,14 +190,7 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
         return switch (slot) {
             case SLOT_FLUID_ID_IN -> stack.getItem() instanceof IItemFluidIdentifier || stack.getItem() instanceof FluidIdentifierItem;
             case SLOT_FLUID_ID_OUT, SLOT_INPUT_IO_OUT, SLOT_OUTPUT_IO_OUT -> false;
-            case SLOT_INPUT_IO_IN, SLOT_OUTPUT_IO_IN -> {
-                //? if forge {
-                yield stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-                //?}
-                //? if fabric {
-                /*yield net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage.ITEM.find(stack, null) != null;
-                *///?}
-            }
+            case SLOT_INPUT_IO_IN, SLOT_OUTPUT_IO_IN -> PlatformHooks.isFluidContainer(stack);
             case SLOT_BATTERY -> stack.getItem() instanceof ItemCreativeBattery || isEnergyProviderItem(stack) || isEnergyReceiverItem(stack);
             default -> false;
         };
@@ -209,21 +199,7 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
     //? if forge {
     @Override
     protected void setupFluidCapability() {
-        fluidHandler = LazyOptional.of(() -> new UnifiedFluidHandler(this));
-    }
-
-    @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.FLUID_HANDLER) {
-            return fluidHandler.cast();
-        }
-        return super.getCapability(cap, side);
-    }
-
-    @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        fluidHandler.invalidate();
+        setFluidHandler(new UnifiedFluidHandler(this));
     }
 
     private static class UnifiedFluidHandler implements IFluidHandler {

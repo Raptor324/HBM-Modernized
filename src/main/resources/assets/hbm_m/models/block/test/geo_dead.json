@@ -1,0 +1,10 @@
+{
+  "loader": "hbm_m:test",
+  "model": "hbm_m:models/block/test/scene.obj",
+  "parts": ["default"],
+  "flip_v": true,
+  "textures": {
+    "default": "hbm_m:block/machine/rbmk_console",
+    "particle": "hbm_m:block/machine/rbmk_console"
+  }
+}

@@ -41,4 +41,13 @@ public class BlockDecon extends BaseEntityBlock {
     public @NotNull RenderShape getRenderShape(@NotNull BlockState state) {
         return RenderShape.MODEL;
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<BlockDecon> CODEC = simpleCodec(BlockDecon::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

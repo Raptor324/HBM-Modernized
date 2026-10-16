@@ -105,7 +105,7 @@ public class AssemblerJeiCategory extends JeiGenericRecipeCategory<AssemblerReci
     protected void addOutputSlots(IRecipeLayoutBuilder builder, AssemblerRecipe recipe, int outputXOffset) {
         int[][] positions = JeiNeiLayout.getGenericOutputSlotPositions(1);
         addItemSlot(builder, RecipeIngredientRole.OUTPUT, positions[0][0] + outputXOffset, positions[0][1])
-                .addItemStack(recipe.getResultItem(null));
+                .addItemStack(recipe.getResultItemSafe());
     }
 
     @Override

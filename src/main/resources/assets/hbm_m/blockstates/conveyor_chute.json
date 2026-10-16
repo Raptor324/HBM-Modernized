@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "hbm_m:block/network/conveyor_chute" },
+    "facing=east": { "model": "hbm_m:block/network/conveyor_chute", "y": 90 },
+    "facing=south": { "model": "hbm_m:block/network/conveyor_chute", "y": 180 },
+    "facing=west": { "model": "hbm_m:block/network/conveyor_chute", "y": 270 }
+  }
+}

@@ -43,9 +43,21 @@ public class RBMKRodBlock extends RBMKColumnBlock {
         return createTickerHelper(type, ModBlockEntities.RBMK_ROD_BE.get(), RBMKRodBlockEntity::tick);
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos,
                                   Player player, InteractionHand hand, BlockHitResult hit) {
+        return hbmOnUse(state, level, pos, player, hand, hit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        return hbmOnUse(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+    }
+    *///?}
+
+    private InteractionResult hbmOnUse(BlockState state, Level level, BlockPos pos,
+                                       Player player, InteractionHand hand, BlockHitResult hit) {
         if (level.isClientSide) return InteractionResult.SUCCESS;
 
         BlockEntity be = level.getBlockEntity(pos);
@@ -59,11 +71,16 @@ public class RBMKRodBlock extends RBMKColumnBlock {
             rod.fuelSlot.setCount(1);
             if (!player.isCreative()) held.shrink(1);
             rod.setChanged();
-            level.playSound(player, pos, SoundEvents.METAL_PLACE, SoundSource.BLOCKS, 1.0F, 1.2F);
+            // 1:1 with the original's "hbm:item.upgradePlug" sound on fuel insertion.
+            level.playSound(player, pos, com.hbm_m.sound.ModSounds.UPGRADE_PLUG.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
             return InteractionResult.SUCCESS;
         }
 
+        //? if < 1.21.1 {
         return super.use(state, level, pos, player, hand, hit);
+        //?} else {
+        /*return InteractionResult.PASS;
+        *///?}
     }
 
     @Override
@@ -74,11 +91,20 @@ public class RBMKRodBlock extends RBMKColumnBlock {
                     && rod.fuelSlot.getItem() instanceof RBMKRodItem
                     && RBMKRodItem.getHullHeat(rod.fuelSlot) >= rod.maxHeat();
             if (meltdown) {
-                rod.onMelt(level, 1);
+                RBMKColumnBlockEntity.meltdownReactor(level, rod);
             } else {
                 Block.popResource(level, pos, rod.fuelSlot);
             }
         }
         super.onColumnRemoved(col, level, pos);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<RBMKRodBlock> CODEC = simpleCodec(props -> new RBMKRodBlock(false, props));
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

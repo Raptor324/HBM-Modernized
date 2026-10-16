@@ -1,4 +1,3 @@
-//? if forge {
 package com.hbm_m.powerarmor.render;
 
 import com.google.gson.JsonObject;
@@ -46,5 +45,4 @@ public class BismuthArmorModelLoader extends AbstractObjPartModelLoader<BismuthA
         return true;
     }
 }
-//?}
 

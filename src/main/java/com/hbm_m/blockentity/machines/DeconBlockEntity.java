@@ -17,7 +17,7 @@ import net.minecraft.world.phys.AABB;
 /**
  * Порт {@link com.hbm.tileentity.machine.TileEntityDecon} (1.7.10).
  */
-public class DeconBlockEntity extends BlockEntity {
+public class DeconBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity {
 
     public DeconBlockEntity(BlockPos pos, BlockState blockState) {
         super(ModBlockEntities.DECON_BE.get(), pos, blockState);

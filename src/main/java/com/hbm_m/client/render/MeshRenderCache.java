@@ -1,10 +1,5 @@
 package com.hbm_m.client.render;
 
-//? if fabric {
-
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -13,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.hbm_m.client.render.shader.IrisBufferHelper;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.platform.RenderHooks;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -23,15 +19,14 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
+
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-//? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class MeshRenderCache {
 
     private static final int MAX_CACHE_SIZE = 256;
@@ -121,6 +116,17 @@ public class MeshRenderCache {
         });
     }
 
+    /**
+     * Возвращает уже кешированный {@link SingleMeshVboRenderer} по ключу или {@code null},
+     * если VBO ещё не создан. В отличие от {@link #getOrCreateRenderer}, НЕ строит новый
+     * рендерер — используется для ретекстурированных мешей, где квады собирает caller
+     * (см. {@link #getOrCreateRendererFromQuads}), чтобы избежать повторной ретекстуризации
+     * каждый кадр.
+     */
+    public static @org.jetbrains.annotations.Nullable SingleMeshVboRenderer peekRenderer(String partKey) {
+        return PART_RENDERERS.get(partKey);
+    }
+
     public static List<BakedQuad> getOrCompile(String entityType, String partName, BakedModel modelPart) {
         String cacheKey = entityType + ":" + partName;
         return getOrCompile(cacheKey, modelPart);
@@ -147,26 +153,29 @@ public class MeshRenderCache {
     private static VertexBuffer uploadToGPU(List<BakedQuad> quads) {
         if (quads.isEmpty()) return null;
 
-        BufferBuilder builder = new BufferBuilder(quads.size() * 32);
-        IrisBufferHelper.begin(builder, VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK);
+        BufferBuilder builder = IrisBufferHelper.create(VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK, quads.size() * 32);
 
         PoseStack.Pose neutralPose = new PoseStack().last();
         float r = 1.0F, g = 1.0F, b = 1.0F, a = 1.0F;
         int neutralLight = 0;
 
         for (BakedQuad quad : quads) {
-            //? if forge {
-            builder.putBulkData(neutralPose, quad, r, g, b, a, neutralLight, OverlayTexture.NO_OVERLAY, false);
-            //?} else {
-            /*builder.putBulkData(neutralPose, quad, r, g, b, neutralLight, OverlayTexture.NO_OVERLAY);
-            *///?}
+            RenderHooks.putBulkData(builder, neutralPose, quad, r, g, b, a, neutralLight, OverlayTexture.NO_OVERLAY, false);
         }
 
+        //? if < 1.21.1 {
         BufferBuilder.RenderedBuffer renderedBuffer = builder.end();
         VertexBuffer vbo = new VertexBuffer(VertexBuffer.Usage.STATIC);
         vbo.bind();
         vbo.upload(renderedBuffer);
         VertexBuffer.unbind();
+        //?} else {
+        /*com.mojang.blaze3d.vertex.MeshData renderedBuffer = builder.buildOrThrow();
+        VertexBuffer vbo = new VertexBuffer(VertexBuffer.Usage.STATIC);
+        vbo.bind();
+        vbo.upload(renderedBuffer);
+        VertexBuffer.unbind();
+        *///?}
 
         return vbo;
     }
@@ -207,6 +216,17 @@ public class MeshRenderCache {
                 }
 
                 @Override
+                public void cleanup() {
+                    // См. cleanup() в createRendererForPart: закрываем нативный VboData,
+                    // если initVbo() ни разу не потребил его до очистки кэша.
+                    if (pendingData != null) {
+                        pendingData.close();
+                        pendingData = null;
+                    }
+                    super.cleanup();
+                }
+
+                @Override
                 protected List<BakedQuad> getQuadsForIrisPath() {
                     return quadsForIris;
                 }
@@ -229,30 +249,43 @@ public class MeshRenderCache {
         MainRegistry.LOGGER.debug("MeshRenderCache: renderer for part '{}', {} vertices",
             partName, prebuiltData.byteBuffer.remaining() / prebuiltData.bytesPerVertex);
 
-        final List<BakedQuad> quadsForIris = geo.solidQuads();
-        return new SingleMeshVboRenderer() {
-            // One-shot owner: holds VboData until initVbo consumes it, then nulled out.
-            // initVbo() is only ever called once per renderer (gated by `initialized`),
-            // but if a future bug causes a re-init after cleanup(), throwing here is
-            // safer than returning already-freed native buffers.
-            private SingleMeshVboRenderer.VboData pendingData = prebuiltData;
+            final List<BakedQuad> quadsForIris = geo.solidQuads();
+            return new SingleMeshVboRenderer() {
+                // One-shot owner: holds VboData until initVbo consumes it, then nulled out.
+                // initVbo() is only ever called once per renderer (gated by `initialized`),
+                // but if a future bug causes a re-init after cleanup(), throwing here is
+                // safer than returning already-freed native buffers.
+                private SingleMeshVboRenderer.VboData pendingData = prebuiltData;
 
-            @Override
-            protected SingleMeshVboRenderer.VboData buildVboData() {
-                SingleMeshVboRenderer.VboData data = pendingData;
-                if (data == null) {
-                    throw new IllegalStateException(
-                        "buildVboData() called twice for part '" + partName + "'; VboData is one-shot");
+                @Override
+                protected SingleMeshVboRenderer.VboData buildVboData() {
+                    SingleMeshVboRenderer.VboData data = pendingData;
+                    if (data == null) {
+                        throw new IllegalStateException(
+                                "buildVboData() called twice for part '" + partName + "'; VboData is one-shot");
+                    }
+                    pendingData = null;
+                    return data;
                 }
-                pendingData = null;
-                return data;
-            }
 
-            @Override
-            protected List<BakedQuad> getQuadsForIrisPath() {
-                return quadsForIris;
-            }
-        };
+                @Override
+                public void cleanup() {
+                    // Если initVbo() ни разу не выполнился (часть закэширована, но не
+                    // отрисована до reload/disconnect), super.cleanup() выходит рано по
+                    // !initialized — а pendingData держит native memAlloc-буферы вершин
+                    // и индексов. Закрываем явно; close() идемпотентен (флаг consumed).
+                    if (pendingData != null) {
+                        pendingData.close();
+                        pendingData = null;
+                    }
+                    super.cleanup();
+                }
+
+                @Override
+                protected List<BakedQuad> getQuadsForIrisPath() {
+                    return quadsForIris;
+                }
+            };
     }
 
     /**
@@ -295,6 +328,17 @@ public class MeshRenderCache {
         PART_RENDERERS.clear();
         FAILED_RENDERER_KEYS.clear();
         clear();
+    }
+
+    /**
+     * Удаляет конкретный рендерер из кэша и выполняет его GL-очистку.
+     */
+    public static void removeRenderer(String partKey) {
+        SingleMeshVboRenderer renderer = PART_RENDERERS.remove(partKey);
+        if (renderer != null) {
+            renderer.cleanup();
+        }
+        FAILED_RENDERER_KEYS.remove(partKey);
     }
 
     public static int getCachedQuadsCount() {

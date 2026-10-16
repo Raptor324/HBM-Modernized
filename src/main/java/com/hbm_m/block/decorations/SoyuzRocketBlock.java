@@ -66,4 +66,13 @@ public class SoyuzRocketBlock extends BaseEntityBlock {
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new SoyuzRocketBlockEntity(pos, state);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<SoyuzRocketBlock> CODEC = simpleCodec(SoyuzRocketBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

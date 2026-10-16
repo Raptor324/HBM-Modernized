@@ -18,4 +18,10 @@ public class ModModelLayers {
                         ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "power_armor"), "main");
             //?}
 
+    public static final ModelLayerLocation GAS_MASK = new ModelLayerLocation(
+            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "gas_mask"), "main");
+
+    public static final ModelLayerLocation M65 = new ModelLayerLocation(
+            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "m65"), "main");
+
 }

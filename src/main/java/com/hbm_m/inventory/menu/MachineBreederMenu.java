@@ -2,10 +2,8 @@ package com.hbm_m.inventory.menu;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.machines.MachineBreederBlockEntity;
-import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
-import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.packet.PacketSyncEnergy;
 
@@ -20,26 +18,17 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-//? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
-//? if fabric {
-/*import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
-*///?}
 
-@SuppressWarnings("UnstableApiUsage")
+/**
+ * Two-slot menu (input/output) matching {@code gui_breeder.png}'s actual layout 1:1 - slot
+ * coordinates reverse-engineered from the texture itself (input at 35,35; output at 125,35;
+ * flanking a vertical flux-progress bar at 73,19).
+ */
 public class MachineBreederMenu extends AbstractContainerMenu implements ILongEnergyMenu {
 
     private static final int SLOT_INPUT = 0;
-    private static final int SLOT_BATTERY = 1;
-    private static final int SLOT_OUTPUT = 2;
-    private static final int SLOT_FLUID_INPUT = 3;
-    private static final int SLOT_FLUID_OUTPUT = 4;
-    private static final int SLOT_UPGRADE_1 = 5;
-    private static final int SLOT_UPGRADE_2 = 6;
-    private static final int SLOT_FLUID_ID = 7;
-    private static final int MACHINE_SLOTS = 8;
+    private static final int SLOT_OUTPUT = 1;
+    private static final int MACHINE_SLOTS = 2;
 
     private final MachineBreederBlockEntity blockEntity;
     private final Level level;
@@ -70,50 +59,22 @@ public class MachineBreederMenu extends AbstractContainerMenu implements ILongEn
 
         this.machineInventory = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
 
-        this.addSlot(new Slot(machineInventory, SLOT_INPUT, 62, 45));
-        this.addSlot(new Slot(machineInventory, SLOT_BATTERY, 152, 72) {
-            @Override
-            public boolean mayPlace(ItemStack stack) {
-                //? if forge {
-                if (stack.getCapability(ForgeCapabilities.ENERGY).isPresent()) return true;
-                //?}
-                return stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()
-                    || stack.getItem() instanceof ItemCreativeBattery;
-            }
-        });
-        this.addSlot(new Slot(machineInventory, SLOT_OUTPUT, 113, 45) {
+        this.addSlot(new Slot(machineInventory, SLOT_INPUT, 35, 35));
+        this.addSlot(new Slot(machineInventory, SLOT_OUTPUT, 125, 35) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false;
             }
         });
-        this.addSlot(new Slot(machineInventory, SLOT_FLUID_INPUT, 17, 18));
-        this.addSlot(new Slot(machineInventory, SLOT_FLUID_OUTPUT, 17, 54) {
-            @Override
-            public boolean mayPlace(ItemStack stack) {
-                return false;
-            }
-        });
-        this.addSlot(new Slot(machineInventory, SLOT_UPGRADE_1, 80, 18));
-        this.addSlot(new Slot(machineInventory, SLOT_UPGRADE_2, 98, 18));
-        this.addSlot(new Slot(machineInventory, SLOT_FLUID_ID, 35, 72));
 
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 9; j++) {
-                this.addSlot(new Slot(inv, j + i * 9 + 9, 8 + j * 18, 122 + i * 18));
+                this.addSlot(new Slot(inv, j + i * 9 + 9, 8 + j * 18, 84 + i * 18));
             }
         }
         for (int i = 0; i < 9; i++) {
-            this.addSlot(new Slot(inv, i, 8 + i * 18, 180));
+            this.addSlot(new Slot(inv, i, 8 + i * 18, 142));
         }
-    }
-
-    private static boolean hasFluidStorageItem(ItemStack stack) {
-        //? if forge {
-        return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-        //?} else {
-        /*return FluidStorage.ITEM.find(stack, ContainerItemContext.withConstant(stack)) != null;
-        *///?}
     }
 
     private static MachineBreederBlockEntity getBlockEntity(Inventory inv, FriendlyByteBuf data) {
@@ -203,28 +164,8 @@ public class MachineBreederMenu extends AbstractContainerMenu implements ILongEn
                 return ItemStack.EMPTY;
             }
         } else {
-            boolean isBattery = stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()
-                || stack.getItem() instanceof ItemCreativeBattery;
-            //? if forge {
-            isBattery = isBattery || stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
-            //?}
-
-            if (isBattery) {
-                if (!moveItemStackTo(stack, SLOT_BATTERY, SLOT_BATTERY + 1, false)) {
-                    return ItemStack.EMPTY;
-                }
-            } else if (hasFluidStorageItem(stack)) {
-                if (!moveItemStackTo(stack, SLOT_FLUID_INPUT, SLOT_FLUID_INPUT + 1, false)) {
-                    return ItemStack.EMPTY;
-                }
-            } else {
-                if (!moveItemStackTo(stack, SLOT_UPGRADE_1, SLOT_UPGRADE_2 + 1, false)) {
-                    if (!moveItemStackTo(stack, SLOT_FLUID_ID, SLOT_FLUID_ID + 1, false)) {
-                        if (!moveItemStackTo(stack, SLOT_INPUT, SLOT_INPUT + 1, false)) {
-                            return ItemStack.EMPTY;
-                        }
-                    }
-                }
+            if (!moveItemStackTo(stack, SLOT_INPUT, SLOT_INPUT + 1, false)) {
+                return ItemStack.EMPTY;
             }
         }
 

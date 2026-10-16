@@ -3,6 +3,7 @@ package com.hbm_m.blockentity.bomb;
 import java.util.List;
 
 import com.hbm_m.block.bomb.LandmineBlock;
+import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.sound.ModSounds;
 
@@ -18,7 +19,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
-public class LandMineBlockEntity extends BlockEntity {
+public class LandMineBlockEntity extends BaseHbmBlockEntity {
 
     private boolean isPrimed = false;
     public boolean waitingForPlayer = false;
@@ -87,16 +88,17 @@ public class LandMineBlockEntity extends BlockEntity {
         }
     }
 
+    
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putBoolean("primed", isPrimed);
         tag.putBoolean("waiting", waitingForPlayer);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         isPrimed = tag.getBoolean("primed");
         waitingForPlayer = tag.getBoolean("waiting");
     }

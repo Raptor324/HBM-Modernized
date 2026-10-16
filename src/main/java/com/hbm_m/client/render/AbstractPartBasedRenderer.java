@@ -1,12 +1,12 @@
 package com.hbm_m.client.render;
 
-
 import java.lang.reflect.Field;
 
 import org.joml.Matrix4f;
 
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.main.MainRegistry;
+
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.client.Minecraft;
@@ -17,20 +17,17 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import com.hbm_m.client.render.culling.OcclusionCullingHelper;
 
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends BakedModel>
-        implements BlockEntityRenderer<T> {
+        implements com.hbm_m.client.render.HbmBerBounds<T> {
 
     /**
      * Получает модель для рендеринга. По умолчанию - из blockstate.
@@ -71,11 +68,23 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
     }
 
     @Override
+    public int getViewDistance() {
+        return RenderDistanceHelper.getStaticViewDistanceBlocks();
+    }
+
+    @Override
     public void render(T blockEntity, float partialTick, PoseStack poseStack,
                        MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
         // Frustum cull FIRST for the main pass. Shadow pass uses light-space
         // bounds; the main-camera frustum here would drop off-screen casters.
-        if (!ShaderCompatibilityDetector.isRenderingShadowPass() && !isInViewFrustum(blockEntity)) {
+        if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
+            // ── Диагностика 1.21.1 (машины не отбрасывают теней под Iris):
+            // счётчик вызовов BER внутри теневого прохода; логируется из
+            // ClientModEvents (AFTER_SKY основного прохода). 0 вызовов =
+            // Iris вообще не зовёт BER в shadow (пустой список теневых BE,
+            // интероп terrain-мода) — тогда проблема не в нашем draw-пути.
+            SHADOW_BER_INVOCATIONS++;
+        } else if (!isInViewFrustum(blockEntity)) {
             return;
         }
 
@@ -93,8 +102,7 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
         
         if (model == null) return;
 
-        LegacyAnimator animator = LegacyAnimator.create(poseStack, bufferSource,
-                packedLight, packedOverlay);
+        LegacyAnimator animator = LegacyAnimator.create(poseStack);
 
         com.hbm_m.client.render.LightSampleCache.BASE_POSE.get().set(poseStack.last().pose());
         com.hbm_m.client.render.LightSampleCache.BASE_POSE_SET.set(true);
@@ -111,6 +119,57 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
 
     protected final Minecraft getMinecraft() {
         return Minecraft.getInstance();
+    }
+
+    // -----------------------------------------------------------------------
+    // Общий куллинг и fade для реализаций
+    // -----------------------------------------------------------------------
+
+    /** Occlusion/frustum-куллинг по AABB из {@link #frustumCullBounds}. */
+    protected final boolean passesOcclusionCulling(T blockEntity) {
+        return passesOcclusionCulling(blockEntity, frustumCullBounds(blockEntity));
+    }
+
+    /** Публичный доступ к AABB этого BE для движковых расчётов (shared light и т.п.). */
+    protected final AABB renderBounds(T blockEntity) {
+        return frustumCullBounds(blockEntity);
+    }
+
+    /**
+     * Проверка видимости через BE-уровень: в контрапшене Create BE.getLevel() —
+     * VirtualRenderWorld, shouldRender() его распознаёт и пропускает frustum/ray-march
+     * кулинг.
+     */
+    protected final boolean passesOcclusionCulling(T blockEntity, AABB bounds) {
+        return OcclusionCullingHelper.shouldRender(blockEntity, bounds);
+    }
+
+    /**
+     * Общая логика куллинга + статического fade: пропускает рендер за пределами
+     * дистанции и выставляет {@link SingleMeshVboRenderer#setFadeAlpha}.
+     *
+     * @return fade в [0,1], или -1 если рендер следует пропустить.
+     */
+    protected final float applyCullingAndStaticFade(T blockEntity) {
+        return applyCullingAndStaticFade(blockEntity, frustumCullBounds(blockEntity));
+    }
+
+    protected final float applyCullingAndStaticFade(T blockEntity, AABB bounds) {
+        if (!passesOcclusionCulling(blockEntity, bounds)) return -1f;
+        float staticFade = RenderDistanceHelper.computeStaticFade(blockEntity);
+        if (staticFade < 0) return -1f;
+        SingleMeshVboRenderer.setFadeAlpha(staticFade);
+        return staticFade;
+    }
+
+    /** Диагностика shadow pass: вызовы BER с прошлого сброса. См. render(). */
+    private static int SHADOW_BER_INVOCATIONS = 0;
+
+    /** Читает и обнуляет счётчик вызовов BER в shadow pass (раз в кадр из AFTER_SKY). */
+    public static int drainShadowBerInvocations() {
+        int v = SHADOW_BER_INVOCATIONS;
+        SHADOW_BER_INVOCATIONS = 0;
+        return v;
     }
 
     protected boolean isInViewFrustum(T blockEntity) {
@@ -144,6 +203,18 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
         //?}
         //? if fabric {
         /*if (blockEntity instanceof com.hbm_m.blockentity.BaseMachineBlockEntity b) {
+            return b.getRenderBoundingBox();
+        }
+        if (blockEntity instanceof com.hbm_m.block.entity.doors.DoorBlockEntity d) {
+            return d.getRenderBoundingBox();
+        }
+        return new AABB(blockEntity.getBlockPos()).inflate(1.0D);
+        *///?}
+
+        //? if neoforge {
+        /*// На 1.21.1 у BlockEntity есть ванильный getRenderBoundingBox(), но для HBM-машин
+        // используем явные переопределения (мультиблоки с увеличенным AABB), как на Fabric.
+        if (blockEntity instanceof com.hbm_m.blockentity.BaseMachineBlockEntity b) {
             return b.getRenderBoundingBox();
         }
         if (blockEntity instanceof com.hbm_m.block.entity.doors.DoorBlockEntity d) {

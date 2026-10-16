@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +42,7 @@ public class GUINukeFatMan extends GuiInfoScreen<NukeFatManMenu> {
 
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(guiGraphics);
+        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         
         this.renderTooltip(guiGraphics, mouseX, mouseY);
@@ -60,7 +61,8 @@ public class GUINukeFatMan extends GuiInfoScreen<NukeFatManMenu> {
     @Override
     protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, imageWidth, imageHeight);
-
+        // тайл может отсутствовать в реплее Flashback
+        if (be != null) {
         if (be.isReady()) {
             guiGraphics.blit(TEXTURE, this.leftPos + 134, this.topPos + 35, 176, 48, 16, 16);
         }
@@ -74,6 +76,7 @@ public class GUINukeFatMan extends GuiInfoScreen<NukeFatManMenu> {
                     case 3 -> guiGraphics.blit(TEXTURE, this.leftPos + 106, this.topPos + 43, 200, 24, 24, 24);
                 }
             }
+        }
         }
 
         this.drawInfoPanel(guiGraphics, -16, 16, PanelType.LARGE_BLUE_INFO);

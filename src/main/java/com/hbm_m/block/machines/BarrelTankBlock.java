@@ -1,5 +1,6 @@
 package com.hbm_m.block.machines;
 
+import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
@@ -9,12 +10,16 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.blockentity.machines.MachineFluidTankBlockEntity;
 
 import dev.architectury.registry.menu.MenuRegistry;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -31,6 +36,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.item.Item;
 
 /**
  * Small single-block fluid barrel (no multiblock structure — same full-cube hitbox as the
@@ -49,14 +55,57 @@ public class BarrelTankBlock extends BaseEntityBlock {
 
     private final BiFunction<BlockPos, BlockState, ? extends MachineFluidTankBlockEntity> beFactory;
     private final Supplier<BlockEntityType<? extends MachineFluidTankBlockEntity>> beTypeSupplier;
+    @Nullable
+    private final TooltipInfo tooltipInfo;
+
+    /**
+     * Static fluid-storage-capability summary shown as an item tooltip, matching the original
+     * mod's per-material barrel info panel (capacity + hot/corrosive/highly-corrosive/antimatter
+     * storage permissions). Declared statically here (rather than read off a live BlockEntity)
+     * so it also shows up on the item in inventory/JEI, before the block is ever placed.
+     */
+    public record TooltipInfo(int capacityMb, boolean canStoreHot, boolean canStoreCorrosive,
+                               boolean canStoreHighlyCorrosive, boolean canStoreAntimatter) {}
 
     public BarrelTankBlock(Properties properties,
                            BiFunction<BlockPos, BlockState, ? extends MachineFluidTankBlockEntity> beFactory,
                            Supplier<BlockEntityType<? extends MachineFluidTankBlockEntity>> beTypeSupplier) {
+        this(properties, beFactory, beTypeSupplier, null);
+    }
+
+    public BarrelTankBlock(Properties properties,
+                           BiFunction<BlockPos, BlockState, ? extends MachineFluidTankBlockEntity> beFactory,
+                           Supplier<BlockEntityType<? extends MachineFluidTankBlockEntity>> beTypeSupplier,
+                           @Nullable TooltipInfo tooltipInfo) {
         super(properties);
         this.beFactory = beFactory;
         this.beTypeSupplier = beTypeSupplier;
+        this.tooltipInfo = tooltipInfo;
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+    }
+
+    //? if < 1.21.1 {
+    @Override
+    public void appendHoverText(@NotNull ItemStack stack, @Nullable BlockGetter level, @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
+        super.appendHoverText(stack, level, tooltip, flag);
+    //?} else {
+    /*@Override
+    public void appendHoverText(@NotNull ItemStack stack, @NotNull Item.TooltipContext ctx, @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
+        super.appendHoverText(stack, ctx, tooltip, flag);
+    *///?}
+        if (tooltipInfo == null) return;
+
+        tooltip.add(Component.translatable("tooltip.hbm_m.barrel.capacity", tooltipInfo.capacityMb())
+                .withStyle(ChatFormatting.AQUA));
+        tooltip.add(storageLine(tooltipInfo.canStoreHot(), "tooltip.hbm_m.barrel.hot"));
+        tooltip.add(storageLine(tooltipInfo.canStoreCorrosive(), "tooltip.hbm_m.barrel.corrosive"));
+        tooltip.add(storageLine(tooltipInfo.canStoreHighlyCorrosive(), "tooltip.hbm_m.barrel.highly_corrosive"));
+        tooltip.add(storageLine(tooltipInfo.canStoreAntimatter(), "tooltip.hbm_m.barrel.antimatter"));
+    }
+
+    private static Component storageLine(boolean can, String baseKey) {
+        String key = can ? baseKey + ".yes" : baseKey + ".no";
+        return Component.translatable(key).withStyle(can ? ChatFormatting.GREEN : ChatFormatting.YELLOW);
     }
 
     @Override
@@ -85,8 +134,19 @@ public class BarrelTankBlock extends BaseEntityBlock {
         return RenderShape.MODEL;
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
+        return hbmOnUse(state, level, pos, player, hand, hit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull BlockHitResult hit) {
+        return hbmOnUse(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+    }
+    *///?}
+
+    private InteractionResult hbmOnUse(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
         if (level.isClientSide) {
             return InteractionResult.sidedSuccess(true);
         }
@@ -111,4 +171,13 @@ public class BarrelTankBlock extends BaseEntityBlock {
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@NotNull Level level, @NotNull BlockState state, @NotNull BlockEntityType<T> type) {
         return createTickerHelper(type, beTypeSupplier.get(), MachineFluidTankBlockEntity::tick);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<BarrelTankBlock> CODEC = simpleCodec(props -> new BarrelTankBlock(props, com.hbm_m.blockentity.machines.BarrelIronBlockEntity::new, () -> com.hbm_m.blockentity.ModBlockEntities.BARREL_IRON_BE.get()));
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

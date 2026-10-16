@@ -2,7 +2,7 @@ package com.hbm_m.powerarmor;
 
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.item.ArmorMaterial;
+import com.hbm_m.item.tools_and_armor.ModArmorMaterials;
 
 /**
  * AJRO Power Armor – "orange" AJR variant.
@@ -51,7 +51,7 @@ public class AJROArmor extends ModPowerArmorItem {
     .setJumpSound("hbm_m:step.iron_jump")
     .setFallSound("hbm_m:step.iron_land");
 
-    public AJROArmor(ArmorMaterial material, Type type, Properties properties) {
+    public AJROArmor(ModArmorMaterials material, Type type, Properties properties) {
         super(material, type, properties, AJRO_SPECS);
     }
 }

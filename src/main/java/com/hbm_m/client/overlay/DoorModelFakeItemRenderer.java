@@ -3,6 +3,7 @@ package com.hbm_m.client.overlay;
 
 import com.hbm_m.client.model.variant.DoorModelRegistry;
 import com.hbm_m.client.model.variant.DoorModelSelection;
+import com.hbm_m.platform.PlatformHooks;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -63,7 +64,7 @@ public final class DoorModelFakeItemRenderer {
         if (registry.isRegistered(doorId)) {
             ResourceLocation modelPath = registry.getModelPath(doorId, selection);
             if (modelPath != null) {
-                BakedModel candidate = mc.getModelManager().getModel(modelPath);
+                BakedModel candidate = PlatformHooks.getModel(mc.getModelManager(), modelPath);
                 if (candidate != null && candidate != mc.getModelManager().getMissingModel()) {
                     modelToRender = candidate;
                 }
@@ -96,7 +97,11 @@ public final class DoorModelFakeItemRenderer {
 
         pose.pushPose();
         pose.translate(8.0f, 8.0f, 150.0f);
-        pose.mulPoseMatrix(new org.joml.Matrix4f().scaling(1.0f, -1.0f, 1.0f));
+        //? if < 1.21.1 {
+        pose.mulPoseMatrix(new org.joml.Matrix4f().scaling(1.0F, -1.0F, 1.0F));
+        //?} else {
+        /*pose.mulPose(new org.joml.Matrix4f().scaling(1.0F, -1.0F, 1.0F));
+        *///?}
         pose.scale(16.0f, 16.0f, 16.0f);
 
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);

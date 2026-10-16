@@ -33,15 +33,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
-
 /**
  * Iris/Oculus companion-mesh renderer: handles {@code flushBatchIris},
  * single-instance Iris draws through {@code ExtendedShader}, and
@@ -50,11 +41,14 @@ import net.fabricmc.api.Environment;
  * Extracted from {@link InstancedStaticPartRenderer} to reduce
  * class complexity.
  */
+
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 final class IrisInstancedBatchRenderer {
 
     private final InstancedStaticPartRenderer parent;
@@ -142,29 +136,36 @@ final class IrisInstancedBatchRenderer {
         BlockPos anchor = (blockEntity != null) ? blockEntity.getBlockPos() : blockPos;
         if (anchor == null) anchor = BlockPos.ZERO;
         if (LightSampleCache.BASE_POSE_SET.get()) {
-            parent.tmpLocalPose.set(LightSampleCache.BASE_POSE.get()).invert().mul(poseStack.last().pose());
+                parent.tmpLocalPose.set(LightSampleCache.BASE_POSE.get()).invert().mul(poseStack.last().pose());
         } else {
             var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+            //? if < 1.21.1 {
             parent.tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
+            //?} else {
+            /*parent.tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation()).invert();
+            *///?}
             parent.tmpLocalPose.set(parent.tmpInvViewRot).mul(poseStack.last().pose());
             parent.tmpLocalPose.m30(parent.tmpLocalPose.m30() - (float) (anchor.getX() - cam.x));
             parent.tmpLocalPose.m31(parent.tmpLocalPose.m31() - (float) (anchor.getY() - cam.y));
             parent.tmpLocalPose.m32(parent.tmpLocalPose.m32() - (float) (anchor.getZ() - cam.z));
         }
         long partHash = System.identityHashCode(parent);
-        if (parent.useSlicedLight) {
-            LightSampleCache.getOrSample16(blockEntity, partHash, parent.objBbox, anchor,
-                                           parent.tmpLocalPose, packedLight, parent.tmpCornerUV);
-        } else {
-            LightSampleCache.getOrSample8(blockEntity, partHash, parent.objBbox, anchor,
-                                          parent.tmpLocalPose, packedLight, parent.tmpCornerUV);
-        }
+        LightSampleCache.getOrSample8(blockEntity, partHash, parent.objBbox, anchor,
+                                      parent.tmpLocalPose, packedLight, parent.tmpCornerUV);
     }
 
     // ── Single draw with Iris ExtendedShader ───────────────────────────
 
     boolean drawSingleWithIrisExtended(PoseStack poseStack, int packedLight,
                                        BlockPos blockPos, @Nullable BlockEntity blockEntity) {
+        // Shadow pass: только через АКТИВНЫЙ per-BE батч (см. SingleMeshVboRenderer
+        // .renderWithIrisExtended и IrisRenderBatch.begin). Standalone-путь в
+        // shadow запрещён. Без батча — false, вызывающий addInstance/renderSingle
+        // уйдёт в putBulkData через bufferSource (SHADOW_BLOCK на endBatch).
+        if (ShaderCompatibilityDetector.isRenderingShadowPass() && IrisRenderBatch.active() == null) {
+            return false;
+        }
+
         IrisCompanionMesh companion = getOrBuildIrisCompanion();
         if (companion == null) return false;
 
@@ -181,18 +182,18 @@ final class IrisInstancedBatchRenderer {
 
         IrisRenderBatch batch = IrisRenderBatch.active();
         if (batch != null) {
+            // R_cam живёт в RenderSystem.getModelViewMatrix() на ОБЕИХ версиях (см. фикс в
+            // InstancedStaticPartRenderer.addInstance) — композит обязателен, иначе модели летают.
+            Matrix4f fullModelView = new Matrix4f(RenderSystem.getModelViewMatrix()).mul(poseStack.last().pose());
             LightSampleCache.getOrSample(blockEntity, packedLight, irisSingleUV, 0);
             int blockUInt = Math.max(0, Math.min(240, Math.round(irisSingleUV[0])));
             int skyVInt   = Math.max(0, Math.min(240, Math.round(irisSingleUV[1])));
             int packedSmoothLight = (skyVInt << 16) | blockUInt;
-            if (haveCorners && parent.useSlicedLight && companion.supportsSlicedPerVertexLightmap()) {
-                batch.drawCompanionWithSlicedPerVertexLight(companion, poseStack.last().pose(),
-                        parent.tmpCornerUV, packedSmoothLight);
-            } else if (haveCorners) {
-                batch.drawCompanionWithPerVertexLight(companion, poseStack.last().pose(),
+            if (haveCorners) {
+                batch.drawCompanionWithPerVertexLight(companion, fullModelView,
                         parent.tmpCornerUV, packedSmoothLight);
             } else {
-                batch.drawCompanion(companion, poseStack.last().pose(), packedSmoothLight);
+                batch.drawCompanion(companion, fullModelView, packedSmoothLight);
             }
             return true;
         }
@@ -210,7 +211,8 @@ final class IrisInstancedBatchRenderer {
 
             LightSampleCache.getOrSample(blockEntity, packedLight, irisSingleUV, 0);
 
-            parent.vanillaHelper.applyCommonUniforms(shader, RenderSystem.getProjectionMatrix(), poseStack.last().pose());
+            Matrix4f fullModelView = new Matrix4f(RenderSystem.getModelViewMatrix()).mul(poseStack.last().pose());
+            parent.vanillaHelper.applyCommonUniforms(shader, RenderSystem.getProjectionMatrix(), fullModelView);
             if (parent.vanillaHelper.uBrightness != null) parent.vanillaHelper.uBrightness.set(
                     parent.vanillaHelper.brightnessFromUV(irisSingleUV[0], irisSingleUV[1], Float.NaN));
 
@@ -260,6 +262,15 @@ final class IrisInstancedBatchRenderer {
     // ── Batch flush (Iris) ─────────────────────────────────────────────
 
     void flushBatchIris(Matrix4f projectionMatrix) {
+        // Instanced-flush только основной проход: в shadow инстансы НЕ
+        // накапливаются, а рисуются немедленно через активный per-BE батч
+        // (addInstance → drawSingleWithIrisExtended). Выход и для случая, если
+        // stage-событие придёт во время shadow-прохода (Embeddium диспатчит
+        // их из теневых terrain-слоёв) — там флашить нельзя.
+        if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
+            return;
+        }
+
         IrisCompanionMesh companion = getOrBuildIrisCompanion();
 
         boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
@@ -291,7 +302,9 @@ final class IrisInstancedBatchRenderer {
         try (IrisPhaseGuard ignored = IrisPhaseGuard.pushBlockEntities()) {
             RenderSystem.setShader(() -> shader);
 
-            parent.vanillaHelper.applyCommonUniforms(shader, projectionMatrix, IDENTITY);
+
+            parent.vanillaHelper.applyCommonUniforms(shader,
+                    parent.vanillaHelper.stripViewRotationForInstanced(projectionMatrix), IDENTITY);
 
             com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0,
                 net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS);
@@ -323,9 +336,7 @@ final class IrisInstancedBatchRenderer {
 
             final int uv2Loc = (companion != null) ? companion.getUv2Location() : -1;
             final boolean perVertexLight = companion != null
-                    && (parent.useSlicedLight
-                            ? companion.supportsSlicedPerVertexLightmap()
-                            : companion.supportsPerVertexLightmap());
+                    && companion.supportsPerVertexLightmap();
 
             if (perVertexLight) {
                 companion.ensureLightmapCapacity(Math.max(8, parent.instanceCount));

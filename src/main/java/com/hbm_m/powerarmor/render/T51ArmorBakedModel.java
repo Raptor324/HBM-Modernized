@@ -1,4 +1,3 @@
-//? if forge {
 package com.hbm_m.powerarmor.render;
 
 
@@ -13,21 +12,11 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ArmorItem;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
 
 /**
  * Модель для рендеринга T51 Power Armor в GUI и руке.
  * Использует абстрактный базовый класс для общей логики рендеринга.
  */
-//? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
 public class T51ArmorBakedModel extends AbstractArmorBakedModel {
 
     private static final String[] T51_ORDER = {
@@ -97,4 +86,3 @@ public class T51ArmorBakedModel extends AbstractArmorBakedModel {
         }
     }
 }
-//?}

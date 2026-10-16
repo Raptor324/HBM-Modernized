@@ -7,28 +7,21 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 
 import com.hbm_m.main.MainRegistry;
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.ModList;
-//?}
-
-//? if fabric {
-/*import dev.architectury.platform.Platform;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
+import dev.architectury.platform.Platform;
 
 /**
  * Try-with-resources scope helper that calls
  * {@code WorldRenderingPipeline.setPhase(WorldRenderingPhase.<phase>)} on entry
  * and restores {@code WorldRenderingPhase.NONE} on close.
  */
+
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public final class IrisPhaseGuard implements AutoCloseable {
 
     private static volatile boolean initialized = false;
@@ -151,16 +144,9 @@ public final class IrisPhaseGuard implements AutoCloseable {
         if (initialized) return;
         initialized = true;
 
-        //? if forge {
-        if (!ModList.get().isLoaded("oculus") && !ModList.get().isLoaded("iris")) {
+        if (!Platform.isModLoaded("iris") && !Platform.isModLoaded("oculus")) {
             return;
         }
-        //?}
-        //? if fabric {
-        /*if (!Platform.isModLoaded("iris") && !Platform.isModLoaded("oculus")) {
-            return;
-        }
-        *///?}
 
         try {
             Class<?> irisClass = Class.forName("net.irisshaders.iris.Iris");

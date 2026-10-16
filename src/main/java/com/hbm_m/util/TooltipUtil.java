@@ -1,4 +1,3 @@
-// TooltipUtil.java
 package com.hbm_m.util;
 
 import net.minecraft.network.chat.Component;

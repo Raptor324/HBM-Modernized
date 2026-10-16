@@ -1,5 +1,6 @@
 package com.hbm_m.item.industrial;
 
+import com.hbm_m.item.ITooltipProvider;
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -14,7 +15,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 
-public class ZirnoxRodItem extends Item {
+public class ZirnoxRodItem extends Item implements ITooltipProvider {
 
     private static final String NBT_LIFE = "life";
 
@@ -80,8 +81,7 @@ public class ZirnoxRodItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         int life = getLifeTime(stack);
         float depletion = Math.min(100.0F, (life * 100.0F) / Math.max(1, maxLife));
         tooltip.add(Component.literal(String.format("Depletion: %.2f%%", depletion)).withStyle(ChatFormatting.YELLOW));

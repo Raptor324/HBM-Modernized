@@ -25,21 +25,18 @@ import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.ObjModelVboBuilder;
 import com.hbm_m.client.render.RenderDistanceHelper;
 import com.hbm_m.client.render.SingleMeshVboRenderer;
+import com.hbm_m.client.render.ClientRenderFlags;
 import com.hbm_m.client.render.culling.OcclusionCullingHelper;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
-import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.platform.PlatformHooks;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -56,12 +53,13 @@ import net.minecraft.world.phys.AABB;
 
 //? if forge {
 import net.minecraftforge.client.model.data.ModelData;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*import net.neoforged.neoforge.client.model.data.ModelData;
+@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, BakedModel> {
 
     private static final ConcurrentHashMap<String, InstancedStaticPartRenderer> instancedFrameCache = new ConcurrentHashMap<>();
@@ -137,19 +135,9 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
         int count = 0;
         var rand = RandomSource.create(42);
         for (Direction d : Direction.values()) {
-            //? if forge {
             count += partModel.getQuads(null, d, rand, ModelData.EMPTY, RenderType.solid()).size();
-             //?}
-            //? if fabric {
-            /*count += partModel.getQuads(null, d, rand).size();
-            *///?}
         }
-        //? if forge {
         count += partModel.getQuads(null, null, rand, ModelData.EMPTY, RenderType.solid()).size();
-         //?}
-        //? if fabric {
-        /*count += partModel.getQuads(null, null, rand).size();
-        *///?}
         if (count == 0) {
             PARTS_WITHOUT_GEOMETRY.add(cacheKey);
             return false;
@@ -170,7 +158,7 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
         if (modelPath == null) return super.getModel(blockEntity);
         
         ModelManager modelManager = Minecraft.getInstance().getModelManager();
-        BakedModel selectionModel = modelManager.getModel(modelPath);
+        BakedModel selectionModel = PlatformHooks.getModel(modelManager, modelPath);
         if (selectionModel == null || selectionModel == modelManager.getMissingModel()) {
             return super.getModel(blockEntity);
         }
@@ -196,13 +184,10 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
         if (doorDecl == null) return;
 
         BlockPos blockPos = be.getBlockPos();
-        var minecraft = Minecraft.getInstance();
-        if (!com.hbm_m.compat.ContraptionRenderCompat.isContraptionRender(be)) {
-            AABB renderBounds = be.getRenderBoundingBox();
-            if (!OcclusionCullingHelper.shouldRender(blockPos, minecraft.level, renderBounds)) {
-                return;
-            }
-        }
+        // Куллинг + fade: в контрапшене Create shouldRender() пропускает
+        // frustum/ray-march кулинг.
+        float doorFade = applyCullingAndStaticFade(be);
+        if (doorFade < 0) return;
 
         boolean onContraption = com.hbm_m.compat.ContraptionRenderCompat.isContraptionRender(be);
         float openTicks;
@@ -216,10 +201,6 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
             isOpen = be.isOpen();
         }
         
-        float doorFade = RenderDistanceHelper.computeStaticFade(be);
-        if (doorFade < 0) return;
-        SingleMeshVboRenderer.setFadeAlpha(doorFade);
-
         doorDecl.doOffsetTransform(animator);
 
         if (model instanceof DoorBakedModel doorModel) {
@@ -322,7 +303,11 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
                                 DoorModelSelection selection, DoorDecl doorDecl) {
         for (DaeNode node : nodes) {
             poseStack.pushPose();
+            //? if < 1.21.1 {
             poseStack.mulPoseMatrix(node.localMatrix(time, clip));
+             //?} else {
+            /*poseStack.last().pose().mul(node.localMatrix(time, clip));
+            *///?}
             if (node.mesh != null) {
                 SingleMeshVboRenderer renderer = getDaeRendererForNode(node, selection, doorDecl);
                 if (renderer != null) {
@@ -340,11 +325,27 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
 
         return DAE_RENDERER_CACHE.computeIfAbsent(key, k -> {
             try {
-                ResourceLocation texture = resolveDaeTexture(node, selection, doorDecl);
+                ResourceLocation rawTexture = resolveDaeTexture(node, selection, doorDecl);
+                
+                // Очищаем путь от "textures/" и ".png", чтобы атлас мог найти спрайт
+                String cleanPath = rawTexture.getPath();
+                if (cleanPath.startsWith("textures/")) {
+                    cleanPath = cleanPath.substring("textures/".length());
+                }
+                if (cleanPath.endsWith(".png")) {
+                    cleanPath = cleanPath.substring(0, cleanPath.length() - 4);
+                }
+                ResourceLocation spriteLocation = ResourceLocation.fromNamespaceAndPath(rawTexture.getNamespace(), cleanPath);
+
                 TextureAtlasSprite sprite = Minecraft.getInstance().getModelManager()
                         .getAtlas(TextureAtlas.LOCATION_BLOCKS)
-                        .getSprite(texture);
+                        .getSprite(spriteLocation);
                 
+                if (sprite == null) {
+                    MainRegistry.LOGGER.error("DoorRenderer: Sprite '{}' not found in block atlas!", spriteLocation);
+                    return null;
+                }
+
                 List<BakedQuad> quads = DaeQuadBaker.bakeNodeQuads(node.mesh, new Matrix4f(), sprite);
                 if (quads.isEmpty()) return null;
                 return MeshRenderCache.getOrCreateRendererFromQuadList(key, quads);
@@ -389,14 +390,10 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
             String[] partNames = model.getPartNames();
             String staticFramePart = detectFramePart(partNames);
             
-            boolean useBatchingNow = ModClothConfig.useInstancedBatching();
+            boolean useBatchingNow = ClientRenderFlags.useInstancedBatching();
             boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
-            //? if forge {
             boolean useIrisBatch = ShaderCompatibilityDetector.isExternalShaderActive() && (!useBatchingNow || shadowPass);
-            //?}
-            //? if fabric {
-            /*boolean useIrisBatch = ShaderCompatibilityDetector.isExternalShaderActive();
-            *///?}
+
             if (useIrisBatch) {
                 try (IrisRenderBatch batch = IrisRenderBatch.begin(shadowPass, RenderSystem.getProjectionMatrix())) {
                     renderDoorVboParts(be, model, doorDecl, partNames, staticFramePart, doorType,
@@ -426,7 +423,7 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
 
             if (useInstancedFrame) {
                 poseStack.pushPose();
-                boolean useBatching = ModClothConfig.useInstancedBatching();
+                boolean useBatching = ClientRenderFlags.useInstancedBatching();
                 boolean inShadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
                 if (useBatching && !inShadowPass) {
                     frameRenderer.addInstance(poseStack, packedLight, blockPos, be, bufferSource);
@@ -479,7 +476,7 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
             if (partModel != null && partHasGeometry(partModel, partName, geomCacheKey)) {
                 String partCacheKey = getPartCacheKey(doorType, partName, selection);
 
-                boolean useBatching = ModClothConfig.useInstancedBatching();
+                boolean useBatching = ClientRenderFlags.useInstancedBatching();
                 boolean inShadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
                 if (useBatching && !inShadowPass) {
                     if (!partInitializationFlags.getOrDefault(partCacheKey, false)) {
@@ -581,11 +578,6 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
         }
     }
 
-    @Override
-    public int getViewDistance() {
-        return RenderDistanceHelper.getStaticViewDistanceBlocks();
-    }
-
     public void onResourceManagerReload() {
         clearAllCaches();
     }
@@ -605,6 +597,10 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
 
         com.hbm_m.client.render.implementations.DoorVboRenderer.clearCache();
 
+        // Очищаем рендереры из общего кэша MeshRenderCache перед удалением
+        for (String key : DAE_RENDERER_CACHE.keySet()) {
+            MeshRenderCache.removeRenderer(key);
+        }
         DAE_RENDERER_CACHE.values().forEach(SingleMeshVboRenderer::cleanup);
         DAE_RENDERER_CACHE.clear();
         DAE_MODELS_CACHE.clear();

@@ -83,7 +83,6 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
     protected final ContainerData data;
 
     //? if forge {
-    private final LazyOptional<IFluidHandler> lazyWaterHandler;
     private final LazyOptional<IFluidHandler> lazySteamHandler;
     //?}
 
@@ -95,7 +94,6 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
         this.steamTank = new FluidTank(Fluids.EMPTY, STEAM_CAPACITY);
 
         //? if forge {
-        this.lazyWaterHandler = LazyOptional.of(() -> new WaterFluidHandler(this));
         this.lazySteamHandler = LazyOptional.of(() -> new SteamFluidHandler(this));
         //?}
 
@@ -328,28 +326,32 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
     public int getSteamCapacity() { return steamTank.getMaxFill(); }
     public int getThermalUnits() { return heat; }
 
+    public net.minecraft.world.level.material.Fluid getTankFluid(boolean water) {
+        return water ? waterTank.getStoredFluid() : steamTank.getStoredFluid();
+    }
+
     // --- NBT ---
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
+
         CompoundTag waterTag = new CompoundTag();
         waterTank.writeToNBT(waterTag, "water");
         tag.put("WaterTank", waterTag);
-        
+
         CompoundTag steamTag = new CompoundTag();
         steamTank.writeToNBT(steamTag, "steam");
         tag.put("SteamTank", steamTag);
-        
+
         tag.putInt("Heat", heat);
         tag.putInt("ThermalUnits", heat);
         tag.putBoolean("IsOn", isOn);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
+
         if (tag.contains("WaterTank")) {
             waterTank.readFromNBT(tag.getCompound("WaterTank"), "water");
         }
@@ -367,13 +369,16 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
     // --- Capabilities ---
     //? if forge {
     @Override
+    protected void setupFluidCapability() {
+        // Water — обработчик по умолчанию (все стороны, кроме UP) — через базовый fluidHandlerOpt.
+        setFluidHandler(new WaterFluidHandler(this));
+    }
+
+    @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.FLUID_HANDLER) {
-            // Water input from sides and bottom, steam output from top
-            if (side == Direction.UP) {
-                return lazySteamHandler.cast();
-            }
-            return lazyWaterHandler.cast();
+        // Steam output from top; остальные стороны (water) отдаёт базовый fluidHandlerOpt.
+        if (cap == ForgeCapabilities.FLUID_HANDLER && side == Direction.UP) {
+            return lazySteamHandler.cast();
         }
         return super.getCapability(cap, side);
     }
@@ -381,7 +386,6 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
     @Override
     public void invalidateCaps() {
         super.invalidateCaps();
-        lazyWaterHandler.invalidate();
         lazySteamHandler.invalidate();
     }
     //?}
@@ -395,8 +399,7 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
-        // TODO: Implement menu
-        return null;
+        return new com.hbm_m.inventory.menu.MachineIndustrialBoilerMenu(id, inv, this, data);
     }
 
     @Override
@@ -414,6 +417,10 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
             //? if fabric {
             /*case SLOT_WATER_IN -> FluidStorage.ITEM.find(stack, null) != null;
             case SLOT_STEAM_IN -> FluidStorage.ITEM.find(stack, null) != null;
+            *///?}
+            //? if neoforge {
+            /*case SLOT_WATER_IN -> stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM) != null;
+            case SLOT_STEAM_IN -> stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM) != null;
             *///?}
             case SLOT_WATER_OUT, SLOT_STEAM_OUT -> false; // Output slots
             default -> false;
@@ -537,4 +544,22 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
         }
     }
     //?}
-}
+
+    // Энергопорты мультиблока: позиции фантомов структуры, ранее регистрировавшиеся блоком.
+    // Ядро (worldPosition) подписывается в BaseMachineBlockEntity.ensureNetworkInitialized().
+    @Override
+    protected BlockPos[] getExtraEnergyPorts() {
+        if (level == null || level.isClientSide) return new BlockPos[0];
+        if (!(getBlockState().getBlock() instanceof com.hbm_m.block.machines.MachineIndustrialBoilerBlock block)) return new BlockPos[0];
+
+        var helper = block.getStructureHelper();
+        Direction facing = getBlockState().getValue(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING);
+
+        java.util.List<BlockPos> ports = new java.util.ArrayList<>();
+        for (BlockPos localPos : helper.getStructureMap().keySet()) {
+            if (helper.resolvePartRole(localPos, block).canReceiveEnergy()) {
+                ports.add(helper.getRotatedPos(worldPosition, localPos, facing));
+            }
+        }
+        return ports.toArray(new BlockPos[0]);
+    }}

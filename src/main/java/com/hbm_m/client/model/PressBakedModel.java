@@ -53,8 +53,9 @@ public class PressBakedModel extends AbstractMultipartBakedModel implements Abst
 
     @Override
     protected boolean shouldSkipWorldRendering(@Nullable BlockState state) {
-        // Base запекается в чанк Embeddium/Sodium; BER рендерит только Head
-        return false;
+        // Статика (Base) рендерится движком через инстансинг (MachineRenderers);
+        // в чанк-меш модель не отдаём — иначе двойной рендер.
+        return true;
     }
 
     @Override
@@ -62,6 +63,30 @@ public class PressBakedModel extends AbstractMultipartBakedModel implements Abst
         //? if forge {
         return getQuads(state, side, rand, ModelData.EMPTY, null);
         //?}
+
+        //? if neoforge {
+        /*// 1.21.1 neoforge: чанк-бэкер вызывает 5-arg overload (см. ниже). 3-arg — item/BER hot path.
+        // Зеркалируем forge-логику: ITEM — приоритетные части (Base+Head), WORLD — только Base (translate+filter).
+        if (state == null) {
+            return buildItemQuadsFromRenderParts(side, rand);
+        }
+        BakedModel basePart = parts.get(BASE);
+        if (basePart != null) {
+            List<BakedQuad> partQuads = new ArrayList<>();
+            for (Direction d : Direction.values()) {
+                partQuads.addAll(basePart.getQuads(state, d, rand));
+            }
+            partQuads.addAll(basePart.getQuads(state, null, rand));
+            if (!partQuads.isEmpty()) {
+                List<BakedQuad> translated = ModelHelper.translateQuads(partQuads, 0.5f, 0f, 0.5f);
+                if (side != null) {
+                    return translated.stream().filter(q -> q.getDirection() == side).toList();
+                }
+                return translated;
+            }
+        }
+        return Collections.emptyList();
+        *///?}
 
         //? if fabric {
         /*// ITEM RENDER
@@ -89,17 +114,16 @@ public class PressBakedModel extends AbstractMultipartBakedModel implements Abst
         *///?}
     }
 
-    //? if forge {
+    //? if neoforge {
+    /*// NeoForge 1.21.1: 5-arg overload — вызывается чанк-бэкером. Зеркалируем forge-логику:
+    // ITEM (state == null) — приоритетные части (Base+Head). WORLD — только Base (translate + filter по side); Head — BER.
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
-                                    RandomSource rand, ModelData modelData,
+                                    RandomSource rand, net.neoforged.neoforge.client.model.data.ModelData modelData,
                                     @Nullable net.minecraft.client.renderer.RenderType renderType) {
-        // ITEM RENDER (Инвентарь/Рука)
         if (state == null) {
-            return getItemQuads(side, rand, modelData, renderType);
+            return buildItemQuadsFromRenderParts(side, rand);
         }
-
-        // WORLD RENDER: Base запекается в чанк Embeddium/Sodium - нулевая нагрузка на CPU
         BakedModel basePart = parts.get(BASE);
         if (basePart != null) {
             List<BakedQuad> partQuads = new ArrayList<>();
@@ -115,6 +139,21 @@ public class PressBakedModel extends AbstractMultipartBakedModel implements Abst
                 return translated;
             }
         }
+        return Collections.emptyList();
+    }
+    *///?}
+
+    //? if forge {
+    @Override
+    public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
+                                    RandomSource rand, ModelData modelData,
+                                    @Nullable net.minecraft.client.renderer.RenderType renderType) {
+        // ITEM RENDER (Инвентарь/Рука)
+        if (state == null) {
+            return getItemQuads(side, rand, modelData, renderType);
+        }
+
+        // WORLD RENDER: статика (Base) рендерится движком (инстансинг) — в чанк не отдаём.
         return Collections.emptyList();
     }
 
@@ -203,6 +242,10 @@ public class PressBakedModel extends AbstractMultipartBakedModel implements Abst
         //?}
 
         //? if fabric {
+        /*return super.getParticleIcon();
+        *///?}
+
+        //? if neoforge {
         /*return super.getParticleIcon();
         *///?}
     }

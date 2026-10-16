@@ -1,4 +1,46 @@
 {
+  "alarm.amssiren": {
+    "category": "blocks",
+    "sounds": [
+      "hbm_m:alarm/amssiren"
+    ]
+  },
+  "alarm.beepsiren": {
+    "category": "blocks",
+    "sounds": [
+      "hbm_m:alarm/beepsiren"
+    ]
+  },
+  "alarm.classicsiren": {
+    "category": "blocks",
+    "sounds": [
+      "hbm_m:alarm/classicsiren"
+    ]
+  },
+  "alarm.nostromosiren": {
+    "category": "blocks",
+    "sounds": [
+      "hbm_m:alarm/nostromosiren"
+    ]
+  },
+  "alarm.regularsiren": {
+    "category": "blocks",
+    "sounds": [
+      "hbm_m:alarm/regularsiren"
+    ]
+  },
+  "alarm.stridersiren": {
+    "category": "blocks",
+    "sounds": [
+      "hbm_m:alarm/stridersiren"
+    ]
+  },
+  "alarm.sweepsiren": {
+    "category": "blocks",
+    "sounds": [
+      "hbm_m:alarm/sweepsiren"
+    ]
+  },
   "soyuz.alarm": {
     "category": "blocks",
     "sounds": [
@@ -263,6 +305,19 @@
       "hbm_m:player/vomit"
     ]
   },
+  "tool.gasmaskscrew": {
+    "category": "player",
+    "sounds": ["hbm_m:tool/gasmaskscrew"]
+  },
+  "player.cough": {
+    "category": "player",
+    "sounds": [
+      "hbm_m:player/cough1",
+      "hbm_m:player/cough2",
+      "hbm_m:player/cough3",
+      "hbm_m:player/cough4"
+    ]
+  },
   "tool.repair1": {
     "subtitle": "sounds.hbm_m.subtitle.repair",
     "sounds": [
@@ -372,6 +427,12 @@
       "hbm_m:tool/repair5",
       "hbm_m:tool/repair6",
       "hbm_m:tool/repair7"
+    ]
+  },
+  "tool.upgrade_plug": {
+    "subtitle": "sounds.hbm_m.subtitle.upgrade_plug",
+    "sounds": [
+      "hbm_m:tool/upgrade_plug"
     ]
   },
   "tool.extract1": {
@@ -610,6 +671,36 @@
       "hbm_m:block/switch_on"
     ]
   },
+  "block.broadcast1": {
+    "category": "block",
+    "subtitle": "sounds.hbm_m.subtitle.broadcast",
+    "sounds": [
+      "hbm_m:broadcast1"
+    ]
+  },
+  "block.broadcast2": {
+    "category": "block",
+    "subtitle": "sounds.hbm_m.subtitle.broadcast",
+    "sounds": [
+      "hbm_m:broadcast2"
+    ]
+  },
+  "block.broadcast3": {
+    "category": "block",
+    "subtitle": "sounds.hbm_m.subtitle.broadcast",
+    "sounds": [
+      "hbm_m:broadcast3"
+    ]
+  },
+  "block.broadcast_random": {
+    "category": "block",
+    "subtitle": "sounds.hbm_m.subtitle.broadcast",
+    "sounds": [
+      "hbm_m:broadcast1",
+      "hbm_m:broadcast2",
+      "hbm_m:broadcast3"
+    ]
+  },
   "step.powered": {
     "category": "player",
     "sounds": [
@@ -688,6 +779,16 @@
     "category": "player",
     "sounds": [
       "hbm_m:weapon/disintegration"
+    ]
+  },
+  "music_disc.glass": {
+    "category": "record",
+    "subtitle": "item.hbm_m.music_disc_glass.desc",
+    "sounds": [
+      {
+        "name": "hbm_m:music/record_glass",
+        "stream": true
+      }
     ]
   }
 }

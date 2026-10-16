@@ -23,12 +23,12 @@ public class HighlightBlocksPacket implements S2CPacket {
 
     public static HighlightBlocksPacket fromBytes(FriendlyByteBuf buf) {
         return new HighlightBlocksPacket(
-                buf.readCollection(java.util.ArrayList::new, FriendlyByteBuf::readBlockPos));
+                buf.readCollection(java.util.ArrayList::new, b -> b.readBlockPos()));
     }
 
     @Override
     public void write(FriendlyByteBuf buf) {
-        buf.writeCollection(positions, FriendlyByteBuf::writeBlockPos);
+        buf.writeCollection(positions, (b, pos) -> b.writeBlockPos(pos));
     }
 
     // ── Handler ───────────────────────────────────────────────────────────────
@@ -62,15 +62,15 @@ public class HighlightBlocksPacket implements S2CPacket {
 
         public static OrphanedPhantomsPacket fromBytes(FriendlyByteBuf buf) {
             return new OrphanedPhantomsPacket(
-                    buf.readCollection(java.util.ArrayList::new, FriendlyByteBuf::readBlockPos),
-                    buf.readCollection(java.util.ArrayList::new, FriendlyByteBuf::readBlockPos)
+                    buf.readCollection(java.util.ArrayList::new, b -> b.readBlockPos()),
+                    buf.readCollection(java.util.ArrayList::new, b -> b.readBlockPos())
             );
         }
 
         @Override
         public void write(FriendlyByteBuf buf) {
-            buf.writeCollection(addPositions,    FriendlyByteBuf::writeBlockPos);
-            buf.writeCollection(removePositions, FriendlyByteBuf::writeBlockPos);
+            buf.writeCollection(addPositions,    (b, pos) -> b.writeBlockPos(pos));
+            buf.writeCollection(removePositions, (b, pos) -> b.writeBlockPos(pos));
         }
 
         // ── Handler ───────────────────────────────────────────────────────────
