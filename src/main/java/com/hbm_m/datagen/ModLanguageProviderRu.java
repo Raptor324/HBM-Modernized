@@ -1,18 +1,18 @@
 package com.hbm_m.datagen;
 //? if forge {
 
-import static com.hbm_m.block.ModBlocks.ENABLED_INGOT_BLOCKS;
-import static com.hbm_m.block.ModBlocks.getIngotBlock;
-
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
-import com.hbm_m.item.tags_and_tiers.ModPowders;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.lib.RefStrings;
 
 import dev.architectury.registry.registries.RegistrySupplier;
@@ -29,15 +29,15 @@ public class ModLanguageProviderRu extends LanguageProvider {
     }
 
     private void addIngotPowderTranslations(Set<ResourceLocation> translatedPowders) {
-        for (ModIngots ingot : ModIngots.values()) {
-            if (ModItems.getPowder(ingot) != null) {
-                var powder = ModItems.getPowder(ingot);
-                if (!translatedPowders.contains(powder.getId())) {
-                    add(powder.get(), buildPowderName(ingot, false));
-                }
+        for (ModMaterials mat : ModMaterials.values()) {
+            RegistrySupplier<Item> powder = ModMaterialItems.get(mat, MaterialShape.POWDER);
+            if (powder != null && powder.isPresent() && !translatedPowders.contains(powder.getId())) {
+                add(powder.get(), buildPowderName(mat, false));
             }
-            ModItems.getTinyPowder(ingot).ifPresent(tiny ->
-                    add(tiny.get(), buildPowderName(ingot, true)));
+            RegistrySupplier<Item> tiny = ModMaterialItems.get(mat, MaterialShape.POWDER_TINY);
+            if (tiny != null && tiny.isPresent()) {
+                add(tiny.get(), buildPowderName(mat, true));
+            }
         }
 
         add(ModItems.DUST.get(), "Пыль");
@@ -45,10 +45,10 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModItems.FALLOUT.get(), "Куча радиоактивных осадков");
     }
 
-    private String buildPowderName(ModIngots ingot, boolean tiny) {
-        String base = ingot.getTranslation("ru_ru");
+    private String buildPowderName(ModMaterials mat, boolean tiny) {
+        String base = mat.getTranslation("ru_ru");
         if (base == null || base.isBlank()) {
-            base = formatName(ingot.getName());
+            base = formatName(mat.getId());
         }
 
         String replaced = base.replace("Слиток", "Порошок").replace("слиток", "порошок");
@@ -70,20 +70,20 @@ public class ModLanguageProviderRu extends LanguageProvider {
     }
 
     private void addIngotBlockTranslations(Set<ResourceLocation> translatedBlocks) {
-        for (ModIngots ingot : ModIngots.values()) {
-            if (ENABLED_INGOT_BLOCKS.contains(ingot.getName())) {
-                RegistrySupplier<Block> block = getIngotBlock(ingot);
+        for (ModMaterials mat : ModMaterials.values()) {
+            if (mat.has(MaterialShape.BLOCK)) {
+                RegistrySupplier<Block> block = ModBlocks.getIngotBlock(mat);
                 if (block != null && !translatedBlocks.contains(block.getId())) {
-                    add(block.get(), buildBlockName(ingot));
+                    add(block.get(), buildBlockName(mat));
                 }
             }
         }
     }
 
-    private String buildBlockName(ModIngots ingot) {
-        String base = ingot.getTranslation("ru_ru");
+    private String buildBlockName(ModMaterials mat) {
+        String base = mat.getTranslation("ru_ru");
         if (base == null || base.isBlank()) {
-            base = formatName(ingot.getName());
+            base = formatName(mat.getId());
         }
 
         String replaced = base.replace("Слиток", "Блок").replace("слиток", "блок");
@@ -110,15 +110,19 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("config.hbm_m.category.overlay.tooltip", "Экранные оверлеи (пиксельный эффект, подсветка).");
     }
 
-    @Override
+        @Override
     protected void addTranslations() {
         addConfigTranslations();
 
         // Автоматическая локализация слитков
-        for (ModIngots ingot : ModIngots.values()) {
-            RegistrySupplier<Item> ingotItem = ModItems.getIngot(ingot);
+        // Оверрайды формата ориг. item.ingot_raw.name = "Слиток (%s)" (автоген MAT_STRONTIUM/MAT_NEODYMIUM).
+        Map<ModMaterials, String> ingotOverrides = new LinkedHashMap<>();
+        ingotOverrides.put(ModMaterials.STRONTIUM, "Слиток (Стронций)");
+        ingotOverrides.put(ModMaterials.NEODYMIUM, "Слиток (Неодим)");
+        for (ModMaterials mat : ModMaterials.values()) {
+            RegistrySupplier<Item> ingotItem = ModMaterialItems.get(mat, MaterialShape.INGOT);
             if (ingotItem != null && ingotItem.isPresent()) {
-                String translation = ingot.getTranslation("ru_ru");
+                String translation = ingotOverrides.containsKey(mat) ? ingotOverrides.get(mat) : mat.getTranslation("ru_ru");
                 if (translation != null) {
                     add(ingotItem.get(), translation);
                 }
@@ -127,45 +131,82 @@ public class ModLanguageProviderRu extends LanguageProvider {
 
         Set<ResourceLocation> translatedPowders = new HashSet<>();
 
-        // Автоматическая локализация порошков
-        for (ModPowders powders : ModPowders.values()) {
-            RegistrySupplier<Item> powderItem = ModItems.getPowders(powders);
+        // Автоматическая локализация порошков (ручные оверрайды шести порошков)
+        Map<ModMaterials, String> powderOverrides = new LinkedHashMap<>();
+        powderOverrides.put(ModMaterials.IRON, "Железный порошок");
+        powderOverrides.put(ModMaterials.GOLD, "Золотой порошок");
+        powderOverrides.put(ModMaterials.COAL, "Угольный порошок");
+        powderOverrides.put(ModMaterials.CEMENT, "Цемент");
+        powderOverrides.put(ModMaterials.ALUMINUM, "Алюминиевый порошок");
+        powderOverrides.put(ModMaterials.LIMESTONE, "Известняковый порошок");
+        // Порошки, принятые в единый реестр из ручных регистраций (переводы из ModPowders)
+        powderOverrides.put(ModMaterials.COPPER, "Медный порошок");
+        powderOverrides.put(ModMaterials.DIAMOND, "Алмазная пыль");
+        powderOverrides.put(ModMaterials.EMERALD, "Изумрудная пыль");
+        powderOverrides.put(ModMaterials.LAPIS, "Лазуритовая пыль");
+        powderOverrides.put(ModMaterials.QUARTZ, "Кварцевый порошок");
+        powderOverrides.put(ModMaterials.LITHIUM, "Порошок лития");
+        // Дозарегистрированные полноразмерные порошки (имена 1:1 из ru_RU.lang оригинала)
+        powderOverrides.put(ModMaterials.I131, "Порошок йода-131");
+        powderOverrides.put(ModMaterials.XE135, "Порошок ксенона-135");
+        powderOverrides.put(ModMaterials.CS137, "Порошок цезия-137");
+        powderOverrides.put(ModMaterials.PALEOGENITE, "Порошок палеогенита");
+        powderOverrides.put(ModMaterials.AT209, "Порошок астата-209");
+        // Ориг. item.powder_lanthanium.name = "Лантановый порошок" ("Полустабильный" — только слиток).
+        powderOverrides.put(ModMaterials.LANTHANIUM, "Лантановый порошок");
+        for (Map.Entry<ModMaterials, String> entry : powderOverrides.entrySet()) {
+            RegistrySupplier<Item> powderItem = ModMaterialItems.get(entry.getKey(), MaterialShape.POWDER);
             if (powderItem != null && powderItem.isPresent()) {
-                String translation = powders.getTranslation("ru_ru");
-                if (translation != null) {
-                    add(powderItem.get(), translation);
-                    translatedPowders.add(powderItem.getId());
-                }
+                add(powderItem.get(), entry.getValue());
+                translatedPowders.add(powderItem.getId());
+            }
+        }
+
+        // Tiny-порошки с историческими именами (1:1 из ручных регистраций)
+        Set<ResourceLocation> translatedTinies = new HashSet<>();
+        Map<ModMaterials, String> tinyOverrides = new LinkedHashMap<>();
+        tinyOverrides.put(ModMaterials.COAL, "Маленькая кучка угольной пыли");
+        tinyOverrides.put(ModMaterials.CS137, "Маленькая кучка цезия-137");
+        tinyOverrides.put(ModMaterials.I131, "Маленькая кучка йода-131");
+        tinyOverrides.put(ModMaterials.LITHIUM, "Маленькая кучка лития");
+        tinyOverrides.put(ModMaterials.PALEOGENITE, "Маленькая кучка палеогенита");
+        tinyOverrides.put(ModMaterials.XE135, "Маленькая кучка ксенона-135");
+        tinyOverrides.put(ModMaterials.LANTHANIUM, "Кучка лантанового порошка"); // item.powder_lanthanium_tiny.name
+        for (Map.Entry<ModMaterials, String> entry : tinyOverrides.entrySet()) {
+            RegistrySupplier<Item> tinyItem = ModMaterialItems.get(entry.getKey(), MaterialShape.POWDER_TINY);
+            if (tinyItem != null && tinyItem.isPresent()) {
+                add(tinyItem.get(), entry.getValue());
+                translatedTinies.add(tinyItem.getId());
             }
         }
 
         // Автоматическая локализация порошков из слитков
-        for (ModIngots ingot : ModIngots.values()) {
-            RegistrySupplier<Item> powder = ModItems.getPowder(ingot);
+        for (ModMaterials mat : ModMaterials.values()) {
+            RegistrySupplier<Item> powder = ModMaterialItems.get(mat, MaterialShape.POWDER);
             if (powder != null && powder.isPresent() && !translatedPowders.contains(powder.getId())) {
-                add(powder.get(), buildPowderName(ingot, false));
+                add(powder.get(), buildPowderName(mat, false));
             }
-            ModItems.getTinyPowder(ingot).ifPresent(tiny -> {
-                if (tiny != null && tiny.isPresent()) {
-                    add(tiny.get(), buildPowderName(ingot, true));
-                }
-            });
+            RegistrySupplier<Item> tiny = ModMaterialItems.get(mat, MaterialShape.POWDER_TINY);
+            if (tiny != null && tiny.isPresent() && !translatedTinies.contains(tiny.getId())) {
+                add(tiny.get(), buildPowderName(mat, true));
+            }
         }
 
         // DEV / Боеприпасы / Порошки (из старого if ("ru_ru".equals(this.locale)))
+        // Имена — дословно из ru_RU.lang оригинала (item.powder_*.name).
         add(ModItems.POWDER_SAWDUST.get(), "Опилки");
-        add(ModItems.POWDER_YELLOWCAKE.get(), "Уранинит (порошок)");
-        add(ModItems.POWDER_BALEFIRE.get(), "Порошок белфайра");
-        add(ModItems.POWDER_PALEOGENITE.get(), "Порошок палеогенита");
+        add(ModItems.POWDER_YELLOWCAKE.get(), "Yellowcake");
+        add(ModItems.POWDER_BALEFIRE.get(), "Термоядерный пепел");
         add(ModItems.POWDER_THERMITE.get(), "Термит");
         add(ModItems.POWDER_FERTILIZER.get(), "Удобрение");
         add(ModItems.POWDER_FLUX.get(), "Флюс");
-        add(ModItems.POWDER_MAGIC.get(), "Волшебный порошок");
-        add(ModItems.POWDER_ICE.get(), "Порошковый лёд");
-        add(ModItems.POWDER_SPARK_MIX.get(), "Искровая смесь");
+        add(ModItems.POWDER_MAGIC.get(), "Измельчённое зачарование");
+        add(ModItems.POWDER_ICE.get(), "Крио-порошок");
+        add(ModItems.POWDER_SPARK_MIX.get(), "Спарк-смесь");
         add(ModItems.POWDER_SEMTEX_MIX.get(), "Смесь семтекса");
-        add(ModItems.POWDER_DESH_READY.get(), "Готовый деш (порошок)");
-        add(ModItems.POWDER_COLTAN.get(), "Колтан (порошок)");
+        add(ModItems.POWDER_DESH_READY.get(), "ГотоваяДеш™ смесь");
+        // Оригинал: 4310 powder_coltan_ore "Измельчённый колтан" / 4311 powder_coltan "Очищенный танталит".
+        add(ModItems.POWDER_COLTAN.get(), "Измельчённый колтан");
         add(ModItems.TURRET_AMMO.get(), "Патроны для турели");
         add(ModItems.AMMO_9MM_SP.get(), "9-мм патрон (мягкая пуля)");
         add(ModItems.AMMO_9MM_FMJ.get(), "9-мм патрон (оболочечная пуля)");
@@ -191,15 +232,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModItems.AMMO_FLAME_DIESEL.get(), "Дизельное топливо (огнемёт)");
         add(ModItems.MISSILE_FUSELAGE.get(), "Фюзеляж ракеты");
         add(ModItems.MISSILE_CHIP.get(), "Чип наведения ракеты");
-
-        // =========================================================================
-        // СЮДА ВСТАВЛЯЕТСЯ ВЕСЬ КОД ИЗ СТАРЫХ МЕТОДОВ ПО ПОРЯДКУ:
-        // 1. Все строки изнутри addTranslationsRuRuPart1()
-        // 2. Все строки изнутри addTranslationsRuRuPart2()
-        // 3. Все строки изнутри addTranslationsRuRuPart3()
-        // 4. Все строки изнутри addTranslationsRuRuPart4()
-        // (Сами объявления методов private void addTranslationsRuRuPartX() не нужны)
-        // =========================================================================
 
         // КРЕАТИВНЫЕ ВКЛАДКИ
         add("itemGroup.hbm_m.ntm_resources_tab", "Слитки и ресурсы NTM");
@@ -276,6 +308,22 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("item.hbm_m.missile_drill", "Ракета Drill");
         add("item.hbm_m.missile_shuttle", "Шаттл-ракета");
         add("item.hbm_m.missile_nuclear", "Ядерная ракета Atlas");
+        // Warheads (имена 1:1 из item.warhead_* оригинального ru_RU.lang)
+        add(ModItems.WARHEAD_BUSTER_LARGE.get(), "Большая противобункерная боеголовка");
+        add(ModItems.WARHEAD_BUSTER_MEDIUM.get(), "Средняя противобункерная боеголовка");
+        add(ModItems.WARHEAD_BUSTER_SMALL.get(), "Малая противобункерная боеголовка");
+        add(ModItems.WARHEAD_CLUSTER_LARGE.get(), "Большая кассетная боеголовка");
+        add(ModItems.WARHEAD_CLUSTER_MEDIUM.get(), "Средняя кассетная боеголовка");
+        add(ModItems.WARHEAD_CLUSTER_SMALL.get(), "Малая кассетная боеголовка");
+        add(ModItems.WARHEAD_GENERIC_LARGE.get(), "Большая боеголовка");
+        add(ModItems.WARHEAD_GENERIC_MEDIUM.get(), "Средняя боеголовка");
+        add(ModItems.WARHEAD_GENERIC_SMALL.get(), "Малая боеголовка");
+        add(ModItems.WARHEAD_INCENDIARY_LARGE.get(), "Большая зажигательная боеголовка");
+        add(ModItems.WARHEAD_INCENDIARY_MEDIUM.get(), "Средняя зажигательная боеголовка");
+        add(ModItems.WARHEAD_INCENDIARY_SMALL.get(), "Малая зажигательная боеголовка");
+        add(ModItems.WARHEAD_MIRV.get(), "Термоядерная боеголовка");
+        add(ModItems.WARHEAD_NUCLEAR.get(), "Ядерная боеголовка");
+        add(ModItems.WARHEAD_VOLCANO.get(), "Тектоническая боеголовка");
         add("item.hbm_m.missile_nuclear_cluster", "Кассетная ядерная ракета");
         add("item.hbm_m.missile_volcano", "Ракета Volcano");
         add("item.hbm_m.missile_doomsday", "Ракета Doomsday");
@@ -438,16 +486,86 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModItems.BATTERY_SPARK_CELL_10000.get(), "Устойчивый пространственно-временной спарк кристалл");
         add(ModItems.BATTERY_SPARK_CELL_POWER.get(), "Абсурдный физический спарк блок накопления энергии");
 
-        add(ModItems.WIRE_RED_COPPER.get(), "Провод из красной меди");
-        add(ModItems.WIRE_COPPER.get(), "Медный провод");
-        add(ModItems.WIRE_ALUMINIUM.get(), "Алюминиевый провод");
-        add(ModItems.WIRE_GOLD.get(), "Золотой провод");
-        add(ModItems.WIRE_TUNGSTEN.get(), "Вольфрамовый провод");
-        add(ModItems.WIRE_MAGNETIZED_TUNGSTEN.get(), "Провод из намагниченного вольфрама");
+        // Ориг. wire_fine meta31 (MAT_MINGRADE, ru "Красная медь").
+        add(ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.WIRE), "Провод (Красная медь)");
+        add(ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.WIRE_DENSE), "Плотный провод (Красная медь)");
+        add(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.WIRE), "Медный провод");
+        add(ModMaterialItems.item(ModMaterials.ALUMINIUM, MaterialShape.WIRE), "Алюминиевый провод");
+        add(ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.WIRE), "Золотой провод");
+        add(ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.WIRE), "Вольфрамовый провод");
+        add(ModMaterialItems.item(ModMaterials.MAGNETIZED_TUNGSTEN, MaterialShape.WIRE), "Провод из намагниченного вольфрама");
         add(ModItems.WIRE_FINE.get(), "Железный провод");
-        add(ModItems.WIRE_CARBON.get(), "Провод из свинца");
-        add(ModItems.WIRE_SCHRABIDIUM.get(), "Шрабидиевый провод");
-        add(ModItems.WIRE_ADVANCED_ALLOY.get(), "Провод из продвинутого сплава");
+        add(ModMaterialItems.item(ModMaterials.CARBON, MaterialShape.WIRE), "Провод (Углерод)");
+        add(ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.WIRE), "Шрабидиевый провод");
+        add(ModMaterialItems.item(ModMaterials.ADVANCED_ALLOY, MaterialShape.WIRE), "Провод из продвинутого сплава");
+        // Дозарегистрированные провода (ориг. wire_fine, 4545: PB/ZR)
+        add(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.WIRE), "Свинцовый провод");
+        add(ModMaterialItems.item(ModMaterials.ZIRCONIUM, MaterialShape.WIRE), "Циркониевый провод");
+        // Дозарегистрированные плотные провода (ориг. wire_dense, 4546)
+        add(ModMaterialItems.item(ModMaterials.SCHRABIDATE, MaterialShape.WIRE_DENSE), "Плотный шрабидатовый провод");
+        add(ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.WIRE_DENSE), "Плотный вольфрамовый провод");
+        add(ModMaterialItems.item(ModMaterials.NEODYMIUM, MaterialShape.WIRE_DENSE), "Плотный неодимовый провод");
+        add(ModMaterialItems.item(ModMaterials.NIOBIUM, MaterialShape.WIRE_DENSE), "Плотный ниобиевый провод");
+        add(ModMaterialItems.item(ModMaterials.STAR_METAL, MaterialShape.WIRE_DENSE), "Плотный провод из звёздного металла");
+        add(ModMaterialItems.item(ModMaterials.BSCCO, MaterialShape.WIRE_DENSE), "Плотный BSCCO-провод");
+        add(ModMaterialItems.item(ModMaterials.MAGNETIZED_TUNGSTEN, MaterialShape.WIRE_DENSE), "Плотный провод из намагниченного вольфрама");
+        add(ModMaterialItems.item(ModMaterials.DNT, MaterialShape.WIRE_DENSE), "Плотный провод (Динейтроний)"); // hbmmat.dineutronium
+        // Дозарегистрированные плотные провода (формат ориг. item.wire_dense.name = "Плотный провод (%s)")
+        add(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.WIRE_DENSE), "Плотный стальной провод");
+        add(ModMaterialItems.item(ModMaterials.ADVANCED_ALLOY, MaterialShape.WIRE_DENSE), "Плотный провод из продвинутого сплава");
+        add(ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.WIRE_DENSE), "Плотный шрабидиевый провод");
+        add(ModMaterialItems.item(ModMaterials.SATURNITE, MaterialShape.WIRE_DENSE), "Плотный сатурнитовый провод");
+        add(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.WIRE_DENSE), "Плотный свинцовый провод");
+        add(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.WIRE_DENSE), "Плотный титановый провод");
+        add(ModMaterialItems.item(ModMaterials.COMBINE_STEEL, MaterialShape.WIRE_DENSE), "Плотный провод из Стали Альянса");
+        add(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.WIRE_DENSE), "Плотный железный провод");
+        add(ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.WIRE_DENSE), "Плотный золотой провод");
+        add(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.WIRE_DENSE), "Плотный медный провод");
+        add(ModMaterialItems.item(ModMaterials.ALUMINIUM, MaterialShape.WIRE_DENSE), "Плотный алюминиевый провод");
+        // Стальной провод (ориг. wire_fine, 4545/30 MAT_STEEL; формат ориг. "Провод (%s)")
+        add(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.WIRE), "Провод (Сталь)");
+        // Провода без аналога в оригинале (используются в recipes Arc Welder).
+        add(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.WIRE), "Провод (Титан)");
+        add(ModMaterialItems.item(ModMaterials.SATURNITE, MaterialShape.WIRE), "Провод (Сатурнит)");
+        add(ModMaterialItems.item(ModMaterials.COMBINE_STEEL, MaterialShape.WIRE), "Провод (Сталь Альянса)");
+        add(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.WIRE), "Провод (Железо)");
+        // Дозарегистрированные литые пластины (ориг. plate_cast, 4531; формат ориг. "Литая пластина (%s)")
+        add(ModMaterialItems.item(ModMaterials.SCHRABIDATE, MaterialShape.PLATE_CAST), "Шрабидатовая литая пластина");
+        add(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.PLATE_CAST), "Свинцовая литая пластина");
+        add(ModMaterialItems.item(ModMaterials.FERROURANIUM, MaterialShape.PLATE_CAST), "Ферроурановая литая пластина");
+        add(ModMaterialItems.item(ModMaterials.WEAPONSTEEL, MaterialShape.PLATE_CAST), "Литая пластина из боевой стали");
+        add(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_CAST), "Литая пластина (Сталь)");
+        add(ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.PLATE_CAST), "Литая пластина (Шрабидий)");
+        add(ModMaterialItems.item(ModMaterials.SATURNITE, MaterialShape.PLATE_CAST), "Литая пластина (Сатурнит)");
+        add(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE_CAST), "Литая пластина (Титан)");
+        add(ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.PLATE_CAST), "Литая пластина (Вольфрам)");
+        add(ModMaterialItems.item(ModMaterials.DESH, MaterialShape.PLATE_CAST), "Литая пластина (Деш)");
+        add(ModMaterialItems.item(ModMaterials.DURA_STEEL, MaterialShape.PLATE_CAST), "Литая пластина (Быстрорежущая сталь)");
+        add(ModMaterialItems.item(ModMaterials.ZIRCONIUM, MaterialShape.PLATE_CAST), "Литая пластина (Цирконий)");
+        add(ModMaterialItems.item(ModMaterials.OSMIRIDIUM, MaterialShape.PLATE_CAST), "Литая пластина (Осмиридий)");
+        add(ModMaterialItems.item(ModMaterials.TCALLOY, MaterialShape.PLATE_CAST), "Литая пластина (Технециевая сталь)");
+        add(ModMaterialItems.item(ModMaterials.CDALLOY, MaterialShape.PLATE_CAST), "Литая пластина (Кадмиевая сталь)");
+        add(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE_CAST), "Литая пластина (Железо)");
+        add(ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.PLATE_CAST), "Литая пластина (Золото)");
+        add(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE_CAST), "Литая пластина (Медь)");
+        add(ModMaterialItems.item(ModMaterials.ALUMINIUM, MaterialShape.PLATE_CAST), "Литая пластина (Алюминий)");
+        add(ModMaterialItems.item(ModMaterials.CMB, MaterialShape.PLATE_CAST), "Литая пластина (Сталь Альянса)");
+        add(ModMaterialItems.item(ModMaterials.ABRONZE, MaterialShape.PLATE_CAST), "Литая пластина (Мышьяковая бронза)");
+        add(ModMaterialItems.item(ModMaterials.BBRONZE, MaterialShape.PLATE_CAST), "Литая пластина (Висмутовая бронза)");
+        add(ModMaterialItems.item(ModMaterials.STAR_METAL, MaterialShape.PLATE_CAST), "Литая пластина (Звёздный металл)");
+        add(ModMaterialItems.item(ModMaterials.ALLOY, MaterialShape.PLATE_CAST), "Литая пластина (Продвинутый сплав)");
+        // Сварные пластины (ориг. plate_welded, 4532; формат ориг. "Сваренная пластина (%s)")
+        add(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_WELDED), "Сваренная пластина (Сталь)");
+        add(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE_WELDED), "Сваренная пластина (Титан)");
+        add(ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.PLATE_WELDED), "Сваренная пластина (Вольфрам)");
+        add(ModMaterialItems.item(ModMaterials.ZIRCONIUM, MaterialShape.PLATE_WELDED), "Сваренная пластина (Цирконий)");
+        add(ModMaterialItems.item(ModMaterials.OSMIRIDIUM, MaterialShape.PLATE_WELDED), "Сваренная пластина (Осмиридий)");
+        add(ModMaterialItems.item(ModMaterials.TCALLOY, MaterialShape.PLATE_WELDED), "Сваренная пластина (Технециевая сталь)");
+        add(ModMaterialItems.item(ModMaterials.CDALLOY, MaterialShape.PLATE_WELDED), "Сваренная пластина (Кадмиевая сталь)");
+        add(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE_WELDED), "Сваренная пластина (Железо)");
+        add(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE_WELDED), "Сваренная пластина (Медь)");
+        add(ModMaterialItems.item(ModMaterials.ALUMINIUM, MaterialShape.PLATE_WELDED), "Сваренная пластина (Алюминий)");
+        add(ModMaterialItems.item(ModMaterials.CMB, MaterialShape.PLATE_WELDED), "Сваренная пластина (Сталь Альянса)");
 
         add(ModItems.BATTERY_SCHRABIDIUM.get(), "Шрабидиевая батарейка");
 
@@ -707,7 +825,43 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("item.hbm_m.entity_mob_gold_creeper_spawn_egg", "Яйцо призыва золотого крипера");
         add("entity.hbm_m.entity_mob_nuclear_creeper", "Ядерный крипер");
         add("item.hbm_m.entity_mob_nuclear_creeper_spawn_egg", "Яйцо призыва ядерного крипера");
-        add("death.attack.taint", "%1$s умер от невероятного количества опухолей.");
+        add("entity.hbm_m.bot_prime_body", "Сегмент BOT Prime");
+        add("entity.hbm_m.bot_prime_head", "BOT Prime");
+        add("entity.hbm_m.digamma_spear", "Копьё дигаммы");
+        add("entity.hbm_m.maskman", "Человек в маске");
+        add("entity.hbm_m.rad_beast", "РАД-зверь");
+        add("entity.hbm_m.ufo", "НЛО");
+        add("gui.hbm_m.jei.rbmk_disassembly", "Разборка ТВЭЛ РБМК");
+        add("gui.hbm_m.jei.rbmk_outgasser", "Нейтронная активация РБМК");
+        add("gui.hbm_m.jei.rbmk_waste_decay", "Распад ядерных отходов");
+        add("item.hbm_m.bot_prime_spawn_egg", "Яйцо призыва BOT Prime");
+        add("item.hbm_m.circuit_numitron", "Нумитронная схема");
+        add("item.hbm_m.maskman_spawn_egg", "Яйцо призыва человека в маске");
+        add("item.hbm_m.music_disc_ch", "Пластинка: Швейцария");
+        add("item.hbm_m.music_disc_ch.desc", "Швейцарский псалом");
+        add("item.hbm_m.music_disc_ch.flavour", "Great since 1291 , Motherland of the Dev FuchsDev");
+        add("item.hbm_m.oil_tar_coal", "Каменноугольная смола");
+        add("item.hbm_m.oil_tar_crack", "Крекинговая смола");
+        add("item.hbm_m.oil_tar_crude", "Сырая нефтяная смола");
+        add("item.hbm_m.oil_tar_paraffin", "Парафин");
+        add("item.hbm_m.oil_tar_wax", "Хлорированный смоляной воск");
+        add("item.hbm_m.oil_tar_wood", "Древесная смола");
+        add("item.hbm_m.rad_beast_spawn_egg", "Яйцо призыва РАД-зверя");
+        add("item.hbm_m.rocket_himars_single", "Ракета HIMARS (одиночная)");
+        add("item.hbm_m.rocket_himars_single_tb", "Ракета HIMARS (одиночная термобарическая)");
+        add("item.hbm_m.rocket_turret_demo", "Ракета турели (фугасная)");
+        add("item.hbm_m.rocket_turret_heat", "Ракета турели (кумулятивная)");
+        add("item.hbm_m.rocket_turret_inc", "Ракета турели (зажигательная)");
+        add("item.hbm_m.rocket_turret_phosphorus", "Ракета турели (фосфорная)");
+        add("item.hbm_m.ufo_spawn_egg", "Яйцо призыва НЛО");
+        add("item.hbm_m.upgrade_5g", "Улучшение 5G");
+        add("item.hbm_m.upgrade_screm", "Кричащее улучшение");
+        add("msg.hbm_m.rbmk_console.linked_invalid", "Колонна РБМК не найдена в %s, %s, %s - нажмите ПКМ на колонну снова");
+        add("sounds.hbm_m.subtitle.d_flash", "Вспышка дигаммы");
+        add("sounds.hbm_m.subtitle.rbmk_az5_cover", "Крышка АЗ-5 откидывается");
+        add("sounds.hbm_m.subtitle.rbmk_explosion", "Реактор взрывается");
+        add("sounds.hbm_m.subtitle.steam_engine_operate", "Выпуск пара");
+        
 // MULTIBLOCK DOORS
         add(ModBlocks.LARGE_VEHICLE_DOOR.get(), "Дверь для крупногабаритного транспорта");
         add(ModBlocks.ROUND_AIRLOCK_DOOR.get(), "Круглая воздушная дверь");
@@ -756,7 +910,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("container.hbm_m.nuke_boy", "Ядерная бомба 'Малыш'");
         add("container.hbm_m.nuke_mike", "Ядерная бомба 'Айви Майк'");
         add("container.hbm_m.nuke_tsar", "Царь-бомба");
-        add(ModItems.EARLY_EXPLOSIVE_LENSES.get(), "Взрывные линзы первого поколения");
         add(ModItems.EXPLOSIVE_LENSES.get(), "Взрывные линзы");
         add(ModBlocks.NUKE_FLEIJA.get(), "Ф.Л.Е.Й.Д.Ж.А.");
         add("container.hbm_m.nuke_fleija", "Ф.Л.Е.Й.Д.Ж.А.");
@@ -1081,9 +1234,16 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModItems.COIL_GOLD.get(), "Медная катушка");
         add(ModItems.DUST.get(), "Кучка пыли");
         add(ModItems.DUST_TINY.get(), "Маленькая кучка пыли");
-        add(ModItems.COAL_POWDER_TINY.get(), "Маленькая кучка угольной пыли");
-        add(ModItems.SCRAP.get(), "Мусор");
-        add(ModItems.BILLET_PLUTONIUM.get(), "Заготовка плутония");
+        // 4375 fallout, item.fallout.name оригинала (прошлый add лежал в никогда
+        // не вызывавшемся addIngotPowderTranslations — ключа в lang не было).
+        add(ModItems.FALLOUT.get(), "Куча радиоактивных осадков");
+        add(ModMaterialItems.item(ModMaterials.SCRAP, MaterialShape.SCRAP), "Мусор");
+        // Литейные отходы (порт ItemScraps, 4765; имена из таблицы ModMaterialItems)
+        for (com.hbm_m.item.material.ModMaterialItems.ScrapEntry scrap : com.hbm_m.item.material.ModMaterialItems.scrapEntries()) {
+            Item scrapItem = com.hbm_m.item.material.ModMaterialItems.scrapItem(scrap.mat());
+            if (scrapItem != null) add(scrapItem, scrap.ru());
+        }
+        add(ModMaterialItems.item(ModMaterials.PLUTONIUM, MaterialShape.BILLET), "Заготовка плутония");
         add("item.hbm_m.fluid_barrel", "Жидкостная бочка: %s");
         add("item.hbm_m.fluid_barrel.empty", "Пустая бочка для жидкости");
         add("item.hbm_m.fluid_barrel_infinite", "Бесконечная жидкостная бочка");
@@ -1095,7 +1255,8 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModItems.PIPE_TUNGSTEN.get(), "Вольфрамовая труба");
         add(ModItems.PIPE_TITANIUM.get(), "Титановая труба");
         add(ModItems.PIPE_ALUMINUM.get(), "Алюминиевая труба");
-        add(ModItems.PIPE_DURA_STEEL.get(), "Труба из прочной стали");
+        add(ModItems.PIPE_DURA_STEEL.get(), "Труба (Быстрорежущая сталь)");
+        
         add("item.hbm_m.fluid_identifier", "Мульти-жидкостный идентификатор: %s");
         add("item.hbm_m.fluid_identifier.none", "Мульти-жидкостный идентификатор");
         add("item.hbm_m.fluid_identifier.info", "Жидкостный идентификатор для:");
@@ -1150,8 +1311,152 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModItems.BLADE_TITANIUM.get(), "Титановые лезвия");
         add(ModItems.BLADE_ALLOY.get(), "Лезвия из продвинутого сплава");
         add(ModItems.BORAX.get(), "Бура");
+        // Заглушки диапазона вкладки Parts (id 4098–4500, раздел C отчёта parts_tab_report.md)
+        add(ModItems.INGOT_HES.get(), "Слиток высокообогащённого шрабидиевого топлива");
+        add(ModItems.INGOT_LES.get(), "Слиток низкообогащённого шрабидиевого топлива");
+        add(ModMaterialItems.item(ModMaterials.LES_FUEL, MaterialShape.BILLET), "Брикет низкообогащённого шрабидиевого топлива");
+        add(ModMaterialItems.item(ModMaterials.LES_FUEL, MaterialShape.NUGGET), "Самородок низкообогащённого шрабидиевого топлива");
+        // Ориг. ingot_raw = "Слиток (%s)" (формат + имя материала hbmmat.*).
+        add(ModItems.INGOT_REDSTONE.get(), "Слиток (Редстоун)");
+        add(ModItems.INGOT_BORAX.get(), "Слиток (Бура)");
+        add(ModItems.INGOT_SODIUM.get(), "Слиток (Натрий)");
+        add(ModItems.INGOT_SLAG.get(), "Слиток (Шлак)");
+        add(ModItems.COAL_COKE.get(), "Угольный кокс");
+        add(ModItems.LIGNITE_COKE.get(), "Бурый кокс");
+        add(ModItems.COAL_BRIQUETTE.get(), "Брикет угля");
+        add(ModItems.LIGNITE_BRIQUETTE.get(), "Брикет бурого угля");
+        add(ModItems.SAWDUST_BRIQUETTE.get(), "Брикет древесных опилок");
+        add(ModItems.NITER.get(), "Селитра");
+        // Ориг. 4311 powder_coltan = "Очищенный танталит".
+        add(ModItems.POWDER_COLTAN_PURE.get(), "Очищенный танталит");
+        add(ModItems.POWDER_TEKTITE.get(), "Порошок тектита");
+        add(ModItems.POWDER_IMPURE_OSMIRIDIUM.get(), "Порошок загрязнённого осмиридия");
+        add(ModItems.POWDER_CHLOROPHYTE.get(), "Хлорофитовый порошок");
+        add(ModItems.POWDER_TCALLOY.get(), "Порошок технециевой стали");
+        add(ModItems.POWDER_POISON.get(), "Ядовитый порошок");
+        add(ModItems.MOONSTONE.get(), "Лунный камень");
+        add(ModItems.LITHIUM.get(), "Куб лития");
+        add(ModItems.BEDROCK_ORE_BASE.get(), "Необработанная бедроковая руда");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_COAL.get(), "Фрагмент бедрок-руды (Уголь)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_LIGNITE.get(), "Фрагмент бедрок-руды (Лигнит)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_IRON.get(), "Фрагмент бедрок-руды (Железо)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_GOLD.get(), "Фрагмент бедрок-руды (Золото)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_REDSTONE.get(), "Фрагмент бедрок-руды (Красный камень)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_BAUXITE.get(), "Фрагмент бедрок-руды (Боксит)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_CRYOLITE.get(), "Фрагмент бедрок-руды (Криолит)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_URANIUM.get(), "Фрагмент бедрок-руды (Уран)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_U238.get(), "Фрагмент бедрок-руды (Уран-238)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_PO210.get(), "Фрагмент бедрок-руды (Полоний-210)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_TC99.get(), "Фрагмент бедрок-руды (Технеций-99)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_TITANIUM.get(), "Фрагмент бедрок-руды (Титан)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_TUNGSTEN.get(), "Фрагмент бедрок-руды (Вольфрам)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_ALUMINIUM.get(), "Фрагмент бедрок-руды (Алюминий)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_BISMUTH.get(), "Фрагмент бедрок-руды (Висмут)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_NEODYMIUM.get(), "Фрагмент бедрок-руды (Неодим)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_NIOBIUM.get(), "Фрагмент бедрок-руды (Ниобий)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_BERYLLIUM.get(), "Фрагмент бедрок-руды (Бериллий)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_COBALT.get(), "Фрагмент бедрок-руды (Кобальт)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_BORON.get(), "Фрагмент бедрок-руды (Бор)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_BORAX.get(), "Фрагмент бедрок-руды (Бура)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_ZIRCONIUM.get(), "Фрагмент бедрок-руды (Цирконий)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_SODIUM.get(), "Фрагмент бедрок-руды (Натрий)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_STRONTIUM.get(), "Фрагмент бедрок-руды (Стронций)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_LITHIUM.get(), "Фрагмент бедрок-руды (Литий)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_SULFUR.get(), "Фрагмент бедрок-руды (Сера)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_FLUORITE.get(), "Фрагмент бедрок-руды (Флюорит)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_CHLOROCALCITE.get(), "Фрагмент бедрок-руды (Хлоркальцит)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_CINNABAR.get(), "Фрагмент бедрок-руды (Киноварь)");
+
+        add("item.hbm_m.bedrock_ore.grade.base.name", "Бедроковая руда (%s)");
+        add("item.hbm_m.bedrock_ore.grade.base_roasted.name", "Обожжённая бедроковая руда (%s)");
+        add("item.hbm_m.bedrock_ore.grade.base_washed.name", "Промытая бедроковая руда (%s)");
+        add("item.hbm_m.bedrock_ore.grade.primary.name", "Бедроковая руда (%s), первичная фракция");
+        add("item.hbm_m.bedrock_ore.grade.primary_roasted.name", "Бедроковая руда (%s), обожжённая первичная фракция");
+        add("item.hbm_m.bedrock_ore.grade.primary_sulfuric.name", "Бедроковая руда (%s), серная первичная фракция");
+        add("item.hbm_m.bedrock_ore.grade.primary_nosulfuric.name", "Бедроковая руда (%s), отделённая серная первичная фракция");
+        add("item.hbm_m.bedrock_ore.grade.primary_solvent.name", "Бедроковая руда (%s), растворённая первичная фракция");
+        add("item.hbm_m.bedrock_ore.grade.primary_nosolvent.name", "Бедроковая руда (%s), отделённая растворенная первичная фракция");
+        add("item.hbm_m.bedrock_ore.grade.primary_rad.name", "Бедроковая руда (%s), очищенная первичная фракция");
+        add("item.hbm_m.bedrock_ore.grade.primary_norad.name", "Бедроковая руда (%s), отделённая очищенная первичная фракция");
+        add("item.hbm_m.bedrock_ore.grade.primary_first.name", "Бедроковая руда (%s), первичная фракция, большой вес");
+        add("item.hbm_m.bedrock_ore.grade.primary_second.name", "Бедроковая руда (%s), первичная фракция, малый вес");
+        add("item.hbm_m.bedrock_ore.grade.crumbs.name", "Куски бедроковой руды (%s)");
+        add("item.hbm_m.bedrock_ore.grade.sulfuric_byproduct.name", "Бедроковая руда (%s), серная побочка");
+        add("item.hbm_m.bedrock_ore.grade.sulfuric_roasted.name", "Бедроковая руда (%s), обожжённая серная побочка");
+        add("item.hbm_m.bedrock_ore.grade.sulfuric_arc.name", "Бедроковая руда (%s), переплавленная серная побочка");
+        add("item.hbm_m.bedrock_ore.grade.sulfuric_washed.name", "Бедроковая руда (%s), промытая серная побочка");
+        add("item.hbm_m.bedrock_ore.grade.solvent_byproduct.name", "Бедроковая руда (%s), растворённая побочка");
+        add("item.hbm_m.bedrock_ore.grade.solvent_roasted.name", "Бедроковая руда (%s), обожжённая растворенная побочка");
+        add("item.hbm_m.bedrock_ore.grade.solvent_arc.name", "Бедроковая руда (%s), переплавленная растворенная побочка");
+        add("item.hbm_m.bedrock_ore.grade.solvent_washed.name", "Бедроковая руда (%s), промытая растворенная побочка");
+        add("item.hbm_m.bedrock_ore.grade.rad_byproduct.name", "Бедроковая руда (%s), очищенная побочка");
+        add("item.hbm_m.bedrock_ore.grade.rad_roasted.name", "Бедроковая руда (%s), обожжённая очищенная побочка");
+        add("item.hbm_m.bedrock_ore.grade.rad_arc.name", "Бедроковая руда (%s), переплавленная очищенная побочка");
+        add("item.hbm_m.bedrock_ore.grade.rad_washed.name", "Бедроковая руда (%s), промытая очищенная побочка");
+        add("item.hbm_m.bedrock_ore.trait.arc", "§6Дуговая плавка");
+        add("item.hbm_m.bedrock_ore.trait.centrifuged", "§9Центрифугированный");
+        add("item.hbm_m.bedrock_ore.trait.rad", "§aОбработанный высокоэффективным растворителем");
+        add("item.hbm_m.bedrock_ore.trait.roasted", "§eОбжиг в коксовой печи");
+        add("item.hbm_m.bedrock_ore.trait.solvent", "§fОбработанный растворителем");
+        add("item.hbm_m.bedrock_ore.trait.sulfuric", "§6Обработанный серной кислотой");
+        add("item.hbm_m.bedrock_ore.trait.washed", "§bПромытый в окислителе водой");
+        add("item.hbm_m.bedrock_ore.type.actinide.name", "Актинидная");
+        add("item.hbm_m.bedrock_ore.type.crystal.name", "Кристаллическая");
+        add("item.hbm_m.bedrock_ore.type.heavy.name", "Тяжёлая металлическая");
+        add("item.hbm_m.bedrock_ore.type.light.name", "Лёгкая металлическая");
+        add("item.hbm_m.bedrock_ore.type.nonmetal.name", "Неметаллическая");
+        add("item.hbm_m.bedrock_ore.type.rare.name", "Редкоземельная");
+        add("item.hbm_m.ore_density_scanner.verypoor", "Очень бедный");
+        add("item.hbm_m.ore_density_scanner.poor", "Бедный");
+        add("item.hbm_m.ore_density_scanner.low", "Низкий");
+        add("item.hbm_m.ore_density_scanner.moderate", "Средний");
+        add("item.hbm_m.ore_density_scanner.high", "Высокий");
+        add("item.hbm_m.ore_density_scanner.veryhigh", "Очень высокий");
+        add("item.hbm_m.ore_density_scanner.excellent", "Избыток");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_SILICON.get(), "Фрагмент бедрок-руды (Silicon)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_RARE_EARTH.get(), "Фрагмент бедрок-руды (Rare Earth)");
+        // Дозарегистрированные 13 фрагментов бедрок-руды
+        add(ModItems.BEDROCK_ORE_FRAGMENT_DIAMOND.get(), "Фрагмент бедрок-руды (Diamond)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_THORIUM.get(), "Фрагмент бедрок-руды (Thorium)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_RA226.get(), "Фрагмент бедрок-руды (Radium-226)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_COPPER.get(), "Фрагмент бедрок-руды (Copper)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_LEAD.get(), "Фрагмент бедрок-руды (Lead)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_TANTALIUM.get(), "Фрагмент бедрок-руды (Tantalium)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_EMERALD.get(), "Фрагмент бедрок-руды (Emerald)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_LANTHANIUM.get(), "Фрагмент бедрок-руды (Lanthanium)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_SODALITE.get(), "Фрагмент бедрок-руды (Sodalite)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_KNO.get(), "Фрагмент бедрок-руды (KNO)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_PHOSPHORUS.get(), "Фрагмент бедрок-руды (Phosphorus)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_MOLYSITE.get(), "Фрагмент бедрок-руды (Molysite)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_ASBESTOS.get(), "Фрагмент бедрок-руды (Asbestos)");
+        // Прочие дозарегистрированные предметы Parts
+        add(ModItems.POWDER_POWER.get(), "Энерго-порошок");   // item.powder_power.name оригинала
+        add(ModItems.FULLERENE.get(), "Фуллерен");            // item.powder_ash.fullerene.name оригинала
+        add(ModItems.CRYOLITE_CHUNK.get(), "Кусок криолита"); // item.chunk_ore.cryolite.name оригинала
         add(ModItems.BALL_TNT.get(), "Взрывчатка");
-        add(ModItems.BOLT_STEEL.get(), "Болт");
+        add(ModItems.BOLT_STEEL.get(), "Стержень (Сталь)");          // boltntm = "Стержень (%s)" + hbmmat.steel
+        add(ModItems.BOLT_LEAD.get(), "Стержень (Свинец)");           // hbmmat.lead
+        add(ModItems.BOLT_TUNGSTEN.get(), "Стержень (Вольфрам)");     // hbmmat.tungsten
+        add(ModItems.BOLT_HIGHSPEED_STEEL.get(), "Стержень (Быстрорежущая сталь)"); // boltntm-паттерн + hbmmat.durasteel оригинала
+        // Ориг. item.powder_fire.name/.desc (ru_RU.lang).
+        add("item.hbm_m.fire_powder", "Красный фосфор");
+        // Ключи matshape.* оригинала (ru_RU.lang 1587-1594) — тултип количества ScrapItem.
+        add("matshape.block", "Блок %s");
+        add("matshape.blocks", "Блоки %s");
+        add("matshape.ingot", "Слиток %s");
+        add("matshape.ingots", "Слитки %s");
+        add("matshape.nugget", "Самородок %s");
+        add("matshape.nuggets", "Самородки %s");
+        add("matshape.quantum", "Кванта %s");
+        add("matshape.quanta", "Кванта %s");
+        add("tooltip.hbm_m.fire_powder.desc1", "Используется в многоцелевых бомбах:");
+        add("tooltip.hbm_m.fire_powder.desc2", "Зажигательные бомбы - это весело!");
+        // Ориг. item.rag.name/.desc (ru_RU.lang, ItemRag.addInformation).
+        add(ModItems.RAG.get(), "Тряпка");
+        add("tooltip.hbm_m.rag.desc1", "Бросьте в воду, чтобы намочить.");
+        add("tooltip.hbm_m.rag.desc2", "Нажмите ПКМ, чтобы помочиться на тряпку.");
+        add(ModItems.INGOT_HIGHSPEED_STEEL.get(), "Слиток быстрорежущей стали"); // item.ingot_dura_steel.name оригинала
+        add(ModItems.INGOT_TUNGSTEN_CARBIDE.get(), "Карбид-вольфрамовый слиток"); // item.ingot_tungsten_carbide.name оригинала
         add(ModItems.CANNED_ASBESTOS.get(), "Консервированный асбест");
         add(ModItems.CANNED_ASS.get(), "Консервированная задница");
         add(ModItems.CANNED_BARK.get(), "Консервированная кора");
@@ -1213,9 +1518,12 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModItems.CAPACITOR.get(), "Конденсатор");
         add(ModItems.PCB.get(), "Печатная плата");
         add(ModItems.INSULATOR.get(), "Изолятор");
-        add(ModItems.NUGGET_SILICON.get(), "Самородок кремния");
-        add(ModItems.NUGGET_TANTALIUM.get(), "Самородок тантала");
-        add(ModItems.BILLET_SILICON.get(), "Заготовка кремния");
+        add(ModMaterialItems.item(ModMaterials.SILICON, MaterialShape.NUGGET), "Самородок кремния");
+        add(ModMaterialItems.item(ModMaterials.TANTALIUM, MaterialShape.NUGGET), "Самородок тантала");
+        add(ModMaterialItems.item(ModMaterials.SILICON, MaterialShape.BILLET), "Заготовка кремния");
+        add(ModMaterialItems.item(ModMaterials.GH336, MaterialShape.INGOT), "Слиток гиорсия-336");
+        add(ModMaterialItems.item(ModMaterials.GH336, MaterialShape.BILLET), "Заготовка гиорсия-336");
+        add(ModMaterialItems.item(ModMaterials.GH336, MaterialShape.NUGGET), "Самородок гиорсия-336");
 
         add(ModItems.BATTLE_GEARS.get(), "Боевые детали");
         add(ModItems.BATTLE_CASING.get(), "Боевой корпус");
@@ -1224,22 +1532,23 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModItems.BATTLE_MODULE.get(), "Боевой модуль");
         add(ModItems.METAL_ROD.get(), "Металлический стержень");
         add(ModItems.STRAWBERRY.get(), "Клубника");
-        add(ModItems.PLATE_GOLD.get(), "Золотая пластина");
-        add(ModItems.PLATE_GUNMETAL.get(), "Пластина пушечной бронзы");
-        add(ModItems.PLATE_TITANIUM.get(), "Титановая пластина");
-        add(ModItems.PLATE_GUNSTEEL.get(), "Пластина оружейной стали");
-        add(ModItems.PLATE_IRON.get(), "Железная пластина");
+        add(ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.PLATE), "Золотая пластина");
+        add(ModMaterialItems.item(ModMaterials.GUNMETAL, MaterialShape.PLATE), "Пластина пушечной бронзы");
+        add(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE), "Титановая пластина");
+        add(ModMaterialItems.item(ModMaterials.GUNSTEEL, MaterialShape.PLATE), "Пластина оружейной стали");
+        add(ModMaterialItems.item(ModMaterials.WEAPONSTEEL, MaterialShape.PLATE), "Пластина боевой стали");
+        add(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE), "Железная пластина");
         add(ModItems.PLATE_KEVLAR.get(), "Кевларовая пластина");
-        add(ModItems.PLATE_LEAD.get(), "Свинцовая пластина");
+        add(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.PLATE), "Свинцовая пластина");
         add(ModItems.PLATE_MIXED.get(), "Композитная пластина");
         add(ModItems.PLATE_PAA.get(), "Пластина сплава РаА");
-        add(ModItems.PLATE_SATURNITE.get(), "Сатурнитовая пластина");
-        add(ModItems.PLATE_SCHRABIDIUM.get(), "Шрабидиевая пластина");
-        add(ModItems.PLATE_STEEL.get(), "Стальная пластина");
-        add(ModItems.PLATE_ADVANCED_ALLOY.get(), "Пластина из продвинутого сплава");
-        add(ModItems.PLATE_ALUMINUM.get(), "Алюминиевая пластина");
-        add(ModItems.PLATE_COPPER.get(), "Медная пластина");
-        add(ModItems.PLATE_BISMUTH.get(), "Висмутовая пластина");
+        add(ModMaterialItems.item(ModMaterials.SATURNITE, MaterialShape.PLATE), "Сатурнитовая пластина");
+        add(ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.PLATE), "Шрабидиевая пластина");
+        add(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), "Стальная пластина");
+        add(ModMaterialItems.item(ModMaterials.ADVANCED_ALLOY, MaterialShape.PLATE), "Пластина из продвинутого сплава");
+        add(ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.PLATE), "Алюминиевая пластина");
+        add(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE), "Медная пластина");
+        add(ModMaterialItems.item(ModMaterials.BISMUTH, MaterialShape.PLATE), "Висмутовая пластина");
         add(ModItems.PLATE_ARMOR_AJR.get(), "Броневая пластина AJR");
         add(ModItems.PLATE_ARMOR_DNT.get(), "Броневая пластина DNT");
         add(ModItems.PLATE_ARMOR_DNT_RUSTED.get(), "Ржавая броневая пластина DNT");
@@ -1249,14 +1558,14 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModItems.PLATE_ARMOR_TITANIUM.get(), "Титановая броневая пластина");
         add(ModItems.PLATE_CAST.get(), "Литая пластина");
         add(ModItems.PLATE_CAST_ALT.get(), "Альтернативная литая пластина");
-        add(ModItems.PLATE_CAST_BISMUTH.get(), "Висмутовая литая пластина");
+        add(ModMaterialItems.item(ModMaterials.BISMUTH, MaterialShape.PLATE_CAST), "Висмутовая литая пластина");
         add(ModItems.PLATE_CAST_DARK.get(), "Тёмная литая пластина");
-        add(ModItems.PLATE_COMBINE_STEEL.get(), "Пластина из комбинированной стали");
-        add(ModItems.PLATE_DURA_STEEL.get(), "Пластина из прочной стали");
+        add(ModMaterialItems.item(ModMaterials.COMBINE_STEEL, MaterialShape.PLATE), "Пластина из комбинированной стали");
+        add(ModMaterialItems.item(ModMaterials.DURA_STEEL, MaterialShape.PLATE), "Пластина из прочной стали");
         add(ModItems.PLATE_DALEKANIUM.get(), "Далеканиевая пластина");
-        add(ModItems.PLATE_DESH.get(), "Дешевая пластина");
-        add(ModItems.PLATE_DINEUTRONIUM.get(), "Динейтрониевая пластина");
-        add(ModItems.PLATE_EUPHEMIUM.get(), "Эуфемиевая пластина");
+        add(ModMaterialItems.item(ModMaterials.DESH, MaterialShape.PLATE), "Дешевая пластина");
+        add(ModMaterialItems.item(ModMaterials.DINEUTRONIUM, MaterialShape.PLATE), "Динейтрониевая пластина");
+        add(ModMaterialItems.item(ModMaterials.EUPHEMIUM, MaterialShape.PLATE), "Эуфемиевая пластина");
         add(ModItems.PLATE_FUEL_MOX.get(), "Топливная пластина MOX");
         add(ModItems.PLATE_FUEL_PU238BE.get(), "Топливная пластина Pu-238/Be");
         add(ModItems.PLATE_FUEL_PU239.get(), "Топливная пластина Pu-239");
@@ -1285,7 +1594,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         // КРИСТАЛЛЫ
         add("item.hbm_m.crystal_aluminium", "Алюминиевый кристалл");
         add("item.hbm_m.crystal_beryllium", "Бериллиевый кристалл");
-        add("item.hbm_m.crystal_charred", "Обожжённый кристалл");
+        add("item.hbm_m.crystal_charred", "Обугленный кристалл");
         add("item.hbm_m.crystal_cinnebar", "Киноварный кристалл");
         add("item.hbm_m.crystal_coal", "Углеродный кристалл");
         add("item.hbm_m.crystal_cobalt", "Кобальтовый кристалл");
@@ -1294,7 +1603,137 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("item.hbm_m.crystal_fluorite", "Кристалл флюорита");
         add("item.hbm_m.crystal_gold", "Кристалл золота");
         add("item.hbm_m.crystal_hardened", "Упрочнённый кристалл");
-        add("item.hbm_m.crystal_horn", "Кристаллический рог");
+        add("item.hbm_m.crystal_horn", "Кристальный рог");
+        // Parts-вкладка: недостающие переводы (по ru_RU.lang оригинала)
+        add("item.hbm_m.asbestos_cloth", "Огнеупорная ткань");
+        add("item.hbm_m.assembly_nuke", "Оболочка ядерного минизаряда");
+        add("item.hbm_m.ballistite", "Баллистит");
+        add("item.hbm_m.ball_dynamite", "Динамит");
+        add("item.hbm_m.ball_fireclay", "Шамотная глина");
+        add("item.hbm_m.ball_resin", "Латекс");
+        add("item.hbm_m.ball_tatb", "TATB");
+        add("item.hbm_m.biomass", "Биомасса");
+        add("item.hbm_m.biomass_compressed", "Сжатая биомасса");
+        add("item.hbm_m.bio_wafer", "Вафля из водорослей");
+        add("item.hbm_m.blade_meteorite", "Метеоритное лезвие");
+        add("item.hbm_m.blade_tungsten", "Усиленная вольфрамом лопасть");
+        add("item.hbm_m.bolt_spike", "Железнодорожный гвоздь");
+        add("item.hbm_m.billet_uzh", "Заготовка уран-гидрид циркония");
+        add("item.hbm_m.bottle_mercury", "Пузырёк ртути");
+        add("item.hbm_m.catalyst_clay", "Глинистый катализатор");
+        add("item.hbm_m.centrifuge_element", "Элемент центрифуги");
+        add("item.hbm_m.chlorine_pinwheel", "Хлорная вертушка");
+        add("item.hbm_m.cinnebar", "Киноварь");
+        add("item.hbm_m.coal_infernal", "Адский уголь");
+        add("item.hbm_m.cordite", "Кордит");
+        add("item.hbm_m.deuterium_filter", "Дейтериевый фильтр");
+        add("item.hbm_m.ducttape", "Скотч");
+        add("item.hbm_m.dysfunctional_reactor", "Нерабочий ядерный реактор");
+        add("item.hbm_m.entanglement_kit", "Комплект для квантового запутывания");
+        add("item.hbm_m.filter_coal", "Фильтр с активированным углём");
+        add("item.hbm_m.fins_big_steel", "Большие стальные рёбра решётки");
+        add("item.hbm_m.fins_flat", "Плоский стальной кожух");
+        add("item.hbm_m.fins_quad_titanium", "Маленькие титановые рёбра");
+        add("item.hbm_m.fins_small_steel", "Малые стальные рёбра решётки");
+        add("item.hbm_m.fins_tri_steel", "Большие стальные рёбра");
+        add("item.hbm_m.flame_conspiracy", "Конспирологическая теория");
+        add("item.hbm_m.flame_opinion", "Собственное мнение");
+        add("item.hbm_m.flame_politics", "Политическая тема");
+        add("item.hbm_m.flywheel_beryllium", "Бериллиевый маховик");
+        add("item.hbm_m.fragment_actinium", "Актиниевый-227 осколок");
+        add("item.hbm_m.fragment_boron", "Борный осколок");
+        add("item.hbm_m.fragment_cerium", "Цериевый осколок");
+        add("item.hbm_m.fragment_cobalt", "Кобальтовый осколок");
+        add("item.hbm_m.fragment_coltan", "Колтан");
+        add("item.hbm_m.fragment_lanthanium", "Лантановый осколок");
+        add("item.hbm_m.fragment_meteorite", "Метеоритный осколок");
+        add("item.hbm_m.fragment_neodymium", "Неодимовый осколок");
+        add("item.hbm_m.fragment_niobium", "Ниобиевый осколок");
+        add("item.hbm_m.fuel_tank_large", "Большой топливный бак");
+        add("item.hbm_m.fuel_tank_medium", "Средний топливный бак");
+        add("item.hbm_m.fuel_tank_small", "Малый топливный бак");
+        add("item.hbm_m.gear_large", "Большая шестерня");
+        add("item.hbm_m.gem_alexandrite", "Александрит");
+        add("item.hbm_m.gem_rad", "Радиоактивный самоцвет");
+        add("item.hbm_m.gem_sodalite", "Содалит");
+        add("item.hbm_m.gem_tantalium", "Поликристалл тантала");
+        add("item.hbm_m.gem_volcanic", "Вулканический самоцвет");
+        add("item.hbm_m.hazmat_cloth", "Защитная ткань");
+        add("item.hbm_m.hazmat_cloth_grey", "Освинцованная защитная ткань");
+        add("item.hbm_m.hazmat_cloth_red", "Дополнительная защитная ткань");
+        add("item.hbm_m.ingot_aluminium", "Алюминиевый слиток");
+        add("item.hbm_m.launch_code", "Код запуска");
+        add("item.hbm_m.launch_code_piece", "Кусок кода запуска");
+        add("item.hbm_m.launch_key", "Ключ запуска");
+        add("item.hbm_m.lignite_powder", "Порошок бурого угля");
+        add("item.hbm_m.malachite_chunk", "Кусок малахита");
+        add("item.hbm_m.missile_assembly", "Сборка малой ракеты");
+        add("item.hbm_m.molysite", "Молизит");
+        add("item.hbm_m.neutron_reflector", "Отражатель нейтронов");
+        add("item.hbm_m.nitra", "Нитра");
+        add("item.hbm_m.nitra_small", "Кучка нитры");
+        add("item.hbm_m.nuclear_waste", "Ядерные отходы");
+        add("item.hbm_m.nuclear_waste_tiny", "Маленькая кучка ядерных отходов");
+        add("item.hbm_m.nuclear_waste_vitrified", "Остеклованные ядерные отходы");
+        add("item.hbm_m.nuclear_waste_vitrified_tiny", "Кучка остеклованных ядерных отходов");
+        add("item.hbm_m.nugget_mercury", "Капля ртути");
+        add("item.hbm_m.nugget_mercury_tiny", "Маленькая капля ртути");
+        add("item.hbm_m.pedestal_steel", "Стальная стойка");
+        add("item.hbm_m.pellet_cluster", "Взрывчатые гранулы");
+        add("item.hbm_m.pellet_gas", "Ядовитый газовый баллон");
+        add("item.hbm_m.photo_panel", "Фотоэлектрическая панель");
+        add("item.hbm_m.pipes_steel", "Стальные трубы");
+        add("item.hbm_m.plate_aluminium", "Алюминиевая пластина");
+        add("item.hbm_m.powder_chlorocalcite", "Хлоркальцит");
+        add("item.hbm_m.powder_sodium", "Натрий");
+        add("item.hbm_m.rag_damp", "Влажная тряпка");
+        add("item.hbm_m.rag_piss", "Пропитанная мочой тряпка");
+        add("item.hbm_m.reactor_core", "Активная зона реактора-размножителя");
+        add("item.hbm_m.ring_starmetal", "§9Кольцо из Звёздного металла§r");
+        add("item.hbm_m.rocket_fuel", "Твёрдое топливо (Ракетное)");
+        add("item.hbm_m.rtg_unit", "РИТЭГ-элемент");
+        add("item.hbm_m.rune_blank", "Пустая каталитическая матрица");
+        add("item.hbm_m.rune_dagaz", "Сбалансированная каталитическая матрица");
+        add("item.hbm_m.rune_hagalaz", "Грубая каталитическая матрица");
+        add("item.hbm_m.rune_isa", "Охлаждающая каталитическая матрица");
+        add("item.hbm_m.rune_jera", "Мультипликативная каталитическая матрица");
+        add("item.hbm_m.rune_thurisaz", "Аддитивная каталитическая матрица");
+        add("item.hbm_m.safety_fuse", "Фитиль");
+        add("item.hbm_m.sawblade", "Лезвие пилорамы");
+        add("item.hbm_m.seg_10", "Коннектор 10-го размера");
+        add("item.hbm_m.seg_15", "Коннектор 15-го размера");
+        add("item.hbm_m.seg_20", "Коннектор 20-го размера");
+        add("item.hbm_m.shell_aluminum", "Алюминиевая гильза");
+        add("item.hbm_m.shell_copper", "Медная гильза");
+        add("item.hbm_m.shell_steel", "Стальная гильза");
+        add("item.hbm_m.shell_titanium", "Титановая гильза");
+        add("item.hbm_m.shimmer_axe_head", "Тяжёлое лезвие топора");
+        add("item.hbm_m.shimmer_handle", "Усиленная полимерная ручка");
+        add("item.hbm_m.shimmer_head", "Тяжёлая головка молота");
+        add("item.hbm_m.solid_fuel", "Твёрдое топливо");
+        add("item.hbm_m.solid_fuel_bf", "Твёрдое топливо (Жар-пламя)");
+        add("item.hbm_m.solid_fuel_presto", "Топливное полено");
+        add("item.hbm_m.solid_fuel_presto_bf", "Топливное полено (Жар-пламя)");
+        add("item.hbm_m.solid_fuel_presto_triplet", "Сжатые топливные поленья");
+        add("item.hbm_m.solid_fuel_presto_triplet_bf", "Сжатые топливные поленья (Жар-пламя)");
+        add("item.hbm_m.sphere_steel", "Стальная сфера");
+        add("item.hbm_m.tank_steel", "Стальной бак");
+        add("item.hbm_m.thruster_large", "Большой двигатель");
+        add("item.hbm_m.thruster_medium", "Средний двигатель");
+        add("item.hbm_m.thruster_nuclear", "Ядерный ракетный двигатель LV-N");
+        add("item.hbm_m.thruster_small", "Малый двигатель");
+        add("item.hbm_m.trinitite", "Тринитит");
+        add("item.hbm_m.turbine_tungsten", "Усиленные лопасти турбовентилятора");
+        add("item.hbm_m.waste_mox", "Обеднённое топливо (МОКС)");
+        add("item.hbm_m.waste_plutonium", "Обеднённое топливо (Топливный плутоний)");
+        add("item.hbm_m.waste_schrabidium", "Обеднённое топливо (Шрабидий)");
+        add("item.hbm_m.waste_thorium", "Обеднённое топливо (Топливный торий)");
+        add("item.hbm_m.waste_uranium", "Обеднённое топливо (Топливный уран)");
+        add("item.hbm_m.waste_zfb_mox", "Обеднённое топливо (ЦБР МОКС)");
+        add("item.hbm_m.wiring_red_copper", "Моток провода");
+        add("item.hbm_m.wrench", "Газовый ключ");
+        add("tooltip.hbm_m.crystal_charred.desc1", "Высококачественный силикат, слегка обожжённый.");
+        add("tooltip.hbm_m.crystal_horn.desc1", "Не настоящий рог.");
         add("item.hbm_m.crystal_iron", "Кристалл железа");
         add("item.hbm_m.crystal_lapis", "Кристалл лазурита");
         add("item.hbm_m.crystal_lead", "Кристалл свинца");
@@ -1414,7 +1853,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("block.hbm_m.plutonium_fuel_block", "Блок плутониевого топлива");
         add("block.hbm_m.polonium210_block", "Блок полония-210");
         add("block.hbm_m.armor_table", "Стол модификации брони");
-        add("block.hbm_m.machine_assembler", "Сборочная машина (Старая)");
+        add("block.hbm_m.machine_assembler", "Сборочная машина (LEGACY)");
         add("block.hbm_m.advanced_assembly_machine", "Сборочная машина");
         add("block.hbm_m.block_uranium", "Урановый блок");
         add(ModBlocks.FLUID_TANK.get(), "Цистерна");
@@ -1490,6 +1929,27 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModItems.WASTE_PLATE_U233.get(), "Обеднённая топливная пластина (Высокообогащённый уран-233)");
         add(ModItems.WASTE_PLATE_U235.get(), "Обеднённая топливная пластина (Высокообогащённый уран-235)");
         add(ModItems.WASTE_PLATE_PU239.get(), "Обеднённая топливная пластина (Высокообогащённый плутоний-239)");
+        // Заглушки хвоста вкладки Parts (id 4502+)
+        add(ModItems.BOLT.get(), "Болт");
+        add(ModItems.CASING.get(), "Гильза");
+        add(ModItems.CHEMICAL_DYE.get(), "Химический краситель");
+        add(ModItems.CIRCUIT.get(), "Микросхема");
+        add(ModItems.CRAYON.get(), "Мелок");
+        add(ModItems.ITEM_EXPENSIVE.get(), "Очень дорогая вещь");
+        add("tooltip.hbm_m.item_expensive.desc", "Предмет режима Expensive");
+        add(ModItems.PART_GENERIC.get(), "Универсальная деталь");
+        add(ModItems.PELLET_BUCKSHOT.get(), "Свинцовые гранулы");
+        add(ModItems.PELLET_CHARGED.get(), "Ионизированные частицы");
+        add(ModItems.PIPE.get(), "Труба");
+        add(ModItems.PLANT_ITEM.get(), "Растение");
+        add(ModItems.PLATE_WELDED.get(), "Сваренная пластина");
+        add(ModItems.SHELL.get(), "Оболочка");
+        add(ModItems.UPGRADE_MUFFLER.get(), "Улучшение «Глушитель»");
+        add(ModItems.UPGRADE_TEMPLATE.get(), "Шаблон улучшения механизма");
+        add(ModItems.WASTE_NATURAL_URANIUM.get(), "Обеднённое топливо из природного урана");
+        add(ModItems.WASTE_U233.get(), "Обеднённое топливо из урана-233");
+        add(ModItems.WASTE_U235.get(), "Обеднённое топливо из урана-235");
+        add(ModItems.WIRE_DENSE.get(), "Плотный провод");
         add(ModBlocks.CONVEYOR.get(), "Конвейерная лента");
         add(ModBlocks.CONVEYOR_DOUBLE.get(), "Двойная конвейерная лента");
         add(ModBlocks.CONVEYOR_EXPRESS.get(), "Скоростная конвейерная лента");
@@ -1681,8 +2141,8 @@ public class ModLanguageProviderRu extends LanguageProvider {
 
         add("block.hbm_m.wood_burner", "Дровяной генератор");
         add("block.hbm_m.shredder", "Измельчитель");
-        add("block.hbm_m.blast_furnace", "Доменная печь");
-        add("block.hbm_m.blast_furnace_extension", "Расширение доменной печи");
+        add("block.hbm_m.blast_furnace", "Доменная печь (LEGACY)");
+        add("block.hbm_m.blast_furnace_extension", "Расширение доменной печи (LEGACY)");
         add("block.hbm_m.heating_oven", "Нагревательная печь");
         add("block.hbm_m.press", "Пресс");
         add("block.hbm_m.geiger_counter_block", "Стационарный счетчик Гейгера");
@@ -1743,8 +2203,8 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("fluid.hbm_m.lightoil_crack", "Лёгкая крекированная нефть");
         add("fluid.hbm_m.lightoil_ds", "Обессеренная лёгкая нефть");
         add("fluid.hbm_m.lightoil_vacuum", "Вакуумная лёгкая нефть");
-        add("fluid.hbm_m.heatingoil", "Печное топливо");
-        add("fluid.hbm_m.heatingoil_vacuum", "Вакуумное печное топливо");
+        add("fluid.hbm_m.heatingoil", "Мазут");
+        add("fluid.hbm_m.heatingoil_vacuum", "Тяжёлый мазут");
         add("fluid.hbm_m.naphtha", "Нафта");
         add("fluid.hbm_m.naphtha_coker", "Коксовая нафта");
         add("fluid.hbm_m.naphtha_crack", "Крекированная нафта");
@@ -1762,7 +2222,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("fluid.hbm_m.oil_ds", "Обессеренная нефть");
         add("fluid.hbm_m.reclaimed", "Регенерированное масло");
         add("fluid.hbm_m.slop", "Нефтяной шлак");
-        add("fluid.hbm_m.lpg", "СУГ (Сжиженный углеводородный газ)");
+        add("fluid.hbm_m.lpg", "Сжиженный попутный газ (СПГ)");
         add("fluid.hbm_m.petroil", "Нефтяное масло");
         add("fluid.hbm_m.petroil_leaded", "Этилированное нефтяное масло");
         add("fluid.hbm_m.reformate", "Риформат");
@@ -1791,98 +2251,97 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("fluid.hbm_m.smoke_poison", "Ядовитый дым");
         add("fluid.hbm_m.wastegas", "Отработанный газ");
         add("fluid.hbm_m.chlorine", "Хлор");
-        add("fluid.hbm_m.phosgene", "Phosgene");
-        add("fluid.hbm_m.mustardgas", "Mustard Gas");
-        add("fluid.hbm_m.xenon", "Xenon");
-        add("fluid.hbm_m.deuterium", "Deuterium");
-        add("fluid.hbm_m.tritium", "Tritium");
-        add("fluid.hbm_m.helium3", "Helium-3");
-        add("fluid.hbm_m.helium4", "Helium-4");
-        add("fluid.hbm_m.uf6", "Uranium Hexafluoride");
-        add("fluid.hbm_m.puf6", "Plutonium Hexafluoride");
-        add("fluid.hbm_m.plasma_dt", "D-T Plasma");
-        add("fluid.hbm_m.plasma_hd", "H-D Plasma");
-        add("fluid.hbm_m.plasma_ht", "H-T Plasma");
-        add("fluid.hbm_m.plasma_dh3", "D-He3 Plasma");
-        add("fluid.hbm_m.plasma_xm", "Xenon-Mercury Plasma");
-        add("fluid.hbm_m.plasma_bf", "Balefire Plasma");
-        add("fluid.hbm_m.steam", "Steam");
+        add("fluid.hbm_m.phosgene", "Фосген");
+        add("fluid.hbm_m.mustardgas", "Иприт");
+        add("fluid.hbm_m.xenon", "Ксенон");
+        add("fluid.hbm_m.deuterium", "Дейтерий");
+        add("fluid.hbm_m.tritium", "Тритий");
+        add("fluid.hbm_m.helium3", "Гелий-3");
+        add("fluid.hbm_m.helium4", "Гелий-4");
+        add("fluid.hbm_m.uf6", "Гексафторид урана");
+        add("fluid.hbm_m.puf6", "Гексафторид плутония");
+        add("fluid.hbm_m.plasma_dt", "Дейтерий-Тритиевая плазма");
+        add("fluid.hbm_m.plasma_hd", "Водород-Дейтериевая плазма");
+        add("fluid.hbm_m.plasma_ht", "Водород-Тритиевая плазма");
+        add("fluid.hbm_m.plasma_dh3", "Дейтерий-Гелий-3 плазма");
+        add("fluid.hbm_m.plasma_xm", "Гелий-4-Кислородная плазма");
+        add("fluid.hbm_m.plasma_bf", "Жар-плазма");
+        add("fluid.hbm_m.steam", "Пар");
         add("fluid.hbm_m.airblast", "Воздушное дутьё");
         add("fluid.hbm_m.flue", "Дымовые газы");
-        add("fluid.hbm_m.hotsteam", "Hot Steam");
-        add("fluid.hbm_m.superhotsteam", "Super Hot Steam");
-        add("fluid.hbm_m.ultrahotsteam", "Ultra Hot Steam");
-        add("fluid.hbm_m.spentsteam", "Spent Steam");
-        add("fluid.hbm_m.heavywater", "Heavy Water");
-        add("fluid.hbm_m.heavywater_hot", "Hot Heavy Water");
-        add("fluid.hbm_m.coolant", "Coolant");
-        add("fluid.hbm_m.coolant_hot", "Hot Coolant");
-        add("fluid.hbm_m.cryogel", "Cryogel");
-        add("fluid.hbm_m.perfluoromethyl", "Perfluoromethyl");
-        add("fluid.hbm_m.perfluoromethyl_cold", "Cold Perfluoromethyl");
-        add("fluid.hbm_m.perfluoromethyl_hot", "Hot Perfluoromethyl");
-        add("fluid.hbm_m.sulfuric_acid", "Sulfuric Acid");
-        add("fluid.hbm_m.nitric_acid", "Nitric Acid");
-        add("fluid.hbm_m.nitroglycerin", "Nitroglycerin");
-        add("fluid.hbm_m.peroxide", "Hydrogen Peroxide");
-        add("fluid.hbm_m.lye", "Lye");
-        add("fluid.hbm_m.vitriol", "Vitriol");
-        add("fluid.hbm_m.solvent", "Solvent");
-        add("fluid.hbm_m.fracksol", "Fracking Solution");
-        add("fluid.hbm_m.ethanol", "Ethanol");
-        add("fluid.hbm_m.biofuel", "Biofuel");
-        add("fluid.hbm_m.mercury", "Mercury");
-        add("fluid.hbm_m.lead", "Liquid Lead");
-        add("fluid.hbm_m.lead_hot", "Hot Liquid Lead");
-        add("fluid.hbm_m.sodium", "Liquid Sodium");
-        add("fluid.hbm_m.sodium_hot", "Hot Liquid Sodium");
-        add("fluid.hbm_m.calcium_solution", "Calcium Solution");
-        add("fluid.hbm_m.calcium_chloride", "Calcium Chloride");
-        add("fluid.hbm_m.potassium_chloride", "Potassium Chloride");
-        add("fluid.hbm_m.chlorocalcite_solution", "Chlorocalcite Solution");
-        add("fluid.hbm_m.chlorocalcite_mix", "Chlorocalcite Mix");
-        add("fluid.hbm_m.chlorocalcite_cleaned", "Cleaned Chlorocalcite");
-        add("fluid.hbm_m.bauxite_solution", "Bauxite Solution");
-        add("fluid.hbm_m.alumina", "Alumina");
-        add("fluid.hbm_m.sodium_aluminate", "Sodium Aluminate");
-        add("fluid.hbm_m.redmud", "Red Mud");
-        add("fluid.hbm_m.schrabidic", "Schrabidic Acid");
-        add("fluid.hbm_m.aschrab", "Anti-Schrabidium");
-        add("fluid.hbm_m.sas3", "SAS-3");
-        add("fluid.hbm_m.balefire", "Balefire");
-        add("fluid.hbm_m.amat", "Antimatter");
-        add("fluid.hbm_m.thorium_salt", "Thorium Salt");
-        add("fluid.hbm_m.thorium_salt_hot", "Hot Thorium Salt");
-        add("fluid.hbm_m.thorium_salt_depleted", "Depleted Thorium Salt");
-        add("fluid.hbm_m.watz", "Watz Fluid");
-        add("fluid.hbm_m.lava", "Lava");
-        add("fluid.hbm_m.concrete", "Concrete");
-        add("fluid.hbm_m.blood", "Blood");
-        add("fluid.hbm_m.blood_hot", "Hot Blood");
-        add("fluid.hbm_m.colloid", "Colloid");
-        add("fluid.hbm_m.smear", "Smear");
-        add("fluid.hbm_m.wastefluid", "Waste Fluid");
-        add("fluid.hbm_m.radiosolvent", "Radiosolvent");
-        add("fluid.hbm_m.salient", "Salient");
-        add("fluid.hbm_m.iongel", "Ion Gel");
-        add("fluid.hbm_m.fullerene", "Fullerene");
-        add("fluid.hbm_m.nitan", "Nitan Mix");
-        add("fluid.hbm_m.dhc", "DHC");
-        add("fluid.hbm_m.egg", "Liquid Egg");
-        add("fluid.hbm_m.cholesterol", "Cholesterol");
-        add("fluid.hbm_m.estradiol", "Estradiol");
-        add("fluid.hbm_m.pheromone", "Pheromone");
-        add("fluid.hbm_m.pheromone_m", "Male Pheromone");
-        add("fluid.hbm_m.seedslurry", "Seed Slurry");
-        add("fluid.hbm_m.enderjuice", "Ender Juice");
-        add("fluid.hbm_m.xpjuice", "XP Juice");
-        add("fluid.hbm_m.mug", "Mug Root Beer");
-        add("fluid.hbm_m.mug_hot", "Hot Mug Root Beer");
-        add("fluid.hbm_m.none", "None");
-        add("fluid.hbm_m.death", "Death");
-        add("fluid.hbm_m.pain", "Pain");
-        add("fluid.hbm_m.stellar_flux", "Stellar Flux");
-        add("fluid.hbm_m.bromide", "Bromide");
+        add("fluid.hbm_m.hotsteam", "Горячий пар");
+        add("fluid.hbm_m.superhotsteam", "Перегретый пар");
+        add("fluid.hbm_m.ultrahotsteam", "Раскалённый пар");
+        add("fluid.hbm_m.spentsteam", "Пар низкого давления");
+        add("fluid.hbm_m.heavywater", "Тяжёлая вода");
+        add("fluid.hbm_m.heavywater_hot", "Горячая тяжёлая вода");
+        add("fluid.hbm_m.coolant", "Хладагент");
+        add("fluid.hbm_m.coolant_hot", "Горячий хладагент");
+        add("fluid.hbm_m.cryogel", "Криогель");
+        add("fluid.hbm_m.perfluoromethyl", "Перфторометан");
+        add("fluid.hbm_m.perfluoromethyl_cold", "Холодный перфторометан");
+        add("fluid.hbm_m.perfluoromethyl_hot", "Горячий перфторометан");
+        add("fluid.hbm_m.sulfuric_acid", "Серная кислота");
+        add("fluid.hbm_m.nitric_acid", "Азотная кислота");
+        add("fluid.hbm_m.nitroglycerin", "Нитроглицерин");
+        add("fluid.hbm_m.peroxide", "Пероксид водорода");
+        add("fluid.hbm_m.lye", "Щёлок");
+        add("fluid.hbm_m.vitriol", "Купорос");
+        add("fluid.hbm_m.solvent", "Растворитель");
+        add("fluid.hbm_m.fracksol", "Жидкость для гидроразрыва пласта");
+        add("fluid.hbm_m.ethanol", "Этанол");
+        add("fluid.hbm_m.biofuel", "Биотопливо");
+        add("fluid.hbm_m.mercury", "Ртуть");
+        add("fluid.hbm_m.lead", "Жидкий свинец");
+        add("fluid.hbm_m.lead_hot", "Горячий жидкий свинец");
+        add("fluid.hbm_m.sodium", "Жидкий натрий");
+        add("fluid.hbm_m.sodium_hot", "Горячий жидкий натрий");
+        add("fluid.hbm_m.calcium_solution", "Раствор кальция");
+        add("fluid.hbm_m.calcium_chloride", "Раствор хлорида кальция");
+        add("fluid.hbm_m.potassium_chloride", "Раствор хлорида калия");
+        add("fluid.hbm_m.chlorocalcite_solution", "Раствор хлоркальцита");
+        add("fluid.hbm_m.chlorocalcite_mix", "Смешанный раствор хлоркальцита");
+        add("fluid.hbm_m.chlorocalcite_cleaned", "Очищенный раствор хлоркальцита");
+        add("fluid.hbm_m.bauxite_solution", "Раствор боксита");
+        add("fluid.hbm_m.alumina", "Глинозём");
+        add("fluid.hbm_m.sodium_aluminate", "Алюминат натрия");
+        add("fluid.hbm_m.redmud", "Красный шлам");
+        add("fluid.hbm_m.schrabidic", "Шрабидиевая кислота");
+        add("fluid.hbm_m.aschrab", "Антишрабидий");
+        add("fluid.hbm_m.sas3", "Трисульфид шрабидия");
+        add("fluid.hbm_m.balefire", "Ракетное жар-топливо");
+        add("fluid.hbm_m.amat", "Антиматерия");
+        add("fluid.hbm_m.thorium_salt", "Жидкая ториевая соль");
+        add("fluid.hbm_m.thorium_salt_hot", "Горячая жидкая ториевая соль");
+        add("fluid.hbm_m.thorium_salt_depleted", "Обеднённая жидкая ториевая соль");
+        add("fluid.hbm_m.watz", "Жидкий понос");
+        add("fluid.hbm_m.lava", "Лава");
+        add("fluid.hbm_m.concrete", "Цементный раствор");
+        add("fluid.hbm_m.blood", "Кровь");
+        add("fluid.hbm_m.blood_hot", "Горячая кровь");
+        add("fluid.hbm_m.colloid", "Коллоидный раствор");
+        add("fluid.hbm_m.smear", "Промышленное масло");
+        add("fluid.hbm_m.wastefluid", "Жидкие ядерные отходы");
+        add("fluid.hbm_m.radiosolvent", "Высокоэффективный растворитель");
+        add("fluid.hbm_m.salient", "Зелёный сойлент");
+        add("fluid.hbm_m.iongel", "Ионный гель");
+        add("fluid.hbm_m.fullerene", "Раствор фуллерена");
+        add("fluid.hbm_m.nitan", "100-октановое сверхтопливо NITAN©");
+        add("fluid.hbm_m.dhc", "Дейтерированный углеводород");
+        add("fluid.hbm_m.egg", "Растворенное яйцо");
+        add("fluid.hbm_m.cholesterol", "Раствор холестерина");
+        add("fluid.hbm_m.estradiol", "Раствор эстрадиола");
+        add("fluid.hbm_m.pheromone", "Феромон-бустер");
+        add("fluid.hbm_m.pheromone_m", "Модифицированный феромон-бустер");
+        add("fluid.hbm_m.seedslurry", "Жидкая рассада");
+        add("fluid.hbm_m.enderjuice", "Эндер-сок");
+        add("fluid.hbm_m.xpjuice", "Жидкий опыт");
+        add("fluid.hbm_m.mug", "Квас \"Царские Припасы\"");
+        add("fluid.hbm_m.mug_hot", "Горячий квас \"Царские Припасы\"");
+        add("fluid.hbm_m.none", "Ничего");
+        add("fluid.hbm_m.death", "Осмиридовый раствор");
+        add("fluid.hbm_m.pain", "Пандемониум(III) Раствор танталита");
+        add("fluid.hbm_m.stellar_flux", "Звёздная материя");
 
 
         // РУДЫ
@@ -1951,6 +2410,405 @@ public class ModLanguageProviderRu extends LanguageProvider {
 
         add("block.hbm_m.waste_grass", "Мёртвая трава");
         add("block.hbm_m.waste_leaves", "Мёртвая листва");
+        add("block.hbm_m.block_graphite", "Графитовый блок");
+        add("block.hbm_m.block_slag", "Блок шлака");
+        add("block.hbm_m.deco_rbmk", "Декоративный блок РБМК");
+        add("block.hbm_m.deco_rbmk_panel", "Декоративная панель РБМК");
+        add("block.hbm_m.deco_rbmk_panel_slab2", "Панельная плита РБМК");
+        add("block.hbm_m.deco_rbmk_smooth", "Гладкий декоративный блок РБМК");
+        add("block.hbm_m.deco_rbmk_smooth_panel", "Гладкая декоративная панель РБМК");
+        add("block.hbm_m.deco_rbmk_smooth_panel_slab2", "Гладкая панельная плита РБМК");
+        add("block.hbm_m.electric_furnace", "Электропечь");
+        add("block.hbm_m.emp", "ЭМИ-устройство");
+        add("block.hbm_m.furnace_brick", "Кирпичная печь");
+        add("block.hbm_m.gas_centrifuge", "Газовая центрифуга");
+        add("block.hbm_m.machine_blast_furnace", "Доменная печь");
+        add("block.hbm_m.oil_pipe", "Нефтепровод");
+        add("block.hbm_m.ore_bedrock_mineral", "Коренное месторождение минералов");
+        add("block.hbm_m.ore_bedrock_oil", "Коренное месторождение нефти");
+        add("block.hbm_m.ore_oil_empty", "Истощённое месторождение нефти");
+        add("block.hbm_m.refinery", "Нефтеперерабатывающий завод");
+        add("block.hbm_m.slag", "Шлак");
+        add("block.hbm_m.universal_machine_part", "Универсальная деталь машины");
+        add("block.hbm_m.zirnox_deb_blank", "Обломки ZIRNOX");
+        add("block.hbm_m.zirnox_deb_concrete", "Бетонные обломки ZIRNOX");
+        add("block.hbm_m.zirnox_deb_element", "Топливные обломки ZIRNOX");
+        add("block.hbm_m.zirnox_deb_exchanger", "Обломки теплообменника ZIRNOX");
+        add("block.hbm_m.zirnox_deb_shrapnel", "Шрапнель ZIRNOX");
+        add("block.hbm_m.zirnox_destroyed", "Разрушенный реактор ZIRNOX");
+        add("block.hbm_m.ancient_scrap", "Древние обломки");
+        add("block.hbm_m.ash_digamma", "Пепел");
+        add("block.hbm_m.asphalt_light", "Асфальтированный светящийся камень");
+        add("block.hbm_m.barbed_wire_acid", "Кислотная колючая проволока");
+        add("block.hbm_m.barbed_wire_ultradeath", "Радиоактивная колючая проволока");
+        add("block.hbm_m.basalt", "Базальт");
+        add("block.hbm_m.basalt_smooth", "Гладкий базальт");
+        add("block.hbm_m.basalt_tiles", "Базальтовая плитка");
+        add("block.hbm_m.blast_door", "Раздвижные двери");
+        add("block.hbm_m.block_aluminium", "Алюминиевый блок");
+        add("block.hbm_m.block_asbestos", "Асбест");
+        add("block.hbm_m.block_bakelite", "Блок бакелита");
+        add("block.hbm_m.block_c4", "Блок C-4");
+        add("block.hbm_m.block_coltan", "Блок колтана");
+        add("block.hbm_m.block_corium", "Кориум");
+        add("block.hbm_m.block_corium_cobble", "Буриум");
+        add("block.hbm_m.block_euphemium_cluster", "Эвфемиево-вытравленный кластер шрабидия");
+        add("block.hbm_m.block_fiberglass", "Рулон стекловолокна");
+        add("block.hbm_m.block_fluorite", "Флюоритовый блок");
+        add("block.hbm_m.block_insulator", "Рулон изолятора");
+        add("block.hbm_m.block_lithium", "Литиевый блок");
+        add("block.hbm_m.block_magnetized_tungsten", "Блок намагниченного вольфрама");
+        add("block.hbm_m.block_meteor_broken", "Разбитый блок метеорита");
+        add("block.hbm_m.block_meteor_molten", "Горячий метеоритный булыжник");
+        add("block.hbm_m.block_meteor_treasure", "Блок метеоритных сокровищ");
+        add("block.hbm_m.block_niter", "Блок селитры");
+        add("block.hbm_m.block_polymer", "Блок полимера");
+        add("block.hbm_m.block_pu_mix", "Блок плутония реакторного качества");
+        add("block.hbm_m.block_red_phosphorus", "Блок красного фосфора");
+        add("block.hbm_m.block_rubber", "Блок резины");
+        add("block.hbm_m.block_semtex", "Блок семтекса");
+        add("block.hbm_m.block_smore", "Блок с'мора");
+        add("block.hbm_m.block_sulfur", "Блок серы");
+        add("block.hbm_m.block_tantalium", "Блок тантала");
+        add("block.hbm_m.block_trinitite", "Тринититовый блок");
+        add("block.hbm_m.block_tritium", "Блок тритиевых пробирок");
+        add("block.hbm_m.block_waste", "Блок ядерных отходов");
+        add("block.hbm_m.block_waste_vitrified", "Блок остеклованных ядерных отходов");
+        add("block.hbm_m.block_white_phosphorus", "Блок белого фосфора");
+        add("block.hbm_m.block_yellowcake", "Блок жёлтого кека");
+        add("block.hbm_m.boxcar", "Грузовой вагон");
+        add("block.hbm_m.brick_asbestos", "Асбестовые кирпичи");
+        add("block.hbm_m.brick_compound", "Композитная сетка");
+        add("block.hbm_m.brick_forgotten", "Блок");
+        add("block.hbm_m.brick_jungle", "Энаргитовые кирпичи");
+        add("block.hbm_m.brick_jungle_circle", "Круг Механиста");
+        add("block.hbm_m.brick_jungle_cracked", "Потресканные энаргитовые кирпичи");
+        add("block.hbm_m.brick_jungle_fragile", "Хрупкие энаргитовые кирпичи");
+        add("block.hbm_m.brick_jungle_glyph", "Энаргитовые кирпичи с глифами");
+        add("block.hbm_m.brick_jungle_lava", "Магматические энаргитовые кирпичи");
+        add("block.hbm_m.brick_jungle_mystic", "Магические энаргитовые кирпичи");
+        add("block.hbm_m.brick_jungle_ooze", "Радиоактивные энаргитовые кирпичи");
+        add("block.hbm_m.brick_jungle_trap", "Энаргитовые кирпичи-ловушка");
+        add("block.hbm_m.brick_red", "Кирпичи красной комнаты");
+        add("block.hbm_m.broadcaster_pc", "Повреждённый передатчик");
+        add("block.hbm_m.cable_detector", "Редстоун-рубильник");
+        add("block.hbm_m.cable_diode", "Диод из красной меди");
+        add("block.hbm_m.cable_switch", "Рубильник");
+        add("block.hbm_m.capacitor_copper", "Старый конденсатор");
+        add("block.hbm_m.cargo_elevator", "Грузовой лифт");
+        add("block.hbm_m.charge_c4", "Подрывной заряд");
+        add("block.hbm_m.charge_dynamite", "Бомба с таймером");
+        add("block.hbm_m.charge_miner", "Шахтёрский заряд с таймером");
+        add("block.hbm_m.charge_semtex", "Шахтёрский заряд с семтексом");
+        add("block.hbm_m.chlorine_gas", "Хлор");
+        add("block.hbm_m.cluster_aluminium", "Алюминиевый рудный кластер");
+        add("block.hbm_m.cluster_copper", "Медный рудный кластер");
+        add("block.hbm_m.cluster_depth_iron", "Глубинный железорудный кластер");
+        add("block.hbm_m.cluster_depth_titanium", "Глубинный титановый рудный кластер");
+        add("block.hbm_m.cluster_depth_tungsten", "Глубинный вольфрамовый рудный кластер");
+        add("block.hbm_m.cluster_iron", "Железорудный кластер");
+        add("block.hbm_m.cluster_titanium", "Титановый рудный кластер");
+        add("block.hbm_m.cm_flux", "Приёмник нейтронного потока");
+        add("block.hbm_m.cm_heat", "Теплоприёмник");
+        add("block.hbm_m.cmb_brick", "Плита из стали Альянса");
+        add("block.hbm_m.cmb_brick_reinforced", "Усиленные кирпичи из стали Альянса");
+        add("block.hbm_m.compact_launcher", "Компактная пусковая площадка");
+        add("block.hbm_m.crane_boxer", "Конвейерный упаковщик");
+        add("block.hbm_m.crane_extractor", "Конвейерный извлекатель");
+        add("block.hbm_m.crane_grabber", "Конвейерный сборщик");
+        add("block.hbm_m.crane_inserter", "Конвейерный вставщик");
+        add("block.hbm_m.crane_partitioner", "Вставщик окислителя");
+        add("block.hbm_m.crane_router", "Конвейерный сортировщик");
+        add("block.hbm_m.crane_splitter", "Конвейерный разделитель");
+        add("block.hbm_m.crane_unboxer", "Конвейерный распаковщик");
+        add("block.hbm_m.crate_ammo", "Ящик из звёздного металла");
+        add("block.hbm_m.crate_can", "Ящик с консервами");
+        add("block.hbm_m.crate_jungle", "Ящик из энаргита");
+        add("block.hbm_m.crate_red", "Красный ящик");
+        add("block.hbm_m.deco_aluminium", "Алюминиевый декоративный блок");
+        add("block.hbm_m.deco_beryllium", "Бериллиевый декоративный блок");
+        add("block.hbm_m.deco_lead", "Свинцовый декоративный блок");
+        add("block.hbm_m.deco_red_copper", "Красномедный декоративный блок");
+        add("block.hbm_m.deco_tungsten", "Вольфрамовый декоративный блок");
+        add("block.hbm_m.depth_dnt", "ДНТ-усиленные глубинные кирпичи");
+        add("block.hbm_m.det_charge", "Заряд взрывчатки");
+        add("block.hbm_m.det_cord", "Детонирующий шнур");
+        add("block.hbm_m.det_nuke", "Ядерный заряд");
+        add("block.hbm_m.dfc_core", "Ядро реактора тёмного синтеза");
+        add("block.hbm_m.dfc_emitter", "Излучатель РТС");
+        add("block.hbm_m.dfc_injector", "Топливный инжектор РТС");
+        add("block.hbm_m.dfc_receiver", "Приёмник РТС");
+        add("block.hbm_m.dfc_stabilizer", "Стабилизатор РТС");
+        add("block.hbm_m.dirt_dead", "Мёртвая земля");
+        add("block.hbm_m.dirt_oily", "Пропитанная нефтью земля");
+        add("block.hbm_m.drone_crate", "Пассивный ящик для дронов");
+        add("block.hbm_m.drone_crate_provider", "Ящик снабжения для дронов");
+        add("block.hbm_m.drone_crate_requester", "Ящик запроса для дронов");
+        add("block.hbm_m.drone_dock", "Дрон-станция");
+        add("block.hbm_m.drone_waypoint", "Путевая точка для дронов");
+        add("block.hbm_m.drone_waypoint_request", "Логистическая путевая точка для дронов");
+        add("block.hbm_m.ducrete", "Дюкретовая плитка");
+        add("block.hbm_m.dynamite", "Динамит");
+        add("block.hbm_m.factory_advanced_hull", "Корпус усовершенствованной фабрики");
+        add("block.hbm_m.factory_titanium_hull", "Корпус базовой фабрики");
+        add("block.hbm_m.fence_metal", "Проволочная сетка");
+        add("block.hbm_m.fence_metal_post", "Столб проволочной сетки");
+        add("block.hbm_m.field_disturber", "Подавитель высокоэнергетических полей");
+        add("block.hbm_m.fire_digamma", "Затяжная Дигамма");
+        add("block.hbm_m.fireworks", "Батарея фейерверков");
+        add("block.hbm_m.fissure_bomb", "Вулканическая бомба");
+        add("block.hbm_m.flame_war", "Война в коробке");
+        add("block.hbm_m.fluid_counter_valve", "Жидкостный клапан со счётчиком");
+        add("block.hbm_m.fluid_duct_box", "Универсальная жидкостная труба (Boxduct)");
+        add("block.hbm_m.fluid_duct_exhaust", "Выхлопная труба");
+        add("block.hbm_m.fluid_duct_paintable", "Окрашиваемая универсальная жидкостная труба");
+        add("block.hbm_m.fluid_duct_paintable_block_exhaust", "Окрашиваемая покрытая выхлопная труба");
+        add("block.hbm_m.fluid_switch", "Редстоун-жидкостный клапан");
+        add("block.hbm_m.foundry_mold", "Малый литейный резервуар");
+        add("block.hbm_m.foundry_outlet", "Литейный спуск");
+        add("block.hbm_m.foundry_slagtap", "Литейный спуск для шлака");
+        add("block.hbm_m.foundry_tank", "Литейный бассейн");
+        add("block.hbm_m.frozen_dirt", "Замороженная земля");
+        add("block.hbm_m.frozen_grass", "Замороженная трава");
+        add("block.hbm_m.frozen_log", "Замороженное бревно");
+        add("block.hbm_m.frozen_planks", "Замороженные доски");
+        add("block.hbm_m.fusion_component", "Сверхпроводящие катушки (BSCCO)");
+        add("block.hbm_m.fusion_hatch", "Люк доступа термоядерного реактора");
+        add("block.hbm_m.fusion_heater", "Компонент нагревателя плазмы");
+        add("block.hbm_m.gas_asbestos", "Частицы асбеста в воздухе");
+        add("block.hbm_m.gas_coal", "Воздушная угольная пыль");
+        add("block.hbm_m.gas_explosive", "Взрывоопасный газ");
+        add("block.hbm_m.gas_flammable", "Горючий газ");
+        add("block.hbm_m.gas_meltdown", "Газ из активной зоны");
+        add("block.hbm_m.gas_monoxide", "Угарный газ");
+        add("block.hbm_m.gas_radon", "Радон");
+        add("block.hbm_m.gas_radon_dense", "Плотный радон");
+        add("block.hbm_m.gas_radon_tomb", "Могильный газ");
+        add("block.hbm_m.geiger", "Счётчик Гейгера");
+        add("block.hbm_m.glass_ash", "Пепельное стекло");
+        add("block.hbm_m.glass_boron", "Борное стекло");
+        add("block.hbm_m.glass_lead", "Свинцовое стекло");
+        add("block.hbm_m.glass_polarized", "Поляризованное стекло");
+        add("block.hbm_m.glass_polonium", "Полониевое стекло");
+        add("block.hbm_m.glass_quartz", "Кварцевое стекло");
+        add("block.hbm_m.glass_trinitite", "Тринититовое стекло");
+        add("block.hbm_m.glass_uranium", "Урановое стекло");
+        add("block.hbm_m.glyphid_base", "Блок улья глифидов");
+        add("block.hbm_m.gravel_diamond", "Измельчённые алмазы");
+        add("block.hbm_m.gravel_obsidian", "Измельчённый обсидиан");
+        add("block.hbm_m.hadron_coil_alloy", "Плотная сверхпроводящая катушка");
+        add("block.hbm_m.hadron_coil_chlorophyte", "Плотная хлорофитовая катушка");
+        add("block.hbm_m.hadron_coil_gold", "Плотная золотая катушка");
+        add("block.hbm_m.hadron_coil_magtung", "Плотная сверхпроводящая 4000K катушка");
+        add("block.hbm_m.hadron_coil_mese", "Плотная месе катушка");
+        add("block.hbm_m.hadron_coil_neodymium", "Плотная неодимовая катушка");
+        add("block.hbm_m.hadron_coil_schrabidate", "Плотная шрабидатавая катушка");
+        add("block.hbm_m.hadron_coil_schrabidium", "Плотная шрабидиевая катушка");
+        add("block.hbm_m.hadron_coil_starmetal", "Плотная звёзднометаллическая катушка");
+        add("block.hbm_m.hev_battery", "Батарея костюма");
+        add("block.hbm_m.icf_block", "Лазер ICF");
+        add("block.hbm_m.icf_component", "Стабилизатор ICF");
+        add("block.hbm_m.icf_controller", "Контроллер лазера ICF");
+        add("block.hbm_m.iter", "Термоядерный реактор");
+        add("block.hbm_m.ladder_aluminium", "Алюминиевая лестница");
+        add("block.hbm_m.ladder_cobalt", "Кобальтовая лестница");
+        add("block.hbm_m.ladder_copper", "Медная лестница");
+        add("block.hbm_m.ladder_gold", "Золотая лестница");
+        add("block.hbm_m.ladder_iron", "Железная лестница");
+        add("block.hbm_m.ladder_lead", "Свинцовая лестница");
+        add("block.hbm_m.ladder_steel", "Стальная лестница");
+        add("block.hbm_m.ladder_sturdy", "Прочная деревянная лестница");
+        add("block.hbm_m.ladder_titanium", "Титановая лестница");
+        add("block.hbm_m.ladder_tungsten", "Вольфрамовая лестница");
+        add("block.hbm_m.lamp_demon", "Лампа из заряда-демона");
+        add("block.hbm_m.lamp_tritium_blue_off", "Синяя тритиевая лампа");
+        add("block.hbm_m.lamp_tritium_blue_on", "Синяя тритиевая лампа");
+        add("block.hbm_m.lamp_tritium_green_off", "Зелёная тритиевая лампа");
+        add("block.hbm_m.lamp_tritium_green_on", "Зелёная тритиевая лампа");
+        add("block.hbm_m.launch_table", "Большая пусковая площадка");
+        add("block.hbm_m.logic_block", "Блок действия подземелья");
+        add("block.hbm_m.machine_boiler", "Бойлер");
+        add("block.hbm_m.machine_centrifuge", "Центрифуга");
+        add("block.hbm_m.machine_controller", "Блок удалённого доступа к реактору");
+        add("block.hbm_m.machine_converter_he_rf", "Конвертер энергии HE в RF");
+        add("block.hbm_m.machine_converter_rf_he", "Конвертер энергии RF в HE");
+        add("block.hbm_m.machine_crystallizer", "Рудный окислитель");
+        add("block.hbm_m.machine_detector", "Детектор мощности");
+        add("block.hbm_m.machine_drain", "Сливная труба");
+        add("block.hbm_m.machine_epress", "Электрический пресс");
+        add("block.hbm_m.machine_fluidtank", "Цистерна");
+        add("block.hbm_m.machine_forcefield", "Излучатель силового поля");
+        add("block.hbm_m.machine_gascent", "Газовая центрифуга");
+        add("block.hbm_m.machine_icf_press", "Топливный пресс ICF");
+        add("block.hbm_m.machine_keyforge", "Стол мастера по замкам");
+        add("block.hbm_m.machine_microwave", "Микроволновка");
+        add("block.hbm_m.machine_mining_laser", "Шахтёрский лазер");
+        add("block.hbm_m.machine_missile_assembly", "Ракетосборочная станция");
+        add("block.hbm_m.machine_press", "Твердотопливный пресс");
+        add("block.hbm_m.machine_puf6_tank", "Бочка гексафторида плутония");
+        add("block.hbm_m.machine_radar", "Радар");
+        add("block.hbm_m.machine_refinery", "Нефтеперерабатывающий завод");
+        add("block.hbm_m.machine_satlinker", "Менеджер ID спутников");
+        add("block.hbm_m.machine_solar_boiler", "Бойлер солнечной башни");
+        add("block.hbm_m.machine_storage_drum", "Бочка для захоронения ядерных отходов");
+        add("block.hbm_m.machine_teleporter", "Телепорт");
+        add("block.hbm_m.machine_transformer", "Трансформатор 10k-20Гц");
+        add("block.hbm_m.machine_uf6_tank", "Бочка гексафторида урана");
+        add("block.hbm_m.machine_waste_drum", "Бочка с отработанным топливом");
+        add("block.hbm_m.mass_storage", "Накопительный блок");
+        add("block.hbm_m.meteor_spawner", "Сборщик киберкрабов");
+        add("block.hbm_m.mine_he", "Противотанковая мина");
+        add("block.hbm_m.mine_naval", "Морская мина");
+        add("block.hbm_m.mine_shrap", "Мина со шрапнелью");
+        add("block.hbm_m.moon_turf", "Лунный грунт");
+        add("block.hbm_m.mush", "Светящийся гриб");
+        add("block.hbm_m.oil_spill", "Разлитая нефть");
+        add("block.hbm_m.ore_alexandrite", "Александритовая руда");
+        add("block.hbm_m.ore_aluminium", "Алюминиевая руда");
+        add("block.hbm_m.ore_australium", "Австралиевая руда");
+        add("block.hbm_m.ore_cinnebar", "Киноварная руда");
+        add("block.hbm_m.ore_coltan", "Колтановая руда");
+        add("block.hbm_m.ore_copper", "Медная руда");
+        add("block.hbm_m.ore_depth_borax", "Глубинная бура");
+        add("block.hbm_m.ore_depth_cinnebar", "Глубинная киноварь");
+        add("block.hbm_m.ore_depth_nether_neodymium", "Адская глубинная неодимовая руда");
+        add("block.hbm_m.ore_depth_zirconium", "Глубинная циркониевая руда");
+        add("block.hbm_m.ore_gneiss_asbestos", "Сланцевая асбестовая руда");
+        add("block.hbm_m.ore_gneiss_copper", "Сланцевая медная руда");
+        add("block.hbm_m.ore_gneiss_gas", "Сланцевый газ");
+        add("block.hbm_m.ore_gneiss_gold", "Сланцевая золотая руда");
+        add("block.hbm_m.ore_gneiss_iron", "Сланцевая железная руда");
+        add("block.hbm_m.ore_gneiss_lithium", "Сланцевая литиевая руда");
+        add("block.hbm_m.ore_gneiss_rare", "Сланцевая редкоземельная руда");
+        add("block.hbm_m.ore_gneiss_uranium", "Сланцевая урановая руда");
+        add("block.hbm_m.ore_gneiss_uranium_scorched", "Обожжённая сланцевая урановая руда");
+        add("block.hbm_m.ore_nether_coal", "Горящая руда адского угля");
+        add("block.hbm_m.ore_nether_cobalt", "Адская кобальтовая руда");
+        add("block.hbm_m.ore_nether_fire", "Адская фосфорная руда");
+        add("block.hbm_m.ore_nether_plutonium", "Адская плутониевая руда");
+        add("block.hbm_m.ore_nether_smoldering", "Тлеющий адский камень");
+        add("block.hbm_m.ore_nether_sulfur", "Адская серная руда");
+        add("block.hbm_m.ore_nether_tungsten", "Адская вольфрамовая руда");
+        add("block.hbm_m.ore_nether_uranium", "Адская урановая руда");
+        add("block.hbm_m.ore_nether_uranium_scorched", "Обожжённая адская урановая руда");
+        add("block.hbm_m.ore_rare", "Редкоземельная руда");
+        add("block.hbm_m.ore_tektite_osmiridium", "Перемешанный с осмиридием тектит");
+        add("block.hbm_m.ore_tikite", "Трикситовая руда");
+        add("block.hbm_m.ore_uranium_scorched", "Обожжённая урановая руда");
+        add("block.hbm_m.pile_block", "Чикагская поленница");
+        add("block.hbm_m.pile_brick", "Графитовые блоки Чикагской поленницы");
+        add("block.hbm_m.pink_log", "Розовое дерево");
+        add("block.hbm_m.pink_planks", "Розовые доски");
+        add("block.hbm_m.pipe_anchor", "Труба с анкером");
+        add("block.hbm_m.plasma_heater", "Нагреватель плазмы");
+        add("block.hbm_m.pneumatic_storage_access", "Пневмосистема хранения - Терминал доступа");
+        add("block.hbm_m.pneumatic_storage_clutter", "Пневмосистема хранения — Буферное хранилище");
+        add("block.hbm_m.pneumatic_storage_exporter", "Пневмосистема хранения - Экспортёр");
+        add("block.hbm_m.pneumatic_storage_importer", "Пневмосистема хранения - Импортёр");
+        add("block.hbm_m.pneumatic_storage_mono", "Пневмосистема хранения - Монохранилище");
+        add("block.hbm_m.pneumatic_tube", "Пневмотруба");
+        add("block.hbm_m.pneumatic_tube_paintable", "Окрашиваемая пневмотруба");
+        add("block.hbm_m.press_preheater", "Внешний нагреватель пресса");
+        add("block.hbm_m.pwr_block", "Водо-водяной энергетический реактор (ВВЭР)");
+        add("block.hbm_m.pwr_casing", "Внешняя обшивка ВВЭР");
+        add("block.hbm_m.pwr_channel", "Каналы с охладителем ВВЭР");
+        add("block.hbm_m.pwr_control", "Регулирующие стержни ВВЭР");
+        add("block.hbm_m.pwr_controller", "Контроллер ВВЭР");
+        add("block.hbm_m.pwr_fuel", "Топливный стержень ВВЭР");
+        add("block.hbm_m.pwr_heatex", "Теплообменник ВВЭР");
+        add("block.hbm_m.pwr_heatsink", "Радиатор ВВЭР");
+        add("block.hbm_m.pwr_neutron_source", "Источник нейтронов ВВЭР");
+        add("block.hbm_m.pwr_port", "Люк доступа ВВЭР");
+        add("block.hbm_m.pwr_reflector", "Нейтронный отражатель ВВЭР");
+        add("block.hbm_m.radio_autocal", "Автоматический калькулятор AUTOCAL");
+        add("block.hbm_m.radio_telex", "Телекс");
+        add("block.hbm_m.radio_torch_controller", "Редстоун-по-радио контроллер");
+        add("block.hbm_m.radio_torch_counter", "Редстоун-по-радио счётчик предметов");
+        add("block.hbm_m.radio_torch_logic", "Редстоун-по-радио логический приёмник");
+        add("block.hbm_m.radio_torch_reader", "Редстоун-по-радио считыватель");
+        add("block.hbm_m.radio_torch_receiver", "Редстоун-по-радио приёмник");
+        add("block.hbm_m.radio_torch_sender", "Редстоун-по-радио передатчик");
+        add("block.hbm_m.radiobox", "Коробка управления вредителями Розенберга");
+        add("block.hbm_m.radiorec", "FM радио");
+        add("block.hbm_m.rail_booster", "Ускоряющие высокоскоростные рельсы");
+        add("block.hbm_m.rail_highspeed", "Высокоскоростные рельсы");
+        add("block.hbm_m.rail_narrow", "Узкоколейные вагонеточные рельсы");
+        add("block.hbm_m.rail_wood", "Деревянные рельсы");
+        add("block.hbm_m.rebar", "Арматура");
+        add("block.hbm_m.red_cable_box", "Провод из красной меди (Boxcable)");
+        add("block.hbm_m.reinforced_brick", "Усиленный бетон");
+        add("block.hbm_m.reinforced_ducrete", "Усиленный дюкрет");
+        add("block.hbm_m.reinforced_glass_pane", "Усиленная стеклянная панель");
+        add("block.hbm_m.reinforced_laminate", "Усиленный ламинат");
+        add("block.hbm_m.reinforced_laminate_pane", "Усиленная ламинатная панель");
+        add("block.hbm_m.reinforced_lamp_off", "Усиленная лампа");
+        add("block.hbm_m.reinforced_lamp_on", "Усиленная лампа");
+        add("block.hbm_m.reinforced_light", "Усиленный светящийся камень");
+        add("block.hbm_m.reinforced_sand", "Усиленный песчаник");
+        add("block.hbm_m.safe", "Сейф");
+        add("block.hbm_m.sand_boron", "Борный песок");
+        add("block.hbm_m.sand_dirty", "Пропитанный нефтью песок");
+        add("block.hbm_m.sand_dirty_red", "Пропитанный нефтью красный песок");
+        add("block.hbm_m.sand_lead", "Свинцовый песок");
+        add("block.hbm_m.sand_polonium", "Полониевый песок");
+        add("block.hbm_m.sand_quartz", "Кварцевый песок");
+        add("block.hbm_m.sand_uranium", "Урановый песок");
+        add("block.hbm_m.sandbags", "Мешки с песком");
+        add("block.hbm_m.sat_dock", "Станция посадки груза");
+        add("block.hbm_m.seal_controller", "Открыватель люка пусковой шахты");
+        add("block.hbm_m.seal_frame", "Рама люка пусковой шахты");
+        add("block.hbm_m.seal_hatch", "Люк пусковой шахты");
+        add("block.hbm_m.semtex", "Семтекс");
+        add("block.hbm_m.solar_mirror", "Зеркало-гелиостат");
+        add("block.hbm_m.soyuz_capsule", "Грузовая посадочная капсула");
+        add("block.hbm_m.soyuz_launcher", "Стартовая платформа \"Союза\"");
+        add("block.hbm_m.spikes", "Шипы");
+        add("block.hbm_m.steel_corner", "Стальной угол");
+        add("block.hbm_m.steel_roof", "Плоская стальная крыша");
+        add("block.hbm_m.steel_scaffold", "Стальные подмостки");
+        add("block.hbm_m.steel_wall", "Стальная стенка");
+        add("block.hbm_m.stone_cracked", "Треснутый камень");
+        add("block.hbm_m.stone_depth", "Глубинный камень");
+        add("block.hbm_m.stone_depth_nether", "Адский глубинный камень");
+        add("block.hbm_m.stone_gneiss", "Графитовый сланец");
+        add("block.hbm_m.stone_porous", "Пористый камень");
+        add("block.hbm_m.struct_icf_core", "Ядро инерциального термоядерного реактора (ICF)");
+        add("block.hbm_m.struct_launcher", "Блок-компонент пусковой площадки");
+        add("block.hbm_m.struct_launcher_core", "Ядро компактной пусковой площадки");
+        add("block.hbm_m.struct_launcher_core_large", "Ядро большой пусковой площадки");
+        add("block.hbm_m.struct_scaffold", "Подмосток пусковой площадки");
+        add("block.hbm_m.struct_soyuz_core", "Ядро стартовой площадки Союза");
+        add("block.hbm_m.struct_torus_core", "Ядро основной камеры (Термоядерный реактор)");
+        add("block.hbm_m.struct_watz_core", "Ядро Ватцз-реактора");
+        add("block.hbm_m.tektite", "Тектит");
+        add("block.hbm_m.teleanchor", "Телепортационный якорь");
+        add("block.hbm_m.tesla", "Катушка Теслы");
+        add("block.hbm_m.therm_endo", "Эндотермическая бомба");
+        add("block.hbm_m.therm_exo", "Экзотермическая бомба");
+        add("block.hbm_m.tile_lab", "Лабораторная плитка");
+        add("block.hbm_m.tile_lab_broken", "Разбитая лабораторная плитка");
+        add("block.hbm_m.tile_lab_cracked", "Треснувшая лабораторная плитка");
+        add("block.hbm_m.trapdoor_steel", "Стальной люк");
+        add("block.hbm_m.vacuum", "Вакуум");
+        add("block.hbm_m.vent_chlorine", "Хлорный клапан");
+        add("block.hbm_m.vent_chlorine_seal", "Хлорный уплотнитель");
+        add("block.hbm_m.vent_cloud", "Воздушный клапан с облаком");
+        add("block.hbm_m.vent_pink_cloud", "Воздушный клапан с розовым облаком");
+        add("block.hbm_m.volcano_core", "Вулканическое ядро");
+        add("block.hbm_m.volcano_rad_core", "Радиоактивное вулканическое ядро");
+        add("block.hbm_m.wand_air", "Блок для структурной палочки (Air)");
+        add("block.hbm_m.wand_jigsaw", "Блок для структурной палочки (Jigsaw)");
+        add("block.hbm_m.wand_logic", "Блок для структурной палочки (Logic)");
+        add("block.hbm_m.wand_loot", "Блок для структурной палочки (Lootable)");
+        add("block.hbm_m.waste_earth", "Мёртвая трава");
+        add("block.hbm_m.waste_mycelium", "Светящийся мицелий");
+        add("block.hbm_m.waste_trinitite", "Тринититовый песок");
+        add("block.hbm_m.waste_trinitite_red", "Красный тринититовый песок");
+        add("block.hbm_m.watz_cooler", "Суперохладитель реактора Ватцза");
+        add("block.hbm_m.watz_element", "Камера реакции Ватцза");
+        add("block.hbm_m.watz_end", "Стабилизатор реактора Ватцза");
+        add("block.hbm_m.watz_end_bolted", "Стабилизатор реактора Ватцза (Заклепанный)");
+        add("block.hbm_m.wood_barrier", "Деревянный барьер");
 
         // MACHINE GUI
         
@@ -2009,7 +2867,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("tooltip.hbm_m.rad_protection.value", "Сопротивление радиации: %s");
 
         add("container.hbm_m.armor_table", "Стол модификации брони");
-        add("container.hbm_m.machine_assembler", "Сборочная машина (Старая)");
+        add("container.hbm_m.machine_assembler", "Сборочная машина (LEGACY)");
         add("container.hbm_m.advanced_assembly_machine", "Сборочная машина");
         add(ModBlocks.CRUCIBLE.get(), "Тигель (WIP)");
         add(ModBlocks.FOUNDRY_BASIN.get(), "Литейный бассейн");
@@ -2157,8 +3015,139 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModItems.ITEM_SECRET_SELENIUM_STEEL.get(), "Секрет: Селеновая сталь");
         add(ModItems.ITEM_SECRET_ABERRATOR.get(), "Секрет: Аберратор");
         add(ModItems.ITEM_SECRET_FOLLY.get(), "Секрет: Глупость");
+        
         add("advancements.hbm_m.red_room.title", "Другая сторона");
         add("advancements.hbm_m.red_room.description", "Без ключа не войдёшь. Хотя бы треснутого.");
+        add("advancements.hbm_m.acidizer.description", "Скрафти кристаллизатор");
+        add("advancements.hbm_m.acidizer.title", "Кислотная ванна");
+        add("advancements.hbm_m.assembly.description", "Скрафти сборочную машину");
+        add("advancements.hbm_m.assembly.title", "Требуется сборка");
+        add("advancements.hbm_m.bismuth.description", "Получи висмут");
+        add("advancements.hbm_m.bismuth.title", "Пепто-Бисмут");
+        add("advancements.hbm_m.blast_furnace.description", "Скрафти доменную печь");
+        add("advancements.hbm_m.blast_furnace.title", "Стальные нервы");
+        add("advancements.hbm_m.boss_creeper.description", "Убей ядерного крипера");
+        add("advancements.hbm_m.boss_creeper.title", "Убийца крипера");
+        add("advancements.hbm_m.boss_maskman.description", "Убей человека в маске");
+        add("advancements.hbm_m.boss_maskman.title", "Человек в маске");
+        add("advancements.hbm_m.boss_meltdown.description", "Убей РАД-зверя");
+        add("advancements.hbm_m.boss_meltdown.title", "Расплавление");
+        add("advancements.hbm_m.boss_ufo.description", "Убей НЛО");
+        add("advancements.hbm_m.boss_ufo.title", "Близкий контакт");
+        add("advancements.hbm_m.boss_worm.description", "Убей BOT Prime");
+        add("advancements.hbm_m.boss_worm.title", "Бездонная яма");
+        add("advancements.hbm_m.breeding.description", "Получи америций");
+        add("advancements.hbm_m.breeding.title", "Программа наработки");
+        add("advancements.hbm_m.burner_press.description", "Скрафти обжиговый пресс");
+        add("advancements.hbm_m.burner_press.title", "Пресс-папье");
+        add("advancements.hbm_m.c20_5.description", "Узнай сам");
+        add("advancements.hbm_m.c20_5.title", "C20-5");
+        add("advancements.hbm_m.centrifuge.description", "Скрафти центрифугу");
+        add("advancements.hbm_m.centrifuge.title", "По кругу");
+        add("advancements.hbm_m.chemplant.description", "Скрафти химзавод");
+        add("advancements.hbm_m.chemplant.title", "Химия - это жизнь");
+        add("advancements.hbm_m.chicago_pile.description", "Скрафти плутониевый стержень");
+        add("advancements.hbm_m.chicago_pile.title", "Чикагская поленница");
+        add("advancements.hbm_m.concrete.description", "Скрафти гладкий или асбестовый бетон");
+        add("advancements.hbm_m.concrete.title", "Высечено в бетоне");
+        add("advancements.hbm_m.desh.description", "Получи деш");
+        add("advancements.hbm_m.desh.title", "Плотная материя");
+        add("advancements.hbm_m.digamma_feel.description", "Достигни 2 дигаммы");
+        add("advancements.hbm_m.digamma_feel.title", "Ты чувствуешь это");
+        add("advancements.hbm_m.digamma_kauai_moho.description", "Узри копьё дигаммы");
+        add("advancements.hbm_m.digamma_kauai_moho.title", "Кауаи Мохо");
+        add("advancements.hbm_m.digamma_know.description", "Достигни 10 дигаммы");
+        add("advancements.hbm_m.digamma_know.title", "Ты знаешь это");
+        add("advancements.hbm_m.digamma_see.description", "Получи первое облучение дигаммой");
+        add("advancements.hbm_m.digamma_see.title", "Ты видишь это");
+        add("advancements.hbm_m.digamma_up_on_top.description", "Переживи то, что будет дальше");
+        add("advancements.hbm_m.digamma_up_on_top.title", "На вершине");
+        add("advancements.hbm_m.fiend.description", "Возьми мерцающую кувалду");
+        add("advancements.hbm_m.fiend.title", "Изверг");
+        add("advancements.hbm_m.fiend2.description", "Возьми мерцающий топор");
+        add("advancements.hbm_m.fiend2.title", "Изверг II");
+        add("advancements.hbm_m.foeq.description", "Разверни спутник FOEQ");
+        add("advancements.hbm_m.foeq.title", "Кулак яростной дрожи");
+        add("advancements.hbm_m.fox_breeding.description", "Разведи двух лисиц");
+        add("advancements.hbm_m.fox_breeding.title", "Славная с 1291 года");
+        add("advancements.hbm_m.fusion.description", "Скрафти ядро термоядерного тора");
+        add("advancements.hbm_m.fusion.title", "Как солнце");
+        add("advancements.hbm_m.gas_cent.description", "Скрафти газовую центрифугу");
+        add("advancements.hbm_m.gas_cent.title", "Центр обогащения");
+        add("advancements.hbm_m.go_fish.description", "Поймай нечто необычное");
+        add("advancements.hbm_m.go_fish.title", "Иди лови рыбу");
+        add("advancements.hbm_m.hidden.description", "О некоторых вещах не объявляют");
+        add("advancements.hbm_m.hidden.title", "Скрытое");
+        add("advancements.hbm_m.horizons_bonus.description", "Заверши начатое Horizons");
+        add("advancements.hbm_m.horizons_bonus.title", "За горизонтом");
+        add("advancements.hbm_m.horizons_end.description", "Увидь, что нашёл Horizons");
+        add("advancements.hbm_m.horizons_end.title", "Горизонт событий");
+        add("advancements.hbm_m.horizons_start.description", "Выведи Horizons на орбиту");
+        add("advancements.hbm_m.horizons_start.title", "Широкие горизонты");
+        add("advancements.hbm_m.impossible.description", "Получи ничего");
+        add("advancements.hbm_m.impossible.title", "Невозможно");
+        add("advancements.hbm_m.inferno.description", "Подожги нефтеперерабатывающий завод");
+        add("advancements.hbm_m.inferno.title", "Инферно");
+        add("advancements.hbm_m.manhattan.description", "Взорви ядерное устройство");
+        add("advancements.hbm_m.manhattan.title", "Теперь я стал смертью");
+        add("advancements.hbm_m.no9.description", "Выкури Номер 9");
+        add("advancements.hbm_m.no9.title", "Номер 9");
+        add("advancements.hbm_m.omega12.description", "Скрафти частицу дигаммы");
+        add("advancements.hbm_m.omega12.title", "Омега 12");
+        add("advancements.hbm_m.polymer.description", "Получи полимер");
+        add("advancements.hbm_m.polymer.title", "Пластик - это фантастика");
+        add("advancements.hbm_m.potato.description", "Скрафти картофельную батарейку");
+        add("advancements.hbm_m.potato.title", "Картофельная батарейка");
+        add("advancements.hbm_m.rad_death.description", "Умереть от лучевой болезни");
+        add("advancements.hbm_m.rad_death.title", "Ай, Радиация!");
+        add("advancements.hbm_m.rad_poison.description", "Достигнуть уровня радиации в 200 РАД");
+        add("advancements.hbm_m.rad_poison.title", "Ура, Радиация!");
+        add("advancements.hbm_m.radium.description", "Выпей радиевый кофе");
+        add("advancements.hbm_m.radium.title", "Свети и радуйся");
+        add("advancements.hbm_m.rbmk.description", "Скрафти пустой ТВЭЛ РБМК");
+        add("advancements.hbm_m.rbmk.title", "Реактор Большой Мощности Канальный");
+        add("advancements.hbm_m.rbmk_boom.description", "Устрой аварию на РБМК");
+        add("advancements.hbm_m.rbmk_boom.title", "3,6 рентгена");
+        add("advancements.hbm_m.red_balloons.description", "Скрафти ядерную ракету");
+        add("advancements.hbm_m.red_balloons.title", "99 красных шаров");
+        add("advancements.hbm_m.root.description", "Расщепи пару атомов и живи с последствиями");
+        add("advancements.hbm_m.root.title", "Ядерные технологии");
+        add("advancements.hbm_m.sacrifice.description", "Пожертвуй чем-нибудь");
+        add("advancements.hbm_m.sacrifice.title", "Жертва");
+        add("advancements.hbm_m.schrab.description", "Получи шрабидий");
+        add("advancements.hbm_m.schrab.title", "Элемент 126");
+        add("advancements.hbm_m.selenium.description", "Скрафти селеновый поршень или винтовку Б92");
+        add("advancements.hbm_m.selenium.title", "Селеновая сталь");
+        add("advancements.hbm_m.silex.description", "Скрафти SILEX");
+        add("advancements.hbm_m.silex.title", "Лазерный фокус");
+        add("advancements.hbm_m.slimeball.description", "Подбери слизь");
+        add("advancements.hbm_m.slimeball.title", "Слизень");
+        add("advancements.hbm_m.some_wounds.description", "Используй нож-инъектор");
+        add("advancements.hbm_m.some_wounds.title", "Некоторые раны не заживают");
+        add("advancements.hbm_m.soyuz.description", "Запусти Союз с пассажиром");
+        add("advancements.hbm_m.soyuz.title", "Картошка в космосе");
+        add("advancements.hbm_m.space.description", "Достигни орбиты");
+        add("advancements.hbm_m.space.title", "Космическая гонка");
+        add("advancements.hbm_m.stratum.description", "Добудь гнейс");
+        add("advancements.hbm_m.stratum.title", "Глубочайший пласт");
+        add("advancements.hbm_m.sulfuric.description", "Искупайся в чём-то едком");
+        add("advancements.hbm_m.sulfuric.title", "Серная");
+        add("advancements.hbm_m.tantalum.description", "Получи танталий");
+        add("advancements.hbm_m.tantalum.title", "Танталовы муки");
+        add("advancements.hbm_m.taste_of_blood.description", "Выпей то, что не следовало");
+        add("advancements.hbm_m.taste_of_blood.title", "Вкус крови");
+        add("advancements.hbm_m.technetium.description", "Получи технеций");
+        add("advancements.hbm_m.technetium.title", "Искусственный элемент");
+        add("advancements.hbm_m.watz.description", "Скрафти ядро Watz");
+        add("advancements.hbm_m.watz.title", "Watz Up");
+        add("advancements.hbm_m.watz_boom.description", "Взорви установку Watz");
+        add("advancements.hbm_m.watz_boom.title", "Фабрика шлама");
+        add("advancements.hbm_m.zirnox_boom.description", "Взорви реактор ZIRNOX");
+        add("advancements.hbm_m.zirnox_boom.title", "Не хорошо, но и не ужасно");
+        add("advancements.hbm_m.radiation_200.title", "Ура, Радиация!");
+        add("advancements.hbm_m.radiation_200.description", "Достигнуть уровня радиации в 200 РАД");
+        add("advancements.hbm_m.radiation_1000.title", "Ай, Радиация!");
+        add("advancements.hbm_m.radiation_1000.description", "Умереть от лучевой болезни");
         add("gui.hbm_m.solar_boiler.sunlight", "Солнечный свет");
         add("gui.hbm_m.solar_boiler.mirrors", "Активные зеркала: %s");
         add("container.hbm_m.solar_boiler", "Солнечный котел");
@@ -2277,6 +3266,9 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("door.skin.hbm_m.vault_door.skin_99", "Vault 99");
         add("door.skin.hbm_m.vault_door.skin_81", "Vault 81");
         add("door.skin.hbm_m.vault_door.skin_111", "Vault 111");
+
+        // item.undefined.name=Undefined (в ru_RU.lang оригинала перевода нет)
+        add(ModItems.UNDEFINED.get(), "Undefined");
 
         add(ModItems.SCREWDRIVER.get(), "Отвёртка");
         add("tooltip.hbm_m.screwdriver", "Клик ПКМ - настройка конвертера энергии или смена скина двери");
@@ -2434,15 +3426,10 @@ public class ModLanguageProviderRu extends LanguageProvider {
 
         // СООБЩЕНИЯ О СМЕРТИ
         add("death.attack.radiation", "Игрок %s умер от лучевой болезни");
-        // 1.7.10 death.attack.asbestos / death.attack.blacklung
         add("death.attack.asbestos", "%1$s теперь имеет право на финансовую компенсацию.");
         add("death.attack.blacklung", "%1$s умер от болезни чёрных лёгких.");
         add("death.attack.hardlanding_smash", "%1$s был раздавлен в лепешку %2$s");
-
-        add("advancements.hbm_m.radiation_200.title", "Ура, Радиация!");
-        add("advancements.hbm_m.radiation_200.description", "Достигнуть уровня радиации в 200 РАД");
-        add("advancements.hbm_m.radiation_1000.title", "Ай, Радиация!");
-        add("advancements.hbm_m.radiation_1000.description", "Умереть от лучевой болезни");
+        add("death.attack.taint", "%1$s умер от невероятного количества опухолей.");
 
         add("chat.hbm_m.structure.obstructed", "Другие блоки мешают установке структуры!!");
         add("chat.hbm_m.chungus.on", "Турбина Левиафан: ВКЛ");
@@ -2710,9 +3697,15 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("armor.fsb.hardLanding", "Жёсткая посадка");
         add("armor.fsb.stepSize", "Шаг: %d");
         add("armor.fsb.dash", "Дополнительных рывков: %d");
+
+        // Мета-предметы вкладки Parts (PartTabMetaItems): имена из ru_RU.lang оригинала.
+        for (com.hbm_m.item.PartTabMetaItems.Entry e : com.hbm_m.item.PartTabMetaItems.entries()) {
+            dev.architectury.registry.registries.RegistrySupplier<Item> sup = com.hbm_m.item.PartTabMetaItems.get(e.id);
+            if (sup != null && sup.isPresent()) {
+                add(sup.get(), e.ru);
+            }
+        }
+        add("tooltip.hbm_m.waste_cooling.desc", "Охладите в бочке с отработанным топливом");
     }
 }
 //?}
-
-
-

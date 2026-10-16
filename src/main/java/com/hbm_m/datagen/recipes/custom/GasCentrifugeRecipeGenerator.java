@@ -2,8 +2,9 @@ package com.hbm_m.datagen.recipes.custom;
 //? if forge {
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
-import com.hbm_m.item.tags_and_tiers.ModPowders;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 
 import dev.architectury.fluid.FluidStack;
 import net.minecraft.data.recipes.FinishedRecipe;
@@ -31,8 +32,8 @@ public final class GasCentrifugeRecipeGenerator {
         GasCentrifugeRecipeBuilder.gasCentrifugeRecipe(
                         fluid(ModFluids.UF6.getSource(), 1200),
                         new ItemStack[]{
-                                new ItemStack(ModItems.NUGGET_U238.get(), 11),
-                                new ItemStack(ModItems.NUGGET_U235.get(), 1),
+                                ModMaterialItems.stack(ModMaterials.URANIUM238, MaterialShape.NUGGET, 11),
+                                ModMaterialItems.stack(ModMaterials.URANIUM235, MaterialShape.NUGGET, 1),
                                 new ItemStack(ModItems.FLUORITE.get(), 4)
                         }, true, 4)
                 .save(writer, "gas_centrifuge/uf6_high_enriched");
@@ -41,8 +42,8 @@ public final class GasCentrifugeRecipeGenerator {
         GasCentrifugeRecipeBuilder.gasCentrifugeRecipe(
                         fluid(ModFluids.UF6.getSource(), 1200),
                         new ItemStack[]{
-                                new ItemStack(ModItems.NUGGET_U238.get(), 6),
-                                new ItemStack(ModItems.NUGGET_URANIUM_FUEL.get(), 6),
+                                ModMaterialItems.stack(ModMaterials.URANIUM238, MaterialShape.NUGGET, 6),
+                                ModMaterialItems.stack(ModMaterials.URANIUM_FUEL, MaterialShape.NUGGET, 6),
                                 new ItemStack(ModItems.FLUORITE.get(), 4)
                         }, false, 2)
                 .save(writer, "gas_centrifuge/uf6_low_enriched");
@@ -51,19 +52,19 @@ public final class GasCentrifugeRecipeGenerator {
         GasCentrifugeRecipeBuilder.gasCentrifugeRecipe(
                         fluid(ModFluids.PUF6.getSource(), 900),
                         new ItemStack[]{
-                                new ItemStack(ModItems.NUGGET_PU238.get(), 3),
-                                new ItemStack(ModItems.NUGGET_PU_MIX.get(), 6),
+                                ModMaterialItems.stack(ModMaterials.PLUTONIUM238, MaterialShape.NUGGET, 3),
+                                ModMaterialItems.stack(ModMaterials.PU_MIX, MaterialShape.NUGGET, 6),
                                 new ItemStack(ModItems.FLUORITE.get(), 3)
                         }, false, 1)
                 .save(writer, "gas_centrifuge/puf6_enriched");
 
         // ── WATZ sludge → iron powder×1 + lead powder×1 + nuclear_waste_tiny×1 + dust×2 (2 centrifuges)
-        // ModItems API: getPowders(ModPowders) — порошок-powder-тип; getPowder(ModIngots) — ingot→powder.
+        // ModMaterialItems API: MaterialShape.POWDER — порошок (был getPowders/getPowder).
         GasCentrifugeRecipeBuilder.gasCentrifugeRecipe(
                         fluid(ModFluids.WATZ.getSource(), 1000),
                         new ItemStack[]{
-                                new ItemStack(ModItems.getPowders(ModPowders.IRON).get(), 1),
-                                new ItemStack(ModItems.getPowder(ModIngots.LEAD).get(), 1),
+                                ModMaterialItems.stack(ModMaterials.IRON, MaterialShape.POWDER, 1),
+                                ModMaterialItems.stack(ModMaterials.LEAD, MaterialShape.POWDER, 1),
                                 new ItemStack(ModItems.NUCLEAR_WASTE_TINY.get(), 1),
                                 new ItemStack(ModItems.DUST.get(), 2)
                         }, false, 2)

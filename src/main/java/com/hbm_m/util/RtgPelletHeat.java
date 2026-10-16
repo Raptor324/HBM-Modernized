@@ -7,8 +7,8 @@ import com.hbm_m.item.ModItems;
 import net.minecraft.world.item.Item;
 
 /**
- * Shared RTG-pellet heat lookup, used by both {@code MachineRtgBlockEntity} and
- * {@code MachineDifurnaceRtgBlockEntity} - see {@code MachineRtgBlockEntity}'s class javadoc for
+ * Shared RTG-pellet heat lookup, used by both the removed RTG block entity and
+ * {@code MachineDifurnaceRtgBlockEntity} - see the removed RTG block entity's class javadoc for
  * the scope note on why decay/depletion isn't ported (values below are the original's non-decay
  * heat constants).
  */

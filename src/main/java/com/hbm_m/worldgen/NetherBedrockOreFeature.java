@@ -3,6 +3,9 @@ package com.hbm_m.worldgen;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.nature.OreBedrockBlockEntity;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 
 import com.mojang.serialization.Codec;
 
@@ -85,7 +88,7 @@ public class NetherBedrockOreFeature extends Feature<NoneFeatureConfiguration> {
     private ItemStack pickResource(net.minecraft.util.RandomSource rand) {
         int roll = rand.nextInt(250);
         if (roll < 100) return new ItemStack(Items.GLOWSTONE_DUST, 4);
-        if (roll < 150) return new ItemStack(ModItems.CRYSTAL_PHOSPHORUS.get(), 4);
+        if (roll < 150) return ModMaterialItems.stack(ModMaterials.PHOSPHORUS, MaterialShape.CRYSTAL, 4);
         return new ItemStack(Items.QUARTZ, 4);
     }
 }

@@ -32,6 +32,21 @@ public class PedestalBlock extends BaseEntityBlock {
         return RenderShape.MODEL;
     }
 
+    // Геометрия RenderPedestal (1.7.10): нижняя плита 0-4px, колонна 12x12
+    // 4-12px, верхняя плита 12-16px — между плитами сквозной вырез.
+    private static final net.minecraft.world.phys.shapes.VoxelShape SHAPE =
+            net.minecraft.world.phys.shapes.Shapes.or(
+                    Block.box(0, 0, 0, 16, 4, 16),
+                    Block.box(2, 4, 2, 14, 12, 14),
+                    Block.box(0, 12, 0, 16, 16, 16));
+
+    @Override
+    public net.minecraft.world.phys.shapes.VoxelShape getShape(net.minecraft.world.level.block.state.BlockState state,
+            net.minecraft.world.level.BlockGetter level, net.minecraft.core.BlockPos pos,
+            net.minecraft.world.phys.shapes.CollisionContext context) {
+        return SHAPE;
+    }
+
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {

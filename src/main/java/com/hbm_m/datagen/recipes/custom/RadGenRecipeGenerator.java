@@ -1,6 +1,9 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.world.item.ItemStack;
@@ -32,7 +35,7 @@ public final class RadGenRecipeGenerator {
         radgen(writer, "waste_long_tiny", ModItems.NUCLEAR_WASTE_LONG_TINY.get(),
                 50, 12 * 60 * 20, new ItemStack(ModItems.NUCLEAR_WASTE_LONG_DEPLETED_TINY.get()));
         // Scrap: сгорает без выхода (result опускается).
-        radgen(writer, "scrap", ModItems.SCRAP_NUCLEAR.get(),
+        radgen(writer, "scrap", ModMaterialItems.item(ModMaterials.SCRAP_NUCLEAR, MaterialShape.SCRAP),
                 50, 5 * 60 * 20, ItemStack.EMPTY);
         radgen(writer, "gem_rad", ModItems.GEM_RAD.get(),
                 25_000, 30 * 60 * 20, new ItemStack(Items.DIAMOND));

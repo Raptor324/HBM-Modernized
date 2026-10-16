@@ -107,7 +107,7 @@ public class RBMKDebrisBurningBlock extends Block {
             if (damage <= 0.025F) continue;
 
             e.hurt(level.damageSources().inFire(), damage);
-            e.setSecondsOnFire(5);
+            com.hbm_m.platform.PlatformHooks.setSecondsOnFire(e, 5);
         }
     }
 

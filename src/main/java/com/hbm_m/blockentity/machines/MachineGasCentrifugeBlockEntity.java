@@ -18,6 +18,9 @@ import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.recipe.PseudoFluidTank;
 import com.hbm_m.recipe.PseudoFluidType;
 
@@ -324,7 +327,7 @@ public class MachineGasCentrifugeBlockEntity extends BaseMachineBlockEntity impl
     private void convertFinalUraniumOutput() {
         if (outputTank.getFill() < 600) return;
 
-        ItemStack nugget = new ItemStack(ModItems.NUGGET_URANIUM_FUEL.get(), 6);
+        ItemStack nugget = new ItemStack(ModMaterialItems.item(ModMaterials.URANIUM_FUEL, MaterialShape.NUGGET), 6);
         ItemStack fluorite = new ItemStack(ModItems.FLUORITE.get(), 1);
         if (!canAcceptOutput(nugget) || !canAcceptOutput(fluorite)) return;
 

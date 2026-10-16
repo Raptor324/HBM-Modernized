@@ -87,7 +87,7 @@ public final class DhClientCompat {
             capturedFovDeg = (float) expectedFov;
         } else {
             if (++captureRejectDiag % 300 == 1) {
-                com.hbm_m.main.MainRegistry.LOGGER.info(
+                com.hbm_m.main.MainRegistry.LOGGER.debug(
                         "HBM capture VANILLA PROJ REJECTED: {}",
                         candidate == null ? "no source"
                                 : String.format("joml m22=%.5f m23=%.5f m32=%.5f m33=%.5f",
@@ -125,7 +125,7 @@ public final class DhClientCompat {
     private static void logCaptureRejectedAtUse() {
         if (++useRejectDiag % 300 == 1) {
             Matrix4f c = capturedVanillaProjection;
-            com.hbm_m.main.MainRegistry.LOGGER.info(
+            com.hbm_m.main.MainRegistry.LOGGER.debug(
                     "HBM capture REJECTED AT USE x{}: storedFov={}, actualFovY={}{}",
                     useRejectDiag,
                     String.format("%.2f", capturedFovDeg),
@@ -234,7 +234,7 @@ public final class DhClientCompat {
             return base;
         } catch (Throwable t) {
             if (++captureRejectDiag % 300 == 1) {
-                com.hbm_m.main.MainRegistry.LOGGER.info(
+                com.hbm_m.main.MainRegistry.LOGGER.debug(
                         "HBM reconstruct proj failed: {}", t.toString());
             }
             return null;

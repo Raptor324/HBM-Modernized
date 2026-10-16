@@ -18,11 +18,7 @@ import net.minecraft.world.entity.player.Inventory;
 public class GUINukeSolinium extends GuiInfoScreen<NukeSoliniumMenu> {
 
     private static final ResourceLocation TEXTURE =
-            //? if < 1.21.1 {
-            new ResourceLocation(RefStrings.MODID, "textures/gui/weapon/solinium_schematic.png");
-            //?} else {
-            /*ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/weapon/solinium_schematic.png");
-             *///?}
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/weapon/solinium_schematic.png");
 
     private final NukeSoliniumBlockEntity be;
 

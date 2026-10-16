@@ -3,6 +3,9 @@ package com.hbm_m.event;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.bomb.LandmineBlock;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.sound.ModSounds;
 
 import dev.architectury.event.EventResult;
@@ -45,16 +48,17 @@ public class BombDefuser {
             ModSounds.CLICK
     );
 
-    private record DropAmount(RegistrySupplier<?> item, int amount) {}
+    private record DropAmount(RegistrySupplier<Item> item, int amount) {}
 
+    // Supplier'ы разрешаем лениво: класс инициализируется на CONSTRUCT, реестр ещё пуст.
     private static final Map<RegistrySupplier<Block>, List<DropAmount>> BOMB_DROPS = Map.of(
             ModBlocks.MINE_FAT, List.of(
-                    new DropAmount(ModItems.BILLET_PLUTONIUM, 1),
-                    new DropAmount(ModItems.PLATE_STEEL, 3),
+                    new DropAmount(ModMaterialItems.get(ModMaterials.PLUTONIUM, MaterialShape.BILLET), 1),
+                    new DropAmount(ModMaterialItems.get(ModMaterials.STEEL, MaterialShape.PLATE), 3),
                     new DropAmount(ModItems.BALL_TNT, 1)
             ),
             ModBlocks.MINE_AP, List.of(
-                    new DropAmount(ModItems.PLATE_STEEL, 3),
+                    new DropAmount(ModMaterialItems.get(ModMaterials.STEEL, MaterialShape.PLATE), 3),
                     new DropAmount(ModItems.BALL_TNT, 2)
             ),
             ModBlocks.NAVAL_MINE, List.of(
@@ -62,17 +66,17 @@ public class BombDefuser {
                     new DropAmount(ModItems.BALL_TNT, 24)
             ),
             ModBlocks.DUD_CONVENTIONAL, List.of(
-                    new DropAmount(ModItems.PLATE_STEEL, 8),
+                    new DropAmount(ModMaterialItems.get(ModMaterials.STEEL, MaterialShape.PLATE), 8),
                     new DropAmount(ModItems.BALL_TNT, 16)
             ),
             ModBlocks.DUD_SALTED, List.of(
-                    new DropAmount(ModItems.BILLET_PLUTONIUM, 2),
+                    new DropAmount(ModMaterialItems.get(ModMaterials.PLUTONIUM, MaterialShape.BILLET), 2),
                     new DropAmount(ModItems.BALL_TNT, 8),
                     new DropAmount(ModItems.COBALT_RAW, 8)
             ),
             ModBlocks.DUD_NUKE, List.of(
                     new DropAmount(ModItems.BALL_TNT, 8),
-                    new DropAmount(ModItems.BILLET_PLUTONIUM, 4)
+                    new DropAmount(ModMaterialItems.get(ModMaterials.PLUTONIUM, MaterialShape.BILLET), 4)
             )
     );
 
@@ -138,16 +142,10 @@ public class BombDefuser {
     }
 
     private static void spawnDrop(Level level, BlockPos pos, DropAmount drop) {
-        var obj = drop.item.get();
-        Item itemToDrop = null;
-
-        if (obj instanceof Item item) {
-            itemToDrop = item;
-        } else if (obj instanceof Block block) {
-            itemToDrop = Item.byBlock(block);
-        }
-
-        if (itemToDrop == null || itemToDrop == Items.AIR) return;
+        RegistrySupplier<Item> supplier = drop.item();
+        if (supplier == null || !supplier.isPresent()) return;
+        Item itemToDrop = supplier.get();
+        if (itemToDrop == Items.AIR) return;
 
         ItemStack dropStack = new ItemStack(itemToDrop, drop.amount);
         ItemEntity dropEntity = new ItemEntity(level,

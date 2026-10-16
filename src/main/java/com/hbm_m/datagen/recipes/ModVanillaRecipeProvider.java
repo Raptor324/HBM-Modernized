@@ -13,8 +13,9 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.generic.BlockAbsorber;
 import com.hbm_m.item.BlockAbsorberItem;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
-import com.hbm_m.item.tags_and_tiers.ModPowders;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.item.tags_and_tiers.ModTags;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.platform.PlatformHooks;
@@ -107,43 +108,43 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("ZRZ")
                 .pattern("Z Z")
                 .pattern("ZRZ")
-                .define('Z', ModItems.getIngot(ModIngots.ZIRCONIUM).get())
+                .define('Z', ModMaterialItems.item(ModMaterials.ZIRCONIUM, MaterialShape.INGOT))
                 .define('R', ModItems.ROD_QUAD_EMPTY.get())
                 .unlockedBy(getHasName(ModItems.ROD_QUAD_EMPTY.get()), has(ModItems.ROD_QUAD_EMPTY.get()))
                 .save(writer, recipeId("crafting/rbmk_fuel_empty"));
 
         // RodRecipes.java:90-120 - addRBMKRod(billet, rod)
-        rbmkRod(writer, ModItems.RBMK_FUEL_UEU,            ModItems.BILLET_URANIUM);
-        rbmkRod(writer, ModItems.RBMK_FUEL_MEU,            ModItems.BILLET_URANIUM_FUEL);
-        rbmkRod(writer, ModItems.RBMK_FUEL_HEU233,         ModItems.BILLET_U233);
-        rbmkRod(writer, ModItems.RBMK_FUEL_HEU235,         ModItems.BILLET_U235);
-        rbmkRod(writer, ModItems.RBMK_FUEL_UZH,            ModItems.BILLET_UZH);
-        rbmkRod(writer, ModItems.RBMK_FUEL_THMEU,          ModItems.BILLET_THORIUM_FUEL);
-        rbmkRod(writer, ModItems.RBMK_FUEL_MOX,            ModItems.BILLET_MOX_FUEL);
-        rbmkRod(writer, ModItems.RBMK_FUEL_LEP,            ModItems.BILLET_PLUTONIUM_FUEL);
-        rbmkRod(writer, ModItems.RBMK_FUEL_MEP,            ModItems.BILLET_PU_MIX);
-        rbmkRod(writer, ModItems.RBMK_FUEL_HEP,            ModItems.BILLET_PU239);
-        rbmkRod(writer, ModItems.RBMK_FUEL_HEP241,         ModItems.BILLET_PU241);
-        rbmkRod(writer, ModItems.RBMK_FUEL_LEA,            ModItems.BILLET_AMERICIUM_FUEL);
-        rbmkRod(writer, ModItems.RBMK_FUEL_MEA,            ModItems.BILLET_AM_MIX);
-        rbmkRod(writer, ModItems.RBMK_FUEL_HEA241,         ModItems.BILLET_AM241);
-        rbmkRod(writer, ModItems.RBMK_FUEL_HEA242,         ModItems.BILLET_AM242);
-        rbmkRod(writer, ModItems.RBMK_FUEL_MEN,            ModItems.BILLET_NEPTUNIUM_FUEL);
-        rbmkRod(writer, ModItems.RBMK_FUEL_HEN,            ModItems.BILLET_NEPTUNIUM);
-        rbmkRod(writer, ModItems.RBMK_FUEL_PO210BE,        ModItems.BILLET_PO210BE);
-        rbmkRod(writer, ModItems.RBMK_FUEL_RA226BE,        ModItems.BILLET_RA226BE);
-        rbmkRod(writer, ModItems.RBMK_FUEL_PU238BE,        ModItems.BILLET_PU238BE);
-        rbmkRod(writer, ModItems.RBMK_FUEL_LEAUS,          ModItems.BILLET_AUSTRALIUM_LESSER);
-        rbmkRod(writer, ModItems.RBMK_FUEL_HEAUS,          ModItems.BILLET_AUSTRALIUM_GREATER);
+        rbmkRod(writer, ModItems.RBMK_FUEL_UEU,            ModMaterialItems.get(ModMaterials.URANIUM, MaterialShape.BILLET));
+        rbmkRod(writer, ModItems.RBMK_FUEL_MEU,            ModMaterialItems.get(ModMaterials.URANIUM_FUEL, MaterialShape.BILLET));
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEU233,         ModMaterialItems.get(ModMaterials.URANIUM233, MaterialShape.BILLET));
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEU235,         ModMaterialItems.get(ModMaterials.URANIUM235, MaterialShape.BILLET));
+        rbmkRod(writer, ModItems.RBMK_FUEL_UZH,            ModMaterialItems.get(ModMaterials.UZH, MaterialShape.BILLET));
+        rbmkRod(writer, ModItems.RBMK_FUEL_THMEU,          ModMaterialItems.get(ModMaterials.THORIUM_FUEL, MaterialShape.BILLET));
+        rbmkRod(writer, ModItems.RBMK_FUEL_MOX,            ModMaterialItems.get(ModMaterials.MOX_FUEL, MaterialShape.BILLET));
+        rbmkRod(writer, ModItems.RBMK_FUEL_LEP,            ModMaterialItems.get(ModMaterials.PLUTONIUM_FUEL, MaterialShape.BILLET));
+        rbmkRod(writer, ModItems.RBMK_FUEL_MEP,            ModMaterialItems.get(ModMaterials.PU_MIX, MaterialShape.BILLET));
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEP,            ModMaterialItems.get(ModMaterials.PLUTONIUM239, MaterialShape.BILLET));
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEP241,         ModMaterialItems.get(ModMaterials.PLUTONIUM241, MaterialShape.BILLET));
+        rbmkRod(writer, ModItems.RBMK_FUEL_LEA,            ModMaterialItems.get(ModMaterials.AMERICIUM_FUEL, MaterialShape.BILLET));
+        rbmkRod(writer, ModItems.RBMK_FUEL_MEA,            ModMaterialItems.get(ModMaterials.AM_MIX, MaterialShape.BILLET));
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEA241,         ModMaterialItems.get(ModMaterials.AM241, MaterialShape.BILLET));
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEA242,         ModMaterialItems.get(ModMaterials.AM242, MaterialShape.BILLET));
+        rbmkRod(writer, ModItems.RBMK_FUEL_MEN,            ModMaterialItems.get(ModMaterials.NEPTUNIUM_FUEL, MaterialShape.BILLET));
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEN,            ModMaterialItems.get(ModMaterials.NEPTUNIUM, MaterialShape.BILLET));
+        rbmkRod(writer, ModItems.RBMK_FUEL_PO210BE,        ModMaterialItems.get(ModMaterials.PO210BE, MaterialShape.BILLET));
+        rbmkRod(writer, ModItems.RBMK_FUEL_RA226BE,        ModMaterialItems.get(ModMaterials.RA226BE, MaterialShape.BILLET));
+        rbmkRod(writer, ModItems.RBMK_FUEL_PU238BE,        ModMaterialItems.get(ModMaterials.PU238BE, MaterialShape.BILLET));
+        rbmkRod(writer, ModItems.RBMK_FUEL_LEAUS,          ModMaterialItems.get(ModMaterials.AUSTRALIUM_LESSER, MaterialShape.BILLET));
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEAUS,          ModMaterialItems.get(ModMaterials.AUSTRALIUM_GREATER, MaterialShape.BILLET));
         rbmkRod(writer, ModItems.RBMK_FUEL_BALEFIRE,       ModItems.EGG_BALEFIRE_SHARD);
-        rbmkRod(writer, ModItems.RBMK_FUEL_LES,            ModItems.BILLET_LES);
-        rbmkRod(writer, ModItems.RBMK_FUEL_MES,            ModItems.BILLET_SCHRABIDIUM_FUEL);
-        rbmkRod(writer, ModItems.RBMK_FUEL_HES,            ModItems.BILLET_HES);
-        rbmkRod(writer, ModItems.RBMK_FUEL_BALEFIRE_GOLD,  ModItems.BILLET_BALEFIRE_GOLD);
-        rbmkRod(writer, ModItems.RBMK_FUEL_FLASHLEAD,      ModItems.BILLET_FLASHLEAD);
-        rbmkRod(writer, ModItems.RBMK_FUEL_ZFB_BISMUTH,    ModItems.BILLET_ZFB_BISMUTH);
-        rbmkRod(writer, ModItems.RBMK_FUEL_ZFB_PU241,      ModItems.BILLET_ZFB_PU241);
-        rbmkRod(writer, ModItems.RBMK_FUEL_ZFB_AM_MIX,     ModItems.BILLET_ZFB_AM_MIX);
+        rbmkRod(writer, ModItems.RBMK_FUEL_LES,            ModMaterialItems.get(ModMaterials.LES_FUEL, MaterialShape.BILLET));
+        rbmkRod(writer, ModItems.RBMK_FUEL_MES,            ModMaterialItems.get(ModMaterials.SCHRABIDIUM_FUEL, MaterialShape.BILLET));
+        rbmkRod(writer, ModItems.RBMK_FUEL_HES,            ModMaterialItems.get(ModMaterials.HES, MaterialShape.BILLET));
+        rbmkRod(writer, ModItems.RBMK_FUEL_BALEFIRE_GOLD,  ModMaterialItems.get(ModMaterials.BALEFIRE_GOLD, MaterialShape.BILLET));
+        rbmkRod(writer, ModItems.RBMK_FUEL_FLASHLEAD,      ModMaterialItems.get(ModMaterials.FLASHLEAD, MaterialShape.BILLET));
+        rbmkRod(writer, ModItems.RBMK_FUEL_ZFB_BISMUTH,    ModMaterialItems.get(ModMaterials.ZFB_BISMUTH, MaterialShape.BILLET));
+        rbmkRod(writer, ModItems.RBMK_FUEL_ZFB_PU241,      ModMaterialItems.get(ModMaterials.ZFB_PU241, MaterialShape.BILLET));
+        rbmkRod(writer, ModItems.RBMK_FUEL_ZFB_AM_MIX,     ModMaterialItems.get(ModMaterials.ZFB_AM_MIX, MaterialShape.BILLET));
 
         // RodRecipes.java:121
         ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.RBMK_FUEL_DRX.get())
@@ -173,16 +174,16 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
      * {@code main/CraftingManager.java:751-793 and 987-993} plus {@code crafting/ToolRecipes.java:133}.
      */
     private void registerRbmkBlockRecipes(Consumer<FinishedRecipe> writer) {
-        Ingredient steelPlate  = Ingredient.of(ModItems.PLATE_STEEL.get());
-        Ingredient graphiteIng = Ingredient.of(ModItems.getIngot(ModIngots.GRAPHITE).get());
-        Ingredient boronIngot  = Ingredient.of(ModItems.getIngot(ModIngots.BORON).get());
+        Ingredient steelPlate  = Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE));
+        Ingredient graphiteIng = Ingredient.of(ModMaterialItems.item(ModMaterials.GRAPHITE, MaterialShape.INGOT));
+        Ingredient boronIngot  = Ingredient.of(ModMaterialItems.item(ModMaterials.BORON, MaterialShape.INGOT));
 
         // :751 - rbmk_lid x4
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.RBMK_LID.get(), 4)
                 .pattern("PPP").pattern("CCC").pattern("PPP")
                 .define('P', steelPlate)
                 .define('C', ModBlocks.CONCRETE_ASBESTOS.get())
-                .unlockedBy(getHasName(ModItems.PLATE_STEEL.get()), has(ModItems.PLATE_STEEL.get()))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)), has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)))
                 .save(writer, recipeId("crafting/rbmk_lid"));
 
         // :752 and :753 - rbmk_lid_glass x4, two layer orders
@@ -191,14 +192,14 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .define('P', steelPlate)
                 .define('L', ModBlocks.GLASS_LEAD.get())
                 .define('B', ModBlocks.GLASS_BORON.get())
-                .unlockedBy(getHasName(ModItems.PLATE_STEEL.get()), has(ModItems.PLATE_STEEL.get()))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)), has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)))
                 .save(writer, recipeId("crafting/rbmk_lid_glass"));
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.RBMK_LID_GLASS.get(), 4)
                 .pattern("BBB").pattern("LLL").pattern("P P")
                 .define('P', steelPlate)
                 .define('L', ModBlocks.GLASS_LEAD.get())
                 .define('B', ModBlocks.GLASS_BORON.get())
-                .unlockedBy(getHasName(ModItems.PLATE_STEEL.get()), has(ModItems.PLATE_STEEL.get()))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)), has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)))
                 .save(writer, recipeId("crafting/rbmk_lid_glass_alt"));
 
         // :755
@@ -236,7 +237,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("BGB").pattern("GRG").pattern("BGB")
                 .define('G', ModBlocks.BLOCK_GRAPHITE.get())
                 .define('R', ModBlocks.RBMK_CONTROL.get())
-                .define('B', ModItems.NUGGET_BISMUTH.get())
+                .define('B', ModMaterialItems.item(ModMaterials.BISMUTH, MaterialShape.NUGGET))
                 .unlockedBy(getHasName(ModBlocks.RBMK_CONTROL.get()), has(ModBlocks.RBMK_CONTROL.get()))
                 .save(writer, recipeId("crafting/rbmk_control_mod"));
         // :761
@@ -269,7 +270,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("ZCZ").pattern("ZRZ").pattern("ZCZ")
                 .define('C', ModItems.SHELL_STEEL.get())
                 .define('R', ModBlocks.RBMK_BLANK.get())
-                .define('Z', ModItems.getIngot(ModIngots.ZIRCONIUM).get())
+                .define('Z', ModMaterialItems.item(ModMaterials.ZIRCONIUM, MaterialShape.INGOT))
                 .unlockedBy(getHasName(ModBlocks.RBMK_BLANK.get()), has(ModBlocks.RBMK_BLANK.get()))
                 .save(writer, recipeId("crafting/rbmk_element_reasim"));
         // :767
@@ -277,7 +278,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("BGB").pattern("GRG").pattern("BGB")
                 .define('G', ModBlocks.BLOCK_GRAPHITE.get())
                 .define('R', ModBlocks.RBMK_ROD_REASIM.get())
-                .define('B', ModItems.getIngot(ModIngots.TCALLOY).get())
+                .define('B', ModMaterialItems.item(ModMaterials.TCALLOY, MaterialShape.INGOT))
                 .unlockedBy(getHasName(ModBlocks.RBMK_ROD_REASIM.get()), has(ModBlocks.RBMK_ROD_REASIM.get()))
                 .save(writer, recipeId("crafting/rbmk_element_reasim_mod"));
         // :768
@@ -307,16 +308,16 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         // :771
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RBMK_STEAM_INLET.get())
                 .pattern("SCS").pattern("CBC").pattern("SCS")
-                .define('S', ModItems.getIngot(ModIngots.STEEL).get())
-                .define('C', ModItems.PLATE_IRON.get())
+                .define('S', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
+                .define('C', ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE))
                 .define('B', ModItems.TANK_STEEL.get())
                 .unlockedBy(getHasName(ModItems.TANK_STEEL.get()), has(ModItems.TANK_STEEL.get()))
                 .save(writer, recipeId("crafting/rbmk_steam_inlet"));
         // :772
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RBMK_STEAM_OUTLET.get())
                 .pattern("SCS").pattern("CBC").pattern("SCS")
-                .define('S', ModItems.getIngot(ModIngots.STEEL).get())
-                .define('C', ModItems.PLATE_COPPER.get())
+                .define('S', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
+                .define('C', ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE))
                 .define('B', ModItems.TANK_STEEL.get())
                 .unlockedBy(getHasName(ModItems.TANK_STEEL.get()), has(ModItems.TANK_STEEL.get()))
                 .save(writer, recipeId("crafting/rbmk_steam_outlet"));
@@ -430,7 +431,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("BGB").pattern("GRG").pattern("BGB")
                 .define('G', ModBlocks.BLOCK_GRAPHITE.get())
                 .define('R', ModBlocks.RBMK_ROD.get())
-                .define('B', ModItems.NUGGET_BISMUTH.get())
+                .define('B', ModMaterialItems.item(ModMaterials.BISMUTH, MaterialShape.NUGGET))
                 .unlockedBy(getHasName(ModBlocks.RBMK_ROD.get()), has(ModBlocks.RBMK_ROD.get()))
                 .save(writer, recipeId("crafting/rbmk_element_mod"));
         // :991
@@ -447,14 +448,14 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .define('C', ModItems.PIPE_COPPER.get())
                 .define('P', ModItems.SHELL_STEEL.get())
                 .define('R', ModBlocks.RBMK_BLANK.get())
-                .define('I', ModItems.getIngot(ModIngots.POLYMER).get())
+                .define('I', ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.INGOT))
                 .unlockedBy(getHasName(ModBlocks.RBMK_BLANK.get()), has(ModBlocks.RBMK_BLANK.get()))
                 .save(writer, recipeId("crafting/rbmk_heater"));
         // :993
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RBMK_COOLER.get())
                 .pattern("IGI").pattern("GCG").pattern("IGI")
                 .define('C', ModBlocks.RBMK_BLANK.get())
-                .define('I', ModItems.PLATE_POLYMER.get())
+                .define('I', ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.PLATE))
                 .define('G', ModBlocks.STEEL_GRATE.get())
                 .unlockedBy(getHasName(ModBlocks.RBMK_BLANK.get()), has(ModBlocks.RBMK_BLANK.get()))
                 .save(writer, recipeId("crafting/rbmk_cooler"));
@@ -462,7 +463,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         // ToolRecipes.java:133
         ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, ModItems.RBMK_TOOL.get())
                 .pattern(" A ").pattern(" IA").pattern("I  ")
-                .define('A', ModItems.getIngot(ModIngots.LEAD).get())
+                .define('A', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
                 .define('I', Items.IRON_INGOT)
                 .unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
                 .save(writer, recipeId("crafting/rbmk_tool"));
@@ -490,20 +491,20 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("PPP")
                 .pattern("GPG")
                 .pattern(" F ")
-                .define('P', ModItems.PLATE_STEEL.get())
+                .define('P', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
                 .define('G', Items.GLASS_PANE)
-                .define('F', ModItems.PLATE_IRON.get())
-                .unlockedBy(getHasName(ModItems.PLATE_STEEL.get()), has(ModItems.PLATE_STEEL.get()))
+                .define('F', ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)), has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)))
                 .save(writer, recipeId("crafting/gas_mask"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.GAS_MASK_M65.get())
                 .pattern("PPP")
                 .pattern("GPG")
                 .pattern(" F ")
-                .define('P', ModItems.getIngot(ModIngots.RUBBER).get())
+                .define('P', ModMaterialItems.item(ModMaterials.RUBBER, MaterialShape.INGOT))
                 .define('G', Items.GLASS_PANE)
-                .define('F', ModItems.PLATE_IRON.get())
-                .unlockedBy(getHasName(ModItems.getIngot(ModIngots.RUBBER).get()), has(ModItems.getIngot(ModIngots.RUBBER).get()))
+                .define('F', ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.RUBBER, MaterialShape.INGOT)), has(ModMaterialItems.item(ModMaterials.RUBBER, MaterialShape.INGOT)))
                 .save(writer, recipeId("crafting/gas_mask_m65"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.GAS_MASK_OLDE.get())
@@ -520,9 +521,9 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern(" P ")
                 .pattern("PPP")
                 .pattern(" F ")
-                .define('P', ModItems.getIngot(ModIngots.RUBBER).get())
-                .define('F', ModItems.PLATE_IRON.get())
-                .unlockedBy(getHasName(ModItems.getIngot(ModIngots.RUBBER).get()), has(ModItems.getIngot(ModIngots.RUBBER).get()))
+                .define('P', ModMaterialItems.item(ModMaterials.RUBBER, MaterialShape.INGOT))
+                .define('F', ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.RUBBER, MaterialShape.INGOT)), has(ModMaterialItems.item(ModMaterials.RUBBER, MaterialShape.INGOT)))
                 .save(writer, recipeId("crafting/gas_mask_mono"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.MASK_RAG.get())
@@ -541,7 +542,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.GAS_MASK_FILTER.get())
                 .pattern("I")
                 .pattern("F")
-                .define('I', ModItems.PLATE_IRON.get())
+                .define('I', ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE))
                 .define('F', ModItems.FILTER_COAL.get())
                 .unlockedBy(getHasName(ModItems.FILTER_COAL.get()), has(ModItems.FILTER_COAL.get()))
                 .save(writer, recipeId("crafting/gas_mask_filter"));
@@ -550,7 +551,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("ZZZ")
                 .pattern("ZCZ")
                 .pattern("ZZZ")
-                .define('Z', ModItems.NUGGET_ZIRCONIUM.get())
+                .define('Z', ModMaterialItems.item(ModMaterials.ZIRCONIUM, MaterialShape.NUGGET))
                 .define('C', ModItems.CATALYST_CLAY.get())
                 .unlockedBy(getHasName(ModItems.CATALYST_CLAY.get()), has(ModItems.CATALYST_CLAY.get()))
                 .save(writer, recipeId("crafting/gas_mask_filter_mono"));
@@ -559,7 +560,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("ZCZ")
                 .pattern("CFC")
                 .pattern("ZCZ")
-                .define('Z', ModItems.getIngot(ModIngots.ZIRCONIUM).get())
+                .define('Z', ModMaterialItems.item(ModMaterials.ZIRCONIUM, MaterialShape.INGOT))
                 .define('C', ModItems.CATALYST_CLAY.get())
                 .define('F', ModItems.GAS_MASK_FILTER.get())
                 .unlockedBy(getHasName(ModItems.GAS_MASK_FILTER.get()), has(ModItems.GAS_MASK_FILTER.get()))
@@ -587,9 +588,9 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("IGI")
                 .pattern(" F ")
                 .define('D', ModItems.DUCTTAPE.get())
-                .define('I', ModItems.getIngot(ModIngots.RUBBER).get())
+                .define('I', ModMaterialItems.item(ModMaterials.RUBBER, MaterialShape.INGOT))
                 .define('G', Items.GLASS_PANE)
-                .define('F', ModItems.PLATE_IRON.get())
+                .define('F', ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE))
                 .unlockedBy(getHasName(ModItems.DUCTTAPE.get()), has(ModItems.DUCTTAPE.get()))
                 .save(writer, recipeId("crafting/attachment_mask"));
 
@@ -598,15 +599,15 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("DID")
                 .pattern(" F ")
                 .define('D', ModItems.DUCTTAPE.get())
-                .define('I', ModItems.getIngot(ModIngots.RUBBER).get())
-                .define('F', ModItems.PLATE_IRON.get())
+                .define('I', ModMaterialItems.item(ModMaterials.RUBBER, MaterialShape.INGOT))
+                .define('F', ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE))
                 .unlockedBy(getHasName(ModItems.DUCTTAPE.get()), has(ModItems.DUCTTAPE.get()))
                 .save(writer, recipeId("crafting/attachment_mask_mono"));
 
         // ── Лекарства (1.7.10 ConsumableRecipes / CraftingManager) ────────────
         ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.SIOX.get(), 8)
-                .requires(ModItems.getPowders(ModPowders.COAL).get())
-                .requires(ModItems.getPowder(ModIngots.ASBESTOS).get())
+                .requires(ModMaterialItems.item(ModMaterials.COAL, MaterialShape.POWDER))
+                .requires(ModMaterialItems.item(ModMaterials.ASBESTOS, MaterialShape.POWDER))
                 .requires(Items.GOLD_NUGGET)
                 .unlockedBy(getHasName(Items.GOLD_NUGGET), has(Items.GOLD_NUGGET))
                 .save(writer, recipeId("crafting/siox"));
@@ -614,7 +615,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         // pill_herbal (1.7.10: угольная пыль + ядовитая картошка + адский нарост + наперстянка;
         // наперстянка в порт не перенесена — опущена)
         ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.PILL_HERBAL.get())
-                .requires(ModItems.getPowders(ModPowders.COAL).get())
+                .requires(ModMaterialItems.item(ModMaterials.COAL, MaterialShape.POWDER))
                 .requires(Items.POISONOUS_POTATO)
                 .requires(Items.NETHER_WART)
                 .unlockedBy(getHasName(Items.NETHER_WART), has(Items.NETHER_WART))
@@ -624,7 +625,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("PPL")
                 .pattern(" MD")
                 .pattern(" SC")
-                .define('P', ModItems.PLATE_STEEL.get())
+                .define('P', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
                 .define('M', ModItems.MOTOR.get())
                 .define('L', ModItems.PART_MECHANISM.get())
                 .define('S', ModBlocks.STEEL_SCAFFOLD.get())
@@ -637,7 +638,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("L")
                 .pattern("G")
                 .pattern("C")
-                .define('L', ModItems.getIngot(ModIngots.LEAD).get())
+                .define('L', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
                 .define('G', Items.GUNPOWDER)
                 .define('C', ModItems.CASING_BAG.get())
                 .unlockedBy(getHasName(Items.GUNPOWDER), has(Items.GUNPOWDER))
@@ -649,7 +650,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("L")
                 .pattern("G")
                 .pattern("C")
-                .define('L', ModItems.getIngot(ModIngots.LEAD).get())
+                .define('L', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
                 .define('G', Items.GUNPOWDER)
                 .define('C', ModItems.CASING_BAG.get())
                 .unlockedBy(getHasName(Items.GUNPOWDER), has(Items.GUNPOWDER))
@@ -659,7 +660,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("L")
                 .pattern("G")
                 .pattern("C")
-                .define('L', ModItems.getIngot(ModIngots.LEAD).get())
+                .define('L', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
                 .define('G', Items.GUNPOWDER)
                 .define('C', ModItems.CASING_BAG.get())
                 .unlockedBy(getHasName(Items.GUNPOWDER), has(Items.GUNPOWDER))
@@ -669,7 +670,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("L")
                 .pattern("I")
                 .pattern("C")
-                .define('L', ModItems.getIngot(ModIngots.LEAD).get())
+                .define('L', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
                 .define('I', Items.IRON_INGOT)
                 .define('C', ModItems.CASING_BAG.get())
                 .unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
@@ -679,7 +680,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("L")
                 .pattern("I")
                 .pattern("C")
-                .define('L', ModItems.getIngot(ModIngots.LEAD).get())
+                .define('L', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
                 .define('I', Items.IRON_INGOT)
                 .define('C', ModItems.CASING_BAG.get())
                 .unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
@@ -688,7 +689,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         // .50 BMG-Munition fuer den Chekhov-Turret
         ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_50_SP.get(), 8)
                 .pattern("L").pattern("G").pattern("C")
-                .define('L', ModItems.getIngot(ModIngots.LEAD).get())
+                .define('L', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
                 .define('G', Items.GUNPOWDER)
                 .define('C', ModItems.CASING_BAG.get())
                 .unlockedBy(getHasName(Items.GUNPOWDER), has(Items.GUNPOWDER))
@@ -696,7 +697,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
 
         ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_50_JHP.get(), 8)
                 .pattern("L").pattern("G").pattern("C")
-                .define('L', ModItems.getIngot(ModIngots.LEAD).get())
+                .define('L', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
                 .define('G', Items.GUNPOWDER)
                 .define('C', ModItems.CASING_BAG.get())
                 .unlockedBy(getHasName(Items.GUNPOWDER), has(Items.GUNPOWDER))
@@ -704,7 +705,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
 
         ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_50_FMJ.get(), 8)
                 .pattern("L").pattern("I").pattern("C")
-                .define('L', ModItems.getIngot(ModIngots.LEAD).get())
+                .define('L', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
                 .define('I', Items.IRON_INGOT)
                 .define('C', ModItems.CASING_BAG.get())
                 .unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
@@ -712,7 +713,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
 
         ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_50_AP.get(), 8)
                 .pattern("L").pattern("I").pattern("C")
-                .define('L', ModItems.getIngot(ModIngots.LEAD).get())
+                .define('L', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
                 .define('I', Items.IRON_INGOT)
                 .define('C', ModItems.CASING_BAG.get())
                 .unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
@@ -720,8 +721,8 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
 
         ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_50_DU.get(), 8)
                 .pattern("L").pattern("I").pattern("C")
-                .define('L', ModItems.getIngot(ModIngots.LEAD).get())
-                .define('I', ModItems.getIngot(ModIngots.URANIUM238).get())
+                .define('L', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
+                .define('I', ModMaterialItems.item(ModMaterials.URANIUM238, MaterialShape.INGOT))
                 .define('C', ModItems.CASING_BAG.get())
                 .unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
                 .save(writer, recipeId("crafting/ammo_50_du"));
@@ -729,7 +730,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         // 5.56mm-Munition fuer den Friendly-Turret
         ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_556_SP.get(), 12)
                 .pattern("L").pattern("G").pattern("C")
-                .define('L', ModItems.getIngot(ModIngots.LEAD).get())
+                .define('L', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
                 .define('G', Items.GUNPOWDER)
                 .define('C', ModItems.CASING_BAG.get())
                 .unlockedBy(getHasName(Items.GUNPOWDER), has(Items.GUNPOWDER))
@@ -737,7 +738,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
 
         ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_556_JHP.get(), 12)
                 .pattern("L").pattern("G").pattern("C")
-                .define('L', ModItems.getIngot(ModIngots.LEAD).get())
+                .define('L', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
                 .define('G', Items.GUNPOWDER)
                 .define('C', ModItems.CASING_BAG.get())
                 .unlockedBy(getHasName(Items.GUNPOWDER), has(Items.GUNPOWDER))
@@ -745,7 +746,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
 
         ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_556_FMJ.get(), 12)
                 .pattern("L").pattern("I").pattern("C")
-                .define('L', ModItems.getIngot(ModIngots.LEAD).get())
+                .define('L', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
                 .define('I', Items.IRON_INGOT)
                 .define('C', ModItems.CASING_BAG.get())
                 .unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
@@ -753,7 +754,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
 
         ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_556_AP.get(), 12)
                 .pattern("L").pattern("I").pattern("C")
-                .define('L', ModItems.getIngot(ModIngots.LEAD).get())
+                .define('L', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
                 .define('I', Items.IRON_INGOT)
                 .define('C', ModItems.CASING_BAG.get())
                 .unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
@@ -765,7 +766,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern(" P ")
                 .pattern(" M ")
                 .pattern(" G ")
-                .define('P', ModItems.PLATE_STEEL.get())
+                .define('P', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
                 .define('M', ModItems.MOTOR.get())
                 .define('G', Items.GUNPOWDER)
                 .unlockedBy(getHasName(Items.GUNPOWDER), has(Items.GUNPOWDER))
@@ -775,7 +776,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern(" P ")
                 .pattern(" M ")
                 .pattern(" G ")
-                .define('P', ModItems.PLATE_TITANIUM.get())
+                .define('P', ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE))
                 .define('M', ModItems.MOTOR.get())
                 .define('G', Items.GUNPOWDER)
                 .unlockedBy(getHasName(Items.GUNPOWDER), has(Items.GUNPOWDER))
@@ -785,9 +786,9 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_TAU_URANIUM.get(), 4)
                 .pattern("U")
                 .pattern("C")
-                .define('U', ModItems.getIngot(ModIngots.URANIUM).get())
+                .define('U', ModMaterialItems.item(ModMaterials.URANIUM, MaterialShape.INGOT))
                 .define('C', ModItems.CASING_BAG.get())
-                .unlockedBy(getHasName(ModItems.getIngot(ModIngots.URANIUM).get()), has(ModItems.getIngot(ModIngots.URANIUM).get()))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.URANIUM, MaterialShape.INGOT)), has(ModMaterialItems.item(ModMaterials.URANIUM, MaterialShape.INGOT)))
                 .save(writer, recipeId("crafting/ammo_tau_uranium"));
 
         // Fritz-Turret Brennstoff (MVP-Item statt Fluid-Tank, siehe TurretBaseBlockEntity#tickFritz)
@@ -804,7 +805,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("PPP")
                 .pattern("MCM")
                 .pattern("SSS")
-                .define('P', ModItems.PLATE_STEEL.get())
+                .define('P', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
                 .define('M', ModItems.MOTOR.get())
                 .define('C', ModItems.ADVANCED_CIRCUIT.get())
                 .define('S', ModBlocks.STEEL_SCAFFOLD.get())
@@ -814,30 +815,15 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.MISSILE_FUSELAGE.get(), 2)
                 .pattern("P")
                 .pattern("P")
-                .define('P', ModItems.PLATE_STEEL.get())
-                .unlockedBy(getHasName(ModItems.PLATE_STEEL.get()), has(ModItems.PLATE_STEEL.get()))
+                .define('P', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)), has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)))
                 .save(writer, recipeId("crafting/missile_fuselage"));
 
         ShapelessRecipeBuilder.shapeless(RecipeCategory.COMBAT, ModItems.MISSILE_CHIP.get())
                 .requires(ModItems.SILICON_CIRCUIT.get())
-                .requires(ModItems.getIngot(ModIngots.LEAD).get())
+                .requires(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
                 .unlockedBy(getHasName(ModItems.SILICON_CIRCUIT.get()), has(ModItems.SILICON_CIRCUIT.get()))
                 .save(writer, recipeId("crafting/missile_chip"));
-    }
-
-    //  БЕЗОПАСНАЯ ПРОВЕРКА NULL
-    private boolean isItemSafe(RegistrySupplier<?> itemObj) {
-        return itemObj != null && itemObj.isPresent() && itemObj.get() != null;
-    }
-
-    private ItemLike safeIngot(ModIngots ingot) {
-        RegistrySupplier<?> obj = ModItems.getIngot(ingot);
-        return isItemSafe(obj) ? (ItemLike) obj.get() : Items.AIR;
-    }
-
-    private Item safePowder(ModPowders powder) {
-        RegistrySupplier<?> obj = ModItems.getPowders(powder);
-        return isItemSafe(obj) ? (Item) obj.get() : null;
     }
 
     //основные рецепты
@@ -847,27 +833,27 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("$$$")
                 .pattern("###")
                 .pattern("$$$")
-                .define('#', ModItems.PLATE_LEAD.get())
-                .define('$', ModItems.PLATE_STEEL.get())
-                .unlockedBy(getHasName(ModItems.PLATE_LEAD.get()), has(ModItems.PLATE_IRON.get()))
+                .define('#', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.PLATE))
+                .define('$', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.PLATE)), has(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE)))
                 .save(writer, recipeId("crafting/door_bunker"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.METAL_DOOR.get())
                 .pattern("$$$")
                 .pattern("###")
                 .pattern("$$$")
-                .define('#', ModItems.PLATE_STEEL.get())
-                .define('$', ModItems.PLATE_IRON.get())
-                .unlockedBy(getHasName(ModItems.PLATE_STEEL.get()), has(ModItems.PLATE_IRON.get()))
+                .define('#', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
+                .define('$', ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)), has(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE)))
                 .save(writer, recipeId("crafting/metal_door"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.DOOR_OFFICE.get())
                 .pattern("$$$")
                 .pattern("###")
                 .pattern("$$$")
-                .define('#', ModItems.PLATE_IRON.get())
+                .define('#', ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE))
                 .define('$', Items.OAK_WOOD)
-                .unlockedBy(getHasName(ModItems.PLATE_IRON.get()), has(ModItems.PLATE_IRON.get()))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE)), has(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE)))
                 .save(writer, recipeId("crafting/door_office"));
 
         //МОТОРЫ
@@ -875,8 +861,8 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern(" $ ")
                 .pattern("%#%")
                 .pattern("%@%")
-                .define('%', ModItems.PLATE_IRON.get())
-                .define('$', ModItems.WIRE_RED_COPPER.get())
+                .define('%', ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE))
+                .define('$', ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.WIRE))
                 .define('#', ModItems.COIL_COPPER.get())
                 .define('@', ModItems.COIL_COPPER_TORUS.get())
                 .unlockedBy(getHasName(ModItems.COIL_COPPER_TORUS.get()), has(ModItems.COIL_COPPER_TORUS.get()))
@@ -886,8 +872,8 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern(" $ ")
                 .pattern("%#%")
                 .pattern(" @ ")
-                .define('%', ModItems.PLATE_STEEL.get())
-                .define('$', ModItems.WIRE_RED_COPPER.get())
+                .define('%', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
+                .define('$', ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.WIRE))
                 .define('#', ModItems.COIL_COPPER.get())
                 .define('@', ModItems.COIL_COPPER_TORUS.get())
                 .unlockedBy(getHasName(ModItems.COIL_COPPER_TORUS.get()), has(ModItems.COIL_COPPER_TORUS.get()))
@@ -897,32 +883,32 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.WIRING_RED_COPPER.get())
                 .pattern("PPP").pattern("PIP").pattern("PPP")
-                .define('P', ModItems.PLATE_STEEL.get())
-                .define('I', ModItems.getIngot(com.hbm_m.item.tags_and_tiers.ModIngots.STEEL).get())
-                .unlockedBy(getHasName(ModItems.PLATE_STEEL.get()), has(ModItems.PLATE_STEEL.get()))
+                .define('P', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
+                .define('I', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)), has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)))
                 .save(writer, recipeId("crafting/wiring_red_copper"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RED_WIRE_COATED.get(), 16)
                 .pattern("WRW").pattern("RIR").pattern("WRW")
-                .define('W', ModItems.PLATE_POLYMER.get())
-                .define('I', ModItems.getIngot(com.hbm_m.item.tags_and_tiers.ModIngots.RED_COPPER).get())
-                .define('R', ModItems.WIRE_RED_COPPER.get())
-                .unlockedBy(getHasName(ModItems.WIRE_RED_COPPER.get()), has(ModItems.WIRE_RED_COPPER.get()))
+                .define('W', ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.PLATE))
+                .define('I', ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.INGOT))
+                .define('R', ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.WIRE))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.WIRE)), has(ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.WIRE)))
                 .save(writer, recipeId("crafting/red_wire_coated"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RED_CONNECTOR.get(), 4)
                 .pattern("C").pattern("I").pattern("S")
                 .define('C', ModItems.COIL_COPPER.get())
-                .define('I', ModItems.PLATE_POLYMER.get())
-                .define('S', ModItems.getIngot(com.hbm_m.item.tags_and_tiers.ModIngots.STEEL).get())
+                .define('I', ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.PLATE))
+                .define('S', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
                 .unlockedBy(getHasName(ModItems.COIL_COPPER.get()), has(ModItems.COIL_COPPER.get()))
                 .save(writer, recipeId("crafting/red_connector"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RED_CONNECTOR_SUPER.get(), 2)
                 .pattern("CCC").pattern("III").pattern(" S ")
                 .define('C', ModItems.COIL_COPPER.get())
-                .define('I', ModItems.PLATE_POLYMER.get())
-                .define('S', ModItems.getIngot(com.hbm_m.item.tags_and_tiers.ModIngots.ADVANCED_ALLOY).get())
+                .define('I', ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.PLATE))
+                .define('S', ModMaterialItems.item(ModMaterials.ADVANCED_ALLOY, MaterialShape.INGOT))
                 .unlockedBy(getHasName(ModItems.COIL_COPPER.get()), has(ModItems.COIL_COPPER.get()))
                 .save(writer, recipeId("crafting/red_connector_super"));
 
@@ -930,7 +916,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("CWC").pattern("PWP").pattern(" S ")
                 .define('C', ModItems.COIL_COPPER.get())
                 .define('W', ItemTags.PLANKS)
-                .define('P', ModItems.PLATE_POLYMER.get())
+                .define('P', ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.PLATE))
                 .define('S', Blocks.COBBLESTONE)
                 .unlockedBy(getHasName(ModItems.COIL_COPPER.get()), has(ModItems.COIL_COPPER.get()))
                 .save(writer, recipeId("crafting/red_pylon"));
@@ -939,7 +925,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("CWC").pattern("PWP").pattern(" S ")
                 .define('C', ModItems.COIL_COPPER.get())
                 .define('W', ModItems.PIPE_STEEL.get())
-                .define('P', ModItems.PLATE_POLYMER.get())
+                .define('P', ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.PLATE))
                 .define('S', Blocks.COBBLESTONE)
                 .unlockedBy(getHasName(ModItems.PIPE_STEEL.get()), has(ModItems.PIPE_STEEL.get()))
                 .save(writer, recipeId("crafting/red_pylon_steel"));
@@ -948,7 +934,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("CCW").pattern("IIW").pattern("  S")
                 .define('C', ModItems.COIL_COPPER.get())
                 .define('W', ItemTags.PLANKS)
-                .define('I', ModItems.PLATE_POLYMER.get())
+                .define('I', ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.PLATE))
                 .define('S', Blocks.COBBLESTONE)
                 .unlockedBy(getHasName(ModItems.COIL_COPPER.get()), has(ModItems.COIL_COPPER.get()))
                 .save(writer, recipeId("crafting/red_pylon_medium_wood"));
@@ -957,21 +943,21 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("CCW").pattern("IIW").pattern("  S")
                 .define('C', ModItems.COIL_COPPER.get())
                 .define('W', ModItems.PIPE_STEEL.get())
-                .define('I', ModItems.PLATE_POLYMER.get())
+                .define('I', ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.PLATE))
                 .define('S', Blocks.COBBLESTONE)
                 .unlockedBy(getHasName(ModItems.PIPE_STEEL.get()), has(ModItems.PIPE_STEEL.get()))
                 .save(writer, recipeId("crafting/red_pylon_medium_steel"));
 
         ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModBlocks.RED_PYLON_MEDIUM_WOOD_TRANSFORMER.get())
                 .requires(ModBlocks.RED_PYLON_MEDIUM_WOOD.get())
-                .requires(ModItems.PLATE_POLYMER.get())
+                .requires(ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.PLATE))
                 .requires(ModItems.COIL_COPPER.get())
                 .unlockedBy(getHasName(ModItems.COIL_COPPER.get()), has(ModItems.COIL_COPPER.get()))
                 .save(writer, recipeId("crafting/red_pylon_medium_wood_transformer"));
 
         ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModBlocks.RED_PYLON_MEDIUM_STEEL_TRANSFORMER.get())
                 .requires(ModBlocks.RED_PYLON_MEDIUM_STEEL.get())
-                .requires(ModItems.PLATE_POLYMER.get())
+                .requires(ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.PLATE))
                 .requires(ModItems.COIL_COPPER.get())
                 .unlockedBy(getHasName(ModItems.COIL_COPPER.get()), has(ModItems.COIL_COPPER.get()))
                 .save(writer, recipeId("crafting/red_pylon_medium_steel_transformer"));
@@ -980,20 +966,20 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("@$@")
                 .pattern("%#%")
                 .pattern("@$@")
-                .define('%', ModItems.getIngot(ModIngots.DESH).get())
+                .define('%', ModMaterialItems.item(ModMaterials.DESH, MaterialShape.INGOT))
                 .define('$', ModItems.COIL_GOLD_TORUS.get())
                 .define('#', ModItems.MOTOR.get())
-                .define('@', Ingredient.of(ModItems.getIngot(ModIngots.BAKELITE).get(), ModItems.getIngot(ModIngots.POLYMER).get()))
-                .unlockedBy(getHasName(ModItems.PLATE_DESH.get()), has(ModItems.PLATE_DESH.get()))
+                .define('@', Ingredient.of(ModMaterialItems.item(ModMaterials.BAKELITE, MaterialShape.INGOT), ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.INGOT)))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.DESH, MaterialShape.PLATE)), has(ModMaterialItems.item(ModMaterials.DESH, MaterialShape.PLATE)))
                 .save(writer, recipeId("crafting/motor_desh"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.STEAM_TURBINE.get())
                 .pattern("ABA")
                 .pattern("CDC")
                 .pattern("ABA")
-                .define('A', ModItems.getIngot(ModIngots.STEEL).get())
+                .define('A', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
                 .define('B', ModItems.COIL_COPPER.get())
-                .define('C', Ingredient.of(ModItems.getIngot(ModIngots.POLYMER).get(), ModItems.getIngot(ModIngots.BAKELITE).get()))
+                .define('C', Ingredient.of(ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.INGOT), ModMaterialItems.item(ModMaterials.BAKELITE, MaterialShape.INGOT)))
                 .define('D', ModItems.TURBINE_TITANIUM.get())
                 .unlockedBy(getHasName(ModItems.TURBINE_TITANIUM.get()), has(ModItems.TURBINE_TITANIUM.get()))
                 .save(writer, recipeId("crafting/steam_turbine"));
@@ -1019,8 +1005,8 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("## ")
                 .pattern("   ")
                 .pattern("   ")
-                .define('#', ModItems.getIngot(ModIngots.ASBESTOS).get())
-                .unlockedBy(getHasName(ModItems.getIngot(ModIngots.ASBESTOS).get()), has(ModItems.getIngot(ModIngots.ASBESTOS).get()))
+                .define('#', ModMaterialItems.item(ModMaterials.ASBESTOS, MaterialShape.INGOT))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.ASBESTOS, MaterialShape.INGOT)), has(ModMaterialItems.item(ModMaterials.ASBESTOS, MaterialShape.INGOT)))
                 .save(writer, recipeId("crafting/insulator3"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.SWITCH.get())
@@ -1036,11 +1022,11 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("BGB")
                 .pattern("SAS")
                 .pattern("BSB")
-                .define('B', ModItems.getIngot(ModIngots.BERYLLIUM).get())
+                .define('B', ModMaterialItems.item(ModMaterials.BERYLLIUM, MaterialShape.INGOT))
                 .define('G', Items.IRON_BARS)
-                .define('S', ModItems.getIngot(ModIngots.STEEL).get())
+                .define('S', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
                 .define('A', Ingredient.of(BlockAbsorberItem.forTier(ModBlocks.RAD_ABSORBER.get(), BlockAbsorber.EnumAbsorberTier.BASE)))
-                .unlockedBy(getHasName(ModItems.getIngot(ModIngots.BERYLLIUM).get()), has(ModItems.getIngot(ModIngots.BERYLLIUM).get()))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.BERYLLIUM, MaterialShape.INGOT)), has(ModMaterialItems.item(ModMaterials.BERYLLIUM, MaterialShape.INGOT)))
                 .save(writer, recipeId("crafting/decon"));
 
         registerRadAbsorberRecipes(writer);
@@ -1065,11 +1051,11 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("###")
                 .pattern("%$@")
                 .pattern("%&&")
-                .define('%', ModItems.WIRE_GOLD.get())
+                .define('%', ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.WIRE))
                 .define('#', Items.GOLD_INGOT)
                 .define('$', ModItems.INTEGRATED_CIRCUIT.get())
-                .define('&', ModItems.getIngot(ModIngots.BERYLLIUM).get())
-                .define('@', ModItems.PLATE_STEEL.get())
+                .define('&', ModMaterialItems.item(ModMaterials.BERYLLIUM, MaterialShape.INGOT))
+                .define('@', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
                 .unlockedBy(getHasName(ModItems.ANALOG_CIRCUIT.get()), has(ModItems.ANALOG_CIRCUIT.get()))
                 .save(writer, recipeId("crafting/geiger3"));
 
@@ -1078,8 +1064,8 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("$ $")
                 .pattern("$ $")
                 .define('$', ModItems.BOLT_STEEL.get())
-                .define('#', ModItems.PLATE_STEEL.get())
-                .unlockedBy(getHasName(ModItems.PLATE_STEEL.get()), has(ModItems.PLATE_STEEL.get()))
+                .define('#', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)), has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)))
                 .save(writer, recipeId("crafting/defuser"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.DESIGNATOR.get())
@@ -1087,9 +1073,9 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("#B#")
                 .pattern("#B#")
                 .define('#', Ingredient.of(
-                        ModItems.getIngot(ModIngots.POLYMER).get(),
-                        ModItems.getIngot(ModIngots.BAKELITE).get()))
-                .define('A', ModItems.PLATE_STEEL.get())
+                        ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.INGOT),
+                        ModMaterialItems.item(ModMaterials.BAKELITE, MaterialShape.INGOT)))
+                .define('A', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
                 .define('B', ModItems.ANALOG_CIRCUIT.get())
                 .unlockedBy(getHasName(ModItems.ANALOG_CIRCUIT.get()), has(ModItems.ANALOG_CIRCUIT.get()))
                 .save(writer, recipeId("crafting/designator"));
@@ -1099,9 +1085,9 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("#C#")
                 .pattern("#B#")
                 .define('#', Ingredient.of(
-                        ModItems.getIngot(ModIngots.POLYMER).get(),
-                        ModItems.getIngot(ModIngots.BAKELITE).get()))
-                .define('A', ModItems.PLATE_LEAD.get())
+                        ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.INGOT),
+                        ModMaterialItems.item(ModMaterials.BAKELITE, MaterialShape.INGOT)))
+                .define('A', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.PLATE))
                 .define('B', ModItems.ADVANCED_CIRCUIT.get())
                 .define('C', ModItems.DESIGNATOR.get())
                 .unlockedBy(getHasName(ModItems.DESIGNATOR.get()), has(ModItems.DESIGNATOR.get()))
@@ -1111,31 +1097,31 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .requires(ModItems.RANGEFINDER.get())
                 .requires(ModItems.DESIGNATOR.get())
                 .requires(Ingredient.of(
-                        ModItems.getIngot(ModIngots.POLYMER).get(),
-                        ModItems.getIngot(ModIngots.BAKELITE).get()))
+                        ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.INGOT),
+                        ModMaterialItems.item(ModMaterials.BAKELITE, MaterialShape.INGOT)))
                 .unlockedBy(getHasName(ModItems.RANGEFINDER.get()), has(ModItems.RANGEFINDER.get()))
                 .save(writer, recipeId("crafting/designator_range"));
 
         // TODO: временная заглушка — заменить на литьё из плутония, когда переработка будет портирована
-        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.BILLET_PLUTONIUM.get())
-                .requires(ModItems.getIngot(ModIngots.URANIUM).get(), 6)
-                .requires(ModItems.getIngot(ModIngots.LEAD).get(), 3)
-                .unlockedBy(getHasName(ModItems.getIngot(ModIngots.URANIUM).get()), has(ModItems.getIngot(ModIngots.URANIUM).get()))
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModMaterialItems.item(ModMaterials.PLUTONIUM, MaterialShape.BILLET))
+                .requires(ModMaterialItems.item(ModMaterials.URANIUM, MaterialShape.INGOT), 6)
+                .requires(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT), 3)
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.URANIUM, MaterialShape.INGOT)), has(ModMaterialItems.item(ModMaterials.URANIUM, MaterialShape.INGOT)))
                 .save(writer, recipeId("crafting/billet_plutonium_stub"));
 
         // TODO: временная заглушка — заменить на ass.mancore в сборочной машине
         ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.FAT_MAN_CORE.get())
-                .requires(ModItems.BILLET_PLUTONIUM.get(), 1)
-                .requires(ModItems.getIngot(ModIngots.BERYLLIUM).get(), 2)
-                .unlockedBy(getHasName(ModItems.BILLET_PLUTONIUM.get()), has(ModItems.BILLET_PLUTONIUM.get()))
+                .requires(ModMaterialItems.item(ModMaterials.PLUTONIUM, MaterialShape.BILLET), 1)
+                .requires(ModMaterialItems.item(ModMaterials.BERYLLIUM, MaterialShape.INGOT), 2)
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.PLUTONIUM, MaterialShape.BILLET)), has(ModMaterialItems.item(ModMaterials.PLUTONIUM, MaterialShape.BILLET)))
                 .save(writer, recipeId("crafting/fat_man_core_stub"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.CRT_DISPLAY.get(), 4)
                 .pattern(" # ")
                 .pattern("$@$")
                 .pattern(" % ")
-                .define('$', ModItems.PLATE_STEEL.get())
-                .define('#', ModItems.getPowder(ModIngots.ALUMINUM).get())
+                .define('$', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
+                .define('#', ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.POWDER))
                 .define('%', ModItems.VACUUM_TUBE.get())
                 .define('@', Ingredient.of(Tags.Items.GLASS_PANES))
                 .unlockedBy(getHasName(ModItems.VACUUM_TUBE.get()), has(ModItems.VACUUM_TUBE.get()))
@@ -1146,7 +1132,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("@  ")
                 .pattern("%  ")
                 .define('#', ModItems.INSULATOR.get())
-                .define('%', Ingredient.of(ModItems.WIRE_COPPER.get(), ModItems.WIRE_GOLD.get()))
+                .define('%', Ingredient.of(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.WIRE), ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.WIRE)))
                 .define('@', ModItems.SILICON_CIRCUIT.get())
                 .unlockedBy(getHasName(ModItems.SILICON_CIRCUIT.get()), has(ModItems.SILICON_CIRCUIT.get()))
                 .save(writer, recipeId("crafting/microchip"));
@@ -1156,7 +1142,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("@  ")
                 .pattern("   ")
                 .define('#', ModItems.INSULATOR.get())
-                .define('@', Ingredient.of(ModItems.PLATE_COPPER.get(), ModItems.PLATE_GOLD.get()))
+                .define('@', Ingredient.of(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE), ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.PLATE)))
                 .unlockedBy(getHasName(ModItems.INSULATOR.get()), has(ModItems.INSULATOR.get()))
                 .save(writer, recipeId("crafting/pcb"));
 
@@ -1166,7 +1152,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("$#$")
                 .define('$', Items.OAK_PLANKS)
                 .define('%', Ingredient.of(Tags.Items.GLASS_PANES))
-                .define('#', ModItems.getIngot(ModIngots.BERYLLIUM).get())
+                .define('#', ModMaterialItems.item(ModMaterials.BERYLLIUM, MaterialShape.INGOT))
                 .define('@', ModItems.VACUUM_TUBE.get())
                 .unlockedBy(getHasName(ModItems.VACUUM_TUBE.get()), has(ModItems.VACUUM_TUBE.get()))
                 .save(writer, recipeId("crafting/dosimeter"));
@@ -1175,18 +1161,18 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("$$ ")
                 .pattern(" $ ")
                 .pattern(" $ ")
-                .define('$', ModItems.getIngot(ModIngots.STEEL).get())
-                .unlockedBy(getHasName(ModItems.getIngot(ModIngots.STEEL).get()), has(ModItems.getIngot(ModIngots.STEEL).get()))
+                .define('$', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT)), has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT)))
                 .save(writer, recipeId("crafting/crowbar"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.OIL_DETECTOR.get())
                 .pattern("# @")
                 .pattern("#$@")
                 .pattern("&&&")
-                .define('&', ModItems.PLATE_STEEL.get())
+                .define('&', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
                 .define('@', Items.COPPER_INGOT)
                 .define('$', ModItems.ANALOG_CIRCUIT.get())
-                .define('#', ModItems.WIRE_GOLD.get())
+                .define('#', ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.WIRE))
                 .unlockedBy(getHasName(ModItems.ANALOG_CIRCUIT.get()), has(ModItems.ANALOG_CIRCUIT.get()))
                 .save(writer, recipeId("crafting/oil_detector"));
 
@@ -1197,7 +1183,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .define('#', ModItems.VACUUM_TUBE.get())
                 .define('@', ModItems.CAPACITOR.get())
                 .define('%', ModItems.CONTROLLER_CHASSIS.get())
-                .define('$', ModItems.PLATE_GOLD.get())
+                .define('$', ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.PLATE))
                 .unlockedBy(getHasName(ModItems.CONTROLLER_CHASSIS.get()), has(ModItems.CONTROLLER_CHASSIS.get()))
                 .save(writer, recipeId("crafting/depth_ores_scanner"));
 
@@ -1206,18 +1192,18 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern(" # ")
                 .pattern("$  ")
                 .define('#', Items.IRON_INGOT)
-                .define('$', ModItems.getIngot(ModIngots.STEEL).get())
-                .unlockedBy(getHasName(ModItems.getIngot(ModIngots.STEEL).get()), has(ModItems.getIngot(ModIngots.STEEL).get()))
+                .define('$', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT)), has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT)))
                 .save(writer, recipeId("crafting/screwdriver"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.STEAM_CONDENSER.get())
                 .pattern("ABA")
                 .pattern("BCB")
                 .pattern("ABA")
-                .define('A', ModItems.getIngot(ModIngots.STEEL).get())
-                .define('B', ModItems.PLATE_IRON.get())
-                .define('C', ModItems.PLATE_CAST_COPPER.get())
-                .unlockedBy(getHasName(ModItems.PLATE_CAST_COPPER.get()), has(ModItems.PLATE_CAST_COPPER.get()))
+                .define('A', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
+                .define('B', ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE))
+                .define('C', ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE_CAST))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE_CAST)), has(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE_CAST)))
                 .save(writer, recipeId("crafting/steam_condenser"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.CONVERTER_BLOCK.get())
@@ -1226,22 +1212,22 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("$$$")
                 .define('#', ModItems.CAPACITOR.get())
                 .define('@', Items.REDSTONE)
-                .define('$', ModItems.getIngot(ModIngots.STEEL).get())
-                .unlockedBy(getHasName(ModItems.getIngot(ModIngots.STEEL).get()), has(ModItems.getIngot(ModIngots.STEEL).get()))
+                .define('$', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT)), has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT)))
                 .save(writer, recipeId("crafting/converter_block"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.MACHINE_BATTERY_SOCKET.get())
                 .pattern("$@$")
-                .define('$', ModItems.PLATE_STEEL.get())
-                .define('@', ModItems.getIngot(ModIngots.RED_COPPER).get())
-                .unlockedBy(getHasName(ModItems.PLATE_STEEL.get()), has(ModItems.PLATE_STEEL.get()))
+                .define('$', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
+                .define('@', ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.INGOT))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)), has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)))
                 .save(writer, recipeId("crafting/machine_battery_socket"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.MACHINE_BATTERY_SOCKET.get())
                 .pattern("I I")
                 .pattern("I I")
                 .pattern("IRI")
-                .define('I', ModItems.PLATE_ALUMINUM.get())
+                .define('I', ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.PLATE))
                 .define('R', ModItems.COIL_COPPER.get())
                 .unlockedBy(getHasName(ModItems.COIL_COPPER.get()), has(ModItems.COIL_COPPER.get()))
                 .save(writer, recipeId("crafting/machine_battery_socket_frame"));
@@ -1256,8 +1242,8 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.BOLT_HIGHSPEED_STEEL.get(), 16)
                 .pattern("$")
                 .pattern("$")
-                .define('$', ModItems.getIngot(ModIngots.DURA_STEEL).get())
-                .unlockedBy(getHasName(ModItems.getIngot(ModIngots.DURA_STEEL).get()), has(ModItems.getIngot(ModIngots.DURA_STEEL).get()))
+                .define('$', ModMaterialItems.item(ModMaterials.DURA_STEEL, MaterialShape.INGOT))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.DURA_STEEL, MaterialShape.INGOT)), has(ModMaterialItems.item(ModMaterials.DURA_STEEL, MaterialShape.INGOT)))
                 .save(writer, recipeId("crafting/bolt_highspeed_steel"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.GRENADE_IF.get())
@@ -1265,9 +1251,9 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("#@#")
                 .pattern(" # ")
                 .define('$', ModItems.COIL_TUNGSTEN.get())
-                .define('#', ModItems.PLATE_STEEL.get())
+                .define('#', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
                 .define('@', ModItems.BALL_TNT.get())
-                .unlockedBy(getHasName(ModItems.PLATE_STEEL.get()), has(ModItems.PLATE_STEEL.get()))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)), has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)))
                 .save(writer, recipeId("crafting/grenade_if"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.VACUUM_TUBE.get())
@@ -1275,25 +1261,25 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("#")
                 .pattern("@")
                 .define('$', Ingredient.of(Tags.Items.GLASS_PANES))
-                .define('#', ModItems.WIRE_TUNGSTEN.get())
+                .define('#', ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.WIRE))
                 .define('@', ModItems.INSULATOR.get())
-                .unlockedBy(getHasName(ModItems.WIRE_TUNGSTEN.get()), has(ModItems.WIRE_TUNGSTEN.get()))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.WIRE)), has(ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.WIRE)))
                 .save(writer, recipeId("crafting/vacuum_tube"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.CAPACITOR.get(), 2)
                 .pattern("$#$")
                 .pattern("% %")
                 .define('$', ModItems.INSULATOR.get())
-                .define('%', Ingredient.of(ModItems.WIRE_COPPER.get(), ModItems.WIRE_ALUMINIUM.get()))
-                .define('#', ModItems.getPowder(ModIngots.ALUMINUM).get())
-                .unlockedBy(getHasName(ModItems.getPowder(ModIngots.ALUMINUM).get()), has(ModItems.getPowder(ModIngots.ALUMINUM).get()))
+                .define('%', Ingredient.of(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.WIRE), ModMaterialItems.item(ModMaterials.ALUMINIUM, MaterialShape.WIRE)))
+                .define('#', ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.POWDER))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.POWDER)), has(ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.POWDER)))
                 .save(writer, recipeId("crafting/capacitor"));
 
         ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.CAPACITOR_TANTALUM.get())
                 .requires(ModItems.INSULATOR.get())
-                .requires(ModItems.NUGGET_TANTALIUM.get())
-                .requires(ModItems.WIRE_COPPER.get())
-                .unlockedBy(getHasName(ModItems.NUGGET_TANTALIUM.get()), has(ModItems.NUGGET_TANTALIUM.get()))
+                .requires(ModMaterialItems.item(ModMaterials.TANTALIUM, MaterialShape.NUGGET))
+                .requires(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.WIRE))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.TANTALIUM, MaterialShape.NUGGET)), has(ModMaterialItems.item(ModMaterials.TANTALIUM, MaterialShape.NUGGET)))
                 .save(writer, recipeId("crafting/capacitor_tantalum"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.CAGE_LAMP.get(), 4)
@@ -1301,7 +1287,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("@")
                 .pattern("!")
                 .define('%', Ingredient.of(Tags.Items.GLASS_PANES))
-                .define('@', ModItems.WIRE_TUNGSTEN.get())
+                .define('@', ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.WIRE))
                 .define('!', Items.IRON_INGOT)
                 .unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
                 .save(writer, recipeId("crafting/cage_lamp"));
@@ -1311,9 +1297,9 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("@")
                 .pattern("!")
                 .define('%', Ingredient.of(Tags.Items.GLASS_PANES))
-                .define('@', ModItems.getPowder(ModIngots.RED_COPPER).get())
-                .define('!', ModItems.PLATE_STEEL.get())
-                .unlockedBy(getHasName(ModItems.PLATE_STEEL.get()), has(ModItems.PLATE_STEEL.get()))
+                .define('@', ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.POWDER))
+                .define('!', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)), has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)))
                 .save(writer, recipeId("crafting/flood_lamp"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.BARBED_WIRE.get(), 16)
@@ -1330,30 +1316,30 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("@@@")
                 .pattern(" $ ")
                 .define('$', ModItems.INSULATOR.get())
-                .define('@', ModItems.WIRE_RED_COPPER.get())
-                .unlockedBy(getHasName(ModItems.WIRE_RED_COPPER.get()), has(ModItems.WIRE_RED_COPPER.get()))
+                .define('@', ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.WIRE))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.WIRE)), has(ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.WIRE)))
                 .save(writer, recipeId("crafting/wire_coated"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.WOOD_BURNER.get())
                 .pattern("$$$")
                 .pattern("@&@")
                 .pattern("% %")
-                .define('$', ModItems.PLATE_STEEL.get())
+                .define('$', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
                 .define('@', ModItems.COIL_COPPER.get())
                 .define('&', Items.FURNACE)
                 .define('%', Items.IRON_INGOT)
-                .unlockedBy(getHasName(ModItems.PLATE_STEEL.get()), has(ModItems.PLATE_STEEL.get()))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)), has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)))
                 .save(writer, recipeId("crafting/wood_burner"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.ARMOR_TABLE.get())
                 .pattern("$$$")
                 .pattern("%&%")
                 .pattern("%#%")
-                .define('$', ModItems.PLATE_STEEL.get())
-                .define('%', ModItems.getIngot(ModIngots.TUNGSTEN).get())
+                .define('$', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
+                .define('%', ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.INGOT))
                 .define('&', Items.CRAFTING_TABLE)
-                .define('#', ModBlocks.getIngotBlock(ModIngots.STEEL).get())
-                .unlockedBy(getHasName(ModItems.PLATE_STEEL.get()), has(ModItems.PLATE_STEEL.get()))
+                .define('#', ModBlocks.getIngotBlock(ModMaterials.STEEL).get())
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)), has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)))
                 .save(writer, recipeId("crafting/armor_table"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.DETONATOR.get())
@@ -1361,7 +1347,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("@  ")
                 .pattern("   ")
                 .define('#', ModItems.INTEGRATED_CIRCUIT.get())
-                .define('@', ModItems.PLATE_STEEL.get())
+                .define('@', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
                 .unlockedBy(getHasName(ModItems.INTEGRATED_CIRCUIT.get()), has(ModItems.INTEGRATED_CIRCUIT.get()))
                 .save(writer, recipeId("crafting/detonator"));
 
@@ -1379,7 +1365,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("#  ")
                 .pattern("$  ")
                 .define('#', ModItems.BALL_TNT.get())
-                .define('$', ModItems.getIngot(ModIngots.STEEL).get())
+                .define('$', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
                 .define('@', ModItems.INSULATOR.get())
                 .unlockedBy(getHasName(ModItems.BALL_TNT.get()), has(ModItems.BALL_TNT.get()))
                 .save(writer, recipeId("crafting/mine_ap"));
@@ -1389,9 +1375,9 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("#  ")
                 .pattern("$  ")
                 .define('#', ModBlocks.MINE_AP.get())
-                .define('$', ModItems.getIngot(ModIngots.TUNGSTEN).get())
-                .define('@', ModItems.BILLET_PLUTONIUM.get())
-                .unlockedBy(getHasName(ModItems.BILLET_PLUTONIUM.get()), has(ModItems.BILLET_PLUTONIUM.get()))
+                .define('$', ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.INGOT))
+                .define('@', ModMaterialItems.item(ModMaterials.PLUTONIUM, MaterialShape.BILLET))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.PLUTONIUM, MaterialShape.BILLET)), has(ModMaterialItems.item(ModMaterials.PLUTONIUM, MaterialShape.BILLET)))
                 .save(writer, recipeId("crafting/mine_fat"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.RANGEFINDER.get())
@@ -1400,7 +1386,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .define('G', Ingredient.of(Tags.Items.GLASS_PANES))
                 .define('R', Items.REDSTONE)
                 .define('C', ModItems.INTEGRATED_CIRCUIT.get())
-                .define('S', ModItems.PLATE_STEEL.get())
+                .define('S', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
                 .unlockedBy(getHasName(ModItems.INTEGRATED_CIRCUIT.get()), has(ModItems.INTEGRATED_CIRCUIT.get()))
                 .save(writer, recipeId("crafting/rangefinder"));
 
@@ -1443,26 +1429,26 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("###")
                 .pattern(" # ")
                 .pattern("###")
-                .define('#', ModItems.getIngot(ModIngots.STEEL).get())
-                .unlockedBy("has_steel_ingot", has(ModItems.getIngot(ModIngots.STEEL).get()))
+                .define('#', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
+                .unlockedBy("has_steel_ingot", has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT)))
                 .save(writer, recipeId("crafting/deco_steel_scaffold"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.STEEL_POLE.get(), 16)
                 .pattern("# #")
                 .pattern("###")
                 .pattern("# #")
-                .define('#', ModItems.getIngot(ModIngots.STEEL).get())
-                .unlockedBy("has_steel_ingot", has(ModItems.getIngot(ModIngots.STEEL).get()))
+                .define('#', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
+                .unlockedBy("has_steel_ingot", has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT)))
                 .save(writer, recipeId("crafting/steel_pole"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.ANTENNA_TOP.get(), 1)
                 .pattern("# #")
                 .pattern("#@#")
                 .pattern("$$$")
-                .define('#', ModItems.getIngot(ModIngots.STEEL).get())
-                .define('@', ModItems.getIngot(ModIngots.RED_COPPER).get())
-                .define('$', ModItems.getIngot(ModIngots.BERYLLIUM).get())
-                .unlockedBy("has_steel_ingot", has(ModItems.getIngot(ModIngots.STEEL).get()))
+                .define('#', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
+                .define('@', ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.INGOT))
+                .define('$', ModMaterialItems.item(ModMaterials.BERYLLIUM, MaterialShape.INGOT))
+                .unlockedBy("has_steel_ingot", has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT)))
                 .save(writer, recipeId("crafting/antenna_top"));
 
         // OTHER
@@ -1591,7 +1577,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("$#")
                 .pattern("##")
                 .define('#', ModBlocks.CONCRETE.get())
-                .define('$', ModItems.PLATE_IRON.get())
+                .define('$', ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE))
                 .unlockedBy("has_concrete", has(ModBlocks.CONCRETE.get()))
                 .save(writer, recipeId("crafting/concrete_fan"));
 
@@ -1622,10 +1608,10 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("$$$")
                 .pattern("%#%")
                 .pattern("%#%")
-                .define('%', ModItems.PLATE_IRON.get())
+                .define('%', ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE))
                 .define('#', Items.TNT)
                 .define('$', Items.FLINT)
-                .unlockedBy(getHasName(ModItems.PLATE_IRON.get()), has(ModItems.PLATE_IRON.get()))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE)), has(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE)))
                 .save(writer, recipeId("crafting/det_miner"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.PRESS.get())
@@ -1643,9 +1629,9 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern(" $ ")
                 .pattern("%#%")
                 .pattern("%#%")
-                .define('#', ModItems.PLATE_STEEL.get())
+                .define('#', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
                 .define('%', ModItems.FIREBRICK.get())
-                .define('$', ModItems.PLATE_COPPER.get())
+                .define('$', ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE))
                 .unlockedBy(getHasName(Items.PISTON), has(Items.PISTON))
                 .save(writer, recipeId("crafting/blast_furnace_extension"));
 
@@ -1689,16 +1675,16 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("###")
                 .pattern(" @ ")
                 .pattern("###")
-                .define('#', ModItems.getIngot(ModIngots.LEAD).get())
-                .define('@', ModBlocks.getIngotBlock(ModIngots.LEAD).get())
-                .unlockedBy(getHasName(ModItems.getIngot(ModIngots.LEAD).get()), has(ModItems.getIngot(ModIngots.LEAD).get()))
+                .define('#', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
+                .define('@', ModBlocks.getIngotBlock(ModMaterials.LEAD).get())
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT)), has(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT)))
                 .save(writer, recipeId("crafting/anvil_lead"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.NUCLEAR_CHARGE.get())
                 .pattern("$$$")
                 .pattern("%@%")
                 .pattern("%#%")
-                .define('%', ModItems.PLATE_STEEL.get())
+                .define('%', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
                 .define('@', ModItems.FAT_MAN_CORE.get())
                 .define('#', ModItems.CONTROLLER.get())
                 .define('$', ModItems.INSULATOR.get())
@@ -1709,7 +1695,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("$$$")
                 .pattern("%##")
                 .pattern("$$$")
-                .define('$', ModItems.PLATE_ALUMINUM.get())
+                .define('$', ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.PLATE))
                 .define('#', ModItems.PCB.get())
                 .define('%', ModItems.CRT_DISPLAY.get())
                 .unlockedBy(getHasName(ModItems.CRT_DISPLAY.get()), has(ModItems.CRT_DISPLAY.get()))
@@ -1723,12 +1709,12 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .unlockedBy(getHasName(ModItems.ALUMINUM_RAW.get()), has(ModItems.ALUMINUM_RAW.get()))
                 .save(writer, recipeId("crafting/alclay_fireclay"));
 
-        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.getPowders(ModPowders.CEMENT).get(), 4)
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModMaterialItems.item(ModMaterials.CEMENT, MaterialShape.POWDER), 4)
                 .pattern("AB")
                 .pattern("BB")
-                .define('A', ModItems.getPowders(ModPowders.LIMESTONE).get())
+                .define('A', ModMaterialItems.item(ModMaterials.LIMESTONE, MaterialShape.POWDER))
                 .define('B', Items.CLAY_BALL)
-                .unlockedBy(getHasName(ModItems.getPowders(ModPowders.LIMESTONE).get()), has(ModItems.getPowders(ModPowders.LIMESTONE).get()))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.LIMESTONE, MaterialShape.POWDER)), has(ModMaterialItems.item(ModMaterials.LIMESTONE, MaterialShape.POWDER)))
                 .save(writer, recipeId("crafting/limestone_cement"));
 
         registerSmelting(writer, ModItems.FIRECLAY_BALL.get(), ModItems.FIREBRICK.get(), 0.1F, 100, "firebrick_smelting");
@@ -1737,9 +1723,9 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
     //переплавка порошков -  ИСПРАВЛЕННАЯ ВЕРСИЯ
     private void registerPowderCooking(Consumer<FinishedRecipe> writer) {
         //  ПРОВЕРЯЕМ КАЖДЫЙ ПОРОШОК ПЕРЕД ИСПОЛЬЗОВАНИЕМ
-        Item ironPowder = safePowder(ModPowders.IRON);
-        Item goldPowder = safePowder(ModPowders.GOLD);
-        Item coalPowder = safePowder(ModPowders.COAL);
+        Item ironPowder = ModMaterialItems.item(ModMaterials.IRON, MaterialShape.POWDER);
+        Item goldPowder = ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.POWDER);
+        Item coalPowder = ModMaterialItems.item(ModMaterials.COAL, MaterialShape.POWDER);
 
         // Регистрируем только если порошок существует
         if (ironPowder != null) {
@@ -1760,40 +1746,40 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
 
     //переплавка руд
     private void registerOreAndRawCooking(Consumer<FinishedRecipe> writer) {
-        ItemLike uraniumIngot = ModItems.getIngot(ModIngots.URANIUM).get();
+        ItemLike uraniumIngot = ModMaterialItems.item(ModMaterials.URANIUM, MaterialShape.INGOT);
         registerSmeltingAndBlasting(writer, ModItems.URANIUM_RAW.get(), uraniumIngot, 2.1F, 3.0F, "uranium_raw");
         registerSmeltingAndBlasting(writer, ModBlocks.URANIUM_ORE.get(), uraniumIngot, 2.1F, 3.0F, "uranium_ore");
         registerSmeltingAndBlasting(writer, ModBlocks.URANIUM_ORE_DEEPSLATE.get(), uraniumIngot, 2.1F, 3.0F, "uranium_ore_deepslate");
 
-        ItemLike thoriumIngot = ModItems.getIngot(ModIngots.THORIUM232).get();
+        ItemLike thoriumIngot = ModMaterialItems.item(ModMaterials.THORIUM232, MaterialShape.INGOT);
         registerSmeltingAndBlasting(writer, ModItems.THORIUM_RAW.get(), thoriumIngot, 2.1F, 3.0F, "thorium_raw");
         registerSmeltingAndBlasting(writer, ModBlocks.THORIUM_ORE.get(), thoriumIngot, 2.1F, 3.0F, "thorium_ore");
         registerSmeltingAndBlasting(writer, ModBlocks.THORIUM_ORE_DEEPSLATE.get(), thoriumIngot, 2.1F, 3.0F, "thorium_ore_deepslate");
 
-        ItemLike titaniumIngot = ModItems.getIngot(ModIngots.TITANIUM).get();
+        ItemLike titaniumIngot = ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.INGOT);
         registerSmeltingAndBlasting(writer, ModItems.TITANIUM_RAW.get(), titaniumIngot, 0.7F, 1.0F, "titanium_raw");
         registerSmeltingAndBlasting(writer, ModBlocks.TITANIUM_ORE.get(), titaniumIngot, 0.7F, 1.0F, "titanium_ore");
         registerSmeltingAndBlasting(writer, ModBlocks.TITANIUM_ORE_DEEPSLATE.get(), titaniumIngot, 0.7F, 1.0F, "titanium_ore_deepslate");
 
-        ItemLike tungstenIngot = ModItems.getIngot(ModIngots.TUNGSTEN).get();
+        ItemLike tungstenIngot = ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.INGOT);
         registerSmeltingAndBlasting(writer, ModItems.TUNGSTEN_RAW.get(), tungstenIngot, 0.7F, 1.0F, "tungsten_raw");
         registerSmeltingAndBlasting(writer, ModBlocks.TUNGSTEN_ORE.get(), tungstenIngot, 0.7F, 1.0F, "tungsten_ore");
 
-        ItemLike leadIngot = ModItems.getIngot(ModIngots.LEAD).get();
+        ItemLike leadIngot = ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT);
         registerSmeltingAndBlasting(writer, ModItems.LEAD_RAW.get(), leadIngot, 0.7F, 1.0F, "lead_raw");
         registerSmeltingAndBlasting(writer, ModBlocks.LEAD_ORE.get(), leadIngot, 0.7F, 1.0F, "lead_ore");
         registerSmeltingAndBlasting(writer, ModBlocks.LEAD_ORE_DEEPSLATE.get(), leadIngot, 0.7F, 1.0F, "lead_ore_deepslate");
 
-        ItemLike cobaltIngot = ModItems.getIngot(ModIngots.COBALT).get();
+        ItemLike cobaltIngot = ModMaterialItems.item(ModMaterials.COBALT, MaterialShape.INGOT);
         registerSmeltingAndBlasting(writer, ModItems.COBALT_RAW.get(), cobaltIngot, 0.7F, 1.0F, "cobalt_raw");
         registerSmeltingAndBlasting(writer, ModBlocks.COBALT_ORE.get(), cobaltIngot, 0.7F, 1.0F, "cobalt_ore");
 
-        ItemLike berylliumIngot = ModItems.getIngot(ModIngots.BERYLLIUM).get();
+        ItemLike berylliumIngot = ModMaterialItems.item(ModMaterials.BERYLLIUM, MaterialShape.INGOT);
         registerSmeltingAndBlasting(writer, ModItems.BERYLLIUM_RAW.get(), berylliumIngot, 0.7F, 1.0F, "beryllium_raw");
         registerSmeltingAndBlasting(writer, ModBlocks.BERYLLIUM_ORE.get(), berylliumIngot, 0.7F, 1.0F, "beryllium_ore");
         registerSmeltingAndBlasting(writer, ModBlocks.BERYLLIUM_ORE_DEEPSLATE.get(), berylliumIngot, 0.7F, 1.0F, "beryllium_ore_deepslate");
 
-        ItemLike aluminumIngot = ModItems.getIngot(ModIngots.ALUMINUM).get();
+        ItemLike aluminumIngot = ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.INGOT);
         registerSmeltingAndBlasting(writer, ModItems.ALUMINUM_RAW.get(), aluminumIngot, 0.7F, 1.0F, "aluminum_raw");
         registerSmeltingAndBlasting(writer, ModBlocks.ALUMINUM_ORE.get(), aluminumIngot, 0.7F, 1.0F, "aluminum_ore");
         registerSmeltingAndBlasting(writer, ModBlocks.ALUMINUM_ORE_DEEPSLATE.get(), aluminumIngot, 0.7F, 1.0F, "aluminum_ore_deepslate");
@@ -1818,36 +1804,36 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("AAA")
                 .pattern("B B")
                 .pattern("BBB")
-                .define('A', ModItems.PLATE_IRON.get())
+                .define('A', ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE))
                 .define('B', Items.IRON_INGOT)
-                .unlockedBy(getHasName(ModItems.PLATE_IRON.get()), has(ModItems.PLATE_IRON.get()))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE)), has(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE)))
                 .save(writer, recipeId("crafting/crate_iron"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.CRATE_STEEL.get())
                 .pattern("AAA")
                 .pattern("B B")
                 .pattern("BBB")
-                .define('A', ModItems.PLATE_STEEL.get())
-                .define('B', ModItems.getIngot(ModIngots.STEEL).get())
-                .unlockedBy(getHasName(ModItems.PLATE_STEEL.get()), has(ModItems.PLATE_STEEL.get()))
+                .define('A', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
+                .define('B', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)), has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)))
                 .save(writer, recipeId("crafting/crate_steel"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.CRATE_DESH.get())
                 .pattern("AAA")
                 .pattern("ABA")
                 .pattern("AAA")
-                .define('A', ModItems.PLATE_DESH.get())
+                .define('A', ModMaterialItems.item(ModMaterials.DESH, MaterialShape.PLATE))
                 .define('B', ModBlocks.CRATE_STEEL.get())
-                .unlockedBy(getHasName(ModItems.PLATE_DESH.get()), has(ModItems.PLATE_DESH.get()))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.DESH, MaterialShape.PLATE)), has(ModMaterialItems.item(ModMaterials.DESH, MaterialShape.PLATE)))
                 .save(writer, recipeId("crafting/crate_desh"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.CRATE_TUNGSTEN.get())
                 .pattern("AAA")
                 .pattern("B B")
                 .pattern("BBB")
-                .define('A', ModItems.PLATE_STEEL.get())
-                .define('B', ModItems.getIngot(ModIngots.TUNGSTEN).get())
-                .unlockedBy(getHasName(ModItems.getIngot(ModIngots.TUNGSTEN).get()), has(ModItems.getIngot(ModIngots.TUNGSTEN).get()))
+                .define('A', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
+                .define('B', ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.INGOT))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.INGOT)), has(ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.INGOT)))
                 .save(writer, recipeId("crafting/crate_tungsten"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.CRATE_TEMPLATE.get())
@@ -1864,10 +1850,10 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
     private void registerStamps(Consumer<FinishedRecipe> writer) {
         buildStamp(writer, ModItems.STAMP_STONE_FLAT.get(), Items.STONE, "stamp_stone_flat");
         buildStamp(writer, ModItems.STAMP_IRON_FLAT.get(), Items.IRON_INGOT, "stamp_iron_flat");
-        buildStamp(writer, ModItems.STAMP_STEEL_FLAT.get(), ModItems.getIngot(ModIngots.STEEL).get(), "stamp_steel_flat");
-        buildStamp(writer, ModItems.STAMP_TITANIUM_FLAT.get(), ModItems.getIngot(ModIngots.TITANIUM).get(), "stamp_titanium_flat");
+        buildStamp(writer, ModItems.STAMP_STEEL_FLAT.get(), ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT), "stamp_steel_flat");
+        buildStamp(writer, ModItems.STAMP_TITANIUM_FLAT.get(), ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.INGOT), "stamp_titanium_flat");
         buildStamp(writer, ModItems.STAMP_OBSIDIAN_FLAT.get(), Blocks.OBSIDIAN.asItem(), "stamp_obsidian_flat");
-        buildStamp(writer, ModItems.STAMP_DESH_FLAT.get(), ModItems.getIngot(ModIngots.DESH).get(), "stamp_desh_flat");
+        buildStamp(writer, ModItems.STAMP_DESH_FLAT.get(), ModMaterialItems.item(ModMaterials.DESH, MaterialShape.INGOT), "stamp_desh_flat");
     }
 
     //крафты гранат
@@ -1876,38 +1862,38 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("%@ ")
                 .pattern("#$#")
                 .pattern(" # ")
-                .define('%', ModItems.WIRE_RED_COPPER.get())
-                .define('@', ModItems.PLATE_STEEL.get())
-                .define('#', ModItems.PLATE_IRON.get())
+                .define('%', ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.WIRE))
+                .define('@', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
+                .define('#', ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE))
                 .define('$', ModItems.BALL_TNT.get())
-                .unlockedBy(getHasName(ModItems.PLATE_STEEL.get()), has(ModItems.PLATE_STEEL.get()))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)), has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)))
                 .save(writer, recipeId("crafting/grenade"));
 
         buildGrenadeUpgrade(writer, ModItems.GRENADEHE.get(), ModItems.BALL_TNT.get(), "grenadehe");
         buildGrenadeUpgrade(writer, ModItems.GRENADESLIME.get(), Items.SLIME_BALL, "grenadeslime");
-        buildGrenadeUpgrade(writer, ModItems.GRENADEFIRE.get(), ModItems.getIngot(ModIngots.PHOSPHORUS).get(), "grenadefire");
+        buildGrenadeUpgrade(writer, ModItems.GRENADEFIRE.get(), ModMaterialItems.item(ModMaterials.PHOSPHORUS, MaterialShape.INGOT), "grenadefire");
         buildGrenadeIfUpgrade(writer, ModItems.GRENADE_IF_HE.get(), ModItems.BALL_TNT.get(), "grenade_if_he");
         buildGrenadeIfUpgrade(writer, ModItems.GRENADE_IF_SLIME.get(), Items.SLIME_BALL, "grenade_if_slime");
-        buildGrenadeIfUpgrade(writer, ModItems.GRENADE_IF_FIRE.get(), ModItems.getIngot(ModIngots.PHOSPHORUS).get(), "grenade_if_fire");
+        buildGrenadeIfUpgrade(writer, ModItems.GRENADE_IF_FIRE.get(), ModMaterialItems.item(ModMaterials.PHOSPHORUS, MaterialShape.INGOT), "grenade_if_fire");
 
-        buildBlades(writer, ModItems.BLADE_STEEL.get(), ModItems.getIngot(ModIngots.STEEL).get(), ModItems.PLATE_STEEL.get(),"blades_steel");
-        buildBlades(writer, ModItems.BLADE_TITANIUM.get(), ModItems.getIngot(ModIngots.TITANIUM).get(), ModItems.PLATE_TITANIUM.get(),"blades_titanium");
-        buildBlades(writer, ModItems.BLADE_ALLOY.get(), ModItems.getIngot(ModIngots.ADVANCED_ALLOY).get(), ModItems.PLATE_ADVANCED_ALLOY.get(),"blades_advanced_alloy");
+        buildBlades(writer, ModItems.BLADE_STEEL.get(), ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT), ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE),"blades_steel");
+        buildBlades(writer, ModItems.BLADE_TITANIUM.get(), ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.INGOT), ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE),"blades_titanium");
+        buildBlades(writer, ModItems.BLADE_ALLOY.get(), ModMaterialItems.item(ModMaterials.ADVANCED_ALLOY, MaterialShape.INGOT), ModMaterialItems.item(ModMaterials.ADVANCED_ALLOY, MaterialShape.PLATE),"blades_advanced_alloy");
 
 
 
         buildBarbedWireUpgrade(writer, Item.byBlock(ModBlocks.BARBED_WIRE_FIRE.get()), Items.BLAZE_POWDER, "barbed_wire_fire");
         buildBarbedWireUpgrade(writer, Item.byBlock(ModBlocks.BARBED_WIRE_POISON.get()), Items.SPIDER_EYE, "barbed_wire_poison");
         buildBarbedWireUpgrade(writer, Item.byBlock(ModBlocks.BARBED_WIRE_WITHER.get()), Items.WITHER_SKELETON_SKULL, "barbed_wire_wither");
-        buildBarbedWireUpgrade(writer, Item.byBlock(ModBlocks.BARBED_WIRE_RAD.get()), ModItems.BILLET_PLUTONIUM.get(), "barbed_wire_rad");
+        buildBarbedWireUpgrade(writer, Item.byBlock(ModBlocks.BARBED_WIRE_RAD.get()), ModMaterialItems.item(ModMaterials.PLUTONIUM, MaterialShape.BILLET), "barbed_wire_rad");
 
         ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.GRENADESMART.get(), 4)
                 .pattern(" @ ")
                 .pattern("&%$")
                 .pattern(" # ")
                 .define('%', ModItems.GRENADE.get())
-                .define('&', ModItems.getIngot(ModIngots.PHOSPHORUS).get())
-                .define('#', ModItems.PLATE_STEEL.get())
+                .define('&', ModMaterialItems.item(ModMaterials.PHOSPHORUS, MaterialShape.INGOT))
+                .define('#', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
                 .define('@', ModItems.MICROCHIP.get())
                 .define('$', ModItems.BALL_TNT.get())
                 .unlockedBy(getHasName(ModItems.GRENADE.get()), has(ModItems.GRENADE.get()))
@@ -1916,7 +1902,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
 
     //крафты брони и инструментов
     private void registerToolAndArmorSets(Consumer<FinishedRecipe> writer) {
-        ItemLike titaniumIngot = ModItems.getIngot(ModIngots.TITANIUM).get();
+        ItemLike titaniumIngot = ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.INGOT);
         buildToolSet(writer, "titanium", titaniumIngot,
                 ModItems.TITANIUM_SWORD.get(), ModItems.TITANIUM_SHOVEL.get(), ModItems.TITANIUM_PICKAXE.get(),
                 ModItems.TITANIUM_HOE.get(), ModItems.TITANIUM_AXE.get());
@@ -1924,7 +1910,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 ModItems.TITANIUM_HELMET.get(), ModItems.TITANIUM_CHESTPLATE.get(),
                 ModItems.TITANIUM_LEGGINGS.get(), ModItems.TITANIUM_BOOTS.get());
 
-        ItemLike steelIngot = ModItems.getIngot(ModIngots.STEEL).get();
+        ItemLike steelIngot = ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT);
         buildToolSet(writer, "steel", steelIngot,
                 ModItems.STEEL_SWORD.get(), ModItems.STEEL_SHOVEL.get(), ModItems.STEEL_PICKAXE.get(),
                 ModItems.STEEL_HOE.get(), ModItems.STEEL_AXE.get());
@@ -1932,7 +1918,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 ModItems.STEEL_HELMET.get(), ModItems.STEEL_CHESTPLATE.get(),
                 ModItems.STEEL_LEGGINGS.get(), ModItems.STEEL_BOOTS.get());
 
-        ItemLike starmetalIngot = ModItems.getIngot(ModIngots.STARMETAL).get();
+        ItemLike starmetalIngot = ModMaterialItems.item(ModMaterials.STARMETAL, MaterialShape.INGOT);
         buildToolSet(writer, "starmetal", starmetalIngot,
                 ModItems.STARMETAL_SWORD.get(), ModItems.STARMETAL_SHOVEL.get(), ModItems.STARMETAL_PICKAXE.get(),
                 ModItems.STARMETAL_HOE.get(), ModItems.STARMETAL_AXE.get());
@@ -1940,7 +1926,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 ModItems.STARMETAL_HELMET.get(), ModItems.STARMETAL_CHESTPLATE.get(),
                 ModItems.STARMETAL_LEGGINGS.get(), ModItems.STARMETAL_BOOTS.get());
 
-        ItemLike alloyIngot = ModItems.getIngot(ModIngots.ADVANCED_ALLOY).get();
+        ItemLike alloyIngot = ModMaterialItems.item(ModMaterials.ADVANCED_ALLOY, MaterialShape.INGOT);
         buildToolSet(writer, "alloy", alloyIngot,
                 ModItems.ALLOY_SWORD.get(), ModItems.ALLOY_SHOVEL.get(), ModItems.ALLOY_PICKAXE.get(),
                 ModItems.ALLOY_HOE.get(), ModItems.ALLOY_AXE.get());
@@ -1948,12 +1934,12 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 ModItems.ALLOY_HELMET.get(), ModItems.ALLOY_CHESTPLATE.get(),
                 ModItems.ALLOY_LEGGINGS.get(), ModItems.ALLOY_BOOTS.get());
 
-        ItemLike cobaltIngot = ModItems.getIngot(ModIngots.COBALT).get();
+        ItemLike cobaltIngot = ModMaterialItems.item(ModMaterials.COBALT, MaterialShape.INGOT);
         buildArmorSet(writer, "cobalt", cobaltIngot,
                 ModItems.COBALT_HELMET.get(), ModItems.COBALT_CHESTPLATE.get(),
                 ModItems.COBALT_LEGGINGS.get(), ModItems.COBALT_BOOTS.get());
 
-        ItemLike asbestosSheet = ModItems.getIngot(ModIngots.ASBESTOS).get();
+        ItemLike asbestosSheet = ModMaterialItems.item(ModMaterials.ASBESTOS, MaterialShape.INGOT);
         buildArmorSet(writer, "asbestos", asbestosSheet,
                 ModItems.ASBESTOS_HELMET.get(), ModItems.ASBESTOS_CHESTPLATE.get(),
                 ModItems.ASBESTOS_LEGGINGS.get(), ModItems.ASBESTOS_BOOTS.get());
@@ -1961,11 +1947,11 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
 
     //крафты катушек
     private void registerCoil(Consumer<FinishedRecipe> writer) {
-        buildCoil(writer, ModItems.COIL_ADVANCED_ALLOY.get(), ModItems.WIRE_ADVANCED_ALLOY.get(), "coil_advanced_alloy");
-        buildCoil(writer, ModItems.COIL_COPPER.get(), ModItems.WIRE_RED_COPPER.get(), "coil_copper");
-        buildCoil(writer, ModItems.COIL_GOLD.get(), ModItems.WIRE_GOLD.get(), "coil_gold");
-        buildCoil(writer, ModItems.COIL_MAGNETIZED_TUNGSTEN.get(), ModItems.WIRE_MAGNETIZED_TUNGSTEN.get(), "coil_magnetized_tungsten");
-        buildCoil(writer, ModItems.COIL_TUNGSTEN.get(), ModItems.WIRE_TUNGSTEN.get(), "coil_tungsten");
+        buildCoil(writer, ModItems.COIL_ADVANCED_ALLOY.get(), ModMaterialItems.item(ModMaterials.ADVANCED_ALLOY, MaterialShape.WIRE), "coil_advanced_alloy");
+        buildCoil(writer, ModItems.COIL_COPPER.get(), ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.WIRE), "coil_copper");
+        buildCoil(writer, ModItems.COIL_GOLD.get(), ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.WIRE), "coil_gold");
+        buildCoil(writer, ModItems.COIL_MAGNETIZED_TUNGSTEN.get(), ModMaterialItems.item(ModMaterials.MAGNETIZED_TUNGSTEN, MaterialShape.WIRE), "coil_magnetized_tungsten");
+        buildCoil(writer, ModItems.COIL_TUNGSTEN.get(), ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.WIRE), "coil_tungsten");
     }
 
     //крафты кольцевых катушек
@@ -1993,7 +1979,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern(" # ")
                 .pattern("#$#")
                 .pattern(" # ")
-                .define('$', ModItems.PLATE_IRON.get())
+                .define('$', ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE))
                 .define('#', material)
                 .unlockedBy(getHasName(material), has(material))
                 .save(writer, recipeId("crafting/" + name));
@@ -2005,7 +1991,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("$%$")
                 .pattern(" # ")
                 .define('%', ModItems.GRENADE.get())
-                .define('#', ModItems.PLATE_STEEL.get())
+                .define('#', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
                 .define('$', core)
                 .unlockedBy(getHasName(ModItems.GRENADE.get()), has(ModItems.GRENADE.get()))
                 .save(writer, recipeId("crafting/" + name));
@@ -2017,7 +2003,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("$%$")
                 .pattern(" # ")
                 .define('%', ModItems.GRENADE_IF.get())
-                .define('#', ModItems.PLATE_STEEL.get())
+                .define('#', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
                 .define('$', core)
                 .unlockedBy(getHasName(ModItems.GRENADE_IF.get()), has(ModItems.GRENADE_IF.get()))
                 .save(writer, recipeId("crafting/" + name));
@@ -2159,11 +2145,11 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern(" M ")
                 .pattern("PMP")
                 .pattern(" S ")
-                .define('M', ModItems.getIngot(ModIngots.METEORITE_FORGED).get())
-                .define('P', ModItems.PLATE_GOLD.get())
+                .define('M', ModMaterialItems.item(ModMaterials.METEORITE_FORGED, MaterialShape.INGOT))
+                .define('P', ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.PLATE))
                 .define('S', Items.STICK)
-                .unlockedBy(getHasName(ModItems.getIngot(ModIngots.METEORITE_FORGED).get()),
-                        has(ModItems.getIngot(ModIngots.METEORITE_FORGED).get()))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.METEORITE_FORGED, MaterialShape.INGOT)),
+                        has(ModMaterialItems.item(ModMaterials.METEORITE_FORGED, MaterialShape.INGOT)))
                 .save(writer, recipeId("meteorite_sword"));
 
         registerSmelting(writer, ModItems.METEORITE_SWORD.get(), ModItems.METEORITE_SWORD_SEARED.get(),
@@ -2206,15 +2192,15 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         saveShapedStackRecipe(writer, recipeId("crafting/rad_absorber_base"), baseStack, pattern,
                 mapOf(
                         'I', Ingredient.of(Items.COPPER_INGOT),
-                        'C', Ingredient.of(ModItems.getPowders(ModPowders.COAL).get()),
-                        'P', Ingredient.of(ModItems.getPowder(ModIngots.LEAD).get())
+                        'C', Ingredient.of(ModMaterialItems.item(ModMaterials.COAL, MaterialShape.POWDER)),
+                        'P', Ingredient.of(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.POWDER))
                 ),
                 Items.COPPER_INGOT, "has_copper");
 
         saveShapedStackRecipe(writer, recipeId("crafting/rad_absorber_red"), redStack, pattern,
                 mapOf(
-                        'I', Ingredient.of(ModItems.getIngot(ModIngots.TITANIUM).get()),
-                        'C', Ingredient.of(ModItems.getPowders(ModPowders.COAL).get()),
+                        'I', Ingredient.of(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.INGOT)),
+                        'C', Ingredient.of(ModMaterialItems.item(ModMaterials.COAL, MaterialShape.POWDER)),
                         'P', Ingredient.of(baseStack)
                 ),
                 baseStack.getItem(), "has_rad_absorber_base");
@@ -2222,8 +2208,8 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         saveShapedStackRecipe(writer, recipeId("crafting/rad_absorber_green"), greenStack, pattern,
                 mapOf(
                         'I', Ingredient.of(
-                                ModItems.getIngot(ModIngots.BAKELITE).get(),
-                                ModItems.getIngot(ModIngots.POLYMER).get()),
+                                ModMaterialItems.item(ModMaterials.BAKELITE, MaterialShape.INGOT),
+                                ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.INGOT)),
                         'C', Ingredient.of(ModItems.POWDER_DESH_MIX.get()),
                         'P', Ingredient.of(redStack)
                 ),
@@ -2232,7 +2218,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         saveShapedStackRecipe(writer, recipeId("crafting/rad_absorber_pink"),
                 BlockAbsorberItem.forTier(ModBlocks.RAD_ABSORBER.get(), pink), pattern,
                 mapOf(
-                        'I', Ingredient.of(ModItems.getIngot(ModIngots.SATURNITE).get()),
+                        'I', Ingredient.of(ModMaterialItems.item(ModMaterials.SATURNITE, MaterialShape.INGOT)),
                         'C', Ingredient.of(ModItems.POWDER_NITAN_MIX.get()),
                         'P', Ingredient.of(greenStack)
                 ),
@@ -2321,49 +2307,16 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
      * Port of the 1.7.10 MineralRecipes.java addBillet(billet, nugget) family.
      */
     private void registerBilletNuggetPairs(Consumer<FinishedRecipe> writer) {
-        registerBilletNuggetPair(writer, ModItems.BILLET_ACTINIUM.get(), ModItems.NUGGET_ACTINIUM.get(), "actinium");
-        registerBilletNuggetPair(writer, ModItems.BILLET_AM241.get(), ModItems.NUGGET_AM241.get(), "am241");
-        registerBilletNuggetPair(writer, ModItems.BILLET_AM242.get(), ModItems.NUGGET_AM242.get(), "am242");
-        registerBilletNuggetPair(writer, ModItems.BILLET_AMERICIUM_FUEL.get(), ModItems.NUGGET_AMERICIUM_FUEL.get(), "americium_fuel");
-        registerBilletNuggetPair(writer, ModItems.BILLET_AM_MIX.get(), ModItems.NUGGET_AM_MIX.get(), "am_mix");
-        registerBilletNuggetPair(writer, ModItems.BILLET_AU198.get(), ModItems.NUGGET_AU198.get(), "au198");
-        registerBilletNuggetPair(writer, ModItems.BILLET_AUSTRALIUM.get(), ModItems.NUGGET_AUSTRALIUM.get(), "australium");
-        registerBilletNuggetPair(writer, ModItems.BILLET_AUSTRALIUM_GREATER.get(), ModItems.NUGGET_AUSTRALIUM_GREATER.get(), "australium_greater");
-        registerBilletNuggetPair(writer, ModItems.BILLET_AUSTRALIUM_LESSER.get(), ModItems.NUGGET_AUSTRALIUM_LESSER.get(), "australium_lesser");
-        registerBilletNuggetPair(writer, ModItems.BILLET_BERYLLIUM.get(), ModItems.NUGGET_BERYLLIUM.get(), "beryllium");
-        registerBilletNuggetPair(writer, ModItems.BILLET_BISMUTH.get(), ModItems.NUGGET_BISMUTH.get(), "bismuth");
-        registerBilletNuggetPair(writer, ModItems.BILLET_CO60.get(), ModItems.NUGGET_CO60.get(), "co60");
-        registerBilletNuggetPair(writer, ModItems.BILLET_COBALT.get(), ModItems.NUGGET_COBALT.get(), "cobalt");
-        registerBilletNuggetPair(writer, ModItems.BILLET_GH336.get(), ModItems.NUGGET_GH336.get(), "gh336");
-        registerBilletNuggetPair(writer, ModItems.BILLET_HES.get(), ModItems.NUGGET_HES.get(), "hes");
-        registerBilletNuggetPair(writer, ModItems.BILLET_LES.get(), ModItems.NUGGET_LES.get(), "les");
-        registerBilletNuggetPair(writer, ModItems.BILLET_MOX_FUEL.get(), ModItems.NUGGET_MOX_FUEL.get(), "mox_fuel");
-        registerBilletNuggetPair(writer, ModItems.BILLET_NEPTUNIUM.get(), ModItems.NUGGET_NEPTUNIUM.get(), "neptunium");
-        registerBilletNuggetPair(writer, ModItems.BILLET_NEPTUNIUM_FUEL.get(), ModItems.NUGGET_NEPTUNIUM_FUEL.get(), "neptunium_fuel");
-        registerBilletNuggetPair(writer, ModItems.BILLET_PB209.get(), ModItems.NUGGET_PB209.get(), "pb209");
-        registerBilletNuggetPair(writer, ModItems.BILLET_PLUTONIUM.get(), ModItems.NUGGET_PLUTONIUM.get(), "plutonium");
-        registerBilletNuggetPair(writer, ModItems.BILLET_PLUTONIUM_FUEL.get(), ModItems.NUGGET_PLUTONIUM_FUEL.get(), "plutonium_fuel");
-        registerBilletNuggetPair(writer, ModItems.BILLET_POLONIUM.get(), ModItems.NUGGET_POLONIUM.get(), "polonium");
-        registerBilletNuggetPair(writer, ModItems.BILLET_PU238.get(), ModItems.NUGGET_PU238.get(), "pu238");
-        registerBilletNuggetPair(writer, ModItems.BILLET_PU239.get(), ModItems.NUGGET_PU239.get(), "pu239");
-        registerBilletNuggetPair(writer, ModItems.BILLET_PU240.get(), ModItems.NUGGET_PU240.get(), "pu240");
-        registerBilletNuggetPair(writer, ModItems.BILLET_PU241.get(), ModItems.NUGGET_PU241.get(), "pu241");
-        registerBilletNuggetPair(writer, ModItems.BILLET_PU_MIX.get(), ModItems.NUGGET_PU_MIX.get(), "pu_mix");
-        registerBilletNuggetPair(writer, ModItems.BILLET_RA226.get(), ModItems.NUGGET_RA226.get(), "ra226");
-        registerBilletNuggetPair(writer, ModItems.BILLET_SCHRABIDIUM.get(), ModItems.NUGGET_SCHRABIDIUM.get(), "schrabidium");
-        registerBilletNuggetPair(writer, ModItems.BILLET_SCHRABIDIUM_FUEL.get(), ModItems.NUGGET_SCHRABIDIUM_FUEL.get(), "schrabidium_fuel");
-        registerBilletNuggetPair(writer, ModItems.BILLET_SILICON.get(), ModItems.NUGGET_SILICON.get(), "silicon");
-        registerBilletNuggetPair(writer, ModItems.BILLET_SOLINIUM.get(), ModItems.NUGGET_SOLINIUM.get(), "solinium");
-        registerBilletNuggetPair(writer, ModItems.BILLET_SR90.get(), ModItems.NUGGET_SR90.get(), "sr90");
-        registerBilletNuggetPair(writer, ModItems.BILLET_TECHNETIUM.get(), ModItems.NUGGET_TECHNETIUM.get(), "technetium");
-        registerBilletNuggetPair(writer, ModItems.BILLET_TH232.get(), ModItems.NUGGET_TH232.get(), "th232");
-        registerBilletNuggetPair(writer, ModItems.BILLET_THORIUM_FUEL.get(), ModItems.NUGGET_THORIUM_FUEL.get(), "thorium_fuel");
-        registerBilletNuggetPair(writer, ModItems.BILLET_U233.get(), ModItems.NUGGET_U233.get(), "u233");
-        registerBilletNuggetPair(writer, ModItems.BILLET_U235.get(), ModItems.NUGGET_U235.get(), "u235");
-        registerBilletNuggetPair(writer, ModItems.BILLET_U238.get(), ModItems.NUGGET_U238.get(), "u238");
-        registerBilletNuggetPair(writer, ModItems.BILLET_URANIUM.get(), ModItems.NUGGET_URANIUM.get(), "uranium");
-        registerBilletNuggetPair(writer, ModItems.BILLET_URANIUM_FUEL.get(), ModItems.NUGGET_URANIUM_FUEL.get(), "uranium_fuel");
-        registerBilletNuggetPair(writer, ModItems.BILLET_ZIRCONIUM.get(), ModItems.NUGGET_ZIRCONIUM.get(), "zirconium");
+        // Цикл по реестру материалов: для каждого материала, у которого есть и биллет,
+        // и наггет — 6 наггетов -> 1 биллет и 1 биллет -> 6 наггетов.
+        // Порт семейства addBillet(billet, nugget) из 1.7.10 MineralRecipes.java.
+        for (ModMaterials mat : ModMaterials.values()) {
+            if (!mat.has(MaterialShape.BILLET) || !mat.has(MaterialShape.NUGGET)) continue;
+            registerBilletNuggetPair(writer,
+                    ModMaterialItems.item(mat, MaterialShape.BILLET),
+                    ModMaterialItems.item(mat, MaterialShape.NUGGET),
+                    mat.getId());
+        }
     }
 
     private void registerBilletNuggetPair(Consumer<FinishedRecipe> writer, Item billet, Item nugget, String name) {

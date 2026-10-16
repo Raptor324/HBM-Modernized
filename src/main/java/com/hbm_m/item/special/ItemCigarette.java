@@ -55,8 +55,13 @@ public class ItemCigarette extends Item {
         return UseAnim.BOW;
     }
 
+    //? if < 1.21.1 {
     @Override
     public int getUseDuration(@NotNull ItemStack stack) {
+    //?} else {
+    /*@Override
+    public int getUseDuration(@NotNull ItemStack stack, @NotNull net.minecraft.world.entity.LivingEntity entity) {
+    *///?}
         return USE_TICKS;
     }
 
@@ -105,9 +110,15 @@ public class ItemCigarette extends Item {
         return stack;
     }
 
+    //? if < 1.21.1 {
     @Override
     public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level,
                                 @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
+    //?} else {
+    /*@Override
+    public void appendHoverText(@NotNull ItemStack stack, @NotNull Item.TooltipContext context,
+                                @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
+    *///?}
         if (!crackpipe) {
             tooltip.add(Component.literal("✓ Asbestos filter").withStyle(ChatFormatting.RED));
             tooltip.add(Component.literal("✓ High in tar").withStyle(ChatFormatting.RED));

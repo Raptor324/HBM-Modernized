@@ -1,0 +1,9 @@
+{
+	"parent": "block/orientable",
+	"textures": {
+		"top": "hbm_m:block/difurnace_top_on_alt",
+		"front": "hbm_m:block/difurnace_front_on_alt",
+		"side": "hbm_m:block/difurnace_side_alt",
+		"bottom": "hbm_m:block/difurnace_top_off_alt"
+	}
+}

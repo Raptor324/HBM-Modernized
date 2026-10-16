@@ -6,7 +6,9 @@ import com.hbm_m.explosion.vanillant.standard.BlockMutatorBulkie;
 import com.hbm_m.explosion.vanillant.standard.BlockProcessorStandard;
 import com.hbm_m.explosion.vanillant.standard.EntityProcessorStandard;
 import com.hbm_m.explosion.vanillant.standard.ExplosionEffectStandard;
-import com.hbm_m.item.ModItems;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
@@ -73,7 +75,7 @@ public class EntityCreeperGold extends Creeper {
         super.dropCustomDeathLoot(source, looting, recentlyHit);
         int amount = recentlyHit ? 5 + this.random.nextInt(6 + looting * 2) : 3;
         for (int i = 0; i < amount; ++i) {
-            this.spawnAtLocation(new ItemStack(ModItems.CRYSTAL_GOLD.get()));
+            this.spawnAtLocation(ModMaterialItems.stack(ModMaterials.GOLD, MaterialShape.CRYSTAL, 1));
         }
     }
     //?} else {
@@ -83,7 +85,7 @@ public class EntityCreeperGold extends Creeper {
         int looting = 0;
         int amount = recentlyHit ? 5 + this.random.nextInt(6 + looting * 2) : 3;
         for (int i = 0; i < amount; ++i) {
-            this.spawnAtLocation(new ItemStack(ModItems.CRYSTAL_GOLD.get()));
+            this.spawnAtLocation(ModMaterialItems.stack(ModMaterials.GOLD, MaterialShape.CRYSTAL, 1));
         }
     }
     *///?}

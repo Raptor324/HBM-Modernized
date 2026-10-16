@@ -51,7 +51,7 @@ public class MissileItem extends Item implements ITooltipProvider {
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         // Tier localized: missile.tier.tier0, missile.tier.tier1, ...
-        String tierKey = "item.hbm_m.missile.tier." + this.tier.name().toLowerCase();
+        String tierKey = "item.hbm_m.missile.tier." + this.tier.name().toLowerCase(java.util.Locale.ROOT);
         tooltip.add(Component.translatable(tierKey).withStyle(ChatFormatting.ITALIC));
 
         if (!this.launchable) {

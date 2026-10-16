@@ -51,7 +51,7 @@ public final class ModArmorMaterialsAccess {
 
     static {
         for (ModArmorMaterials m : ModArmorMaterials.values()) {
-            HOLDERS.put(m, ARMOR_MATERIALS.register(m.name().toLowerCase(), () -> buildMaterial(m)));
+            HOLDERS.put(m, ARMOR_MATERIALS.register(m.name().toLowerCase(java.util.Locale.ROOT), () -> buildMaterial(m)));
         }
     }
 
@@ -75,8 +75,8 @@ public final class ModArmorMaterialsAccess {
         var layers = java.util.List.of(
                 new ArmorMaterial.Layer(
                         //? if < 1.21.1 {
-                        new ResourceLocation(MainRegistry.MOD_ID, m.name().toLowerCase())//?} else {
-                        /^ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, m.name().toLowerCase())
+                        new ResourceLocation(MainRegistry.MOD_ID, m.name().toLowerCase(java.util.Locale.ROOT))//?} else {
+                        /^ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, m.name().toLowerCase(java.util.Locale.ROOT))
                         ^///?}
                         , "", false)
         );

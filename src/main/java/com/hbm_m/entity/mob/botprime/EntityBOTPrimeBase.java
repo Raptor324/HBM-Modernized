@@ -54,7 +54,12 @@ public abstract class EntityBOTPrimeBase extends EntityWormBase implements IRadi
     @Override public boolean removeWhenFarAway(double d) { return false; }
 
     @Override protected SoundEvent getHurtSound(@NotNull DamageSource source) { return SoundEvents.BLAZE_HURT; }
+    //? if < 1.21.1 {
     @Override protected SoundEvent getDeathSound() { return SoundEvents.GENERIC_EXPLODE; }
+    //?} else {
+    /*// 1.21 liefert GENERIC_EXPLODE als Holder.Reference<SoundEvent>.
+    @Override protected SoundEvent getDeathSound() { return SoundEvents.GENERIC_EXPLODE.value(); }
+    *///?}
 
     /**
      * {@code canEntityBeSeenThroughNonSolids}: the worm spends its life inside rock, so it aims

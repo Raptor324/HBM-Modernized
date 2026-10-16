@@ -5,6 +5,9 @@ import com.hbm_m.api.entity.IRadiationImmune;
 import com.hbm_m.damagesource.ModDamageSources;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.radiation.ChunkRadiationManager;
 
 import net.minecraft.core.particles.ParticleTypes;
@@ -79,11 +82,19 @@ public class EntityRADBeast extends Monster implements IRadiationImmune {
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(VICTIM_ID, 0);
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(VICTIM_ID, 0);
+    }
+    *///?}
 
     /** {@code makeLeader}: triple health and a radiation coin that always drops. */
     public EntityRADBeast makeLeader() {
@@ -210,12 +221,20 @@ public class EntityRADBeast extends Monster implements IRadiationImmune {
     }
 
     @Override
+    //? if < 1.21.1 {
     protected void dropCustomDeathLoot(@NotNull DamageSource source, int looting, boolean recentlyHit) {
         super.dropCustomDeathLoot(source, looting, recentlyHit);
+    //?} else {
+    /*protected void dropCustomDeathLoot(net.minecraft.server.level.ServerLevel level, @NotNull DamageSource source, boolean recentlyHit) {
+        super.dropCustomDeathLoot(level, source, recentlyHit);
+        // 1.21 reicht die Pluenderung-Stufe hier nicht mehr durch (sie steckt im LootContext),
+        // daher entfaellt der lootingskalierte Polonium-Nugget-Drop auf dieser Version.
+        int looting = 0;
+    *///?}
         if (!recentlyHit) return;
 
         if (looting > 0) {
-            this.spawnAtLocation(new ItemStack(ModItems.NUGGET_POLONIUM.get(), looting));
+            this.spawnAtLocation(ModMaterialItems.stack(ModMaterials.POLONIUM, MaterialShape.NUGGET, looting));
         }
 
         // Wet beasts drop raw waste instead of intact rods, and twice as much of it.

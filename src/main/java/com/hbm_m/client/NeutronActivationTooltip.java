@@ -23,17 +23,23 @@ public final class NeutronActivationTooltip {
     private NeutronActivationTooltip() {}
 
     public static void init() {
+        //? if < 1.21.1 {
         ClientTooltipEvent.ITEM.register(NeutronActivationTooltip::onItemTooltip);
+        //?} else {
+        /*ClientTooltipEvent.ITEM.register((stack, tooltip, context, flag) -> onItemTooltip(stack, tooltip, flag));
+        *///?}
     }
 
     private static void onItemTooltip(ItemStack stack, List<Component> tooltip, TooltipFlag flag) {
         float activationRads = ContaminationUtil.getNeutronRads(stack);
         if (activationRads <= 0) return;
 
-        tooltip.add(Component.literal("[")
-                .append(Component.translatable("trait.radioactive"))
-                .append("]")
-                .withStyle(ChatFormatting.GREEN));
+        // 1.7.10: GREEN + "[...]" строкой — стиль применялся ко всей строке.
+        // В modern стиль родителя НЕ наследуется append-компонентами, поэтому
+        // красим каждый компонент отдельно (иначе тег рендерится белым).
+        tooltip.add(Component.literal("[").withStyle(ChatFormatting.GREEN)
+                .append(Component.translatable("trait.radioactive").withStyle(ChatFormatting.GREEN))
+                .append(Component.literal("]").withStyle(ChatFormatting.GREEN)));
 
         float perItem = activationRads / stack.getCount();
         tooltip.add(Component.literal(" " + round(perItem) + " RAD/s").withStyle(ChatFormatting.YELLOW));

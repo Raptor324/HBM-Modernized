@@ -32,7 +32,7 @@ public class ItemMachineUpgrade extends Item implements ITooltipProvider {
         EJECTOR;
 
         public String getTranslationKeySuffix() {
-            return name().toLowerCase();
+            return name().toLowerCase(java.util.Locale.ROOT);
         }
     }
 

@@ -14,6 +14,7 @@ import com.hbm_m.blockentity.crates.TungstenCrateBlockEntity;
 import com.hbm_m.blockentity.machines.AnvilBlockEntity;
 import com.hbm_m.blockentity.machines.BatterySocketBlockEntity;
 import com.hbm_m.blockentity.machines.BlastFurnaceBlockEntity;
+import com.hbm_m.blockentity.machines.MachineBlastFurnaceBlockEntity;
 import com.hbm_m.blockentity.machines.DeconBlockEntity;
 import com.hbm_m.blockentity.machines.TestBlockEntity;
 import com.hbm_m.blockentity.machines.FluidDuctBlockEntity;
@@ -434,10 +435,6 @@ public class ModBlockEntities {
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineTeleporterBlockEntity::new,
                             ModBlocks.MACHINE_TELEPORTER.get()).build(null));
 
-    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachinePrecAssBlockEntity>> MACHINE_PRECASS_BE =
-		BLOCK_ENTITIES.register("machine_precass_be", () ->
-			BlockEntityType.Builder.<com.hbm_m.blockentity.machines.MachinePrecAssBlockEntity>of(com.hbm_m.blockentity.machines.MachinePrecAssBlockEntity::new, ModBlocks.MACHINE_PRECASS.get())
-				.build(null));
 
     public static final RegistrySupplier<BlockEntityType<MachineBatteryBlockEntity>> MACHINE_BATTERY_BE =
             BLOCK_ENTITIES.register("machine_battery_be", () -> {
@@ -636,20 +633,12 @@ public class ModBlockEntities {
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.CargoElevatorBlockEntity::new,
                             ModBlocks.CARGO_ELEVATOR.get()).build(null));
 
-    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineRtgBlockEntity>> MACHINE_RTG_BE =
-            BLOCK_ENTITIES.register("machine_rtg_be", () ->
-                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineRtgBlockEntity::new,
-                            ModBlocks.MACHINE_RTG.get()).build(null));
 
     public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineDrainBlockEntity>> MACHINE_DRAIN_BE =
             BLOCK_ENTITIES.register("machine_drain_be", () ->
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineDrainBlockEntity::new,
                             ModBlocks.MACHINE_DRAIN.get()).build(null));
 
-    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineFanBlockEntity>> MACHINE_FAN_BE =
-            BLOCK_ENTITIES.register("machine_fan_be", () ->
-                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineFanBlockEntity::new,
-                            ModBlocks.MACHINE_FAN.get()).build(null));
 
     public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineWasteDrumBlockEntity>> MACHINE_WASTE_DRUM_BE =
             BLOCK_ENTITIES.register("machine_waste_drum_be", () ->
@@ -782,6 +771,12 @@ public class ModBlockEntities {
 					BlockEntityType.Builder.of(BlastFurnaceBlockEntity::new,
 							ModBlocks.BLAST_FURNACE.get()).build(null));
 
+	/** Обновлённая мультиблочная доменная печь 3x7x3 (ориг. TileEntityMachineBlastFurnace). */
+	public static final RegistrySupplier<BlockEntityType<MachineBlastFurnaceBlockEntity>> MACHINE_BLAST_FURNACE_BE =
+			BLOCK_ENTITIES.register("machine_blast_furnace_be", () ->
+					BlockEntityType.Builder.of(MachineBlastFurnaceBlockEntity::new,
+							ModBlocks.MACHINE_BLAST_FURNACE.get()).build(null));
+
 	public static final RegistrySupplier<BlockEntityType<MachineElectricFurnaceBlockEntity>> ELECTRIC_FURNACE_BE =
 			BLOCK_ENTITIES.register("electric_furnace_be", () ->
 					BlockEntityType.Builder.of(MachineElectricFurnaceBlockEntity::new,
@@ -815,7 +810,7 @@ public class ModBlockEntities {
 	public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineCompressorBlockEntity>> COMPRESSOR_BE =
 			BLOCK_ENTITIES.register("compressor_be", () ->
 					BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineCompressorBlockEntity::new,
-							ModBlocks.COMPRESSOR.get(), ModBlocks.MACHINE_COMPRESSOR_COMPACT.get()).build(null));
+							ModBlocks.COMPRESSOR.get()).build(null));
 
 	public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineSawmillBlockEntity>> SAWMILL_BE =
 			BLOCK_ENTITIES.register("sawmill_be", () ->

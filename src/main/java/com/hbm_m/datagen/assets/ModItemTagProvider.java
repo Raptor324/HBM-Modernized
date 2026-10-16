@@ -7,8 +7,9 @@ import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
-import com.hbm_m.item.tags_and_tiers.ModPowders;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.lib.RefStrings;
 
 import dev.architectury.registry.registries.RegistrySupplier;
@@ -45,11 +46,12 @@ public class ModItemTagProvider extends ItemTagsProvider {
         //?}
 
 
-        for (ModIngots ingot : ModIngots.values()) {
-            RegistrySupplier<Item> ingotObject = ModItems.getIngot(ingot);
+        for (ModMaterials mat : ModMaterials.values()) {
+            if (!mat.has(MaterialShape.INGOT)) continue;
+            RegistrySupplier<Item> ingotObject = ModMaterialItems.get(mat, MaterialShape.INGOT);
             //  ПРОВЕРКА НА NULL И НА РЕГИСТРАЦИЮ
             if (ingotObject != null && ingotObject.isPresent()) {
-                String ingotName = ingot.getName();
+                String ingotName = mat.getId();
                 //? if fabric && < 1.21.1 {
                 /*this.tag(ItemTags.create(new ResourceLocation("forge", "ingots/" + ingotName)))
                         .add(ingotObject.get());
@@ -70,51 +72,38 @@ public class ModItemTagProvider extends ItemTagsProvider {
         //?}
 
 
-        for (ModPowders powder : ModPowders.values()) {
-            RegistrySupplier<Item> powderObject = ModItems.getPowders(powder);
-            //  ПОЛНАЯ ПРОВЕРКА - ИСПРАВЛЕНА ОСНОВНАЯ ОШИБКА!
-            if (powderObject != null && powderObject.isPresent()) {
-                String powderName = powder.getName();
-                //? if fabric && < 1.21.1 {
-                /*this.tag(ItemTags.create(new ResourceLocation("forge", "powders/" + powderName)))
-                        .add(powderObject.get());
-                *///?} else {
-                                this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + powderName)))
-                        .add(powderObject.get());
-                //?}
+        //  ПОРОШКИ (базовые и из слитков — единый реестр материалов)
+        for (ModMaterials mat : ModMaterials.values()) {
+            if (mat.has(MaterialShape.POWDER)) {
+                RegistrySupplier<Item> powderObject = ModMaterialItems.get(mat, MaterialShape.POWDER);
+                //  ПОЛНАЯ ПРОВЕРКА - ИСПРАВЛЕНА ОСНОВНАЯ ОШИБКА!
+                if (powderObject != null && powderObject.isPresent()) {
+                    String powderName = mat.getId();
+                    //? if fabric && < 1.21.1 {
+                    /*this.tag(ItemTags.create(new ResourceLocation("forge", "powders/" + powderName)))
+                            .add(powderObject.get());
+                    *///?} else {
+                                    this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + powderName)))
+                            .add(powderObject.get());
+                    //?}
 
-                powdersTagBuilder.add(powderObject.getKey());
-            }
-        }
-
-        //  ПОРОШКИ ИЗ СЛИТКОВ
-        for (ModIngots ingot : ModIngots.values()) {
-            RegistrySupplier<Item> powderObject = ModItems.getPowder(ingot);
-            if (powderObject != null && powderObject.isPresent()) {  //  ДОБАВЛЕНА ПРОВЕРКА isPresent()
-                //? if fabric && < 1.21.1 {
-                /*this.tag(ItemTags.create(new ResourceLocation("forge", "powders/" + ingot.getName())))
-                        .add(powderObject.get());
-                *///?} else {
-                                this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + ingot.getName())))
-                        .add(powderObject.get());
-                //?}
-
-                powdersTagBuilder.add(powderObject.getKey());
+                    powdersTagBuilder.add(powderObject.getKey());
+                }
             }
 
             //  МАЛЕНЬКИЕ ПОРОШКИ С ПРОВЕРКОЙ
-            ModItems.getTinyPowder(ingot).ifPresent(tiny -> {
-                if (tiny != null && tiny.isPresent()) {  //  ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА
+            if (mat.has(MaterialShape.POWDER_TINY)) {
+                RegistrySupplier<Item> tinyObject = ModMaterialItems.get(mat, MaterialShape.POWDER_TINY);
+                if (tinyObject != null && tinyObject.isPresent()) {
                     //? if fabric && < 1.21.1 {
-                    /*this.tag(ItemTags.create(new ResourceLocation("forge", "powders/" + ingot.getName() + "/tiny")))
-                            .add(tiny.get());
+                    /*this.tag(ItemTags.create(new ResourceLocation("forge", "powders/" + mat.getId() + "/tiny")))
+                            .add(tinyObject.get());
                     *///?} else {
-                                        this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + ingot.getName() + "/tiny")))
-                            .add(tiny.get());
+                                        this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + mat.getId() + "/tiny")))
+                            .add(tinyObject.get());
                     //?}
-
                 }
-            });
+            }
         }
 
         //  БАЗОВЫЕ ПОРОШКИ (всегда существуют)
@@ -218,8 +207,8 @@ public class ModItemTagProvider extends ItemTagsProvider {
 
         // Rubber Bars
         this.tag(ModTags.Items.RUBBER_BAR)
-                .add(ModItems.getIngot(ModIngots.BIORUBBER).get())
-                .add(ModItems.getIngot(ModIngots.RUBBER).get());
+                .add(ModMaterialItems.item(ModMaterials.BIORUBBER, MaterialShape.INGOT))
+                .add(ModMaterialItems.item(ModMaterials.RUBBER, MaterialShape.INGOT));
 
         this.tag(ZIRNOX_RODS)
                 .add(ModItems.ROD_ZIRNOX_LES_FUEL.get())
@@ -411,7 +400,23 @@ public class ModItemTagProvider extends ItemTagsProvider {
         this.tag(Tags.Items.DYES_BLACK).add(Items.BLACK_DYE);
         this.tag(Tags.Items.DYES_WHITE).add(Items.WHITE_DYE);
         this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "wires_fine/lead")))
-                .add(ModItems.WIRE_CARBON.get());
+                .add(ModMaterialItems.item(ModMaterials.CARBON, MaterialShape.WIRE));
+
+        // Химические красители и мелки: ванильные теги minecraft:<color>_dyes, чтобы их
+        // принимали ванильные/модовые рецепты красителей (16 цветов EnumChemDye оригинала).
+        String[][] dyeColors = {
+                {"black", "black"}, {"red", "red"}, {"green", "green"}, {"brown", "brown"},
+                {"blue", "blue"}, {"purple", "purple"}, {"cyan", "cyan"}, {"silver", "light_gray"},
+                {"gray", "gray"}, {"pink", "pink"}, {"lime", "lime"}, {"yellow", "yellow"},
+                {"lightblue", "light_blue"}, {"magenta", "magenta"}, {"orange", "orange"}, {"white", "white"},
+        };
+        for (String[] dc : dyeColors) {
+            Item chemical = com.hbm_m.item.PartTabMetaItems.itemOrNull("chemical_dye_" + dc[0]);
+            Item crayonItem = com.hbm_m.item.PartTabMetaItems.itemOrNull("crayon_" + dc[0]);
+            var builder = this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("minecraft", dc[1] + "_dyes")));
+            if (chemical != null) builder.add(chemical);
+            if (crayonItem != null) builder.add(crayonItem);
+        }
     }
 }
 //?}

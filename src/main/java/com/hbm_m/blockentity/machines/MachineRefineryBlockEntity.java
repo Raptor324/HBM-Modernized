@@ -430,6 +430,7 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
         }
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -441,7 +442,21 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
         tag.putInt("sulfurProgress", sulfurProgress);
         tag.putBoolean("isOn", isOn);
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
+        tag.putBoolean("hasExploded", hasExploded);
+        tag.putBoolean("onFire", onFire);
+        for (int i = 0; i < tanks.length; i++) {
+            tanks[i].writeToNBT(tag, "tank_" + i);
+        }
+        tag.putInt("sulfurProgress", sulfurProgress);
+        tag.putBoolean("isOn", isOn);
+    }
+    *///?}
 
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -453,6 +468,19 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
         sulfurProgress = tag.getInt("sulfurProgress");
         isOn = tag.getBoolean("isOn");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
+        hasExploded = tag.getBoolean("hasExploded");
+        onFire = tag.getBoolean("onFire");
+        for (int i = 0; i < tanks.length; i++) {
+            tanks[i].readFromNBT(tag, "tank_" + i);
+        }
+        sulfurProgress = tag.getInt("sulfurProgress");
+        isOn = tag.getBoolean("isOn");
+    }
+    *///?}
 
     @Override
     public Component getDisplayName() {

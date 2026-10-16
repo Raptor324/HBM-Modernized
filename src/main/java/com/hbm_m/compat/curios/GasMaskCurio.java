@@ -40,13 +40,9 @@ public class GasMaskCurio implements ICurio {
         return !CuriosAccess.isPowerArmorHead(ctxWearer(ctx)) && !GasMaskUtil.isMaskOnHead(ctxWearer(ctx));
     }
 
-    /** Доступ к сущности из SlotContext: геттер переименован между версиями Curios. */
+    /** Доступ к сущности из SlotContext. */
     private static LivingEntity ctxWearer(SlotContext ctx) {
-        //? if < 1.21.1 {
-        return ctx.getWearer();
-        //?} else {
-        /*return ctx.entity();
-         *///?}
+        return ctx.entity();
     }
 
     @Override

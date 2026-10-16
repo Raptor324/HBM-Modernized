@@ -5,8 +5,9 @@ import java.util.Map;
 
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
-import com.hbm_m.item.tags_and_tiers.ModPowders;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -55,21 +56,23 @@ public class RBMKOutgasserRecipes {
 
         // --- lithium to tritium ---
         put(ModBlocksItem(com.hbm_m.block.ModBlocks.BLOCK_LITHIUM.get()), ItemStack.EMPTY, tritium, 10_000);
-        put(get(ModItems.getIngot(ModIngots.LITHIUM_INGOT)),              ItemStack.EMPTY, tritium,  1_000);
-        put(ModItems.LITHIUM_POWDER.get(),                                ItemStack.EMPTY, tritium,  1_000);
-        put(ModItems.LITHIUM_POWDER_TINY.get(),                           ItemStack.EMPTY, tritium,    100);
+        put(com.hbm_m.item.ModItems.LITHIUM.get(), ItemStack.EMPTY, tritium,  1_000);
+        put(ModMaterialItems.item(ModMaterials.LITHIUM, MaterialShape.POWDER), ItemStack.EMPTY, tritium,  1_000);
+        put(ModMaterialItems.item(ModMaterials.LITHIUM, MaterialShape.POWDER_TINY), ItemStack.EMPTY, tritium,    100);
 
         // --- gold to gold-198 ---
-        put(Items.GOLD_INGOT,  one(null, get(ModItems.getIngot(ModIngots.AU198))),  null, 0);
-        put(Items.GOLD_NUGGET, one(null, ModItems.NUGGET_AU198.get()),              null, 0);
-        put(get(ModItems.getPowders(ModPowders.GOLD)),
-                one(null, get(ModItems.getPowder(ModIngots.AU198))),                null, 0);
+        put(Items.GOLD_INGOT,  one(null, ModMaterialItems.item(ModMaterials.AU198, MaterialShape.INGOT)),  null, 0);
+        put(Items.GOLD_NUGGET, one(null, ModMaterialItems.item(ModMaterials.AU198, MaterialShape.NUGGET)), null, 0);
+        put(ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.POWDER),
+                one(null, ModMaterialItems.item(ModMaterials.AU198, MaterialShape.POWDER)),                null, 0);
 
         // --- thorium-232 to thorium fuel ---
-        put(get(ModItems.getIngot(ModIngots.THORIUM232)),
-                one(null, get(ModItems.getIngot(ModIngots.THORIUM_FUEL))),          null, 0);
-        put(ModItems.NUGGET_TH232.get(), one(null, ModItems.NUGGET_THORIUM_FUEL.get()), null, 0);
-        put(ModItems.BILLET_TH232.get(), one(null, ModItems.BILLET_THORIUM_FUEL.get()), null, 0);
+        put(ModMaterialItems.item(ModMaterials.THORIUM232, MaterialShape.INGOT),
+                one(null, ModMaterialItems.item(ModMaterials.THORIUM_FUEL, MaterialShape.INGOT)),          null, 0);
+        put(ModMaterialItems.item(ModMaterials.THORIUM232, MaterialShape.NUGGET),
+                one(null, ModMaterialItems.item(ModMaterials.THORIUM_FUEL, MaterialShape.NUGGET)),         null, 0);
+        put(ModMaterialItems.item(ModMaterials.THORIUM232, MaterialShape.BILLET),
+                one(null, ModMaterialItems.item(ModMaterials.THORIUM_FUEL, MaterialShape.BILLET)),         null, 0);
 
         // --- mushrooms to glowing mushrooms ---
         put(Blocks.BROWN_MUSHROOM.asItem(), one(null, com.hbm_m.block.ModBlocks.MUSH.get().asItem()), null, 0);
@@ -81,7 +84,7 @@ public class RBMKOutgasserRecipes {
         ItemStack coalTar = new ItemStack(ModItems.OIL_TAR_COAL.get());
 
         put(Items.COAL,                                  coalTar.copy(),                     syngas,  50);
-        put(get(ModItems.getPowders(ModPowders.COAL)),   coalTar.copy(),                     syngas,  50);
+        put(ModMaterialItems.item(ModMaterials.COAL, MaterialShape.POWDER), coalTar.copy(),             syngas,  50);
         put(Blocks.COAL_BLOCK.asItem(),
                 new ItemStack(ModItems.OIL_TAR_COAL.get(), 9),                               syngas, 500);
 
@@ -92,10 +95,6 @@ public class RBMKOutgasserRecipes {
 
     private static Item ModBlocksItem(net.minecraft.world.level.block.Block block) {
         return block == null ? null : block.asItem();
-    }
-
-    private static Item get(dev.architectury.registry.registries.RegistrySupplier<Item> supplier) {
-        return supplier == null ? null : supplier.get();
     }
 
     public static OutgasserRecipe getRecipe(ItemStack input) {

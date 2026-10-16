@@ -3,6 +3,9 @@ package com.hbm_m.datagen.recipes.custom;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 
 import dev.architectury.fluid.FluidStack;
 import net.minecraft.data.recipes.FinishedRecipe;
@@ -48,35 +51,35 @@ public final class CrystallizerRecipeGenerator {
         // ═══════════════════════════════════════════════════════════════════
         // БАЗОВЫЕ РУДЫ (перекись водорода 500 mB, baseTime, prod 0.05)
         // ═══════════════════════════════════════════════════════════════════
-        ore(writer, "coal",        "forge:ores/coal",       ModItems.CRYSTAL_COAL.get());
-        ore(writer, "iron",        "forge:ores/iron",       ModItems.CRYSTAL_IRON.get());
-        ore(writer, "gold",        "forge:ores/gold",       ModItems.CRYSTAL_GOLD.get());
-        ore(writer, "redstone",    "forge:ores/redstone",   ModItems.CRYSTAL_REDSTONE.get());
-        ore(writer, "lapis",       "forge:ores/lapis",      ModItems.CRYSTAL_LAPIS.get());
-        ore(writer, "diamond",     "forge:ores/diamond",    ModItems.CRYSTAL_DIAMOND.get());
-        ore(writer, "copper",      "forge:ores/copper",     ModItems.CRYSTAL_COPPER.get());
-        ore(writer, "sulfur",      "forge:ores/sulfur",     ModItems.CRYSTAL_SULFUR.get());
-        ore(writer, "niter",       "forge:ores/niter",      ModItems.CRYSTAL_NITER.get());
-        ore(writer, "aluminum",    "forge:ores/aluminum",   ModItems.CRYSTAL_ALUMINIUM.get());
-        ore(writer, "fluorite",    "forge:ores/fluorite",   ModItems.CRYSTAL_FLUORITE.get());
-        ore(writer, "beryllium",   "forge:ores/beryllium",  ModItems.CRYSTAL_BERYLLIUM.get());
-        ore(writer, "lead",        "forge:ores/lead",       ModItems.CRYSTAL_LEAD.get());
-        ore(writer, "cinnabar",    "forge:ores/cinnabar",   ModItems.CRYSTAL_CINNEBAR.get());
+        ore(writer, "coal",        "forge:ores/coal",       ModMaterialItems.item(ModMaterials.COAL, MaterialShape.CRYSTAL));
+        ore(writer, "iron",        "forge:ores/iron",       ModMaterialItems.item(ModMaterials.IRON, MaterialShape.CRYSTAL));
+        ore(writer, "gold",        "forge:ores/gold",       ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.CRYSTAL));
+        ore(writer, "redstone",    "forge:ores/redstone",   ModMaterialItems.item(ModMaterials.REDSTONE, MaterialShape.CRYSTAL));
+        ore(writer, "lapis",       "forge:ores/lapis",      ModMaterialItems.item(ModMaterials.LAPIS, MaterialShape.CRYSTAL));
+        ore(writer, "diamond",     "forge:ores/diamond",    ModMaterialItems.item(ModMaterials.DIAMOND, MaterialShape.CRYSTAL));
+        ore(writer, "copper",      "forge:ores/copper",     ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.CRYSTAL));
+        ore(writer, "sulfur",      "forge:ores/sulfur",     ModMaterialItems.item(ModMaterials.SULFUR, MaterialShape.CRYSTAL));
+        ore(writer, "niter",       "forge:ores/niter",      ModMaterialItems.item(ModMaterials.NITER, MaterialShape.CRYSTAL));
+        ore(writer, "aluminum",    "forge:ores/aluminum",   ModMaterialItems.item(ModMaterials.ALUMINIUM, MaterialShape.CRYSTAL));
+        ore(writer, "fluorite",    "forge:ores/fluorite",   ModMaterialItems.item(ModMaterials.FLUORITE, MaterialShape.CRYSTAL));
+        ore(writer, "beryllium",   "forge:ores/beryllium",  ModMaterialItems.item(ModMaterials.BERYLLIUM, MaterialShape.CRYSTAL));
+        ore(writer, "lead",        "forge:ores/lead",       ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.CRYSTAL));
+        ore(writer, "cinnabar",    "forge:ores/cinnabar",   ModMaterialItems.item(ModMaterials.CINNEBAR, MaterialShape.CRYSTAL));
 
         // ═══════════════════════════════════════════════════════════════════
         // РАДИОАКТИВНЫЕ / ТУГОПЛАВКИЕ РУДЫ (серная кислота 500 mB, baseTime, prod 0.05)
         // ═══════════════════════════════════════════════════════════════════
-        ore(writer, "uranium",     "forge:ores/uranium",     ModItems.CRYSTAL_URANIUM.get(),     SULFUR);
-        ore(writer, "thorium",     "forge:ores/thorium",     ModItems.CRYSTAL_THORIUM.get(),     SULFUR);
-        ore(writer, "plutonium",   "forge:ores/plutonium",   ModItems.CRYSTAL_PLUTONIUM.get(),   SULFUR);
-        ore(writer, "titanium",    "forge:ores/titanium",    ModItems.CRYSTAL_TITANIUM.get(),     SULFUR);
-        ore(writer, "tungsten",    "forge:ores/tungsten",    ModItems.CRYSTAL_TUNGSTEN.get(),     SULFUR);
-        ore(writer, "lithium",     "forge:ores/lithium",     ModItems.CRYSTAL_LITHIUM.get(),     SULFUR);
-        ore(writer, "cobalt",      "forge:ores/cobalt",      ModItems.CRYSTAL_COBALT.get(),      SULFUR);
-        ore(writer, "schrabidium", "forge:ores/schrabidium", ModItems.CRYSTAL_SCHRABIDIUM.get(), SULFUR);
+        ore(writer, "uranium",     "forge:ores/uranium",     ModMaterialItems.item(ModMaterials.URANIUM, MaterialShape.CRYSTAL),     SULFUR);
+        ore(writer, "thorium",     "forge:ores/thorium",     ModMaterialItems.item(ModMaterials.THORIUM, MaterialShape.CRYSTAL),     SULFUR);
+        ore(writer, "plutonium",   "forge:ores/plutonium",   ModMaterialItems.item(ModMaterials.PLUTONIUM, MaterialShape.CRYSTAL),   SULFUR);
+        ore(writer, "titanium",    "forge:ores/titanium",    ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.CRYSTAL),     SULFUR);
+        ore(writer, "tungsten",    "forge:ores/tungsten",    ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.CRYSTAL),     SULFUR);
+        ore(writer, "lithium",     "forge:ores/lithium",     ModMaterialItems.item(ModMaterials.LITHIUM, MaterialShape.CRYSTAL),     SULFUR);
+        ore(writer, "cobalt",      "forge:ores/cobalt",      ModMaterialItems.item(ModMaterials.COBALT, MaterialShape.CRYSTAL),      SULFUR);
+        ore(writer, "schrabidium", "forge:ores/schrabidium", ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.CRYSTAL), SULFUR);
 
         // Редкоземельные руды (forge:ores/rareground) — серная.
-        ore(writer, "rareground", "forge:ores/rareground", ModItems.CRYSTAL_RARE.get(), SULFUR);
+        ore(writer, "rareground", "forge:ores/rareground", ModMaterialItems.item(ModMaterials.RARE, MaterialShape.CRYSTAL), SULFUR);
 
         // ═══════════════════════════════════════════════════════════════════
         // УТИЛИТАРНЫЕ ПРЕОБРАЗОВАНИЯ

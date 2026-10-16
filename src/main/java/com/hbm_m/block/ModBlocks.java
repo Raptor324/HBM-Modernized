@@ -45,6 +45,7 @@ import com.hbm_m.block.explosives.SmokeBombBlock;
 import com.hbm_m.block.explosives.WasteChargeBlock;
 import com.hbm_m.block.machines.ArmorTableBlock;
 import com.hbm_m.block.machines.BlastFurnaceBlock;
+import com.hbm_m.block.machines.MachineBlastFurnaceBlock;
 import com.hbm_m.block.machines.BlastFurnaceExtensionBlock;
 import com.hbm_m.block.machines.CargoElevatorBlock;
 import com.hbm_m.block.machines.FluidDuctBlock;
@@ -165,7 +166,8 @@ import com.hbm_m.block.weapons.FallingSellafit;
 import com.hbm_m.item.BlockAbsorberItem;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.fekal_electric.MachineBatteryBlockItem;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.platform.PlatformHooks;
 
@@ -234,27 +236,10 @@ public class ModBlocks {
     private static final BlockBehaviour.Properties INGOT_BLOCK_PROPERTIES =
             BlockProps.copy(Blocks.IRON_BLOCK).strength(3.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops();
 
-    // 1. СПИСОК РАЗРЕШЕННЫХ БЛОКОВ (Whitelist)
-    // Сюда добавляем только те материалы, которым нужны блоки (9 слитков = 1 блок).
-    // Скопировано и адаптировано из ModItems, убраны лишние материалы типа еды или топлива, если им не нужен блок.
-    // 1. СПИСОК РАЗРЕШЕННЫХ БЛОКОВ (Whitelist)
-    // 1. СПИСОК РАЗРЕШЕННЫХ БЛОКОВ (Whitelist)
-    public static final Set<String> ENABLED_INGOT_BLOCKS = Set.of(
-            "uranium", "plutonium", "thorium", "titanium", "aluminum", "copper",
-            "lead", "tungsten", "steel", "advanced_alloy", "schrabidium", "saturnite",
-            "beryllium", "bismuth", "desh", "cobalt", "lanthanium",
-            "niobium", "zirconium", "actinium", "ferrouranium",
-            "u233", "u235", "u238", "pu238", "pu239", "pu240", "pu241",
-            "ra226", "neptunium",
-            "australium", "dineutronium", "euphemium",
-            "combine_steel", "dura_steel", "starmetal", "red_copper",
-            "plutonium_fuel", "uranium_fuel", "thorium_fuel", "mox_fuel", "schrabidium_fuel",
-            "schraranium", "schrabidate", "solinium",
-            "boron", "tcalloy", "cdalloy", "cadmium"
-    );
+    // Блоки хранения задаются формой BLOCK в реестре ModMaterials (единый источник истины).
 
     // 2. КАРТА БЛОКОВ
-    public static final Map<ModIngots, RegistrySupplier<Block>> INGOT_BLOCKS = new EnumMap<>(ModIngots.class);
+    public static final Map<ModMaterials, RegistrySupplier<Block>> INGOT_BLOCKS = new EnumMap<>(ModMaterials.class);
 
     /**
      * Слитковые блоки с {@code ExtDisplayEffect.RADFOG} в GIT ({@code BlockHazard#setDisplayEffect}, ModBlocks ~1328–1342).
@@ -269,63 +254,58 @@ public class ModBlocks {
             "schrabidium", "schraranium", "schrabidate", "solinium", "schrabidium_fuel");
 
     /** GIT: RADFOG на block_u233, block_u235, block_neptunium, block_plutonium, block_pu*, block_mox_fuel, block_plutonium_fuel. */
-    public static boolean hasRadFogParticles(ModIngots ingot) {
-        return RADFOG_INGOT_BLOCKS.contains(ingot.getName());
+    public static boolean hasRadFogParticles(ModMaterials mat) {
+        return RADFOG_INGOT_BLOCKS.contains(mat.getId());
     }
 
-    public static boolean hasSchrabFogParticles(ModIngots ingot) {
-        return SCHRABFOG_INGOT_BLOCKS.contains(ingot.getName());
+    public static boolean hasSchrabFogParticles(ModMaterials mat) {
+        return SCHRABFOG_INGOT_BLOCKS.contains(mat.getId());
     }
 
     // 3. АВТОМАТИЧЕСКАЯ РЕГИСТРАЦИЯ
     static {
-        for (ModIngots ingot : ModIngots.values()) {
-            String name = ingot.getName();
+        for (ModMaterials mat : ModMaterials.values()) {
+            // Проверяем, задан ли материалу блок хранения формой BLOCK
+            if (!mat.has(MaterialShape.BLOCK)) continue;
 
-            // Проверяем, есть ли этот слиток в "белом списке"
-            if (ENABLED_INGOT_BLOCKS.contains(name)) {
+            String blockName = MaterialShape.BLOCK.itemId(mat);
 
-                String blockName = "block_" + name;
+            // Display particles: RADFOG / SCHRAB (1.7.10 BlockHazard#setDisplayEffect, ModBlocks ~1326-1373).
+            // Все слитковые блоки — это BlockHazard; per-tick эмиттер чанковой радиации (hazard × 0.1/сек)
+            // запускается автоматически через scheduled-tick. Различаются только визуальные частицы.
+            RegistrySupplier<Block> registeredBlock = registerBlock(blockName,
+                    () -> {
+                        BlockHazard block = new BlockHazard(INGOT_BLOCK_PROPERTIES).makeBeaconable();
+                        if (hasRadFogParticles(mat)) {
+                            block.setDisplayEffect(BlockHazard.ExtDisplayEffect.RADFOG);
+                        } else if (hasSchrabFogParticles(mat)) {
+                            block.setDisplayEffect(BlockHazard.ExtDisplayEffect.SCHRAB);
+                        }
+                        return block;
+                    });
 
-                RegistrySupplier<Block> registeredBlock;
-
-                // Display particles: RADFOG / SCHRAB (1.7.10 BlockHazard#setDisplayEffect, ModBlocks ~1326-1373).
-                // Все слитковые блоки — это BlockHazard; per-tick эмиттер чанковой радиации (hazard × 0.1/сек)
-                // запускается автоматически через scheduled-tick. Различаются только визуальные частицы.
-                registeredBlock = registerBlock(blockName,
-                        () -> {
-                            BlockHazard block = new BlockHazard(INGOT_BLOCK_PROPERTIES).makeBeaconable();
-                            if (hasRadFogParticles(ingot)) {
-                                block.setDisplayEffect(BlockHazard.ExtDisplayEffect.RADFOG);
-                            } else if (hasSchrabFogParticles(ingot)) {
-                                block.setDisplayEffect(BlockHazard.ExtDisplayEffect.SCHRAB);
-                            }
-                            return block;
-                        });
-
-                // Сохраняем в карту
-                INGOT_BLOCKS.put(ingot, registeredBlock);
-            }
+            // Сохраняем в карту
+            INGOT_BLOCKS.put(mat, registeredBlock);
         }
     }
 
     // Вспомогательный метод получения блока
-    public static RegistrySupplier<Block> getIngotBlock(ModIngots ingot) {
-        RegistrySupplier<Block> block = INGOT_BLOCKS.get(ingot);
+    public static RegistrySupplier<Block> getIngotBlock(ModMaterials mat) {
+        RegistrySupplier<Block> block = INGOT_BLOCKS.get(mat);
         if (block == null) {
             // Логируем ошибку или возвращаем заглушку, чтобы игра не крашилась при обращении к несуществующему блоку
-            throw new NullPointerException("Block for ingot " + ingot.getName() + " is not registered! Check ENABLED_INGOT_BLOCKS.");
+            throw new NullPointerException("Block for material " + mat.getId() + " is not registered! Нет формы BLOCK в ModMaterials.");
         }
         return block;
     }
 
-    public static boolean hasIngotBlock(ModIngots ingot) {
-        return INGOT_BLOCKS.containsKey(ingot);
+    public static boolean hasIngotBlock(ModMaterials mat) {
+        return INGOT_BLOCKS.containsKey(mat);
     }
 
-    public static final RegistrySupplier<Block> URANIUM_BLOCK = getIngotBlock(ModIngots.URANIUM);
-    public static final RegistrySupplier<Block> PLUTONIUM_BLOCK = getIngotBlock(ModIngots.PLUTONIUM);
-    public static final RegistrySupplier<Block> PLUTONIUM_FUEL_BLOCK = getIngotBlock(ModIngots.PLUTONIUM_FUEL);
+    public static final RegistrySupplier<Block> URANIUM_BLOCK = getIngotBlock(ModMaterials.URANIUM);
+    public static final RegistrySupplier<Block> PLUTONIUM_BLOCK = getIngotBlock(ModMaterials.PLUTONIUM);
+    public static final RegistrySupplier<Block> PLUTONIUM_FUEL_BLOCK = getIngotBlock(ModMaterials.PLUTONIUM_FUEL);
 
     public static final RegistrySupplier<Block> POLONIUM210_BLOCK = registerBlock("polonium210_block",
             () -> new BlockHazard(INGOT_BLOCK_PROPERTIES));
@@ -376,11 +356,19 @@ public class ModBlocks {
                     .sound(SoundType.METAL)
                     .requiresCorrectToolForDrops()));
 
+    /** Legacy одноблочная доменная печь (старые миры, ориг. MachineDifurnace). */
     public static final RegistrySupplier<Block> BLAST_FURNACE = registerBlock("blast_furnace",
             () -> new BlastFurnaceBlock(BlockProps.copy(Blocks.IRON_BLOCK)
                     .strength(4.0f, 4.0f)
                     .sound(SoundType.STONE)
                     .lightLevel(state -> state.getValue(BlastFurnaceBlock.LIT) ? 15 : 0)));
+
+    /** Обновлённая мультиблочная доменная печь 3x7x3 (ориг. MachineBlastFurnace). */
+    public static final RegistrySupplier<Block> MACHINE_BLAST_FURNACE = registerBlock("machine_blast_furnace",
+            () -> new MachineBlastFurnaceBlock(BlockProps.copy(Blocks.IRON_BLOCK)
+                    .strength(4.0f, 4.0f)
+                    .sound(SoundType.STONE)
+                    .lightLevel(state -> state.getValue(MachineBlastFurnaceBlock.LIT) ? 15 : 0)));
 
     public static final RegistrySupplier<Block> BLAST_FURNACE_EXTENSION = registerBlock("blast_furnace_extension",
             () -> new BlastFurnaceExtensionBlock(BlockProps.copy(Blocks.IRON_BLOCK)
@@ -1062,16 +1050,16 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> BLOCK_METEOR_COBBLE = registerBlock("block_meteor_cobble",
             () -> new Block(STRUCTURE_DECOR_STONE));
     // NOTE: "block_red_copper"/"block_starmetal" уже регистрируются автоциклом слитковых блоков
-    // (ENABLED_INGOT_BLOCKS, static {} выше) — здесь только алиасы, иначе дубликат имени
+    // (форма BLOCK в ModMaterials, static {} выше) — здесь только алиасы, иначе дубликат имени
     // не биндится и runData падает ("Registry Object not present").
     public static final RegistrySupplier<Block> BLOCK_COPPER = registerBlock("block_copper",
             () -> new Block(STRUCTURE_DECOR_METAL));
-    public static final RegistrySupplier<Block> BLOCK_RED_COPPER = getIngotBlock(ModIngots.RED_COPPER);
+    public static final RegistrySupplier<Block> BLOCK_RED_COPPER = getIngotBlock(ModMaterials.RED_COPPER);
     public static final RegistrySupplier<Block> BLOCK_SCRAP = registerBlock("block_scrap",
             () -> new Block(STRUCTURE_DECOR_METAL));
     public static final RegistrySupplier<Block> BLOCK_ELECTRICAL_SCRAP = registerBlock("block_electrical_scrap",
             () -> new Block(STRUCTURE_DECOR_METAL));
-    public static final RegistrySupplier<Block> BLOCK_STARMETAL = getIngotBlock(ModIngots.STARMETAL);
+    public static final RegistrySupplier<Block> BLOCK_STARMETAL = getIngotBlock(ModMaterials.STARMETAL);
 
     public static final RegistrySupplier<Block> DECO_TITANIUM = registerBlock("deco_titanium",
             () -> new Block(STRUCTURE_DECOR_METAL));
@@ -2226,15 +2214,15 @@ public class ModBlocks {
 
     // ── Decorative / support blocks used by the original's RBMK recipes ──────
     // com.hbm.blocks.ModBlocks:1436-1437 - plain deco blocks reusing the rbmk column textures.
-    public static final RegistrySupplier<Block> DECO_RBMK        = registerBlock("deco_rbmk",        () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 100.0f)));
-    public static final RegistrySupplier<Block> DECO_RBMK_SMOOTH = registerBlock("deco_rbmk_smooth", () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 100.0f)));
+    public static final RegistrySupplier<Block> DECO_RBMK        = registerBlock("deco_rbmk",        () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 100.0f)));
+    public static final RegistrySupplier<Block> DECO_RBMK_SMOOTH = registerBlock("deco_rbmk_smooth", () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 100.0f)));
     /**
      * CE ships four RBMK decoration blocks, not two: the plain and smooth casings plus a panelled
      * version of each ({@code deco_rbmk_panel} / {@code deco_rbmk_smooth_panel}). The panelled pair
      * was missing entirely.
      */
-    public static final RegistrySupplier<Block> DECO_RBMK_PANEL        = registerBlock("deco_rbmk_panel",        () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 100.0f)));
-    public static final RegistrySupplier<Block> DECO_RBMK_SMOOTH_PANEL = registerBlock("deco_rbmk_smooth_panel", () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 100.0f)));
+    public static final RegistrySupplier<Block> DECO_RBMK_PANEL        = registerBlock("deco_rbmk_panel",        () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 100.0f)));
+    public static final RegistrySupplier<Block> DECO_RBMK_SMOOTH_PANEL = registerBlock("deco_rbmk_smooth_panel", () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 100.0f)));
 
     /**
      * CE's thin RBMK panel slabs. Each pair is a 2px single you craft and carry plus a 4px double
@@ -2243,7 +2231,7 @@ public class ModBlocks {
      * ({@code setCreativeTab(null)}), and drop two singles when broken.
      */
     private static BlockBehaviour.Properties rbmkSlabProps() {
-        return BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).noOcclusion();
+        return BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).noOcclusion();
     }
 
     public static final RegistrySupplier<Block> DECO_RBMK_PANEL_SLAB4 = registerBlockWithoutItem("deco_rbmk_panel_slab4",
@@ -2256,13 +2244,13 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> DECO_RBMK_SMOOTH_PANEL_SLAB2 = registerBlock("deco_rbmk_smooth_panel_slab2",
             () -> new com.hbm_m.block.generic.RBMKSlabBlock(false, rbmkSlabProps()));
     // com.hbm.blocks.ModBlocks:1571 - graphite storage block, used by the moderator/control recipes.
-    public static final RegistrySupplier<Block> BLOCK_GRAPHITE   = registerBlock("block_graphite",   () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f)));
+    public static final RegistrySupplier<Block> BLOCK_GRAPHITE   = registerBlock("block_graphite",   () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f)));
 
     // ── Debris ──────────────────────────────────────────────────────────────
-    public static final RegistrySupplier<Block> RBMK_DEBRIS            = registerBlock("rbmk_debris",            () -> new Block(BlockBehaviour.Properties.copy(Blocks.GRAVEL).strength(0.5f)));
-    public static final RegistrySupplier<Block> RBMK_DEBRIS_BURNING    = registerBlock("rbmk_debris_burning",    () -> new com.hbm_m.block.machines.rbmk.RBMKDebrisBurningBlock(BlockBehaviour.Properties.copy(Blocks.GRAVEL).strength(0.5f).lightLevel(s -> 10).randomTicks()));
-    public static final RegistrySupplier<Block> RBMK_DEBRIS_DIGAMMA    = registerBlock("rbmk_debris_digamma",    () -> new com.hbm_m.block.machines.rbmk.RBMKDebrisDigammaBlock(BlockBehaviour.Properties.copy(Blocks.GRAVEL).strength(0.5f).lightLevel(s -> 8).randomTicks()));
-    public static final RegistrySupplier<Block> RBMK_DEBRIS_RADIATING  = registerBlock("rbmk_debris_radiating",  () -> new com.hbm_m.block.machines.rbmk.RBMKDebrisRadiatingBlock(BlockBehaviour.Properties.copy(Blocks.GRAVEL).strength(0.5f).lightLevel(s -> 4).randomTicks()));
+    public static final RegistrySupplier<Block> RBMK_DEBRIS            = registerBlock("rbmk_debris",            () -> new Block(BlockProps.copy(Blocks.GRAVEL).strength(0.5f)));
+    public static final RegistrySupplier<Block> RBMK_DEBRIS_BURNING    = registerBlock("rbmk_debris_burning",    () -> new com.hbm_m.block.machines.rbmk.RBMKDebrisBurningBlock(BlockProps.copy(Blocks.GRAVEL).strength(0.5f).lightLevel(s -> 10).randomTicks()));
+    public static final RegistrySupplier<Block> RBMK_DEBRIS_DIGAMMA    = registerBlock("rbmk_debris_digamma",    () -> new com.hbm_m.block.machines.rbmk.RBMKDebrisDigammaBlock(BlockProps.copy(Blocks.GRAVEL).strength(0.5f).lightLevel(s -> 8).randomTicks()));
+    public static final RegistrySupplier<Block> RBMK_DEBRIS_RADIATING  = registerBlock("rbmk_debris_radiating",  () -> new com.hbm_m.block.machines.rbmk.RBMKDebrisRadiatingBlock(BlockProps.copy(Blocks.GRAVEL).strength(0.5f).lightLevel(s -> 4).randomTicks()));
 
     // ── Corium (molten reactor core, 1:1 with the original's ModBlocks.corium_block) ──────────
     public static final RegistrySupplier<Block> RBMK_CORIUM = registerBlock("rbmk_corium",
@@ -2360,7 +2348,7 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> BRICK_JUNGLE_MYSTIC = registerBlock("brick_jungle_mystic", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BRICK_JUNGLE_OOZE = registerBlock("brick_jungle_ooze", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BRICK_JUNGLE_TRAP = registerBlock("brick_jungle_trap", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> BRICK_RED = registerBlock("brick_red", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> BRICK_RED = registerBlock("brick_red", () -> new RedBrickBlock(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BROADCASTER_PC = registerBlock("broadcaster_pc",
             () -> new com.hbm_m.block.machines.BroadcasterPcBlock(BlockProps.copy(Blocks.STONE).noOcclusion()));
     public static final RegistrySupplier<Block> CABLE_DETECTOR = registerBlock("cable_detector", () -> new Block(BlockProps.copy(Blocks.STONE)));
@@ -2610,9 +2598,6 @@ public class ModBlocks {
     /** Rein dekorativ im Original (leerer TE-Stub, keine Fluid-Logik) - siehe {@link #MACHINE_UF6_TANK}. */
     public static final RegistrySupplier<Block> MACHINE_PUF6_TANK = registerBlock("machine_puf6_tank",
             () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).noOcclusion()));
-    /** Genuinely missing from the port until now - no RTG (radioisotope thermoelectric generator) existed anywhere. */
-    public static final RegistrySupplier<Block> MACHINE_RTG = registerBlock("machine_rtg_grey",
-            () -> new com.hbm_m.block.machines.MachineRtgBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).sound(SoundType.METAL).noOcclusion()));
     /** Genuinely missing from the port until now - machine_difurnace_off/_extension already exist under
      * blast_furnace/blast_furnace_extension (renamed IDs); only the RTG-heated variant was a real gap. */
     public static final RegistrySupplier<Block> MACHINE_DIFURNACE_RTG = registerBlock("machine_difurnace_rtg_off",
@@ -2623,18 +2608,12 @@ public class ModBlocks {
     /** Genuinely missing from the port until now - purely decorative marker, no TileEntity (matches original). */
     public static final RegistrySupplier<Block> TELEANCHOR = registerBlock("teleanchor",
             () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).sound(SoundType.METAL)));
-    /** Genuinely missing from the port until now - reuses MachineAdvancedAssemblerBlockEntity wholesale (see class javadoc). */
-    public static final RegistrySupplier<Block> MACHINE_PRECASS = registerBlock("machine_precass",
-            () -> new com.hbm_m.block.machines.MachinePrecAssBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 30.0f).sound(SoundType.METAL).noOcclusion()));
     /** Genuinely missing from the port until now. */
     public static final RegistrySupplier<Block> MACHINE_DRAIN = registerBlock("machine_drain",
             () -> new com.hbm_m.block.machines.MachineDrainBlock(BlockProps.copy(Blocks.STONE).strength(5.0f, 10.0f).noOcclusion()));
     /** Genuinely missing from the port until now - purely decorative in the original, no TileEntity (see class javadoc). */
     public static final RegistrySupplier<Block> MACHINE_TRANSFORMER = registerBlock("machine_transformer",
             () -> new com.hbm_m.block.generic.MachineTransformerBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f)));
-    /** Genuinely missing from the port until now. */
-    public static final RegistrySupplier<Block> MACHINE_FAN = registerBlock("fan",
-            () -> new com.hbm_m.block.machines.MachineFanBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).sound(SoundType.METAL).noOcclusion()));
     /** Genuinely missing from the port until now. */
     public static final RegistrySupplier<Block> MACHINE_WASTE_DRUM = registerBlock("machine_waste_drum",
             () -> new com.hbm_m.block.machines.MachineWasteDrumBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).sound(SoundType.METAL).noOcclusion()));
@@ -2674,7 +2653,7 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> OIL_SPILL = registerBlock("oil_spill", () -> new OilSpillBlock(BlockProps.copy(Blocks.STONE).strength(0.1F).sound(SoundType.GRAVEL).noOcclusion()));
     /** Порт {@code BlockPedestal} (1.7.10) — постамент с парящим предметом. */
     public static final RegistrySupplier<Block> PEDESTAL = registerBlock("pedestal",
-            () -> new PedestalBlock(BlockProps.copy(Blocks.STONE).strength(3.0F, 9.0F)));
+            () -> new PedestalBlock(BlockProps.copy(Blocks.STONE).strength(3.0F, 9.0F).noOcclusion()));
     public static final RegistrySupplier<Block> PINK_LOG = registerBlock("pink_log", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> PINK_PLANKS = registerBlock("pink_planks", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> PLANT_FLOWER_CD0 = registerBlock("plant_flower_cd0", () -> new Block(BlockProps.copy(Blocks.STONE)));
@@ -2912,10 +2891,6 @@ public class ModBlocks {
 
     public static final RegistrySupplier<Block> COMPRESSOR = registerBlock("compressor",
             () -> new com.hbm_m.block.machines.MachineCompressorBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
-    /** Genuinely missing from the port until now - identical logic to {@link #COMPRESSOR}, the original's
-     * "compact" variant only differed in multiblock footprint/visuals, which this single-block port already lacks. */
-    public static final RegistrySupplier<Block> MACHINE_COMPRESSOR_COMPACT = registerBlock("machine_compressor_compact",
-            () -> new com.hbm_m.block.machines.MachineCompressorBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
     public static final RegistrySupplier<Block> PUREX = registerBlock("purex",
             () -> new com.hbm_m.block.machines.MachinePUREXBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
@@ -3016,6 +2991,7 @@ public class ModBlocks {
             () -> new com.hbm_m.block.machines.BarrelTankBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion(),
                     com.hbm_m.blockentity.machines.OrbusBlockEntity::new,
                     () -> com.hbm_m.blockentity.ModBlockEntities.ORBUS_BE.get()));
+                    
     public static final RegistrySupplier<Block> ORE_SLOPPER = registerBlock("ore_slopper",
             () -> new MachineOreSlopperBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
@@ -3087,189 +3063,189 @@ public class ModBlocks {
     // sind bewusst ausgelassen. Sichtbar NUR im Dev-Tab.
 
     public static final RegistrySupplier<Block> BLOCK_ASBESTOS = registerBlock("block_asbestos",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_BAKELITE = registerBlock("block_bakelite",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_C4 = registerBlock("block_c4",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_COLTAN = registerBlock("block_coltan",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_CORIUM = registerBlock("block_corium",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_CORIUM_COBBLE = registerBlock("block_corium_cobble",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_EUPHEMIUM_CLUSTER = registerBlock("block_euphemium_cluster",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_FIBERGLASS = registerBlock("block_fiberglass",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_FLUORITE = registerBlock("block_fluorite",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_GRAPHITE_DETECTOR = registerBlock("block_graphite_detector",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_GRAPHITE_DRILLED = registerBlock("block_graphite_drilled",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_GRAPHITE_FUEL = registerBlock("block_graphite_fuel",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_GRAPHITE_LITHIUM = registerBlock("block_graphite_lithium",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_GRAPHITE_PLUTONIUM = registerBlock("block_graphite_plutonium",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_GRAPHITE_SOURCE = registerBlock("block_graphite_source",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_GRAPHITE_TRITIUM = registerBlock("block_graphite_tritium",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_INSULATOR = registerBlock("block_insulator",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_LITHIUM = registerBlock("block_lithium",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_MAGNETIZED_TUNGSTEN = registerBlock("block_magnetized_tungsten",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_METEOR_BROKEN = registerBlock("block_meteor_broken",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_METEOR_MOLTEN = registerBlock("block_meteor_molten",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_METEOR_TREASURE = registerBlock("block_meteor_treasure",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_NITER = registerBlock("block_niter",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_POLYMER = registerBlock("block_polymer",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_PU_MIX = registerBlock("block_pu_mix",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_RED_PHOSPHORUS = registerBlock("block_red_phosphorus",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_RUBBER = registerBlock("block_rubber",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_SEMTEX = registerBlock("block_semtex",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_SMORE = registerBlock("block_smore",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_SULFUR = registerBlock("block_sulfur",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_TANTALIUM = registerBlock("block_tantalium",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_TRINITITE = registerBlock("block_trinitite",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_TRITIUM = registerBlock("block_tritium",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_WASTE = registerBlock("block_waste",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_WASTE_VITRIFIED = registerBlock("block_waste_vitrified",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_WHITE_PHOSPHORUS = registerBlock("block_white_phosphorus",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_YELLOWCAKE = registerBlock("block_yellowcake",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BRICK_FORGOTTEN = registerBlock("brick_forgotten",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> CONCRETE_LIQUID = registerBlock("concrete_liquid",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> DIGAMMA_MATTER = registerBlock("digamma_matter",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> DUNGEON_SPAWNER = registerBlock("dungeon_spawner",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> EVENT_TESTER = registerBlock("event_tester",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> FLUID_DUCT_PAINTABLE_BLOCK_EXHAUST = registerBlock("fluid_duct_paintable_block_exhaust",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> GEIGER = registerBlock("geiger",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> GEYSIR_NETHER = registerBlock("geysir_nether",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ICF_BLOCK = registerBlock("icf_block",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> LAUNCH_TABLE = registerBlock("launch_table",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> LOGIC_BLOCK = registerBlock("logic_block",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MACHINE_RADAR = registerBlock("machine_radar",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MUSH_BLOCK_STEM = registerBlock("mush_block_stem",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_ALEXANDRITE = registerBlock("ore_alexandrite",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_ALUMINIUM = registerBlock("ore_aluminium",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_AUSTRALIUM = registerBlock("ore_australium",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_CINNEBAR = registerBlock("ore_cinnebar",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_COLTAN = registerBlock("ore_coltan",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_COPPER = registerBlock("ore_copper",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_DEPTH_BORAX = registerBlock("ore_depth_borax",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_DEPTH_CINNEBAR = registerBlock("ore_depth_cinnebar",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_DEPTH_NETHER_NEODYMIUM = registerBlock("ore_depth_nether_neodymium",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_DEPTH_ZIRCONIUM = registerBlock("ore_depth_zirconium",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_GNEISS_ASBESTOS = registerBlock("ore_gneiss_asbestos",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_GNEISS_COPPER = registerBlock("ore_gneiss_copper",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_GNEISS_GAS = registerBlock("ore_gneiss_gas",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_GNEISS_GOLD = registerBlock("ore_gneiss_gold",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_GNEISS_IRON = registerBlock("ore_gneiss_iron",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_GNEISS_LITHIUM = registerBlock("ore_gneiss_lithium",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_GNEISS_RARE = registerBlock("ore_gneiss_rare",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_GNEISS_URANIUM = registerBlock("ore_gneiss_uranium",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_GNEISS_URANIUM_SCORCHED = registerBlock("ore_gneiss_uranium_scorched",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_NETHER_COAL = registerBlock("ore_nether_coal",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_NETHER_COBALT = registerBlock("ore_nether_cobalt",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_NETHER_FIRE = registerBlock("ore_nether_fire",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_NETHER_PLUTONIUM = registerBlock("ore_nether_plutonium",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_NETHER_SMOLDERING = registerBlock("ore_nether_smoldering",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_NETHER_SULFUR = registerBlock("ore_nether_sulfur",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_NETHER_TUNGSTEN = registerBlock("ore_nether_tungsten",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_NETHER_URANIUM = registerBlock("ore_nether_uranium",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_NETHER_URANIUM_SCORCHED = registerBlock("ore_nether_uranium_scorched",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_RARE = registerBlock("ore_rare",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_TEKTITE_OSMIRIDIUM = registerBlock("ore_tektite_osmiridium",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_TIKITE = registerBlock("ore_tikite",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_URANIUM_SCORCHED = registerBlock("ore_uranium_scorched",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> PILE_BLOCK = registerBlock("pile_block",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> PILE_BRICK = registerBlock("pile_brick",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> PNEUMATIC_STORAGE_ACCESS = registerBlock("pneumatic_storage_access",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> PNEUMATIC_STORAGE_CLUTTER = registerBlock("pneumatic_storage_clutter",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> PNEUMATIC_STORAGE_EXPORTER = registerBlock("pneumatic_storage_exporter",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> PNEUMATIC_STORAGE_IMPORTER = registerBlock("pneumatic_storage_importer",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> PNEUMATIC_STORAGE_MONO = registerBlock("pneumatic_storage_mono",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> SOLAR_MIRROR = registerBlock("solar_mirror",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> STRUCTURE_ANCHOR = registerBlock("structure_anchor",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> WAND_TANDEM = registerBlock("wand_tandem",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE)));
     // ─── ENDE AUTO-PORT Bloecke ───
 
     public static final RegistrySupplier<Block> TEST_BLOCK = registerBlock("test_block",

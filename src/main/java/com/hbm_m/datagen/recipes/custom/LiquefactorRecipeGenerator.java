@@ -2,7 +2,9 @@ package com.hbm_m.datagen.recipes.custom;
 //? if forge {
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 
 import dev.architectury.fluid.FluidStack;
 import net.minecraft.data.recipes.FinishedRecipe;
@@ -27,8 +29,8 @@ public final class LiquefactorRecipeGenerator {
         // ── Переработка нефти/металлов ─────────────────────────────────────────
         put(writer, "coaloil_from_coal",     Items.COAL,                               ModFluids.COALOIL, 100);
         put(writer, "coaloil_from_lignite",  ModItems.LIGNITE.get(),                   ModFluids.COALOIL, 50);
-        put(writer, "lead_from_ingot",       ModItems.getIngot(ModIngots.LEAD).get(),  ModFluids.LEAD,    100);
-        put(writer, "lead_from_powder",      ModItems.getPowder(ModIngots.LEAD).get(), ModFluids.LEAD,    100);
+        put(writer, "lead_from_ingot",       ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT),  ModFluids.LEAD,    100);
+        put(writer, "lead_from_powder",      ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.POWDER), ModFluids.LEAD,    100);
 
         // ── «General utility recipes because why not» ─────────────────────────
         put(writer, "lava_from_netherrack",  Items.NETHERRACK,  ModFluids.LAVA,  250);

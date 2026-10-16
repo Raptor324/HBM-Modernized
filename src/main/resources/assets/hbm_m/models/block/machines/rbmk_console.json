@@ -1,6 +1,6 @@
 {
   "textures": {
-    "particle": "hbm_m:block/machine/rbmk_console"
+    "particle": "hbm_m:block/machine/rbmk_control"
   },
   "loader": "forge:composite",
   "children": {
@@ -10,7 +10,7 @@
       "flip_v": true,
       "render_type": "minecraft:solid",
       "textures": {
-        "default": "hbm_m:block/machine/rbmk_console"
+        "default": "hbm_m:block/machine/rbmk_control"
       }
     }
   },

@@ -10,7 +10,9 @@ import com.hbm_m.explosion.vanillant.standard.BlockAllocatorStandard;
 import com.hbm_m.explosion.vanillant.standard.BlockMutatorFire;
 import com.hbm_m.explosion.vanillant.standard.BlockProcessorStandard;
 import com.hbm_m.explosion.vanillant.standard.EntityProcessorCross;
-import com.hbm_m.item.ModItems;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.particle.ModParticleTypes;
 import com.hbm_m.particle.explosions.ServerExplosionParticles;
@@ -316,7 +318,7 @@ public final class MissileWarheadEffects {
     }
 
     public static List<ItemStack> defaultDebrisForTier(int tier) {
-        ItemStack scrap = new ItemStack(ModItems.SCRAP.get());
+        ItemStack scrap = ModMaterialItems.stack(ModMaterials.SCRAP, MaterialShape.SCRAP, 1);
         return switch (tier) {
             case 0 -> List.of(
                     scrap.copyWithCount(2),

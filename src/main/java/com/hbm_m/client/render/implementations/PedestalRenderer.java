@@ -9,6 +9,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.util.Mth;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -21,8 +22,9 @@ import com.hbm_m.blockentity.decorations.PedestalBlockEntity;
 /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 *///?}
 /**
- * Рендер постамента (порт 1.7.10 TileEntitySpecialRenderer BlockPedestal):
- * предмет парит над постаментом и медленно вращается.
+ * Рендер постамента (порт 1.7.10 RenderPedestalTile): предмет парит над
+ * постаментом с масштабом 1.5x. Блок-предметы не вращаются и висят чуть
+ * выше; предметы-не-блоки медленно вращаются.
  */
 public class PedestalRenderer implements BlockEntityRenderer<PedestalBlockEntity> {
 
@@ -36,11 +38,12 @@ public class PedestalRenderer implements BlockEntityRenderer<PedestalBlockEntity
 
         Level level = pedestal.getLevel();
         float time = level != null ? (level.getGameTime() % 200000L) + partialTick : 0.0F;
+        boolean isBlockItem = stack.getItem() instanceof BlockItem;
 
         pose.pushPose();
-        pose.translate(0.5D, 1.15D + Mth.sin(time * 0.06F) * 0.06D, 0.5D);
-        pose.mulPose(Axis.YP.rotationDegrees(time * 1.5F));
-        pose.scale(0.5F, 0.5F, 0.5F);
+        pose.translate(0.5D, 1.15D + Mth.sin(time * 0.1F) * 0.0625D + (isBlockItem ? 0.0625D : 0.0D), 0.5D);
+        if (!isBlockItem) pose.mulPose(Axis.YP.rotationDegrees(time * 1.5F));
+        pose.scale(1.5F, 1.5F, 1.5F);
         Minecraft.getInstance().getItemRenderer().renderStatic(stack, ItemDisplayContext.GROUND,
                 light, OverlayTexture.NO_OVERLAY, pose, buffers, pedestal.getLevel(), 0);
         pose.popPose();

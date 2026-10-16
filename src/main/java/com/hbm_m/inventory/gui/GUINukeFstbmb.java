@@ -1,5 +1,6 @@
 package com.hbm_m.inventory.gui;
 
+import com.hbm_m.main.MainRegistry;
 import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.blockentity.bomb.NukeFstbmbBlockEntity;
@@ -18,11 +19,7 @@ import net.minecraft.world.entity.player.Inventory;
 public class GUINukeFstbmb extends GuiInfoScreen<NukeFstbmbMenu> {
 
     private static final ResourceLocation TEXTURE =
-            //? if < 1.21.1 {
-            new ResourceLocation("hbm_m", "textures/gui/weapon/fstbmb_schematic.png");
-            //?} else {
-            /*ResourceLocation.fromNamespaceAndPath("hbm_m", "textures/gui/weapon/fstbmb_schematic.png");
-             *///?}
+            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/weapon/fstbmb_schematic.png");
 
     private final NukeFstbmbBlockEntity be;
     private Button startButton;

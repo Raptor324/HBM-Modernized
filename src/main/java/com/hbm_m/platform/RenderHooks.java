@@ -85,6 +85,18 @@ public final class RenderHooks {
     }
 
     /**
+     * Вершина для LINES: позиция, цвет и нормаль относительно Pose (без UV/света).
+     */
+    public static void vertexLine(VertexConsumer consumer, PoseStack.Pose pose, float x, float y, float z,
+                                  int r, int g, int b, int a, float nx, float ny, float nz) {
+        //? if < 1.21.1 {
+        consumer.vertex(pose.pose(), x, y, z).color(r, g, b, a).normal(pose.normal(), nx, ny, nz).endVertex();
+        //?} else {
+        /*consumer.addVertex(pose.pose(), x, y, z).setColor(r, g, b, a).setNormal(pose, nx, ny, nz);
+        *///?}
+    }
+
+    /**
      * Полноценная вершина: позиция, цвет, текстура, оверлей, свет, нормаль.
      */
     public static void vertexFull(VertexConsumer consumer, Matrix4f matrix, float x, float y, float z,

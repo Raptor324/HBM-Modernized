@@ -6,7 +6,9 @@ import java.util.function.Supplier;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 
 import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.Item;
@@ -63,11 +65,11 @@ public class MagicRecipes {
         recipes.add(new MagicRecipe(ModItems.ROD_OF_DISCORD,
                 () -> Ingredient.of(Items.ENDER_PEARL),
                 () -> Ingredient.of(Items.BLAZE_ROD),
-                () -> Ingredient.of(ModItems.NUGGET_EUPHEMIUM.get())));
+                () -> Ingredient.of(ModMaterialItems.item(ModMaterials.EUPHEMIUM, MaterialShape.NUGGET))));
 
         // Balefire and Steel
         recipes.add(new MagicRecipe(ModItems.BALEFIRE_AND_STEEL,
-                () -> Ingredient.of(ModItems.getIngot(ModIngots.STEEL).get()),
+                () -> Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT)),
                 () -> Ingredient.of(ModItems.EGG_BALEFIRE_SHARD.get())));
 
         // Алмазная кувалда
@@ -80,7 +82,7 @@ public class MagicRecipes {
         // Мезозная кувалда
         recipes.add(new MagicRecipe(ModItems.MESE_GAVEL,
                 () -> Ingredient.of(ModItems.SHIMMER_HANDLE.get()),
-                () -> Ingredient.of(ModItems.getPowder(ModIngots.DINEUTRONIUM).get()),
+                () -> Ingredient.of(ModMaterialItems.item(ModMaterials.DINEUTRONIUM, MaterialShape.POWDER)),
                 () -> Ingredient.of(ModItems.BLADES_DESH.get()),
                 () -> Ingredient.of(ModItems.DIAMOND_GAVEL.get())));
     }

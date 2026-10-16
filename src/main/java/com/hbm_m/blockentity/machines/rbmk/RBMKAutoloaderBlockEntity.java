@@ -237,7 +237,7 @@ public class RBMKAutoloaderBlockEntity extends RBMKColumnBlockEntity implements 
             if (!slots[i].isEmpty()) {
                 CompoundTag s = new CompoundTag();
                 s.putByte("s", (byte) i);
-                s.put("item", safeItemSave(slots[i], registries));
+                s.put("item", safeItemSave(slots[i]));
                 list.add(s);
             }
         }

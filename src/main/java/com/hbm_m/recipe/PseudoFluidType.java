@@ -6,8 +6,9 @@ import java.util.Map;
 
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
-import com.hbm_m.item.tags_and_tiers.ModPowders;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
@@ -27,30 +28,30 @@ public final class PseudoFluidType {
 
     // Uranium enrichment chain: NUF6 -> LEUF6 -> MEUF6 -> HEUF6 -> (none)
     public static final PseudoFluidType HEUF6 = new PseudoFluidType("heuf6", 300, 0, NONE, true,
-            new ItemStack(ModItems.NUGGET_U238.get(), 2),
-            new ItemStack(ModItems.NUGGET_U235.get(), 1),
+            new ItemStack(ModMaterialItems.item(ModMaterials.URANIUM238, MaterialShape.NUGGET), 2),
+            new ItemStack(ModMaterialItems.item(ModMaterials.URANIUM235, MaterialShape.NUGGET), 1),
             new ItemStack(ModItems.FLUORITE.get(), 1));
     public static final PseudoFluidType MEUF6 = new PseudoFluidType("meuf6", 200, 100, HEUF6, false,
-            new ItemStack(ModItems.NUGGET_U238.get(), 1));
+            new ItemStack(ModMaterialItems.item(ModMaterials.URANIUM238, MaterialShape.NUGGET), 1));
     public static final PseudoFluidType LEUF6 = new PseudoFluidType("leuf6", 300, 200, MEUF6, false,
-            new ItemStack(ModItems.NUGGET_U238.get(), 1),
+            new ItemStack(ModMaterialItems.item(ModMaterials.URANIUM238, MaterialShape.NUGGET), 1),
             new ItemStack(ModItems.FLUORITE.get(), 1));
     public static final PseudoFluidType NUF6 = new PseudoFluidType("nuf6", 400, 300, LEUF6, false,
-            new ItemStack(ModItems.NUGGET_U238.get(), 1));
+            new ItemStack(ModMaterialItems.item(ModMaterials.URANIUM238, MaterialShape.NUGGET), 1));
 
     // Plutonium enrichment: single step.
     public static final PseudoFluidType PF6 = new PseudoFluidType("pf6", 300, 0, NONE, false,
-            new ItemStack(ModItems.NUGGET_PU238.get(), 1),
-            new ItemStack(ModItems.NUGGET_PU_MIX.get(), 2),
+            new ItemStack(ModMaterialItems.item(ModMaterials.PLUTONIUM238, MaterialShape.NUGGET), 1),
+            new ItemStack(ModMaterialItems.item(ModMaterials.PU_MIX, MaterialShape.NUGGET), 2),
             new ItemStack(ModItems.FLUORITE.get(), 1));
 
     // WATZ byproduct chain: MUD -> MUD_HEAVY -> (none)
     public static final PseudoFluidType MUD_HEAVY = new PseudoFluidType("mud_heavy", 500, 0, NONE, false,
-            new ItemStack(ModItems.getPowders(ModPowders.IRON).get(), 1),
+            new ItemStack(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.POWDER), 1),
             new ItemStack(ModItems.DUST.get(), 1),
             new ItemStack(ModItems.NUCLEAR_WASTE_TINY.get(), 1));
     public static final PseudoFluidType MUD = new PseudoFluidType("mud", 1000, 500, MUD_HEAVY, false,
-            new ItemStack(ModItems.getPowder(ModIngots.LEAD).get(), 1),
+            new ItemStack(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.POWDER), 1),
             new ItemStack(ModItems.DUST.get(), 1));
 
     /** Maps a real piped {@link Fluid} to the pseudo-fluid stage a centrifuge starts converting it into. */

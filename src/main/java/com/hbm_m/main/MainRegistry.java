@@ -44,8 +44,8 @@ public final class MainRegistry {
     public static final String MOD_ID = RefStrings.MODID;
 
     /** Порт {@code MainRegistry.missileTab} / {@code MainRegistry.nukeTab} (1.7.10). */
-    public static final RegistrySupplier<CreativeModeTab> missileTab = ModCreativeTabs.NTM_MISSILES_TAB;
-    public static final RegistrySupplier<CreativeModeTab> nukeTab = ModCreativeTabs.NTM_BOMBS_TAB;
+    public static final RegistrySupplier<CreativeModeTab> missileTab = ModCreativeTabs.NTM_MISSILE_TAB;
+    public static final RegistrySupplier<CreativeModeTab> nukeTab = ModCreativeTabs.NTM_NUKE_TAB;
 
     static {
         // Загрузка JSON-конфига (client.json + server.json) ДО любой инициализации,
@@ -152,6 +152,9 @@ public final class MainRegistry {
         com.hbm_m.handler.ArmorRegistryInit.init();
         HazardRegistry.registerItems();
         com.hbm_m.event.LungGasHandler.init();
+        com.hbm_m.advancement.AchievementHandler.init();
+        com.hbm_m.armormod.event.ArmorModTickHandler.init();
+        com.hbm_m.handler.BossSpawnHandler.init();
         com.hbm_m.config.FalloutConfigJSON.initialize();
         DamageResistanceHandler.initArmorStats();
         com.hbm_m.blockentity.machines.LaunchPadBaseBlockEntity.registerLaunchables();

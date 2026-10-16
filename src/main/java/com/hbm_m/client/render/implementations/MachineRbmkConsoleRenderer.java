@@ -3,7 +3,6 @@ package com.hbm_m.client.render.implementations;
 import com.hbm_m.block.machines.MachineRbmkConsoleBlock;
 import com.hbm_m.blockentity.machines.MachineRbmkConsoleBlockEntity;
 import com.hbm_m.blockentity.machines.MachineRbmkConsoleBlockEntity.RBMKColumnData;
-import com.hbm_m.blockentity.machines.rbmk.RBMKColumnBlockEntity.ColumnType;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -18,7 +17,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.InventoryMenu;
 import org.joml.Matrix4f;
-import org.joml.Quaternionf;
 
 import java.util.List;
 import java.util.Map;
@@ -37,23 +35,29 @@ import java.util.Map;
  * bare cube - the console rendered as a featureless slab even though the correct mesh and
  * texture were both present as assets.
  * <p>
- * Screen quad position is the OBJ's own "screen" mesh island bounding box (X≈-0.5, Y:[1.75,3.75],
- * Z:[-1,1] in the model's raw coordinate space), verified directly against the OBJ's vertex data.
+ * Mesh placement, per-facing rotation, mini-map cell/marker geometry and screen text layout are
+ * all ported verbatim from {@code RenderRBMKConsole}, so the drawn body lines up exactly with the
+ * multiblock footprint declared in {@code MachineRbmkConsoleBlock#defineStructure}.
  */
 public class MachineRbmkConsoleRenderer implements BlockEntityRenderer<MachineRbmkConsoleBlockEntity> {
 
     private static final int GRID = MachineRbmkConsoleBlockEntity.GRID;
     private static final String MODEL_PATH = "models/block/rbmk_console.obj";
+    /** The console body's texture. NOT {@code block/machine/rbmk_console} - that file is a flat
+     *  grey 256x256 placeholder, which is exactly why the console rendered as a featureless grey
+     *  mass. The original binds {@code ResourceManager.rbmk_console_tex}, which resolves to
+     *  {@code textures/models/machines/rbmk_control.png}; its 1:1 port lives here. */
+    private static final String BODY_TEXTURE = "block/machine/rbmk_control";
 
-    // Screen quad bounds in the OBJ's raw local space (see class javadoc).
-    private static final float SCREEN_X = -0.505f;
-    private static final float SCREEN_Y0 = 1.85f;
-    private static final float SCREEN_Y1 = 3.65f;
-    private static final float SCREEN_Z0 = -0.95f;
-    private static final float SCREEN_Z1 = 0.95f;
-    private static final float CELL_H = (SCREEN_Y1 - SCREEN_Y0) / GRID;
-    private static final float CELL_W = (SCREEN_Z1 - SCREEN_Z0) / GRID;
-    private static final float GAP = 0.006f;
+    // Screen grid layout, 1:1 with RenderRBMKConsole's kx/ky/kz: the mini-map sits on the panel
+    // face at model X = -0.3725 (normal +X, i.e. facing the operator), cells are 0.125 wide,
+    // laid out top-down / +Z-to--Z from the top-left corner of the grid.
+    private static final double SCREEN_X = -0.3725D;
+    private static final double CELL = 0.125D;
+    private static final double GRID_TOP = 3.625D;
+    private static final double GRID_LEFT = CELL * 7;
+    /** Half-extent of one mini-map cell quad (original: {@code 0.0625D * 0.75}). */
+    private static final double CELL_HALF = 0.0625D * 0.75D;
 
     public MachineRbmkConsoleRenderer(BlockEntityRendererProvider.Context ctx) {}
 
@@ -78,7 +82,7 @@ public class MachineRbmkConsoleRenderer implements BlockEntityRenderer<MachineRb
         Map<String, List<float[]>> obj = RBMKColumnRenderer.getObj(MODEL_PATH);
         List<float[]> mesh = obj.get("Cube");
         if (mesh == null) return;
-        TextureAtlasSprite bodySprite = RBMKColumnRenderer.sprite(RefStrings.MODID, "block/machine/rbmk_console");
+        TextureAtlasSprite bodySprite = RBMKColumnRenderer.sprite(RefStrings.MODID, BODY_TEXTURE);
         VertexConsumer vc = buf.getBuffer(RenderType.solid());
         RBMKColumnRenderer.renderObjGroup(vc, ps.last().pose(), mesh, bodySprite, 1f, 1f, 1f, light, overlay);
     }
@@ -92,14 +96,24 @@ public class MachineRbmkConsoleRenderer implements BlockEntityRenderer<MachineRb
         // 1:1 with the original's per-facing rotation switch in RenderRBMKConsole - rotates the
         // whole mesh (and everything drawn after it, including the mini-map/screens below) to
         // match the block's stored facing, same y-degree convention as the blockstate JSON.
+        // 1:1 with the original's per-facing rotation table (meta 2/3/4/5 -> 90/270/180/0 degrees,
+        // i.e. NORTH/SOUTH/WEST/EAST): the mesh is modeled facing +X, so it has to be turned until
+        // its screen face points along FACING. The previous table used NORTH -> 0 degrees, which
+        // left the screen pointing WEST on a north-facing console and put the whole body a quarter
+        // turn off from the multiblock footprint.
         Direction facing = be.getBlockState().getValue(MachineRbmkConsoleBlock.FACING);
         float rotY = switch (facing) {
-            case SOUTH -> 180f;
-            case WEST  -> 270f;
-            case EAST  -> 90f;
-            default    -> 0f; // NORTH
+            case SOUTH -> 270f;
+            case WEST  -> 180f;
+            case EAST  -> 0f;
+            default    -> 90f; // NORTH
         };
         ps.mulPose(com.mojang.math.Axis.YP.rotationDegrees(rotY));
+        // 1:1 with the original's post-rotation glTranslated(0.5, 0, 0): the mesh's own origin sits
+        // at the panel wall, so it has to be pushed half a block along the facing axis to line up
+        // with the block it is anchored to (mesh then spans 0..2 blocks deep, matching the
+        // multiblock footprint defined in MachineRbmkConsoleBlock#defineStructure).
+        ps.translate(0.5, 0, 0);
 
         renderBody(ps, buf, packedLight, packedOverlay);
 
@@ -109,18 +123,17 @@ public class MachineRbmkConsoleRenderer implements BlockEntityRenderer<MachineRb
 
         for (int i = 0; i < MachineRbmkConsoleBlockEntity.AREA; i++) {
             RBMKColumnData col = be.columns[i];
-            int gx = i % GRID;
-            int gz = i / GRID;
+            // 1:1 with the original: an unscanned slot draws nothing at all, it does not get a
+            // placeholder cell.
+            if (col == null) continue;
 
-            float y0 = SCREEN_Y1 - (gz + 1) * CELL_H + GAP;
-            float y1 = SCREEN_Y1 - gz * CELL_H - GAP;
-            float z0 = SCREEN_Z0 + gx * CELL_W + GAP;
-            float z1 = SCREEN_Z0 + (gx + 1) * CELL_W - GAP;
+            // 1:1 with the original's kx/ky/kz.
+            double kx = SCREEN_X;
+            double ky = -(i / GRID) * CELL + GRID_TOP;
+            double kz = -(i % GRID) * CELL + GRID_LEFT;
 
             float r, g, b;
-            if (col == null) {
-                r = 0.10f; g = 0.10f; b = 0.10f;
-            } else if (col.data.contains("color") && col.data.getShort("color") >= 0) {
+            if (col.data.contains("color") && col.data.getShort("color") >= 0) {
                 // 1:1 with the original: a control rod assigned to a color group is tinted by
                 // that group's color, overriding the heat gradient entirely.
                 int rgb = switch (col.data.getShort("color")) {
@@ -148,35 +161,36 @@ public class MachineRbmkConsoleRenderer implements BlockEntityRenderer<MachineRb
 
             // 1:1 with the original: a column the crane is currently over flashes solid yellow,
             // overriding whatever color it would otherwise have.
-            if (col != null && col.data.getInt("indicator") > 0) {
+            if (col.data.getInt("indicator") > 0) {
                 r = 1f; g = 1f; b = 0f;
             }
 
-            quad(vc, m, SCREEN_X, y0, z0, SCREEN_X, y0, z1, SCREEN_X, y1, z1, SCREEN_X, y1, z0,
-                    -1, 0, 0, sprite, r, g, b, packedLight, packedOverlay);
+            // 1:1 with the original's drawColumn - a flat cell quad on the panel face, normal +X.
+            quad(vc, m, (float) kx, (float) (ky + CELL_HALF), (float) (kz - CELL_HALF),
+                        (float) kx, (float) (ky + CELL_HALF), (float) (kz + CELL_HALF),
+                        (float) kx, (float) (ky - CELL_HALF), (float) (kz + CELL_HALF),
+                        (float) kx, (float) (ky - CELL_HALF), (float) (kz - CELL_HALF),
+                    1, 0, 0, sprite, r, g, b, packedLight, packedOverlay);
 
-            // Dot overlay: a small fixed-size marker whose BRIGHTNESS (not size) encodes
-            // enrichment/insertion-level - 1:1 with the original's drawFuel/drawControl/
-            // drawControlAuto (which always draw the same-size diamond, tinted green-by-
-            // enrichment, yellow-by-level for manual rods, or purple-by-level for auto rods).
-            if (col != null && (col.type == ColumnType.FUEL || col.type == ColumnType.CONTROL)) {
-                float dr, dg, db;
-                if (col.type == ColumnType.FUEL) {
-                    double enrichment = Math.min(Math.max(col.data.getDouble("enrichment"), 0), 1);
-                    dr = 0f; dg = (float) (0.25 + enrichment * 0.75); db = 0f;
-                } else {
-                    float level = (float) Math.min(Math.max(col.data.getDouble("level"), 0), 1);
-                    boolean auto = col.data.getBoolean("auto");
-                    dr = level; dg = auto ? 0f : level; db = auto ? level : 0f;
+            // 1:1 with the original's drawFuel / drawControl / drawControlAuto: a fixed-size
+            // diamond marker 0.01 in front of the cell, green-by-enrichment for fuel, yellow-by-
+            // level for manual rods, purple-by-level for automatic ones.
+            // This port has no separate CONTROL_AUTO ColumnType (RBMKColumnBlockEntity.ColumnType
+            // folds both control rod variants into CONTROL); the auto flag rides along in the NBT
+            // instead, exactly as the existing screen code already read it.
+            switch (col.type) {
+                case FUEL -> {
+                    float e = (float) Math.min(Math.max(col.data.getDouble("enrichment"), 0), 1);
+                    drawDot(vc, m, kx + 0.01, ky, kz, 0F, 0.25F + e * 0.75F, 0F,
+                            sprite, packedLight, packedOverlay);
                 }
-                float half = Math.min(CELL_H, CELL_W) * 0.18f;
-                float cyMid = (y0 + y1) * 0.5f;
-                float czMid = (z0 + z1) * 0.5f;
-                quad(vc, m, SCREEN_X - 0.001f, cyMid - half, czMid - half,
-                        SCREEN_X - 0.001f, cyMid - half, czMid + half,
-                        SCREEN_X - 0.001f, cyMid + half, czMid + half,
-                        SCREEN_X - 0.001f, cyMid + half, czMid - half,
-                        -1, 0, 0, sprite, dr, dg, db, packedLight, packedOverlay);
+                case CONTROL -> {
+                    float l = (float) Math.min(Math.max(col.data.getDouble("level"), 0), 1);
+                    boolean auto = col.data.getBoolean("auto");
+                    drawDot(vc, m, kx + 0.01, ky, kz, l, auto ? 0F : l, auto ? l : 0F,
+                            sprite, packedLight, packedOverlay);
+                }
+                default -> { }
             }
         }
 
@@ -185,35 +199,75 @@ public class MachineRbmkConsoleRenderer implements BlockEntityRenderer<MachineRb
         ps.popPose();
     }
 
-    // ─── Text screens ────────────────────────────────────────────────────────
+    // ─── Screen markers ──────────────────────────────────────────────────────
 
-    private static final float TEXT_SCALE = 0.007f;
+    /** 1:1 with {@code RenderRBMKConsole.drawDot}: a three-quad diamond of fixed size on the
+     *  panel face (normal +X), whose color - not size - carries the value. */
+    private static void drawDot(VertexConsumer vc, Matrix4f m, double x, double y, double z,
+                                 float r, float g, float b,
+                                 TextureAtlasSprite sprite, int light, int overlay) {
+        double w = 0.03125D;
+        double e = 0.022097D;
+        float fx = (float) x;
+
+        quad(vc, m, fx, (float) (y + w), (float) z,
+                    fx, (float) (y + e), (float) (z + e),
+                    fx, (float) y,       (float) (z + w),
+                    fx, (float) (y - e), (float) (z + e),
+                1, 0, 0, sprite, r, g, b, light, overlay);
+
+        quad(vc, m, fx, (float) (y + e), (float) (z - e),
+                    fx, (float) (y + w), (float) z,
+                    fx, (float) (y - e), (float) (z - e),
+                    fx, (float) y,       (float) (z - w),
+                1, 0, 0, sprite, r, g, b, light, overlay);
+
+        quad(vc, m, fx, (float) (y + w), (float) z,
+                    fx, (float) (y - e), (float) (z + e),
+                    fx, (float) (y - w), (float) z,
+                    fx, (float) (y - e), (float) (z - e),
+                1, 0, 0, sprite, r, g, b, light, overlay);
+    }
+
+    // ─── Text screens ────────────────────────────────────────────────────────
 
     /**
      * Draws the 6 per-screen aggregate readouts (see
-     * {@code MachineRbmkConsoleBlockEntity#computeScreenText}) as flat text below the grid
-     * mini-map, on the same plane. Orientation is a best-effort match to the model's screen
-     * face (viewed from -X, columns run along +Z, rows down along -Y) - the exact placement may
-     * need a small offset tweak once seen in-game.
+     * {@code MachineRbmkConsoleBlockEntity#computeScreenText}) 1:1 with the original's screen
+     * placement: the screens sit in two columns on the console's wings at model Z = +-1.75,
+     * three rows apart by 0.75, on the panel plane at model X = -0.42, each scaled to fit 0.8
+     * blocks of width and rotated a quarter turn so it faces +X along with the rest of the panel.
      */
     private void renderScreenText(MachineRbmkConsoleBlockEntity be, PoseStack ps, MultiBufferSource buf,
                                    int packedLight, int packedOverlay) {
         Font font = Minecraft.getInstance().font;
-        float y = SCREEN_Y0 - 0.08f;
+
+        ps.pushPose();
+        ps.translate(-0.42F, 3.5F, 1.75F);
 
         for (int i = 0; i < MachineRbmkConsoleBlockEntity.SCREENS; i++) {
+            ps.pushPose();
+
+            if (i % 2 == 1) ps.translate(0, 0, 1.75F * -2);
+            ps.translate(0, -0.75F * (i / 2), 0);
+
             String text = be.screenText != null && be.screenText[i] != null ? be.screenText[i] : "";
+
             if (!text.isEmpty()) {
-                ps.pushPose();
-                ps.translate(SCREEN_X - 0.001f, y, SCREEN_Z0);
-                ps.mulPose(new Quaternionf().rotateY((float) (-Math.PI / 2)));
-                ps.scale(TEXT_SCALE, -TEXT_SCALE, TEXT_SCALE);
-                font.drawInBatch(text, 0, 0, 0x40FF60, false, ps.last().pose(), buf,
-                        Font.DisplayMode.NORMAL, 0, packedLight);
-                ps.popPose();
+                int width = font.width(text);
+                int height = 9; // Font.lineHeight equivalent of the original's FONT_HEIGHT
+
+                float f3 = Math.min(0.03F, 0.8F / Math.max(width, 1));
+                ps.scale(f3, -f3, f3);
+                ps.mulPose(com.mojang.math.Axis.YP.rotationDegrees(90));
+
+                font.drawInBatch(text, -width / 2f, -height / 2f, 0x00FF00, false,
+                        ps.last().pose(), buf, Font.DisplayMode.NORMAL, 0, packedLight);
             }
-            y -= 0.10f;
+            ps.popPose();
         }
+
+        ps.popPose();
     }
 
     private static void quad(VertexConsumer vc, Matrix4f m,

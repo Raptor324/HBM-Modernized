@@ -357,7 +357,7 @@ public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements com.
                 float nx = tri[base+5], ny = tri[base+6], nz = tri[base+7];
                 float au = u0 + u * (u1 - u0);
                 float av = v0 + (1f - v) * (v1 - v0); // V flipped
-                vc.vertex(m, x, y, z).color(r,g,b,a).uv(au,av).overlayCoords(overlay).uv2(light).normal(nx,ny,nz).endVertex();
+                com.hbm_m.platform.RenderHooks.vertexFull(vc, m, x, y, z, (int)(r * 255f), (int)(g * 255f), (int)(b * 255f), (int)(a * 255f), au, av, overlay, light, nx, ny, nz);
             }
         }
     }

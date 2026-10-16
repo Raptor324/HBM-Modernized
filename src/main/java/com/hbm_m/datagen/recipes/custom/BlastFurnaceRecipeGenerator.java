@@ -1,8 +1,9 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
-import com.hbm_m.item.tags_and_tiers.ModPowders;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.tags.ItemTags;
@@ -27,44 +28,44 @@ public final class BlastFurnaceRecipeGenerator {
     public static void generate(Consumer<FinishedRecipe> writer) {
         // IRON + COAL -> steel x1
         BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
-                new ItemStack(ModItems.getIngot(ModIngots.STEEL).get()),
+                new ItemStack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT)),
                 Ingredient.of(Items.IRON_INGOT),
                 Ingredient.of(ItemTags.COALS)
         ).duration(800).save(writer, "blast_furnace/steel_from_ingot");
 
         // IRON.ore() + COAL -> steel x2
         BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
-                new ItemStack(ModItems.getIngot(ModIngots.STEEL).get(), 2),
+                new ItemStack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT), 2),
                 Ingredient.of(Tags.Items.ORES_IRON),
                 Ingredient.of(ItemTags.COALS)
         ).duration(800).save(writer, "blast_furnace/steel_from_ore");
 
         // IRON.ore() + COAL_BLOCK -> steel x3 (coal block burns hotter, like coke)
         BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
-                new ItemStack(ModItems.getIngot(ModIngots.STEEL).get(), 3),
+                new ItemStack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT), 3),
                 Ingredient.of(Tags.Items.ORES_IRON),
                 Ingredient.of(Items.COAL_BLOCK)
         ).duration(1200).save(writer, "blast_furnace/steel_from_ore_coal_block");
 
         // IRON.ore() + coal powder -> steel x3 (flux-like)
         BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
-                new ItemStack(ModItems.getIngot(ModIngots.STEEL).get(), 3),
+                new ItemStack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT), 3),
                 Ingredient.of(Tags.Items.ORES_IRON),
-                Ingredient.of(ModItems.getPowders(ModPowders.COAL).get())
+                Ingredient.of(ModMaterialItems.item(ModMaterials.COAL, MaterialShape.POWDER))
         ).duration(1200).save(writer, "blast_furnace/steel_from_ore_powder");
 
         // CU + REDSTONE -> red_copper x2
         BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
-                new ItemStack(ModItems.getIngot(ModIngots.RED_COPPER).get(), 2),
+                new ItemStack(ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.INGOT), 2),
                 Ingredient.of(Items.COPPER_INGOT),
                 Ingredient.of(Items.REDSTONE)
         ).duration(400).save(writer, "blast_furnace/red_copper");
 
         // STEEL + RED_COPPER (MINGRADE analogue) -> advanced_alloy x2
         BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
-                new ItemStack(ModItems.getIngot(ModIngots.ADVANCED_ALLOY).get(), 2),
-                Ingredient.of(ModItems.getIngot(ModIngots.STEEL).get()),
-                Ingredient.of(ModItems.getIngot(ModIngots.RED_COPPER).get())
+                new ItemStack(ModMaterialItems.item(ModMaterials.ADVANCED_ALLOY, MaterialShape.INGOT), 2),
+                Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT)),
+                Ingredient.of(ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.INGOT))
         ).save(writer, "blast_furnace/advanced_alloy");
 
 
@@ -75,8 +76,8 @@ public final class BlastFurnaceRecipeGenerator {
 
         // CU (dust/dust) + REDSTONE dust -> red_copper x2 (blast.mingradeDust)
         BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
-                new ItemStack(ModItems.getIngot(ModIngots.RED_COPPER).get(), 2),
-                Ingredient.of(ModItems.COPPER_POWDER.get()),
+                new ItemStack(ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.INGOT), 2),
+                Ingredient.of(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.POWDER)),
                 Ingredient.of(Items.REDSTONE)
                 ).duration(400).save(writer, "blast_furnace/red_copper_dust");
 
@@ -92,7 +93,7 @@ public final class BlastFurnaceRecipeGenerator {
         // ALUMINUM powder + 7x clay_ball -> firebrick x8 (blast.firebrick)
         BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
                 new ItemStack(ModItems.FIREBRICK.get(), 8),
-                Ingredient.of(ModItems.getPowder(ModIngots.ALUMINUM).get()),
+                Ingredient.of(ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.POWDER)),
                 Ingredient.of(Items.CLAY_BALL)
                 ).save(writer, "blast_furnace/firebrick");
 
@@ -105,22 +106,22 @@ public final class BlastFurnaceRecipeGenerator {
                 ).save(writer, "blast_furnace/firebrick_limestone");
 
         // --- Previously flagged as "skipped" - all three actually portable, the required items just live
-        // under this port's generic per-ingot naming (ModIngots.METEORITE/STARMETAL/SATURNITE + getPowder())
+        // under this port's generic per-ingot naming (ModMaterials.METEORITE/STARMETAL/SATURNITE + MaterialShape.POWDER)
         // rather than individually declared ModItems fields, so an earlier pass missed them. ---
 
         // Cobalt + meteorite powder -> meteorite ingot (blast.meteor)
         BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
-                new ItemStack(ModItems.getIngot(ModIngots.METEORITE).get()),
-                Ingredient.of(ModItems.getIngot(ModIngots.COBALT).get()),
-                Ingredient.of(ModItems.getPowder(ModIngots.METEORITE).get())
+                new ItemStack(ModMaterialItems.item(ModMaterials.METEORITE, MaterialShape.INGOT)),
+                Ingredient.of(ModMaterialItems.item(ModMaterials.COBALT, MaterialShape.INGOT)),
+                Ingredient.of(ModMaterialItems.item(ModMaterials.METEORITE, MaterialShape.POWDER))
                 ).save(writer, "blast_furnace/meteorite_ingot");
 
 
         // Saturnite (BIGMT) + meteorite ingot -> starmetal ingot x2 (blast.starmetal)
         BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
-                new ItemStack(ModItems.getIngot(ModIngots.STARMETAL).get(), 2),
-                Ingredient.of(ModItems.getIngot(ModIngots.SATURNITE).get()),
-                Ingredient.of(ModItems.getIngot(ModIngots.METEORITE).get())
+                new ItemStack(ModMaterialItems.item(ModMaterials.STARMETAL, MaterialShape.INGOT), 2),
+                Ingredient.of(ModMaterialItems.item(ModMaterials.SATURNITE, MaterialShape.INGOT)),
+                Ingredient.of(ModMaterialItems.item(ModMaterials.METEORITE, MaterialShape.INGOT))
                 ).save(writer, "blast_furnace/starmetal_ingot");
 
 
@@ -131,7 +132,7 @@ public final class BlastFurnaceRecipeGenerator {
         BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
                 new ItemStack(ModItems.METEORITE_SWORD_ALLOYED.get()),
                 Ingredient.of(ModItems.METEORITE_SWORD_HARDENED.get()),
-                Ingredient.of(ModItems.getIngot(ModIngots.COBALT).get())
+                Ingredient.of(ModMaterialItems.item(ModMaterials.COBALT, MaterialShape.INGOT))
                 ).save(writer, "blast_furnace/meteorite_sword_alloyed");
     }
 }

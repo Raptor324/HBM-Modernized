@@ -2,7 +2,9 @@ package com.hbm_m.datagen.recipes.custom;
 //? if forge {
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 
 import dev.architectury.fluid.FluidStack;
 import net.minecraft.data.recipes.FinishedRecipe;
@@ -54,7 +56,7 @@ public final class SolderingRecipeGenerator {
         solder(writer, "advanced_circuit", new ItemStack(ModItems.ADVANCED_CIRCUIT.get()),
                 300, 1000, fluid(ModFluids.SULFURIC_ACID, 1000),
                 new Pair[]{p(ModItems.MICROCHIP.get(), 16), p(CAP, 4)},
-                new Pair[]{p(PCB, 8), p(ModItems.getIngot(ModIngots.RUBBER).get(), 2)},
+                new Pair[]{p(PCB, 8), p(ModMaterialItems.item(ModMaterials.RUBBER, MaterialShape.INGOT), 2)},
                 new Pair[]{pTag("wires_fine/lead", 8)});
 
         // CAPACITOR_BOARD — peroxide 250 mB

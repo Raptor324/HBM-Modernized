@@ -258,8 +258,13 @@ public class EntityMaskMan extends Monster implements IRadiationImmune {
     }
 
     @Override
+    //? if < 1.21.1 {
     protected void dropCustomDeathLoot(@NotNull DamageSource source, int looting, boolean recentlyHit) {
         super.dropCustomDeathLoot(source, looting, recentlyHit);
+    //?} else {
+    /*protected void dropCustomDeathLoot(net.minecraft.server.level.ServerLevel level, @NotNull DamageSource source, boolean recentlyHit) {
+        super.dropCustomDeathLoot(level, source, recentlyHit);
+    *///?}
         if (this.level().isClientSide) return;
 
         // The original hands over its own gas mask with a combo filter already installed; the

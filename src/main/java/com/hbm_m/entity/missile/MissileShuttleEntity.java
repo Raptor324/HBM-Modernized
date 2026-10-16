@@ -28,9 +28,9 @@ public class MissileShuttleEntity extends MissileBaseEntity {
     @Override
     protected List<ItemStack> getDebris() {
         return List.of(
-                new ItemStack(ModItems.SCRAP.get(), 8),
-                new ItemStack(ModItems.SCRAP.get(), 2),
-                new ItemStack(ModItems.SCRAP.get(), 1),
+                com.hbm_m.item.material.ModMaterialItems.stack(com.hbm_m.item.material.ModMaterials.SCRAP, com.hbm_m.item.material.MaterialShape.SCRAP, 8),
+                com.hbm_m.item.material.ModMaterialItems.stack(com.hbm_m.item.material.ModMaterials.SCRAP, com.hbm_m.item.material.MaterialShape.SCRAP, 2),
+                com.hbm_m.item.material.ModMaterialItems.stack(com.hbm_m.item.material.ModMaterials.SCRAP, com.hbm_m.item.material.MaterialShape.SCRAP, 1),
                 new ItemStack(net.minecraft.world.level.block.Blocks.GLASS_PANE, 2));
     }
 

@@ -25,12 +25,24 @@ import net.minecraft.world.level.Level;
  */
 public class RBMKFuelDisassemblyRecipe extends CustomRecipe {
 
+    //? if < 1.21.1 {
     public RBMKFuelDisassemblyRecipe(ResourceLocation id, CraftingBookCategory category) {
         super(id, category);
     }
+    //?} else {
+    /*// 1.21 fuehrt Rezepte ueber RecipeHolder; der Konstruktor bekommt keine Id mehr.
+    public RBMKFuelDisassemblyRecipe(CraftingBookCategory category) {
+        super(category);
+    }
+    *///?}
 
+    //? if < 1.21.1 {
     @Override
     public boolean matches(CraftingContainer container, Level level) {
+    //?} else {
+    /*@Override
+    public boolean matches(net.minecraft.world.item.crafting.CraftingInput container, Level level) {
+    *///?}
         ItemStack stack = getOnlyStack(container);
         if (stack == null || !(stack.getItem() instanceof RBMKRodItem rod)) return false;
         return rod.getPellet() != null
@@ -38,8 +50,14 @@ public class RBMKFuelDisassemblyRecipe extends CustomRecipe {
                 && RBMKRodItem.getCoreHeat(stack) < 50;
     }
 
+    //? if < 1.21.1 {
     @Override
     public ItemStack assemble(CraftingContainer container, RegistryAccess registries) {
+    //?} else {
+    /*@Override
+    public ItemStack assemble(net.minecraft.world.item.crafting.CraftingInput container,
+                              net.minecraft.core.HolderLookup.Provider registries) {
+    *///?}
         ItemStack stack = getOnlyStack(container);
         if (stack == null || !(stack.getItem() instanceof RBMKRodItem rod)) return ItemStack.EMPTY;
 
@@ -71,10 +89,17 @@ public class RBMKFuelDisassemblyRecipe extends CustomRecipe {
      * eight pellets <b>and</b> the casing they go back into. The port returned nothing at all, which
      * quietly deleted one casing per disassembly and made the fuel loop lossy.
      */
+    //? if < 1.21.1 {
     @Override
     public NonNullList<ItemStack> getRemainingItems(CraftingContainer container) {
         NonNullList<ItemStack> remaining = NonNullList.withSize(container.getContainerSize(), ItemStack.EMPTY);
         for (int i = 0; i < container.getContainerSize(); i++) {
+    //?} else {
+    /*@Override
+    public NonNullList<ItemStack> getRemainingItems(net.minecraft.world.item.crafting.CraftingInput container) {
+        NonNullList<ItemStack> remaining = NonNullList.withSize(container.size(), ItemStack.EMPTY);
+        for (int i = 0; i < container.size(); i++) {
+    *///?}
             if (container.getItem(i).getItem() instanceof RBMKRodItem) {
                 remaining.set(i, new ItemStack(com.hbm_m.item.ModItems.RBMK_FUEL_EMPTY.get()));
                 break;
@@ -89,9 +114,15 @@ public class RBMKFuelDisassemblyRecipe extends CustomRecipe {
     }
 
     /** RBMKFuelCraftingHandler.hasExactlyOneStack + getFirstStack, combined. */
+    //? if < 1.21.1 {
     private static ItemStack getOnlyStack(CraftingContainer container) {
         ItemStack found = null;
         for (int i = 0; i < container.getContainerSize(); i++) {
+    //?} else {
+    /*private static ItemStack getOnlyStack(net.minecraft.world.item.crafting.CraftingInput container) {
+        ItemStack found = null;
+        for (int i = 0; i < container.size(); i++) {
+    *///?}
             ItemStack stack = container.getItem(i);
             if (stack.isEmpty()) continue;
             if (found != null) return null;

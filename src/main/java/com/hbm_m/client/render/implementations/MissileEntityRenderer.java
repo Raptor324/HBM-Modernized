@@ -89,7 +89,6 @@ public class MissileEntityRenderer<T extends MissileBaseEntity> extends EntityRe
         MissileRenderHelper.applyLaunchFacingRotation(poseStack, launchFacing);
 
         MissileRenderData data = MissileRenderHelper.resolveFlightData(entity);
-        com.hbm_m.client.render.FrameStateProbe.snap("px.mer.pre");
 
         LightSampleCache.BASE_POSE.set(poseStack.last().pose());
         LightSampleCache.BASE_POSE_SET.set(true);
@@ -104,7 +103,6 @@ public class MissileEntityRenderer<T extends MissileBaseEntity> extends EntityRe
             if (data != null) {
                 data.render(poseStack, meshLight, lightPos, buffer);
             }
-            com.hbm_m.client.render.FrameStateProbe.snap("px.mer.mesh");
         } finally {
             SingleMeshVboRenderer.setEntityMissileDepthBias(false);
             LightSampleCache.BASE_POSE_SET.set(false);
@@ -112,7 +110,6 @@ public class MissileEntityRenderer<T extends MissileBaseEntity> extends EntityRe
 
         poseStack.popPose();
         super.render(entity, entityYaw, partialTicks, poseStack, buffer, packedLight);
-        com.hbm_m.client.render.FrameStateProbe.snap("px.mer.post");
 
     }
 

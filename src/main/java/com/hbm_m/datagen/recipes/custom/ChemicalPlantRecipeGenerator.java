@@ -5,8 +5,9 @@ import java.util.function.Consumer;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
-import com.hbm_m.item.tags_and_tiers.ModPowders;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.world.item.ItemStack;
@@ -66,7 +67,7 @@ public final class ChemicalPlantRecipeGenerator {
 
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
             .withIconItem(new ItemStack(ModBlocks.CONCRETE.get()))
-            .addItemInput(ModItems.getPowders(ModPowders.CEMENT).get(), 1)
+            .addItemInput(ModMaterialItems.item(ModMaterials.CEMENT, MaterialShape.POWDER), 1)
             .addItemInput(Items.GRAVEL, 8)
             .addItemInput(Items.SAND, 8)
             .addFluidInput(ModFluids.WATER.getSource(), 2_000)
@@ -75,8 +76,8 @@ public final class ChemicalPlantRecipeGenerator {
 
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
             .withIconItem(new ItemStack(ModBlocks.CONCRETE_ASBESTOS.get()))
-            .addItemInput(ModItems.getPowders(ModPowders.CEMENT).get(), 4)
-            .addItemInput(ModItems.getIngot(ModIngots.ASBESTOS).get(), 4)
+.addItemInput(ModMaterialItems.item(ModMaterials.CEMENT, MaterialShape.POWDER), 4)
+.addItemInput(ModMaterialItems.item(ModMaterials.ASBESTOS, MaterialShape.INGOT), 4)
             .addItemInput(Items.SAND, 8)
             .addFluidInput(ModFluids.WATER.getSource(), 2_000)
             .addItemOutput(new ItemStack(ModBlocks.CONCRETE_ASBESTOS.get(), 16))
@@ -85,7 +86,7 @@ public final class ChemicalPlantRecipeGenerator {
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
             .withIconItem(ModItems.FLUID_IDENTIFIER.get())
             .withIconFluid(ModFluids.CONCRETE.getSource())
-            .addItemInput(ModItems.getPowders(ModPowders.CEMENT).get(), 1)
+            .addItemInput(ModMaterialItems.item(ModMaterials.CEMENT, MaterialShape.POWDER), 1)
             .addItemInput(Items.GRAVEL, 8)
             .addItemInput(Items.SAND, 8)
             .addFluidInput(ModFluids.WATER.getSource(), 2_000)
@@ -158,7 +159,7 @@ public final class ChemicalPlantRecipeGenerator {
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(50, 100)
             .withIconItem(ModItems.BALL_DYNAMITE.get())
             .addItemInput(Items.SUGAR, 1)
-            .addItemInput(ModItems.CRYSTAL_NITER.get(), 1)
+            .addItemInput(ModMaterialItems.item(ModMaterials.NITER, MaterialShape.CRYSTAL), 1)
             .addItemInput(Items.SAND, 1)
             .addItemOutput(new ItemStack(ModItems.BALL_DYNAMITE.get(), 2))
             .save(writer, "chemplant/chem_dynamite");
@@ -175,41 +176,41 @@ public final class ChemicalPlantRecipeGenerator {
     /** Polymer/plastic chain — port of 1.7.10 chem.polymer/bakelite/rubber/hardplastic/pvc/desh/deshcracked. */
     private static void registerPolymers(Consumer<FinishedRecipe> writer) {
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
-            .withIconItem(ModItems.getIngot(ModIngots.POLYMER).get())
-            .addItemInput(ModItems.getPowders(ModPowders.COAL).get(), 2)
+            .withIconItem(ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.INGOT))
+            .addItemInput(ModMaterialItems.item(ModMaterials.COAL, MaterialShape.POWDER), 2)
             .addItemInput(ModItems.FLUORITE.get(), 1)
             .addFluidInput(ModFluids.PETROLEUM.getSource(), 1_000)
-            .addItemOutput(new ItemStack(ModItems.getIngot(ModIngots.POLYMER).get(), 4))
+            .addItemOutput(new ItemStack(ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.INGOT), 4))
             .save(writer, "chemplant/chem_polymer");
 
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
-            .withIconItem(ModItems.getIngot(ModIngots.BAKELITE).get())
+            .withIconItem(ModMaterialItems.item(ModMaterials.BAKELITE, MaterialShape.INGOT))
             .addFluidInput(ModFluids.AROMATICS.getSource(), 500)
             .addFluidInput(ModFluids.PETROLEUM.getSource(), 500)
-            .addItemOutput(new ItemStack(ModItems.getIngot(ModIngots.BAKELITE).get(), 1))
+            .addItemOutput(new ItemStack(ModMaterialItems.item(ModMaterials.BAKELITE, MaterialShape.INGOT), 1))
             .save(writer, "chemplant/chem_bakelite");
 
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 200)
-            .withIconItem(ModItems.getIngot(ModIngots.RUBBER).get())
+            .withIconItem(ModMaterialItems.item(ModMaterials.RUBBER, MaterialShape.INGOT))
             .addItemInput(ModItems.SULFUR.get(), 1)
             .addFluidInput(ModFluids.UNSATURATEDS.getSource(), 500)
-            .addItemOutput(new ItemStack(ModItems.getIngot(ModIngots.RUBBER).get(), 2))
+            .addItemOutput(new ItemStack(ModMaterialItems.item(ModMaterials.RUBBER, MaterialShape.INGOT), 2))
             .save(writer, "chemplant/chem_rubber");
 
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
-            .withIconItem(ModItems.getIngot(ModIngots.DESH).get())
+            .withIconItem(ModMaterialItems.item(ModMaterials.DESH, MaterialShape.INGOT))
             .addItemInput(ModItems.POWDER_DESH_MIX.get(), 1)
             .addFluidInput(ModFluids.LIGHTOIL.getSource(), 200)
             .addFluidInput(ModFluids.MERCURY.getSource(), 200)
-            .addItemOutput(new ItemStack(ModItems.getIngot(ModIngots.DESH).get(), 1))
+            .addItemOutput(new ItemStack(ModMaterialItems.item(ModMaterials.DESH, MaterialShape.INGOT), 1))
             .save(writer, "chemplant/chem_desh");
 
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
-            .withIconItem(ModItems.getIngot(ModIngots.DESH).get())
+            .withIconItem(ModMaterialItems.item(ModMaterials.DESH, MaterialShape.INGOT))
             .addItemInput(ModItems.POWDER_DESH_MIX.get(), 1)
             .addFluidInput(ModFluids.LIGHTOIL_CRACK.getSource(), 500)
             .addFluidInput(ModFluids.MERCURY.getSource(), 100)
-            .addItemOutput(new ItemStack(ModItems.getIngot(ModIngots.DESH).get(), 1))
+            .addItemOutput(new ItemStack(ModMaterialItems.item(ModMaterials.DESH, MaterialShape.INGOT), 1))
             .save(writer, "chemplant/chem_deshcracked");
     }
 
@@ -234,7 +235,7 @@ public final class ChemicalPlantRecipeGenerator {
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 300)
             .withIconItem(ModItems.FLUID_IDENTIFIER.get())
             .withIconFluid(ModFluids.ENDERJUICE.getSource())
-            .addItemInput(ModItems.DIAMOND_POWDER.get(), 1)
+            .addItemInput(ModMaterialItems.item(ModMaterials.DIAMOND, MaterialShape.POWDER), 1)
             .addFluidInput(ModFluids.XPJUICE.getSource(), 500)
             .addFluidOutput(ModFluids.ENDERJUICE.getSource(), 100)
             .save(writer, "chemplant/chem_epearl");
@@ -244,15 +245,15 @@ public final class ChemicalPlantRecipeGenerator {
             .addItemInput(ModItems.GLYPHID_MEAT.get(), 3)
             .addFluidInput(ModFluids.WATER.getSource(), 1_000)
             .addItemOutput(new ItemStack(ModItems.SULFUR.get(), 4))
-            .addItemOutput(new ItemStack(ModItems.CRYSTAL_NITER.get(), 3))
+            .addItemOutput(new ItemStack(ModMaterialItems.item(ModMaterials.NITER, MaterialShape.CRYSTAL), 3))
             .addFluidOutput(ModFluids.SALIENT.getSource(), 250)
             .save(writer, "chemplant/chem_meatprocessing");
 
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(150, 5_000)
-            .withIconItem(ModItems.getIngot(ModIngots.SCHRABIDATE).get())
-            .addItemInput(ModItems.getPowders(ModPowders.IRON).get(), 1)
+            .withIconItem(ModMaterialItems.item(ModMaterials.SCHRABIDATE, MaterialShape.INGOT))
+            .addItemInput(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.POWDER), 1)
             .addFluidInput(ModFluids.SCHRABIDIC.getSource(), 250)
-            .addItemOutput(new ItemStack(ModItems.getIngot(ModIngots.SCHRABIDATE).get(), 1))
+            .addItemOutput(new ItemStack(ModMaterialItems.item(ModMaterials.SCHRABIDATE, MaterialShape.INGOT), 1))
             .save(writer, "chemplant/chem_schrabidate");
 
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(80, 100)
@@ -269,7 +270,7 @@ public final class ChemicalPlantRecipeGenerator {
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(20, 400)
             .withIconItem(ModItems.FLUID_IDENTIFIER.get())
             .withIconFluid(ModFluids.HYDROGEN.getSource())
-            .addItemInput(ModItems.getPowders(ModPowders.COAL).get(), 1)
+            .addItemInput(ModMaterialItems.item(ModMaterials.COAL, MaterialShape.POWDER), 1)
             .addFluidInput(ModFluids.WATER.getSource(), 8_000)
             .addFluidOutput(ModFluids.HYDROGEN.getSource(), 500)
             .save(writer, "chemplant/chem_hydrogen");
@@ -388,7 +389,7 @@ public final class ChemicalPlantRecipeGenerator {
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(50, 100)
             .withIconItem(ModItems.FLUID_IDENTIFIER.get())
             .withIconFluid(ModFluids.NITRIC_ACID.getSource())
-            .addItemInput(ModItems.CRYSTAL_NITER.get(), 1)
+            .addItemInput(ModMaterialItems.item(ModMaterials.NITER, MaterialShape.CRYSTAL), 1)
             .addFluidInput(ModFluids.SULFURIC_ACID.getSource(), 500)
             .addFluidOutput(ModFluids.NITRIC_ACID.getSource(), 1_000)
             .save(writer, "chemplant/chem_nitricacid");
@@ -456,7 +457,7 @@ public final class ChemicalPlantRecipeGenerator {
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 500)
             .withIconItem(ModItems.FLUID_IDENTIFIER.get())
             .withIconFluid(ModFluids.UF6.getSource())
-            .addItemInput(ModItems.getPowder(ModIngots.URANIUM).get(), 1)
+            .addItemInput(ModMaterialItems.item(ModMaterials.URANIUM, MaterialShape.POWDER), 1)
             .addItemInput(ModItems.FLUORITE.get(), 4)
             .addFluidInput(ModFluids.WATER.getSource(), 1_000)
             .addItemOutput(new ItemStack(ModItems.SULFUR.get(), 2))
@@ -466,7 +467,7 @@ public final class ChemicalPlantRecipeGenerator {
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(200, 500)
             .withIconItem(ModItems.FLUID_IDENTIFIER.get())
             .withIconFluid(ModFluids.PUF6.getSource())
-            .addItemInput(ModItems.getPowder(ModIngots.PLUTONIUM).get(), 1)
+            .addItemInput(ModMaterialItems.item(ModMaterials.PLUTONIUM, MaterialShape.POWDER), 1)
             .addItemInput(ModItems.FLUORITE.get(), 3)
             .addFluidInput(ModFluids.WATER.getSource(), 1_000)
             .addFluidOutput(ModFluids.PUF6.getSource(), 900)
@@ -477,7 +478,7 @@ public final class ChemicalPlantRecipeGenerator {
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(200, 5_000)
             .withIconItem(ModItems.FLUID_IDENTIFIER.get())
             .withIconFluid(ModFluids.SAS3.getSource())
-            .addItemInput(ModItems.getPowder(ModIngots.SCHRABIDIUM).get(), 1)
+            .addItemInput(ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.POWDER), 1)
             .addItemInput(ModItems.SULFUR.get(), 2)
             .addFluidInput(ModFluids.PEROXIDE.getSource(), 2_000)
             .addFluidOutput(ModFluids.SAS3.getSource(), 1_000)
@@ -532,17 +533,17 @@ public final class ChemicalPlantRecipeGenerator {
         // KNO.dust() маппим на CRYSTAL_NITER (пока другого аналога в Modernized нет).
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 1_000)
             .withIconItem(ModItems.BALL_TNT.get())
-            .addItemInput(ModItems.CRYSTAL_NITER.get(), 1)
+            .addItemInput(ModMaterialItems.item(ModMaterials.NITER, MaterialShape.CRYSTAL), 1)
             .addFluidInput(ModFluids.AROMATICS.getSource(), 500)
             .addItemOutput(new ItemStack(ModItems.BALL_TNT.get(), 4))
             .save(writer, "chemplant/chem_tnt");
 
         // 1.7.10: chem.c4
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 1_000)
-            .withIconItem(ModItems.getIngot(ModIngots.C4).get())
-            .addItemInput(ModItems.CRYSTAL_NITER.get(), 1)
+            .withIconItem(ModMaterialItems.item(ModMaterials.C4, MaterialShape.INGOT))
+            .addItemInput(ModMaterialItems.item(ModMaterials.NITER, MaterialShape.CRYSTAL), 1)
             .addFluidInput(ModFluids.UNSATURATEDS.getSource(), 500)
-            .addItemOutput(new ItemStack(ModItems.getIngot(ModIngots.C4).get(), 4))
+            .addItemOutput(new ItemStack(ModMaterialItems.item(ModMaterials.C4, MaterialShape.INGOT), 4))
             .save(writer, "chemplant/chem_c4");
 
         // TODO: chem.cordite (нет sawdust/cordite items)
