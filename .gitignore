@@ -116,3 +116,6 @@ notes/
 # Python bytecode
 __pycache__/
 *.pyc
+
+# nightly porting pipeline state, machine-local
+docs/porting/machine_porting_matrix.json
