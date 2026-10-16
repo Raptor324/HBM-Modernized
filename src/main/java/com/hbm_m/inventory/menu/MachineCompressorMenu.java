@@ -11,10 +11,10 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 //? if forge {
-import net.minecraftforge.items.SlotItemHandler;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.items.SlotItemHandler;
-*///?}
+/*import net.minecraftforge.items.SlotItemHandler;
+*///?} elif neoforge {
+import net.neoforged.neoforge.items.SlotItemHandler;
+//?}
 
 /** Slot-Koordinaten 1:1 aus {@code ContainerCompressor} (1.7.10 Original): Fluid-ID (17,72),
  *  Batterie (152,72). Upgrade-Slots des Originals entfallen (siehe

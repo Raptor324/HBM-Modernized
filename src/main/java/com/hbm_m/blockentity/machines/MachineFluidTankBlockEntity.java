@@ -56,12 +56,12 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.AABB;
 //? if forge {
-import net.minecraftforge.common.capabilities.Capability;
+/*import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.IItemHandler;
-//?}
+*///?}
 
 @SuppressWarnings("UnstableApiUsage")
 public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements MenuProvider, IMultiblockSidedIO, IFluidStandardTransceiverMK2
@@ -99,9 +99,9 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
     protected final ContainerData data;
 
     //? if forge {
-    private final LazyOptional<IItemHandler> lazyItemHandler;
+    /*private final LazyOptional<IItemHandler> lazyItemHandler;
     private final LazyOptional<IFluidHandler> lazyFluidHandler;
-    //?}
+    *///?}
 
     /** Разрешённые стороны прямого подключения к контроллеру. Если {@link #fluidSidesFromMultiblockStructure} — пусто допустимо (= ни одной стороны); иначе пусто = все стороны. */
     private java.util.Set<Direction> allowedFluidSides = java.util.EnumSet.noneOf(Direction.class);
@@ -161,9 +161,9 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
         };
 
         //? if forge {
-        this.lazyItemHandler = LazyOptional.of(() -> itemHandler);
+        /*this.lazyItemHandler = LazyOptional.of(() -> itemHandler);
         this.lazyFluidHandler = LazyOptional.of(() -> new NetworkFluidHandlerWrapper(this));
-        //?}
+        *///?}
     }
 
     @Override
@@ -666,7 +666,7 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.ITEM_HANDLER) {
             return lazyItemHandler.cast();
@@ -685,7 +685,7 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
             }
         return super.getCapability(cap, side);
     }
-    //?}
+    *///?}
 
     @Override
     public void setAllowedFluidSidesFromMultiblockStructure(java.util.Set<Direction> sides) {
@@ -729,9 +729,9 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
     public void setRemoved() {
         super.setRemoved();
         //? if forge {
-        lazyItemHandler.invalidate();
+        /*lazyItemHandler.invalidate();
         lazyFluidHandler.invalidate();
-        //?}
+        *///?}
     }
 
     @Override
@@ -794,7 +794,7 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
     }
 
     //? if forge {
-    private class NetworkFluidHandlerWrapper implements IFluidHandler {
+    /*private class NetworkFluidHandlerWrapper implements IFluidHandler {
         private final MachineFluidTankBlockEntity entity;
         private IFluidHandler internal;
 
@@ -837,5 +837,5 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
             return internal.drain(maxDrain, action);
         }
     }
-    //?}
+    *///?}
 }

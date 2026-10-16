@@ -220,7 +220,7 @@ public class ClientRenderHandler {
 
         private static RenderType makePylonOverlay() {
             //? if < 1.21.1 {
-            return create("hbm_m_pylon_overlay", DefaultVertexFormat.POSITION_COLOR_TEX, VertexFormat.Mode.QUADS, 4096, false, false,
+            /*return create("hbm_m_pylon_overlay", DefaultVertexFormat.POSITION_COLOR_TEX, VertexFormat.Mode.QUADS, 4096, false, false,
                     RenderType.CompositeState.builder()
                             .setShaderState(POSITION_COLOR_TEX_SHADER)
                             .setTextureState(new RenderStateShard.TextureStateShard(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS, false, false))
@@ -230,8 +230,8 @@ public class ClientRenderHandler {
                             .setDepthTestState(LEQUAL_DEPTH_TEST)
                             .setWriteMaskState(COLOR_WRITE)
                             .createCompositeState(false));
-            //?} else {
-            /*return create("hbm_m_pylon_overlay", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 4096, false, false,
+            *///?} else {
+            return create("hbm_m_pylon_overlay", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 4096, false, false,
                     RenderType.CompositeState.builder()
                             .setShaderState(RENDERTYPE_TEXT_BACKGROUND_SHADER)
                             .setTextureState(new RenderStateShard.TextureStateShard(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS, false, false))
@@ -241,14 +241,14 @@ public class ClientRenderHandler {
                             .setDepthTestState(LEQUAL_DEPTH_TEST)
                             .setWriteMaskState(COLOR_WRITE)
                             .createCompositeState(false));
-            *///?}
+            //?}
         }
 
         /** Кабели ЛЭП (RedPylonWireRenderer): текстурированные квады wire.png, UV-тайлинг 1/8 блока. */
         public static final Function<ResourceLocation, RenderType> PYLON_WIRE = Util.memoize(
                 texture -> {
                     //? if < 1.21.1 {
-                    return create("hbm_m_pylon_wire", DefaultVertexFormat.POSITION_COLOR_TEX, VertexFormat.Mode.QUADS, 262144, false, false,
+                    /*return create("hbm_m_pylon_wire", DefaultVertexFormat.POSITION_COLOR_TEX, VertexFormat.Mode.QUADS, 262144, false, false,
                             RenderType.CompositeState.builder()
                                     .setShaderState(POSITION_COLOR_TEX_SHADER)
                                     .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
@@ -258,8 +258,8 @@ public class ClientRenderHandler {
                                     .setDepthTestState(LEQUAL_DEPTH_TEST)
                                     .setWriteMaskState(COLOR_DEPTH_WRITE)
                                     .createCompositeState(false));
-                    //?} else {
-                    /*return create("hbm_m_pylon_wire", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 262144, false, false,
+                    *///?} else {
+                    return create("hbm_m_pylon_wire", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 262144, false, false,
                             RenderType.CompositeState.builder()
                                     .setShaderState(RENDERTYPE_TEXT_BACKGROUND_SHADER)
                                     .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
@@ -269,7 +269,7 @@ public class ClientRenderHandler {
                                     .setDepthTestState(LEQUAL_DEPTH_TEST)
                                     .setWriteMaskState(COLOR_DEPTH_WRITE)
                                     .createCompositeState(false));
-                    *///?}
+                    //?}
                 });
 
         /** Fleija cloud — untextured sphere, full-bright color (порт RenderCloudFleija). */
@@ -530,12 +530,12 @@ public class ClientRenderHandler {
             // падающий на пустых sortOnUpload-батчах — а HIGHLIGHT_BOX_FILL
             // сортируемый (см. PlainBufferSource).
             //? if < 1.21.1 {
-            bs = new com.hbm_m.client.render.PlainBufferSource(
-                    new com.mojang.blaze3d.vertex.BufferBuilder(CustomRenderTypes.HIGHLIGHT_BOX_FILL.bufferSize()));
-            //?} else {
             /*bs = new com.hbm_m.client.render.PlainBufferSource(
+                    new com.mojang.blaze3d.vertex.BufferBuilder(CustomRenderTypes.HIGHLIGHT_BOX_FILL.bufferSize()));
+            *///?} else {
+            bs = new com.hbm_m.client.render.PlainBufferSource(
                     new com.mojang.blaze3d.vertex.ByteBufferBuilder(CustomRenderTypes.HIGHLIGHT_BOX_FILL.bufferSize()));
-            *///?}
+            //?}
             highlightBufferSource = bs;
         }
         return bs;
@@ -646,81 +646,81 @@ public class ClientRenderHandler {
         
         if (drawDown) {
             //? if < 1.21.1 {
-            consumer.vertex(matrix, minX, minY, minZ).color(r, g, b, alpha).endVertex();
+            /*consumer.vertex(matrix, minX, minY, minZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, maxX, minY, minZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, maxX, minY, maxZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, minX, minY, maxZ).color(r, g, b, alpha).endVertex();
-            //?} else {
-            /*consumer.addVertex(matrix, minX, minY, minZ).setColor(r, g, b, alpha);
+            *///?} else {
+            consumer.addVertex(matrix, minX, minY, minZ).setColor(r, g, b, alpha);
             consumer.addVertex(matrix, maxX, minY, minZ).setColor(r, g, b, alpha);
             consumer.addVertex(matrix, maxX, minY, maxZ).setColor(r, g, b, alpha);
             consumer.addVertex(matrix, minX, minY, maxZ).setColor(r, g, b, alpha);
-            *///?}
+            //?}
         }
         if (drawUp) {
             //? if < 1.21.1 {
-            consumer.vertex(matrix, minX, maxY, maxZ).color(r, g, b, alpha).endVertex();
+            /*consumer.vertex(matrix, minX, maxY, maxZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, maxX, maxY, maxZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, maxX, maxY, minZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, minX, maxY, minZ).color(r, g, b, alpha).endVertex();
-            //?} else {
-            /*consumer.addVertex(matrix, minX, maxY, maxZ).setColor(r, g, b, alpha);
+            *///?} else {
+            consumer.addVertex(matrix, minX, maxY, maxZ).setColor(r, g, b, alpha);
             consumer.addVertex(matrix, maxX, maxY, maxZ).setColor(r, g, b, alpha);
             consumer.addVertex(matrix, maxX, maxY, minZ).setColor(r, g, b, alpha);
             consumer.addVertex(matrix, minX, maxY, minZ).setColor(r, g, b, alpha);
-            *///?}
+            //?}
         }
         if (drawNorth) {
             //? if < 1.21.1 {
-            consumer.vertex(matrix, minX, minY, minZ).color(r, g, b, alpha).endVertex();
+            /*consumer.vertex(matrix, minX, minY, minZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, minX, maxY, minZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, maxX, maxY, minZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, maxX, minY, minZ).color(r, g, b, alpha).endVertex();
-            //?} else {
-            /*consumer.addVertex(matrix, minX, minY, minZ).setColor(r, g, b, alpha);
+            *///?} else {
+            consumer.addVertex(matrix, minX, minY, minZ).setColor(r, g, b, alpha);
             consumer.addVertex(matrix, minX, maxY, minZ).setColor(r, g, b, alpha);
             consumer.addVertex(matrix, maxX, maxY, minZ).setColor(r, g, b, alpha);
             consumer.addVertex(matrix, maxX, minY, minZ).setColor(r, g, b, alpha);
-            *///?}
+            //?}
         }
         if (drawSouth) {
             //? if < 1.21.1 {
-            consumer.vertex(matrix, maxX, minY, maxZ).color(r, g, b, alpha).endVertex();
+            /*consumer.vertex(matrix, maxX, minY, maxZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, maxX, maxY, maxZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, minX, maxY, maxZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, minX, minY, maxZ).color(r, g, b, alpha).endVertex();
-            //?} else {
-            /*consumer.addVertex(matrix, maxX, minY, maxZ).setColor(r, g, b, alpha);
+            *///?} else {
+            consumer.addVertex(matrix, maxX, minY, maxZ).setColor(r, g, b, alpha);
             consumer.addVertex(matrix, maxX, maxY, maxZ).setColor(r, g, b, alpha);
             consumer.addVertex(matrix, minX, maxY, maxZ).setColor(r, g, b, alpha);
             consumer.addVertex(matrix, minX, minY, maxZ).setColor(r, g, b, alpha);
-            *///?}
+            //?}
         }
         if (drawWest) {
             //? if < 1.21.1 {
-            consumer.vertex(matrix, minX, minY, maxZ).color(r, g, b, alpha).endVertex();
+            /*consumer.vertex(matrix, minX, minY, maxZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, minX, maxY, maxZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, minX, maxY, minZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, minX, minY, minZ).color(r, g, b, alpha).endVertex();
-            //?} else {
-            /*consumer.addVertex(matrix, minX, minY, maxZ).setColor(r, g, b, alpha);
+            *///?} else {
+            consumer.addVertex(matrix, minX, minY, maxZ).setColor(r, g, b, alpha);
             consumer.addVertex(matrix, minX, maxY, maxZ).setColor(r, g, b, alpha);
             consumer.addVertex(matrix, minX, maxY, minZ).setColor(r, g, b, alpha);
             consumer.addVertex(matrix, minX, minY, minZ).setColor(r, g, b, alpha);
-            *///?}
+            //?}
         }
         if (drawEast) {
             //? if < 1.21.1 {
-            consumer.vertex(matrix, maxX, minY, minZ).color(r, g, b, alpha).endVertex();
+            /*consumer.vertex(matrix, maxX, minY, minZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, maxX, maxY, minZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, maxX, maxY, maxZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, maxX, minY, maxZ).color(r, g, b, alpha).endVertex();
-            //?} else {
-            /*consumer.addVertex(matrix, maxX, minY, minZ).setColor(r, g, b, alpha);
+            *///?} else {
+            consumer.addVertex(matrix, maxX, minY, minZ).setColor(r, g, b, alpha);
             consumer.addVertex(matrix, maxX, maxY, minZ).setColor(r, g, b, alpha);
             consumer.addVertex(matrix, maxX, maxY, maxZ).setColor(r, g, b, alpha);
             consumer.addVertex(matrix, maxX, minY, maxZ).setColor(r, g, b, alpha);
-            *///?}
+            //?}
         }
     }
 

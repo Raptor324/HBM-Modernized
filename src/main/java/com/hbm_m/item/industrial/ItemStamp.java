@@ -9,10 +9,10 @@ public class ItemStamp extends Item {
 
     public ItemStamp(Properties properties, int maxUses) {
         super(//? if < 1.21.1 {
-              properties.defaultDurability(maxUses)
-              //?} else {
-              /*properties.durability(maxUses)
-              *///?}
+              /*properties.defaultDurability(maxUses)
+              *///?} else {
+              properties.durability(maxUses)
+              //?}
         );
         this.maxUses = maxUses;
         this.unbreakable = false;

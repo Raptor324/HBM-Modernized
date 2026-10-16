@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import com.google.gson.JsonObject;
+/*import com.google.gson.JsonObject;
 import com.hbm_m.recipe.BreederRecipe;
 
 import net.minecraft.world.item.Item;
@@ -8,7 +8,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
-/**
+/^*
  * Datagen-билдер {@link BreederRecipe} ({@code hbm_m:breeder}).
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.</p>
@@ -22,7 +22,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
  *   "energy_per_tick": 100
  * }
  * }</pre>
- */
+ ^/
 public class BreederRecipeBuilder extends BaseRecipeBuilder<BreederRecipeBuilder> {
 
     private final Ingredient input;
@@ -56,4 +56,4 @@ public class BreederRecipeBuilder extends BaseRecipeBuilder<BreederRecipeBuilder
         return BreederRecipe.Serializer.INSTANCE;
     }
 }
-//?}
+*///?}

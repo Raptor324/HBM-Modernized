@@ -38,13 +38,14 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.phys.AABB;
 
 //? if forge {
-import net.minecraftforge.common.capabilities.Capability;
+/*import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-//?}
+*///?}
 
 @SuppressWarnings("UnstableApiUsage")
 public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2, IMultiblockSidedIO {
@@ -463,6 +464,19 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
 
     // ── Misc ──────────────────────────────────────────────────────────────
 
+    /**
+     * Мультиблок 5×5×5 с ядром в центре основания; OBJ-модель простирается на
+     * ±2.5 по X/Z и 0..5 по Y от ядра. Дефолтный 1-блочный AABB ошибочно
+     * культил бы рендер, когда ядро за кадром.
+     */
+    //? if forge {
+    /*@Override
+    *///?}
+    public AABB getRenderBoundingBox() {
+        return new AABB(worldPosition.getX() - 2, worldPosition.getY(), worldPosition.getZ() - 2,
+                worldPosition.getX() + 3, worldPosition.getY() + 5, worldPosition.getZ() + 3);
+    }
+
     @SuppressWarnings({"rawtypes", "unchecked"})
     private static BlockState copyPropertyUnsafe(BlockState target, BlockState source,
             net.minecraft.world.level.block.state.properties.Property property) {
@@ -517,7 +531,7 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
 
     // ── Forge fluid capabilities ──────────────────────────────────────────
     //? if forge {
-    @Override
+    /*@Override
     protected void setupFluidCapability() {
         setFluidHandler(new UnifiedFluidHandler(this));
     }
@@ -618,5 +632,5 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
             return drained;
         }
     }
-    //?}
+    *///?}
 }

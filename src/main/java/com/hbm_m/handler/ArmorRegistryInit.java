@@ -33,5 +33,32 @@ public final class ArmorRegistryInit {
         ArmorRegistry.register(ModItems.MASK_RAG.get(), HazardClass.PARTICLE_COARSE);
         ArmorRegistry.register(ModItems.MASK_PISS.get(),
                 HazardClass.PARTICLE_COARSE, HazardClass.GAS_LUNG);
+
+        // Everything below was missing: the port only registered the filters and the two rag masks,
+        // so the gas masks themselves, the goggles and every helmet protected against nothing.
+        // Straight from the original ArmorUtil.register().
+        ArmorRegistry.register(ModItems.GAS_MASK.get(), HazardClass.SAND, HazardClass.LIGHT);
+        ArmorRegistry.register(ModItems.GAS_MASK_M65.get(), HazardClass.SAND);
+        ArmorRegistry.register(ModItems.ATTACHMENT_MASK.get(), HazardClass.SAND);
+
+        ArmorRegistry.register(ModItems.GOGGLES.get(), HazardClass.LIGHT, HazardClass.SAND);
+        ArmorRegistry.register(ModItems.ASHGLASSES.get(), HazardClass.LIGHT, HazardClass.SAND);
+
+        ArmorRegistry.register(ModItems.ASBESTOS_HELMET.get(), HazardClass.SAND, HazardClass.LIGHT);
+        ArmorRegistry.register(ModItems.HAZMAT_HELMET.get(), HazardClass.SAND);
+        ArmorRegistry.register(ModItems.HAZMAT_HELMET_RED.get(), HazardClass.SAND);
+        ArmorRegistry.register(ModItems.HAZMAT_HELMET_GREY.get(), HazardClass.SAND);
+        ArmorRegistry.register(ModItems.HAZMAT_PAA_HELMET.get(), HazardClass.LIGHT, HazardClass.SAND);
+        ArmorRegistry.register(ModItems.LIQUIDATOR_HELMET.get(), HazardClass.LIGHT, HazardClass.SAND);
+
+        ArmorRegistry.register(ModItems.SCHRABIDIUM_HELMET.get(), FULL_PACKAGE);
+        ArmorRegistry.register(ModItems.EUPHEMIUM_HELMET.get(), FULL_PACKAGE);
     }
+
+    /** The original's ArmorUtil.FULL_PACKAGE: everything a head slot can shield against. */
+    private static final HazardClass[] FULL_PACKAGE = {
+            HazardClass.PARTICLE_COARSE, HazardClass.PARTICLE_FINE, HazardClass.GAS_LUNG,
+            HazardClass.BACTERIA, HazardClass.GAS_BLISTERING, HazardClass.GAS_MONOXIDE,
+            HazardClass.LIGHT, HazardClass.SAND
+    };
 }

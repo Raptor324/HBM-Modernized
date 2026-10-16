@@ -7,9 +7,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.biome.Biome;
 
 //? if forge {
-import dev.architectury.registry.registries.DeferredRegister;
+/*import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
-//?}
+*///?}
 
 /**
  * Ключи биомов кратера для кода (смазывание, подмена биомов при взрывах и т.д.).
@@ -59,7 +59,7 @@ public class ModBiomes {
                     );
 
     //? if forge {
-    public static final DeferredRegister<Biome> BIOMES =
+    /*public static final DeferredRegister<Biome> BIOMES =
             DeferredRegister.create(MainRegistry.MOD_ID, Registries.BIOME);
 
     public static final RegistrySupplier<Biome> INNER_CRATER = BIOMES.register(
@@ -76,11 +76,11 @@ public class ModBiomes {
             "outer_crater",
             CraterBiomes::createOuterCraterBiome
     );
-//?}
+*///?}
 
     public static void init() {
         //? if forge {
-        BIOMES.register();
-//?}
+        /*BIOMES.register();
+*///?}
     }
 }

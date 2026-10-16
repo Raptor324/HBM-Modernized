@@ -6,19 +6,19 @@ import com.hbm_m.interfaces.IEnergyReceiver;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 //? if neoforge {
-/*import net.neoforged.neoforge.capabilities.*;
+import net.neoforged.neoforge.capabilities.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import com.hbm_m.lib.RefStrings;
-*///?}
-//? if forge {
-import net.minecraftforge.common.capabilities.*;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 //?}
+//? if forge {
+/*import net.minecraftforge.common.capabilities.*;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+*///?}
 
 //? if forge {
-public class ModCapabilities {
+/*public class ModCapabilities {
     public static final Capability<IEnergyProvider>  HBM_ENERGY_PROVIDER  = CapabilityManager.get(new CapabilityToken<>() {});
     public static final Capability<IEnergyReceiver>  HBM_ENERGY_RECEIVER  = CapabilityManager.get(new CapabilityToken<>() {});
     public static final Capability<IEnergyConnector> HBM_ENERGY_CONNECTOR = CapabilityManager.get(new CapabilityToken<>() {});
@@ -36,10 +36,10 @@ public class ModCapabilities {
             || be.getCapability(HBM_ENERGY_RECEIVER).isPresent();
     }
 }
-//?}
+*///?}
 
 //? if neoforge {
-/*import com.hbm_m.blockentity.BaseHbmBlockEntity;
+import com.hbm_m.blockentity.BaseHbmBlockEntity;
 
 public class ModCapabilities {
     public static final BlockCapability<IEnergyProvider, Direction> HBM_ENERGY_PROVIDER =
@@ -135,4 +135,4 @@ public class ModCapabilities {
             || be instanceof IEnergyReceiver;
     }
 }
-*///?}
+//?}

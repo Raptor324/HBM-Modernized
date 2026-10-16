@@ -74,15 +74,15 @@ public final class ClusterSubmunitionMesh {
                                    Vec3 pos, Vec2 uv, Vec3 normal,
                                    int light, int overlay) {
         //? if < 1.21.1 {
-        consumer.vertex(pose.pose(), pos.x(), pos.y(), pos.z())
+        /*consumer.vertex(pose.pose(), pos.x(), pos.y(), pos.z())
                 .color(255, 255, 255, 255)
                 .uv(uv.u(), 1.0F - uv.v())
                 .overlayCoords(overlay)
                 .uv2(light)
                 .normal(pose.normal(), normal.x(), normal.y(), normal.z())
                 .endVertex();
-        //?} else {
-        /*// 1.21.1: vertex->addVertex, color->setColor, uv->setUv, overlayCoords->setOverlay, uv2->setLight,
+        *///?} else {
+        // 1.21.1: vertex->addVertex, color->setColor, uv->setUv, overlayCoords->setOverlay, uv2->setLight,
         // normal(Vector3f,f,f,f) -> setNormal(f,f,f) с ручным умножением на pose.normal() (Matrix3f).
         // pose.normal() в 1.21.1 возвращает Matrix3f (не Vector3f) — transform'им исходный normal.
         org.joml.Matrix3f nm = pose.normal();
@@ -94,7 +94,7 @@ public final class ClusterSubmunitionMesh {
                 .setOverlay(overlay)
                 .setLight(light)
                 .setNormal(transformed.x, transformed.y, transformed.z);
-        *///?}
+        //?}
     }
 
     private static List<Tri> loadMiniNukeTriangles(ResourceManager rm) {

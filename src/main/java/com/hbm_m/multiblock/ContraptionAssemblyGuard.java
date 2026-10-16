@@ -32,35 +32,35 @@ public final class ContraptionAssemblyGuard {
 
     private ContraptionAssemblyGuard() {}
 
-    /** Максимальная вложенность окон (защита от переполнения счётчика). */
-    private static final int MAX_DEPTH = 8;
-
     /** Страховочное время жизни окна: 30 с. Достаточно даже для гигантских сборок. */
     private static final long WINDOW_TIMEOUT_NANOS = 30_000_000_000L;
 
     private static final ThreadLocal<Integer> DEPTH = ThreadLocal.withInitial(() -> 0);
     private static final ThreadLocal<Long> DEADLINE_NANOS = ThreadLocal.withInitial(() -> 0L);
 
-    /** Открыть окно (вызывается из mixin'ов на HEAD методов движков сборки). */
+    /**
+     * Открыть окно (вызывается из mixin'ов на HEAD методов движков сборки).
+     *
+     * <p>The depth is not capped. It used to stop incrementing past a limit while pop() always
+     * decremented, so nesting deeper than the cap closed the window while the outermost engine was
+     * still moving blocks - which is exactly the dupe this guard exists to prevent.</p>
+     */
     public static void push() {
         int d = DEPTH.get();
         if (d == 0) {
             DEADLINE_NANOS.set(System.nanoTime() + WINDOW_TIMEOUT_NANOS);
-            // Диагностика дюпа: видно, открывается ли окно вообще и на каком потоке.
-            com.hbm_m.main.MainRegistry.LOGGER.info(
-                "[HBM] окно сборки ОТКРЫТО (thread {})", Thread.currentThread().getName());
+            com.hbm_m.main.MainRegistry.LOGGER.debug(
+                "[HBM] contraption move window opened (thread {})", Thread.currentThread().getName());
         }
-        if (d < MAX_DEPTH) {
-            DEPTH.set(d + 1);
-        }
+        DEPTH.set(d + 1);
     }
 
     /** Закрыть окно (вызывается из mixin'ов на RETURN методов движков сборки). */
     public static void pop() {
         int d = DEPTH.get();
         if (d == 1) {
-            com.hbm_m.main.MainRegistry.LOGGER.info(
-                "[HBM] окно сборки ЗАКРЫТО (thread {})", Thread.currentThread().getName());
+            com.hbm_m.main.MainRegistry.LOGGER.debug(
+                "[HBM] contraption move window closed (thread {})", Thread.currentThread().getName());
         }
         DEPTH.set(Math.max(0, d - 1));
     }

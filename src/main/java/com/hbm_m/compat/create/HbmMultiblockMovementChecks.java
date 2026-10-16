@@ -41,13 +41,9 @@ public final class HbmMultiblockMovementChecks {
         if (registered) return;
         registered = true;
         BlockMovementChecks.registerAttachedCheck(HbmMultiblockMovementChecks::isAttachedToSameMultiblock);
-        // Наши блоки всегда перемещаемы: явный SUCCESS исключает отказ по тегам/настройкам,
-        // а лог показывает, что BFS вообще рассматривал контроллер как кандидата.
+        // Our blocks are always movable: an explicit SUCCESS rules out a refusal by tag or config.
         BlockMovementChecks.registerMovementAllowedCheck((state, level, pos) -> {
             if (isHbmMultiblockBlock(state)) {
-                com.hbm_m.main.MainRegistry.LOGGER.info(
-                        "[HBM][AllowedCheck] кандидат {} ({}) разрешён к перемещению",
-                        pos.toShortString(), state.getBlock());
                 return BlockMovementChecks.CheckResult.SUCCESS;
             }
             return BlockMovementChecks.CheckResult.PASS;
@@ -102,8 +98,9 @@ public final class HbmMultiblockMovementChecks {
         return BlockMovementChecks.CheckResult.PASS;
     }
 
+    /** Assembly BFS calls this per block per direction, so it must not log at INFO. */
     private static BlockMovementChecks.CheckResult debug(BlockPos pos, Direction dir, String what, BlockMovementChecks.CheckResult result) {
-        com.hbm_m.main.MainRegistry.LOGGER.info(
+        com.hbm_m.main.MainRegistry.LOGGER.debug(
                 "[HBM][AttachCheck] {} {} dir={} -> {}", what, pos.toShortString(), dir, result);
         return result;
     }

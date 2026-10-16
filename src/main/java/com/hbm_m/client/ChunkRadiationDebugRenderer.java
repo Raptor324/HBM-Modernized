@@ -38,10 +38,10 @@ public class ChunkRadiationDebugRenderer {
         // Дебаг-визуализация радиации — отладочный инструмент; на 1.21.1 всегда возвращаем (визуализация выключена).
         // TODO(fidelity-port): найти 1.21.1-аналог renderDebug, если потребуется рабочий дебаг-рендер.
         //? if < 1.21.1 {
-        if (!ModClothConfig.get().enableDebugRender || !mc.options.renderDebug) return;
-        //?} else {
-        /*if (!ModClothConfig.get().enableDebugRender) return;
-        *///?}
+        /*if (!ModClothConfig.get().enableDebugRender || !mc.options.renderDebug) return;
+        *///?} else {
+        if (!ModClothConfig.get().enableDebugRender) return;
+        //?}
 
         // Если радиация отключена в конфиге, не рендерим ничего.
         // ClientRadiationData может содержать устаревшие значения с прошлого сеанса,

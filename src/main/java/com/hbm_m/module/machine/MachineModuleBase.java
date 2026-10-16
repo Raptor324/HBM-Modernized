@@ -324,7 +324,12 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
             currentRecipe = pickRecipeForTick();
             if (currentRecipe != null) {
                 maxProgress = getRecipeDuration(currentRecipe);
-                progress = 0.0;
+                // Only a genuine switch clears progress. currentRecipe is transient while progress
+                // is persisted, so resolving the recipe for the first time after a chunk load used
+                // to wipe the saved progress - the original keeps it, storing the recipe name too.
+                if (prev != null) {
+                    progress = 0.0;
+                }
                 needsSync = true;
                 onRecipeChanged(prev, currentRecipe);
             }
@@ -415,10 +420,10 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
             if (incoming == null || incoming.isEmpty()) return true;
             if (slotStack == null || slotStack.isEmpty()) return true;
             //? if < 1.21.1 {
-            if (!PlatformHooks.isSameItemSameTags(slotStack, incoming)) return false;
-            //?} else {
-            /*if (!ItemStack.isSameItemSameComponents(slotStack, incoming)) return false;
-            *///?}
+            /*if (!PlatformHooks.isSameItemSameTags(slotStack, incoming)) return false;
+            *///?} else {
+            if (!ItemStack.isSameItemSameComponents(slotStack, incoming)) return false;
+            //?}
             return (long) slotStack.getCount() + incoming.getCount() <= slotStack.getMaxStackSize();
         }
 

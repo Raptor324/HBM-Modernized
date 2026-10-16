@@ -32,7 +32,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 //? if forge {
-import com.hbm_m.powerarmor.resist.DamageResistanceHandler;
+/*import com.hbm_m.powerarmor.resist.DamageResistanceHandler;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingFallEvent;
@@ -40,7 +40,7 @@ import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-//?}
+*///?}
 
 /**
  * Combined handler for Power Armor events.
@@ -52,7 +52,10 @@ import net.minecraftforge.fml.common.Mod;
  * - Все расчеты через централизованную систему DT+DR
  */
 //? if forge {
-@Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)//?}
+/*@Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)*///?}
+//? if neoforge {
+@net.neoforged.fml.common.EventBusSubscriber(modid = MainRegistry.MOD_ID)
+//?}
 public final class PowerArmorHandlers {
 
     private static final String TAG_DASH_COOLDOWN = "hbm_power_armor_dash_cooldown";
@@ -79,7 +82,7 @@ public final class PowerArmorHandlers {
      * и рассчитываем урон через DamageResistanceHandler
      */
     //? if forge {
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    /*@SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onLivingAttack(LivingAttackEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
         if (player.level().isClientSide) return;
@@ -117,13 +120,13 @@ public final class PowerArmorHandlers {
             data.putFloat("hbm_power_armor_damage", calculatedDamage);
         }
     }
-    //?}
+    *///?}
 
     /**
      * LOWEST priority - применяем наш урон ПОСЛЕ всей ванильной обработки
      */
     //? if forge {
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    /*@SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onLivingHurt(LivingHurtEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
         if (player.level().isClientSide) return;
@@ -136,7 +139,7 @@ public final class PowerArmorHandlers {
             data.remove("hbm_power_armor_damage");
         }
     }
-    //?}
+    *///?}
 
     // ========== MOVEMENT HANDLING ==========
 
@@ -151,15 +154,15 @@ public final class PowerArmorHandlers {
 
         if (!ModPowerArmorItem.hasFSBArmor(player)) {
             //? if < 1.21.1 {
-            if (player.maxUpStep() > 0.6F) {
+            /*if (player.maxUpStep() > 0.6F) {
                 player.setMaxUpStep(0.6F);
             }
-            //?} else {
-            /*var attr = player.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.STEP_HEIGHT);
+            *///?} else {
+            var attr = player.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.STEP_HEIGHT);
             if (attr != null && attr.getBaseValue() > 0.6) {
                 attr.setBaseValue(0.6);
             }
-            *///?}
+            //?}
             return;
         }
 
@@ -170,13 +173,13 @@ public final class PowerArmorHandlers {
         float stepHeight = specs.stepHeight;
         if (stepHeight > 0) {
             //? if < 1.21.1 {
-            player.setMaxUpStep(Math.max(0.6F, stepHeight));
-            //?} else {
-            /*var attr = player.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.STEP_HEIGHT);
+            /*player.setMaxUpStep(Math.max(0.6F, stepHeight));
+            *///?} else {
+            var attr = player.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.STEP_HEIGHT);
             if (attr != null) {
                 attr.setBaseValue(Math.max(0.6, stepHeight));
             }
-            *///?}
+            //?}
         }
     }
 
@@ -215,7 +218,10 @@ public final class PowerArmorHandlers {
         double dashSpeed = 1.5 + (specs.dashCount * 0.5);
         Vec3 dashVelocity = lookDirection.scale(dashSpeed);
         player.setDeltaMovement(dashVelocity.x, Math.max(dashVelocity.y, 0.2), dashVelocity.z);
-        
+        // Movement is client-authoritative: without hurtMarked the server never sends
+        // ClientboundSetEntityMotionPacket to the owner and the impulse is overwritten.
+        player.hurtMarked = true;
+
         // Установка кулдауна
         tag.putInt(TAG_DASH_COOLDOWN, DASH_COOLDOWN_TICKS);
         
@@ -392,13 +398,44 @@ public final class PowerArmorHandlers {
         PlayerPersistentData.get(player).putBoolean("hbm_hard_landing_occured", true);
     }
 
-    /**
-     * Hard Landing: полная защита от урона падения (перк сета с hasHardLanding).
-     * LivingFallEvent срабатывает после travel(), до causeFallDamage().
-     */
-    //? if forge {
-    @SubscribeEvent
-    public static void onLivingFall(LivingFallEvent event) {
+    // ============ NeoForge: the same three handlers ============
+    // On 1.21.1 LivingAttackEvent became LivingIncomingDamageEvent and LivingHurtEvent became
+    // LivingDamageEvent.Pre. Without this branch the whole DT/DR system, arrow deflection and fall
+    // immunity were dead: register() only hooks the ticks, and the forge handlers do not compile.
+    //? if neoforge {
+    @net.neoforged.bus.api.SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.HIGHEST)
+    public static void onIncomingDamage(net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent event) {
+        if (!(event.getEntity() instanceof Player player)) return;
+        if (player.level().isClientSide) return;
+        if (player.getAbilities().instabuild || player.isSpectator()) return;
+
+        if (com.hbm_m.powerarmor.resist.DamageResistanceHandler.shouldDeflectProjectile(player, event.getSource())) {
+            event.setCanceled(true);
+            Entity projectile = event.getSource().getDirectEntity();
+            if (projectile instanceof net.minecraft.world.entity.projectile.Projectile proj) {
+                proj.setDeltaMovement(proj.getDeltaMovement().scale(-0.5));
+                proj.hurtMarked = true;
+            }
+        }
+    }
+
+    @net.neoforged.bus.api.SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.LOWEST)
+    public static void onDamagePre(net.neoforged.neoforge.event.entity.living.LivingDamageEvent.Pre event) {
+        if (!(event.getEntity() instanceof Player player)) return;
+        if (player.level().isClientSide) return;
+        if (player.getAbilities().instabuild || player.isSpectator()) return;
+        if (!ModArmorFSB.hasFSBArmor(player)) return;
+        if (!(player.getItemBySlot(EquipmentSlot.CHEST).getItem() instanceof ModPowerArmorItem)) return;
+
+        float calculated = com.hbm_m.powerarmor.resist.DamageResistanceHandler.calculateDamage(
+                player, event.getSource(), event.getNewDamage(), 0F, 0F);
+        if (calculated < event.getNewDamage()) {
+            event.setNewDamage(calculated);
+        }
+    }
+
+    @net.neoforged.bus.api.SubscribeEvent
+    public static void onLivingFallNeo(net.neoforged.neoforge.event.entity.living.LivingFallEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
         if (player.level().isClientSide) return;
         if (player.isSpectator()) return;
@@ -414,6 +451,29 @@ public final class PowerArmorHandlers {
         event.setCanceled(true);
     }
     //?}
+
+    /**
+     * Hard Landing: полная защита от урона падения (перк сета с hasHardLanding).
+     * LivingFallEvent срабатывает после travel(), до causeFallDamage().
+     */
+    //? if forge {
+    /*@SubscribeEvent
+    public static void onLivingFall(LivingFallEvent event) {
+        if (!(event.getEntity() instanceof Player player)) return;
+        if (player.level().isClientSide) return;
+        if (player.isSpectator()) return;
+        if (player.isFallFlying()) return;
+        if (!ModArmorFSB.hasFSBArmorIgnoreCharge(player)) return;
+
+        ItemStack chestStack = player.getItemBySlot(EquipmentSlot.CHEST);
+        if (!(chestStack.getItem() instanceof ModPowerArmorItem armorItem)) return;
+        if (!armorItem.getSpecs().hasHardLanding) return;
+
+        event.setDistance(0.0F);
+        event.setDamageMultiplier(0.0F);
+        event.setCanceled(true);
+    }
+    *///?}
 
     private static void applyHardLandingAOE(ServerLevel level, Player player) {
         AABB box = player.getBoundingBox().inflate(HBM_RADIUS, 0.0D, HBM_RADIUS);

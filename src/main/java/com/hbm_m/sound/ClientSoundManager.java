@@ -6,9 +6,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
+*///?}
 //? if fabric {
 /*import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;*///?}
@@ -21,8 +21,8 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.entity.BlockEntity;
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
 /*@Environment(EnvType.CLIENT)*///?}
 public class ClientSoundManager {

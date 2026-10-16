@@ -27,22 +27,22 @@ import com.hbm_m.particle.explosions.nuclear.small.LargeExplosionSpark;
 import net.minecraft.core.particles.SimpleParticleType;
 
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
+*///?} elif neoforge {
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
 
 @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 @EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT)
-*///?}
+//?}
 public class ClientParticleHandler {
 
     @SubscribeEvent

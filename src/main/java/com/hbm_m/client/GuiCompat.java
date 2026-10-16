@@ -17,10 +17,10 @@ import net.minecraft.client.gui.screens.Screen;
  */
 
 //? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+*///?} elif neoforge {
+@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+//?}
 public final class GuiCompat {
     private GuiCompat() {}
 
@@ -36,10 +36,10 @@ public final class GuiCompat {
 
     public static void renderBackground(Screen screen, GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         //? if < 1.21.1 {
-        screen.renderBackground(guiGraphics);
-        //?} else {
-        /*screen.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
-        *///?}
+        /*screen.renderBackground(guiGraphics);
+        *///?} else {
+        screen.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+        //?}
     }
 
     /**
@@ -50,11 +50,11 @@ public final class GuiCompat {
     public static net.minecraft.client.gui.components.Checkbox checkbox(
             int x, int y, int width, int height, net.minecraft.network.chat.Component message, boolean selected) {
         //? if < 1.21.1 {
-        return new net.minecraft.client.gui.components.Checkbox(x, y, width, height, message, selected);
-        //?} else {
-        /*return net.minecraft.client.gui.components.Checkbox.builder(message, net.minecraft.client.Minecraft.getInstance().font)
+        /*return new net.minecraft.client.gui.components.Checkbox(x, y, width, height, message, selected);
+        *///?} else {
+        return net.minecraft.client.gui.components.Checkbox.builder(message, net.minecraft.client.Minecraft.getInstance().font)
                 .pos(x, y).selected(selected).build();
-        *///?}
+        //?}
     }
 
     /**
@@ -79,13 +79,13 @@ public final class GuiCompat {
      */
     public static void renderFlatBlurredBackground(Screen screen, GuiGraphics guiGraphics, float partialTick) {
         //? if < 1.21.1 {
-        screen.renderBackground(guiGraphics);
-        //?} else {
-        /*// Эквивалент protected Screen.renderBlurredBackground, недоступного извне.
+        /*screen.renderBackground(guiGraphics);
+        *///?} else {
+        // Эквивалент protected Screen.renderBlurredBackground, недоступного извне.
         net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
         mc.gameRenderer.processBlurEffect(partialTick);
         mc.getMainRenderTarget().bindWrite(false);
         screen.renderTransparentBackground(guiGraphics);
-        *///?}
+        //?}
     }
 }

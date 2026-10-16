@@ -25,12 +25,12 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 //? if forge {
-import net.minecraftforge.common.capabilities.Capability;
+/*import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
-//?}
+*///?}
 
 /**
  * BlockEntity для Fracking Tower (Гидроразрывная вышка).
@@ -43,7 +43,7 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
  * - Поддержка апгрейдов скорости и энергии
  */
 @SuppressWarnings("UnstableApiUsage")
-public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
+public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.fluids.IFluidStandardTransceiverMK2 {
     
     // Энергия
     protected static long maxPower = 5_000_000L;
@@ -517,12 +517,37 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
     // CAPABILITIES
     //=====================================================================================//
 
-    //? if forge {
+    // ==================== IFluidUserMK2 / MK2-ÑÐµÑÑ ====================
+    // ÐÑÐ¸Ð²ÑÐ·ÐºÐ° Ð¾Ð±ÑÐ°Ð±Ð¾ÑÑÐ¸ÐºÐ° Ð¶Ð¸Ð´ÐºÐ¾ÑÑÐ¸ Ð½Ð¸Ð¶Ðµ Ð¶Ð¸Ð²ÑÑ Ð² //? if forge, Ð° BaseMachineBlockEntity
+    // Ð¾ÑÐ´Ð°ÑÑ NeoForge-Ð¾Ð±ÑÑÑÐºÑ ÑÐ¾Ð»ÑÐºÐ¾ ÑÐµÐ°Ð»Ð¸Ð·Ð°ÑÐ¸ÑÐ¼ IFluidUserMK2 â Ð±ÐµÐ· ÑÑÐ¾Ð³Ð¾ Ñ Ð¼Ð°ÑÐ¸Ð½Ñ
+    // Ð½Ð° NeoForge Ð½Ðµ Ð±ÑÐ»Ð¾ fluid-ÐºÐ°Ð¿Ð°Ð±Ð¸Ð»Ð¸ÑÐ¸ Ð²Ð¾Ð¾Ð±ÑÐµ, Ð¸ ÑÑÑÐ±Ñ Ðº Ð½ÐµÐ¹ Ð½Ðµ Ð¿Ð¾Ð´ÐºÐ»ÑÑÐ°Ð»Ð¸ÑÑ.
+
     @Override
+    public FluidTank[] getAllTanks() { return new FluidTank[] { oilTank, gasTank, fracksolTank }; }
+
+    @Override
+    public FluidTank[] getReceivingTanks() { return new FluidTank[] { fracksolTank }; }
+
+    @Override
+    public FluidTank[] getSendingTanks() { return new FluidTank[] { oilTank, gasTank }; }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
+    }
+
+    @Override
+    public boolean canConnect(net.minecraft.world.level.material.Fluid fluid, net.minecraft.core.Direction fromDir) {
+        return fromDir != null;
+    }
+
+
+    //? if forge {
+    /*@Override
     protected void setupFluidCapability() {
         setFluidHandler(new FrackingTowerFluidHandler(this));
     }
-    //?}
+    *///?}
 
     //=====================================================================================//
     // РЕНДЕРИНГ

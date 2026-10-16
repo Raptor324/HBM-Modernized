@@ -91,7 +91,7 @@ public class RBMKGraphBlockEntity extends RBMKPanelDeviceBlockEntity {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         for (int i = 0; i < UNITS; i++) {
@@ -121,8 +121,8 @@ public class RBMKGraphBlockEntity extends RBMKPanelDeviceBlockEntity {
             }
         }
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         for (int i = 0; i < UNITS; i++) {
@@ -152,5 +152,5 @@ public class RBMKGraphBlockEntity extends RBMKPanelDeviceBlockEntity {
             }
         }
     }
-    *///?}
+    //?}
 }

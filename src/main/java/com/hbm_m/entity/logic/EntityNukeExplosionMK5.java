@@ -84,18 +84,18 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 
     //? if < 1.21.1 {
 
-    @Override
+    /*@Override
     protected void defineSynchedData() {
         // нет синхронизируемых полей
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
 
         // нет синхронизируемых полей
     
     }
-    *///?}
+    //?}
 
     @Override
     public void tick() {
@@ -115,7 +115,10 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
         }
 
         // радиация в первые тики после начала взрыва
-        if (!level().isClientSide && applyInstantPlayerRads && explosion != null && this.tickCount < 10 && strength >= 75) {
+        // No explosion != null guard: the ray engine is created further down in this same tick, so on
+        // tick 1 it was still null and the largest dose of the ramp was silently skipped. radiate()
+        // does not touch the engine.
+        if (!level().isClientSide && applyInstantPlayerRads && this.tickCount < 10 && strength >= 75) {
             float baseRads = 2_500_000F / (this.tickCount * 5 + 1);
             radiate(baseRads, this.length * 2);
         }

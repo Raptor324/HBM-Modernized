@@ -62,7 +62,7 @@ public class MachineTurbofanBlockEntity extends BaseMachineBlockEntity {
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
             net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable net.minecraft.core.Direction side) {
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
@@ -70,7 +70,7 @@ public class MachineTurbofanBlockEntity extends BaseMachineBlockEntity {
         }
         return super.getCapability(cap, side);
     }
-    //?}
+    *///?}
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineTurbofanBlockEntity be) {
         if (level.isClientSide()) return;

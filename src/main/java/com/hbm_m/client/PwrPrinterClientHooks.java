@@ -1,12 +1,12 @@
 package com.hbm_m.client;
 
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
+*///?} elif neoforge {
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
-*///?}
+//?}
 //? if fabric {
 /*import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;

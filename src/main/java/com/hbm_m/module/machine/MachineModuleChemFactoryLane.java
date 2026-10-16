@@ -9,10 +9,12 @@ import com.hbm_m.interfaces.IEnergyReceiver;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.platform.ModItemStackHandler;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
-import com.hbm_m.recipe.index.ModRecipeIndex;
+import com.hbm_m.platform.recipe.RecipeHooks;
 
 import dev.architectury.fluid.FluidStack;
-import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
@@ -23,19 +25,17 @@ import net.minecraft.world.level.material.Fluids;
  * Одна из 4 параллельных "линий" Chemical Factory (1.7.10 {@code TileEntityMachineChemicalFactory}
  * + {@code ModuleMachineChemplant} x4).
  *
- * <p>Отличие от {@link MachineModuleChemplant} (одиночный Chemical Plant): в оригинале рецепт для
- * каждой линии выбирался вручную через GUI (blueprint-driven selector). Мы сознательно упрощаем это —
- * рецепт подбирается автоматически по содержимому входных слотов/баков линии, как это уже делает
- * {@link MachineModuleAdvancedAssembler} для сборочной машины. Ручной выбор рецепта — nice-to-have,
- * не являющийся частью базовой функциональности машины, поэтому он пропущен в этом порту.</p>
- * TODO - КАЛ, ПЕРЕДЕЛАТЬ
+ * <p>Как и в оригинале, рецепт каждой линии выбирается вручную через GUI
+ * ({@code GUIScreenRecipeSelector}): слот шаблона линии принимает папку чертежей
+ * ({@code ItemBlueprintFolder}), а выбор рецепта ограничен пулом этой папки.
+ * Логика повторяет {@link MachineModuleChemplant}, но с собственными слотами/баками линии.</p>
  */
 public class MachineModuleChemFactoryLane extends MachineModuleBase<ChemicalPlantRecipe> {
 
     private final FluidTank[] inputTanks;
     private final FluidTank[] outputTanks;
 
-    @Nullable private ChemicalPlantRecipe lastTankSetupRecipe;
+    @Nullable private ResourceLocation lastTankSetupRecipeId;
 
     public MachineModuleChemFactoryLane(int index, IEnergyReceiver energy, ModItemStackHandler inv,
                                          int[] solidIn, int[] solidOut,
@@ -53,8 +53,21 @@ public class MachineModuleChemFactoryLane extends MachineModuleBase<ChemicalPlan
      * (совпадает по семантике с {@code needsSync} базового класса, добавлено для симметрии с
      * {@link MachineModuleChemplant#updateAndGetDirty}).
      */
-    public boolean updateAndGetDirty(double speed, double powerMul, boolean extraCondition) {
-        super.update(speed, powerMul, extraCondition, null);
+    public boolean updateAndGetDirty(double speed, double powerMul, boolean extraCondition, ItemStack blueprint) {
+        // Нужно сохранить семантику химмашины: при несоответствии blueprint pool сбрасываем выбранный рецепт целиком.
+        ChemicalPlantRecipe r = getRecipeByIdCached(getRecipeType(), selectedRecipeId);
+        if (r != null && !isRecipeAllowedByBlueprint(r, blueprint)) {
+            selectedRecipeId = null;
+            lastTankSetupRecipeId = null;
+            resetProgress();
+            return true;
+        }
+
+        boolean wasProcessing = this.didProcess;
+        super.update(speed, powerMul, extraCondition, blueprint);
+        if (wasProcessing && !this.didProcess) {
+            this.needsSync = true;
+        }
         return needsSync;
     }
 
@@ -72,46 +85,14 @@ public class MachineModuleChemFactoryLane extends MachineModuleBase<ChemicalPlan
     @Override
     @Nullable
     protected ChemicalPlantRecipe findRecipeForInputs() {
-        if (level == null) return null;
-        for (ChemicalPlantRecipe recipe : ModRecipeIndex.of(level.getRecipeManager()).getAll(getRecipeType())) {
-            if (matchesInputs(recipe)) return recipe;
-        }
-        return null;
-    }
-
-    /**
-     * Проверка "похож ли рецепт на текущее содержимое линии" — используется и для авто-подбора,
-     * и для валидации того, что уже выбранный рецепт всё ещё уместен (иначе прогресс сбрасывается).
-     */
-    private boolean matchesInputs(ChemicalPlantRecipe recipe) {
-        List<ChemicalPlantRecipe.CountedIngredient> itemInputs = recipe.getItemInputs();
-        if (itemInputs.size() > inputSlots.length) return false;
-        for (int i = 0; i < itemInputs.size(); i++) {
-            ItemStack stack = itemHandler.getStackInSlot(inputSlots[i]);
-            if (stack.isEmpty() || !itemInputs.get(i).ingredient().test(stack)) return false;
-        }
-
-        List<FluidStack> fluidInputs = recipe.getFluidInputs();
-        if (fluidInputs.size() > inputTanks.length) return false;
-        for (int i = 0; i < fluidInputs.size(); i++) {
-            FluidStack req = fluidInputs.get(i);
-            if (req.isEmpty()) return false;
-            Fluid fluid = req.getFluid();
-            FluidTank tank = inputTanks[i];
-            if (tank.isEmpty()) {
-                // Без предметного якоря нельзя достоверно опознать рецепт по пустому баку.
-                if (itemInputs.isEmpty()) return false;
-                continue;
-            }
-            if (!VanillaFluidEquivalence.sameSubstance(tank.getStoredFluid(), fluid)) return false;
-        }
-        // Рецепты вообще без входов не матчим — иначе линия "залипнет" на первом таком рецепте.
-        return !itemInputs.isEmpty() || !fluidInputs.isEmpty();
+        // Рецепт выбирается явно через GUI (как в оригинале), поэтому "по инпутам" — это поиск по selectedRecipeId.
+        return getRecipeByIdCached(getRecipeType(), selectedRecipeId);
     }
 
     @Override
     protected boolean matchesCurrentRecipe(ChemicalPlantRecipe recipe) {
-        return recipe != null && matchesInputs(recipe);
+        if (selectedRecipeId == null || recipe == null || level == null) return false;
+        return selectedRecipeId.equals(RecipeHooks.recipeId(level.getRecipeManager(), getRecipeType(), recipe));
     }
 
     @Override
@@ -138,22 +119,50 @@ public class MachineModuleChemFactoryLane extends MachineModuleBase<ChemicalPlan
     @Override
     @Nullable
     protected ChemicalPlantRecipe findRecipeForItem(ItemStack stack) {
-        if (level == null) return null;
-        for (ChemicalPlantRecipe recipe : ModRecipeIndex.of(level.getRecipeManager()).getAll(getRecipeType())) {
-            for (ChemicalPlantRecipe.CountedIngredient in : recipe.getItemInputs()) {
-                if (in.ingredient().test(stack)) return recipe;
-            }
+        // Валидация мусора в слотах: предмет подходит, только если он входит во входы выбранного рецепта.
+        ChemicalPlantRecipe r = getRecipeByIdCached(getRecipeType(), selectedRecipeId);
+        if (r == null) return null;
+        for (ChemicalPlantRecipe.CountedIngredient in : r.getItemInputs()) {
+            if (in.ingredient().test(stack)) return r;
         }
         return null;
     }
 
     @Override
-    protected void onRecipeChanged(@Nullable ChemicalPlantRecipe previous, @Nullable ChemicalPlantRecipe current) {
-        setupTanks(current);
+    protected boolean isRecipeAllowedByBlueprint(ChemicalPlantRecipe recipe, @Nullable ItemStack blueprint) {
+        return isBlueprintAllowedForPool(recipe.getBlueprintPool(), blueprint);
     }
 
-    private void setupTanks(@Nullable ChemicalPlantRecipe recipe) {
-        if (recipe == null || recipe == lastTankSetupRecipe) return;
+    @Override
+    protected void onRecipeChanged(@Nullable ChemicalPlantRecipe previous, @Nullable ChemicalPlantRecipe current) {
+        // Важно: не делаем reset/дренаж каждый тик — конфигурируем только при смене id.
+        if (selectedRecipeId == null || current == null) {
+            lastTankSetupRecipeId = null;
+            return;
+        }
+        if (selectedRecipeId.equals(lastTankSetupRecipeId)) return;
+        setupTanks(current);
+        lastTankSetupRecipeId = selectedRecipeId;
+    }
+
+    /**
+     * После выбора рецепта на сервере: немедленно конфигурирует входные/выходные баки,
+     * чтобы блок-синх не уходил клиенту со старыми типами до следующего {@link #update}.
+     */
+    public void syncTankConfigurationToRecipe(Level level) {
+        if (selectedRecipeId == null) {
+            lastTankSetupRecipeId = null;
+            return;
+        }
+        ChemicalPlantRecipe recipe = getRecipeByIdCached(getRecipeType(), selectedRecipeId);
+        if (recipe != null) {
+            setupTanks(recipe);
+            lastTankSetupRecipeId = selectedRecipeId;
+        }
+    }
+
+    public void setupTanks(@Nullable ChemicalPlantRecipe recipe) {
+        if (recipe == null) return;
 
         List<FluidStack> fluidInputs = recipe.getFluidInputs();
         for (int i = 0; i < inputTanks.length; i++) {
@@ -172,7 +181,6 @@ public class MachineModuleChemFactoryLane extends MachineModuleBase<ChemicalPlan
                 outputTanks[i].resetTank();
             }
         }
-        lastTankSetupRecipe = recipe;
     }
 
     private boolean canProcessInternal(ChemicalPlantRecipe recipe) {
@@ -240,4 +248,50 @@ public class MachineModuleChemFactoryLane extends MachineModuleBase<ChemicalPlan
     public ChemicalPlantRecipe peekRecipe() {
         return currentRecipe;
     }
+
+    /** Рецепт из менеджера по выбранному id — независимо от того, крутился ли тик. */
+    @Nullable
+    public ChemicalPlantRecipe peekRecipe(Level level) {
+        return getRecipeByIdCached(getRecipeType(), selectedRecipeId);
+    }
+
+    public void setSelectedRecipe(@Nullable ResourceLocation id) {
+        setSelectedRecipeId(id);
+        this.lastTankSetupRecipeId = null;
+    }
+
+    @Override
+    protected void writeExtraToNbt(CompoundTag nbt) {
+        nbt.putBoolean("HasRecipe", selectedRecipeId != null);
+        if (selectedRecipeId != null) {
+            nbt.putString("SelectedRecipe", selectedRecipeId.toString());
+        }
+    }
+
+    @Override
+    protected void readExtraFromNbt(CompoundTag nbt) {
+        if (nbt.contains("HasRecipe") && nbt.getBoolean("HasRecipe")) {
+            selectedRecipeId = ResourceLocation.tryParse(nbt.getString("SelectedRecipe"));
+        } else {
+            selectedRecipeId = null;
+        }
+    }
+
+    @Override
+    protected void writeExtraToBuf(FriendlyByteBuf buf) {
+        buf.writeBoolean(selectedRecipeId != null);
+        if (selectedRecipeId != null) {
+            buf.writeResourceLocation(selectedRecipeId);
+        }
+    }
+
+    @Override
+    protected void readExtraFromBuf(FriendlyByteBuf buf) {
+        if (buf.readBoolean()) {
+            selectedRecipeId = buf.readResourceLocation();
+        } else {
+            selectedRecipeId = null;
+        }
+    }
+
 }

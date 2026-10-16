@@ -52,8 +52,8 @@ public abstract class PylonBaseBlockEntity extends BaseHbmBlockEntity implements
 
     /** Кабели тянутся до 100 м — рендер-габарит бесконечный (как в оригинале). */
     //? if forge {
-    @Override
-    //?}
+    /*@Override
+    *///?}
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
         return new net.minecraft.world.phys.AABB(-1.0E7, -1.0E7, -1.0E7, 1.0E7, 1.0E7, 1.0E7);
     }

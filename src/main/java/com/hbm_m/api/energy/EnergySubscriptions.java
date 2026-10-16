@@ -31,15 +31,18 @@ public final class EnergySubscriptions {
     private static final int DELAY_NOTHING = 20;
     private static final int DELAY_CONNECT_NET = 10;
     private static final int DELAY_PROVIDE_DIRECT = 1;
-
     /**
      * Единая карта backoff-состояний и реестр для централизованного драйвера подписок.
-     * Слабые ключи и значения: выгрузка чанка/GC сами убирают запись — отдельная
+     * Слабые ключи: выгрузка чанка/GC сами убирают запись — отдельная
      * периодическая чистка не нужна (раньше тут был второй strong-key HashMap с
      * full-scan removeIf при каждом update() — главный пожиратель TPS).
      */
+    // Weak KEYS only. BackoffState is referenced by nothing but this map, so weakValues() made
+    // every entry weakly reachable the moment it was created and the first GC emptied the whole
+    // registry while the block entities were still alive. Machines whose own ticker does not call
+    // ensureNetworkInitialized (71 of them) then never subscribed again and got no power at all.
     private static final Map<BlockEntity, BackoffState> REGISTRY =
-            new MapMaker().concurrencyLevel(1).weakKeys().weakValues().makeMap();
+            new MapMaker().concurrencyLevel(1).weakKeys().makeMap();
 
     private static final class BackoffState {
         int receiverDelay;

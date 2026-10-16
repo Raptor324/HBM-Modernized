@@ -1,13 +1,13 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import com.google.gson.JsonObject;
+/*import com.google.gson.JsonObject;
 import com.hbm_m.recipe.HydrotreaterRecipe;
 
 import dev.architectury.fluid.FluidStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
-/**
+/^*
  * Datagen-билдер {@link HydrotreaterRecipe} ({@code hbm_m:hydrotreater}).
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.
@@ -26,7 +26,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
  *
  * <p>Предметного выхода нет — {@link #getResult()} возвращает {@link Items#AIR}
  * (ванильный {@code RecipeBuilder} требует реализацию).</p>
- */
+ ^/
 public class HydrotreaterRecipeBuilder extends BaseRecipeBuilder<HydrotreaterRecipeBuilder> {
 
     private final FluidStack input;
@@ -65,4 +65,4 @@ public class HydrotreaterRecipeBuilder extends BaseRecipeBuilder<HydrotreaterRec
         return HydrotreaterRecipe.Serializer.INSTANCE;
     }
 }
-//?}
+*///?}

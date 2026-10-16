@@ -94,8 +94,17 @@ public class MissileContrailNT extends MissileTrailNT {
         if (this.age <= 0) {
             return;
         }
+        if (!com.hbm_m.client.missile.track.MissileTrackContrail.allowVapor()) {
+            return;
+        }
+        // На «меньше» пар спавнится вдвое реже.
+        if (com.hbm_m.client.missile.track.MissileTrackContrail.isVaporHalved()
+                && this.random.nextFloat() >= 0.5F) {
+            return;
+        }
+        // Начальный размер пара увеличен в 1.5 раза.
         ParticleEngineNT.INSTANCE.add(new MissileVaporContrailNT(
-                this.level, this.x, this.y, this.z, this.quadSize));
+                this.level, this.x, this.y, this.z, this.quadSize * 1.5F));
     }
 
     /** 1.7.10 {@code ParticleRocketFlame}: оранжевое пламя, темнеет с возрастом. */

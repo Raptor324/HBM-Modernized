@@ -91,10 +91,10 @@ public class RBMKSteamInletBlockEntity extends BlockEntity
     }
 
     //? if forge {
-    /**
+    /*/^*
      * Without this the tank existed but nothing could ever reach it - pipes and tanks had no
      * handler to talk to, so the channel simply refused every connection.
-     */
+     ^/
     @Override
     public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
             net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable Direction side) {
@@ -103,53 +103,53 @@ public class RBMKSteamInletBlockEntity extends BlockEntity
         }
         return super.getCapability(cap, side);
     }
-    //?}
+    *///?}
 
     // ─── NBT / Sync ──────────────────────────────────────────────────────────
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         waterTank.writeToNBT(tag, "tank");
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         waterTank.writeToNBT(tag, "tank");
     }
-    *///?}
+    //?}
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public void load(CompoundTag tag) {
         super.load(tag);
         waterTank.readFromNBT(tag, "tank");
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         waterTank.readFromNBT(tag, "tank");
     }
-    *///?}
+    //?}
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public CompoundTag getUpdateTag() {
         CompoundTag tag = super.getUpdateTag();
         saveAdditional(tag);
         return tag;
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
         saveAdditional(tag, registries);
         return tag;
     }
-    *///?}
+    //?}
 
     @Override
     public Packet<ClientGamePacketListener> getUpdatePacket() {

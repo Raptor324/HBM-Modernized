@@ -50,10 +50,10 @@ public final class MissileTrackWorldRender {
             // ImmediatelyFast фабрика подменяет источник на BatchableBufferSource,
             // падающий на пустых sortOnUpload-батчах (см. PlainBufferSource).
             //? if < 1.21.1 {
-            bs = new com.hbm_m.client.render.PlainBufferSource(new com.mojang.blaze3d.vertex.BufferBuilder(256));
-            //?} else {
-            /*bs = new com.hbm_m.client.render.PlainBufferSource(new com.mojang.blaze3d.vertex.ByteBufferBuilder(256));
-            *///?}
+            /*bs = new com.hbm_m.client.render.PlainBufferSource(new com.mojang.blaze3d.vertex.BufferBuilder(256));
+            *///?} else {
+            bs = new com.hbm_m.client.render.PlainBufferSource(new com.mojang.blaze3d.vertex.ByteBufferBuilder(256));
+            //?}
             missileBufferSource = bs;
         }
         return bs;

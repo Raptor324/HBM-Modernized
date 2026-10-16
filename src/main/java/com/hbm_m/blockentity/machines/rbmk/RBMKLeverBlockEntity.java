@@ -121,7 +121,7 @@ public class RBMKLeverBlockEntity extends RBMKPanelDeviceBlockEntity {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         for (int i = 0; i < UNITS; i++) {
@@ -144,8 +144,8 @@ public class RBMKLeverBlockEntity extends RBMKPanelDeviceBlockEntity {
             flip[i]       = state[i] ? 1.0 : 0.0;
         }
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         for (int i = 0; i < UNITS; i++) {
@@ -168,5 +168,5 @@ public class RBMKLeverBlockEntity extends RBMKPanelDeviceBlockEntity {
             flip[i]       = state[i] ? 1.0 : 0.0;
         }
     }
-    *///?}
+    //?}
 }

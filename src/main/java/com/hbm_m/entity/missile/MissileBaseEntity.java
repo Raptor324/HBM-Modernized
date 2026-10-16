@@ -155,7 +155,7 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public void lerpTo(double x, double y, double z, float yRot, float xRot, int steps, boolean teleport) {
         this.lerpX = x;
         this.lerpY = y;
@@ -164,8 +164,8 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         this.lerpXRot = xRot;
         this.lerpSteps = steps + 1;
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     public void lerpTo(double x, double y, double z, float yRot, float xRot, int steps) {
         this.lerpX = x;
         this.lerpY = y;
@@ -174,7 +174,7 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         this.lerpXRot = xRot;
         this.lerpSteps = steps + 1;
     }
-    *///?}
+    //?}
 
     @Override
     public void recreateFromPacket(ClientboundAddEntityPacket packet) {
@@ -469,7 +469,7 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     protected void defineSynchedData() {
         this.entityData.define(DATA_LAUNCH_FACING, Direction.NORTH);
     }
@@ -478,8 +478,8 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
     public Packet<ClientGamePacketListener> getAddEntityPacket() {
         return new ClientboundAddEntityPacket(this, MobCategory.MISC.ordinal());
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
         builder.define(DATA_LAUNCH_FACING, Direction.NORTH);
     }
@@ -488,7 +488,7 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
     public Packet<ClientGamePacketListener> getAddEntityPacket(net.minecraft.server.level.ServerEntity serverEntity) {
         return new ClientboundAddEntityPacket(this, serverEntity);
     }
-    *///?}
+    //?}
 
     @Override
     public void addAdditionalSaveData(CompoundTag tag) {
@@ -588,18 +588,18 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public void onAddedToWorld() {
         super.onAddedToWorld();
         onAddedToLevelHook();
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     public void onAddedToLevel() {
         super.onAddedToLevel();
         onAddedToLevelHook();
     }
-    *///?}
+    //?}
 
     private void onAddedToLevelHook() {
         if (!this.level().isClientSide && this.level() instanceof ServerLevel server) {
@@ -624,18 +624,18 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public void onRemovedFromWorld() {
         onRemovedFromLevelHook();
         super.onRemovedFromWorld();
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     public void onRemovedFromLevel() {
         onRemovedFromLevelHook();
         super.onRemovedFromLevel();
     }
-    *///?}
+    //?}
 
     private void onRemovedFromLevelHook() {
         if (!this.level().isClientSide) {

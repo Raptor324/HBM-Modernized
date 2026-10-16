@@ -164,7 +164,9 @@ public class BarrelIronMenu extends AbstractContainerMenu {
                 }
             } else {
                 if (stackInSlot.getItem() instanceof IItemFluidIdentifier) {
-                    if (!moveItemStackTo(stackInSlot, MACHINE_SLOTS + 0, MACHINE_SLOTS + 1, false)) {
+                    // The ID-in slot is added first, so it is index 0. MACHINE_SLOTS equals
+                    // PLAYER_INVENTORY_START, so the old range pointed at the player inventory.
+                    if (!moveItemStackTo(stackInSlot, 0, 1, false)) {
                         return ItemStack.EMPTY;
                     }
                 } else if (FluidItemAccess.hasFluidHandler(stackInSlot)) {

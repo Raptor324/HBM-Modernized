@@ -1,5 +1,6 @@
 package com.hbm_m.platform;
 
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 import net.minecraft.client.renderer.block.model.BlockModel;
@@ -12,33 +13,42 @@ import net.minecraft.client.resources.model.ModelState;
 import net.minecraft.resources.ResourceLocation;
 
 //? if < 1.21.1 {
-import net.minecraftforge.client.model.geometry.IGeometryBakingContext;
+/*import net.minecraftforge.client.model.geometry.IGeometryBakingContext;
 import net.minecraftforge.client.model.obj.ObjLoader;
 import net.minecraftforge.client.model.obj.ObjModel;
-//?} else {
-/*import net.neoforged.neoforge.client.model.geometry.IGeometryBakingContext;
+*///?} else {
+import net.neoforged.neoforge.client.model.geometry.IGeometryBakingContext;
 import net.neoforged.neoforge.client.model.obj.ObjLoader;
 import net.neoforged.neoforge.client.model.obj.ObjModel;
-*///?}
+//?}
 
 //? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
+/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+*///?} elif fabric {
 /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
 *///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+//?}
 public final class LoaderHooks {
     private LoaderHooks() {}
+
+    private record ObjCacheKey(ResourceLocation modelLocation, boolean flipV) {}
+
+    // Глобальный кеш распарсенных OBJ: один .obj, на который ссылаются несколько геометрий, парсится один раз
+    private static final ConcurrentHashMap<ObjCacheKey, ObjModel> OBJ_CACHE = new ConcurrentHashMap<>();
 
     /**
      * Кросс-версионная загрузка OBJ модели.
      * Исправляет баг 1.20.1 Forge, где flipV ошибочно передавался вместо automaticCulling.
      */
     public static ObjModel loadObjModel(ResourceLocation modelLocation, boolean flipV) {
-        return ObjLoader.INSTANCE.loadModel(
-            new ObjModel.ModelSettings(modelLocation, false, true, flipV, true, null)
-        );
+        return OBJ_CACHE.computeIfAbsent(new ObjCacheKey(modelLocation, flipV), key -> {
+            ObjModel model = ObjLoader.INSTANCE.loadModel(
+                new ObjModel.ModelSettings(modelLocation, false, true, flipV, true, null)
+            );
+            com.hbm_m.main.MainRegistry.LOGGER.debug("LoaderHooks: parsed OBJ model {}", modelLocation);
+            return model;
+        });
     }
 
     /**
@@ -47,10 +57,10 @@ public final class LoaderHooks {
      */
     public static BakedModel bakeObjModel(ObjModel model, IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides, ResourceLocation modelName) {
         //? if < 1.21.1 {
-        return model.bake(context, baker, spriteGetter, modelState, overrides, modelName);
-        //?} else {
-        /*return model.bake(context, baker, spriteGetter, modelState, overrides);
-        *///?}
+        /*return model.bake(context, baker, spriteGetter, modelState, overrides, modelName);
+        *///?} else {
+        return model.bake(context, baker, spriteGetter, modelState, overrides);
+        //?}
     }
 
     /**
@@ -59,9 +69,9 @@ public final class LoaderHooks {
      */
     public static BakedModel bakeBlockModel(BlockModel blockModel, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ResourceLocation modelLocation, boolean guiLight3d) {
         //? if < 1.21.1 {
-        return blockModel.bake(baker, blockModel, spriteGetter, modelState, modelLocation, guiLight3d);
-        //?} else {
-        /*return blockModel.bake(baker, blockModel, spriteGetter, modelState, guiLight3d);
-        *///?}
+        /*return blockModel.bake(baker, blockModel, spriteGetter, modelState, modelLocation, guiLight3d);
+        *///?} else {
+        return blockModel.bake(baker, blockModel, spriteGetter, modelState, guiLight3d);
+        //?}
     }
 }

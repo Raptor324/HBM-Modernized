@@ -27,13 +27,13 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 
 //? if forge {
-import net.minecraftforge.common.capabilities.Capability;
+/*import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-//?}
+*///?}
 
-public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder {
+public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder, com.hbm_m.api.fluids.IFluidStandardTransceiverMK2 {
 
     public static final int SLOT_FLUID_ID_IN = 0;
     public static final int SLOT_FLUID_ID_OUT = 1;
@@ -196,8 +196,32 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
         };
     }
 
-    //? if forge {
+    // ==================== IFluidUserMK2 / MK2 network ====================
+    // The fluid handler binding below lives in //? if forge, and BaseMachineBlockEntity only hands
+    // out the NeoForge wrapper to classes implementing IFluidUserMK2 - without this the turbine had
+    // no fluid capability at all on NeoForge and took no steam from pipes.
+
     @Override
+    public FluidTank[] getAllTanks() { return tanks; }
+
+    @Override
+    public FluidTank[] getReceivingTanks() { return new FluidTank[] { tanks[0] }; }
+
+    @Override
+    public FluidTank[] getSendingTanks() { return new FluidTank[] { tanks[1] }; }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
+    }
+
+    @Override
+    public boolean canConnect(Fluid fluid, Direction fromDir) {
+        return fromDir != null;
+    }
+
+    //? if forge {
+    /*@Override
     protected void setupFluidCapability() {
         setFluidHandler(new UnifiedFluidHandler(this));
     }
@@ -272,5 +296,5 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
             return drained;
         }
     }
-    //?}
+    *///?}
 }

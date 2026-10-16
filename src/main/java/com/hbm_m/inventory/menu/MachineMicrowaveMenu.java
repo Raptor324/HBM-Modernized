@@ -11,10 +11,10 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 //? if forge {
-import net.minecraftforge.items.SlotItemHandler;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.items.SlotItemHandler;
-*///?}
+/*import net.minecraftforge.items.SlotItemHandler;
+*///?} elif neoforge {
+import net.neoforged.neoforge.items.SlotItemHandler;
+//?}
 
 /** Slot-Koordinaten 1:1 aus {@code ContainerMicrowave} (1.7.10 Original): Input (80,35),
  *  Output (140,35, extraktionsonly), Batterie (8,53). */

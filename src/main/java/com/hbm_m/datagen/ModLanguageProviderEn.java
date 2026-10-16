@@ -1,7 +1,7 @@
 package com.hbm_m.datagen;
 //? if forge {
 
-import java.util.Arrays;
+/*import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -28,7 +28,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         super(output, RefStrings.MODID, "en_us");
     }
 
-    /** Выделено из addTranslations: метод упирался в лимит 64КБ байткода. */
+    /^* Выделено из addTranslations: метод упирался в лимит 64КБ байткода. ^/
     private void addPlateTranslations() {
         // Дозарегистрированные провода (ориг. wire_fine, 4545/30 MAT_STEEL)
         add(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.WIRE), "Steel Wire");
@@ -76,7 +76,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModMaterialItems.item(ModMaterials.CMB, MaterialShape.PLATE_WELDED), "Welded Combine Steel Plate");
     }
 
-    /** Выделено из addTranslations: метод упирался в лимит 64КБ байткода. */
+    /^* Выделено из addTranslations: метод упирался в лимит 64КБ байткода. ^/
     private void addWarheadTranslations() {
         add(ModItems.WARHEAD_BUSTER_LARGE.get(), "Large Bunker Buster Warhead");
         add(ModItems.WARHEAD_BUSTER_MEDIUM.get(), "Medium Bunker Buster Warhead");
@@ -370,6 +370,30 @@ public class ModLanguageProviderEn extends LanguageProvider {
 
         add(ModBlocks.NUKE_FAT_MAN.get(), "Fat Man");
         add(ModItems.NUKE_PROTOTYPE.get(), "Prototype");
+        // GUI titles that had no entry at all: the screens showed the raw key.
+        add("container.frackingTower", "Fracking Tower");
+        add("container.hbm_m.ashpit", "Ashpit");
+        add("container.hbm_m.coker", "Coker");
+        add("container.hbm_m.condenser_powered", "Powered Condenser");
+        add("container.hbm_m.conveyor_press", "Conveyor Press");
+        add("container.hbm_m.electric_furnace", "Electric Furnace");
+        add("container.hbm_m.furnace_brick", "Brick Furnace");
+        add("container.hbm_m.machine_large_turbine", "Industrial Steam Turbine");
+        add("container.hbm_m.machine_satlinker", "Satellite ID Manager");
+        add("container.hbm_m.missile_assembly", "Missile Assembly Station");
+        add("container.hbm_m.mixer", "Industrial Mixer");
+        add("container.hbm_m.pyrooven", "Pyrolysis Oven");
+        add("container.hbm_m.radgen", "Radiation-Powered Engine");
+        add("container.hbm_m.reactor_research", "Research Reactor");
+        add("container.hbm_m.refinery", "Oil Refinery");
+        add("container.hbm_m.solidifier", "Solidifier");
+        add("container.hbm_m.soyuz_launcher", "Soyuz Launch Platform");
+        add("container.hbm_m.turbinegas", "Gas Turbine");
+        add("gui.hbm_m.assembler_recipe_selector", "Recipe Selector");
+        add("gui.hbm_m.fluid_identifier", "Fluid Identifier");
+        add("jei.hbm_m.crucible_smelting", "Crucible Smelting");
+        // Present in the Russian provider but missing here.
+        add("tooltip.hbm_m.requires", "Requires");
         add("container.hbm_m.nuke_prototype", "Prototype");
         add(ModItems.IGNITER.get(), "Igniter");
         add(ModItems.CELL_SAS3.get(), "SA-S3 Fuel Cell");
@@ -765,6 +789,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
 
         add("item.hbm_m.radaway", "Radaway");
         add("effect.hbm_m.radaway", "Radiation cleansing");
+        add("effect.hbm_m.radiation", "Contaminated");
         add("sounds.hbm_m.radaway_use", "Use of radaway");
 
         add(ModItems.TEMPLATE_FOLDER.get(), "Template Folder");
@@ -2879,6 +2904,60 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("death.attack.hardlanding_smash", "%1$s was flattened by %2$s");
         add("death.attack.taint", "%1$s died from flux tumors.");
 
+        // Ported from the 1.7.10 en_US.lang (keys there are camelCase, ours are snake_case).
+        add("death.attack.acid", "%1$s fell into acid.");
+        add("death.attack.acid_player", "%1$s was dissolved by %2$s.");
+        add("death.attack.ams", "%1$s was bathed in deadly particles that have yet to be named by human science.");
+        add("death.attack.ams_core", "%1$s was vaporized in the fire of a singularity.");
+        add("death.attack.bang", "%1$s was blasted into bite-sized pieces.");
+        add("death.attack.blender", "%1$s was chopped in small, bite-sized pieces.");
+        add("death.attack.boat", "%1$s was hit by a boat.");
+        add("death.attack.boil", "%1$s was boiled alive by %2$s.");
+        add("death.attack.boxcar", "%1$s was smushed by a falling boxcar. Oh well.");
+        add("death.attack.broadcast", "%1$s got their brain melted.");
+        add("death.attack.building", "%1$s was hit by a falling building.");
+        add("death.attack.cheater", "%1$s's intestines turned into oats. (???)");
+        add("death.attack.chopper_bullet", "%1$s was rekt by %2$s.");
+        add("death.attack.cloud", "%1$s melted like a popsicle in the sun.");
+        add("death.attack.cmb", "%1$s was fizzeled by %2$s.");
+        add("death.attack.digamma", "%1$s stepped into the abyss.");
+        add("death.attack.electricity", "%1$s was electrocuted.");
+        add("death.attack.electrified", "%1$s was electrified by %2$s.");
+        add("death.attack.euthanized", "%1$s was euthanized by %2$s.");
+        add("death.attack.euthanized_self", "%1$s euthanized himself, what a dork.");
+        add("death.attack.euthanized_self_2", "%1$s wins the Darwin Award.");
+        add("death.attack.exhaust", "%1$s was turned into shish kebab by a starting rocket.");
+        add("death.attack.flamethrower", "%1$s was cremated by %2$s.");
+        add("death.attack.ice", "%1$s was turned into a popsicle by %2$s.");
+        add("death.attack.laser", "%1$s was turned into ash by %2$s.");
+        add("death.attack.lead", "%1$s died from lead poisoning.");
+        add("death.attack.lunar", "%1$s forgot to charge their vital organs.");
+        add("death.attack.meteorite", "%1$s was hit by a falling rock from outer space.");
+        add("death.attack.microwave", "%1$s was exploded by microwave radiation.");
+        add("death.attack.mku", "%1$s died from unknown causes.");
+        add("death.attack.monoxide", "%1$s forgot to change the batteries in their carbon monoxide detector.");
+        add("death.attack.mud_poisoning", "%1$s died in poisonous mud.");
+        add("death.attack.nuclear_blast", "%1$s was blown away by a nuclear explosion.");
+        add("death.attack.overdose", "%1$s overdosed and asphyxiated.");
+        add("death.attack.pc", "%1$s was reduced to a puddle in the pink cloud.");
+        add("death.attack.plasma", "%1$s was immolated by %2$s.");
+        add("death.attack.revolver_bullet", "%1$s was shot in the head by %2$s.");
+        add("death.attack.rubble", "%1$s was squashed by debris.");
+        add("death.attack.shrapnel", "%1$s was ragged by a shrapnel.");
+        add("death.attack.spikes", "%1$s got impaled.");
+        add("death.attack.sub_atomic", "%1$s's atoms have been destroyed by %2$s.");
+        add("death.attack.suicide", "%1$s blew their head off.");
+        add("death.attack.tau", "%1$s was riddeled by %2$s using negatively charged tauons.");
+        add("death.attack.tau_blast", "%1$s charged the XVL1456 for too long and was blown into pieces.");
+        add("death.attack.teleporter", "%1$s was teleported into nothingness.");
+
+        // No counterpart in the 1.7.10 lang file - these damage types are new to the port.
+        add("death.attack.blast", "%1$s was blown to pieces.");
+        add("death.attack.boltgun", "%1$s was riveted by %2$s.");
+        add("death.attack.enervation", "%1$s was drained of all energy.");
+        add("death.attack.nitan", "%1$s underestimated Nitan.");
+        add("death.attack.vacuum", "%1$s suffocated in vacuum.");
+
 
         add("chat.hbm_m.structure.obstructed", "Placement obstructed by other blocks!");
         add("chat.hbm_m.chungus.on", "Leviathan Turbine: ON");
@@ -3494,6 +3573,10 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModBlocks.RAIL_WOOD.get(), "Wooden Tracks");
         add(ModBlocks.RED_CABLE.get(), "Red Copper Cable");
         add(ModBlocks.RED_CABLE_BOX.get(), "Red Cable Junction Box");
+        add(ModBlocks.RED_CABLE_BOX_1.get(), "Red Copper Boxcable");
+        add(ModBlocks.RED_CABLE_BOX_2.get(), "Red Copper Boxcable");
+        add(ModBlocks.RED_CABLE_BOX_3.get(), "Red Copper Boxcable");
+        add(ModBlocks.RED_CABLE_BOX_4.get(), "Red Copper Boxcable");
         add(ModBlocks.RED_CABLE_CLASSIC.get(), "Red Copper Cable (Classic)");
         add(ModBlocks.RED_CABLE_PAINTABLE.get(), "Paintable Cable");
         add(ModBlocks.RED_CABLE_GAUGE.get(), "Power Gauge");
@@ -5009,4 +5092,4 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("tooltip.hbm_m.waste_cooling.desc", "Cool in a Spent Fuel Pool Drum");
     }
 }
-//?}
+*///?}

@@ -62,7 +62,7 @@ public class RBMKAutoloaderMenu extends AbstractContainerMenu {
             for (int col = 0; col < 3; col++) {
                 int index = col + row * 3;
                 addSlot(new Slot(container, index, 17 + col * 18, 18 + row * 18) {
-                    @Override public boolean mayPlace(ItemStack s) { return be.isItemValidForSlot(index, s); }
+                    @Override public boolean mayPlace(ItemStack s) { return be != null && be.isItemValidForSlot(index, s); }
                 });
             }
         }
@@ -95,6 +95,24 @@ public class RBMKAutoloaderMenu extends AbstractContainerMenu {
     }
 
     public RBMKAutoloaderBlockEntity getBlockEntity() { return blockEntity; }
+
+    /**
+     * The menu holds a snapshot of the slots while the block keeps ticking and changing its own
+     * fields. Without the re-sync a slot click wrote the stale snapshot back into the BE. Same
+     * trick as in {@code RBMKRodMenu}.
+     */
+    @Override
+    public void broadcastChanges() {
+        if (blockEntity != null) {
+            for (int i = 0; i < RBMKAutoloaderBlockEntity.SLOTS; i++) {
+                Slot slot = this.slots.get(i);
+                if (!ItemStack.matches(slot.getItem(), blockEntity.slots[i])) {
+                    slot.set(blockEntity.slots[i].copy());
+                }
+            }
+        }
+        super.broadcastChanges();
+    }
 
     @Override
     public boolean stillValid(Player player) {

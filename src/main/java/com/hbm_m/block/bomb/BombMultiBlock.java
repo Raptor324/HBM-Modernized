@@ -54,7 +54,7 @@ public class BombMultiBlock extends NukeBaseBlock implements IBomb {
     }
 
     //? if > 1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<BombMultiBlock> CODEC = simpleCodec(BombMultiBlock::new);
+    public static final com.mojang.serialization.MapCodec<BombMultiBlock> CODEC = simpleCodec(BombMultiBlock::new);
     @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.Block> codec() { return CODEC; }
-     *///?}
+     //?}
 }

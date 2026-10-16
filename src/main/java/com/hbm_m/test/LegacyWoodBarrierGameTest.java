@@ -13,12 +13,12 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 //? if forge {
-import net.minecraftforge.gametest.GameTestHolder;
+/*import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.gametest.GameTestHolder;
+*///?} elif neoforge {
+import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
- *///?}
+ //?}
 
 /**
  * Guard test for the wood barrier ensuring no recursion in collision shapes.

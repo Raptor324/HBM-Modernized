@@ -742,11 +742,11 @@ public class MultiblockStructureHelper {
                 
                 if (oldBE != null) {
                     //? if < 1.21.1 {
-                    nbt = oldBE.saveWithFullMetadata();
-                    //?} else {
-                    /*// 1.21.1: saveWithFullMetadata требует HolderLookup.Provider.
+                    /*nbt = oldBE.saveWithFullMetadata();
+                    *///?} else {
+                    // 1.21.1: saveWithFullMetadata требует HolderLookup.Provider.
                     nbt = oldBE.saveWithFullMetadata(level.registryAccess());
-                    *///?}
+                    //?}
                     level.removeBlockEntity(currentCtrlPos);
                 }
                 
@@ -760,11 +760,11 @@ public class MultiblockStructureHelper {
                     BlockEntity newBE = level.getBlockEntity(newCtrlPos);
                     if (newBE != null) {
                         //? if < 1.21.1 {
-                        newBE.load(nbt);
-                        //?} else {
-                        /*// 1.21.1: BlockEntity.load(CompoundTag) удалён — loadCustomOnly с Provider.
+                        /*newBE.load(nbt);
+                        *///?} else {
+                        // 1.21.1: BlockEntity.load(CompoundTag) удалён — loadCustomOnly с Provider.
                         newBE.loadCustomOnly(nbt, level.registryAccess());
-                        *///?}
+                        //?}
                     }
                 }
                 level.updateNeighborsAt(currentCtrlPos, state.getBlock());
@@ -1304,8 +1304,14 @@ public class MultiblockStructureHelper {
 
     // Новый приватный метод для проверки, можно ли заменить блок
     private boolean isBlockReplaceable(BlockState state) {
-        // Сначала проверяем наш базовый Set
-        if (replaceableBlocks.contains(state.getBlock())) {
+        // Ванильная replaceable-проверка: воздух, трава, снег, жидкости и наши
+        // блоки-газы (BlockGasBase объявлен .replaceable()). В 1.7.10 газ в
+        // оригинале isReplaceable=true и установка мультиблока его просто
+        // затирает (fillSpace).
+        if (state.canBeReplaced()) {
+            return true;
+        }
+        if (state.getBlock() instanceof com.hbm_m.block.gas.BlockGasBase) {
             return true;
         }
 
@@ -1328,8 +1334,16 @@ public class MultiblockStructureHelper {
             // Structure definitions may legitimately include a part at local (0,0,0)
             // when the controller itself is offset within the pattern. Only skip the
             // controller's own world position, mirroring placeStructure().
-            if (worldPos.equals(controllerPos)) continue;
             BlockState existingState = level.getBlockState(worldPos);
+
+            if (worldPos.equals(controllerPos)) {
+                // Клетка ядра тоже участвует в проверке: если контроллер встал в занятый
+                // блок (отказ вместо сдвига — см. CorePlaceContext), подсвечиваем и его.
+                if (!isBlockReplaceable(existingState)) {
+                    obstructions.add(worldPos);
+                }
+                continue;
+            }
 
             // Используем наш новый метод для проверки
             if (!isBlockReplaceable(existingState)) {
@@ -1364,7 +1378,12 @@ public class MultiblockStructureHelper {
         BlockPos controllerPos = MultiblockPlacement.getCorePos(facadePos, facing, this, controllerBlock);
         for (BlockPos relativePos : structureMap.keySet()) {
             BlockPos worldPos = getRotatedPos(controllerPos, relativePos, facing);
-            if (worldPos.equals(controllerPos)) continue;
+            if (worldPos.equals(controllerPos)) {
+                // Клетка ядра: занята твёрдым блоком — предпросмотр красный (согласовано
+                // с отказом в MultiblockBlockItem.placeBlock).
+                if (!isBlockReplaceable(level.getBlockState(worldPos))) return false;
+                continue;
+            }
             if (!isBlockReplaceable(level.getBlockState(worldPos))) return false;
         }
         return true;
@@ -1386,8 +1405,8 @@ public class MultiblockStructureHelper {
         // клеток, сдвигает структуру и плодит контроллеры-дубликаты («зомби-станки»).
         // После закрытия окна осиротевшие части перепривяжутся через relink.
         if (ContraptionAssemblyGuard.isMoving()) {
-            MainRegistry.LOGGER.info(
-                "[HBM] placeStructure подавлен (окно сборки контрапшена), контроллер {}",
+            MainRegistry.LOGGER.debug(
+                "[HBM] placeStructure suppressed (contraption move window), controller {}",
                 controllerPos.toShortString());
             return;
         }
@@ -1567,8 +1586,8 @@ public class MultiblockStructureHelper {
         // Перенос блоков движком сборки (Create/Sable): разрушать структуру нельзя -
         // движок уже сохранил state+NBT и вернёт её на месте. Разрушение здесь = дюп.
         if (ContraptionAssemblyGuard.isMoving()) {
-            MainRegistry.LOGGER.info(
-                "[HBM] destroyStructure подавлен (окно сборки контрапшена), контроллер {}",
+            MainRegistry.LOGGER.debug(
+                "[HBM] destroyStructure suppressed (contraption move window), controller {}",
                 controllerPos.toShortString());
             return;
         }

@@ -64,7 +64,11 @@ public class MachineModuleChemplant extends MachineModuleBase<ChemicalPlantRecip
 
     @Override
     protected boolean requiresFullEnergyBufferToStart() {
-        return true;
+        // As the original 1.7.10 chemical plant: ModuleMachineBase.canProcess only checks
+        // power >= recipe.power for the current tick, never the whole cycle. Requiring the full
+        // cycle up front stalls the plant outright whenever energyPerTick * duration exceeds its
+        // buffer. MachineModuleChemFactoryLane, the same machine family, already returns false.
+        return false;
     }
 
     @Override

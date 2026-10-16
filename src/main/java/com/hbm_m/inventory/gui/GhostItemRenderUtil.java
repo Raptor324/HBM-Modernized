@@ -27,12 +27,12 @@ import net.minecraft.world.item.ItemStack;
  */
 
 //? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
+/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+*///?} elif fabric {
 /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
 *///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+//?}
 public final class GhostItemRenderUtil {
 
     private GhostItemRenderUtil() {
@@ -54,10 +54,10 @@ public final class GhostItemRenderUtil {
         pose.pushPose();
         pose.translate(x + 8.0F, y + 8.0F, 150.0F);
         //? if < 1.21.1 {
-        pose.mulPoseMatrix(new org.joml.Matrix4f().scaling(1.0F, -1.0F, 1.0F));
-        //?} else {
-        /*pose.mulPose(new org.joml.Matrix4f().scaling(1.0F, -1.0F, 1.0F));
-        *///?}
+        /*pose.mulPoseMatrix(new org.joml.Matrix4f().scaling(1.0F, -1.0F, 1.0F));
+        *///?} else {
+        pose.mulPose(new org.joml.Matrix4f().scaling(1.0F, -1.0F, 1.0F));
+        //?}
         pose.scale(16.0F, 16.0F, 16.0F);
 
         MultiBufferSource tintedSource = tintBufferSource(guiGraphics.bufferSource(), alpha);
@@ -99,7 +99,7 @@ public final class GhostItemRenderUtil {
         return new VertexConsumer() {
 
             //? if < 1.21.1 {
-            // ─── потоковые вызовы: просто фильтруем ───
+            /*// ─── потоковые вызовы: просто фильтруем ───
             @Override
             public VertexConsumer vertex(double x, double y, double z) {
                 return inner.vertex(x, y, z);
@@ -138,7 +138,7 @@ public final class GhostItemRenderUtil {
             // ─── критический путь для моделей ───
 
             //? if forge {
-            @Override
+            /^@Override
             public void putBulkData(PoseStack.Pose matrix, BakedQuad quad, float r, float g, float b, float a, int light, int overlay, boolean hasAmbientOcclusion) {
                 inner.putBulkData(matrix, quad, r, g, b, a * alpha, light, overlay, hasAmbientOcclusion);
             }
@@ -147,13 +147,13 @@ public final class GhostItemRenderUtil {
             public void putBulkData(PoseStack.Pose matrix, BakedQuad quad, float r, float g, float b, int light, int overlay) {
                 inner.putBulkData(matrix, quad, r * alpha, g * alpha, b * alpha, light, overlay);
             }
-            //?}
+            ^///?}
 
             //? if fabric {
-            /*public void putBulkData(PoseStack.Pose matrix, BakedQuad quad, float r, float g, float b, int light, int overlay) {
+            /^public void putBulkData(PoseStack.Pose matrix, BakedQuad quad, float r, float g, float b, int light, int overlay) {
                 inner.putBulkData(matrix, quad, r * alpha, g * alpha, b * alpha, light, overlay);
             }
-            *///?}
+            ^///?}
 
             // ─── дефолтный цвет (для путей, использующих defaultColor) ───
             @Override
@@ -166,8 +166,8 @@ public final class GhostItemRenderUtil {
                 inner.unsetDefaultColor();
             }
         };
-        //?} else {
-            /*@Override
+        *///?} else {
+            @Override
             public VertexConsumer addVertex(float x, float y, float z) {
                 return inner.addVertex(x, y, z);
             }
@@ -204,6 +204,6 @@ public final class GhostItemRenderUtil {
                 inner.putBulkData(matrix, quad, r, g, b, a * alpha, light, overlay, readExistingColor);
             }
         };
-        *///?}
+        //?}
     }
 }

@@ -42,12 +42,12 @@ import net.minecraft.resources.ResourceLocation;
  */
 
 //? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
+/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+*///?} elif fabric {
 /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
 *///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+//?}
 public class TransitionSealRenderer implements com.hbm_m.client.render.HbmBerBounds<TransitionSealBlockEntity> {
 
     private static final String CLIP_NAME = "animation";
@@ -108,10 +108,10 @@ public class TransitionSealRenderer implements com.hbm_m.client.render.HbmBerBou
         for (DaeNode node : nodes) {
             poseStack.pushPose();
             //? if < 1.21.1 {
-            poseStack.mulPoseMatrix(node.localMatrix(time, clip));
-            //?} else {
-            /*poseStack.mulPose(node.localMatrix(time, clip));
-            *///?}
+            /*poseStack.mulPoseMatrix(node.localMatrix(time, clip));
+            *///?} else {
+            poseStack.mulPose(node.localMatrix(time, clip));
+            //?}
             if (node.mesh != null) {
                 SingleMeshVboRenderer renderer = getRendererForNode(node);
                 if (renderer != null) {

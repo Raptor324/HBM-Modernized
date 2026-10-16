@@ -60,20 +60,20 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
 
     //? if < 1.21.1 {
 
-    @Override
+    /*@Override
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(SYNCHED_YAW, 0.0F);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
 
         super.defineSynchedData(builder);
         builder.define(SYNCHED_YAW, 0.0F);
     
     }
-    *///?}
+    //?}
 
     public void syncYawWithPlane(float planeYaw) {
         this.entityData.set(SYNCHED_YAW, planeYaw);

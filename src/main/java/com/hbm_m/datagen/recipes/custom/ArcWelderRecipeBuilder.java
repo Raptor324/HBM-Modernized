@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import javax.annotation.Nullable;
+/*import javax.annotation.Nullable;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -12,7 +12,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
-/**
+/^*
  * Datagen-билдер {@link ArcWelderRecipe} ({@code hbm_m:arc_welder}).
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.</p>
@@ -28,7 +28,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
  *   "consumption": 10000
  * }
  * }</pre>
- */
+ ^/
 public class ArcWelderRecipeBuilder extends BaseRecipeBuilder<ArcWelderRecipeBuilder> {
 
     private final Ingredient[] inputs;
@@ -49,7 +49,7 @@ public class ArcWelderRecipeBuilder extends BaseRecipeBuilder<ArcWelderRecipeBui
         this.consumption = consumption;
     }
 
-    /** Полная перегрузка: массивы ingredient+count, опциональный fluid, выход, длительность, потребление. */
+    /^* Полная перегрузка: массивы ingredient+count, опциональный fluid, выход, длительность, потребление. ^/
     public static ArcWelderRecipeBuilder arcWelderRecipe(Ingredient[] inputs, int[] counts,
                                                           @Nullable FluidStack fluid,
                                                           ItemStack output, int duration, long consumption) {
@@ -59,7 +59,7 @@ public class ArcWelderRecipeBuilder extends BaseRecipeBuilder<ArcWelderRecipeBui
         return new ArcWelderRecipeBuilder(inputs, counts, fluid, output, duration, consumption);
     }
 
-    /** Без жидкости — упрощённая перегрузка. */
+    /^* Без жидкости — упрощённая перегрузка. ^/
     public static ArcWelderRecipeBuilder arcWelderRecipe(Ingredient[] inputs, int[] counts,
                                                           ItemStack output, int duration, long consumption) {
         return arcWelderRecipe(inputs, counts, null, output, duration, consumption);
@@ -93,4 +93,4 @@ public class ArcWelderRecipeBuilder extends BaseRecipeBuilder<ArcWelderRecipeBui
         return ArcWelderRecipe.Serializer.INSTANCE;
     }
 }
-//?}
+*///?}

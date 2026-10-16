@@ -14,7 +14,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
 //? if forge {
-public class CentrifugeJeiCategory extends JeiUniversalRecipeCategory<CentrifugeRecipe> {
+/*public class CentrifugeJeiCategory extends JeiUniversalRecipeCategory<CentrifugeRecipe> {
 
     public static final RecipeType<CentrifugeRecipe> RECIPE_TYPE =
             RecipeType.create(RefStrings.MODID, "centrifuge", CentrifugeRecipe.class);
@@ -62,7 +62,7 @@ public class CentrifugeJeiCategory extends JeiUniversalRecipeCategory<Centrifuge
     }
 
 }
-//?} else {
-/*public final class CentrifugeJeiCategory {
+*///?} else {
+public final class CentrifugeJeiCategory {
     private CentrifugeJeiCategory() {}
-}*///?}
+}//?}

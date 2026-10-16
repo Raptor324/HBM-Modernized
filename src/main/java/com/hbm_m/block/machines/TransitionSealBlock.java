@@ -132,7 +132,7 @@ public class TransitionSealBlock extends BaseEntityBlock implements IMultiblockC
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public boolean isPathfindable(BlockState state, BlockGetter level, BlockPos pos, PathComputationType type) {
         if(level.getBlockEntity(pos) instanceof TransitionSealBlockEntity seal) {
             return switch(type) {
@@ -142,14 +142,14 @@ public class TransitionSealBlock extends BaseEntityBlock implements IMultiblockC
         }
         return false;
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected boolean isPathfindable(BlockState state, PathComputationType type) {
         // 1.21.1: BlockGetter/BlockPos из сигнатуры убраны, BE-запрос недоступен.
         // Возвращаем false — поведение по умолчанию (плотный блок).
         return false;
     }
-    *///?}
+    //?}
 
     @Override
     public boolean isCollisionShapeFullBlock(BlockState state, BlockGetter world, BlockPos pos) {
@@ -191,11 +191,11 @@ public class TransitionSealBlock extends BaseEntityBlock implements IMultiblockC
     }
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<TransitionSealBlock> CODEC = simpleCodec(TransitionSealBlock::new);
+    public static final com.mojang.serialization.MapCodec<TransitionSealBlock> CODEC = simpleCodec(TransitionSealBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    *///?}
+    //?}
 }

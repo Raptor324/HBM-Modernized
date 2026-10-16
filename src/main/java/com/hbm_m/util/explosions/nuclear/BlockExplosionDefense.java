@@ -108,6 +108,13 @@ public class BlockExplosionDefense {
             return 250.0F;
         }
 
+        // === УСИЛЕННЫЙ БЕТОН - 400 ===
+        // isSpecialConcreteBlock was declared and never called, so reinforced concrete fell through
+        // to the generic path and got its vanilla blast resistance instead of 400.
+        if (isSpecialConcreteBlock(block)) {
+            return 400.0F;
+        }
+
         // === МЕТЕОРИТ - 500 ===
         if (isMeteorBlock(block)) {
             return 500.0F;
@@ -165,7 +172,7 @@ public class BlockExplosionDefense {
     }
 
     //? if forge {
-    @net.minecraftforge.fml.common.Mod.EventBusSubscriber(
+    /*@net.minecraftforge.fml.common.Mod.EventBusSubscriber(
             modid = "hbm_m",
             bus = net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus.FORGE,
             value = net.minecraftforge.api.distmarker.Dist.CLIENT
@@ -199,13 +206,14 @@ public class BlockExplosionDefense {
             }
         }
     }
-    //?}
+    *///?}
 
     /**
      *  Проверка: это ли один из наших модульных блоков
      */
     private static boolean isModularBlock(Block block) {
         return isConcreteBlock(block) ||
+                isSpecialConcreteBlock(block) ||
                 isMeteorBlock(block) ||
                 isBrickBlock(block) ||
                 isTileBlock(block) ||
@@ -220,6 +228,7 @@ public class BlockExplosionDefense {
      */
     private static float getDefenseValueForBlock(Block block) {
         if (isConcreteBlock(block)) return 250.0F;
+        if (isSpecialConcreteBlock(block)) return 400.0F;
         if (isMeteorBlock(block)) return 500.0F;
         if (isBrickBlock(block)) return 350.0F;
         if (isTileBlock(block)) return 200.0F;

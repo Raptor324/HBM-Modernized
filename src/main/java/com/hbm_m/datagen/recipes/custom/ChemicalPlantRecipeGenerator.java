@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import java.util.function.Consumer;
+/*import java.util.function.Consumer;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.inventory.fluid.ModFluids;
@@ -13,11 +13,11 @@ import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
-/**
+/^*
  * Groups all chemical plant recipes (ported from 1.7.10 {@code ChemicalPlantRecipes.registerDefaults()}).
  *
  * <p>Рецепты пишутся в data-pack как custom recipes {@code hbm_m:chemical_plant}.</p>
- */
+ ^/
 public final class ChemicalPlantRecipeGenerator {
 
     private ChemicalPlantRecipeGenerator() {}
@@ -47,7 +47,7 @@ public final class ChemicalPlantRecipeGenerator {
         // chem.cordite, chem.coltancleaning, chem.coltanpain, chem.yellowcake, chem.balefire, chem.osmiridiumdeath, chem.meth
     }
 
-    /** Concrete/asphalt/aggregate/obsidian family — port of 1.7.10 chem.concrete/concreteasbestos/liquidconk/asphalt/aggregate/obsidian. */
+    /^* Concrete/asphalt/aggregate/obsidian family — port of 1.7.10 chem.concrete/concreteasbestos/liquidconk/asphalt/aggregate/obsidian. ^/
     private static void registerConstructionMaterials(Consumer<FinishedRecipe> writer) {
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(60, 500)
             .withIconItem(new ItemStack(Items.OBSIDIAN))
@@ -109,7 +109,7 @@ public final class ChemicalPlantRecipeGenerator {
             .save(writer, "chemplant/chem_rustysteel");
     }
 
-    /** Solid/liquid fuel and arc-electrode chains — port of 1.7.10 chem.biosolidfuel/biooilsolidfuel/oilelectrodes/lubeelectrodes/biogas/rocketfuel. */
+    /^* Solid/liquid fuel and arc-electrode chains — port of 1.7.10 chem.biosolidfuel/biooilsolidfuel/oilelectrodes/lubeelectrodes/biogas/rocketfuel. ^/
     private static void registerFuelsAndElectrodes(Consumer<FinishedRecipe> writer) {
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(40, 100)
             .withIconItem(ModItems.SOLID_FUEL.get())
@@ -173,7 +173,7 @@ public final class ChemicalPlantRecipeGenerator {
             .save(writer, "chemplant/chem_tatb");
     }
 
-    /** Polymer/plastic chain — port of 1.7.10 chem.polymer/bakelite/rubber/hardplastic/pvc/desh/deshcracked. */
+    /^* Polymer/plastic chain — port of 1.7.10 chem.polymer/bakelite/rubber/hardplastic/pvc/desh/deshcracked. ^/
     private static void registerPolymers(Consumer<FinishedRecipe> writer) {
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
             .withIconItem(ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.INGOT))
@@ -214,7 +214,7 @@ public final class ChemicalPlantRecipeGenerator {
             .save(writer, "chemplant/chem_deshcracked");
     }
 
-    /** Miscellaneous late additions — port of 1.7.10 chem.laminate/polarized/epearl/meatprocessing/schrabidate/coltancrystal. */
+    /^* Miscellaneous late additions — port of 1.7.10 chem.laminate/polarized/epearl/meatprocessing/schrabidate/coltancrystal. ^/
     private static void registerMisc(Consumer<FinishedRecipe> writer) {
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(20, 100)
             .withIconItem(new ItemStack(ModBlocks.REINFORCED_LAMINATE.get()))
@@ -555,4 +555,4 @@ public final class ChemicalPlantRecipeGenerator {
     // TODO: дальше в 1.7.10 идут большие блоки рецептов (бетон/взрывчатка/стекло/и т.д.) —
     // переносим по мере появления контента в Modernized.
 }
-//?}
+*///?}

@@ -6,10 +6,10 @@ import com.hbm_m.api.fluids.HbmFluidRegistry;
 import com.hbm_m.client.gui.FluidGuiRendering;
 
 //? if forge {
-import net.minecraftforge.fluids.FluidStack;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.fluids.FluidStack;
-*///?}
+/*import net.minecraftforge.fluids.FluidStack;
+*///?} elif neoforge {
+import net.neoforged.neoforge.fluids.FluidStack;
+//?}
 import mezz.jei.api.ingredients.IIngredientRenderer;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
@@ -29,12 +29,12 @@ import net.minecraft.world.level.material.Fluids;
  */
 
 //? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
+/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+*///?} elif fabric {
 /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
 *///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+//?}
 public class HbmFluidJeiRenderer implements IIngredientRenderer<FluidStack> {
 
     private final int width;

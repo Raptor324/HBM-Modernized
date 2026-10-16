@@ -11,10 +11,10 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 //? if forge {
-import net.minecraftforge.items.SlotItemHandler;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.items.SlotItemHandler;
-*///?}
+/*import net.minecraftforge.items.SlotItemHandler;
+*///?} elif neoforge {
+import net.neoforged.neoforge.items.SlotItemHandler;
+//?}
 
 /** Vereinigt beide Original-GUIs (Fluid + Metall) in einem Menu (siehe
  *  {@link MachineElectrolyserBlockEntity}) statt zwei getrennter Container/Screens wie im

@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import java.util.function.Consumer;
+/*import java.util.function.Consumer;
 
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.material.MaterialShape;
@@ -12,13 +12,13 @@ import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
-/**
+/^*
  * Generates all press recipes (plates, wires, circuits).
  *
  * <p>Использует {@code save(writer, "id")} из {@link BaseRecipeBuilder} —
  * Stonecutter-блоки с {@code ResourceLocation} больше не нужны: хелпер сам
  * строит id через {@code RefStrings.MODID} с учётом версии MC.</p>
- */
+ ^/
 public final class PressRecipeGenerator {
 
     private PressRecipeGenerator() {
@@ -179,4 +179,4 @@ public final class PressRecipeGenerator {
     private static void generateCircuits(Consumer<FinishedRecipe> writer) {
     }
 }
-//?}
+*///?}

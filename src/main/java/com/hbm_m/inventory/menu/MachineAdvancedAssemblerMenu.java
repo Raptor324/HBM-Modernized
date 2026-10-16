@@ -62,8 +62,8 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implemen
             @Override public boolean mayPlace(ItemStack stack) {
                 if (ItemEnergyAccess.getHbmProvider(stack).isPresent() || ItemEnergyAccess.getHbmReceiver(stack).isPresent()) return true;
                 //? if neoforge {
-                /*if (stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null) return true;
-                *///?}
+                if (stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null) return true;
+                //?}
                 return false;
             }
         });

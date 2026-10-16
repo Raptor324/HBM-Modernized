@@ -26,11 +26,11 @@ public class RBMKReflectorBlock extends RBMKColumnBlock {
     }
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<RBMKReflectorBlock> CODEC = simpleCodec(RBMKReflectorBlock::new);
+    public static final com.mojang.serialization.MapCodec<RBMKReflectorBlock> CODEC = simpleCodec(RBMKReflectorBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    *///?}
+    //?}
 }

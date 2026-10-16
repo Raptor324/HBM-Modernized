@@ -17,10 +17,10 @@ import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 
 //? if forge {
-import net.minecraftforge.client.model.data.ModelData;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.client.model.data.ModelData;
-*///?}
+/*import net.minecraftforge.client.model.data.ModelData;
+*///?} elif neoforge {
+import net.neoforged.neoforge.client.model.data.ModelData;
+//?}
 
 
 /**
@@ -29,12 +29,12 @@ import net.minecraftforge.client.model.data.ModelData;
  */
 
 //? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
+/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+*///?} elif fabric {
 /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
 *///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+//?}
 public record PartGeometry(List<BakedQuad> solidQuads) {
 
     public static final long BAKE_SEED = 42L;

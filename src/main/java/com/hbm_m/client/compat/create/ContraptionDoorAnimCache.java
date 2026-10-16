@@ -9,12 +9,12 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
+*///?} elif neoforge {
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
-*///?}
+//?}
 
 /**
  * Renderer-owned chase-кэш плавной анимации двери на контрапшене.

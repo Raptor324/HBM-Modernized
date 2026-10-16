@@ -21,11 +21,11 @@ public class SteelCrateBlock extends BaseCrateBlock {
     }
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<SteelCrateBlock> CODEC = simpleCodec(SteelCrateBlock::new);
+    public static final com.mojang.serialization.MapCodec<SteelCrateBlock> CODEC = simpleCodec(SteelCrateBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    *///?}
+    //?}
 }

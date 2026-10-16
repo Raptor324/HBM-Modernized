@@ -1,13 +1,13 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import com.google.gson.JsonObject;
+/*import com.google.gson.JsonObject;
 import com.hbm_m.recipe.CompressorRecipe;
 
 import dev.architectury.fluid.FluidStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
-/**
+/^*
  * Datagen-билдер {@link CompressorRecipe} ({@code hbm_m:compressor}).
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.
@@ -27,7 +27,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
  *
  * <p>Предметного выхода нет — {@link #getResult()} возвращает {@link Items#AIR}
  * (ванильный {@code RecipeBuilder} требует реализацию).</p>
- */
+ ^/
 public class CompressorRecipeBuilder extends BaseRecipeBuilder<CompressorRecipeBuilder> {
 
     private final FluidStack input;
@@ -69,4 +69,4 @@ public class CompressorRecipeBuilder extends BaseRecipeBuilder<CompressorRecipeB
         return CompressorRecipe.Serializer.INSTANCE;
     }
 }
-//?}
+*///?}

@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'cable_neo.blend'
 # www.blender.org
+mtllib red_cable.mtl
+usemtl surface
 o negY
 v 0.156250 -0.500000 -0.093750
 v 0.156250 -0.500000 0.093750

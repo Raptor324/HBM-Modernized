@@ -1,7 +1,7 @@
 package com.hbm_m.entity;
 
 //? if forge {
-import net.minecraft.world.entity.SpawnPlacements;
+/*import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 import com.hbm_m.entity.mob.EntityCreeperNuclear;
@@ -61,10 +61,10 @@ public final class ModEntityEvents {
     private ModEntityEvents() {
     }
 }
- //?}
+ *///?}
 
 //? if neoforge {
-/*import net.minecraft.world.entity.SpawnPlacementTypes;
+import net.minecraft.world.entity.SpawnPlacementTypes;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 import com.hbm_m.entity.mob.EntityCreeperNuclear;
@@ -85,6 +85,11 @@ public final class ModEntityEvents {
     @SubscribeEvent
     public static void onEntityAttributeCreation(EntityAttributeCreationEvent event) {
         event.put(ModEntities.NOLO.get(), NoloEntity.createAttributes().build());
+        event.put(ModEntities.UFO.get(), com.hbm_m.entity.mob.EntityUFO.createAttributes().build());
+        event.put(ModEntities.BOT_PRIME_HEAD.get(), com.hbm_m.entity.mob.botprime.EntityBOTPrimeBase.createAttributes().build());
+        event.put(ModEntities.BOT_PRIME_BODY.get(), com.hbm_m.entity.mob.botprime.EntityBOTPrimeBase.createAttributes().build());
+        event.put(ModEntities.RAD_BEAST.get(), com.hbm_m.entity.mob.EntityRADBeast.createAttributes().build());
+        event.put(ModEntities.MASKMAN.get(), com.hbm_m.entity.mob.EntityMaskMan.createAttributes().build());
         event.put(ModEntities.ENTITY_MOB_TAINTED_CREEPER.get(), EntityCreeperTainted.createAttributes().build());
         event.put(ModEntities.ENTITY_MOB_VOLATILE_CREEPER.get(), EntityCreeperVolatile.createAttributes().build());
         event.put(ModEntities.ENTITY_MOB_GOLD_CREEPER.get(), EntityCreeperGold.createAttributes().build());
@@ -118,4 +123,4 @@ public final class ModEntityEvents {
                 RegisterSpawnPlacementsEvent.Operation.REPLACE);
     }
 }
-*///?}
+//?}

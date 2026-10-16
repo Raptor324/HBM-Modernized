@@ -77,16 +77,16 @@ public abstract class NukeBaseBlock extends Block implements EntityBlock, IBomb 
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
         return openGui(state, level, pos, player, hand, hitResult);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         return openGui(state, level, pos, player, InteractionHand.MAIN_HAND, hitResult);
     }
-    *///?}
+    //?}
 
     private InteractionResult openGui(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
         if (level.isClientSide) return InteractionResult.SUCCESS;

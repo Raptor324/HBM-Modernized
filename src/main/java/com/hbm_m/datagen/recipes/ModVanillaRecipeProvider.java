@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes;
 //? if forge {
-import java.util.LinkedHashMap;
+/*import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -76,20 +76,20 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         registerBookOfWagons(writer);
     }
 
-    /**
+    /^*
      * RBMK fuel chain, 1:1 with the original's {@code crafting/RodRecipes.java:89-121}:
      * an empty zirconium casing plus eight billets of the matching material assemble
      * shapelessly into the loaded rod. The original has no billet-to-pellet step - pellets
      * only ever come *out* of a rod via the disassembly recipe, ported from
      * {@code crafting/handlers/RBMKFuelCraftingHandler.java}.
-     */
-    /**
+     ^/
+    /^*
      * Книга Вагонов ({@code book_of_}): «золотой» рецепт из оригинала (B = осколок яйца
      * белфайра, G = золотой слиток, A = книга). В 1.7.10 он регистрировался только при
      * включённом LBSM-конфиге; здесь он безусловный, поскольку шуточный рецепт из 8
      * страниц ({@code page_of_}, предмет не портирован) недоступен — иначе книга была бы
      * получаема только через лут Красной комнаты.
-     */
+     ^/
     private void registerBookOfWagons(Consumer<FinishedRecipe> writer) {
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.BOOK_OF_.get())
                 .pattern("BGB")
@@ -160,7 +160,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .save(writer, recipeId("crafting/rbmk_fuel_disassembly").toString());
     }
 
-    /** RodRecipes.java:246 - empty casing + 8 billets, shapeless. */
+    /^* RodRecipes.java:246 - empty casing + 8 billets, shapeless. ^/
     private void rbmkRod(Consumer<FinishedRecipe> writer, RegistrySupplier<Item> rod, RegistrySupplier<Item> billet) {
         ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, rod.get())
                 .requires(ModItems.RBMK_FUEL_EMPTY.get())
@@ -169,10 +169,10 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .save(writer, recipeId("crafting/" + rod.getId().getPath()));
     }
 
-    /**
+    /^*
      * Every RBMK block/panel/lid/tool recipe, 1:1 with the original's
      * {@code main/CraftingManager.java:751-793 and 987-993} plus {@code crafting/ToolRecipes.java:133}.
-     */
+     ^/
     private void registerRbmkBlockRecipes(Consumer<FinishedRecipe> writer) {
         Ingredient steelPlate  = Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE));
         Ingredient graphiteIng = Ingredient.of(ModMaterialItems.item(ModMaterials.GRAPHITE, MaterialShape.INGOT));
@@ -469,7 +469,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .save(writer, recipeId("crafting/rbmk_tool"));
     }
 
-    /** The shared radio-torch + circuit + blank-panel column used by most RBMK panel devices. */
+    /^* The shared radio-torch + circuit + blank-panel column used by most RBMK panel devices. ^/
     private void rbmkPanel(Consumer<FinishedRecipe> writer,
             RegistrySupplier<net.minecraft.world.level.block.Block> panel,
             RegistrySupplier<net.minecraft.world.level.block.Block> torch,
@@ -2295,17 +2295,17 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
 
     private ResourceLocation recipeId(String path) {
         //? if fabric && < 1.21.1 {
-        /*return new ResourceLocation(RefStrings.MODID, path);
-        *///?} else {
+        /^return new ResourceLocation(RefStrings.MODID, path);
+        ^///?} else {
                 return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, path);
         //?}
     }
 
 
-    /**
+    /^*
      * Billet <-> nugget compression (6 nuggets -> 1 billet, 1 billet -> 6 nuggets).
      * Port of the 1.7.10 MineralRecipes.java addBillet(billet, nugget) family.
-     */
+     ^/
     private void registerBilletNuggetPairs(Consumer<FinishedRecipe> writer) {
         // Цикл по реестру материалов: для каждого материала, у которого есть и биллет,
         // и наггет — 6 наггетов -> 1 биллет и 1 биллет -> 6 наггетов.
@@ -2333,4 +2333,4 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .save(writer, recipeId("crafting/nugget_" + name + "_decompress"));
     }
 }
-//?}
+*///?}

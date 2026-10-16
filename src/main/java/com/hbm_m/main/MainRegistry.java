@@ -58,7 +58,7 @@ public final class MainRegistry {
         LOGGER.info("Initializing {}", RefStrings.NAME);
 
         //? if neoforge {
-        /*// NeoForge 1.21+: регистрация сетевых пейлоадов обязана произойти ДО фазы
+        // NeoForge 1.21+: регистрация сетевых пейлоадов обязана произойти ДО фазы
         // NetworkRegistry.setup() → RegisterPayloadHandlersEvent, которая выполняется
         // ПОСЛЕ конструкторов модов, но ДО FMLCommonSetupEvent/FMLClientSetupEvent.
         // Architectury добавляет слушатель RegisterPayloadHandlersEvent в момент вызова
@@ -66,7 +66,7 @@ public final class MainRegistry {
         // не срабатывает → S2C-пакеты (радиация, гейгер, дебаг-рендер) не доходят до клиента.
         ModPacketHandler.register();
         ModPacketHandler.registerClientReceivers();
-        *///?}
+        //?}
 
         // Registries (common)
         // Must run before any world loads: the RBMK dials are world game rules in the original.
@@ -79,8 +79,8 @@ public final class MainRegistry {
         ModSounds.init();
         ModItems.init();
         //? if neoforge {
-        /*com.hbm_m.item.tools_and_armor.ModArmorMaterialsAccess.init();
-        *///?}
+        com.hbm_m.item.tools_and_armor.ModArmorMaterialsAccess.init();
+        //?}
         ModMenuTypes.init();
         ModCreativeTabs.init();
         ModParticleTypes.init();
@@ -135,11 +135,17 @@ public final class MainRegistry {
 
         LifecycleEvent.SERVER_LEVEL_UNLOAD.register((ServerLevel level) -> {
             com.hbm_m.api.network.UniNodespace.onLevelUnload(level);
+            com.hbm_m.blockentity.network.radio.RTTYNetwork.onLevelUnload(level);
+            com.hbm_m.handler.rbmk.NeutronNodeWorld.removeWorld(level);
+            com.hbm_m.worldgen.StructureConnectionFixProcessor.onLevelUnload(level);
         });
 
         LifecycleEvent.SERVER_STOPPED.register(server -> {
             com.hbm_m.api.network.UniNodespace.onServerStop();
             com.hbm_m.api.fluids.FluidNetProvider.clearAll();
+            com.hbm_m.blockentity.network.radio.RTTYNetwork.onServerStop();
+            com.hbm_m.handler.rbmk.NeutronNodeWorld.removeAllWorlds();
+            com.hbm_m.worldgen.StructureConnectionFixProcessor.onServerStop();
         });
     }
 
@@ -160,10 +166,6 @@ public final class MainRegistry {
         com.hbm_m.blockentity.machines.LaunchPadBaseBlockEntity.registerLaunchables();
         com.hbm_m.satellite.Satellite.register();
 
-        // Диагностика загрузки рецептов на 1.21.1 — запускается ПОСЛЕ RegisterEvent.
-        //? if >= 1.21.1 {
-        /*com.hbm_m.recipe.ModRecipes.debugRecipeSerializerRegistry();
-        *///?}
 
         // CentrifugeRecipes.registerRecipes();
         // Рецепты Cyclotron, CrucibleSmelting, MoltenAlloy, ArcWelder и Soldering теперь data-driven (JSON)

@@ -1,7 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
 //? if forge {
-import org.jetbrains.annotations.NotNull;
+/*import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
@@ -9,10 +9,10 @@ import com.hbm_m.inventory.fluid.tank.FluidTank;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
-/**
+/^*
  * Forge fluid capability bridge for the Cooling Tower (Small).
  * Tank 0 = hot coolant input, tank 1 = cooled coolant output.
- */
+ ^/
 public class TowerSmallFluidHandler implements IFluidHandler {
 
     private final MachineTowerSmallBlockEntity blockEntity;
@@ -91,4 +91,4 @@ public class TowerSmallFluidHandler implements IFluidHandler {
         return drained > 0 ? new FluidStack(out.getTankType(), drained) : FluidStack.EMPTY;
     }
 }
-//?}
+*///?}

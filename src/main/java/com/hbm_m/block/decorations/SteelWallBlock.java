@@ -72,16 +72,16 @@ public class SteelWallBlock extends Block {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         return hbmOnUse(state, level, pos, player, hand);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         return hbmOnUse(state, level, pos, player, InteractionHand.MAIN_HAND);
     }
-    *///?}
+    //?}
 
     /** Отвёртка циклически поворачивает панель (N→E→S→W), как onScrew оригинала. */
     private InteractionResult hbmOnUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand) {

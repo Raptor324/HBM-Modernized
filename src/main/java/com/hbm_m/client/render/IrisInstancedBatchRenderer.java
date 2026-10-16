@@ -43,12 +43,12 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
  */
 
 //? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
+/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+*///?} elif fabric {
 /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
 *///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+//?}
 final class IrisInstancedBatchRenderer {
 
     private final InstancedStaticPartRenderer parent;
@@ -140,10 +140,10 @@ final class IrisInstancedBatchRenderer {
         } else {
             var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
             //? if < 1.21.1 {
-            parent.tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
-            //?} else {
-            /*parent.tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation()).invert();
-            *///?}
+            /*parent.tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
+            *///?} else {
+            parent.tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation()).invert();
+            //?}
             parent.tmpLocalPose.set(parent.tmpInvViewRot).mul(poseStack.last().pose());
             parent.tmpLocalPose.m30(parent.tmpLocalPose.m30() - (float) (anchor.getX() - cam.x));
             parent.tmpLocalPose.m31(parent.tmpLocalPose.m31() - (float) (anchor.getY() - cam.y));

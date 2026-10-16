@@ -169,16 +169,16 @@ public class MachineTowerSmallBlock extends BaseEntityBlock implements IMultiblo
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         return reportStatus(state, level, pos, player, hand, hit);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         return reportStatus(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
-    *///?}
+    //?}
 
     private InteractionResult reportStatus(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         // No GUI - this multiblock is a purely passive fluid pipe-to-pipe converter.
@@ -236,11 +236,11 @@ public class MachineTowerSmallBlock extends BaseEntityBlock implements IMultiblo
     }
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<MachineTowerSmallBlock> CODEC = simpleCodec(MachineTowerSmallBlock::new);
+    public static final com.mojang.serialization.MapCodec<MachineTowerSmallBlock> CODEC = simpleCodec(MachineTowerSmallBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    *///?}
+    //?}
 }

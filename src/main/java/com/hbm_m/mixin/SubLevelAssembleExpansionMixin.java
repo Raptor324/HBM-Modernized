@@ -9,7 +9,7 @@ import net.minecraft.server.level.ServerLevel;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.Set;
 
@@ -40,9 +40,20 @@ import java.util.Set;
 @Mixin(targets = "dev.ryanhcode.sable.api.SubLevelAssemblyHelper")
 public abstract class SubLevelAssembleExpansionMixin {
 
+    /**
+     * Signature mirrors Sable 2.0.5 exactly: the method is {@code public static} and returns
+     * {@code ServerSubLevel}, and it takes a fourth {@code BoundingBox3ic} argument. The previous
+     * non-static, three-argument, CallbackInfo form could not apply at all, so the expansion never
+     * ran. Sable is already a compileOnly dependency, so the types can be named here - the same
+     * shape waystonessable uses for the same method.
+     */
     @Inject(method = "assembleBlocks", at = @At("HEAD"), remap = false, require = 0)
-    private void hbm_m$expandToFullMultiblock(ServerLevel level, BlockPos anchor,
-                                              Iterable<BlockPos> blocks, CallbackInfo ci) {
+    private static void hbm_m$expandToFullMultiblock(
+            ServerLevel level,
+            BlockPos anchor,
+            Iterable<BlockPos> blocks,
+            dev.ryanhcode.sable.companion.math.BoundingBox3ic bounds,
+            CallbackInfoReturnable<?> cir) {
         if (!(blocks instanceof Set<BlockPos> set) || set.isEmpty()) {
             return;
         }

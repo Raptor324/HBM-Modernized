@@ -1,5 +1,5 @@
 //? if forge {
-package com.hbm_m.client.input;
+/*package com.hbm_m.client.input;
 
 import com.hbm_m.main.MainRegistry;
 import net.minecraftforge.api.distmarker.Dist;
@@ -15,11 +15,11 @@ import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-/**
+/^*
  * Обработчик входных событий для открытия GUI мульти-детонатора по нажатию R
  * ✓ Совместимо с MultiDetonatorItem версии 4 точек
  * ✓ Совместимо с MultiDetonatorScreen версии 4 точек
- */
+ ^/
 @Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class MultiDetonatorKeyInputHandler {
 
@@ -54,4 +54,4 @@ public class MultiDetonatorKeyInputHandler {
         }
     }
 }
-//?}
+*///?}

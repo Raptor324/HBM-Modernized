@@ -78,10 +78,10 @@ public class MachineAutocrafterBlockEntity extends BaseMachineBlockEntity {
         }
 
         //? if < 1.21.1 {
-        NonNullList<ItemStack> remaining = recipe.getRemainingItems(grid);
-        //?} else {
-        /*NonNullList<ItemStack> remaining = recipe.getRemainingItems(grid.toCraftingInput());
-        *///?}
+        /*NonNullList<ItemStack> remaining = recipe.getRemainingItems(grid);
+        *///?} else {
+        NonNullList<ItemStack> remaining = recipe.getRemainingItems(grid.toCraftingInput());
+        //?}
         for (int i = 0; i < GRID_SIZE; i++) {
             inventory.getStackInSlot(GRID_START + i).shrink(1);
 

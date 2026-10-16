@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import com.hbm_m.item.ModItems;
+/*import com.hbm_m.item.ModItems;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.recipes.FinishedRecipe;
@@ -10,7 +10,7 @@ import net.minecraft.world.item.ItemStack;
 
 import java.util.function.Consumer;
 
-/**
+/^*
  * Генератор JSON-рецептов циклотрона ({@code hbm_m:cyclotron}).
  *
  * <p>Порт рецептов из удалённого статического {@code CyclotronRecipes.registerRecipes()}
@@ -26,7 +26,7 @@ import java.util.function.Consumer;
  * если предмета нет — рецепт пропускается (поведение оригинала).</p>
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.</p>
- */
+ ^/
 public final class CyclotronRecipeGenerator {
 
     private CyclotronRecipeGenerator() {}
@@ -95,11 +95,11 @@ public final class CyclotronRecipeGenerator {
         item(writer, "pl_pellet",   "part_plutonium", "pellet_charged",     1000, "nugget_schrabidium");
     }
 
-    /**
+    /^*
      * Пара {@code addLegacyTag}: target = mod-предмет ({@code part_*}), input = forge-тег
      * {@code "forge:powders/<element>"}, output — mod-предмет по строковому id.
      * Если target или выходной предмет отсутствуют в {@code BuiltInRegistries.ITEM} — рецепт пропускается.
-     */
+     ^/
     private static void tag(Consumer<FinishedRecipe> writer, String name, String targetId,
                            String inputElement, int amat, String outputId) {
         Item target = modItem(targetId);
@@ -110,10 +110,10 @@ public final class CyclotronRecipeGenerator {
                 .save(writer, "cyclotron/" + name);
     }
 
-    /**
+    /^*
      * Пара {@code addLegacyItem}: target + input — mod-предметы по строковым id.
      * Если target/input/output отсутствуют — рецепт пропускается.
-     */
+     ^/
     private static void item(Consumer<FinishedRecipe> writer, String name, String targetId,
                             String inputId, int amat, String outputId) {
         Item target = modItem(targetId);
@@ -131,4 +131,4 @@ public final class CyclotronRecipeGenerator {
         return item == null ? null : item;
     }
 }
-//?}
+*///?}

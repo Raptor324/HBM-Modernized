@@ -35,7 +35,7 @@ public class FullBrightParticleRenderType implements ParticleRenderType {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public void begin(BufferBuilder buffer, TextureManager textureManager) {
         savedFogStart = RenderSystem.getShaderFogStart();
         savedFogEnd = RenderSystem.getShaderFogEnd();
@@ -52,8 +52,8 @@ public class FullBrightParticleRenderType implements ParticleRenderType {
 
         IrisBufferHelper.beginWithoutExtending(buffer, VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
     }
-    //?} else {
-    /*// 1.21.1: ParticleRenderType.begin(Tesselator, TextureManager) возвращает BufferBuilder.
+    *///?} else {
+    // 1.21.1: ParticleRenderType.begin(Tesselator, TextureManager) возвращает BufferBuilder.
     @Override
     public BufferBuilder begin(Tesselator tesselator, TextureManager textureManager) {
         savedFogStart = RenderSystem.getShaderFogStart();
@@ -71,7 +71,7 @@ public class FullBrightParticleRenderType implements ParticleRenderType {
 
         return tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
     }
-    *///?}
+    //?}
 
     private static void disableParticleFog() {
         RenderSystem.setShaderFogStart(NO_FOG_START);
@@ -92,7 +92,7 @@ public class FullBrightParticleRenderType implements ParticleRenderType {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public void end(Tesselator tesselator) {
         tesselator.end();
         RenderSystem.enableCull();
@@ -102,7 +102,7 @@ public class FullBrightParticleRenderType implements ParticleRenderType {
         RenderSystem.setShaderFogStart(savedFogStart);
         RenderSystem.setShaderFogEnd(savedFogEnd);
     }
-    //?}
+    *///?}
     // 1.21.1: ParticleRenderType.end(Tesselator) удалён из интерфейса — сброс RenderSystem-стейта
     // выполняет движок после flush. Паритет с LongRangeParticleRenderType (else-ветки для end() нет).
 }

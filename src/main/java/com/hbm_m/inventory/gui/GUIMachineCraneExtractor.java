@@ -1,5 +1,6 @@
 package com.hbm_m.inventory.gui;
 
+import com.hbm_m.network.CraneControlPacket;
 import com.hbm_m.blockentity.network.MachineCraneExtractorBlockEntity;
 import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.filter.ModulePatternMatcher;
@@ -79,21 +80,22 @@ public class GUIMachineCraneExtractor extends GuiInfoScreen<MachineCraneExtracto
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (extractor == null) return super.mouseClicked(mouseX, mouseY, button); // тайл может отсутствовать в реплее Flashback
+        if (extractor == null) return super.mouseClicked(mouseX, mouseY, button); // no tile in a Flashback replay
+        net.minecraft.core.BlockPos pos = extractor.getBlockPos();
         for (int i = 0; i < 9; i++) {
             Slot slot = this.menu.slots.get(i);
             if (isHoveringSlot(slot, (int) mouseX, (int) mouseY) && button == 1 && slot.hasItem()) {
-                extractor.nextMode(i);
+                CraneControlPacket.sendToServer(pos, CraneControlPacket.FILTER_MODE, i);
                 return true;
             }
         }
 
         if (isHovering(187, 34, 18, 18, (int) mouseX, (int) mouseY)) {
-            extractor.toggleMaxEject();
+            CraneControlPacket.sendToServer(pos, CraneControlPacket.TOGGLE_MAX_EJECT, 0);
             return true;
         }
         if (isHovering(128, 30, 14, 26, (int) mouseX, (int) mouseY)) {
-            extractor.toggleWhitelist();
+            CraneControlPacket.sendToServer(pos, CraneControlPacket.TOGGLE_WHITELIST, 0);
             return true;
         }
 

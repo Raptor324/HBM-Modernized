@@ -40,12 +40,12 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
  */
 
 //? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
+/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+*///?} elif fabric {
 /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
 *///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+//?}
 final class VanillaInstancedBatchRenderer {
 
     private final InstancedStaticPartRenderer parent;
@@ -116,7 +116,7 @@ final class VanillaInstancedBatchRenderer {
     // ── 1.21.1 view-rotation stripping ────────────────────────────────
 
     //? if >= 1.21.1 {
-    /*// На 1.21.1 Mojang переносит camera view rotation (R_cam) в projection matrix
+    // На 1.21.1 Mojang переносит camera view rotation (R_cam) в projection matrix
     // RenderLevelStageEvent'а: event.getProjectionMatrix() = P*R_cam. При этом BER
     // poseStack, из которого addInstance извлекает InstPos/InstRot, тоже несёт R_cam
     // (mat = R_cam * T(blockPos - cameraPos) * perBELocal — см. комментарий в
@@ -132,7 +132,7 @@ final class VanillaInstancedBatchRenderer {
     // где R_cam применяется один раз через poseStack ModelViewMat. Стриппинг там ломает.
     private final org.joml.Matrix4f strippedProjection = new org.joml.Matrix4f();
     private final org.joml.Matrix4f invViewRotTmp = new org.joml.Matrix4f();
-    *///?}
+    //?}
 
     Matrix4f stripViewRotationForInstanced(Matrix4f projection) {
         // По ванильному GameRenderer.renderLevel 1.21.1 проекция события — это P*bob
@@ -232,10 +232,10 @@ final class VanillaInstancedBatchRenderer {
         } else {
             var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
             //? if < 1.21.1 {
-            parent.tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
-             //?} else {
-            /*parent.tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation()).invert();
-            *///?}
+            /*parent.tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
+             *///?} else {
+            parent.tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation()).invert();
+            //?}
             parent.tmpLocalPose.set(parent.tmpInvViewRot).mul(poseStack.last().pose());
             parent.tmpLocalPose.m30(parent.tmpLocalPose.m30() - (float) (blockPosForSample.getX() - cam.x));
             parent.tmpLocalPose.m31(parent.tmpLocalPose.m31() - (float) (blockPosForSample.getY() - cam.y));

@@ -298,7 +298,9 @@ public class MissileABMEntity extends MissileBaseEntity {
         // velocity сохраняется базовым классом как "Velocity" — не дублируем.
         tag.putInt("ABMActivation", this.activationTimer);
         if (this.tracking != null) {
-            tag.putInt("ABMTrackingId", this.tracking.getId());
+            // UUID, not getId(): the network id is a per-session counter, so after a restart it
+            // resolved to whatever entity happened to hold that number.
+            tag.putUUID("ABMTrackingUUID", this.tracking.getUUID());
         }
     }
 
@@ -306,9 +308,9 @@ public class MissileABMEntity extends MissileBaseEntity {
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
         this.activationTimer = tag.getInt("ABMActivation");
-        // tracking восстанавливается лениво в serverTickLogic, если entityID не валиден.
-        if (tag.contains("ABMTrackingId") && this.level() != null) {
-            Entity e = this.level().getEntity(tag.getInt("ABMTrackingId"));
+        // tracking восстанавливается лениво в serverTickLogic, если цель не найдена.
+        if (tag.hasUUID("ABMTrackingUUID") && this.level() instanceof ServerLevel server) {
+            Entity e = server.getEntity(tag.getUUID("ABMTrackingUUID"));
             if (e instanceof MissileBaseEntity) {
                 this.tracking = e;
             }

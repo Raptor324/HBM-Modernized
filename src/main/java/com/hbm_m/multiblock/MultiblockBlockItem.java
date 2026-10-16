@@ -106,16 +106,29 @@ public class MultiblockBlockItem extends BlockItem {
             return null;
         }
 
-        return new BlockPlaceContext(
-                context.getPlayer(),
-                context.getHand(),
-                context.getItemInHand(),
-                new BlockHitResult(
-                        Vec3.atCenterOf(corePos),
-                        context.getClickedFace(),
-                        corePos,
-                        context.isInside()
-                )
-        );
+        // ВАЖНО: нельзя использовать обычный BlockPlaceContext — ванильный
+        // getClickedPos() при занятой (не replaceable) клетке ядра пересчитывает
+        // позицию как corePos.relative(грань исходного клика). Если игрок смотрел
+        // на блок сверху вниз, грань = UP, и вся структура «взмывает» на блок
+        // выше вместо честного отказа (как BlockDummyable 1.7.10: checkRequirement
+        // отклоняет установку). Пинним позицию ядра явно.
+        return new CorePlaceContext(context, corePos);
+    }
+
+    /** Контекст установки, чей {@code getClickedPos()} всегда возвращает позицию ядра. */
+    private static final class CorePlaceContext extends BlockPlaceContext {
+
+        private final BlockPos corePos;
+
+        CorePlaceContext(BlockPlaceContext parent, BlockPos corePos) {
+            super(parent.getLevel(), parent.getPlayer(), parent.getHand(), parent.getItemInHand(),
+                    new BlockHitResult(Vec3.atCenterOf(corePos), parent.getClickedFace(), corePos, parent.isInside()));
+            this.corePos = corePos.immutable();
+        }
+
+        @Override
+        public BlockPos getClickedPos() {
+            return this.corePos;
+        }
     }
 }

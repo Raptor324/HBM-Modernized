@@ -16,21 +16,21 @@ import com.hbm_m.platform.PlatformHooks;
 // Forge/NeoForge: сигнатуры IFluidHandlerItem идентичны, различаются только пакеты.
 // Логика — общая (BarrelAccess ниже), эти импорты нужны лишь обёртке-адаптеру.
 //? if forge {
-import net.minecraftforge.common.capabilities.ICapabilityProvider;
+/*import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
-//?}
+*///?}
 //? if neoforge {
-/*import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
-*///?}
+//?}
 //? if forge {
-import net.minecraftforge.common.capabilities.Capability;
+/*import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-//?}
+*///?}
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Direction;
@@ -128,11 +128,11 @@ public class FluidBarrelItem extends Item implements ITooltipProvider {
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
         return new FluidBarrelCapabilityProvider(stack);
     }
-    //?}
+    *///?}
 
     // Static helper methods for NBT access
     public static dev.architectury.fluid.FluidStack getFluid(ItemStack stack) {
@@ -315,7 +315,7 @@ public class FluidBarrelItem extends Item implements ITooltipProvider {
     //?}
 
     //? if forge {
-    private static class FluidBarrelCapabilityProvider implements ICapabilityProvider {
+    /*private static class FluidBarrelCapabilityProvider implements ICapabilityProvider {
         private final FluidBarrelCapabilityHandler handler;
         private final LazyOptional<IFluidHandlerItem> optional;
 
@@ -332,5 +332,5 @@ public class FluidBarrelItem extends Item implements ITooltipProvider {
                     : LazyOptional.empty();
         }
     }
-    //?}
+    *///?}
 }

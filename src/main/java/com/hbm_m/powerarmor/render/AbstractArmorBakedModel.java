@@ -21,8 +21,8 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-import net.minecraftforge.client.model.data.ModelData;
-//?}
+/*import net.minecraftforge.client.model.data.ModelData;
+*///?}
 
 /**
  * Абстрактный базовый класс для рендеринга иконок брони в GUI.
@@ -79,17 +79,17 @@ public abstract class AbstractArmorBakedModel extends AbstractMultipartBakedMode
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
                                     RandomSource rand, ModelData modelData, @Nullable RenderType renderType) {
         return collectQuads(state, side, rand, modelData, renderType);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
         return collectQuads(state, side, rand, null, null);
     }
-    *///?}
+    //?}
 
     private List<BakedQuad> collectQuads(@Nullable BlockState state, @Nullable Direction side,
                                          RandomSource rand, Object modelData, @Nullable RenderType renderType) {
@@ -117,7 +117,7 @@ public abstract class AbstractArmorBakedModel extends AbstractMultipartBakedMode
     private static List<BakedQuad> getPartQuads(BakedModel part, @Nullable Direction side, RandomSource rand,
                                                 Object modelData, @Nullable RenderType renderType) {
         //? if < 1.21.1 {
-        if (side != null) {
+        /*if (side != null) {
             return part.getQuads(null, side, rand, (net.minecraftforge.client.model.data.ModelData) modelData, renderType);
         }
         List<BakedQuad> all = new ArrayList<>();
@@ -126,8 +126,8 @@ public abstract class AbstractArmorBakedModel extends AbstractMultipartBakedMode
         }
         all.addAll(part.getQuads(null, null, rand, (net.minecraftforge.client.model.data.ModelData) modelData, renderType));
         return all;
-        //?} else {
-        /*if (side != null) {
+        *///?} else {
+        if (side != null) {
             return part.getQuads(null, side, rand);
         }
         List<BakedQuad> all = new ArrayList<>();
@@ -136,14 +136,14 @@ public abstract class AbstractArmorBakedModel extends AbstractMultipartBakedMode
         }
         all.addAll(part.getQuads(null, null, rand));
         return all;
-        *///?}
+        //?}
     }
 
     //? if forge {
-    @Override
+    /*@Override
     @Deprecated
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
         return getQuads(state, side, rand, ModelData.EMPTY, null);
     }
-    //?}
+    *///?}
 }

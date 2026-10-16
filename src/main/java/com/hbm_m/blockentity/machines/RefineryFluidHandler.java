@@ -1,7 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
 //? if forge {
-import org.jetbrains.annotations.NotNull;
+/*import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
@@ -9,10 +9,10 @@ import com.hbm_m.inventory.fluid.tank.FluidTank;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
-/**
+/^*
  * Forge fluid capability bridge for Refinery.
  * Tank 0 = input, tanks 1..4 = outputs.
- */
+ ^/
 public class RefineryFluidHandler implements IFluidHandler {
 
     private final MachineRefineryBlockEntity blockEntity;
@@ -101,4 +101,4 @@ public class RefineryFluidHandler implements IFluidHandler {
         return FluidStack.EMPTY;
     }
 }
-//?}
+*///?}

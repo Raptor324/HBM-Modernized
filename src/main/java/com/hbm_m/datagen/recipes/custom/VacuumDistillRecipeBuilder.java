@@ -1,13 +1,13 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import com.google.gson.JsonObject;
+/*import com.google.gson.JsonObject;
 import com.hbm_m.recipe.VacuumDistillRecipe;
 
 import dev.architectury.fluid.FluidStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
-/**
+/^*
  * Datagen-билдер {@link VacuumDistillRecipe} ({@code hbm_m:vacuum_distill}).
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.
@@ -27,7 +27,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
  *
  * <p>Предметного выхода нет — {@link #getResult()} возвращает {@link Items#AIR}
  * (ванильный {@code RecipeBuilder} требует реализацию).</p>
- */
+ ^/
 public class VacuumDistillRecipeBuilder extends BaseRecipeBuilder<VacuumDistillRecipeBuilder> {
 
     private final FluidStack input;
@@ -70,4 +70,4 @@ public class VacuumDistillRecipeBuilder extends BaseRecipeBuilder<VacuumDistillR
         return VacuumDistillRecipe.Serializer.INSTANCE;
     }
 }
-//?}
+*///?}

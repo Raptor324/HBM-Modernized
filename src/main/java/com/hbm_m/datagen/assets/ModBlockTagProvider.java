@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.assets;
 //? if forge {
-import java.util.Set;
+/*import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import org.jetbrains.annotations.NotNull;
@@ -139,7 +139,7 @@ public class ModBlockTagProvider extends BlockTagsProvider {
         // ============ ТЕГ ДЛЯ OCCLUSION CULLING ============
         // Блоки, через которые можно видеть (не блокируют рендеринг машин)
         //? if fabric && < 1.21.1 {
-        /*this.tag(BlockTags.create(new ResourceLocation(RefStrings.MODID, "non_occluding")))
+        /^this.tag(BlockTags.create(new ResourceLocation(RefStrings.MODID, "non_occluding")))
                 .add(ModBlocks.UNIVERSAL_MACHINE_PART.get())
                 .addTag(Tags.Blocks.GLASS)
                 .addTag(Tags.Blocks.GLASS_PANES)
@@ -179,7 +179,7 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 .add(Blocks.TRIPWIRE)
                 .add(Blocks.TRIPWIRE_HOOK)
                 .add(Blocks.CAMPFIRE);
-        *///?} else {
+        ^///?} else {
                 this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "non_occluding")))
                 .add(ModBlocks.UNIVERSAL_MACHINE_PART.get())
                 .addTag(Tags.Blocks.GLASS)
@@ -246,28 +246,35 @@ public class ModBlockTagProvider extends BlockTagsProvider {
 
 
         // ============ ТЕГИ СОВМЕСТИМОСТИ С ДРУГИМИ МОДАМИ ============
+        //  Storage blocks for every material with a BLOCK form. Only uranium and plutonium were
+        //  listed by hand, so recipes for the other storage_blocks/^ matched an empty tag.
         //? if fabric && < 1.21.1 {
-        /*this.tag(BlockTags.create(new ResourceLocation("forge", "storage_blocks/uranium")))
-                .add(ModBlocks.URANIUM_BLOCK.get());
-        *///?} else {
-                this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/uranium")))
-                .add(ModBlocks.URANIUM_BLOCK.get());
+        /^var storageBlocksTagBuilder = this.tag(BlockTags.create(new ResourceLocation("forge", "storage_blocks")));
+        ^///?} else {
+                var storageBlocksTagBuilder = this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks")));
         //?}
 
+        //  Iterate the registry itself instead of filtering ModMaterials by hand: INGOT_BLOCKS is
+        //  filled exactly on mat.has(BLOCK), so it cannot drift from ModItemTagProvider, which
+        //  copies the same tags.
+        for (var entry : ModBlocks.INGOT_BLOCKS.entrySet()) {
+            Block storageBlock = entry.getValue().get();
+            //? if fabric && < 1.21.1 {
+            /^this.tag(BlockTags.create(new ResourceLocation("forge", "storage_blocks/" + entry.getKey().getId())))
+                    .add(storageBlock);
+            ^///?} else {
+                        this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/" + entry.getKey().getId())))
+                    .add(storageBlock);
+            //?}
+
+            storageBlocksTagBuilder.add(storageBlock);
+        }
+
 
         //? if fabric && < 1.21.1 {
-        /*this.tag(BlockTags.create(new ResourceLocation("forge", "storage_blocks/plutonium")))
-                .add(ModBlocks.PLUTONIUM_BLOCK.get());
-        *///?} else {
-                this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/plutonium")))
-                .add(ModBlocks.PLUTONIUM_BLOCK.get());
-        //?}
-
-
-        //? if fabric && < 1.21.1 {
-        /*this.tag(BlockTags.create(new ResourceLocation("forge", "ores/uranium")))
+        /^this.tag(BlockTags.create(new ResourceLocation("forge", "ores/uranium")))
                 .add(ModBlocks.URANIUM_ORE.get());
-        *///?} else {
+        ^///?} else {
                 this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/uranium")))
                 .add(ModBlocks.URANIUM_ORE.get());
         //?}
@@ -290,4 +297,4 @@ public class ModBlockTagProvider extends BlockTagsProvider {
 
     }
 }
-//?}
+*///?}

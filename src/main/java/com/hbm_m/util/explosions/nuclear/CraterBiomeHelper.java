@@ -204,8 +204,17 @@ public class CraterBiomeHelper {
                         null
                 );
 
-                var players = level.getServer().getPlayerList().getPlayers();
-                for (var player : players) {
+                // Same filter as WorldUtil.flushChunk: right level AND within view distance. This
+                // used to send to every player on the server, so a nuke in the Overworld pushed
+                // Overworld chunk data into the client levels of players in other dimensions, and a
+                // large crater still shipped one full chunk packet per chunk to everyone far away.
+                int viewDistance = level.getServer().getPlayerList().getViewDistance();
+                var chunkPos = chunk.getPos();
+                for (var player : level.getServer().getPlayerList().getPlayers()) {
+                    if (player.level() != level) continue;
+                    var pc = player.chunkPosition();
+                    if (Math.abs(pc.x - chunkPos.x) > viewDistance + 1
+                            || Math.abs(pc.z - chunkPos.z) > viewDistance + 1) continue;
                     player.connection.send(packet);
                 }
             } catch (Exception e) {

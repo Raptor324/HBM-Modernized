@@ -1,7 +1,7 @@
 package com.hbm_m.datagen;
 //? if forge {
 
-import java.util.Arrays;
+/*import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -346,6 +346,28 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("gui.hbm_m.energy", "Энергия: %s/%s HE");
         add("gui.hbm_m.burn_time", "Время горения: %s%%");
         add("container.hbm_m.gas_centrifuge", "Газовая центрифуга");
+        // GUI titles that had no entry at all: the screens showed the raw key.
+        add("container.frackingTower", "Фрекинговая вышка");
+        add("container.hbm_m.ashpit", "Зольник");
+        add("container.hbm_m.coker", "Коксователь");
+        add("container.hbm_m.condenser_powered", "Электрический конденсатор");
+        add("container.hbm_m.conveyor_press", "Конвейерный пресс");
+        add("container.hbm_m.electric_furnace", "Электропечь");
+        add("container.hbm_m.furnace_brick", "Кирпичная печь");
+        add("container.hbm_m.machine_large_turbine", "Промышленная паровая турбина");
+        add("container.hbm_m.machine_satlinker", "Менеджер ID спутников");
+        add("container.hbm_m.missile_assembly", "Ракетосборочная станция");
+        add("container.hbm_m.mixer", "Промышленный миксер");
+        add("container.hbm_m.pyrooven", "Пиролизная печь");
+        add("container.hbm_m.radgen", "Радиационный двигатель");
+        add("container.hbm_m.reactor_research", "Исследовательский реактор");
+        add("container.hbm_m.refinery", "Нефтеперерабатывающий завод");
+        add("container.hbm_m.solidifier", "Затвердитель");
+        add("container.hbm_m.soyuz_launcher", "Стартовая платформа \"Союза\"");
+        add("container.hbm_m.turbinegas", "Газовая турбина");
+        add("gui.hbm_m.assembler_recipe_selector", "Выбор рецепта");
+        add("gui.hbm_m.fluid_identifier", "Идентификатор жидкости");
+        add("jei.hbm_m.crucible_smelting", "Плавка в тигле");
         add("container.hbm_m.book", "Книга Вагонов");
         add("container.hbm_m.book.extended_crafting", "Расширенный крафт на 4 слота");
         add("container.hbm_m.book.standard_inventory", "Обычный инвентарь");
@@ -976,6 +998,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("item.hbm_m.radaway", "Антирадин");
         add("item.hbm_m.wood_ash_powder", "Древесный пепел");
         add("effect.hbm_m.radaway", "Очищение от радиации");
+        add("effect.hbm_m.radiation", "Излучение");
 
 
 // ru_ru case
@@ -2736,6 +2759,10 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("block.hbm_m.rail_wood", "Деревянные рельсы");
         add("block.hbm_m.rebar", "Арматура");
         add("block.hbm_m.red_cable_box", "Провод из красной меди (Boxcable)");
+        add("block.hbm_m.red_cable_box_1", "Провод из красной меди (Boxcable)");
+        add("block.hbm_m.red_cable_box_2", "Провод из красной меди (Boxcable)");
+        add("block.hbm_m.red_cable_box_3", "Провод из красной меди (Boxcable)");
+        add("block.hbm_m.red_cable_box_4", "Провод из красной меди (Boxcable)");
         add("block.hbm_m.reinforced_brick", "Усиленный бетон");
         add("block.hbm_m.reinforced_ducrete", "Усиленный дюкрет");
         add("block.hbm_m.reinforced_glass_pane", "Усиленная стеклянная панель");
@@ -3708,4 +3735,4 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("tooltip.hbm_m.waste_cooling.desc", "Охладите в бочке с отработанным топливом");
     }
 }
-//?}
+*///?}

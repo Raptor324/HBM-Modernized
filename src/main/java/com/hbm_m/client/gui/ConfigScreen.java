@@ -320,16 +320,16 @@ public class ConfigScreen extends Screen {
     // ================================================================
 
     //? if <1.21 {
-    @Override
+    /*@Override
     public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
         return handleMouseScrolled(mouseX, mouseY, amount);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontal, double amount) {
         return handleMouseScrolled(mouseX, mouseY, amount);
     }
-    *///?}
+    //?}
 
     private boolean handleMouseScrolled(double mouseX, double mouseY, double amount) {
         // Колесо над полосой вкладок (или Shift в любом месте) → прокрутка вкладок,
@@ -341,10 +341,10 @@ public class ConfigScreen extends Screen {
             return true;
         }
         //? if <1.21 {
-        return super.mouseScrolled(mouseX, mouseY, amount);
-        //?} else {
-        /*return super.mouseScrolled(mouseX, mouseY, 0.0D, amount);
-        *///?}
+        /*return super.mouseScrolled(mouseX, mouseY, amount);
+        *///?} else {
+        return super.mouseScrolled(mouseX, mouseY, 0.0D, amount);
+        //?}
     }
 
     // ================================================================
@@ -447,10 +447,10 @@ public class ConfigScreen extends Screen {
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partial) {
         //? if >=1.21.1 {
-        /*// Blur мира под ВСЕМ меню (как vanilla renderBackground 1.21.1), но без
+        // Blur мира под ВСЕМ меню (как vanilla renderBackground 1.21.1), но без
         // dirt-текстуры — поверх блюра рисуем собственный полупрозрачный оверлей.
         this.renderBlurredBackground(partial);
-        *///?}
+        //?}
         // Фон: только полупрозрачный тёмный оверлей (без земляного dirt-фона).
         g.fill(0, 0, this.width, this.height, COL_OVERLAY);
 
@@ -897,19 +897,19 @@ public class ConfigScreen extends Screen {
 
         ConfigList(Minecraft mc, int leftPos, int rowW, int screenHeight, int y0, int y1, int itemHeight) {
             //? if < 1.21.1 {
-            super(mc, rowW, screenHeight, y0, y1, itemHeight);
+            /*super(mc, rowW, screenHeight, y0, y1, itemHeight);
             setLeftPos(leftPos);
             setRenderBackground(false);
             setRenderTopAndBottom(false);
-            //?} else {
-            /*super(mc, rowW, y1 - y0, y0, itemHeight);
+            *///?} else {
+            super(mc, rowW, y1 - y0, y0, itemHeight);
             this.setX(leftPos);
-            *///?}
+            //?}
             this.rowW = rowW;
         }
 
         //? if >=1.21.1 {
-        /*/// В 1.21.1 у AbstractSelectionList нет setRenderBackground(false) — вместо этого
+        /// В 1.21.1 у AbstractSelectionList нет setRenderBackground(false) — вместо этого
         /// он всегда рисует полупрозрачную текстуру inworld_menu_list_background и
         /// сепараторы сверху/снизу. Через них просвечивает «каша» из мира/блюра —
         /// отключаем, фон под списком рисует сам ConfigScreen.
@@ -920,7 +920,7 @@ public class ConfigScreen extends Screen {
         @Override
         protected void renderListSeparators(net.minecraft.client.gui.GuiGraphics g) {
         }
-        *///?}
+        //?}
 
         @Override
         public int getRowWidth() {

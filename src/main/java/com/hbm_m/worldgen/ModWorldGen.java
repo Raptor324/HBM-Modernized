@@ -18,9 +18,9 @@ public class ModWorldGen {
     // Biome modifiers are Forge-only registry (forge:biome_modifier), not a vanilla registry.
     // Architectury's DeferredRegister cannot access it via RegistrarManager.
     //? if forge {
-    public static final net.minecraftforge.registries.DeferredRegister<net.minecraftforge.common.world.BiomeModifier> BIOME_MODIFIERS =
+    /*public static final net.minecraftforge.registries.DeferredRegister<net.minecraftforge.common.world.BiomeModifier> BIOME_MODIFIERS =
             net.minecraftforge.registries.DeferredRegister.create(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIERS, RefStrings.MODID);
-    //?}
+    *///?}
 
     public static final DeferredRegister<Feature<?>> FEATURES =
             DeferredRegister.create(RefStrings.MODID, Registries.FEATURE);
@@ -105,10 +105,10 @@ public class ModWorldGen {
     }
 
     //? if forge {
-    /** Регистрация worldgen DeferredRegister на Forge mod event bus (как в старом {@code MainRegistry}). */
+    /*/^* Регистрация worldgen DeferredRegister на Forge mod event bus (как в старом {@code MainRegistry}). ^/
     public static void register(net.minecraftforge.eventbus.api.IEventBus modEventBus) {
         BIOME_MODIFIERS.register(modEventBus);
         register();
     }
-    //?}
+    *///?}
 }

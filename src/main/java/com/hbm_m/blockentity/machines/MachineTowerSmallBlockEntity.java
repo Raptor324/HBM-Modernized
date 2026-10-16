@@ -22,11 +22,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-import net.minecraftforge.common.capabilities.Capability;
+/*import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-//?}
+*///?}
 
 /**
  * BlockEntity for the Cooling Tower (Small) multiblock.
@@ -175,11 +175,11 @@ public class MachineTowerSmallBlockEntity extends BaseMachineBlockEntity impleme
     }
 
     //? if forge {
-    @Override
+    /*@Override
     protected void setupFluidCapability() {
         setFluidHandler(new TowerSmallFluidHandler(this));
     }
-    //?}
+    *///?}
 
     @Override
     protected Component getDefaultName() {

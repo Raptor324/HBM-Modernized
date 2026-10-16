@@ -25,16 +25,16 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
 
 //? if < 1.21.1 {
-import net.minecraftforge.client.model.geometry.IGeometryBakingContext;
+/*import net.minecraftforge.client.model.geometry.IGeometryBakingContext;
 import net.minecraftforge.client.model.geometry.IGeometryLoader;
 import net.minecraftforge.client.model.geometry.IUnbakedGeometry;
 import net.minecraftforge.client.model.obj.ObjModel;
-//?} else {
-/*import net.neoforged.neoforge.client.model.geometry.IGeometryBakingContext;
+*///?} else {
+import net.neoforged.neoforge.client.model.geometry.IGeometryBakingContext;
 import net.neoforged.neoforge.client.model.geometry.IGeometryLoader;
 import net.neoforged.neoforge.client.model.geometry.IUnbakedGeometry;
 import net.neoforged.neoforge.client.model.obj.ObjModel;
-*///?}
+//?}
 
 public abstract class AbstractObjPartModelLoader<T extends BakedModel> implements IGeometryLoader<AbstractObjPartModelLoader.ObjPartGeometry<T>> {
 
@@ -63,9 +63,6 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
         private final boolean flipV;
         private final AbstractObjPartModelLoader<T> loader;
         
-        // Кэшируем загруженную модель, чтобы не парсить OBJ повторно при множественных bake()
-        private volatile ObjModel cachedObjModel;
-
         public ObjPartGeometry(ResourceLocation modelLocation, Set<String> partNames, boolean flipV,
                                AbstractObjPartModelLoader<T> loader) {
             this.modelLocation = modelLocation;
@@ -74,22 +71,32 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
             this.loader = loader;
         }
 
+        // Парсинг OBJ дедуплицируется глобально в LoaderHooks (по modelLocation + flipV)
+        private ObjModel getOrLoadObjModel() {
+            try {
+                return LoaderHooks.loadObjModel(modelLocation, flipV);
+            } catch (Exception e) {
+                MainRegistry.LOGGER.error("Failed to load OBJ model: " + modelLocation, e);
+                throw new RuntimeException("Не удалось загрузить OBJ модель: " + modelLocation, e);
+            }
+        }
+
         @Override
         public void resolveParents(Function<ResourceLocation, UnbakedModel> modelGetter, IGeometryBakingContext context) {
         }
 
         //? if < 1.21.1 {
-        @Override
+        /*@Override
         public BakedModel bake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides, ResourceLocation modelName) {
             return doBake(context, baker, spriteGetter, modelState, overrides, modelName);
         }
-        //?} else {
-        /*@Override
+        *///?} else {
+        @Override
         public BakedModel bake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides) {
             ResourceLocation modelName = ResourceLocation.parse(context.getModelName());
             return doBake(context, baker, spriteGetter, modelState, overrides, modelName);
         }
-        *///?}
+        //?}
 
         private BakedModel doBake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides, ResourceLocation modelName) {
             ObjModel model = getOrLoadObjModel();
@@ -98,26 +105,6 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
 
             MainRegistry.LOGGER.info("{}: Total baked parts: {}", loader.getClass().getSimpleName(), bakedParts.size());
             return loader.createBakedModel(bakedParts, context.getTransforms(), modelName);
-        }
-
-        private ObjModel getOrLoadObjModel() {
-            ObjModel model = this.cachedObjModel;
-            if (model == null) {
-                synchronized (this) {
-                    model = this.cachedObjModel;
-                    if (model == null) {
-                        try {
-                            model = LoaderHooks.loadObjModel(modelLocation, flipV);
-                            this.cachedObjModel = model;
-                            MainRegistry.LOGGER.info("{}: Successfully loaded OBJ model: {}", loader.getClass().getSimpleName(), modelLocation);
-                        } catch (Exception e) {
-                            MainRegistry.LOGGER.error("Failed to load OBJ model: " + modelLocation, e);
-                            throw new RuntimeException("Не удалось загрузить OBJ модель: " + modelLocation, e);
-                        }
-                    }
-                }
-            }
-            return model;
         }
 
         private HashMap<String, BakedModel> bakeParts(ObjModel model, IGeometryBakingContext context,

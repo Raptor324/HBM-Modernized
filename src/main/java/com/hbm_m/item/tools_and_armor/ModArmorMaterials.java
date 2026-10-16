@@ -27,14 +27,14 @@ import java.util.function.Supplier;
  */
 
 //? if < 1.21.1 {
-import net.minecraft.world.item.ArmorMaterial;
-//?}
+/*import net.minecraft.world.item.ArmorMaterial;
+*///?}
 
 //? if < 1.21.1 {
-public enum ModArmorMaterials implements ArmorMaterial {
-//?} else {
-/*public enum ModArmorMaterials {
-*///?}
+/*public enum ModArmorMaterials implements ArmorMaterial {
+*///?} else {
+public enum ModArmorMaterials {
+//?}
 
     ALLOY("alloy", 26, new int[]{ 5, 7, 5, 4 }, 25,
             SoundEvents.ARMOR_EQUIP_IRON, 1.25f, 0.05f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))),
@@ -96,6 +96,11 @@ public enum ModArmorMaterials implements ArmorMaterial {
 
     private static final int[] BASE_DURABILITY = { 11, 16, 16, 13 };
 
+    /** Version-agnostic form of the 1.20.1-only getDurabilityForType override. */
+    public int durabilityFor(ArmorItem.Type type) {
+        return BASE_DURABILITY[type.ordinal()] * this.durabilityMultiplier;
+    }
+
     ModArmorMaterials(String name, int durabilityMultiplier, int[] protectionAmounts, int enchantmentValue, Object equipSound,
                       float toughness, float knockbackResistance, Supplier<Ingredient> repairIngredient) {
         this.name = name;
@@ -133,13 +138,13 @@ public enum ModArmorMaterials implements ArmorMaterial {
     }
 
     //? if >= 1.21.1 {
-    /*public net.minecraft.core.Holder<SoundEvent> getEquipSound() {
+    public net.minecraft.core.Holder<SoundEvent> getEquipSound() {
         return (net.minecraft.core.Holder<SoundEvent>) this.equipSound;
     }
-    *///?}
+    //?}
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public int getDurabilityForType(ArmorItem.Type pType) {
         return BASE_DURABILITY[pType.ordinal()] * this.durabilityMultiplier;
     }
@@ -158,5 +163,5 @@ public enum ModArmorMaterials implements ArmorMaterial {
     public Ingredient getRepairIngredient() {
         return this.repairIngredient.get();
     }
-    //?}
+    *///?}
 }

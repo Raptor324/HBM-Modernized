@@ -24,16 +24,16 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.world.phys.Vec3;
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
+*///?}
 //? if fabric {
 /*import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 *///?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
-*///?}
+//?}
 
 /**
  * Instanced / MDI batching for OBJ machine parts on vanilla Forge world render stages.

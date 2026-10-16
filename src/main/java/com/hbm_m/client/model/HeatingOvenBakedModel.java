@@ -8,8 +8,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-import net.minecraftforge.client.model.data.ModelData;
-//?}
+/*import net.minecraftforge.client.model.data.ModelData;
+*///?}
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -67,12 +67,12 @@ public class HeatingOvenBakedModel extends AbstractMultipartBakedModel implement
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
         //? if forge {
-        return getQuads(state, side, rand, ModelData.EMPTY, null);
-        //?}
+        /*return getQuads(state, side, rand, ModelData.EMPTY, null);
+        *///?}
 
         //? if neoforge {
-        /*return super.getQuads(state, side, rand);
-        *///?}
+        return super.getQuads(state, side, rand);
+        //?}
 
         //? if fabric {
         /*// ITEM RENDER (Inventory/Hand)
@@ -101,7 +101,7 @@ public class HeatingOvenBakedModel extends AbstractMultipartBakedModel implement
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
                                     RandomSource rand, ModelData modelData,
                                     @Nullable net.minecraft.client.renderer.RenderType renderType) {
@@ -168,7 +168,7 @@ public class HeatingOvenBakedModel extends AbstractMultipartBakedModel implement
 
         return quads;
     }
-    //?}
+    *///?}
 
     //? if fabric {
     /*private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand) {

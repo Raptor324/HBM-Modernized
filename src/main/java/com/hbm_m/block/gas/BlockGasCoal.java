@@ -5,6 +5,9 @@ import com.hbm_m.handler.ArmorRegistry;
 import com.hbm_m.handler.HazardClass;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
@@ -31,16 +34,35 @@ public class BlockGasCoal extends BlockGasBase {
     }
 
     @Override
-    public void randomTick(BlockState state, net.minecraft.server.level.ServerLevel level, BlockPos pos, RandomSource random) {
-        // 20% — рассеивается; иначе 1/5 — оседает вниз (как в оригинале).
-        if (random.nextInt(5) == 0) {
+    public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+        if (random.nextInt(20) == 0) {
             level.removeBlock(pos, false);
-        } else if (random.nextInt(5) == 0) {
-            BlockPos below = pos.below();
-            if (level.getBlockState(below).isAir()) {
-                level.removeBlock(pos, false);
-                level.setBlock(below, state, 3);
-            }
+            return;
         }
+        super.tick(state, level, pos, random);
+    }
+
+    @Override
+    protected void spawnAmbientParticles(BlockState state, Level level, BlockPos pos, RandomSource random) {
+        level.addParticle(
+                ParticleTypes.SMOKE,
+                pos.getX() + random.nextDouble(),
+                pos.getY() + random.nextDouble(),
+                pos.getZ() + random.nextDouble(),
+                0.0D, 0.0D, 0.0D
+        );
+    }
+
+    @Override
+    public Direction getFirstDirection(Level level, BlockPos pos, RandomSource random) {
+        if (random.nextInt(5) == 0) {
+            return Direction.DOWN;
+        }
+        return Direction.getRandom(random);
+    }
+
+    @Override
+    public Direction getSecondDirection(Level level, BlockPos pos, RandomSource random) {
+        return randomHorizontal(random);
     }
 }

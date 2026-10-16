@@ -12,10 +12,10 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 //? if forge {
-import net.minecraftforge.items.SlotItemHandler;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.items.SlotItemHandler;
-*///?}
+/*import net.minecraftforge.items.SlotItemHandler;
+*///?} elif neoforge {
+import net.neoforged.neoforge.items.SlotItemHandler;
+//?}
 
 public class MachineArcWelderMenu extends AbstractContainerMenu {
 

@@ -80,7 +80,7 @@ public class RBMKPelletItem extends Item {
     public static boolean isPoisoned(int meta) { return rectify(meta) >= 5; }
 
     //? if < 1.21.1 {
-    public static int getState(ItemStack stack) {
+    /*public static int getState(ItemStack stack) {
         CompoundTag tag = stack.getTag();
         return tag == null ? 0 : rectify(tag.getInt("pellet_state"));
     }
@@ -88,8 +88,8 @@ public class RBMKPelletItem extends Item {
     public static void setState(ItemStack stack, int state) {
         stack.getOrCreateTag().putInt("pellet_state", rectify(state));
     }
-    //?} else {
-    /*public static int getState(ItemStack stack) {
+    *///?} else {
+    public static int getState(ItemStack stack) {
         net.minecraft.world.item.component.CustomData data =
             stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
         return data == null ? 0 : rectify(data.copyTag().getInt("pellet_state"));
@@ -103,7 +103,7 @@ public class RBMKPelletItem extends Item {
         stack.set(net.minecraft.core.component.DataComponents.CUSTOM_DATA,
             net.minecraft.world.item.component.CustomData.of(tag));
     }
-    *///?}
+    //?}
 
     /** Convenience for the disassembly recipe: builds a stack in the given state. */
     public ItemStack withState(int count, int state) {
@@ -115,12 +115,12 @@ public class RBMKPelletItem extends Item {
     // ─── Tooltip (ItemRBMKPellet.addInformation) ──────────────────────────────
 
     //? if < 1.21.1 {
-    // @Override omitted intentionally — Stonecutter removes this block for >= 1.21.1
+    /*// @Override omitted intentionally — Stonecutter removes this block for >= 1.21.1
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> list, TooltipFlag flag) {
-    *///?}
+    //?}
         list.add(Component.literal(ChatFormatting.ITALIC + fullName));
         list.add(Component.literal(ChatFormatting.DARK_GRAY.toString() + ChatFormatting.ITALIC + "Pellet for recycling"));
 

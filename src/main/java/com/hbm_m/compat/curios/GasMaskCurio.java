@@ -58,7 +58,7 @@ public class GasMaskCurio implements ICurio {
      * а id модификатора — ResourceLocation вместо UUID.
      */
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public Multimap<Attribute, AttributeModifier> getAttributeModifiers(SlotContext ctx, UUID uuid) {
         Multimap<Attribute, AttributeModifier> base = this.stack.getItem().getDefaultAttributeModifiers(EquipmentSlot.HEAD);
         if (base.isEmpty()) {
@@ -72,8 +72,8 @@ public class GasMaskCurio implements ICurio {
         }
         return builder.build();
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     public Multimap<net.minecraft.core.Holder<Attribute>, AttributeModifier> getAttributeModifiers(SlotContext ctx, net.minecraft.resources.ResourceLocation id) {
         // В 9.x вызывается только эта перегрузка (UUID-версия deprecated и не вызывается).
         com.google.common.collect.ImmutableMultimap.Builder<net.minecraft.core.Holder<Attribute>, AttributeModifier> builder =
@@ -82,5 +82,5 @@ public class GasMaskCurio implements ICurio {
                 new AttributeModifier(id, m.amount(), m.operation())));
         return builder.build();
     }
-     *///?}
+     //?}
 }

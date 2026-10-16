@@ -12,11 +12,11 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.blockentity.ModBlockEntities;
 
 //? if forge {
-import com.hbm_m.capability.ModCapabilities;
+/*import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.interfaces.IEnergyConnector;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
-//?}
+*///?}
 
 /**
  * Выключатель энергосети — аналог CableSwitch из 1.7.10.
@@ -26,8 +26,8 @@ import net.minecraftforge.common.util.LazyOptional;
 public class SwitchBlockEntity extends BlockEntity implements PowerConductor {
 
     //? if forge {
-    private final LazyOptional<IEnergyConnector> hbmConnector = LazyOptional.of(() -> this);
-    //?}
+    /*private final LazyOptional<IEnergyConnector> hbmConnector = LazyOptional.of(() -> this);
+    *///?}
 
     public SwitchBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.SWITCH_BE.get(), pos, state);
@@ -63,7 +63,7 @@ public class SwitchBlockEntity extends BlockEntity implements PowerConductor {
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ModCapabilities.HBM_ENERGY_CONNECTOR) {
             if (isValidSide(side)) {
@@ -84,7 +84,7 @@ public class SwitchBlockEntity extends BlockEntity implements PowerConductor {
         super.onChunkUnloaded();
         destroyOwnNode();
     }
-    //?}
+    *///?}
 
     @Override
     public boolean canConnectEnergy(Direction side) {
@@ -96,7 +96,7 @@ public class SwitchBlockEntity extends BlockEntity implements PowerConductor {
         super.setRemoved();
         destroyOwnNode();
         //? if forge {
-        hbmConnector.invalidate();
-        //?}
+        /*hbmConnector.invalidate();
+        *///?}
     }
 }

@@ -6,17 +6,17 @@ import com.hbm_m.recipe.ArcFurnaceRecipe;
 
 import dev.architectury.fluid.FluidStack;
 //? if forge {
-//? if forge {
-import mezz.jei.api.forge.ForgeTypes;
-//?} elif neoforge {
-/*import mezz.jei.api.neoforge.NeoForgeTypes;
-*///?}
-//? if forge {
-import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
+/*//? if forge {
+/^import mezz.jei.api.forge.ForgeTypes;
+^///?} elif neoforge {
+import mezz.jei.api.neoforge.NeoForgeTypes;
 //?}
-//?} elif neoforge {
-/*import mezz.jei.api.neoforge.NeoForgeTypes;
-*///?}
+//? if forge {
+/^import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
+^///?}
+*///?} elif neoforge {
+import mezz.jei.api.neoforge.NeoForgeTypes;
+//?}
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.RecipeIngredientRole;
@@ -30,7 +30,7 @@ import net.minecraft.world.item.ItemStack;
  * Fluid-Ausgaenge (siehe {@link ArcFurnaceRecipe}).
  */
 //? if forge {
-public class ArcFurnaceJeiCategory extends JeiGenericRecipeCategory<ArcFurnaceRecipe> {
+/*public class ArcFurnaceJeiCategory extends JeiGenericRecipeCategory<ArcFurnaceRecipe> {
 
     public static final RecipeType<ArcFurnaceRecipe> RECIPE_TYPE =
             RecipeType.create(RefStrings.MODID, "arc_furnace", ArcFurnaceRecipe.class);
@@ -104,12 +104,12 @@ public class ArcFurnaceJeiCategory extends JeiGenericRecipeCategory<ArcFurnaceRe
         addItemSlot(builder, RecipeIngredientRole.OUTPUT, x, y)
                 .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
                 //? if forge {
-                .setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
+                /^.setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                 .addIngredient(ForgeTypes.FLUID_STACK, FluidStackHooksForge.toForge(fluid));
-                //?} elif neoforge {
-                /*.setCustomRenderer(NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
+                ^///?} elif neoforge {
+                .setCustomRenderer(NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                 .addIngredient(NeoForgeTypes.FLUID_STACK, new net.neoforged.neoforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
-                *///?}
+                //?}
     }
 
     @Override
@@ -122,7 +122,7 @@ public class ArcFurnaceJeiCategory extends JeiGenericRecipeCategory<ArcFurnaceRe
         JeiNeiRendering.drawGenericRecipeExtras(graphics, recipe.getDuration(), 0);
     }
 }
-//?} else {
-/*public final class ArcFurnaceJeiCategory {
+*///?} else {
+public final class ArcFurnaceJeiCategory {
     private ArcFurnaceJeiCategory() {}
-}*///?}
+}//?}

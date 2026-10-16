@@ -13,10 +13,10 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
 
 //? if forge {
-import net.minecraftforge.registries.ForgeRegistries;
-//?} elif neoforge {
-/*import net.minecraft.core.registries.BuiltInRegistries;
-*///?}
+/*import net.minecraftforge.registries.ForgeRegistries;
+*///?} elif neoforge {
+import net.minecraft.core.registries.BuiltInRegistries;
+//?}
 
 /**
  * Регистрирует Create {@link MovementBehaviour} + {@link MovingInteractionBehaviour}
@@ -34,12 +34,12 @@ public final class CreateDoorRegistrar {
     public static void register() {
         int count = 0;
         //? if forge {
-        for (Block block : ForgeRegistries.BLOCKS.getValues()) {
+        /*for (Block block : ForgeRegistries.BLOCKS.getValues()) {
             ResourceLocation key = ForgeRegistries.BLOCKS.getKey(block);
-        //?} elif neoforge {
-        /*for (Block block : BuiltInRegistries.BLOCK) {
+        *///?} elif neoforge {
+        for (Block block : BuiltInRegistries.BLOCK) {
             ResourceLocation key = BuiltInRegistries.BLOCK.getKey(block);
-        *///?}
+        //?}
             if (key == null || !RefStrings.MODID.equals(key.getNamespace())) continue;
             if (!(block instanceof DoorBlock door)) continue;
 

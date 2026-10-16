@@ -37,20 +37,20 @@ public final class FluidBlockAccess {
      * @return handler или {@code null}, если блок не предоставляет fluid-capability
      */
     //? if forge {
-    @Nullable
+    /*@Nullable
     public static net.minecraftforge.fluids.capability.IFluidHandler getFluidHandler(Level level, BlockPos pos, @Nullable Direction side) {
         BlockEntity be = level.getBlockEntity(pos);
         if (be == null || be.isRemoved()) return null;
         return be.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, side).orElse(null);
     }
-    //?}
+    *///?}
     //? if neoforge {
-    /*@Nullable
+    @Nullable
     public static net.neoforged.neoforge.fluids.capability.IFluidHandler getFluidHandler(Level level, BlockPos pos, @Nullable Direction side) {
         // На NeoForge запрос идёт через Level, не через BlockEntity.getCapability.
         BlockEntity be = level.getBlockEntity(pos);
         if (be == null || be.isRemoved()) return null;
         return level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.BLOCK, pos, side);
     }
-    *///?}
+    //?}
 }

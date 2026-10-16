@@ -1,5 +1,5 @@
 //? if forge {
-package com.hbm_m.capability;
+/*package com.hbm_m.capability;
 
 // Данный класс предоставляет capability для хранения данных о радиации в чанке.
 // Он реализует ICapabilitySerializable для сохранения и загрузки данных в NBT тег чанка.
@@ -72,4 +72,4 @@ public class ChunkRadiationProvider implements ICapabilitySerializable<CompoundT
         }
     }
 }
-//?}
+*///?}

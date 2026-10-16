@@ -220,7 +220,7 @@ public class EntityMaskMan extends Monster implements IRadiationImmune {
         if (++this.attackCount >= this.attack.amount) {
             this.attackCount = 0;
             // The original advances by a random non-zero step so it never repeats the same phase.
-            int next = this.attack.ordinal() + this.random.nextInt(LaserAttack.values().length - 1);
+            int next = this.attack.ordinal() + 1 + this.random.nextInt(LaserAttack.values().length - 1);
             this.attack = LaserAttack.values()[next % LaserAttack.values().length];
         }
     }
@@ -259,12 +259,12 @@ public class EntityMaskMan extends Monster implements IRadiationImmune {
 
     @Override
     //? if < 1.21.1 {
-    protected void dropCustomDeathLoot(@NotNull DamageSource source, int looting, boolean recentlyHit) {
+    /*protected void dropCustomDeathLoot(@NotNull DamageSource source, int looting, boolean recentlyHit) {
         super.dropCustomDeathLoot(source, looting, recentlyHit);
-    //?} else {
-    /*protected void dropCustomDeathLoot(net.minecraft.server.level.ServerLevel level, @NotNull DamageSource source, boolean recentlyHit) {
+    *///?} else {
+    protected void dropCustomDeathLoot(net.minecraft.server.level.ServerLevel level, @NotNull DamageSource source, boolean recentlyHit) {
         super.dropCustomDeathLoot(level, source, recentlyHit);
-    *///?}
+    //?}
         if (this.level().isClientSide) return;
 
         // The original hands over its own gas mask with a combo filter already installed; the

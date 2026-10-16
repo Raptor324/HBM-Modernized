@@ -31,12 +31,12 @@ public final class NukeTab {
     /** Фон вкладки: Forge 1.20.1 — {@code withBackgroundLocation}; NeoForge 1.21+ — {@code backgroundTexture}. */
     public static void applyBackgroundTexture(CreativeModeTab.Builder builder) {
         //? if forge {
-        builder.withBackgroundLocation(BACKGROUND_TEXTURE);
-        //?}
+        /*builder.withBackgroundLocation(BACKGROUND_TEXTURE);
+        *///?}
 
         //? if neoforge {
-        /*builder.backgroundTexture(BACKGROUND_TEXTURE);
-        *///?}
+        builder.backgroundTexture(BACKGROUND_TEXTURE);
+        //?}
 
     }
 

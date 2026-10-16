@@ -490,6 +490,9 @@ public class PWRControllerBlockEntity extends BaseMachineBlockEntity
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        // BaseMachineBlockEntity stores the inventory and the energy here; without the super call
+        // both were dropped on every save, so the machine came back empty and discharged.
+        super.writeNbtData(tag, registries);
         coolantTank.writeToNBT(tag, "tank_coolant");
         coolantHotTank.writeToNBT(tag, "tank_coolant_hot");
         tag.putBoolean("assembled", assembled);
@@ -524,6 +527,7 @@ public class PWRControllerBlockEntity extends BaseMachineBlockEntity
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         coolantTank.readFromNBT(tag, "tank_coolant");
         coolantHotTank.readFromNBT(tag, "tank_coolant_hot");
         assembled = tag.getBoolean("assembled");

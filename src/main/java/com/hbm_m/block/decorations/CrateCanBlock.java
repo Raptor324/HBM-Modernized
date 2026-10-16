@@ -33,16 +33,16 @@ public class CrateCanBlock extends Block {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         return hbmOnUse(state, level, pos, player, hand);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         return hbmOnUse(state, level, pos, player, InteractionHand.MAIN_HAND);
     }
-    *///?}
+    //?}
 
     private InteractionResult hbmOnUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand) {
         if (!isCrowbar(player.getItemInHand(hand))) {
@@ -65,11 +65,11 @@ public class CrateCanBlock extends Block {
         ResourceLocation tableResource = ResourceLocation.fromNamespaceAndPath(com.hbm_m.lib.RefStrings.MODID, "crates/crate_can");
         LootTable table;
         //? if < 1.21.1 {
-        table = serverLevel.getServer().getLootData().getLootTable(tableResource);
-        //?} else {
-        /*table = serverLevel.getServer().reloadableRegistries().getLootTable(
+        /*table = serverLevel.getServer().getLootData().getLootTable(tableResource);
+        *///?} else {
+        table = serverLevel.getServer().reloadableRegistries().getLootTable(
                 net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.LOOT_TABLE, tableResource));
-        *///?}
+        //?}
         if (table == LootTable.EMPTY) return;
 
         LootParams params = new LootParams.Builder(serverLevel)

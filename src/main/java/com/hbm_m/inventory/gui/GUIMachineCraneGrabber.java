@@ -1,5 +1,6 @@
 package com.hbm_m.inventory.gui;
 
+import com.hbm_m.network.CraneControlPacket;
 import com.hbm_m.blockentity.network.MachineCraneGrabberBlockEntity;
 import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.filter.ModulePatternMatcher;
@@ -71,17 +72,18 @@ public class GUIMachineCraneGrabber extends GuiInfoScreen<MachineCraneGrabberMen
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (grabber == null) return super.mouseClicked(mouseX, mouseY, button); // тайл может отсутствовать в реплее Flashback
+        if (grabber == null) return super.mouseClicked(mouseX, mouseY, button); // no tile in a Flashback replay
+        net.minecraft.core.BlockPos pos = grabber.getBlockPos();
         for (int i = 0; i < 9; i++) {
             Slot slot = this.menu.slots.get(i);
             if (isHoveringSlot(slot, (int) mouseX, (int) mouseY) && button == 1 && slot.hasItem()) {
-                grabber.nextMode(i);
+                CraneControlPacket.sendToServer(pos, CraneControlPacket.FILTER_MODE, i);
                 return true;
             }
         }
 
         if (isHovering(97, 30, 14, 26, (int) mouseX, (int) mouseY)) {
-            grabber.toggleWhitelist();
+            CraneControlPacket.sendToServer(pos, CraneControlPacket.TOGGLE_WHITELIST, 0);
             return true;
         }
 

@@ -59,18 +59,18 @@ public class KeyholeBlock extends Block {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
             net.minecraft.world.InteractionHand hand, BlockHitResult hit) {
         return activate(state, level, pos, player, hit);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
             BlockHitResult hit) {
         return activate(state, level, pos, player, hit);
     }
-    *///?}
+    //?}
 
     private InteractionResult activate(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         ItemStack held = player.getMainHandItem();

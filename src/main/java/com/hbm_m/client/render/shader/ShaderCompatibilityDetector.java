@@ -12,12 +12,12 @@ import dev.architectury.platform.Platform;
 import net.minecraft.client.Minecraft;
 
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} else if neoforge {
-/*import net.neoforged.api.distmarker.Dist;
+*///?} else if neoforge {
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
-*///?} else if fabric {
+//?} else if fabric {
 /*import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 *///?}

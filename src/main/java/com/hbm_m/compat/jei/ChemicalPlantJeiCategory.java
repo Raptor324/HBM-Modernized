@@ -26,12 +26,12 @@ import net.minecraft.world.item.ItemStack;
  */
 
 //? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
+/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+*///?} elif fabric {
 /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
 *///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+//?}
 public class ChemicalPlantJeiCategory extends JeiGenericRecipeCategory<ChemicalPlantRecipe> {
 
     public static final RecipeType<ChemicalPlantRecipe> RECIPE_TYPE =
@@ -115,18 +115,18 @@ public class ChemicalPlantJeiCategory extends JeiGenericRecipeCategory<ChemicalP
                 continue;
             }
             //? if forge {
-            addItemSlot(builder, RecipeIngredientRole.INPUT,
+            /*addItemSlot(builder, RecipeIngredientRole.INPUT,
                     positions[slotIndex][0] + inputXOffset, positions[slotIndex][1])
                     .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
                     .setCustomRenderer(mezz.jei.api.forge.ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                     .addIngredient(mezz.jei.api.forge.ForgeTypes.FLUID_STACK, new net.minecraftforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount(), fluid.getTag()));
-            //?} elif neoforge {
-            /*addItemSlot(builder, RecipeIngredientRole.INPUT,
+            *///?} elif neoforge {
+            addItemSlot(builder, RecipeIngredientRole.INPUT,
                     positions[slotIndex][0] + inputXOffset, positions[slotIndex][1])
                     .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
                     .setCustomRenderer(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                     .addIngredient(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK, new net.neoforged.neoforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
-            *///?}
+            //?}
             slotIndex++;
         }
     }
@@ -152,18 +152,18 @@ public class ChemicalPlantJeiCategory extends JeiGenericRecipeCategory<ChemicalP
                 continue;
             }
             //? if forge {
-            addItemSlot(builder, RecipeIngredientRole.OUTPUT,
+            /*addItemSlot(builder, RecipeIngredientRole.OUTPUT,
                     positions[slotIndex][0] + outputXOffset, positions[slotIndex][1])
                     .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
                     .setCustomRenderer(mezz.jei.api.forge.ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                     .addIngredient(mezz.jei.api.forge.ForgeTypes.FLUID_STACK, new net.minecraftforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount(), fluid.getTag()));
-            //?} elif neoforge {
-            /*addItemSlot(builder, RecipeIngredientRole.OUTPUT,
+            *///?} elif neoforge {
+            addItemSlot(builder, RecipeIngredientRole.OUTPUT,
                     positions[slotIndex][0] + outputXOffset, positions[slotIndex][1])
                     .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
                     .setCustomRenderer(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                     .addIngredient(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK, new net.neoforged.neoforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
-            *///?}
+            //?}
             slotIndex++;
         }
     }

@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import com.hbm_m.inventory.material.MaterialType;
+/*import com.hbm_m.inventory.material.MaterialType;
 import com.hbm_m.item.material.ItemCastMold;
 
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.function.Consumer;
 
-/**
+/^*
  * Генератор {@code hbm_m:mold_casting} (data-driven JSON).
  *
  * <p>Перебирает все {@link ItemCastMold.MoldType} × все {@link MaterialType} и для каждой
@@ -31,7 +31,7 @@ import java.util.function.Consumer;
  *
  * <p>Каждое {@code MaterialType} из {@code MaterialType.values()} (27 значений) × 33
  * {@code MoldType} = 891 пара; после фильтра пустых выходов остаётся ~80 фактических рецептов.</p>
- */
+ ^/
 public final class MoldCastingRecipeGenerator {
 
     public static void generate(Consumer<FinishedRecipe> writer) {
@@ -48,7 +48,7 @@ public final class MoldCastingRecipeGenerator {
         }
     }
 
-    /** Контейнер выхода: {@link Ingredient} + {@code count}; {@link #EMPTY} — нет рецепта. */
+    /^* Контейнер выхода: {@link Ingredient} + {@code count}; {@link #EMPTY} — нет рецепта. ^/
     private static final class Output {
         final net.minecraft.world.item.crafting.Ingredient ingredient;
         final int count;
@@ -89,12 +89,12 @@ public final class MoldCastingRecipeGenerator {
         };
     }
 
-    /** Использует {@code MaterialType.name} как tag-суффикс (с тем же fallback的其他 spelling не поддерживается). */
+    /^* Использует {@code MaterialType.name} как tag-суффикс (с тем же fallback的其他 spelling не поддерживается). ^/
     private static String tagName(MaterialType mat) {
         return mat.name;
     }
 
-    /** Теговый выход: {@code forge:ingots/<mat>} — резолвится в runtime. */
+    /^* Теговый выход: {@code forge:ingots/<mat>} — резолвится в runtime. ^/
     private static Output tagOutput(String tagId, int count) {
         net.minecraft.tags.TagKey<Item> tag = net.minecraft.tags.TagKey.create(
                 net.minecraft.core.registries.Registries.ITEM,
@@ -123,7 +123,7 @@ public final class MoldCastingRecipeGenerator {
         return ItemStack.EMPTY;
     }
 
-    /** Alternate spellings/names used across this mod's item ids for the same material. */
+    /^* Alternate spellings/names used across this mod's item ids for the same material. ^/
     private static List<String> nameCandidates(MaterialType mat) {
         List<String> out = new ArrayList<>(3);
         out.add(mat.name);
@@ -133,4 +133,4 @@ public final class MoldCastingRecipeGenerator {
         return out;
     }
 }
-//?}
+*///?}

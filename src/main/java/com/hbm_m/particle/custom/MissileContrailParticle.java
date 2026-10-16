@@ -26,12 +26,12 @@ import java.util.Random;
  * motion damping, multi-layer billboard, particle atlas alpha blend (FX layer 1).
  */
 //? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
+/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+*///?} elif fabric {
 /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
 *///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+//?}
 public class MissileContrailParticle extends TextureSheetParticle {
 
     /** Set by {@link com.hbm_m.entity.missile.MissileBaseEntity} before spawning contrail particles. */
@@ -155,11 +155,11 @@ public class MissileContrailParticle extends TextureSheetParticle {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public boolean shouldCull() {
         return false;
     }
-    //?}
+    *///?}
 
     @Override
     public int getLightColor(float partialTick) {

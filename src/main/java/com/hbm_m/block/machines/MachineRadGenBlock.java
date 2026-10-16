@@ -149,7 +149,7 @@ public class MachineRadGenBlock extends BaseEntityBlock implements IMultiblockCo
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos,
                                   Player player, InteractionHand hand, BlockHitResult hit) {
 
@@ -163,8 +163,8 @@ public class MachineRadGenBlock extends BaseEntityBlock implements IMultiblockCo
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
         }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
 
         if (!level.isClientSide()) {
@@ -177,7 +177,7 @@ public class MachineRadGenBlock extends BaseEntityBlock implements IMultiblockCo
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
         }
-    *///?}
+    //?}
 
 
     @Override
@@ -196,11 +196,11 @@ public class MachineRadGenBlock extends BaseEntityBlock implements IMultiblockCo
     }
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<MachineRadGenBlock> CODEC = simpleCodec(MachineRadGenBlock::new);
+    public static final com.mojang.serialization.MapCodec<MachineRadGenBlock> CODEC = simpleCodec(MachineRadGenBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    *///?}
+    //?}
 }

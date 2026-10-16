@@ -1,5 +1,5 @@
 //? if neoforge {
-/*package com.hbm_m.main;
+package com.hbm_m.main;
 
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.capability.ModAttachments;
@@ -43,4 +43,4 @@ public final class NeoForgeEntrypoint {
         // ClientSetup — отдельный addListener здесь не нужен (иначе дубликат).
     }
 }
-*///?}
+//?}

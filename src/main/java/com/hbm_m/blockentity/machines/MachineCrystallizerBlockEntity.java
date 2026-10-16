@@ -39,12 +39,12 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.AABB;
 //? if forge {
-import net.minecraftforge.common.capabilities.Capability;
+/*import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-//?}
+*///?}
 
 //? if fabric {
 /*import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
@@ -450,8 +450,8 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
      * frustum, which makes the spinner and fluid disappear at steep viewing angles.
      */
     //? if forge {
-    @Override
-    //?}
+    /*@Override
+    *///?}
     public AABB getRenderBoundingBox() {
         BlockState state = getBlockState();
         if (state.getBlock() instanceof MachineCrystallizerBlock block
@@ -540,9 +540,9 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
     }
 
     //? if forge {
-    @Override
+    /*@Override
     protected void setupFluidCapability() {
         setFluidHandler(tank);
     }
-    //?}
+    *///?}
 }

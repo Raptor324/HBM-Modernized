@@ -702,7 +702,8 @@ public class ModBlockEntities {
 
 	public static final RegistrySupplier<BlockEntityType<WireBlockEntity>> WIRE_BE =
 		BLOCK_ENTITIES.register("wire_be", () ->
-			BlockEntityType.Builder.<WireBlockEntity>of(WireBlockEntity::new, ModBlocks.WIRE_COATED.get(), ModBlocks.RED_WIRE_COATED.get(), ModBlocks.RED_CABLE.get(), ModBlocks.RED_CABLE_CLASSIC.get())
+			BlockEntityType.Builder.<WireBlockEntity>of(WireBlockEntity::new, ModBlocks.WIRE_COATED.get(), ModBlocks.RED_WIRE_COATED.get(), ModBlocks.RED_CABLE.get(), ModBlocks.RED_CABLE_CLASSIC.get(),
+					ModBlocks.RED_CABLE_BOX.get(), ModBlocks.RED_CABLE_BOX_1.get(), ModBlocks.RED_CABLE_BOX_2.get(), ModBlocks.RED_CABLE_BOX_3.get(), ModBlocks.RED_CABLE_BOX_4.get())
 				.build(null));
 
 	// ══════════ Сеть длинной ЛЭП (порт TileEntityPylonBase-иерархии 1.7.10) ══════════

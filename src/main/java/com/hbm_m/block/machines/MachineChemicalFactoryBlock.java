@@ -34,24 +34,29 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
+/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
+*///?}
 import dev.architectury.registry.menu.MenuRegistry;
 
 public class MachineChemicalFactoryBlock extends BaseEntityBlock implements IMultiblockController {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
+    /** Рама видима, когда над верхним поясом структуры стоят блоки (хелпер {{@code MultiblockFrameHelper}}). */
+    public static final BooleanProperty FRAME = BooleanProperty.create("frame");
     private final MultiblockStructureHelper structureHelper;
 
     public MachineChemicalFactoryBlock(BlockBehaviour.Properties properties) {
         super(properties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+        this.registerDefaultState(this.stateDefinition.any()
+                .setValue(FACING, Direction.NORTH)
+                .setValue(FRAME, false));
         this.structureHelper = defineStructureNew();
     }
 
@@ -125,6 +130,9 @@ public class MachineChemicalFactoryBlock extends BaseEntityBlock implements IMul
             if (core == null) {
                 return;
             }
+            if (level.getBlockEntity(core) instanceof com.hbm_m.interfaces.IFrameSupportable be) {
+                be.checkForFrame();
+            }
         }
     }
 
@@ -157,7 +165,7 @@ public class MachineChemicalFactoryBlock extends BaseEntityBlock implements IMul
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
+        builder.add(FACING, FRAME);
     }
 
     @Nullable
@@ -173,16 +181,16 @@ public class MachineChemicalFactoryBlock extends BaseEntityBlock implements IMul
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         return openMenu(state, level, pos, player, hand, hit);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
-    *///?}
+    //?}
 
     private InteractionResult openMenu(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider menu) {
@@ -198,11 +206,11 @@ public class MachineChemicalFactoryBlock extends BaseEntityBlock implements IMul
     }
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<MachineChemicalFactoryBlock> CODEC = simpleCodec(MachineChemicalFactoryBlock::new);
+    public static final com.mojang.serialization.MapCodec<MachineChemicalFactoryBlock> CODEC = simpleCodec(MachineChemicalFactoryBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    *///?}
+    //?}
 }
