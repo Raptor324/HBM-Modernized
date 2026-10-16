@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "hbm_m:coin_ufo"
+    },
+    "title": {
+      "translate": "advancements.hbm_m.boss_ufo.title"
+    },
+    "description": {
+      "translate": "advancements.hbm_m.boss_ufo.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "parent": "hbm_m:boss_worm"
+}

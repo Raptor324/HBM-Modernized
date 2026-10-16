@@ -14,9 +14,49 @@ import com.hbm_m.config.schema.ConfigSide;
 
 public class ModClothConfig {
 
-    // ════════════════════════════════════════════════════════════════
-    // Общие настройки
-    // ════════════════════════════════════════════════════════════════
+    // Общие настройки 
+    /**
+     * The RBMK simulation dials that vanilla game rules cannot carry. In the original every dial
+     * is a world game rule; the boolean and integer ones are registered as such in
+     * {@link com.hbm_m.handler.rbmk.RBMKGameRules}, but game rules have no floating-point type,
+     * so the rest live here. Defaults are the original's, so leaving this untouched behaves
+     * exactly like an unmodified world.
+     */
+    public RBMKDialSettings rbmkDials = new RBMKDialSettings();
+
+    public static class RBMKDialSettings {
+        /** dialPassiveCooling */
+        public double passiveCooling = 2.5;
+        /** dialPassiveCoolingInner */
+        public double passiveCoolingInner = 0.1;
+        /** dialColumnHeatFlow */
+        public double columnHeatFlow = 0.2;
+        /** dialDiffusionMod */
+        public double fuelDiffusionMod = 1.0;
+        /** dialHeatProvision */
+        public double heatProvision = 0.2;
+        /** dialBoilerHeatConsumption */
+        public double boilerHeatConsumption = 0.1;
+        /** dialControlSpeed */
+        public double controlSpeedMod = 1.0;
+        /** dialReactivityMod */
+        public double reactivityMod = 1.0;
+        /** dialOutgasserSpeedMod */
+        public double outgasserMod = 1.0;
+        /** dialControlSurgeMod */
+        public double surgeMod = 1.0;
+        /** dialReasimBoilerSpeed */
+        public double reasimBoilerSpeed = 0.05;
+        /** dialModeratorEfficiency */
+        public double moderatorEfficiency = 1.0;
+        /** dialAbsorberEfficiency */
+        public double absorberEfficiency = 1.0;
+        /** dialReflectorEfficiency */
+        public double reflectorEfficiency = 1.0;
+        /** dialAbsorberHeatConversion */
+        public double absorberHeatConversion = 0.05;
+    }
+
     public boolean enableRadiation = true;
     public boolean enableChunkRads = true;
 

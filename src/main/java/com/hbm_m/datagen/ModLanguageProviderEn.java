@@ -1756,12 +1756,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModBlocks.RBMK_OUTGASSER.get(), "RBMK Irradiation Channel");
         add(ModBlocks.RBMK_STORAGE.get(), "RBMK Storage");
         add(ModBlocks.RBMK_BLANK.get(), "RBMK Blank");
-        add(ModBlocks.RBMK_CONTROL_BLUE.get(),        "RBMK Control Rod (Blue)");
-        add(ModBlocks.RBMK_CONTROL_GREEN.get(),       "RBMK Control Rod (Green)");
-        add(ModBlocks.RBMK_CONTROL_YELLOW.get(),      "RBMK Control Rod (Yellow)");
-        add(ModBlocks.RBMK_CONTROL_PURPLE.get(),      "RBMK Control Rod (Purple)");
         add(ModBlocks.RBMK_CONTROL_MOD.get(),         "RBMK Control Rod (Moderated)");
-        add(ModBlocks.RBMK_CONTROL_MOD_AUTO.get(),    "RBMK Auto Control Rod (Moderated)");
         add(ModBlocks.RBMK_CONTROL_REASIM.get(),      "RBMK Control Rod (ReaSim)");
         add(ModBlocks.RBMK_CONTROL_REASIM_AUTO.get(), "RBMK Auto Control Rod (ReaSim)");
         add(ModBlocks.RBMK_STEAM_INLET.get(),         "RBMK Steam Inlet");
@@ -1786,12 +1781,10 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.RBMK_LID.get(), "RBMK Lid");
         add(ModItems.RBMK_LID_GLASS.get(), "RBMK Glass Lid");
         add(ModItems.RBMK_FUEL_EMPTY.get(), "RBMK Fuel Rod (Empty)");
-        add(ModItems.RBMK_FUEL_LEU235.get(), "RBMK Fuel Rod LEU-235");
         add(ModItems.RBMK_FUEL_HEU235.get(), "RBMK Fuel Rod HEU-235");
         add(ModItems.RBMK_FUEL_LEP.get(), "RBMK Fuel Rod LEP");
         add(ModItems.RBMK_FUEL_HEP.get(), "RBMK Fuel Rod HEP-239");
         add(ModItems.RBMK_FUEL_MOX.get(), "RBMK Fuel Rod MOX");
-        add(ModItems.RBMK_PELLET_LEU235.get(), "RBMK Pellet LEU-235");
         add(ModItems.RBMK_PELLET_HEU235.get(), "RBMK Pellet HEU-235");
         add(ModItems.RBMK_PELLET_LEP.get(), "RBMK Pellet LEP");
         add(ModItems.RBMK_PELLET_HEP.get(), "RBMK Pellet HEP-239");
@@ -2269,8 +2262,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("container.hbm_m.advanced_assembly_machine", "Assembly Machine");
         add(ModBlocks.CRUCIBLE.get(), "Crucible (WIP)");
         add(ModBlocks.FOUNDRY_BASIN.get(), "Foundry Basin");
-        add(ModBlocks.SU47_TROPHY.get(), "Su-47 Trophy");
-        add(ModBlocks.JAS39_TROPHY.get(), "Saab Jas39 Gripen E");
         add(ModBlocks.FOUNDRY_OUTLET.get(), "Foundry Outlet");
         add(ModBlocks.FOUNDRY_CHANNEL.get(), "Foundry Channel");
         add("container.hbm_m.crucible", "Crucible");
@@ -4204,7 +4195,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.RBMK_FUEL_HEA242.get(), "HEA-242 RBMK Fuel Rod");
         add(ModItems.RBMK_FUEL_HEAUS.get(), "HEAus RBMK Fuel Rod");
         add(ModItems.RBMK_FUEL_HEN.get(), "HEN RBMK Fuel Rod");
-        add(ModItems.RBMK_FUEL_HEP_ALT.get(), "HEP-239 RBMK Fuel Rod");
         add(ModItems.RBMK_FUEL_HEP241.get(), "HEP-241 RBMK Fuel Rod");
         add(ModItems.RBMK_FUEL_HES.get(), "HES RBMK Fuel Rod");
         add(ModItems.RBMK_FUEL_HEU233.get(), "HEU-233 RBMK Fuel Rod");

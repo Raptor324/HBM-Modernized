@@ -56,6 +56,7 @@ public final class ModDamageSources {
     public static DamageSource electricity(Level level) { return create(level, ModDamageTypes.ELECTRICITY); }
     public static DamageSource exhaust(Level level) { return create(level, ModDamageTypes.EXHAUST); }
     public static DamageSource spikes(Level level) { return create(level, ModDamageTypes.SPIKES); }
+    public static DamageSource boltgun(Entity attacker) { return create(attacker, attacker, ModDamageTypes.BOLTGUN); }
     public static DamageSource monoxide(Level level) { return create(level, ModDamageTypes.MONOXIDE); }
     public static DamageSource asbestos(Level level) { return create(level, ModDamageTypes.ASBESTOS); }
     public static DamageSource blacklung(Level level) { return create(level, ModDamageTypes.BLACKLUNG); }

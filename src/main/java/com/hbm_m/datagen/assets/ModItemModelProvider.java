@@ -141,31 +141,39 @@ public class ModItemModelProvider extends ItemModelProvider {
         powdersItem(ModItems.POWDER_COLTAN);
 
         // Sentry-Turret Munition (MVP-Platzhalter, nutzt vorhandene Ammo-DGK-Textur)
-        powderTexture(ModItems.TURRET_AMMO, "ammo_dgk");
+        powderTexture(ModItems.TURRET_AMMO, "turret_ammo");
 
         // Echte 9mm/.50/5.56mm-Munition fuer Sentry/Chekhov/Friendly (Platzhalter-Textur, bis eigene Assets vorhanden sind)
-        powderTexture(ModItems.AMMO_9MM_SP, "ammo_dgk");
-        powderTexture(ModItems.AMMO_9MM_FMJ, "ammo_dgk");
-        powderTexture(ModItems.AMMO_9MM_JHP, "ammo_dgk");
-        powderTexture(ModItems.AMMO_9MM_AP, "ammo_dgk");
-        powderTexture(ModItems.AMMO_50_SP, "ammo_dgk");
-        powderTexture(ModItems.AMMO_50_FMJ, "ammo_dgk");
-        powderTexture(ModItems.AMMO_50_JHP, "ammo_dgk");
-        powderTexture(ModItems.AMMO_50_AP, "ammo_dgk");
-        powderTexture(ModItems.AMMO_50_DU, "ammo_dgk");
-        powderTexture(ModItems.AMMO_556_SP, "ammo_dgk");
-        powderTexture(ModItems.AMMO_556_FMJ, "ammo_dgk");
-        powderTexture(ModItems.AMMO_556_JHP, "ammo_dgk");
-        powderTexture(ModItems.AMMO_556_AP, "ammo_dgk");
-        powderTexture(ModItems.ROCKET_TURRET_STANDARD, "ammo_dgk");
-        powderTexture(ModItems.ROCKET_HIMARS_STANDARD, "ammo_dgk");
-        powderTexture(ModItems.ROCKET_HIMARS_HE, "ammo_dgk");
-        powderTexture(ModItems.ROCKET_HIMARS_LAVA, "ammo_dgk");
-        powderTexture(ModItems.ROCKET_HIMARS_MINI_NUKE, "ammo_dgk");
-        powderTexture(ModItems.ROCKET_HIMARS_WP, "ammo_dgk");
-        powderTexture(ModItems.ROCKET_HIMARS_THERMOBARIC, "ammo_dgk");
-        powderTexture(ModItems.AMMO_TAU_URANIUM, "ammo_dgk");
-        powderTexture(ModItems.AMMO_FLAME_DIESEL, "ammo_dgk");
+        powderTexture(ModItems.AMMO_9MM_SP, "ammo_9mm_sp");
+        powderTexture(ModItems.AMMO_9MM_FMJ, "ammo_9mm_fmj");
+        powderTexture(ModItems.AMMO_9MM_JHP, "ammo_9mm_jhp");
+        powderTexture(ModItems.AMMO_9MM_AP, "ammo_9mm_ap");
+        powderTexture(ModItems.AMMO_50_SP, "ammo_50_sp");
+        powderTexture(ModItems.AMMO_50_FMJ, "ammo_50_fmj");
+        powderTexture(ModItems.AMMO_50_JHP, "ammo_50_jhp");
+        powderTexture(ModItems.AMMO_50_AP, "ammo_50_ap");
+        powderTexture(ModItems.AMMO_50_DU, "ammo_50_du");
+        powderTexture(ModItems.AMMO_556_SP, "ammo_556_sp");
+        powderTexture(ModItems.AMMO_556_FMJ, "ammo_556_fmj");
+        powderTexture(ModItems.AMMO_556_JHP, "ammo_556_jhp");
+        powderTexture(ModItems.AMMO_556_AP, "ammo_556_ap");
+        // Every rocket used to fall back to the DGK grenade icon; each now carries its own
+        // art, taken from the original's projectile textures.
+        powderTexture(ModItems.ROCKET_HIMARS_STANDARD, "rocket_himars_standard");
+        powderTexture(ModItems.ROCKET_HIMARS_HE, "rocket_himars_standard_he");
+        powderTexture(ModItems.ROCKET_HIMARS_LAVA, "rocket_himars_standard_lava");
+        powderTexture(ModItems.ROCKET_HIMARS_MINI_NUKE, "rocket_himars_standard_mini_nuke");
+        powderTexture(ModItems.ROCKET_HIMARS_WP, "rocket_himars_standard_wp");
+        powderTexture(ModItems.ROCKET_HIMARS_THERMOBARIC, "rocket_himars_standard_tb");
+        powderTexture(ModItems.ROCKET_HIMARS_SINGLE, "rocket_himars_single");
+        powderTexture(ModItems.ROCKET_HIMARS_SINGLE_TB, "rocket_himars_single_tb");
+        powderTexture(ModItems.ROCKET_TURRET_STANDARD, "rocket_turret_he");
+        powderTexture(ModItems.ROCKET_TURRET_HEAT, "rocket_turret_heat");
+        powderTexture(ModItems.ROCKET_TURRET_DEMO, "rocket_turret_demo");
+        powderTexture(ModItems.ROCKET_TURRET_INC, "rocket_turret_inc");
+        powderTexture(ModItems.ROCKET_TURRET_PHOSPHORUS, "rocket_turret_phosphorus");
+        powderTexture(ModItems.AMMO_TAU_URANIUM, "ammo_tau_uranium");
+        powderTexture(ModItems.AMMO_FLAME_DIESEL, "ammo_flame_diesel");
 
         // Missile-Assembly-Teile (Platzhalter-Texturen, bis eigene Assets vorhanden sind)
         powderTexture(ModItems.MISSILE_FUSELAGE, "pipes_steel");
@@ -220,6 +228,18 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.SAT_HEAD_RESONATOR);
         withExistingParent(ModItems.INGOT_TUNGSTEN_CARBIDE.getId().getPath(), "item/generated")
                 .texture("layer0", modLoc("item/ingot/ingot_tungsten_carbide"));
+
+        // The original is a single damage-variant item with one texture; the port splits it into
+        // four items, so they all share that texture rather than inventing three new ones.
+        for (var caller : java.util.List.of(ModItems.BOMB_CALLER_NAPALM,
+                ModItems.BOMB_CALLER_CHLORINE, ModItems.BOMB_CALLER_ATOMIC)) {
+            withExistingParent(caller.getId().getPath(), "item/generated")
+                    .texture("layer0", modLoc("item/bomb_caller"));
+        }
+
+
+
+
 
         registerRadAbsorberItemModels();
 
@@ -313,6 +333,8 @@ public class ModItemModelProvider extends ItemModelProvider {
                 .texture("layer0", mcLoc("item/music_disc_13"));
         withExistingParent(ModItems.MUSIC_DISC_GLASS.getId().getPath(), "item/generated")
                 .texture("layer0", modLoc("item/record_glass"));
+        withExistingParent(ModItems.MUSIC_DISC_CH.getId().getPath(), "item/generated")
+                .texture("layer0", modLoc("item/record_ch"));
 
         simpleItem(ModItems.HEART_PIECE);
         simpleItem(ModItems.HEART_CONTAINER);
@@ -473,6 +495,9 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.ADVANCED_CIRCUIT);
         simpleItem(ModItems.ANALOG_CIRCUIT);
         simpleItem(ModItems.VACUUM_TUBE);
+        simpleItem(ModItems.UPGRADE_5G);
+        simpleItem(ModItems.UPGRADE_SCREM);
+        simpleItem(ModItems.CIRCUIT_NUMITRON);
         simpleItem(ModItems.CAPACITOR);
         simpleItem(ModItems.CENTRIFUGE_ELEMENT);
         simpleItem(ModItems.PCB);
@@ -592,41 +617,32 @@ public class ModItemModelProvider extends ItemModelProvider {
         withExistingParent(ModItems.WASTE_PLATE_U233.getId().getPath(), "item/generated").texture("layer0", modLoc("item/waste_plate_uranium"));
         withExistingParent(ModItems.WASTE_PLATE_U235.getId().getPath(), "item/generated").texture("layer0", modLoc("item/waste_plate_uranium"));
         withExistingParent(ModItems.WASTE_PLATE_PU239.getId().getPath(), "item/generated").texture("layer0", modLoc("item/waste_plate_mox"));
-        withExistingParent(ModItems.RBMK_FUEL_DRX.getId().getPath(), "item/generated")
-            .texture("layer0", modLoc("block/rbmkrods/" + ModItems.RBMK_FUEL_DRX.getId().getPath()));
+        rbmkPelletModels();
 
-        // RBMK fuel rods
-        withExistingParent(ModItems.RBMK_FUEL_EMPTY.getId().getPath(), "item/generated").texture("layer0", modLoc("block/rbmk/rbmk_element_inner"));
-        withExistingParent(ModItems.RBMK_FUEL_LEU235.getId().getPath(), "item/generated").texture("layer0", modLoc("block/rbmk/rbmk_fuel"));
-        withExistingParent(ModItems.RBMK_FUEL_HEU235.getId().getPath(), "item/generated").texture("layer0", modLoc("block/rbmk/rbmk_fuel"));
-        withExistingParent(ModItems.RBMK_FUEL_LEP.getId().getPath(),    "item/generated").texture("layer0", modLoc("block/rbmk/rbmk_fuel"));
-        withExistingParent(ModItems.RBMK_FUEL_HEP.getId().getPath(),    "item/generated").texture("layer0", modLoc("block/rbmk/rbmk_fuel"));
-        withExistingParent(ModItems.RBMK_FUEL_MOX.getId().getPath(),    "item/generated").texture("layer0", modLoc("block/rbmk/rbmk_fuel"));
-        // RBMK pellets
-        withExistingParent(ModItems.RBMK_PELLET_LEU235.getId().getPath(), "item/generated").texture("layer0", modLoc("block/rbmk/rbmk_element_inner"));
-        withExistingParent(ModItems.RBMK_PELLET_HEU235.getId().getPath(), "item/generated").texture("layer0", modLoc("block/rbmk/rbmk_element_inner"));
-        withExistingParent(ModItems.RBMK_PELLET_LEP.getId().getPath(),    "item/generated").texture("layer0", modLoc("block/rbmk/rbmk_element_inner"));
-        withExistingParent(ModItems.RBMK_PELLET_HEP.getId().getPath(),    "item/generated").texture("layer0", modLoc("block/rbmk/rbmk_element_inner"));
-        withExistingParent(ModItems.RBMK_PELLET_MOX.getId().getPath(),    "item/generated").texture("layer0", modLoc("block/rbmk/rbmk_element_inner"));
-        // RBMK lids
-        withExistingParent(ModItems.RBMK_LID.getId().getPath(),       "item/generated").texture("layer0", modLoc("block/rbmk/rbmk_blank_cover_top"));
-        withExistingParent(ModItems.RBMK_LID_GLASS.getId().getPath(), "item/generated").texture("layer0", modLoc("block/rbmk/rbmk_blank_glass_top"));
+        // RBMK rods/pellets/lids - all use the original mod's own item textures (1:1 copies).
+        for (RegistrySupplier<Item> rbmk : java.util.List.of(
+                ModItems.RBMK_FUEL_DRX, ModItems.RBMK_FUEL_EMPTY, ModItems.RBMK_FUEL_TEST,
+                ModItems.RBMK_FUEL_HEU235, ModItems.RBMK_FUEL_LEP, ModItems.RBMK_FUEL_HEP,
+                ModItems.RBMK_FUEL_MOX,
+                ModItems.RBMK_LID, ModItems.RBMK_LID_GLASS)) {
+            withExistingParent(rbmk.getId().getPath(), "item/generated")
+                    .texture("layer0", modLoc("item/" + rbmk.getId().getPath()));
+        }
 
         // RBMK block items — parent points to block/rbmk/ not block/machines/
         java.util.List<dev.architectury.registry.registries.RegistrySupplier<net.minecraft.world.level.block.Block>> rbmkBlocks = java.util.List.of(
             ModBlocks.RBMK_ROD, ModBlocks.RBMK_ROD_MOD, ModBlocks.RBMK_ROD_REASIM, ModBlocks.RBMK_ROD_REASIM_MOD,
             ModBlocks.RBMK_CONTROL,
-            ModBlocks.RBMK_CONTROL_BLUE, ModBlocks.RBMK_CONTROL_GREEN, ModBlocks.RBMK_CONTROL_YELLOW,
-            ModBlocks.RBMK_CONTROL_PURPLE, ModBlocks.RBMK_CONTROL_MOD, ModBlocks.RBMK_CONTROL_MOD_AUTO,
+            
+            ModBlocks.RBMK_CONTROL_MOD, 
             ModBlocks.RBMK_CONTROL_AUTO, ModBlocks.RBMK_CONTROL_REASIM, ModBlocks.RBMK_CONTROL_REASIM_AUTO,
             ModBlocks.RBMK_MODERATOR, ModBlocks.RBMK_ABSORBER, ModBlocks.RBMK_REFLECTOR,
             ModBlocks.RBMK_COOLER, ModBlocks.RBMK_BOILER, ModBlocks.RBMK_HEATER,
             ModBlocks.RBMK_OUTGASSER, ModBlocks.RBMK_STORAGE, ModBlocks.RBMK_BLANK,
             ModBlocks.RBMK_STEAM_INLET, ModBlocks.RBMK_STEAM_OUTLET,
             ModBlocks.RBMK_LOADER, ModBlocks.RBMK_AUTOLOADER, ModBlocks.RBMK_CRANE_CONSOLE,
-            ModBlocks.RBMK_DISPLAY, ModBlocks.RBMK_GAUGE, ModBlocks.RBMK_INDICATOR,
-            ModBlocks.RBMK_LEVER, ModBlocks.RBMK_NUMITRON, ModBlocks.RBMK_GRAPH,
-            ModBlocks.RBMK_TERMINAL, ModBlocks.RBMK_KEYPAD, ModBlocks.RBMK_DISPLAY_BLANK,
+            // The 9 mini panels are not columns - they share one hand-written body model
+            // (block/rbmk/rbmk_panel) with facing variants, and ship their own item models.
             ModBlocks.RBMK_DEBRIS, ModBlocks.RBMK_DEBRIS_BURNING,
             ModBlocks.RBMK_DEBRIS_DIGAMMA, ModBlocks.RBMK_DEBRIS_RADIATING
         );
@@ -1048,6 +1064,10 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModel(ModBlocks.TUNGSTEN_ORE);
         blockItemFromBlockModel(ModBlocks.WASTE_CHARGE);
 
+        withExistingParent(ModItems.BOT_PRIME_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.UFO_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.RAD_BEAST_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.MASKMAN_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
         withExistingParent(ModItems.NOLO_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
         withExistingParent(ModItems.ENTITY_MOB_TAINTED_CREEPER_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
         withExistingParent(ModItems.ENTITY_MOB_VOLATILE_CREEPER_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
@@ -1065,6 +1085,12 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.ASH_MISC);
         simpleItem(ModItems.ASH_FLY);
         simpleItem(ModItems.ASH_SOOT);
+        simpleItem(ModItems.OIL_TAR_CRUDE);
+        simpleItem(ModItems.OIL_TAR_CRACK);
+        simpleItem(ModItems.OIL_TAR_COAL);
+        simpleItem(ModItems.OIL_TAR_WOOD);
+        simpleItem(ModItems.OIL_TAR_WAX);
+        simpleItem(ModItems.OIL_TAR_PARAFFIN);
         simpleItem(ModItems.FLUORITE);
         simpleItem(ModItems.LIGNITE);
         simpleItem(ModItems.CINNABAR);
@@ -1889,7 +1915,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.RBMK_FUEL_HEA242,
                 ModItems.RBMK_FUEL_HEAUS,
                 ModItems.RBMK_FUEL_HEN,
-                ModItems.RBMK_FUEL_HEP_ALT,
                 ModItems.RBMK_FUEL_HEP241,
                 ModItems.RBMK_FUEL_HES,
                 ModItems.RBMK_FUEL_HEU233,
@@ -1910,34 +1935,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.RBMK_FUEL_ZFB_AM_MIX,
                 ModItems.RBMK_FUEL_ZFB_BISMUTH,
                 ModItems.RBMK_FUEL_ZFB_PU241,
-                ModItems.RBMK_PELLET_BALEFIRE,
-                ModItems.RBMK_PELLET_BALEFIRE_GOLD,
-                ModItems.RBMK_PELLET_DRX,
-                ModItems.RBMK_PELLET_FLASHLEAD,
-                ModItems.RBMK_PELLET_HEA241,
-                ModItems.RBMK_PELLET_HEA242,
-                ModItems.RBMK_PELLET_HEAUS,
-                ModItems.RBMK_PELLET_HEN,
-                ModItems.RBMK_PELLET_HEP241,
-                ModItems.RBMK_PELLET_HES,
-                ModItems.RBMK_PELLET_HEU233,
-                ModItems.RBMK_PELLET_LEA,
-                ModItems.RBMK_PELLET_LEAUS,
-                ModItems.RBMK_PELLET_LES,
-                ModItems.RBMK_PELLET_MEA,
-                ModItems.RBMK_PELLET_MEN,
-                ModItems.RBMK_PELLET_MEP,
-                ModItems.RBMK_PELLET_MES,
-                ModItems.RBMK_PELLET_MEU,
-                ModItems.RBMK_PELLET_PO210BE,
-                ModItems.RBMK_PELLET_PU238BE,
-                ModItems.RBMK_PELLET_RA226BE,
-                ModItems.RBMK_PELLET_THMEU,
-                ModItems.RBMK_PELLET_UEU,
-                ModItems.RBMK_PELLET_UZH,
-                ModItems.RBMK_PELLET_ZFB_AM_MIX,
-                ModItems.RBMK_PELLET_ZFB_BISMUTH,
-                ModItems.RBMK_PELLET_ZFB_PU241,
                 ModItems.RBMK_TOOL,
                 ModItems.REACHER,
                 ModItems.REACTOR_CORE,
@@ -2367,6 +2364,54 @@ public class ModItemModelProvider extends ItemModelProvider {
                     .predicate(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "tier"), tier.ordinal())
                     .end();
         }
+    }
+
+
+    /**
+     * RBMK pellet models, reproducing {@code ItemRBMKPellet}'s multi-pass rendering: the base
+     * texture plus one of five enrichment overlays, plus the xenon overlay for the poisoned
+     * states. The original selected these by item damage; here the {@code hbm_m:pellet_state}
+     * item property (bound in ClientSetup) picks the matching override model.
+     */
+    private void rbmkPelletModels() {
+        ResourceLocation stateProperty = modLoc("pellet_state");
+
+        for (RegistrySupplier<Item> supplier : java.util.List.of(
+                ModItems.RBMK_PELLET_UEU, ModItems.RBMK_PELLET_MEU, ModItems.RBMK_PELLET_HEU233,
+                ModItems.RBMK_PELLET_HEU235, ModItems.RBMK_PELLET_UZH, ModItems.RBMK_PELLET_THMEU,
+                ModItems.RBMK_PELLET_LEP, ModItems.RBMK_PELLET_MEP, ModItems.RBMK_PELLET_HEP,
+                ModItems.RBMK_PELLET_HEP241, ModItems.RBMK_PELLET_LEA, ModItems.RBMK_PELLET_MEA,
+                ModItems.RBMK_PELLET_HEA241, ModItems.RBMK_PELLET_HEA242, ModItems.RBMK_PELLET_MEN,
+                ModItems.RBMK_PELLET_HEN, ModItems.RBMK_PELLET_MOX, ModItems.RBMK_PELLET_LES,
+                ModItems.RBMK_PELLET_MES, ModItems.RBMK_PELLET_HES, ModItems.RBMK_PELLET_LEAUS,
+                ModItems.RBMK_PELLET_HEAUS, ModItems.RBMK_PELLET_PO210BE, ModItems.RBMK_PELLET_RA226BE,
+                ModItems.RBMK_PELLET_PU238BE, ModItems.RBMK_PELLET_BALEFIRE_GOLD,
+                ModItems.RBMK_PELLET_FLASHLEAD, ModItems.RBMK_PELLET_BALEFIRE,
+                ModItems.RBMK_PELLET_ZFB_BISMUTH, ModItems.RBMK_PELLET_ZFB_PU241,
+                ModItems.RBMK_PELLET_ZFB_AM_MIX, ModItems.RBMK_PELLET_DRX)) {
+
+            String name = supplier.getId().getPath();
+            int states = supplier.get() instanceof com.hbm_m.item.rbmk.RBMKPelletItem pellet
+                    ? pellet.stateCount() : 10;
+
+            ItemModelBuilder base = pelletStateModel(name, name, 0);
+            for (int state = 1; state < states; state++) {
+                String variant = name + "_" + state;
+                pelletStateModel(variant, name, state);
+                base.override()
+                        .predicate(stateProperty, state)
+                        .model(new ModelFile.UncheckedModelFile(modLoc("item/" + variant)))
+                        .end();
+            }
+        }
+    }
+
+    private ItemModelBuilder pelletStateModel(String modelName, String textureName, int state) {
+        ItemModelBuilder builder = withExistingParent(modelName, "item/generated")
+                .texture("layer0", modLoc("item/" + textureName))
+                .texture("layer1", modLoc("item/rbmk_pellet_overlay_e" + (state % 5)));
+        if (state >= 5) builder.texture("layer2", modLoc("item/rbmk_pellet_overlay_xenon"));
+        return builder;
     }
 
 }

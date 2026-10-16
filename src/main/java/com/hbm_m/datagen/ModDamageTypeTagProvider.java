@@ -31,6 +31,7 @@ public class ModDamageTypeTagProvider extends DamageTypeTagsProvider {
 
         // Тег: Урон, который игнорирует броню
         tag(DamageTypeTags.BYPASSES_ARMOR).add(
+                ModDamageTypes.BOLTGUN,
                 ModDamageTypes.RADIATION,
                 ModDamageTypes.MUD_POISONING,
                 ModDamageTypes.EUTHANIZED_SELF,

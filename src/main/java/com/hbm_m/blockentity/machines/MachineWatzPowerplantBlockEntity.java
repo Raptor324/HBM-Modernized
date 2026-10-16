@@ -280,6 +280,10 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
             serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE, x, y, z, 40, 1.5D, 1.0D, 1.5D, 0.03D);
             serverLevel.sendParticles(ParticleTypes.EXPLOSION, x, y, z, 4, 0.8D, 0.5D, 0.8D, 0.01D);
             level.explode(null, x, y, z, 3.0F, Level.ExplosionInteraction.BLOCK);
+            // The structural collapse is still simplified (see the class doc), but the meltdown
+            // itself is real, so it credits everyone within 50 blocks as the original does.
+            com.hbm_m.advancement.ModAdvancements.grantNearby(level, x, y, z, 50D,
+                    com.hbm_m.advancement.ModAdvancements.WATZ_BOOM);
         }
     }
 

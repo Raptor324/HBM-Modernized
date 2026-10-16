@@ -21,7 +21,6 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.phys.AABB;
 
 /**
  * BER, генерируемый фабрикой {@link MachineRenderers}. Содержит весь общий
@@ -58,8 +57,13 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
         @Override public float fadeAlpha() { return fadeAlpha; }
         @Override public BlockPos blockPos() { return blockPos; }
         @Override public @Nullable Matrix4f partTransform(String partName) {
-            Matrix4f m = transforms.get(partName);
-            return m == null ? null : new Matrix4f(m);
+            // Живой экземпляр без defensive copy: матрица мутируется через saveTransform
+            // раз за кадр, хуки живут внутри того же кадра.
+            return transforms.get(partName);
+        }
+
+        void saveTransform(String partName, Matrix4f pose) {
+            transforms.computeIfAbsent(partName, k -> new Matrix4f()).set(pose);
         }
     }
 
@@ -142,13 +146,15 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
         // все части переиспользуют его (экономия getLightColor-вызовов на фермах).
         float[] sharedLight = null;
         if (ClientRenderFlags.useInstancedBatching()) {
-            AABB bounds = renderBounds(blockEntity);
-            sharedLightBbox[0] = (float) (bounds.minX - blockPos.getX());
-            sharedLightBbox[1] = (float) (bounds.minY - blockPos.getY());
-            sharedLightBbox[2] = (float) (bounds.minZ - blockPos.getZ());
-            sharedLightBbox[3] = (float) (bounds.maxX - blockPos.getX());
-            sharedLightBbox[4] = (float) (bounds.maxY - blockPos.getY());
-            sharedLightBbox[5] = (float) (bounds.maxZ - blockPos.getZ());
+            // Фиксированный bbox 1×2×1 вокруг блока BE вместо renderBounds(): new AABB()
+            // на каждую машину каждый кадр — чистый мусор для GC, на свет LOD-сэмпла
+            // влияет мало (сэмпл кешируется в LightSampleCache).
+            sharedLightBbox[0] = -0.5f;
+            sharedLightBbox[1] = 0f;
+            sharedLightBbox[2] = -0.5f;
+            sharedLightBbox[3] = 1.5f;
+            sharedLightBbox[4] = 2f;
+            sharedLightBbox[5] = 1.5f;
             sharedLightPose.identity();
             com.hbm_m.client.render.LightSampleCache.getOrSample8Lod(blockEntity, spec.lightSampleKey,
                     sharedLightBbox, blockPos, sharedLightPose, packedLight, sharedLight8,
@@ -160,11 +166,12 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
         for (MachineSpec.PartDef<T> part : spec.parts()) {
             if (!animatedVisible && part.animator() != null) continue;
             BakedModel partModel = spec.partModel(part, model);
-            var dynQuads = spec.dynamicQuads(part, blockEntity);
-            if (partModel == null && dynQuads == null && !part.dynamic()) continue;
+            // Ленивое построение: dynQuads вычисляются только если VBO ещё не собран
+            // (раньше resolver дергался каждый кадр для каждого BE — см. MachineSpec.partRendererLazy).
+            if (partModel == null && !part.dynamic()) continue;
+            String dynKey = part.dynamic() ? spec.dynamicCacheKeyValue(part, blockEntity) : null;
 
-            MachinePartRenderer renderer = spec.partRenderer(part, partModel, dynQuads,
-                    part.dynamic() ? spec.dynamicCacheKeyValue(part, blockEntity) : null);
+            MachinePartRenderer renderer = spec.partRendererLazy(part, partModel, blockEntity, dynKey);
             if (!renderer.hasGeometry()) continue;
 
             poseStack.pushPose();
@@ -175,7 +182,11 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
                     draw = part.animator().animate(blockEntity, partialTick, gameTime, poseStack);
                 }
                 if (draw) {
-                    ctx.transforms.put(part.name(), new Matrix4f(poseStack.last().pose()));
+                    // Матрицы нужны только хукам (MachineRenderApi.partTransform);
+                    // без хуков не аллоцируем ничего.
+                    if (!spec.hooks().isEmpty()) {
+                        ctx.saveTransform(part.name(), poseStack.last().pose());
+                    }
                     renderer.enqueue(poseStack, blockPose, basePoseStack, packedLight, blockPos,
                             blockEntity, bufferSource, sharedLight);
                 }

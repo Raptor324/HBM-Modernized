@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "hbm_m:gem_tantalium"
+    },
+    "title": {
+      "translate": "advancements.hbm_m.tantalum.title"
+    },
+    "description": {
+      "translate": "advancements.hbm_m.tantalum.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "parent": "hbm_m:chemplant"
+}

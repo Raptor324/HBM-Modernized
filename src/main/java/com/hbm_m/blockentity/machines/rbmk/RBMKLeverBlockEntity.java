@@ -29,6 +29,10 @@ public class RBMKLeverBlockEntity extends RBMKPanelDeviceBlockEntity {
     public final String[]  commandOff = new String[UNITS];
     public final boolean[] state      = new boolean[UNITS];
     public final double[]  flip       = new double[UNITS];
+    /** LeverUnit.polling - while set, the lever re-sends its command every tick at either end. */
+    public final boolean[] polling    = new boolean[UNITS];
+    /** LeverUnit.prevFlipProgress - previous tick's flip, for render interpolation. */
+    public final double[]  prevFlip   = new double[UNITS];
 
     public RBMKLeverBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.RBMK_LEVER_BE.get(), pos, state);
@@ -40,10 +44,28 @@ public class RBMKLeverBlockEntity extends RBMKPanelDeviceBlockEntity {
     @Override
     protected void onPanelTick(Level level, BlockPos pos) {
         for (int i = 0; i < UNITS; i++) {
+            // The original snapshots the previous progress before the active check, so an
+            // inactive lever still interpolates to a standstill instead of snapping.
+            prevFlip[i] = flip[i];
+            if (!isUnitActive(i)) continue;
+
+            // Polling mode re-sends at whichever end the lever is resting at.
+            if (polling[i]) {
+                if (flip[i] >= 1.0) send(level, i, commandOn[i]);
+                if (flip[i] <= 0.0) send(level, i, commandOff[i]);
+            }
+
             double target = state[i] ? 1.0 : 0.0;
             if (flip[i] < target) flip[i] = Math.min(target, flip[i] + FLIP_SPEED);
             else if (flip[i] > target) flip[i] = Math.max(target, flip[i] - FLIP_SPEED);
         }
+    }
+
+    /** Broadcasts one command on a unit's channel, skipping blanks like the original's canSend. */
+    private void send(Level level, int unit, String command) {
+        String ch = channel[unit];
+        if (ch != null && !ch.isEmpty() && command != null && !command.isEmpty())
+            RTTYNetwork.broadcast(level, ch, command);
     }
 
     /** Hit-quadrant → unit index: top half = unit 0, bottom half = unit 1 (2 stacked levers). */
@@ -69,6 +91,7 @@ public class RBMKLeverBlockEntity extends RBMKPanelDeviceBlockEntity {
 
     public void flipLever(Level level, BlockPos pos, Player player, int unit) {
         if (unit < 0 || unit >= UNITS) return;
+        if (!isUnitActive(unit)) return;
         state[unit] = !state[unit];
         setChanged();
         syncToClient();
@@ -81,38 +104,69 @@ public class RBMKLeverBlockEntity extends RBMKPanelDeviceBlockEntity {
         }
     }
 
+    /** Original per-unit array size (see the matching *Unit inner class). */
+    @Override public int unitCount() { return UNITS; }
+
     @Override
     public void receiveControl(CompoundTag data) {
+        receiveSharedControl(data);
         for (int i = 0; i < UNITS; i++) {
             if (data.contains("channel" + i))    channel[i]    = data.getString("channel" + i);
             if (data.contains("commandOn" + i))  commandOn[i]  = data.getString("commandOn" + i);
             if (data.contains("commandOff" + i)) commandOff[i] = data.getString("commandOff" + i);
+            if (data.contains("lpolling" + i))   polling[i]    = data.getBoolean("lpolling" + i);
         }
         setChanged();
         syncToClient();
     }
 
-    
+    //? if < 1.21.1 {
     @Override
-    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.writeNbtData(tag, registries);
+    protected void saveAdditional(CompoundTag tag) {
+        super.saveAdditional(tag);
         for (int i = 0; i < UNITS; i++) {
-        tag.putString("channel" + i, channel[i]);
-        tag.putString("commandOn" + i, commandOn[i]);
-        tag.putString("commandOff" + i, commandOff[i]);
-        tag.putBoolean("state" + i, state[i]);
+            tag.putString("channel" + i, channel[i]);
+            tag.putString("commandOn" + i, commandOn[i]);
+            tag.putString("commandOff" + i, commandOff[i]);
+            tag.putBoolean("lpolling" + i, polling[i]);
+            tag.putBoolean("state" + i, state[i]);
         }
     }
 
     @Override
-    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.readNbtData(tag, registries);
+    public void load(CompoundTag tag) {
+        super.load(tag);
         for (int i = 0; i < UNITS; i++) {
-        channel[i]    = tag.contains("channel" + i) ? tag.getString("channel" + i) : "";
-        commandOn[i]  = tag.contains("commandOn" + i) ? tag.getString("commandOn" + i) : "1";
-        commandOff[i] = tag.contains("commandOff" + i) ? tag.getString("commandOff" + i) : "0";
-        state[i]      = tag.getBoolean("state" + i);
-        flip[i]       = state[i] ? 1.0 : 0.0;
+            channel[i]    = tag.contains("channel" + i) ? tag.getString("channel" + i) : "";
+            commandOn[i]  = tag.contains("commandOn" + i) ? tag.getString("commandOn" + i) : "1";
+            commandOff[i] = tag.contains("commandOff" + i) ? tag.getString("commandOff" + i) : "0";
+            state[i]      = tag.getBoolean("state" + i);
+            flip[i]       = state[i] ? 1.0 : 0.0;
         }
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
+        for (int i = 0; i < UNITS; i++) {
+            tag.putString("channel" + i, channel[i]);
+            tag.putString("commandOn" + i, commandOn[i]);
+            tag.putString("commandOff" + i, commandOff[i]);
+            tag.putBoolean("lpolling" + i, polling[i]);
+            tag.putBoolean("state" + i, state[i]);
+        }
+    }
+
+    @Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
+        for (int i = 0; i < UNITS; i++) {
+            channel[i]    = tag.contains("channel" + i) ? tag.getString("channel" + i) : "";
+            commandOn[i]  = tag.contains("commandOn" + i) ? tag.getString("commandOn" + i) : "1";
+            commandOff[i] = tag.contains("commandOff" + i) ? tag.getString("commandOff" + i) : "0";
+            state[i]      = tag.getBoolean("state" + i);
+            flip[i]       = state[i] ? 1.0 : 0.0;
+        }
+    }
+    *///?}
 }

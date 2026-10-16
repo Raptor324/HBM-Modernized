@@ -1,5 +1,7 @@
 package com.hbm_m.item;
 
+import net.minecraft.world.item.RecordItem;
+import net.minecraftforge.common.ForgeSpawnEggItem;
 import static com.hbm_m.lib.RefStrings.MODID;
 
 import java.util.EnumMap;
@@ -455,6 +457,15 @@ public class ModItems {
             () -> new AirBombItem(new Item.Properties(), ModEntities.AIRBOMB_PROJECTILE));
     public static final RegistrySupplier<Item> AIRNUKEBOMB_A = ITEMS.register("airnukebomb_a",
             () -> new AirNukeBombItem(new Item.Properties(), ModEntities.AIRNUKEBOMB_PROJECTILE));
+    public static final RegistrySupplier<Item> BOT_PRIME_SPAWN_EGG = ITEMS.register("bot_prime_spawn_egg",
+            () -> new ForgeSpawnEggItem(ModEntities.BOT_PRIME_HEAD, 0x3a3f45, 0xc03020, new Item.Properties()));
+    public static final RegistrySupplier<Item> UFO_SPAWN_EGG = ITEMS.register("ufo_spawn_egg",
+            () -> new ForgeSpawnEggItem(ModEntities.UFO, 0x505a64, 0x30ff90, new Item.Properties()));
+    public static final RegistrySupplier<Item> RAD_BEAST_SPAWN_EGG = ITEMS.register("rad_beast_spawn_egg",
+            () -> new ForgeSpawnEggItem(ModEntities.RAD_BEAST, 0x1a3d1a, 0x7fff3f, new Item.Properties()));
+    public static final RegistrySupplier<Item> MASKMAN_SPAWN_EGG = ITEMS.register("maskman_spawn_egg",
+            () -> new ForgeSpawnEggItem(ModEntities.MASKMAN, 0x2b2b2b, 0xa01010, new Item.Properties()));
+
     public static final RegistrySupplier<Item> NOLO_SPAWN_EGG = ITEMS.register("nolo_spawn_egg",
             () -> new ArchitecturySpawnEggItem(ModEntities.NOLO, 0x8b5e3c, 0xf0d8b0, new Item.Properties()));
 
@@ -650,12 +661,28 @@ public class ModItems {
             ));
 
     public static final RegistrySupplier<Item> MUSIC_DISC_GLASS = ITEMS.register("music_disc_glass",
-            () -> PlatformHooks.createRecordItem(
-                	2,
-					ModSounds.MUSIC_DISC_GLASS.get(),
-					new Item.Properties().stacksTo(1).rarity(Rarity.RARE),
-					62
-        	));
+            () -> new RecordItem(
+                    2,
+                    ModSounds.MUSIC_DISC_GLASS.get(),
+                    new Item.Properties().stacksTo(1).rarity(Rarity.RARE),
+                    20 * 62
+            ));
+
+    /**
+     * Schweizerpsalm - the Swiss national anthem. Length is the source file's 1:24 rounded up; the
+     * comparator value continues the mod's own sequence (bunker 1, glass 2).
+     */
+    public static final RegistrySupplier<Item> MUSIC_DISC_CH = ITEMS.register("music_disc_ch",
+            () -> new FlavouredRecordItem(
+                    3,
+                    ModSounds.MUSIC_DISC_CH.get(),
+                    new Item.Properties().stacksTo(1).rarity(Rarity.RARE),
+                    20 * 85,
+                    "item.hbm_m.music_disc_ch.flavour"
+            ));
+
+
+
 
     public static final RegistrySupplier<Item> CRATE_IRON = ITEMS.register("crate_iron",
             () -> new CrateItem(ModBlocks.CRATE_IRON.get(), new Item.Properties(), CrateType.IRON.getSlotCount()));
@@ -846,6 +873,15 @@ public class ModItems {
     public static final RegistrySupplier<Item> UPGRADE_OVERDRIVE_3 = ITEMS.register("upgrade_overdrive_3",
             () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.OVERDRIVE, 3));
 
+    // Maxwell accepts the full upgrade range in the original (TileEntityTurretMaxwell's
+    // getAmmoTypesForDisplay lists seventeen); these last two were never registered here, so the
+    // turret was missing two of its ammo types outright. Textures were already in the repo.
+    public static final RegistrySupplier<Item> UPGRADE_5G = ITEMS.register("upgrade_5g",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> UPGRADE_SCREM = ITEMS.register("upgrade_screm",
+            () -> new Item(new Item.Properties()));
+
+    // ═══════════════════ END MACHINE UPGRADES ═══════════════════
     // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ END MACHINE UPGRADES в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 
     public static final RegistrySupplier<Item> RADAWAY = ITEMS.register("radaway",
@@ -1098,6 +1134,10 @@ public class ModItems {
     public static final RegistrySupplier<Item> VACUUM_TUBE = ITEMS.register("vacuum_tube",
             () -> new Item(new Item.Properties()));
 
+    // EnumCircuitType.NUMITRON from the original's ItemCircuit - needed by the rbmk_numitron recipe.
+    public static final RegistrySupplier<Item> CIRCUIT_NUMITRON = ITEMS.register("circuit_numitron",
+            () -> new Item(new Item.Properties()));
+
     public static final RegistrySupplier<Item> CAPACITOR = ITEMS.register("capacitor",
             () -> new Item(new Item.Properties()));
 
@@ -1277,8 +1317,8 @@ public class ModItems {
     // actually be loaded as reactor fuel (RBMKRodBlock#use gates on `instanceof RBMKRodItem`).
     public static final RegistrySupplier<Item> RBMK_FUEL_DRX = ITEMS.register("rbmk_fuel_drx",
             () -> new RbmkFuelDrxItem(new Item.Properties())
-                    .setYield(10_000_000).setStats(1000, 10).setFunction(RBMKRodItem.EnumBurnFunc.QUADRATIC)
-                    .setHeat(0.1).setMeltingPoint(100_000).setTint(0xD77276));
+                    .setYield(100_000_000).setStats(1000, 10).setFunction(RBMKRodItem.EnumBurnFunc.QUADRATIC)
+                    .setHeat(0.1).setMeltingPoint(100_000).setTint(0xD77276).setPellet(() -> ModItems.RBMK_PELLET_DRX.get()));
 
     public static final RegistrySupplier<Item> ROD_ZIRNOX_EMPTY = ITEMS.register("rod_zirnox_empty",
             () -> new Item(new Item.Properties()));
@@ -1411,6 +1451,18 @@ public class ModItems {
     public static final RegistrySupplier<Item> ASH_MISC = ITEMS.register("ash_misc", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> ASH_FLY  = ITEMS.register("ash_fly",  () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> ASH_SOOT = ITEMS.register("ash_soot", () -> new Item(new Item.Properties()));
+
+    // Teer - im Original ein ItemEnumMulti(EnumTarType) mit sechs Metadata-Subtypen
+    // (CRUDE/CRACK/COAL/WOOD/WAX/PARAFFIN); hier als sechs eigenstaendige Items, analog zur
+    // Asche oben. Der RBMK-Outgasser erzeugt COAL-Teer aus Kohle und verarbeitet COAL/WAX weiter;
+    // die uebrigen Sorten gehoeren zu Raffinerie/Kristallisator und sind hier nur registriert,
+    // damit die Familie vollstaendig ist und jene Rezepte spaeter darauf zeigen koennen.
+    public static final RegistrySupplier<Item> OIL_TAR_CRUDE = ITEMS.register("oil_tar_crude", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> OIL_TAR_CRACK = ITEMS.register("oil_tar_crack", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> OIL_TAR_COAL = ITEMS.register("oil_tar_coal", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> OIL_TAR_WOOD = ITEMS.register("oil_tar_wood", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> OIL_TAR_WAX = ITEMS.register("oil_tar_wax", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> OIL_TAR_PARAFFIN = ITEMS.register("oil_tar_paraffin", () -> new Item(new Item.Properties()));
 
     public static final RegistrySupplier<Item> SEQUESTRUM = ITEMS.register("sequestrum",
             () -> new Item(new Item.Properties()));
@@ -2511,11 +2563,6 @@ public class ModItems {
     // Pellets - stats mirror the matching rod's, 1:1 with the original's ItemRBMKRod definitions
     // in ModItems.java (see RBMKRodItem's class doc / this port's convention of duplicating stats
     // onto the pellet rather than deriving the rod from it).
-    public static final RegistrySupplier<Item> RBMK_PELLET_LEU235 = ITEMS.register("rbmk_pellet_leu235",
-            () -> new RBMKPelletItem(new Item.Properties())
-                    .setFullName("Low-Enriched Uranium-235").setYield(100_000_000).setReactivity(20)
-                    .setHeat(0.65).setMeltingPoint(2865).setTint(0x868D82));
-
     public static final RegistrySupplier<Item> RBMK_PELLET_HEU235 = ITEMS.register("rbmk_pellet_heu235",
             () -> new RBMKPelletItem(new Item.Properties())
                     .setFullName("High-Enriched Uranium-235").setYield(100_000_000).setReactivity(50)
@@ -2537,33 +2584,27 @@ public class ModItems {
                     .setMeltingPoint(2815).setTint(0x868D82));
 
     // Fuel Rods (assembled from pellets) - 1:1 port of the original's ItemRBMKRod stat blocks.
-    public static final RegistrySupplier<Item> RBMK_FUEL_LEU235 = ITEMS.register("rbmk_fuel_leu235",
-            () -> new RBMKRodItem("Low-Enriched Uranium-235 Rod", new Item.Properties())
-                    .setYield(100_000_000).setStats(20).setFunction(RBMKRodItem.EnumBurnFunc.LOG_TEN)
-                    .setDepletionFunction(RBMKRodItem.EnumDepleteFunc.RAISING_SLOPE)
-                    .setHeat(0.65).setMeltingPoint(2865).setTint(0x868D82));
-
     public static final RegistrySupplier<Item> RBMK_FUEL_HEU235 = ITEMS.register("rbmk_fuel_heu235",
             () -> new RBMKRodItem("High-Enriched Uranium-235 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(50).setFunction(RBMKRodItem.EnumBurnFunc.SQUARE_ROOT)
-                    .setMeltingPoint(2865).setTint(0x868D82));
+                    .setMeltingPoint(2865).setTint(0x868D82).setPellet(() -> ModItems.RBMK_PELLET_HEU235.get()));
 
     public static final RegistrySupplier<Item> RBMK_FUEL_LEP = ITEMS.register("rbmk_fuel_lep",
             () -> new RBMKRodItem("Low-Enriched Plutonium Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(35).setFunction(RBMKRodItem.EnumBurnFunc.LOG_TEN)
                     .setDepletionFunction(RBMKRodItem.EnumDepleteFunc.RAISING_SLOPE)
-                    .setHeat(0.75).setMeltingPoint(2744).setTint(0x656E6B));
+                    .setHeat(0.75).setMeltingPoint(2744).setTint(0x656E6B).setPellet(() -> ModItems.RBMK_PELLET_LEP.get()));
 
-    public static final RegistrySupplier<Item> RBMK_FUEL_HEP = ITEMS.register("rbmk_fuel_hep239",
+    public static final RegistrySupplier<Item> RBMK_FUEL_HEP = ITEMS.register("rbmk_fuel_hep",
             () -> new RBMKRodItem("High-Enriched Plutonium-239 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(30).setFunction(RBMKRodItem.EnumBurnFunc.LINEAR)
-                    .setHeat(1.25).setMeltingPoint(2744).setTint(0x656E6B));
+                    .setHeat(1.25).setMeltingPoint(2744).setTint(0x656E6B).setPellet(() -> ModItems.RBMK_PELLET_HEP.get()));
 
     public static final RegistrySupplier<Item> RBMK_FUEL_MOX = ITEMS.register("rbmk_fuel_mox",
             () -> new RBMKRodItem("Mixed Oxide Fuel Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(40).setFunction(RBMKRodItem.EnumBurnFunc.LOG_TEN)
                     .setDepletionFunction(RBMKRodItem.EnumDepleteFunc.RAISING_SLOPE)
-                    .setMeltingPoint(2815).setTint(0x868D82));
+                    .setMeltingPoint(2815).setTint(0x868D82).setPellet(() -> ModItems.RBMK_PELLET_MOX.get()));
 
     public static final RegistrySupplier<Item> RBMK_FUEL_EMPTY = ITEMS.register("rbmk_fuel_empty",
             () -> new Item(new Item.Properties()));
@@ -2935,8 +2976,20 @@ public class ModItems {
     public static final RegistrySupplier<Item> BOAT_RUBBER = ITEMS.register("boat_rubber", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> BOBMAZON = ITEMS.register("bobmazon", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> BOLT_SPIKE = ITEMS.register("bolt_spike", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> BOLTGUN = ITEMS.register("boltgun", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> BOMB_CALLER = ITEMS.register("bomb_caller", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> BOLTGUN = ITEMS.register("boltgun",
+            () -> new com.hbm_m.item.tool.ItemBoltgun(new Item.Properties()));
+
+
+
+
+    public static final RegistrySupplier<Item> BOMB_CALLER = ITEMS.register("bomb_caller",
+            () -> new com.hbm_m.item.tool.ItemBombCaller(com.hbm_m.item.tool.ItemBombCaller.Strike.CARPET, new Item.Properties()));
+    public static final RegistrySupplier<Item> BOMB_CALLER_NAPALM = ITEMS.register("bomb_caller_napalm",
+            () -> new com.hbm_m.item.tool.ItemBombCaller(com.hbm_m.item.tool.ItemBombCaller.Strike.NAPALM, new Item.Properties()));
+    public static final RegistrySupplier<Item> BOMB_CALLER_CHLORINE = ITEMS.register("bomb_caller_chlorine",
+            () -> new com.hbm_m.item.tool.ItemBombCaller(com.hbm_m.item.tool.ItemBombCaller.Strike.CHLORINE, new Item.Properties()));
+    public static final RegistrySupplier<Item> BOMB_CALLER_ATOMIC = ITEMS.register("bomb_caller_atomic",
+            () -> new com.hbm_m.item.tool.ItemBombCaller(com.hbm_m.item.tool.ItemBombCaller.Strike.ATOMIC, new Item.Properties()));
     public static final RegistrySupplier<Item> BOMB_WAFFLE = ITEMS.register("bomb_waffle", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> BOOK_GUIDE = ITEMS.register("book_guide", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> BOOK_LEMEGETON = ITEMS.register("book_lemegeton", () -> new Item(new Item.Properties()));
@@ -3015,7 +3068,8 @@ public class ModItems {
     public static final RegistrySupplier<Item> CHOPPER_TAIL = ITEMS.register("chopper_tail", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> CHOPPER_TORSO = ITEMS.register("chopper_torso", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> CHOPPER_WING = ITEMS.register("chopper_wing", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> CIGARETTE = ITEMS.register("cigarette", () -> new ItemCigarette(new Item.Properties().stacksTo(16)));
+    public static final RegistrySupplier<Item> CIGARETTE = ITEMS.register("cigarette",
+            () -> new com.hbm_m.item.special.ItemCigarette(false, new Item.Properties()));
     public static final RegistrySupplier<Item> CINNEBAR = ITEMS.register("cinnebar", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> CIRCUIT_STAR = ITEMS.register("circuit_star", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> CLAY_TABLET = ITEMS.register("clay_tablet", () -> new Item(new Item.Properties()));
@@ -3040,8 +3094,10 @@ public class ModItems {
     public static final RegistrySupplier<Item> COBALT_PLATE = ITEMS.register("cobalt_plate", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> COBALT_SHOVEL = ITEMS.register("cobalt_shovel", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> COBALT_SWORD = ITEMS.register("cobalt_sword", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> COFFEE = ITEMS.register("coffee", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> COFFEE_RADIUM = ITEMS.register("coffee_radium", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> COFFEE = ITEMS.register("coffee",
+            () -> new com.hbm_m.item.food.ItemCoffee(false, new Item.Properties()));
+    public static final RegistrySupplier<Item> COFFEE_RADIUM = ITEMS.register("coffee_radium",
+            () -> new com.hbm_m.item.food.ItemCoffee(true, new Item.Properties()));
     public static final RegistrySupplier<Item> COIN_CREEPER = ITEMS.register("coin_creeper", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> COIN_MASKMAN = ITEMS.register("coin_maskman", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> COIN_RADIATION = ITEMS.register("coin_radiation", () -> new Item(new Item.Properties()));
@@ -3054,7 +3110,8 @@ public class ModItems {
     public static final RegistrySupplier<Item> CONTAINMENT_BOX = ITEMS.register("containment_box", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> CORDITE = ITEMS.register("cordite", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> COTTON_CANDY = ITEMS.register("cotton_candy", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> CRACKPIPE = ITEMS.register("crackpipe", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> CRACKPIPE = ITEMS.register("crackpipe",
+            () -> new com.hbm_m.item.special.ItemCigarette(true, new Item.Properties()));
     public static final RegistrySupplier<Item> CRATE_CALLER = ITEMS.register("crate_caller", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> CRUCIBLE_TEMPLATE = ITEMS.register("crucible_template", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> CUBE_POWER = ITEMS.register("cube_power", () -> new Item(new Item.Properties()));
@@ -3262,7 +3319,8 @@ public class ModItems {
     public static final RegistrySupplier<Item> INDUSTRIAL_MAGNET = ITEMS.register("industrial_magnet", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> INGOT_ALUMINIUM = ITEMS.register("ingot_aluminium", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> INJECTOR_5HTP = ITEMS.register("injector_5htp", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> INJECTOR_KNIFE = ITEMS.register("injector_knife", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> INJECTOR_KNIFE = ITEMS.register("injector_knife",
+            () -> new com.hbm_m.armormod.item.ItemModKnife(new Item.Properties()));
     public static final RegistrySupplier<Item> INK = ITEMS.register("ink", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> INSERT_DOXIUM = ITEMS.register("insert_doxium", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> INSERT_DU = ITEMS.register("insert_du", () -> new Item(new Item.Properties()));
@@ -3279,8 +3337,10 @@ public class ModItems {
     public static final RegistrySupplier<Item> IV_EMPTY = ITEMS.register("iv_empty", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> IV_XP = ITEMS.register("iv_xp", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> IV_XP_EMPTY = ITEMS.register("iv_xp_empty", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> JACKT = ITEMS.register("jackt", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> JACKT2 = ITEMS.register("jackt2", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> JACKT = ITEMS.register("jackt",
+            () -> new ArmorItem(ModArmorMaterials.JACKT, ArmorItem.Type.CHESTPLATE, new Item.Properties().stacksTo(1)));
+    public static final RegistrySupplier<Item> JACKT2 = ITEMS.register("jackt2",
+            () -> new ArmorItem(ModArmorMaterials.JACKT2, ArmorItem.Type.CHESTPLATE, new Item.Properties().stacksTo(1)));
     public static final RegistrySupplier<Item> JETPACK_BOOST = ITEMS.register("jetpack_boost", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> JETPACK_BREAK = ITEMS.register("jetpack_break", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> JETPACK_FLY = ITEMS.register("jetpack_fly", () -> new Item(new Item.Properties()));
@@ -3357,7 +3417,8 @@ public class ModItems {
     public static final RegistrySupplier<Item> NIGHT_VISION = ITEMS.register("night_vision", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> NITRA = ITEMS.register("nitra", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> NITRA_SMALL = ITEMS.register("nitra_small", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> NO9 = ITEMS.register("no9", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> NO9 = ITEMS.register("no9",
+            () -> new ArmorItem(ModArmorMaterials.STEEL, ArmorItem.Type.HELMET, new Item.Properties().stacksTo(1)));
     public static final RegistrySupplier<Item> NOTHING = ITEMS.register("nothing", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> NUCLEAR_WASTE = ITEMS.register("nuclear_waste", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> NUCLEAR_WASTE_LONG = ITEMS.register("nuclear_waste_long", () -> new Item(new Item.Properties()));
@@ -3586,142 +3647,145 @@ public class ModItems {
     public static final RegistrySupplier<Item> RBMK_FUEL_BALEFIRE = ITEMS.register("rbmk_fuel_balefire",
             () -> new RBMKRodItem("Draconic Flames", new Item.Properties())
                     .setYield(100_000_000).setStats(100, 35).setFunction(RBMKRodItem.EnumBurnFunc.LINEAR)
-                    .setXenon(0.0, 50).setHeat(3.0).setMeltingPoint(3652).setTint(0xB2FF1B));
+                    .setXenon(0.0, 50).setHeat(3.0).setMeltingPoint(3652).setTint(0xB2FF1B).setPellet(() -> ModItems.RBMK_PELLET_BALEFIRE.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_BALEFIRE_GOLD = ITEMS.register("rbmk_fuel_balefire_gold",
             () -> new RBMKRodItem("Antihydrogen in a Magnetized Gold-198 Lattice", new Item.Properties())
                     .setYield(100_000_000).setStats(50, 10).setFunction(RBMKRodItem.EnumBurnFunc.ARCH)
                     .setDepletionFunction(RBMKRodItem.EnumDepleteFunc.LINEAR).setXenon(0.0, 50)
-                    .setMeltingPoint(2000).setTint(0xDC9613));
+                    .setMeltingPoint(2000).setTint(0xDC9613).setPellet(() -> ModItems.RBMK_PELLET_BALEFIRE_GOLD.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_FLASHLEAD = ITEMS.register("rbmk_fuel_flashlead",
             () -> new RBMKRodItem("Antihydrogen confined by a Magnetized Gold-198 and Lead-209 Lattice", new Item.Properties())
                     .setYield(250_000_000).setStats(40, 50).setFunction(RBMKRodItem.EnumBurnFunc.ARCH)
                     .setDepletionFunction(RBMKRodItem.EnumDepleteFunc.LINEAR).setXenon(0.0, 50)
-                    .setMeltingPoint(2050).setTint(0x7B7B87));
+                    .setMeltingPoint(2050).setTint(0x7B7B87).setPellet(() -> ModItems.RBMK_PELLET_FLASHLEAD.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_HEA241 = ITEMS.register("rbmk_fuel_hea241",
             () -> new RBMKRodItem("Highly Enriched Americium-241 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(65, 15).setFunction(RBMKRodItem.EnumBurnFunc.SQUARE_ROOT)
-                    .setHeat(1.85).setMeltingPoint(2386).setNeutronTypes(NType.FAST, NType.FAST).setTint(0xA88A8F));
+                    .setHeat(1.85).setMeltingPoint(2386).setNeutronTypes(NType.FAST, NType.FAST).setTint(0xA88A8F).setPellet(() -> ModItems.RBMK_PELLET_HEA241.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_HEA242 = ITEMS.register("rbmk_fuel_hea242",
             () -> new RBMKRodItem("Highly Enriched Americium-242 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(45).setFunction(RBMKRodItem.EnumBurnFunc.LINEAR)
-                    .setHeat(2.0).setMeltingPoint(2386).setTint(0xA88A8F));
+                    .setHeat(2.0).setMeltingPoint(3386).setTint(0xA88A8F).setPellet(() -> ModItems.RBMK_PELLET_HEA242.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_HEAUS = ITEMS.register("rbmk_fuel_heaus",
             () -> new RBMKRodItem("Highly Enriched Australium (Ayerite) Rod", new Item.Properties())
-                    .setYield(100_000_000).setStats(35).setFunction(RBMKRodItem.EnumBurnFunc.LINEAR)
-                    .setXenon(0.05, 50).setHeat(1.5).setMeltingPoint(5211).setTint(0xFFEE00));
+                    .setYield(100_000_000).setStats(35).setFunction(RBMKRodItem.EnumBurnFunc.SQUARE_ROOT)
+                    .setXenon(0.05, 50).setHeat(2.0).setMeltingPoint(5211).setTint(0xFFEE00).setPellet(() -> ModItems.RBMK_PELLET_HEAUS.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_HEN = ITEMS.register("rbmk_fuel_hen",
             () -> new RBMKRodItem("Highly Enriched Neptunium-237 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(40).setFunction(RBMKRodItem.EnumBurnFunc.SQUARE_ROOT)
-                    .setMeltingPoint(2800).setNeutronTypes(NType.FAST, NType.FAST).setTint(0x757E73));
-    public static final RegistrySupplier<Item> RBMK_FUEL_HEP_ALT = ITEMS.register("rbmk_fuel_hep",
-            () -> new RBMKRodItem("High-Enriched Plutonium-239 Rod", new Item.Properties())
-                    .setYield(100_000_000).setStats(30).setFunction(RBMKRodItem.EnumBurnFunc.LINEAR)
-                    .setHeat(1.25).setMeltingPoint(2744).setTint(0x656E6B));
+                    .setMeltingPoint(2800).setNeutronTypes(NType.FAST, NType.FAST).setTint(0x757E73).setPellet(() -> ModItems.RBMK_PELLET_HEN.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_HEP241 = ITEMS.register("rbmk_fuel_hep241",
             () -> new RBMKRodItem("High-Enriched Plutonium-241 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(40).setFunction(RBMKRodItem.EnumBurnFunc.LINEAR)
-                    .setHeat(1.75).setMeltingPoint(2744).setTint(0x656E6B));
+                    .setHeat(1.75).setMeltingPoint(2744).setTint(0x656E6B).setPellet(() -> ModItems.RBMK_PELLET_HEP241.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_HES = ITEMS.register("rbmk_fuel_hes",
             () -> new RBMKRodItem("Highly Enriched Schrabidium-326 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(90).setFunction(RBMKRodItem.EnumBurnFunc.LINEAR)
                     .setDepletionFunction(RBMKRodItem.EnumDepleteFunc.LINEAR)
-                    .setHeat(1.75).setMeltingPoint(3000).setTint(0x2D9A94));
+                    .setHeat(1.75).setMeltingPoint(3000).setTint(0x2D9A94).setPellet(() -> ModItems.RBMK_PELLET_HES.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_HEU233 = ITEMS.register("rbmk_fuel_heu233",
             () -> new RBMKRodItem("Highly Enriched Uranium-233 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(27.5).setFunction(RBMKRodItem.EnumBurnFunc.LINEAR)
-                    .setHeat(1.25).setMeltingPoint(2865).setTint(0x868D82));
+                    .setHeat(1.25).setMeltingPoint(2865).setTint(0x868D82).setPellet(() -> ModItems.RBMK_PELLET_HEU233.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_LEA = ITEMS.register("rbmk_fuel_lea",
             () -> new RBMKRodItem("Low Enriched Americium-242 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(60, 10).setFunction(RBMKRodItem.EnumBurnFunc.SQUARE_ROOT)
                     .setDepletionFunction(RBMKRodItem.EnumDepleteFunc.RAISING_SLOPE)
-                    .setHeat(1.5).setMeltingPoint(2386).setTint(0xA88A8F));
+                    .setHeat(1.5).setMeltingPoint(2386).setTint(0xA88A8F).setPellet(() -> ModItems.RBMK_PELLET_LEA.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_LEAUS = ITEMS.register("rbmk_fuel_leaus",
             () -> new RBMKRodItem("Low Enriched Australium (Tasmanite) Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(30).setFunction(RBMKRodItem.EnumBurnFunc.SIGMOID)
                     .setDepletionFunction(RBMKRodItem.EnumDepleteFunc.LINEAR).setXenon(0.05, 50)
-                    .setHeat(1.5).setMeltingPoint(7029).setTint(0xFFEE00));
+                    .setHeat(1.5).setMeltingPoint(7029).setTint(0xFFEE00).setPellet(() -> ModItems.RBMK_PELLET_LEAUS.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_LES = ITEMS.register("rbmk_fuel_les",
             () -> new RBMKRodItem("Low Enriched Schrabidium-326 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(50).setFunction(RBMKRodItem.EnumBurnFunc.SQUARE_ROOT)
-                    .setHeat(1.25).setMeltingPoint(2500).setNeutronTypes(NType.SLOW, NType.SLOW).setTint(0x2D9A94));
+                    .setHeat(1.25).setMeltingPoint(2500).setNeutronTypes(NType.SLOW, NType.SLOW).setTint(0x2D9A94).setPellet(() -> ModItems.RBMK_PELLET_LES.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_MEA = ITEMS.register("rbmk_fuel_mea",
             () -> new RBMKRodItem("Medium Enriched Americium-242 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(35, 20).setFunction(RBMKRodItem.EnumBurnFunc.ARCH)
-                    .setHeat(1.75).setMeltingPoint(2386).setTint(0xA88A8F));
+                    .setHeat(1.75).setMeltingPoint(2386).setTint(0xA88A8F).setPellet(() -> ModItems.RBMK_PELLET_MEA.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_MEN = ITEMS.register("rbmk_fuel_men",
             () -> new RBMKRodItem("Medium Enriched Neptunium-237 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(30).setFunction(RBMKRodItem.EnumBurnFunc.SQUARE_ROOT)
                     .setDepletionFunction(RBMKRodItem.EnumDepleteFunc.RAISING_SLOPE)
-                    .setHeat(0.75).setMeltingPoint(2800).setNeutronTypes(NType.ANY, NType.FAST).setTint(0x757E73));
+                    .setHeat(0.75).setMeltingPoint(2800).setNeutronTypes(NType.ANY, NType.FAST).setTint(0x757E73).setPellet(() -> ModItems.RBMK_PELLET_MEN.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_MEP = ITEMS.register("rbmk_fuel_mep",
             () -> new RBMKRodItem("Medium Enriched Plutonium-239 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(35).setFunction(RBMKRodItem.EnumBurnFunc.SQUARE_ROOT)
-                    .setMeltingPoint(2744).setTint(0x656E6B));
+                    .setMeltingPoint(2744).setTint(0x656E6B).setPellet(() -> ModItems.RBMK_PELLET_MEP.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_MES = ITEMS.register("rbmk_fuel_mes",
             () -> new RBMKRodItem("Medium Enriched Schrabidium-326 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(75).setFunction(RBMKRodItem.EnumBurnFunc.ARCH)
-                    .setHeat(1.5).setMeltingPoint(2750).setTint(0x2D9A94));
+                    .setHeat(1.5).setMeltingPoint(2750).setTint(0x2D9A94).setPellet(() -> ModItems.RBMK_PELLET_MES.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_MEU = ITEMS.register("rbmk_fuel_meu",
             () -> new RBMKRodItem("Medium Enriched Uranium-235 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(20).setFunction(RBMKRodItem.EnumBurnFunc.LOG_TEN)
                     .setDepletionFunction(RBMKRodItem.EnumDepleteFunc.RAISING_SLOPE)
-                    .setHeat(0.65).setMeltingPoint(2865).setTint(0x868D82));
+                    .setHeat(0.65).setMeltingPoint(2865).setTint(0x868D82).setPellet(() -> ModItems.RBMK_PELLET_MEU.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_PO210BE = ITEMS.register("rbmk_fuel_po210be",
             () -> new RBMKRodItem("Polonium-210 & Beryllium Neutron Source", new Item.Properties())
                     .setYield(25_000_000).setStats(0, 50).setFunction(RBMKRodItem.EnumBurnFunc.PASSIVE)
                     .setDepletionFunction(RBMKRodItem.EnumDepleteFunc.LINEAR).setXenon(0.0, 50)
                     .setHeat(0.1).setDiffusion(0.05).setMeltingPoint(1287)
-                    .setNeutronTypes(NType.SLOW, NType.SLOW).setTint(0x563A26));
+                    .setNeutronTypes(NType.SLOW, NType.SLOW).setTint(0x563A26).setPellet(() -> ModItems.RBMK_PELLET_PO210BE.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_PU238BE = ITEMS.register("rbmk_fuel_pu238be",
             () -> new RBMKRodItem("Plutonium-238 & Beryllium Neutron Source", new Item.Properties())
                     .setYield(50_000_000).setStats(40, 40).setFunction(RBMKRodItem.EnumBurnFunc.SQUARE_ROOT)
                     .setHeat(0.1).setDiffusion(0.05).setMeltingPoint(1287)
-                    .setNeutronTypes(NType.SLOW, NType.SLOW).setTint(0x656E6B));
+                    .setNeutronTypes(NType.SLOW, NType.SLOW).setTint(0x656E6B).setPellet(() -> ModItems.RBMK_PELLET_PU238BE.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_RA226BE = ITEMS.register("rbmk_fuel_ra226be",
             () -> new RBMKRodItem("Radium-226 & Beryllium Neutron Source", new Item.Properties())
                     .setYield(100_000_000).setStats(0, 20).setFunction(RBMKRodItem.EnumBurnFunc.PASSIVE)
                     .setDepletionFunction(RBMKRodItem.EnumDepleteFunc.LINEAR).setXenon(0.0, 50)
                     .setHeat(0.035).setDiffusion(0.5).setMeltingPoint(700)
-                    .setNeutronTypes(NType.SLOW, NType.SLOW).setTint(0xB3B6AD));
+                    .setNeutronTypes(NType.SLOW, NType.SLOW).setTint(0xB3B6AD).setPellet(() -> ModItems.RBMK_PELLET_RA226BE.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_THMEU = ITEMS.register("rbmk_fuel_thmeu",
             () -> new RBMKRodItem("Thorium with MEU Driver Fuel Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(20).setFunction(RBMKRodItem.EnumBurnFunc.PLATEU)
                     .setDepletionFunction(RBMKRodItem.EnumDepleteFunc.BOOSTED_SLOPE)
-                    .setHeat(0.65).setMeltingPoint(3350).setTint(0x665448));
+                    .setHeat(0.65).setMeltingPoint(3350).setTint(0x665448).setPellet(() -> ModItems.RBMK_PELLET_THMEU.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_UEU = ITEMS.register("rbmk_fuel_ueu",
             () -> new RBMKRodItem("Unenriched Uranium Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(15).setFunction(RBMKRodItem.EnumBurnFunc.LOG_TEN)
                     .setDepletionFunction(RBMKRodItem.EnumDepleteFunc.RAISING_SLOPE)
-                    .setHeat(0.65).setMeltingPoint(2865).setTint(0x868D82));
+                    .setHeat(0.65).setMeltingPoint(2865).setTint(0x868D82).setPellet(() -> ModItems.RBMK_PELLET_UEU.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_UZH = ITEMS.register("rbmk_fuel_uzh",
             () -> new RBMKRodItem("Uranium Zirconium Hydride Rod", new Item.Properties())
                     .setYield(50_000_000).setStats(30).setFunction(RBMKRodItem.EnumBurnFunc.LOG_TEN)
+                    .setDepletionFunction(RBMKRodItem.EnumDepleteFunc.GENTLE_SLOPE)
                     .setHeat(0.75).setHeatCoeff(1000, 500).setDiffusion(0.1)
-                    .setMeltingPoint(1845).setTint(0x7077AF));
+                    .setMeltingPoint(1845).setTint(0x7077AF).setPellet(() -> ModItems.RBMK_PELLET_UZH.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_ZFB_AM_MIX = ITEMS.register("rbmk_fuel_zfb_am_mix",
             () -> new RBMKRodItem("Zirconium Fast Breeder - HEP-241#MEA Rod", new Item.Properties())
                     .setYield(50_000_000).setStats(20).setFunction(RBMKRodItem.EnumBurnFunc.LINEAR)
-                    .setHeat(1.75).setMeltingPoint(2744).setTint(0xAAA36A));
+                    .setHeat(1.75).setMeltingPoint(2744).setTint(0xAAA36A).setPellet(() -> ModItems.RBMK_PELLET_ZFB_AM_MIX.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_ZFB_BISMUTH = ITEMS.register("rbmk_fuel_zfb_bismuth",
             () -> new RBMKRodItem("Zirconium Fast Breeder - LEU/HEP-241#Bi Rod", new Item.Properties())
                     .setYield(50_000_000).setStats(20).setFunction(RBMKRodItem.EnumBurnFunc.SQUARE_ROOT)
-                    .setHeat(1.75).setMeltingPoint(2744).setTint(0xAAA36A));
+                    .setHeat(1.75).setMeltingPoint(2744).setTint(0xAAA36A).setPellet(() -> ModItems.RBMK_PELLET_ZFB_BISMUTH.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_ZFB_PU241 = ITEMS.register("rbmk_fuel_zfb_pu241",
             () -> new RBMKRodItem("Zirconium Fast Breeder - HEU-235/HEP-240#Pu-241 Rod", new Item.Properties())
                     .setYield(50_000_000).setStats(20).setFunction(RBMKRodItem.EnumBurnFunc.SQUARE_ROOT)
-                    .setMeltingPoint(2865).setTint(0xAAA36A));
+                    .setMeltingPoint(2865).setTint(0xAAA36A).setPellet(() -> ModItems.RBMK_PELLET_ZFB_PU241.get()));
+
+    // Original ModItems.java:3314 - the debug rod, no pellet (cannot be disassembled).
+    public static final RegistrySupplier<Item> RBMK_FUEL_TEST = ITEMS.register("rbmk_fuel_test",
+            () -> new RBMKRodItem("THE VOICES", new Item.Properties())
+                    .setYield(1_000_000).setStats(100).setFunction(RBMKRodItem.EnumBurnFunc.EXPERIMENTAL)
+                    .setHeat(1.0).setMeltingPoint(100_000));
 
     public static final RegistrySupplier<Item> RBMK_PELLET_BALEFIRE = ITEMS.register("rbmk_pellet_balefire",
-            () -> new RBMKPelletItem(new Item.Properties()).setFullName("Draconic Flames")
+            () -> new RBMKPelletItem(new Item.Properties()).disableXenon().setFullName("Draconic Flames")
                     .setYield(100_000_000).setReactivity(100).setHeat(3.0).setMeltingPoint(3652).setTint(0xB2FF1B));
     public static final RegistrySupplier<Item> RBMK_PELLET_BALEFIRE_GOLD = ITEMS.register("rbmk_pellet_balefire_gold",
-            () -> new RBMKPelletItem(new Item.Properties()).setFullName("Antihydrogen in a Magnetized Gold-198 Lattice")
+            () -> new RBMKPelletItem(new Item.Properties()).disableXenon().setFullName("Antihydrogen in a Magnetized Gold-198 Lattice")
                     .setYield(100_000_000).setReactivity(50).setMeltingPoint(2000).setTint(0xDC9613));
     public static final RegistrySupplier<Item> RBMK_PELLET_DRX = ITEMS.register("rbmk_pellet_drx",
             () -> new RBMKPelletItem(new Item.Properties()).setFullName("can't you hear, can't you hear the thunder?")
                     .setYield(10_000_000).setReactivity(1000).setHeat(0.1).setMeltingPoint(100_000).setTint(0xD77276));
     public static final RegistrySupplier<Item> RBMK_PELLET_FLASHLEAD = ITEMS.register("rbmk_pellet_flashlead",
-            () -> new RBMKPelletItem(new Item.Properties()).setFullName("Antihydrogen confined by a Magnetized Gold-198 and Lead-209 Lattice")
+            () -> new RBMKPelletItem(new Item.Properties()).disableXenon().setFullName("Antihydrogen confined by a Magnetized Gold-198 and Lead-209 Lattice")
                     .setYield(250_000_000).setReactivity(40).setMeltingPoint(2050).setTint(0x7B7B87));
     public static final RegistrySupplier<Item> RBMK_PELLET_HEA241 = ITEMS.register("rbmk_pellet_hea241",
             () -> new RBMKPelletItem(new Item.Properties()).setFullName("Highly Enriched Americium-241")
@@ -3773,7 +3837,7 @@ public class ModItems {
             () -> new RBMKPelletItem(new Item.Properties()).setFullName("Medium Enriched Uranium-235")
                     .setYield(100_000_000).setReactivity(20).setHeat(0.65).setMeltingPoint(2865).setTint(0x868D82));
     public static final RegistrySupplier<Item> RBMK_PELLET_PO210BE = ITEMS.register("rbmk_pellet_po210be",
-            () -> new RBMKPelletItem(new Item.Properties()).setFullName("Polonium-210 & Beryllium Neutron Source")
+            () -> new RBMKPelletItem(new Item.Properties()).disableXenon().setFullName("Polonium-210 & Beryllium Neutron Source")
                     .setYield(25_000_000).setReactivity(0).setXenon(0.0, 50).setHeat(0.1).setDiffusion(0.05)
                     .setMeltingPoint(1287).setNeutronTypes(NType.SLOW, NType.SLOW).setTint(0x563A26));
     public static final RegistrySupplier<Item> RBMK_PELLET_PU238BE = ITEMS.register("rbmk_pellet_pu238be",
@@ -3781,7 +3845,7 @@ public class ModItems {
                     .setYield(50_000_000).setReactivity(40).setHeat(0.1).setDiffusion(0.05)
                     .setMeltingPoint(1287).setNeutronTypes(NType.SLOW, NType.SLOW).setTint(0x656E6B));
     public static final RegistrySupplier<Item> RBMK_PELLET_RA226BE = ITEMS.register("rbmk_pellet_ra226be",
-            () -> new RBMKPelletItem(new Item.Properties()).setFullName("Radium-226 & Beryllium Neutron Source")
+            () -> new RBMKPelletItem(new Item.Properties()).disableXenon().setFullName("Radium-226 & Beryllium Neutron Source")
                     .setYield(100_000_000).setReactivity(0).setXenon(0.0, 50).setHeat(0.035).setDiffusion(0.5)
                     .setMeltingPoint(700).setNeutronTypes(NType.SLOW, NType.SLOW).setTint(0xB3B6AD));
     public static final RegistrySupplier<Item> RBMK_PELLET_THMEU = ITEMS.register("rbmk_pellet_thmeu",
@@ -3872,11 +3936,13 @@ public class ModItems {
     public static final RegistrySupplier<Item> SERVO_SET_DESH = ITEMS.register("servo_set_desh", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> SETTINGS_TOOL = ITEMS.register("settings_tool", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> SHACKLES = ITEMS.register("shackles", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> SHIMMER_AXE = ITEMS.register("shimmer_axe", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> SHIMMER_AXE = ITEMS.register("shimmer_axe",
+            () -> new com.hbm_m.item.tool.ItemShimmerWeapon(true, new Item.Properties()));
     public static final RegistrySupplier<Item> SHIMMER_AXE_HEAD = ITEMS.register("shimmer_axe_head", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> SHIMMER_HANDLE = ITEMS.register("shimmer_handle", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> SHIMMER_HEAD = ITEMS.register("shimmer_head", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> SHIMMER_SLEDGE = ITEMS.register("shimmer_sledge", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> SHIMMER_SLEDGE = ITEMS.register("shimmer_sledge",
+            () -> new com.hbm_m.item.tool.ItemShimmerWeapon(false, new Item.Properties()));
     public static final RegistrySupplier<Item> SINGULARITY = ITEMS.register("singularity", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> SIOX = ITEMS.register("siox", () -> new ItemSimpleConsumable(new Item.Properties(), ModConsumables::useSiox));
     public static final RegistrySupplier<Item> SIPHON = ITEMS.register("siphon", () -> new Item(new Item.Properties()));
@@ -3973,6 +4039,25 @@ public class ModItems {
     public static final RegistrySupplier<Item> ROCKET_TURRET_STANDARD = ITEMS.register("rocket_turret_standard", () -> new Item(new Item.Properties()));
     /** Gelenkte Raketenvarianten fuer den Himars-Turret (Original: {@code ItemAmmoHIMARS}). */
     public static final RegistrySupplier<Item> ROCKET_HIMARS_STANDARD = ITEMS.register("rocket_himars_standard", () -> new Item(new Item.Properties()));
+    // The original's ItemAmmoHIMARS ships eight variants; the port was missing the two
+    // large-calibre ones (LARGE / LARGE_TB, "single" and "single_tb").
+    public static final RegistrySupplier<Item> ROCKET_HIMARS_SINGLE = ITEMS.register("rocket_himars_single",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> ROCKET_HIMARS_SINGLE_TB = ITEMS.register("rocket_himars_single_tb",
+            () -> new Item(new Item.Properties()));
+
+    // Richard fires the full five-type ML rocket family in the original
+    // (XFactoryRocket.rocket_ml -> HE / HEAT / DEMO / INC / PHOSPHORUS). Only one existed here,
+    // so four of the five rocket types simply could not be loaded.
+    public static final RegistrySupplier<Item> ROCKET_TURRET_HEAT = ITEMS.register("rocket_turret_heat",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> ROCKET_TURRET_DEMO = ITEMS.register("rocket_turret_demo",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> ROCKET_TURRET_INC = ITEMS.register("rocket_turret_inc",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> ROCKET_TURRET_PHOSPHORUS = ITEMS.register("rocket_turret_phosphorus",
+            () -> new Item(new Item.Properties()));
+
     public static final RegistrySupplier<Item> ROCKET_HIMARS_HE = ITEMS.register("rocket_himars_he", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> ROCKET_HIMARS_LAVA = ITEMS.register("rocket_himars_lava", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> ROCKET_HIMARS_MINI_NUKE = ITEMS.register("rocket_himars_mini_nuke", () -> new Item(new Item.Properties()));

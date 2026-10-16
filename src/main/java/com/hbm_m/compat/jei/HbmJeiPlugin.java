@@ -100,6 +100,9 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeCategories(new CrystallizerJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new PressJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new ShredderJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new RBMKDisassemblyJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new RBMKWasteDecayJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new RBMKOutgasserJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new BlastFurnaceJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new GasCentrifugeJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new ArcFurnaceJeiCategory(registration.getJeiHelpers().getGuiHelper()));
@@ -152,6 +155,11 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipes(RadiolysisJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, RadiolysisRecipe.Type.INSTANCE));
         registration.addRecipes(ElectrolyserFluidJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, ElectrolyserFluidRecipe.Type.INSTANCE));
         registration.addRecipes(ElectrolyserMetalJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, ElectrolyserMetalRecipe.Type.INSTANCE));
+
+        // FFA: Crucible- und RBMK-Kategorien (in funni-stuff nicht enthalten).
+        registration.addRecipes(RBMKDisassemblyJeiCategory.RECIPE_TYPE, RBMKDisassemblyJeiRecipe.all());
+        registration.addRecipes(RBMKWasteDecayJeiCategory.RECIPE_TYPE, RBMKWasteDecayJeiCategory.all());
+        registration.addRecipes(RBMKOutgasserJeiCategory.RECIPE_TYPE, RBMKOutgasserJeiCategory.all());
     }
 
     @Override

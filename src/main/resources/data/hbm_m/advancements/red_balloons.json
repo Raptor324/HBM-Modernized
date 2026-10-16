@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "hbm_m:missile_nuclear"
+    },
+    "title": {
+      "translate": "advancements.hbm_m.red_balloons.title"
+    },
+    "description": {
+      "translate": "advancements.hbm_m.red_balloons.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "parent": "hbm_m:polymer"
+}

@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "hbm_m:coin_creeper"
+    },
+    "title": {
+      "translate": "advancements.hbm_m.boss_creeper.title"
+    },
+    "description": {
+      "translate": "advancements.hbm_m.boss_creeper.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "parent": "hbm_m:root"
+}

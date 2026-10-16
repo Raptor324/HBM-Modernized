@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "hbm_m:nugget_bismuth"
+    },
+    "title": {
+      "translate": "advancements.hbm_m.bismuth.title"
+    },
+    "description": {
+      "translate": "advancements.hbm_m.bismuth.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "parent": "hbm_m:rbmk"
+}

@@ -28,7 +28,7 @@ public class MachineFurnaceIronMenu extends AbstractContainerMenu {
     private static final int SLOT_FUEL_1 = MachineFurnaceIronBlockEntity.SLOT_FUEL_1;
     private static final int SLOT_FUEL_2 = MachineFurnaceIronBlockEntity.SLOT_FUEL_2;
     private static final int SLOT_OUTPUT = MachineFurnaceIronBlockEntity.SLOT_OUTPUT;
-    private static final int MACHINE_SLOT_COUNT = 4;
+    private static final int MACHINE_SLOT_COUNT = 5;
     private static final int PLAYER_INV_START = MACHINE_SLOT_COUNT;
     private static final int PLAYER_INV_END = MACHINE_SLOT_COUNT + 36;
 
@@ -51,6 +51,13 @@ public class MachineFurnaceIronMenu extends AbstractContainerMenu {
         this.addSlot(new FuelSlot(container, SLOT_FUEL_1, 53, 53));
         this.addSlot(new FuelSlot(container, SLOT_FUEL_2, 71, 53));
         this.addSlot(new OutputSlot(container, SLOT_OUTPUT, 125, 35));
+        // Original ContainerFurnaceIron: SlotUpgrade at (17, 35).
+        this.addSlot(new Slot(container, MachineFurnaceIronBlockEntity.SLOT_UPGRADE, 17, 35) {
+            @Override public boolean mayPlace(net.minecraft.world.item.ItemStack stack) {
+                return stack.getItem() instanceof com.hbm_m.item.industrial.ItemMachineUpgrade;
+            }
+            @Override public int getMaxStackSize() { return 1; }
+        });
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {

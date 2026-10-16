@@ -54,6 +54,8 @@ public class ModDamageTypes {
     public static final ResourceKey<DamageType> ELECTRICITY = createKey("electricity");
     public static final ResourceKey<DamageType> EXHAUST = createKey("exhaust");
     public static final ResourceKey<DamageType> SPIKES = createKey("spikes");
+    /** {@code ItemBoltgun}: a rivet, which the original explicitly makes bypass armour. */
+    public static final ResourceKey<DamageType> BOLTGUN = createKey("boltgun");
     public static final ResourceKey<DamageType> LUNAR = createKey("lunar");
     public static final ResourceKey<DamageType> MONOXIDE = createKey("monoxide");
     public static final ResourceKey<DamageType> ASBESTOS = createKey("asbestos");

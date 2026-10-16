@@ -1,0 +1,141 @@
+{
+  "parent": "hbm_m:block/turret_arty",
+  "display": {
+    "gui": {
+      "rotation": [
+        30,
+        225,
+        0
+      ],
+      "translation": [
+        0.0,
+        -8.0,
+        0.0
+      ],
+      "scale": [
+        0.1471,
+        0.1471,
+        0.1471
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        0,
+        180,
+        0
+      ],
+      "translation": [
+        0.0,
+        -8.0,
+        0.0
+      ],
+      "scale": [
+        0.1471,
+        0.1471,
+        0.1471
+      ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [
+        0,
+        45,
+        0
+      ],
+      "translation": [
+        0.0,
+        -5.6,
+        0.0
+      ],
+      "scale": [
+        0.103,
+        0.103,
+        0.103
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        0,
+        45,
+        0
+      ],
+      "translation": [
+        0.0,
+        -5.6,
+        0.0
+      ],
+      "scale": [
+        0.103,
+        0.103,
+        0.103
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        45,
+        0
+      ],
+      "translation": [
+        0.0,
+        -5.6,
+        0.0
+      ],
+      "scale": [
+        0.103,
+        0.103,
+        0.103
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        45,
+        0
+      ],
+      "translation": [
+        0.0,
+        -5.6,
+        0.0
+      ],
+      "scale": [
+        0.103,
+        0.103,
+        0.103
+      ]
+    },
+    "ground": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0.0,
+        -4.0,
+        0.0
+      ],
+      "scale": [
+        0.0736,
+        0.0736,
+        0.0736
+      ]
+    },
+    "head": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0.0,
+        -4.0,
+        0.0
+      ],
+      "scale": [
+        0.0736,
+        0.0736,
+        0.0736
+      ]
+    }
+  }
+}

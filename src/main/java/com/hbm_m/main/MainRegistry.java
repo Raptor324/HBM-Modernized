@@ -69,6 +69,8 @@ public final class MainRegistry {
         *///?}
 
         // Registries (common)
+        // Must run before any world loads: the RBMK dials are world game rules in the original.
+        com.hbm_m.handler.rbmk.RBMKGameRules.register();
         DoorDeclRegistry.init();
         ModBiomes.init();
         ModBlocks.init();
@@ -94,6 +96,9 @@ public final class MainRegistry {
         PlayerHandler.register();
         ChunkRadiationManager.init();
         ModEventHandler.register();
+        // Опциональный Curios: слушатели вешаются только при наличии мода,
+        // иначе классы Curios API вообще не загружаются (NoClassDefFoundError).
+        com.hbm_m.compat.curios.CuriosCompat.init();
         PowerArmorHandlers.register();
         LadderClimbHandler.register();
         com.hbm_m.server.missile.MissileTrackBroadcaster.register();
@@ -117,11 +122,12 @@ public final class MainRegistry {
             // единая точка тика для PowerNet и жидкостей
             com.hbm_m.api.energy.EnergySubscriptions.tickAll(server);
             com.hbm_m.api.network.UniNodespace.updateNodespace(server);
-            // Process RBMK neutron streams for every loaded server level
-            for (ServerLevel lvl : server.getAllLevels()) {
-                if (lvl != null) {
-                    NeutronNodeWorld.tick(lvl);
-                }
+            // Process RBMK neutron streams for every loaded server level. The tick counter that
+            // paces the node-cache sweep is advanced once per server tick, not once per level.
+            NeutronNodeWorld.removeEmptyWorlds();
+            boolean rbmkCacheClear = NeutronNodeWorld.advanceTick();
+            for (ServerLevel rbmkLevel : server.getAllLevels()) {
+                NeutronNodeWorld.tick(rbmkLevel, rbmkCacheClear);
             }
             // Отложенный фикс соединений решёток/паней после спавна структур
             com.hbm_m.worldgen.StructureConnectionFixProcessor.tickIfReady(server);
@@ -138,6 +144,8 @@ public final class MainRegistry {
     }
 
     private static void commonSetup() {
+        // Panel slabs reference each other, so the pairing runs once after registration.
+        com.hbm_m.block.ModBlocks.linkSlabPairs();
         com.hbm_m.handler.HTTPHandler.loadStats();
         ModPacketHandler.register();
         com.hbm_m.handler.HazmatRegistry.registerHazmats();

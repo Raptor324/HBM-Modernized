@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "hbm_m:no9"
+    },
+    "title": {
+      "translate": "advancements.hbm_m.no9.title"
+    },
+    "description": {
+      "translate": "advancements.hbm_m.no9.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "parent": "hbm_m:root"
+}

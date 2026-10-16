@@ -1,5 +1,7 @@
 package com.hbm_m.radiation;
 
+import com.hbm_m.advancement.ModAdvancements;
+
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.damagesource.ModDamageSources;
 import com.hbm_m.explosion.command.HbmExplosionCommands;
@@ -251,7 +253,11 @@ public class PlayerHandler {
     private static float getRadiationFromItemStack(ItemStack stack) {
         if (stack.isEmpty()) return 0.0F;
         float perItemRadiation = HazardSystem.getHazardLevelFromStack(stack, HazardRegistry.RADIATION);
-        return perItemRadiation * stack.getCount();
+        // Induced activation from sitting in a neutron flux counts on top of the item's own
+        // radioactivity (CE: HazardSystem.getRadsFromStack). getNeutronRads already accounts for
+        // the stack size, so it is added outside the multiply.
+        return perItemRadiation * stack.getCount()
+                + com.hbm_m.util.ContaminationUtil.getNeutronRads(stack);
     }
     
     /**
@@ -260,10 +266,10 @@ public class PlayerHandler {
     private static void applyRadiationEffects(Player player) {
         float rads = getPlayerRads(player);
 
-        // Проверяем достижения через хук
-        if (player instanceof ServerPlayer serverPlayer) {
-            com.hbm_m.platform.PlatformHooks.awardAdvancementIfEligible(serverPlayer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "radiation_200"), rads >= 200.0F);
-            com.hbm_m.platform.PlatformHooks.awardAdvancementIfEligible(serverPlayer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "radiation_1000"), rads >= ModClothConfig.get().maxPlayerRad);
+        // Достижения: пороги радиации (оригинал: achRadPoison при 200 RAD,
+        // achRadDeath при летальной дозе - последний выдаётся ниже, при самой смерти).
+        if (rads >= 200.0F) {
+            ModAdvancements.grant(player, ModAdvancements.RAD_POISON);
         }
 
         // Летальный порог (конфиг maxPlayerRad; у мобов в EntityEffectHandler — 1000 RAD как в 1.7.10)
@@ -272,6 +278,7 @@ public class PlayerHandler {
                     "SERVER: Player {} radiation ({}) reached maxPlayerRad ({}). Killing player and resetting radiation.",
                     player.getName().getString(), rads, ModClothConfig.get().maxPlayerRad);
             player.hurt(ModDamageSources.radiation(player.level()), Float.MAX_VALUE);
+            ModAdvancements.grant(player, ModAdvancements.RAD_DEATH);
             setPlayerRads(player, 0F);
             return;
         }

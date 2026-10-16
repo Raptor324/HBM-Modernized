@@ -56,6 +56,10 @@ public class ClientModEvents {
         if (initialized) return;
         initialized = true;
 
+        // Induced radioactivity from a neutron flux gets its own tooltip line; kept as its own
+        // handler because - unlike the block below - it must also apply to armour.
+        NeutronActivationTooltip.init();
+
         // Версионно-зависимая регистрация тултипов: на 1.20.1 Architectury даёт 3-параметровый
         // callback (stack, lines, flag), на 1.21.1+ — 4-параметровый с Item.TooltipContext.
         // Тело вынесено в handleItemTooltip, чтобы логика не дублировалась.

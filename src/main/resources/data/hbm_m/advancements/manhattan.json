@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "hbm_m:custom_nuke"
+    },
+    "title": {
+      "translate": "advancements.hbm_m.manhattan.title"
+    },
+    "description": {
+      "translate": "advancements.hbm_m.manhattan.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "parent": "hbm_m:polymer"
+}

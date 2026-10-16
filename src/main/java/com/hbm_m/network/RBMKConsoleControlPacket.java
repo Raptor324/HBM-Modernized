@@ -23,6 +23,7 @@ public class RBMKConsoleControlPacket implements C2SPacket {
     public static final int ACTION_CYCLE_SCREEN   = 3;
     public static final int ACTION_SET_ORIGIN     = 4;
     public static final int ACTION_ASSIGN_SCREEN  = 5;
+    public static final int ACTION_COMPRESSOR     = 6;
 
     private final BlockPos consolePos;
     private final int      action;
@@ -94,6 +95,12 @@ public class RBMKConsoleControlPacket implements C2SPacket {
     public static void sendAssignScreen(BlockPos pos, int screenId, int[] selected) {
         ModPacketHandler.sendToServer(ModPacketHandler.RBMK_CONSOLE_CONTROL,
             new RBMKConsoleControlPacket(pos, ACTION_ASSIGN_SCREEN, 0, screenId, selected));
+    }
+
+    /** CE's "compressor" control: steps the steam grade of every selected boiler channel. */
+    public static void sendCompressor(BlockPos pos, int[] selected) {
+        ModPacketHandler.sendToServer(ModPacketHandler.RBMK_CONSOLE_CONTROL,
+            new RBMKConsoleControlPacket(pos, ACTION_COMPRESSOR, 0, 0, selected));
     }
 
     public static void sendSetOrigin(BlockPos consolePos, BlockPos origin) {

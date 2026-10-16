@@ -90,6 +90,9 @@ public class ModRecipes {
     public static final RegistrySupplier<RecipeSerializer<CrystallizerRecipe>> CRYSTALLIZER_SERIALIZER =
             SERIALIZERS.register("crystallizer", () -> CrystallizerRecipe.Serializer.INSTANCE);
 
+    // 1:1 port of the original's RBMKFuelCraftingHandler (rod -> 8 pellets, see that class).
+    public static final RegistrySupplier<RecipeSerializer<?>> RBMK_FUEL_DISASSEMBLY_SERIALIZER =
+            SERIALIZERS.register("rbmk_fuel_disassembly", () -> RBMKFuelDisassemblyRecipe.SERIALIZER);
     public static final RegistrySupplier<RecipeType<CrystallizerRecipe>> CRYSTALLIZER_TYPE =
             RECIPE_TYPES.register("crystallizer", () -> CrystallizerRecipe.Type.INSTANCE);
 

@@ -14,16 +14,27 @@ import org.jetbrains.annotations.Nullable;
 public class RBMKControlAutoBlock extends RBMKColumnBlock {
 
     public final boolean moderated;
+    /** See {@link RBMKControlManualBlock} - the original registers rbmk_control_auto and
+     *  rbmk_control_reasim_auto as separate blocks with their own textures (ModBlocks.java:2106-2108). */
+    private final String texturePrefix;
 
     public RBMKControlAutoBlock(boolean moderated, Properties props) {
+        this(moderated, null, props);
+    }
+
+    public RBMKControlAutoBlock(boolean moderated, String texturePrefix, Properties props) {
         super(props);
         this.moderated = moderated;
+        this.texturePrefix = texturePrefix;
     }
 
     @Nullable @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         RBMKControlAutoBlockEntity be = new RBMKControlAutoBlockEntity(pos, state);
         be.moderated = moderated;
+        be.texturePrefix = texturePrefix;
+        // Only the two ReaSim variants need electricity to move; see RBMKControlBlockEntity.powered.
+        be.powered = texturePrefix != null && texturePrefix.startsWith("rbmk_control_reasim");
         return be;
     }
 

@@ -47,6 +47,9 @@ public class MachineStorageDrumBlockEntity extends BaseMachineBlockEntity {
         super(ModBlockEntities.MACHINE_STORAGE_DRUM_BE.get(), pos, state, INVENTORY_SIZE, 0L, 0L, 0L);
     }
 
+    /** CE: {@code decayRate = 0.9965402628F} - a ten-second half-life on stored activation. */
+    private static final float DECAY_RATE = 0.9965402628F;
+
     public static void tick(Level level, BlockPos pos, BlockState state, MachineStorageDrumBlockEntity be) {
         if (level.isClientSide) return;
 
@@ -76,6 +79,11 @@ public class MachineStorageDrumBlockEntity extends BaseMachineBlockEntity {
                 gas += TINY_YIELD_MB;
                 be.inventory.setStackInSlot(i, new ItemStack(ModItems.NUCLEAR_WASTE_SHORT_DEPLETED_TINY.get()));
             }
+
+            // Anything in the drum that has no waste recipe of its own instead has its induced
+            // neutron activation bled off - CE's drum is the intended way to cool down something
+            // you left sitting in an outgasser. DECAY_RATE is a ten-second half-life.
+            com.hbm_m.util.ContaminationUtil.neutronActivateItem(stack, 0.0F, DECAY_RATE);
 
             if (!stack.isEmpty()) rad += 0.1F;
         }

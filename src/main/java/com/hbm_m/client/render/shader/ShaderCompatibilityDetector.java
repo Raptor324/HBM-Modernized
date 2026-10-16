@@ -7,7 +7,6 @@ import java.lang.reflect.Method;
 
 import com.hbm_m.client.render.culling.OcclusionCullingHelper;
 import com.hbm_m.main.MainRegistry;
-import com.mojang.blaze3d.systems.RenderSystem;
 
 import dev.architectury.platform.Platform;
 import net.minecraft.client.Minecraft;
@@ -107,22 +106,17 @@ public class ShaderCompatibilityDetector {
         initialized = true;
     }
 
-    public static boolean isExternalShaderActive() {
-        // Sodium строит чанки на фоновых потоках. Вызов Iris API с фонового потока небезопасен
-        // (Iris хранит состояние в thread-locals render-потока). Возвращаем кэш.
-        if (!RenderSystem.isOnRenderThread()) {
-            return cachedShaderActive;
-        }
-
-        if (!initialized) {
-            init();
-        }
-
-        // Если API не найдено, значит шейдеров точно нет
+    /**
+     * Один опрос Iris API за кадр (из {@link com.hbm_m.client.render.ClientRenderFlags#onFrameStart}).
+     * Раньше {@link #isExternalShaderActive()} дергал MethodHandle на каждый вызов
+     * (per-part per-BE per-pass) — на фермах машин это давало проценты кадра.
+     */
+    public static void updateState() {
+        if (!initialized) init();
         if (irisApiInstance == null || (irisIsShaderPackInUseMH == null && irisIsShaderPackInUse == null)) {
-            return false;
+            cachedShaderActive = false;
+            return;
         }
-
         try {
             boolean isActive;
             if (irisIsShaderPackInUseMH != null) {
@@ -132,7 +126,6 @@ public class ShaderCompatibilityDetector {
                 isActive = inUse != null && inUse;
             }
 
-            // Обновляем кэш для фоновых потоков
             cachedShaderActive = isActive;
 
             if (isActive != lastState) {
@@ -142,10 +135,15 @@ public class ShaderCompatibilityDetector {
                 // Откладываем инвалидацию — вызов из render loop ломает итерацию Sodium (wrapped is null)
                 pendingChunkInvalidation = true;
             }
-            return isActive;
         } catch (Throwable e) {
-            return false;
+            cachedShaderActive = false;
         }
+    }
+
+    public static boolean isExternalShaderActive() {
+        // O(1): состояние опрашивается один раз за кадр в updateState().
+        // Фоновые потоки (Sodium chunk builder) тоже читают этот кеш.
+        return cachedShaderActive;
     }
 
     /**

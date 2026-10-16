@@ -26,7 +26,7 @@ import java.util.function.Supplier;
  * screen, and (for Lever/KeyPad) a primary left-click action - everything else (screwdriver
  * opens config, RTTY tick wiring) is identical.
  */
-public class RBMKPanelDeviceBlock extends RBMKColumnBlock {
+public class RBMKPanelDeviceBlock extends RBMKMiniPanelBlock {
 
     /** Fires the device's primary action (lever flip / keypad press) on a plain right-click. */
     public interface PrimaryClick {

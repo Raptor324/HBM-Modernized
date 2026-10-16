@@ -207,9 +207,121 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 ModBlocks.TURRET_SENTRY, ModBlocks.TURRET_CHEKHOV, ModBlocks.TURRET_FRIENDLY, ModBlocks.TURRET_JEREMY,
                 ModBlocks.TURRET_TAUON, ModBlocks.TURRET_RICHARD, ModBlocks.TURRET_HOWARD,
                 ModBlocks.TURRET_MAXWELL, ModBlocks.TURRET_FRITZ, ModBlocks.TURRET_ARTY, ModBlocks.TURRET_HIMARS)) {
-            simpleBlockWithItem(turretBlock.get(),
+            // Blockstate only. The item model is hand-written under models/item/turret_<name>.json
+            // because it needs per-turret display transforms: these composite OBJ models carry no
+            // "display" section, so the items rendered at full world scale and spilled far out of
+            // their inventory slots (the artillery mesh alone spans over four blocks).
+            simpleBlock(turretBlock.get(),
                     models().getExistingFile(modLoc("block/" + turretBlock.getId().getPath())));
         }
+
+        // ─── AUTO-PORT: fehlende Original-Bloecke (nur DEV-Tab, ungeprueft) ───
+        // Texturen liegen unter block/ported/, getrennt vom handgepflegten Bestand.
+        simpleBlockWithItem(ModBlocks.BLOCK_ASBESTOS.get(), models().cubeAll("block_asbestos", modLoc("block/ported/block_asbestos")));
+        simpleBlockWithItem(ModBlocks.BLOCK_BAKELITE.get(), models().cubeAll("block_bakelite", modLoc("block/ported/block_bakelite")));
+        simpleBlockWithItem(ModBlocks.BLOCK_C4.get(), models().cubeAll("block_c4", modLoc("block/ported/block_c4")));
+        simpleBlockWithItem(ModBlocks.BLOCK_COLTAN.get(), models().cubeAll("block_coltan", modLoc("block/ported/block_coltan")));
+        simpleBlockWithItem(ModBlocks.BLOCK_CORIUM.get(), models().cubeAll("block_corium", modLoc("block/ported/block_corium")));
+        simpleBlockWithItem(ModBlocks.BLOCK_CORIUM_COBBLE.get(), models().cubeAll("block_corium_cobble", modLoc("block/ported/block_corium_cobble")));
+        simpleBlockWithItem(ModBlocks.BLOCK_EUPHEMIUM_CLUSTER.get(), models().cubeBottomTop("block_euphemium_cluster",
+                modLoc("block/ported/block_euphemium_cluster_side"), modLoc("block/ported/block_euphemium_cluster_bottom"), modLoc("block/ported/block_euphemium_cluster_top")));
+        simpleBlockWithItem(ModBlocks.BLOCK_FIBERGLASS.get(), models().cubeBottomTop("block_fiberglass",
+                modLoc("block/ported/block_fiberglass_side"), modLoc("block/ported/block_fiberglass_bottom"), modLoc("block/ported/block_fiberglass_top")));
+        simpleBlockWithItem(ModBlocks.BLOCK_FLUORITE.get(), models().cubeAll("block_fluorite", modLoc("block/ported/block_fluorite")));
+        simpleBlockWithItem(ModBlocks.BLOCK_GRAPHITE_DETECTOR.get(), models().cubeAll("block_graphite_detector", modLoc("block/ported/block_graphite_detector")));
+        simpleBlockWithItem(ModBlocks.BLOCK_GRAPHITE_DRILLED.get(), models().cubeAll("block_graphite_drilled", modLoc("block/ported/block_graphite_drilled")));
+        simpleBlockWithItem(ModBlocks.BLOCK_GRAPHITE_FUEL.get(), models().cubeAll("block_graphite_fuel", modLoc("block/ported/block_graphite_fuel")));
+        simpleBlockWithItem(ModBlocks.BLOCK_GRAPHITE_LITHIUM.get(), models().cubeAll("block_graphite_lithium", modLoc("block/ported/block_graphite_lithium")));
+        simpleBlockWithItem(ModBlocks.BLOCK_GRAPHITE_PLUTONIUM.get(), models().cubeAll("block_graphite_plutonium", modLoc("block/ported/block_graphite_plutonium")));
+        simpleBlockWithItem(ModBlocks.BLOCK_GRAPHITE_SOURCE.get(), models().cubeAll("block_graphite_source", modLoc("block/ported/block_graphite_source")));
+        simpleBlockWithItem(ModBlocks.BLOCK_GRAPHITE_TRITIUM.get(), models().cubeAll("block_graphite_tritium", modLoc("block/ported/block_graphite_tritium")));
+        simpleBlockWithItem(ModBlocks.BLOCK_INSULATOR.get(), models().cubeBottomTop("block_insulator",
+                modLoc("block/ported/block_insulator_side"), modLoc("block/ported/block_insulator_bottom"), modLoc("block/ported/block_insulator_top")));
+        simpleBlockWithItem(ModBlocks.BLOCK_LITHIUM.get(), models().cubeAll("block_lithium", modLoc("block/ported/block_lithium")));
+        simpleBlockWithItem(ModBlocks.BLOCK_MAGNETIZED_TUNGSTEN.get(), models().cubeAll("block_magnetized_tungsten", modLoc("block/ported/block_magnetized_tungsten")));
+        simpleBlockWithItem(ModBlocks.BLOCK_METEOR.get(), models().cubeAll("block_meteor", modLoc("block/ported/block_meteor")));
+        simpleBlockWithItem(ModBlocks.BLOCK_METEOR_BROKEN.get(), models().cubeAll("block_meteor_broken", modLoc("block/ported/block_meteor_broken")));
+        simpleBlockWithItem(ModBlocks.BLOCK_METEOR_COBBLE.get(), models().cubeAll("block_meteor_cobble", modLoc("block/ported/block_meteor_cobble")));
+        simpleBlockWithItem(ModBlocks.BLOCK_METEOR_MOLTEN.get(), models().cubeAll("block_meteor_molten", modLoc("block/ported/block_meteor_molten")));
+        simpleBlockWithItem(ModBlocks.BLOCK_METEOR_TREASURE.get(), models().cubeAll("block_meteor_treasure", modLoc("block/ported/block_meteor_treasure")));
+        simpleBlockWithItem(ModBlocks.BLOCK_NITER.get(), models().cubeAll("block_niter", modLoc("block/ported/block_niter")));
+        simpleBlockWithItem(ModBlocks.BLOCK_POLYMER.get(), models().cubeAll("block_polymer", modLoc("block/ported/block_polymer")));
+        simpleBlockWithItem(ModBlocks.BLOCK_PU_MIX.get(), models().cubeAll("block_pu_mix", modLoc("block/ported/block_pu_mix")));
+        simpleBlockWithItem(ModBlocks.BLOCK_RED_PHOSPHORUS.get(), models().cubeAll("block_red_phosphorus", modLoc("block/ported/block_red_phosphorus")));
+        simpleBlockWithItem(ModBlocks.BLOCK_RUBBER.get(), models().cubeAll("block_rubber", modLoc("block/ported/block_rubber")));
+        simpleBlockWithItem(ModBlocks.BLOCK_SCRAP.get(), models().cubeAll("block_scrap", modLoc("block/ported/block_scrap")));
+        simpleBlockWithItem(ModBlocks.BLOCK_SEMTEX.get(), models().cubeAll("block_semtex", modLoc("block/ported/block_semtex")));
+        simpleBlockWithItem(ModBlocks.BLOCK_SMORE.get(), models().cubeBottomTop("block_smore",
+                modLoc("block/ported/block_smore_side"), modLoc("block/ported/block_smore_bottom"), modLoc("block/ported/block_smore_top")));
+        simpleBlockWithItem(ModBlocks.BLOCK_SULFUR.get(), models().cubeAll("block_sulfur", modLoc("block/ported/block_sulfur")));
+        simpleBlockWithItem(ModBlocks.BLOCK_TANTALIUM.get(), models().cubeAll("block_tantalium", modLoc("block/ported/block_tantalium")));
+        simpleBlockWithItem(ModBlocks.BLOCK_TRINITITE.get(), models().cubeAll("block_trinitite", modLoc("block/ported/block_trinitite")));
+        simpleBlockWithItem(ModBlocks.BLOCK_TRITIUM.get(), models().cubeBottomTop("block_tritium",
+                modLoc("block/ported/block_tritium_side"), modLoc("block/ported/block_tritium_bottom"), modLoc("block/ported/block_tritium_top")));
+        simpleBlockWithItem(ModBlocks.BLOCK_WASTE.get(), models().cubeAll("block_waste", modLoc("block/ported/block_waste")));
+        simpleBlockWithItem(ModBlocks.BLOCK_WASTE_VITRIFIED.get(), models().cubeAll("block_waste_vitrified", modLoc("block/ported/block_waste_vitrified")));
+        simpleBlockWithItem(ModBlocks.BLOCK_WHITE_PHOSPHORUS.get(), models().cubeAll("block_white_phosphorus", modLoc("block/ported/block_white_phosphorus")));
+        simpleBlockWithItem(ModBlocks.BLOCK_YELLOWCAKE.get(), models().cubeAll("block_yellowcake", modLoc("block/ported/block_yellowcake")));
+        simpleBlockWithItem(ModBlocks.BRICK_FORGOTTEN.get(), models().cubeAll("brick_forgotten", modLoc("block/ported/brick_forgotten")));
+        simpleBlockWithItem(ModBlocks.CONCRETE_LIQUID.get(), models().cubeAll("concrete_liquid", modLoc("block/ported/concrete_liquid")));
+        simpleBlockWithItem(ModBlocks.DIGAMMA_MATTER.get(), models().cubeAll("digamma_matter", modLoc("block/ported/digamma_matter")));
+        simpleBlockWithItem(ModBlocks.DUNGEON_SPAWNER.get(), models().cubeAll("dungeon_spawner", modLoc("block/ported/dungeon_spawner")));
+        simpleBlockWithItem(ModBlocks.EVENT_TESTER.get(), models().cubeAll("event_tester", modLoc("block/ported/event_tester")));
+        simpleBlockWithItem(ModBlocks.FLUID_DUCT_PAINTABLE_BLOCK_EXHAUST.get(), models().cubeAll("fluid_duct_paintable_block_exhaust", modLoc("block/ported/fluid_duct_paintable_block_exhaust")));
+        simpleBlockWithItem(ModBlocks.GEIGER.get(), models().cubeAll("geiger", modLoc("block/ported/geiger")));
+        simpleBlockWithItem(ModBlocks.GEYSIR_NETHER.get(), models().cubeAll("geysir_nether", modLoc("block/ported/geysir_nether")));
+        simpleBlockWithItem(ModBlocks.ICF_BLOCK.get(), models().cubeAll("icf_block", modLoc("block/ported/icf_block")));
+        simpleBlockWithItem(ModBlocks.LAUNCH_TABLE.get(), models().cubeAll("launch_table", modLoc("block/ported/launch_table")));
+        simpleBlockWithItem(ModBlocks.LOGIC_BLOCK.get(), models().cubeAll("logic_block", modLoc("block/ported/logic_block")));
+        simpleBlockWithItem(ModBlocks.MACHINE_RADAR.get(), models().cubeAll("machine_radar", modLoc("block/ported/machine_radar")));
+        simpleBlockWithItem(ModBlocks.MUSH_BLOCK_STEM.get(), models().cubeAll("mush_block_stem", modLoc("block/ported/mush_block_stem")));
+        simpleBlockWithItem(ModBlocks.ORE_ALEXANDRITE.get(), models().cubeAll("ore_alexandrite", modLoc("block/ported/ore_alexandrite")));
+        simpleBlockWithItem(ModBlocks.ORE_ALUMINIUM.get(), models().cubeAll("ore_aluminium", modLoc("block/ported/ore_aluminium")));
+        simpleBlockWithItem(ModBlocks.ORE_AUSTRALIUM.get(), models().cubeAll("ore_australium", modLoc("block/ported/ore_australium")));
+        simpleBlockWithItem(ModBlocks.ORE_CINNEBAR.get(), models().cubeAll("ore_cinnebar", modLoc("block/ported/ore_cinnebar")));
+        simpleBlockWithItem(ModBlocks.ORE_COLTAN.get(), models().cubeAll("ore_coltan", modLoc("block/ported/ore_coltan")));
+        simpleBlockWithItem(ModBlocks.ORE_COPPER.get(), models().cubeAll("ore_copper", modLoc("block/ported/ore_copper")));
+        simpleBlockWithItem(ModBlocks.ORE_DEPTH_BORAX.get(), models().cubeAll("ore_depth_borax", modLoc("block/ported/ore_depth_borax")));
+        simpleBlockWithItem(ModBlocks.ORE_DEPTH_CINNEBAR.get(), models().cubeAll("ore_depth_cinnebar", modLoc("block/ported/ore_depth_cinnebar")));
+        simpleBlockWithItem(ModBlocks.ORE_DEPTH_NETHER_NEODYMIUM.get(), models().cubeAll("ore_depth_nether_neodymium", modLoc("block/ported/ore_depth_nether_neodymium")));
+        simpleBlockWithItem(ModBlocks.ORE_DEPTH_ZIRCONIUM.get(), models().cubeAll("ore_depth_zirconium", modLoc("block/ported/ore_depth_zirconium")));
+        simpleBlockWithItem(ModBlocks.ORE_GNEISS_ASBESTOS.get(), models().cubeAll("ore_gneiss_asbestos", modLoc("block/ported/ore_gneiss_asbestos")));
+        simpleBlockWithItem(ModBlocks.ORE_GNEISS_COPPER.get(), models().cubeAll("ore_gneiss_copper", modLoc("block/ported/ore_gneiss_copper")));
+        simpleBlockWithItem(ModBlocks.ORE_GNEISS_GAS.get(), models().cubeAll("ore_gneiss_gas", modLoc("block/ported/ore_gneiss_gas")));
+        simpleBlockWithItem(ModBlocks.ORE_GNEISS_GOLD.get(), models().cubeAll("ore_gneiss_gold", modLoc("block/ported/ore_gneiss_gold")));
+        simpleBlockWithItem(ModBlocks.ORE_GNEISS_IRON.get(), models().cubeAll("ore_gneiss_iron", modLoc("block/ported/ore_gneiss_iron")));
+        simpleBlockWithItem(ModBlocks.ORE_GNEISS_LITHIUM.get(), models().cubeAll("ore_gneiss_lithium", modLoc("block/ported/ore_gneiss_lithium")));
+        simpleBlockWithItem(ModBlocks.ORE_GNEISS_RARE.get(), models().cubeAll("ore_gneiss_rare", modLoc("block/ported/ore_gneiss_rare")));
+        simpleBlockWithItem(ModBlocks.ORE_GNEISS_URANIUM.get(), models().cubeAll("ore_gneiss_uranium", modLoc("block/ported/ore_gneiss_uranium")));
+        simpleBlockWithItem(ModBlocks.ORE_GNEISS_URANIUM_SCORCHED.get(), models().cubeAll("ore_gneiss_uranium_scorched", modLoc("block/ported/ore_gneiss_uranium_scorched")));
+        simpleBlockWithItem(ModBlocks.ORE_NETHER_COAL.get(), models().cubeAll("ore_nether_coal", modLoc("block/ported/ore_nether_coal")));
+        simpleBlockWithItem(ModBlocks.ORE_NETHER_COBALT.get(), models().cubeAll("ore_nether_cobalt", modLoc("block/ported/ore_nether_cobalt")));
+        simpleBlockWithItem(ModBlocks.ORE_NETHER_FIRE.get(), models().cubeAll("ore_nether_fire", modLoc("block/ported/ore_nether_fire")));
+        simpleBlockWithItem(ModBlocks.ORE_NETHER_PLUTONIUM.get(), models().cubeAll("ore_nether_plutonium", modLoc("block/ported/ore_nether_plutonium")));
+        simpleBlockWithItem(ModBlocks.ORE_NETHER_SMOLDERING.get(), models().cubeAll("ore_nether_smoldering", modLoc("block/ported/ore_nether_smoldering")));
+        simpleBlockWithItem(ModBlocks.ORE_NETHER_SULFUR.get(), models().cubeAll("ore_nether_sulfur", modLoc("block/ported/ore_nether_sulfur")));
+        simpleBlockWithItem(ModBlocks.ORE_NETHER_TUNGSTEN.get(), models().cubeAll("ore_nether_tungsten", modLoc("block/ported/ore_nether_tungsten")));
+        simpleBlockWithItem(ModBlocks.ORE_NETHER_URANIUM.get(), models().cubeAll("ore_nether_uranium", modLoc("block/ported/ore_nether_uranium")));
+        simpleBlockWithItem(ModBlocks.ORE_NETHER_URANIUM_SCORCHED.get(), models().cubeAll("ore_nether_uranium_scorched", modLoc("block/ported/ore_nether_uranium_scorched")));
+        simpleBlockWithItem(ModBlocks.ORE_OIL_SAND.get(), models().cubeAll("ore_oil_sand", modLoc("block/ported/ore_oil_sand")));
+        simpleBlockWithItem(ModBlocks.ORE_RARE.get(), models().cubeAll("ore_rare", modLoc("block/ported/ore_rare")));
+        simpleBlockWithItem(ModBlocks.ORE_TEKTITE_OSMIRIDIUM.get(), models().cubeAll("ore_tektite_osmiridium", modLoc("block/ported/ore_tektite_osmiridium")));
+        simpleBlockWithItem(ModBlocks.ORE_TIKITE.get(), models().cubeAll("ore_tikite", modLoc("block/ported/ore_tikite")));
+        simpleBlockWithItem(ModBlocks.ORE_URANIUM_SCORCHED.get(), models().cubeAll("ore_uranium_scorched", modLoc("block/ported/ore_uranium_scorched")));
+        simpleBlockWithItem(ModBlocks.PILE_BLOCK.get(), models().cubeAll("pile_block", modLoc("block/ported/pile_block")));
+        simpleBlockWithItem(ModBlocks.PILE_BRICK.get(), models().cubeBottomTop("pile_brick",
+                modLoc("block/ported/pile_brick_side"), modLoc("block/ported/pile_brick_bottom"), modLoc("block/ported/pile_brick_top")));
+        simpleBlockWithItem(ModBlocks.PNEUMATIC_STORAGE_ACCESS.get(), models().cubeAll("pneumatic_storage_access", modLoc("block/ported/pneumatic_storage_access")));
+        simpleBlockWithItem(ModBlocks.PNEUMATIC_STORAGE_CLUTTER.get(), models().cubeAll("pneumatic_storage_clutter", modLoc("block/ported/pneumatic_storage_clutter")));
+        simpleBlockWithItem(ModBlocks.PNEUMATIC_STORAGE_EXPORTER.get(), models().cubeAll("pneumatic_storage_exporter", modLoc("block/ported/pneumatic_storage_exporter")));
+        simpleBlockWithItem(ModBlocks.PNEUMATIC_STORAGE_IMPORTER.get(), models().cubeAll("pneumatic_storage_importer", modLoc("block/ported/pneumatic_storage_importer")));
+        simpleBlockWithItem(ModBlocks.PNEUMATIC_STORAGE_MONO.get(), models().cubeAll("pneumatic_storage_mono", modLoc("block/ported/pneumatic_storage_mono")));
+        simpleBlockWithItem(ModBlocks.SOLAR_MIRROR.get(), models().cubeAll("solar_mirror", modLoc("block/ported/solar_mirror")));
+        simpleBlockWithItem(ModBlocks.STEEL_BEAM.get(), models().cubeAll("steel_beam", modLoc("block/ported/steel_beam")));
+        simpleBlockWithItem(ModBlocks.STRUCTURE_ANCHOR.get(), models().cubeAll("structure_anchor", modLoc("block/ported/structure_anchor")));
+        simpleBlockWithItem(ModBlocks.WAND_TANDEM.get(), models().cubeBottomTop("wand_tandem",
+                modLoc("block/ported/wand_tandem_side"), modLoc("block/ported/wand_tandem_bottom"), modLoc("block/ported/wand_tandem_top")));
+        // ─── ENDE AUTO-PORT Bloecke ───
 
         simpleBlockWithItem(ModBlocks.FALLING_SELLAFIT1.get(),
                 models().cubeAll(
@@ -501,7 +613,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         horizontalBlock(ModBlocks.THRESHER.get(),
             models().getExistingFile(modLoc("block/machines/thresher")));
         simpleMachineBlock(ModBlocks.BEAMLINE);
-        customMachineBlock(ModBlocks.BOILER);
+        explodableMachineBlock(ModBlocks.BOILER,
+                "block/machines/boiler", "block/machines/boiler_burst");
         horizontalBlock(ModBlocks.PUMP_STEAM.get(),
             models().cubeAll(ModBlocks.PUMP_STEAM.getId().getPath(), modLoc("block/machine/pump_steam")));
         horizontalBlock(ModBlocks.PUMP_ELECTRIC.get(),
@@ -647,9 +760,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
             com.hbm_m.block.machines.MachineRotaryFurnaceBlock.FACING, com.hbm_m.block.machines.MachineRotaryFurnaceBlock.LIT,
             "rotary_furnace", "rotary_furnace");
 
-        // FluidTank - только FACING
-        horizontalBlock(ModBlocks.FLUID_TANK.get(),
-            models().getExistingFile(modLoc("block/machines/fluid_tank")));
+        // FluidTank - FACING plus the wrecked variant
+        explodableMachineBlock(ModBlocks.FLUID_TANK,
+                "block/machines/fluid_tank", "block/machines/fluid_tank_exploded");
 
         // BAT9000 - uses its own pre-existing dedicated model/texture (static, no fluid-tint swap)
         horizontalBlock(ModBlocks.BAT9000.get(),
@@ -3300,6 +3413,41 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customObjBlockSimple(ModBlocks.STEEL_ROOF);
         // Порт BlockScaffold: OBJ-панель 2/16..14/16, AXIS-ориентация (модель-обёртка в resources)
         objAxisBlockWithItem(ModBlocks.STEEL_SCAFFOLD, "block/steel_scaffold", false);
+        // RBMK support/deco blocks (1:1 with com.hbm.blocks.ModBlocks - deco_rbmk reuses
+        // rbmk/rbmk_top, deco_rbmk_smooth reuses rbmk/rbmk_blank_top).
+        // These four have textures of their own in CE; the first two were borrowing the RBMK
+        // column's top faces as stand-ins and the panelled pair did not exist at all.
+        simpleBlockWithItem(ModBlocks.DECO_RBMK.get(),
+                models().cubeAll(ModBlocks.DECO_RBMK.getId().getPath(), modLoc("block/deco_rbmk")));
+        simpleBlockWithItem(ModBlocks.DECO_RBMK_SMOOTH.get(),
+                models().cubeAll(ModBlocks.DECO_RBMK_SMOOTH.getId().getPath(), modLoc("block/deco_rbmk_smooth")));
+        simpleBlockWithItem(ModBlocks.DECO_RBMK_PANEL.get(),
+                models().cubeAll(ModBlocks.DECO_RBMK_PANEL.getId().getPath(), modLoc("block/deco_rbmk_panel")));
+        simpleBlockWithItem(ModBlocks.DECO_RBMK_SMOOTH_PANEL.get(),
+                models().cubeAll(ModBlocks.DECO_RBMK_SMOOTH_PANEL.getId().getPath(), modLoc("block/deco_rbmk_panel_smooth")));
+
+        // CE's thin panel slabs: a 2px single and the 4px double it stacks into. The side faces use
+        // a dedicated narrow strip texture, sampled from the bottom of the sheet so the panel's
+        // edge lines up whichever height it is.
+        rbmkPanelSlab(ModBlocks.DECO_RBMK_PANEL_SLAB2.get(), "deco_rbmk_panel_slab2",
+                "deco_rbmk_panel", "deco_rbmk_panel_side", 2);
+        rbmkPanelSlab(ModBlocks.DECO_RBMK_PANEL_SLAB4.get(), "deco_rbmk_panel_slab4",
+                "deco_rbmk_panel", "deco_rbmk_panel_side", 4);
+        rbmkPanelSlab(ModBlocks.DECO_RBMK_SMOOTH_PANEL_SLAB2.get(), "deco_rbmk_smooth_panel_slab2",
+                "deco_rbmk_panel_smooth", "deco_rbmk_panel_smooth_side", 2);
+        rbmkPanelSlab(ModBlocks.DECO_RBMK_SMOOTH_PANEL_SLAB4.get(), "deco_rbmk_smooth_panel_slab4",
+                "deco_rbmk_panel_smooth", "deco_rbmk_panel_smooth_side", 4);
+        simpleBlockWithItem(ModBlocks.BLOCK_GRAPHITE.get(),
+                models().cubeAll(ModBlocks.BLOCK_GRAPHITE.getId().getPath(), modLoc("block/block_graphite")));
+        simpleBlockWithItem(ModBlocks.STEEL_GRATE.get(),
+                models().cubeBottomTop(ModBlocks.STEEL_GRATE.getId().getPath(),
+                        modLoc("block/grate_side"), modLoc("block/grate_top"), modLoc("block/grate_top")));
+        simpleBlockWithItem(ModBlocks.STEEL_SCAFFOLD.get(),
+                models().cubeAll(
+                        ModBlocks.STEEL_SCAFFOLD.getId().getPath(),
+                        modLoc("block/steel_scaffold")
+                )
+        );
         simpleBlockWithItem(ModBlocks.STONE_CRACKED.get(),
                 models().cubeAll(
                         ModBlocks.STONE_CRACKED.getId().getPath(),
@@ -4225,6 +4373,33 @@ public class ModBlockStateProvider extends BlockStateProvider {
         }
     }
 
+    /**
+     * A horizontally-placed machine that has a wrecked model for when it has been blown up.
+     *
+     * <p>Emits the usual four facings twice over, keyed on the block's {@code exploded} property,
+     * so the model swaps the moment the block entity flips that flag. The original does the same
+     * swap inside its tile-entity renderer; the port has these on plain baked models, so the
+     * blockstate is the place for it.</p>
+     */
+    private <T extends Block> void explodableMachineBlock(RegistrySupplier<T> blockObject,
+                                                          String intactModel, String explodedModel) {
+        var intact = models().getExistingFile(modLoc(intactModel));
+        var wrecked = models().getExistingFile(modLoc(explodedModel));
+
+        getVariantBuilder(blockObject.get()).forAllStates(state -> {
+            var facing = state.getValue(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING);
+            // Each block declares its own BooleanProperty instance, so the property has to be
+            // taken from the state itself - passing another block's instance to getValue throws.
+            var property = state.getBlock().getStateDefinition().getProperty("exploded");
+            boolean exploded = property instanceof net.minecraft.world.level.block.state.properties.BooleanProperty flag
+                    && state.getValue(flag);
+            return net.minecraftforge.client.model.generators.ConfiguredModel.builder()
+                    .modelFile(exploded ? wrecked : intact)
+                    .rotationY(((int) facing.toYRot() + 180) % 360)
+                    .build();
+        });
+    }
+
     private <T extends Block> void customMachineBlock(RegistrySupplier<T> blockObject) {
         // Создаём только blockstate, который ссылается на JSON модель
         // JSON модель должна лежать в resources/assets/hbm_m/models/block/<название>.json
@@ -4576,6 +4751,37 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         simpleBlockItem(block, models().cubeAll(blockObject.getId().getPath(), modLoc(overlayTexture)));
     }
+
+    /**
+     * One RBMK panel slab: a flat plate {@code height} pixels tall, textured with the panel sheet on
+     * the flat faces and the narrow edge strip on the sides. 1:1 with CE's hand-written
+     * {@code deco_rbmk_*_slab2/4} models.
+     */
+    private void rbmkPanelSlab(net.minecraft.world.level.block.Block block, String name,
+                                String topTex, String sideTex, int height) {
+        var model = models().getBuilder(name)
+                .texture("particle", modLoc("block/" + topTex))
+                .texture("texture", modLoc("block/" + topTex))
+                .texture("side", modLoc("block/" + sideTex));
+
+        model.element()
+                .from(0, 0, 0).to(16, height, 16)
+                .face(Direction.DOWN).uvs(0, 0, 16, 16).texture("#texture").cullface(Direction.DOWN).end()
+                .face(Direction.UP).uvs(0, 0, 16, 16).texture("#texture").end()
+                .face(Direction.NORTH).uvs(0, 16 - height, 16, 16).texture("#side").cullface(Direction.NORTH).end()
+                .face(Direction.SOUTH).uvs(0, 16 - height, 16, 16).texture("#side").cullface(Direction.SOUTH).end()
+                .face(Direction.WEST).uvs(0, 16 - height, 16, 16).texture("#side").cullface(Direction.WEST).end()
+                .face(Direction.EAST).uvs(0, 16 - height, 16, 16).texture("#side").cullface(Direction.EAST).end()
+                .end();
+
+        simpleBlock(block, model);
+
+        // Only the single slab has an item; the double is never carried.
+        if (block.asItem() != net.minecraft.world.item.Items.AIR) {
+            simpleBlockItem(block, model);
+        }
+    }
+
     /** Axis-колонна (балки/трубы структурного декора) + предметная модель. */
     /** Ванильная лестница (порт BlockNTMLadder): blockstate как у ladder.json, модель-родитель block/ladder. */
     private void ladderBlockWithItem(Block block, String texture) {

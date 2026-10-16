@@ -25,16 +25,25 @@ public class RBMKRodBlock extends RBMKColumnBlock {
 
     /** Whether this fuel channel has a built-in graphite moderator. */
     public final boolean moderated;
+    /** ReaSim fuel channels spread flux in eight directions instead of four
+     *  (original: TileEntityRBMKRodReaSim). */
+    public final boolean reaSim;
 
     public RBMKRodBlock(boolean moderated, Properties props) {
+        this(moderated, false, props);
+    }
+
+    public RBMKRodBlock(boolean moderated, boolean reaSim, Properties props) {
         super(props);
         this.moderated = moderated;
+        this.reaSim = reaSim;
     }
 
     @Nullable @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         RBMKRodBlockEntity be = new RBMKRodBlockEntity(pos, state);
         be.moderated = moderated;
+        be.reaSim = reaSim;
         return be;
     }
 

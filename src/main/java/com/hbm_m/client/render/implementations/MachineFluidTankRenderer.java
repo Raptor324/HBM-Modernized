@@ -182,6 +182,12 @@ public final class MachineFluidTankRenderer {
      * Алмазы опасности на двух боковых гранях бака (1.7.10 RenderFluidTank):
      * translate(-0.25, 0.5, -1.501)/(0.25, 0.5, 1.501), rotateY ±90°, scale(1, 0.375, 0.375).
      * Стек хука = setupTransform·T(-0.5); возвращаемся в модельный фрейм T(0.5).
+     * <p>
+     * ВАЖНО: в 1.7.10 оффсеты заданы в сыром OBJ-фрейме, а наш пайплайн запекает части
+     * С root-трансформом из fluid_tank.json (Forge ObjModel компоузит getRootTransform()
+     * всегда, даже с identity ModelState): baked = T(-0.5,0,-2.5)·RotY(90)·raw.
+     * Поэтому перед легаси-оффсетами вставляются те же T+R — иначе алмазы оказываются
+     * не на тех гранях (сырой Z-фрейм ≠ запечённый, корпус в хуке длинная коробка по Z').
      */
     private static void renderDiamonds(MachineFluidTankBlockEntity be, float partialTick,
                                        PoseStack poseStack, MultiBufferSource buffer,
@@ -198,17 +204,23 @@ public final class MachineFluidTankRenderer {
 
         RenderSystem.disableCull();
 
+        // root-трансформ модели B = T(-0.5,0,-2.5)·RotY(90), затем легаси-оффсеты L:
+        // итого B·L — те же координаты, что в 1.7.10, но в запечённом фрейме модели.
+        // Компенсация T(0.5,0,0.5) из старого хука НЕ нужна: она должна была
+        // выравнивать сырой фрейм, а B·L уже даёт запечённые координаты напрямую.
         poseStack.pushPose();
-        poseStack.translate(0.5F, 0.0F, 0.5F); // компенсация -0.5 из блочного трансформа
-        poseStack.translate(-0.25F, 0.5F, -0.501F);
+        poseStack.translate(-0.5F, 0.0F, -2.5F);
+        poseStack.mulPose(Axis.YP.rotationDegrees(90.0F));
+        poseStack.translate(-0.25F, 0.5F, -1.501F);
         poseStack.mulPose(Axis.YP.rotationDegrees(90.0F));
         poseStack.scale(1.0F, 0.375F, 0.375F);
         DiamondPronter.pront(poseStack, buffer, type.poison, type.flammability, type.reactivity, type.symbol, light, packedOverlay);
         poseStack.popPose();
 
         poseStack.pushPose();
-        poseStack.translate(0.5F, 0.0F, 0.5F); // компенсация -0.5 из блочного трансформа
-        poseStack.translate(0.25F, 0.5F, 2.501F);
+        poseStack.translate(-0.5F, 0.0F, -2.5F);
+        poseStack.mulPose(Axis.YP.rotationDegrees(90.0F));
+        poseStack.translate(0.25F, 0.5F, 1.501F);
         poseStack.mulPose(Axis.YN.rotationDegrees(90.0F));
         poseStack.scale(1.0F, 0.375F, 0.375F);
         DiamondPronter.pront(poseStack, buffer, type.poison, type.flammability, type.reactivity, type.symbol, light, packedOverlay);

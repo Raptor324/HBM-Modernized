@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "hbm_m:injector_knife"
+    },
+    "title": {
+      "translate": "advancements.hbm_m.some_wounds.title"
+    },
+    "description": {
+      "translate": "advancements.hbm_m.some_wounds.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "parent": "hbm_m:root"
+}

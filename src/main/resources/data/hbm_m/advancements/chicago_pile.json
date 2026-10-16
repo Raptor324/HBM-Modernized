@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "hbm_m:pile_rod_plutonium"
+    },
+    "title": {
+      "translate": "advancements.hbm_m.chicago_pile.title"
+    },
+    "description": {
+      "translate": "advancements.hbm_m.chicago_pile.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "parent": "hbm_m:centrifuge"
+}

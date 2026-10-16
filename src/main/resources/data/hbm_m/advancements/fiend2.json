@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "hbm_m:shimmer_axe"
+    },
+    "title": {
+      "translate": "advancements.hbm_m.fiend2.title"
+    },
+    "description": {
+      "translate": "advancements.hbm_m.fiend2.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "parent": "hbm_m:fiend"
+}

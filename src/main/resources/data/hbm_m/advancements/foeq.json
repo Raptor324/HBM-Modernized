@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "hbm_m:sat_foeq"
+    },
+    "title": {
+      "translate": "advancements.hbm_m.foeq.title"
+    },
+    "description": {
+      "translate": "advancements.hbm_m.foeq.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "parent": "hbm_m:desh"
+}

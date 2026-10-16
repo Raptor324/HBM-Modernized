@@ -2081,12 +2081,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.RBMK_OUTGASSER.get(), "РБМК Канал облучения");
         add(ModBlocks.RBMK_STORAGE.get(), "РБМК Хранилище");
         add(ModBlocks.RBMK_BLANK.get(), "РБМК Заглушка");
-        add(ModBlocks.RBMK_CONTROL_BLUE.get(),        "РБМК Стержень управления (синий)");
-        add(ModBlocks.RBMK_CONTROL_GREEN.get(),       "РБМК Стержень управления (зелёный)");
-        add(ModBlocks.RBMK_CONTROL_YELLOW.get(),      "РБМК Стержень управления (жёлтый)");
-        add(ModBlocks.RBMK_CONTROL_PURPLE.get(),      "РБМК Стержень управления (фиолетовый)");
         add(ModBlocks.RBMK_CONTROL_MOD.get(),         "РБМК Стержень управления с замедлителем");
-        add(ModBlocks.RBMK_CONTROL_MOD_AUTO.get(),    "РБМК Авто-стержень с замедлителем");
         add(ModBlocks.RBMK_CONTROL_REASIM.get(),      "РБМК Стержень управления (ReaSim)");
         add(ModBlocks.RBMK_CONTROL_REASIM_AUTO.get(), "РБМК Авто-стержень (ReaSim)");
         add(ModBlocks.RBMK_STEAM_INLET.get(),         "РБМК Вход пара");

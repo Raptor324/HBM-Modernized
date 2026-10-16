@@ -33,6 +33,14 @@ public class SatelliteHorizons extends Satellite {
         used = nbt.getBoolean("used");
     }
 
+    /** {@code SatelliteHorizons.onOrbit}: reaching orbit is itself the first advancement. */
+    @Override
+    public void onOrbit(ServerLevel level, double x, double y, double z) {
+        super.onOrbit(level, x, y, z);
+        com.hbm_m.advancement.ModAdvancements.grantAll(level,
+                com.hbm_m.advancement.ModAdvancements.HORIZONS_START);
+    }
+
     @Override
     public void onCoordAction(ServerLevel level, Player player, int x, int y, int z) {
         if (used) {
@@ -54,5 +62,8 @@ public class SatelliteHorizons extends Satellite {
 
         level.getServer().getPlayerList().broadcastSystemMessage(
                 Component.literal("Horizons has been activated.").withStyle(ChatFormatting.RED), false);
+
+        com.hbm_m.advancement.ModAdvancements.grantAll(level,
+                com.hbm_m.advancement.ModAdvancements.HORIZONS_END);
     }
 }

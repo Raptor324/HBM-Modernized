@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "minecraft:baked_potato"
+    },
+    "title": {
+      "translate": "advancements.hbm_m.soyuz.title"
+    },
+    "description": {
+      "translate": "advancements.hbm_m.soyuz.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "parent": "hbm_m:desh"
+}

@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "hbm_m:debris_fuel"
+    },
+    "title": {
+      "translate": "advancements.hbm_m.rbmk_boom.title"
+    },
+    "description": {
+      "translate": "advancements.hbm_m.rbmk_boom.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "parent": "hbm_m:rbmk"
+}

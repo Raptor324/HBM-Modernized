@@ -31,6 +31,18 @@ public class ModParticleTypes {
     public static final RegistrySupplier<SimpleParticleType> SMOKE_COLUMN = PARTICLES.register("smoke_column",
             () -> createParticle(false));
 
+    /** RBMK meltdown effects, 1:1 with the original's "rbmkflame" / "rbmksteam" / "rbmkmush". */
+    public static final RegistrySupplier<SimpleParticleType> RBMK_FLAME = PARTICLES.register("rbmk_flame",
+            () -> createParticle(true));
+    public static final RegistrySupplier<SimpleParticleType> RBMK_STEAM = PARTICLES.register("rbmk_steam",
+            () -> createParticle(true));
+    public static final RegistrySupplier<SimpleParticleType> RBMK_MUSH = PARTICLES.register("rbmk_mush",
+            () -> createParticle(true));
+
+    /** {@code mode: "radialDigamma"} - the digamma spear's dark red pall. */
+    public static final RegistrySupplier<SimpleParticleType> DIGAMMA_SMOKE = PARTICLES.register("digamma_smoke",
+            () -> createParticle(true));
+
     public static final RegistrySupplier<SimpleParticleType> EXPLOSION_WAVE = PARTICLES.register("explosion_wave",
             () -> createParticle(false));
 

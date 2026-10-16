@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "hbm_m:coffee_radium"
+    },
+    "title": {
+      "translate": "advancements.hbm_m.radium.title"
+    },
+    "description": {
+      "translate": "advancements.hbm_m.radium.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "parent": "hbm_m:centrifuge"
+}

@@ -12,11 +12,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
- * 1:1-Port von {@code ContainerRBMKHeater} (1.7.10-Original): das Original besass zwar einen
- * einzelnen Item-Slot (Fluid-Identifier zum Umschalten des Kuehlmitteltyps via
- * {@code FluidTank.setType}), doch die modernisierte {@link RBMKHeaterBlockEntity} hat kein
- * Item-Inventar (nur Fluid-Tanks) - dieser Slot entfaellt daher analog zu {@link RBMKBoilerMenu}.
- * Nur die Spieler-Inventar-Slots werden uebernommen (xSize/ySize 176x186, wie im Original).
+ * 1:1-Port von {@code ContainerRBMKHeater}: ein Fluid-Identifier-Slot bei (41,45), der den
+ * Kuehlmitteltyp des Zulauftanks umschaltet ({@code FluidTank.setType}), plus das Spieler-Inventar
+ * (xSize/ySize 176x186, wie im Original). Der Slot fehlte bisher, weil die Block-Entity gar kein
+ * Item-Inventar hatte - damit war der Waermetauscher fest auf ein Kuehlmittel verdrahtet.
  */
 public class RBMKHeaterMenu extends AbstractContainerMenu {
 
@@ -29,6 +28,8 @@ public class RBMKHeaterMenu extends AbstractContainerMenu {
     public RBMKHeaterMenu(int id, Inventory inv, RBMKHeaterBlockEntity be) {
         super(ModMenuTypes.RBMK_HEATER_MENU.get(), id);
         this.blockEntity = be;
+
+        addSlot(new net.minecraftforge.items.SlotItemHandler(be.inventory, RBMKHeaterBlockEntity.SLOT_FLUID_ID, 41, 45));
 
         // Original (ContainerRBMKHeater): 8+j*18, 84+i*18+20 / 8+i*18, 142+20 -- image is 176x186,
         // 20px taller than the standard 166px machine GUI.
