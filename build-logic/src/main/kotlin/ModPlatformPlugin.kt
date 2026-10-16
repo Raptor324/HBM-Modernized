@@ -14,6 +14,7 @@ import org.gradle.api.artifacts.repositories.MavenArtifactRepository
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Copy
+import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.javadoc.Javadoc
 import org.gradle.external.javadoc.StandardJavadocDocletOptions
 import org.gradle.internal.extensions.stdlib.toDefaultLowerCase
@@ -49,6 +50,9 @@ abstract class ModPlatformPlugin @Inject constructor() : Plugin<Project> {
 			sourcesJarTask.convention(if (inferredLoaderIsFabric) "remapSourcesJar" else "sourcesJar")
 		}
 
+		// НЕ убирать kotlin.jvm/ksp: mixin annotation processing в ModDevGradle 2.x
+		// идёт через KSP (генерация mixin-refmap), без плагина конфигурация падает с
+		// "Mixin annotation processing requires KSP plugin".
 		listOf(
 			"org.jetbrains.kotlin.jvm",
 			"com.google.devtools.ksp",
@@ -129,6 +133,7 @@ abstract class ModPlatformPlugin @Inject constructor() : Plugin<Project> {
 	) {
 		tasks.named<ProcessResources>("processResources") {
 			dependsOn(tasks.named("stonecutterGenerate"))
+			// kspKotlin обязателен: это mixin annotation processing (refmap), не «мёртвый» таск.
 			dependsOn("kspKotlin")
 			duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
@@ -287,11 +292,28 @@ abstract class ModPlatformPlugin @Inject constructor() : Plugin<Project> {
 
 	private fun Project.configureJava(stonecutter: StonecutterBuildExtension, requiredJava: JavaVersion) {
 		extensions.configure<JavaPluginExtension>("java") {
-			withSourcesJar()
-			withJavadocJar()
 			sourceCompatibility = requiredJava
 			targetCompatibility = requiredJava
 		}
+
+		// sources/javadoc-джарки нужны только публикации и buildAndCollect. withSourcesJar()/
+		// withJavadocJar() цепляют их к assemble, и каждый дев-билд тратил на них ~15-20 c
+		// (zip 20k исходников + javadoc-генерация). Поэтому регистрируем вручную, вне
+		// assemble: зависимости проставлены явно (buildAndCollect — через from(Task),
+		// публикация — через dependsOn ниже).
+		// Источники захватываются ВНЕ лямбды конфигурации: внутри неё receiver — таск,
+		// и the<SourceSetContainer>() искал бы расширение у таска, а не у проекта.
+		val mainSourceSet = the<SourceSetContainer>().named("main")
+		val javadocTask = tasks.named("javadoc")
+		val sourcesJar = tasks.register<Jar>("sourcesJar") {
+			archiveClassifier = "sources"
+			from(mainSourceSet.map { it.allSource })
+		}
+		tasks.register<Jar>("javadocJar") {
+			archiveClassifier = "javadoc"
+			from(javadocTask)
+		}
+
 		// Javadoc: UTF-8; не валим build из-за несовместимых/незавершённых комментариев (doclint, битые @link)
 		tasks.withType<Javadoc>().configureEach {
 			isFailOnError = false
@@ -362,6 +384,12 @@ abstract class ModPlatformPlugin @Inject constructor() : Plugin<Project> {
 
 			val jarTask = tasks.named(targetName).map { it as Jar }
 			val srcJarTask = tasks.named(ext.sourcesJarTask.get()).map { it as Jar }
+			// mpp НЕ вайрит зависимости входных файлов сам (PublishModTask просто бросает
+			// FileNotFoundException, если таски не собраны; раньше sourcesJar спасал его
+			// wiring в assemble) — явные dependsOn позволяют запускать публикацию standalone.
+			tasks.withType<me.modmuss50.mpp.PublishModTask>().configureEach {
+				dependsOn(jarTask, srcJarTask)
+			}
 			val currentVersion = stonecutter.current.version
 			val deps = ext.dependencies
 

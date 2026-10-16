@@ -68,7 +68,8 @@ neoForge {
 			programArgument("--username=Dev")
 			// UTF-8 для логов + ASCII-локаль (иначе log4j пишет даты «сен.» в
 			// платформенной Cp1251 — debug.log открывается как ломаный UTF-8).
-			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8", "-Dconsole.encoding=UTF-8",
+			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-XX:+UnlockDiagnosticVMOptions", "-XX:+DebugNonSafepoints",
+				"-Dfile.encoding=UTF-8", "-Dconsole.encoding=UTF-8",
 				"-Duser.language=en", "-Duser.country=US")
 		}
 		register("server") {
