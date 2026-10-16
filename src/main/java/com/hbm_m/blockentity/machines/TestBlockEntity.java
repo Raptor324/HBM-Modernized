@@ -17,8 +17,8 @@ public class TestBlockEntity extends BlockEntity {
     }
 
     //? if forge {
-    /*@Override
-    *///?}
+    @Override
+    //?}
     public AABB getRenderBoundingBox() {
         // Модель сильно больше одного блока — раздуваем AABB, чтобы BER не кулился ванилью.
         BlockPos pos = getBlockPos();

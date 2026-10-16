@@ -27,22 +27,22 @@ import com.hbm_m.particle.explosions.nuclear.small.LargeExplosionSpark;
 import net.minecraft.core.particles.SimpleParticleType;
 
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
-*///?} elif neoforge {
-import net.neoforged.api.distmarker.Dist;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
 
 @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 @EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT)
-//?}
+*///?}
 public class ClientParticleHandler {
 
     @SubscribeEvent
@@ -140,23 +140,5 @@ public class ClientParticleHandler {
         event.registerSpriteSet(
                 ModParticleTypes.RAD_FOG_PARTICLE.get(),
                 RadFogParticle.Provider::new);
-
-        // RBMK and digamma providers used to live in a forge-only block in ClientSetup, so on
-        // NeoForge these four types had no factory at all.
-        event.registerSpriteSet(
-                ModParticleTypes.RBMK_FLAME.get(),
-                com.hbm_m.particle.custom.RBMKFlameParticle.Provider::new);
-
-        event.registerSpriteSet(
-                ModParticleTypes.RBMK_STEAM.get(),
-                com.hbm_m.particle.custom.RBMKSteamParticle.Provider::new);
-
-        event.registerSpriteSet(
-                ModParticleTypes.RBMK_MUSH.get(),
-                com.hbm_m.particle.custom.RBMKMushParticle.Provider::new);
-
-        event.registerSpriteSet(
-                ModParticleTypes.DIGAMMA_SMOKE.get(),
-                com.hbm_m.particle.custom.DigammaSmokeParticle.Provider::new);
     }
 }

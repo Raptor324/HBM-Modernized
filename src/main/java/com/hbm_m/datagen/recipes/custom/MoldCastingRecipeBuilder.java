@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import com.google.gson.JsonObject;
+import com.google.gson.JsonObject;
 import com.hbm_m.inventory.material.MaterialType;
 import com.hbm_m.item.material.ItemCastMold;
 import com.hbm_m.recipe.MoldCastingRecipe;
@@ -11,7 +11,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
-/^*
+/**
  * Datagen-билдер {@link MoldCastingRecipe} ({@code hbm_m:mold_casting}).
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge}. Поддерживает два формата
@@ -29,7 +29,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
  * <p>{@link #getResult()} возвращает первый предмет ingredient'а (требование ванильного
  * {@code RecipeBuilder}); но реальный выходной стак вычисляется {@link MoldCastingRecipe#getOutput}
  * в runtime из {@code outputIngredient.getItems()[0]} × {@code count}.</p>
- ^/
+ */
 public class MoldCastingRecipeBuilder extends BaseRecipeBuilder<MoldCastingRecipeBuilder> {
 
     private final ItemCastMold.MoldType mold;
@@ -45,7 +45,7 @@ public class MoldCastingRecipeBuilder extends BaseRecipeBuilder<MoldCastingRecip
         this.count = count;
     }
 
-    /^* Item-перегрузка: выход — одиночный {@link ItemStack} (запишется как {@code {"item":...}}). ^/
+    /** Item-перегрузка: выход — одиночный {@link ItemStack} (запишется как {@code {"item":...}}). */
     public MoldCastingRecipeBuilder(ItemCastMold.MoldType mold, MaterialType material, ItemStack output) {
         this(mold, material, Ingredient.of(output), output.getCount());
     }
@@ -77,10 +77,10 @@ public class MoldCastingRecipeBuilder extends BaseRecipeBuilder<MoldCastingRecip
         json.add("output", outJson);
     }
 
-    /^*
+    /**
      * Хак для определения, является ли {@link Ingredient} теговым. В 1.20.1 Ingredient
      * {@code toJson()} эмитит {@code {"tag":"..."}}, а одиночный предмет — {@code {"item":"..."}}.
-     ^/
+     */
     private static net.minecraft.resources.ResourceLocation tagIdOf(Ingredient ingredient) {
         try {
             com.google.gson.JsonElement el = ingredient.toJson();
@@ -99,4 +99,4 @@ public class MoldCastingRecipeBuilder extends BaseRecipeBuilder<MoldCastingRecip
         return MoldCastingRecipe.Serializer.INSTANCE;
     }
 }
-*///?}
+//?}

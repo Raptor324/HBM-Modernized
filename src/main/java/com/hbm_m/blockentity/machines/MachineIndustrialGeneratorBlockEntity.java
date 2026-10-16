@@ -61,7 +61,7 @@ public class MachineIndustrialGeneratorBlockEntity extends BaseMachineBlockEntit
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
             net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
@@ -69,7 +69,7 @@ public class MachineIndustrialGeneratorBlockEntity extends BaseMachineBlockEntit
         }
         return super.getCapability(cap, side);
     }
-    *///?}
+    //?}
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineIndustrialGeneratorBlockEntity be) {
         if (level.isClientSide()) return;
@@ -81,9 +81,9 @@ public class MachineIndustrialGeneratorBlockEntity extends BaseMachineBlockEntit
 
         if (level.getGameTime() % 20 == 0) {
             for (Direction dir : Direction.values()) {
-                trySubscribe(waterTank, level, pos.relative(dir), dir);
-                trySubscribe(lubricantTank, level, pos.relative(dir), dir);
-                trySubscribe(fuelTank, level, pos.relative(dir), dir);
+                trySubscribe(waterTank.getTankType(), level, pos.relative(dir), dir);
+                trySubscribe(lubricantTank.getTankType(), level, pos.relative(dir), dir);
+                trySubscribe(fuelTank.getTankType(), level, pos.relative(dir), dir);
             }
         }
 
@@ -160,9 +160,6 @@ public class MachineIndustrialGeneratorBlockEntity extends BaseMachineBlockEntit
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        // BaseMachineBlockEntity stores the inventory and the energy here; without the super call
-        // both were dropped on every save, so the machine came back empty and discharged.
-        super.writeNbtData(tag, registries);
         tag.putInt("burn_time", burnTime);
         tag.putInt("max_burn_time", maxBurnTime);
         waterTank.writeToNBT(tag, "tank_water");
@@ -172,7 +169,6 @@ public class MachineIndustrialGeneratorBlockEntity extends BaseMachineBlockEntit
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.readNbtData(tag, registries);
         burnTime = tag.getInt("burn_time");
         maxBurnTime = tag.contains("max_burn_time") ? Math.max(1, tag.getInt("max_burn_time")) : 1;
         waterTank.readFromNBT(tag, "tank_water");

@@ -23,11 +23,11 @@ import net.minecraft.resources.ResourceLocation;
  * player-pilotable capsule is a separate feature outside this launcher's scope).
  */
 
-//? if forge {
-/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-*///?} elif neoforge {
-@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-//?}
+//? if < 1.21.1 {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} else {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class SoyuzCapsuleEntityRenderer extends EntityRenderer<SoyuzCapsuleEntity> {
 
     private static final ResourceLocation ROCKET_MODEL_ID =

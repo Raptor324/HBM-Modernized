@@ -1,4 +1,4 @@
-//? if forge || neoforge {
+//? if forge {
 package com.hbm_m.client.render.item;
 
 import com.hbm_m.blockentity.machines.rbmk.RBMKColumnBlockEntity;

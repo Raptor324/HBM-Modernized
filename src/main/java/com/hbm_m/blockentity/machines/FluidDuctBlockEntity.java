@@ -20,6 +20,9 @@ import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.client.render.DoorChunkInvalidationHelper;
 
+//? if fabric {
+/*import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
+*///?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -34,16 +37,17 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 //? if forge {
-/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
- *///?}
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+ //?}
 
  /**
  * BlockEntity трубы. Хранит тип жидкости и управляет MK2 узлом в UniNodespace.
  * <p>
- * Визуал оверлея (neo / colored / silver): в OBJ MTL слой «skin» помечен {@code forge_TintIndex 1},
- * JSON {@code mtl_override} подставляет MTL для bake (base / overlay), а блоки труб зарегистрированы
- * как {@code cutout} в {@link com.hbm_m.client.ClientSetup}, чтобы оверлей с альфой отображался
- * поверх основы.
+ * Визуал оверлея (neo / colored / silver): в Forge OBJ MTL задаётся {@code forge_TintIndex 1} для слоя
+ * «skin»; на Fabric {@link com.hbm_m.client.model.loading.MtlData} читает это поле, JSON {@code mtl_override}
+ * подставляет MTL для bake (base / overlay), а блоки труб зарегистрированы в {@code BlockRenderLayerMap}
+ * как {@code cutout} в {@link com.hbm_m.client.ClientSetup}, чтобы оверлей с альфой и tint из
+ * {@code ColorProviderRegistry.BLOCK} отображался как на Forge (multipart solid + cutout).
  *
  * Логика передачи жидкостей:
  *  - Узел (FluidNode) создаётся при загрузке блока/смене типа и разрушается при выгрузке.
@@ -54,7 +58,7 @@ import net.minecraft.world.level.material.Fluids;
  */
 
 @SuppressWarnings("UnstableApiUsage")
-public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPipeMK2 {
+public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPipeMK2, com.hbm_m.interfaces.ICopiable {
 
     private static final String NBT_FLUID_TYPE = "FluidType";
 
@@ -161,7 +165,7 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
         }
     }
 
-    //? if forge || neoforge {
+    //? if forge {
     @Override
     public void onLoad() {
         super.onLoad();
@@ -188,6 +192,15 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
     }
     //?}
 
+    //? if fabric {
+    /*@Override
+    public void setLevel(Level level) {
+        super.setLevel(level);
+        if (level instanceof ServerLevel serverLevel) {
+            ensureNode(serverLevel);
+        }
+    }
+    *///?}
 
     @Override
     public void setRemoved() {
@@ -199,7 +212,7 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
         super.setRemoved();
     }
 
-    //? if forge || neoforge {
+    //? if forge {
     @Override
     public void onChunkUnloaded() {
         if (level instanceof ServerLevel serverLevel && node != null && !node.isExpired()) {
@@ -281,13 +294,16 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
      */
     private static boolean checkNeighborFluidHandler(Level level, BlockEntity neighbor, Direction side) {
         //? if forge {
-        /*return neighbor.getCapability(ForgeCapabilities.FLUID_HANDLER, side).isPresent();
-         *///?}
+        return neighbor.getCapability(ForgeCapabilities.FLUID_HANDLER, side).isPresent();
+         //?}
+        //? if fabric {
+        /*return FluidStorage.SIDED.find(level, neighbor.getBlockPos(), neighbor.getBlockState(), neighbor, side) != null;
+        *///?}
         //? if neoforge {
-        // NeoForge 1.21.1: FluidHandler.BLOCK через level.getCapability (BlockEntity.getCapability убран).
+        /*// NeoForge 1.21.1: FluidHandler.BLOCK через level.getCapability (BlockEntity.getCapability убран).
         return level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.BLOCK,
                 neighbor.getBlockPos(), neighbor.getBlockState(), neighbor, side) != null;
-        //?}
+        *///?}
     }
 
     // =====================================================================================
@@ -337,10 +353,52 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
      */
     private void refreshClientTintMesh() {
         if (level == null || !level.isClientSide) return;
-        //? if forge || neoforge {
+        //? if forge {
         requestModelDataUpdate();
-        //?}
+         //?}
         level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_IMMEDIATE);
         DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
+    }
+
+    // =====================================================================================
+    // Устройство настройки: тип жидкости + Ctrl-массовая вставка по сети труб (оригинал
+    // TileEntityPipeBaseNT: TOOL_CTRL → changeTypeRecursively, индекс >= длины → очистка).
+    // =====================================================================================
+
+    @Override
+    public CompoundTag getSettings(Level level, BlockPos pos) {
+        CompoundTag nbt = new CompoundTag();
+        if (fluidType != Fluids.EMPTY) {
+            net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
+            list.add(net.minecraft.nbt.StringTag.valueOf(BuiltInRegistries.FLUID.getKey(fluidType).toString()));
+            nbt.put("fluids", list);
+        }
+        return nbt;
+    }
+
+    @Override
+    public void pasteSettings(CompoundTag nbt, int index, Level level, net.minecraft.world.entity.player.Player player, BlockPos pos) {
+        net.minecraft.nbt.ListTag list = nbt.getList("fluids", net.minecraft.nbt.Tag.TAG_STRING);
+        if (list.isEmpty()) return;
+
+        // Оригинал: индекс за пределами списка = тип NONE (очистка трубы).
+        Fluid fluid = Fluids.EMPTY;
+        if (index < list.size()) {
+            fluid = com.hbm_m.interfaces.IFluidCopiable.fluidFromString(list.getString(index));
+        }
+
+        if (player != null && com.hbm_m.network.CopyToolKeyState.get(player.getUUID()).ctrl) {
+            com.hbm_m.block.machines.FluidDuctBlock.paintConnectedDuctNetwork(level, pos, fluid);
+        } else {
+            setFluidType(fluid);
+        }
+    }
+
+    @Override
+    public String[] infoForDisplay(Level level, BlockPos pos) {
+        if (fluidType == Fluids.EMPTY) return new String[0];
+        return new String[] {
+                com.hbm_m.inventory.fluid.FluidType.forFluid(fluidType).getUnlocalizedName()
+        };
     }
 }

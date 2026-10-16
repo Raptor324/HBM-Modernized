@@ -54,18 +54,18 @@ public class PedestalBlock extends BaseEntityBlock {
     }
 
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
             net.minecraft.world.InteractionHand hand, BlockHitResult hit) {
         return swap(level, pos, player);
     }
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
             BlockHitResult hit) {
         return swap(level, pos, player);
     }
-    //?}
+    *///?}
 
     private static InteractionResult swap(Level level, BlockPos pos, Player player) {
         BlockEntity be = level.getBlockEntity(pos);
@@ -91,13 +91,13 @@ public class PedestalBlock extends BaseEntityBlock {
     }
 
     //? if >1.20.1 {
-    public static final com.mojang.serialization.MapCodec<PedestalBlock> CODEC = simpleCodec(PedestalBlock::new);
+    /*public static final com.mojang.serialization.MapCodec<PedestalBlock> CODEC = simpleCodec(PedestalBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends BaseEntityBlock> codec() {
         return CODEC;
     }
-    //?}
+    *///?}
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {

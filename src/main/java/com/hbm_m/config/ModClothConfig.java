@@ -63,6 +63,9 @@ public class ModClothConfig {
     /** MOTD при входе в мир и уведомление о новой версии на Modrinth (ориг. GeneralConfig.enableMOTD). */
     public boolean enableMOTD = true;
 
+    /** Логирование использования детонатора, взрывов, пусков ракет (ориг. GeneralConfig.enableExtendedLogging). */
+    public boolean enableExtendedLogging = false;
+
     // ════════════════════════════════════════════════════════════════
     // Эффекты мира
     // ════════════════════════════════════════════════════════════════
@@ -184,6 +187,14 @@ public class ModClothConfig {
 
     /** Плюс по строке INFO на каждую MDI-команду (тег части, baseInstance и т.д.). */
     public boolean mdiVerboseSubdraws = false;
+
+    /**
+     * Переиспользование чистых MDI-рендереров между кадрами: рендерер, не изменивший
+     * ни одной записи инстансов (skip-write в addInstance), не копируется в снапшот
+     * и не проходит span-дифф — координатор переиспользует прошлокадровые партицию,
+     * fade-кэши и окна аплоада. Kill-switch на случай регрессии картинки.
+     */
+    public boolean mdiCleanFrameReuse = true;
 
     /** Max instances per InstancedStaticPartRenderer (one OBJ part). Large machine fields need 4096+. */
     public int maxInstancedInstancesPerPart = 4096;

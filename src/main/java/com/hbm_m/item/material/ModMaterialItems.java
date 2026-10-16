@@ -47,7 +47,7 @@ public final class ModMaterialItems {
         // scraps_<материал> на каждый плавкий/присадочный материал Mats.java оригинала.
         for (ScrapEntry e : FOUNDRY_SCRAPS) {
             SCRAP_ITEMS.putIfAbsent(e.mat(), ModItems.ITEMS.register(
-                    "scraps_" + e.mat().getId(), () -> new ScrapItem(new Item.Properties())));
+                    "scraps_" + e.mat().getId(), () -> new ScrapItem(e.mat(), new Item.Properties())));
         }
     }
 
@@ -231,6 +231,14 @@ public final class ModMaterialItems {
         }
         if (mat == ModMaterials.IRON && shape == MaterialShape.POWDER) {
             return new RadioactiveItem(props);
+        }
+        // Топливо оригинального FuelHandler 1.7.10: угольная пыль 1600 тиков,
+        // кристаллизованный уголь (crystal_coal) 6400 тиков.
+        if (mat == ModMaterials.COAL && shape == MaterialShape.POWDER) {
+            return new com.hbm_m.item.industrial.FuelItem(props, 1600);
+        }
+        if (mat == ModMaterials.COAL && shape == MaterialShape.CRYSTAL) {
+            return new com.hbm_m.item.industrial.FuelItem(props, 6400);
         }
         // Лор-строки оригинала (desc в 1.7.10) для материалов.
         List<Component> lore = materialLore(mat, shape);

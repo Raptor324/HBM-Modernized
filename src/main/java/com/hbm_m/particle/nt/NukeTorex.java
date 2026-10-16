@@ -33,7 +33,7 @@ import net.minecraft.world.phys.Vec3;
 /**
  * Toroidal convection mushroom cloud effect
  */
-public class NukeTorex extends ParticleNT implements FarCapableParticle {
+public class NukeTorex extends ParticleNT implements FarCapableParticle, ReplaceOnRespawn {
 
     protected int type = 0;
     protected float scale = 1;
@@ -63,9 +63,17 @@ public class NukeTorex extends ParticleNT implements FarCapableParticle {
     private static final int SORT_INTERVAL = 3;
     private int sortCounter = 0;
 
+    //? if fabric && < 1.21.1 {
+    /*private static final ResourceLocation CLOUDLET = new ResourceLocation(RefStrings.MODID, "textures/particle/particle_base.png");
+    *///?} else {
         private static final ResourceLocation CLOUDLET = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/particle/particle_base.png");
+    //?}
 
+    //? if fabric && < 1.21.1 {
+    /*private static final ResourceLocation FLASH = new ResourceLocation(RefStrings.MODID, "textures/particle/flare.png");
+    *///?} else {
         private static final ResourceLocation FLASH = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/particle/flare.png");
+    //?}
 
 
     public NukeTorex(ClientLevel level, double x, double y, double z) {
@@ -484,7 +492,7 @@ public class NukeTorex extends ParticleNT implements FarCapableParticle {
         //  Ядерная вспышка и тряска HUD живут в ModEventHandlerClient (Forge-only оверлей).
         //  CameraShakeHandler.addShake() работает на всех лоадерах и даёт ещё и тряску камеры.
         //? if forge {
-        /*if (this.age < 10 && now - com.hbm_m.powerarmor.ModEventHandlerClient.flashTimestamp > 1_000) {
+        if (this.age < 10 && now - com.hbm_m.powerarmor.ModEventHandlerClient.flashTimestamp > 1_000) {
             com.hbm_m.powerarmor.ModEventHandlerClient.triggerNuclearFlash();
         }
         if (this.didPlaySound && !this.didShake && now - com.hbm_m.powerarmor.ModEventHandlerClient.shakeTimestamp > 1_000) {
@@ -497,13 +505,13 @@ public class NukeTorex extends ParticleNT implements FarCapableParticle {
                 player.hurtTime = 15;
             }
         }
-        *///?} else {
-        if (this.didPlaySound && !this.didShake) {
+        //?} else {
+        /*if (this.didPlaySound && !this.didShake) {
             this.didShake = true;
             CameraShakeHandler.addShake(1.0F, 30);
         }
         
-        //?}
+        *///?}
     }
 
     @Override

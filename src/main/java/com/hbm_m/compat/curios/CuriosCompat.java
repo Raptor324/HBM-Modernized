@@ -25,10 +25,10 @@ public final class CuriosCompat {
     public static void init() {
         if (isLoaded()) {
             //? if forge {
-            /*CuriosForgeEvents.init();
-            *///?} else {
-            CuriosNeoForgeEvents.init();
-             //?}
+            CuriosForgeEvents.init();
+            //?} else {
+            /*CuriosNeoForgeEvents.init();
+             *///?}
         }
     }
 

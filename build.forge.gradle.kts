@@ -33,20 +33,51 @@ legacyForge {
 	validateAccessTransformers = true
 	accessTransformers.from(rootProject.file("src/main/resources/aw/${stonecutter.current.version}.cfg"))
 
+	// ── UTF-8 для дев-логов ─────────────────────────────────────────────
+	// Сгенерированный MDG clientLog4j2.xml не задаёт charset в PatternLayout —
+	// файловые логи пишутся в платформенной Cp1251 (кириллица выглядит «broken»
+	// при чтении как UTF-8). -Dfile.encoding через jvmArguments не спасает, если
+	// запуск идёт мимо gradle-таска (IDE-конфиг со старыми аргументами), поэтому
+	// патчим САМ конфиг: idempotent, выполняется перед каждым запуском. Файл
+	// один и тот же для любого способа запуска (path зашит в launch-аргументах).
+	fun patchDevLogCharset() {
+		val f = file("build/moddev/clientLog4j2.xml")
+		if (!f.exists()) return
+		var text = f.readText()
+		val cleaned = text.replace("charset=\"UTF-8\" charset=\"UTF-8\"", "charset=\"UTF-8\"")
+		if (cleaned != text) {
+			f.writeText(cleaned)
+			text = cleaned
+		}
+		if (text.contains("charset=\"UTF-8\"")) return
+		val patched = Regex("<PatternLayout(?![^>]*\\bcharset=)").replace(text, "<PatternLayout charset=\"UTF-8\"")
+		if (patched != text) {
+			f.writeText(patched)
+			println("patchDevLogCharset: charset=UTF-8 added to ${f}")
+		}
+	}
+	tasks.matching { it.name in setOf("runClient", "runServer", "runGameTestServer", "runData") }.configureEach {
+		doFirst { patchDevLogCharset() }
+	}
+
 	runs {
 		register("client") {
 			client()
 			gameDirectory = file("run/")
 			ideName = "Forge Client (${stonecutter.active?.version})"
 			programArgument("--username=Dev")
-			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8", "-Dconsole.encoding=UTF-8")
+			// user.language=en: локаль по умолчанию даёт русские месяцы в паттерне
+			// даты log4j; в Cp1251-файле они читаются как «ёхэЄ» — лог ломается.
+			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8", "-Dconsole.encoding=UTF-8",
+				"-Duser.language=en", "-Duser.country=US")
 		}
 		register("server") {
 			server()
 			gameDirectory = file("run/")
 			ideName = "Forge Server (${stonecutter.active?.version})"
 			programArgument("--nogui")
-			jvmArguments.addAll("-Xmx4G", "-Xms2G")
+			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8",
+				"-Duser.language=en", "-Duser.country=US")
 		}
 		// GameTest-сервер: headless-прогон всех @GameTest без GUI.
 		register("gameTestServer") {
@@ -59,7 +90,8 @@ legacyForge {
 			ideName = "Forge GameTest (${stonecutter.active?.version})"
 			systemProperty("forge.gameTestServer", "true")
 			systemProperty("forge.enableGameTest", "true")
-			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8", "-Dconsole.encoding=UTF-8")
+			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8", "-Dconsole.encoding=UTF-8",
+				"-Duser.language=en", "-Duser.country=US")
 			// TODO(other-agent WIP): doFirst недоступен в runs-DSL — перенести в tasks.named("gameTestServer")
 		}
 

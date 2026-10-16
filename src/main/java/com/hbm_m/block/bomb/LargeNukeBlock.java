@@ -51,6 +51,7 @@ public class LargeNukeBlock extends NukeBaseBlock implements IBomb {
             net.minecraft.world.item.ItemStack[] items = nuke.slots.toArray(new net.minecraft.world.item.ItemStack[0]);
             int radius = type.detonationRadius(items);
             if (nuke.isReady()) {
+                Containers.dropContents(level, pos, nuke);
                 nuke.clearContent();
                 level.setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
                 NuclearExplosionAPI.startLargeNuke(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, radius);
@@ -62,8 +63,8 @@ public class LargeNukeBlock extends NukeBaseBlock implements IBomb {
     }
 
     //? if > 1.20.1 {
-    public static final com.mojang.serialization.MapCodec<LargeNukeBlock> CODEC =
+    /*public static final com.mojang.serialization.MapCodec<LargeNukeBlock> CODEC =
             simpleCodec(props -> new LargeNukeBlock(LargeNukeType.GADGET, props));
     @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.Block> codec() { return CODEC; }
-     //?}
+     *///?}
 }

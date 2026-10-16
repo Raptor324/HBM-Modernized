@@ -43,12 +43,6 @@ public class AnvilMenu extends AbstractContainerMenu {
         this.level = inv.player.level();
         this.access = ContainerLevelAccess.create(level, blockEntity.getBlockPos());
 
-        // The result slot is a preview that is deliberately not saved to NBT, so rebuild it when the
-        // screen opens on a freshly loaded anvil.
-        if (!level.isClientSide()) {
-            blockEntity.updateCrafting();
-        }
-
         // Добавляем инвентарь игрока ПЕРЕД слотами наковальни
         addPlayerInventory(inv);
         addPlayerHotbar(inv);

@@ -170,35 +170,25 @@ public class BossSpawnHandler {
         mob.moveTo(x, y, z, level.random.nextFloat() * 360.0F, 0.0F);
 
         //? if forge {
-        /*var result = net.minecraftforge.event.ForgeEventFactory.checkSpawnPosition(mob, level,
+        var result = net.minecraftforge.event.ForgeEventFactory.checkSpawnPosition(mob, level,
                 MobSpawnType.EVENT);
         if (!result) return false;
 
         mob.finalizeSpawn(level, level.getCurrentDifficultyAt(BlockPos.containing(x, y, z)),
                 MobSpawnType.EVENT, null, null);
-        *///?} else {
-        // Kein plattformneutrales Gegenstueck zu checkSpawnPosition; hier nur finalisieren.
+        //?} else {
+        /*// Kein plattformneutrales Gegenstueck zu checkSpawnPosition; hier nur finalisieren.
         // finalizeSpawn verlor auf 1.21 den abschliessenden CompoundTag-Parameter.
         mob.finalizeSpawn(level, level.getCurrentDifficultyAt(BlockPos.containing(x, y, z)),
                 MobSpawnType.EVENT, null);
-        //?}
+        *///?}
         level.addFreshEntity(mob);
         return true;
     }
 
-    /** Vanilla-Untertag "PlayerPersisted" — das Einzige, was einen Tod ueberlebt. */
-    private static final String PERSISTED = "PlayerPersisted";
-
     private static CompoundTag persistentData(ServerPlayer player) {
         // getPersistentData() ist Forge-spezifisch; PlayerPersistentData kapselt beide Plattformen.
-        // ServerPlayer.restoreFrom copies only the PlayerPersisted sub-tag across a respawn, so the
-        // MaskMan timer and the RAD mark used to be wiped by every death - exactly what upstream
-        // avoids by reading getCompoundTag(PERSISTED_NBT_TAG).
-        CompoundTag root = com.hbm_m.platform.PlayerPersistentData.get(player);
-        if (!root.contains(PERSISTED)) {
-            root.put(PERSISTED, new CompoundTag());
-        }
-        return root.getCompound(PERSISTED);
+        return com.hbm_m.platform.PlayerPersistentData.get(player);
     }
 
     private static int getTimer(ServerPlayer player) {

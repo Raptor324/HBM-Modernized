@@ -41,11 +41,11 @@ import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.AABB;
 
 //? if forge {
-/*import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-*///?}
+//?}
 
 @SuppressWarnings("UnstableApiUsage")
 public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2, IMultiblockSidedIO {
@@ -251,13 +251,6 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
         tag.putBoolean("isOn", isOn);
         tag.putBoolean("redstonePowered", redstonePowered);
         tag.putInt("output", output);
-        // The multiblock's controller side configuration is applied only when the structure is
-        // placed or rebuilt, never on chunk load: without persisting it, a restart re-opened the
-        // face the structure had deliberately closed.
-        int fluidSideMask = 0;
-        for (Direction dir : allowedFluidSides) fluidSideMask |= (1 << dir.get3DDataValue());
-        tag.putInt("AllowedFluidSides", fluidSideMask);
-        tag.putBoolean("FluidSidesFromMbStructure", fluidSidesFromMultiblockStructure);
     }
 
     @Override
@@ -274,14 +267,6 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
         isOn           = tag.getBoolean("isOn");
         redstonePowered= tag.getBoolean("redstonePowered");
         output         = tag.getInt("output");
-        if (tag.contains("AllowedFluidSides")) {
-            int fluidSideMask = tag.getInt("AllowedFluidSides");
-            allowedFluidSides.clear();
-            for (Direction dir : Direction.values()) {
-                if ((fluidSideMask & (1 << dir.get3DDataValue())) != 0) allowedFluidSides.add(dir);
-            }
-        }
-        fluidSidesFromMultiblockStructure = tag.getBoolean("FluidSidesFromMbStructure");
     }
 
     // ── Redstone ──────────────────────────────────────────────────────────
@@ -485,8 +470,8 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
      * культил бы рендер, когда ядро за кадром.
      */
     //? if forge {
-    /*@Override
-    *///?}
+    @Override
+    //?}
     public AABB getRenderBoundingBox() {
         return new AABB(worldPosition.getX() - 2, worldPosition.getY(), worldPosition.getZ() - 2,
                 worldPosition.getX() + 3, worldPosition.getY() + 5, worldPosition.getZ() + 3);
@@ -546,7 +531,7 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
 
     // ── Forge fluid capabilities ──────────────────────────────────────────
     //? if forge {
-    /*@Override
+    @Override
     protected void setupFluidCapability() {
         setFluidHandler(new UnifiedFluidHandler(this));
     }
@@ -647,5 +632,5 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
             return drained;
         }
     }
-    *///?}
+    //?}
 }

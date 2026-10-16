@@ -31,14 +31,14 @@ import net.minecraft.world.level.material.Fluids;
 import com.hbm_m.platform.PlatformHooks;
 
 //? if forge {
-/*import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-*///?}
+//?}
 
 /**
  * Large Turbine - Port von {@code TileEntityMachineLargeTurbine} (1.7.10 Original, dort selbst
@@ -78,9 +78,9 @@ public class MachineLargeTurbineBlockEntity extends BaseMachineBlockEntity imple
     private boolean active = false;
 
     //? if forge {
-    /*private LazyOptional<IFluidHandler> steamInputHandler = LazyOptional.empty();
+    private LazyOptional<IFluidHandler> steamInputHandler = LazyOptional.empty();
     private LazyOptional<IFluidHandler> spentOutputHandler = LazyOptional.empty();
-    *///?}
+    //?}
 
     public MachineLargeTurbineBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.LARGE_TURBINE_BE.get(), pos, state, INVENTORY_SIZE, MAX_POWER, 0L, ENERGY_EXTRACT_RATE);
@@ -117,7 +117,7 @@ public class MachineLargeTurbineBlockEntity extends BaseMachineBlockEntity imple
             if (tanks[1].getFill() > 0) {
                 tryProvide(tanks[1], level, neighborPos, dir);
             }
-            trySubscribe(tanks[0], level, neighborPos, dir);
+            trySubscribe(tanks[0].getTankType(), level, neighborPos, dir);
         }
 
         // 1:1 aus dem Original: der Energiepuffer verliert jeden Tick 5%, bevor neue Energie erzeugt wird.
@@ -211,9 +211,6 @@ public class MachineLargeTurbineBlockEntity extends BaseMachineBlockEntity imple
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        // BaseMachineBlockEntity stores the inventory and the energy here; without the super call
-        // both were dropped on every save, so the machine came back empty and discharged.
-        super.writeNbtData(tag, registries);
         tag.putBoolean("active", active);
         tanks[0].writeToNBT(tag, "input");
         tanks[1].writeToNBT(tag, "output");
@@ -221,7 +218,6 @@ public class MachineLargeTurbineBlockEntity extends BaseMachineBlockEntity imple
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.readNbtData(tag, registries);
         active = tag.getBoolean("active");
         tanks[0].readFromNBT(tag, "input");
         tanks[1].readFromNBT(tag, "output");
@@ -265,7 +261,7 @@ public class MachineLargeTurbineBlockEntity extends BaseMachineBlockEntity imple
     // ── Forge fluid capabilities ─────────────────────────────────────────────
 
     //? if forge {
-    /*@Override
+    @Override
     protected void setupFluidCapability() {
         steamInputHandler  = LazyOptional.of(() -> new SteamInputHandler(this));
         spentOutputHandler = LazyOptional.of(() -> new SpentOutputHandler(this));
@@ -361,5 +357,5 @@ public class MachineLargeTurbineBlockEntity extends BaseMachineBlockEntity imple
             return drained;
         }
     }
-    *///?}
+    //?}
 }

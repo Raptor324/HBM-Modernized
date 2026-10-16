@@ -25,25 +25,25 @@ import net.minecraft.client.resources.model.UnbakedModel;
 import net.minecraft.resources.ResourceLocation;
 
 //? if < 1.21.1 {
-/*import net.minecraftforge.client.model.geometry.IGeometryBakingContext;
+import net.minecraftforge.client.model.geometry.IGeometryBakingContext;
 import net.minecraftforge.client.model.geometry.IGeometryLoader;
 import net.minecraftforge.client.model.geometry.IUnbakedGeometry;
 import net.minecraftforge.client.model.obj.ObjModel;
 
-/^*
+/**
  * Loads the 6 separate Soyuz launcher OBJ parts (Table, TowerBase, Tower,
  * SupportBase, Support, Legs - each its own .obj file, unlike other multipart
  * machines here which use one .obj with named sub-groups) into a single
  * {@link SoyuzLauncherBakedModel}. See that class for why world-rendering of
  * baked quads is skipped entirely (16-bit chunk mesh overflow on the ~60
  * block tall masts).
- ^/
-*///?} else {
-import net.neoforged.neoforge.client.model.geometry.IGeometryBakingContext;
+ */
+//?} else {
+/*import net.neoforged.neoforge.client.model.geometry.IGeometryBakingContext;
 import net.neoforged.neoforge.client.model.geometry.IGeometryLoader;
 import net.neoforged.neoforge.client.model.geometry.IUnbakedGeometry;
 import net.neoforged.neoforge.client.model.obj.ObjModel;
-//?}
+*///?}
 
 public class SoyuzLauncherModelLoader implements IGeometryLoader<SoyuzLauncherModelLoader.Geometry> {
 
@@ -80,17 +80,17 @@ public class SoyuzLauncherModelLoader implements IGeometryLoader<SoyuzLauncherMo
         public void resolveParents(Function<ResourceLocation, UnbakedModel> modelGetter, IGeometryBakingContext context) {}
 
         //? if < 1.21.1 {
-        /*@Override
+        @Override
         public BakedModel bake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides, ResourceLocation modelLocation) {
             return doBake(context, baker, spriteGetter, modelState, overrides, modelLocation);
         }
-        *///?} else {
-        @Override
+        //?} else {
+        /*@Override
         public BakedModel bake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides) {
             ResourceLocation modelLocation = ResourceLocation.parse(context.getModelName());
             return doBake(context, baker, spriteGetter, modelState, overrides, modelLocation);
         }
-        //?}
+        *///?}
 
         private BakedModel doBake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides, ResourceLocation modelName) {
             HashMap<String, BakedModel> bakedParts = new LinkedHashMap<>();

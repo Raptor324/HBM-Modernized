@@ -52,7 +52,7 @@ public class MachineSteamEngineBlockEntity extends BaseMachineBlockEntity implem
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
             net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
@@ -60,7 +60,7 @@ public class MachineSteamEngineBlockEntity extends BaseMachineBlockEntity implem
         }
         return super.getCapability(cap, side);
     }
-    *///?}
+    //?}
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineSteamEngineBlockEntity be) {
         if (level.isClientSide()) return;
@@ -70,7 +70,7 @@ public class MachineSteamEngineBlockEntity extends BaseMachineBlockEntity implem
     private void serverTick(Level level, BlockPos pos) {
         if (level.getGameTime() % 20 == 0) {
             for (Direction dir : Direction.values()) {
-                trySubscribe(steamTank, level, pos.relative(dir), dir);
+                trySubscribe(steamTank.getTankType(), level, pos.relative(dir), dir);
                 tryProvide(spentSteamTank, level, pos.relative(dir), dir);
             }
         }

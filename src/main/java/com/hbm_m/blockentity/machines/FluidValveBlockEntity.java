@@ -146,7 +146,7 @@ public class FluidValveBlockEntity extends BaseHbmBlockEntity implements IFluidP
     }
 
 
-    //? if forge || neoforge {
+    //? if forge {
     @Override
     public void onLoad() {
         super.onLoad();
@@ -154,6 +154,13 @@ public class FluidValveBlockEntity extends BaseHbmBlockEntity implements IFluidP
     }
     //?}
 
+    //? if fabric {
+    /*@Override
+    public void setLevel(Level level) {
+        super.setLevel(level);
+        initFromLevel(level);
+    }
+    *///?}
 
     @Override
     public void setRemoved() {
@@ -162,7 +169,7 @@ public class FluidValveBlockEntity extends BaseHbmBlockEntity implements IFluidP
         super.setRemoved();
     }
 
-    //? if forge || neoforge {
+    //? if forge {
     @Override
     public void onChunkUnloaded() {
         if (node != null) node.expired = true;

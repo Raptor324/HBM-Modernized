@@ -126,9 +126,6 @@ public class BlockTaint extends Block {
 
         if (entity instanceof LivingEntity living) {
             if (level.random.nextInt(50) == 0) {
-                // Holder.direct makes an unregistered holder: MobEffectInstance.save() then throws
-                // "Unregistered holder" and the whole entity save (autosave, logout, chunk unload)
-                // dies with it. PlatformHooks casts the RegistrySupplier, which is a real Reference.
                 com.hbm_m.platform.PlatformHooks.addEffect(living, ModEffects.TAINT, 15 * 20, effectLevel);
             }
         }
@@ -142,14 +139,16 @@ public class BlockTaint extends Block {
     }
 
     //? if < 1.21.1 {
-    /*@Override
-    public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
-    *///?} else {
     @Override
-    public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext level, List<Component> tooltip, TooltipFlag flag) {
-    //?}
+    public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.literal("DO NOT TOUCH, BREATHE OR STARE AT.").withStyle(ChatFormatting.GRAY));
     }
+    //?} else {
+    /*@Override
+    public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext level, List<Component> tooltip, TooltipFlag flag) {
+        tooltip.add(Component.literal("DO NOT TOUCH, BREATHE OR STARE AT.").withStyle(ChatFormatting.GRAY));
+    }
+    *///?}
 
     /** Устанавливает блок порчи с заданным «возрастом» (бывш. metadata). */
     public static BlockState stateWithAge(int age) {

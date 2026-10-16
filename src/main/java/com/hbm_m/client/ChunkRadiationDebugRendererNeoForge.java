@@ -1,17 +1,17 @@
 //? if neoforge {
-package com.hbm_m.client;
+/*package com.hbm_m.client;
 
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 
-/**
+/^*
  * NeoForge-only event hook for {@link ChunkRadiationDebugRenderer}.
  *
  * Зеркалирует {@link ChunkRadiationDebugRendererForge} — держит загрузчик-специфичный
  * event hook отдельно, чтобы сам рендерер оставался loader-agnostic.
- */
+ ^/
 @EventBusSubscriber(value = Dist.CLIENT)
 public final class ChunkRadiationDebugRendererNeoForge {
     private ChunkRadiationDebugRendererNeoForge() {}
@@ -22,4 +22,4 @@ public final class ChunkRadiationDebugRendererNeoForge {
         ChunkRadiationDebugRenderer.render(event.getPoseStack(), event.getCamera().getPosition());
     }
 }
-//?}
+*///?}

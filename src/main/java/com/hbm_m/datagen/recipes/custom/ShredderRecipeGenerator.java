@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
@@ -22,13 +22,13 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-/^*
+/**
  * Generates shredder recipes, including block conversions and powder automation.
  *
  * <p>Использует {@code save(writer, "id")} из {@link BaseRecipeBuilder} и статический
  * {@link BaseRecipeBuilder#resLoc(String)} для ванильных билдеров — Stonecutter-блоки
  * с {@code ResourceLocation} больше не нужны.</p>
- ^/
+ */
 public final class ShredderRecipeGenerator {
 
     private static final Set<String> ENABLED_POWDERS = Set.of(
@@ -140,9 +140,9 @@ public final class ShredderRecipeGenerator {
         }
     }
 
-    /^
+    /*
      * Raw mod ores → matching powder (1.7.10 auto-generated these from ore-dict "ore*" entries).
-     ^/
+     */
     private static void registerModRawOreRecipes(Consumer<FinishedRecipe> writer) {
         registerRawToPowder(writer, ModItems.URANIUM_RAW, ModMaterials.URANIUM);
         registerRawToPowder(writer, ModItems.LEAD_RAW, ModMaterials.LEAD);
@@ -258,4 +258,4 @@ public final class ShredderRecipeGenerator {
                 .save(writer, BaseRecipeBuilder.resLoc("dust_tiny_from_dust"));
     }
 }
-*///?}
+//?}

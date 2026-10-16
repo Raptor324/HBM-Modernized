@@ -25,7 +25,7 @@ import java.util.List;
  * non-channel ICrucibleAcceptor (e.g. a foundry outlet); if none accepts,
  * the content is equalized/swapped with ALL neighbouring channels.
  */
-public class MachineFoundryChannelBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements ICrucibleAcceptor {
+public class MachineFoundryChannelBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements ICrucibleAcceptor, com.hbm_m.interfaces.ICopiable {
 
     public static final int CAPACITY = MaterialStack.MB_PER_INGOT * 2;
 
@@ -178,6 +178,24 @@ public class MachineFoundryChannelBlockEntity extends com.hbm_m.blockentity.Base
     @Override
     public boolean canAcceptPartialPour(Level level, BlockPos pos, Direction side, MaterialStack stack) {
         if (side != Direction.UP) return false;
+        // Оригинал: налив разрешён, только если вся связная сеть каналов свободна от чужого
+        // материала (TileEntityFoundryChannel.canAcceptPartialPour проверяет node.net.links).
+        // Здесь — итеративный flood-fill по соседним каналам (сеть разрежена, глубина не ограничена).
+        java.util.Set<BlockPos> visited = new java.util.HashSet<>();
+        java.util.Deque<BlockPos> queue = new java.util.ArrayDeque<>();
+        visited.add(worldPosition);
+        queue.add(worldPosition);
+        while (!queue.isEmpty()) {
+            BlockPos p = queue.poll();
+            for (Direction dir : H_DIRS) {
+                BlockPos n = p.relative(dir);
+                if (!visited.add(n)) continue;
+                if (level.getBlockEntity(n) instanceof MachineFoundryChannelBlockEntity other) {
+                    if (other.type != null && other.amount > 0 && other.type != stack.type) return false;
+                    queue.add(n);
+                }
+            }
+        }
         return standardCheck(stack);
     }
 
@@ -205,4 +223,16 @@ public class MachineFoundryChannelBlockEntity extends com.hbm_m.blockentity.Base
         amount   = tag.getInt("mat_amount");
         lastFlow = tag.getInt("lastFlow");
     }
+
+    /* ── Устройство настройки: копия металла как matFilter, вставка пустая (оригинал) ── */
+
+    @Override
+    public CompoundTag getSettings(Level level, BlockPos pos) {
+        CompoundTag nbt = new CompoundTag();
+        if (type != null) nbt.putIntArray("matFilter", new int[]{ type.id });
+        return nbt;
+    }
+
+    @Override
+    public void pasteSettings(CompoundTag nbt, int index, Level level, net.minecraft.world.entity.player.Player player, BlockPos pos) { }
 }

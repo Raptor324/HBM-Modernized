@@ -13,11 +13,11 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.state.BlockState;
 
-//? if forge {
-/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-*///?} elif neoforge {
-@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-//?}
+//? if < 1.21.1 {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} else {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class AirstrikeNukeEntityRenderer extends EntityRenderer<AirstrikeNukeEntity> {
 
     private final BlockRenderDispatcher blockRenderer;

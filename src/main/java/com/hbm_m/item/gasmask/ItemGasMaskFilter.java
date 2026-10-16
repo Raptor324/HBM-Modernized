@@ -44,8 +44,7 @@ public class ItemGasMaskFilter extends Item implements ITooltipProvider {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack filterStack = player.getItemInHand(hand);
         // Маска на голове, прицепленная к шлему или в слоте лица Curios.
-        GasMaskUtil.WornMask worn = GasMaskUtil.resolveWornMaskRef(player);
-        ItemStack mask = worn.mask();
+        ItemStack mask = GasMaskUtil.resolveWornMask(player);
 
         if (!(mask.getItem() instanceof IGasMask) || !IGasMask.isFilterApplicable(mask, filterStack)) {
             return InteractionResultHolder.pass(filterStack);
@@ -53,10 +52,7 @@ public class ItemGasMaskFilter extends Item implements ITooltipProvider {
 
         if (!level.isClientSide()) {
             ItemStack old = GasMaskUtil.takeFilter(mask);
-            IGasMask.installFilter(mask, filterStack);
-            // A mask attached to a helmet is a copy decoded from its NBT; without this the filter
-            // vanished into the copy, and any ejected old filter got handed out a second time.
-            worn.commit();
+            IGasMask.installFilter(mask, this);
 
             if (old.isEmpty()) {
                 filterStack.shrink(1);

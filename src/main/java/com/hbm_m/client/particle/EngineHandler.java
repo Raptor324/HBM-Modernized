@@ -5,11 +5,12 @@ import com.hbm_m.client.missile.track.MissileTrackWorldRender;
 import com.hbm_m.particle.nt.ParticleEngineNT;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.MultiBufferSource;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.event.TickEvent;
@@ -18,8 +19,8 @@ import net.minecraftforge.fml.common.Mod;
 
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
-*///?} elif neoforge {
-import net.neoforged.api.distmarker.Dist;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
@@ -28,7 +29,7 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 
 @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 @EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT)
-//?}
+*///?}
 public class EngineHandler {
 
     @SubscribeEvent
@@ -37,7 +38,7 @@ public class EngineHandler {
     }
 
     //? if forge {
-    /*@SubscribeEvent
+    @SubscribeEvent
     public static void onRenderTickEnd(net.minecraftforge.event.TickEvent.RenderTickEvent event) {
         // КОНЕЦ кадра: инвалидируем статический lastProgramId, чтобы первый
         // apply() следующего кадра (небо!) сделал честный glUseProgram независимо
@@ -50,12 +51,12 @@ public class EngineHandler {
             // прицельного сброса в конце AFTER_WEATHER-прохода.
         }
     }
-    *///?} elif neoforge {
-    @SubscribeEvent
+    //?} elif neoforge {
+    /*@SubscribeEvent
     public static void onRenderTickEnd(net.neoforged.neoforge.client.event.ClientTickEvent.Post event) {
         com.hbm_m.client.render.shader.ShaderBindResync.invalidateStaticProgramCache();
     }
-    //?}
+    *///?}
 
     @SubscribeEvent
     public static void onRenderLevelStage(RenderLevelStageEvent event) {
@@ -66,10 +67,10 @@ public class EngineHandler {
         // RenderSystem model-view (к флашу батчей он может быть сброшен
         // чужими хуками DH/Iris → «гриб улетает при движении камеры»).
         //? if < 1.21.1 {
-        /*org.joml.Matrix4f levelRotation = new org.joml.Matrix4f(event.getPoseStack().last().pose());
-        *///?} else {
-        org.joml.Matrix4f levelRotation = new org.joml.Matrix4f(event.getModelViewMatrix());
-        //?}
+        org.joml.Matrix4f levelRotation = new org.joml.Matrix4f(event.getPoseStack().last().pose());
+        //?} else {
+        /*org.joml.Matrix4f levelRotation = new org.joml.Matrix4f(event.getModelViewMatrix());
+        *///?}
         com.hbm_m.platform.RenderHooks.pushLevelModelView(levelRotation);
         // Точная проекция кадра (та же, которой пак/ваниль рисовали террейн):
         // база для cleanExtendedProjection — иначе под Iris частицы строили
@@ -131,10 +132,10 @@ public class EngineHandler {
         // Единый туман сцены = бесшовный переход между путями рендера.
 
         //? if < 1.21.1 {
-        /*float partialTick = event.getPartialTick();
-        *///?} else {
-        float partialTick = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true);
-        //?}
+        float partialTick = event.getPartialTick();
+        //?} else {
+        /*float partialTick = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true);
+        *///?}
 
         // Порог деления = граница ванильной прорисовки: ближе рисуем с нативным
         // depth-тестом, дальше — тем же ванильным путём, но с удлинённой
@@ -351,29 +352,48 @@ public class EngineHandler {
         }
     }
 
+    /**
+     * Общий тик NT-частиц (forge- и neoforge-ветки onClientTick).
+     *
+     * 1) Откат назад: клиентский gameTime УМЕНЬШИЛСЯ (реплеер вроде Flashback
+     *    отмотал таймлайн) — движок вычисляет границу отката и удаляет только
+     *    частицы «из будущего» (шлейф ракеты после точки перемотки), история
+     *    до точки остаётся. См. ParticleEngineNT.onWorldGameTime.
+     * 2) worldRunsNormally=false (1.21.1 /tick freeze — см. ветку neoforge):
+     *    частицы замораживаются вместе с миром, как ванильные.
+     */
+    private static void doParticleTick(boolean worldRunsNormally) {
+        // Ленивая привязка DH-моста (DI-реестр DH может очиститься при его
+        // инициализации). Класс DhRenderBridge наследует DH-класс — грузить
+        // его можно только при наличии DH (guard строго до упоминания).
+        if (com.hbm_m.compat.dh.DhCompat.isModPresent()) {
+            com.hbm_m.client.compat.dh.DhRenderBridge.tryRegister();
+        }
+        if (!worldRunsNormally) return;
+        ParticleEngineNT engine = ParticleEngineNT.INSTANCE;
+        ClientLevel level = Minecraft.getInstance().level;
+        if (level != null) {
+            engine.onWorldGameTime(level.getGameTime());
+        }
+        engine.tick();
+    }
+
     //? if forge {
-    /*@SubscribeEvent
+    @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.START && !Minecraft.getInstance().isPaused()) {
-            // Ленивая привязка DH-моста (DI-реестр DH может очиститься при его
-            // инициализации). Класс DhRenderBridge наследует DH-класс — грузить
-            // его можно только при наличии DH (guard строго до упоминания).
-            if (com.hbm_m.compat.dh.DhCompat.isModPresent()) {
-                com.hbm_m.client.compat.dh.DhRenderBridge.tryRegister();
-            }
-            ParticleEngineNT.INSTANCE.tick();
+            // 1.20.1: /tick freeze нет — мир всегда «тикает» на клиенте.
+            doParticleTick(true);
         }
     }
-    *///?} elif neoforge {
-    @SubscribeEvent
+    //?} elif neoforge {
+    /*@SubscribeEvent
     public static void onClientTick(ClientTickEvent.Pre event) {
         if (!Minecraft.getInstance().isPaused()) {
-            // Ленивая привязка DH-моста (см. forge-ветку).
-            if (com.hbm_m.compat.dh.DhCompat.isModPresent()) {
-                com.hbm_m.client.compat.dh.DhRenderBridge.tryRegister();
-            }
-            ParticleEngineNT.INSTANCE.tick();
+            ClientLevel lvl = Minecraft.getInstance().level;
+            boolean runs = lvl == null || lvl.tickRateManager().runsNormally();
+            doParticleTick(runs);
         }
     }
-    //?}
+    *///?}
 }

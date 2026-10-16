@@ -52,8 +52,8 @@ public abstract class PylonBaseBlockEntity extends BaseHbmBlockEntity implements
 
     /** Кабели тянутся до 100 м — рендер-габарит бесконечный (как в оригинале). */
     //? if forge {
-    /*@Override
-    *///?}
+    @Override
+    //?}
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
         return new net.minecraft.world.phys.AABB(-1.0E7, -1.0E7, -1.0E7, 1.0E7, 1.0E7, 1.0E7);
     }
@@ -88,16 +88,6 @@ public abstract class PylonBaseBlockEntity extends BaseHbmBlockEntity implements
         }
         setChanged();
         syncToClient();
-    }
-
-    // A conductor that keeps its node after the block is gone leaves the grid merged through a
-    // block that no longer exists, and any conductor placed there later inherits the ghost node.
-    @Override
-    public void setRemoved() {
-        super.setRemoved();
-        if (level instanceof ServerLevel serverLevel) {
-            Nodespace.destroyNode(serverLevel, getBlockPos());
-        }
     }
 
     /** Порт disconnectAll из 1.7.10: разрывает все соединения и уничтожает узлы на обоих концах. */

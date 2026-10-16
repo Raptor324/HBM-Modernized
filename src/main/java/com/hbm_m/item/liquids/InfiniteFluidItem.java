@@ -18,7 +18,7 @@ import org.jetbrains.annotations.Nullable;
 import net.minecraft.core.registries.BuiltInRegistries;
 // Forge/NeoForge: сигнатуры IFluidHandlerItem идентичны, различаются только пакеты.
 //? if forge {
-/*import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
@@ -28,12 +28,12 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import org.jetbrains.annotations.NotNull;
 import net.minecraft.core.Direction;
-*///?}
+//?}
 //? if neoforge {
-import net.neoforged.neoforge.fluids.FluidStack;
+/*import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
-//?}
+*///?}
 
 /**
  * Infinite fluid item (port of 1.7.10 ItemInfiniteFluid).
@@ -218,7 +218,7 @@ public class InfiniteFluidItem extends Item implements ITooltipProvider {
     //?}
 
     //? if forge {
-    /*@Override
+    @Override
     public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
         return new InfiniteFluidCapabilityProvider(stack, transferRate, fixedFluid);
     }
@@ -241,5 +241,5 @@ public class InfiniteFluidItem extends Item implements ITooltipProvider {
             return LazyOptional.empty();
         }
     }
-    *///?}
+    //?}
 }

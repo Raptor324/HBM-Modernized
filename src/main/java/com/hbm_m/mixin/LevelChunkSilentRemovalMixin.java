@@ -2,6 +2,7 @@ package com.hbm_m.mixin;
 
 //? if forge || neoforge {
 import com.hbm_m.interfaces.IMultiblockController;
+import com.hbm_m.interfaces.IMultiblockPart;
 import com.hbm_m.multiblock.ContraptionAssemblyGuard;
 
 import net.minecraft.core.BlockPos;
@@ -44,7 +45,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 public abstract class LevelChunkSilentRemovalMixin {
 
     static {
-        com.hbm_m.main.MainRegistry.LOGGER.info("[HBM][Mixin] LevelChunkSilentRemovalMixin применён к LevelChunk");
+        com.hbm_m.main.MainRegistry.LOGGER.info("[HBM][Mixin] LevelChunkSilentRemovalMixin applied to LevelChunk");
     }
 
     @Redirect(
@@ -57,18 +58,14 @@ public abstract class LevelChunkSilentRemovalMixin {
     private void hbm_m$silentRemovalDuringContraptionMove(BlockState receiver, Level level, BlockPos pos,
                                                           BlockState otherState, boolean isMoving) {
         if (ContraptionAssemblyGuard.isMoving()) {
-            // IMultiblockPart is implemented by the part's BlockEntity, not by its Block, so the old
-            // test against the Block never matched and only the controller half of this guard worked.
             Block receiverBlock = receiver.getBlock();
-            boolean receiverOurs = receiverBlock instanceof IMultiblockController
-                    || receiverBlock instanceof com.hbm_m.block.UniversalMachinePartBlock;
+            boolean receiverOurs = receiverBlock instanceof IMultiblockPart || receiverBlock instanceof IMultiblockController;
             if (!receiverOurs && receiver.isAir()) {
                 Block otherBlock = otherState.getBlock();
-                receiverOurs = otherBlock instanceof IMultiblockController
-                        || otherBlock instanceof com.hbm_m.block.UniversalMachinePartBlock;
+                receiverOurs = otherBlock instanceof IMultiblockPart || otherBlock instanceof IMultiblockController;
             }
             if (receiverOurs) {
-                com.hbm_m.main.MainRegistry.LOGGER.debug(
+                com.hbm_m.main.MainRegistry.LOGGER.info(
                     "[HBM] onRemove подавлен при переносе, блок {} @ {}", receiverBlock, pos.toShortString());
                 return; // Перенос блока движком сборки — разрушение подавляем.
             }

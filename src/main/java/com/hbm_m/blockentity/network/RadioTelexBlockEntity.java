@@ -137,21 +137,21 @@ public class RadioTelexBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEnt
 
         ItemStack paper = new ItemStack(Items.PAPER);
         //? if < 1.21.1 {
-        /*paper.setHoverName(Component.literal("Message"));
+        paper.setHoverName(Component.literal("Message"));
         ListTag lore = new ListTag();
         for (String line : rxLines) {
             lore.add(StringTag.valueOf(Component.Serializer.toJson(Component.literal(line != null ? line : ""))));
         }
         CompoundTag display = paper.getOrCreateTagElement("display");
         display.put("Lore", lore);
-        *///?} else {
-        paper.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, Component.literal("Message"));
+        //?} else {
+        /*paper.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, Component.literal("Message"));
         List<Component> lore = new java.util.ArrayList<>();
         for (String line : rxLines) {
             lore.add(Component.literal(line != null ? line : ""));
         }
         paper.set(net.minecraft.core.component.DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(lore));
-        //?}
+        *///?}
 
         ItemEntity item = new ItemEntity(level, worldPosition.getX() + 0.5, worldPosition.getY() + 1.0, worldPosition.getZ() + 0.5, paper);
         level.addFreshEntity(item);

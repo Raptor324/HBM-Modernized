@@ -21,6 +21,9 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+//? if fabric {
+/*import team.reborn.energy.api.EnergyStorage;
+*///?}
 
 @SuppressWarnings("UnstableApiUsage")
 public class MachineAssemblerMenu extends AbstractContainerMenu implements ILongEnergyMenu {
@@ -224,12 +227,9 @@ public class MachineAssemblerMenu extends AbstractContainerMenu implements ILong
                 moved = this.moveItemStackTo(sourceStack, TE_INVENTORY_FIRST_SLOT_INDEX + 6, TE_INVENTORY_FIRST_SLOT_INDEX + TE_INVENTORY_SLOT_COUNT, false);
             }
 
-            // Fallback: the three upgrade slots (1-3). The old fallback used the whole TE range, which
-            // includes the output slot (5) - vanilla moveItemStackTo ignores mayPlace when it merges
-            // onto an existing stack, so a shift-click could land in the output.
+            // If none of the prioritized moves succeeded, as a fallback try the full TE range
             if (!moved) {
-                if (!this.moveItemStackTo(sourceStack, TE_INVENTORY_FIRST_SLOT_INDEX + 1,
-                        TE_INVENTORY_FIRST_SLOT_INDEX + 4, false)) {
+                if (!this.moveItemStackTo(sourceStack, TE_INVENTORY_FIRST_SLOT_INDEX, TE_INVENTORY_FIRST_SLOT_INDEX + TE_INVENTORY_SLOT_COUNT, false)) {
                     return ItemStack.EMPTY;
                 }
             }

@@ -193,16 +193,16 @@ public class MachineTowerLargeBlock extends BaseEntityBlock implements IMultiblo
     }
 
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
         return reportStatus(pState, pLevel, pPos, pPlayer, pHand, pHit);
     }
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     protected InteractionResult useWithoutItem(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, BlockHitResult pHit) {
         return reportStatus(pState, pLevel, pPos, pPlayer, InteractionHand.MAIN_HAND, pHit);
     }
-    //?}
+    *///?}
 
     private InteractionResult reportStatus(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
         // No GUI - this multiblock is a purely passive fluid pipe-to-pipe converter.
@@ -260,11 +260,11 @@ public class MachineTowerLargeBlock extends BaseEntityBlock implements IMultiblo
     }
 
     //? if >1.20.1 {
-    public static final com.mojang.serialization.MapCodec<MachineTowerLargeBlock> CODEC = simpleCodec(MachineTowerLargeBlock::new);
+    /*public static final com.mojang.serialization.MapCodec<MachineTowerLargeBlock> CODEC = simpleCodec(MachineTowerLargeBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    //?}
+    *///?}
 }

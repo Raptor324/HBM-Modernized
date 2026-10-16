@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import java.util.Arrays;
+import java.util.Arrays;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -65,4 +65,4 @@ public class CentrifugeRecipeBuilder extends BaseRecipeBuilder<CentrifugeRecipeB
         return CentrifugeRecipe.Serializer.INSTANCE;
     }
 }
-*///?}
+//?}

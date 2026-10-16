@@ -36,17 +36,47 @@ neoForge {
 		minecraftVersion = mc
 	}
 
+	// ── UTF-8 для дев-логов ─────────────────────────────────────────────
+	// Сгенерированный MDG log4j2-конфиг не задаёт charset в PatternLayout —
+	// файловые логи пишутся в платформенной Cp1251. Патчим конфиг idempotent-
+	// но перед каждым запуском (файл общий для любого способа запуска).
+	fun patchDevLogCharset() {
+		val f = file("build/moddev/clientLog4j2.xml")
+		if (!f.exists()) return
+		var text = f.readText()
+		val cleaned = text.replace("charset=\"UTF-8\" charset=\"UTF-8\"", "charset=\"UTF-8\"")
+		if (cleaned != text) {
+			f.writeText(cleaned)
+			text = cleaned
+		}
+		if (text.contains("charset=\"UTF-8\"")) return
+		val patched = Regex("<PatternLayout(?![^>]*\\bcharset=)").replace(text, "<PatternLayout charset=\"UTF-8\"")
+		if (patched != text) {
+			f.writeText(patched)
+			println("patchDevLogCharset: charset=UTF-8 added to ${f}")
+		}
+	}
+	tasks.matching { it.name in setOf("runClient", "runServer", "runGameTestServer") }.configureEach {
+		doFirst { patchDevLogCharset() }
+	}
+
 	runs {
 		register("client") {
 			client()
 			gameDirectory = file("run/")
 			ideName = "NeoForge Client (${stonecutter.active?.version})"
 			programArgument("--username=Dev")
+			// UTF-8 для логов + ASCII-локаль (иначе log4j пишет даты «сен.» в
+			// платформенной Cp1251 — debug.log открывается как ломаный UTF-8).
+			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8", "-Dconsole.encoding=UTF-8",
+				"-Duser.language=en", "-Duser.country=US")
 		}
 		register("server") {
 			server()
 			gameDirectory = file("run/")
 			ideName = "NeoForge Server (${stonecutter.active?.version})"
+			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8",
+				"-Duser.language=en", "-Duser.country=US")
 		}
 		// GameTest-сервер: headless-прогон всех @GameTest без GUI.
 		// NeoForge 1.21.1 НЕ поддерживает аргумент CLI --gametest (это Forge-only).
@@ -64,6 +94,8 @@ neoForge {
 			ideName = "NeoForge GameTest (${stonecutter.active?.version})"
 			systemProperty("neoforge.gameTestServer", "true")
 			systemProperty("neoforge.enableGameTest", "true")
+			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8",
+				"-Duser.language=en", "-Duser.country=US")
 			// TODO(other-agent WIP): doFirst недоступен в runs-DSL — перенести в tasks.named("gameTestServer")
 		}
 	}
@@ -105,20 +137,14 @@ dependencies {
 	// строковых таргетов миксинов (@Mixin(targets = "...")) на этапе компиляции.
 	// В рантайм не пакуется; в отсутствие Sable миксины просто не применяются.
 	"compileOnly"("maven.modrinth:sable:2.0.5+mc1.21.1")
-	// The modrinth artifact does not expose BoundingBox3ic - it lives in the nested
-	// sable-companion jar-in-jar, which SubLevelAssembleExpansionMixin has to name in its handler
-	// signature. 35 KB, checked in under libs/. compileOnly: nothing is packed into the mod.
-	if (stonecutter.current.version == "1.21.1") {
-		"compileOnly"(rootProject.files("libs/sable-companion-common-1.21.1-1.6.0.jar"))
-	}
 
 	// Рантайм-зависимости для ручного тестирования интеграции с Create
 	// Aeronautics / Sable в runClient (только 1.21.1 - на других версиях
 	// этих модов нет). Create 6.x тащит Flywheel/Ponder внутри себя (jarJar).
 	if (stonecutter.current.version == "1.21.1") {
-		// "runtimeOnly"("maven.modrinth:create:6.0.10+mc1.21.1")
-		// "runtimeOnly"("maven.modrinth:sable:2.0.5+mc1.21.1")
-		// "runtimeOnly"("maven.modrinth:create-aeronautics:1.3.1+mc1.21.1") // bundled: simulated + offroad внутри
+		"runtimeOnly"("maven.modrinth:create:6.0.10+mc1.21.1")
+		"runtimeOnly"("maven.modrinth:sable:2.0.5+mc1.21.1")
+		"runtimeOnly"("maven.modrinth:create-aeronautics:1.3.1+mc1.21.1") // bundled: simulated + offroad внутри
 	}
 	// В NeoForge артефакт называется flywheel-neoforge-api
 	"compileOnly"("dev.engine-room.flywheel:flywheel-neoforge-api-$mcVer:${prop("deps.flywheel")}")
@@ -187,8 +213,8 @@ tasks.named<ProcessResources>("processResources") {
 				moveInto(bm, target)
 				target.walkTopDown().filter { it.isFile && it.extension == "json" }.forEach { f ->
 					f.writeText(f.readText()
-							.replace("\"forge:add_features\"", "\"neoforge:add_features\"")
-							.replace("\"forge:add_spawns\"", "\"neoforge:add_spawns\""))
+						.replace("\"forge:add_features\"", "\"neoforge:add_features\"")
+						.replace("\"forge:add_spawns\"", "\"neoforge:add_spawns\""))
 				}
 			}
 		}
@@ -218,19 +244,6 @@ tasks.named<ProcessResources>("processResources") {
 					if (plural.isDirectory) moveInto(plural, File(tags, new))
 				}
 			}
-		}
-
-		// The block above moves the tag files, but references inside JSON stay "forge:".
-		// Unremapped, recipes match an empty tag and silently stop crafting.
-		// The leading quote in the pattern keeps "neoforge:add_features" intact.
-		// glass is the only tag whose name also changed: NeoForge calls it c:glass_blocks.
-		dataDir.walkTopDown().filter { it.isFile && it.extension == "json" }.forEach { file ->
-			val text = file.readText()
-			if (!text.contains("forge:")) return@forEach
-			val out = text.replace("\"#forge:", "\"#c:").replace("\"forge:", "\"c:")
-				.replace("\"c:glass\"", "\"c:glass_blocks\"").replace("\"#c:glass\"", "\"#c:glass_blocks\"")
-			// "neoforge:" also matches the guard above, so only write when something actually changed.
-			if (out != text) file.writeText(out)
 		}
 
 		// Remap silk-touch условия в loot-таблицах: датаген (1.20.1) пишет
@@ -300,15 +313,22 @@ tasks.named<ProcessResources>("processResources") {
 			}
 		}
 
+		// Ссылки на теги forge:* внутри рецептов → c:* (неймспейс переименован выше).
+		dataDir.resolve("hbm_m").resolve("recipe").walkTopDown()
+			.filter { it.isFile && it.extension == "json" }.forEach { file ->
+				val text = file.readText()
+				if (text.contains("\"forge:")) {
+					file.writeText(text.replace(Regex("\"(tag)\"\\s*:\\s*\"forge:"), "\"$1\": \"c:"))
+				}
+			}
+
 		// Лут-таблицы батарей используют minecraft:copy_nbt, удалённый в 1.20.5+.
 		// На 1.21.1 состояние батареи переносится кодом
 		// (MachineBatteryBlock#playerWillDestroy → MachineBatteryBlockEntity#saveToItemStack),
 		// поэтому таблицы просто исключаем из сборки.
 		listOf("loot_table", "loot_tables").forEach { dirName ->
 			File(File(dataDir, "hbm_m"), dirName).walkTopDown()
-				// machine_fensu is a MachineBatteryBlock too - its name just does not start with
-				// machine_battery, so it kept its loot table and dropped a second copy of itself.
-				.filter { it.isFile && (it.name.startsWith("machine_battery") || it.name == "machine_fensu.json") }
+				.filter { it.isFile && it.name.startsWith("machine_battery") }
 				.forEach { it.delete() }
 		}
 

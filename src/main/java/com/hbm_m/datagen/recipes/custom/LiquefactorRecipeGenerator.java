@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import com.hbm_m.inventory.fluid.ModFluids;
+import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
@@ -13,14 +13,14 @@ import net.minecraft.world.item.crafting.Ingredient;
 
 import java.util.function.Consumer;
 
-/^*
+/**
  * Генератор JSON-рецептов ликвейфактора ({@code hbm_m:liquefactor}).
  *
  * <p>Порт 24 рецептов из удалённого статического {@code LiquefactorRecipes} (static-блок;
  * оригинал 1.7.10 — {@code com.hbm.inventory.recipes.LiquefactionRecipes}): предмет → жидкость (mB),
  * 1 предмет за цикл. Жидкостные стаки создаются через {@link FluidStack#create} из {@link ModFluids}.
  * Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.</p>
- ^/
+ */
 public final class LiquefactorRecipeGenerator {
 
     private LiquefactorRecipeGenerator() {}
@@ -63,4 +63,4 @@ public final class LiquefactorRecipeGenerator {
                 .save(writer, "liquefactor/" + id);
     }
 }
-*///?}
+//?}

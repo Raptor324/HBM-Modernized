@@ -197,7 +197,7 @@ public class SellafitSolidificationTracker {
         }
 
         if (!keysToRemove.isEmpty()) {
-            MainRegistry.LOGGER.debug("[SELLAFIT] Очищено старых записей: " + keysToRemove.size());
+            MainRegistry.LOGGER.debug("[SELLAFIT] Stale entries cleaned: " + keysToRemove.size());
         }
     }
 }

@@ -129,9 +129,10 @@ public class RBMKTerminalBlockEntity extends RBMKPanelDeviceBlockEntity {
         syncToClient();
     }
 
+    //? if < 1.21.1 {
     @Override
-    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.writeNbtData(tag, registries);
+    protected void saveAdditional(CompoundTag tag) {
+        super.saveAdditional(tag);
         tag.putString("channel", channel);
         tag.putBoolean("running", running);
         tag.putBoolean("doesRepeat", doesRepeat);
@@ -141,12 +142,34 @@ public class RBMKTerminalBlockEntity extends RBMKPanelDeviceBlockEntity {
     }
 
     @Override
-    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.readNbtData(tag, registries);
+    public void load(CompoundTag tag) {
+        super.load(tag);
         channel = tag.getString("channel");
         running = tag.getBoolean("running");
         doesRepeat = tag.getBoolean("doesRepeat");
         for (int i = 0; i < history.length; i++) history[i] = tag.getString("history" + i);
         runningValue = tag.contains("runningValue") ? tag.getString("runningValue") : "0";
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
+        tag.putString("channel", channel);
+        tag.putBoolean("running", running);
+        tag.putBoolean("doesRepeat", doesRepeat);
+        for (int i = 0; i < history.length; i++)
+            tag.putString("history" + i, history[i] == null ? "" : history[i]);
+        tag.putString("runningValue", runningValue);
+    }
+
+    @Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
+        channel = tag.getString("channel");
+        running = tag.getBoolean("running");
+        doesRepeat = tag.getBoolean("doesRepeat");
+        for (int i = 0; i < history.length; i++) history[i] = tag.getString("history" + i);
+        runningValue = tag.contains("runningValue") ? tag.getString("runningValue") : "0";
+    }
+    *///?}
 }

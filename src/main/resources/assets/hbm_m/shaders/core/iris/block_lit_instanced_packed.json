@@ -1,0 +1,15 @@
+{
+    "vertex": "hbm_m:iris/block_lit_instanced_packed",
+    "fragment": "hbm_m:iris/block_lit_instanced_packed",
+    "samplers": [
+        { "name": "iris_Sampler0" },
+        { "name": "iris_Sampler2" }
+    ],
+    "uniforms": [
+        { "name": "iris_ModelViewMat", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+        { "name": "iris_ProjMat", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+        { "name": "iris_FogStart", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "iris_FogEnd", "type": "float", "count": 1, "values": [ 1.0 ] },
+        { "name": "iris_FogColor", "type": "float", "count": 4, "values": [ 0.0, 0.0, 0.0, 0.0 ] }
+    ]
+}

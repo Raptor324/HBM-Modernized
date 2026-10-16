@@ -24,12 +24,12 @@ import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 //? if forge {
-/*import net.minecraftforge.gametest.GameTestHolder;
+import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
-*///?} elif neoforge {
-import net.neoforged.neoforge.gametest.GameTestHolder;
+//?} elif neoforge {
+/*import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
-//?}
+*///?}
 
 import java.util.List;
 import java.util.Map;

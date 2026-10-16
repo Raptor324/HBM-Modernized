@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import javax.annotation.Nullable;
+import javax.annotation.Nullable;
 
 import com.google.gson.JsonObject;
 import com.hbm_m.recipe.PyroOvenRecipe;
@@ -11,7 +11,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
-/^*
+/**
  * Datagen-билдер {@link PyroOvenRecipe} ({@code hbm_m:pyro_oven}).
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.</p>
@@ -27,7 +27,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
  *   "duration": 100
  * }
  * }</pre>
- ^/
+ */
 public class PyroOvenRecipeBuilder extends BaseRecipeBuilder<PyroOvenRecipeBuilder> {
 
     @Nullable
@@ -89,4 +89,4 @@ public class PyroOvenRecipeBuilder extends BaseRecipeBuilder<PyroOvenRecipeBuild
         return PyroOvenRecipe.Serializer.INSTANCE;
     }
 }
-*///?}
+//?}

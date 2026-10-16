@@ -54,16 +54,16 @@ public class SwitchBlock extends BaseEntityBlock {
     }
 
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         return hbmOnUse(state, level, pos, player, hand, hit);
     }
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         return hbmOnUse(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
-    //?}
+    *///?}
 
     private InteractionResult hbmOnUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (level.isClientSide) {
@@ -120,7 +120,7 @@ public class SwitchBlock extends BaseEntityBlock {
     }
 
     //? if > 1.20.1 {
-    public static final com.mojang.serialization.MapCodec<SwitchBlock> CODEC = simpleCodec(SwitchBlock::new);
+    /*public static final com.mojang.serialization.MapCodec<SwitchBlock> CODEC = simpleCodec(SwitchBlock::new);
     @Override protected com.mojang.serialization.MapCodec<? extends BaseEntityBlock> codec() { return CODEC; }
-    //?}
+    *///?}
 }

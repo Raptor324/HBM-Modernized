@@ -80,18 +80,11 @@ public class LandmineBlock extends Block implements EntityBlock, IBomb {
     }
 
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public void appendHoverText(ItemStack stack,
                                  @Nullable BlockGetter level,
                                  List<Component> tooltip,
                                  TooltipFlag flag) {
-    *///?} else {
-    @Override
-    public void appendHoverText(ItemStack stack,
-                                 net.minecraft.world.item.Item.TooltipContext level,
-                                 List<Component> tooltip,
-                                 TooltipFlag flag) {
-    //?}
         if (this == ModBlocks.MINE_FAT.get()) {
             tooltip.add(Component.translatable("tooltip.hbm_m.mine_nuke.line1").withStyle(ChatFormatting.DARK_RED));
             tooltip.add(Component.translatable("tooltip.hbm_m.mine_nuke.line2").withStyle(ChatFormatting.RED));
@@ -102,6 +95,23 @@ public class LandmineBlock extends Block implements EntityBlock, IBomb {
             tooltip.add(Component.translatable("tooltip.hbm_m.mine.line1").withStyle(ChatFormatting.GRAY));
         }
     }
+    //?} else {
+    /*@Override
+    public void appendHoverText(ItemStack stack,
+                                 net.minecraft.world.item.Item.TooltipContext level,
+                                 List<Component> tooltip,
+                                 TooltipFlag flag) {
+        if (this == ModBlocks.MINE_FAT.get()) {
+            tooltip.add(Component.translatable("tooltip.hbm_m.mine_nuke.line1").withStyle(ChatFormatting.DARK_RED));
+            tooltip.add(Component.translatable("tooltip.hbm_m.mine_nuke.line2").withStyle(ChatFormatting.RED));
+            tooltip.add(Component.translatable("tooltip.hbm_m.mine_nuke.line3").withStyle(ChatFormatting.GRAY));
+        } else if (this == ModBlocks.NAVAL_MINE.get()) {
+            tooltip.add(Component.translatable("tooltip.hbm_m.naval_mine.line1").withStyle(ChatFormatting.GRAY));
+        } else {
+            tooltip.add(Component.translatable("tooltip.hbm_m.mine.line1").withStyle(ChatFormatting.GRAY));
+        }
+    }
+    *///?}
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {

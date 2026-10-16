@@ -110,22 +110,39 @@ public class AnvilBlock extends FallingBlock implements EntityBlock {
     }
 
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof AnvilBlockEntity be) {
             MenuRegistry.openExtendedMenu((ServerPlayer) player, be, buf -> buf.writeBlockPos(pos));
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
     }
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof AnvilBlockEntity be) {
             MenuRegistry.openExtendedMenu((ServerPlayer) player, be, buf -> buf.writeBlockPos(pos));
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
     }
-    //?}
+    *///?}
+
+    // Оригинал NTMAnvil.addInformation: золотой «Tier N Anvil»
+    //? if < 1.21.1 {
+    @Override
+    public void appendHoverText(net.minecraft.world.item.ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.BlockGetter level,
+                                java.util.List<net.minecraft.network.chat.Component> tooltip, net.minecraft.world.item.TooltipFlag flag) {
+        tooltip.add(net.minecraft.network.chat.Component.literal("Tier " + tier.getLegacyId() + " Anvil")
+                .withStyle(net.minecraft.ChatFormatting.GOLD));
+    }
+    //?} else {
+    /*@Override
+    public void appendHoverText(net.minecraft.world.item.ItemStack stack, net.minecraft.world.item.Item.TooltipContext level,
+                                java.util.List<net.minecraft.network.chat.Component> tooltip, net.minecraft.world.item.TooltipFlag flag) {
+        tooltip.add(net.minecraft.network.chat.Component.literal("Tier " + tier.getLegacyId() + " Anvil")
+                .withStyle(net.minecraft.ChatFormatting.GOLD));
+    }
+    *///?}
 
     /**
      * Настраивает параметры урона для падающей наковальни.
@@ -173,11 +190,11 @@ public class AnvilBlock extends FallingBlock implements EntityBlock {
     }
 
     //? if >= 1.21.1 {
-    public static final com.mojang.serialization.MapCodec<AnvilBlock> CODEC = simpleCodec(props -> new AnvilBlock(props, AnvilTier.STEEL));
+    /*public static final com.mojang.serialization.MapCodec<AnvilBlock> CODEC = simpleCodec(props -> new AnvilBlock(props, AnvilTier.STEEL));
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.FallingBlock> codec() {
         return CODEC;
     }
-    //?}
+    *///?}
 }

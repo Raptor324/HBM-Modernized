@@ -85,16 +85,16 @@ public class SoyuzLauncherBlock extends BaseEntityBlock {
     }
 
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         return openMenu(state, level, pos, player, hand, hit);
     }
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
-    //?}
+    *///?}
 
     private InteractionResult openMenu(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide()) {
@@ -106,20 +106,11 @@ public class SoyuzLauncherBlock extends BaseEntityBlock {
     }
 
     //? if >1.20.1 {
-    public static final com.mojang.serialization.MapCodec<SoyuzLauncherBlock> CODEC = simpleCodec(SoyuzLauncherBlock::new);
+    /*public static final com.mojang.serialization.MapCodec<SoyuzLauncherBlock> CODEC = simpleCodec(SoyuzLauncherBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    //?}
-
-    @Override
-    public void onRemove(net.minecraft.world.level.block.state.BlockState state, net.minecraft.world.level.Level level,
-                            net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState newState, boolean isMoving) {
-        if (!state.is(newState.getBlock())) {
-            com.hbm_m.block.MachineDrops.dropInventory(level, pos);
-        }
-        super.onRemove(state, level, pos, newState, isMoving);
-    }
+    *///?}
 }

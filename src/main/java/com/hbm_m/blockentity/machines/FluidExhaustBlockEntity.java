@@ -82,15 +82,24 @@ public class FluidExhaustBlockEntity extends BaseHbmBlockEntity implements IFlui
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public void onLoad() {
         super.onLoad();
         if (level instanceof ServerLevel serverLevel) {
             initNodes(serverLevel);
         }
     }
-    *///?}
+    //?}
 
+    //? if fabric {
+    /*@Override
+    public void setLevel(Level level) {
+        super.setLevel(level);
+        if (level instanceof ServerLevel serverLevel) {
+            initNodes(serverLevel);
+        }
+    }
+    *///?}
 
     @Override
     public void setRemoved() {
@@ -105,7 +114,7 @@ public class FluidExhaustBlockEntity extends BaseHbmBlockEntity implements IFlui
         super.setRemoved();
     }
 
-    //? if forge || neoforge {
+    //? if forge {
     @Override
     public void onChunkUnloaded() {
         if (level instanceof ServerLevel serverLevel) {

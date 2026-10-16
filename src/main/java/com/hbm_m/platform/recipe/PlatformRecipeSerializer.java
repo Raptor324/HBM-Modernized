@@ -8,7 +8,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import org.jetbrains.annotations.NotNull;
 
 //? if >= 1.21.1 {
-import com.mojang.serialization.MapCodec;
+/*import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.MapLike;
@@ -16,7 +16,7 @@ import com.mojang.serialization.RecordBuilder;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import java.util.stream.Stream;
-//?}
+*///?}
 
 public abstract class PlatformRecipeSerializer<R extends Recipe<?>> implements RecipeSerializer<R> {
 
@@ -26,7 +26,7 @@ public abstract class PlatformRecipeSerializer<R extends Recipe<?>> implements R
 
     //? if < 1.21.1 {
     
-    /*@Override
+    @Override
     public @NotNull R fromJson(@NotNull ResourceLocation id, @NotNull JsonObject json) {
         return readJson(id, json);
     }
@@ -40,10 +40,10 @@ public abstract class PlatformRecipeSerializer<R extends Recipe<?>> implements R
     public void toNetwork(@NotNull FriendlyByteBuf buf, @NotNull R recipe) {
         writeNetwork(buf, recipe);
     }
-    *///?} else {
+    //?} else {
     
-    /** RecipeManager assigns the real id, so the codec only ever needs this placeholder. */
-    private static final ResourceLocation DUMMY_ID = ResourceLocation.withDefaultNamespace("dummy");
+    /*private static int decodeCallCount = 0;
+    private static int decodeSuccessCount = 0;
 
     private final MapCodec<R> mapCodec = new MapCodec<R>() {
         @Override
@@ -53,17 +53,22 @@ public abstract class PlatformRecipeSerializer<R extends Recipe<?>> implements R
 
         @Override
         public <T> DataResult<R> decode(com.mojang.serialization.DynamicOps<T> ops, MapLike<T> input) {
+            decodeCallCount++;
+            if (decodeCallCount <= 5) {
+                System.err.println("[HBM DEBUG] PlatformRecipeSerializer.decode CALLED #" + decodeCallCount + " ops=" + ops.getClass().getSimpleName());
+            }
             try {
-                T map = ops.createMap(input.entries());
-                // Recipes already load through JsonOps. Converting again walks arrays element by
-                // element and NPEs on JsonNull, which recipes use for empty grid slots.
-                JsonObject json = map instanceof JsonObject obj
-                        ? obj
-                        : new com.mojang.serialization.Dynamic<>(ops, map).convert(JsonOps.INSTANCE).getValue().getAsJsonObject();
-                return DataResult.success(readJson(DUMMY_ID, json));
+                com.mojang.serialization.Dynamic<T> dynamic = new com.mojang.serialization.Dynamic<>(ops, ops.createMap(input.entries()));
+                com.google.gson.JsonElement json = dynamic.convert(JsonOps.INSTANCE).getValue();
+                R recipe = readJson(ResourceLocation.withDefaultNamespace("dummy"), json.getAsJsonObject());
+                decodeSuccessCount++;
+                if (decodeSuccessCount <= 5) {
+                    System.err.println("[HBM DEBUG] PlatformRecipeSerializer.decode SUCCESS #" + decodeSuccessCount + " recipe=" + recipe.getClass().getSimpleName());
+                }
+                return DataResult.success(recipe);
             } catch (Exception e) {
-                // RecipeManager only surfaces the message, so log the cause with its stack trace.
-                com.hbm_m.main.MainRegistry.LOGGER.error("Failed to parse recipe", e);
+                System.err.println("[HBM DEBUG] PlatformRecipeSerializer.decode FAILED #" + decodeCallCount + ": " + e.getClass().getSimpleName() + ": " + e.getMessage());
+                e.printStackTrace();
                 return DataResult.error(() -> "Failed to parse recipe: " + e.getMessage());
             }
         }
@@ -77,7 +82,7 @@ public abstract class PlatformRecipeSerializer<R extends Recipe<?>> implements R
     private final StreamCodec<RegistryFriendlyByteBuf, R> streamCodec = new StreamCodec<RegistryFriendlyByteBuf, R>() {
         @Override
         public R decode(RegistryFriendlyByteBuf buf) {
-            return readNetwork(DUMMY_ID, buf);
+            return readNetwork(ResourceLocation.withDefaultNamespace("dummy"), buf);
         }
 
         @Override
@@ -95,5 +100,5 @@ public abstract class PlatformRecipeSerializer<R extends Recipe<?>> implements R
     public StreamCodec<RegistryFriendlyByteBuf, R> streamCodec() {
         return streamCodec;
     }
-    //?}
+    *///?}
 }

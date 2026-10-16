@@ -48,6 +48,9 @@ public final class MainRegistry {
     public static final RegistrySupplier<CreativeModeTab> nukeTab = ModCreativeTabs.NTM_NUKE_TAB;
 
     static {
+        // Форс UTF-8 в log4j-аппендерах ДО основного потока логов (иначе debug.log
+        // пишется в Cp1251 — кириллица и даты «13 сент» выглядят ломано в UTF-8).
+        LogCharsetPatcher.apply();
         // Загрузка JSON-конфига (client.json + server.json) ДО любой инициализации,
         // чтобы классы, захватывающие значения в static final (ChunkRadiationHandlerSimple.MAX_RAD),
         // видели загруженные значения. Замена AutoConfig.register(...).
@@ -58,7 +61,7 @@ public final class MainRegistry {
         LOGGER.info("Initializing {}", RefStrings.NAME);
 
         //? if neoforge {
-        // NeoForge 1.21+: регистрация сетевых пейлоадов обязана произойти ДО фазы
+        /*// NeoForge 1.21+: регистрация сетевых пейлоадов обязана произойти ДО фазы
         // NetworkRegistry.setup() → RegisterPayloadHandlersEvent, которая выполняется
         // ПОСЛЕ конструкторов модов, но ДО FMLCommonSetupEvent/FMLClientSetupEvent.
         // Architectury добавляет слушатель RegisterPayloadHandlersEvent в момент вызова
@@ -66,7 +69,7 @@ public final class MainRegistry {
         // не срабатывает → S2C-пакеты (радиация, гейгер, дебаг-рендер) не доходят до клиента.
         ModPacketHandler.register();
         ModPacketHandler.registerClientReceivers();
-        //?}
+        *///?}
 
         // Registries (common)
         // Must run before any world loads: the RBMK dials are world game rules in the original.
@@ -79,8 +82,8 @@ public final class MainRegistry {
         ModSounds.init();
         ModItems.init();
         //? if neoforge {
-        com.hbm_m.item.tools_and_armor.ModArmorMaterialsAccess.init();
-        //?}
+        /*com.hbm_m.item.tools_and_armor.ModArmorMaterialsAccess.init();
+        *///?}
         ModMenuTypes.init();
         ModCreativeTabs.init();
         ModParticleTypes.init();
@@ -108,10 +111,6 @@ public final class MainRegistry {
         LifecycleEvent.SETUP.register(MainRegistry::commonSetup);
 
         TickEvent.SERVER_POST.register(server -> {
-            // The move window lives for exactly one tick: pop() from the mixins can be skipped
-            // when another mod cancels the engine method at HEAD.
-            com.hbm_m.multiblock.ContraptionAssemblyGuard.endServerTick();
-
             // 1. Защита от фейковых/недогруженных серверов (Flashback)
             if (server == null) {
                 return; 
@@ -139,17 +138,11 @@ public final class MainRegistry {
 
         LifecycleEvent.SERVER_LEVEL_UNLOAD.register((ServerLevel level) -> {
             com.hbm_m.api.network.UniNodespace.onLevelUnload(level);
-            com.hbm_m.blockentity.network.radio.RTTYNetwork.onLevelUnload(level);
-            com.hbm_m.handler.rbmk.NeutronNodeWorld.removeWorld(level);
-            com.hbm_m.worldgen.StructureConnectionFixProcessor.onLevelUnload(level);
         });
 
         LifecycleEvent.SERVER_STOPPED.register(server -> {
             com.hbm_m.api.network.UniNodespace.onServerStop();
             com.hbm_m.api.fluids.FluidNetProvider.clearAll();
-            com.hbm_m.blockentity.network.radio.RTTYNetwork.onServerStop();
-            com.hbm_m.handler.rbmk.NeutronNodeWorld.removeAllWorlds();
-            com.hbm_m.worldgen.StructureConnectionFixProcessor.onServerStop();
         });
     }
 
@@ -164,13 +157,16 @@ public final class MainRegistry {
         com.hbm_m.event.LungGasHandler.init();
         com.hbm_m.advancement.AchievementHandler.init();
         com.hbm_m.armormod.event.ArmorModTickHandler.init();
-        com.hbm_m.armormod.event.ArmorModificationServerEvents.init();
         com.hbm_m.handler.BossSpawnHandler.init();
         com.hbm_m.config.FalloutConfigJSON.initialize();
         DamageResistanceHandler.initArmorStats();
         com.hbm_m.blockentity.machines.LaunchPadBaseBlockEntity.registerLaunchables();
         com.hbm_m.satellite.Satellite.register();
 
+        // Диагностика загрузки рецептов на 1.21.1 — запускается ПОСЛЕ RegisterEvent.
+        //? if >= 1.21.1 {
+        /*com.hbm_m.recipe.ModRecipes.debugRecipeSerializerRegistry();
+        *///?}
 
         // CentrifugeRecipes.registerRecipes();
         // Рецепты Cyclotron, CrucibleSmelting, MoltenAlloy, ArcWelder и Soldering теперь data-driven (JSON)

@@ -12,12 +12,15 @@ import dev.architectury.platform.Platform;
 import net.minecraft.client.Minecraft;
 
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-*///?} else if neoforge {
-import net.neoforged.api.distmarker.Dist;
+//?} else if neoforge {
+/*import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
-//?}
+*///?} else if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+*///?}
 
 /**
  * Кросс-лоадерный детектор состояния шейдеров Iris/Oculus.
@@ -33,7 +36,9 @@ import net.neoforged.api.distmarker.OnlyIn;
  */
 //? if forge || neoforge {
 @OnlyIn(Dist.CLIENT)
-//?}
+//?} else if fabric {
+/*@Environment(EnvType.CLIENT)
+*///?}
 public class ShaderCompatibilityDetector {
 
     private ShaderCompatibilityDetector() {}
@@ -67,36 +72,36 @@ public class ShaderCompatibilityDetector {
     private static void init() {
         if (initialized) return;
 
-        if (Platform.isModLoaded("oculus") || Platform.isModLoaded("iris")) {
+        try {
+            Class<?> irisApiClass = Class.forName("net.irisshaders.iris.api.v0.IrisApi");
+            Method getInstanceMethod = irisApiClass.getMethod("getInstance");
+            irisApiInstance = getInstanceMethod.invoke(null);
+            irisIsShaderPackInUse = irisApiClass.getMethod("isShaderPackInUse");
+            irisIsRenderingShadowPass = irisApiClass.getMethod("isRenderingShadowPass");
+
+            // MethodHandle bind. Both methods return primitive `boolean`,
+            // so adapt to (Object)boolean so the call sites can invokeExact
+            // without an extra unboxing hop.
             try {
-                Class<?> irisApiClass = Class.forName("net.irisshaders.iris.api.v0.IrisApi");
-                Method getInstanceMethod = irisApiClass.getMethod("getInstance");
-                irisApiInstance = getInstanceMethod.invoke(null);
-                irisIsShaderPackInUse = irisApiClass.getMethod("isShaderPackInUse");
-                irisIsRenderingShadowPass = irisApiClass.getMethod("isRenderingShadowPass");
-
-                // MethodHandle bind. Both methods return primitive `boolean`,
-                // so adapt to (Object)boolean so the call sites can invokeExact
-                // without an extra unboxing hop.
-                try {
-                    MethodHandles.Lookup lookup = MethodHandles.lookup();
-                    irisIsShaderPackInUse.setAccessible(true);
-                    irisIsRenderingShadowPass.setAccessible(true);
-                    irisIsShaderPackInUseMH = lookup.unreflect(irisIsShaderPackInUse)
-                            .asType(MethodType.methodType(boolean.class, Object.class));
-                    irisIsRenderingShadowPassMH = lookup.unreflect(irisIsRenderingShadowPass)
-                            .asType(MethodType.methodType(boolean.class, Object.class));
-                } catch (Throwable mhFail) {
-                    MainRegistry.LOGGER.warn("ShaderCompatibilityDetector: MethodHandle binding failed ({}), using Method.invoke", mhFail.toString());
-                    irisIsShaderPackInUseMH = null;
-                    irisIsRenderingShadowPassMH = null;
-                }
-
-                MainRegistry.LOGGER.info("ShaderCompatibilityDetector: API found and cached (MH={}).",
-                        irisIsShaderPackInUseMH != null);
-            } catch (Exception e) {
-                MainRegistry.LOGGER.error("ShaderCompatibilityDetector: Failed to cache API", e);
+                MethodHandles.Lookup lookup = MethodHandles.lookup();
+                irisIsShaderPackInUse.setAccessible(true);
+                irisIsRenderingShadowPass.setAccessible(true);
+                irisIsShaderPackInUseMH = lookup.unreflect(irisIsShaderPackInUse)
+                        .asType(MethodType.methodType(boolean.class, Object.class));
+                irisIsRenderingShadowPassMH = lookup.unreflect(irisIsRenderingShadowPass)
+                        .asType(MethodType.methodType(boolean.class, Object.class));
+            } catch (Throwable mhFail) {
+                MainRegistry.LOGGER.warn("ShaderCompatibilityDetector: MethodHandle binding failed ({}), using Method.invoke", mhFail.toString());
+                irisIsShaderPackInUseMH = null;
+                irisIsRenderingShadowPassMH = null;
             }
+
+            MainRegistry.LOGGER.info("ShaderCompatibilityDetector: API found and cached (MH={}).",
+                    irisIsShaderPackInUseMH != null);
+        } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
+            // Iris / Oculus not present on classpath
+        } catch (Throwable e) {
+            MainRegistry.LOGGER.error("ShaderCompatibilityDetector: Failed to cache API", e);
         }
         initialized = true;
     }
@@ -179,7 +184,7 @@ public class ShaderCompatibilityDetector {
             if (result && !loggedShadowPassDetected) {
                 loggedShadowPassDetected = true;
                 MainRegistry.LOGGER.info(
-                        "ShaderCompatibilityDetector: Iris shadow pass detected (isRenderingShadowPass=true) — API works on this loader");
+                        "ShaderCompatibilityDetector: Iris shadow pass detected (isRenderingShadowPass=true) - API works on this loader");
             }
             return result;
         } catch (Throwable e) {

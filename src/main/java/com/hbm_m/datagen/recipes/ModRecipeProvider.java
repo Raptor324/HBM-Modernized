@@ -157,6 +157,48 @@ public class ModRecipeProvider extends RecipeProvider {
                 .unlockedBy("has_block_fallout", has(ModBlocks.BLOCK_FALLOUT.get()))
                 .save(pWriter, "fallout_from_block_fallout");
 
+        // Блоки кокса (1.7.10 MineralRecipes.add1To9PairSameMeta: 9 coke ↔ block_coke по вариантам).
+        // 9→1: дефолтный save() даёт id = hbm_m:coal_coke_block; 1→9: явные id — иначе конфликт
+        // с coker-рецептом coal_coke.json.
+        ShapedRecipeBuilder.shaped(net.minecraft.data.recipes.RecipeCategory.MISC, ModBlocks.BLOCK_COAL_COKE.get())
+                .pattern("###")
+                .pattern("###")
+                .pattern("###")
+                .define('#', ModItems.COAL_COKE.get())
+                .unlockedBy("has_coal_coke", has(ModItems.COAL_COKE.get()))
+                .save(pWriter);
+
+        ShapelessRecipeBuilder.shapeless(net.minecraft.data.recipes.RecipeCategory.MISC, ModItems.COAL_COKE.get(), 9)
+                .requires(ModBlocks.BLOCK_COAL_COKE.get())
+                .unlockedBy("has_coal_coke_block", has(ModBlocks.BLOCK_COAL_COKE.get()))
+                .save(pWriter, "hbm_m:coal_coke_from_block");
+
+        ShapedRecipeBuilder.shaped(net.minecraft.data.recipes.RecipeCategory.MISC, ModBlocks.BLOCK_LIGNITE_COKE.get())
+                .pattern("###")
+                .pattern("###")
+                .pattern("###")
+                .define('#', ModItems.LIGNITE_COKE.get())
+                .unlockedBy("has_lignite_coke", has(ModItems.LIGNITE_COKE.get()))
+                .save(pWriter);
+
+        ShapelessRecipeBuilder.shapeless(net.minecraft.data.recipes.RecipeCategory.MISC, ModItems.LIGNITE_COKE.get(), 9)
+                .requires(ModBlocks.BLOCK_LIGNITE_COKE.get())
+                .unlockedBy("has_lignite_coke_block", has(ModBlocks.BLOCK_LIGNITE_COKE.get()))
+                .save(pWriter, "hbm_m:lignite_coke_from_block");
+
+        ShapedRecipeBuilder.shaped(net.minecraft.data.recipes.RecipeCategory.MISC, ModBlocks.BLOCK_PETROLEUM_COKE.get())
+                .pattern("###")
+                .pattern("###")
+                .pattern("###")
+                .define('#', ModItems.COKE_PETROLEUM.get())
+                .unlockedBy("has_coke_petroleum", has(ModItems.COKE_PETROLEUM.get()))
+                .save(pWriter);
+
+        ShapelessRecipeBuilder.shapeless(net.minecraft.data.recipes.RecipeCategory.MISC, ModItems.COKE_PETROLEUM.get(), 9)
+                .requires(ModBlocks.BLOCK_PETROLEUM_COKE.get())
+                .unlockedBy("has_petroleum_coke_block", has(ModBlocks.BLOCK_PETROLEUM_COKE.get()))
+                .save(pWriter, "hbm_m:petroleum_coke_from_block");
+
         ShapedRecipeBuilder.shaped(net.minecraft.data.recipes.RecipeCategory.MISC, ModBlocks.NUCLEAR_FALLOUT.get(), 2)
                 .pattern("##")
                 .define('#', ModItems.FALLOUT.get())

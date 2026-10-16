@@ -60,7 +60,7 @@ public class FallingSellafit extends FallingBlock {
     }
 
     //? if >= 1.21.1 {
-    public static final com.mojang.serialization.MapCodec<FallingSellafit> CODEC = com.mojang.serialization.codecs.RecordCodecBuilder.mapCodec(instance -> 
+    /*public static final com.mojang.serialization.MapCodec<FallingSellafit> CODEC = com.mojang.serialization.codecs.RecordCodecBuilder.mapCodec(instance -> 
         instance.group(
             net.minecraft.core.registries.BuiltInRegistries.BLOCK.byNameCodec().fieldOf("solid_equivalent").forGetter(FallingSellafit::getSolidEquivalent)
         ).apply(instance, FallingSellafit::new)
@@ -70,5 +70,5 @@ public class FallingSellafit extends FallingBlock {
     public com.mojang.serialization.MapCodec<FallingSellafit> codec() {
         return CODEC;
     }
-    //?}
+    *///?}
 }

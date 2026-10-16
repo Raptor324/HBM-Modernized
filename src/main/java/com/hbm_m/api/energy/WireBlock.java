@@ -36,9 +36,9 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import com.hbm_m.capability.ModCapabilities;
 //? if forge {
-/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-*///?}
+//?}
 
 
 public class WireBlock extends BaseEntityBlock {
@@ -72,6 +72,26 @@ public class WireBlock extends BaseEntityBlock {
                     Direction.DOWN, Block.box(5.5, 0, 5.5, 10.5, 5.5, 10.5)
             );
 
+    /**
+     * Кэш форм по битмаске 6 соединений (N/E/S/W/U/D): результат детерминирован per-state,
+     * а Shapes.or на каждый вызов getShape создаёт цепочку объектов в горячем пути коллизий.
+     */
+    private static final VoxelShape[] SHAPES_BY_MASK = new VoxelShape[64];
+
+    private static VoxelShape shapeForMask(int mask) {
+        VoxelShape shape = SHAPES_BY_MASK[mask];
+        if (shape == null) {
+            shape = CORE_SHAPE;
+            for (Direction dir : Direction.values()) {
+                if ((mask & (1 << dir.ordinal())) != 0) {
+                    shape = Shapes.or(shape, ARM_SHAPES.get(dir));
+                }
+            }
+            SHAPES_BY_MASK[mask] = shape;
+        }
+        return shape;
+    }
+
     public WireBlock(Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any()
@@ -87,14 +107,13 @@ public class WireBlock extends BaseEntityBlock {
 
     @Override
     public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
-        VoxelShape shape = CORE_SHAPE;
-        // Мы используем PROPERTIES_MAP, который добавили выше
+        int mask = 0;
         for (Direction dir : Direction.values()) {
             if (pState.getValue(PROPERTIES_MAP.get(dir))) {
-                shape = Shapes.or(shape, ARM_SHAPES.get(dir));
+                mask |= 1 << dir.ordinal();
             }
         }
-        return shape;
+        return shapeForMask(mask);
     }
 
     @Override
@@ -174,19 +193,19 @@ public class WireBlock extends BaseEntityBlock {
         }
 
         //? if forge {
-        /*if (be.getCapability(ModCapabilities.HBM_ENERGY_CONNECTOR, sideFromNeighbor).isPresent()) return true;
+        if (be.getCapability(ModCapabilities.HBM_ENERGY_CONNECTOR, sideFromNeighbor).isPresent()) return true;
         if (be.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER, sideFromNeighbor).isPresent()) return true;
         if (be.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER, sideFromNeighbor).isPresent()) return true;
         return be.getCapability(ForgeCapabilities.ENERGY, sideFromNeighbor).isPresent();
-        *///?} else {
-        if (world instanceof net.minecraft.world.level.Level level) {
+        //?} else {
+        /*if (world instanceof net.minecraft.world.level.Level level) {
             if (level.getCapability(ModCapabilities.HBM_ENERGY_CONNECTOR, neighborPos, neighborState, be, sideFromNeighbor) != null) return true;
             if (level.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER, neighborPos, neighborState, be, sideFromNeighbor) != null) return true;
             if (level.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER, neighborPos, neighborState, be, sideFromNeighbor) != null) return true;
             return level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.BLOCK, neighborPos, neighborState, be, sideFromNeighbor) != null;
         }
         return false;
-        //?}
+        *///?}
     }
 
     public static BooleanProperty getProperty(Direction direction) {
@@ -234,7 +253,7 @@ public class WireBlock extends BaseEntityBlock {
     }
 
     //? if > 1.20.1 {
-    public static final com.mojang.serialization.MapCodec<WireBlock> CODEC = simpleCodec(WireBlock::new);
+    /*public static final com.mojang.serialization.MapCodec<WireBlock> CODEC = simpleCodec(WireBlock::new);
     @Override protected com.mojang.serialization.MapCodec<? extends BaseEntityBlock> codec() { return CODEC; }
-    //?}
+    *///?}
 }

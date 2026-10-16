@@ -14,7 +14,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
-public class MukeWaveParticle extends ParticleNT {
+public class MukeWaveParticle extends ParticleNT implements ReplaceOnRespawn {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             RefStrings.MODID, "textures/particle/shockwave.png");

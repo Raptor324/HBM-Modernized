@@ -56,16 +56,16 @@ public class MovingConveyorItemEntity extends Entity implements ItemSupplier {
     }
 
     //? if < 1.21.1 {
-    /*@Override
-    protected void defineSynchedData() {
-        var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
-    *///?} else {
     @Override
-    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
-        var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
-    //?}
-        defs.define(ITEM, ItemStack.EMPTY);
+    protected void defineSynchedData() {
+        this.entityData.define(ITEM, ItemStack.EMPTY);
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        builder.define(ITEM, ItemStack.EMPTY);
+    }
+    *///?}
 
     @Override
     public ItemStack getItem() {
@@ -91,13 +91,9 @@ public class MovingConveyorItemEntity extends Entity implements ItemSupplier {
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
-        // The original's EntityMovingConveyorObject.hitByEntity only reacts to a player attacker and
-        // never overrides attackEntityFrom, so fire, lava and explosions leave belt cargo alone.
-        // Reacting to every source spilled a whole conveyor line through any hot spot.
-        if (this.level().isClientSide || this.isRemoved() || !(source.getEntity() instanceof Player)) {
-            return false;
+        if (!this.level().isClientSide && !this.isRemoved()) {
+            knockOff();
         }
-        knockOff();
         return true;
     }
 
@@ -134,10 +130,7 @@ public class MovingConveyorItemEntity extends Entity implements ItemSupplier {
                 for (MovingConveyorItemEntity obj : nearby) obj.discard();
                 BlockPos pos = BlockPos.containing(getX(), getY(), getZ());
                 this.level().explode(this, getX(), getY() + 0.125, getZ(), 1.0F, Level.ExplosionInteraction.BLOCK);
-                // The original also requires the entity to be older than 400 ticks before it takes
-                // the belt with it, so a freshly spawned item whose id happens to align with the
-                // 400-tick cram check cannot blow up the line.
-                if (this.tickCount > 400 && this.level().getBlockState(pos).getBlock() instanceof IConveyorBelt) {
+                if (this.level().getBlockState(pos).getBlock() instanceof IConveyorBelt) {
                     this.level().removeBlock(pos, false);
                 }
                 return;

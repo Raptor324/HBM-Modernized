@@ -40,12 +40,12 @@ public final class IrisBufferHelper {
      */
     public static BufferBuilder create(VertexFormat.Mode mode, VertexFormat format, int capacity) {
         //? if < 1.21.1 {
-        /*BufferBuilder buffer = new BufferBuilder(capacity);
+        BufferBuilder buffer = new BufferBuilder(capacity);
         buffer.begin(mode, format);
         return buffer;
-        *///?} else {
-        return new BufferBuilder(new com.mojang.blaze3d.vertex.ByteBufferBuilder(capacity), mode, format);
-        //?}
+        //?} else {
+        /*return new BufferBuilder(new com.mojang.blaze3d.vertex.ByteBufferBuilder(capacity), mode, format);
+        *///?}
     }
 
     /**
@@ -73,8 +73,8 @@ public final class IrisBufferHelper {
             return;
         }
         //? if < 1.21.1 {
-        /*buffer.begin(mode, format);
-        *///?}
+        buffer.begin(mode, format);
+        //?}
     }
 
     /**
@@ -87,16 +87,16 @@ public final class IrisBufferHelper {
         if (format != DefaultVertexFormat.BLOCK && format != DefaultVertexFormat.NEW_ENTITY
                 && format != DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP) {
             //? if < 1.21.1 {
-            /*buffer.begin(mode, format);
-            *///?}
+            buffer.begin(mode, format);
+            //?}
             return;
         }
         if (tryIrisBeginWithoutExtending(buffer, mode, format)) {
             return;
         }
         //? if < 1.21.1 {
-        /*buffer.begin(mode, format);
-        *///?}
+        buffer.begin(mode, format);
+        //?}
     }
 
     private static int getGlMode(VertexFormat.Mode mode) {

@@ -24,7 +24,11 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-import com.hbm_m.api.item.ItemHandlerAccess;
+//? if forge {
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.ItemHandlerHelper;
+//?}
 
 /**
  * Crane Router - Port von {@code CraneRouter}/{@code TileEntityCraneRouter} (1.7.10 Original).
@@ -35,7 +39,7 @@ import com.hbm_m.api.item.ItemHandlerAccess;
  * gibt es keine Treffer, greifen WILDCARD-Seiten als Fallback; ansonsten faellt das Item einfach
  * an Ort und Stelle herunter - 1:1 aus dem Original ({@code CraneRouter.getOutputDir}).
  */
-public class MachineCraneRouterBlockEntity extends BaseMachineBlockEntity implements IEnterableBlock {
+public class MachineCraneRouterBlockEntity extends BaseMachineBlockEntity implements IEnterableBlock, com.hbm_m.interfaces.IControlReceiverFilter {
 
     public static final int SLOTS_PER_SIDE = 5;
     public static final int SIDE_COUNT = 6;
@@ -120,11 +124,17 @@ public class MachineCraneRouterBlockEntity extends BaseMachineBlockEntity implem
             return;
         }
 
-        // Was forge-only with no NeoForge counterpart: on 1.21.1 the router dropped everything on
-        // the floor instead of pushing it into the inventory on that side.
-        ItemStack remainder = ItemHandlerAccess.insert(level, targetPos, dir.getOpposite(), stack, false);
-        if (remainder.isEmpty()) return;
-        stack = remainder;
+        //? if forge {
+        BlockEntity targetBe = level.getBlockEntity(targetPos);
+        if (targetBe != null) {
+            IItemHandler handler = targetBe.getCapability(ForgeCapabilities.ITEM_HANDLER, dir.getOpposite()).orElse(null);
+            if (handler != null) {
+                ItemStack remainder = ItemHandlerHelper.insertItem(handler, stack, false);
+                if (remainder.isEmpty()) return;
+                stack = remainder;
+            }
+        }
+        //?}
 
         ItemEntity drop = new ItemEntity(level, targetPos.getX() + 0.5, targetPos.getY() + 0.5, targetPos.getZ() + 0.5, stack);
         level.addFreshEntity(drop);
@@ -138,7 +148,6 @@ public class MachineCraneRouterBlockEntity extends BaseMachineBlockEntity implem
     public void nextTargetMode(int side) {
         modes[side] = (modes[side] + 1) % 4;
         setChanged();
-        sendUpdateToClient();
     }
 
     public void nextFilterMode(int index) {
@@ -146,7 +155,6 @@ public class MachineCraneRouterBlockEntity extends BaseMachineBlockEntity implem
         int slot = index % SLOTS_PER_SIDE;
         patterns[side].nextMode(slot);
         setChanged();
-        sendUpdateToClient();
     }
 
     public void initPattern(int index, ItemStack stack) {
@@ -176,6 +184,37 @@ public class MachineCraneRouterBlockEntity extends BaseMachineBlockEntity implem
         }
         int[] loaded = tag.getIntArray("modes");
         if (loaded.length == SIDE_COUNT) System.arraycopy(loaded, 0, modes, 0, SIDE_COUNT);
+    }
+
+    // ── Устройство настройки: фильтры сторон + режимы (оригинал CraneRouter) ──
+
+    @Override
+    public int[] getFilterSlots() {
+        return new int[] { 0, INVENTORY_SIZE };
+    }
+
+    @Override
+    public void nextMode(int i) {
+        nextFilterMode(i);
+    }
+
+    @Override
+    public CompoundTag getSettings(Level level, BlockPos pos) {
+        CompoundTag nbt = com.hbm_m.interfaces.IControlReceiverFilter.super.getSettings(level, pos);
+        nbt.putIntArray("modes", modes);
+        return nbt;
+    }
+
+    @Override
+    public void pasteSettings(CompoundTag nbt, int index, Level level, net.minecraft.world.entity.player.Player player, BlockPos pos) {
+        // Слоты фильтра + nextMode — из default IControlReceiverFilter.
+        com.hbm_m.interfaces.IControlReceiverFilter.super.pasteSettings(nbt, index, level, player, pos);
+        int[] loaded = nbt.getIntArray("modes");
+        if (loaded.length == SIDE_COUNT) {
+            System.arraycopy(loaded, 0, modes, 0, SIDE_COUNT);
+            setChanged();
+            sendUpdateToClient();
+        }
     }
 
     // ── Slot validation / Menu ─────────────────────────────────────────────

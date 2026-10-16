@@ -45,6 +45,7 @@ public class NukeCustomBlock extends NukeBaseBlock implements IBomb {
         if (level.isClientSide) return BombReturnCode.UNDEFINED;
         if (level.getBlockEntity(pos) instanceof NukeCustomBlockEntity nuke && nuke.isReady()) {
             CustomNukeExplosion.Yields yields = CustomNukeExplosion.computeYields(nuke.slots);
+            Containers.dropContents(level, pos, nuke);
             nuke.clearContent();
             level.setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
             if (level instanceof ServerLevel server) {
@@ -57,7 +58,7 @@ public class NukeCustomBlock extends NukeBaseBlock implements IBomb {
     }
 
     //? if > 1.20.1 {
-    public static final com.mojang.serialization.MapCodec<NukeCustomBlock> CODEC = simpleCodec(NukeCustomBlock::new);
+    /*public static final com.mojang.serialization.MapCodec<NukeCustomBlock> CODEC = simpleCodec(NukeCustomBlock::new);
     @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.Block> codec() { return CODEC; }
-     //?}
+     *///?}
 }

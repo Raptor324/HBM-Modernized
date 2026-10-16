@@ -41,22 +41,26 @@ public class GigaDetBlock extends Block implements IDetonatable {
     }
 
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public void appendHoverText(ItemStack stack,
                                 @Nullable BlockGetter level,
                                 List<Component> tooltip,
                                 TooltipFlag flag) {
-    *///?} else {
-    @Override
-    public void appendHoverText(ItemStack stack,
-                                net.minecraft.world.item.Item.TooltipContext level,
-                                List<Component> tooltip,
-                                TooltipFlag flag) {
-    //?}
         tooltip.add(Component.translatable("tooltip.hbm_m.gigadet.line1")
                 .withStyle(ChatFormatting.GRAY));
 
     }
+    //?} else {
+    /*@Override
+    public void appendHoverText(ItemStack stack,
+                                net.minecraft.world.item.Item.TooltipContext level,
+                                List<Component> tooltip,
+                                TooltipFlag flag) {
+        tooltip.add(Component.translatable("tooltip.hbm_m.gigadet.line1")
+                .withStyle(ChatFormatting.GRAY));
+
+    }
+    *///?}
 
     @Override
     public boolean onDetonate(Level level, BlockPos pos, BlockState state, Player player) {

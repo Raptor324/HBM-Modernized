@@ -37,7 +37,7 @@ public class FluidTankModePacket implements C2SPacket {
             if (!(context.getPlayer() instanceof ServerPlayer player)) return;
 
             ServerLevel level = player.serverLevel();
-            BlockEntity be    = ModPacketHandler.blockEntityAt(player, msg.pos);
+            BlockEntity be    = level.getBlockEntity(msg.pos);
 
             if (be instanceof MachineFluidTankBlockEntity fluidTank) {
                 fluidTank.handleModeButton();

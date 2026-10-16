@@ -1,19 +1,19 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import com.hbm_m.inventory.fluid.ModFluids;
+import com.hbm_m.inventory.fluid.ModFluids;
 
 import dev.architectury.fluid.FluidStack;
 import net.minecraft.data.recipes.FinishedRecipe;
 
 import java.util.function.Consumer;
 
-/^*
+/**
  * Генератор JSON-рецептов промышленного миксера ({@code hbm_m:mixer}).
  *
  * <p>Порт 4 рецептов из удалённого статического {@code MixerRecipes} (static-блок).
  * Жидкостные стаки создаются через {@link FluidStack#create} из {@link ModFluids} (mB).
  * Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.</p>
- ^/
+ */
 public final class MixerRecipeGenerator {
 
     private MixerRecipeGenerator() {}
@@ -57,4 +57,4 @@ public final class MixerRecipeGenerator {
         return FluidStack.create(entry.getSource(), (long) amountMb);
     }
 }
-*///?}
+//?}

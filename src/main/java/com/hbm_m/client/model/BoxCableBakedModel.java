@@ -24,12 +24,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-/*import net.minecraftforge.client.ChunkRenderTypeSet;
+import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.model.data.ModelData;
-*///?} else if neoforge {
-import net.neoforged.neoforge.client.ChunkRenderTypeSet;
+//?} else if neoforge {
+/*import net.neoforged.neoforge.client.ChunkRenderTypeSet;
 import net.neoforged.neoforge.client.model.data.ModelData;
-//?}
+*///?}
 
 /**
  * Порт RenderBoxDuct (1.7.10) для PowerCableBox: короб рисуется КАК НЕСКОЛЬКО боксов —

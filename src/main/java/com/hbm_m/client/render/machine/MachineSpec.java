@@ -22,22 +22,31 @@ import net.minecraft.world.level.block.entity.BlockEntity;
  */
 public final class MachineSpec<T extends BlockEntity> {
 
-    /** Описание одной части. {@code name} — уникальный ключ; {@code modelPartName} — имя части модели. */
+    /**
+     * Описание одной части. {@code name} — уникальный ключ; {@code modelPartName} — имя части модели.
+     *
+     * <p>{@code animated} — признак АНИМИРОВАННОГО КОНТЕНТА (руки, шестерни, слайдеры):
+     * такие части гаснут/скипаются по дистанции {@code modelUpdateDistance}.
+     * Аниматор без анимации (легаси-офсеты запечки) — НЕ анимированная часть: она
+     * обязана жить до статической отсечки, см. {@link MachineSpecBuilder#staticPart}.
+     */
     record PartDef<T extends BlockEntity>(
             String name,
             String modelPartName,
-            @Nullable PartAnimator<T> animator,      // null = статическая
+            @Nullable PartAnimator<T> animator,      // null = трансформ не нужен
             @Nullable QuadResolver<T> dynamicQuads,  // null = брать часть модели по имени
             @Nullable Function<T, String> dynamicCacheKey,
             int boneId,                               // 0 = не bone-часть; 1..N = chain-группа
-            String staticCacheKey                     // предвычисленный "id/name" — без String-аллокаций в hot path
+            boolean animated,                         // гейт по modelUpdateDistance
+            String staticCacheKey,                    // предвычисленный "id/name" — без String-аллокаций в hot path
+            @Nullable Function<T, Integer> lightOverride // null/-1 = свет мира; >=0 = форсированный packedLight (fullbright)
     ) {
         boolean dynamic() { return dynamicQuads != null; }
-        boolean animated() { return animator != null; }
     }
 
     final String id;
     final Class<T> beClass;
+    final net.minecraft.world.level.block.entity.BlockEntityType<T> type;
     final Function<T, BakedModel> modelResolver;
     final Function<T, Direction> facingResolver;
     final List<PartDef<T>> parts;
@@ -47,15 +56,28 @@ public final class MachineSpec<T extends BlockEntity> {
     final long lightSampleKey;
     @Nullable final MachineSpecBuilder.BlockTransform<T> blockTransform; // null = дефолтный setupBlockTransform
 
+    // Конфиг multipart-модели (ConfiguredMultipartBakedModel), вливается в инстанс
+    // в конце запекания моделей (MachineRenderRegistry.bindBakedModels).
+    /** Части item-рендера; null = все части модели. */
+    final @Nullable List<String> itemParts;
+    /** Исключения из item-рендера; применяется после itemParts (когда та null). */
+    final @Nullable List<String> itemExcept;
+    /** Render types чанк-пасса (forge getRenderTypes); null = дефолт. */
+    final @Nullable List<net.minecraft.client.renderer.RenderType> chunkRenderTypes;
+
     // Runtime: full cache key → GPU-держатель части. Кешируется между кадрами.
     private final Map<String, MachinePartRenderer> partRenderers = new ConcurrentHashMap<>();
 
-    MachineSpec(String id, Class<T> beClass, Function<T, BakedModel> modelResolver,
+    MachineSpec(String id, Class<T> beClass, net.minecraft.world.level.block.entity.BlockEntityType<T> type,
+                Function<T, BakedModel> modelResolver,
                 Function<T, Direction> facingResolver, List<PartDef<T>> parts,
                 List<MachineRenderHook<T>> hooks, int viewDistance,
-                @Nullable MachineSpecBuilder.BlockTransform<T> blockTransform) {
+                @Nullable MachineSpecBuilder.BlockTransform<T> blockTransform,
+                @Nullable List<String> itemParts, @Nullable List<String> itemExcept,
+                @Nullable List<net.minecraft.client.renderer.RenderType> chunkRenderTypes) {
         this.id = id;
         this.beClass = beClass;
+        this.type = type;
         this.modelResolver = modelResolver;
         this.facingResolver = facingResolver;
         this.parts = List.copyOf(parts);
@@ -63,6 +85,37 @@ public final class MachineSpec<T extends BlockEntity> {
         this.viewDistance = viewDistance;
         this.lightSampleKey = (0x4D4143484C534B4FL) ^ (id.hashCode() * 0x9E3779B97F4A7C15L);
         this.blockTransform = blockTransform;
+        this.itemParts = itemParts == null ? null : List.copyOf(itemParts);
+        this.itemExcept = itemExcept == null ? null : List.copyOf(itemExcept);
+        this.chunkRenderTypes = chunkRenderTypes == null ? null : List.copyOf(chunkRenderTypes);
+    }
+
+    net.minecraft.world.level.block.entity.BlockEntityType<T> type() { return type; }
+    @Nullable List<String> itemParts() { return itemParts; }
+    @Nullable List<String> itemExcept() { return itemExcept; }
+    @Nullable List<net.minecraft.client.renderer.RenderType> chunkRenderTypes() { return chunkRenderTypes; }
+
+    /**
+     * Итоговый список частей item-рендера. Явный {@code itemParts} побеждает;
+     * по умолчанию — НЕ-динамические части спеки (то, что BER рисует статикой
+     * и анимацией), минус {@code itemExcept}. Динамические части (пер-BE
+     * геометрия: уровни жидкости, условная рама) и вообще необъявленные
+     * (мусорные группы OBJ) в item не попадают.
+     */
+    List<String> deriveItemParts() {
+        if (itemParts != null) {
+            return itemParts;
+        }
+        List<String> out = new ArrayList<>();
+        for (PartDef<?> p : parts) {
+            if (!p.dynamic() && !out.contains(p.modelPartName())) {
+                out.add(p.modelPartName());
+            }
+        }
+        if (itemExcept != null) {
+            out.removeIf(itemExcept::contains);
+        }
+        return out;
     }
 
     @Nullable MachineSpecBuilder.BlockTransform<T> blockTransform() { return blockTransform; }
@@ -156,6 +209,26 @@ public final class MachineSpec<T extends BlockEntity> {
     void flush(Matrix4f projection) {
         for (MachinePartRenderer r : partRenderers.values()) {
             r.flush(projection);
+        }
+    }
+
+    /** Фаза 2 (после MDI): затухающие инстансы прямых путей — см. InstancedRenderFrame.
+     *  Окна рендереров сортируются по дальнему fading-инстансу (back-to-front глобально):
+     *  fading идёт с depth-write, несортированный порядок окон depth-reject'ил бы
+     *  дальние машины за ближними. */
+    void flushFading(Matrix4f projection) {
+        if (partRenderers.isEmpty()) {
+            return;
+        }
+        List<MachinePartRenderer> fading = new ArrayList<>(partRenderers.size());
+        for (MachinePartRenderer r : partRenderers.values()) {
+            if (r.fadingSortKeyDistSq() >= 0f) {
+                fading.add(r);
+            }
+        }
+        fading.sort((a, b) -> Float.compare(b.fadingSortKeyDistSq(), a.fadingSortKeyDistSq()));
+        for (MachinePartRenderer r : fading) {
+            r.flushFading(projection);
         }
     }
 

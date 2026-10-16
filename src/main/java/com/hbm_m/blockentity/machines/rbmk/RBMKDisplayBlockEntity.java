@@ -103,9 +103,7 @@ public class RBMKDisplayBlockEntity extends RBMKPanelDeviceBlockEntity {
                 int      ri   = x - GRID_HALF, rj = z - GRID_HALF;
                 BlockPos cPos = target.offset(rotatedX(ri, rj), 0, rotatedZ(ri, rj));
 
-                // Same 15x15 sweep as MachineRbmkConsoleBlockEntity.scanReactor, around a target
-                // read from NBT: without the guard it loads chunks off a persisted position.
-                if (com.hbm_m.util.Compat.getTileStandard(level, cPos) instanceof RBMKColumnBlockEntity col) {
+                if (level.getBlockEntity(cPos) instanceof RBMKColumnBlockEntity col) {
                     CompoundTag d = col.getNBTForConsole();
                     d.putDouble("heat", col.heat);
                     d.putDouble("maxHeat", col.maxHeat());
@@ -156,15 +154,29 @@ public class RBMKDisplayBlockEntity extends RBMKPanelDeviceBlockEntity {
         syncToClient();
     }
 
+    //? if < 1.21.1 {
     @Override
-    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.writeNbtData(tag, registries);
+    protected void saveAdditional(CompoundTag tag) {
+        super.saveAdditional(tag);
         saveDisplay(tag);
     }
 
     @Override
-    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.readNbtData(tag, registries);
+    public void load(CompoundTag tag) {
+        super.load(tag);
         loadDisplay(tag);
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
+        saveDisplay(tag);
+    }
+
+    @Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
+        loadDisplay(tag);
+    }
+    *///?}
 }

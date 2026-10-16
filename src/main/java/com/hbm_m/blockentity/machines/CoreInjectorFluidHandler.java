@@ -1,19 +1,19 @@
 package com.hbm_m.blockentity.machines;
 
 //? if forge {
-/*import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
-/^*
+/**
  * Forge-Fluid-Capability-Bruecke fuer den Core Injector: Tank 0 = Deuterium, Tank 1 = Tritium
  * (1:1 aus {@code TileEntityCoreInjector.tanks}). Erlaubt es Pumpen/Roehren, die beiden Tanks von
  * aussen zu befuellen; die eigentliche Weitergabe an ein Ziel entlang des Strahls erledigt
  * {@link MachineCoreInjectorBlockEntity#tick}.
- ^/
+ */
 public class CoreInjectorFluidHandler implements IFluidHandler {
 
     private final MachineCoreInjectorBlockEntity blockEntity;
@@ -100,4 +100,4 @@ public class CoreInjectorFluidHandler implements IFluidHandler {
         return FluidStack.EMPTY;
     }
 }
-*///?}
+//?}

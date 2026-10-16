@@ -183,12 +183,12 @@ public abstract class EntityWormBase extends PathfinderMob {
     @Override protected float getSoundVolume()               { return 5.0F; }
 
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     protected float getStandingEyeHeight(@NotNull net.minecraft.world.entity.Pose pose,
                                          @NotNull net.minecraft.world.entity.EntityDimensions size) {
         return size.height * 0.5F;
     }
-    *///?}
+    //?}
     // Auf 1.21 gibt es getStandingEyeHeight nicht mehr - die Augenhoehe kommt aus EntityDimensions.
 
     protected boolean isCourseTraversable() {

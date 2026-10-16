@@ -21,10 +21,12 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
 
 //? if forge {
-/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
 *///?} elif neoforge {
-@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-//?}
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class MeshRenderCache {
 
     private static final int MAX_CACHE_SIZE = 256;
@@ -78,8 +80,24 @@ public class MeshRenderCache {
     }
 
     public static List<BakedQuad> getOrCompile(Class<?> modelClass, String partName, BakedModel modelPart) {
-        String cacheKey = modelClass.getSimpleName() + ":" + partName;
-        return getOrCompile(cacheKey, modelPart);
+        return getOrCompile(classKey(modelClass, partName), modelPart);
+    }
+
+    /**
+     * Интернированные ключи "class:part" / "entity:part": пары конечны, а конкатенация
+     * на каждый кадр создавала две новые строки на часть перед каждым lookup.
+     */
+    private static final ConcurrentHashMap<Class<?>, ConcurrentHashMap<String, String>> CLASS_KEY_CACHE = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, ConcurrentHashMap<String, String>> OWNER_KEY_CACHE = new ConcurrentHashMap<>();
+
+    private static String classKey(Class<?> owner, String partName) {
+        return CLASS_KEY_CACHE.computeIfAbsent(owner, c -> new ConcurrentHashMap<>())
+                .computeIfAbsent(partName, p -> owner.getSimpleName() + ":" + p);
+    }
+
+    private static String ownerKey(String owner, String partName) {
+        return OWNER_KEY_CACHE.computeIfAbsent(owner, c -> new ConcurrentHashMap<>())
+                .computeIfAbsent(partName, p -> owner + ":" + p);
     }
 
     /**
@@ -126,22 +144,19 @@ public class MeshRenderCache {
     }
 
     public static List<BakedQuad> getOrCompile(String entityType, String partName, BakedModel modelPart) {
-        String cacheKey = entityType + ":" + partName;
-        return getOrCompile(cacheKey, modelPart);
+        return getOrCompile(ownerKey(entityType, partName), modelPart);
     }
 
     public static PartGeometry getOrCompilePartGeometry(String entityType, String partName, BakedModel modelPart) {
-        return getOrCompilePartGeometry(entityType + ":" + partName, modelPart);
+        return getOrCompilePartGeometry(ownerKey(entityType, partName), modelPart);
     }
 
     public static VertexBuffer getOrCreateGPUBuffer(String entityType, String partName, BakedModel modelPart) {
-        String cacheKey = entityType + ":" + partName;
-        return getOrCreateGPUBuffer(cacheKey, modelPart);
+        return getOrCreateGPUBuffer(ownerKey(entityType, partName), modelPart);
     }
 
     public static SingleMeshVboRenderer getOrCreateRenderer(String entityType, String partName, BakedModel model) {
-        String partKey = entityType + ":" + partName;
-        return getOrCreateRenderer(partKey, model);
+        return getOrCreateRenderer(ownerKey(entityType, partName), model);
     }
 
     private static String partNameFromKey(String cacheKey) {
@@ -162,18 +177,18 @@ public class MeshRenderCache {
         }
 
         //? if < 1.21.1 {
-        /*BufferBuilder.RenderedBuffer renderedBuffer = builder.end();
+        BufferBuilder.RenderedBuffer renderedBuffer = builder.end();
         VertexBuffer vbo = new VertexBuffer(VertexBuffer.Usage.STATIC);
         vbo.bind();
         vbo.upload(renderedBuffer);
         VertexBuffer.unbind();
-        *///?} else {
-        com.mojang.blaze3d.vertex.MeshData renderedBuffer = builder.buildOrThrow();
+        //?} else {
+        /*com.mojang.blaze3d.vertex.MeshData renderedBuffer = builder.buildOrThrow();
         VertexBuffer vbo = new VertexBuffer(VertexBuffer.Usage.STATIC);
         vbo.bind();
         vbo.upload(renderedBuffer);
         VertexBuffer.unbind();
-        //?}
+        *///?}
 
         return vbo;
     }

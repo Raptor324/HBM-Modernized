@@ -20,7 +20,11 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-import com.hbm_m.api.item.ItemHandlerAccess;
+//? if forge {
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.ItemHandlerHelper;
+//?}
 
 /**
  * Crane Inserter - Port von {@code TileEntityCraneInserter} (1.7.10 Original). 21-Slot-Puffer, der
@@ -58,18 +62,16 @@ public class MachineCraneInserterBlockEntity extends BaseMachineBlockEntity impl
         BlockEntity target = level.getBlockEntity(targetPos);
         if (target == null) return;
 
-        // This used to sit in a forge-only Stonecutter branch with no NeoForge counterpart, so on
-        // 1.21.1 the inserter never inserted anything at all. ItemHandlerAccess resolves the
-        // handler on both platforms; var infers the platform's own IItemHandler type.
-        Direction accessSide = outputSide.getOpposite();
-        if (ItemHandlerAccess.getItemHandler(level, targetPos, accessSide) == null) return;
+        //? if forge {
+        IItemHandler handler = target.getCapability(ForgeCapabilities.ITEM_HANDLER, outputSide.getOpposite()).orElse(null);
+        if (handler == null) return;
 
         boolean didSomething = false;
         for (int i = 0; i < INVENTORY_SIZE && !didSomething; i++) {
             ItemStack stack = inventory.getStackInSlot(i);
             if (stack.isEmpty()) continue;
 
-            ItemStack remainder = ItemHandlerAccess.insert(level, targetPos, accessSide, stack.copy(), false);
+            ItemStack remainder = ItemHandlerHelper.insertItem(handler, stack.copy(), false);
             if (remainder.getCount() != stack.getCount()) {
                 inventory.setStackInSlot(i, remainder);
                 didSomething = true;
@@ -84,16 +86,17 @@ public class MachineCraneInserterBlockEntity extends BaseMachineBlockEntity impl
 
                 ItemStack single = stack.copy();
                 single.setCount(1);
-                if (ItemHandlerAccess.insert(level, targetPos, accessSide, single, false).isEmpty()) {
+                ItemStack remainder = ItemHandlerHelper.insertItem(handler, single, false);
+                if (remainder.isEmpty()) {
                     stack.shrink(1);
                     if (stack.isEmpty()) inventory.setStackInSlot(i, ItemStack.EMPTY);
-                    didSomething = true;
                     break;
                 }
             }
         }
+        //?}
 
-        if (didSomething) setChanged();
+        setChanged();
     }
 
     // ── IEnterableBlock ──────────────────────────────────────────────────────
@@ -139,7 +142,7 @@ public class MachineCraneInserterBlockEntity extends BaseMachineBlockEntity impl
     // ── Toggle ───────────────────────────────────────────────────────────────
 
     public boolean isDestroyer() { return destroyer; }
-    public void toggleDestroyer() { destroyer = !destroyer; setChanged(); sendUpdateToClient(); }
+    public void toggleDestroyer() { destroyer = !destroyer; setChanged(); }
 
     // ── NBT ─────────────────────────────────────────────────────────────────
 

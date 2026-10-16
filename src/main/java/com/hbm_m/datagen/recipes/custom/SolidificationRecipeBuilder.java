@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import com.google.gson.JsonObject;
+import com.google.gson.JsonObject;
 import com.hbm_m.recipe.SolidificationRecipe;
 
 import dev.architectury.fluid.FluidStack;
@@ -8,7 +8,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
-/^*
+/**
  * Datagen-билдер {@link SolidificationRecipe} ({@code hbm_m:solidification}).
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.</p>
@@ -21,7 +21,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
  *   "result": { "item": "hbm_m:solid_fuel", "count": 1 }
  * }
  * }</pre>
- ^/
+ */
 public class SolidificationRecipeBuilder extends BaseRecipeBuilder<SolidificationRecipeBuilder> {
 
     private final FluidStack input;
@@ -52,4 +52,4 @@ public class SolidificationRecipeBuilder extends BaseRecipeBuilder<Solidificatio
         return SolidificationRecipe.Serializer.INSTANCE;
     }
 }
-*///?}
+//?}

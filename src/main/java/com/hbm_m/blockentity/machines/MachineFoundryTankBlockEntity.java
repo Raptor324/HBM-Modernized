@@ -25,13 +25,17 @@ import java.util.List;
  * a foundry channel), or equalizes/swaps amounts with an adjacent tank - 1:1 with the original's
  * three-tier fallback.
  */
-public class MachineFoundryTankBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements ICrucibleAcceptor {
+public class MachineFoundryTankBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements ICrucibleAcceptor, com.hbm_m.interfaces.ICopiable {
 
     public static final int CAPACITY = MaterialStack.BUCKET * 4;
 
     @Nullable public MaterialType type = null;
     public int amount = 0;
     private int nextUpdate = 0;
+
+    /** Sync-поля рендера расплава (аналог fillLevel/fillColor бассейна). */
+    private float fillLevel = 0f;
+    private int   fillColor = 0;
 
     public MachineFoundryTankBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.FOUNDRY_TANK_BE.get(), pos, state);
@@ -41,11 +45,12 @@ public class MachineFoundryTankBlockEntity extends com.hbm_m.blockentity.BaseHbm
         if (level.isClientSide) return;
 
         if (be.type == null && be.amount != 0) be.amount = 0;
+        // Sync полей рендера в начале тика: покрывает загрузку чанка и сброс в ноль.
+        be.updateRenderSync(level);
 
         be.nextUpdate--;
         if (be.nextUpdate > 0 || be.amount <= 0 || be.type == null) return;
         be.nextUpdate = level.random.nextInt(6) + 5;
-
         boolean hasOp = false;
 
         // 1) drain down into a tank directly below
@@ -56,6 +61,7 @@ public class MachineFoundryTankBlockEntity extends com.hbm_m.blockentity.BaseHbm
                 be.amount -= toFill;
                 below.amount += toFill;
                 below.setChanged();
+                below.updateRenderSync(level);
                 hasOp = true;
             }
         }
@@ -105,11 +111,31 @@ public class MachineFoundryTankBlockEntity extends com.hbm_m.blockentity.BaseHbm
                     }
                 }
                 neighbor.setChanged();
+                neighbor.updateRenderSync(level);
             }
         }
 
         be.setChanged();
+        be.updateRenderSync(level);
     }
+
+    /**
+     * Пересчитать sync-поля рендера расплава; при изменении — обновить клиента
+     * (тот же паттерн, что у fillLevel/fillColor бассейна).
+     */
+    private void updateRenderSync(Level level) {
+        float nf = type != null && amount > 0 ? Math.min(1f, (float) amount / CAPACITY) : 0f;
+        int nc = type != null && amount > 0 ? 0xFF000000 | type.color : 0;
+        if (fillLevel != nf || fillColor != nc) {
+            fillLevel = nf;
+            fillColor = nc;
+            setChanged();
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
+    }
+
+    public float getFillLevel() { return fillLevel; }
+    public int getFillColor() { return fillColor; }
 
     private static <T> void shuffle(List<T> list, net.minecraft.util.RandomSource random) {
         for (int i = list.size() - 1; i > 0; i--) {
@@ -137,6 +163,7 @@ public class MachineFoundryTankBlockEntity extends com.hbm_m.blockentity.BaseHbm
         amount += toAdd;
         stack.amount -= toAdd;
         setChanged();
+        updateRenderSync(level);
         return stack.amount > 0 ? stack : null;
     }
 
@@ -159,5 +186,17 @@ public class MachineFoundryTankBlockEntity extends com.hbm_m.blockentity.BaseHbm
         amount = tag.getInt("mat_amount");
         nextUpdate = tag.getInt("nextUpdate");
     }
+
+    /* ── Устройство настройки: копия металла как matFilter, вставка пустая (оригинал) ── */
+
+    @Override
+    public CompoundTag getSettings(Level level, BlockPos pos) {
+        CompoundTag nbt = new CompoundTag();
+        if (type != null) nbt.putIntArray("matFilter", new int[]{ type.id });
+        return nbt;
+    }
+
+    @Override
+    public void pasteSettings(CompoundTag nbt, int index, Level level, net.minecraft.world.entity.player.Player player, BlockPos pos) { }
 
 }

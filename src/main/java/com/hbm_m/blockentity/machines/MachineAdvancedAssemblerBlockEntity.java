@@ -42,19 +42,29 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fml.DistExecutor;
-*///?}
-//? if neoforge {
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 //?}
+//? if neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
+import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+import team.reborn.energy.api.EnergyStorage;
+import com.hbm_m.client.machine.AdvancedAssemblerClientTicker;
+import com.hbm_m.platform.PlatformHooks;
+*///?}
 /**
  * Advanced Assembler Block Entity:
  * - Наследование от BaseMachineBlockEntity
@@ -186,9 +196,9 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     @Override
     protected void setupFluidCapability() {
         //? if forge {
-        /*// Экспонируем входной бак (inputTank) через базовый fluidHandlerOpt.
+        // Экспонируем входной бак (inputTank) через базовый fluidHandlerOpt.
         setFluidHandler(inputTank);
-        *///?}
+        //?}
     }
 
     // Ограничиваем валидность слотов
@@ -425,7 +435,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         }
 
         //? if forge {
-        /*energySourceStack.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY).ifPresent(itemEnergy -> {
+        energySourceStack.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY).ifPresent(itemEnergy -> {
             long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
             if (energyNeeded <= 0) return;
 
@@ -437,11 +447,29 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
                 setChanged();
             }
         });
+        //?}
+
+        //? if fabric {
+        /*var itemEnergy = EnergyStorage.ITEM.find(energySourceStack, null);
+        if (itemEnergy == null) return;
+
+        long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
+        if (energyNeeded <= 0) return;
+
+        long maxTransfer = Math.min(energyNeeded, this.getReceiveSpeed());
+        if (maxTransfer <= 0) return;
+
+        try (Transaction tx = Transaction.openOuter()) {
+            long extracted = itemEnergy.extract(maxTransfer, tx);
+            if (extracted > 0) {
+                setEnergyStored(getEnergyStored() + extracted);
+                tx.commit();
+            }
+        }
         *///?}
 
-
         //? if neoforge {
-        var itemEnergy = energySourceStack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM);
+        /*var itemEnergy = energySourceStack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM);
         if (itemEnergy == null) return;
 
         long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
@@ -455,7 +483,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             this.setEnergyStored(this.getEnergyStored() + extracted);
             setChanged();
         }
-        //?}
+        *///?}
     }
 
     // Рецепты и ghost-предметы
@@ -668,7 +696,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
     // Capability: используем базовые item/energy/fluids, плюс локальные хэндлеры флюидов
     //? if forge {
-    /*@Override
+    @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.ITEM_HANDLER) {
             return itemHandler.cast();
@@ -698,8 +726,21 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         // FLUID_HANDLER для разрешённых сторон отдаёт базовый fluidHandlerOpt (см. setupFluidCapability).
         return super.getCapability(cap, side);
     }
-    *///?}
+    //?}
 
+    //? if fabric {
+    /*@Nullable
+    public Storage<FluidVariant> getFluidStorage(@Nullable Direction side) {
+        if (side != null) {
+            if (fluidSidesFromMultiblockStructure) {
+                if (!allowedFluidSides.contains(side)) return null;
+            } else if (!allowedFluidSides.isEmpty() && !allowedFluidSides.contains(side)) return null;
+        }
+        // По умолчанию: вниз = вход, вверх = выход, иначе вход
+        if (side == Direction.UP) return outputTank.getStorage();
+        return inputTank.getStorage();
+    }
+    *///?}
 
     @Override
     public void setAllowedEnergySides(java.util.Set<Direction> sides) {
@@ -749,21 +790,21 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public void onLoad() {
         super.onLoad();
         if (level != null && !level.isClientSide && assemblerModule == null) {
             this.assemblerModule = new MachineModuleAdvancedAssembler(0, this, this.inventory, this.level);
         }
     }
-    *///?}
+    //?}
 
     //? if forge {
-    /*@Override
+    @Override
     public void invalidateCaps() {
         super.invalidateCaps();
     }
-    *///?}
+    //?}
 
     @Override
     public void setRemoved() {
@@ -773,6 +814,53 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         super.setRemoved();
     }
 
+    //? if fabric {
+    /*@Environment(EnvType.CLIENT)
+    public float getRingAngle() {
+        return clientTicker != null ? clientTicker.getRingAngle() : 0;
+    }
+
+    @Environment(EnvType.CLIENT)
+    public float getPrevRingAngle() {
+        return clientTicker != null ? clientTicker.getPrevRingAngle() : 0;
+    }
+
+    @Environment(EnvType.CLIENT)
+    public AdvancedAssemblerClientTicker.AssemblerArm[] getArms() {
+        return clientTicker != null ? clientTicker.getArms() : new AdvancedAssemblerClientTicker.AssemblerArm[0];
+    }
+
+    @Environment(EnvType.CLIENT)
+    @Nullable
+    private ResourceLocation clientRecipeIconCacheId;
+
+    @Environment(EnvType.CLIENT)
+    private ItemStack clientRecipeIconCache = ItemStack.EMPTY;
+
+    @Environment(EnvType.CLIENT)
+    public ItemStack getClientRecipeIcon() {
+        ResourceLocation id = selectedRecipeId;
+        if (id == null) {
+            clientRecipeIconCacheId = null;
+            clientRecipeIconCache = ItemStack.EMPTY;
+            return ItemStack.EMPTY;
+        }
+        if (id.equals(clientRecipeIconCacheId)) {
+            return clientRecipeIconCache;
+        }
+        clientRecipeIconCacheId = id;
+        Level level = getLevel();
+        if (level == null) {
+            clientRecipeIconCache = ItemStack.EMPTY;
+            return ItemStack.EMPTY;
+        }
+        clientRecipeIconCache = RecipeHooks.getRecipeByKey(level.getRecipeManager(), id)
+                .filter(r -> r instanceof AssemblerRecipe)
+                .map(r -> ((AssemblerRecipe) r).getResultItemSafe())
+                .orElse(ItemStack.EMPTY);
+        return clientRecipeIconCache;
+    }
+    *///?}
 
     //? if forge || neoforge {
     @Nullable

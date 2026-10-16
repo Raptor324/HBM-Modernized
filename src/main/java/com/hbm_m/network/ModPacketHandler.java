@@ -57,6 +57,9 @@ public class ModPacketHandler {
     public static final ResourceLocation SET_CHEM_RECIPE       = id("set_chem_recipe");
     public static final ResourceLocation SET_CHEM_FACTORY_RECIPE = id("set_chem_factory_recipe");
     public static final ResourceLocation TOGGLE_WOOD_BURNER    = id("toggle_wood_burner");
+    public static final ResourceLocation SET_CRUCIBLE_RECIPE   = id("set_crucible_recipe");
+    public static final ResourceLocation HEATEX_CONTROL        = id("heatex_control");
+    public static final ResourceLocation OILBURNER_TOGGLE      = id("oilburner_toggle");
     public static final ResourceLocation BUILD_MISSILE         = id("build_missile");
     public static final ResourceLocation FLUID_TANK_MODE       = id("fluid_tank_mode");
     public static final ResourceLocation DETONATE_ALL          = id("detonate_all");
@@ -66,7 +69,6 @@ public class ModPacketHandler {
     public static final ResourceLocation ANVIL_CRAFT           = id("anvil_craft");
     public static final ResourceLocation ANVIL_SELECT_RECIPE   = id("anvil_select_recipe");
     public static final ResourceLocation POWER_ARMOR_DASH      = id("power_armor_dash");
-    public static final ResourceLocation POWER_ARMOR_DASH_REQUEST = id("power_armor_dash_request");
     public static final ResourceLocation DOOR_MODEL            = id("door_model");
     public static final ResourceLocation FLUID_IDENTIFIER_CTRL = id("fluid_identifier_ctrl");
     public static final ResourceLocation ITEM_DESIGNATOR       = id("item_designator");
@@ -78,8 +80,9 @@ public class ModPacketHandler {
     public static final ResourceLocation RBMK_CONTROL_CONTROL        = id("rbmk_control_control");
     public static final ResourceLocation RBMK_BOILER_CONTROL         = id("rbmk_boiler_control");
     public static final ResourceLocation RBMK_CRANE_CONTROL          = id("rbmk_crane_control");
+    public static final ResourceLocation COPY_TOOL_KEY               = id("copy_tool_key");
+    public static final ResourceLocation MACHINE_CONTROL             = id("machine_control");
     public static final ResourceLocation SOYUZ_LAUNCHER_CONTROL      = id("soyuz_launcher_control");
-    public static final ResourceLocation NUKE_FSTBMB_CONTROL         = id("nuke_fstbmb_control");
     public static final ResourceLocation SOLDERING_STATION_CONTROL   = id("soldering_station_control");
     public static final ResourceLocation ORPHANED_PHANTOMS     = id("orphaned_phantoms");
     public static final ResourceLocation SPAWN_PARTICLE        = id("spawn_particle");
@@ -91,7 +94,6 @@ public class ModPacketHandler {
     public static final ResourceLocation MICROWAVE_SPEED       = id("microwave_speed");
     public static final ResourceLocation ANNIHILATOR_POOL      = id("annihilator_pool");
     public static final ResourceLocation FUNNEL_MODE            = id("funnel_mode");
-    public static final ResourceLocation CRANE_CONTROL          = id("crane_control");
     public static final ResourceLocation RADIO_TORCH_CONTROL    = id("radio_torch_control");
 
 
@@ -202,9 +204,17 @@ public class ModPacketHandler {
                 ToggleWoodBurnerPacket::decode,
                 ToggleWoodBurnerPacket::handle);
 
-        registerC2S(POWER_ARMOR_DASH_REQUEST,
-                com.hbm_m.network.packets.PowerArmorDashC2SPacket::decode,
-                com.hbm_m.network.packets.PowerArmorDashC2SPacket::handle);
+        registerC2S(SET_CRUCIBLE_RECIPE,
+                com.hbm_m.network.SetCrucibleRecipeC2SPacket::decode,
+                com.hbm_m.network.SetCrucibleRecipeC2SPacket::handle);
+
+        registerC2S(HEATEX_CONTROL,
+                com.hbm_m.network.SetHeatexControlC2SPacket::decode,
+                com.hbm_m.network.SetHeatexControlC2SPacket::handle);
+
+        registerC2S(OILBURNER_TOGGLE,
+                com.hbm_m.network.ToggleOilburnerC2SPacket::decode,
+                com.hbm_m.network.ToggleOilburnerC2SPacket::handle);
 
         registerC2S(BUILD_MISSILE,
                 BuildMissilePacket::decode,
@@ -274,6 +284,14 @@ public class ModPacketHandler {
                 RBMKCraneControlPacket::decode,
                 RBMKCraneControlPacket::handle);
 
+        registerC2S(COPY_TOOL_KEY,
+                CopyToolKeyPacket::decode,
+                CopyToolKeyPacket::handle);
+
+        registerC2S(MACHINE_CONTROL,
+                MachineControlC2SPacket::decode,
+                MachineControlC2SPacket::handle);
+
         registerC2S(RBMK_CONTROL_CONTROL,
                 RBMKControlPacket::decode,
                 RBMKControlPacket::handle);
@@ -285,10 +303,6 @@ public class ModPacketHandler {
         registerC2S(SOYUZ_LAUNCHER_CONTROL,
                 SoyuzLauncherControlPacket::decode,
                 SoyuzLauncherControlPacket::handle);
-
-        registerC2S(NUKE_FSTBMB_CONTROL,
-                NukeFstbmbControlPacket::decode,
-                NukeFstbmbControlPacket::handle);
 
         registerC2S(SOLDERING_STATION_CONTROL,
                 SolderingStationControlPacket::decode,
@@ -318,10 +332,6 @@ public class ModPacketHandler {
                 FunnelModeC2SPacket::decode,
                 FunnelModeC2SPacket::handle);
 
-        registerC2S(CRANE_CONTROL,
-                CraneControlPacket::decode,
-                CraneControlPacket::handle);
-
         registerC2S(RADIO_TORCH_CONTROL,
                 RadioTorchControlPacket::decode,
                 RadioTorchControlPacket::handle);
@@ -330,7 +340,11 @@ public class ModPacketHandler {
     // ══════════════════════ Вспомогательные методы ════════════════════════════
 
     private static ResourceLocation id(String path) {
+        //? if fabric && < 1.21.1 {
+        /*return new ResourceLocation(RefStrings.MODID, path);
+        *///?} else {
         return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, path);
+        //?}
     }
 
     /**
@@ -345,7 +359,7 @@ public class ModPacketHandler {
             Function<FriendlyByteBuf, T> decoder,
             java.util.function.BiConsumer<T, PacketContext> handler) {
         //? if >= 1.21.1 {
-        // NeoForge 1.21+: пейлоад участвует в negotiation, поэтому должен быть
+        /*// NeoForge 1.21+: пейлоад участвует в negotiation, поэтому должен быть
         // зарегистрирован на ОБОИХ сторонах. На клиенте — с приёмником, на выделенном
         // сервере — только объявление типа (иначе checkPacket уронит отправку S2C).
         if (dev.architectury.platform.Platform.getEnvironment() == Env.CLIENT) {
@@ -357,16 +371,16 @@ public class ModPacketHandler {
         } else {
             NetworkManager.registerS2CPayloadType(id);
         }
-        //?}
+        *///?}
         //? if < 1.21.1 {
-        /*if (dev.architectury.platform.Platform.getEnvironment() == Env.CLIENT) {
+        if (dev.architectury.platform.Platform.getEnvironment() == Env.CLIENT) {
             NetworkManager.registerReceiver(
                     NetworkManager.Side.S2C,
                     id,
                     (buf, context) -> handler.accept(decoder.apply(buf), context)
             );
         }
-        *///?}
+        //?}
 
     }
 
@@ -388,31 +402,6 @@ public class ModPacketHandler {
         );
     }
 
-    // ══════════════════════════ C2S validation ════════════════════════════════
-
-    /**
-     * Block entity at a client-supplied {@link net.minecraft.core.BlockPos}, or null. The position
-     * comes from the packet and can point anywhere, so this never loads or generates a chunk on the
-     * server thread — an unloaded position simply reads as null.
-     *
-     * <p>Deliberately no distance check: contraption sub-levels (Sable / Create Aeronautics) drive
-     * block entities the player is legitimately nowhere near, so a radius would break simulation.
-     * This is not an access check either — it only bounds where a packet can reach.
-     */
-    public static net.minecraft.world.level.block.entity.BlockEntity blockEntityAt(
-            ServerPlayer player, net.minecraft.core.BlockPos pos) {
-        if (pos == null) return null;
-        // Compat resolves the chunk once and returns null unless it is already resident, so the
-        // guard and the lookup are a single step that cannot drift apart.
-        var be = com.hbm_m.util.Compat.getTileStandard(player.level(), pos);
-        if (be == null && NET_DEBUG_PACKETS) {
-            com.hbm_m.main.MainRegistry.LOGGER.info(
-                    "[NET-DBG] C2S rejected: no block entity at {} for {}",
-                    pos, player.getGameProfile().getName());
-        }
-        return be;
-    }
-
     // ══════════════════════════ Отправка пакетов ══════════════════════════════
 
     /**
@@ -431,12 +420,12 @@ public class ModPacketHandler {
             return;
         }
         //? if < 1.21.1 {
-        /*FriendlyByteBuf buf = new FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
+        FriendlyByteBuf buf = new FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
         packet.write(buf);
-        *///?} else {
-        net.minecraft.network.RegistryFriendlyByteBuf buf = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), player.server.registryAccess());
+        //?} else {
+        /*net.minecraft.network.RegistryFriendlyByteBuf buf = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), player.server.registryAccess());
         packet.write(buf);
-        //?}
+        *///?}
         
         if (NET_DEBUG_PACKETS) {
             com.hbm_m.main.MainRegistry.LOGGER.info(
@@ -497,7 +486,7 @@ public class ModPacketHandler {
     }
 
 	//? if >= 1.21.1 {
-    @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
     private static net.minecraft.core.RegistryAccess getClientRegistryAccess() {
         if (net.minecraft.client.Minecraft.getInstance().level != null) {
             return net.minecraft.client.Minecraft.getInstance().level.registryAccess();
@@ -507,7 +496,7 @@ public class ModPacketHandler {
         }
         return net.minecraft.core.RegistryAccess.EMPTY;
     }
-    //?}
+    *///?}
 
     /**
      * Отправить пакет на сервер (C2S).
@@ -515,12 +504,12 @@ public class ModPacketHandler {
      */
     public static void sendToServer(ResourceLocation id, C2SPacket packet) {
         //? if < 1.21.1 {
-        /*FriendlyByteBuf buf = new FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
+        FriendlyByteBuf buf = new FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
         packet.write(buf);
-        *///?} else {
-        net.minecraft.network.RegistryFriendlyByteBuf buf = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), getClientRegistryAccess());
+        //?} else {
+        /*net.minecraft.network.RegistryFriendlyByteBuf buf = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), getClientRegistryAccess());
         packet.write(buf);
-        //?}
+        *///?}
         
         if (NET_DEBUG_PACKETS) {
             com.hbm_m.main.MainRegistry.LOGGER.info(

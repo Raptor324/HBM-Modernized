@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import java.util.ArrayList;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -20,9 +20,9 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.material.Fluid;
 
-/^*
+/**
  * Datagen builder for {@link ChemicalPlantRecipe}.
- ^/
+ */
 public class ChemicalPlantRecipeBuilder extends BaseRecipeBuilder<ChemicalPlantRecipeBuilder> {
 
     private final int duration;
@@ -75,7 +75,7 @@ public class ChemicalPlantRecipeBuilder extends BaseRecipeBuilder<ChemicalPlantR
         return this;
     }
 
-    /^* Переход на единый FluidStack-вход: вместo {@code Fluid + int} принимаем {@link FluidStack}. ^/
+    /** Переход на единый FluidStack-вход: вместo {@code Fluid + int} принимаем {@link FluidStack}. */
     public ChemicalPlantRecipeBuilder addFluidInput(FluidStack stack) {
         if (stack != null && !stack.isEmpty()) {
             this.fluidInputs.add(new FluidAmount(stack.getFluid(), (int) stack.getAmount()));
@@ -178,4 +178,4 @@ public class ChemicalPlantRecipeBuilder extends BaseRecipeBuilder<ChemicalPlantR
         return ChemicalPlantRecipe.Serializer.INSTANCE;
     }
 }
-*///?}
+//?}

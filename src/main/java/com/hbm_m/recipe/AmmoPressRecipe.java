@@ -3,7 +3,6 @@ package com.hbm_m.recipe;
 import org.jetbrains.annotations.NotNull;
 
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.platform.recipe.PlatformRecipe;
@@ -113,19 +112,18 @@ public class AmmoPressRecipe extends PlatformRecipe {
 
     public static class Serializer extends PlatformRecipeSerializer<AmmoPressRecipe> {
         public static final Serializer INSTANCE = new Serializer();
+        //? if fabric && < 1.21.1 {
+        /*public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "ammo_press");
+        *///?} else {
         public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "ammo_press");
+        //?}
 
         @Override
         public AmmoPressRecipe readJson(ResourceLocation recipeId, JsonObject json) {
             JsonArray ingredientsArray = GsonHelper.getAsJsonArray(json, "ingredients");
             NonNullList<Ingredient> inputs = NonNullList.withSize(AmmoPressRecipe.GRID_SIZE, Ingredient.EMPTY);
             for (int i = 0; i < AmmoPressRecipe.GRID_SIZE && i < ingredientsArray.size(); i++) {
-                // A null entry is an empty slot of the 3x3 grid; Ingredient.CODEC rejects JsonNull.
-                JsonElement entry = ingredientsArray.get(i);
-                if (entry.isJsonNull()) {
-                    continue;
-                }
-                inputs.set(i, RecipeHooks.ingredientFromJson(entry));
+                inputs.set(i, RecipeHooks.ingredientFromJson(ingredientsArray.get(i)));
             }
 
             ItemStack output = RecipeHooks.itemStackFromJson(GsonHelper.getAsJsonObject(json, "result"));

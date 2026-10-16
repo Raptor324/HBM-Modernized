@@ -38,6 +38,7 @@ public class ClearPointPacket implements C2SPacket {
     public static void handle(ClearPointPacket msg, PacketContext context) {
         context.queue(() -> {
             if (!(context.getPlayer() instanceof ServerPlayer player)) return;
+            if (msg.pointIndex < 0 || msg.pointIndex >= 4) return;
 
             ItemStack mainItem = player.getMainHandItem();
             ItemStack offItem  = player.getOffhandItem();

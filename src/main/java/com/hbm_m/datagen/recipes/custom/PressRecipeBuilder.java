@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import java.util.Objects;
+import java.util.Objects;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -15,9 +15,9 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.ItemLike;
 
-/^*
+/**
  * Builder for {@link PressRecipe} data generation.
- ^/
+ */
 public class PressRecipeBuilder extends BaseRecipeBuilder<PressRecipeBuilder> {
 
     private final ItemStack output;
@@ -120,4 +120,4 @@ public class PressRecipeBuilder extends BaseRecipeBuilder<PressRecipeBuilder> {
         return PressRecipe.Serializer.INSTANCE;
     }
 }
-*///?}
+//?}

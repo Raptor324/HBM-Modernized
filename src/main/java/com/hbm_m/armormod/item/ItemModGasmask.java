@@ -16,6 +16,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -24,8 +25,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Съёмный противогаз-модификация: прицепляется к шлему (слот helmet_only, стол модификаций)
- * и даёт защиту лёгких через фильтр. Шифт+ПКМ по предмету в руке — выкрутить фильтр.
- * Порт {@link com.hbm.items.armor.ItemModGasmask} (1.7.10).
+ * и даёт защиту лёгких через фильтр. ПКМ — вкрутить фильтр в прицепленную маску,
+ * Шифт+ПКМ — выкрутить. Порт {@link com.hbm.items.armor.ItemModGasmask} (1.7.10).
  */
 public class ItemModGasmask extends ItemArmorMod implements IGasMask {
 
@@ -46,20 +47,41 @@ public class ItemModGasmask extends ItemArmorMod implements IGasMask {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
+        // Маска на голове, прицепленная к шлему или в слоте лица Curios.
+        ItemStack mask = GasMaskUtil.resolveWornMask(player);
 
-        // Upstream unscrews the filter from the attachment held in hand. Screwing one into a mask
-        // that is already bolted onto a worn helmet is ItemGasMaskFilter's job; the branch that used
-        // to live here tested the held stack for being a filter, which it never is.
-        if (player.isShiftKeyDown() && IGasMask.hasFilter(stack)) {
-            if (!level.isClientSide()) {
-                ItemStack filter = GasMaskUtil.takeFilter(stack);
-                if (!filter.isEmpty() && !player.getInventory().add(filter)) {
-                    player.drop(filter, false);
+        if (mask.getItem() instanceof IGasMask) {
+            // Маска уже прицеплена к шлему — обрабатываем как обычную маску.
+            if (player.isShiftKeyDown()) {
+                ItemStack filter = GasMaskUtil.takeFilter(mask);
+                if (!filter.isEmpty()) {
+                    if (!level.isClientSide()) {
+                        if (!player.getInventory().add(filter)) {
+                            player.drop(filter, false);
+                        }
+                        level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                                ModSounds.FILTER_SCREW.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+                    }
+                    return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
                 }
-                level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                        ModSounds.FILTER_SCREW.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+                return InteractionResultHolder.pass(stack);
             }
-            return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
+
+            ItemStack held = player.getItemInHand(hand);
+            if (held.getItem() instanceof ItemGasMaskFilter && IGasMask.isFilterApplicable(mask, held)) {
+                if (!level.isClientSide()) {
+                    ItemStack old = GasMaskUtil.takeFilter(mask);
+                    IGasMask.installFilter(mask, held.getItem());
+                    if (old.isEmpty()) {
+                        held.shrink(1);
+                    } else {
+                        player.setItemInHand(hand, old);
+                    }
+                    level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                            ModSounds.FILTER_SCREW.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+                }
+                return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
+            }
         }
 
         return InteractionResultHolder.pass(stack);

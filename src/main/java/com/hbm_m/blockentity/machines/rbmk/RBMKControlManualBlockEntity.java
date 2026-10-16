@@ -7,7 +7,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class RBMKControlManualBlockEntity extends RBMKControlBlockEntity {
+public class RBMKControlManualBlockEntity extends RBMKControlBlockEntity implements com.hbm_m.interfaces.ICopiable {
 
     public boolean moderated = false;
 
@@ -82,17 +82,33 @@ public class RBMKControlManualBlockEntity extends RBMKControlBlockEntity {
 
     // CE persists startingLevel (TileEntityRBMKControlManual.writeToNBT). Without it a reload
     // mid-withdrawal resets the surge reference point and the tip effect silently vanishes.
+    //? if < 1.21.1 {
     @Override
-    protected void writeNbtData(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.writeNbtData(tag, registries);
+    protected void saveAdditional(net.minecraft.nbt.CompoundTag tag) {
+        super.saveAdditional(tag);
         tag.putDouble("startingLevel", startingLevel);
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
+        tag.putDouble("startingLevel", startingLevel);
+    }
+    *///?}
 
+    //? if < 1.21.1 {
     @Override
-    protected void readNbtData(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.readNbtData(tag, registries);
+    public void load(net.minecraft.nbt.CompoundTag tag) {
+        super.load(tag);
         if (tag.contains("startingLevel")) startingLevel = tag.getDouble("startingLevel");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
+        if (tag.contains("startingLevel")) startingLevel = tag.getDouble("startingLevel");
+    }
+    *///?}
 
     public static void tick(Level level, BlockPos pos, BlockState state, RBMKControlManualBlockEntity be) {
         baseTick(level, pos, state, be);
@@ -101,6 +117,25 @@ public class RBMKControlManualBlockEntity extends RBMKControlBlockEntity {
             be.lastLevel = be.level;
             be.moveLevelToTarget(level);
         }
+    }
+
+    /* ── Устройство настройки: цвет группы стержней (оригинал) ──────────── */
+
+    @Override
+    public net.minecraft.nbt.CompoundTag getSettings(Level level, BlockPos pos) {
+        net.minecraft.nbt.CompoundTag data = new net.minecraft.nbt.CompoundTag();
+        if (color >= 0) data.putInt("color", color);
+        return data;
+    }
+
+    @Override
+    public void pasteSettings(net.minecraft.nbt.CompoundTag nbt, int index, Level level, net.minecraft.world.entity.player.Player player, BlockPos pos) {
+        if (nbt.contains("color")) {
+            color = (short) net.minecraft.util.Mth.clamp(nbt.getInt("color"), 0, 4);
+        } else {
+            color = -1;
+        }
+        setChanged();
     }
 }
 

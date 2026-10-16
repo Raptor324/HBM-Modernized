@@ -426,9 +426,9 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
         if (missile.fuel == MissileItem.MissileFuel.SOLID) {
             return true;
         }
-        // GIT TileEntityLaunchPadBase.hasFuel: both tanks must hold the missile's fuelCap.
-        // Solid fuel has a cap of 0, so it passes without any liquid at all.
-        return tanks[0].getFill() >= missile.fuelCap && tanks[1].getFill() >= missile.fuelCap;
+        // WIP: проверка заполнения баков временно отключена — для пуска достаточно ракеты, энергии и цели.
+        // return tanks[0].getFill() >= missile.fuelCap && tanks[1].getFill() >= missile.fuelCap;
+        return true;
     }
 
     public boolean isMissileValid() {
@@ -511,11 +511,6 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
         }
         Entity missile = instantiateMissile((int) Math.floor(entity.getX()), (int) Math.floor(entity.getZ()));
         if (missile != null) {
-            // Upstream hands the interceptor its target here; without it the ABM ignored the target
-            // the radar operator picked and grabbed the nearest one on its own 40 ticks later.
-            if (missile instanceof com.hbm_m.entity.missile.MissileABMEntity abm) {
-                abm.tracking = entity;
-            }
             finalizeLaunch(missile);
             return true;
         }
@@ -603,11 +598,14 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
         this.energy = Math.max(0, this.energy - 75_000L);
 
         ItemStack stack = inventory.getStackInSlot(SLOT_MISSILE);
+        // WIP: расход топлива из баков временно отключён.
+        /*
         if (stack.getItem() instanceof MissileItem missileItem
                 && missileItem.fuel != MissileItem.MissileFuel.SOLID) {
             tanks[0].setFill(tanks[0].getFill() - missileItem.fuelCap);
             tanks[1].setFill(tanks[1].getFill() - missileItem.fuelCap);
         }
+        */
         stack.shrink(1);
         // Кулдаун до следующего пуска
         this.delay = 100;

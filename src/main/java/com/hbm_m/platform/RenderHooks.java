@@ -21,12 +21,12 @@ public final class RenderHooks {
      */
     public static BufferBuilder beginTesselator(Tesselator tesselator, VertexFormat.Mode mode, VertexFormat format) {
         //? if < 1.21.1 {
-        /*BufferBuilder builder = tesselator.getBuilder();
+        BufferBuilder builder = tesselator.getBuilder();
         builder.begin(mode, format);
         return builder;
-        *///?} else {
-        return tesselator.begin(mode, format);
-        //?}
+        //?} else {
+        /*return tesselator.begin(mode, format);
+        *///?}
     }
 
     /**
@@ -34,10 +34,10 @@ public final class RenderHooks {
      */
     public static void drawWithShader(BufferBuilder buffer) {
         //? if < 1.21.1 {
-        /*com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(buffer.end());
-        *///?} else {
-        com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(buffer.buildOrThrow());
-        //?}
+        com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(buffer.end());
+        //?} else {
+        /*com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(buffer.buildOrThrow());
+        *///?}
     }
 
     /**
@@ -45,10 +45,10 @@ public final class RenderHooks {
      */
     public static net.minecraft.client.renderer.MultiBufferSource.BufferSource immediateBufferSource(int capacity) {
         //? if < 1.21.1 {
-        /*return net.minecraft.client.renderer.MultiBufferSource.immediate(new com.mojang.blaze3d.vertex.BufferBuilder(capacity));
-        *///?} else {
-        return net.minecraft.client.renderer.MultiBufferSource.immediate(new com.mojang.blaze3d.vertex.ByteBufferBuilder(capacity));
-        //?}
+        return net.minecraft.client.renderer.MultiBufferSource.immediate(new com.mojang.blaze3d.vertex.BufferBuilder(capacity));
+        //?} else {
+        /*return net.minecraft.client.renderer.MultiBufferSource.immediate(new com.mojang.blaze3d.vertex.ByteBufferBuilder(capacity));
+        *///?}
     }
 
     /**
@@ -56,10 +56,10 @@ public final class RenderHooks {
      */
     public static void vertexTexColor(VertexConsumer consumer, Matrix4f matrix, float x, float y, float z, float u, float v, int r, int g, int b, int a) {
         //? if < 1.21.1 {
-        /*consumer.vertex(matrix, x, y, z).uv(u, v).color(r, g, b, a).endVertex();
-        *///?} else {
-        consumer.addVertex(matrix, x, y, z).setUv(u, v).setColor(r, g, b, a);
-        //?}
+        consumer.vertex(matrix, x, y, z).uv(u, v).color(r, g, b, a).endVertex();
+        //?} else {
+        /*consumer.addVertex(matrix, x, y, z).setUv(u, v).setColor(r, g, b, a);
+        *///?}
     }
 
     /**
@@ -67,10 +67,10 @@ public final class RenderHooks {
      */
     public static void vertexColor(VertexConsumer consumer, Matrix4f matrix, float x, float y, float z, int r, int g, int b, int a) {
         //? if < 1.21.1 {
-        /*consumer.vertex(matrix, x, y, z).color(r, g, b, a).endVertex();
-        *///?} else {
-        consumer.addVertex(matrix, x, y, z).setColor(r, g, b, a);
-        //?}
+        consumer.vertex(matrix, x, y, z).color(r, g, b, a).endVertex();
+        //?} else {
+        /*consumer.addVertex(matrix, x, y, z).setColor(r, g, b, a);
+        *///?}
     }
 
     /**
@@ -78,10 +78,10 @@ public final class RenderHooks {
      */
     public static void vertexColor(VertexConsumer consumer, double x, double y, double z, int r, int g, int b, int a) {
         //? if < 1.21.1 {
-        /*consumer.vertex(x, y, z).color(r, g, b, a).endVertex();
-        *///?} else {
-        consumer.addVertex((float) x, (float) y, (float) z).setColor(r, g, b, a);
-        //?}
+        consumer.vertex(x, y, z).color(r, g, b, a).endVertex();
+        //?} else {
+        /*consumer.addVertex((float) x, (float) y, (float) z).setColor(r, g, b, a);
+        *///?}
     }
 
     /**
@@ -90,10 +90,10 @@ public final class RenderHooks {
     public static void vertexLine(VertexConsumer consumer, PoseStack.Pose pose, float x, float y, float z,
                                   int r, int g, int b, int a, float nx, float ny, float nz) {
         //? if < 1.21.1 {
-        /*consumer.vertex(pose.pose(), x, y, z).color(r, g, b, a).normal(pose.normal(), nx, ny, nz).endVertex();
-        *///?} else {
-        consumer.addVertex(pose.pose(), x, y, z).setColor(r, g, b, a).setNormal(pose, nx, ny, nz);
-        //?}
+        consumer.vertex(pose.pose(), x, y, z).color(r, g, b, a).normal(pose.normal(), nx, ny, nz).endVertex();
+        //?} else {
+        /*consumer.addVertex(pose.pose(), x, y, z).setColor(r, g, b, a).setNormal(pose, nx, ny, nz);
+        *///?}
     }
 
     /**
@@ -105,10 +105,10 @@ public final class RenderHooks {
                                   int packedOverlay, int packedLight,
                                   float nx, float ny, float nz) {
         //? if < 1.21.1 {
-        /*consumer.vertex(matrix, x, y, z).color(r, g, b, a).uv(u, v).overlayCoords(packedOverlay).uv2(packedLight).normal(nx, ny, nz).endVertex();
-        *///?} else {
-        consumer.addVertex(matrix, x, y, z).setColor(r, g, b, a).setUv(u, v).setOverlay(packedOverlay).setLight(packedLight).setNormal(nx, ny, nz);
-        //?}
+        consumer.vertex(matrix, x, y, z).color(r, g, b, a).uv(u, v).overlayCoords(packedOverlay).uv2(packedLight).normal(nx, ny, nz).endVertex();
+        //?} else {
+        /*consumer.addVertex(matrix, x, y, z).setColor(r, g, b, a).setUv(u, v).setOverlay(packedOverlay).setLight(packedLight).setNormal(nx, ny, nz);
+        *///?}
     }
 
     /**
@@ -118,12 +118,14 @@ public final class RenderHooks {
      */
     public static void putBulkData(VertexConsumer consumer, PoseStack.Pose matrix, BakedQuad quad,
                                    float r, float g, float b, float a, int packedLight, int packedOverlay, boolean readExistingColor) {
-        //? if < 1.21.1 && forge {
-        /*consumer.putBulkData(matrix, quad, r, g, b, a, packedLight, packedOverlay, readExistingColor);
-        *///?} else {
-        // 1.21.1 (vanilla/neoforge/fabric): 8-arg сигнатура (с alpha, без readExistingColor).
+        //? if < 1.21.1 && fabric {
+        /*consumer.putBulkData(matrix, quad, r, g, b, packedLight, packedOverlay);
+        *///?} elif < 1.21.1 && forge {
+        consumer.putBulkData(matrix, quad, r, g, b, a, packedLight, packedOverlay, readExistingColor);
+        //?} else {
+        /*// 1.21.1 (vanilla/neoforge/fabric): 8-arg сигнатура (с alpha, без readExistingColor).
         consumer.putBulkData(matrix, quad, r, g, b, a, packedLight, packedOverlay);
-        //?}
+        *///?}
     }
 
     // =====================================================================================
@@ -142,42 +144,42 @@ public final class RenderHooks {
 
     public static int getGlType(VertexFormatElement element) {
         //? if < 1.21.1 {
-        /*return element.getType().getGlType();
-        *///?} else {
-        return element.type().glType();
-        //?}
+        return element.getType().getGlType();
+        //?} else {
+        /*return element.type().glType();
+        *///?}
     }
 
     public static int getCount(VertexFormatElement element) {
         //? if < 1.21.1 {
-        /*return element.getCount();
-        *///?} else {
-        return element.count();
-        //?}
+        return element.getCount();
+        //?} else {
+        /*return element.count();
+        *///?}
     }
 
     public static VertexFormatElement.Usage getUsage(VertexFormatElement element) {
         //? if < 1.21.1 {
-        /*return element.getUsage();
-        *///?} else {
-        return element.usage();
-        //?}
+        return element.getUsage();
+        //?} else {
+        /*return element.usage();
+        *///?}
     }
 
     public static int getIndex(VertexFormatElement element) {
         //? if < 1.21.1 {
-        /*return element.getIndex();
-        *///?} else {
-        return element.index();
-        //?}
+        return element.getIndex();
+        //?} else {
+        /*return element.index();
+        *///?}
     }
 
      public static int getByteSize(VertexFormatElement element) {
         //? if < 1.21.1 {
-        /*return element.getByteSize();
-        *///?} else {
-        return element.byteSize();
-        //?}
+        return element.getByteSize();
+        //?} else {
+        /*return element.byteSize();
+        *///?}
     }
 
     /**
@@ -190,15 +192,122 @@ public final class RenderHooks {
                                                          net.minecraft.core.Direction side,
                                                          net.minecraft.util.RandomSource rand) {
         //? if forge {
-        /*return model.getQuads(state, side, rand,
+        return model.getQuads(state, side, rand,
                 net.minecraftforge.client.model.data.ModelData.EMPTY,
                 net.minecraft.client.renderer.RenderType.solid());
-        *///?} elif neoforge {
-        return model.getQuads(state, side, rand,
+        //?} elif neoforge {
+        /*return model.getQuads(state, side, rand,
                 net.neoforged.neoforge.client.model.data.ModelData.EMPTY,
                 net.minecraft.client.renderer.RenderType.solid());
-        //?} else {
+        *///?} else {
         /*return model.getQuads(state, side, rand);
+        *///?}
+    }
+
+    /**
+     * Кросс-версионный пустой ModelData (для 5-аргументного getQuads).
+     * Заменяет пер-файловые заглушки вида {@code static final ModelData DATA = ModelData.EMPTY}.
+     */
+    public static Object emptyModelData() {
+        //? if forge {
+        return net.minecraftforge.client.model.data.ModelData.EMPTY;
+        //?} elif neoforge {
+        /*return net.neoforged.neoforge.client.model.data.ModelData.EMPTY;
+        *///?} else {
+        /*return null;
+        *///?}
+    }
+
+    /**
+     * Кросс-версионный 5-аргументный вызов {@code model.getQuads} с пустым ModelData.
+     * Тела forge/neoforge идентичны (отличается только пакет ModelData) — гейт живёт здесь.
+     *
+     * @param renderType фильтр render type (null — без фильтра)
+     */
+    public static java.util.List<BakedQuad> getModelQuads(net.minecraft.client.resources.model.BakedModel model,
+                                                          net.minecraft.world.level.block.state.BlockState state,
+                                                          net.minecraft.core.Direction side,
+                                                          net.minecraft.util.RandomSource rand,
+                                                          @org.jetbrains.annotations.Nullable
+                                                          net.minecraft.client.renderer.RenderType renderType) {
+        //? if forge {
+        return model.getQuads(state, side, rand,
+                net.minecraftforge.client.model.data.ModelData.EMPTY, renderType);
+        //?} elif neoforge {
+        /*return model.getQuads(state, side, rand,
+                net.neoforged.neoforge.client.model.data.ModelData.EMPTY, renderType);
+        *///?} else {
+        /*return model.getQuads(state, side, rand);
+        *///?}
+    }
+
+    /**
+     * Умножает верхнюю матрицу PoseStack на заданную (кросс-версионно):
+     * 1.20.1 — {@code poseStack.mulPoseMatrix(mat)}; 1.21.1 —
+     * {@code poseStack.last().pose().mul(mat)}.
+     */
+    public static void mulPoseMatrix(PoseStack poseStack, Matrix4f mat) {
+        //? if < 1.21.1 {
+        poseStack.mulPoseMatrix(mat);
+        //?} else {
+        /*poseStack.last().pose().mul(mat);
+        *///?}
+    }
+
+    /**
+     * Рендер ванильной {@code Model} в буфер (кросс-версионно):
+     * 1.20.1 требует ARGB-float цвета, в 1.21.1 сигнатура без цвета.
+     */
+    public static void renderModelToBuffer(net.minecraft.client.model.Model model, PoseStack poseStack,
+                                           VertexConsumer consumer, int packedLight, int packedOverlay) {
+        //? if < 1.21.1 {
+        model.renderToBuffer(poseStack, consumer, packedLight, packedOverlay, 1f, 1f, 1f, 1f);
+        //?} else {
+        /*// 1.21.1: цвет задаётся через VertexConsumer/контекст, не аргументами.
+        model.renderToBuffer(poseStack, consumer, packedLight, packedOverlay);
+        *///?}
+    }
+
+    // =====================================================================================
+    //  Vertex-запись: варианты без полной цепочки (замена дублированных гейтов vertex/endVertex)
+    // =====================================================================================
+
+    /**
+     * Вершина: позиция (с матрицей) + цвет + UV + свет блока (без нормали/оверлея).
+     * Формат жидкости/расплава (FOUNDRY и т.п.).
+     */
+    public static void vertexColorUvLight(VertexConsumer consumer, Matrix4f matrix, float x, float y, float z,
+                                          int r, int g, int b, int a, float u, float v, int light) {
+        //? if < 1.21.1 {
+        consumer.vertex(matrix, x, y, z).color(r, g, b, a).uv(u, v).uv2(light).endVertex();
+        //?} else {
+        /*consumer.addVertex(matrix, x, y, z).setColor(r, g, b, a).setUv(u, v).setLight(light);
+        *///?}
+    }
+
+    /**
+     * Вершина: позиция (с матрицей) + цвет + UV + свет + нормаль (без оверлея).
+     */
+    public static void vertexColorUvLightNormal(VertexConsumer consumer, Matrix4f matrix, float x, float y, float z,
+                                                int r, int g, int b, int a, float u, float v, int light,
+                                                float nx, float ny, float nz) {
+        //? if < 1.21.1 {
+        consumer.vertex(matrix, x, y, z).color(r, g, b, a).uv(u, v).uv2(light).normal(nx, ny, nz).endVertex();
+        //?} else {
+        /*consumer.addVertex(matrix, x, y, z).setColor(r, g, b, a).setUv(u, v).setLight(light).setNormal(nx, ny, nz);
+        *///?}
+    }
+
+    /**
+     * Вершина: позиция (без матрицы) + цвет + UV. Для статичных квадов в экранных
+     * координатах (провода ЛЭП и т.п.).
+     */
+    public static void vertexColorUv(VertexConsumer consumer, float x, float y, float z,
+                                     int r, int g, int b, int a, float u, float v) {
+        //? if < 1.21.1 {
+        consumer.vertex(x, y, z).color(r, g, b, a).uv(u, v).endVertex();
+        //?} else {
+        /*consumer.addVertex(x, y, z).setColor(r, g, b, a).setUv(u, v);
         *///?}
     }
 
@@ -207,10 +316,10 @@ public final class RenderHooks {
      */
     public static void particleVertex(VertexConsumer consumer, float x, float y, float z, float u, float v, int r, int g, int b, int a, int packedLight) {
         //? if < 1.21.1 {
-        /*consumer.vertex(x, y, z).uv(u, v).color(r, g, b, a).uv2(packedLight).endVertex();
-        *///?} else {
-        consumer.addVertex(x, y, z).setUv(u, v).setColor(r, g, b, a).setLight(packedLight);
-        //?}
+        consumer.vertex(x, y, z).uv(u, v).color(r, g, b, a).uv2(packedLight).endVertex();
+        //?} else {
+        /*consumer.addVertex(x, y, z).setUv(u, v).setColor(r, g, b, a).setLight(packedLight);
+        *///?}
     }
 
     // =====================================================================================
@@ -234,20 +343,20 @@ public final class RenderHooks {
      */
     public static void pushLevelModelView(Matrix4f levelRotation) {
         //? if < 1.21.1 {
-        /*CURRENT_LEVEL_ROTATION.set(new Matrix4f(levelRotation));
+        CURRENT_LEVEL_ROTATION.set(new Matrix4f(levelRotation));
         PoseStack stack = com.mojang.blaze3d.systems.RenderSystem.getModelViewStack();
         stack.pushPose();
         stack.setIdentity();
         stack.mulPoseMatrix(levelRotation);
         com.mojang.blaze3d.systems.RenderSystem.applyModelViewMatrix();
-        *///?} else {
-        org.joml.Matrix4fStack stack = com.mojang.blaze3d.systems.RenderSystem.getModelViewStack();
+        //?} else {
+        /*org.joml.Matrix4fStack stack = com.mojang.blaze3d.systems.RenderSystem.getModelViewStack();
         CURRENT_LEVEL_ROTATION.set(new org.joml.Matrix4f(levelRotation));
         stack.pushMatrix();
         stack.identity();
         stack.mul(levelRotation);
         com.mojang.blaze3d.systems.RenderSystem.applyModelViewMatrix();
-        //?}
+        *///?}
     }
 
     /**
@@ -272,13 +381,24 @@ public final class RenderHooks {
     public static void popLevelModelView() {
         CURRENT_LEVEL_ROTATION.remove();
         //? if < 1.21.1 {
-        /*PoseStack stack = com.mojang.blaze3d.systems.RenderSystem.getModelViewStack();
+        PoseStack stack = com.mojang.blaze3d.systems.RenderSystem.getModelViewStack();
         stack.popPose();
         com.mojang.blaze3d.systems.RenderSystem.applyModelViewMatrix();
-        *///?} else {
-        org.joml.Matrix4fStack stack = com.mojang.blaze3d.systems.RenderSystem.getModelViewStack();
+        //?} else {
+        /*org.joml.Matrix4fStack stack = com.mojang.blaze3d.systems.RenderSystem.getModelViewStack();
         stack.popMatrix();
         com.mojang.blaze3d.systems.RenderSystem.applyModelViewMatrix();
-        //?}
+        *///?}
+    }
+
+    /**
+     * Возвращает частичный тик текущего кадра рендера (0.0 .. 1.0).
+     */
+    public static float getPartialTick() {
+        //? if < 1.21.1 {
+        return net.minecraft.client.Minecraft.getInstance().getFrameTime();
+        //?} else {
+        /*return net.minecraft.client.Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true);
+        *///?}
     }
 }

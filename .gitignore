@@ -64,7 +64,7 @@ logs/
 /OLD/
 agent
 ideas
-libs/*
+libs/
 design.md
 # ================= OS Specific =================
 # Системные файлы, которые могут случайно появиться.
@@ -87,29 +87,6 @@ desktop.ini
 HBM-Modernized.code-workspace
 java_pid*
 AGENTS.md
-libs/*
-# ...except the 35 KB Sable companion API jar: SubLevelAssembleExpansionMixin names
-# BoundingBox3ic from it, so the build needs it present.
-!libs/sable-companion-common-1.21.1-1.6.0.jar
+libs/
 .aider*
-# Локальный контекст для Claude Code
-CLAUDE.md
-
-# Датаген пишет в assets только blockstates, models и lang. Первые два игнорируются выше,
-# lang отслеживается намеренно (его забирают переводчики), а всё остальное, что провайдеры
-# сгенерируют в будущем, в репозиторий попадать не должно.
-src/generated/resources/assets/*
-!src/generated/resources/assets/hbm_m/
-src/generated/resources/assets/hbm_m/*
-!src/generated/resources/assets/hbm_m/lang/
-
-# Черновики и следы инструментов: nul появляется от перенаправления вывода в git bash,
-# остальное — резервные копии редакторов и хвосты неудачных патчей.
-nul
-NUL
-*.bak
-*.orig
-*.rej
-*.tmp
-scratch/
-notes/
+.agents/

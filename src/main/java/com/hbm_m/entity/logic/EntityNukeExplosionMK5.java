@@ -84,20 +84,18 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 
     //? if < 1.21.1 {
 
-    /*@Override
-    protected void defineSynchedData() {
-
-var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
-    *///?} else {
     @Override
+    protected void defineSynchedData() {
+        // нет синхронизируемых полей
+    }
+    //?} else {
+    /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
-
-var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
-    //?}
 
         // нет синхронизируемых полей
     
     }
+    *///?}
 
     @Override
     public void tick() {
@@ -117,10 +115,7 @@ var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
         }
 
         // радиация в первые тики после начала взрыва
-        // No explosion != null guard: the ray engine is created further down in this same tick, so on
-        // tick 1 it was still null and the largest dose of the ramp was silently skipped. radiate()
-        // does not touch the engine.
-        if (!level().isClientSide && applyInstantPlayerRads && this.tickCount < 10 && strength >= 75) {
+        if (!level().isClientSide && applyInstantPlayerRads && explosion != null && this.tickCount < 10 && strength >= 75) {
             float baseRads = 2_500_000F / (this.tickCount * 5 + 1);
             radiate(baseRads, this.length * 2);
         }
@@ -266,7 +261,6 @@ var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
         com.hbm_m.entity.effect.EntityFalloutRain fallout = new com.hbm_m.entity.effect.EntityFalloutRain(ModEntities.NUKE_FALLOUT_RAIN.get(), level());
         fallout.setPos(getX(), getY(), getZ());
         fallout.setScale(scale);
-        fallout.applyCraterBiomes = this.applyCraterBiomes;
         WorldUtil.loadAndSpawnEntityInWorld(fallout);
     }
 
@@ -286,7 +280,7 @@ var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
         this.destroyTerrain = tag.getBoolean("destroyTerrain");
         this.applyEntityDamage = tag.getBoolean("applyEntityDamage");
         this.applyInstantPlayerRads = tag.getBoolean("applyInstantPlayerRads");
-        this.applyCraterBiomes = !tag.contains("applyCraterBiomes") || tag.getBoolean("applyCraterBiomes");
+        this.applyCraterBiomes = tag.getBoolean("applyCraterBiomes");
         this.fallout = tag.getBoolean("fallout");
         this.falloutAdd = tag.getInt("falloutAdd");
         // Снапшот состояния ChunkEater (алгоритм 0) — взрыв продолжится с места остановки.

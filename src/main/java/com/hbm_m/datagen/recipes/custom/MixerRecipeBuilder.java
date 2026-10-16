@@ -1,13 +1,13 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import com.google.gson.JsonObject;
+import com.google.gson.JsonObject;
 import com.hbm_m.recipe.MixerRecipe;
 
 import dev.architectury.fluid.FluidStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
-/^*
+/**
  * Datagen-билдер {@link MixerRecipe} ({@code hbm_m:mixer}).
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген компилируется
@@ -29,7 +29,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
  * <p>Миксер не имеет предметного выхода — {@link #getResult()} возвращает {@link Items#AIR}
  * (ванильный {@code RecipeBuilder} требует реализацию, но для чисто жидкостных рецептов
  * результат не используется).</p>
- ^/
+ */
 public class MixerRecipeBuilder extends BaseRecipeBuilder<MixerRecipeBuilder> {
 
     private final FluidStack inputA;
@@ -71,4 +71,4 @@ public class MixerRecipeBuilder extends BaseRecipeBuilder<MixerRecipeBuilder> {
         return MixerRecipe.Serializer.INSTANCE;
     }
 }
-*///?}
+//?}

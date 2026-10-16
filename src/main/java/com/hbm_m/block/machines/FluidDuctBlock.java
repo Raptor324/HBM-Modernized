@@ -29,6 +29,14 @@ import com.hbm_m.interfaces.ILookOverlay;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.liquids.FluidDuctItem;
 
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
+*///?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -64,12 +72,12 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-*///?} elif neoforge {
-import net.neoforged.api.distmarker.Dist;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
-//?}
+*///?}
 
 /**
  * Fluid duct: multipart blockstate + Forge OBJ visibility on {@code pipe_neo.obj}. Fluid type lives in the block entity.
@@ -102,6 +110,23 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
             Direction.EAST, Block.box(12, 4, 4, 16, 12, 12),
             Direction.UP, Block.box(4, 12, 4, 12, 16, 12),
             Direction.DOWN, Block.box(4, 0, 4, 12, 4, 12));
+
+    /** Кэш форм по битмаске 6 соединений: getShape вызывается в горячем пути коллизий/рейкаста. */
+    private static final VoxelShape[] SHAPES_BY_MASK = new VoxelShape[64];
+
+    private static VoxelShape shapeForMask(int mask) {
+        VoxelShape shape = SHAPES_BY_MASK[mask];
+        if (shape == null) {
+            shape = CORE;
+            for (Direction dir : Direction.values()) {
+                if ((mask & (1 << dir.ordinal())) != 0) {
+                    shape = Shapes.or(shape, ARM_SHAPES.get(dir));
+                }
+            }
+            SHAPES_BY_MASK[mask] = shape;
+        }
+        return shape;
+    }
 
     private static final int IDENTIFIER_NETWORK_LIMIT = 512;
 
@@ -137,13 +162,13 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
     @Override
     public VoxelShape getShape(@NotNull BlockState state, @NotNull BlockGetter level, @NotNull BlockPos pos,
             @NotNull CollisionContext context) {
-        VoxelShape shape = CORE;
+        int mask = 0;
         for (Direction dir : Direction.values()) {
             if (state.getValue(PROPERTY_BY_DIRECTION.get(dir))) {
-                shape = Shapes.or(shape, ARM_SHAPES.get(dir));
+                mask |= 1 << dir.ordinal();
             }
         }
-        return shape;
+        return shapeForMask(mask);
     }
 
     /** Full connection + render shape for a duct at {@code pos} (block there must be this block type). */
@@ -224,6 +249,7 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
         refreshAdjacentDucts(level, pos);
     }
 
+    @SuppressWarnings("UnstableApiUsage") // Fabric Transfer API в ветке //? if fabric
     private boolean canConnectTo(LevelAccessor level, BlockPos myPos, BlockPos neighborPos, Direction direction) {
         BlockState neighborState = level.getBlockState(neighborPos);
         Block selfBlock = level.getBlockState(myPos).getBlock();
@@ -293,11 +319,39 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
                     return false;
                 }
 
-                // Остальные контроллеры (не MK2): судим по наличию жидкостного хендлера у самого
-                // контроллера. Раньше здесь стоял forge-only fill(SIMULATE), и на NeoForge управление
-                // проваливалось вниз, где проверяется уже соседний блок, а не контроллер.
-                return com.hbm_m.api.fluids.FluidCapabilityAccess.hasFluidHandler(
-                        level, part.getControllerPos(), direction.getOpposite());
+                // Остальные контроллеры:
+                // - если труба не окрашена (EMPTY) — показываем соединение просто по наличию fluid handler
+                // - если окрашена — fallback через Forge fill(SIMULATE).
+                //? if forge {
+                var cap = ctrl.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, null);
+                if (!cap.isPresent()) return false;
+                if (ductFluid == Fluids.EMPTY) return true;
+                var handler = cap.resolve().orElse(null);
+                if (handler == null) return false;
+                int canFill = handler.fill(new net.minecraftforge.fluids.FluidStack(ductFluid, 1), net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE);
+                return canFill > 0;
+                //?}
+
+                //? if fabric {
+                /*// Паритет с Forge: capability FLUID_HANDLER с side=null на контроллере.
+                // SIDED.find(..., null) → getFluidStorage(null) у BlockEntity (см. FabricEntrypoint).
+                if (!(level instanceof Level lvl)) {
+                    return false;
+                }
+                BlockPos ctrlPos = part.getControllerPos();
+                BlockState ctrlState = level.getBlockState(ctrlPos);
+                Storage<FluidVariant> storage = FluidStorage.SIDED.find(lvl, ctrlPos, ctrlState, ctrl, null);
+                if (storage == null) {
+                    return false;
+                }
+                if (ductFluid == Fluids.EMPTY) {
+                    return true;
+                }
+                try (Transaction tx = Transaction.openOuter()) {
+                    long inserted = storage.insert(FluidVariant.of(ductFluid), 81L, tx);
+                    return inserted > 0;
+                }
+                *///?}
             }
 
             // Контроллер цистерны: прямое подключение запрещено правилами мультиблока.
@@ -387,17 +441,17 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
     }
 
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public InteractionResult use(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
             @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
         return hbmOnUse(state, level, pos, player, hand, hit);
     }
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     protected InteractionResult useWithoutItem(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull BlockHitResult hit) {
         return hbmOnUse(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
-    //?}
+    *///?}
 
     private InteractionResult hbmOnUse(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
             @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
@@ -538,7 +592,7 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
     }
 
     //? if < 1.21.1 {
-    /*@NotNull
+    @NotNull
     @Override
     public ItemStack getCloneItemStack(@NotNull BlockGetter level, @NotNull BlockPos pos, @NotNull BlockState state) {
         ItemStack stack = new ItemStack(getDuctItem());
@@ -549,8 +603,8 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
         }
         return stack;
     }
-    *///?} else {
-    @NotNull
+    //?} else {
+    /*@NotNull
     @Override
     public ItemStack getCloneItemStack(@NotNull net.minecraft.world.level.LevelReader level, @NotNull BlockPos pos, @NotNull BlockState state) {
         ItemStack stack = new ItemStack(getDuctItem());
@@ -561,7 +615,7 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
         }
         return stack;
     }
-    //?}
+    *///?}
 
     private net.minecraft.world.item.Item getDuctItem() {
         return switch (pipeStyle) {
@@ -586,6 +640,8 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
 //? if forge || neoforge {
 @OnlyIn(Dist.CLIENT)
 //?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
     public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
         BlockEntity be = level.getBlockEntity(pos);
         if (!(be instanceof FluidDuctBlockEntity ductBe)) {
@@ -603,11 +659,11 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
     }
 
     //? if >1.20.1 {
-    public static final com.mojang.serialization.MapCodec<FluidDuctBlock> CODEC = simpleCodec(props -> new FluidDuctBlock(props, PipeStyle.NEO));
+    /*public static final com.mojang.serialization.MapCodec<FluidDuctBlock> CODEC = simpleCodec(props -> new FluidDuctBlock(props, PipeStyle.NEO));
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    //?}
+    *///?}
 }

@@ -240,12 +240,12 @@ public class CraterGenerator {
         try {
             Minecraft mc = Minecraft.getInstance();
             //? if < 1.21.1 {
-            /*return mc != null && mc.options != null && mc.options.renderDebug;
-            *///?} else {
-            // 1.21.1: Options.renderDebug удалён — F3 debug-экран больше не имеет публичного флага.
+            return mc != null && mc.options != null && mc.options.renderDebug;
+            //?} else {
+            /*// 1.21.1: Options.renderDebug удалён — F3 debug-экран больше не имеет публичного флага.
             // TODO(fidelity-port): найти 1.21.1-аналог renderDebug. Пока дебаг-визуализация лучей отключена.
             return false;
-            //?}
+            *///?}
         } catch (Exception e) {
             return false;
         }

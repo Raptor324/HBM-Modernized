@@ -45,7 +45,8 @@ public final class MachineAssemblerRenderer {
     public static void register() {
         MachineRenderers.machine("assembler", ModBlockEntities.MACHINE_ASSEMBLER_BE.get(),
                 MachineAssemblerBlockEntity.class)
-            .part("Body", MachineAssemblerRenderer::animateBody)
+            // Body — статика: «аниматор» только применяет легаси yaw/офсеты запечки.
+            .staticPart("Body", MachineAssemblerRenderer::animateBody)
             .part("Slider", MachineAssemblerRenderer::animateSlider)
             .part("Arm", MachineAssemblerRenderer::animateArm)
             .part("Cog", "CogA", MachineAssemblerRenderer::animateCogA)

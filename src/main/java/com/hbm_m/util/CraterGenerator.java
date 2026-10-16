@@ -128,7 +128,7 @@ public class CraterGenerator {
         }
 
         long endTime = System.currentTimeMillis();
-        MainRegistry.LOGGER.debug("[CRATER] Генерация кратера завершена за " + (endTime - startTime) + " мс");
+        MainRegistry.LOGGER.debug("[CRATER] Crater generation finished in " + (endTime - startTime) + " ms");
     }
 
     private static void collectCraterBlocksOptimized(ServerLevel level, BlockPos centerPos, int searchRadius, int depth,
@@ -354,14 +354,14 @@ public class CraterGenerator {
             discardedCount++;
             if (discardedCount % 100 == 0) Thread.yield();
         }
-        MainRegistry.LOGGER.debug("[CRATER] Удалено предметов: " + discardedCount);
+        MainRegistry.LOGGER.debug("[CRATER] Discarded items: " + discardedCount);
     }
 
     private static void applyDamageZonesOptimizedV2(ServerLevel level, BlockPos centerPos,
                                                     Block wasteLogBlock, Block wastePlanksBlock,
                                                     Block burnedGrassBlock, Block[] selafitBlocks,
                                                     RandomSource random) {
-        MainRegistry.LOGGER.debug("[CRATER] Применение зон повреждения начато!");
+        MainRegistry.LOGGER.debug("[CRATER] Damage zone application started");
         int centerX = centerPos.getX();
         int centerY = centerPos.getY();
         int centerZ = centerPos.getZ();
@@ -443,7 +443,7 @@ public class CraterGenerator {
             item.discard();
         }
         applyKillZoneToEntitiesOptimized(level, centerPos, random);
-        MainRegistry.LOGGER.debug("[CRATER]  Применение зон повреждения завершено!");
+        MainRegistry.LOGGER.debug("[CRATER] Damage zone application finished");
     }
 
 

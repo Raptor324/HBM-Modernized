@@ -138,7 +138,8 @@ public class HeatingOvenBlock extends BaseEntityBlock implements IMultiblockCont
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         if (level.isClientSide()) {
-            return null;
+            return createTickerHelper(type, ModBlockEntities.HEATING_OVEN_BE.get(),
+                HeatingOvenBlockEntity::clientTick);
         }
         return createTickerHelper(type, ModBlockEntities.HEATING_OVEN_BE.get(),
             HeatingOvenBlockEntity::serverTick);
@@ -153,16 +154,16 @@ public class HeatingOvenBlock extends BaseEntityBlock implements IMultiblockCont
     }
 
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         return openMenu(state, level, pos, player, hand, hit);
     }
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
-    //?}
+    *///?}
 
     private InteractionResult openMenu(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (level.isClientSide()) {
@@ -171,13 +172,7 @@ public class HeatingOvenBlock extends BaseEntityBlock implements IMultiblockCont
 
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof HeatingOvenBlockEntity oven) {
-            // Shift+click to toggle door
-            if (player.isShiftKeyDown()) {
-                oven.toggleDoor();
-                return InteractionResult.CONSUME;
-            }
-
-            // Normal click to open GUI
+            // Дверца открывается сама, пока GUI открыт (playersUsing), как в оригинале
             MenuRegistry.openExtendedMenu((ServerPlayer) player, oven, buf -> buf.writeBlockPos(pos));
             return InteractionResult.CONSUME;
         }
@@ -200,11 +195,11 @@ public class HeatingOvenBlock extends BaseEntityBlock implements IMultiblockCont
     }
 
     //? if >1.20.1 {
-    public static final com.mojang.serialization.MapCodec<HeatingOvenBlock> CODEC = simpleCodec(HeatingOvenBlock::new);
+    /*public static final com.mojang.serialization.MapCodec<HeatingOvenBlock> CODEC = simpleCodec(HeatingOvenBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    //?}
+    *///?}
 }

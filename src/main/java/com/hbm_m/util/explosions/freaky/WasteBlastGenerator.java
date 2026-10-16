@@ -124,9 +124,7 @@ public class WasteBlastGenerator {
 
         // Сортируем блоки по расстоянию от эпицентра (от центра к краям)
         List<Map.Entry<BlockPos, Integer>> sortedBlocks = new ArrayList<>(blocksToProcess.entrySet());
-        // Ascending: the shielding model only works if a block is processed after whatever stands
-        // between it and the epicentre. The comparator was reversed, so it ran edges-first.
-        sortedBlocks.sort(Map.Entry.comparingByValue());
+        sortedBlocks.sort((a, b) -> Integer.compare(b.getValue(), a.getValue()));
 
         Set<BlockPos> protectedBlocks = new HashSet<>();
 
@@ -413,37 +411,27 @@ public class WasteBlastGenerator {
             }
         }
 
-        // Сортируем по расстоянию: от центра к краям, иначе модель затенения не работает -
-        // блок может быть прикрыт только тем, что уже обработано ближе к эпицентру.
+        // Сортируем по расстоянию
         List<Map.Entry<BlockPos, Integer>> sortedBlocks = new ArrayList<>(blocksToProcess.entrySet());
-        sortedBlocks.sort(Map.Entry.comparingByValue());
+        sortedBlocks.sort((a, b) -> Integer.compare(b.getValue(), a.getValue()));
 
         // Планируем удаление с анимацией
         Set<BlockPos> removedBlocks = new HashSet<>();
-        Set<BlockPos> protectedBlocks = new HashSet<>();
         int blocksPerTick = Math.max(1, sortedBlocks.size() / 40);
-        processBlocksAnimated(level, sortedBlocks, blocksPerTick, 0, removedBlocks, protectedBlocks,
-                upperPartBlocks, centerPos, radius, sellafieldBlocks);
+        processBlocksAnimated(level, sortedBlocks, blocksPerTick, 0, removedBlocks,
+                upperPartBlocks, centerPos, sellafieldBlocks);
     }
 
     /**
-     * Обработка блоков с анимацией.
-     *
-     * <p>{@code protectedBlocks} and the blast radius are threaded through the batches: the set
-     * used to be recreated on every tick, which reset the shielding model each batch, and the
-     * survival chance was normalised by the block's own Manhattan distance instead of the radius,
-     * so {@code distance / maxRadius} came out at or near 1 for every block - the whole falloff
-     * was gone. The instant variant already passes the radius.</p>
+     * Обработка блоков с анимацией
      */
     private static void processBlocksAnimated(ServerLevel level,
                                               List<Map.Entry<BlockPos, Integer>> sortedBlocks,
                                               int blocksPerTick,
                                               int currentIndex,
                                               Set<BlockPos> removedBlocks,
-                                              Set<BlockPos> protectedBlocks,
                                               Set<BlockPos> upperPartBlocks,
                                               BlockPos centerPos,
-                                              int radius,
                                               Block[] sellafieldBlocks) {
         RandomSource random = level.random;
 
@@ -452,6 +440,8 @@ public class WasteBlastGenerator {
                     sellafieldBlocks, random);
             return;
         }
+
+        Set<BlockPos> protectedBlocks = new HashSet<>();
 
         int endIndex = Math.min(currentIndex + blocksPerTick, sortedBlocks.size());
         for (int i = currentIndex; i < endIndex; i++) {
@@ -465,7 +455,7 @@ public class WasteBlastGenerator {
             }
 
             int distance = sortedBlocks.get(i).getValue();
-            float survivalChance = calculateSurvivalChance(resistance, distance, radius);
+            float survivalChance = calculateSurvivalChance(resistance, distance, centerPos.distManhattan(pos));
 
             if (random.nextFloat() < survivalChance) {
                 protectedBlocks.add(pos);
@@ -482,7 +472,7 @@ public class WasteBlastGenerator {
         if (level.getServer() != null) {
             level.getServer().tell(new net.minecraft.server.TickTask(1, () -> {
                 processBlocksAnimated(level, sortedBlocks, blocksPerTick, nextIndex,
-                        removedBlocks, protectedBlocks, upperPartBlocks, centerPos, radius, sellafieldBlocks);
+                        removedBlocks, upperPartBlocks, centerPos, sellafieldBlocks);
             }));
         }
     }

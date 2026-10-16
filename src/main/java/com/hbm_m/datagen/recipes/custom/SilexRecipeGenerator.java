@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import com.hbm_m.item.ModItems;
+import com.hbm_m.item.ModItems;
 import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
 import com.hbm_m.item.material.ModMaterials;
@@ -11,7 +11,7 @@ import net.minecraft.world.item.crafting.Ingredient;
 
 import java.util.function.Consumer;
 
-/^*
+/**
  * Генератор JSON-рецептов SILEX ({@code hbm_m:silex}).
  *
  * <p>Порт рецептов 1:1 из статического {@code com.hbm_m.recipe.SilexRecipes} — прямый перенос
@@ -19,7 +19,7 @@ import java.util.function.Consumer;
  * (U → U235/U238, Pu-Mix → Pu239/Pu240, Am-Mix → Am241/Am242).</p>
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.</p>
- ^/
+ */
 public final class SilexRecipeGenerator {
 
     private SilexRecipeGenerator() {}
@@ -57,4 +57,4 @@ public final class SilexRecipeGenerator {
                 .save(writer, "silex/" + id);
     }
 }
-*///?}
+//?}

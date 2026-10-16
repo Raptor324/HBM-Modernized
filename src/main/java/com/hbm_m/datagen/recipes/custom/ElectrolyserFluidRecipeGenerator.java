@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import com.hbm_m.inventory.fluid.ModFluids;
+import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
@@ -12,12 +12,12 @@ import net.minecraft.world.item.ItemStack;
 
 import java.util.function.Consumer;
 
-/^*
+/**
  * Генератор JSON-рецептов электролизёра, Fluid-режим ({@code hbm_m:electrolyser_fluid}).
  *
  * <p>Порт 6 рецептов из удалённого статического {@code ElectrolyserRecipes} (Fluid-часть).
  * Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.</p>
- ^/
+ */
 public final class ElectrolyserFluidRecipeGenerator {
 
     private ElectrolyserFluidRecipeGenerator() {}
@@ -75,4 +75,4 @@ public final class ElectrolyserFluidRecipeGenerator {
         return FluidStack.create(entry.getSource(), (long) amountMb);
     }
 }
-*///?}
+//?}

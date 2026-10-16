@@ -27,13 +27,25 @@ import net.minecraft.world.phys.Vec3;
  * Портировано из explosiveideas (NukeExplosionEmitterParticle), без вспышки и тряски камеры.
  * Все эффекты затухают со временем; рендер только на клиенте.
  */
-public class NukeExplosionRings extends ParticleNT implements FarCapableParticle {
+public class NukeExplosionRings extends ParticleNT implements FarCapableParticle, ReplaceOnRespawn {
 
+    //? if fabric && < 1.21.1 {
+    /*private static final ResourceLocation TEXTURE_FLARE = new ResourceLocation(RefStrings.MODID, "textures/particle/nuke_explosion_flare.png");
+    *///?} else {
         private static final ResourceLocation TEXTURE_FLARE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/particle/nuke_explosion_flare.png");
+    //?}
 
+    //? if fabric && < 1.21.1 {
+    /*private static final ResourceLocation TEXTURE_FIRE = new ResourceLocation(RefStrings.MODID, "textures/particle/nuke_explosion.png");
+    *///?} else {
         private static final ResourceLocation TEXTURE_FIRE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/particle/nuke_explosion.png");
+    //?}
 
+    //? if fabric && < 1.21.1 {
+    /*private static final ResourceLocation TEXTURE_SMOKE = new ResourceLocation(RefStrings.MODID, "textures/particle/nuke_explosion_smoke.png");
+    *///?} else {
         private static final ResourceLocation TEXTURE_SMOKE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/particle/nuke_explosion_smoke.png");
+    //?}
 
 
     private static final int MAX_SUB_PARTICLES = 1_500;

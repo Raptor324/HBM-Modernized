@@ -17,10 +17,10 @@ import net.minecraft.client.Minecraft;
  * (запись геометрии в их FBO отравляла композит apply.frag — «чёрная земля»).
  */
 //? if forge {
-/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-*///?} elif neoforge {
-@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
- //?}
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+ *///?}
 public final class DhClientCompat {
 
     private DhClientCompat() {}
@@ -222,10 +222,10 @@ public final class DhClientCompat {
             PoseStack bob = new PoseStack();
             float hurtTick;
             //? if < 1.21.1 {
-            /*hurtTick = partialTick;
-            *///?} else {
-            hurtTick = cam.getPartialTickTime();
-             //?}
+            hurtTick = partialTick;
+            //?} else {
+            /*hurtTick = cam.getPartialTickTime();
+             *///?}
             invokeBob(gr, "bobHurt", bob, hurtTick);
             if (mc.options.bobView().get()) {
                 invokeBob(gr, "bobView", bob, partialTick);

@@ -38,10 +38,10 @@ public class RedCableGaugeBlock extends BaseEntityBlock implements ILookOverlay 
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
 
     //? if > 1.20.1 {
-    public static final com.mojang.serialization.MapCodec<RedCableGaugeBlock> CODEC = simpleCodec(RedCableGaugeBlock::new);
+    /*public static final com.mojang.serialization.MapCodec<RedCableGaugeBlock> CODEC = simpleCodec(RedCableGaugeBlock::new);
     @Override
     protected com.mojang.serialization.MapCodec<? extends BaseEntityBlock> codec() { return CODEC; }
-    //?}
+    *///?}
 
     public RedCableGaugeBlock(Properties properties) {
         super(properties);

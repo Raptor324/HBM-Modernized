@@ -1,6 +1,5 @@
 package com.hbm_m.inventory.gui;
 
-import com.hbm_m.network.CraneControlPacket;
 import com.hbm_m.blockentity.network.MachineCraneRouterBlockEntity;
 import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.filter.ModulePatternMatcher;
@@ -95,13 +94,12 @@ public class GUIMachineCraneRouter extends GuiInfoScreen<MachineCraneRouterMenu>
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (router == null) return super.mouseClicked(mouseX, mouseY, button); // no tile in a Flashback replay
-        net.minecraft.core.BlockPos pos = router.getBlockPos();
+        if (router == null) return super.mouseClicked(mouseX, mouseY, button); // тайл может отсутствовать в реплее Flashback
         for (int col = 0; col < 2; col++) {
             for (int row = 0; row < 3; row++) {
                 int side = col * 3 + row;
                 if (isHovering(7 + col * 222, 16 + row * 26, 18, 18, (int) mouseX, (int) mouseY)) {
-                    CraneControlPacket.sendToServer(pos, CraneControlPacket.ROUTER_TARGET_MODE, side);
+                    router.nextTargetMode(side);
                     return true;
                 }
             }
@@ -110,7 +108,7 @@ public class GUIMachineCraneRouter extends GuiInfoScreen<MachineCraneRouterMenu>
         for (int i = 0; i < MachineCraneRouterBlockEntity.INVENTORY_SIZE; i++) {
             Slot slot = this.menu.slots.get(i);
             if (isHoveringSlot(slot, (int) mouseX, (int) mouseY) && button == 1 && slot.hasItem()) {
-                CraneControlPacket.sendToServer(pos, CraneControlPacket.FILTER_MODE, i);
+                router.nextFilterMode(i);
                 return true;
             }
         }

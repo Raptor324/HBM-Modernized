@@ -46,8 +46,8 @@ public class RedConnectorBlock extends BaseEntityBlock {
     private final Supplier<? extends BlockEntityType<? extends PylonBaseBlockEntity>> type;
     private final int maxRange;
     //? if > 1.20.1 {
-    private final com.mojang.serialization.MapCodec<RedConnectorBlock> codec;
-    //?}
+    /*private final com.mojang.serialization.MapCodec<RedConnectorBlock> codec;
+    *///?}
 
     public RedConnectorBlock(Properties properties, Supplier<? extends BlockEntityType<? extends PylonBaseBlockEntity>> type, int maxRange) {
         super(properties);
@@ -55,8 +55,8 @@ public class RedConnectorBlock extends BaseEntityBlock {
         this.maxRange = maxRange;
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.DOWN));
         //? if > 1.20.1 {
-        this.codec = simpleCodec(p -> new RedConnectorBlock(p, type, maxRange));
-        //?}
+        /*this.codec = simpleCodec(p -> new RedConnectorBlock(p, type, maxRange));
+        *///?}
     }
 
     @Override
@@ -65,9 +65,9 @@ public class RedConnectorBlock extends BaseEntityBlock {
     }
 
     //? if > 1.20.1 {
-    @Override
+    /*@Override
     protected com.mojang.serialization.MapCodec<? extends BaseEntityBlock> codec() { return codec; }
-    //?}
+    *///?}
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
@@ -122,17 +122,6 @@ public class RedConnectorBlock extends BaseEntityBlock {
         return RenderShape.MODEL;
     }
 
-    // Breaking a connector used to leave its wire partners still pointing at it (RedPylonCoreBlock
-    // does this for pylons); the peer node kept the dead link and power flowed through nothing.
-    @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (!level.isClientSide && newState.getBlock() != this
-                && level.getBlockEntity(pos) instanceof PylonBaseBlockEntity pylon) {
-            pylon.disconnectAll();
-        }
-        super.onRemove(state, level, pos, newState, isMoving);
-    }
-
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
@@ -157,12 +146,14 @@ public class RedConnectorBlock extends BaseEntityBlock {
     }
 
     //? if < 1.21.1 {
-    /*@Override
-    public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
-    *///?} else {
     @Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-    //?}
+    public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
         addTooltip(tooltip);
     }
+    //?} else {
+    /*@Override
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+        addTooltip(tooltip);
+    }
+    *///?}
 }

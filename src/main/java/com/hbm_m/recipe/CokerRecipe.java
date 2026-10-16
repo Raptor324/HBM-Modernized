@@ -102,7 +102,11 @@ public class CokerRecipe extends PlatformRecipe {
 
     public static class Serializer extends PlatformRecipeSerializer<CokerRecipe> {
         public static final Serializer INSTANCE = new Serializer();
+        //? if fabric && < 1.21.1 {
+        /*public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "coker");
+        *///?} else {
         public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "coker");
+        //?}
 
         @Override
         public CokerRecipe readJson(ResourceLocation recipeId, JsonObject json) {

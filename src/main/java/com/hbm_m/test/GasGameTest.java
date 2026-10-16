@@ -49,12 +49,12 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.PushReaction;
 //? if forge {
-/*import net.minecraftforge.gametest.GameTestHolder;
+import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
-*///?} elif neoforge {
-import net.neoforged.neoforge.gametest.GameTestHolder;
+//?} elif neoforge {
+/*import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
- //?}
+ *///?}
 
 /**
  * Кроссплатформенный набор GameTest-ов для системы газов ({@code com.hbm_m.block.gas}).
@@ -172,7 +172,7 @@ public final class GasGameTest {
      */
     private static Player makeSurvivalPlayer(GameTestHelper helper) {
         //? if < 1.21.1 {
-        /*return new Player(helper.getLevel(), BlockPos.ZERO, 0.0F,
+        return new Player(helper.getLevel(), BlockPos.ZERO, 0.0F,
                 new com.mojang.authlib.GameProfile(UUID.randomUUID(), "gas-test-player")) {
             @Override
             public boolean isSpectator() {
@@ -184,9 +184,9 @@ public final class GasGameTest {
                 return false;
             }
         };
-        *///?} else {
-        return helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
-         //?}
+        //?} else {
+        /*return helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+         *///?}
     }
 
     /** Надевает противогаз с установленным фильтром. */
@@ -967,29 +967,17 @@ public final class GasGameTest {
     public static void gas_meltdownPumpsChunkRadiationUnderSky(GameTestHelper helper) {
         fillBox(helper, 0, 0, 0, 4, 4, 4, Blocks.STONE);
         // Колонка: воздух y=1..3, стекло y=4 (небо видно, свет проходит)
-        helper.setBlock(CENTER, Blocks.AIR);
+        helper.setBlock(new BlockPos(2, 1, 2), Blocks.AIR);
         helper.setBlock(new BlockPos(2, 2, 2), Blocks.AIR);
         helper.setBlock(new BlockPos(2, 3, 2), Blocks.AIR);
         helper.setBlock(new BlockPos(2, 4, 2), Blocks.GLASS);
-        BlockPos abs = helper.absolutePos(CENTER);
+        BlockPos abs = helper.absolutePos(new BlockPos(2, 1, 2));
         Level level = helper.getLevel();
         float baseline = ChunkRadiationManager.getRadiation(level, abs.getX(), abs.getY(), abs.getZ());
-        Block gas = ModBlocks.GAS_MELTDOWN.get();
-        helper.setBlock(CENTER, gas);
+        helper.setBlock(new BlockPos(2, 1, 2), ModBlocks.GAS_MELTDOWN.get());
         // Система чанк-радиации имеет собственный распад (×0.99 − 0.05 за цикл):
         // при непрерывной накачке +5/тик значение выходит на равновесие ~30 RAD.
-        helper.startSequence().thenExecuteFor(160, () -> {
-            // The gas both drifts upward (tryMove) and disperses on a roll, so the source leaves
-            // (2,1,2) on most runs and the pump stops early. Re-seed only when the whole air column
-            // is empty — replacing it while the old block still floats above would stack sources
-            // and let the test pass on inflated output.
-            for (int y = 1; y <= 3; y++) {
-                if (helper.getBlockState(new BlockPos(2, y, 2)).is(gas)) {
-                    return;
-                }
-            }
-            helper.setBlock(CENTER, gas);
-        }).thenExecute(() -> {
+        helper.startSequence().thenExecuteAfter(160, () -> {
             float rad = ChunkRadiationManager.getRadiation(level, abs.getX(), abs.getY(), abs.getZ());
             if (level.canSeeSky(abs)) {
                 // Арена под открытым небом — газ качает +5 RAD/тик в чанк.

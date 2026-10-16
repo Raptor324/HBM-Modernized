@@ -47,9 +47,6 @@ public class ArmorSidePanelSlot extends Slot {
     }
 
     private void playEquipSound(ArmorItem armorItem) {
-        // Server only: playSound here broadcasts without excluding the actor, so the client played
-        // it a second time on top of the server's.
-        if (player.level().isClientSide()) return;
         com.hbm_m.platform.PlatformHooks.playSound(player.level(), player.getX(), player.getY(), player.getZ(),
                 armorItem.getEquipSound(), SoundSource.PLAYERS, 1.0F, 1.0F);
     }
@@ -60,10 +57,10 @@ public class ArmorSidePanelSlot extends Slot {
             return false;
         }
         //? if < 1.21.1 {
-        /*return Mob.getEquipmentSlotForItem(stack) == this.slotType;
-        *///?} else {
-        return this.player.getEquipmentSlotForItem(stack) == this.slotType;
-        //?}
+        return Mob.getEquipmentSlotForItem(stack) == this.slotType;
+        //?} else {
+        /*return this.player.getEquipmentSlotForItem(stack) == this.slotType;
+        *///?}
     }
 
     @Override

@@ -1,7 +1,7 @@
 package com.hbm_m.datagen;
 //? if forge {
 
-/*import java.util.ArrayList;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +53,7 @@ import net.minecraftforge.common.world.BiomeModifier;
 import net.minecraftforge.common.world.ForgeBiomeModifiers;
 import net.minecraftforge.registries.ForgeRegistries;
 
-/^*
+/**
  * Датаген всех configured/placed feature и biome-модификаторов мода — полная замена
  * рукописным JSON в {@code data/hbm_m/worldgen} и {@code data/hbm_m/forge/biome_modifier}.
  *
@@ -61,7 +61,7 @@ import net.minecraftforge.registries.ForgeRegistries;
  * 1.18+ (камень до ~y0, глыбовый сланец ниже): низкоплавковые руды ушли в глубокий сланец,
  * поверхностные (лигнит, известняк) подняты выше; Незер не изменился (там те же 0..127).
  * Числа жил/размеры взяты из {@code HbmWorldGen} + {@code WorldConfig} оригинала.
- ^/
+ */
 public final class ModWorldGenProvider {
 
     private ModWorldGenProvider() {}
@@ -332,20 +332,6 @@ public final class ModWorldGenProvider {
                         net.minecraft.world.level.biome.Biomes.WINDSWEPT_SAVANNA,
                         net.minecraft.world.level.biome.Biomes.BEACH),
                 List.of("sand_oil_deposit"), GenerationStep.Decoration.UNDERGROUND_ORES);
-
-        // Natural mob spawns. The port registered SpawnPlacement predicates for the three creepers
-        // but no biome ever carried a spawn entry, so they only ever came from spawn eggs. Upstream
-        // EntityMappings adds phosgene (5), volatile (10) and gold (1) to every biome, monster
-        // category; the port's own placement rules already gate them to the overworld and y <= 40.
-        ctx.register(bm("add_spawns"), new ForgeBiomeModifiers.AddSpawnsBiomeModifier(
-                biomes.getOrThrow(BiomeTags.IS_OVERWORLD),
-                List.of(
-                        new net.minecraft.world.level.biome.MobSpawnSettings.SpawnerData(
-                                com.hbm_m.entity.ModEntities.ENTITY_MOB_PHOSGENE_CREEPER.get(), 5, 1, 1),
-                        new net.minecraft.world.level.biome.MobSpawnSettings.SpawnerData(
-                                com.hbm_m.entity.ModEntities.ENTITY_MOB_VOLATILE_CREEPER.get(), 10, 1, 1),
-                        new net.minecraft.world.level.biome.MobSpawnSettings.SpawnerData(
-                                com.hbm_m.entity.ModEntities.ENTITY_MOB_GOLD_CREEPER.get(), 1, 1, 1))));
     }
 
     private static void addModifier(BootstapContext<BiomeModifier> ctx,
@@ -428,4 +414,4 @@ public final class ModWorldGenProvider {
                         new SimpleBlockConfiguration(BlockStateProvider.simple(block.defaultBlockState()))))));
     }
 }
-*///?}
+//?}

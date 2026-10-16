@@ -12,10 +12,10 @@ import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-/*import net.minecraftforge.client.model.data.ModelData;
-*///?} elif neoforge {
-import net.neoforged.neoforge.client.model.data.ModelData;
-//?}
+import net.minecraftforge.client.model.data.ModelData;
+//?} elif neoforge {
+/*import net.neoforged.neoforge.client.model.data.ModelData;
+*///?}
 
 /**
  * Baked model for the decorative Soyuz launch tower (6 separate OBJ parts:
@@ -25,7 +25,7 @@ import net.neoforged.neoforge.client.model.data.ModelData;
  * chunk-local vertex encoding used by the normal baked-model/chunk-mesh
  * pipeline (and by fast renderers like Sodium/Embeddium), which silently
  * wraps/corrupts geometry that large ("inside-out" looking parts). So,
- * like {@link MachineHydraulicFrackiningTowerBakedModel}, world rendering
+ * like the configured multipart machine models, world rendering
  * is skipped entirely here and handled instead by a BlockEntityRenderer
  * using direct float-precision VBOs (see SoyuzLauncherRenderer).
  */

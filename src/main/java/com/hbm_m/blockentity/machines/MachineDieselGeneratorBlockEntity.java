@@ -60,7 +60,7 @@ public class MachineDieselGeneratorBlockEntity extends BaseMachineBlockEntity im
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
             net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
@@ -68,7 +68,7 @@ public class MachineDieselGeneratorBlockEntity extends BaseMachineBlockEntity im
         }
         return super.getCapability(cap, side);
     }
-    *///?}
+    //?}
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineDieselGeneratorBlockEntity be) {
         if (level.isClientSide()) return;
@@ -80,7 +80,7 @@ public class MachineDieselGeneratorBlockEntity extends BaseMachineBlockEntity im
 
         if (level.getGameTime() % 20 == 0) {
             for (Direction dir : Direction.values()) {
-                trySubscribe(tank, level, pos.relative(dir), dir);
+                trySubscribe(tank.getTankType(), level, pos.relative(dir), dir);
             }
         }
 

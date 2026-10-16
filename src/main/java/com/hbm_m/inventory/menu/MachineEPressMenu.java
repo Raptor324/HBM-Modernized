@@ -15,8 +15,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 //? if forge {
-/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
-*///?}
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+//?}
 
 public class MachineEPressMenu extends AbstractContainerMenu {
 
@@ -92,10 +92,6 @@ public class MachineEPressMenu extends AbstractContainerMenu {
     private static final int VANILLA_FIRST_SLOT_INDEX = 0;
     private static final int TE_INVENTORY_FIRST_SLOT_INDEX = VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT;
     private static final int TE_INVENTORY_SLOT_COUNT = 5;
-    /** Battery, stamp and material; the output sits between them and the upgrade slot and must stay
-     * out of the insert range - vanilla moveItemStackTo ignores mayPlace when merging. */
-    private static final int TE_INSERTABLE_SLOT_COUNT = 3;
-    private static final int TE_UPGRADE_SLOT_OFFSET = 4;
 
     @Override
     public ItemStack quickMoveStack(Player playerIn, int index) {
@@ -107,9 +103,7 @@ public class MachineEPressMenu extends AbstractContainerMenu {
 
         if (index < VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT) {
             if (!moveItemStackTo(sourceStack, TE_INVENTORY_FIRST_SLOT_INDEX, TE_INVENTORY_FIRST_SLOT_INDEX
-                    + TE_INSERTABLE_SLOT_COUNT, false)
-                    && !moveItemStackTo(sourceStack, TE_INVENTORY_FIRST_SLOT_INDEX + TE_UPGRADE_SLOT_OFFSET,
-                            TE_INVENTORY_FIRST_SLOT_INDEX + TE_UPGRADE_SLOT_OFFSET + 1, false)) {
+                    + TE_INVENTORY_SLOT_COUNT, false)) {
                 return ItemStack.EMPTY;
             }
         } else if (index < TE_INVENTORY_FIRST_SLOT_INDEX + TE_INVENTORY_SLOT_COUNT) {
@@ -160,10 +154,10 @@ public class MachineEPressMenu extends AbstractContainerMenu {
         public boolean mayPlace(ItemStack stack) {
             if (ItemEnergyAccess.getHbmProvider(stack).isPresent()) return true;
             //? if forge {
-            /*return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
-            *///?} elif neoforge {
-            return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
-            //?} else {
+            return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
+            //?} elif neoforge {
+            /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
+            *///?} else {
             /*return false;
             *///?}
         }

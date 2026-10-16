@@ -112,8 +112,12 @@ void main() {
     mat4 rotMatrix = quatToMat4(InstRot);
     mat4 translation = mat4(1.0);
     translation[3] = vec4(InstPos, 1.0);
+    // InstPos/InstRot — МИРОВЫЕ координаты (FrameViewState): движение камеры не
+    // меняет записи (span-дифф даёт нулевой аплоад статичной сцены). Камера
+    // (R_cam·T(-cam)) приходит через ModelViewMat → viewPos остаётся view-space,
+    // туман/глубина не меняются.
     mat4 instBase = translation * rotMatrix;
-    modelView = instBase;
+    modelView = ModelViewMat * instBase;
     worldRot = rotMatrix;
     bboxMin = InstBboxMin;
     bboxSize = InstBboxSize.xyz;
@@ -122,7 +126,9 @@ void main() {
     lc45 = InstLightC45;
     lc67 = InstLightC67;
 
-    fragNormal = mat3(modelView) * Normal;
+    // Мировая нормаль части (без view-ротации) — для затенения; fragNormal
+    // сохраняет прежнюю семантику (ротация инстанса, без камеры).
+    fragNormal = mat3(instBase) * Normal;
 #else
     modelView = ModelViewMat;
     bboxMin = BboxMin;

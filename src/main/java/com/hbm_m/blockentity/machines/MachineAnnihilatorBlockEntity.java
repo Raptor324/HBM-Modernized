@@ -13,7 +13,7 @@ import com.hbm_m.hazard.HazardRegistry;
 import com.hbm_m.hazard.HazardSystem;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineAnnihilatorMenu;
-import com.hbm_m.radiation.ChunkRadiationManager;
+import com.hbm_m.radiation.ChunkRadiationAccess;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -29,6 +29,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.material.Fluid;
 
 /**
@@ -77,7 +78,7 @@ public class MachineAnnihilatorBlockEntity extends BaseMachineBlockEntity implem
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public @NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
             net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
@@ -85,7 +86,7 @@ public class MachineAnnihilatorBlockEntity extends BaseMachineBlockEntity implem
         }
         return super.getCapability(cap, side);
     }
-    *///?}
+    //?}
 
     // ==================== TICK ====================
 
@@ -94,7 +95,7 @@ public class MachineAnnihilatorBlockEntity extends BaseMachineBlockEntity implem
 
         if (level.getGameTime() % 20 == 0) {
             for (Direction dir : Direction.values()) {
-                be.trySubscribe(be.tank, level, pos.relative(dir), dir);
+                be.trySubscribe(be.tank.getTankType(), level, pos.relative(dir), dir);
             }
         }
 
@@ -138,9 +139,9 @@ public class MachineAnnihilatorBlockEntity extends BaseMachineBlockEntity implem
         if (hazard <= 0f) return;
 
         float amount = Math.min(1000f, hazard * count);
-        // Go through the manager: writing the attachment directly skips the config gate, leaves the
-        // chunk out of the active set (no spread or decay) and never marks it unsaved.
-        ChunkRadiationManager.incrementRad(level, worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(), amount);
+        LevelChunk chunk = level.getChunkAt(worldPosition);
+        ChunkRadiationAccess.get(chunk).ifPresent(rad ->
+                rad.setAmbientRadiation(rad.getAmbientRadiation() + amount));
     }
 
     private void updateMonitor(ServerLevel level) {

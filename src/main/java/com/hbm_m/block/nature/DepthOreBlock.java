@@ -13,14 +13,17 @@ import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.level.Explosion;
 
 //? if neoforge {
-import net.minecraft.world.item.Item.TooltipContext;
+/*import net.minecraft.world.item.Item.TooltipContext;
+import net.minecraft.world.item.TooltipFlag;
+*///?}
+
+//? if forge {
 import net.minecraft.world.item.TooltipFlag;
 //?}
 
-//? if forge {
+//? if fabric {
 /*import net.minecraft.world.item.TooltipFlag;
 *///?}
-
 
 import org.jetbrains.annotations.Nullable;
 
@@ -37,22 +40,31 @@ public class DepthOreBlock extends Block {
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public void appendHoverText(ItemStack stack,
                                 @Nullable BlockGetter level,
                                 List<Component> tooltip,
                                 TooltipFlag flag) {
         addDepthOreTooltip(tooltip);
     }
-    *///?}
+    //?}
 
     //? if neoforge {
-    @Override
+    /*@Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         addDepthOreTooltip(tooltip);
     }
-    //?}
+    *///?}
 
+    //? if fabric {
+    /*@Override
+    public void appendHoverText(ItemStack stack,
+                                @Nullable net.minecraft.world.level.BlockGetter level,
+                                List<Component> tooltip,
+                                TooltipFlag flag) {
+        addDepthOreTooltip(tooltip);
+    }
+    *///?}
 
     private static void addDepthOreTooltip(List<Component> tooltip) {
         tooltip.add(Component.translatable("tooltip.hbm_m.depthstone.line1")
@@ -70,19 +82,25 @@ public class DepthOreBlock extends Block {
     }
 
     //? if forge {
-    /*@Override
-    public void onBlockExploded(BlockState state, Level level, BlockPos pos, Explosion explosion) {
-        explodeDropAndRemove(level, pos);
-    }
-    *///?}
-
-    //? if neoforge {
     @Override
     public void onBlockExploded(BlockState state, Level level, BlockPos pos, Explosion explosion) {
         explodeDropAndRemove(level, pos);
     }
     //?}
 
+    //? if neoforge {
+    /*@Override
+    public void onBlockExploded(BlockState state, Level level, BlockPos pos, Explosion explosion) {
+        explodeDropAndRemove(level, pos);
+    }
+    *///?}
+
+    //? if fabric {
+    /*@Override
+    public void wasExploded(Level level, BlockPos pos, Explosion explosion) {
+        explodeDropAndRemove(level, pos);
+    }
+    *///?}
 
     private void explodeDropAndRemove(Level level, BlockPos pos) {
         popResource(level, pos, new ItemStack(this));

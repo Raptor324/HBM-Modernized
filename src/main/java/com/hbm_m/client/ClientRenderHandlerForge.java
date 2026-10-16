@@ -1,13 +1,13 @@
 //? if forge {
-/*package com.hbm_m.client;
+package com.hbm_m.client;
 
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
-/^*
+/**
  * Forge-only event wiring for {@link ClientRenderHandler}.
- ^/
+ */
 public final class ClientRenderHandlerForge {
     private ClientRenderHandlerForge() {}
 
@@ -17,10 +17,10 @@ public final class ClientRenderHandlerForge {
         ClientRenderHandler.onClientTickEnd();
     }
 
-    /^*
+    /**
      * Не регистрируется на EVENT_BUS в текущем билде: MDI и подсветка мира
      * выполняются в {@link com.hbm_m.client.ClientModEvents#onRenderLevelStage}.
-     ^/
+     */
     @SubscribeEvent
     public static void onRenderWorld(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) return;
@@ -29,5 +29,5 @@ public final class ClientRenderHandlerForge {
         ClientRenderHandler.onRenderWorldLate(mc.renderBuffers().bufferSource(), event.getPoseStack(), cameraPos);
     }
 }
-*///?}
+//?}
 

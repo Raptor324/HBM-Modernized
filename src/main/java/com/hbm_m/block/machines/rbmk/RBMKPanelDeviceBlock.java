@@ -74,7 +74,7 @@ public class RBMKPanelDeviceBlock extends RBMKMiniPanelBlock {
     }
 
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos,
                                   Player player, InteractionHand hand, BlockHitResult hit) {
 
@@ -102,8 +102,8 @@ public class RBMKPanelDeviceBlock extends RBMKMiniPanelBlock {
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
         }
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
 
         BlockEntity be = level.getBlockEntity(pos);
@@ -130,14 +130,14 @@ public class RBMKPanelDeviceBlock extends RBMKMiniPanelBlock {
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
         }
-    //?}
+    *///?}
 
 
     //? if >1.20.1 {
-    @Override
+    /*@Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return simpleCodec(p -> new RBMKPanelDeviceBlock(p, this.factory, this.typeSupplier, this.screenId, this.requireScrewdriver, this.primaryClick));
     }
-    //?}
+    *///?}
 
 }

@@ -9,12 +9,12 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 //? if forge {
-/*import net.minecraftforge.gametest.GameTestHolder;
+import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
-*///?} elif neoforge {
-import net.neoforged.neoforge.gametest.GameTestHolder;
+//?} elif neoforge {
+/*import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
-//?}
+*///?}
 
 /**
  * Parity suite: verifies that the OBSERVABLE contract of {@link PlatformHooks}
@@ -300,14 +300,14 @@ public final class CrossLoaderParityGameTest {
         // Mutate the returned tag directly (NOT via editItemTag).
         tag.putLong("energy", 999L);
         //? if < 1.21.1 {
-        /*// 1.20.1: live reference — the mutation persists.
+        // 1.20.1: live reference — the mutation persists.
         check(PlatformHooks.getLong(stack, "energy") == 999L,
                 "1.20.1: getItemTag returns live reference, mutation must persist");
-        *///?} else {
-    // 1.21.1: copy — the mutation does NOT persist. The value stayed 100.
+        //?} else {
+    /*// 1.21.1: copy — the mutation does NOT persist. The value stayed 100.
         check(PlatformHooks.getLong(stack, "energy") == 100L,
                 "1.21.1: getItemTag returns copy, direct mutation must NOT persist (use editItemTag)");
-        //?}
+        *///?}
         helper.succeed();
     }
 

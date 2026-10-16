@@ -7,7 +7,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
-//? if forge || neoforge {
+//? if forge {
 import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
@@ -71,4 +71,6 @@ public class SolderingStationJeiCategory implements IRecipeCategory<SolderingRec
         }
     }
 }
-//?}
+//?} else {
+/*public final class SolderingStationJeiCategory { private SolderingStationJeiCategory() {} }
+*///?}

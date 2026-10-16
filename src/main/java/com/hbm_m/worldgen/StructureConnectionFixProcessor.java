@@ -9,8 +9,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import com.mojang.serialization.Codec;
 //? if >= 1.21.1 {
-import com.mojang.serialization.MapCodec;
-//?}
+/*import com.mojang.serialization.MapCodec;
+*///?}
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
@@ -42,10 +42,10 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 public class StructureConnectionFixProcessor extends StructureProcessor {
 
     //? if < 1.21.1 {
-    /*public static final Codec<StructureConnectionFixProcessor> CODEC = Codec.unit(StructureConnectionFixProcessor::new);
-    *///?} else {
-    public static final MapCodec<StructureConnectionFixProcessor> CODEC = MapCodec.unit(StructureConnectionFixProcessor::new);
-    //?}
+    public static final Codec<StructureConnectionFixProcessor> CODEC = Codec.unit(StructureConnectionFixProcessor::new);
+    //?} else {
+    /*public static final MapCodec<StructureConnectionFixProcessor> CODEC = MapCodec.unit(StructureConnectionFixProcessor::new);
+    *///?}
 
     public static final TagKey<Block> CONNECTABLES =
             TagKey.create(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath(com.hbm_m.lib.RefStrings.MODID, "structure_connectables"));
@@ -53,16 +53,6 @@ public class StructureConnectionFixProcessor extends StructureProcessor {
     /** Отложенные позиции (с счётчиком попыток) по измерению. */
     private static final Map<ResourceKey<Level>, Queue<PendingPos>> PENDING = new ConcurrentHashMap<>();
     private static final int MAX_ATTEMPTS = 200;
-
-    /** Static and keyed by dimension: without this a queue left undrained when the world closes
-     *  would be replayed against the next world opened in the same JVM, under the same key. */
-    public static void onLevelUnload(Level level) {
-        PENDING.remove(level.dimension());
-    }
-
-    public static void onServerStop() {
-        PENDING.clear();
-    }
 
     private record PendingPos(BlockPos pos, int attempts) {}
 

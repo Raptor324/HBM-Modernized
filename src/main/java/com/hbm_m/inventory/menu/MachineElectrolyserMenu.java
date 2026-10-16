@@ -11,10 +11,10 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 //? if forge {
-/*import net.minecraftforge.items.SlotItemHandler;
-*///?} elif neoforge {
-import net.neoforged.neoforge.items.SlotItemHandler;
-//?}
+import net.minecraftforge.items.SlotItemHandler;
+//?} elif neoforge {
+/*import net.neoforged.neoforge.items.SlotItemHandler;
+*///?}
 
 /** Vereinigt beide Original-GUIs (Fluid + Metall) in einem Menu (siehe
  *  {@link MachineElectrolyserBlockEntity}) statt zwei getrennter Container/Screens wie im
@@ -46,11 +46,11 @@ public class MachineElectrolyserMenu extends AbstractContainerMenu {
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                addSlot(new Slot(inv, col + row * 9 + 9, 8 + col * 18, 165 + row * 18));
+                addSlot(new Slot(inv, col + row * 9 + 9, 8 + col * 18, 104 + row * 18));
             }
         }
         for (int col = 0; col < 9; col++) {
-            addSlot(new Slot(inv, col, 8 + col * 18, 223));
+            addSlot(new Slot(inv, col, 8 + col * 18, 162));
         }
     }
 

@@ -61,18 +61,18 @@ public class FluidValveBlock extends BaseEntityBlock {
     }
 
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos,
                                  Player player, InteractionHand hand, BlockHitResult hit) {
         return handleUse(state, level, pos, player, hand, hit);
     }
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
                                                Player player, BlockHitResult hit) {
         return handleUse(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
-    //?}
+    *///?}
 
     private InteractionResult handleUse(BlockState state, Level level, BlockPos pos,
                                         Player player, InteractionHand hand, BlockHitResult hit) {
@@ -94,11 +94,11 @@ public class FluidValveBlock extends BaseEntityBlock {
     }
 
     //? if >1.20.1 {
-    public static final com.mojang.serialization.MapCodec<FluidValveBlock> CODEC = simpleCodec(FluidValveBlock::new);
+    /*public static final com.mojang.serialization.MapCodec<FluidValveBlock> CODEC = simpleCodec(FluidValveBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    //?}
+    *///?}
 }

@@ -48,7 +48,8 @@ public final class MultiblockExpander {
         Set<BlockPos> visitedControllers = new HashSet<>();
 
         for (BlockPos pos : positions) {
-            BlockPos controllerPos = resolveControllerPos(level, pos);
+            BlockEntity be = level.getBlockEntity(pos);
+            BlockPos controllerPos = resolveControllerPos(be, pos);
 
             if (controllerPos != null && visitedControllers.add(controllerPos)) {
                 // Сам контроллер тоже часть выделения: structureMap содержит ТОЛЬКО части,
@@ -72,16 +73,12 @@ public final class MultiblockExpander {
      * @param pos позиция блока
      * @return позиция контроллера, или null если блок не является частью мультиблока HBM
      */
-    private static BlockPos resolveControllerPos(Level level, BlockPos pos) {
-        BlockEntity be = level.getBlockEntity(pos);
+    private static BlockPos resolveControllerPos(BlockEntity be, BlockPos pos) {
         if (be instanceof IMultiblockPart part) {
             // Часть знает своего контроллера
             return part.getControllerPos();
         }
-        // IMultiblockController is implemented by Block classes, never by a BlockEntity, and not
-        // every controller even has one: testing the block entity here was always false, so the
-        // whole expansion did nothing and only the controller travelled with a contraption.
-        if (level.getBlockState(pos).getBlock() instanceof IMultiblockController) {
+        if (be instanceof IMultiblockController) {
             // Сам контроллер
             return pos;
         }
@@ -96,9 +93,8 @@ public final class MultiblockExpander {
      * @return список всех позиций мультиблока, или null если контроллер не найден
      */
     public static Collection<BlockPos> getAllMultiblockPositions(Level level, BlockPos controllerPos) {
-        BlockState state = level.getBlockState(controllerPos);
-        // The controller interface lives on the Block, not the BlockEntity.
-        if (!(state.getBlock() instanceof IMultiblockController controller)) {
+        BlockEntity be = level.getBlockEntity(controllerPos);
+        if (!(be instanceof IMultiblockController controller)) {
             return null;
         }
 
@@ -107,6 +103,7 @@ public final class MultiblockExpander {
             return null;
         }
 
+        BlockState state = level.getBlockState(controllerPos);
         Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
 
         return helper.getAllPartPositions(controllerPos, facing);

@@ -38,9 +38,7 @@ public class BedrockOilOreFeature extends Feature<NoneFeatureConfiguration> {
                     if (Math.abs(dx) + dy + Math.abs(dz) > 6) continue;
 
                     BlockPos pos = new BlockPos(origin.getX() + dx, baseY + dy, origin.getZ() + dz);
-                    // getMinBuildHeight is an inclusive Y, and baseY starts there: with <= the whole bottom
-                    // layer - the widest one, and the only one containing bedrock - was never placed.
-                    if (pos.getY() < level.getMinBuildHeight() || pos.getY() >= level.getMaxBuildHeight()) continue;
+                    if (pos.getY() <= level.getMinBuildHeight() || pos.getY() >= level.getMaxBuildHeight()) continue;
 
                     BlockState existing = level.getBlockState(pos);
                     boolean replaceable = existing.is(net.minecraft.world.level.block.Blocks.BEDROCK)

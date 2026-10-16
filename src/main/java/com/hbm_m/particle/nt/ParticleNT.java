@@ -38,6 +38,12 @@ public abstract class ParticleNT {
     protected final RandomSource random;
     public int age;
     public int lifetime;
+    /**
+     * Тик движка (ParticleEngineNT.tickCounter), на который частица заспавнилась.
+     * Заполняется в ParticleEngineNT.add. Основа отката реплеера: при перемотке
+     * назад удаляются только частицы с spawnTick больше границы таймлайна.
+     */
+    public long spawnTick;
     public float gravity;
     public float rCol = 1.0F, gCol = 1.0F, bCol = 1.0F, alpha = 1.0F;
     protected float roll, oRoll;
@@ -49,7 +55,12 @@ public abstract class ParticleNT {
         this.bb = INITIAL_AABB;
         this.noClip = false;
         this.level = level;
-        this.random = RandomSource.create();
+        // Seed по координатам и классу: один и тот же эффект в одной точке
+        // даёт идентичную траекторию при каждом прогоне (важно для перемотки
+        // в рекордерах — Flashback отыгрывает пакеты заново).
+        long seed = (long) (x * 911.0) ^ ((long) (y * 131.0) << 16) ^ ((long) (z * 107.0) << 32)
+                ^ (long) (this.getClass().getName().hashCode() * 2654435761L);
+        this.random = RandomSource.create(seed);
         setPos(x, y, z);
         this.xo = x;
         this.yo = y;

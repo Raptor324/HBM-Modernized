@@ -128,15 +128,15 @@ public final class MissileRenderHelper {
     public static MissileBakedModel resolveMissileModel(ResourceLocation itemId) {
         BakedModel model = resolveBakedModel(itemId);
         //? if forge {
-        /*MissileBakedModel missileModel = com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat.unwrapMissileDelegate(model);
+        MissileBakedModel missileModel = com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat.unwrapMissileDelegate(model);
         if (missileModel != null) {
             return missileModel;
         }
-        *///?} else {
-        if (model instanceof MissileBakedModel missileModel) {
+        //?} else {
+        /*if (model instanceof MissileBakedModel missileModel) {
             return missileModel;
         }
-        //?}
+        *///?}
         debugMissile("resolveMissileModel: {} is not MissileBakedModel", itemId);
         return null;
     }
@@ -147,14 +147,14 @@ public final class MissileRenderHelper {
             return null;
         }
         //? if forge {
-        /*BakedModel shaperModel = Minecraft.getInstance().getItemRenderer()
+        BakedModel shaperModel = Minecraft.getInstance().getItemRenderer()
                 .getItemModelShaper()
                 .getItemModel(stack);
         if (shaperModel != null
                 && shaperModel != Minecraft.getInstance().getModelManager().getMissingModel()) {
             return AbstractPartBasedRenderer.unwrapFabricForwardingModels(shaperModel);
         }
-        *///?}
+        //?}
         return resolveBakedModel(BuiltInRegistries.ITEM.getKey(stack.getItem()));
     }
 
@@ -167,27 +167,27 @@ public final class MissileRenderHelper {
         BakedModel itemModel = modelManager.getModel(new ModelResourceLocation(itemId, "inventory"));
         itemModel = AbstractPartBasedRenderer.unwrapFabricForwardingModels(itemModel);
         //? if forge {
-        /*if (com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat.unwrapMissileDelegate(itemModel) != null) {
+        if (com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat.unwrapMissileDelegate(itemModel) != null) {
             return itemModel;
         }
-        *///?} else {
-        if (itemModel instanceof MissileBakedModel) {
+        //?} else {
+        /*if (itemModel instanceof MissileBakedModel) {
             return itemModel;
         }
-        //?}
+        *///?}
         ResourceLocation meshId = meshModelId(itemId);
         if (!meshId.equals(itemId)) {
             BakedModel meshModel = modelManager.getModel(new ModelResourceLocation(meshId, "inventory"));
             meshModel = AbstractPartBasedRenderer.unwrapFabricForwardingModels(meshModel);
             //? if forge {
-            /*if (com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat.unwrapMissileDelegate(meshModel) != null) {
+            if (com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat.unwrapMissileDelegate(meshModel) != null) {
                 return meshModel;
             }
-            *///?} else {
-            if (meshModel instanceof MissileBakedModel) {
+            //?} else {
+            /*if (meshModel instanceof MissileBakedModel) {
                 return meshModel;
             }
-            //?}
+            *///?}
         }
         return itemModel;
     }

@@ -127,22 +127,22 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
     }
 
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public boolean isPathfindable(BlockState state, BlockGetter level, BlockPos pos, PathComputationType type) {
         return switch (type) {
             case LAND, AIR -> state.getValue(OPEN);
             default -> false;
         };
     }
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     protected boolean isPathfindable(BlockState state, PathComputationType type) {
         return switch (type) {
             case LAND, AIR -> state.getValue(OPEN);
             default -> false;
         };
     }
-    //?}
+    *///?}
 
     public static int[] getDoorDimensions(String doorDeclId) {
         DoorDecl decl = DoorDeclRegistry.getById(doorDeclId);
@@ -186,16 +186,16 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
     }
 
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         return hbmOnUse(state, level, pos, player, hand, hit);
     }
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         return hbmOnUse(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
-    //?}
+    *///?}
 
     private InteractionResult hbmOnUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (hasScrewdriver(player)) {
@@ -398,11 +398,11 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
     }
 
     //? if >1.20.1 {
-    public static final com.mojang.serialization.MapCodec<DoorBlock> CODEC = simpleCodec(props -> new DoorBlock(props, "large_vehicle_door"));
+    /*public static final com.mojang.serialization.MapCodec<DoorBlock> CODEC = simpleCodec(props -> new DoorBlock(props, "large_vehicle_door"));
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    //?}
+    *///?}
 }

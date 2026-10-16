@@ -89,9 +89,6 @@ public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements
     }
 
     public boolean isEmpty() {
-        // A structure crate holds its loot as a pending LootTable until first opened; without this a
-        // crate mined before opening was packed as empty and its loot was lost.
-        if (lootTable != null) return false;
         for (int i = 0; i < itemHandler.getSlots(); i++) {
             if (!itemHandler.getStackInSlot(i).isEmpty()) {
                 return false;
@@ -100,29 +97,15 @@ public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements
         return true;
     }
 
-    // The chunk packet does not need every stack of every crate in render distance: nothing on the
-    // client reads them (the menu syncs its own slots, and there is no crate renderer).
-    //? if < 1.21.1 {
-    /*@Override
-    public @NotNull CompoundTag getUpdateTag() {
-        return new CompoundTag();
-    }
-    *///?} else {
-    @Override
-    public @NotNull CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
-        return new CompoundTag();
-    }
-    //?}
-
     public void saveToItem(ItemStack stack) {
         //? if < 1.21.1 {
-        /*CompoundTag tag = new CompoundTag();
+        CompoundTag tag = new CompoundTag();
         this.saveAdditional(tag);
         if (!tag.isEmpty()) {
             stack.addTagElement("BlockEntityTag", tag);
         }
-        *///?} else {
-        // 1.21.1: addTagElement/saveAdditional(CompoundTag) удалены — сохраняем через DataComponents.
+        //?} else {
+        /*// 1.21.1: addTagElement/saveAdditional(CompoundTag) удалены — сохраняем через DataComponents.
         // level.holderLookup() без аргументов и HolderLookup.direct() удалены в 1.21.1 —
         // берём registryAccess() из level (this.level всегда доступен у размещённого BE).
         net.minecraft.core.HolderLookup.Provider registries = this.level.registryAccess();
@@ -131,23 +114,7 @@ public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements
             stack.set(net.minecraft.core.component.DataComponents.BLOCK_ENTITY_DATA,
                     net.minecraft.world.item.component.CustomData.of(tag));
         }
-        //?}
-    }
-
-    // Upstream TileEntityCrateBase is an ISidedInventory open on every side; the port dropped the
-    // item capability during the Fabric port, so hoppers, pipes and every automation mod saw nothing.
-    @Override
-    public @Nullable Object getItemHandler(@Nullable net.minecraft.core.Direction side) {
-        return itemHandler;
-    }
-
-    /** Leert Inventar und Loot-Tabelle - nach dem Packen in das Kisten-Item. */
-    public void clearContents() {
-        for (int i = 0; i < itemHandler.getSlots(); i++) {
-            itemHandler.setStackInSlot(i, ItemStack.EMPTY);
-        }
-        lootTable = null;
-        lootTableSeed = 0L;
+        *///?}
     }
 
     public ModItemStackHandler getItemHandler() {
@@ -171,12 +138,12 @@ public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements
             return;
         }
         //? if < 1.21.1 {
-        /*LootTable table = serverLevel.getServer().getLootData().getLootTable(this.lootTable);
-        *///?} else {
-        // 1.21.1: getLootData() → reloadableRegistries(); ключ лут-таблицы теперь ResourceKey<LootTable>.
+        LootTable table = serverLevel.getServer().getLootData().getLootTable(this.lootTable);
+        //?} else {
+        /*// 1.21.1: getLootData() → reloadableRegistries(); ключ лут-таблицы теперь ResourceKey<LootTable>.
         LootTable table = serverLevel.getServer().reloadableRegistries().getLootTable(
                 net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.LOOT_TABLE, this.lootTable));
-        //?}
+        *///?}
         if (table == LootTable.EMPTY) {
             // Таблица не найдена — очищаем ссылку, чтобы не пытаться повторно.
             this.lootTable = null;

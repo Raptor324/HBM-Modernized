@@ -35,13 +35,8 @@ public final class ExplosionCommandOptions {
         return damage;
     }
 
-    /**
-     * The server switch wins over the command flag: {@code enableCraterBiomes} was checked on the
-     * fallout path ({@code EntityFalloutRain}) but nowhere on the nuclear one, so a normal
-     * detonation - which uses DEFAULT with biomes = true - rewrote biomes even with the option off.
-     */
     public boolean biomes() {
-        return biomes && com.hbm_m.config.ModClothConfig.get().enableCraterBiomes;
+        return biomes;
     }
 
     public boolean particles() {

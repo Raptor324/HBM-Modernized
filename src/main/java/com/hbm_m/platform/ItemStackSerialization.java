@@ -13,17 +13,17 @@ public final class ItemStackSerialization {
 
     public static net.minecraft.nbt.CompoundTag serialize(ModItemStackHandler handler, net.minecraft.core.HolderLookup.Provider registries) {
         //? if < 1.21.1 {
-        /*return handler.serializeNBT();
-        *///?} else {
-        return handler.serializeNBT(registries);
-        //?}
+        return handler.serializeNBT();
+        //?} else {
+        /*return handler.serializeNBT(registries);
+        *///?}
     }
 
     public static void deserialize(ModItemStackHandler handler, net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         //? if < 1.21.1 {
-        /*handler.deserializeNBT(tag);
-        *///?} else {
-        handler.deserializeNBT(registries, tag);
-        //?}
+        handler.deserializeNBT(tag);
+        //?} else {
+        /*handler.deserializeNBT(registries, tag);
+        *///?}
     }
 }

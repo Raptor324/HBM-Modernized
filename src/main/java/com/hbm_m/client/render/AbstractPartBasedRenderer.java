@@ -20,10 +20,12 @@ import net.minecraft.world.phys.AABB;
 import com.hbm_m.client.render.culling.OcclusionCullingHelper;
 
 //? if forge {
-/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
 *///?} elif neoforge {
-@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-//?}
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends BakedModel>
         implements com.hbm_m.client.render.HbmBerBounds<T> {
 
@@ -53,7 +55,7 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
      * need a stable copy go through {@link #getCurrentModelViewMatrix()} which
      * does the defensive copy on demand.
      */
-    private final Matrix4f currentModelViewMatrix = new Matrix4f();
+    protected final Matrix4f currentModelViewMatrix = new Matrix4f();
     
     /** Defensive copy - callers may not mutate the renderer's snapshot field. */
     public Matrix4f getCurrentModelViewMatrix() {
@@ -153,15 +155,22 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
     }
 
     protected final float applyCullingAndStaticFade(T blockEntity, AABB bounds) {
-        if (!passesOcclusionCulling(blockEntity, bounds)) return -1f;
+        if (!passesOcclusionCulling(blockEntity, bounds)) {
+            NucleusDebug.recordMachineCulled();
+            return -1f;
+        }
         float staticFade = RenderDistanceHelper.computeStaticFade(blockEntity);
-        if (staticFade < 0) return -1f;
+        if (staticFade < 0) {
+            NucleusDebug.recordMachineCulled();
+            return -1f;
+        }
         SingleMeshVboRenderer.setFadeAlpha(staticFade);
+        NucleusDebug.recordMachineRendered();
         return staticFade;
     }
 
     /** Диагностика shadow pass: вызовы BER с прошлого сброса. См. render(). */
-    private static int SHADOW_BER_INVOCATIONS = 0;
+    protected static int SHADOW_BER_INVOCATIONS = 0;
 
     /** Читает и обнуляет счётчик вызовов BER в shadow pass (раз в кадр из AFTER_SKY). */
     public static int drainShadowBerInvocations() {
@@ -197,11 +206,20 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
      */
     private static AABB frustumCullBounds(BlockEntity blockEntity) {
         //? if forge {
-        /*return ((net.minecraftforge.common.extensions.IForgeBlockEntity) blockEntity).getRenderBoundingBox();
+        return ((net.minecraftforge.common.extensions.IForgeBlockEntity) blockEntity).getRenderBoundingBox();
+        //?}
+        //? if fabric {
+        /*if (blockEntity instanceof com.hbm_m.blockentity.BaseMachineBlockEntity b) {
+            return b.getRenderBoundingBox();
+        }
+        if (blockEntity instanceof com.hbm_m.block.entity.doors.DoorBlockEntity d) {
+            return d.getRenderBoundingBox();
+        }
+        return new AABB(blockEntity.getBlockPos()).inflate(1.0D);
         *///?}
 
         //? if neoforge {
-        // На 1.21.1 у BlockEntity есть ванильный getRenderBoundingBox(), но для HBM-машин
+        /*// На 1.21.1 у BlockEntity есть ванильный getRenderBoundingBox(), но для HBM-машин
         // используем явные переопределения (мультиблоки с увеличенным AABB), как на Fabric.
         if (blockEntity instanceof com.hbm_m.api.render.RenderBoundsProvider p) {
             return p.getRenderBoundingBox();
@@ -213,7 +231,7 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
             return d.getRenderBoundingBox();
         }
         return new AABB(blockEntity.getBlockPos()).inflate(1.0D);
-        //?}
+        *///?}
     }
 
     // -----------------------------------------------------------------------
@@ -248,7 +266,7 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
             } catch (ClassNotFoundException ignored) {
                 // FRAPI недоступен в окружении
             } catch (Exception e) {
-                MainRegistry.LOGGER.warn("[HBM] Не удалось получить поле ForwardingBakedModel.wrapped: {}", e.toString());
+                MainRegistry.LOGGER.warn("[HBM] Failed to get field ForwardingBakedModel.wrapped: {}", e.toString());
             }
         }
 
@@ -271,7 +289,7 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
                 BakedModel inner = (BakedModel) fabricWrappedField.get(model);
                 if (inner == null || inner == model) break;
                 if (depth == 1) {
-                    MainRegistry.LOGGER.debug("[HBM] Разворачиваем {} → {}",
+                    MainRegistry.LOGGER.debug("[HBM] Unwrapping {} -> {}",
                             model.getClass().getSimpleName(), inner.getClass().getSimpleName());
                 }
                 model = inner;

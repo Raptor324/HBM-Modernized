@@ -1,5 +1,5 @@
 //? if neoforge {
-package com.hbm_m.powerarmor.render;
+/*package com.hbm_m.powerarmor.render;
 
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.powerarmor.layer.AJROPowerArmorLayer;
@@ -88,4 +88,4 @@ public final class ClientPowerArmorRenderNeoForge {
 
     private ClientPowerArmorRenderNeoForge() {}
 }
-//?}
+*///?}

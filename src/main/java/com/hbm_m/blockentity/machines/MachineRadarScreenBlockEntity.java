@@ -285,8 +285,8 @@ public class MachineRadarScreenBlockEntity extends com.hbm_m.blockentity.BaseHbm
     }
 
     //? if forge {
-    /*@Override
-    *///?}
+    @Override
+    //?}
     public AABB getRenderBoundingBox() {
         return new AABB(
                 worldPosition.getX() - 1,

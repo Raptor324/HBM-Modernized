@@ -23,7 +23,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.Fluids;
 
 import dev.architectury.fluid.FluidStack;
 
@@ -38,7 +37,7 @@ import dev.architectury.fluid.FluidStack;
  * Molten-Pour, kein separates GUI-Umschalt-Paket (beide Modi in einem Menu vereint statt zwei
  * getrennten Containern wie im Original {@code ContainerElectrolyserFluid}/{@code ...Metal}).
  */
-public class MachineElectrolyserBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
+public class MachineElectrolyserBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2, com.hbm_m.interfaces.IFluidCopiable {
 
     public static final int SLOT_BATTERY = 0;
     public static final int SLOT_FLUID_ID = 1;
@@ -65,9 +64,7 @@ public class MachineElectrolyserBlockEntity extends BaseMachineBlockEntity imple
 
     public MachineElectrolyserBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.ELECTROLYSER_BE.get(), pos, state, SLOT_COUNT, MAX_POWER, MAX_POWER);
-        // Upstream ships this tank typed (Fluids.WATER): an untyped tank makes trySubscribe ask the
-        // pipe network for Fluids.EMPTY, so the machine could never be fed through a duct.
-        tanks[0] = new FluidTank(16_000).conform(Fluids.WATER); // water/generic input
+        tanks[0] = new FluidTank(16_000); // water/generic input
         tanks[1] = new FluidTank(16_000); // hydrogen-style output A
         tanks[2] = new FluidTank(16_000); // oxygen-style output B
         tanks[3] = new FluidTank(16_000); // nitric acid (metal-mode etch fluid) - kept for tank-count parity, unused by metal recipes here
@@ -80,12 +77,9 @@ public class MachineElectrolyserBlockEntity extends BaseMachineBlockEntity imple
 
         be.chargeFromBatterySlot(SLOT_BATTERY);
 
-        ItemStack[] slots = be.inventorySlotArray();
-        if (be.tanks[0].setType(SLOT_FLUID_ID, slots)) be.applySlotsArray(slots);
-
         if (level.getGameTime() % 20 == 0) {
             for (Direction dir : Direction.values()) {
-                be.trySubscribe(be.tanks[0], level, pos.relative(dir), dir);
+                be.trySubscribe(be.tanks[0].getTankType(), level, pos.relative(dir), dir);
                 if (be.tanks[1].getFill() > 0) be.tryProvide(be.tanks[1], level, pos.relative(dir), dir);
                 if (be.tanks[2].getFill() > 0) be.tryProvide(be.tanks[2], level, pos.relative(dir), dir);
             }
@@ -284,19 +278,6 @@ public class MachineElectrolyserBlockEntity extends BaseMachineBlockEntity imple
             case SLOT_CRYSTAL -> level == null || findMetalRecipe(stack) != null;
             default -> false;
         };
-    }
-
-    private ItemStack[] inventorySlotArray() {
-        ItemStack[] arr = new ItemStack[SLOT_COUNT];
-        for (int i = 0; i < SLOT_COUNT; i++) arr[i] = inventory.getStackInSlot(i);
-        return arr;
-    }
-
-    private void applySlotsArray(ItemStack[] arr) {
-        for (int i = 0; i < SLOT_COUNT; i++) {
-            inventory.setStackInSlot(i, arr[i] == null ? ItemStack.EMPTY : arr[i]);
-        }
-        setChanged();
     }
 
     @Nullable

@@ -1,6 +1,7 @@
 plugins {
 	alias(libs.plugins.stonecutter)
 	alias(libs.plugins.dotenv)
+	alias(libs.plugins.fabric.loom).apply(false)
 	alias(libs.plugins.neoforged.moddev).apply(false)
 	alias(libs.plugins.jsonlang.postprocess).apply(false)
 	alias(libs.plugins.mod.publish.plugin).apply(false)
@@ -18,7 +19,9 @@ for (version in stonecutter.versions.map { it.version }.distinct()) tasks.regist
 }
 
 stonecutter tasks {
-	val ordering = versionComparator
+	val ordering = versionComparator.thenComparingInt { task ->
+		if (task.metadata.project.endsWith("fabric")) 1 else 0
+	}
 
 	listOf("publishModrinth", "publishCurseforge").forEach { taskName ->
 		gradle.allprojects {
@@ -30,7 +33,7 @@ stonecutter tasks {
 }
 
 stonecutter parameters {
-	constants.match(node.metadata.project.substringAfterLast('-'), "neoforge", "forge")
+	constants.match(node.metadata.project.substringAfterLast('-'), "fabric", "neoforge", "forge")
 	filters.include("**/*.fsh", "**/*.vsh")
 	swaps["mod_version"] = "\"" + property("mod.version") + "\";"
 	swaps["mod_id"] = "\"" + property("mod.id") + "\";"

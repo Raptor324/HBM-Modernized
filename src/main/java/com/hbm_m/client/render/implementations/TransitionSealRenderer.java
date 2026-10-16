@@ -3,6 +3,7 @@ package com.hbm_m.client.render.implementations;
 import java.util.List;
 
 import com.hbm_m.block.machines.TransitionSealBlock;
+import com.hbm_m.platform.RenderHooks;
 import com.hbm_m.blockentity.machines.TransitionSealBlockEntity;
 import com.hbm_m.client.loader.dae.DaeAnimation;
 import com.hbm_m.client.loader.dae.DaeModel;
@@ -41,11 +42,11 @@ import net.minecraft.resources.ResourceLocation;
  * matrices are authored in Minecraft space).
  */
 
-//? if forge {
-/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-*///?} elif neoforge {
-@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-//?}
+//? if < 1.21.1 {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} else {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class TransitionSealRenderer implements com.hbm_m.client.render.HbmBerBounds<TransitionSealBlockEntity> {
 
     private static final String CLIP_NAME = "animation";
@@ -105,11 +106,7 @@ public class TransitionSealRenderer implements com.hbm_m.client.render.HbmBerBou
                                     TransitionSealBlockEntity be, MultiBufferSource bufferSource) {
         for (DaeNode node : nodes) {
             poseStack.pushPose();
-            //? if < 1.21.1 {
-            /*poseStack.mulPoseMatrix(node.localMatrix(time, clip));
-            *///?} else {
-            poseStack.mulPose(node.localMatrix(time, clip));
-            //?}
+            RenderHooks.mulPoseMatrix(poseStack, node.localMatrix(time, clip));
             if (node.mesh != null) {
                 SingleMeshVboRenderer renderer = getRendererForNode(node);
                 if (renderer != null) {

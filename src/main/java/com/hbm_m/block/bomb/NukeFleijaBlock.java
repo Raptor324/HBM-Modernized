@@ -48,9 +48,6 @@ public class NukeFleijaBlock extends NukeBaseBlock implements IBomb {
     public BombReturnCode explode(Level level, BlockPos pos) {
         if (level.isClientSide) return BombReturnCode.UNDEFINED;
         if (level.getBlockEntity(pos) instanceof NukeFleijaBlockEntity nuke && nuke.isReady()) {
-            // Clear first: setBlock triggers onRemove, which drops the container - a detonated bomb
-            // handed its payload back.
-            nuke.clearContent();
             level.setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
             explode(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
             return BombReturnCode.DETONATED;
@@ -59,7 +56,7 @@ public class NukeFleijaBlock extends NukeBaseBlock implements IBomb {
     }
 
     //? if > 1.20.1 {
-    public static final com.mojang.serialization.MapCodec<NukeFleijaBlock> CODEC = simpleCodec(NukeFleijaBlock::new);
+    /*public static final com.mojang.serialization.MapCodec<NukeFleijaBlock> CODEC = simpleCodec(NukeFleijaBlock::new);
     @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.Block> codec() { return CODEC; }
-     //?}
+     *///?}
 }

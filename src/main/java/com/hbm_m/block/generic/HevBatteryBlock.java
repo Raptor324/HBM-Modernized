@@ -35,7 +35,7 @@ public class HevBatteryBlock extends Block {
     }
 
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 
         if (level.isClientSide()) return InteractionResult.SUCCESS;
@@ -55,8 +55,8 @@ public class HevBatteryBlock extends Block {
 
         return InteractionResult.CONSUME;
         }
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
 
         if (level.isClientSide()) return InteractionResult.SUCCESS;
@@ -76,6 +76,6 @@ public class HevBatteryBlock extends Block {
 
         return InteractionResult.CONSUME;
         }
-    //?}
+    *///?}
 
 }

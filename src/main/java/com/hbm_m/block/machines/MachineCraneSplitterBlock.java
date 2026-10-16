@@ -152,7 +152,7 @@ public class MachineCraneSplitterBlock extends BaseEntityBlock implements IConve
     // ==================== screwdriver reconfiguration ====================
 
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 
         ItemStack held = player.getItemInHand(hand);
@@ -170,8 +170,8 @@ public class MachineCraneSplitterBlock extends BaseEntityBlock implements IConve
         }
         return InteractionResult.CONSUME;
         }
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
 
         ItemStack held = player.getItemInHand(InteractionHand.MAIN_HAND);
@@ -189,7 +189,7 @@ public class MachineCraneSplitterBlock extends BaseEntityBlock implements IConve
         }
         return InteractionResult.CONSUME;
         }
-    //?}
+    *///?}
 
 
     @Override
@@ -203,11 +203,11 @@ public class MachineCraneSplitterBlock extends BaseEntityBlock implements IConve
     }
 
     //? if >1.20.1 {
-    public static final com.mojang.serialization.MapCodec<MachineCraneSplitterBlock> CODEC = simpleCodec(MachineCraneSplitterBlock::new);
+    /*public static final com.mojang.serialization.MapCodec<MachineCraneSplitterBlock> CODEC = simpleCodec(MachineCraneSplitterBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    //?}
+    *///?}
 }

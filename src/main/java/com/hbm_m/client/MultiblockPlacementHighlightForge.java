@@ -1,5 +1,5 @@
 //? if forge {
-/*package com.hbm_m.client;
+package com.hbm_m.client;
 
 import com.hbm_m.multiblock.MultiblockBlockItem;
 
@@ -10,10 +10,10 @@ import net.minecraftforge.client.event.RenderHighlightEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-/^*
+/**
  * Forge-only подписчик: при удержании предмета мультиблока отменяет ванильный
  * контур цели и рисует рамку футпринта (порт drawPlacementHighlight из 1.7.10).
- ^/
+ */
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public final class MultiblockPlacementHighlightForge {
     private MultiblockPlacementHighlightForge() {}
@@ -30,4 +30,4 @@ public final class MultiblockPlacementHighlightForge {
         MultiblockPlacementHighlight.render(mc.level, mc.player, item, target, event.getPoseStack());
     }
 }
-*///?}
+//?}

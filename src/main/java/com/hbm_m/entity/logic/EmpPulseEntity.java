@@ -56,10 +56,10 @@ public class EmpPulseEntity extends Entity {
         Level level = this.level();
         for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
             for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
-                LevelChunk chunk = com.hbm_m.util.Compat.getLoadedChunkAt(level, chunkX, chunkZ);
-                if (chunk == null) {
+                if (!level.hasChunk(chunkX, chunkZ)) {
                     continue;
                 }
+                LevelChunk chunk = level.getChunk(chunkX, chunkZ);
                 for (BlockEntity be : chunk.getBlockEntities().values()) {
                     BlockPos pos = be.getBlockPos();
                     if (be instanceof IEnergyReceiver && center.distSqr(pos) <= RADIUS_SQR) {
@@ -72,9 +72,7 @@ public class EmpPulseEntity extends Entity {
 
     private void shock() {
         for (BlockPos pos : this.machines) {
-            // Positions were collected in allocate() on an earlier tick, so an edge chunk may have
-            // unloaded since then — resolving it here would pull it back in.
-            BlockEntity be = com.hbm_m.util.Compat.getTileStandard(this.level(), pos);
+            BlockEntity be = this.level().getBlockEntity(pos);
             if (be instanceof IEnergyReceiver receiver) {
                 receiver.setEnergyStored(0);
             }
@@ -83,19 +81,16 @@ public class EmpPulseEntity extends Entity {
 
     //? if < 1.21.1 {
 
-    /*@Override
-    protected void defineSynchedData() {
-
-var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
-    *///?} else {
     @Override
+    protected void defineSynchedData() {
+    }
+    //?} else {
+    /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
-
-var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
-    //?}
 
     
     }
+    *///?}
 
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {

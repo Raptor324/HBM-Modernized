@@ -30,10 +30,10 @@ public class ModSwordItem extends SwordItem implements ITooltipProvider {
 
     public ModSwordItem(Tier tier, int attackDamage, float attackSpeed, Properties properties) {
         //? if < 1.21.1 {
-        /*super(tier, attackDamage, attackSpeed, properties);
-        *///?} else {
-        super(tier, properties.attributes(SwordItem.createAttributes(tier, attackDamage, attackSpeed)));
-        //?}
+        super(tier, attackDamage, attackSpeed, properties);
+        //?} else {
+        /*super(tier, properties.attributes(SwordItem.createAttributes(tier, attackDamage, attackSpeed)));
+        *///?}
     }
 
     @Override

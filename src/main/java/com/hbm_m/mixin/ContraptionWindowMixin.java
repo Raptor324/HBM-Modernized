@@ -29,7 +29,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class ContraptionWindowMixin {
 
     static {
-        com.hbm_m.main.MainRegistry.LOGGER.info("[HBM][Mixin] ContraptionWindowMixin применён к Contraption");
+        com.hbm_m.main.MainRegistry.LOGGER.info("[HBM][Mixin] ContraptionWindowMixin applied to Contraption");
     }
 
     @Inject(method = "removeBlocksFromWorld", at = @At("HEAD"), remap = false)

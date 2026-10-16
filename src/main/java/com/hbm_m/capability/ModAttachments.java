@@ -1,5 +1,5 @@
 //? if neoforge {
-package com.hbm_m.capability;
+/*package com.hbm_m.capability;
 
 import com.hbm_m.interfaces.IChunkRadiation;
 import com.hbm_m.lib.RefStrings;
@@ -36,4 +36,4 @@ public class ModAttachments {
             }).build()
     );
 }
-//?}
+*///?}

@@ -25,7 +25,7 @@ public class RBMKCraneConsoleBlock extends RBMKColumnBlock {
     // and a shift-click rotation cycle are handled here, bypassing RBMKColumnBlock's default
     // "open MenuProvider" behavior entirely.
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos,
                                   Player player, InteractionHand hand, BlockHitResult hit) {
 
@@ -47,8 +47,8 @@ public class RBMKCraneConsoleBlock extends RBMKColumnBlock {
 
         return InteractionResult.PASS;
         }
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
 
         if (level.isClientSide) return InteractionResult.SUCCESS;
@@ -69,7 +69,7 @@ public class RBMKCraneConsoleBlock extends RBMKColumnBlock {
 
         return InteractionResult.PASS;
         }
-    //?}
+    *///?}
 
 
     @Nullable @Override
@@ -83,11 +83,11 @@ public class RBMKCraneConsoleBlock extends RBMKColumnBlock {
     }
 
     //? if >1.20.1 {
-    public static final com.mojang.serialization.MapCodec<RBMKCraneConsoleBlock> CODEC = simpleCodec(RBMKCraneConsoleBlock::new);
+    /*public static final com.mojang.serialization.MapCodec<RBMKCraneConsoleBlock> CODEC = simpleCodec(RBMKCraneConsoleBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    //?}
+    *///?}
 }

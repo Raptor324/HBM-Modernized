@@ -21,6 +21,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
@@ -31,22 +32,22 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-*///?} elif neoforge {
-import net.neoforged.api.distmarker.Dist;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-//?}
+*///?}
 
 //? if forge {
-/*@Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
-*///?} elif neoforge {
-@EventBusSubscriber(modid = RefStrings.MODID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
-//?}
+@Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+//?} elif neoforge {
+/*@EventBusSubscriber(modid = RefStrings.MODID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
+*///?}
 @SuppressWarnings({"UnstableApiUsage", "removal"})
 public class ClientModEvents {
 
@@ -64,12 +65,12 @@ public class ClientModEvents {
         // callback (stack, lines, flag), на 1.21.1+ — 4-параметровый с Item.TooltipContext.
         // Тело вынесено в handleItemTooltip, чтобы логика не дублировалась.
         //? if < 1.21.1 {
-        /*ClientTooltipEvent.ITEM.register((stack, lines, flag) ->
+        ClientTooltipEvent.ITEM.register((stack, lines, flag) ->
                 handleItemTooltip(stack, Minecraft.getInstance().level, lines, flag));
-        *///?} else {
-        ClientTooltipEvent.ITEM.register((stack, lines, context, flag) ->
+        //?} else {
+        /*ClientTooltipEvent.ITEM.register((stack, lines, context, flag) ->
                 handleItemTooltip(stack, context.level(), lines, flag));
-        //?}
+        *///?}
 
         ClientTickEvent.CLIENT_POST.register(client -> {
             com.hbm_m.client.overlay.OverlayInfoToast.tick();
@@ -82,6 +83,30 @@ public class ClientModEvents {
             }
         });
 
+        //? if fabric {
+        /*WorldRenderEvents.AFTER_ENTITIES.register(context -> {
+            ModClothConfig cfg = ModClothConfig.get();
+            if (!cfg.enableOcclusionCulling) {
+                OcclusionCullingHelper.captureBlockEntityPassFrustum(null);
+            } else {
+                OcclusionCullingHelper.captureBlockEntityPassFrustum(context.frustum());
+            }
+        });
+
+        // РЕГРЕССИЯ-СТОП: instanced flush ТОЛЬКО здесь. END — не рисовать batch (грязные texture units).
+        WorldRenderEvents.AFTER_BLOCK_ENTITIES.register(context -> {
+            var cameraPos = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+            InstancedRenderFrame.presentAfterBlockEntities(context.projectionMatrix(), cameraPos);
+        });
+
+        WorldRenderEvents.END.register(context -> {
+            InstancedRenderFrame.flushDeferredPresent();
+        });
+
+        WorldRenderEvents.LAST.register(context -> {
+            com.hbm_m.client.render.shader.IrisRenderBatch.closePersistentIfActive();
+        });
+        *///?}
     }
 
     /**
@@ -94,6 +119,13 @@ public class ClientModEvents {
      */
     private static void handleItemTooltip(ItemStack stack, @Nullable Level level, List<Component> lines, TooltipFlag flag) {
         if (stack.isEmpty()) return;
+
+        // Completion status
+        com.hbm_m.util.CompletionStatus status = com.hbm_m.util.CompletionTracker.getStatus(
+                BuiltInRegistries.ITEM.getKey(stack.getItem()));
+        if (status != null) {
+            lines.add(status.getTooltip());
+        }
 
         // Версионно-независимые предметные тултипы.
         if (stack.getItem() instanceof ITooltipProvider provider) {
@@ -168,11 +200,11 @@ public class ClientModEvents {
             // строится проекция дальнего И ближнего NT-проходов.
             Minecraft mcCapture = Minecraft.getInstance();
             //? if < 1.21.1 {
-            /*com.hbm_m.client.compat.dh.DhClientCompat.captureVanillaProjection(mcCapture.getFrameTime());
-            *///?} else {
-            com.hbm_m.client.compat.dh.DhClientCompat.captureVanillaProjection(
+            com.hbm_m.client.compat.dh.DhClientCompat.captureVanillaProjection(mcCapture.getFrameTime());
+            //?} else {
+            /*com.hbm_m.client.compat.dh.DhClientCompat.captureVanillaProjection(
                     mcCapture.getTimer().getGameTimeDeltaPartialTick(true));
-            //?}
+            *///?}
             MissileTrackClient.beginRenderFrame();
             logShadowBerDiagnostics();
         }
@@ -184,6 +216,13 @@ public class ClientModEvents {
             var frustum = cfg.enableOcclusionCulling ? event.getFrustum() : null;
             InstancedRenderFrame.onBeforeBlockEntities(
                     event.getProjectionMatrix(), cameraPos, frustum);
+
+            // Байпас диспетчера: машины Nucleus рисуются плоским обходом ЗДЕСЬ
+            // (до обхода BE), диспетчер их потом только отменяет. poseStack
+            // события = базис диспетчера (R_cam без трансляции, 1.20.1).
+            com.hbm_m.client.render.NucleusDispatcherBypass.collectMain(
+                    event.getPoseStack(), mc.renderBuffers().bufferSource(),
+                    com.hbm_m.platform.RenderHooks.getPartialTick());
 
             // РЕГРЕССИЯ-СТОП (двойная отрисовка): меши ракет рисуются ТОЛЬКО
             // в EngineHandler на AFTER_WEATHER (renderFiltered) — единый
@@ -211,13 +250,31 @@ public class ClientModEvents {
     }
 
     //? if forge {
-    /*@SubscribeEvent
+    @SubscribeEvent
     public static void onRenderGuiPre(net.minecraftforge.client.event.RenderGuiEvent.Pre event) {
         // Виньетка использует multiply-блендинг (ZERO/ONE_MINUS_SRC_COLOR) и
         // молча ломается при расхождении кеша факторов блендинга с физикой
         // (GlStateManager._blendFuncSeparate но-опится при «совпадении»).
         // Форсируем честный блендинг ДО Gui.render.
         com.hbm_m.client.render.shader.ShaderBindResync.forceHonestBlendState();
+    }
+
+    /** Секция движка рендера Nucleus на F3-экране (левая панель). */
+    @SubscribeEvent
+    public static void onNucleusDebugText(net.minecraftforge.client.event.CustomizeGuiOverlayEvent.DebugText event) {
+        // 1.20.1 Forge диспатчит DebugText даже при закрытом F3 (и в чате) —
+        // без гейта секция [Nucleus] висит на HUD постоянно.
+        if (!net.minecraft.client.Minecraft.getInstance().options.renderDebug) {
+            return;
+        }
+        com.hbm_m.client.render.NucleusDebug.appendDebugLines(event.getLeft());
+    }
+    //?} elif neoforge {
+    /*@SubscribeEvent
+    public static void onNucleusDebugText(net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent.DebugText event) {
+        // 1.21.1: Options.renderDebug удалён; событие приходит только при открытом
+        // дебаг-экране — дополнительный гейт не нужен.
+        com.hbm_m.client.render.NucleusDebug.appendDebugLines(event.getLeft());
     }
     *///?}
 
@@ -242,8 +299,8 @@ public class ClientModEvents {
             com.hbm_m.main.MainRegistry.LOGGER.info(
                     "[HBM] Iris shadow pass: {} block-entity renderer invocations last frame{}",
                     count,
-                    zero ? " — BERs are NOT called in the shadow pass (empty shadow BE list / terrain-mod interop), shadows impossible"
-                         : " — shadow draw path active");
+                    zero ? " - BERs are NOT called in the shadow pass (empty shadow BE list / terrain-mod interop), shadows impossible"
+                         : " - shadow draw path active");
             lastLoggedShadowBerCount = count;
         }
     }

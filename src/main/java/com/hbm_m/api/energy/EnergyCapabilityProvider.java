@@ -9,13 +9,13 @@ import com.hbm_m.platform.PlatformHooks;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 //? if forge {
-/*import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.util.LazyOptional;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-*///?}
+//?}
 
 /**
  * Провайдер capability для ItemStack (батарейки).
@@ -24,7 +24,7 @@ import org.jetbrains.annotations.Nullable;
  */
 
 //? if forge {
-/*public class EnergyCapabilityProvider implements ICapabilityProvider {
+public class EnergyCapabilityProvider implements ICapabilityProvider {
     private final LazyOptional<ItemEnergyStorage> storage;
 
     public EnergyCapabilityProvider(ItemStack stack, long capacity, long maxReceive, long maxExtract) {
@@ -41,16 +41,16 @@ import org.jetbrains.annotations.Nullable;
             return storage.cast();
         }
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY) {
-            return storage.lazyMap(s -> new LongEnergyWrapper(s)).cast();
+            return storage.lazyMap(s -> new LongEnergyWrapper(s, LongEnergyWrapper.BitMode.LOW)).cast();
         }
 
         return LazyOptional.empty();
     }
-*///?}
+//?}
 
 //? if !forge {
-public class EnergyCapabilityProvider {
-//?}
+/*public class EnergyCapabilityProvider {
+*///?}
 
     public static class ItemEnergyStorage implements IEnergyProvider, IEnergyReceiver {
         private final ItemStack stack;

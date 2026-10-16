@@ -2,9 +2,7 @@ package com.hbm_m.client.loader;
 
 import java.util.HashMap;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.hbm_m.client.model.MissileBakedModel;
 import com.hbm_m.lib.RefStrings;
@@ -17,17 +15,13 @@ import net.minecraft.resources.ResourceLocation;
 /**
  * OBJ loader for missile models (single or multi-part). Textures use {@code models/missile/} sprites
  * in the block atlas ({@code textures/models/missile/}).
+ * Части — все корневые группы OBJ (авто), ручные списки не нужны.
  */
 public class MissileModelLoader extends AbstractObjPartModelLoader<MissileBakedModel> {
 
     @Override
     protected Set<String> getPartNames(JsonObject jsonObject) {
-        if (!jsonObject.has("parts")) {
-            return Set.of();
-        }
-        return jsonObject.getAsJsonArray("parts").asList().stream()
-                .map(JsonElement::getAsString)
-                .collect(Collectors.toSet());
+        return Set.of(); // АВТО: все корневые группы OBJ
     }
 
     @Override

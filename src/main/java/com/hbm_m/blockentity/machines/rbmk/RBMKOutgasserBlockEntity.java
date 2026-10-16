@@ -211,7 +211,7 @@ public class RBMKOutgasserBlockEntity extends RBMKColumnBlockEntity
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
             net.minecraftforge.common.capabilities.Capability<T> cap,
             @org.jetbrains.annotations.Nullable Direction side) {
@@ -220,7 +220,7 @@ public class RBMKOutgasserBlockEntity extends RBMKColumnBlockEntity
         }
         return super.getCapability(cap, side);
     }
-    *///?}
+    //?}
 
     // ─── IRBMKLoadable ───────────────────────────────────────────────────────
 
@@ -249,23 +249,47 @@ public class RBMKOutgasserBlockEntity extends RBMKColumnBlockEntity
 
     // ─── NBT ─────────────────────────────────────────────────────────────────
 
+    //? if < 1.21.1 {
     @Override
-    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.writeNbtData(tag, registries);
+    protected void saveAdditional(CompoundTag tag) {
+        super.saveAdditional(tag);
         if (!inputSlot.isEmpty())  tag.put("inputSlot",  safeItemSave(inputSlot));
         if (!outputSlot.isEmpty()) tag.put("outputSlot", safeItemSave(outputSlot));
         gasTank.writeToNBT(tag, "gas");
         tag.putDouble("progress", progress);
         tag.putDouble("lastUsedFlux", lastUsedFlux);
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
+        if (!inputSlot.isEmpty())  tag.put("inputSlot",  safeItemSave(inputSlot));
+        if (!outputSlot.isEmpty()) tag.put("outputSlot", safeItemSave(outputSlot));
+        gasTank.writeToNBT(tag, "gas");
+        tag.putDouble("progress", progress);
+        tag.putDouble("lastUsedFlux", lastUsedFlux);
+    }
+    *///?}
 
+    //? if < 1.21.1 {
     @Override
-    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.readNbtData(tag, registries);
+    public void load(CompoundTag tag) {
+        super.load(tag);
+        inputSlot  = tag.contains("inputSlot")  ? ItemStack.of(tag.getCompound("inputSlot"))  : ItemStack.EMPTY;
+        outputSlot = tag.contains("outputSlot") ? ItemStack.of(tag.getCompound("outputSlot")) : ItemStack.EMPTY;
+        gasTank.readFromNBT(tag, "gas");
+        progress = tag.getDouble("progress");
+        lastUsedFlux = tag.getDouble("lastUsedFlux");
+    }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
         inputSlot  = tag.contains("inputSlot")  ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("inputSlot"), registries)  : ItemStack.EMPTY;
         outputSlot = tag.contains("outputSlot") ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("outputSlot"), registries) : ItemStack.EMPTY;
         gasTank.readFromNBT(tag, "gas");
         progress = tag.getDouble("progress");
         lastUsedFlux = tag.getDouble("lastUsedFlux");
     }
+    *///?}
 }

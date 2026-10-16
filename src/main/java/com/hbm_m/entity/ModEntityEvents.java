@@ -1,7 +1,7 @@
 package com.hbm_m.entity;
 
 //? if forge {
-/*import net.minecraft.world.entity.SpawnPlacements;
+import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 import com.hbm_m.entity.mob.EntityCreeperNuclear;
@@ -61,10 +61,10 @@ public final class ModEntityEvents {
     private ModEntityEvents() {
     }
 }
- *///?}
+ //?}
 
 //? if neoforge {
-import net.minecraft.world.entity.SpawnPlacementTypes;
+/*import net.minecraft.world.entity.SpawnPlacementTypes;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 import com.hbm_m.entity.mob.EntityCreeperNuclear;
@@ -123,4 +123,4 @@ public final class ModEntityEvents {
                 RegisterSpawnPlacementsEvent.Operation.REPLACE);
     }
 }
-//?}
+*///?}

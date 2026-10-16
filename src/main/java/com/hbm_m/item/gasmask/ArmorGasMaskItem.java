@@ -63,17 +63,17 @@ public class ArmorGasMaskItem extends ArmorItem implements IGasMask, ITooltipPro
     // Взаимная блокировка: нельзя надеть противогаз на голову,
     // пока маска уже стоит в слоте лица Curios (и наоборот — см. GasMaskCurio).
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public boolean canEquip(ItemStack stack, EquipmentSlot slot, net.minecraft.world.entity.Entity entity) {
         return super.canEquip(stack, slot, entity)
                 && (slot != EquipmentSlot.HEAD || !(entity instanceof LivingEntity living) || CuriosCompat.getFaceMask(living).isEmpty());
     }
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     public boolean canEquip(ItemStack stack, EquipmentSlot slot, LivingEntity entity) {
         return super.canEquip(stack, slot, entity) && (slot != EquipmentSlot.HEAD || CuriosCompat.getFaceMask(entity).isEmpty());
     }
-     //?}
+     *///?}
 
     @Override
     public EnumSet<HazardClass> getBlacklist() {
@@ -86,18 +86,20 @@ public class ArmorGasMaskItem extends ArmorItem implements IGasMask, ITooltipPro
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         // Шифт+ПКМ по маске в руке — выкрутить фильтр (в оригинале то же самое).
-        ItemStack mask = player.getItemInHand(hand);
-        if (player.isShiftKeyDown() && IGasMask.hasFilter(mask)) {
-            // takeFilter edits the stack, so it must not run on the client: the tag is server state.
-            if (!level.isClientSide()) {
-                ItemStack filter = GasMaskUtil.takeFilter(mask);
-                if (!filter.isEmpty() && !player.getInventory().add(filter)) {
-                    player.drop(filter, false);
+        if (player.isShiftKeyDown()) {
+            ItemStack mask = player.getItemInHand(hand);
+            ItemStack filter = GasMaskUtil.takeFilter(mask);
+            if (!filter.isEmpty()) {
+                if (!level.isClientSide()) {
+                    if (!player.getInventory().add(filter)) {
+                        player.drop(filter, false);
+                    }
+                    level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                            ModSounds.FILTER_SCREW.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
                 }
-                level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                        ModSounds.FILTER_SCREW.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+                return InteractionResultHolder.sidedSuccess(mask, level.isClientSide());
             }
-            return InteractionResultHolder.sidedSuccess(mask, level.isClientSide());
+            return InteractionResultHolder.pass(mask);
         }
         return super.use(level, player, hand);
     }

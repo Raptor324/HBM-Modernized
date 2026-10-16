@@ -6,17 +6,17 @@ import com.hbm_m.recipe.RotaryFurnaceRecipe;
 
 import dev.architectury.fluid.FluidStack;
 //? if forge {
-/*//? if forge {
-/^import mezz.jei.api.forge.ForgeTypes;
-^///?} elif neoforge {
-import mezz.jei.api.neoforge.NeoForgeTypes;
-//?}
 //? if forge {
-/^import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
-^///?}
-*///?} elif neoforge {
-import mezz.jei.api.neoforge.NeoForgeTypes;
+import mezz.jei.api.forge.ForgeTypes;
+//?} elif neoforge {
+/*import mezz.jei.api.neoforge.NeoForgeTypes;
+*///?}
+//? if forge {
+import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
 //?}
+//?} elif neoforge {
+/*import mezz.jei.api.neoforge.NeoForgeTypes;
+*///?}
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.RecipeIngredientRole;
@@ -30,7 +30,7 @@ import net.minecraft.world.item.ItemStack;
  * -&gt; 1 Ausgabe. Arbeitet direkt mit dem data-driven {@link RotaryFurnaceRecipe} (JSON) -
  * Eingaenge aus {@link RotaryFurnaceRecipe#getInputs()}, Ausgabe aus {@link RotaryFurnaceRecipe#getOutput()}.
  */
-//? if forge || neoforge {
+//? if forge {
 public class RotaryFurnaceJeiCategory extends JeiGenericRecipeCategory<RotaryFurnaceRecipe> {
 
     public static final RecipeType<RotaryFurnaceRecipe> RECIPE_TYPE =
@@ -88,12 +88,12 @@ public class RotaryFurnaceJeiCategory extends JeiGenericRecipeCategory<RotaryFur
                     positions[slotIndex][0] + inputXOffset, positions[slotIndex][1])
                     .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
                     //? if forge {
-                    /*.setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
+                    .setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                     .addIngredient(ForgeTypes.FLUID_STACK, FluidStackHooksForge.toForge(fluid));
-                    *///?} elif neoforge {
-                    .setCustomRenderer(NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
+                    //?} elif neoforge {
+                    /*.setCustomRenderer(NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                     .addIngredient(NeoForgeTypes.FLUID_STACK, new net.neoforged.neoforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
-                    //?}
+                    *///?}
         }
     }
 
@@ -113,4 +113,7 @@ public class RotaryFurnaceJeiCategory extends JeiGenericRecipeCategory<RotaryFur
         JeiNeiRendering.drawGenericRecipeExtras(graphics, recipe.getDuration(), 0);
     }
 }
-//?}
+//?} else {
+/*public final class RotaryFurnaceJeiCategory {
+    private RotaryFurnaceJeiCategory() {}
+}*///?}

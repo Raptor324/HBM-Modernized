@@ -61,7 +61,7 @@ public class MachineCondenserPoweredBlockEntity extends BaseMachineBlockEntity i
                 BlockEntity neighborBe = level.getBlockEntity(neighborPos);
                 if (!(neighborBe instanceof IFluidConnectorMK2)) continue;
 
-                trySubscribe(spentSteamTank, level, neighborPos, dir);
+                trySubscribe(spentSteamTank.getTankType(), level, neighborPos, dir);
                 if (waterTank.getFill() > 0) {
                     tryProvide(waterTank, level, neighborPos, dir);
                 }

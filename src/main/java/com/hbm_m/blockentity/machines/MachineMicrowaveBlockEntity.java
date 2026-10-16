@@ -8,6 +8,7 @@ import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.MachineMicrowaveMenu;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.SimpleContainer;
@@ -34,7 +35,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * dies ist im Original ein absichtlicher Bestrafungsmechanismus fuer die hoechste Geschwindigkeits-
  * stufe, keine Fehlportierung.
  */
-public class MachineMicrowaveBlockEntity extends BaseMachineBlockEntity {
+public class MachineMicrowaveBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.interfaces.ICopiable {
 
     public static final int SLOT_INPUT = 0;
     public static final int SLOT_OUTPUT = 1;
@@ -155,6 +156,27 @@ public class MachineMicrowaveBlockEntity extends BaseMachineBlockEntity {
         super.readNbtData(tag, registries);
         time = tag.getInt("time");
         speed = tag.getInt("speed");
+    }
+
+    // ==================== Устройство настройки (оригинал) ====================
+
+    @Override
+    public CompoundTag getSettings(Level level, BlockPos pos) {
+        CompoundTag nbt = new CompoundTag();
+        nbt.putInt("microSpeed", speed);
+        return nbt;
+    }
+
+    @Override
+    public void pasteSettings(CompoundTag nbt, int index, Level level, Player player, BlockPos pos) {
+        if (nbt.contains("microSpeed")) speed = Mth.clamp(nbt.getInt("microSpeed"), 0, MAX_SPEED);
+        setChanged();
+        sendUpdateToClient();
+    }
+
+    @Override
+    public String[] infoForDisplay(Level level, BlockPos pos) {
+        return new String[]{ "copytool.speed" };
     }
 
     // ==================== GUI ====================

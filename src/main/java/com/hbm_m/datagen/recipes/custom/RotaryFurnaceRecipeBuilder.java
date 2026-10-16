@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import javax.annotation.Nullable;
+import javax.annotation.Nullable;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -12,7 +12,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
-/^*
+/**
  * Datagen-билдер {@link RotaryFurnaceRecipe} ({@code hbm_m:rotary_furnace}).
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.</p>
@@ -27,7 +27,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
  *   "duration": 100
  * }
  * }</pre>
- ^/
+ */
 public class RotaryFurnaceRecipeBuilder extends BaseRecipeBuilder<RotaryFurnaceRecipeBuilder> {
 
     private final Ingredient[] inputs;
@@ -46,7 +46,7 @@ public class RotaryFurnaceRecipeBuilder extends BaseRecipeBuilder<RotaryFurnaceR
         this.duration = duration;
     }
 
-    /^* Полная перегрузка: массивы ingredient+count, опциональная жидкость, выход, длительность. ^/
+    /** Полная перегрузка: массивы ingredient+count, опциональная жидкость, выход, длительность. */
     public static RotaryFurnaceRecipeBuilder rotaryFurnaceRecipe(Ingredient[] inputs, int[] counts,
                                                                  @Nullable FluidStack fluid,
                                                                  ItemStack output, int duration) {
@@ -56,7 +56,7 @@ public class RotaryFurnaceRecipeBuilder extends BaseRecipeBuilder<RotaryFurnaceR
         return new RotaryFurnaceRecipeBuilder(inputs, counts, fluid, output, duration);
     }
 
-    /^* Без жидкости — упрощённая перегрузка. ^/
+    /** Без жидкости — упрощённая перегрузка. */
     public static RotaryFurnaceRecipeBuilder rotaryFurnaceRecipe(Ingredient[] inputs, int[] counts,
                                                                  ItemStack output, int duration) {
         return rotaryFurnaceRecipe(inputs, counts, null, output, duration);
@@ -91,4 +91,4 @@ public class RotaryFurnaceRecipeBuilder extends BaseRecipeBuilder<RotaryFurnaceR
         return RotaryFurnaceRecipe.Serializer.INSTANCE;
     }
 }
-*///?}
+//?}

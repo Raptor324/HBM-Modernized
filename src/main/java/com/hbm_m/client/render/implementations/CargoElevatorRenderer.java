@@ -29,10 +29,10 @@ import org.joml.Matrix4f;
  * manual named-group OBJ rendering approach as {@link RBMKColumnRenderer}.
  */
 //? if forge {
-/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-*///?} elif neoforge {
-@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-//?}
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class CargoElevatorRenderer implements BlockEntityRenderer<CargoElevatorBlockEntity> {
 
     private static final Map<String, Map<String, List<float[]>>> OBJ_CACHE = new HashMap<>();

@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import com.google.gson.JsonArray;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.hbm_m.inventory.material.MaterialStack;
 import com.hbm_m.inventory.material.MaterialType;
@@ -9,7 +9,7 @@ import com.hbm_m.recipe.MoltenAlloyRecipe;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
-/^*
+/**
  * Datagen-билдер {@link MoltenAlloyRecipe} ({@code hbm_m:molten_alloy}).
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген компилируется
@@ -26,7 +26,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
  *   "outputs": [ { "material": "steel",  "amount": 288 }, ... ]
  * }
  * }</pre>
- ^/
+ */
 public class MoltenAlloyRecipeBuilder extends BaseRecipeBuilder<MoltenAlloyRecipeBuilder> {
 
     private final MaterialStack[] inputs;
@@ -67,4 +67,4 @@ public class MoltenAlloyRecipeBuilder extends BaseRecipeBuilder<MoltenAlloyRecip
         return MoltenAlloyRecipe.Serializer.INSTANCE;
     }
 }
-*///?}
+//?}

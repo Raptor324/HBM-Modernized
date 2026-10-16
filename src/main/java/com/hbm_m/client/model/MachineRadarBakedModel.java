@@ -16,11 +16,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-/*import net.minecraftforge.client.ChunkRenderTypeSet;
+import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.model.data.ModelData;
-*///?} elif neoforge {
-import net.neoforged.neoforge.client.ChunkRenderTypeSet;
-import net.neoforged.neoforge.client.model.data.ModelData;
 //?}
 
 /**
@@ -96,8 +93,7 @@ public class MachineRadarBakedModel extends AbstractMultipartBakedModel implemen
         return true;
     }
 
-    // Без ветки neoforge слой падал в solid, и прозрачные участки рисовались непрозрачными.
-    //? if forge || neoforge {
+    //? if forge {
     @Override
     public ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand, ModelData data) {
         return ChunkRenderTypeSet.of(RenderType.cutout());
@@ -107,11 +103,11 @@ public class MachineRadarBakedModel extends AbstractMultipartBakedModel implemen
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
         //? if forge {
-        /*return getQuads(state, side, rand, ModelData.EMPTY, null);
-        *///?}
+        return getQuads(state, side, rand, ModelData.EMPTY, null);
+        //?}
 
         //? if neoforge {
-        // 1.21.1 neoforge: чанк-бэкер вызывает 5-arg overload (см. ниже). 3-arg — item/BER hot path.
+        /*// 1.21.1 neoforge: чанк-бэкер вызывает 5-arg overload (см. ниже). 3-arg — item/BER hot path.
         // Зеркалируем forge-логику: ITEM — приоритетные части, WORLD — staticPart или List.of() (VBO).
         if (state == null) {
             return buildItemQuadsFromRenderParts(side, rand);
@@ -124,12 +120,25 @@ public class MachineRadarBakedModel extends AbstractMultipartBakedModel implemen
             return List.of();
         }
         return staticPart.getQuads(state, side, rand);
-        //?}
+        *///?}
 
+        //? if fabric {
+        /*if (state == null) {
+            return getItemQuads(side, rand);
+        }
+        if (ShaderCompatibilityDetector.useVboGeometry()) {
+            return List.of();
+        }
+        BakedModel staticPart = parts.get(getStaticPartName());
+        if (staticPart == null) {
+            return List.of();
+        }
+        return staticPart.getQuads(state, side, rand);
+        *///?}
     }
 
     //? if neoforge {
-    // NeoForge 1.21.1: 5-arg overload — вызывается чанк-бэкером. Зеркалируем forge-логику:
+    /*// NeoForge 1.21.1: 5-arg overload — вызывается чанк-бэкером. Зеркалируем forge-логику:
     // ITEM (state == null) — приоритетные части. WORLD — staticPart или List.of() если useVboGeometry.
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
@@ -147,10 +156,10 @@ public class MachineRadarBakedModel extends AbstractMultipartBakedModel implemen
         }
         return staticPart.getQuads(state, side, rand, modelData, renderType);
     }
-    //?}
+    *///?}
 
     //? if forge {
-    /*@Override
+    @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
                                     RandomSource rand, ModelData modelData,
                                     @Nullable net.minecraft.client.renderer.RenderType renderType) {
@@ -196,7 +205,7 @@ public class MachineRadarBakedModel extends AbstractMultipartBakedModel implemen
         }
         this.cachedItemQuads = allQuads;
     }
-    *///?}
+    //?}
 
     @Override
     protected List<String> getItemRenderPartNames() {

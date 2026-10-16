@@ -22,6 +22,9 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+//? if fabric {
+/*import team.reborn.energy.api.EnergyStorage;
+*///?}
 
 @SuppressWarnings("UnstableApiUsage")
 public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implements ILongEnergyMenu {
@@ -57,7 +60,11 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implemen
 
         this.addSlot(new Slot(container, 0, 152, 81) { // Energy
             @Override public boolean mayPlace(ItemStack stack) {
-                return ItemEnergyAccess.isEnergyItem(stack);
+                if (ItemEnergyAccess.getHbmProvider(stack).isPresent() || ItemEnergyAccess.getHbmReceiver(stack).isPresent()) return true;
+                //? if neoforge {
+                /*if (stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null) return true;
+                *///?}
+                return false;
             }
         });
         this.addSlot(new Slot(container, 1, 35, 126)); // Blueprint

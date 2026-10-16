@@ -1,5 +1,5 @@
 //? if neoforge {
-package com.hbm_m.compat.curios;
+/*package com.hbm_m.compat.curios;
 
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.item.ModItems;
@@ -9,17 +9,17 @@ import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import top.theillusivec4.curios.api.CuriosApi;
 import top.theillusivec4.curios.api.CuriosCapability;
 
-/**
+/^*
  * [NeoForge 1.21.1] Регистрирует ICurio для наших противогазов
  * (слот лица Curios).
  *
  * ВАЖНО: БЕЗ @EventBusSubscriber — авто-подписчик грузит класс (и ICurio)
  * на construction даже без Curios. Регистрируем вручную из
  * {@link CuriosCompat#init()} только при наличии Curios.
- */
+ ^/
 public final class CuriosNeoForgeEvents {
 
-    /** Вызывать только после проверки CuriosCompat.isLoaded(). */
+    /^* Вызывать только после проверки CuriosCompat.isLoaded(). ^/
     public static void init() {
         var container = net.neoforged.fml.ModList.get()
                 .getModContainerById(MainRegistry.MOD_ID).orElseThrow();
@@ -41,4 +41,4 @@ public final class CuriosNeoForgeEvents {
     private CuriosNeoForgeEvents() {
     }
 }
-//?}
+*///?}

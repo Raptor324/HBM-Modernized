@@ -1,10 +1,10 @@
 package com.hbm_m.client.model.variant;
 
 //? if forge {
-/*import net.minecraftforge.client.model.data.ModelProperty;
- *///?} elif neoforge {
-import net.neoforged.neoforge.client.model.data.ModelProperty;
-//?}
+import net.minecraftforge.client.model.data.ModelProperty;
+ //?} elif neoforge {
+/*import net.neoforged.neoforge.client.model.data.ModelProperty;
+*///?}
 
 /**
  * Client-only holder for ModelProperty constants used by door rendering.

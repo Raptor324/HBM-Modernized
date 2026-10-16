@@ -1,5 +1,5 @@
 //? if forge {
-/*package com.hbm_m.powerarmor.overlay;
+package com.hbm_m.powerarmor.overlay;
 
 import org.joml.Matrix4f;
 
@@ -100,4 +100,4 @@ public class VATSRenderHandler {
         return sb.toString();
     }
 }
-*///?}
+//?}

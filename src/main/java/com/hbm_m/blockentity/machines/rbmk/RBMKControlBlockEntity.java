@@ -68,9 +68,7 @@ public abstract class RBMKControlBlockEntity extends RBMKColumnBlockEntity imple
     public double getMult() { return level; }
 
     public void setTarget(double target) {
-        // Math.min/max propagate NaN, and every later comparison against NaN is false, which freezes
-        // the rod. The value comes straight off a client packet.
-        this.targetLevel = Double.isNaN(target) ? 0D : Math.max(0, Math.min(1, target));
+        this.targetLevel = Math.max(0, Math.min(1, target));
     }
 
     /**
@@ -127,7 +125,7 @@ public abstract class RBMKControlBlockEntity extends RBMKColumnBlockEntity imple
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
             @org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap,
             @org.jetbrains.annotations.Nullable Direction side) {
@@ -139,7 +137,7 @@ public abstract class RBMKControlBlockEntity extends RBMKColumnBlockEntity imple
         }
         return super.getCapability(cap, side);
     }
-    *///?}
+    //?}
 
     @Override
     public void setRemoved() {

@@ -21,12 +21,12 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-/*import net.minecraftforge.gametest.GameTestHolder;
+import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
-*///?} elif neoforge {
-import net.neoforged.neoforge.gametest.GameTestHolder;
+//?} elif neoforge {
+/*import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
-//?}
+*///?}
 
 /**
  * Кроссплатформенные GameTests энергосети energymk2.

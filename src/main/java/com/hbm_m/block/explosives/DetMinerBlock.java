@@ -36,23 +36,28 @@ public class DetMinerBlock extends Block implements IDetonatable {
         super(properties);
     }
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public void appendHoverText(ItemStack stack,
                                 @Nullable net.minecraft.world.level.BlockGetter level,
                                 List<Component> tooltip,
                                 TooltipFlag flag) {
-    *///?} else {
-    @Override
-    public void appendHoverText(ItemStack stack,
-                                net.minecraft.world.item.Item.TooltipContext level,
-                                List<Component> tooltip,
-                                TooltipFlag flag) {
-    //?}
         tooltip.add(Component.translatable("tooltip.hbm_m.detminer.line1")
                 .withStyle(ChatFormatting.YELLOW));
         tooltip.add(Component.translatable("tooltip.hbm_m.detminer.line4")
                 .withStyle(ChatFormatting.GRAY));
     }
+    //?} else {
+    /*@Override
+    public void appendHoverText(ItemStack stack,
+                                net.minecraft.world.item.Item.TooltipContext level,
+                                List<Component> tooltip,
+                                TooltipFlag flag) {
+        tooltip.add(Component.translatable("tooltip.hbm_m.detminer.line1")
+                .withStyle(ChatFormatting.YELLOW));
+        tooltip.add(Component.translatable("tooltip.hbm_m.detminer.line4")
+                .withStyle(ChatFormatting.GRAY));
+    }
+    *///?}
     @Override
     public void neighborChanged(BlockState state, Level level, BlockPos pos,
                                 Block block, BlockPos fromPos, boolean isMoving) {
@@ -68,22 +73,19 @@ public class DetMinerBlock extends Block implements IDetonatable {
 
         ServerLevel serverLevel = (ServerLevel) level;
 
-        // 1. Убираем сам майнер — до разрушения радиуса.
-        // Each setBlockAndUpdate in the radius notifies this position, and while the miner still
-        // stood there and still saw redstone, neighborChanged re-entered onDetonate and dropped the
-        // remaining blocks a second time. Upstream removes the block before it explodes.
-        serverLevel.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
-        serverLevel.gameEvent(null, GameEvent.BLOCK_DESTROY, pos);
-
-        // 2. Разрушаем блоки в радиусе MINING_RADIUS
+        // 1. Разрушаем блоки в радиусе MINING_RADIUS
         destroyBlocksInRadius(serverLevel, pos);
 
-        // 3. Активируем соседние Detonatable блоки по цепочке
+        // 2. Активируем соседние Detonatable блоки по цепочке
         triggerNearbyDetonations(serverLevel, pos, player);
 
-        // 4. Звук взрыва
+        // 3. Звук взрыва
         com.hbm_m.platform.PlatformHooks.playSound(serverLevel, pos, SoundEvents.GENERIC_EXPLODE,
                 SoundSource.BLOCKS, 1.0F, 1.0F);
+
+        // 4. Удаляем этот блок
+        serverLevel.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
+        serverLevel.gameEvent(null, GameEvent.BLOCK_DESTROY, pos);
 
         return true;
     }
@@ -136,8 +138,11 @@ public class DetMinerBlock extends Block implements IDetonatable {
                         BlockState checkState = serverLevel.getBlockState(checkPos);
                         Block block = checkState.getBlock();
                         if (block instanceof IDetonatable) {
-                            com.hbm_m.api.bomb.BombDetonation.triggerDetonatableLater(
-                                    serverLevel, checkPos, block, player, (int) (dist * 2));
+                            IDetonatable detonatable = (IDetonatable) block;
+                            int delay = (int)(dist * 2); // Задержка зависит от расстояния
+                            serverLevel.getServer().tell(new TickTask(delay, () -> {
+                                detonatable.onDetonate(serverLevel, checkPos, checkState, player);
+                            }));
                         }
                     }
                 }

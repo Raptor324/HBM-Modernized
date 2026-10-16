@@ -40,17 +40,17 @@ import net.minecraft.world.level.material.Fluids;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.block.machines.FluidDuctBlock;
 //? if forge {
-/*import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-*///?}
+//?}
 
 
 @SuppressWarnings("UnstableApiUsage")
-public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implements IMultiblockPart, IEnergyConnector, IFluidConnectorMK2 {
+public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implements IMultiblockPart, IEnergyConnector, IFluidConnectorMK2, com.hbm_m.api.block.ICrucibleAcceptor {
 
     // Виртуальные узлы жидкостной сети на позиции коннектора, по одному на тип жидкости контроллера.
     // Используется для "коннектор-к-коннектору" без труб: переносы делает FluidNet,
@@ -121,7 +121,7 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
     private java.util.Set<Direction> allowedFluidSides = java.util.EnumSet.noneOf(Direction.class);
 
     //? if forge {
-    /*/^*
+    /**
      * Reiner Konnektivitäts-Marker für JEDEN Teil der Struktur (auch DEFAULT-Phantomblöcke), NICHT
      * an die Connector-Rollen delegiert. Nodespace#PowerNode lehnt Knoten ohne
      * ModCapabilities.hasEnergyComponent() sofort ab (PowerNode#isValid) - ohne diesen Marker
@@ -129,10 +129,10 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
      * physische Kette zu weit entfernten Connectoren (z.B. Chungus' Energie-Connector 10 Blöcke
      * entfernt) bilden. canConnectEnergy() bleibt unabhängig rollenbasiert - Kabel docken weiterhin
      * nur visuell an echten Connector-Rollen an.
-     ^/
+     */
     private final net.minecraftforge.common.util.LazyOptional<IEnergyConnector> selfEnergyConnector =
             net.minecraftforge.common.util.LazyOptional.of(() -> this);
-    *///?}
+    //?}
 
     public UniversalMachinePartBlockEntity(BlockPos pPos, BlockState pBlockState) {
         super(ModBlockEntities.UNIVERSAL_MACHINE_PART_BE.get(), pPos, pBlockState);
@@ -234,20 +234,6 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
                 } else {
                     // Попытки исчерпаны: контроллера действительно нет рядом.
                     be.pendingRelinkCheck = false;
-                    be.relinkAttempts = 0;
-
-                    // A phantom part with no machine is litter: it renders as nothing, drops
-                    // nothing and breaks in one hit. Sable/Create moves used to take the
-                    // controller and leave whole footprints of these behind, so clean them up
-                    // instead of leaving them in the world for good. The move window is checked
-                    // because during it the controller is legitimately absent for a few ticks.
-                    if (!com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {
-                        com.hbm_m.main.MainRegistry.LOGGER.debug(
-                                "[HBM] Осиротевшая часть мультиблока удалена: {}", pos.toShortString());
-                        com.hbm_m.multiblock.MultiblockStructureHelper.runOrphanCleanup(
-                                () -> level.removeBlock(pos, false));
-                        return;
-                    }
                 }
             }
         }
@@ -427,21 +413,33 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
             }
             return result;
         }
-        // Последний шанс — баки самого контроллера. Раньше здесь читался forge-only
-        // IFluidHandler, поэтому на 1.21.1 список оставался пустым.
-        if (controller instanceof IFluidUserMK2 user) {
-            FluidTank[] tanks = user.getAllTanks();
-            if (tanks != null) {
-                for (FluidTank t : tanks) {
-                    if (t == null || t.getFill() <= 0) continue;
-                    Fluid type = t.getTankType();
-                    if (type != null && type != Fluids.EMPTY
-                            && type != com.hbm_m.inventory.fluid.ModFluids.NONE.getSource()) {
-                        result.add(type);
+        //? if forge {
+        IFluidHandler handler = controller.getCapability(ForgeCapabilities.FLUID_HANDLER, null).resolve().orElse(null);
+        if (handler != null) {
+            for (int i = 0; i < handler.getTanks(); i++) {
+                FluidStack fs = handler.getFluidInTank(i);
+                if (fs != null && !fs.isEmpty()) result.add(fs.getFluid());
+            }
+        }
+        //?}
+        //? if fabric {
+        /*if (controller.getLevel() instanceof ServerLevel sl) {
+            BlockPos bp = controller.getBlockPos();
+            BlockState st = sl.getBlockState(bp);
+            Storage<FluidVariant> storage = FluidStorage.SIDED.find(sl, bp, st, controller, null);
+            if (storage != null) {
+                for (StorageView<FluidVariant> view : storage) {
+                    if (!view.isResourceBlank() && view.getAmount() > 0) {
+                        Fluid f = view.getResource().getFluid();
+                        if (f != null && f != Fluids.EMPTY
+                                && f != com.hbm_m.inventory.fluid.ModFluids.NONE.getSource()) {
+                            result.add(f);
+                        }
                     }
                 }
             }
         }
+        *///?}
         return result;
     }
 
@@ -475,6 +473,41 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
     @Override
     public BlockPos getControllerPos() {
         return this.controllerPos;
+    }
+
+    // ───────────────────────── ICrucibleAcceptor (прокси налива) ─────────────────────────
+    // Порт TileEntityProxyCombo.moltenMetal: фантомная часть мультиблока пробрасывает
+    // налив расплава в контроллер, если тот принимает ({@code ICrucibleAcceptor}).
+
+    private @Nullable com.hbm_m.api.block.ICrucibleAcceptor castingController() {
+        BlockPos ctrl = getControllerPos();
+        if (ctrl == null || level == null) return null;
+        BlockEntity be = level.getBlockEntity(ctrl);
+        return be instanceof com.hbm_m.api.block.ICrucibleAcceptor acc ? acc : null;
+    }
+
+    @Override
+    public boolean canAcceptPartialPour(net.minecraft.world.level.Level level, BlockPos pos, net.minecraft.core.Direction side, com.hbm_m.inventory.material.MaterialStack stack) {
+        com.hbm_m.api.block.ICrucibleAcceptor acc = castingController();
+        return acc != null && acc.canAcceptPartialPour(level, pos, side, stack);
+    }
+
+    @Override
+    public @Nullable com.hbm_m.inventory.material.MaterialStack pour(net.minecraft.world.level.Level level, BlockPos pos, net.minecraft.core.Direction side, com.hbm_m.inventory.material.MaterialStack stack) {
+        com.hbm_m.api.block.ICrucibleAcceptor acc = castingController();
+        return acc == null ? stack : acc.pour(level, pos, side, stack);
+    }
+
+    @Override
+    public boolean canAcceptPartialFlow(net.minecraft.world.level.Level level, BlockPos pos, net.minecraft.core.Direction side, com.hbm_m.inventory.material.MaterialStack stack) {
+        com.hbm_m.api.block.ICrucibleAcceptor acc = castingController();
+        return acc != null && acc.canAcceptPartialFlow(level, pos, side, stack);
+    }
+
+    @Override
+    public @Nullable com.hbm_m.inventory.material.MaterialStack flow(net.minecraft.world.level.Level level, BlockPos pos, net.minecraft.core.Direction side, com.hbm_m.inventory.material.MaterialStack stack) {
+        com.hbm_m.api.block.ICrucibleAcceptor acc = castingController();
+        return acc == null ? stack : acc.flow(level, pos, side, stack);
     }
 
     @Override
@@ -572,7 +605,7 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
         return allowedEnergySides.contains(side);
     }
 
-    //? if forge || neoforge {
+    //? if forge {
     @Override
     public void onLoad() {
         super.onLoad();
@@ -597,13 +630,9 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
         }
         com.hbm_m.api.energy.EnergySubscriptions.unsubscribeAll(this);
     }
-    //?}
 
-    // getCapability/invalidateCaps below are Forge-only: NeoForge 1.21.1 removed
-    // BlockEntity.getCapability entirely. Only the two lifecycle hooks above apply to both.
-    //? if forge {
 
-    /*@NotNull
+    @NotNull
     @Override
     public <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         var level = this.level;
@@ -687,22 +716,7 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
         super.invalidateCaps();
         selfEnergyConnector.invalidate();
     }
-    *///?}
-
-    private static int sideMask(java.util.Set<Direction> sides) {
-        int mask = 0;
-        for (Direction dir : sides) mask |= (1 << dir.get3DDataValue());
-        return mask;
-    }
-
-    private static void readSideMask(CompoundTag tag, String key, java.util.Set<Direction> target) {
-        target.clear();
-        if (!tag.contains(key)) return;
-        int mask = tag.getInt(key);
-        for (Direction dir : Direction.values()) {
-            if ((mask & (1 << dir.get3DDataValue())) != 0) target.add(dir);
-        }
-    }
+    //?}
 
     @Override
     protected void writeNbtData(@NotNull CompoundTag pTag, @Nullable HolderLookup.Provider registries) {
@@ -720,12 +734,21 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
             pTag.putLong("LocalOffset", this.localOffsetFromController.asLong());
         }
 
-        // Written unconditionally: an empty set used to write nothing, and the reader only
-        // overwrites when the key is present, so loading onto a live instance (the client update
-        // tag, or loadCustomOnly during controller migration) kept the previous sides forever.
-        pTag.putInt("ClimbSides", sideMask(allowedClimbSides));
-        pTag.putInt("EnergySides", sideMask(allowedEnergySides));
-        pTag.putInt("FluidSides", sideMask(allowedFluidSides));
+        if (!allowedClimbSides.isEmpty()) {
+            int mask = 0;
+            for (Direction dir : allowedClimbSides) mask |= (1 << dir.get3DDataValue());
+            pTag.putInt("ClimbSides", mask);
+        }
+        if (!allowedEnergySides.isEmpty()) {
+            int mask = 0;
+            for (Direction dir : allowedEnergySides) mask |= (1 << dir.get3DDataValue());
+            pTag.putInt("EnergySides", mask);
+        }
+        if (!allowedFluidSides.isEmpty()) {
+            int mask = 0;
+            for (Direction dir : allowedFluidSides) mask |= (1 << dir.get3DDataValue());
+            pTag.putInt("FluidSides", mask);
+        }
     }
 
     @Override
@@ -733,8 +756,6 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
         super.readNbtData(pTag, registries);
         if (pTag.contains("ControllerPos")) {
             this.controllerPos = com.hbm_m.platform.PlatformHooks.readBlockPos(pTag, "ControllerPos");
-        } else {
-            this.controllerPos = null;
         }
         // Восстанавливаем локальный оффсет от контроллера (вращение-инвариантный).
         // Create/Sable disassembly сохраняет этот тег как есть (он не зависит от worldPos),
@@ -754,9 +775,27 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
                 this.role = PartRole.DEFAULT;
             }
         }
-        readSideMask(pTag, "ClimbSides", allowedClimbSides);
-        readSideMask(pTag, "EnergySides", allowedEnergySides);
-        readSideMask(pTag, "FluidSides", allowedFluidSides);
+        if (pTag.contains("ClimbSides")) {
+            int mask = pTag.getInt("ClimbSides");
+            allowedClimbSides.clear();
+            for (Direction dir : Direction.values()) {
+                if ((mask & (1 << dir.get3DDataValue())) != 0) allowedClimbSides.add(dir);
+            }
+        }
+        if (pTag.contains("EnergySides")) {
+            int mask = pTag.getInt("EnergySides");
+            allowedEnergySides.clear();
+            for (Direction dir : Direction.values()) {
+                if ((mask & (1 << dir.get3DDataValue())) != 0) allowedEnergySides.add(dir);
+            }
+        }
+        if (pTag.contains("FluidSides")) {
+            int mask = pTag.getInt("FluidSides");
+            allowedFluidSides.clear();
+            for (Direction dir : Direction.values()) {
+                if ((mask & (1 << dir.get3DDataValue())) != 0) allowedFluidSides.add(dir);
+            }
+        }
     }
 
     @Override
@@ -782,10 +821,10 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
         BlockEntity ctrl = level.getBlockEntity(controllerPos);
         if (ctrl instanceof MachineAssemblerBlockEntity) {
             //? if forge {
-            /*return ((MachineAssemblerBlockEntity) ctrl).getItemHandlerForPart(this.role).resolve().orElse(null);
-            *///?} elif neoforge {
-            return ((MachineAssemblerBlockEntity) ctrl).getItemHandlerForPart(this.role);
-             //?}
+            return ((MachineAssemblerBlockEntity) ctrl).getItemHandlerForPart(this.role).resolve().orElse(null);
+            //?} elif neoforge {
+            /*return ((MachineAssemblerBlockEntity) ctrl).getItemHandler(side);
+             *///?}
         }
         if (ctrl instanceof BaseHbmBlockEntity hbm) {
             return hbm.getItemHandler(side);
@@ -804,11 +843,11 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
         // только воду/спент-стим, остальные коннекторы — только рецептурные баки.
         if (ctrl instanceof com.hbm_m.api.fluids.IPositionalFluidTransceiver p) {
             //? if neoforge {
-            return new com.hbm_m.api.fluids.NeoForgeFluidHandlerMK2(p.getFluidTransceiverFor(worldPosition));
-            //?}
-            //? if forge {
-            /*return null; // Forge: жидкостный доступ через MK2-сеть (tickFluidConnector)
+            /*return new com.hbm_m.api.fluids.NeoForgeFluidHandlerMK2(p.getFluidTransceiverFor(worldPosition));
             *///?}
+            //? if forge {
+            return null; // Forge: жидкостный доступ через MK2-сеть (tickFluidConnector)
+            //?}
         }
         if (ctrl instanceof BaseHbmBlockEntity hbm) {
             return hbm.getFluidHandler(null);

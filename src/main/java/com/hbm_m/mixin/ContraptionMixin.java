@@ -91,10 +91,7 @@ public abstract class ContraptionMixin {
                         controllersToExpand.add(controllerPos);
                     }
                 }
-            } else if (world.getBlockState(worldPos).getBlock() instanceof IMultiblockController) {
-                // The controller interface is on the Block, not the BlockEntity - the old check on
-                // the block entity was always false, so a controller grabbed on its own never
-                // pulled its parts along.
+            } else if (be instanceof IMultiblockController) {
                 controllersToExpand.add(worldPos);
             }
         }
@@ -121,10 +118,10 @@ public abstract class ContraptionMixin {
                 net.minecraft.nbt.CompoundTag nbt = null;
                 if (blockEntity != null) {
                     //? if < 1.21 {
-                    /*nbt = blockEntity.saveWithoutMetadata();
-                    *///?} else {
-                    nbt = blockEntity.saveWithoutMetadata(world.registryAccess());
-                     //?}
+                    nbt = blockEntity.saveWithoutMetadata();
+                    //?} else {
+                    /*nbt = blockEntity.saveWithoutMetadata(world.registryAccess());
+                     *///?}
                 }
                 StructureBlockInfo info = new StructureBlockInfo(localPart, blockState, nbt);
                 this.blocks.put(localPart, info);

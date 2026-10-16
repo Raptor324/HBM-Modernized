@@ -40,15 +40,7 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 
-//? if forge {
-/*import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
-import net.minecraftforge.client.model.data.ModelData;
-import net.minecraftforge.fluids.FluidStack;
-*///?} elif neoforge {
-import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
-import net.neoforged.neoforge.client.model.data.ModelData;
-import net.neoforged.neoforge.fluids.FluidStack;
-//?}
+import com.hbm_m.platform.ClientFluidHooks;
 
 /**
  * Кристаллизатор на фабрике {@link MachineRenderers}: корпус живёт в чанк-меше,
@@ -126,12 +118,10 @@ public final class MachineCrystallizerRenderer {
 
     private static List<BakedQuad> collectModelQuads(BakedModel model, @Nullable RenderType renderType) {
         List<BakedQuad> quads = new ArrayList<>();
-        //? if forge {
-        /*quads.addAll(model.getQuads(null, null, RANDOM, ModelData.EMPTY, renderType));
+        quads.addAll(RenderHooks.getModelQuads(model, null, null, RANDOM, renderType));
         for (Direction dir : Direction.values()) {
-            quads.addAll(model.getQuads(null, dir, RANDOM, ModelData.EMPTY, renderType));
+            quads.addAll(RenderHooks.getModelQuads(model, null, dir, RANDOM, renderType));
         }
-        *///?}
         return quads;
     }
 
@@ -191,7 +181,7 @@ public final class MachineCrystallizerRenderer {
         PoseStack poseStack = new PoseStack();
 
         //? if forge {
-        /*try (var ignored = IrisPhaseGuard.pushBlockEntities()) {
+        try (var ignored = IrisPhaseGuard.pushBlockEntities()) {
             for (DeferredCrystallizerFluid entry : DEFERRED_FLUIDS) {
                 poseStack.pushPose();
                 poseStack.last().pose().set(entry.pose);
@@ -202,7 +192,7 @@ public final class MachineCrystallizerRenderer {
             }
             buffers.endBatch();
         }
-        *///?}
+        //?}
         DEFERRED_FLUIDS.clear();
     }
 
@@ -246,33 +236,11 @@ public final class MachineCrystallizerRenderer {
             return Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(blockFluidTexture);
         }
 
-        //? if forge {
-        /*IClientFluidTypeExtensions ext = IClientFluidTypeExtensions.of(fluid);
-        FluidStack stack = new FluidStack(fluid, be.getTank().getFluidAmountMb());
-        ResourceLocation stillTexture = ext.getStillTexture(stack);
-        if (stillTexture == null) return null;
-        return Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(stillTexture);
-        *///?}
-        //? if neoforge {
-        IClientFluidTypeExtensions ext = IClientFluidTypeExtensions.of(fluid);
-        FluidStack stack = new FluidStack(fluid, be.getTank().getFluidAmountMb());
-        ResourceLocation stillTexture = ext.getStillTexture(stack);
-        if (stillTexture == null) return null;
-        return Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(stillTexture);
-        //?}
+        return ClientFluidHooks.stillSprite(fluid, be.getTank().getFluidAmountMb());
     }
 
     private static int getFluidTint(MachineCrystallizerBlockEntity be, Fluid fluid) {
-        //? if forge {
-        /*IClientFluidTypeExtensions ext = IClientFluidTypeExtensions.of(fluid);
-        FluidStack stack = new FluidStack(fluid, be.getTank().getFluidAmountMb());
-        return ext.getTintColor(stack);
-        *///?}
-        //? if neoforge {
-        IClientFluidTypeExtensions ext = IClientFluidTypeExtensions.of(fluid);
-        FluidStack stack = new FluidStack(fluid, be.getTank().getFluidAmountMb());
-        return ext.getTintColor(stack);
-        //?}
+        return ClientFluidHooks.tint(fluid, be.getTank().getFluidAmountMb());
     }
 
     private static List<BakedQuad> remapQuadsSprite(List<BakedQuad> source, TextureAtlasSprite newSprite) {

@@ -1,6 +1,5 @@
 package com.hbm_m.inventory.gui;
 
-import com.hbm_m.network.CraneControlPacket;
 import com.hbm_m.blockentity.network.MachineCraneInserterBlockEntity;
 import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.MachineCraneInserterMenu;
@@ -61,7 +60,7 @@ public class GUIMachineCraneInserter extends GuiInfoScreen<MachineCraneInserterM
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (inserter != null && isHovering(151, 34, 18, 18, (int) mouseX, (int) mouseY)) {
-            CraneControlPacket.sendToServer(inserter.getBlockPos(), CraneControlPacket.INSERTER_DESTROYER, 0);
+            inserter.toggleDestroyer();
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);

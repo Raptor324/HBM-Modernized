@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.material.MaterialShape;
@@ -14,7 +14,7 @@ import net.minecraft.world.item.Items;
 
 import java.util.function.Consumer;
 
-/^*
+/**
  * Генератор JSON-рецептов рудного окислителя ({@code hbm_m:crystallizer}).
  *
  * <p>Порт раскомментированных рецептов из удалённого статического {@code CrystallizerRecipes.registerDefaults()}.
@@ -33,7 +33,7 @@ import java.util.function.Consumer;
  *   <li>{@code peroxide=PEROXIDE@500}, {@code sulfur=SULFURIC_ACID@500}.</li>
  *   <li>{@code productivity=0.05} для всех рудных, 0.25 — для ROTTEN_FLESH→LEATHER.</li>
  * </ul>
- ^/
+ */
 public final class CrystallizerRecipeGenerator {
 
     // Длительности (прямые порты констант из CrystallizerRecipes).
@@ -107,45 +107,21 @@ public final class CrystallizerRecipeGenerator {
                         Items.BLACK_DYE, 1, fluid(ModFluids.SULFURIC_ACID, 250),
                         new ItemStack(Items.SLIME_BALL, 4), MIXING_TIME, 0f)
                 .save(writer, "crystallizer/black_dye_to_slime");
-
-        // Смолы (GIT CrystallizerRecipes: три вида смолы уходят в воск хлором, воск и парафин
-        // дают заряженную гранулу и красную таблетку). Замыкает ветку нефтехимии: рафинёр
-        // теперь выдаёт смолу побочным продуктом.
-        CrystallizerRecipeBuilder.crystallizerRecipe(
-                        ModItems.OIL_TAR_CRUDE.get(), 1, fluid(ModFluids.CHLORINE, 250),
-                        new ItemStack(ModItems.OIL_TAR_WAX.get()), 20, 0f)
-                .save(writer, "crystallizer/tar_crude_to_wax");
-        CrystallizerRecipeBuilder.crystallizerRecipe(
-                        ModItems.OIL_TAR_CRACK.get(), 1, fluid(ModFluids.CHLORINE, 100),
-                        new ItemStack(ModItems.OIL_TAR_WAX.get()), 20, 0f)
-                .save(writer, "crystallizer/tar_crack_to_wax");
-        CrystallizerRecipeBuilder.crystallizerRecipe(
-                        ModItems.OIL_TAR_PARAFFIN.get(), 1, fluid(ModFluids.CHLORINE, 100),
-                        new ItemStack(ModItems.OIL_TAR_WAX.get()), 20, 0f)
-                .save(writer, "crystallizer/tar_paraffin_to_wax");
-        CrystallizerRecipeBuilder.crystallizerRecipe(
-                        ModItems.OIL_TAR_WAX.get(), 1, fluid(ModFluids.IONGEL, 500),
-                        new ItemStack(ModItems.PELLET_CHARGED.get()), 200, 0f)
-                .save(writer, "crystallizer/tar_wax_to_pellet_charged");
-        CrystallizerRecipeBuilder.crystallizerRecipe(
-                        ModItems.OIL_TAR_PARAFFIN.get(), 1, fluid(ModFluids.ESTRADIOL, 250),
-                        new ItemStack(ModItems.PILL_RED.get()), 200, 0f)
-                .save(writer, "crystallizer/tar_paraffin_to_pill_red");
     }
 
-    /^* Руда по forge-тегу с перекисью 500 mB, baseTime, productivity 0.05 (базовый случай). ^/
+    /** Руда по forge-тегу с перекисью 500 mB, baseTime, productivity 0.05 (базовый случай). */
     private static void ore(Consumer<FinishedRecipe> writer, String name, String tagId,
                             net.minecraft.world.item.Item output) {
         ore(writer, name, tagId, new ItemStack(output), PEROXIDE);
     }
 
-    /^* Руда по forge-тегу с заданной кислотой, baseTime, productivity 0.05. ^/
+    /** Руда по forge-тегу с заданной кислотой, baseTime, productivity 0.05. */
     private static void ore(Consumer<FinishedRecipe> writer, String name, String tagId,
                             net.minecraft.world.item.Item output, FluidStack acid) {
         ore(writer, name, tagId, new ItemStack(output), acid);
     }
 
-    /^* Руда по forge-тегу с заданной кислотой, baseTime, productivity 0.05 (ItemStack-перегрузка). ^/
+    /** Руда по forge-тегу с заданной кислотой, baseTime, productivity 0.05 (ItemStack-перегрузка). */
     private static void ore(Consumer<FinishedRecipe> writer, String name, String tagId,
                             ItemStack output, FluidStack acid) {
         CrystallizerRecipeBuilder.crystallizerRecipe(
@@ -157,4 +133,4 @@ public final class CrystallizerRecipeGenerator {
         return FluidStack.create(entry.getSource(), (long) amountMb);
     }
 }
-*///?}
+//?}

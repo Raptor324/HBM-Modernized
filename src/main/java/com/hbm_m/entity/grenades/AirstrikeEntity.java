@@ -42,8 +42,6 @@ public class AirstrikeEntity extends Entity {
     private int chunkRetryTimer = 0;
     private boolean hasFinishedAttack = false;
     private boolean isWaitingForChunk = false;
-    private static final int AMBIENT_SOUND_INTERVAL = 60;
-
     private Vec3 direction = Vec3.ZERO;
 
     private static final Random RANDOM = new Random();
@@ -132,21 +130,20 @@ public class AirstrikeEntity extends Entity {
 
     //? if < 1.21.1 {
 
-    /*@Override
-    protected void defineSynchedData() {
-
-var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
-    *///?} else {
     @Override
+    protected void defineSynchedData() {
+        this.entityData.define(TARGET_POS, BlockPos.ZERO);
+        this.entityData.define(OWNER_UUID_ACCESSOR, "");
+    }
+    //?} else {
+    /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
 
-var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
-    //?}
-
-        defs.define(TARGET_POS, BlockPos.ZERO);
-        defs.define(OWNER_UUID_ACCESSOR, "");
+        builder.define(TARGET_POS, BlockPos.ZERO);
+        builder.define(OWNER_UUID_ACCESSOR, "");
     
     }
+    *///?}
 
     @Override
     public void tick() {
@@ -177,11 +174,8 @@ var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
                 this.setYRot(newYaw);
                 this.yRotO = newYaw;
             }
-            // Was called every tick: 20 sound packets per second at volume 6. The original has no
-            // ambient engine loop at all - it only plays sounds at bomb-drop time - so the interval
-            // below is a tuning choice, not upstream parity. Adjust to the sample length in game.
-            // of its bomber sounds on a tick interval (ticksExisted % bombRate).
-            if (this.tickCount % AMBIENT_SOUND_INTERVAL == 0) playAmbientSound();
+
+            playAmbientSound();
 
             BlockPos target = getTargetPos();
             Vec3 targetCenter = Vec3.atCenterOf(target);
@@ -196,7 +190,7 @@ var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
                     dropAirBomb(target);  // 🆕 НОВЫЙ метод для авиабомб
                     bombTimer = 0;
                 }
-            } else if (!hasFinishedAttack && bombsDropped >= TOTAL_BOMBS) {
+            } else if (bombsDropped >= TOTAL_BOMBS) {
                 // 🆕 Завершаем атаку после 3 бомб
                 hasFinishedAttack = true;
                 despawnTimer = 0;
@@ -320,9 +314,7 @@ var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
         }
         this.isWaitingForChunk = tag.getBoolean("WaitingForChunk");
         this.chunkRetryTimer = tag.getInt("ChunkRetryTimer");
-        this.bombsDropped = tag.getInt("BombsDropped");
-        this.hasFinishedAttack = tag.getBoolean("HasFinishedAttack");
-        this.direction = new Vec3(tag.getDouble("DirX"), 0, tag.getDouble("DirZ"));
+        this.bombsDropped = tag.getInt("BombsDropped");  // 🆕 Сохранение счётчика
     }
 
     @Override
@@ -334,28 +326,22 @@ var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
         tag.putString("OwnerUUID", this.entityData.get(OWNER_UUID_ACCESSOR));
         tag.putBoolean("WaitingForChunk", isWaitingForChunk);
         tag.putInt("ChunkRetryTimer", chunkRetryTimer);
-        tag.putInt("BombsDropped", bombsDropped);
-        // Both were missing: without them a reloaded plane that had already passed its target had
-        // direction = ZERO, so the dot product below never went negative, hasFinishedAttack never
-        // flipped, and the plane flew on forever.
-        tag.putBoolean("HasFinishedAttack", hasFinishedAttack);
-        tag.putDouble("DirX", direction.x);
-        tag.putDouble("DirZ", direction.z);
+        tag.putInt("BombsDropped", bombsDropped);  // 🆕 Сохранение счётчика
     }
 
     //? if < 1.21.1 {
-    /*@NotNull
+    @NotNull
     @Override
     public Packet<ClientGamePacketListener> getAddEntityPacket() {
         return new net.minecraft.network.protocol.game.ClientboundAddEntityPacket(this);
     }
-    *///?} else {
-    @NotNull
+    //?} else {
+    /*@NotNull
     @Override
     public Packet<ClientGamePacketListener> getAddEntityPacket(net.minecraft.server.level.ServerEntity serverEntity) {
         return new net.minecraft.network.protocol.game.ClientboundAddEntityPacket(this, serverEntity);
     }
-    //?}
+    *///?}
 
     @Override public boolean isPickable() { return false; }
     @Override public boolean isPushable() { return false; }

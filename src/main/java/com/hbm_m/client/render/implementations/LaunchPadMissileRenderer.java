@@ -16,11 +16,11 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
-//? if forge {
-/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-*///?} elif neoforge {
-@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-//?}
+//? if < 1.21.1 {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} else {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class LaunchPadMissileRenderer implements com.hbm_m.client.render.HbmBerBounds<LaunchPadBaseBlockEntity> {
 
     public LaunchPadMissileRenderer(BlockEntityRendererProvider.Context context) {
@@ -40,12 +40,14 @@ public class LaunchPadMissileRenderer implements com.hbm_m.client.render.HbmBerB
         }
 
         boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
+        //? if forge {
         if (ShaderCompatibilityDetector.isExternalShaderActive()) {
             try (IrisRenderBatch batch = IrisRenderBatch.begin(shadowPass, RenderSystem.getProjectionMatrix())) {
                 drawMissileOnPad(be, renderData, poseStack, buffer, packedLight);
             }
             return;
         }
+        //?}
 
         drawMissileOnPad(be, renderData, poseStack, buffer, packedLight);
     }

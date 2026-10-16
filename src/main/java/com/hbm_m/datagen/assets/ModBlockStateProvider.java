@@ -2,7 +2,7 @@ package com.hbm_m.datagen.assets;
 
 import java.util.Map;
 //? if forge {
-/*import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.RedBrickBlock;
 import com.hbm_m.block.RedBrickBlock.RedFace;
 import com.hbm_m.block.decorations.DoorBlock;
@@ -62,10 +62,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // Блоки слитков теперь генерируются автоматически в цикле ниже
 
         blockWithItem(ModBlocks.GIGA_DET);
-        // Textures ported from the 1.7.10 assets - these three had no blockstate at all.
-        blockWithItem(ModBlocks.ORE_OIL_EMPTY);
-        blockWithItem(ModBlocks.GEIGER);
-        blockWithItem(ModBlocks.BROADCASTER);
         blockWithItem(ModBlocks.POLONIUM210_BLOCK);
         blockWithItem(ModBlocks.EXPLOSIVE_CHARGE);
         blockWithItem(ModBlocks.CRATE_WEAPON);
@@ -639,7 +635,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customMachineBlock(ModBlocks.DIESELGEN);
         simpleMachineBlock(ModBlocks.DIPOLE);
         simpleMachineBlock(ModBlocks.DRONE);
-        simpleMachineBlock(ModBlocks.ELECTRIC_HEATER);
+        horizontalBlock(ModBlocks.ELECTRIC_HEATER.get(),
+            models().getExistingFile(modLoc("block/machines/electric_heater")));
         horizontalBlock(ModBlocks.ELECTROLYSER.get(),
             models().getExistingFile(modLoc("block/machines/electrolyser")));
         customMachineBlock(ModBlocks.EPRESS);
@@ -647,9 +644,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
             models().getExistingFile(modLoc("block/machines/exposure_chamber")));
         simpleMachineBlock(ModBlocks.FENSU);
         // FENSU2 (machine_battery_redd) is a MachineBatteryBlock (FACING-Blockstate) - see orientableBlockWithItem below.
-        simpleMachineBlock(ModBlocks.FIREBOX);
+        horizontalBlock(ModBlocks.FIREBOX.get(),
+            models().getExistingFile(modLoc("block/machines/firebox")));
         simpleMachineBlock(ModBlocks.FRACTION_SPACER);
-        simpleMachineBlock(ModBlocks.HEATEX);
+        horizontalBlock(ModBlocks.HEATEX.get(),
+            models().getExistingFile(modLoc("block/machines/heatex")));
         customMachineBlock(ModBlocks.HEPHAESTUS);
         simpleMachineBlock(ModBlocks.ICF);
         simpleMachineBlock(ModBlocks.INTAKE);
@@ -658,8 +657,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
         horizontalBlock(ModBlocks.MICROWAVE.get(),
             models().getExistingFile(modLoc("block/machines/microwave")));
         customMachineBlock(ModBlocks.MINING_LASER);
-        simpleMachineBlock(ModBlocks.OILBURNER);
-        simpleMachineBlock(ModBlocks.OILBURNER_HP);
+        horizontalBlock(ModBlocks.OILBURNER.get(),
+            models().getExistingFile(modLoc("block/machines/oilburner")));
+        horizontalBlock(ModBlocks.OILBURNER_HP.get(),
+            models().getExistingFile(modLoc("block/machines/oilburner_hp")));
         // ORBUS is now a BarrelTankBlock (FACING blockstate) instead of a static "" variant.
         horizontalBlock(ModBlocks.ORBUS.get(), models().getExistingFile(modLoc("block/machines/orbus")));
         simpleMachineBlock(ModBlocks.ORE_SLOPPER);
@@ -699,8 +700,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customBombBlock(ModBlocks.NUKE_MIKE);
         customBombBlock(ModBlocks.NUKE_TSAR);
         customBombBlock(ModBlocks.NUKE_FLEIJA);
-        // The model and its OBJ were already ported, only the blockstate was never emitted.
-        customBombBlock(ModBlocks.NUKE_PROTOTYPE);
         customMachineBlock(ModBlocks.CORE_EMITTER);
         customMachineBlock(ModBlocks.CORE_INJECTOR);
         customMachineBlock(ModBlocks.CORE_RECEIVER);
@@ -750,15 +749,16 @@ public class ModBlockStateProvider extends BlockStateProvider {
         registerLitMachineBlock(ModBlocks.FURNACE_STEEL,
             com.hbm_m.block.machines.MachineFurnaceSteelBlock.FACING, com.hbm_m.block.machines.MachineFurnaceSteelBlock.LIT,
             "furnace_steel", "furnace_steel");
-        // Electric Furnace / Brick Furnace: own texture sets ported from the 1.7.10 assets
-        // (machine_electric_furnace_*, machine_furnace_brick_*), so both stop borrowing the iron
-        // furnace model. Separate front texture for the lit state, like vanilla's furnace.
+        // Electric Furnace / Brick Furnace: kein eigenes Modell/Textur-Set portiert (nicht in den
+        // vorhandenen Assets vorhanden) - als Platzhalter wird das bereits existierende
+        // furnace_iron-Modell (inkl. Textur) wiederverwendet, damit die Bloecke kompilieren und
+        // sichtbar sind. Sollte spaeter durch dedizierte Modelle ersetzt werden.
         registerLitMachineBlock(ModBlocks.ELECTRIC_FURNACE,
             com.hbm_m.block.machines.MachineElectricFurnaceBlock.FACING, com.hbm_m.block.machines.MachineElectricFurnaceBlock.LIT,
-            "electric_furnace", "electric_furnace_on");
+            "furnace_iron", "furnace_iron");
         registerLitMachineBlock(ModBlocks.FURNACE_BRICK,
             com.hbm_m.block.machines.MachineFurnaceBrickBlock.FACING, com.hbm_m.block.machines.MachineFurnaceBrickBlock.LIT,
-            "furnace_brick", "furnace_brick_on");
+            "furnace_iron", "furnace_iron");
         // Rotary Furnace: eigenes OBJ-Modell bereits vorhanden (block/machines/rotary_furnace.json),
         // kein separates LIT-Modell portiert - gleiches Modell fuer beide Zustaende.
         registerLitMachineBlock(ModBlocks.ROTARY_FURNACE,
@@ -778,13 +778,13 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         // Жидкостный насос / клапан / выхлоп — временно ванильный iron cube (отдельные модели позже)
         ModelFile fluidPumpModel = models().withExistingParent(ModBlocks.FLUID_PUMP.getId().getPath(), mcLoc("block/cube_all"))
-                .texture("all", modLoc("block/block_steel"))
-                .texture("particle", modLoc("block/block_steel"));
+                .texture("all", mcLoc("block/iron_block"))
+                .texture("particle", mcLoc("block/iron_block"));
         horizontalBlock(ModBlocks.FLUID_PUMP.get(), fluidPumpModel);
 
         ModelFile fluidValveModel = models().withExistingParent(ModBlocks.FLUID_VALVE.getId().getPath(), mcLoc("block/cube_all"))
-                .texture("all", modLoc("block/fluid_valve_off"))
-                .texture("particle", modLoc("block/fluid_valve_off"));
+                .texture("all", mcLoc("block/iron_block"))
+                .texture("particle", mcLoc("block/iron_block"));
         simpleBlock(ModBlocks.FLUID_VALVE.get(), fluidValveModel);
 
         ModelFile fluidExhaustModel = models().withExistingParent(ModBlocks.FLUID_EXHAUST.getId().getPath(), mcLoc("block/cube_all"))
@@ -794,13 +794,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         // Decor
         customObjBlock(ModBlocks.REBAR);
-        // Hand-written OBJ models existed, the blockstates never did: every barbed wire
-        // block logged "missing model for variant" and rendered as the missing model.
-        customObjBlock(ModBlocks.BARBED_WIRE);
-        customObjBlock(ModBlocks.BARBED_WIRE_FIRE);
-        customObjBlock(ModBlocks.BARBED_WIRE_POISON);
-        customObjBlock(ModBlocks.BARBED_WIRE_WITHER);
-        customObjBlock(ModBlocks.BARBED_WIRE_RAD);
 
         // Decor
         customObjBlock(ModBlocks.CRT_BROKEN);
@@ -1140,6 +1133,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // BLOCK_RED_COPPER / BLOCK_STARMETAL — алиасы слитковых блоков (auto-loop ниже), тут не конфигурируем.
         blockWithItem(ModBlocks.BLOCK_SCRAP);
         blockWithItem(ModBlocks.BLOCK_ELECTRICAL_SCRAP);
+        blockWithItem(ModBlocks.BLOCK_COAL_COKE);
+        blockWithItem(ModBlocks.BLOCK_LIGNITE_COKE);
+        blockWithItem(ModBlocks.BLOCK_PETROLEUM_COKE);
         blockWithItem(ModBlocks.DECO_TITANIUM);
         blockWithItem(ModBlocks.WOOD_STRUCTURE);
         blockWithItem(ModBlocks.POLE_TOP);
@@ -2359,24 +2355,12 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/slag_dynamic")
                 )
         );
-        simpleBlockWithItem(ModBlocks.FOUNDRY_MOLD.get(),
-                models().cubeBottomTop(
-                        ModBlocks.FOUNDRY_MOLD.getId().getPath(),
-                        modLoc("block/foundry_mold_side"),
-                        modLoc("block/foundry_mold_bottom"),
-                        modLoc("block/foundry_mold_top")
-                )
-        );
+        // foundry_mold / foundry_tank: полые "чашка"-модели 1:1 с оригиналом
+        // (hand-written в assets/hbm_m/models/block/machines/, cutout) — как foundry_basin.
+        simpleMachineBlock(ModBlocks.FOUNDRY_MOLD);
         // foundry_slagtap uses a hand-written static blockstate+model (directional spout shape,
         // matching foundry_outlet's precedent - see assets/hbm_m/blockstates/foundry_slagtap.json).
-        simpleBlockWithItem(ModBlocks.FOUNDRY_TANK.get(),
-                models().cubeBottomTop(
-                        ModBlocks.FOUNDRY_TANK.getId().getPath(),
-                        modLoc("block/foundry_tank_side"),
-                        modLoc("block/foundry_tank_bottom"),
-                        modLoc("block/foundry_tank_top")
-                )
-        );
+        simpleMachineBlock(ModBlocks.FOUNDRY_TANK);
         simpleBlockWithItem(ModBlocks.FROZEN_DIRT.get(),
                 models().cubeAll(
                         ModBlocks.FROZEN_DIRT.getId().getPath(),
@@ -3255,11 +3239,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 )
         );
         // Порт BlockNTMGlassPane: ванильная панель (Post/Side/NoSide)
-        // Glass needs the cutout layer: paneBlock leaves render_type unset, so the pane baked
-        // into the solid layer and its edges came out opaque.
-        paneBlockWithRenderType((net.minecraft.world.level.block.IronBarsBlock) ModBlocks.REINFORCED_GLASS_PANE.get(),
-                modLoc("block/reinforced_glass_pane"), modLoc("block/reinforced_glass_pane_edge"),
-                mcLoc("cutout"));
+        paneBlock((net.minecraft.world.level.block.IronBarsBlock) ModBlocks.REINFORCED_GLASS_PANE.get(),
+                modLoc("block/reinforced_glass_pane"), modLoc("block/reinforced_glass_pane_edge"));
         simpleBlockItem(ModBlocks.REINFORCED_GLASS_PANE.get(), models().getExistingFile(modLoc("block/reinforced_glass_pane_post")));
         simpleBlockWithItem(ModBlocks.REINFORCED_LAMINATE.get(),
                 models().cubeAll(
@@ -3767,10 +3748,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
         );
     }
 
-    /^*
+    /**
      * Метод для блоков, у которых текстура имеет префикс "block_".
      * Например, для блока с именем "uranium_block" он будет искать текстуру "block_uranium".
-     ^/
+     */
     private void resourceBlockWithItem(RegistrySupplier<Block> blockObject) {
         // 1. Получаем регистрационное имя (теперь оно уже "block_uranium")
         String registrationName = blockObject.getId().getPath();
@@ -3821,9 +3802,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(blockObject.get(), models().getExistingFile(modLoc("block/" + textureName)));
     }
 
-    /^*
+    /**
      * Поглотитель радиации — варианты по уровню ({@link BlockAbsorber.EnumAbsorberTier}).
-     ^/
+     */
     private void registerRadAbsorber() {
         Block block = ModBlocks.RAD_ABSORBER.get();
         VariantBlockStateBuilder builder = getVariantBuilder(block);
@@ -3838,9 +3819,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
         }
     }
 
-    /^*
+    /**
      * Старый метод для блоков, у которых имя текстуры СОВПАДАЕТ с именем регистрации.
-     ^/
+     */
     // =====================================================================================
     // МИГРАЦИЯ ручных blockstates/моделей на датаген.
     // Ранее это были рукописные JSON в src/main/resources/assets/hbm_m/blockstates и models/block.
@@ -3880,9 +3861,14 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 .texture("east", modLoc("block/rbmk/rbmk_absorber_side"))
                 .texture("west", modLoc("block/rbmk/rbmk_absorber_side"))
                 .texture("particle", modLoc("block/rbmk/rbmk_absorber_side"));
-        ModelFile mrbmk_rbmk_autoloader = models().withExistingParent("block/rbmk/rbmk_autoloader", mcLoc("block/cube_all"))
-                .texture("all", modLoc("block/rbmk/standalone_rbmk_autoloader"))
-                .texture("particle", modLoc("block/rbmk/standalone_rbmk_autoloader"));
+        ModelFile mrbmk_rbmk_autoloader = models().withExistingParent("block/rbmk/rbmk_autoloader", mcLoc("block/cube"))
+                .texture("down", modLoc("block/rbmk/rbmk_blank_top"))
+                .texture("up", modLoc("block/rbmk/rbmk_blank_top"))
+                .texture("north", modLoc("block/rbmk/rbmk_blank_side"))
+                .texture("south", modLoc("block/rbmk/rbmk_blank_side"))
+                .texture("east", modLoc("block/rbmk/rbmk_blank_side"))
+                .texture("west", modLoc("block/rbmk/rbmk_blank_side"))
+                .texture("particle", modLoc("block/rbmk/rbmk_blank_side"));
         ModelFile mrbmk_rbmk_blank = models().withExistingParent("block/rbmk/rbmk_blank", mcLoc("block/cube"))
                 .texture("down", modLoc("block/rbmk/rbmk_blank_top"))
                 .texture("up", modLoc("block/rbmk/rbmk_blank_top"))
@@ -4123,9 +4109,14 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 .texture("east", modLoc("block/rbmk/rbmk_control_side"))
                 .texture("west", modLoc("block/rbmk/rbmk_control_side"))
                 .texture("particle", modLoc("block/rbmk/rbmk_control_side"));
-        ModelFile mrbmk_rbmk_loader = models().withExistingParent("block/rbmk/rbmk_loader", mcLoc("block/cube_all"))
-                .texture("all", modLoc("block/rbmk/standalone_rbmk_loader"))
-                .texture("particle", modLoc("block/rbmk/standalone_rbmk_loader"));
+        ModelFile mrbmk_rbmk_loader = models().withExistingParent("block/rbmk/rbmk_loader", mcLoc("block/cube"))
+                .texture("down", modLoc("block/rbmk/rbmk_blank_top"))
+                .texture("up", modLoc("block/rbmk/rbmk_blank_top"))
+                .texture("north", modLoc("block/rbmk/rbmk_blank_side"))
+                .texture("south", modLoc("block/rbmk/rbmk_blank_side"))
+                .texture("east", modLoc("block/rbmk/rbmk_blank_side"))
+                .texture("west", modLoc("block/rbmk/rbmk_blank_side"))
+                .texture("particle", modLoc("block/rbmk/rbmk_blank_side"));
         ModelFile mrbmk_rbmk_moderator = models().withExistingParent("block/rbmk/rbmk_moderator", mcLoc("block/cube"))
                 .texture("down", modLoc("block/rbmk/rbmk_moderator_top"))
                 .texture("up", modLoc("block/rbmk/rbmk_moderator_top"))
@@ -4249,7 +4240,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         mig("steam_turbine", mmachines_steam_turbine, "facing=east@90", "facing=north@0", "facing=south@180", "facing=west@270");
     }
 
-    /^* Блок по registry-имени (поиск по статическим полям ModBlocks). ^/
+    /** Блок по registry-имени (поиск по статическим полям ModBlocks). */
     private Block migBlock(String name) {
         for (java.lang.reflect.Field f : ModBlocks.class.getDeclaredFields()) {
             if (java.lang.reflect.Modifier.isStatic(f.getModifiers()) && RegistrySupplier.class.isAssignableFrom(f.getType())) {
@@ -4263,10 +4254,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
         throw new IllegalStateException("MIGRATE: block '" + name + "' not found in ModBlocks");
     }
 
-    /^*
+    /**
      * Воспроизводит ручной blockstate: каждый элемент variants — "ключ@поворотY".
      * Пустой ключ ("" ) — единственный вариант без свойств. Свойства разрешаются по блоку.
-     ^/
+     */
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void mig(String blockName, ModelFile model, String... variants) {
         Block block = migBlock(blockName);
@@ -4334,10 +4325,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
     }
 
 
-    /^*
+    /**
      * Генерирует состояние для блока с кастомной OBJ моделью.
      * ВАЖНО: Сам файл модели (.json) должен быть создан вручную в /resources!
-     ^/
+     */
     private <T extends Block> void customObjBlock(RegistrySupplier<T> blockObject) {
         // Создаём только blockstate, который ссылается на JSON модель
         // JSON модель должна лежать в resources/assets/hbm_m/models/block/<название>.json
@@ -4370,14 +4361,14 @@ public class ModBlockStateProvider extends BlockStateProvider {
         }
     }
 
-    /^*
+    /**
      * A horizontally-placed machine that has a wrecked model for when it has been blown up.
      *
      * <p>Emits the usual four facings twice over, keyed on the block's {@code exploded} property,
      * so the model swaps the moment the block entity flips that flag. The original does the same
      * swap inside its tile-entity renderer; the port has these on plain baked models, so the
      * blockstate is the place for it.</p>
-     ^/
+     */
     private <T extends Block> void explodableMachineBlock(RegistrySupplier<T> blockObject,
                                                           String intactModel, String explodedModel) {
         var intact = models().getExistingFile(modLoc(intactModel));
@@ -4409,14 +4400,14 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 models().getExistingFile(modLoc("block/machines/" + blockObject.getId().getPath())));
     }
 
-    /^*
+    /**
      * Crane-Block mit voller 6-Richtungs-{@link net.minecraft.world.level.block.state.properties.BlockStateProperties#FACING}
      * (wie ein Kolben/Dropper) statt der interaktiven Screwdriver-Ausgabeseite des Originals
      * ({@code BlockCraneBase}). Ausgabeseite ist immer die der Eingabeseite (FACING) gegenueberliegende
      * Seite - deshalb werden nur die "Default"-Icons (in/out/top/side) gebraucht, nicht die ~20
      * Turn-Varianten fuer eine per Screwdriver ueberschriebene Ausgabeseite (siehe Klassenkommentar
      * an {@code MachineCraneInserterBlockEntity} fuer die volle Scope-Begruendung).
-     ^/
+     */
     private <T extends Block> void craneDirectionalBlock(RegistrySupplier<T> blockObject, String texturePrefix) {
         ResourceLocation inTex = modLoc("block/" + texturePrefix + "_in");
         ResourceLocation outTex = modLoc("block/" + texturePrefix + "_out");
@@ -4450,11 +4441,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
         }
     }
 
-    /^*
+    /**
      * Fuer Bloecke mit einer 6-Wege-{@code FACING}-Property, deren Modell aber visuell symmetrisch
      * ist (z.B. ein kleiner zentrierter Marker-Wuerfel wie {@code MachineDroneWaypointBlock}) - jede
      * Facing-Variante zeigt dasselbe unrotierte Modell, spart damit 6 separate Modell-Dateien.
-     ^/
+     */
     private <T extends Block> void directionlessFacingBlock(T block, ModelFile model) {
         VariantBlockStateBuilder builder = getVariantBuilder(block);
         for (Direction facing : Direction.values()) {
@@ -4465,7 +4456,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(block, model);
     }
 
-    /^* Same as {@link #directionlessFacingBlock} but for the vanilla FACING property. ^/
+    /** Same as {@link #directionlessFacingBlock} but for the vanilla FACING property. */
     private <T extends Block> void plainFacingBlock(T block, ModelFile model) {
         VariantBlockStateBuilder builder = getVariantBuilder(block);
         for (Direction facing : Direction.values()) {
@@ -4490,16 +4481,16 @@ public class ModBlockStateProvider extends BlockStateProvider {
             models().getExistingFile(modLoc("block/bomb/" + blockObject.getId().getPath())));
     }
 
-    /^*
+    /**
      * Advanced Assembly Machine: FACING + FRAME (frame в BlockState для запекания в чанк).
      * Одна модель - getQuads возвращает Base+Frame при frame=true.
-     ^/
-    /^*
+     */
+    /**
      * Chemical plant: без {@code rotationY} в blockstate - поворот задаётся только в
-     * {@link com.hbm_m.client.model.MachineChemicalPlantBakedModel} через
+     * {@link com.hbm_m.client.model.ConfiguredMultipartBakedModel} через
      * {@link com.hbm_m.util.MultipartFacingTransforms#legacyBlockEntityBakedRotationY}, в точности как
      * {@code LegacyAnimator.setupBlockTransform} у VBO (иначе vanilla y + getQuads дают двойной поворот).
-     ^/
+     */
     private void registerChemicalPlantBlock(RegistrySupplier<? extends Block> blockObject) {
         VariantBlockStateBuilder builder = getVariantBuilder(blockObject.get());
         ModelFile modelFile = models().getExistingFile(modLoc("block/machines/" + blockObject.getId().getPath()));
@@ -4547,13 +4538,13 @@ public class ModBlockStateProvider extends BlockStateProvider {
         }
     }
 
-    /^*
+    /**
      * Генерирует модель и состояние для горизонтально-ориентированного блока.
      * @param blockObject Блок
      * @param sideTexture Текстура для боковых и задней сторон
      * @param frontTexture Текстура для лицевой стороны (север)
      * @param topTexture Текстура для верха и низа
-     ^/
+     */
     private void orientableBlockWithItem(RegistrySupplier<Block> blockObject, ResourceLocation sideTexture, ResourceLocation frontTexture, ResourceLocation topTexture) {
         // 1. Создаем модель блока с разными текстурами.
         //    Метод orientable использует стандартные имена: side, front, top, bottom.
@@ -4578,7 +4569,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         ));
     }
 
-    /^* Тонкий слой осадков (не snow-layer с LAYERS). ^/
+    /** Тонкий слой осадков (не snow-layer с LAYERS). */
     private void registerFalloutLayerBlock(RegistrySupplier<Block> block, String baseName) {
         ResourceLocation texture = blockTexture(block.get());
         ModelFile model = models().withExistingParent(baseName, mcLoc("block/snow_height2"))
@@ -4587,7 +4578,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlock(block.get(), model);
     }
 
-    /^* Полный блок fallout (1.7.10 block_fallout). ^/
+    /** Полный блок fallout (1.7.10 block_fallout). */
     private void registerFalloutBlock(RegistrySupplier<Block> block, String baseName, String textureName) {
         simpleBlock(block.get(), models().cubeAll(baseName, modLoc("block/" + textureName)));
     }
@@ -4644,10 +4635,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(block.get(), models().withExistingParent(baseName + "_inventory", mcLoc("block/snow_height2")).texture("texture", texture).texture("particle", texture));
     }
 
-    /^*
+    /**
      * Регистрирует blockstate для машин со свойством LIT (включен/выключен).
      * Генерирует варианты для каждого направления FACING и состояния LIT.
-     ^/
+     */
     private void registerLitMachineBlock(RegistrySupplier<? extends Block> blockObject, 
                                           DirectionProperty facingProperty,
                                           BooleanProperty litProperty,
@@ -4683,9 +4674,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // simpleBlockItem(blockObject.get(), offModelFile);
     }
 
-    /^*
+    /**
      * Возвращает угол поворота Y для направления в градусах.
-     ^/
+     */
     private int getRotationY(Direction facing) {
         return switch (facing) {
             case SOUTH -> 180;
@@ -4749,11 +4740,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(block, models().cubeAll(blockObject.getId().getPath(), modLoc(overlayTexture)));
     }
 
-    /^*
+    /**
      * One RBMK panel slab: a flat plate {@code height} pixels tall, textured with the panel sheet on
      * the flat faces and the narrow edge strip on the sides. 1:1 with CE's hand-written
      * {@code deco_rbmk_*_slab2/4} models.
-     ^/
+     */
     private void rbmkPanelSlab(net.minecraft.world.level.block.Block block, String name,
                                 String topTex, String sideTex, int height) {
         var model = models().getBuilder(name)
@@ -4779,8 +4770,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         }
     }
 
-    /^* Axis-колонна (балки/трубы структурного декора) + предметная модель. ^/
-    /^* Ванильная лестница (порт BlockNTMLadder): blockstate как у ladder.json, модель-родитель block/ladder. ^/
+    /** Axis-колонна (балки/трубы структурного декора) + предметная модель. */
+    /** Ванильная лестница (порт BlockNTMLadder): blockstate как у ladder.json, модель-родитель block/ladder. */
     private void ladderBlockWithItem(Block block, String texture) {
         String name = texture.substring("block/".length());
         ModelFile model = models().withExistingParent(name, mcLoc("block/ladder"))
@@ -4790,11 +4781,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(block, model);
     }
 
-    /^*
+    /**
      * GrateBlock (порт BlockGrate): панель высотой 2px на высоте pos*2px.
      * pos=8 (потолок) визуально h7, pos=9 (под блоком) — h0. Стороны обрезают
      * текстуру по высоте, как ISBRH оригинала.
-     ^/
+     */
     private void grateBlockWithItem(RegistrySupplier<Block> blockObject, String top, String side) {
         Block block = blockObject.get();
         String name = blockObject.getId().getPath();
@@ -4824,11 +4815,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(block, levels[0]);
     }
 
-    /^*
+    /**
      * AXIS-блок с готовой JSON/OBJ моделью-обёрткой из resources.
      * baseVertical=true — база модели вертикальна (steel_beam: колонна вдоль Y),
      * false — база ориентирована по X (steel_scaffold: панель, нормаль X).
-     ^/
+     */
     private void objAxisBlockWithItem(RegistrySupplier<Block> blockObject, String modelName, boolean baseVertical) {
         Block block = blockObject.get();
         ModelFile model = models().getExistingFile(modLoc(modelName));
@@ -4856,7 +4847,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(block, model);
     }
 
-    /^* OilSpillBlock (порт BlockLayering): слои как у снега, модели поверх vanilla snow_heightN. ^/
+    /** OilSpillBlock (порт BlockLayering): слои как у снега, модели поверх vanilla snow_heightN. */
     private void layerBlockWithItem(RegistrySupplier<Block> blockObject, String texture) {
         Block block = blockObject.get();
         String name = blockObject.getId().getPath();
@@ -4878,7 +4869,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         itemModels().withExistingParent(name, mcLoc("item/generated")).texture("layer0", modLoc(texture));
     }
 
-    /^* OBJ-блок без ориентации (модель-обёртка в resources, identity transform). ^/
+    /** OBJ-блок без ориентации (модель-обёртка в resources, identity transform). */
     private void customObjBlockSimple(RegistrySupplier<Block> blockObject) {
         ModelFile model = models().getExistingFile(modLoc("block/" + blockObject.getId().getPath()));
         VariantBlockStateBuilder builder = getVariantBuilder(blockObject.get());
@@ -4889,14 +4880,14 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(blockObject.get(), model);
     }
 
-    /^* OBJ-блок без свойства facing (обычный Block): один вариант, без поворотов. ^/
+    /** OBJ-блок без свойства facing (обычный Block): один вариант, без поворотов. */
     private void customObjBlockNoFacing(RegistrySupplier<Block> blockObject) {
         ModelFile model = models().getExistingFile(modLoc("block/" + blockObject.getId().getPath()));
         getVariantBuilder(blockObject.get()).partialState().modelForState().modelFile(model).addModel();
         simpleBlockItem(blockObject.get(), model);
     }
 
-    /^* OBJ-блок с нестандартной картой поворотов facing→y (из рендера оригинала). ^/
+    /** OBJ-блок с нестандартной картой поворотов facing→y (из рендера оригинала). */
     private void customObjBlockRotated(RegistrySupplier<Block> blockObject, Map<Direction, Integer> rotY) {
         ModelFile model = models().getExistingFile(modLoc("block/" + blockObject.getId().getPath()));
         VariantBlockStateBuilder builder = getVariantBuilder(blockObject.get());
@@ -4907,7 +4898,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(blockObject.get(), model);
     }
 
-    /^* Ванильный забор (порт BlockMetalFence): post/side шаблоны с текстурой. ^/
+    /** Ванильный забор (порт BlockMetalFence): post/side шаблоны с текстурой. */
     private void fenceBlockWithItem(RegistrySupplier<Block> blockObject, String texture) {
         ModelFile post = models().withExistingParent(blockObject.getId().getPath() + "_post", mcLoc("block/fence_post"))
                 .texture("texture", modLoc(texture));
@@ -4944,4 +4935,4 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(block, model);
     }
 }
-*///?}
+//?}

@@ -65,16 +65,16 @@ public class EntityBombletZeta extends Projectile {
     }
 
     //? if < 1.21.1 {
-    /*@Override
-    protected void defineSynchedData() {
-        var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
-    *///?} else {
     @Override
-    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
-        var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
-    //?}
-        defs.define(BOMB_TYPE, TYPE_CARPET);
+    protected void defineSynchedData() {
+        this.entityData.define(BOMB_TYPE, TYPE_CARPET);
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        builder.define(BOMB_TYPE, TYPE_CARPET);
+    }
+    *///?}
 
     public int getBombType()             { return this.entityData.get(BOMB_TYPE); }
     public void setBombType(int type)    { this.entityData.set(BOMB_TYPE, type); }

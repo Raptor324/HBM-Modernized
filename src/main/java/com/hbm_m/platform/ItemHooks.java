@@ -17,10 +17,10 @@ public final class ItemHooks {
      */
     public static void hurtAndBreak(ItemStack stack, int amount, LivingEntity entity, net.minecraft.world.InteractionHand hand) {
         //? if < 1.21.1 {
-        /*stack.hurtAndBreak(amount, entity, e -> e.broadcastBreakEvent(hand));
-        *///?} else {
-        stack.hurtAndBreak(amount, entity, hand == net.minecraft.world.InteractionHand.MAIN_HAND ? net.minecraft.world.entity.EquipmentSlot.MAINHAND : net.minecraft.world.entity.EquipmentSlot.OFFHAND);
-        //?}
+        stack.hurtAndBreak(amount, entity, e -> e.broadcastBreakEvent(hand));
+        //?} else {
+        /*stack.hurtAndBreak(amount, entity, hand == net.minecraft.world.InteractionHand.MAIN_HAND ? net.minecraft.world.entity.EquipmentSlot.MAINHAND : net.minecraft.world.entity.EquipmentSlot.OFFHAND);
+        *///?}
     }
 
     /**
@@ -29,15 +29,15 @@ public final class ItemHooks {
      */
     public static int getEnchantmentLevel(ItemStack stack, Level level, String enchName) {
         //? if < 1.21.1 {
-        /*net.minecraft.world.item.enchantment.Enchantment ench = net.minecraft.core.registries.BuiltInRegistries.ENCHANTMENT.get(net.minecraft.resources.ResourceLocation.tryParse(enchName));
+        net.minecraft.world.item.enchantment.Enchantment ench = net.minecraft.core.registries.BuiltInRegistries.ENCHANTMENT.get(net.minecraft.resources.ResourceLocation.tryParse(enchName));
         if (ench == null) return 0;
         return net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(ench, stack);
-        *///?} else {
-        net.minecraft.core.Registry<net.minecraft.world.item.enchantment.Enchantment> registry = level.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+        //?} else {
+        /*net.minecraft.core.Registry<net.minecraft.world.item.enchantment.Enchantment> registry = level.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
         var holder = registry.getHolder(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENCHANTMENT, net.minecraft.resources.ResourceLocation.parse(enchName))).orElse(null);
         if (holder == null) return 0;
         return net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(holder, stack);
-        //?}
+        *///?}
     }
 
     /**
@@ -46,19 +46,19 @@ public final class ItemHooks {
      */
     public static void setEnchantmentLevel(ItemStack stack, Level level, String enchName, int enchLevel) {
         //? if < 1.21.1 {
-        /*net.minecraft.world.item.enchantment.Enchantment ench = net.minecraft.core.registries.BuiltInRegistries.ENCHANTMENT.get(net.minecraft.resources.ResourceLocation.tryParse(enchName));
+        net.minecraft.world.item.enchantment.Enchantment ench = net.minecraft.core.registries.BuiltInRegistries.ENCHANTMENT.get(net.minecraft.resources.ResourceLocation.tryParse(enchName));
         if (ench != null) {
             java.util.Map<net.minecraft.world.item.enchantment.Enchantment, Integer> map = new java.util.HashMap<>(net.minecraft.world.item.enchantment.EnchantmentHelper.getEnchantments(stack));
             map.put(ench, enchLevel);
             net.minecraft.world.item.enchantment.EnchantmentHelper.setEnchantments(map, stack);
         }
-        *///?} else {
-        net.minecraft.core.Registry<net.minecraft.world.item.enchantment.Enchantment> registry = level.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+        //?} else {
+        /*net.minecraft.core.Registry<net.minecraft.world.item.enchantment.Enchantment> registry = level.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
         var holder = registry.getHolder(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENCHANTMENT, net.minecraft.resources.ResourceLocation.parse(enchName))).orElse(null);
         if (holder != null) {
             net.minecraft.world.item.enchantment.EnchantmentHelper.updateEnchantments(stack, m -> m.set(holder, enchLevel));
         }
-        //?}
+        *///?}
     }
 
     /**
@@ -66,19 +66,19 @@ public final class ItemHooks {
      */
     public static void removeEnchantment(ItemStack stack, Level level, String enchName) {
         //? if < 1.21.1 {
-        /*net.minecraft.world.item.enchantment.Enchantment ench = net.minecraft.core.registries.BuiltInRegistries.ENCHANTMENT.get(net.minecraft.resources.ResourceLocation.tryParse(enchName));
+        net.minecraft.world.item.enchantment.Enchantment ench = net.minecraft.core.registries.BuiltInRegistries.ENCHANTMENT.get(net.minecraft.resources.ResourceLocation.tryParse(enchName));
         if (ench != null) {
             java.util.Map<net.minecraft.world.item.enchantment.Enchantment, Integer> map = new java.util.HashMap<>(net.minecraft.world.item.enchantment.EnchantmentHelper.getEnchantments(stack));
             map.remove(ench);
             net.minecraft.world.item.enchantment.EnchantmentHelper.setEnchantments(map, stack);
         }
-        *///?} else {
-        net.minecraft.core.Registry<net.minecraft.world.item.enchantment.Enchantment> registry = level.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+        //?} else {
+        /*net.minecraft.core.Registry<net.minecraft.world.item.enchantment.Enchantment> registry = level.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
         var holder = registry.getHolder(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENCHANTMENT, net.minecraft.resources.ResourceLocation.parse(enchName))).orElse(null);
         if (holder != null) {
             net.minecraft.world.item.enchantment.EnchantmentHelper.updateEnchantments(stack, m -> m.set(holder, 0));
         }
-        //?}
+        *///?}
     }
 
     /**
@@ -88,9 +88,9 @@ public final class ItemHooks {
      */
     public static int getItemMaxStackSize(net.minecraft.world.item.Item item) {
         //? if < 1.21.1 {
-        /*return item.getMaxStackSize();
-        *///?} else {
-        return item.getDefaultMaxStackSize();
-        //?}
+        return item.getMaxStackSize();
+        //?} else {
+        /*return item.getDefaultMaxStackSize();
+        *///?}
     }
 }
