@@ -239,6 +239,12 @@ public final class MissileRenderHelper {
         // machine flushes draw on top of.
         float prevFadeAlpha = SingleMeshVboRenderer.getFadeAlpha();
         SingleMeshVboRenderer.setFadeAlpha(1.0F);
+        // The GPU fade ramp never applied to missiles - but the old global
+        // pendingFadeMode arming here was consumed by nothing: the missile path
+        // draws through SingleMeshVboRenderer only, which never reaches
+        // addInstance. Per-instance fade MODE now travels in PartEnqueueRequest;
+        // there is no global to arm (and no stale FADE_MODE_NONE that a later
+        // machine record could have consumed).
         try {
             drawMissileMeshInner(stack, missileModel, poseStack, packedLight, lightPos, bufferSource, blockEntity);
         } finally {

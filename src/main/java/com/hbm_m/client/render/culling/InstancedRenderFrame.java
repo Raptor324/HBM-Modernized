@@ -68,11 +68,33 @@ public final class InstancedRenderFrame {
         com.hbm_m.client.render.shader.IrisInstancedShaders.onFrameStart();
         // Per-frame counters for the F3 ([Nucleus]) section; the overlay draws later in this frame.
         NucleusDebug.onFrameStart();
+        // Event-driven light: invalidate light caches + render-dirty machines in
+        // sections whose light changed (CrankShaft LightUpdatedVisualStorage pattern).
+        com.hbm_m.client.render.LightSampleCache.drainLightUpdates(net.minecraft.client.Minecraft.getInstance().level);
+        // Retained Instance Graph (Milestone 3): drain async handoffs and re-evaluate
+        // dirty light. No per-frame sparse GPU flush: the retained graph's global
+        // backing buffer was dead VRAM (never bound or drawn) - real rendering
+        // streams through spec.syncInstanceRecord -> InstancedStaticPartRenderer,
+        // so the sparse queue is an upload no-op.
+        com.hbm_m.client.render.retained.RetainedInstanceGraph rig = com.hbm_m.client.render.retained.RetainedInstanceGraph.get();
+        rig.drainHandoffQueue();
+        rig.processDirtyLightSections();
+        // R4-3.4.5: the PersistentIndirectCommandTable was dead in production (never
+        // registered to) - both the table and this per-frame flushIfDirty call are gone.
         // Detect Iris pipeline rebuilds before BER so cached ExtendedShader /
         // sampler bindings are not reused with destroyed GlResources.
         IrisExtendedShaderAccess.tickPass();
         MachineChemicalPlantRenderer.clearDeferredFluids();
         MachineCrystallizerRenderer.clearDeferredFluids();
+        // Arm high-performance CPU Frustum Culler with camera-relative planes and exact camera position:
+        if (cameraPos != null) {
+            CpuFrustumCuller.INSTANCE.updateCameraRelative(
+                    projection,
+                    FrameViewState.viewBasisRotation(),
+                    cameraPos
+            );
+        }
+
         // Single source of truth: the effective occlusion mode. The legacy
         // enableOcclusionCulling boolean is only a config-load mirror - gating the
         // CPU helper on it left ray-marching enabled (mode=CPU) without frustum
@@ -80,7 +102,6 @@ public final class InstancedRenderFrame {
         if (ModClothConfig.get().getEffectiveOcclusionCullingMode() == ModClothConfig.OcclusionCullingMode.CPU) {
             OcclusionCullingHelper.onFrameStart();
             OcclusionCullingHelper.captureBlockEntityPassFrustum(blockEntityFrustum);
-            OcclusionCullingHelper.captureCpuFrustumFallback(projection, cameraPos);
         } else {
             OcclusionCullingHelper.captureBlockEntityPassFrustum(null);
         }
@@ -108,6 +129,14 @@ public final class InstancedRenderFrame {
 
             MdiBatchCoordinator coord = MdiBatchCoordinator.beginFrame(projection);
             flushAllInstanced(projection);
+            // Global-batch Tier-1 flush: after the flat walk above (every main-pass
+            // bake flows MachineRenderRegistry.flushAll -> MachineSpec.flush ->
+            // MachinePartRenderer.flush -> InstancedStaticPartRenderer.flush ->
+            // IrisInstancedBatchRenderer.flushBatchIris -> NucleusGpuBaker.bakeMain),
+            // BEFORE the MDI endFrame / fading phase. ONE glMultiDrawElementsIndirect
+            // per frame through the pack's own gbuffers program. No-op when nothing
+            // baked.
+            com.hbm_m.client.render.NucleusGpuBaker.presentMainBatch(projection);
             if (coord != null) {
                 coord.endFrame();
             }
@@ -144,7 +173,10 @@ public final class InstancedRenderFrame {
             MachineCrystallizerRenderer.presentDeferredFluids();
         } catch (Throwable t) {
             MainRegistry.LOGGER.error("[HBM-M] instanced present failed", t);
-            // Safety after the exception: fence the staging copies already submitted
+            com.hbm_m.client.render.HardwareTierManager.triggerRuntimeDegradation("InstancedRenderFrame.presentAfterBlockEntities", t);
+            // Safety after the exception: drop any bake-collect entries that never
+            // reached their flush (their pool ranges may be re-laid-out next frame),
+            // fence the staging copies already submitted
             // (otherwise the next frame may overwrite an unfinished range) and
             // invalidate the camera cache (serial did not grow - without the reset the
             // next frame would reuse a stale view matrix).
@@ -154,6 +186,12 @@ public final class InstancedRenderFrame {
             }
             FrameViewState.invalidate();
             MdiBatchCoordinator.discardActiveSessionNoDispatch();
+            // The comment above promised this and it never happened: entries
+            // collected before the throw survived into the next frame, whose flush
+            // then appended the same caches AGAIN - duplicate draw commands in one
+            // glMultiDrawElementsIndirect (z-fighting/flicker) and unbounded
+            // PENDING_MAIN growth when the throw repeated every frame.
+            com.hbm_m.client.render.NucleusGpuBaker.discardPendingBatches();
             MachineChemicalPlantRenderer.clearDeferredFluids();
             MachineCrystallizerRenderer.clearDeferredFluids();
         }

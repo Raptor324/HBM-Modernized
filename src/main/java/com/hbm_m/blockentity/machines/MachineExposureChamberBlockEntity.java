@@ -6,7 +6,6 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.MachineExposureChamberMenu;
-import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.recipe.ExposureChamberRecipe;
 
 import net.minecraft.core.BlockPos;
@@ -69,7 +68,7 @@ public class MachineExposureChamberBlockEntity extends BaseMachineBlockEntity {
 
         // Load a fresh particle capsule into the internal cache once it's empty.
         if (be.cachedParticle == null && !particleStack.isEmpty() && !ingredientStack.isEmpty() && be.savedParticles <= 0) {
-            ExposureChamberRecipe recipe = findRecipe(be, particleStack, ingredientStack);
+            ExposureChamberRecipe recipe = be.findRecipe(particleStack, ingredientStack);
             if (recipe != null) {
                 be.cachedParticle = particleStack.getItem();
                 be.inventory.extractItem(SLOT_PARTICLE, 1, false);
@@ -79,7 +78,7 @@ public class MachineExposureChamberBlockEntity extends BaseMachineBlockEntity {
 
         // Consume the cached particle against the ingredient slot.
         if (be.cachedParticle != null && be.savedParticles > 0 && be.energy >= CONSUMPTION) {
-            ExposureChamberRecipe recipe = findRecipe(be, new ItemStack(be.cachedParticle), ingredientStack);
+            ExposureChamberRecipe recipe = be.findRecipe(new ItemStack(be.cachedParticle), ingredientStack);
 
             if (recipe != null && be.canAcceptOutput(recipe.getOutput())) {
                 be.progress++;
@@ -103,8 +102,17 @@ public class MachineExposureChamberBlockEntity extends BaseMachineBlockEntity {
             be.cachedParticle = null;
         }
 
-        be.setChanged();
-        be.sendUpdateToClient();
+        // Anti-sync-spam: полный пакет только при изменении синхронизируемого состояния
+        // (энергия, прогресс, флаги). Инвентарь сам зовёт setChanged из onContentsChanged.
+        be.syncIfStateChanged(
+                com.hbm_m.recipe.index.CachedRecipeResolver.sign(0,
+                        be.energy, be.progress, be.savedParticles,
+                        be.isOn ? 1L : 0L,
+                        be.cachedParticle == null ? 0L : com.hbm_m.platform.PlatformHooks.stackFingerprint(new ItemStack(be.cachedParticle))),
+                com.hbm_m.recipe.index.CachedRecipeResolver.sign(1,
+                        com.hbm_m.platform.PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_PARTICLE)),
+                        com.hbm_m.platform.PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_INGREDIENT)),
+                        com.hbm_m.platform.PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_OUTPUT))));
     }
 
     private boolean canAcceptOutput(ItemStack result) {
@@ -114,16 +122,25 @@ public class MachineExposureChamberBlockEntity extends BaseMachineBlockEntity {
         return current.getCount() + result.getCount() <= current.getMaxStackSize();
     }
 
+    /** Кэширующий резолвер: скан списка рецептов только при смене подписи (particle, ingredient). */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<ExposureChamberRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+
     /** Data-driven поиск ExposureChamberRecipe по паре (particle, ingredient) — заменяет статический ExposureChamberRecipes.getRecipe. */
     @Nullable
-    private static ExposureChamberRecipe findRecipe(MachineExposureChamberBlockEntity be,
-                                                    ItemStack particle, ItemStack ingredient) {
-        Level level = be.getLevel();
+    private ExposureChamberRecipe findRecipe(ItemStack particle, ItemStack ingredient) {
+        Level level = getLevel();
         if (level == null) return null;
-        for (ExposureChamberRecipe recipe : RecipeHooks.getAllRecipes(level, ExposureChamberRecipe.Type.INSTANCE)) {
-            if (recipe.matches(particle, ingredient)) return recipe;
-        }
-        return null;
+        long sig = com.hbm_m.recipe.index.CachedRecipeResolver.sign(2,
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(particle),
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(ingredient));
+        return recipeResolver.resolve(level, ExposureChamberRecipe.Type.INSTANCE, sig,
+                (lvl, all) -> {
+                    for (ExposureChamberRecipe recipe : all) {
+                        if (recipe.matches(particle, ingredient)) return recipe;
+                    }
+                    return null;
+                });
     }
 
     private void produceOutput(ItemStack result) {

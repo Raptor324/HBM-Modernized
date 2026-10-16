@@ -107,8 +107,20 @@ public class MachineReactorResearchBlockEntity extends BaseMachineBlockEntity {
             ChunkRadiationManager.incrementRad(level, pos.getX(), pos.getY(), pos.getZ(), rad);
         }
 
-        setChanged();
-        sendUpdateToClient();
+        // Anti-sync-spam: полный 128-битный снапшот всего, что пишет writeNbtData
+        // (energy у реактора всегда 0, инвентарь/флюкс — через фингерпринты).
+        long lo = heat;
+        lo = lo * 31L + water;
+        lo = lo * 31L + Double.doubleToLongBits(this.level);
+        lo = lo * 31L + Double.doubleToLongBits(targetLevel);
+        long hi = exploded ? 1L : 0L;
+        for (int i = 0; i < INVENTORY_SIZE; i++) {
+            hi = hi * 31L + com.hbm_m.platform.PlatformHooks.stackFingerprint(inventory.getStackInSlot(i));
+        }
+        for (int flux : slotFlux) {
+            hi = hi * 31L + flux;
+        }
+        syncIfStateChanged(lo, hi);
     }
 
     /**

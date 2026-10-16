@@ -93,12 +93,14 @@ public class MachineRadiolysisBlockEntity extends BaseMachineBlockEntity impleme
         ItemStack[] slots = be.inventorySlotArray();
         if (be.tanks[0].setType(SLOT_FLUID_ID, slots)) be.applySlotsArray(slots);
 
-        if (level.getGameTime() % 10 == 0) {
-            for (Direction dir : Direction.values()) {
-                be.trySubscribe(be.tanks[0], level, pos.relative(dir), dir);
-                if (be.tanks[1].getFill() > 0) be.tryProvide(be.tanks[1], level, pos.relative(dir), dir);
-                if (be.tanks[2].getFill() > 0) be.tryProvide(be.tanks[2], level, pos.relative(dir), dir);
-            }
+        // trySubscribe — раз в 10 тиков (регистрация, идемпотентно). tryProvide — каждый тик:
+        // его вторая ветка — прямой пуш в соседний приёмник, гейт делит пропускную способность
+        // выдачи. Fill-проверки пропускают зонд, пока выходные баки пусты.
+        boolean subscribeDue = level.getGameTime() % 10 == 0;
+        for (Direction dir : Direction.values()) {
+            if (subscribeDue) be.trySubscribe(be.tanks[0], level, pos.relative(dir), dir);
+            if (be.tanks[1].getFill() > 0) be.tryProvide(be.tanks[1], level, pos.relative(dir), dir);
+            if (be.tanks[2].getFill() > 0) be.tryProvide(be.tanks[2], level, pos.relative(dir), dir);
         }
 
         // 1:1: {@code crackTime = max(-0.1 * (heat - 100) + 30, 5)} - je heisser, desto oefter.
@@ -107,29 +109,58 @@ public class MachineRadiolysisBlockEntity extends BaseMachineBlockEntity impleme
             if (level.getGameTime() % crackTime == 0) be.crack();
         }
 
-        be.setChanged();
-        be.sendUpdateToClient();
+        // P6: клиентский пакет только при реальном изменении состояния
+        // (энергия, heat + подписи всех трёх танков).
+        be.syncIfStateChanged(
+                (be.getEnergyStored() * 31L + be.heat),
+                tankFingerprint(be.tanks[0]) * 961L + tankFingerprint(be.tanks[1]) * 31L + tankFingerprint(be.tanks[2]));
+    }
+
+    /** Подпись бака: тип жидкости + уровень заполнения (для sync-подписи и кэша рецептов). */
+    private static long tankFingerprint(FluidTank tank) {
+        Fluid f = tank.getTankType();
+        return (f == null ? 0L : f.hashCode()) * 31L + tank.getFill();
     }
 
     /** Результат радиолиза/крекинга: (жидкость A, mB, жидкость B, mB) — общий для обоих рецептов. */
     private record CrackResult(net.minecraft.world.level.material.Fluid outA, int amountA,
                                net.minecraft.world.level.material.Fluid outB, int amountB) {}
 
+    /** Кэшированные сканы: по одному резолверу на таблицу, подпись — фингерпринт входного бака. */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<RadiolysisRecipe> ownResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<CrackingTowerRecipe> fallbackResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+
     /**
      * Data-driven поиск: сначала собственный RadiolysisRecipe (вода → пероксид+водород),
      * затем делегирование в CrackingTowerRecipe — как оригинальный RadiolysisRecipes
-     * делегировал в CrackingRecipes.
+     * делегировал в CrackingRecipes. Скай кэшируется по подписи бака (value-keyed),
+     * кэш сбрасывается при /reload через эпоху ModRecipeIndex.
      */
     @org.jetbrains.annotations.Nullable
     private CrackResult findCrackRecipe() {
         if (level == null) return null;
-        RadiolysisRecipe own = RadiolysisRecipe.getRecipe(level, tanks[0].getTankType());
+        Fluid input = tanks[0].getTankType();
+        if (input == null) return null;
+        long signature = com.hbm_m.recipe.index.CachedRecipeResolver.sign(7, tankFingerprint(tanks[0]));
+        RadiolysisRecipe own = ownResolver.resolve(level, RadiolysisRecipe.Type.INSTANCE, signature, (lvl, all) -> {
+            for (RadiolysisRecipe recipe : all) {
+                if (recipe.matches(input)) return recipe;
+            }
+            return null;
+        });
         if (own != null) {
             return new CrackResult(own.getOutputA(), own.getOutputAMb(),
                     own.getOutputB() != null ? own.getOutputB() : own.getOutputA(),
                     own.getOutputBMb());
         }
-        CrackingTowerRecipe fallback = CrackingTowerRecipe.getRecipe(level, tanks[0].getTankType());
+        CrackingTowerRecipe fallback = fallbackResolver.resolve(level, CrackingTowerRecipe.Type.INSTANCE, signature, (lvl, all) -> {
+            for (CrackingTowerRecipe recipe : all) {
+                if (recipe.matches(input)) return recipe;
+            }
+            return null;
+        });
         if (fallback != null) {
             return new CrackResult(fallback.getOutputA(), fallback.getOutputAMb(),
                     fallback.getOutputB() != null ? fallback.getOutputB() : fallback.getOutputA(),

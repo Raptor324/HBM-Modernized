@@ -29,6 +29,8 @@ public final class ModEventHandler {
 		// SP — при входе в мир (стартует интегрированный сервер).
 		dev.architectury.event.events.common.LifecycleEvent.SERVER_STARTED.register(
 				server -> com.hbm_m.config.ConfigDebugLogger.dumpSide(com.hbm_m.config.schema.ConfigSide.SERVER));
+		// Серверная инвалидация кэша рецептов (reload/datapack sync/tags) — loader-gated glue.
+		com.hbm_m.platform.RecipeCacheInvalidationHooks.register();
 	}
 
 	private static void onPlayerJoin(Player player) {

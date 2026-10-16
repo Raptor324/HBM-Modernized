@@ -74,13 +74,19 @@ public abstract class FireboxBaseBlockEntity extends BaseMachineBlockEntity impl
     // ─────────────────────────── Тик сервера ───────────────────────────
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, FireboxBaseBlockEntity be) {
-        // Дым: 3 позиции по каждой из 4 горизонтальных сторон, как в оригинале
-        for (int i = 0; i < 4; i++) {
-            Direction dir = Direction.from2DDataValue(i);
-            Direction rot = dir.getCounterClockWise();
-            for (int j = -1; j <= 1; j++) {
-                be.sendSmokeAt(level, pos.offset(dir.getNormal().getX() * 2 + rot.getNormal().getX() * j, 0,
-                        dir.getNormal().getZ() * 2 + rot.getNormal().getZ() * j), dir);
+        // Дым: 3 позиции по каждой из 4 горизонтальных сторон, как в оригинале.
+        // tryProvide внутри sendSmokeAt — прямой пуш в соседний приёмник: каждый тик,
+        // иначе гейт делит пропускную способность отвода дыма. Гейт снят (Pump-паттерн) —
+        // раздача дыма единственная работа блока; 12-позиционный обход выполняется только
+        // когда есть дым в любом из трёх баков.
+        if (be.smoke.getFill() > 0 || be.smokeLeaded.getFill() > 0 || be.smokePoison.getFill() > 0) {
+            for (int i = 0; i < 4; i++) {
+                Direction dir = Direction.from2DDataValue(i);
+                Direction rot = dir.getCounterClockWise();
+                for (int j = -1; j <= 1; j++) {
+                    be.sendSmokeAt(level, pos.offset(dir.getNormal().getX() * 2 + rot.getNormal().getX() * j, 0,
+                            dir.getNormal().getZ() * 2 + rot.getNormal().getZ() * j), dir);
+                }
             }
         }
 
@@ -181,9 +187,11 @@ public abstract class FireboxBaseBlockEntity extends BaseMachineBlockEntity impl
     // ─────────────────────── Дым (порт TileEntityMachinePolluting) ───────────────────────
 
     private void sendSmokeAt(Level level, BlockPos pipePos, Direction dir) {
-        if (smoke.getFill() > 0) tryProvide(smoke, level, pipePos, dir);
-        if (smokeLeaded.getFill() > 0) tryProvide(smokeLeaded, level, pipePos, dir);
-        if (smokePoison.getFill() > 0) tryProvide(smokePoison, level, pipePos, dir);
+        // BE уже достаётся один раз; все три tryProvide идут через BE-вариант.
+        net.minecraft.world.level.block.entity.BlockEntity pipeBe = level.getBlockEntity(pipePos);
+        if (smoke.getFill() > 0) tryProvide(smoke.getTankType(), smoke.getPressure(), pipeBe, level, pipePos, dir);
+        if (smokeLeaded.getFill() > 0) tryProvide(smokeLeaded.getTankType(), smokeLeaded.getPressure(), pipeBe, level, pipePos, dir);
+        if (smokePoison.getFill() > 0) tryProvide(smokePoison.getTankType(), smokePoison.getPressure(), pipeBe, level, pipePos, dir);
     }
 
     /** SOOT → бак обычного дыма: ceil(amount * 100) mB, клампится при переполнении. */

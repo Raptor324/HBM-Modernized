@@ -12,7 +12,6 @@ import com.hbm_m.handler.pollution.PollutionHandler;
 import com.hbm_m.inventory.fluid.trait.PollutionType;
 import com.hbm_m.inventory.menu.MachineRotaryFurnaceMenu;
 import com.hbm_m.platform.ModItemStackHandler;
-import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.recipe.RotaryFurnaceRecipe;
 
 import net.minecraft.core.BlockPos;
@@ -59,6 +58,10 @@ public class MachineRotaryFurnaceBlockEntity extends com.hbm_m.blockentity.BaseH
     private static final int SLOT_COUNT = 5;
 
     private final FluidTank tank = new FluidTank(16_000);
+
+    /** Кэш скана рецептов: сигнатура = фингерпринты 3 входов + тип/уровень бака (P2). */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<RotaryFurnaceRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
 
     private final ModItemStackHandler inventory = new ModItemStackHandler(SLOT_COUNT) {
         @Override
@@ -133,9 +136,15 @@ public class MachineRotaryFurnaceBlockEntity extends com.hbm_m.blockentity.BaseH
     public static void tick(Level level, BlockPos pos, BlockState state, MachineRotaryFurnaceBlockEntity be) {
         if (level.isClientSide()) return;
 
-        if (level.getGameTime() % 10 == 0) {
+        // trySubscribe (регистрация, идемпотентно) — раз в 10 тиков. tryProvide внутри
+        // sendSmoke — прямой пуш дыма в соседний приёмник: каждый тик, иначе гейт делит
+        // пропускную способность отвода дыма. sendSmoke сам проверяет заполнение баков.
+        boolean subscribeDue = level.getGameTime() % 10 == 0;
+        boolean hasSmoke = be.smokeTanks.tanks()[0].getFill() > 0 || be.smokeTanks.tanks()[1].getFill() > 0
+                || be.smokeTanks.tanks()[2].getFill() > 0;
+        if (subscribeDue || hasSmoke) {
             for (Direction dir : Direction.values()) {
-                be.trySubscribe(be.tank, level, pos.relative(dir), dir);
+                if (subscribeDue) be.trySubscribe(be.tank, level, pos.relative(dir), dir);
                 be.sendSmoke(level, pos.relative(dir), dir);
             }
         }
@@ -190,13 +199,24 @@ public class MachineRotaryFurnaceBlockEntity extends com.hbm_m.blockentity.BaseH
         ItemStack s0 = be.inventory.getStackInSlot(SLOT_IN1);
         ItemStack s1 = be.inventory.getStackInSlot(SLOT_IN2);
         ItemStack s2 = be.inventory.getStackInSlot(SLOT_IN3);
-        for (RotaryFurnaceRecipe recipe : RecipeHooks.getAllRecipes(level, RotaryFurnaceRecipe.Type.INSTANCE)) {
-            if (recipe.matchesInputs(s0, s1, s2)
-                    && recipe.matchesFluid(be.tank.getTankType(), be.tank.getFill())) {
-                return recipe;
-            }
-        }
-        return null;
+        // Чистый матч по входам (CONTRACT 1): headroom выхода (canAcceptResult) остаётся
+        // per-tick в tick() ВНЕ резолвера — закэшированный рецепт не блокирует машину.
+        long signature = com.hbm_m.recipe.index.CachedRecipeResolver.sign(0L,
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(s0),
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(s1),
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(s2),
+                be.tank.getTankType().hashCode(),
+                be.tank.getFill());
+        return be.recipeResolver.resolve(level, RotaryFurnaceRecipe.Type.INSTANCE, signature,
+                (lvl, all) -> {
+                    for (RotaryFurnaceRecipe recipe : all) {
+                        if (recipe.matchesInputs(s0, s1, s2)
+                                && recipe.matchesFluid(be.tank.getTankType(), be.tank.getFill())) {
+                            return recipe;
+                        }
+                    }
+                    return null;
+                });
     }
 
     private boolean tryConsumeFuel() {

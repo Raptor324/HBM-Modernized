@@ -3,6 +3,7 @@ package com.hbm_m.client.render.rbmk;
 import com.hbm_m.blockentity.machines.MachineRbmkConsoleBlockEntity.RBMKColumnData;
 import com.hbm_m.blockentity.machines.rbmk.RBMKColumnBlockEntity.ColumnType;
 import com.hbm_m.blockentity.machines.rbmk.RBMKDisplayBlockEntity;
+import com.hbm_m.client.render.cache.RenderCacheManager;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
@@ -30,6 +31,12 @@ public class RBMKDisplayRenderer extends RBMKPanelRenderer<RBMKDisplayBlockEntit
     private static final int[] GROUP_COLORS = {0xFF0000, 0xFFFF00, 0x008000, 0x0000FF, 0x8000FF};
 
     private static TextureAtlasSprite white;
+
+    // A re-stitch replaces the atlas sprites wholesale (u0/v0 are final on TextureAtlasSprite),
+    // so the latch must be dropped on reload/session end - white() re-fetches lazily.
+    static {
+        RenderCacheManager.register(reason -> white = null);
+    }
 
     public RBMKDisplayRenderer(BlockEntityRendererProvider.Context ctx) {}
 

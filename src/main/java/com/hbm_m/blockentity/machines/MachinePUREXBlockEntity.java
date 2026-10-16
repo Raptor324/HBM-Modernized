@@ -88,12 +88,15 @@ public class MachinePUREXBlockEntity extends BaseMachineBlockEntity implements I
     private void serverTick(Level level, BlockPos pos) {
         chargeFromBatterySlot(SLOT_BATTERY);
 
-        if (level.getGameTime() % 20 == 0) {
-            for (Direction dir : Direction.values()) {
-                for (FluidTank tank : inputTanks) {
-                    trySubscribe(tank, level, pos.relative(dir), dir);
-                }
-                tryProvide(outputTank, level, pos.relative(dir), dir);
+        // trySubscribe — раз в 20 тиков (регистрация, идемпотентно). tryProvide — каждый тик:
+        // его вторая ветка — прямой пуш в соседний приёмник, гейт делит пропускную способность
+        // выдачи. Fill-проверка пропускает зонд, пока выходной бак пуст.
+        boolean subscribeDue = level.getGameTime() % 20 == 0;
+        for (Direction dir : Direction.values()) {
+            if (outputTank.getFill() > 0) tryProvide(outputTank, level, pos.relative(dir), dir);
+            if (!subscribeDue) continue;
+            for (FluidTank tank : inputTanks) {
+                trySubscribe(tank, level, pos.relative(dir), dir);
             }
         }
 
@@ -120,14 +123,56 @@ public class MachinePUREXBlockEntity extends BaseMachineBlockEntity implements I
         }
     }
 
+    /**
+     * Кэшированный скан рецептов: подпись — 3 предметных входных слота + 3 входных бака
+     * (тип + заполнение). Сканер — ТОЛЬКО матч ингредиентов по содержимому входов
+     * (CachedRecipeResolver CONTRACT 1); output-headroom и энергия проверяются per-tick
+     * в {@link #canProcess} против кэшированного рецепта.
+     */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<PurexRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+
     @Nullable
     private PurexRecipe findRecipe(Level level) {
-        // Кросс-версионный доступ: RecipeHooks.getAllRecipes разворачивает RecipeHolder на 1.21.1.
-        List<PurexRecipe> recipes = com.hbm_m.platform.recipe.RecipeHooks.getAllRecipes(level, PurexRecipe.Type.INSTANCE);
-        for (PurexRecipe recipe : recipes) {
-            if (canProcess(recipe)) return recipe;
+        long signature = com.hbm_m.recipe.index.CachedRecipeResolver.sign(4,
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(inventory.getStackInSlot(ITEM_INPUT_START)),
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(inventory.getStackInSlot(ITEM_INPUT_START + 1)),
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(inventory.getStackInSlot(ITEM_INPUT_START + 2)),
+                tankSig(inputTanks[0]), tankSig(inputTanks[1]), tankSig(inputTanks[2]));
+        return recipeResolver.resolve(level, PurexRecipe.Type.INSTANCE, signature, (lvl, all) -> {
+            for (PurexRecipe recipe : all) {
+                if (matchesIngredients(recipe)) return recipe;
+            }
+            return null;
+        });
+    }
+
+    /** Дешёвая подпись бака (тип + заполнение) для подписи сканера. */
+    private static long tankSig(FluidTank tank) {
+        return tank.getTankType().hashCode() * 31L + tank.getFill();
+    }
+
+    /** Чистый матч ингредиентов рецепта по входным слотам/бакам — без output-headroom. */
+    private boolean matchesIngredients(PurexRecipe recipe) {
+        List<PurexRecipe.CountedIngredient> itemInputs = recipe.getItemInputs();
+        if (itemInputs.size() > ITEM_INPUT_COUNT) return false;
+        for (int i = 0; i < itemInputs.size(); i++) {
+            ItemStack slotStack = inventory.getStackInSlot(ITEM_INPUT_START + i);
+            PurexRecipe.CountedIngredient req = itemInputs.get(i);
+            if (!req.ingredient().test(slotStack) || slotStack.getCount() < req.count()) return false;
         }
-        return null;
+
+        List<PurexRecipe.FluidIngredient> fluidInputs = recipe.getFluidInputs();
+        if (fluidInputs.size() > inputTanks.length) return false;
+        for (int i = 0; i < fluidInputs.size(); i++) {
+            PurexRecipe.FluidIngredient req = fluidInputs.get(i);
+            Fluid fluid = net.minecraft.core.registries.BuiltInRegistries.FLUID.get(req.fluidId());
+            FluidTank tank = inputTanks[i];
+            if (tank.isEmpty() || tank.getStoredFluid() != fluid || tank.getFluidAmountMb() < req.amount()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private boolean canProcess(PurexRecipe recipe) {

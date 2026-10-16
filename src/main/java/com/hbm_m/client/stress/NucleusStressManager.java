@@ -196,24 +196,36 @@ public final class NucleusStressManager {
 
         dimension = dim;
         List<StressMachine> placed = new ArrayList<>(count);
-        server.execute(() -> {
-            ServerLevel lvl = server.getLevel(dim);
-            if (lvl == null) return;
-            for (BlockPos pos : positions) {
-                placed.add(snapshotAndPlace(lvl, block, pos, radius, skinId));
-            }
-            List<StressMachine> toStore;
-            synchronized (LOCK) {
-                MACHINES.addAll(placed);
-                toStore = new ArrayList<>(MACHINES);
-            }
-            // Mirror the scene into the save folder: a crash/logout without clear
-            // is rolled back on the next world join.
-            saveStore(lvl, toStore, dim);
-        });
+        scheduleBatchedSpawn(server, dim, block, positions, radius, skinId, placed, 0, count, modelId);
 
         String grid = side + "x" + side + "x" + side + ", spacing " + trim(spacing);
         return Component.literal("Spawning " + count + " '" + modelId + "' stress machines (cube " + grid + ")");
+    }
+
+    private static final int BATCH_SIZE = 100;
+
+    private static void scheduleBatchedSpawn(MinecraftServer server, ResourceKey<Level> dim, Block block,
+                                            List<BlockPos> positions, int radius, @Nullable String skinId,
+                                            List<StressMachine> placed, int startIndex, int total, String modelId) {
+        server.execute(() -> {
+            ServerLevel lvl = server.getLevel(dim);
+            if (lvl == null) return;
+            int limit = Math.min(startIndex + BATCH_SIZE, total);
+            for (int i = startIndex; i < limit; i++) {
+                placed.add(snapshotAndPlace(lvl, block, positions.get(i), radius, skinId));
+            }
+            if (limit < total) {
+                scheduleBatchedSpawn(server, dim, block, positions, radius, skinId, placed, limit, total, modelId);
+            } else {
+                List<StressMachine> toStore;
+                synchronized (LOCK) {
+                    MACHINES.addAll(placed);
+                    toStore = new ArrayList<>(MACHINES);
+                }
+                saveStore(lvl, toStore, dim);
+                MainRegistry.LOGGER.info("[NucleusStress] spawned {} '{}' machines successfully", total, modelId);
+            }
+        });
     }
 
     /**
@@ -411,34 +423,46 @@ public final class NucleusStressManager {
             return Component.literal("Stress dimension no longer loaded - " + machines.size()
                     + " machines left in place").withStyle(ChatFormatting.YELLOW);
         }
-        server.execute(() -> {
-            restoreMachines(level, machines);
+        scheduleBatchedRestore(server, level, machines, machines.size() - 1, () -> {
             deleteStore(server);
+            MainRegistry.LOGGER.info("[NucleusStress] cleared {} stress machines, scene restored", machines.size());
+            mc.execute(() -> {
+                if (mc.player != null) {
+                    mc.player.displayClientMessage(Component.literal("Cleared " + machines.size() + " stress machines, scene restored"), false);
+                }
+            });
         });
-        return Component.literal("Cleared " + machines.size() + " stress machines, scene restored");
+        return Component.literal("Clearing " + machines.size() + " stress machines...");
     }
 
     /**
-     * Replays the snapshots (server thread). Reverse order: snapshots of later
+     * Replays the snapshots (server thread) in batches across ticks. Reverse order: snapshots of later
      * machines contain earlier machines' blocks (overlapping spacing overrides) -
      * LIFO restore is exact. Controller cell FIRST: its onRemove tears the
      * structure down quietly (destroyStructure clears the phantom parts with plain
-     * setBlock - no drops/particles/sounds). Restoring a part cell while its
-     * controller still stands would fire UniversalMachinePartBlock's "machine
-     * broke" cascade (destroyBlock(controllerPos, true) = item drop + break
-     * effects), which is exactly the noise a stress restore must not make.
+     * setBlock - no drops/particles/sounds).
      */
-    private static void restoreMachines(ServerLevel level, List<StressMachine> machines) {
-        for (int i = machines.size() - 1; i >= 0; i--) {
-            StressMachine m = machines.get(i);
-            if (m.controllerIndex >= 0) {
-                restoreCell(level, m, m.controllerIndex);
+    private static void scheduleBatchedRestore(MinecraftServer server, ServerLevel level,
+                                              List<StressMachine> machines, int currentIndex,
+                                              Runnable onComplete) {
+        server.execute(() -> {
+            int target = Math.max(currentIndex - BATCH_SIZE, -1);
+            for (int i = currentIndex; i > target; i--) {
+                StressMachine m = machines.get(i);
+                if (m.controllerIndex >= 0) {
+                    restoreCell(level, m, m.controllerIndex);
+                }
+                for (int k = 0; k < m.snapshotPositions.length; k++) {
+                    if (k == m.controllerIndex) continue;
+                    restoreCell(level, m, k);
+                }
             }
-            for (int k = 0; k < m.snapshotPositions.length; k++) {
-                if (k == m.controllerIndex) continue;
-                restoreCell(level, m, k);
+            if (target >= 0) {
+                scheduleBatchedRestore(server, level, machines, target, onComplete);
+            } else {
+                onComplete.run();
             }
-        }
+        });
     }
 
     private static void restoreCell(ServerLevel level, StressMachine m, int k) {
@@ -678,19 +702,23 @@ public final class NucleusStressManager {
             if (stored == null || stored.machines().isEmpty()) return;
             ServerLevel level = server.getLevel(stored.dimension());
             if (level != null) {
-                restoreMachines(level, stored.machines());
+                scheduleBatchedRestore(server, level, stored.machines(), stored.machines().size() - 1, () -> {
+                    deleteStore(server);
+                    MainRegistry.LOGGER.info("[NucleusStress] crash recovery: restored {} stress machines from a previous session",
+                            stored.machines().size());
+                    mc.execute(() -> {
+                        if (mc.player != null) {
+                            mc.player.displayClientMessage(Component.literal(
+                                    "[NucleusStress] Rolled back " + stored.machines().size()
+                                            + " stress machines left by a previous session"), false);
+                        }
+                    });
+                });
+            } else {
+                deleteStore(server);
+                MainRegistry.LOGGER.warn("[NucleusStress] crash recovery: dimension {} not loaded - skipped restoring {} stress machines",
+                        stored.dimension().location(), stored.machines().size());
             }
-            deleteStore(server);
-            String dimNote = level != null ? "" : " (dimension not loaded - machines kept)";
-            MainRegistry.LOGGER.info("[NucleusStress] crash recovery: restored {} stress machines from a previous session{}",
-                    stored.machines().size(), dimNote);
-            mc.execute(() -> {
-                if (mc.player != null) {
-                    mc.player.displayClientMessage(Component.literal(
-                            "[NucleusStress] Rolled back " + stored.machines().size()
-                                    + " stress machines left by a previous session"), false);
-                }
-            });
         });
     }
 

@@ -9,6 +9,11 @@ import java.lang.reflect.Method;
 /**
  * BufferBuilder compatibility helper for Iris/Oculus.
  *
+ * <p>Attribution / Credits:
+ * Adapted from Iris (https://github.com/IrisShaders/Iris, LGPL-3.0) and
+ * Oculus (https://github.com/Asek3/Oculus, LGPL-3.0).
+ * Authors: coderbot, IMS212, Iris Team, Asek3.</p>
+ *
  * <p><b>When NOT to use:</b> during level render (RenderLevelStageEvent, block
  * entities) with shaders enabled
  * ({@link ShaderCompatibilityDetector#isExternalShaderActive()}). In that case
@@ -26,8 +31,9 @@ public final class IrisBufferHelper {
 
     private static final int GL_QUADS = 7;
 
+    private static Class<?> extendingBufferBuilderClass;
     private static Method irisBeginWithoutExtending;
-    private static boolean irisChecked;
+    private static volatile boolean irisInitialized = false;
 
     /**
      * Cross-version {@link BufferBuilder} factory.
@@ -56,8 +62,9 @@ public final class IrisBufferHelper {
      * ExtendingBufferBuilder class from Connector/FFAPI (Forgified Fabric API).
      * Connector uses the same interface as Iris, but in a different package.
      */
+    private static Class<?> connectorClass;
     private static Method connectorBeginWithoutExtending;
-    private static boolean connectorChecked;
+    private static volatile boolean connectorInitialized = false;
 
     /**
      * Begins a BufferBuilder with DefaultVertexFormat.BLOCK without Iris
@@ -120,58 +127,85 @@ public final class IrisBufferHelper {
         };
     }
 
-    private static boolean tryIrisBeginWithoutExtending(BufferBuilder buffer, VertexFormat.Mode drawMode, VertexFormat vertexFormat) {
-        // --- Iris / Oculus (1.20+) ---
-        if (!irisChecked) {
-            irisChecked = true;
-            for (String className : new String[]{
-                    "net.irisshaders.iris.vertices.ExtendingBufferBuilder",
-                    "net.coderbot.iris.vertices.ExtendingBufferBuilder"
-            }) {
+    private static synchronized void ensureIrisInitialized() {
+        if (irisInitialized) return;
+        irisInitialized = true;
+        for (String className : new String[]{
+                "net.irisshaders.iris.vertices.ExtendingBufferBuilder",
+                "net.coderbot.iris.vertices.ExtendingBufferBuilder"
+        }) {
+            try {
+                Class<?> iface = Class.forName(className);
+                Method m = null;
                 try {
-                    Class<?> iface = Class.forName(className);
-                    if (iface.isInstance(buffer)) {
-                        irisBeginWithoutExtending = iface.getMethod("iris$beginWithoutExtending", VertexFormat.Mode.class, VertexFormat.class);
-                        break;
+                    m = iface.getMethod("iris$beginWithoutExtending", VertexFormat.Mode.class, VertexFormat.class);
+                } catch (NoSuchMethodException e) {
+                    for (Method candidate : iface.getMethods()) {
+                        if ("iris$beginWithoutExtending".equals(candidate.getName()) && candidate.getParameterCount() == 2) {
+                            m = candidate;
+                            break;
+                        }
                     }
-                } catch (ClassNotFoundException | NoSuchMethodException ignored) {
                 }
+                if (m != null) {
+                    m.setAccessible(true);
+                    extendingBufferBuilderClass = iface;
+                    irisBeginWithoutExtending = m;
+                    break;
+                }
+            } catch (ClassNotFoundException ignored) {
             }
         }
-        if (irisBeginWithoutExtending != null) {
+    }
+
+    private static synchronized void ensureConnectorInitialized() {
+        if (connectorInitialized) return;
+        connectorInitialized = true;
+        for (String className : new String[]{
+                "com.sinytra.forgified_fabric_api.fabric.mixin.renderer.indigo.MixinBufferBuilder",
+                "link.infra.indium.renderer.render.ExtendingBufferBuilder"
+        }) {
             try {
-                irisBeginWithoutExtending.invoke(buffer, drawMode, vertexFormat);
-                return true;
-            } catch (Exception ignored) {
+                Class<?> iface = Class.forName(className);
+                for (Method candidate : iface.getMethods()) {
+                    if ("iris$beginWithoutExtending".equals(candidate.getName()) && candidate.getParameterCount() == 2) {
+                        candidate.setAccessible(true);
+                        connectorClass = iface;
+                        connectorBeginWithoutExtending = candidate;
+                        return;
+                    }
+                }
+            } catch (ClassNotFoundException ignored) {
+            }
+        }
+    }
+
+    private static boolean tryIrisBeginWithoutExtending(BufferBuilder buffer, VertexFormat.Mode drawMode, VertexFormat vertexFormat) {
+        if (buffer == null) {
+            return false;
+        }
+        // --- Iris / Oculus (1.20+) ---
+        ensureIrisInitialized();
+        if (extendingBufferBuilderClass != null && irisBeginWithoutExtending != null) {
+            if (extendingBufferBuilderClass.isInstance(buffer)) {
+                try {
+                    irisBeginWithoutExtending.invoke(buffer, drawMode, vertexFormat);
+                    return true;
+                } catch (Exception ignored) {
+                }
             }
         }
 
         // --- Connector / Forgified Fabric API (FFAPI) ---
-        int glMode = getGlMode(drawMode);
-        if (!connectorChecked) {
-            connectorChecked = true;
-            try {
-                Class<?> iface = Class.forName("com.sinytra.forgified_fabric_api.fabric.mixin.renderer.indigo.MixinBufferBuilder");
-                if (iface.isInstance(buffer)) {
-                    connectorBeginWithoutExtending = iface.getMethod("iris$beginWithoutExtending", int.class, VertexFormat.class);
-                }
-            } catch (ClassNotFoundException | NoSuchMethodException ignored) {
-            }
-            if (connectorBeginWithoutExtending == null) {
+        ensureConnectorInitialized();
+        if (connectorClass != null && connectorBeginWithoutExtending != null) {
+            if (connectorClass.isInstance(buffer)) {
                 try {
-                    Class<?> iface = Class.forName("link.infra.indium.renderer.render.ExtendingBufferBuilder");
-                    if (iface.isInstance(buffer)) {
-                        connectorBeginWithoutExtending = iface.getMethod("iris$beginWithoutExtending", int.class, VertexFormat.class);
-                    }
-                } catch (ClassNotFoundException | NoSuchMethodException ignored) {
+                    int glMode = getGlMode(drawMode);
+                    connectorBeginWithoutExtending.invoke(buffer, glMode, vertexFormat);
+                    return true;
+                } catch (Exception ignored) {
                 }
-            }
-        }
-        if (connectorBeginWithoutExtending != null) {
-            try {
-                connectorBeginWithoutExtending.invoke(buffer, glMode, vertexFormat);
-                return true;
-            } catch (Exception ignored) {
             }
         }
 

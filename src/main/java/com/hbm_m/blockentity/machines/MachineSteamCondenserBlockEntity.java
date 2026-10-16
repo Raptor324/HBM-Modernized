@@ -77,14 +77,20 @@ public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity imp
             be.waterTimer--;
         }
 
+        // trySubscribe — раз в 5 тиков (probeDue), только регистрация, идемпотентно.
+        // tryProvide — каждый тик: его вторая ветка — прямой пуш в соседний приёмник, гейт
+        // делит пропускную способность выдачи, а не только стоимость скана. Fill-проверка
+        // пропускает зонд, пока бак воды пуст.
+        boolean subscribeDue = be.probeDue(5);
         for (Direction dir : Direction.values()) {
             BlockPos pipePos = pos.relative(dir);
-            BlockEntity pipeBe = level.getBlockEntity(pipePos);
-            if (!(pipeBe instanceof com.hbm_m.api.fluids.IFluidConnectorMK2)) continue;
-
-            be.trySubscribe(ModFluids.SPENTSTEAM.getSource(), level, pipePos, dir);
             if (be.outputWaterTank.getFill() > 0) {
                 be.tryProvide(be.outputWaterTank, level, pipePos, dir);
+            }
+            if (!subscribeDue) continue;
+            BlockEntity pipeBe = level.getBlockEntity(pipePos);
+            if (pipeBe instanceof com.hbm_m.api.fluids.IFluidConnectorMK2) {
+                be.trySubscribe(ModFluids.SPENTSTEAM.getSource(), level, pipePos, dir);
             }
         }
 

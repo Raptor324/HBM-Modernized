@@ -82,10 +82,14 @@ public class MachineDroneCrateBlockEntity extends BaseMachineBlockEntity
         applyFluidIdentifier();
 
         // 1:1: die Rohranbindung laeuft nur im Fluessigkeitsbetrieb.
-        if (!itemType && level.getGameTime() % 20 == 0) {
+        // trySubscribe — раз в 20 тиков (регистрация, идемпотентно). tryProvide — каждый тик:
+        // его вторая ветка — прямой пуш в соседний приёмник, гейт делит пропускную способность
+        // выдачи. Fill-проверка пропускает зонд, пока бак пуст.
+        if (!itemType) {
+            boolean subscribeDue = level.getGameTime() % 20 == 0;
             for (Direction dir : Direction.values()) {
                 if (sendingMode) {
-                    trySubscribe(fluidTank.getTankType(), level, pos.relative(dir), dir);
+                    if (subscribeDue) trySubscribe(fluidTank.getTankType(), level, pos.relative(dir), dir);
                 } else if (fluidTank.getFill() > 0) {
                     tryProvide(fluidTank, level, pos.relative(dir), dir);
                 }

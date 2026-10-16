@@ -49,5 +49,15 @@ public class MixinIrisShadowRenderer {
     @Inject(method = "renderShadows", at = @At("HEAD"), remap = false, expect = 0, require = 0)
     private void nucleus$onShadowPassStart(CallbackInfo ci) {
         com.hbm_m.client.render.NucleusDebug.onShadowPassStart();
+        com.hbm_m.client.render.shader.ShaderCompatibilityDetector.setRenderingShadowPass(true);
+        // 1.21.1 only: nobody installs a shadow BlockEntityRenderFunction there,
+        // so we install ours on the first shadow pass (no-op on 1.20.1 and on
+        // re-invocations - see IrisShadowBeFunction121).
+        com.hbm_m.client.render.IrisShadowBeFunction121.onShadowPassStart();
+    }
+
+    @Inject(method = "renderShadows", at = @At("RETURN"), remap = false, expect = 0, require = 0)
+    private void nucleus$onShadowPassEnd(CallbackInfo ci) {
+        com.hbm_m.client.render.shader.ShaderCompatibilityDetector.setRenderingShadowPass(false);
     }
 }

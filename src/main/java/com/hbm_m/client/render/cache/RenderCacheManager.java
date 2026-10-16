@@ -80,15 +80,23 @@ public final class RenderCacheManager {
     public static void invalidateAllNow(Reason reason) {
         try {
             // Per-frame states (MDI frame gate, stats, deferred redraws)
-            InstancedRenderFrame.clear();
+            guarded("InstancedRenderFrame.clear", InstancedRenderFrame::clear);
 
             // MDI GPU atlas: sessions must not survive reload/disconnect
-            MdiGeometryAtlas.resetForResourceLifecycle();
+            guarded("MdiGeometryAtlas.resetForResourceLifecycle", MdiGeometryAtlas::resetForResourceLifecycle);
+
+            // Retained instance scene graph & sparse queue
+            guarded("RetainedInstanceGraph.clear",
+                    () -> com.hbm_m.client.render.retained.RetainedInstanceGraph.get().clear());
 
             // Renderer-specific caches (instancers, DAE, door skins, etc.);
             // factory machines are cleared via MachineRenderRegistry.clearAll().
-            com.hbm_m.client.render.machine.MachineRenderRegistry.clearAll();
-            com.hbm_m.client.render.implementations.MachineDoorRenderer.clearDaeCaches();
+            guarded("MachineRenderRegistry.clearAll",
+                    com.hbm_m.client.render.machine.MachineRenderRegistry::clearAll);
+            guarded("MachineDoorRenderer.clearDaeCaches",
+                    com.hbm_m.client.render.implementations.MachineDoorRenderer::clearDaeCaches);
+            guarded("MachineDoorRenderer.resetUvRectAttribCheck",
+                    com.hbm_m.client.render.implementations.MachineDoorRenderer::resetUvRectAttribCheck);
 
             // Registered invalidators (machine specs, special effects)
             for (InvalidationHook hook : HOOKS) {
@@ -100,15 +108,42 @@ public final class RenderCacheManager {
             }
 
             // Shared engine compilers/caches
-            MeshRenderCache.clearAll();
-            LightSampleCache.invalidateAll();
-            OcclusionCullingHelper.clearCache();
+            guarded("MeshRenderCache.clearAll", MeshRenderCache::clearAll);
+            guarded("LightSampleCache.invalidateAll", LightSampleCache::invalidateAll);
+            guarded("OcclusionCullingHelper.clearCache", OcclusionCullingHelper::clearCache);
 
-            com.hbm_m.powerarmor.layer.AbstractObjArmorLayer.clearAllCaches();
+            guarded("AbstractObjArmorLayer.clearAllCaches",
+                    com.hbm_m.powerarmor.layer.AbstractObjArmorLayer::clearAllCaches);
+
+            // GPU-compute subsystems + keyed caches: their GL storage (HiZ pyramid
+            // texture, culler/scatter SSBOs) lives until its explicit destroy and
+            // must not survive a reload/disconnect; the sampler-location cache is
+            // keyed by pipeline generation and grows across Iris reloads.
+            guarded("HiZDepthPyramid.destroy",
+                    () -> com.hbm_m.client.render.culling.HiZDepthPyramid.get().destroy());
+            guarded("NucleusGpuCuller.destroy",
+                    com.hbm_m.client.render.culling.NucleusGpuCuller::destroy);
+            guarded("ComputeScatterUploader.destroy",
+                    com.hbm_m.client.render.ComputeScatterUploader::destroy);
+            guarded("SingleMeshVboRenderer.clearSamplerLocationCache",
+                    com.hbm_m.client.render.SingleMeshVboRenderer::clearSamplerLocationCache);
 
             MainRegistry.LOGGER.info("Render cache invalidation completed ({})", reason);
         } catch (Throwable t) {
             MainRegistry.LOGGER.error("Error during render cache invalidation", t);
+        }
+    }
+
+    /**
+     * One teardown step with its own guard: a throw from one cache must not
+     * cancel the frees of the others (GL storage lives until its Delete* call
+     * and these steps are the only free paths - see the audit 2026-10-05 §3.11).
+     */
+    private static void guarded(String name, Runnable step) {
+        try {
+            step.run();
+        } catch (Throwable t) {
+            MainRegistry.LOGGER.error("RenderCacheManager: step {} failed", name, t);
         }
     }
 }

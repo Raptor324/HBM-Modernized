@@ -52,7 +52,10 @@ public class MachineZirnoxDestroyedBlockEntity extends BaseHbmBlockEntity {
             return;
         }
 
-        blockEntity.radiate(level, pos);
+        // 200^3 entity query + per-entity block line march — phase-spread, not every tick.
+        if (blockEntity.probeDue(10)) {
+            blockEntity.radiate(level, pos);
+        }
 
         RandomSource random = level.getRandom();
         if (random.nextInt(5000) == 0) {
@@ -63,7 +66,8 @@ public class MachineZirnoxDestroyedBlockEntity extends BaseHbmBlockEntity {
             blockEntity.spawnFlameEffects((ServerLevel) level, pos, random);
         }
 
-        blockEntity.setChanged();
+        // writeNbtData ships only onFire — sync on its flip, not every tick.
+        blockEntity.syncIfStateChanged(0L, blockEntity.onFire ? 1L : 0L);
     }
 
     private void spawnFlameEffects(ServerLevel level, BlockPos pos, RandomSource random) {

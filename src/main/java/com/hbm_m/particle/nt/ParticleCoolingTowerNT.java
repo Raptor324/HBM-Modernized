@@ -143,6 +143,6 @@ public class ParticleCoolingTowerNT extends ParticleNT {
 
     @Override
     public RenderType getRenderType() {
-        return com.hbm_m.client.ClientRenderHandler.CustomRenderTypes.TOWER_PARTICLES.apply(TEXTURE);
+        return com.hbm_m.client.ClientRenderHandler.CustomRenderTypes.towerParticles(TEXTURE);
     }
 }

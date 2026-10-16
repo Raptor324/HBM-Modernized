@@ -150,24 +150,25 @@ public class MachineTurbineGasBlockEntity extends BaseMachineBlockEntity impleme
 
         chargeItemInSlot(SLOT_BATTERY);
 
-        if (level.getGameTime() % 20 == 0) {
-            for (Direction dir : Direction.values()) {
-                BlockPos neighborPos = worldPosition.relative(dir);
-                BlockEntity neighborBe = level.getBlockEntity(neighborPos);
-                if (!(neighborBe instanceof IFluidConnectorMK2)) continue;
-
-                trySubscribe(gasTank, level, neighborPos, dir);
-                trySubscribe(lubeTank, level, neighborPos, dir);
-                trySubscribe(waterTank, level, neighborPos, dir);
-                if (hotsteamTank.getFill() > 0) {
-                    tryProvide(hotsteamTank, level, neighborPos, dir);
-                }
+        // trySubscribe — раз в 20 тиков (регистрация, идемпотентно). tryProvide — каждый тик:
+        // его вторая ветка — прямой пуш hotsteam в соседний приёмник, гейт делит пропускную
+        // способность выдачи. Fill-проверка пропускает зонд, пока бак пуст.
+        boolean subscribeDue = level.getGameTime() % 20 == 0;
+        for (Direction dir : Direction.values()) {
+            BlockPos neighborPos = worldPosition.relative(dir);
+            if (hotsteamTank.getFill() > 0) {
+                tryProvide(hotsteamTank, level, neighborPos, dir);
             }
+            if (!subscribeDue) continue;
+            BlockEntity neighborBe = level.getBlockEntity(neighborPos);
+            if (!(neighborBe instanceof IFluidConnectorMK2)) continue;
+            trySubscribe(gasTank, level, neighborPos, dir);
+            trySubscribe(lubeTank, level, neighborPos, dir);
+            trySubscribe(waterTank, level, neighborPos, dir);
         }
 
-        boolean wasActive = active;
-
         waterToBoil = 0D;
+
         // Original: throttle = powerSliderPos * 100 / 60.
         throttle = powerSliderPos * 100 / 60;
 
@@ -195,10 +196,13 @@ public class MachineTurbineGasBlockEntity extends BaseMachineBlockEntity impleme
 
         active = state == 1;
 
-        if (wasActive != active || rpm > 0 || counter > 0) {
-            setChanged();
-            sendUpdateToClient();
-        }
+        // Анти-sync-спам: старое условие (wasActive != active || rpm > 0 || counter > 0) было
+        // тавтологией во время работы — синк шёл каждый тик. Подпись (energy, rpm/256 | counter)
+        // плюс heartbeat раз в 20 тиков; стрелка Drehzahl на клиенте обновляется ступенчато —
+        // принято (PR-note).
+        syncIfChangedOrEvery(getEnergyStored(),
+                ((long) rpm / 256L) | ((long) counter << 8) | (active ? 1L << 32 : 0L),
+                20);
     }
 
     /**

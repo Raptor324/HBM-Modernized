@@ -120,8 +120,9 @@ public class MachineWoodBurnerBlockEntity extends BaseMachineBlockEntity impleme
         be.chargeItemInSlot(SLOT_BATTERY);
 
         // Оригинал: раз в секунду trySubscribe(tank.getTankType()) на обеих задних позициях.
+        // Порты идут через TTL-кэш базы (пересбор — раз на изменение структуры, не каждый раз).
         if (level.getGameTime() % 20 == 0) {
-            for (BlockPos portPos : be.getExtraEnergyPorts()) {
+            for (BlockPos portPos : be.getCachedExtraPorts()) {
                 be.trySubscribe(be.tank.getTankType(), level, portPos, getDirectionTo(pos, portPos));
             }
         }
@@ -184,8 +185,35 @@ public class MachineWoodBurnerBlockEntity extends BaseMachineBlockEntity impleme
             level.setBlock(pos, state.setValue(MachineWoodBurnerBlock.LIT, burning), 3);
         }
 
-        // Оригинал: networkPackNT(25) — полная синхронизация каждый тик.
-        be.sendUpdateToClient();
+        // Оригинал: networkPackNT(25) — полная синхронизация каждый тик; здесь — по подписи
+        // отрисовываемого состояния (P6: буфер, burnTime/powerGen, зола, режим, инвентарь).
+        // При горении подпись меняется каждый тик (энергия/burnTime), в простое — только
+        // при реальном изменении.
+        be.syncIfStateChanged(be.syncEnergyBucket(), be.syncStateBucket());
+    }
+
+    /** lo-часть подписи: энергия и счётчики горения (меняются каждый тик генерации). */
+    private long syncEnergyBucket() {
+        return ((energy * 31L + burnTime) * 31L + maxBurnTime) * 31L + powerGen;
+    }
+
+    /** hi-часть подписи: баки, счётчики золы, режим и инвентарь. */
+    private long syncStateBucket() {
+        long h = tankFingerprint(tank);
+        h = h * 31L + tankFingerprint(smoke);
+        h = h * 31L + ashLevel[0];
+        h = h * 31L + ashLevel[1];
+        h = h * 31L + ashLevel[2];
+        h = h * 31L + (isOn ? 1L : 0L) + (liquidBurn ? 2L : 0L);
+        for (int i = 0; i < INVENTORY_SIZE; i++) {
+            h = h * 31L + com.hbm_m.platform.PlatformHooks.stackFingerprint(inventory.getStackInSlot(i));
+        }
+        return h;
+    }
+
+    private static long tankFingerprint(FluidTank t) {
+        net.minecraft.world.level.material.Fluid type = t.getTankType();
+        return (type == null ? 0L : type.hashCode() * 31L) + t.getFill();
     }
 
     /** Клиентский тик: дым из трубы при генерации (порт spawnParticle("smoke")). */

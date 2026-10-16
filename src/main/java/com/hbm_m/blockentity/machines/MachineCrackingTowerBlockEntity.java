@@ -1,6 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
@@ -9,6 +10,7 @@ import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineCrackingTowerMenu;
 import com.hbm_m.recipe.CrackingTowerRecipe;
+import com.hbm_m.recipe.index.CachedRecipeResolver;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -44,13 +46,27 @@ public class MachineCrackingTowerBlockEntity extends BaseMachineBlockEntity impl
 
     private final FluidTank[] tanks = new FluidTank[5];
 
+    /** Кэш скана рецептов: подпись = тип входной жидкости, инвалидируется эпохой /reload. */
+    private final CachedRecipeResolver<CrackingTowerRecipe> recipeResolver = new CachedRecipeResolver<>();
+
+    /** Рецепт по жидкости через {@link CachedRecipeResolver} — повторные вызовы в тик не пересканируют список. */
+    private CrackingTowerRecipe cachedRecipeFor(@Nullable net.minecraft.world.level.material.Fluid fluid) {
+        long sig = CachedRecipeResolver.sign(0x0C7AC1L, fluid == null ? 0L : fluid.hashCode());
+        return recipeResolver.resolve(level, CrackingTowerRecipe.Type.INSTANCE, sig, (lvl, all) -> {
+            for (CrackingTowerRecipe recipe : all) {
+                if (recipe.matches(fluid)) return recipe;
+            }
+            return null;
+        });
+    }
+
     public MachineCrackingTowerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.CRACKING_TOWER_BE.get(), pos, state, 0, 0L, 0L, 0L);
         tanks[0] = new FluidTank(ModFluids.BITUMEN.getSource(), OIL_CAPACITY_MB) {
             @Override
             public boolean isFluidValid(Fluid fluid) {
                 // Data-driven: рецепт ищется в RecipeManager (заменяет CrackingTowerRecipes.has).
-                return CrackingTowerRecipe.hasRecipe(level, fluid);
+                return cachedRecipeFor(fluid) != null;
             }
         };
         tanks[1] = new FluidTank(ModFluids.STEAM.getSource(), STEAM_CAPACITY_MB) {
@@ -75,22 +91,32 @@ public class MachineCrackingTowerBlockEntity extends BaseMachineBlockEntity impl
             }
         }
 
+        // Neighbor handling: trySubscribe is throttled (registration only, idempotent) —
+        // раз в 5 тиков, фаза по позиции. tryProvide stays per tick: its second branch is a
+        // DIRECT push to the adjacent receiver, and gating it would divide transfer throughput.
+        // Fill check skips the probe while the output tank is empty.
+        boolean subscribeDue = be.probeDue(5);
         for (Direction dir : Direction.values()) {
             BlockPos neighborPos = pos.relative(dir);
-            be.trySubscribe(be.tanks[0], level, neighborPos, dir);
-            be.trySubscribe(be.tanks[1], level, neighborPos, dir);
-            be.tryProvide(be.tanks[2], level, neighborPos, dir);
-            be.tryProvide(be.tanks[3], level, neighborPos, dir);
-            be.tryProvide(be.tanks[4], level, neighborPos, dir);
+            if (subscribeDue) {
+                be.trySubscribe(be.tanks[0], level, neighborPos, dir);
+                be.trySubscribe(be.tanks[1], level, neighborPos, dir);
+            }
+            if (be.tanks[2].getFill() > 0) be.tryProvide(be.tanks[2], level, neighborPos, dir);
+            if (be.tanks[3].getFill() > 0) be.tryProvide(be.tanks[3], level, neighborPos, dir);
+            if (be.tanks[4].getFill() > 0) be.tryProvide(be.tanks[4], level, neighborPos, dir);
         }
 
-        be.setChanged();
-        be.sendUpdateToClient();
+        // P6 sync gate: полный пакет только при изменении танков (+energy) — не каждый тик.
+        long sig = tankFingerprint(be.tanks[0]) * 31L + tankFingerprint(be.tanks[1]);
+        long sig2 = tankFingerprint(be.tanks[2]) * 31L + tankFingerprint(be.tanks[3]);
+        sig2 = sig2 * 961748941L + tankFingerprint(be.tanks[4]);
+        be.syncIfStateChanged(sig, sig2);
     }
 
     /** Direktport von {@code setupTanks()}. */
     private void setupTanks() {
-        CrackingTowerRecipe recipe = CrackingTowerRecipe.getRecipe(level, tanks[0].getTankType());
+        CrackingTowerRecipe recipe = cachedRecipeFor(tanks[0].getTankType());
         if (recipe == null) return;
         if (tanks[2].isEmpty()) tanks[2].conform(recipe.getOutputA());
         if (tanks[3].isEmpty() && recipe.hasOutputB()) tanks[3].conform(recipe.getOutputB());
@@ -98,7 +124,7 @@ public class MachineCrackingTowerBlockEntity extends BaseMachineBlockEntity impl
 
     /** Direktport von {@code crack()}: verbraucht Oel + Dampf, produziert zwei Fraktionen + Restdampf. */
     private boolean crack() {
-        CrackingTowerRecipe recipe = CrackingTowerRecipe.getRecipe(level, tanks[0].getTankType());
+        CrackingTowerRecipe recipe = cachedRecipeFor(tanks[0].getTankType());
         if (recipe == null) return false;
 
         int steamNeeded = CrackingTowerRecipe.STEAM_PER_100_INPUT;
@@ -118,6 +144,12 @@ public class MachineCrackingTowerBlockEntity extends BaseMachineBlockEntity impl
         }
         tanks[4].fillMb(ModFluids.SPENTSTEAM.getSource(), spentSteamProduced);
         return true;
+    }
+
+    /** 64-битный фингерпринт танка (тип жидкости + заполнение) для sync-подписи. */
+    private static long tankFingerprint(FluidTank tank) {
+        Fluid f = tank.getTankType();
+        return (f == null ? 0L : f.hashCode()) * 31L + tank.getFill();
     }
 
     // ==================== GUI (generische GuiInfoScreen-Balken) ====================
@@ -163,7 +195,7 @@ public class MachineCrackingTowerBlockEntity extends BaseMachineBlockEntity impl
 
     @Override
     public boolean canConnect(Fluid fluid, Direction fromDir) {
-        return fromDir != null && (CrackingTowerRecipe.hasRecipe(level, fluid)
+        return fromDir != null && (cachedRecipeFor(fluid) != null
                 || fluid == ModFluids.STEAM.getSource()
                 || tanks[2].getTankType() == fluid || tanks[3].getTankType() == fluid || tanks[4].getTankType() == fluid);
     }

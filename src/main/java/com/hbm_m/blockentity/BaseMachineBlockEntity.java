@@ -195,7 +195,9 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
 
     @Override
     public void setEnergyStored(long energy) {
-        this.energy = Math.max(0, Math.min(this.capacity, energy));
+        long clamped = Math.max(0, Math.min(this.capacity, energy));
+        if (clamped == this.energy) return; // анти-спам: все override'ы обходят super, setChanged() сам не синхронизирует
+        this.energy = clamped;
         setChanged();
     }
 
@@ -346,6 +348,17 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
         }
     }
 
+    /**
+     * Общий гейт синхронизации: setChanged/sendUpdateToClient только при реальном изменении.
+     * Миграция ~40 безусловных вызовов на этот хелпер — механическая per-call-site работа.
+     */
+    protected void syncIf(boolean changed) {
+        if (changed) {
+            setChanged();
+            sendUpdateToClient();
+        }
+    }
+
     // ═══════════════════════════ Capabilities ════════════════════════════════
 
     //? if forge {
@@ -492,7 +505,9 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
      */
     public void ensureNetworkInitialized() {
         if (level != null && !level.isClientSide) {
-            com.hbm_m.api.energy.EnergySubscriptions.update(this, getExtraEnergyPorts());
+            // Lazy supplier: массив портов материализуется только после per-tick гейтов
+            // внутри EnergySubscriptions.update (dedup/backoff).
+            com.hbm_m.api.energy.EnergySubscriptions.update(this, this::getCachedExtraPorts);
         }
     }
 
@@ -504,14 +519,50 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
         return new net.minecraft.core.BlockPos[0];
     }
 
+    // === Кэш портов (дорогой пересбор — раз на изменение структуры, не на каждый тик) ===
+    // Инвалидация: setLevel / setRemoved / смена blockstate, плюс 100-тик TTL —
+    // любой пропущенный event самолечится в течение 5 с.
+    @org.jetbrains.annotations.Nullable
+    private net.minecraft.core.BlockPos[] cachedExtraPorts = null;
+    private long portsBuiltAtGameTime = Long.MIN_VALUE;
+    private static final long PORT_CACHE_TTL_TICKS = 100;
+
+    /** Кэширующая обёртка над {@link #getExtraEnergyPorts()}; используется поставщиком в ensureNetworkInitialized. */
+    protected net.minecraft.core.BlockPos[] getCachedExtraPorts() {
+        if (level == null || level.isClientSide) return getExtraEnergyPorts();
+        long now = level.getGameTime();
+        if (cachedExtraPorts == null || now - portsBuiltAtGameTime >= PORT_CACHE_TTL_TICKS) {
+            cachedExtraPorts = getExtraEnergyPorts();
+            portsBuiltAtGameTime = now;
+        }
+        return cachedExtraPorts;
+    }
+
+    /** Явная инвалидация кэша портов (например, при реллинке capacitor bus). */
+    public void invalidateEnergyPortCache() {
+        cachedExtraPorts = null;
+    }
+
+    @Override
+    public void setBlockState(net.minecraft.world.level.block.state.BlockState state) {
+        super.setBlockState(state);
+        // Сборка/разборка мультиблока меняет blockstate контроллера — порты могли измениться.
+        invalidateEnergyPortCache();
+    }
+
     @Override
     public void setRemoved() {
         super.setRemoved();
         // Снимаем подписки при удалении, включая порты частей мультиблока
-        // (сети сами пересоберутся через recentlyChanged)
+        // (сети сами пересоберутся через recentlyChanged).
+        // ПОРЯДОК КРИТИЧЕН: сперва отдаём СТАРЫЙ кэшированный массив в unsubscribeAll —
+        // очистка кэша до этого привела бы к отписке от пустых/устаревших портов
+        // и утечке receivers в сети.
         if (this.level != null && !this.level.isClientSide) {
-            com.hbm_m.api.energy.EnergySubscriptions.unsubscribeAll(this, getExtraEnergyPorts());
+            net.minecraft.core.BlockPos[] oldPorts = (cachedExtraPorts != null) ? cachedExtraPorts : getExtraEnergyPorts();
+            com.hbm_m.api.energy.EnergySubscriptions.unsubscribeAll(this, oldPorts);
         }
+        invalidateEnergyPortCache();
     }
 
 
@@ -520,6 +571,7 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
     @Override
     public void setLevel(Level pLevel) {
         super.setLevel(pLevel);
+        invalidateEnergyPortCache();
         // Регистрируемся в централизованном драйвере подписок энергосети
         // (setLevel вызывается vanilla и при загрузке чанка, и при установке блока)
         if (pLevel != null && !pLevel.isClientSide) {

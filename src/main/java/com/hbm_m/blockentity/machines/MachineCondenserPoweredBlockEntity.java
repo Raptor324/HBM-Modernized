@@ -55,16 +55,19 @@ public class MachineCondenserPoweredBlockEntity extends BaseMachineBlockEntity i
     private void serverTick(Level level, BlockPos pos) {
         ensureNetworkInitialized();
 
-        if (level.getGameTime() % 20 == 0) {
-            for (Direction dir : Direction.values()) {
-                BlockPos neighborPos = pos.relative(dir);
-                BlockEntity neighborBe = level.getBlockEntity(neighborPos);
-                if (!(neighborBe instanceof IFluidConnectorMK2)) continue;
-
+        // trySubscribe — раз в 20 тиков (регистрация, идемпотентно). tryProvide — каждый тик:
+        // его вторая ветка — прямой пуш воды в соседний приёмник, гейт делит пропускную
+        // способность выдачи. Fill-проверка пропускает зонд, пока бак воды пуст.
+        boolean subscribeDue = level.getGameTime() % 20 == 0;
+        for (Direction dir : Direction.values()) {
+            BlockPos neighborPos = pos.relative(dir);
+            if (waterTank.getFill() > 0) {
+                tryProvide(waterTank, level, neighborPos, dir);
+            }
+            if (!subscribeDue) continue;
+            BlockEntity neighborBe = level.getBlockEntity(neighborPos);
+            if (neighborBe instanceof IFluidConnectorMK2) {
                 trySubscribe(spentSteamTank, level, neighborPos, dir);
-                if (waterTank.getFill() > 0) {
-                    tryProvide(waterTank, level, neighborPos, dir);
-                }
             }
         }
 

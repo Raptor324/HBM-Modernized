@@ -272,6 +272,15 @@ public class ModClothConfig {
     public boolean nucleusParametricAnim = true;
 
     /**
+     * Dither-fade (screen-door) вместо альфа-блендинга дистанционного фейда:
+     * фрагментный шейдер отсекает пиксели по статическому экранному хешу,
+     * блендинг и back-to-front сортировка фейд-хвоста не нужны вовсе —
+     * фейд-фаза схлопывается в непрозрачную пачку (ноль CPU-сортировки и
+     * CPU-партиционирования). Цена: проявление «зерном» в переходной полосе.
+     */
+    public boolean nucleusDitherFade = false;
+
+    /**
      * Глобальный теневой батч под Iris: все части теневого прохода уходят одной
      * пачкой инстансных дроуков вместо per-BE отрисовки. Флаг: {@code -Dhbm.shadowInstancing=false}.
      */
@@ -361,6 +370,15 @@ public class ModClothConfig {
     public boolean nucleusGpuBake = true;
 
     /**
+     * Окклюзионная фаза bake-cull (Tier 1 под Iris) по Hi-Z пирамиде глубины
+     * (переиспользует клиентский HiZDepthPyramid). Строго опционально: при false
+     * cull остаётся frustum-only (прежнее поведение); при недоступной глубине
+     * — тихий откат на frustum-only (на кадр), ошибка GL отключает фичу до
+     * перезапуска с одним логом.
+     */
+    public boolean nucleusBakeHiZ = false;
+
+    /**
      * Compute-скаттер массовых аплоадов инстансов (один dispatch вместо N
      * копий). Требует OpenGL 4.3 и не-Intel GPU; иначе DMA-путь.
      * Флаг: {@code -Dhbm.gpuScatter=false}.
@@ -386,6 +404,15 @@ public class ModClothConfig {
      * Флаг: {@code -Dhbm.gpuScatter.minSpans=N}.
      */
     public int nucleusGpuScatterMinSpans = 16;
+
+    /**
+     * Общий бюджет VRAM для per-renderer bake-кэшей Nucleus (Tier 1: output + record +
+     * control SSBO; heap-снимок записей учитывается по факту). Кэш, не влезающий в
+     * бюджет после LRU-выселения, остаётся на immediate-пути — бюджет не может
+     * трэшиться. Значение &lt;= 0 отключает кэширование; эффективный бюджет клэмпится
+     * в 16..1024 МБ. Флаг: {@code -Dhbm.bakeCacheMB=N}.
+     */
+    public int nucleusBakeCacheMB = 192;
 
     /** Max instances per InstancedStaticPartRenderer (one OBJ part). Large machine fields need 4096+. */
     public int maxInstancedInstancesPerPart = 4096;

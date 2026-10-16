@@ -10,20 +10,25 @@ layout(location = 2) in vec2 UV0;
 #ifdef USE_VERTEX_BONE_ID
 layout(location = 3) in int BoneId;
 layout(location = 4) in vec3 InstPos;
+// Packed quat: 4 snorm16 halves in 2 record words, read as GL_SHORT normalized
+// ([-1,1] floats - no shader decode needed; CPU encoder packSnorm16).
 layout(location = 5) in vec4 InstRot;
 layout(location = 6) in vec3 InstBboxMin;
 // xyz = bbox extent; w = per-instance fade (keeps attrib count <= 16 with BoneId).
 layout(location = 7) in vec4 InstBboxSize;
-layout(location = 8)  in vec4 InstLightC01;  // corner0.uv, corner1.uv
+// Corner light, PACKED u8 (normalized 0..1; decode to the 0..240 texel grid by x240):
+layout(location = 8)  in vec4 InstLightC01;  // corner0.u, corner0.v, corner1.u, corner1.v
 layout(location = 9)  in vec4 InstLightC23;
 layout(location = 10) in vec4 InstLightC45;
 layout(location = 11) in vec4 InstLightC67;
 #else
 layout(location = 3)  in vec3 InstPos;
+// Packed quat: 4 snorm16 halves in 2 record words, read as GL_SHORT normalized.
 layout(location = 4)  in vec4 InstRot;
 layout(location = 5)  in vec3 InstBboxMin;
 layout(location = 6)  in vec3 InstBboxSize;
-layout(location = 7)  in vec4 InstLightC01;  // corner0.uv, corner1.uv
+// Corner light, PACKED u8 (normalized 0..1; decode to the 0..240 texel grid by x240):
+layout(location = 7)  in vec4 InstLightC01;  // corner0.u, corner0.v, corner1.u, corner1.v
 layout(location = 8)  in vec4 InstLightC23;
 layout(location = 9)  in vec4 InstLightC45;
 layout(location = 10) in vec4 InstLightC67;
@@ -125,10 +130,12 @@ void main() {
     worldRot = rotMatrix;
     bboxMin = InstBboxMin;
     bboxSize = InstBboxSize.xyz;
-    lc01 = InstLightC01;
-    lc23 = InstLightC23;
-    lc45 = InstLightC45;
-    lc67 = InstLightC67;
+    // Corner light: packed u8, normalized fetch decodes to the 0..240 texel grid
+    // by x240 (byte x 240/255; CPU encoder InstancedStaticPartRenderer.packLightU8).
+    lc01 = InstLightC01 * 240.0;
+    lc23 = InstLightC23 * 240.0;
+    lc45 = InstLightC45 * 240.0;
+    lc67 = InstLightC67 * 240.0;
 
     // Part world normal (no view rotation) - for shading; fragNormal keeps
     // its previous semantics (instance rotation, camera-independent).
@@ -166,7 +173,13 @@ void main() {
     vertexDistance = length(viewPos.xyz);
 
 #ifdef USE_INSTANCING
+#ifdef USE_VERTEX_BONE_ID
     vFadeAlpha = InstBboxSize.w;
+#else
+    // This file's USE_INSTANCING path has no InstBboxSize.w (vec3 attribute);
+    // the per-instance fade arrives as its own attribute (see :35).
+    vFadeAlpha = InstFadeAlpha;
+#endif
 #else
     vFadeAlpha = FadeAlpha;
 #endif

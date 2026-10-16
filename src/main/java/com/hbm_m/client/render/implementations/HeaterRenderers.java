@@ -9,7 +9,7 @@ import com.hbm_m.blockentity.machines.MachineFireboxBlockEntity;
 import com.hbm_m.client.model.ConfiguredMultipartBakedModel;
 import com.hbm_m.platform.RenderHooks;
 import com.hbm_m.client.render.machine.MachineRenderers;
-import com.mojang.blaze3d.vertex.PoseStack;
+import org.joml.Vector3f;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.BakedQuad;
@@ -44,7 +44,7 @@ public final class HeaterRenderers {
             .part("Main") // empty_world_quads: the body is drawn by the BER
             .lightOverride("Inner", be -> be.isBurning()
                     ? net.minecraft.client.renderer.LightTexture.pack(15, 15) : -1)
-            .part("Door", "Door", HeaterRenderers::animateFireboxDoor)
+            .rotateY("Door", 1.375f, 0.375f, (be, pt) -> -be.getInterpolatedDoorAngle(pt))
             .dynamicPart("Inner", HeaterRenderers::fireboxInnerQuads,
                     be -> be.isBurning() ? "burning" : "idle")
             .register();
@@ -55,28 +55,10 @@ public final class HeaterRenderers {
             .part("Main") // empty_world_quads: the body is drawn by the BER
             .lightOverride("Inner", be -> be.isBurning()
                     ? net.minecraft.client.renderer.LightTexture.pack(15, 15) : -1)
-            .part("Door", "Door", HeaterRenderers::animateOvenDoor)
+            .translatingPart("Door", new Vector3f(0f, 0f, 1f), (be, pt) -> be.getInterpolatedDoorAngle(pt) * 0.75 / 135.0)
             .dynamicPart("Inner", HeaterRenderers::ovenInnerQuads,
                     be -> be.isBurning() ? "burning" : "idle")
             .register();
-    }
-
-    // -- Doors ------------------------------------------------------------
-
-    /** Port of RenderFirebox: rotate around the hinge (1.375, 0, 0.375) by -Y. */
-    private static boolean animateFireboxDoor(FireboxBaseBlockEntity be, float partialTick, long gameTime, PoseStack pose) {
-        float door = be.getInterpolatedDoorAngle(partialTick);
-        pose.translate(1.375F, 0F, 0.375F);
-        pose.mulPose(com.mojang.math.Axis.YP.rotationDegrees(-door));
-        pose.translate(-1.375F, 0F, -0.375F);
-        return true;
-    }
-
-    /** Port of RenderHeatingOven: the door slides along Z by door * 0.75 / 135. */
-    private static boolean animateOvenDoor(FireboxBaseBlockEntity be, float partialTick, long gameTime, PoseStack pose) {
-        float door = be.getInterpolatedDoorAngle(partialTick);
-        pose.translate(0F, 0F, door * 0.75F / 135F);
-        return true;
     }
 
     // -- Fireboxes --------------------------------------------------------

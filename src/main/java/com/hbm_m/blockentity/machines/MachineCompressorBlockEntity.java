@@ -8,7 +8,9 @@ import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineCompressorMenu;
+import com.hbm_m.platform.PlatformHooks;
 import com.hbm_m.recipe.CompressorRecipe;
+import com.hbm_m.recipe.index.CachedRecipeResolver;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -53,6 +55,11 @@ public class MachineCompressorBlockEntity extends BaseMachineBlockEntity impleme
 
     private final com.hbm_m.inventory.UpgradeManager upgradeManager = new com.hbm_m.inventory.UpgradeManager();
 
+    /** Кэш скана спец-рецептов: ключ — (тип жидкости, давление) входного бака; оба call-site'а (tick + setupOutputTank). */
+    private final CachedRecipeResolver<CompressorRecipe> recipeResolver = new CachedRecipeResolver<>();
+
+    private static final long RECIPE_SEED = 0xC00F5E5L;
+
     private static final java.util.Map<com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType, Integer> VALID_UPGRADES = java.util.Map.of(
             com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.SPEED, 3,
             com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.POWER, 3,
@@ -74,16 +81,18 @@ public class MachineCompressorBlockEntity extends BaseMachineBlockEntity impleme
         ItemStack[] slots = be.inventorySlotArray();
         if (be.tanks[0].setType(SLOT_FLUID_ID, slots)) be.applySlotsArray(slots);
 
-        if (level.getGameTime() % 20 == 0) {
-            for (Direction dir : Direction.values()) {
-                be.trySubscribe(be.tanks[0], level, pos.relative(dir), dir);
-                be.tryProvide(be.tanks[1], level, pos.relative(dir), dir);
-            }
+        // trySubscribe — раз в 20 тиков (регистрация, идемпотентно). tryProvide — каждый тик:
+        // его вторая ветка — прямой пуш в соседний приёмник, гейт делит пропускную способность
+        // выдачи. Fill-проверка пропускает зонд, пока выходной бак пуст.
+        boolean subscribeDue = level.getGameTime() % 20 == 0;
+        for (Direction dir : Direction.values()) {
+            if (subscribeDue) be.trySubscribe(be.tanks[0], level, pos.relative(dir), dir);
+            if (be.tanks[1].getFill() > 0) be.tryProvide(be.tanks[1], level, pos.relative(dir), dir);
         }
 
         be.setupOutputTank();
 
-        CompressorRecipe recipe = CompressorRecipe.getRecipe(level, be.tanks[0].getTankType(), be.tanks[0].getPressure());
+        CompressorRecipe recipe = be.findRecipe();
         be.applyUpgrades(recipe);
 
         if (be.canProcess(recipe, be.powerRequirement)) {
@@ -100,8 +109,47 @@ public class MachineCompressorBlockEntity extends BaseMachineBlockEntity impleme
             be.isOn = false;
         }
 
-        be.setChanged();
-        be.sendUpdateToClient();
+        // Anti-sync-spam: полный BE-пакет только при изменении состояния (энергия/прогресс/
+        // баки/апгрейды). Подпись покрывает всё, что пишет writeNbtData.
+        long lo = be.energy;
+        lo = lo * 31L + be.progress;
+        lo = lo * 31L + (be.isOn ? 1L : 0L);
+        lo = lo * 31L + be.processTime;
+        lo = lo * 31L + be.powerRequirement;
+        lo = lo * 31L + tankFingerprint(be.tanks[0]);
+        lo = lo * 31L + tankFingerprint(be.tanks[1]);
+        long hi = 0;
+        for (int i = 0; i < SLOT_COUNT; i++) {
+            hi = hi * 31L + PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(i));
+        }
+        be.syncIfStateChanged(lo, hi);
+    }
+
+    /** Дешёвый фингерпринт содержимого HBM-бака (тип жидкости + mB-уровень). */
+    private static long tankFingerprint(FluidTank tank) {
+        Fluid type = tank.getTankType();
+        return (type == null ? 0L : type.hashCode()) * 31L + tank.getFluidAmountMb();
+    }
+
+    /**
+     * Поиск спец-рецепта по (тип, давление) входного бака — обёртка над
+     * {@link CompressorRecipe#getRecipe} с кэшем {@link CachedRecipeResolver} (общий
+     * для tick и setupOutputTank). Ёмкостные проверки баков остаются per-tick вне сканера.
+     */
+    @Nullable
+    private CompressorRecipe findRecipe() {
+        Level lvl = getLevel();
+        if (lvl == null) return null;
+        final Fluid type = tanks[0].getTankType();
+        final int pressure = tanks[0].getPressure();
+        long sig = CachedRecipeResolver.sign(RECIPE_SEED, type == null ? 0L : type.hashCode(), pressure);
+        return recipeResolver.resolve(lvl, CompressorRecipe.Type.INSTANCE, sig, (level, all) -> {
+            if (type == null) return null;
+            for (CompressorRecipe recipe : all) {
+                if (recipe.matches(type, pressure)) return recipe;
+            }
+            return null;
+        });
     }
 
     /** GIT TileEntityMachineCompressorBase.updateEntity: upgrades set the cycle time and draw. */
@@ -121,7 +169,7 @@ public class MachineCompressorBlockEntity extends BaseMachineBlockEntity impleme
     }
 
     private void setupOutputTank() {
-        CompressorRecipe recipe = CompressorRecipe.getRecipe(getLevel(), tanks[0].getTankType(), tanks[0].getPressure());
+        CompressorRecipe recipe = findRecipe();
         if (tanks[1].getFill() > 0) return;
 
         // Upstream setupTanks: without a recipe the compressor only raises the pressure of the same

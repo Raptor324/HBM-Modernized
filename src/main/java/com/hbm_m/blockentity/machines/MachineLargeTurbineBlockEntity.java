@@ -109,27 +109,33 @@ public class MachineLargeTurbineBlockEntity extends BaseMachineBlockEntity imple
 
         chargeItemInSlot(SLOT_BATTERY);
 
+        // trySubscribe — регистрация, идемпотентно: гейтимся probeDue(20), сети сами лечатся
+        // через recentlyChanged. tryProvide — каждый тик: его вторая ветка — прямой пуш в
+        // соседний приёмник, гейт делил бы пропускную способность выдачи. Fill-проверка
+        // пропускает зонд соседей, пока бак спент-стима пуст.
+        boolean subscribeDue = probeDue(20);
         for (Direction dir : Direction.values()) {
             BlockPos neighborPos = worldPosition.relative(dir);
-            BlockEntity neighborBe = level.getBlockEntity(neighborPos);
-            if (!(neighborBe instanceof IFluidConnectorMK2)) continue;
-
             if (tanks[1].getFill() > 0) {
                 tryProvide(tanks[1], level, neighborPos, dir);
             }
+            if (!subscribeDue) continue;
+            BlockEntity neighborBe = level.getBlockEntity(neighborPos);
+            if (!(neighborBe instanceof IFluidConnectorMK2)) continue;
             trySubscribe(tanks[0], level, neighborPos, dir);
         }
 
         // 1:1 aus dem Original: der Energiepuffer verliert jeden Tick 5%, bevor neue Energie erzeugt wird.
         setEnergyStored((long) (getEnergyStored() * 0.95D));
 
-        boolean wasActive = active;
         active = processSteam();
 
-        if (wasActive != active || active) {
-            setChanged();
-            sendUpdateToClient();
-        }
+        // Anti-sync-spam: подпись покрывает всё, что пишет writeNbtData и видит клиент
+        // (энергия, active, оба бака) — пакет только при реальном изменении.
+        long tankSig = tanks[0].getTankType().hashCode() * 31L + tanks[0].getFill();
+        tankSig = tankSig * 31L + tanks[1].getTankType().hashCode();
+        tankSig = tankSig * 31L + tanks[1].getFill();
+        syncIfStateChanged(getEnergyStored(), tankSig * 31L + (active ? 1L : 0L));
     }
 
     private boolean processSteam() {

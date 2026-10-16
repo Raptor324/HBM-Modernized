@@ -10,6 +10,7 @@ import com.hbm_m.block.machines.MachineBatterySocketBlock;
 import com.hbm_m.blockentity.machines.BatterySocketBlockEntity;
 import com.hbm_m.client.model.BatteryPackBakedModel;
 import com.hbm_m.client.render.RenderDistanceHelper;
+import com.hbm_m.client.render.cache.RenderCacheManager;
 import com.hbm_m.item.fekal_electric.ItemBatteryPack;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.lib.RefStrings;
@@ -63,6 +64,13 @@ public class BatterySocketCreativeRenderer implements com.hbm_m.client.render.Hb
     /** Per-tier body quad cache: Socket-model parts remapped onto the tier's sprite. */
     private static final Map<ResourceLocation, List<net.minecraft.client.renderer.block.model.BakedQuad>> BODY_QUADS =
             new ConcurrentHashMap<>();
+
+    // The cached quads embed UV rects (and sprite references) of the atlas layout they were
+    // remapped against; a re-stitch replaces the atlas sprites wholesale, so the cache must be
+    // dropped on reload/session end - bodyQuads() rebuilds it lazily against the new atlas.
+    static {
+        RenderCacheManager.register(reason -> BODY_QUADS.clear());
+    }
 
     private static final float ITEM_DEGREES_PER_TICK = 2.5f;
 

@@ -32,12 +32,15 @@ public final class MachineLoopSoundFactory {
 
     private MachineLoopSoundFactory() {}
 
-    /** Sable overrides the player's distance for blocks on ships; a plain AABB distance would not do. */
+    /**
+     * Sable overrides the player's distance for blocks on ships: a BE on a ship sits in far-away
+     * plot-grid chunks, so the distance (and the sound anchor) must be projected into world space.
+     */
     public static boolean inRange(BlockEntity be, double yOffset, double maxDistance) {
         LocalPlayer player = Minecraft.getInstance().player;
         if (player == null) return false;
-        BlockPos pos = be.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5, pos.getY() + yOffset, pos.getZ() + 0.5) < maxDistance * maxDistance;
+        net.minecraft.world.phys.Vec3 world = com.hbm_m.sound.SableSoundPosition.project(be.getBlockPos(), yOffset);
+        return player.distanceToSqr(world.x, world.y, world.z) < maxDistance * maxDistance;
     }
 
     /**
@@ -50,13 +53,19 @@ public final class MachineLoopSoundFactory {
         Class<?> type = be.getClass();
         return new AbstractTickableSoundInstance(sound, SoundSource.BLOCKS, RandomSource.create()) {
             {
-                this.x = pos.getX() + 0.5;
-                this.y = pos.getY() + yOffset;
-                this.z = pos.getZ() + 0.5;
+                updatePosition();
                 this.looping = true;
                 this.delay = 0;
                 this.attenuation = Attenuation.LINEAR;
                 apply(be, (float) speed.applyAsDouble(be));
+            }
+
+            /** Sable ships move - re-anchor in world space every tick (raw plot-grid coords mute the loop). */
+            private void updatePosition() {
+                net.minecraft.world.phys.Vec3 world = com.hbm_m.sound.SableSoundPosition.project(pos, yOffset);
+                this.x = world.x;
+                this.y = world.y;
+                this.z = world.z;
             }
 
             private void apply(BlockEntity live, float value) {
@@ -86,6 +95,7 @@ public final class MachineLoopSoundFactory {
                     this.stop();
                     return;
                 }
+                updatePosition();
                 apply(live, value);
             }
         };

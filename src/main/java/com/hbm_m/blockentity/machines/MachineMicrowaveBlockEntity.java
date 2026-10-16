@@ -52,6 +52,10 @@ public class MachineMicrowaveBlockEntity extends BaseMachineBlockEntity implemen
 
     private final SimpleContainer recipeInput = new SimpleContainer(1);
 
+    /** Кэш vanilla smelting-скана по фингерпринту входного стека (value-keyed, CONTRACT 2 CachedRecipeResolver). */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<SmeltingRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+
     public MachineMicrowaveBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MICROWAVE_BE.get(), pos, state, SLOT_COUNT, MAX_POWER, MAX_POWER);
     }
@@ -79,8 +83,13 @@ public class MachineMicrowaveBlockEntity extends BaseMachineBlockEntity implemen
             }
         }
 
-        be.setChanged();
-        be.sendUpdateToClient();
+        // Anti-sync-spam: подпись покрывает энергию, time/speed и фингерпринты всех слотов
+        // (всё, что пишет writeNbtData) — пакет только при реальном изменении.
+        long sig = be.time * 31L + be.speed;
+        sig = sig * 31L + com.hbm_m.platform.PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_INPUT));
+        sig = sig * 31L + com.hbm_m.platform.PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_OUTPUT));
+        sig = sig * 31L + com.hbm_m.platform.PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_BATTERY));
+        be.syncIfStateChanged(be.energy, sig);
     }
 
     public void adjustSpeed(int delta) {
@@ -127,7 +136,12 @@ public class MachineMicrowaveBlockEntity extends BaseMachineBlockEntity implemen
 
     private java.util.Optional<SmeltingRecipe> getRecipe(Level level, ItemStack input) {
         // 1.21.1: getRecipeFor требует RecipeInput (SingleRecipeInput) и возвращает RecipeHolder.
-        return com.hbm_m.platform.recipe.RecipeHooks.getRecipeFor(level, RecipeType.SMELTING, input);
+        // Скан кэшируется по фингерпринту входного стека (value-keyed); негативный результат
+        // тоже кэшируется; epoch сбрасывает кэш при /reload.
+        SmeltingRecipe recipe = recipeResolver.resolve(level, RecipeType.SMELTING,
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(input),
+                (lvl, all) -> com.hbm_m.platform.recipe.RecipeHooks.getRecipeFor(lvl, RecipeType.SMELTING, input).orElse(null));
+        return java.util.Optional.ofNullable(recipe);
     }
 
     public long getPowerScaled(int scale) {

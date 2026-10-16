@@ -53,6 +53,9 @@ public class MachinePumpElectricBlockEntity extends BaseMachineBlockEntity imple
     }
 
     private void serverTick(ServerLevel level, BlockPos pos) {
+        // Выдача воды в 4 соседние трубы — каждый тик (как у PumpBlockEntity): tryProvide —
+        // прямой пуш, гейт делил бы пропускную способность помпы на 20. Fill-проверка
+        // не даёт зондировать соседей, пока бак пуст.
         for (Direction dir : Direction.Plane.HORIZONTAL) {
             BlockPos conPos = pos.relative(dir, 2);
             if (water.getFill() > 0) {
@@ -73,8 +76,11 @@ public class MachinePumpElectricBlockEntity extends BaseMachineBlockEntity imple
             operate();
         }
 
-        setChanged();
-        level.sendBlockUpdated(pos, getBlockState(), getBlockState(), 3);
+        // Anti-sync-spam: пакет только при изменении состояния (энергия/бак/флаги NBT),
+        // содержимое пакета прежнее. rotor — чисто клиентская анимация, в NBT не пишется.
+        syncIfStateChanged(
+                getEnergyStored() * 31L + water.getTankType().hashCode() * 31L + water.getFill(),
+                (isOn ? 1L : 0L) * 31L + (onGround ? 1L : 0L));
     }
 
     private void clientTick() {

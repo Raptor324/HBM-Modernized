@@ -26,7 +26,7 @@ uniform sampler2D iris_Sampler0;
 
 out vec4 fragColor;
 
-// Two 8-bit bytes (hi = v.x, lo = v.y) into a 16-bit unorm channel:
+// Two 8-bit bytes (lo = v.x, hi = v.y) into a 16-bit unorm channel:
 // value = (hi*256 + lo) / 65535, with rounding to the nearest byte.
 float packUnorm2x8(vec2 v) {
     v = clamp(v, vec2(0.0), vec2(1.0));
@@ -39,14 +39,16 @@ float packUnorm2x8(float x, float y) {
 }
 
 vec2 signNonZero(vec2 v) {
-    return mix(vec2(-1.0), vec2(1.0), greaterThanEqual(v, vec2(0.0)));
+    return step(vec2(0.0), v) * 2.0 - 1.0;
 }
 
 // Octahedral encoding of a unit vector into [0,1]^2: project the sphere onto
 // an octahedron and unfold the lower hemisphere along the diagonals.
 vec2 encodeUnitVector(vec3 n) {
     vec2 p = n.xy * (1.0 / (abs(n.x) + abs(n.y) + abs(n.z)));
-    p = n.z <= 0.0 ? ((1.0 - abs(p.yx)) * signNonZero(p)) : p;
+    if (n.z <= 0.0) {
+        p = (1.0 - abs(p.yx)) * signNonZero(p);
+    }
     return 0.5 * p + 0.5;
 }
 

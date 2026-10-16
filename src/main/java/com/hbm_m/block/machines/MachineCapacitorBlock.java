@@ -76,6 +76,16 @@ public class MachineCapacitorBlock extends BaseEntityBlock implements com.hbm_m.
         return createTickerHelper(type, ModBlockEntities.MACHINE_CAPACITOR_BE.get(), MachineCapacitorBlockEntity::tick);
     }
 
+    @Override
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos fromPos, boolean isMoving) {
+        super.neighborChanged(state, level, pos, block, fromPos, isMoving);
+        // Реллинк шлейфа capacitor_bus: цепочка портов зависит от blockstate СОСЕДЕЙ,
+        // который не меняет blockstate самого конденсатора — инвалидируем кэш явно.
+        if (!level.isClientSide && level.getBlockEntity(pos) instanceof MachineCapacitorBlockEntity cap) {
+            cap.invalidateEnergyPortCache();
+        }
+    }
+
     /** Port of {@code MachineCapacitor.printHook}: charge level, percent and the REAL per-tick flow. */
     @Override
     public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {

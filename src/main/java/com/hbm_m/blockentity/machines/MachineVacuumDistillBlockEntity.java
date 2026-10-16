@@ -48,13 +48,18 @@ public class MachineVacuumDistillBlockEntity extends BaseMachineBlockEntity impl
     private final FluidTank[] tanks = new FluidTank[5];
     private boolean isOn = false;
 
+    /** Cached recipe-scan: keyed on the input fluid identity (covers setupTanks, refine
+     *  and the tank-validity/canConnect checks); output-tank headroom stays per-tick. */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<VacuumDistillRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+
     public MachineVacuumDistillBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.VACUUM_DISTILL_BE.get(), pos, state, SLOT_COUNT, MAX_POWER, MAX_POWER, 0L);
         tanks[0] = new FluidTank(OIL_CAPACITY_MB) {
             @Override
             public boolean isFluidValid(Fluid fluid) {
                 // Data-driven: рецепт ищется в RecipeManager (заменяет VacuumDistillRecipes.has).
-                return VacuumDistillRecipe.hasRecipe(level, fluid);
+                return findRecipe(level, fluid) != null;
             }
         };
         tanks[1] = new FluidTank(OUTPUT_CAPACITY_MB);
@@ -70,21 +75,54 @@ public class MachineVacuumDistillBlockEntity extends BaseMachineBlockEntity impl
         be.setupTanks();
         be.isOn = be.refine();
 
+        // Neighbor handling: subscribe into the MK2 net is throttled (registration only, idempotent);
+        // tryProvide stays per tick — its second branch is a DIRECT push to the adjacent receiver,
+        // and gating it would divide transfer throughput, not just scan cost. The per-tank fill
+        // check skips the probe while the output tank is empty.
+        boolean subscribeDue = be.probeDue(20);
         for (Direction dir : Direction.values()) {
             BlockPos neighborPos = pos.relative(dir);
-            be.trySubscribe(be.tanks[0], level, neighborPos, dir);
-            be.tryProvide(be.tanks[1], level, neighborPos, dir);
-            be.tryProvide(be.tanks[2], level, neighborPos, dir);
-            be.tryProvide(be.tanks[3], level, neighborPos, dir);
-            be.tryProvide(be.tanks[4], level, neighborPos, dir);
+            if (subscribeDue) be.trySubscribe(be.tanks[0], level, neighborPos, dir);
+            if (be.tanks[1].getFill() > 0) be.tryProvide(be.tanks[1], level, neighborPos, dir);
+            if (be.tanks[2].getFill() > 0) be.tryProvide(be.tanks[2], level, neighborPos, dir);
+            if (be.tanks[3].getFill() > 0) be.tryProvide(be.tanks[3], level, neighborPos, dir);
+            if (be.tanks[4].getFill() > 0) be.tryProvide(be.tanks[4], level, neighborPos, dir);
         }
 
-        be.setChanged();
-        be.sendUpdateToClient();
+        // Anti-sync-spam: setChanged/sendBlockUpdated only when energy, tank contents or run
+        // flag moved (P6: signature covers every field writeNbtData ships and the client renders).
+        be.syncIfStateChanged(be.energy, be.tankSyncSignature());
+    }
+
+    /** Cached поиск VacuumDistillRecipe по входной жидкости (подпись = идентичность жидкости). */
+    @Nullable
+    private VacuumDistillRecipe findRecipe(Level level, Fluid input) {
+        if (level == null || input == null) return null;
+        long signature = com.hbm_m.recipe.index.CachedRecipeResolver.sign(7L, input.hashCode());
+        return recipeResolver.resolve(level, VacuumDistillRecipe.Type.INSTANCE, signature, (lvl, all) -> {
+            for (VacuumDistillRecipe recipe : all) {
+                if (recipe.matches(input)) return recipe;
+            }
+            return null;
+        });
+    }
+
+    private long tankSyncSignature() {
+        long h = tankFingerprint(tanks[0]);
+        h = h * 31L + tankFingerprint(tanks[1]);
+        h = h * 31L + tankFingerprint(tanks[2]);
+        h = h * 31L + tankFingerprint(tanks[3]);
+        h = h * 31L + tankFingerprint(tanks[4]);
+        return h * 31L + (isOn ? 1L : 0L);
+    }
+
+    private static long tankFingerprint(FluidTank tank) {
+        Fluid type = tank.getTankType();
+        return (type == null ? 0L : type.hashCode() * 31L) + tank.getFill();
     }
 
     private void setupTanks() {
-        VacuumDistillRecipe recipe = VacuumDistillRecipe.getRecipe(level, tanks[0].getTankType());
+        VacuumDistillRecipe recipe = findRecipe(level, tanks[0].getTankType());
         if (recipe == null) return;
         if (tanks[1].isEmpty()) tanks[1].conform(recipe.getHeavy());
         if (tanks[2].isEmpty()) tanks[2].conform(recipe.getReformate());
@@ -96,7 +134,7 @@ public class MachineVacuumDistillBlockEntity extends BaseMachineBlockEntity impl
      *  {@link VacuumDistillRecipe#HEAVY_MB}/{@link VacuumDistillRecipe#REFORMATE_MB}/
      *  {@link VacuumDistillRecipe#LIGHT_MB}/{@link VacuumDistillRecipe#SOUR_MB}). */
     private boolean refine() {
-        VacuumDistillRecipe recipe = VacuumDistillRecipe.getRecipe(level, tanks[0].getTankType());
+        VacuumDistillRecipe recipe = findRecipe(level, tanks[0].getTankType());
         if (recipe == null) return false;
         if (getEnergyStored() < POWER_PER_CYCLE) return false;
         if (tanks[0].getFill() < OIL_PER_CYCLE_MB) return false;
@@ -148,7 +186,7 @@ public class MachineVacuumDistillBlockEntity extends BaseMachineBlockEntity impl
 
     @Override
     public boolean canConnect(Fluid fluid, Direction fromDir) {
-        return fromDir != null && (VacuumDistillRecipe.hasRecipe(level, fluid)
+        return fromDir != null && (findRecipe(level, fluid) != null
                 || tanks[1].getTankType() == fluid || tanks[2].getTankType() == fluid
                 || tanks[3].getTankType() == fluid || tanks[4].getTankType() == fluid);
     }

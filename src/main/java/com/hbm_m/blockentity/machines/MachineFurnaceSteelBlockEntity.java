@@ -204,10 +204,10 @@ public class MachineFurnaceSteelBlockEntity extends com.hbm_m.blockentity.BaseHb
         ItemStack input = inventory.getStackInSlot(inputSlot(lane));
         if (input.isEmpty()) return false;
 
-        var recipe = getRecipe(level, input);
-        if (recipe.isEmpty()) return false;
+        SmeltingRecipe recipe = getRecipe(level, lane, input);
+        if (recipe == null) return false;
 
-        ItemStack result = recipe.get().getResultItem(level.registryAccess());
+        ItemStack result = recipe.getResultItem(level.registryAccess());
         if (result.isEmpty()) return false;
 
         return canAcceptResult(lane, result);
@@ -222,10 +222,10 @@ public class MachineFurnaceSteelBlockEntity extends com.hbm_m.blockentity.BaseHb
 
     private void craftLane(Level level, int lane) {
         ItemStack input = inventory.getStackInSlot(inputSlot(lane));
-        var recipe = getRecipe(level, input);
-        if (recipe.isEmpty()) return;
+        SmeltingRecipe recipe = getRecipe(level, lane, input);
+        if (recipe == null) return;
 
-        ItemStack result = recipe.get().getResultItem(level.registryAccess()).copy();
+        ItemStack result = recipe.getResultItem(level.registryAccess()).copy();
 
         input.shrink(1);
 
@@ -247,9 +247,23 @@ public class MachineFurnaceSteelBlockEntity extends com.hbm_m.blockentity.BaseHb
         return SLOT_OUTPUT_0 + lane;
     }
 
-    private java.util.Optional<SmeltingRecipe> getRecipe(Level level, ItemStack input) {
-        // 1.21.1: getRecipeFor требует RecipeInput (SingleRecipeInput) и возвращает RecipeHolder.
-        return com.hbm_m.platform.recipe.RecipeHooks.getRecipeFor(level, RecipeType.SMELTING, input);
+    // Кэш скана SMELTING: по резолверу на каждую дорожку, ключ — фингерпринт входного стека
+    // дорожки (value-keyed: одинаковые стеки дорожек легитимно разделяют ответ). Сканер общий;
+    // laneCanSmelt/canAcceptResult (место под выход) — per-tick вне резолвера.
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<SmeltingRecipe>[] laneResolvers =
+            new com.hbm_m.recipe.index.CachedRecipeResolver[LANE_COUNT];
+
+    private SmeltingRecipe getRecipe(Level level, int lane, ItemStack input) {
+        if (laneResolvers[lane] == null) laneResolvers[lane] = new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+        return laneResolvers[lane].resolve(level, RecipeType.SMELTING,
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(input),
+                scanSmelting(input));
+    }
+
+    /** Общий чистый SMELTING-сканер для всех дорожек (input захватывается замыканием). */
+    private static com.hbm_m.recipe.index.CachedRecipeResolver.Scanner<SmeltingRecipe> scanSmelting(ItemStack input) {
+        return (lvl, all) -> // 1.21.1: getRecipeFor требует RecipeInput (SingleRecipeInput).
+                com.hbm_m.platform.recipe.RecipeHooks.getRecipeFor(lvl, RecipeType.SMELTING, input).orElse(null);
     }
 
     public static boolean isFuel(ItemStack stack) {

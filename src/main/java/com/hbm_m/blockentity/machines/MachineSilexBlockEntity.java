@@ -8,7 +8,6 @@ import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineSilexMenu;
-import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.recipe.SilexRecipe;
 import com.hbm_m.recipe.SilexRecipe.WeightedOutput;
 
@@ -54,6 +53,11 @@ public class MachineSilexBlockEntity extends BaseMachineBlockEntity implements I
     private int progress = 0;
     private boolean active = false;
 
+    /** Кэш скана рецептов: сигнатура = фингерпринт входного стака (value-keyed — общий
+     * для currentRecipe() и валидации слота хоппером в isItemValidForSlot). */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<SilexRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+
     public MachineSilexBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.SILEX_BE.get(), pos, state, SLOT_COUNT, CAPACITY, MAX_RECEIVE, 0L);
         tank = new FluidTank(ModFluids.PEROXIDE.getSource(), TANK_CAPACITY_MB) {
@@ -95,9 +99,13 @@ public class MachineSilexBlockEntity extends BaseMachineBlockEntity implements I
             dirty = true;
         }
 
+        // Anti-sync-spam: снапшот энергии + прогресс/активность + бак (бак пишется в NBT).
         if (dirty) {
-            be.setChanged();
-            be.sendUpdateToClient();
+            long lo = be.getEnergyStored();
+            long hi = be.progress * 31L + (be.active ? 1L : 0L);
+            hi = hi * 31L + be.tank.getTankType().hashCode();
+            hi = hi * 31L + be.tank.getFill();
+            be.syncIfStateChanged(lo, hi);
         }
     }
 
@@ -107,14 +115,18 @@ public class MachineSilexBlockEntity extends BaseMachineBlockEntity implements I
         return findRecipe(input);
     }
 
-    /** Data-driven поиск SilexRecipe по входному стаку (заменяет статический SilexRecipes.get/has). */
+    /** Data-driven поиск SilexRecipe по входному стаку (заменяет статический SilexRecipes.get/has).
+     * Value-keyed на фингерпринте стака — хопперная валидация и текущий тик делят один кэш. */
     private SilexRecipe findRecipe(ItemStack input) {
         Level level = getLevel();
         if (level == null || input.isEmpty()) return null;
-        for (SilexRecipe recipe : RecipeHooks.getAllRecipes(level, SilexRecipe.Type.INSTANCE)) {
-            if (recipe.matches(input)) return recipe;
-        }
-        return null;
+        return recipeResolver.resolve(level, SilexRecipe.Type.INSTANCE,
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(input), (lvl, all) -> {
+                    for (SilexRecipe recipe : all) {
+                        if (recipe.matches(input)) return recipe;
+                    }
+                    return null;
+                });
     }
 
     private boolean canProcess(SilexRecipe recipe) {

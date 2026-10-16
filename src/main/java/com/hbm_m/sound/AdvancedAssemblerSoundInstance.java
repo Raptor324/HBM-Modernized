@@ -14,6 +14,8 @@ import net.neoforged.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public class AdvancedAssemblerSoundInstance extends AbstractTickableSoundInstance {
 
+    private final BlockPos origin;
+
     // Конструктор теперь принимает только BlockPos, так как ему больше не нужно знать о BlockEntity.
     public AdvancedAssemblerSoundInstance(BlockPos pos) {
         super(ModSounds.MOTOR.get(), SoundSource.BLOCKS, SoundInstance.createUnseededRandom());
@@ -22,15 +24,23 @@ public class AdvancedAssemblerSoundInstance extends AbstractTickableSoundInstanc
         this.delay = 0;
         this.relative = false; // Звук находится в мировых координатах
         this.attenuation = Attenuation.LINEAR;
-
-        // Устанавливаем позицию
-        this.x = pos.getX() + 0.5;
-        this.y = pos.getY() + 0.5;
-        this.z = pos.getZ() + 0.5;
+        this.origin = pos;
+        updatePosition();
     }
 
-    // Этот метод должен быть реализован, но он может быть пустым,
-    // так как жизненный цикл теперь управляется извне.
+    // Sable ships move - re-anchor in world space every tick (raw plot-grid
+    // coords are millions of blocks out and vanilla mutes the loop).
+    private void updatePosition() {
+        net.minecraft.world.phys.Vec3 world = SableSoundPosition.project(origin, 0.5D);
+        this.x = world.x;
+        this.y = world.y;
+        this.z = world.z;
+    }
+
+    // Жизненный цикл управляется извне (AdvancedAssemblerClientTicker);
+    // здесь только перепривязка позиции - корабль Sable плывёт.
     @Override
-    public void tick() { }
+    public void tick() {
+        updatePosition();
+    }
 }

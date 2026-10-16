@@ -206,6 +206,6 @@ public class ParticleAshesNT extends ParticleNT implements ReplaceOnRespawn {
     @Override
     public RenderType getRenderType() {
         // QUADS-вариант lightmap-рендертипа с той же формулой 770/771 как в 1.7.10.
-        return com.hbm_m.client.ClientRenderHandler.CustomRenderTypes.ASHES_PARTICLES.apply(TEXTURE);
+        return com.hbm_m.client.ClientRenderHandler.CustomRenderTypes.ashesParticles(TEXTURE);
     }
 }

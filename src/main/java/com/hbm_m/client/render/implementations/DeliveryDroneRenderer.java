@@ -3,6 +3,7 @@ package com.hbm_m.client.render.implementations;
 import com.hbm_m.entity.drone.EntityDeliveryDrone;
 import com.hbm_m.entity.drone.EntityDroneBase;
 import com.hbm_m.entity.drone.EntityRequestDrone;
+import com.hbm_m.client.render.cache.RenderCacheManager;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -32,6 +33,16 @@ public class DeliveryDroneRenderer extends EntityRenderer<EntityDroneBase> {
 
     private static final Map<String, List<float[]>> OBJ_PARTS = new LinkedHashMap<>();
     private static boolean loaded = false;
+
+    // The parsed OBJ and the load latch must not survive a resource reload - dropping them makes
+    // the next ensureLoaded() re-read the OBJ from the current resource pack (and re-register
+    // the three SimpleTextures, closing the replaced ones).
+    static {
+        RenderCacheManager.register(reason -> {
+            OBJ_PARTS.clear();
+            loaded = false;
+        });
+    }
 
     private static final String OBJ_PATH = "models/block/machines/drone.obj";
 

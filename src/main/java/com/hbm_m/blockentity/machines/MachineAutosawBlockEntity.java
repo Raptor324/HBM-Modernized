@@ -74,12 +74,15 @@ public class MachineAutosawBlockEntity extends com.hbm_m.blockentity.BaseHbmBloc
         if (!be.isOn) return;
 
         // Entity damage AoE roughly under the arm tip (simplified radius around the block, not the
-        // original's precise rotating-arm-tip vector math).
-        AABB aabb = new AABB(pos).inflate(1.5, 0.5, 1.5);
-        for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, aabb)) {
-            if (e.isAlive() && e.hurt(level.damageSources().generic(), 100)) {
-                level.playSound(null, e.getX(), e.getY(), e.getZ(), net.minecraft.sounds.SoundEvents.WOOD_BREAK,
-                        net.minecraft.sounds.SoundSource.BLOCKS, 2.0F, 0.95F + level.getRandom().nextFloat() * 0.2F);
+        // original's precise rotating-arm-tip vector math). Entity-query gate: раз в 10 тиков,
+        // фаза по позиции — урон 100 в тик всё равно мгновенный.
+        if (be.probeDue(10)) {
+            AABB aabb = new AABB(pos).inflate(1.5, 0.5, 1.5);
+            for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, aabb)) {
+                if (e.isAlive() && e.hurt(level.damageSources().generic(), 100)) {
+                    level.playSound(null, e.getX(), e.getY(), e.getZ(), net.minecraft.sounds.SoundEvents.WOOD_BREAK,
+                            net.minecraft.sounds.SoundSource.BLOCKS, 2.0F, 0.95F + level.getRandom().nextFloat() * 0.2F);
+                }
             }
         }
 
@@ -134,8 +137,22 @@ public class MachineAutosawBlockEntity extends com.hbm_m.blockentity.BaseHbmBloc
             }
         }
 
-        be.setChanged();
-        level.sendBlockUpdated(pos, blockState, blockState, 3);
+        // Anti-sync-spam: анимация руки (yaw/pitch/state) синхронизируется при изменении
+        // сигнатуры, но не реже чем раз в 2 тика (10 Hz — ступенчатая анимация, см. PR-note),
+        // isOn/tank — по факту изменения. Подпись покрывает всё, что пишет writeNbtData.
+        long lo = com.hbm_m.recipe.index.CachedRecipeResolver.sign(9,
+                (long) (be.rotationYaw / 36f),   // 10 секторов по yaw
+                (long) (be.rotationPitch / 8f),  // 10 секторов по pitch
+                be.state,
+                be.forceSkip);
+        long hi = (be.isOn ? 1L : 0L) * 31L + tankFingerprint(be.tank);
+        be.syncIfChangedOrEvery(lo, hi, 2);
+    }
+
+    /** Дешёвый фингерпринт содержимого HBM-бака (тип жидкости + количество mB). */
+    private static long tankFingerprint(FluidTank tank) {
+        Fluid type = tank.getTankType();
+        return (type == null ? 0L : type.hashCode()) * 31L + tank.getFluidAmountMb();
     }
 
     /** Flood-fills the connected log/leaf cluster from the hit position and harvests it, replanting

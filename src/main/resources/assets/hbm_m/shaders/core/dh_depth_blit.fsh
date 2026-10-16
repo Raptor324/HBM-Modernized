@@ -47,7 +47,7 @@ void main() {
     float d = texture(Sampler0, uv).r;
     bool reverseZ = DhReverseZ > 0.5;
     // DH sky (no LOD drawn): leave depth untouched. The conventions are opposite.
-    if (reverseZ ? (d <= 1.0e-6) : (d >= 0.999999)) {
+    if ((reverseZ && d <= 1.0e-6) || (!reverseZ && d >= 0.999999)) {
         discard;
     }
     // REVERSE_Z: d in [0..1] (1 = near, 0 = far), feed d directly - feeding

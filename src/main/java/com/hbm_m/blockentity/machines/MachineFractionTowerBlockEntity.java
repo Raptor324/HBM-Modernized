@@ -39,6 +39,10 @@ public class MachineFractionTowerBlockEntity extends BaseMachineBlockEntity impl
 
     private final FluidTank[] tanks = new FluidTank[3];
 
+    /** Кэш скана рецепта по типу входного бака — ключ: фингерпринт танков (fluid + fill). */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<FractionTowerRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+
     public MachineFractionTowerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.FRACTION_TOWER_BE.get(), pos, state, 0, 0L, 0L, 0L);
         tanks[0] = new FluidTank(TANK_CAPACITY_MB) {
@@ -61,21 +65,49 @@ public class MachineFractionTowerBlockEntity extends BaseMachineBlockEntity impl
             be.fractionate();
         }
 
+        // trySubscribe — раз в 5 тиков (фаза по позиции), только регистрация.
+        // tryProvide — каждый тик: прямой пуш в соседний приёмник, гейт делит
+        // пропускную способность, а не только стоимость скана. Fill-проверка
+        // не даёт зондировать соседей, пока выходной бак пуст.
+        boolean subscribeDue = be.probeDue(5);
         for (Direction dir : Direction.values()) {
             BlockPos neighborPos = pos.relative(dir);
-            be.trySubscribe(be.tanks[0], level, neighborPos, dir);
-            be.tryProvide(be.tanks[1], level, neighborPos, dir);
-            be.tryProvide(be.tanks[2], level, neighborPos, dir);
+            if (subscribeDue) be.trySubscribe(be.tanks[0], level, neighborPos, dir);
+            if (be.tanks[1].getFill() > 0) be.tryProvide(be.tanks[1], level, neighborPos, dir);
+            if (be.tanks[2].getFill() > 0) be.tryProvide(be.tanks[2], level, neighborPos, dir);
         }
 
-        be.setChanged();
-        be.sendUpdateToClient();
+        // P6 anti-sync-spam: пишем энергию + фингерпринты всех трёх танков.
+        be.syncIfStateChanged(be.energy, tankFingerprints(be));
+    }
+
+    private static long tankFingerprints(MachineFractionTowerBlockEntity be) {
+        long h = 1L;
+        for (FluidTank tank : be.tanks) {
+            Fluid type = tank.getTankType();
+            h = com.hbm_m.recipe.index.CachedRecipeResolver.sign(h,
+                    type == null ? 0L : type.hashCode(), tank.getFill());
+        }
+        return h;
+    }
+
+    /** Резолв рецепта через кэш: ключ — фингерпринт типа входного бака. */
+    private FractionTowerRecipe cachedRecipe() {
+        Fluid in = tanks[0].getTankType();
+        long sig = com.hbm_m.recipe.index.CachedRecipeResolver.sign(3L,
+                in == null ? 0L : in.hashCode(), tanks[0].getFill());
+        return recipeResolver.resolve(level, FractionTowerRecipe.Type.INSTANCE, sig, (lvl, all) -> {
+            for (FractionTowerRecipe r : all) {
+                if (r.matches(in)) return r;
+            }
+            return null;
+        });
     }
 
     /** Direktport von {@code setupTanks()}: konformiert die Ausgabetanks auf den Rezepttyp, solange sie leer sind
      *  (im Original wird der Typ bedingungslos ueberschrieben, hier vorsichtiger um kein Fluid zu vernichten). */
     private void setupTanks() {
-        FractionTowerRecipe recipe = FractionTowerRecipe.getRecipe(level, tanks[0].getTankType());
+        FractionTowerRecipe recipe = cachedRecipe();
         if (recipe == null) return;
         if (tanks[1].isEmpty()) tanks[1].conform(recipe.getOutputA());
         if (tanks[2].isEmpty()) tanks[2].conform(recipe.getOutputB());
@@ -83,7 +115,7 @@ public class MachineFractionTowerBlockEntity extends BaseMachineBlockEntity impl
 
     /** Direktport von {@code fractionate()}. */
     private boolean fractionate() {
-        FractionTowerRecipe recipe = FractionTowerRecipe.getRecipe(level, tanks[0].getTankType());
+        FractionTowerRecipe recipe = cachedRecipe();
         if (recipe == null) return false;
         if (tanks[0].getFill() < INPUT_PER_CYCLE_MB) return false;
         if (tanks[1].getFill() + recipe.getOutputAMb() > tanks[1].getMaxFill()) return false;

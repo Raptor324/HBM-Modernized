@@ -116,6 +116,9 @@ public class PWRControllerBlockEntity extends BaseMachineBlockEntity
     private final List<BlockPos> ports = new ArrayList<>();
     private final List<BlockPos> rods = new ArrayList<>();
 
+    /** Last signature whose state delta triggered setChanged() (anti-sync-spam gate). */
+    private long lastSyncedStateSig = Long.MIN_VALUE;
+
     public PWRControllerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.PWR_CONTROLLER_BE.get(), pos, state, 2, 0L, 0L);
     }
@@ -197,13 +200,15 @@ public class PWRControllerBlockEntity extends BaseMachineBlockEntity
     private void serverTick(ServerLevel level, BlockPos pos) {
         if (!assembled) return;
 
-        if (level.getGameTime() % 20 == 0) {
-            for (BlockPos portPos : ports) {
-                for (Direction dir : Direction.values()) {
-                    BlockPos neighbor = portPos.relative(dir);
-                    if (coolantHotTank.getFill() > 0) tryProvide(coolantHotTank, level, neighbor, dir);
-                    trySubscribe(coolantTank, level, neighbor, dir);
-                }
+        // trySubscribe — раз в 20 тиков (регистрация, идемпотентно). tryProvide — каждый тик:
+        // его вторая ветка — прямой пуш горячего теплоносителя в соседний приёмник, гейт делит
+        // пропускную способность. Fill-проверка пропускает зонд, пока бак пуст.
+        boolean subscribeDue = level.getGameTime() % 20 == 0;
+        for (BlockPos portPos : ports) {
+            for (Direction dir : Direction.values()) {
+                BlockPos neighbor = portPos.relative(dir);
+                if (coolantHotTank.getFill() > 0) tryProvide(coolantHotTank, level, neighbor, dir);
+                if (subscribeDue) trySubscribe(coolantTank, level, neighbor, dir);
             }
         }
 
@@ -266,9 +271,22 @@ public class PWRControllerBlockEntity extends BaseMachineBlockEntity
             meltDown(level);
         }
 
-        setChanged();
-        // A PWR may be up to 4096 blocks, and the update tag carries the whole structure: syncing it
-        // every tick to every viewer was a lot of traffic for values that move slowly.
+        // setChanged only on a state delta (rod positions / temperature bucket / tank fills);
+        // client sync keeps its 5-tick gate: a PWR may be up to 4096 blocks, and the update tag
+        // carries the whole structure — syncing it every tick to every viewer was a lot of traffic
+        // for values that move slowly.
+        long stateSig = com.hbm_m.recipe.index.CachedRecipeResolver.sign(1L,
+                Double.doubleToRawLongBits(rodLevel),
+                Double.doubleToRawLongBits(rodTarget),
+                Double.doubleToRawLongBits(flux),
+                coreHeat >>> 10, hullHeat >>> 10,
+                coolantTank.getFill(), coolantHotTank.getFill(),
+                typeLoaded == null ? 0L : typeLoaded.name().hashCode(),
+                amountLoaded, Double.doubleToRawLongBits(progress));
+        if (stateSig != lastSyncedStateSig) {
+            lastSyncedStateSig = stateSig;
+            setChanged();
+        }
         if (level != null && level.getGameTime() % 5 == 0) {
             sendUpdateToClient();
         }
@@ -593,12 +611,18 @@ public class PWRControllerBlockEntity extends BaseMachineBlockEntity
         ports.clear();
         int portCount = tag.getInt("portCount");
         for (int i = 0; i < portCount; i++) {
-            if (tag.contains("port" + i)) ports.add(com.hbm_m.platform.PlatformHooks.readBlockPos(tag, "port" + i));
+            if (tag.contains("port" + i)) {
+                net.minecraft.core.BlockPos p = com.hbm_m.platform.PlatformHooks.readBlockPos(tag, "port" + i);
+                if (p != null) ports.add(p);
+            }
         }
         rods.clear();
         int rodPosCount = tag.getInt("rodPosCount");
         for (int i = 0; i < rodPosCount; i++) {
-            if (tag.contains("rodPos" + i)) rods.add(com.hbm_m.platform.PlatformHooks.readBlockPos(tag, "rodPos" + i));
+            if (tag.contains("rodPos" + i)) {
+                net.minecraft.core.BlockPos p = com.hbm_m.platform.PlatformHooks.readBlockPos(tag, "rodPos" + i);
+                if (p != null) rods.add(p);
+            }
         }
     }
 

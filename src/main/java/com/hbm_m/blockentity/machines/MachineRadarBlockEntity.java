@@ -399,10 +399,14 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
             return;
         }
 
-        for (Direction dir : Direction.values()) {
-            tryPullEnergyFromPos(worldPosition.relative(dir), dir.getOpposite());
-            if (!canReceive()) {
-                return;
+        // 6 прямых соседей — раз в 20 тиков (probeDue, фаза размазана по позиции),
+        // как и прежний ежетиковый обход, гарантирующий подзарядку буфера.
+        if (probeDue(20)) {
+            for (Direction dir : Direction.values()) {
+                tryPullEnergyFromPos(worldPosition.relative(dir), dir.getOpposite());
+                if (!canReceive()) {
+                    return;
+                }
             }
         }
 

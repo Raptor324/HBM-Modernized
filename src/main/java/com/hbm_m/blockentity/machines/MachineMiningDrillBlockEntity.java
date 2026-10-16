@@ -6,7 +6,6 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import com.hbm_m.block.ModBlocks;
@@ -21,7 +20,6 @@ import com.hbm_m.recipe.ModRecipes;
 import com.hbm_m.recipe.ShredderRecipe;
 import com.hbm_m.worldgen.BedrockOreDensity;
 import com.hbm_m.platform.PlatformHooks;
-import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.platform.recipe.RecipeInputWrapper;
 
 import net.minecraft.core.BlockPos;
@@ -107,6 +105,10 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity implem
     public float crusherRotation, prevCrusherRotation;
 
     private final HashSet<BlockPos> veinRecursionBrake = new HashSet<>();
+
+    /** Кэш SHREDDER-скана по фингерпринту дропа (value-keyed, CONTRACT 2 CachedRecipeResolver); event-time only. */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<ShredderRecipe> shredderResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
 
     /** Bohr-Fluid-Tank fuer Bedrock-Erz (Wasser/Schwefelsaeure/Solvent, siehe {@link BedrockOreDensity}). */
     private final FluidTank tank = new FluidTank(ModFluids.NONE.getSource(), 4000);
@@ -399,11 +401,18 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity implem
             SimpleContainer container = new SimpleContainer(1);
             container.setItem(0, new ItemStack(stack.getItem(), 1));
             RecipeInputWrapper wrapper = new RecipeInputWrapper(container);
-            Optional<ShredderRecipe> recipe = RecipeHooks.getAllRecipes(level, ModRecipes.SHREDDER_TYPE.get()).stream()
-                    .filter(r -> r.matchesRecipe(wrapper, level))
-                    .findFirst();
-            if (recipe.isPresent()) {
-                ItemStack crushed = recipe.get().getOutput();
+            // SHREDDER-скан через value-keyed кэш (подпись = фингерпринт пробного стека,
+            // как и раньше — матч идёт по item без учёта count/NBT исходного дропа).
+            ShredderRecipe recipe = shredderResolver.resolve(level, ModRecipes.SHREDDER_TYPE.get(),
+                    PlatformHooks.stackFingerprint(container.getItem(0)),
+                    (lvl, all) -> {
+                        for (ShredderRecipe r : all) {
+                            if (r.matchesRecipe(wrapper, lvl)) return r;
+                        }
+                        return null;
+                    });
+            if (recipe != null) {
+                ItemStack crushed = recipe.getOutput();
                 crushed.setCount(crushed.getCount() * stack.getCount());
                 result.add(crushed);
             } else {

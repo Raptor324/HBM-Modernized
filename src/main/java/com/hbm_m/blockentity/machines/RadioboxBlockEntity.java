@@ -46,10 +46,14 @@ public class RadioboxBlockEntity extends BaseMachineBlockEntity {
         if (!be.isOn) return;
         if (!be.infinite && be.getEnergyStored() < ACTIVATION_THRESHOLD) return;
 
+        // 15-block entity query — phase-spread, not every tick.
+        if (!be.probeDue(10)) return;
+
         AABB box = new AABB(pos).inflate(RADIUS);
-        for (Enemy mob : level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, box, e -> e instanceof Enemy)
-                .stream().map(e -> (Enemy) e).toList()) {
-            ((net.minecraft.world.entity.LivingEntity) mob).hurt(ModDamageSources.enervation(level), DAMAGE);
+        java.util.List<net.minecraft.world.entity.LivingEntity> mobs =
+                level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, box, e -> e instanceof Enemy);
+        for (int i = 0; i < mobs.size(); i++) {
+            mobs.get(i).hurt(ModDamageSources.enervation(level), DAMAGE);
         }
     }
 

@@ -137,13 +137,35 @@ public final class PlatformHooks {
 
     /**
      * Заменяет {@code NbtUtils.readBlockPos(tag.getCompound(key))}.
-     * 1.21.1: NbtUtils.readBlockPos(CompoundTag, String) возвращает Optional.
+     *
+     * <p>На 1.21.1 {@code NbtUtils.readBlockPos(CompoundTag, String)} читает ключ как
+     * {@code int[3]} (IntArrayTag). Это несовместимо со старыми сейвами, записанными на
+     * 1.20.1, где позиция хранится как {@code CompoundTag {X, Y, Z}}.
+     * Для backward-compat проверяем оба формата и возвращаем {@code null} (не ZERO!)
+     * если ключ отсутствует или имеет неверный тип — чтобы caller мог корректно
+     * обработать «нет данных».
+     *
+     * @return parsed BlockPos, or {@code null} if the key is absent or unreadable
      */
+    @org.jetbrains.annotations.Nullable
     public static net.minecraft.core.BlockPos readBlockPos(net.minecraft.nbt.CompoundTag tag, String key) {
         //? if < 1.21.1 {
-        return net.minecraft.nbt.NbtUtils.readBlockPos(tag.getCompound(key));
+        if (!tag.contains(key)) return null;
+        net.minecraft.nbt.CompoundTag sub = tag.getCompound(key);
+        if (sub.isEmpty()) return null;
+        return net.minecraft.nbt.NbtUtils.readBlockPos(sub);
         //?} else {
-        /*return net.minecraft.nbt.NbtUtils.readBlockPos(tag, key).orElse(net.minecraft.core.BlockPos.ZERO);
+        /*// Attempt 1: 1.21.1 native format (IntArrayTag stored directly under 'key')
+        java.util.Optional<net.minecraft.core.BlockPos> result = net.minecraft.nbt.NbtUtils.readBlockPos(tag, key);
+        if (result.isPresent()) return result.get();
+        // Attempt 2: legacy 1.20.1 compound format {X, Y, Z} — for old worlds migrated to 1.21.1
+        if (tag.contains(key, net.minecraft.nbt.Tag.TAG_COMPOUND)) {
+            net.minecraft.nbt.CompoundTag sub = tag.getCompound(key);
+            if (sub.contains("X") && sub.contains("Y") && sub.contains("Z")) {
+                return new net.minecraft.core.BlockPos(sub.getInt("X"), sub.getInt("Y"), sub.getInt("Z"));
+            }
+        }
+        return null;
         *///?}
     }
 
@@ -240,8 +262,48 @@ public final class PlatformHooks {
         //?} else {
         /*return ItemStack.isSameItemSameComponents(a, b);
         *///?}
-    
+
     }
+
+    /**
+     * Probabilistic 64-bit fingerprint of an ItemStack for cheap per-tick input-signature
+     * comparisons (MachineModuleBase input gating).
+     *
+     * <p>DOCUMENTED CORRECTNESS PROPERTY: this is a probabilistic gate, not an equality
+     * test. ALWAYS distinguished: empty-vs-nonempty, item identity, count, DAMAGE
+     * ({@code stack.getDamageValue()} — tag {@code Damage} on 1.20.1 /
+     * {@code DataComponents.DAMAGE} on 1.21.1) and NBT tag / {@code CUSTOM_DATA}.
+     * NOT covered: on 1.21.1, any component OTHER than {@code CUSTOM_DATA} (enchantments,
+     * potion contents, etc. carried outside CUSTOM_DATA are not in the mix).
+     * RULE: never key a sync/scan gate on an uncovered component without adding an explicit
+     * signature term for it, or falling back to {@code syncIf(boolean)} with explicit
+     * per-field comparisons. A hash collision (~2^-64) could at worst retain a stale cached
+     * scan/validate decision until the next genuine slot mutation. Accepted as bounded risk,
+     * consistent with the {@link #isSameItemSameTags} precedent above.
+     */
+    public static long stackFingerprint(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return 0L;
+        long h = stack.getItem().hashCode() * 31L + stack.getCount();
+        h = h * 31L + stack.getDamageValue();
+        //? if < 1.21.1 {
+        h = h * 31L + (stack.getTag() == null ? 0L : stack.getTag().hashCode());
+        //?} else {
+        /*var customData = stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
+        h = h * 31L + (customData == null ? 0L : customData.hashCode());
+        *///?}
+        return h;
+    }
+
+    /**
+     * 64-bit fingerprint of an Architectury FluidStack (перекрёстно-версионно — через
+     * Architectury API, разрешено правилом 6 AGENTS.md) для per-tick fluid-подписей.
+     * 0 для пустого стека; различает variant (fluid) и amount.
+     */
+    public static long fluidFingerprint(dev.architectury.fluid.FluidStack fluid) {
+        if (fluid == null || fluid.isEmpty()) return 0L;
+        return fluid.getFluid().hashCode() * 31L + fluid.getAmount();
+    }
+
     /**
      * Создание ItemStack из NBT-тега. Заменяет {@code ItemStack.of(tag)} на 1.20.1.
      * На 1.21.1 требует {@code HolderLookup.Provider} (DataComponents несут реестровые ссылки).
@@ -322,6 +384,21 @@ public final class PlatformHooks {
         var server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
         return server != null ? server.registryAccess() : null;
         *///?}
+    }
+
+    /**
+     * Открыто ли меню паузы (Esc) в синглплеере — единственный штатный случай,
+     * когда интегрированный сервер не тикает, но это не зависание. Экраны
+     * сохранения мира сюда не попадают (ProgressScreen — не PauseScreen),
+     * зависания в сохранении остаются ловимыми.
+     *
+     * <p><b>Вызывать только при {@code !server.isDedicatedServer()}</b>:
+     * на dedicated клиентские классы отсутствуют (вызов не должен состояться —
+     * HotSpot резолвит константы лениво, как и в остальных client-хелперах).
+     */
+    public static boolean isPauseMenuOpen() {
+        return net.minecraft.client.Minecraft.getInstance().screen
+                instanceof net.minecraft.client.gui.screens.PauseScreen;
     }
 
     // =====================================================================================

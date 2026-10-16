@@ -14,7 +14,7 @@ import net.minecraft.client.Minecraft;
 //? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} else if neoforge {
+//?} elif neoforge {
 /*import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 *///?}
@@ -60,8 +60,22 @@ public class ShaderCompatibilityDetector {
      * Sodium builds chunks on background threads - they cannot call the Iris API directly.
      */
     private static volatile boolean cachedShaderActive = false;
+    private static volatile boolean cachedShadowPass = false;
     /** Deferred invalidation - processed in ClientTickEvent.END */
     private static volatile boolean pendingChunkInvalidation = false;
+    /**
+     * Deferred FULL render-cache invalidation on a pack enable/disable flip,
+     * processed together with {@link #pendingChunkInvalidation} in
+     * {@link #processPendingChunkInvalidation()} (ClientTickEvent.END).
+     * Without it the Tier-1 bake path's GPU state (bake pools at 1.5x headroom,
+     * per-cache SSBOs, shared stores) plus the Iris companion meshes and their
+     * lightmap rings stayed allocated after the pack was switched off - the
+     * VRAM bar stayed pinned right under its peak until F3+T (audit 2026-10-07
+     * VRAM ledger [C]). Both transition directions use the same teardown; every
+     * subsystem it releases rebuilds lazily on the next use, so nothing that a
+     * re-enabled pack still needs is lost.
+     */
+    private static volatile boolean pendingRenderCacheInvalidation = false;
 
     private static void init() {
         if (initialized) return;
@@ -108,6 +122,9 @@ public class ShaderCompatibilityDetector {
      * frame time.
      */
     public static void updateState() {
+        // Block id disguises: poll for a not-yet-disguised loaded pack. FIRST thing
+        // in the method - the IrisApi early-return below must not gate it.
+        ShaderBlockIdDisguises.applyIfPackChanged();
         if (!initialized) init();
         if (irisApiInstance == null || (irisIsShaderPackInUseMH == null && irisIsShaderPackInUse == null)) {
             cachedShaderActive = false;
@@ -130,6 +147,12 @@ public class ShaderCompatibilityDetector {
                 OcclusionCullingHelper.clearCache();
                 // Defer invalidation - calling from the render loop breaks the Sodium iteration (wrapped is null)
                 pendingChunkInvalidation = true;
+                // Full GPU teardown on EITHER direction (vanilla->pack frees the
+                // vanilla-path renderer VBOs that the bake path replaced; pack->vanilla
+                // frees the bake pools, per-cache SSBOs, companion meshes and lightmap
+                // rings - all lazily rebuilt). RenderCacheManager.invalidateAll itself
+                // defers to the render thread via recordRenderCall.
+                pendingRenderCacheInvalidation = true;
             }
         } catch (Throwable e) {
             cachedShaderActive = false;
@@ -148,6 +171,13 @@ public class ShaderCompatibilityDetector {
      * (ReferenceOpenHashSet.wrapped is null).
      */
     public static void processPendingChunkInvalidation() {
+        if (pendingRenderCacheInvalidation) {
+            pendingRenderCacheInvalidation = false;
+            MainRegistry.LOGGER.info(
+                    "ShaderCompatibilityDetector: shader pack toggled - full render cache invalidation");
+            com.hbm_m.client.render.cache.RenderCacheManager.invalidateAll(
+                    com.hbm_m.client.render.cache.RenderCacheManager.Reason.RESOURCE_RELOAD);
+        }
         if (!pendingChunkInvalidation) return;
         pendingChunkInvalidation = false;
         Minecraft mc = Minecraft.getInstance();
@@ -163,40 +193,16 @@ public class ShaderCompatibilityDetector {
     /**
      * Checks whether Iris's shadow pass is currently rendering (for realtime shadows).
      *
-     * <p>Hot-path note: this is queried per-part from the BER/collect paths, so the
-     * reflection is skipped entirely when no Iris pipeline is active (the common case)
-     * - {@code isRenderingShadowPass()} can only be true while a pack is in use.
-     * The result is NOT frame-cached: Iris starts the shadow pass mid-frame (after
-     * {@code ClientRenderFlags.onFrameStart}), so a frame-level snapshot would feed
-     * stale {@code false} into shadow instancing routing.</p>
+     * <p>Cached in a primitive boolean field updated per frame/render phase (head/return of renderShadows),
+     * completely eliminating 100k-300k MethodHandle invocations per second.</p>
      */
     public static boolean isRenderingShadowPass() {
-        if (!initialized) init();
-        if (irisApiInstance == null || !cachedShaderActive) return false;
-        try {
-            boolean result;
-            if (irisIsRenderingShadowPassMH != null) {
-                result = (boolean) irisIsRenderingShadowPassMH.invokeExact((Object) irisApiInstance);
-            } else if (irisIsRenderingShadowPass != null) {
-                Boolean boxed = (Boolean) irisIsRenderingShadowPass.invoke(irisApiInstance);
-                result = boxed != null && boxed;
-            } else {
-                return false;
-            }
-            // 1.21.1 diagnostics (shadows not cast): confirm that the shadow pass
-            // is detected at all via IrisApi on this loader.
-            if (result && !loggedShadowPassDetected) {
-                loggedShadowPassDetected = true;
-                MainRegistry.LOGGER.info(
-                        "ShaderCompatibilityDetector: Iris shadow pass detected (isRenderingShadowPass=true) - API works on this loader");
-            }
-            return result;
-        } catch (Throwable e) {
-            return false;
-        }
+        return cachedShaderActive && cachedShadowPass;
     }
 
-    private static boolean loggedShadowPassDetected = false;
+    public static void setRenderingShadowPass(boolean active) {
+        cachedShadowPass = active;
+    }
 
     /**
      * {@link net.minecraft.client.renderer.blockentity.BlockEntityRenderer#shouldRenderOffScreen}.

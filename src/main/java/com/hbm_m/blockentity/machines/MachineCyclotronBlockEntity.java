@@ -16,6 +16,7 @@ import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType;
 import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.recipe.CyclotronRecipe;
+import com.hbm_m.recipe.index.CachedRecipeResolver;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -60,6 +61,13 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
     private final UpgradeManager upgradeManager = new UpgradeManager();
 
     private int progress;
+
+    /**
+     * Кэш скана рецептов, общий для всех трёх дорожек (CONTRACT 2 — value keying):
+     * подпись строится из фингерпринтов target+input стаков, одинаковые пары дорожек
+     * легитимно шарят закэшированный ответ.
+     */
+    private final CachedRecipeResolver<CyclotronRecipe> recipeResolver = new CachedRecipeResolver<>();
 
     public MachineCyclotronBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.CYCLOTRON_BE.get(), pos, state, INVENTORY_SIZE, MAX_POWER, 5_000_000L);
@@ -260,12 +268,18 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
         if (target == null || input == null || target.isEmpty() || input.isEmpty() || level == null) {
             return null;
         }
-        for (CyclotronRecipe r : RecipeHooks.getAllRecipes(level, CyclotronRecipe.Type.INSTANCE)) {
-            if (r.matches(target, input)) {
-                return r;
-            }
-        }
-        return null;
+        // Рецепты data-driven — поиск по двум стекам через RecipeManager (RecipeHooks),
+        // кэшированный на тик+подпись через CachedRecipeResolver.
+        return recipeResolver.resolve(level, CyclotronRecipe.Type.INSTANCE,
+                CachedRecipeResolver.sign(0L,
+                        PlatformHooks.stackFingerprint(target),
+                        PlatformHooks.stackFingerprint(input)),
+                (lvl, all) -> {
+                    for (CyclotronRecipe r : all) {
+                        if (r.matches(target, input)) return r;
+                    }
+                    return null;
+                });
     }
 
     private void chargeFromBattery() {

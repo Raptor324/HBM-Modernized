@@ -107,6 +107,11 @@ public class MachineCoreInjectorBlockEntity extends BaseMachineBlockEntity imple
     private void injectIntoCore(Level level, BlockPos pos, BlockState state) {
         beam = 0;
 
+        // Нечего впрыскивать — 15-блочный марш до ядра не запускаем (каждый тик по 15 BE-чтений).
+        if (tanks[TANK_DEUTERIUM].getFill() == 0 && tanks[TANK_TRITIUM].getFill() == 0) {
+            return;
+        }
+
         net.minecraft.core.Direction dir = state.hasProperty(
                 net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING)
                 ? state.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING)

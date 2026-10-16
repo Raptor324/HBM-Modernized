@@ -2,21 +2,16 @@ package com.hbm_m.particle;
 
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.particle.nt.ParticleNT;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.Camera;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.Util;
 
 import java.awt.Color;
-import java.util.function.Function;
 
 /**
  * Порт {@code ParticleGasFlame} (1.7.10): факельное пламя газовой факела.
@@ -115,22 +110,12 @@ public class ParticleGasFlame extends ParticleNT {
 
     @Override
     public RenderType getRenderType() {
-        return GasFireRenderTypes.TYPE.apply(TEXTURE);
-    }
-
-    /** Пламя: полупрозрачный квад с полным ярким светом. */
-    private static final class GasFireRenderTypes extends RenderType {
-        private static final Function<ResourceLocation, RenderType> TYPE = Util.memoize(
-                texture -> create("hbm_m_gas_fire", DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP,
-                        VertexFormat.Mode.QUADS, 1536, false, false,
-                        RenderType.CompositeState.builder()
-                                .setShaderState(POSITION_COLOR_TEX_LIGHTMAP_SHADER)
-                                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
-                                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
-                                .setCullState(NO_CULL)
-                                .createCompositeState(false)));
-
-        private GasFireRenderTypes(String s, VertexFormat v, VertexFormat.Mode m,
-                                   int i, boolean b, boolean b2, Runnable r, Runnable r2) { super(s, v, m, i, b, b2, r, r2); }
+        // Селектор с ветвлением: под паком - наш клон position_color_tex_lightmap
+        // (прямой рендер с ванильным цветом), без пака - прежний рендертайп.
+        // Определения обоих типов - в CustomRenderTypes (GAS_FIRE_PARTICLES /
+        // GAS_FIRE_DIRECT); приватный класс здесь больше не нужен: Photon гнал
+        // пламя через свой translucent-материал (color x alpha x scene light) и
+        // делал его бледно-серым.
+        return com.hbm_m.client.ClientRenderHandler.CustomRenderTypes.gasFireParticles(TEXTURE);
     }
 }

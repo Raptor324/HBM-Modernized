@@ -55,13 +55,13 @@ public interface VanillaInstancedMeshRenderer {
      * Enqueue one instance into the per-frame batch buffer for the next
      * {@link #flush(Matrix4f)}.
      * <p>
-     * Source: {@code InstancedStaticPartRenderer#addInstance(PoseStack, int, BlockPos, BlockEntity, MultiBufferSource)}
+     * Source: {@code InstancedStaticPartRenderer#addInstance(PartEnqueueRequest)}
      * — the vanilla accumulation portion (everything below the Iris/shadow-pass
      * early-outs, including the LightSampleCache 8/16-corner sampling and the
-     * float-buffer record write at the bottom).
+     * float-buffer record write at the bottom). All per-instance parameters
+     * travel inside the request; there is no global pending state.
      */
-    void addInstance(PoseStack poseStack, int packedLight, BlockPos blockPos,
-                     @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource);
+    void addInstance(PartEnqueueRequest request);
 
     /**
      * Emit a single {@code glDrawElementsInstanced} for the accumulated batch

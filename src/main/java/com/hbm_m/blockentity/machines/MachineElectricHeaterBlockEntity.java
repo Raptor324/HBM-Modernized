@@ -67,8 +67,11 @@ public class MachineElectricHeaterBlockEntity extends BaseMachineBlockEntity imp
         // Распад запаса тепла
         be.heat = (int) (be.heat * 0.999D);
 
-        // Затяжка тепла снизу с КПД 85% (порт tryPullHeat)
-        be.tryPullHeatFromBelow();
+        // Затяжка тепла снизу с КПД 85% (порт tryPullHeat) — neighbor-scan раз в 20 тиков.
+        int pulledHeat = 0;
+        if (be.probeDue(20)) {
+            pulledHeat = be.tryPullHeatFromBelow();
+        }
 
         // Генерация тепла из энергии
         boolean generating = false;
@@ -85,24 +88,30 @@ public class MachineElectricHeaterBlockEntity extends BaseMachineBlockEntity imp
         // Буфер = 20 тиков потребления при текущей настройке (оригинал getMaxPower)
         be.setEnergyCapacity(be.getConsumption() * 20);
 
+        // Anti-sync-spam: setChanged/sync только при реальном изменении синхронизируемого
+        // состояния (isOn) или фактической подтяжке тепла; энергия сама зовёт setChanged
+        // из setEnergyStored при изменении.
         if (be.isOn != be.wasOnSynced) {
             be.wasOnSynced = be.isOn;
             be.setChanged();
             be.sendUpdateToClient();
-        } else {
+        } else if (pulledHeat > 0) {
             be.setChanged();
         }
     }
 
-    /** Порт tryPullHeat: всё тепло снизу снимается, +85% начисляется себе. */
-    private void tryPullHeatFromBelow() {
-        if (level == null) return;
+    /** Порт tryPullHeat: всё тепло снизу снимается, +85% начисляется себе. Возвращает подтянутое количество (0 = ничего). */
+    private int tryPullHeatFromBelow() {
+        if (level == null) return 0;
         BlockEntity below = level.getBlockEntity(worldPosition.below());
         if (below instanceof IHeatSource source) {
             int stored = source.getHeatStored();
-            this.heat = Math.min(MAX_HEAT, this.heat + (int) (stored * 0.85D));
+            int gained = (int) (stored * 0.85D);
+            this.heat = Math.min(MAX_HEAT, this.heat + gained);
             source.useUpHeat(stored);
+            return gained;
         }
+        return 0;
     }
 
     /** Порт toggleSetting: 0..10 с заворотом. */

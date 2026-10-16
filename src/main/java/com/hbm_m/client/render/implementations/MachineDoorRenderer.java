@@ -23,6 +23,7 @@ import com.hbm_m.block.entity.doors.DoorBlockEntity;
 import com.hbm_m.block.entity.doors.DoorDecl;
 import com.hbm_m.block.machines.TransitionSealBlock;
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.client.render.machine.DoorPartClipper;
 import com.hbm_m.blockentity.machines.TransitionSealBlockEntity;
 import com.hbm_m.client.compat.create.ContraptionDoorAnimCache;
 import com.hbm_m.client.loader.dae.DaeAnimation;
@@ -185,6 +186,7 @@ public final class MachineDoorRenderer {
     // использованием ключа рендер однопоточен.
 
     private static boolean shareStateCurrent;
+    private static boolean shareCullCurrent;
     private static boolean shareStateInitialized;
     private static long shareEpoch;
     private static long shareStateFrame = -1L;
@@ -208,15 +210,18 @@ public final class MachineDoorRenderer {
         }
         shareStateFrame = frame;
         boolean desired = shareSkins();
-        if (shareStateInitialized && desired == shareStateCurrent) {
+        boolean desiredCull = com.hbm_m.config.ModClothConfig.get().doorPartCulling && DOOR_PART_CULLING_FLAG;
+        if (shareStateInitialized && desired == shareStateCurrent && desiredCull == shareCullCurrent) {
             return;
         }
         String prev = shareStateInitialized ? Boolean.toString(shareStateCurrent) : "init";
+        String prevCull = shareStateInitialized ? Boolean.toString(shareCullCurrent) : "init";
         shareEpoch++;
         shareStateInitialized = true;
         shareStateCurrent = desired;
-        MainRegistry.LOGGER.info("[HBM-M] Door skin sharing {} -> {} (shareEpoch={}) -- invalidating door VBO/dae/clip caches",
-                prev, desired, shareEpoch);
+        shareCullCurrent = desiredCull;
+        MainRegistry.LOGGER.info("[HBM-M] Door share state (skinSharing {} -> {}, doorPartCulling {} -> {}, shareEpoch={}) -- invalidating door VBO/dae/clip caches",
+                prev, desired, prevCull, desiredCull, shareEpoch);
         // Полная очистка partRenderers глобального реестра + GPU-кешей машин; dae-кеш
         // и кеш канонических спрайтов партов -- дверные; мемо-кеш клипера ключуется
         // эпохой и истекает сам (плюс его списки квадов меняются идентичностью).
@@ -297,8 +302,10 @@ public final class MachineDoorRenderer {
             // билдер захватывает резолвер eagerly при dynamicPart, обратный порядок оставлял
             // резолвер null и всю обрезку мёртвым кодом. DAE-парты ниже — БЕЗ резолвера
             // (паритет RenderDoorGeneric).
-            door.clipPlanes(part, (be, partialTick) ->
-                    doorPartClipPlanes(be, partialTick, partF, child));
+            if (!isStaticFramePart(part)) {
+                door.clipPlanes(part, (be, partialTick) ->
+                        doorPartClipPlanes(be, partialTick, partF, child));
+            }
             door.dynamicPart(part,
                     be -> resolveDoorPartQuads(be, part),
                     MachineDoorRenderer::doorPartCacheKey,
@@ -507,7 +514,7 @@ public final class MachineDoorRenderer {
         if (!shareSkins() || !isDaeModelActive(be)) return null;
         TextureAtlasSprite s = daeNodeSprite(node, enrichedSelection(be), decl);
         if (s == null) return null;
-        return cachedUvRect("dae/" + decl.getBlockId() + "/" + node.name, s);
+        return cachedUvRect(s);
     }
 
     /**
@@ -594,6 +601,7 @@ public final class MachineDoorRenderer {
     /** Clears the canonical part sprite cache (resource reload -- old models go stale). */
     public static void clearPartSpriteCache() {
         PART_SPRITES.clear();
+        UV_RECT_COPIES.clear();
     }
 
     private static TextureAtlasSprite partSprite(BakedModel part) {
@@ -637,21 +645,18 @@ public final class MachineDoorRenderer {
      * rect per part). The return value is the shared UV_RECT_SCRATCH -- every consumer
      * MUST snapshot the values in the same frame (the DoorPartClipper memo key does).
      */
-    /** Партовые копии uvRect: партов конечное число, ключ уникален по decl/парту. */
-    private static final java.util.HashMap<String, float[]> UV_RECT_COPIES = new java.util.HashMap<>();
+    /** Партовые копии uvRect по спрайту (не аллоцирует строки и исключает коллизии между скинами). */
+    private static final java.util.concurrent.ConcurrentHashMap<TextureAtlasSprite, float[]> UV_RECT_COPIES =
+            new java.util.concurrent.ConcurrentHashMap<>();
 
     /** Снимок атласного rect спрайта в переиспользуемый партовый массив. */
-    private static float[] cachedUvRect(String key, TextureAtlasSprite s) {
-        float[] r = UV_RECT_COPIES.get(key);
-        if (r == null) {
-            r = new float[4];
-            UV_RECT_COPIES.put(key, r);
-        }
-        r[0] = s.getU0();
-        r[1] = s.getV0();
-        r[2] = s.getU1() - s.getU0();
-        r[3] = s.getV1() - s.getV0();
-        return r;
+    private static float[] cachedUvRect(TextureAtlasSprite s) {
+        return UV_RECT_COPIES.computeIfAbsent(s, spr -> new float[] {
+                spr.getU0(),
+                spr.getV0(),
+                spr.getU1() - spr.getU0(),
+                spr.getV1() - spr.getV0()
+        });
     }
     private static float[] doorUvRect(DoorBlockEntity be, String partName) {
         if (!shareSkins()) return null;
@@ -663,7 +668,7 @@ public final class MachineDoorRenderer {
         // Партовая КОПИЯ rect (не общий UV_RECT_SCRATCH): rect живёт до флаша
         // инстанс-батча; общий скретч давал всем партам rect последнего парта —
         // «все текстуры дверей сломаны» в share-режиме.
-        return cachedUvRect("door/" + partName, s);
+        return cachedUvRect(s);
     }
 
     /** OBJ part quads from DoorBakedModel; empty if the part is missing / the skin is not OBJ.
@@ -688,6 +693,24 @@ public final class MachineDoorRenderer {
             out.addAll(RenderHooks.getPartQuads(partModel, null, d, rand));
         }
         out.addAll(RenderHooks.getPartQuads(partModel, null, null, RandomSource.create(42L)));
+
+        if (isStaticFramePart(partName) && com.hbm_m.config.ModClothConfig.get().doorPartCulling && DOOR_PART_CULLING_FLAG) {
+            DoorDecl decl = be.getDoorDecl();
+            if (decl != null) {
+                double[][] planes = decl.getClippingPlanes(partName, 0f, be.getModelSelection());
+                if (planes != null && planes.length > 0) {
+                    float[][] fPlanes = new float[planes.length][4];
+                    for (int pIdx = 0; pIdx < planes.length; pIdx++) {
+                        fPlanes[pIdx][0] = (float) planes[pIdx][0];
+                        fPlanes[pIdx][1] = (float) planes[pIdx][1];
+                        fPlanes[pIdx][2] = (float) planes[pIdx][2];
+                        fPlanes[pIdx][3] = (float) planes[pIdx][3];
+                    }
+                    // Однократный bake-time клип статической рамы перед компиляцией VBO
+                    out = DoorPartClipper.clipQuads(out, fPlanes, null);
+                }
+            }
+        }
 
         if (share) {
             // Композиция tile-split → frac → sprite-нормализация (рев.2). На этом
@@ -793,23 +816,21 @@ public final class MachineDoorRenderer {
      * обратная операция к резолверу — decl'ы возвращают плоскости в позовой СК).
      */
     private static float[][] invertPosePlanes(double[][] planes) {
-        PoseStack.Pose pose = CLIP_POSE.last();
-        org.joml.Matrix3f M = new org.joml.Matrix3f(pose.pose());
-        org.joml.Vector3f c = pose.pose().transformPosition(new org.joml.Vector3f());
+        org.joml.Matrix4f m = CLIP_POSE.last().pose();
+        float m00 = m.m00(), m01 = m.m01(), m02 = m.m02();
+        float m10 = m.m10(), m11 = m.m11(), m12 = m.m12();
+        float m20 = m.m20(), m21 = m.m21(), m22 = m.m22();
+        float cx = m.m30(), cy = m.m31(), cz = m.m32();
 
         float[][] out = planes.length <= CLIP_SCRATCH.length ? CLIP_SCRATCH
                 : new float[planes.length][];
         for (int i = 0; i < planes.length; i++) {
             double[] p = planes[i];
-            // Точная инверсия аффинной позы: p' = M·p + c ⇒ n·p' + D = (Mᵀ·n)·p + (n·c + D).
-            // Полная 3x3 (С МАСШТАБОМ), а не normal(): normal() обратна-транспонирована и
-            // делится на масштаб узла — при scale != 1 (DAE unit-scale) константа плоскости
-            // выходила умноженной на масштаб, клип резал не там («DAE не клипится»).
             float nx = (float) p[0], ny = (float) p[1], nz = (float) p[2];
-            float lx = M.m00() * nx + M.m10() * ny + M.m20() * nz;
-            float ly = M.m01() * nx + M.m11() * ny + M.m21() * nz;
-            float lz = M.m02() * nx + M.m12() * ny + M.m22() * nz;
-            float dLocal = (float) (nx * c.x + ny * c.y + nz * c.z + p[3]);
+            float lx = m00 * nx + m10 * ny + m20 * nz;
+            float ly = m01 * nx + m11 * ny + m21 * nz;
+            float lz = m02 * nx + m12 * ny + m22 * nz;
+            float dLocal = (float) (nx * cx + ny * cy + nz * cz + p[3]);
             float[] row = out[i] != null && out[i].length == 4 ? out[i] : new float[4];
             row[0] = lx; row[1] = ly; row[2] = lz; row[3] = dLocal;
             out[i] = row;
@@ -857,12 +878,14 @@ public final class MachineDoorRenderer {
             applyDaeRootOffset(CLIP_POSE, decl);
             mulPoseChain(CLIP_POSE, model, chain, time);
             float[][] inverted = invertPosePlanes(planes);
-            final org.joml.Vector3f dbgC = CLIP_POSE.last().pose().transformPosition(new org.joml.Vector3f());
-            final org.joml.Matrix3f dbgM = new org.joml.Matrix3f(CLIP_POSE.last().pose());
-            debugClipLog("dae-invert/" + partName, () ->
-                    "src=" + java.util.Arrays.deepToString(planes)
-                    + " inverted=" + java.util.Arrays.deepToString(inverted)
-                    + " poseC=" + dbgC + " poseCols=" + dbgM.getColumn(0, new org.joml.Vector3f()) + "|" + dbgM.getColumn(1, new org.joml.Vector3f()) + "|" + dbgM.getColumn(2, new org.joml.Vector3f()));
+            if (debugDoorClip()) {
+                final org.joml.Vector3f dbgC = CLIP_POSE.last().pose().transformPosition(new org.joml.Vector3f());
+                final org.joml.Matrix3f dbgM = new org.joml.Matrix3f(CLIP_POSE.last().pose());
+                debugClipLog("dae-invert/" + partName, () ->
+                        "src=" + java.util.Arrays.deepToString(planes)
+                        + " inverted=" + java.util.Arrays.deepToString(inverted)
+                        + " poseC=" + dbgC + " poseCols=" + dbgM.getColumn(0, new org.joml.Vector3f()) + "|" + dbgM.getColumn(1, new org.joml.Vector3f()) + "|" + dbgM.getColumn(2, new org.joml.Vector3f()));
+            }
             return inverted;
         } finally {
             CLIP_POSE.popPose();
@@ -1185,7 +1208,14 @@ public final class MachineDoorRenderer {
 
     // ==================== CACHE INVALIDATION ====================
 
+    public static void resetUvRectAttribCheck() {
+        uvRectShaderMemo = null;
+        uvRectShaderMemoVal = false;
+        clearPartSpriteCache();
+    }
+
     public static void clearDaeCaches() {
+        resetUvRectAttribCheck();
         for (String key : DAE_RENDERER_CACHE.keySet()) {
             MeshRenderCache.removeRenderer(key);
         }

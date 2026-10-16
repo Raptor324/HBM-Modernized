@@ -1,6 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.item.IDesignatorItem;
 import com.hbm_m.block.ModBlocks;
@@ -75,6 +76,10 @@ public class SoyuzLauncherBlockEntity extends BaseMachineBlockEntity {
     private boolean wasStarting = false;
     private int countdown = MAX_COUNTDOWN;
 
+    /** Cached slot snapshot for the tank load loops; rebuilt whenever slot contents change. */
+    @Nullable
+    private ItemStack[] cachedSlots;
+
     protected final ContainerData data = new ContainerData() {
         @Override
         public int get(int index) {
@@ -108,9 +113,13 @@ public class SoyuzLauncherBlockEntity extends BaseMachineBlockEntity {
             return;
         }
 
-        boolean fuelChanged = be.tanks[0].loadTank(SLOT_FUEL_IN, SLOT_FUEL_OUT, be.slotArray());
-        boolean oxyChanged = be.tanks[1].loadTank(SLOT_OXIDIZER_IN, SLOT_OXIDIZER_OUT, be.slotArray());
+        // One slot snapshot per tick, shared by both tank loads and the write-back;
+        // rebuilt each tick it is needed so external slot changes are always seen.
+        be.cachedSlots = be.buildSlotArray();
+        boolean fuelChanged = be.tanks[0].loadTank(SLOT_FUEL_IN, SLOT_FUEL_OUT, be.cachedSlots);
+        boolean oxyChanged = be.tanks[1].loadTank(SLOT_OXIDIZER_IN, SLOT_OXIDIZER_OUT, be.cachedSlots);
         be.writeBackSlots();
+        be.cachedSlots = null;
 
         be.chargeBattery();
 
@@ -135,10 +144,25 @@ public class SoyuzLauncherBlockEntity extends BaseMachineBlockEntity {
         if (fuelChanged || oxyChanged) {
             be.setChanged();
         }
-        be.sendUpdateToClient();
+        // Sync only on a state delta: shipped scalar state + fingerprints of the non-cargo slots
+        // (cargo moves through the menu, not the BE packet). Covers mode/starting/countdown,
+        // energy, both tank fills and every dedicated slot.
+        long stateSig = com.hbm_m.recipe.index.CachedRecipeResolver.sign(1L,
+                be.mode, be.starting ? 1L : 0L, be.countdown, be.energy,
+                be.tanks[0].getFill(), be.tanks[1].getFill());
+        long stacks = be.slotFingerprint(SLOT_ROCKET) ^ be.slotFingerprint(SLOT_DESIGNATOR)
+                ^ be.slotFingerprint(SLOT_SATELLITE) ^ be.slotFingerprint(SLOT_LANDER)
+                ^ be.slotFingerprint(SLOT_FUEL_IN) ^ be.slotFingerprint(SLOT_FUEL_OUT)
+                ^ be.slotFingerprint(SLOT_OXIDIZER_IN) ^ be.slotFingerprint(SLOT_OXIDIZER_OUT)
+                ^ be.slotFingerprint(SLOT_BATTERY);
+        be.syncIfStateChanged(stateSig, stacks);
     }
 
-    private ItemStack[] slotArray() {
+    private long slotFingerprint(int slot) {
+        return com.hbm_m.platform.PlatformHooks.stackFingerprint(inventory.getStackInSlot(slot));
+    }
+
+    private ItemStack[] buildSlotArray() {
         ItemStack[] slots = new ItemStack[SLOT_COUNT];
         for (int i = 0; i < SLOT_COUNT; i++) {
             slots[i] = inventory.getStackInSlot(i);
@@ -147,8 +171,8 @@ public class SoyuzLauncherBlockEntity extends BaseMachineBlockEntity {
     }
 
     private void writeBackSlots() {
-        // loadTank() mutates the array in place for the in/out slot pair; push both back.
-        ItemStack[] slots = slotArray();
+        // loadTank() mutates the snapshot array in place for the in/out slot pair; push both back.
+        ItemStack[] slots = this.cachedSlots != null ? this.cachedSlots : buildSlotArray();
         inventory.setStackInSlot(SLOT_FUEL_IN, slots[SLOT_FUEL_IN]);
         inventory.setStackInSlot(SLOT_FUEL_OUT, slots[SLOT_FUEL_OUT]);
         inventory.setStackInSlot(SLOT_OXIDIZER_IN, slots[SLOT_OXIDIZER_IN]);

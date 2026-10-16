@@ -126,10 +126,29 @@ public class TransitionSealBlockEntity extends BaseHbmBlockEntity {
         be.updateEntity();
     }
 
+    /**
+     * Cached result of the ~75-position {@link #isPowered()} frame-ring sweep. The sweep is
+     * expensive (hasNeighborSignal per ring block), so it runs only on {@code probeDue(40)}
+     * (plus the first server tick); between sweeps the cached value is reused. PR-note: a
+     * redstone edge anywhere on the frame can take up to 40 ticks to be noticed - no
+     * neighbor-changed hook was verified, this latency is the accepted fidelity cost.
+     */
+    private boolean cachedPowered = false;
+    private boolean cachedPoweredValid = false;
+
+    /** Server-side cached power read; client still sweeps every tick (render parity). */
+    private boolean cachedPowered() {
+        if(!cachedPoweredValid || probeDue(40)) {
+            cachedPowered = isPowered();
+            cachedPoweredValid = true;
+        }
+        return cachedPowered;
+    }
+
     public void updateEntity() {
         if(level == null) return;
 
-        boolean powered = isPowered();
+        boolean powered = level.isClientSide ? isPowered() : cachedPowered();
         float prev = animTicks;
         boolean prevOpen = prev >= DURATION_TICKS;
         boolean wasMoving = moving;

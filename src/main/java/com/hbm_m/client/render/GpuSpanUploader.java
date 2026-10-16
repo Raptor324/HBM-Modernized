@@ -32,150 +32,138 @@ import org.lwjgl.system.MemoryUtil;
  */
 public final class GpuSpanUploader {
 
-    /** Above this span count in a window, uploading the whole window is cheaper. */
-    private static final int MAX_SPANS = 48;
-    /** Unchanged gaps shorter than this (in floats) are glued to the neighboring span. */
-    private static final int MERGE_GAP_FLOATS = 24;
-
-    // Compute scatter thresholds (Phase 4): below - the DMA path glCopyBufferSubData,
-    // above - one compute dispatch instead of N driver copies (not Intel, GL 4.3;
-    // gates inside ComputeScatterUploader, kill-switch -Dhbm.gpuScatter=false,
-    // threshold -Dhbm.gpuScatter.minSpans=N).
-    /** Config nucleusGpuScatterMinSpans; -Dhbm.gpuScatter.minSpans=N overrides. */
-    private static int scatterMinSpans() {
-        Integer flag = Integer.getInteger("hbm.gpuScatter.minSpans");
-        if (flag != null) {
-            return Math.max(2, flag);
-        }
-        return Math.max(2, com.hbm_m.config.ModClothConfig.get().nucleusGpuScatterMinSpans);
-    }
-    private static final long SCATTER_MIN_BYTES = 4096L;
-
     /** A/B JVM flag -Dhbm.stagingDirect=true forces the direct path (config is the primary source). */
     private static final boolean STAGING_DIRECT_FLAG = Boolean.getBoolean("hbm.stagingDirect");
 
     private GpuSpanUploader() {}
 
     /**
-     * Full window upload + shadow sync (first frame, buffer growth,
-     * span-logic overflow).
+     * Full window upload + optional shadow sync.
      */
     public static void fullUpload(FloatBuffer shadow, int shadowFloatOffset,
                                   FloatBuffer src, int srcFloatOffset,
                                   int floatCount, int destVbo) {
-        uploadSpan(src, srcFloatOffset, floatCount, shadowFloatOffset, destVbo);
-        copyToShadow(shadow, shadowFloatOffset, src, srcFloatOffset, floatCount);
-    }
-
-    /**
-     * Diffs the window {@code src[srcFloatOffset, +floatCount)} against
-     * {@code shadow[shadowFloatOffset, +floatCount)} and uploads only the differences.
-     * The shadow is updated once the upload lands. Buffers are direct (memAlloc*).
-     */
-    public static void diffUpload(FloatBuffer shadow, FloatBuffer src,
-                                  int srcFloatOffset, int shadowFloatOffset,
-                                  int floatCount, int destVbo) {
-        int[] spans = new int[MAX_SPANS * 2];
-        int n = 0;
-        boolean overflow = false;
-        int i = 0;
-        while (i < floatCount) {
-            if (src.get(srcFloatOffset + i) == shadow.get(shadowFloatOffset + i)) {
-                i++;
-                continue;
+        if (uploadSpan(src, srcFloatOffset, floatCount, shadowFloatOffset, destVbo)) {
+            if (shadow != null) {
+                copyToShadow(shadow, shadowFloatOffset, src, srcFloatOffset, floatCount);
             }
-            int start = i;
-            int end = i + 1;
-            int gap = 0;
-            i++;
-            while (i < floatCount) {
-                if (src.get(srcFloatOffset + i) != shadow.get(shadowFloatOffset + i)) {
-                    end = i + 1;
-                    gap = 0;
-                } else {
-                    gap++;
-                    if (gap >= MERGE_GAP_FLOATS) {
-                        break;
-                    }
-                }
-                i++;
-            }
-            if (n >= MAX_SPANS) {
-                overflow = true;
-                break;
-            }
-            spans[n * 2] = start;
-            spans[n * 2 + 1] = end;
-            n++;
-        }
-        if (overflow) {
-            fullUpload(shadow, shadowFloatOffset, src, srcFloatOffset, floatCount, destVbo);
-            return;
-        }
-        if (n >= scatterMinSpans() && ComputeScatterUploader.isGloballyEnabled()
-                && tryScatterBatch(shadow, src, srcFloatOffset, shadowFloatOffset, spans, n, destVbo)) {
-            return;
-        }
-        for (int k = 0; k < n; k++) {
-            int start = spans[k * 2];
-            int end = spans[k * 2 + 1];
-            uploadSpan(src, srcFloatOffset + start, end - start, shadowFloatOffset + start, destVbo);
-            copyToShadow(shadow, shadowFloatOffset + start, src, srcFloatOffset + start, end - start);
         }
     }
 
     /**
-     * Compute scatter batch (Phase 4): all spans of the window are written to the staging
-     * ring ({@link PersistentUploadStaging#stageRegion}), then transferred
-     * to the dest VBO in ONE compute dispatch instead of N {@code glCopyBufferSubData} calls.
-     * The shadow is synced only after the dispatch is issued successfully.
+     * Span-diff window upload: compares {@code src} against the caller-held
+     * {@code shadow} (the CPU mirror of the GPU window contents) and uploads
+     * only the changed contiguous sub-spans; each uploaded span is mirrored
+     * back into the shadow, so it stays a valid diff base for the next call.
+     * Words beyond {@code shadowValidFloats} (e.g. records appended since the
+     * shadow was last synced) are treated as changed and uploaded in full.
+     * A null/undersized shadow degrades to {@link #fullUpload} (whole window,
+     * shadow untouched) - the caller is then responsible for re-syncing it.
+     * <p>
+     * Invariant: skipped spans must already be present in the GPU buffer - a
+     * shadow whose validity is uncertain (upload failure, window re-placement)
+     * must NOT be passed here; the coordinator only transfers shadows from
+     * records whose previous upload succeeded.
      *
-     * @return true if the batch was issued; false for any reason (no compute/Intel/
-     *         ring busy/too few bytes) - the caller falls back to the per-span path.
+     * @param shadowValidFloats how many words of {@code shadow} (from
+     *                          {@code shadowFloatOffset}) are known to mirror
+     *                          the GPU contents; may be less than floatCount.
      */
-    private static boolean tryScatterBatch(FloatBuffer shadow, FloatBuffer src, int srcFloatOffset,
-                                           int shadowFloatOffset, int[] spans, int spanCount, int destVbo) {
-        PersistentUploadStaging staging = PersistentUploadStaging.getOrCreate();
-        ComputeScatterUploader scatter = ComputeScatterUploader.getOrCreate();
-        if (staging == null || scatter == null) {
-            return false;
-        }
-        long totalBytes = 0;
-        for (int k = 0; k < spanCount; k++) {
-            totalBytes += (long) (spans[k * 2 + 1] - spans[k * 2]) * 4L;
-        }
-        if (totalBytes < SCATTER_MIN_BYTES) {
-            return false;
-        }
-        long[] ops = new long[spanCount * 3];
-        for (int k = 0; k < spanCount; k++) {
-            int start = spans[k * 2];
-            int end = spans[k * 2 + 1];
-            int floatCount = end - start;
-            long ringOffset = staging.stageRegion(src, srcFloatOffset + start, floatCount);
-            if (ringOffset < 0) {
-                return false;
-            }
-            ops[k * 3] = ringOffset >> 2;
-            ops[k * 3 + 1] = shadowFloatOffset + start;
-            ops[k * 3 + 2] = floatCount;
-        }
-        if (!scatter.scatter(staging.getBufferId(), destVbo, ops, spanCount)) {
-            return false;
-        }
-        for (int k = 0; k < spanCount; k++) {
-            int start = spans[k * 2];
-            int end = spans[k * 2 + 1];
-            copyToShadow(shadow, shadowFloatOffset + start, src, srcFloatOffset + start, end - start);
-        }
-        NucleusDebug.recordUpload(spanCount, totalBytes);
-        return true;
-    }
-
-    private static void uploadSpan(FloatBuffer src, int srcFloatOffset, int floatCount,
-                                   int destFloatOffset, int destVbo) {
+    public static void diffUpload(FloatBuffer shadow, int shadowFloatOffset, int shadowValidFloats,
+                                  FloatBuffer src, int srcFloatOffset,
+                                  int destFloatOffset, int floatCount, int destVbo) {
         if (floatCount <= 0) {
             return;
+        }
+        if (shadow == null
+                || shadowFloatOffset < 0
+                || shadow.capacity() < shadowFloatOffset + floatCount) {
+            // Degraded path: upload the whole window at its REAL destination
+            // (destFloatOffset - NOT shadowFloatOffset; fullUpload reuses its
+            // shadow-offset parameter as the destination). Passing the shadow
+            // offset (0 for per-window shadows) stacked every new/resized
+            // window on top of slot 0 of the atlas instance VBO, overwrote the
+            // window living there and left all other windows full of
+            // uninitialized VRAM garbage. Sync the shadow back when it can
+            // hold the window so the next call can still span-diff.
+            if (uploadSpan(src, srcFloatOffset, floatCount, destFloatOffset, destVbo)) {
+                if (shadow != null && shadowFloatOffset >= 0 && shadow.capacity() >= shadowFloatOffset + floatCount) {
+                    copyToShadow(shadow, shadowFloatOffset, src, srcFloatOffset, floatCount);
+                }
+            }
+            return;
+        }
+        boolean stagingDirect = com.hbm_m.config.ModClothConfig.get().nucleusStagingDirect
+                || STAGING_DIRECT_FLAG;
+        PersistentUploadStaging staging = stagingDirect ? null : PersistentUploadStaging.getOrCreate();
+        if (staging != null) {
+            // Bind ring + destination ONCE for the whole window's span loop -
+            // a per-span rebind of the same two buffers was 3.16 ms/frame in spark.
+            staging.beginWindowCopy(destVbo);
+        }
+        try {
+            int valid = Math.min(floatCount, Math.max(0, shadowValidFloats));
+            // memAddress0 (not memAddress): these offsets are absolute float
+            // indices, so the base must be position-independent or a non-flipped
+            // src with a nonzero srcFloatOffset would be shifted twice.
+            long srcBaseAddr = MemoryUtil.memAddress0(src) + (long) srcFloatOffset * 4L;
+            long shdBaseAddr = MemoryUtil.memAddress0(shadow) + (long) shadowFloatOffset * 4L;
+            // Coalesce changed runs within one instance record (gaps <= 8 floats,
+            // e.g. scattered light words) but NOT across records: consecutive
+            // animated machines update only their 4-float AnimParams tail, and the
+            // 28 unchanged floats in between must NOT be bridged - a 64-float gap
+            // glued the whole window into one giant span and DMA'd 8x the changed
+            // bytes every frame. Raw memGetInt keeps the scan virtual-call-free.
+            final int COALESCE_GAP_FLOATS = 8;
+            int runStart = -1;
+            int runEnd = -1;
+            for (int i = 0; i < valid; i++) {
+                long byteOff = (long) i * 4L;
+                boolean changed = MemoryUtil.memGetInt(srcBaseAddr + byteOff) != MemoryUtil.memGetInt(shdBaseAddr + byteOff);
+                if (changed) {
+                    if (runStart < 0) {
+                        runStart = i;
+                    }
+                    runEnd = i + 1;
+                } else if (runStart >= 0 && (i - runEnd) >= COALESCE_GAP_FLOATS) {
+                    uploadDiffedSpan(src, srcFloatOffset + runStart, shadow, shadowFloatOffset + runStart,
+                            runEnd - runStart, destFloatOffset + runStart, destVbo);
+                    runStart = -1;
+                }
+            }
+            if (runStart >= 0) {
+                uploadDiffedSpan(src, srcFloatOffset + runStart, shadow, shadowFloatOffset + runStart,
+                        runEnd - runStart, destFloatOffset + runStart, destVbo);
+            }
+            // Tail beyond the shadow's known-valid region: unconditional full span.
+            if (valid < floatCount) {
+                if (uploadSpan(src, srcFloatOffset + valid, floatCount - valid,
+                        destFloatOffset + valid, destVbo)) {
+                    copyToShadow(shadow, shadowFloatOffset + valid, src, srcFloatOffset + valid,
+                            floatCount - valid);
+                }
+            }
+        } finally {
+            if (staging != null) {
+                staging.endWindowCopy();
+            }
+        }
+    }
+
+    /** One diffed span: GPU write + shadow mirror (mirror skipped only when the GPU write failed). */
+    private static void uploadDiffedSpan(FloatBuffer src, int srcFloatOffset,
+                                         FloatBuffer shadow, int shadowFloatOffset,
+                                         int floatCount, int destFloatOffset, int destVbo) {
+        if (uploadSpan(src, srcFloatOffset, floatCount, destFloatOffset, destVbo)) {
+            copyToShadow(shadow, shadowFloatOffset, src, srcFloatOffset, floatCount);
+        }
+    }
+
+    /** @return true if the GPU write succeeded (or was a no-op). */
+    private static boolean uploadSpan(FloatBuffer src, int srcFloatOffset, int floatCount,
+                                   int destFloatOffset, int destVbo) {
+        if (floatCount <= 0) {
+            return true;
         }
         NucleusDebug.recordUpload(1, (long) floatCount * 4L);
         long destByteOffset = (long) destFloatOffset * 4L;
@@ -187,24 +175,44 @@ public final class GpuSpanUploader {
         PersistentUploadStaging staging = stagingDirect ? null : PersistentUploadStaging.getOrCreate();
         if (staging != null
                 && staging.copyRegion(src, srcFloatOffset, floatCount, destVbo, destByteOffset)) {
-            return;
+            return true;
         }
         // Fallback: direct upload from a client-memory buffer (may implicitly
-        // synchronize the driver, but is correct).
+        // synchronize the driver, but is correct). NO synchronous glGetError
+        // polling here: an error drain + verify per span hard-freezes old Tier 2
+        // drivers (glGetError forces a pipeline flush on some of them); the
+        // persistent-mapped ring is the Tier-2-safe path, this fallback only has
+        // to be sized correctly.
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, destVbo);
-        FloatBuffer view = src.duplicate();
-        view.position(srcFloatOffset);
-        view.limit(srcFloatOffset + floatCount);
-        GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, destByteOffset, view);
+        try {
+            FloatBuffer view = src.duplicate();
+            view.position(srcFloatOffset);
+            view.limit(srcFloatOffset + floatCount);
+            GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, destByteOffset, view);
+            return true;
+        } finally {
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+        }
+    }
+
+    /**
+     * Copies {@code floatCount} words from {@code src} into the caller-held
+     * {@code shadow}: seeds/repairs the CPU mirror of a GPU window after a full
+     * upload (see MdiBatchCoordinator.uploadWindowsToAtlas).
+     */
+    public static void syncShadow(FloatBuffer shadow, int shadowFloatOffset,
+                                  FloatBuffer src, int srcFloatOffset, int floatCount) {
+        copyToShadow(shadow, shadowFloatOffset, src, srcFloatOffset, floatCount);
     }
 
     private static void copyToShadow(FloatBuffer shadow, int shadowFloatOffset,
                                      FloatBuffer src, int srcFloatOffset, int floatCount) {
-        if (floatCount <= 0) {
+        if (shadow == null || floatCount <= 0) {
             return;
         }
-        long srcAddr = MemoryUtil.memAddress(src) + (long) srcFloatOffset * 4L;
-        long dstAddr = MemoryUtil.memAddress(shadow) + (long) shadowFloatOffset * 4L;
+        // memAddress0: offsets are absolute float indices; see diffUpload.
+        long srcAddr = MemoryUtil.memAddress0(src) + (long) srcFloatOffset * 4L;
+        long dstAddr = MemoryUtil.memAddress0(shadow) + (long) shadowFloatOffset * 4L;
         MemoryUtil.memCopy(srcAddr, dstAddr, (long) floatCount * 4L);
     }
 }

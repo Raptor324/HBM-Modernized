@@ -106,8 +106,6 @@ public class MachineTurbofanBlockEntity extends MachinePollutingBlockEntity
     private boolean wasOn = false;
     private int output = 0;
     private int consumption = 0;
-    /** wasOn на момент последнего отправленного синка - для пакета при переходе в выключение. */
-    private boolean lastSyncWasOn = false;
 
     // Клиентская анимация ротора (в NBT не пишется - восстанавливается с нуля, как в оригинале).
     private float spin;
@@ -166,11 +164,13 @@ public class MachineTurbofanBlockEntity extends MachinePollutingBlockEntity
         // Подписка бака на трубу за внешней гранью каждого порта; кровь - только НА ВЫДАЧУ
         // (оригинальный трансивер: getReceivingTanks = только топливо, getSendingTanks = кровь),
         // так что труба забирает её сама, без типизации бака идентификатором.
-        if (level.getGameTime() % 20 == 0) {
-            for (PortInfo port : getPorts()) {
-                trySubscribe(tank, level, port.target(), port.outward());
-                tryProvide(blood, level, port.target(), port.outward());
-            }
+        // trySubscribe — раз в 20 тиков (регистрация, идемпотентно). tryProvide — каждый тик:
+        // его вторая ветка — прямой пуш крови в соседний приёмник, гейт делит пропускную
+        // способность выдачи. Fill-проверка пропускает зонд, пока бак крови пуст.
+        boolean subscribeDue = level.getGameTime() % 20 == 0;
+        for (PortInfo port : getPorts()) {
+            if (blood.getFill() > 0) tryProvide(blood, level, port.target(), port.outward());
+            if (subscribeDue) trySubscribe(tank, level, port.target(), port.outward());
         }
 
         output = 0;
@@ -211,6 +211,9 @@ public class MachineTurbofanBlockEntity extends MachinePollutingBlockEntity
 
         sendSmokeAllDirections();
 
+        // Оригинал (TileEntityMachineTurbofan.updateEntity, серверная ветка): зоны
+        // выхлопа/забора/лопастей, толчок 0.2/тик и частицы форсажа выполняются
+        // КАЖДЫЙ ТИК горения - без прореживания. Тот же ритм здесь.
         if (burnValue > 0 && amountToBurn > 0) {
             runCombustionEffects(level, pos, state);
         }
@@ -219,15 +222,30 @@ public class MachineTurbofanBlockEntity extends MachinePollutingBlockEntity
         if (energy > MAX_POWER) energy = MAX_POWER;
         if (energy < 0L) energy = 0L;
 
-        // Оригинал синкается безусловно каждый тик; здесь - по деятельности ИЛИ при переходе
-        // вкл/выкл: без последнего клиент залипает с wasOn=true, и глушёная машина
-        // продолжает крутить ротор и играть звук.
-        boolean active = wasOn || output > 0 || consumption > 0;
-        if (active || lastSyncWasOn != wasOn) {
-            lastSyncWasOn = wasOn;
-            setChanged();
-            sendUpdateToClient();
-        }
+        // Оригинал синкается безусловно каждый тик; здесь - по подписи отрисовываемого
+        // состояния (энергия, мощность/расход, бак, кровь, форсаж, wasOn/showBlood) —
+        // при горении подпись меняется каждый тик (энергия/бак), при глушении шлётся
+        // ровно один переходный пакет (wasOn в подписи), плюс heartbeat раз в 20 тиков.
+        syncIfChangedOrEvery(syncEnergyBucket(), syncStateBucket(), 20);
+    }
+
+    /** lo-часть подписи: энергия + мощность/расход (меняются каждый тик горения). */
+    private long syncEnergyBucket() {
+        return (energy * 31L + output) * 31L + consumption;
+    }
+
+    /** hi-часть подписи: баки, форсаж и флаги wasOn/showBlood. */
+    private long syncStateBucket() {
+        long h = tankFingerprint(tank);
+        h = h * 31L + tankFingerprint(blood);
+        h = h * 31L + afterburner;
+        h = h * 31L + (wasOn ? 1L : 0L) + (showBlood ? 2L : 0L);
+        return h;
+    }
+
+    private static long tankFingerprint(FluidTank t) {
+        Fluid type = t.getTankType();
+        return (type == null ? 0L : type.hashCode() * 31L) + t.getFill();
     }
 
     private void clientTick() {
@@ -560,9 +578,12 @@ public class MachineTurbofanBlockEntity extends MachinePollutingBlockEntity
         for (int index = 0; index < 2; index++) {
             double speed = 2.0D + level.random.nextDouble() * 3.0D;
             double deviation = level.random.nextGaussian() * 0.2D;
+            // Оригинал ставит струю на -dir*(3-i) БЕЗ масштабирования (в 1.7.10 нет
+            // понятия reach); здесь reach растягивает зоны, и струя тянется вместе
+            // с ними - симметрично по обеим горизонтальным осям.
             double x = pos.getX() + 0.5D - airflow.getStepX() * (3 - index) * reach;
             double y = pos.getY() + 1.5D;
-            double z = pos.getZ() + 0.5D - airflow.getStepZ() * (3 - index);
+            double z = pos.getZ() + 0.5D - airflow.getStepZ() * (3 - index) * reach;
 
             CompoundTag data = new CompoundTag();
             data.putString("type", "gasfire");

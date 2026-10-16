@@ -4,7 +4,6 @@ import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineArcWelderMenu;
-import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.recipe.ArcWelderRecipe;
 
 import net.minecraft.core.BlockPos;
@@ -63,7 +62,7 @@ public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity {
         });
 
         // Data-driven поиск рецепта: итерируем ArcWelderRecipe из RecipeManager (заменяет статику ArcWelderRecipes).
-        ArcWelderRecipe recipe = findArcWelderRecipe(level, be);
+        ArcWelderRecipe recipe = be.findArcWelderRecipe(level);
         if (recipe != null) {
             be.processTime  = recipe.getDuration();
             be.consumption  = recipe.getConsumption();
@@ -105,7 +104,15 @@ public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity {
             be.progress = 0;
         }
 
-        level.sendBlockUpdated(pos, state, state, 3);
+        // Anti-sync-spam: полный BE-пакет только при изменении отрисовываемого состояния
+        // (энергия, прогресс/время крафта, бак). Подпись покрывает всё, что пишет writeNbtData.
+        long syncLo = be.energy;
+        syncLo = syncLo * 31L + be.progress;
+        long syncHi = com.hbm_m.recipe.index.CachedRecipeResolver.sign(7,
+                be.processTime,
+                be.tank.getTankType() == null ? 0L : be.tank.getTankType().hashCode(),
+                be.tank.getFill());
+        be.syncIfStateChanged(syncLo, syncHi);
     }
 
     /** Verbraucht die passenden Eingangs-Slots + ggf. Fluid und legt das Ergebnis in SLOT_OUT ab. */
@@ -150,16 +157,27 @@ public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity {
         return com.hbm_m.platform.PlatformHooks.isSameItemSameTags(out, result) && out.getCount() + result.getCount() <= out.getMaxStackSize();
     }
 
+    /** Кэшированный скан рецептов: подпись — фингерпринты значений трёх входных стаков (P4, value-keyed). */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<ArcWelderRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+
     /** Data-driven поиск ArcWelderRecipe по 3 входным слотам (заменяет статический ArcWelderRecipes.getRecipe). */
     @org.jetbrains.annotations.Nullable
-    private static ArcWelderRecipe findArcWelderRecipe(Level level, MachineArcWelderBlockEntity be) {
-        ItemStack s0 = be.inventory.getStackInSlot(SLOT_IN1);
-        ItemStack s1 = be.inventory.getStackInSlot(SLOT_IN2);
-        ItemStack s2 = be.inventory.getStackInSlot(SLOT_IN3);
-        for (ArcWelderRecipe recipe : RecipeHooks.getAllRecipes(level, ArcWelderRecipe.Type.INSTANCE)) {
-            if (recipe.matchesInputs(s0, s1, s2)) return recipe;
-        }
-        return null;
+    private ArcWelderRecipe findArcWelderRecipe(Level level) {
+        ItemStack s0 = inventory.getStackInSlot(SLOT_IN1);
+        ItemStack s1 = inventory.getStackInSlot(SLOT_IN2);
+        ItemStack s2 = inventory.getStackInSlot(SLOT_IN3);
+        long signature = com.hbm_m.recipe.index.CachedRecipeResolver.sign(6,
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(s0),
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(s1),
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(s2));
+        return recipeResolver.resolve(level, ArcWelderRecipe.Type.INSTANCE, signature, (lvl, all) -> {
+            // CONTRACT 1: сканер — только матч по входам; matchesFluid/canOutput/energy — per-tick вне сканера.
+            for (ArcWelderRecipe recipe : all) {
+                if (recipe.matchesInputs(s0, s1, s2)) return recipe;
+            }
+            return null;
+        });
     }
 
     // ─── Progress helpers (for GUI) ───────────────────────────────────────────

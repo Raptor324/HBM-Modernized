@@ -138,8 +138,24 @@ public class MachineCombustionEngineBlockEntity extends BaseMachineBlockEntity i
         // Заряд батареи в слоте 3 (оригинал chargeItemsFromTE(slots, 3, ...)).
         chargeItemInSlot(SLOT_BATTERY);
 
-        setChanged();
-        sendUpdateToClient();
+        // Anti-sync-spam: полный BE-пакет только при изменении состояния (энергия/дроссель/
+        // зажигание/топливо/инвентарь). Подпись покрывает всё, что пишет writeNbtData.
+        long lo = energy;
+        lo = lo * 31L + (isOn ? 1L : 0L);
+        lo = lo * 31L + setting;
+        lo = lo * 31L + tenth;
+        lo = lo * 31L + tankFingerprint();
+        long hi = 0;
+        for (int i = 0; i < INVENTORY_SIZE; i++) {
+            hi = hi * 31L + com.hbm_m.platform.PlatformHooks.stackFingerprint(inventory.getStackInSlot(i));
+        }
+        syncIfStateChanged(lo, hi);
+    }
+
+    /** Дешёвый фингерпринт содержимого топливного бака (тип жидкости + mB-уровень). */
+    private long tankFingerprint() {
+        Fluid type = tank.getTankType();
+        return (type == null ? 0L : type.hashCode()) * 31L + tank.getFluidAmountMb();
     }
 
     // ─────────────────── Эффективность поршней (1:1 ItemPistons) ───────────────────

@@ -3295,6 +3295,8 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.nucleusDispatcherBypass.@Tooltip", "Collect factory machines with a flat pass instead of the vanilla/Sodium block-entity dispatcher. Disable if machines disappear or render twice.");
         add("text.autoconfig.hbm_m.option.nucleusGpuBake", "Nucleus: GPU bake (Iris Tier 1)");
         add("text.autoconfig.hbm_m.option.nucleusGpuBake.@Tooltip", "Bake machine instances into a vertex buffer with a compute shader (one draw per part). Requires OpenGL 4.3; otherwise Tier 2/3 is used automatically.");
+        add("text.autoconfig.hbm_m.option.nucleusBakeHiZ", "Nucleus: bake Hi-Z occlusion");
+        add("text.autoconfig.hbm_m.option.nucleusBakeHiZ.@Tooltip", "Adds depth occlusion to the bake cull (Tier 1): instances fully behind the scene depth (Hi-Z pyramid) are skipped. Strictly optional; falls back to frustum-only automatically when depth is unavailable or GL errors occur.");
         add("text.autoconfig.hbm_m.option.nucleusGpuScatter", "Nucleus: compute scatter uploads");
         add("text.autoconfig.hbm_m.option.nucleusGpuScatter.@Tooltip", "Upload many changed instance spans with one compute dispatch instead of sequential buffer copies. Requires OpenGL 4.3 and a non-Intel GPU; otherwise the DMA path is used.");
         add("text.autoconfig.hbm_m.option.nucleusStagingDirect", "Nucleus: direct span uploads");
@@ -3303,6 +3305,8 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.nucleusGpuCullMinInstances.@Tooltip", "Total instanced count above which the GPU culler enables occlusion (Hi-Z pyramid rebuild; 2:1 hysteresis). Lower to enable occlusion sooner on small scenes; 0 = always on.");
         add("text.autoconfig.hbm_m.option.nucleusGpuScatterMinSpans", "Nucleus: scatter min spans");
         add("text.autoconfig.hbm_m.option.nucleusGpuScatterMinSpans.@Tooltip", "Minimum changed spans per window before the upload switches from sequential copies to a compute scatter dispatch.");
+        add("text.autoconfig.hbm_m.option.nucleusBakeCacheMB", "Nucleus: bake cache budget (MB)");
+        add("text.autoconfig.hbm_m.option.nucleusBakeCacheMB.@Tooltip", "Total VRAM budget for Tier 1 bake caches (output + record SSBOs). Entries that do not fit after LRU eviction stay on the immediate path, so the budget can never thrash. 0 disables caching.");
         add("text.autoconfig.hbm_m.option.glDebugOutput", "GL debug callback");
         add("text.autoconfig.hbm_m.option.glDebugOutput.@Tooltip", "Log HIGH/MEDIUM OpenGL driver messages via KHR_debug. Applies after restart.");
         add("text.autoconfig.hbm_m.option.debugAnimCacheLog", "Log animation cache stats");

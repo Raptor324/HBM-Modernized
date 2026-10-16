@@ -388,9 +388,13 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (!state.is(newState.getBlock()) && !level.isClientSide) {
-            Direction facing = state.getValue(FACING);
-            structureHelper.destroyStructure(level, pos, facing);
+        if (!state.is(newState.getBlock())) {
+            if (level.isClientSide) {
+                com.hbm_m.platform.RenderHooks.onMultiblockPartRemoved(level, pos, pos);
+            } else {
+                Direction facing = state.getValue(FACING);
+                structureHelper.destroyStructure(level, pos, facing);
+            }
         }
         super.onRemove(state, level, pos, newState, isMoving);
     }

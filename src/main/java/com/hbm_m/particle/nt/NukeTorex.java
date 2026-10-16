@@ -522,7 +522,7 @@ public class NukeTorex extends ParticleNT implements FarCapableParticle, Replace
         Random rand = new Random(this.hashCode());
         Matrix4f matrix = poseStack.last().pose();
 
-        VertexConsumer consumer = buffer.getBuffer(ClientRenderHandler.CustomRenderTypes.NUKE_FLASH.apply(FLASH));
+        VertexConsumer consumer = buffer.getBuffer(ClientRenderHandler.CustomRenderTypes.nukeFlash(FLASH));
         for (int i = 0; i < 3; i++) {
             float lx = (float) (rand.nextGaussian() * 0.5 * this.rollerSize * vScale);
             float ly = (float) (rand.nextGaussian() * 0.5 * this.rollerSize * vScale);

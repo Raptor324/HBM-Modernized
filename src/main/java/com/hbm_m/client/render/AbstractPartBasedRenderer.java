@@ -10,6 +10,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 
 import java.lang.reflect.Field;
 
+import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
@@ -58,6 +59,8 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
      * does the defensive copy on demand.
      */
     protected final Matrix4f currentModelViewMatrix = new Matrix4f();
+    protected final Matrix4f basePoseScratch = new Matrix4f();
+    protected final Matrix3f baseNormalScratch = new Matrix3f();
     
     /** Defensive copy - callers may not mutate the renderer's snapshot field. */
     public Matrix4f getCurrentModelViewMatrix() {
@@ -66,7 +69,16 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
 
     @Override
     public boolean shouldRenderOffScreen(T blockEntity) {
-        return ShaderCompatibilityDetector.shouldRenderBlockEntityOffScreen();
+        boolean offScreen = ShaderCompatibilityDetector.shouldRenderBlockEntityOffScreen();
+        if (offScreen) {
+            // SectionCompiler puts the BE into LevelRenderer.globalBlockEntities (rendered
+            // every frame, refreshed ONLY on section recompile). Knowing whether the ghosting
+            // machine lands there is half the ghost diagnosis.
+            com.hbm_m.multiblock.TeardownTrace.log(
+                    "compile: shouldRenderOffScreen=true -> BE {} goes to globalBlockEntities, renderer={}",
+                    blockEntity.getBlockPos().toShortString(), getClass().getSimpleName());
+        }
+        return offScreen;
     }
 
     @Override
@@ -74,9 +86,35 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
         return RenderDistanceHelper.getStaticViewDistanceBlocks();
     }
 
+    /** Suppressed-stale-draw positions already logged (bounded; a stale compiled section
+     * would otherwise fire this every frame while TeardownTrace is on). */
+    private static final it.unimi.dsi.fastutil.longs.LongOpenHashSet SUPPRESSED_DRAW_LOGGED =
+            new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
+
     @Override
     public void render(T blockEntity, float partialTick, PoseStack poseStack,
                        MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
+        // Presence invariant (ghost-model class killer): our renderers draw a BE only while
+        // the live world still holds exactly this BE at this position. Vanilla 1.21.1 has no
+        // isRemoved()/presence check in either per-frame BE loop - the compiled-section list
+        // and globalBlockEntities are refreshed only on section recompile, so a removed BE
+        // stuck in either renders forever. Contraption virtual worlds are exempt: their
+        // getBlockEntity() does not mirror placement.
+        if (blockEntity.getLevel() instanceof net.minecraft.client.multiplayer.ClientLevel clientLevel) {
+            if (blockEntity.isRemoved() || clientLevel.getBlockEntity(blockEntity.getBlockPos()) != blockEntity) {
+                if (com.hbm_m.multiblock.TeardownTrace.TRACE
+                        && SUPPRESSED_DRAW_LOGGED.size() < 256
+                        && SUPPRESSED_DRAW_LOGGED.add(blockEntity.getBlockPos().asLong())) {
+                    com.hbm_m.multiblock.TeardownTrace.trace(
+                            "DRAW SUPPRESSED (stale render list): renderer={} pos={} removed={} liveBeMatches={} state={}",
+                            getClass().getSimpleName(), blockEntity.getBlockPos().toShortString(),
+                            blockEntity.isRemoved(),
+                            clientLevel.getBlockEntity(blockEntity.getBlockPos()) == blockEntity,
+                            clientLevel.getBlockState(blockEntity.getBlockPos()));
+                }
+                return;
+            }
+        }
         // Frustum cull FIRST for the main pass. Shadow pass uses light-space
         // bounds; the main-camera frustum here would drop off-screen casters.
         if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
@@ -109,12 +147,14 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
         com.hbm_m.client.render.LightSampleCache.BASE_POSE.get().set(poseStack.last().pose());
         com.hbm_m.client.render.LightSampleCache.BASE_POSE_SET.set(true);
 
-        poseStack.pushPose();
+        basePoseScratch.set(poseStack.last().pose());
+        baseNormalScratch.set(poseStack.last().normal());
         try {
             setupBlockTransform(animator, blockEntity);
             renderParts(blockEntity, model, animator, partialTick, packedLight, packedOverlay, poseStack, bufferSource);
         } finally {
-            poseStack.popPose();
+            poseStack.last().pose().set(basePoseScratch);
+            poseStack.last().normal().set(baseNormalScratch);
             com.hbm_m.client.render.LightSampleCache.BASE_POSE_SET.set(false);
         }
     }
@@ -173,6 +213,9 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
             return -1f;
         }
         SingleMeshVboRenderer.setFadeAlpha(staticFade);
+        // Per-instance fade MODE lives in PartEnqueueRequest now: MachineBer sets
+        // request.fadeMode per part right before enqueue (contraptions bypass the
+        // distance fade entirely there), so nothing is armed on the machine level.
         NucleusDebug.recordMachineRendered();
         return staticFade;
     }
@@ -217,7 +260,7 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
      * Fabric: only known subclasses with an explicit method (others - 1 block + margin).
      */
     private static AABB frustumCullBounds(BlockEntity blockEntity) {
-        return com.hbm_m.platform.RenderHooks.getRenderBoundingBox(blockEntity);
+        return com.hbm_m.client.render.RenderBoundsCache.get(blockEntity);
     }
 
     // -----------------------------------------------------------------------

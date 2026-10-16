@@ -131,16 +131,21 @@ public class MachinePyroOvenBlockEntity extends com.hbm_m.blockentity.MachinePol
         ItemStack[] slots = inventorySlotArray();
         if (tank0.setType(SLOT_FLUID_ID, slots)) applySlotsArray(slots);
 
-        if (level.getGameTime() % 20 == 0) {
-            for (Direction dir : Direction.values()) {
-                BlockPos neighborPos = pos.relative(dir);
-                BlockEntity neighborBe = level.getBlockEntity(neighborPos);
-                if (!(neighborBe instanceof IFluidConnectorMK2)) continue;
+        // trySubscribe — раз в 20 тиков (регистрация, идемпотентно). tryProvide (и прямой пуш
+        // дыма внутри sendSmoke) — каждый тик: их вторая ветка — прямой перенос в соседний
+        // приёмник, гейт делит пропускную способность выдачи. Fill-проверки пропускают зонд,
+        // пока баки пусты.
+        boolean subscribeDue = level.getGameTime() % 20 == 0;
+        for (Direction dir : Direction.values()) {
+            BlockPos neighborPos = pos.relative(dir);
+            sendSmoke(level, neighborPos, dir);
+            if (tank1.getFill() > 0) {
+                tryProvide(tank1, level, neighborPos, dir);
+            }
+            if (!subscribeDue) continue;
+            BlockEntity neighborBe = level.getBlockEntity(neighborPos);
+            if (neighborBe instanceof IFluidConnectorMK2) {
                 trySubscribe(tank0, level, neighborPos, dir);
-                sendSmoke(level, neighborPos, dir);
-                if (tank1.getFill() > 0) {
-                    tryProvide(tank1, level, neighborPos, dir);
-                }
             }
         }
 
@@ -175,8 +180,17 @@ public class MachinePyroOvenBlockEntity extends com.hbm_m.blockentity.MachinePol
 
         spawnVentPlume(level, pos);
 
-        setChanged();
-        sendUpdateToClient();
+        // P6: клиентский пакет только при реальном изменении состояния
+        // (энергия, прогресс, флаг работы + оба танка). %20-подписка жидкостей выше сохранена.
+        syncIfStateChanged(
+                (getEnergyStored() * 31L + Float.floatToRawIntBits(progress)) * 31L + (isProgressing ? 1L : 0L),
+                tankFingerprint(tank0) * 31L + tankFingerprint(tank1));
+    }
+
+    /** Подпись бака: тип жидкости + уровень заполнения. */
+    private static long tankFingerprint(FluidTank tank) {
+        net.minecraft.world.level.material.Fluid f = tank.getTankType();
+        return (f == null ? 0L : f.hashCode()) * 31L + tank.getFill();
     }
 
     private static int getConsumption(int speed, int powerSaving) {

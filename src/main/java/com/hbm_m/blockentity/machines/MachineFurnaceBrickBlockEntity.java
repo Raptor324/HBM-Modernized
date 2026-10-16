@@ -217,10 +217,10 @@ public class MachineFurnaceBrickBlockEntity extends com.hbm_m.blockentity.BaseHb
         ItemStack input = inventory.getStackInSlot(SLOT_INPUT);
         if (input.isEmpty()) return false;
 
-        var recipe = getRecipe(level, input);
-        if (recipe.isEmpty()) return false;
+        SmeltingRecipe recipe = getRecipe(level, input);
+        if (recipe == null) return false;
 
-        ItemStack result = recipe.get().getResultItem(level.registryAccess());
+        ItemStack result = recipe.getResultItem(level.registryAccess());
         if (result.isEmpty()) return false;
 
         return canAcceptResult(result);
@@ -235,10 +235,10 @@ public class MachineFurnaceBrickBlockEntity extends com.hbm_m.blockentity.BaseHb
 
     private void craftItem(Level level) {
         ItemStack input = inventory.getStackInSlot(SLOT_INPUT);
-        var recipe = getRecipe(level, input);
-        if (recipe.isEmpty()) return;
+        SmeltingRecipe recipe = getRecipe(level, input);
+        if (recipe == null) return;
 
-        ItemStack result = recipe.get().getResultItem(level.registryAccess()).copy();
+        ItemStack result = recipe.getResultItem(level.registryAccess()).copy();
 
         input.shrink(1);
 
@@ -251,9 +251,16 @@ public class MachineFurnaceBrickBlockEntity extends com.hbm_m.blockentity.BaseHb
         }
     }
 
-    private java.util.Optional<SmeltingRecipe> getRecipe(Level level, ItemStack input) {
-        // 1.21.1: getRecipeFor требует RecipeInput (SingleRecipeInput) и возвращает RecipeHolder.
-        return com.hbm_m.platform.recipe.RecipeHooks.getRecipeFor(level, RecipeType.SMELTING, input);
+    // Кэш скана SMELTING: ключ — фингерпринт входного стека; проверка выходного
+    // слота (canAcceptResult) остаётся per-tick вне резолвера.
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<SmeltingRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+
+    private SmeltingRecipe getRecipe(Level level, ItemStack input) {
+        return recipeResolver.resolve(level, RecipeType.SMELTING,
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(input),
+                (lvl, all) -> // 1.21.1: getRecipeFor требует RecipeInput (SingleRecipeInput).
+                        com.hbm_m.platform.recipe.RecipeHooks.getRecipeFor(lvl, RecipeType.SMELTING, input).orElse(null));
     }
 
     public static boolean isFuel(ItemStack stack) {

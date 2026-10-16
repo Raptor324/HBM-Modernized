@@ -9,7 +9,9 @@ import net.neoforged.api.distmarker.OnlyIn;
 *///?}
 
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import net.minecraft.core.HolderLookup;
 
 import com.hbm_m.block.decorations.DoorBlock;
 import com.hbm_m.blockentity.ModBlockEntities;
@@ -54,6 +56,7 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     // 0=закрыта, 1=открыта, 2=закрывается, 3=открывается
     public byte state = 0;
     private int openTicks = 0;
+    public int getOpenTicks() { return this.openTicks; }
     /** Значение openTicks на предыдущем тике — для интерполяции по partialTick (порт 1.7.10 prevOpenTicks). */
     private int prevOpenTicks = 0;
     public long animStartTime = 0;
@@ -166,6 +169,7 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
                 // полный пересбор записей рендера с новым rect'ом.
                 this.markRenderDirty();
                 DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
+                com.hbm_m.platform.RenderHooks.onDoorSkinChanged(this);
             }
 
             syncToClient();
@@ -298,15 +302,24 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
 
     // ==================== Публичные методы ====================
 
+    @Nullable
+    private transient DoorDecl cachedDoorDecl;
+
     public DoorDecl getDoorDecl() {
+        if (cachedDoorDecl != null) {
+            return cachedDoorDecl;
+        }
         // Если ID потерян, используем fallback
         if (doorDeclId == null || doorDeclId.isEmpty()) {
             if (getBlockState().getBlock() instanceof DoorBlock db) {
-                return DoorDeclRegistry.getById(db.getDoorDeclId());
+                cachedDoorDecl = DoorDeclRegistry.getById(db.getDoorDeclId());
+                return cachedDoorDecl;
             }
-            return DoorDecl.LARGE_VEHICLE_DOOR;
+            cachedDoorDecl = DoorDecl.LARGE_VEHICLE_DOOR;
+            return cachedDoorDecl;
         }
-        return DoorDeclRegistry.getById(doorDeclId);
+        cachedDoorDecl = DoorDeclRegistry.getById(doorDeclId);
+        return cachedDoorDecl;
     }
     
     // Для серверной логики используем строковый ID
@@ -978,6 +991,7 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         super.setRemoved();
         if (level != null && level.isClientSide) {
             ClientSoundBootstrap.stopSound(level, worldPosition);
+            com.hbm_m.platform.RenderHooks.onDoorRemoved(this);
         }
     }
 
@@ -1040,7 +1054,11 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         this.pendingRelinkCheck = true;
 
         if (tag.contains("doorDeclId")) {
-            this.doorDeclId = tag.getString("doorDeclId");
+            String newDeclId = tag.getString("doorDeclId");
+            if (!java.util.Objects.equals(this.doorDeclId, newDeclId)) {
+                this.doorDeclId = newDeclId;
+                this.cachedDoorDecl = null;
+            }
         }
         
         if (tag.contains("partRole")) {
@@ -1104,53 +1122,57 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     }
 
     // getUpdateTag: удалён — BaseHbmBlockEntity уже делает super + writeNbtData.
-    //? if forge {
     @Override
-    //?}
-
-    public void handleUpdateTag(CompoundTag tag) {
-        //? if < 1.21.1 {
-        load(tag);
-        //?} else {
-        /*// 1.21.1: BlockEntity.load(CompoundTag) удалён — loadCustomOnly с registries из level.
-        PlatformHooks.loadBlockEntityTag(this, tag, this.level != null ? this.level.registryAccess() : RegistryAccess.EMPTY);
-        *///?}
-    }
-
-
-    public int getOpenTicks() {
-        return this.openTicks;
-    }
-
-    //? if forge {
-    @Override
-    //?}
-    public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt) {
-        CompoundTag tag = PlatformHooks.getItemTag(pkt);
-        if (tag != null) {
-            // Сохраняем предыдущее видимое состояние ДО загрузки - чтобы определить, нужна ли инвалидация
-            byte prevState = this.state;
-            DoorModelSelection prevSelection = this.modelSelection;
-
-            //? if < 1.21.1 {
-            load(tag);
-            //?} else {
-            /*// 1.21.1: BlockEntity.load(CompoundTag) удалён — loadCustomOnly с registries из level.
-            PlatformHooks.loadBlockEntityTag(this, tag, this.level != null ? this.level.registryAccess() : RegistryAccess.EMPTY);
-            *///?}
-
-            if (level != null && level.isClientSide) {
-                // Инвалидируем чанк только при реальном изменении видимого состояния:
-                // DOOR_MOVING/OPEN перехода или смены скина/модели.
-                // Иначе каждый BE-пакет (даже с теми же данными) вызывал пересборку.
-                boolean visibleChange = isVisibleStateChange(prevState, this.state)
-                                     || !prevSelection.equals(this.modelSelection);
-                if (visibleChange) {
-                    DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
-                }
+    protected void applyClientUpdate(@NotNull CompoundTag tag) {
+        byte prevState = this.state;
+        DoorModelSelection prevSelection = this.modelSelection;
+        readNbtData(tag, null);
+        if (level != null && level.isClientSide) {
+            boolean skinChanged = !prevSelection.equals(this.modelSelection);
+            boolean visibleChange = isVisibleStateChange(prevState, this.state) || skinChanged;
+            if (skinChanged) {
+                this.cachedModelKey = null;
+                this.cachedModelData = null;
+                markRenderDirty();
+                com.hbm_m.platform.RenderHooks.onDoorSkinChanged(this);
+            }
+            if (visibleChange) {
+                DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
             }
         }
     }
+
+    @Override
+    protected void applyClientUpdate(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
+        byte prevState = this.state;
+        DoorModelSelection prevSelection = this.modelSelection;
+        readNbtData(tag, registries);
+        if (level != null && level.isClientSide) {
+            boolean skinChanged = !prevSelection.equals(this.modelSelection);
+            boolean visibleChange = isVisibleStateChange(prevState, this.state) || skinChanged;
+            if (skinChanged) {
+                this.cachedModelKey = null;
+                this.cachedModelData = null;
+                markRenderDirty();
+                com.hbm_m.platform.RenderHooks.onDoorSkinChanged(this);
+            }
+            if (visibleChange) {
+                DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
+            }
+        }
+    }
+
+    //? if forge {
+    @Override
+    public void handleUpdateTag(CompoundTag tag) {
+        super.handleUpdateTag(tag);
+    }
+
+    @Override
+    public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt) {
+        super.onDataPacket(net, pkt);
+    }
+    //?}
 
     /** Возвращает true только при переходах DOOR_MOVING или OPEN - то, что видит игрок. */
     private static boolean isVisibleStateChange(byte oldS, byte newS) {

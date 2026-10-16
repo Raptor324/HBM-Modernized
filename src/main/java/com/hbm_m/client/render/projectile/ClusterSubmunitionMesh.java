@@ -6,9 +6,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.joml.Vector3f;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.platform.RenderHooks;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
@@ -74,28 +74,12 @@ public final class ClusterSubmunitionMesh {
     private static void emitVertex(VertexConsumer consumer, PoseStack.Pose pose,
                                    Vec3 pos, Vec2 uv, Vec3 normal,
                                    int light, int overlay) {
-        //? if < 1.21.1 {
-        consumer.vertex(pose.pose(), pos.x(), pos.y(), pos.z())
-                .color(255, 255, 255, 255)
-                .uv(uv.u(), 1.0F - uv.v())
-                .overlayCoords(overlay)
-                .uv2(light)
-                .normal(pose.normal(), normal.x(), normal.y(), normal.z())
-                .endVertex();
-        //?} else {
-        /*// 1.21.1: vertex->addVertex, color->setColor, uv->setUv, overlayCoords->setOverlay, uv2->setLight,
-        // normal(Vector3f,f,f,f) -> setNormal(f,f,f) with manual multiplication by pose.normal() (Matrix3f).
-        // pose.normal() in 1.21.1 returns a Matrix3f (not Vector3f) - transform the source normal.
-        org.joml.Matrix3f nm = pose.normal();
-        org.joml.Vector3f transformed = nm.transform(new org.joml.Vector3f(
-                (float) normal.x(), (float) normal.y(), (float) normal.z()));
-        consumer.addVertex(pose.pose(), pos.x(), pos.y(), pos.z())
-                .setColor(255, 255, 255, 255)
-                .setUv(uv.u(), 1.0F - uv.v())
-                .setOverlay(overlay)
-                .setLight(light)
-                .setNormal(transformed.x, transformed.y, transformed.z);
-        *///?}
+        RenderHooks.vertexFull(consumer, pose,
+                pos.x(), pos.y(), pos.z(),
+                255, 255, 255, 255,
+                uv.u(), 1.0F - uv.v(),
+                overlay, light,
+                normal.x(), normal.y(), normal.z());
     }
 
     private static List<Tri> loadMiniNukeTriangles(ResourceManager rm) {
@@ -197,21 +181,30 @@ public final class ClusterSubmunitionMesh {
 
     private static Vec3 faceNormal(Vec3 a, Vec3 b, Vec3 c, Vec3 na, Vec3 nb, Vec3 nc) {
         if (na != null && nb != null && nc != null) {
-            Vector3f n = new Vector3f(na.x() + nb.x() + nc.x(), na.y() + nb.y() + nc.y(), na.z() + nb.z() + nc.z());
-            if (n.lengthSquared() > 1.0E-6F) {
-                n.normalize();
-                return new Vec3(n.x, n.y, n.z);
+            float nx = na.x() + nb.x() + nc.x();
+            float ny = na.y() + nb.y() + nc.y();
+            float nz = na.z() + nb.z() + nc.z();
+            float lenSq = nx * nx + ny * ny + nz * nz;
+            if (lenSq > 1.0E-6F) {
+                float invLen = (float) (1.0 / Math.sqrt(lenSq));
+                return new Vec3(nx * invLen, ny * invLen, nz * invLen);
             }
         }
-        Vector3f ab = new Vector3f(b.x() - a.x(), b.y() - a.y(), b.z() - a.z());
-        Vector3f ac = new Vector3f(c.x() - a.x(), c.y() - a.y(), c.z() - a.z());
-        ab.cross(ac);
-        if (ab.lengthSquared() > 1.0E-6F) {
-            ab.normalize();
-        } else {
-            ab.set(0, 1, 0);
+        float abx = b.x() - a.x();
+        float aby = b.y() - a.y();
+        float abz = b.z() - a.z();
+        float acx = c.x() - a.x();
+        float acy = c.y() - a.y();
+        float acz = c.z() - a.z();
+        float cx = aby * acz - abz * acy;
+        float cy = abz * acx - abx * acz;
+        float cz = abx * acy - aby * acx;
+        float lenSq = cx * cx + cy * cy + cz * cz;
+        if (lenSq > 1.0E-6F) {
+            float invLen = (float) (1.0 / Math.sqrt(lenSq));
+            return new Vec3(cx * invLen, cy * invLen, cz * invLen);
         }
-        return new Vec3(ab.x, ab.y, ab.z);
+        return new Vec3(0.0F, 1.0F, 0.0F);
     }
 
     /** Model transform, same as {@code LegoClient.RENDER_BOMB}. */

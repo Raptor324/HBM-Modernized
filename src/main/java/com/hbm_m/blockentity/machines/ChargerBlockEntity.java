@@ -51,7 +51,12 @@ public class ChargerBlockEntity extends BaseMachineBlockEntity {
 
         be.ensureNetworkInitialized();
 
-        List<Player> players = level.getEntitiesOfClass(Player.class, chargeArea(pos));
+        // Дорогой player-query — раз в 10 тиков, плюс немедленный ре-скан на фронтах
+        // выдвижения/задвижения плиты (внизу), чтобы state machine не тупил между пробами.
+        int prevUsingTicks = be.usingTicks;
+        List<Player> players = be.probeDue(10)
+                ? level.getEntitiesOfClass(Player.class, chargeArea(pos))
+                : java.util.Collections.emptyList();
 
         // Original: erst zaehlen, wieviel ueberhaupt gebraucht wird - daran haengt das Ausfahren.
         boolean anythingToCharge = false;
@@ -87,12 +92,18 @@ public class ChargerBlockEntity extends BaseMachineBlockEntity {
         }
 
         // Original: erst bei voll ausgefahrener Platte fliesst Strom.
+        if (be.usingTicks != prevUsingTicks) {
+            // Фронт плиты: немедленный ре-скан, чтобы зарядка началась в тик полного
+            // выдвижения, а не в ближайший probe-тик.
+            players = level.getEntitiesOfClass(Player.class, chargeArea(pos));
+        }
         if (be.usingTicks >= DELAY && be.getEnergyStored() > 0) {
             be.doCharge(players);
         }
 
-        be.setChanged();
-        be.sendUpdateToClient();
+        // Анти-спам синка: полный пакет только при изменении энергии или отрисовываемого
+        // состояния плиты (usingTicks — анимация, lastOp — частицы/звук).
+        be.syncIfStateChanged(be.getEnergyStored(), (long) be.usingTicks * 31L + be.lastOp);
     }
 
     /** Original: {@code transferPower} - jeder Gegenstand bekommt hoechstens ein Fuenftel. */

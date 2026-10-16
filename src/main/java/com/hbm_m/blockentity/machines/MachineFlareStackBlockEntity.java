@@ -102,8 +102,11 @@ public class MachineFlareStackBlockEntity extends BaseMachineBlockEntity impleme
         lastOutput = 0;
 
         // Оригинал: 4 кардинальных подключения на ±2 по X/Z, каждый тик (подписка на флюид).
-        for (BlockPos conPos : getConPos(pos)) {
-            trySubscribe(tank.getTankType(), level, conPos, getDirectionTo(pos, conPos));
+        // Neighbor-scan раз в 5 тиков (фаза размазана по позиции).
+        if (probeDue(5)) {
+            for (BlockPos conPos : getConPos(pos)) {
+                trySubscribe(tank.getTankType(), level, conPos, getDirectionTo(pos, conPos));
+            }
         }
 
         // Автозалив/автоопустошение канистр (слоты 1/2) + смена типа по fluid-ID (слот 3).
@@ -174,12 +177,14 @@ public class MachineFlareStackBlockEntity extends BaseMachineBlockEntity impleme
                     data.putDouble("mZ", level.random.nextGaussian() * 0.15);
                     IParticleCreator.sendPacket(level, pos.getX() + 0.5, pos.getY() + 11.75, pos.getZ() + 0.5, 100, data);
 
-                    // Поджог сущностей над факелом (оригинальный AABB).
-                    for (Entity e : level.getEntitiesOfClass(Entity.class, new AABB(
-                            pos.getX() - 1, pos.getY() + 12, pos.getZ() - 2,
-                            pos.getX() + 2, pos.getY() + 17, pos.getZ() + 2))) {
-                        e.setRemainingFireTicks(100); // setFire(5)
-                        e.hurt(level.damageSources().onFire(), 5F);
+                    // Поджог сущностей над факелом (оригинальный AABB) — entity-query раз в 10 тиков.
+                    if (probeDue(10)) {
+                        for (Entity e : level.getEntitiesOfClass(Entity.class, new AABB(
+                                pos.getX() - 1, pos.getY() + 12, pos.getZ() - 2,
+                                pos.getX() + 2, pos.getY() + 17, pos.getZ() + 2))) {
+                            e.setRemainingFireTicks(100); // setFire(5)
+                            e.hurt(level.damageSources().onFire(), 5F);
+                        }
                     }
 
                     if (level.getGameTime() % 3 == 0) {
@@ -202,8 +207,14 @@ public class MachineFlareStackBlockEntity extends BaseMachineBlockEntity impleme
         // Заряд батареи в слоте 0 (оригинал chargeItemsFromTE(slots, 0, ...)).
         chargeItemInSlot(SLOT_BATTERY);
 
-        setChanged();
-        sendUpdateToClient();
+        // Anti-sync-spam: полный пакет только при изменении состояния клапана/поджига,
+        // бака, фактического сжигания (fluidUsed) или энергии. Инвентарь сам зовёт
+        // setChanged из onContentsChanged.
+        Fluid tankType = tank.getTankType();
+        long lo = (isOn ? 1L : 0L) | (doesBurn ? 2L : 0L)
+                | ((tankType == null ? 0L : tankType.hashCode()) * 31L + tank.getFill()) << 2;
+        long hi = (fluidUsed > 0 ? 1L : 0L) | (lastOutput << 1);
+        syncIfStateChanged(lo, hi);
     }
 
     /** Оригинал getConPos: 4 кардинальных позиции на ±2 по X/Z. */

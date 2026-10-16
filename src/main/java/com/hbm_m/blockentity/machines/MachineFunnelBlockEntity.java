@@ -1,12 +1,11 @@
 package com.hbm_m.blockentity.machines;
 
-import java.util.Optional;
-
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.MachineFunnelMenu;
+import com.hbm_m.recipe.index.CachedRecipeResolver;
 import com.hbm_m.util.SimpleCraftingContainer;
 
 import net.minecraft.core.BlockPos;
@@ -47,6 +46,12 @@ public class MachineFunnelBlockEntity extends BaseMachineBlockEntity {
 
     private int mode = MODE_3X3_THEN_2X2;
 
+    // Кэш скана CRAFTING-рецепта: по одному резолверу на (пара слотов, размер сетки),
+    // ключ — фингерпринт входного стека + объём сетки. Пока вход не изменился, скан
+    // RecipeManager не повторяется; проверка выходного слота остаётся per-tick.
+    private final CachedRecipeResolver<CraftingRecipe>[] gridResolvers =
+            new CachedRecipeResolver[SLOT_PAIRS * 2];
+
     public MachineFunnelBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.FUNNEL_BE.get(), pos, state, SLOT_COUNT, 0L, 0L, 0L);
     }
@@ -83,18 +88,24 @@ public class MachineFunnelBlockEntity extends BaseMachineBlockEntity {
     }
 
     private boolean tryCompressGrid(Level level, int index, ItemStack input, int count, int width, int height) {
-        NonNullList<ItemStack> gridItems = NonNullList.withSize(width * height, ItemStack.EMPTY);
-        ItemStack sample = input.copyWithCount(1);
-        for (int i = 0; i < count; i++) {
-            gridItems.set(i, sample);
-        }
-        SimpleCraftingContainer grid = new SimpleCraftingContainer(gridItems, width, height);
+        long sig = CachedRecipeResolver.sign(index,
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(input), count);
+        // Scanner чистый: только матч по входам из подписи; выходной слот проверяется per-tick ниже.
+        CraftingRecipe recipe = gridResolver(index, width).resolve(level, RecipeType.CRAFTING, sig, (lvl, all) -> {
+            NonNullList<ItemStack> gridItems = NonNullList.withSize(width * height, ItemStack.EMPTY);
+            ItemStack sample = input.copyWithCount(1);
+            for (int i = 0; i < count; i++) {
+                gridItems.set(i, sample);
+            }
+            // 1.21.1: getRecipeFor/assemble требуют CraftingInput — хелперы RecipeHooks.
+            return com.hbm_m.platform.recipe.RecipeHooks.getCraftingRecipeFor(
+                    lvl, new SimpleCraftingContainer(gridItems, width, height)).orElse(null);
+        });
+        if (recipe == null) return false;
 
-        // 1.21.1: getRecipeFor/assemble требуют CraftingInput — хелперы RecipeHooks.
-        Optional<CraftingRecipe> recipeOpt = com.hbm_m.platform.recipe.RecipeHooks.getCraftingRecipeFor(level, grid);
-        if (recipeOpt.isEmpty()) return false;
+        SimpleCraftingContainer grid = buildGrid(input, count, width, height);
 
-        ItemStack result = com.hbm_m.platform.recipe.RecipeHooks.assembleCrafting(recipeOpt.get(), grid, level);
+        ItemStack result = com.hbm_m.platform.recipe.RecipeHooks.assembleCrafting(recipe, grid, level);
         if (result.isEmpty()) return false;
 
         int outputSlot = OUTPUT_START + index;
@@ -111,6 +122,21 @@ public class MachineFunnelBlockEntity extends BaseMachineBlockEntity {
             outSlot.grow(result.getCount());
         }
         return true;
+    }
+
+    private SimpleCraftingContainer buildGrid(ItemStack input, int count, int width, int height) {
+        NonNullList<ItemStack> gridItems = NonNullList.withSize(width * height, ItemStack.EMPTY);
+        ItemStack sample = input.copyWithCount(1);
+        for (int i = 0; i < count; i++) {
+            gridItems.set(i, sample);
+        }
+        return new SimpleCraftingContainer(gridItems, width, height);
+    }
+
+    private CachedRecipeResolver<CraftingRecipe> gridResolver(int index, int width) {
+        int slot = index * 2 + (width >= 3 ? 1 : 0);
+        if (gridResolvers[slot] == null) gridResolvers[slot] = new CachedRecipeResolver<>();
+        return gridResolvers[slot];
     }
 
     public void cycleMode() {

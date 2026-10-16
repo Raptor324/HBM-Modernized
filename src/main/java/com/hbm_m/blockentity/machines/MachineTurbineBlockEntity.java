@@ -100,15 +100,22 @@ public class MachineTurbineBlockEntity extends BaseMachineBlockEntity implements
 
         chargeFromBatterySlot(SLOT_BATTERY);
 
-        // MK2 fluid network: provide spent steam and subscribe to steam in all directions
+        // MK2 fluid network: provide spent steam and subscribe to steam in all directions.
+        // trySubscribe (регистрация, идемпотентно) — раз в 5 тиков (probeDue, фаза по позиции);
+        // tryProvide — каждый тик: его вторая ветка — прямой пуш в соседний приёмник, гейт
+        // делит пропускную способность, а не только стоимость скана. Fill-проверка пропускает
+        // зонд, пока бак спент-стима пуст.
+        boolean subscribeDue = probeDue(5);
         for (Direction dir : Direction.values()) {
             BlockPos neighborPos = worldPosition.relative(dir);
-            BlockEntity neighborBe = level.getBlockEntity(neighborPos);
-            if (!(neighborBe instanceof IFluidConnectorMK2)) continue;
 
             if (tanks[1].getFill() > 0) {
                 tryProvide(tanks[1], level, neighborPos, dir);
             }
+
+            if (!subscribeDue) continue;
+            BlockEntity neighborBe = level.getBlockEntity(neighborPos);
+            if (!(neighborBe instanceof IFluidConnectorMK2)) continue;
 
             Fluid tankType = tanks[0].getTankType();
             if (FluidTank.isFluidTypeExplicitlySet(tankType)) {
@@ -121,7 +128,6 @@ public class MachineTurbineBlockEntity extends BaseMachineBlockEntity implements
             }
         }
 
-        boolean wasActive = active;
         active = processSteam();
 
         if (active && maxProgress > 0) {
@@ -130,10 +136,11 @@ public class MachineTurbineBlockEntity extends BaseMachineBlockEntity implements
             progress = 0;
         }
 
-        if (wasActive != active || active) {
-            setChanged();
-            sendUpdateToClient();
-        }
+        // Анти-sync-спам: старое условие (wasActive != active || active) было тавтологией —
+        // синк шёл каждый тик при работе. Подпись (energy, active|bucket прогресса) шлёт пакет
+        // только при реальном изменении отображаемого состояния.
+        long progressBucket = maxProgress > 0 ? (long) progress * 16L / maxProgress : 0L;
+        syncIfStateChanged(getEnergyStored(), (active ? 1L : 0L) | (progressBucket << 1));
     }
 
     /**

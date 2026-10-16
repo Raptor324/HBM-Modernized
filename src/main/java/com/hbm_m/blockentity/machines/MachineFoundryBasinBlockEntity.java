@@ -6,7 +6,6 @@ import com.hbm_m.inventory.material.MaterialStack;
 import com.hbm_m.inventory.material.MaterialType;
 import com.hbm_m.item.material.ItemCastMold;
 import com.hbm_m.platform.PlatformHooks;
-import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.recipe.MoldCastingRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -111,17 +110,27 @@ public class MachineFoundryBasinBlockEntity extends com.hbm_m.blockentity.BaseHb
         return mold.getMoldType().getCost();
     }
 
+    /** Кэширующий резолвер литья: скан списка рецептов только при смене пары (mold, material).
+     *  Headroom выхода (outputSlot.isEmpty) проверяется вызывающим кодом КАЖДЫЙ тик —
+     *  в сканер по контракту CachedRecipeResolver он не входит. */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<MoldCastingRecipe> castingResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+
     private @Nullable ItemStack getResultFor(MaterialType type, ItemCastMold.MoldType mold) {
-        if (level == null) return null;
+        if (level == null || type == null || mold == null) return null;
         // MoldCasting теперь data-driven (JSON) — ищем MoldCastingRecipe по паре (mold, material)
-        // через RecipeHooks (кросс-версионный мост). Статический MoldCastingRecipes удалён.
-        for (MoldCastingRecipe r : RecipeHooks.getAllRecipes(level, MoldCastingRecipe.Type.INSTANCE)) {
-            if (r.matches(mold, type)) {
-                ItemStack out = r.getOutput();
-                return out.isEmpty() ? null : out;
-            }
-        }
-        return null;
+        // через кэширующий резолвер (кросс-версионный мост). Статический MoldCastingRecipes удалён.
+        long sig = com.hbm_m.recipe.index.CachedRecipeResolver.sign(4, type.id, mold.ordinal());
+        MoldCastingRecipe r = castingResolver.resolve(level, MoldCastingRecipe.Type.INSTANCE, sig,
+                (lvl, all) -> {
+                    for (MoldCastingRecipe rec : all) {
+                        if (rec.matches(mold, type)) return rec;
+                    }
+                    return null;
+                });
+        if (r == null) return null;
+        ItemStack out = r.getOutput();
+        return out.isEmpty() ? null : out;
     }
 
     /* ── tick ───────────────────────────────────────────────────────────── */

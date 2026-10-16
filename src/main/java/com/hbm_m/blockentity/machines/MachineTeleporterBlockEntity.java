@@ -54,6 +54,10 @@ public class MachineTeleporterBlockEntity extends BaseMachineBlockEntity {
         if (be.targetY == -1) return;
         if (be.getEnergyStored() < CONSUMPTION) return;
 
+        // Скан сущностей — не каждый тик: probeDue(5) даёт максимум 5 тиков (10 Гц) задержки
+        // между постановкой сущности на площадку и телепортом. Принято (PR-note).
+        if (!be.probeDue(5)) return;
+
         AABB box = new AABB(pos.getX() + 0.25, pos.getY(), pos.getZ() + 0.25,
                 pos.getX() + 0.75, pos.getY() + 2, pos.getZ() + 0.75);
         List<Entity> entities = serverLevel.getEntitiesOfClass(Entity.class, box);

@@ -31,7 +31,10 @@ void main() {
     // Vanilla-compliant directional shading: matches block face weights on cardinal
     // axes (UP: 1.0, DOWN: 0.5, N/S: 0.8, E/W: 0.6) and smoothly interpolates
     // over curved geometry without diagonal dark bands or facing inversion.
-    vec3 n = length(worldNormal) > 1e-4 ? normalize(worldNormal) : vec3(0.0, 1.0, 0.0);
+    vec3 n = vec3(0.0, 1.0, 0.0);
+    if (length(worldNormal) > 1e-4) {
+        n = normalize(worldNormal);
+    }
     vec3 n2 = n * n;
     float yWeight = n.y > 0.0 ? 1.0 : 0.5;
     float diff = n2.x * 0.6 + n2.y * yWeight + n2.z * 0.8;

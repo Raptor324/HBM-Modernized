@@ -161,8 +161,21 @@ public class MachineCoreEmitterBlockEntity extends BaseMachineBlockEntity
             prev = 0;
         }
 
-        setChanged();
-        sendUpdateToClient();
+        // P6 sync gate: полный пакет только при реальном изменении видимого клиенту состояния
+        // (бак, joules/prev/beam, watts, isOn, energy) — вместо безусловного спама каждый тик.
+        long sig = tankFingerprint(coolantTank);
+        sig = sig * 31L + joules;
+        sig = sig * 31L + prev;
+        sig = sig * 31L + beam;
+        sig = sig * 31L + watts;
+        sig = sig * 31L + (isOn ? 1L : 0L);
+        syncIfStateChanged(sig, energy);
+    }
+
+    /** 64-битный фингерпринт танка (тип жидкости + заполнение) для sync-подписи. */
+    private static long tankFingerprint(FluidTank tank) {
+        net.minecraft.world.level.material.Fluid f = tank.getTankType();
+        return (f == null ? 0L : f.hashCode()) * 31L + tank.getFill();
     }
 
     /** 1:1-Port der Strahlschleife. */

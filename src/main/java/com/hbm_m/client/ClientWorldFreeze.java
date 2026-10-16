@@ -22,10 +22,11 @@ import net.neoforged.api.distmarker.OnlyIn;
  * серверных обновлений, но клиентские тики продолжают крутиться — без гейта
  * клиентская симуляция улетает от записанного состояния.
  *
- * Универсальный детект по level.getGameTime() НЕ работает: Flashback пишет
- * ClientboundSetTimePacket в реплей один раз на старте, и при обычном
- * воспроизведении игровое время тоже стоит — по нему паузу не отличить от плейбека.
- * Поэтому: ванильный тик-фриз (1.20.3+, клиент получает ClientboundTickingStatePacket)
+ * Детект по level.getGameTime() НЕ работает: клиентский тик при плейбеке сам
+ * наращивает gameTime (+1 за тик, ClientLevel.tickTime не гейтится), а Flashback
+ * пишет ClientboundSetTimePacket в КАЖДОМ снапшоте чанка записи (раз в 5 минут),
+ * так что при перемотках время скачет в обе стороны — по нему паузу не отличить
+ * от плейбека. Поэтому: ванильный тик-фриз (1.20.3+, клиент получает ClientboundTickingStatePacket)
  * плюс прямая детекция паузы Flashback через рефлексию (опциональная зависимость,
  * имена членов классов мода при рантайме не ремапятся — plain-имена безопасны и в dev,
  * и в production, в отличие от имён ванильных классов).
@@ -35,6 +36,7 @@ public final class ClientWorldFreeze {
 
     private static volatile boolean resolved;
     private static Method flashbackIsInReplay;
+    private static Method flashbackIsExporting;
     private static Class<?> replayServerClass;
     private static Field replayPausedField;
 
@@ -63,9 +65,37 @@ public final class ClientWorldFreeze {
      * true, когда поток серверных обновлений поз остановлен и клиентская
      * экстраполяция должна застыть: пауза-меню, /tick freeze или пауза
      * реплея Flashback (фейковый ReplayServer не тикает — пакеты не идут).
+     *
+     * Экспорт Flashback — НЕ пауза, хотя replayPaused на весь его прогон
+     * прибит в true (ExportJob.setServerTickAndWait пишет его на каждом
+     * кадре и в setup, а снять может только кнопка паузы в редакторе,
+     * недоступная во время экспорта): клиентские тики идут, сервер
+     * переигрывает поток поз и пакетов на полном ходу. Если экспорт считать
+     * паузой, треки ракет замирают на статичной позе без шлейфов на весь
+     * ролик (баг «ракета не летит в экспорте»). Заморозка freeze-секций
+     * экспорта и так ловится через worldRunsNormally().
      */
     public static boolean isWorldFrozen() {
-        return !worldRunsNormally() || isFlashbackReplayPaused();
+        return !worldRunsNormally() || (isFlashbackReplayPaused() && !isFlashbackExporting());
+    }
+
+    /**
+     * Идёт ли прямо сейчас экспорт видео во Flashback (рефлексия публичного
+     * статического {@code Flashback.isExporting()}). true на всём прогоне
+     * ExportJob — включая setup-отмотку. Flashback не установлен / сменил API
+     * → false (гейты вырождаются в прежнее поведение до фикса).
+     */
+    public static boolean isFlashbackExporting() {
+        try {
+            resolve();
+            if (flashbackIsExporting == null) {
+                return false;
+            }
+            return (Boolean) flashbackIsExporting.invoke(null);
+        } catch (Throwable t) {
+            // Flashback не установлен / сменил API — считаем, что экспорта нет.
+            return false;
+        }
     }
 
     private static boolean isFlashbackReplayPaused() {
@@ -95,9 +125,19 @@ public final class ClientWorldFreeze {
         resolved = true;
         try {
             Class<?> flashback = Class.forName("com.moulberry.flashback.Flashback");
-            flashbackIsInReplay = flashback.getMethod("isInReplay");
+            try {
+                flashbackIsInReplay = flashback.getMethod("isInReplay");
+            } catch (Throwable t) {
+                flashbackIsInReplay = null;
+            }
+            try {
+                flashbackIsExporting = flashback.getMethod("isExporting");
+            } catch (Throwable t) {
+                flashbackIsExporting = null;
+            }
         } catch (Throwable t) {
             flashbackIsInReplay = null;
+            flashbackIsExporting = null;
         }
         try {
             replayServerClass = Class.forName("com.moulberry.flashback.playback.ReplayServer");

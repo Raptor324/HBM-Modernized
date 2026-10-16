@@ -64,14 +64,21 @@ public class HeatingOvenBlockEntity extends FireboxBaseBlockEntity {
         FireboxBaseBlockEntity.clientTick(level, pos, state, be);
     }
 
+    /** Кэш IHeatSource снизу: перезапрашивается раз в 20 тиков (probeDue), между запросами
+     *  capability удерживается — сам теплообмен остаётся ежетиковым. */
+    private IHeatSource cachedBelowHeat;
+
     /** Порт tryPullHeat — вызывается из блочного тикера перед serverTick базы. */
     public void tryPullHeatFromBelow() {
         if (level == null || level.isClientSide()) return;
-        BlockEntity below = level.getBlockEntity(worldPosition.below());
-        if (below instanceof IHeatSource source) {
-            int toPull = Math.max(Math.min(source.getHeatStored(), this.getMaxHeat() - this.heatEnergy), 0);
+        if (probeDue(20)) {
+            BlockEntity below = level.getBlockEntity(worldPosition.below());
+            cachedBelowHeat = (below instanceof IHeatSource source) ? source : null;
+        }
+        if (cachedBelowHeat != null) {
+            int toPull = Math.max(Math.min(cachedBelowHeat.getHeatStored(), this.getMaxHeat() - this.heatEnergy), 0);
             this.heatEnergy += (int) (toPull * HEAT_PULL_EFF);
-            source.useUpHeat(toPull);
+            cachedBelowHeat.useUpHeat(toPull);
         }
     }
 

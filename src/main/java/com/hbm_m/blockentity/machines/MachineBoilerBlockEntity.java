@@ -81,18 +81,33 @@ public class MachineBoilerBlockEntity extends BaseMachineBlockEntity implements 
     }
 
     private void serverTick(ServerLevel level, BlockPos pos) {
-        if (level.getGameTime() % 20 == 0) {
-            for (Direction dir : Direction.values()) {
-                trySubscribe(waterTank, level, pos.relative(dir), dir);
-                tryProvide(steamTank, level, pos.relative(dir), dir);
-            }
+        // trySubscribe — раз в 20 тиков (регистрация, идемпотентно). tryProvide — каждый тик:
+        // его вторая ветка — прямой пуш пара в соседний приёмник, гейт делит пропускную
+        // способность выдачи. Fill-проверка пропускает зонд, пока паровой бак пуст.
+        boolean subscribeDue = level.getGameTime() % 20 == 0;
+        for (Direction dir : Direction.values()) {
+            if (steamTank.getFill() > 0) tryProvide(steamTank, level, pos.relative(dir), dir);
+            if (subscribeDue) trySubscribe(waterTank, level, pos.relative(dir), dir);
         }
 
         pullOrDecayHeat(level, pos);
         tryConvert(level, pos);
 
-        setChanged();
-        sendUpdateToClient();
+        // Anti-sync-spam: setChanged/sendBlockUpdated only when heat or tank contents moved.
+        syncIfStateChanged(syncLo(), syncHi());
+    }
+
+    private long syncLo() {
+        return ((long) heat << 32) | (tankFingerprint(waterTank) & 0xFFFFFFFFL);
+    }
+
+    private long syncHi() {
+        return tankFingerprint(steamTank) ^ (hasExploded ? 1L : 0L);
+    }
+
+    private static long tankFingerprint(FluidTank tank) {
+        Fluid type = tank.getTankType();
+        return (type == null ? 0L : type.hashCode() * 31L) + tank.getFill();
     }
 
     private void pullOrDecayHeat(Level level, BlockPos pos) {

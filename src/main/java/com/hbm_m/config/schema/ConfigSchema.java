@@ -173,16 +173,20 @@ public final class ConfigSchema {
         // (конфиг — первоисточник; флаг остаётся аварийным оверрайдом).
         reg(ConfigField.bool("nucleusAnimCache", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         reg(ConfigField.bool("nucleusParametricAnim", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        reg(ConfigField.bool("nucleusDitherFade", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         reg(ConfigField.bool("nucleusShadowInstancing", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         reg(ConfigField.bool("nucleusDoorSkinSharing", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         // Скрытие частей дверей при открывании (be-aware doesRender: BlastDoorDecl/MachineDoorRenderer.applyDoorPartTransform).
         reg(ConfigField.bool("doorPartCulling", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         reg(ConfigField.bool("nucleusDispatcherBypass", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         reg(ConfigField.bool("nucleusGpuBake", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        reg(ConfigField.bool("nucleusBakeHiZ", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         reg(ConfigField.bool("nucleusGpuScatter", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         reg(ConfigField.bool("nucleusStagingDirect", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         reg(ConfigField.integer("nucleusGpuCullMinInstances", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", 0, 1_000_000));
         reg(ConfigField.integer("nucleusGpuScatterMinSpans", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", 2, 512));
+        // 0 отключает bake-кэш; эффективный бюджет клэмпится в 16..1024 МБ (NucleusGpuBaker)
+        reg(ConfigField.integer("nucleusBakeCacheMB", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", 0, 1024));
         reg(ConfigField.integer("vatsRenderDistanceChunks", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", 1, 32));
         // ── Графические эффекты: сворачиваемая группа (аккордеон по parentObject)
         // внутри вкладки «rendering». parentObject = публичное поле ModClothConfig

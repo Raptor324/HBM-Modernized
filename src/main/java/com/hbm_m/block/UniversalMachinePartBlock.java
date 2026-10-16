@@ -449,6 +449,9 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
     @Override
     public void onRemove(BlockState pState, Level pLevel, BlockPos pPos, BlockState pNewState, boolean pIsMoving) {
         if (!pState.is(pNewState.getBlock())) {
+            com.hbm_m.multiblock.TeardownTrace.log("part onRemove: {} @ {} -> {} side={} moving={}",
+                    pState.getBlock(), pPos.toShortString(), pNewState.getBlock(),
+                    pLevel.isClientSide() ? "CLIENT" : "SERVER", pIsMoving);
             // Перенос блока движком сборки (Create/Sable): это НЕ разрушение.
             // Каскад destroyStructure + destroyBlock(controllerPos) здесь = дюп станка:
             // движок уже сохранил state+NBT и вернёт структуру на месте разборки.
@@ -461,6 +464,8 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
             }
             if (pLevel.getBlockEntity(pPos) instanceof IMultiblockPart partBe) {
                 BlockPos controllerPos = partBe.getControllerPos();
+                com.hbm_m.multiblock.TeardownTrace.log("part onRemove: BE controllerPos={} localOffset={}",
+                        controllerPos, partBe.getLocalOffsetFromController());
 
                 // A part carried into a Sable sub-level (or back out of one) still names its
                 // pre-move controller until relink runs, and that position is usually air there.
@@ -476,20 +481,52 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
                     MultiblockStructureHelper.relinkOrphanedPartDeterministic(pLevel, pPos, partBe,
                             !MultiblockStructureHelper.isOrphanCleanup(), pState);
                     controllerPos = partBe.getControllerPos();
+                    com.hbm_m.multiblock.TeardownTrace.log("part onRemove: relink ran, controllerPos now={}", controllerPos);
                 }
 
-                if (controllerPos != null && !pLevel.isClientSide()) {
-                    BlockState controllerState = pLevel.getBlockState(controllerPos);
-                    if (controllerState.getBlock() instanceof IMultiblockController controller) {
-                        if (!MultiblockStructureHelper.isDestroying() && !MultiblockStructureHelper.isRepairing() && controller.shouldDestroyOnPartRemoved()) {
-                            if (controllerState.hasProperty(HorizontalDirectionalBlock.FACING)) {
-                                Direction facing = controllerState.getValue(HorizontalDirectionalBlock.FACING);
-                                controller.getStructureHelper().destroyStructure(pLevel, controllerPos, facing);
+                if (controllerPos == null && partBe.getLocalOffsetFromController() != null) {
+                    Direction facing = pState.hasProperty(HorizontalDirectionalBlock.FACING)
+                            ? pState.getValue(HorizontalDirectionalBlock.FACING)
+                            : Direction.NORTH;
+                    controllerPos = pPos.subtract(MultiblockStructureHelper.rotate(partBe.getLocalOffsetFromController(), facing));
+                    com.hbm_m.multiblock.TeardownTrace.log("part onRemove: controllerPos fell back from localOffset -> {}",
+                            controllerPos.toShortString());
+                }
+
+                if (controllerPos != null) {
+                    if (pLevel.isClientSide()) {
+                        com.hbm_m.multiblock.TeardownTrace.trace("part onRemove: CLIENT channel B fire, part={} -> controller={}",
+                                pPos.toShortString(), controllerPos.toShortString());
+                        com.hbm_m.platform.RenderHooks.onMultiblockPartRemoved(pLevel, pPos, controllerPos);
+                    } else {
+                        BlockState controllerState = pLevel.getBlockState(controllerPos);
+                        if (controllerState.getBlock() instanceof IMultiblockController controller) {
+                            if (!MultiblockStructureHelper.isDestroying() && !MultiblockStructureHelper.isRepairing() && controller.shouldDestroyOnPartRemoved()) {
+                                if (controllerState.hasProperty(HorizontalDirectionalBlock.FACING)) {
+                                    Direction facing = controllerState.getValue(HorizontalDirectionalBlock.FACING);
+                                    controller.getStructureHelper().destroyStructure(pLevel, controllerPos, facing);
+                                }
+                                com.hbm_m.multiblock.TeardownTrace.log("server: destroyBlock(controller) at {}", controllerPos.toShortString());
+                                pLevel.destroyBlock(controllerPos, true);
+                            } else {
+                                com.hbm_m.multiblock.TeardownTrace.log(
+                                        "server: cascade SKIPPED destroying={} repairing={} shouldDestroyOnPartRemoved={}",
+                                        MultiblockStructureHelper.isDestroying(), MultiblockStructureHelper.isRepairing(),
+                                        controller.shouldDestroyOnPartRemoved());
                             }
-                            pLevel.destroyBlock(controllerPos, true);
+                        } else {
+                            com.hbm_m.multiblock.TeardownTrace.log("server: no live controller at {}, nothing to cascade",
+                                    controllerPos.toShortString());
                         }
                     }
+                } else {
+                    com.hbm_m.multiblock.TeardownTrace.trace(
+                            "part onRemove: controllerPos UNRESOLVED (BE field null AND localOffset null) - channels dead for this part, part={}",
+                            pPos.toShortString());
                 }
+            } else {
+                com.hbm_m.multiblock.TeardownTrace.trace("part onRemove: NO part BE at {} (BE already gone) - channels dead for this part",
+                        pPos.toShortString());
             }
         }
         super.onRemove(pState, pLevel, pPos, pNewState, pIsMoving);
@@ -529,7 +566,28 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
     private static void destroyControllerOnHarvest(Level level, BlockPos pos, Player player) {
         if (level.isClientSide() || !(level.getBlockEntity(pos) instanceof IMultiblockPart partBe)) return;
         BlockPos controllerPos = partBe.getControllerPos();
+
+        // Mirror the same fallback chain used in onRemove so that stale / null controllerPos
+        // (e.g. caused by the 1.20.1→1.21.1 NBT format mismatch) still find the real controller.
+        if (!MultiblockStructureHelper.isDestroying()
+                && !MultiblockStructureHelper.isRepairing()
+                && (controllerPos == null
+                    || !(level.getBlockState(controllerPos).getBlock() instanceof IMultiblockController))) {
+            MultiblockStructureHelper.relinkOrphanedPartDeterministic(level, pos, partBe,
+                    !MultiblockStructureHelper.isOrphanCleanup(), level.getBlockState(pos));
+            controllerPos = partBe.getControllerPos();
+        }
+
+        // Secondary fallback: reconstruct position from the local offset stored in the BE.
+        if (controllerPos == null && partBe.getLocalOffsetFromController() != null) {
+            Direction facing = level.getBlockState(pos).hasProperty(HorizontalDirectionalBlock.FACING)
+                    ? level.getBlockState(pos).getValue(HorizontalDirectionalBlock.FACING)
+                    : Direction.NORTH;
+            controllerPos = pos.subtract(MultiblockStructureHelper.rotate(partBe.getLocalOffsetFromController(), facing));
+        }
+
         if (controllerPos == null) return;
+
         BlockState controllerState = level.getBlockState(controllerPos);
         // A controller that refuses to collapse on part removal (a destroyed ZIRNOX ruin) must
         // not be destroyed here either - onRemove honours the flag, this path ignored it.

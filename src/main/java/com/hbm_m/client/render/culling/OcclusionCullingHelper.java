@@ -5,8 +5,6 @@ import com.hbm_m.main.MainRegistry;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-
 import com.hbm_m.client.render.ClientRenderFlags;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
@@ -117,10 +115,12 @@ public final class OcclusionCullingHelper {
     }
 
     /**
-     * Arms the fallback {@link CpuFrustumCuller}: extracts planes from world-space
-     * {@code projection * view} so that tests against world-space AABBs
-     * (as returned by {@link net.minecraft.world.level.block.entity.BlockEntity#getRenderBoundingBox()})
-     * remain mathematically correct.
+     * Arms the fallback {@link CpuFrustumCuller}: delegates to
+     * {@code updateCameraRelative} with the 64-bit camera-relative view basis
+     * from {@link FrameViewState#viewBasisRotation()} - the same arming
+     * {@code InstancedRenderFrame.onBeforeBlockEntities} performs, so the
+     * frustum stays view-bob aware and never regresses to a modelview-matrix
+     * read (IDENTITY in AFTER_ENTITIES on 1.20.1) that corrupted the planes.
      */
     public static void captureCpuFrustumFallback(Matrix4f projection, Vec3 cameraPos) {
         if (projection == null) {
@@ -128,12 +128,11 @@ public final class OcclusionCullingHelper {
             return;
         }
         try {
-            Matrix4f rot = new Matrix4f(RenderSystem.getModelViewMatrix());           // R_cam
-            Matrix4f trans = new Matrix4f().setTranslation(
-                    (float) -cameraPos.x, (float) -cameraPos.y, (float) -cameraPos.z);
-            Matrix4f view = rot.mul(trans);                                          // R * T(-cam)
-            Matrix4f viewProj = new Matrix4f(projection).mul(view);                  // P * V
-            CpuFrustumCuller.updateFrustum(viewProj);
+            CpuFrustumCuller.INSTANCE.updateCameraRelative(
+                    projection,
+                    com.hbm_m.client.render.FrameViewState.viewBasisRotation(),
+                    cameraPos
+            );
         } catch (Throwable err) {
             CpuFrustumCuller.invalidate();
         }

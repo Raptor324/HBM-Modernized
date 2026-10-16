@@ -12,7 +12,6 @@ import com.hbm_m.inventory.menu.MachineSolidifierMenu;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
-import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.recipe.SolidificationRecipe;
 
 import javax.annotation.Nullable;
@@ -97,8 +96,18 @@ public class MachineSolidifierBlockEntity extends BaseMachineBlockEntity impleme
             progress = 0;
         }
 
-        setChanged();
-        sendUpdateToClient();
+        // Анти-спам синхронизации: пакет только при реальном изменении состояния,
+        // которое уезжает в NBT/клиенту (энергия, прогресс, usage, processTime, бак, инвентарь).
+        long lo = com.hbm_m.recipe.index.CachedRecipeResolver.sign(5,
+                getEnergyStored(), progress, usage, processTime,
+                tank.getTankType() == null ? 0L : tank.getTankType().hashCode(), tank.getFluidAmountMb());
+        long hi = com.hbm_m.recipe.index.CachedRecipeResolver.sign(6,
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(inventory.getStackInSlot(SLOT_OUTPUT)),
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(inventory.getStackInSlot(SLOT_BATTERY)),
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(inventory.getStackInSlot(SLOT_UPGRADE_1)),
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(inventory.getStackInSlot(SLOT_UPGRADE_2)),
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(inventory.getStackInSlot(SLOT_FLUID_ID)));
+        syncIfStateChanged(lo, hi);
     }
 
     private boolean canProcess() {
@@ -140,14 +149,24 @@ public class MachineSolidifierBlockEntity extends BaseMachineBlockEntity impleme
     /**
      * Data-driven поиск SolidificationRecipe по жидкости бака
      * (заменяет статический SolidificationRecipes.get).
+     * Кэшируется через {@link com.hbm_m.recipe.index.CachedRecipeResolver}: подпись — тип жидкости бака,
+     * сканер — только матч по списку рецептов. Требование {@code fillMb} по фактическому заполнению
+     * и headroom выходного слота переоцениваются каждый тик в {@link #canProcess()} (CONTRACT 1).
      */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<SolidificationRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+
     @Nullable
     private SolidificationRecipe findSolidificationRecipe(Fluid fluid) {
         if (level == null) return null;
-        for (SolidificationRecipe recipe : RecipeHooks.getAllRecipes(level, SolidificationRecipe.Type.INSTANCE)) {
-            if (recipe.matchesFluid(fluid)) return recipe;
-        }
-        return null;
+        long signature = com.hbm_m.recipe.index.CachedRecipeResolver.sign(4,
+                fluid == null ? 0L : fluid.hashCode());
+        return recipeResolver.resolve(level, SolidificationRecipe.Type.INSTANCE, signature, (lvl, all) -> {
+            for (SolidificationRecipe recipe : all) {
+                if (recipe.matchesFluid(fluid)) return recipe;
+            }
+            return null;
+        });
     }
 
     private Map<UpgradeType, Integer> getValidUpgrades() {

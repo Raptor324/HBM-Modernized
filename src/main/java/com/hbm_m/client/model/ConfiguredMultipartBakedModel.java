@@ -94,15 +94,25 @@ public class ConfiguredMultipartBakedModel extends AbstractMultipartBakedModel i
         return state != null && berWorld;
     }
 
+    private static boolean isFramePart(String name) {
+        return name != null && name.equalsIgnoreCase("Frame");
+    }
+
     @Override
     protected List<String> getItemRenderPartNames() {
         List<String> itemPartList = itemParts;
         if (itemPartList == null) {
-            return List.of(cachedPartNames);
+            List<String> result = new ArrayList<>(cachedPartNames.length);
+            for (String name : cachedPartNames) {
+                if (!isFramePart(name)) {
+                    result.add(name);
+                }
+            }
+            return result;
         }
         List<String> result = new ArrayList<>(itemPartList.size());
         for (String name : itemPartList) {
-            if (parts.containsKey(name)) {
+            if (parts.containsKey(name) && !isFramePart(name)) {
                 result.add(name);
             }
         }

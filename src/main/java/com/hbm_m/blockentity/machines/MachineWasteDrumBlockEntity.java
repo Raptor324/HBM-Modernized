@@ -44,6 +44,9 @@ public class MachineWasteDrumBlockEntity extends BaseMachineBlockEntity {
         }
         if (water <= 0) return;
 
+        // Anti-waste: setChanged() (chunk dirty-mark) only when the cooling actually moved
+        // rod state (heat NBT is written per-tick while cooling) — no change, no write.
+        long before = be.inventoryFingerprint();
         for (int i = 0; i < INVENTORY_SIZE; i++) {
             ItemStack stack = be.inventory.getStackInSlot(i);
             if (stack.isEmpty() || !(stack.getItem() instanceof RBMKRodItem rod)) continue;
@@ -51,7 +54,15 @@ public class MachineWasteDrumBlockEntity extends BaseMachineBlockEntity {
             rod.updateHeat(level, stack, COOL_MOD);
             rod.provideHeat(level, stack, PROVIDE_HEAT, COOL_MOD);
         }
-        be.setChanged();
+        if (be.inventoryFingerprint() != before) be.setChanged();
+    }
+
+    private long inventoryFingerprint() {
+        long h = 0L;
+        for (int i = 0; i < INVENTORY_SIZE; i++) {
+            h = h * 31L + com.hbm_m.platform.PlatformHooks.stackFingerprint(inventory.getStackInSlot(i));
+        }
+        return h;
     }
 
     @Override

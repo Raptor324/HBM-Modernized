@@ -189,18 +189,20 @@ public class MachineCrucibleBlockEntity extends BaseHbmBlockEntity implements co
             }
         }
 
-        /* урон существам в расплаве */
+        /* урон существам в расплаве — раз в 10 тиков, фаза по позиции (entity-query gate) */
         int totalCap = RECIPE_CAPACITY + WASTE_CAPACITY;
-        int totalMass = be.totalAmount(be.recipeStack) + be.totalAmount(be.wasteStack);
-        double meltLevel = ((double) totalMass / (double) totalCap) * 0.875D;
+        if (be.probeDue(10)) {
+            int totalMass = be.totalAmount(be.recipeStack) + be.totalAmount(be.wasteStack);
+            double meltLevel = ((double) totalMass / (double) totalCap) * 0.875D;
 
-        List<LivingEntity> living = level.getEntitiesOfClass(LivingEntity.class,
-                new AABB(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                         pos.getX() + 0.5, pos.getY() + 0.5 + meltLevel, pos.getZ() + 0.5).inflate(1, 0, 1));
-        for (LivingEntity entity : living) {
-            DamageSource lava = level.damageSources().lava();
-            entity.hurt(lava, 5.0F);
-            com.hbm_m.platform.PlatformHooks.setSecondsOnFire(entity, 5);
+            List<LivingEntity> living = level.getEntitiesOfClass(LivingEntity.class,
+                    new AABB(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                             pos.getX() + 0.5, pos.getY() + 0.5 + meltLevel, pos.getZ() + 0.5).inflate(1, 0, 1));
+            for (LivingEntity entity : living) {
+                DamageSource lava = level.damageSources().lava();
+                entity.hurt(lava, 5.0F);
+                com.hbm_m.platform.PlatformHooks.setSecondsOnFire(entity, 5);
+            }
         }
 
         /* плавка */

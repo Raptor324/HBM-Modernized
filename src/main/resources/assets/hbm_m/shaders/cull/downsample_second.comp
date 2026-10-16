@@ -25,11 +25,16 @@ layout(binding = 6, r32f) uniform restrict writeonly image2D mip_6;
 shared float intermediate_memory[16][16];
 
 float reduce_load_mip_0(ivec2 tex) {
+    // Hardening: clamp to the real mip-0 size. Out-of-bounds imageLoad returns
+    // 0.0 per ARB_shader_image_load_store, which reduce_4 would treat as
+    // near-plane geometry. With mip0Size() = nextPot>>1 the dispatch stays in
+    // bounds for every window >= 256 px, so this only guards tiny windows.
+    ivec2 base = min(tex, imageSize(mip_0) - ivec2(2));
     return reduce_4(vec4(
-        imageLoad(mip_0, tex + ivec2(0, 0)).r,
-        imageLoad(mip_0, tex + ivec2(0, 1)).r,
-        imageLoad(mip_0, tex + ivec2(1, 0)).r,
-        imageLoad(mip_0, tex + ivec2(1, 1)).r
+        imageLoad(mip_0, base + ivec2(0, 0)).r,
+        imageLoad(mip_0, base + ivec2(0, 1)).r,
+        imageLoad(mip_0, base + ivec2(1, 0)).r,
+        imageLoad(mip_0, base + ivec2(1, 1)).r
     ));
 }
 

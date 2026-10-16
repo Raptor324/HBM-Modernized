@@ -55,6 +55,7 @@ public final class GameTestRegistration {
         event.register(CableGameTest.class);
         event.register(ArmorTableGameTest.class);
         event.register(ContraptionMoveGameTest.class);
+        event.register(MultiblockTeardownGameTest.class);
         event.register(TurbofanGameTest.class);
         event.register(TurbofanIntegrationGameTest.class);
         event.register(NukeProfileGameTest.class);
@@ -77,6 +78,7 @@ public final class GameTestRegistration {
         event.register(CableGameTest.class);
         event.register(ArmorTableGameTest.class);
         event.register(ContraptionMoveGameTest.class);
+        event.register(MultiblockTeardownGameTest.class);
         event.register(TurbofanGameTest.class);
         event.register(TurbofanIntegrationGameTest.class);
         event.register(NukeProfileGameTest.class);

@@ -13,6 +13,7 @@ import com.hbm_m.inventory.menu.MachineCombinationOvenMenu;
 import com.hbm_m.recipe.CombinationOvenRecipe;
 import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.recipe.ModRecipes;
+import com.hbm_m.recipe.index.CachedRecipeResolver;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -23,6 +24,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluid;
 
 /**
  * Combination Oven - generisch rezeptgesteuerte Einzelblock-Maschine, Portierung der Kernlogik
@@ -50,6 +52,11 @@ public class MachineCombinationOvenBlockEntity extends BaseMachineBlockEntity im
 
     private int progressTicks = 0;
     private int currentDuration = 1;
+
+    /** Кэш скана рецептов: ключ — фингерпринты входного стека и типа жидкости бака. */
+    private final CachedRecipeResolver<CombinationOvenRecipe> recipeResolver = new CachedRecipeResolver<>();
+
+    private static final long RECIPE_SEED = 0xC0FAF00L;
 
     private final FluidTank tank = new FluidTank(TANK_CAPACITY_MB) {
         @Override
@@ -129,13 +136,21 @@ public class MachineCombinationOvenBlockEntity extends BaseMachineBlockEntity im
         ItemStack input = inventory.getStackInSlot(SLOT_INPUT);
         if (input.isEmpty()) return null;
 
-        List<CombinationOvenRecipe> recipes = RecipeHooks.getAllRecipes(level, CombinationOvenRecipe.Type.INSTANCE);
-        for (CombinationOvenRecipe recipe : recipes) {
-            if (recipe.matchesInput(input) && recipe.matchesFluid(tank.getStoredFluid())) {
-                return recipe;
+        // Скан кэшируется ({@link CachedRecipeResolver}) по фингерпринтам входного стека и
+        // типа жидкости бака; количество жидкости/место в выходном слоте проверяются per-tick
+        // в canProcess — вне сканера (CONTRACT 1).
+        final Fluid tankFluid = tank.getStoredFluid();
+        long sig = CachedRecipeResolver.sign(RECIPE_SEED,
+                PlatformHooks.stackFingerprint(input),
+                tankFluid == null ? 0L : tankFluid.hashCode());
+        return recipeResolver.resolve(level, CombinationOvenRecipe.Type.INSTANCE, sig, (lvl, recipes) -> {
+            for (CombinationOvenRecipe recipe : recipes) {
+                if (recipe.matchesInput(input) && recipe.matchesFluid(tankFluid)) {
+                    return recipe;
+                }
             }
-        }
-        return null;
+            return null;
+        });
     }
 
     private boolean canProcess(CombinationOvenRecipe recipe) {

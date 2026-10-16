@@ -26,8 +26,10 @@ import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL33;
 import org.lwjgl.opengl.GL31;
 import org.lwjgl.opengl.GL40;
 import org.lwjgl.opengl.GL42;
@@ -41,6 +43,7 @@ import com.hbm_m.client.render.culling.NucleusGpuCuller;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.client.Minecraft;
@@ -75,13 +78,11 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
  *   <li>Renderer initialised, instanceCount &gt; 0.</li>
  * </ul>
  * <p>
- * <b>Fade ordering (variant G):</b> each instance snapshot is partitioned into
- * [opaque | fading back-to-front] ({@link #partitionOpaqueFirst}), and the command buffer
- * is assembled as [all opaque sub-draws][all fading sub-draws] — executed in a single
- * {@code glMultiDrawElementsIndirect}, but opaque geometry is guaranteed to seal
- * the depth buffer prior to the fading phase. Without this, a distant opaque machine
- * behind a fading machine would fail the depth test (as fading fragments write depth
- * when {@code depthMask(true)}) and the terrain behind it would leak through.
+ * <b>Fade ordering (variant G):</b> each renderer window is one sub-draw of a single
+ * {@code glMultiDrawElementsIndirect}; fading alpha is resolved by the GPU fade ramp
+ * (or per-fragment dither discard with {@code nucleusDitherFade}) and gated by the
+ * cached window minimum, so the coordinator performs no CPU-side opaque/fading
+ * partition and no fading-tail sort.
  * <p>
  * <b>Iris path:</b> untouched. {@link InstancedStaticPartRenderer#flush(Matrix4f)}
  * still routes to {@code flushBatchIris} when an external shader is active —
@@ -115,9 +116,11 @@ public final class MdiBatchCoordinator {
     // Instance records live in stable per-renderer windows (base + capacity) of
     // the atlas instance VBO: the GpuSpanUploader span-diff sees only records that
     // actually changed (fade quantum, light, machine enter/leave), not the whole
-    // buffer shifted by re-laying-out. The [opaque|fading] phase order and the global
-    // back-to-front sorting of fading instances are expressed via the COMMAND ORDER of the
-    // indirect buffer: the cull shader (nucleus_cull.comp) compacts in-place - the
+    // buffer shifted by re-laying-out. There is NO per-frame sort: the command order
+    // is the stable retained-list order of the windows (the CPU-side opaque/fading
+    // partition and the fading-tail sort were removed - see prepareMdiDraw); blending
+    // of fading records therefore runs with depth writes disabled (see the draw
+    // dispatch below). The cull shader (nucleus_cull.comp) compacts in-place - the
     // survivor's position in the compacted VBO equals its input position - so instance
     // data NEVER moves. Per-frame repacking of fade slots and
     // cascading shifts of opaque windows (the main source of upload churn on camera
@@ -173,9 +176,14 @@ public final class MdiBatchCoordinator {
     /** Pool of native snapshot buffers — avoids calling memAllocFloat on every submit. */
     private static final ArrayDeque<FloatBuffer> snapshotPool = new ArrayDeque<>();
     private static final int SNAPSHOT_POOL_MAX_BUFFERS = 128;
+    /** Pool of retired Pending records — dirty churn replaces a record every frame, so the
+     *  record object and its per-instance index arrays are reused instead of feeding the GC. */
+    private static final ArrayDeque<Pending> pendingPool = new ArrayDeque<>();
+    private static final int PENDING_POOL_MAX_RECORDS = 128;
 
     static final class Pending {
-        final InstancedStaticPartRenderer renderer;
+        /** Owner renderer; nulled while the record sits in the record pool so the pool never pins a BER. */
+        InstancedStaticPartRenderer renderer;
         int baseVertex;
         /**
          * Byte offset into the EBO for {@link GL42#glDrawElementsInstancedBaseVertexBaseInstance}
@@ -189,20 +197,12 @@ public final class MdiBatchCoordinator {
         int submitBaseVertex = -1;
         int submitFirstIndexBytes = -1;
         int submitIndexCount = -1;
-        int baseInstance;
         int instanceCount;
         int[] instanceCullIndices;
         long[] instanceOcclusionKeys;
         FloatBuffer instanceData;
         /** Native buffer allocated with {@code memAllocFloat} in {@link #submit}; freed in {@link #endFrame}. */
         boolean instanceDataNativeOwned;
-        /**
-         * Boundary between opaque and fading instances after {@link #partitionOpaqueFirst}:
-         * records [0, opaqueCount) have fade ≈ 1.0, and [opaqueCount, instanceCount) are fading,
-         * sorted back-to-front. -1 indicates partitioning has not yet been executed.
-         * instanceCullIndices and instanceOcclusionKeys are NOT reordered: they are not read in MDI.
-         */
-        int opaqueCount = -1;
         // ── Retained / clean-frame reuse ───────────────────────────────
         /** Timestamp of last submit / submitClean (frame when renderer asserted presence). */
         long assertedFrame;
@@ -213,8 +213,30 @@ public final class MdiBatchCoordinator {
          * are precomputed and valid until the next dirty submit.
          */
         boolean partitionValid;
-        /** Minimum fade value of snapshot (computed during partitioning instead of per-frame scan). */
+        /** Minimum GPU-ramp alpha of the snapshot (recomputed on dirty submits; the MDI blend gate input). */
         float cachedMinFade = 1.0f;
+        /**
+         * Min-fade cache validity: the scan is camera-dependent, so it reruns
+         * when the records change (any dirty submit) OR the camera moves more
+         * than a fraction of a block - a static camera on a static farm never
+         * rescans (the unconditional per-frame scan was 7% of the frame over
+         * ~50k instances, spark 2026-10-08).
+         */
+        boolean minFadeValid;
+        float minFadeCamX, minFadeCamY, minFadeCamZ;
+        /**
+         * Records in the snapshot with a distance-faded mode (&lt; FADE_MODE_NONE_DIVIDER),
+         * counted once per dirty submit: 0 lets the camera-move rescan of
+         * computeWindowMinFade short-circuit to 1f without touching the buffer —
+         * walking/strafing otherwise rescans every record of every window each
+         * frame (1.6 ms/frame, spark 10-09). NOTE: FADE_MODE_STATIC (0.9999) is
+         * below the divider, so every normal static-machine window counts as
+         * "fading" — STATIC records can still produce alpha &lt; 1 through the
+         * static-zone distance ramp and MUST go through the full scan. The
+         * short-circuit only fires for windows that are 100% FADE_MODE_NONE
+         * (missiles, contraptions).
+         */
+        int fadingRecords;
         // -- Stable window in the instance atlas -----------------------------
         /** Window base in records (instance units); -1 = window not yet placed. */
         int atlasWindowBase = -1;
@@ -222,13 +244,24 @@ public final class MdiBatchCoordinator {
         int atlasWindowCap = 0;
         /** The current snapshot is already uploaded into the window and the shadow is valid - the upload is skipped. */
         boolean windowUploaded = false;
+        // -- Span-diff shadow (GpuSpanUploader.diffUpload) -------------------
+        /**
+         * CPU mirror of the GPU contents of this window: written by
+         * {@link #uploadWindowsToAtlas} (fresh copy after a full upload) or
+         * transferred from the replaced record in {@link #submit} when the
+         * previous window upload succeeded (its snapshot IS the GPU mirror).
+         * Lets a dirty re-submit upload only changed records instead of the
+         * whole window. Recycled with the record (see {@link #recycleSnapshot}).
+         */
+        FloatBuffer gpuShadowData;
+        /** How many floats of {@link #gpuShadowData} are known to mirror the GPU (records appended since are not covered). */
+        int gpuShadowValidFloats = 0;
         Pending(InstancedStaticPartRenderer renderer) { this.renderer = renderer; }
     }
 
     /**
-     * Contiguous range of opaque instances for a single {@link Pending} (opaque phase).
-     * Output command buffer: [opaque windows...][fading slots of 1 instance...] in ONE
-     * multi-draw; opaque always precedes fading (seals depth prior to blending).
+     * One {@link Pending} window's instances as a single sub-draw.
+     * Output command buffer: one command per window, all issued in ONE multi-draw.
      */
     static final class SubDraw {
         Pending owner;
@@ -251,47 +284,15 @@ public final class MdiBatchCoordinator {
         }
     }
 
-    /**
-     * Single fading instance in global back-to-front order. The fading phase executes
-     * with depth-write enabled: self-overlap within a model must resolve via depth-test,
-     * while mutual depth-rejection between machines is eliminated by global camera-distance
-     * sorting (distant instances drawn first, near blended on top). One instance per command —
-     * commands are inexpensive (32 B), and fading instances typically number in the dozens.
-     */
-    static final class FadeSlot {
-        Pending owner;
-        int srcInstance;
-        float distSq;
-        /** Instance fade value (for minFade aggregation without reading snapshot data). */
-        float fade = 1.0f;
-        int baseInstance;
-        FadeSlot(Pending owner, int srcInstance, float distSq, int baseInstance) {
-            this.owner = owner;
-            this.srcInstance = srcInstance;
-            this.distSq = distSq;
-            this.baseInstance = baseInstance;
-        }
-
-        /** Pool reuse: allocation only when the fading instance count grows. */
-        void set(Pending owner, int srcInstance, float distSq, int baseInstance) {
-            this.owner = owner;
-            this.srcInstance = srcInstance;
-            this.distSq = distSq;
-            this.baseInstance = baseInstance;
-        }
-    }
-
     private final Matrix4f projectionMatrix;
     private final List<Pending> pending = new ArrayList<>(16);
-    private int totalInstances = 0;
 
     // -- Frame scratch (rendering is single-threaded): pools instead of new lists --
     // PreparedMdi holds these lists only within dispatch() - by the next
-    // frame it is dead. SubDraw/FadeSlot objects are reused: allocation only
-    // when the window/fading-instance count grows.
+    // frame it is dead. SubDraw objects are reused: allocation only
+    // when the window count grows.
     private final ArrayList<Pending> drawListScratch = new ArrayList<>(64);
     private final ArrayList<SubDraw> subDrawPool = new ArrayList<>(64);
-    private final ArrayList<FadeSlot> fadeSlotPool = new ArrayList<>(64);
     /** Persistent indirect command buffer (grows on demand), instead of memAlloc/Free per dispatch. */
     private static ByteBuffer cmdBufScratch;
 
@@ -323,7 +324,7 @@ public final class MdiBatchCoordinator {
                     hasDrawIndirect = false;
                     hasBaseInstance = false;
                 }
-            } catch (Throwable t) {
+            } catch (Exception t) {
                 hasDrawIndirect = false;
                 hasBaseInstance = false;
             }
@@ -332,35 +333,16 @@ public final class MdiBatchCoordinator {
     }
 
     public static boolean isMdiAvailable() {
-        ensureCapsResolved();
-        boolean ok = hasDrawIndirect && hasBaseInstance;
-        if (!loggedOnce) {
-            loggedOnce = true;
-            try {
-                String vendor = GL11.glGetString(GL11.GL_VENDOR);
-                String renderer = GL11.glGetString(GL11.GL_RENDERER);
-                String version = GL11.glGetString(GL11.GL_VERSION);
-                if (ok) {
-                    MainRegistry.LOGGER.info(
-                            "[HBM-M MDI] Draw indirect + base_instance available (atlas batch path). GL_VENDOR='{}', GL_RENDERER='{}', GL_VERSION='{}'",
-                            vendor, renderer, version);
-                } else {
-                    MainRegistry.LOGGER.info(
-                            "[HBM-M MDI] Draw indirect/base_instance NOT available (hasDrawIndirect={}, hasBaseInstance={}) — vanilla instanced path. GL_VENDOR='{}', GL_RENDERER='{}', GL_VERSION='{}'",
-                            hasDrawIndirect, hasBaseInstance, vendor, renderer, version);
-                }
-            } catch (Throwable ignored) {
-                // GL string queries can fail very early; safe to skip the log line.
-            }
-        }
-        return ok;
+        return HardwareTierManager.isTier1();
     }
 
     public static MdiBatchCoordinator beginFrame(Matrix4f projectionMatrix) {
+        if (!HardwareTierManager.isTier1()) {
+            return null;
+        }
         if (ShaderCompatibilityDetector.isExternalShaderActive()) {
             return null;
         }
-        if (!isMdiAvailable()) return null;
 
         retainedFrameStamp++;
         MdiBatchCoordinator session = new MdiBatchCoordinator(projectionMatrix);
@@ -382,20 +364,37 @@ public final class MdiBatchCoordinator {
         if (s != null) {
             // Pending records are retained; snapshots remain alive, and the next frame will re-assert or drop them.
             s.pending.clear();
-            s.totalInstances = 0;
             ACTIVE.remove();
         }
+        // Audit 2026-10-07 #9: no dispatch will follow this frame, so no
+        // recordGpuCull will re-assert the overlay values - clear them so the
+        // F3 "GPU Cull: Active" line cannot keep showing the discarded
+        // session's numbers (the freshness stamp in NucleusDebug covers the
+        // remaining sticky cases; this covers the teardown itself).
+        NucleusDebug.resetGpuCullStats();
+    }
+
+    /**
+     * Retained-record purge for runtime degradation
+     * ({@code HardwareTierManager.triggerRuntimeDegradation}): safe from
+     * in-frame failure paths like {@link #dropAllRetained}, but unlike
+     * {@link #clearCachedRedraw} it deliberately does NOT free the snapshot
+     * pool / cmdBufScratch - those are event-driven-only (can run mid-dispatch
+     * here, where the frees would pull the buffers out from under the
+     * unwinding dispatch).
+     */
+    public static void dropRetainedForDegradation() {
+        dropAllRetained();
     }
 
     public void endFrame() {
         try {
             dispatch();
-        } catch (Throwable t) {
+        } catch (Exception t) {
             MainRegistry.LOGGER.error("[HBM-M MDI] dispatch failed; future flushes will use legacy path", t);
         } finally {
             // Pending records persist in retainedList; snapshots are needed for the next frame. Only reset session.
             pending.clear();
-            totalInstances = 0;
             if (ACTIVE.get() == this) ACTIVE.remove();
         }
     }
@@ -403,10 +402,28 @@ public final class MdiBatchCoordinator {
     public static void clearCachedRedraw() {
         // Dimension change / resource reload / atlas reset: retained records are invalidated.
         dropAllRetained();
+        // Release the persistent high-water natives (snapshot pool + indirect-command
+        // scratch) so a session ends without retaining the largest-ever footprint.
+        // Safe only here: every caller is event-driven (RenderCacheManager
+        // SESSION_END/RESOURCE_RELOAD, forceVanillaImmediate flip) and can never run
+        // mid-dispatch, unlike dropAllRetained() which is also called from in-frame
+        // failure paths. Both buffers re-grow on demand (takeSnapshot / dispatch).
+        FloatBuffer pooled;
+        while ((pooled = snapshotPool.pollFirst()) != null) {
+            MemoryUtil.memFree(pooled);
+        }
+        // Retired records hold only on-heap arrays; clearing the pool releases the
+        // largest-ever index-array footprint along with the natives above.
+        pendingPool.clear();
+        if (cmdBufScratch != null) {
+            MemoryUtil.memFree(cmdBufScratch);
+            cmdBufScratch = null;
+        }
     }
 
-    private record PreparedMdi(List<Pending> drawList, List<SubDraw> opaqueSubs, List<FadeSlot> fadeSlots,
-                               int drawTotalInstances, int pendingSize, int droppedNoSlot, float minFade) {}
+    private record PreparedMdi(List<Pending> drawList, List<SubDraw> opaqueSubs,
+                               int drawTotalInstances, int pendingSize, int droppedNoSlot, float minFade,
+                               boolean ditherFade) {}
 
     private static void freeDrawListInstanceBuffers(List<Pending> drawList) {
         for (int i = 0; i < drawList.size(); i++) {
@@ -415,6 +432,11 @@ public final class MdiBatchCoordinator {
                 MemoryUtil.memFree(p.instanceData);
                 p.instanceData = null;
                 p.instanceDataNativeOwned = false;
+            }
+            if (p.gpuShadowData != null) {
+                MemoryUtil.memFree(p.gpuShadowData);
+                p.gpuShadowData = null;
+                p.gpuShadowValidFloats = 0;
             }
         }
     }
@@ -453,9 +475,55 @@ public final class MdiBatchCoordinator {
             p.instanceDataNativeOwned = false;
             recyclePooled(buf);
         }
+        recycleShadow(p);
     }
 
-    /** Removes record from retained list/map and returns snapshot buffer to pool. */
+    /** Returns the span-diff shadow buffer to the pool (or nulls it). */
+    private static void recycleShadow(Pending p) {
+        if (p.gpuShadowData != null) {
+            FloatBuffer shadow = p.gpuShadowData;
+            p.gpuShadowData = null;
+            p.gpuShadowValidFloats = 0;
+            recyclePooled(shadow);
+        } else {
+            p.gpuShadowValidFloats = 0;
+        }
+    }
+
+    /** Takes a record object from the pool (or allocates one): dirty submits replace the
+     *  previous record on every churned frame, so the record object itself is worth reusing. */
+    private static Pending acquirePending(InstancedStaticPartRenderer renderer) {
+        Pending p = pendingPool.pollFirst();
+        if (p == null) {
+            return new Pending(renderer);
+        }
+        p.renderer = renderer;
+        return p;
+    }
+
+    /** Returns a retired record to the pool. The native snapshot must already be released
+     *  via {@link #recycleSnapshot}. The renderer reference is detached so the pool never
+     *  pins a BER, and the atlas window is reset so a re-acquired record cannot inherit
+     *  the previous owner's window placement. Per-instance index arrays stay attached:
+     *  the next owner reuses them when large enough (see {@link #submit}). */
+    private static void recyclePending(Pending p) {
+        if (pendingPool.size() >= PENDING_POOL_MAX_RECORDS) {
+            return;
+        }
+        p.renderer = null;
+        p.instanceData = null;
+        p.instanceDataNativeOwned = false;
+        p.gpuShadowData = null;
+        p.gpuShadowValidFloats = 0;
+        p.partitionValid = false;
+        p.minFadeValid = false;
+        p.windowUploaded = false;
+        p.atlasWindowBase = -1;
+        p.atlasWindowCap = 0;
+        pendingPool.addFirst(p);
+    }
+
+    /** Removes record from retained list/map, returns snapshot buffer to pool and the record object to the pool. */
     private static void uninstallRetained(Pending p) {
         Pending mapped = retainedByRenderer.get(p.renderer);
         if (mapped == p) {
@@ -463,13 +531,37 @@ public final class MdiBatchCoordinator {
         }
         releaseWindow(p);
         recycleSnapshot(p);
+        recyclePending(p);
     }
 
-    /** Drops retained records without assertion during frame — renderer became culled or unloaded. */
+    public void evictRenderer(InstancedStaticPartRenderer renderer) {
+        evict(renderer);
+    }
+
+    public static void evict(InstancedStaticPartRenderer renderer) {
+        if (renderer == null) return;
+        Pending p = retainedByRenderer.remove(renderer);
+        if (p != null) {
+            retainedList.remove(p);
+            uninstallRetained(p);
+        }
+    }
+
+    /**
+     * Drops retained records without assertion for TWO consecutive frames — renderer
+     * became culled or unloaded. The one-frame grace is transactional: a machine whose
+     * render collection threw or early-returned this frame (renderers flush with
+     * instanceCount==0 and never assert) keeps drawing LAST frame's records and window
+     * and is refreshed next frame, instead of being dropped and re-created in the same
+     * churn (window released to the hole pool, re-placed with a full re-upload — a
+     * visible one-frame vanish + upload spike). A truly removed/unloaded machine
+     * lingers exactly one extra frame with its final records; teardown via
+     * {@link #dropAllRetained} (world change/reload) stays immediate.
+     */
     private static void dropUnassertedRetained() {
         for (Iterator<Pending> it = retainedList.iterator(); it.hasNext(); ) {
             Pending p = it.next();
-            if (p.assertedFrame != retainedFrameStamp) {
+            if (retainedFrameStamp - p.assertedFrame >= 2) {
                 uninstallRetained(p);
                 it.remove();
             }
@@ -479,11 +571,13 @@ public final class MdiBatchCoordinator {
     /** Complete purge of retained state (world change, resource reload, atlas reset). */
     private static void dropAllRetained() {
         for (int i = 0; i < retainedList.size(); i++) {
-            Pending mapped = retainedByRenderer.get(retainedList.get(i).renderer);
-            if (mapped == retainedList.get(i)) {
-                retainedByRenderer.remove(retainedList.get(i).renderer);
+            Pending rp = retainedList.get(i);
+            Pending mapped = retainedByRenderer.get(rp.renderer);
+            if (mapped == rp) {
+                retainedByRenderer.remove(rp.renderer);
             }
-            recycleSnapshot(retainedList.get(i));
+            recycleSnapshot(rp);
+            recyclePending(rp);
         }
         retainedList.clear();
         retainedByRenderer.clear();
@@ -529,77 +623,134 @@ public final class MdiBatchCoordinator {
             srcView.limit(srcStart + instanceFloats);
             instanceSnapshot.put(srcView);
             instanceSnapshot.flip();
-        } catch (Throwable t) {
+        } catch (Exception t) {
             recyclePooled(instanceSnapshot);
             MainRegistry.LOGGER.warn("[HBM-M MDI] instance snapshot alloc/copy failed: {}", t.toString());
             return false;
         }
 
-        Pending p = new Pending(renderer);
+        // Max-submit rule (Embeddium multi-pass): a secondary submit of the same renderer
+        // within one frame is discarded when an earlier, at-least-as-large submit is already
+        // retained. The decision runs BEFORE the record and its index arrays are built, so
+        // a multi-pass loser never allocates; the earlier record is just re-asserted.
+        Pending prev = retainedByRenderer.get(renderer);
+        if (prev != null
+                && prev.dirtySubmittedFrame == retainedFrameStamp
+                && prev.instanceCount >= instanceCount) {
+            // First submit this frame was larger / more complete — retain it.
+            recyclePooled(instanceSnapshot);
+            prev.assertedFrame = retainedFrameStamp;
+            prev.partitionValid = false;
+            prev.minFadeValid = false;
+            // The winning dirty submit this frame already listed prev here (submit
+            // tail); a second listing would inflate pendingSize diagnostics and run
+            // the slot check twice. pending is only cleared at dispatch, so within
+            // one submit batch the record is still present.
+            if (!pending.contains(prev)) {
+                pending.add(prev);
+            }
+            return true;
+        }
+
+        Pending p = acquirePending(renderer);
         p.baseVertex = slot.baseVertex;
         p.firstIndexBytes = slot.firstIndexBytes;
         p.indexCount = slot.indexCount;
         p.submitBaseVertex = slot.baseVertex;
         p.submitFirstIndexBytes = slot.firstIndexBytes;
         p.submitIndexCount = slot.indexCount;
-        p.baseInstance = totalInstances;
         p.instanceCount = instanceCount;
         p.dirtySubmittedFrame = retainedFrameStamp;
         p.instanceData = instanceSnapshot;
         p.instanceDataNativeOwned = true;
+        // MDI always takes the dither path (see prepareMdiDraw): per-instance
+        // fade counts are never consumed there, so the per-dirty-submit buffer
+        // walk is pure waste.
+        p.fadingRecords = 0;
+        // Per-instance index arrays: reuse the replaced record's arrays (ownership moves —
+        // prev is recycled right below) or the pooled record's own leftovers when large
+        // enough; otherwise every churned dirty frame would hand the GC a fresh
+        // int[]/long[] per renderer. Allocation only on growth.
         if (sourceCullIndices != null && sourceCullIndices.length >= instanceCount) {
-            p.instanceCullIndices = new int[instanceCount];
-            System.arraycopy(sourceCullIndices, 0, p.instanceCullIndices, 0, instanceCount);
+            int[] dst = null;
+            if (prev != null && prev.instanceCullIndices != null
+                    && prev.instanceCullIndices.length >= instanceCount) {
+                dst = prev.instanceCullIndices;
+                prev.instanceCullIndices = null;
+            } else if (p.instanceCullIndices != null
+                    && p.instanceCullIndices.length >= instanceCount) {
+                dst = p.instanceCullIndices;
+            }
+            if (dst == null) {
+                dst = new int[instanceCount];
+            }
+            System.arraycopy(sourceCullIndices, 0, dst, 0, instanceCount);
+            p.instanceCullIndices = dst;
         } else {
             p.instanceCullIndices = null;
         }
         if (sourceOcclusionKeys != null && sourceOcclusionKeys.length >= instanceCount) {
-            p.instanceOcclusionKeys = new long[instanceCount];
-            System.arraycopy(sourceOcclusionKeys, 0, p.instanceOcclusionKeys, 0, instanceCount);
+            long[] dst = null;
+            if (prev != null && prev.instanceOcclusionKeys != null
+                    && prev.instanceOcclusionKeys.length >= instanceCount) {
+                dst = prev.instanceOcclusionKeys;
+                prev.instanceOcclusionKeys = null;
+            } else if (p.instanceOcclusionKeys != null
+                    && p.instanceOcclusionKeys.length >= instanceCount) {
+                dst = p.instanceOcclusionKeys;
+            }
+            if (dst == null) {
+                dst = new long[instanceCount];
+            }
+            System.arraycopy(sourceOcclusionKeys, 0, dst, 0, instanceCount);
+            p.instanceOcclusionKeys = dst;
         } else {
             p.instanceOcclusionKeys = null;
         }
 
         // Retained setup: dirty submit replaces renderer record IN-PLACE
         // (stable list order -> stable upload offsets for remaining entries).
-        // Secondary submit of the same renderer in one frame (Embeddium multi-pass):
-        // max-submit rule — keep the fullest submit of this frame.
-        Pending prev = retainedByRenderer.put(renderer, p);
+        retainedByRenderer.put(renderer, p);
         if (prev != null) {
             int idx = retainedList.indexOf(prev);
-            if (prev.dirtySubmittedFrame == retainedFrameStamp
-                    && prev.instanceCount >= instanceCount) {
-                // First submit this frame was larger / more complete — retain it.
-                retainedByRenderer.put(renderer, prev);
-                if (idx >= 0) {
-                    retainedList.set(idx, prev);
-                }
-                recycleSnapshot(p);
-                p = prev;
+            if (idx >= 0) {
+                retainedList.set(idx, p);
             } else {
-                if (idx >= 0) {
-                    retainedList.set(idx, p);
-                } else {
-                    retainedList.add(p);
-                }
-                // The stable atlas window moves with the renderer: the snapshot is
-                // replaced (the diff will re-upload changed records to the same base);
-                // the placement geometry (base/capacity) is preserved.
-                p.atlasWindowBase = prev.atlasWindowBase;
-                p.atlasWindowCap = prev.atlasWindowCap;
-                p.windowUploaded = false;
-                prev.atlasWindowBase = -1;
-                prev.atlasWindowCap = 0;
-                recycleSnapshot(prev);
+                retainedList.add(p);
             }
+            // The stable atlas window moves with the renderer: the snapshot is
+            // replaced (the diff will re-upload changed records to the same base);
+            // the placement geometry (base/capacity) is preserved.
+            p.atlasWindowBase = prev.atlasWindowBase;
+            p.atlasWindowCap = prev.atlasWindowCap;
+            // Span-diff shadow: when the previous window upload succeeded, the
+            // replaced snapshot is the CPU mirror of the GPU window - hand it to
+            // the new record as the diff base instead of paying a full-window
+            // re-upload for one changed machine. An unuploaded/invalidated
+            // window proves nothing about the GPU contents - the shadow is
+            // dropped (diffUpload degrades to a full upload).
+            if (prev.windowUploaded && prev.gpuShadowData != null) {
+                p.gpuShadowData = prev.gpuShadowData;
+                p.gpuShadowValidFloats = prev.gpuShadowValidFloats;
+            } else {
+                p.gpuShadowData = null;
+                p.gpuShadowValidFloats = 0;
+            }
+            prev.gpuShadowData = null;
+            prev.gpuShadowValidFloats = 0;
+            p.windowUploaded = false;
+            prev.atlasWindowBase = -1;
+            prev.atlasWindowCap = 0;
+            recycleSnapshot(prev);
+            recyclePending(prev);
         } else {
             retainedList.add(p);
         }
         p.assertedFrame = retainedFrameStamp;
         p.partitionValid = false;
+        p.minFadeValid = false;
 
         pending.add(p);
-        totalInstances += instanceCount;
         return true;
     }
 
@@ -633,6 +784,35 @@ public final class MdiBatchCoordinator {
         return true;
     }
 
+    /**
+     * Re-asserts presence for a renderer whose static instances were completely short-circuited
+     * on the CPU by RetainedInstanceGraph (instanceCount == 0 on the CPU, but persistent instances
+     * are retained in the GPU atlas window).
+     */
+    public boolean tryAssertRetainedPresence(InstancedStaticPartRenderer renderer) {
+        if (!ClientRenderFlags.mdiCleanFrameReuse()) {
+            return false;
+        }
+        com.hbm_m.client.render.retained.RetainedInstanceGraph rig =
+                com.hbm_m.client.render.retained.RetainedInstanceGraph.get();
+        if (rig != null && !rig.hasActiveInstances(renderer)) {
+            return false;
+        }
+        Pending p = retainedByRenderer.get(renderer);
+        if (p == null || !p.partitionValid || p.instanceCount <= 0) {
+            return false;
+        }
+        if (!renderer.mdiBufferSynced || renderer.mdiRecordWriteHappened) {
+            return false;
+        }
+        MdiGeometryAtlas atlas = MdiGeometryAtlas.getOrCreate();
+        if (atlas == null || !atlas.isReady() || atlas.getCurrentSlot(renderer) == null) {
+            return false;
+        }
+        p.assertedFrame = retainedFrameStamp;
+        return true;
+    }
+
     private void dispatch() {
         PreparedMdi prepared = prepareMdiDraw();
         if (prepared == null) {
@@ -651,7 +831,7 @@ public final class MdiBatchCoordinator {
             if (mc != null && mc.level != null) {
                 return mc.level.getGameTime();
             }
-        } catch (Throwable ignored) {
+        } catch (Exception ignored) {
         }
         return -1L;
     }
@@ -670,6 +850,12 @@ public final class MdiBatchCoordinator {
         int pendingSize = pending.size();
         for (int i = pending.size() - 1; i >= 0; i--) {
             Pending p = pending.get(i);
+            if (p.renderer == null) {
+                // Record recycled mid-frame (origin change / cache clear) while still
+                // listed here; it is no longer in retainedList — nothing left to check.
+                pending.remove(i);
+                continue;
+            }
             MdiGeometryAtlas.Slot slot = atlas.getCurrentSlot(p.renderer);
             if (slot == null) {
                 MainRegistry.LOGGER.warn(
@@ -699,7 +885,6 @@ public final class MdiBatchCoordinator {
             p.indexCount = slot.indexCount;
         }
         pending.clear();
-        totalInstances = 0;
 
         // Frame draw list = retained list (stable order -> stable upload offsets;
         // reused records require no re-upload). Slot check with lazy re-registration
@@ -733,22 +918,34 @@ public final class MdiBatchCoordinator {
 
         int instanceFloatsPerInstance = atlas.getInstanceFloatsPerInstance();
         int instanceFadeOffset = atlas.getInstanceFadeFloatOffset();
+        float camX = FrameViewState.relCamX();
+        float camY = FrameViewState.relCamY();
+        float camZ = FrameViewState.relCamZ();
 
-        // Variant G+: partition [opaque | fading back-to-front] — ONLY for records
-        // with new snapshots; clean records reuse previous frame's partition and caches.
+        // Variant G+: every renderer window draws as ONE sub-draw in a single
+        // multi-draw; the CPU-side opaque/fading partition and the per-frame
+        // membership scan were removed with it. The only camera-dependent
+        // per-frame work left is the blend gate input: the min GPU-ramp alpha
+        // over the window's records (the record stores a static fade MODE).
+        // Dither mode (nucleusDitherFade) resolves alpha per fragment on the
+        // GPU (screen-door discard, no blending) and gates to a constant 1.
+        // The user's nucleusDitherFade toggle picks the fade STYLE; the CPU-side
+        // min-fade scan stays dead either way (see executeMdiGlDraw): dither mode
+        // needs no blend decision at all, and smooth-alpha mode enables GL_BLEND
+        // unconditionally - for every opaque instance (vFadeAlpha == 1.0)
+        // GL_SRC_ALPHA/ONE_MINUS_SRC_ALPHA with depthMask(true) is a mathematical
+        // identity, so no per-window blend gate is required.
+        boolean ditherFade = com.hbm_m.config.ModClothConfig.get().nucleusDitherFade;
         int cleanRenderers = 0;
         int cleanInstances = 0;
         int drawTotalInstances = 0;
         for (int i = 0; i < drawList.size(); i++) {
             Pending p = drawList.get(i);
-            if (!p.partitionValid) {
-                partitionOpaqueFirst(p, instanceFloatsPerInstance, instanceFadeOffset);
-                p.cachedMinFade = computeCachedMinFade(p, instanceFloatsPerInstance, instanceFadeOffset);
-                p.partitionValid = true;
-            } else {
-                cleanRenderers++;
-                cleanInstances += p.instanceCount;
-            }
+            p.cachedMinFade = 1f;
+            p.minFadeValid = true;
+            p.partitionValid = true;
+            cleanRenderers++;
+            cleanInstances += p.instanceCount;
             drawTotalInstances += p.instanceCount;
         }
         NucleusDebug.recordMdiReuse(drawList.size(), cleanRenderers, cleanInstances);
@@ -772,6 +969,10 @@ public final class MdiBatchCoordinator {
             p.atlasWindowCap = Math.max(WINDOW_MIN_CAP, Math.max(p.instanceCount, oldCap * 2));
             p.atlasWindowBase = -1;
             p.windowUploaded = false;
+            // The window will be re-placed at a new offset: the shadow mirrors the
+            // OLD GPU location, so keeping it would make diffUpload see zero
+            // differences and upload nothing to the new window.
+            recycleShadow(p);
             anyAlloc = true;
         }
         if (anyAlloc) {
@@ -781,6 +982,7 @@ public final class MdiBatchCoordinator {
                 if (p.atlasWindowBase != base) {
                     p.atlasWindowBase = base;
                     p.windowUploaded = false;
+                    recycleShadow(p);
                 }
                 base += p.atlasWindowCap;
             }
@@ -794,16 +996,11 @@ public final class MdiBatchCoordinator {
             return null;
         }
 
-        // Opaque phase: one command per window (base = the window's stable base).
-        // Fading: a flat global list sorted by camera distance - the back-to-front
-        // order is carried by the COMMAND ORDER (the cull shader compacts
-        // in-place: compacted position = input position), data does not move.
-        // A fading instance's baseInstance = window base + record index in the snapshot.
-        // Lists and objects are pooled: allocation only on growth (see the scratch fields).
+        // Preserved MDI draw commands: one command per part-geometry (p.instanceCount).
         int subCount = 0;
         for (int i = 0; i < drawList.size(); i++) {
             Pending p = drawList.get(i);
-            if (p.opaqueCount > 0) {
+            if (p.instanceCount > 0) {
                 SubDraw s;
                 if (subCount < subDrawPool.size()) {
                     s = subDrawPool.get(subCount);
@@ -812,38 +1009,10 @@ public final class MdiBatchCoordinator {
                     subDrawPool.add(s);
                 }
                 subCount++;
-                s.set(p, 0, p.opaqueCount, p.atlasWindowBase);
+                s.set(p, 0, p.instanceCount, p.atlasWindowBase);
             }
         }
         List<SubDraw> opaqueSubs = subDrawPool.subList(0, subCount);
-
-        float camX = FrameViewState.relCamX();
-        float camY = FrameViewState.relCamY();
-        float camZ = FrameViewState.relCamZ();
-        int fadeCount = 0;
-        for (int di = 0; di < drawList.size(); di++) {
-            Pending p = drawList.get(di);
-            if (p.instanceData == null) continue;
-            int first = Math.max(0, p.opaqueCount);
-            for (int i = first; i < p.instanceCount; i++) {
-                int base = i * instanceFloatsPerInstance;
-                float dx = p.instanceData.get(base) - camX;
-                float dy = p.instanceData.get(base + 1) - camY;
-                float dz = p.instanceData.get(base + 2) - camZ;
-                FadeSlot s;
-                if (fadeCount < fadeSlotPool.size()) {
-                    s = fadeSlotPool.get(fadeCount);
-                } else {
-                    s = new FadeSlot(null, 0, 0f, 0);
-                    fadeSlotPool.add(s);
-                }
-                fadeCount++;
-                s.set(p, i, dx * dx + dy * dy + dz * dz, p.atlasWindowBase + i);
-                s.fade = p.instanceData.get(base + instanceFadeOffset);
-            }
-        }
-        fadeSlotPool.subList(0, fadeCount).sort((a, b) -> Float.compare(b.distSq, a.distSq));
-        List<FadeSlot> fadeSlots = fadeSlotPool.subList(0, fadeCount);
 
         if (!uploadWindowsToAtlas(drawList, atlas, instanceFloatsPerInstance)) {
             freeDrawListInstanceBuffers(drawList);
@@ -851,20 +1020,79 @@ public final class MdiBatchCoordinator {
             return null;
         }
 
-        return new PreparedMdi(drawList, opaqueSubs, fadeSlots, drawTotalInstances, pendingSize, droppedNoSlot, 1f);
+        return new PreparedMdi(drawList, opaqueSubs, drawTotalInstances, pendingSize, droppedNoSlot, 1f,
+                ditherFade);
     }
 
-    /** Minimum fade value of snapshot (opaque region >= threshold by construction; fading tail suffices). */
-    private static float computeCachedMinFade(Pending p, int floatsPerInstance, int fadeOffset) {
-        float min = 1.0f;
-        if (p.instanceData == null) {
-            return min;
+    /**
+     * Count of distance-faded records (mode &lt; FADE_MODE_NONE_DIVIDER) in a fresh
+     * snapshot - see {@link Pending#fadingRecords}. Runs once per dirty submit over
+     * data still warm in cache, so the per-camera-move rescan can skip windows with
+     * no distance-faded records at all (100% FADE_MODE_NONE - missiles, contraptions)
+     * with one integer compare instead of a full buffer walk. Normal static-machine
+     * windows always count &gt; 0: FADE_MODE_STATIC sits below the divider because
+     * its records still go through the distance ramp in computeWindowMinFade.
+     */
+    private static int countFadingRecords(FloatBuffer data, int count, int stride, int fadeOffset) {
+        if (data == null || count <= 0) {
+            return 1; // unknown - force the full scan path
         }
-        int first = Math.max(0, p.opaqueCount);
-        for (int i = first; i < p.instanceCount; i++) {
-            float fa = p.instanceData.get(i * floatsPerInstance + fadeOffset);
-            if (fa < min) {
-                min = fa;
+        long addr = MemoryUtil.memAddress(data);
+        int fading = 0;
+        for (int i = 0; i < count; i++) {
+            float mode = MemoryUtil.memGetFloat(addr + (long) (i * stride + fadeOffset) * 4L);
+            // FADE_MODE_INVISIBLE (freed/hidden slots) must not count as fading -
+            // the vertex shader clips them out and they carry no blend contribution.
+            if (mode >= 0.0f && mode < InstancedStaticPartRenderer.FADE_MODE_NONE_DIVIDER) {
+                fading++;
+            }
+        }
+        return fading;
+    }
+
+    /**
+     * Min GPU-ramp alpha over one window's records ({@link Pending#cachedMinFade},
+     * the MDI blend gate) - CPU mirror of the vsh fade. The record stores a static
+     * fade MODE (1.0/0.9999/0.9998): mode NONE short-circuits to 1 without a
+     * distance test, so an all-far window costs one float read per record. Records
+     * are anchor-relative: the distance is (record pos - relCam), the same form the
+     * direct path feeds {@link RenderDistanceHelper#evalInstanceAlpha}.
+     */
+    private static float computeWindowMinFade(Pending p, int stride, int fadeOffset,
+                                              float camX, float camY, float camZ) {
+        FloatBuffer data = p.instanceData;
+        if (data == null || p.instanceCount <= 0) {
+            return 1f;
+        }
+        // The snapshot is always a direct native buffer (MemoryUtil.memAllocFloat
+        // in takeSnapshot) and is flipped (position = 0) by the time this runs,
+        // so the raw address is valid for instanceCount * stride floats and the
+        // bounds-checked FloatBuffer.get reads can be raw memGetFloat reads.
+        long addr = MemoryUtil.memAddress(data);
+        float min = 1f;
+        for (int i = 0; i < p.instanceCount; i++) {
+            int base = i * stride;
+            float mode = MemoryUtil.memGetFloat(addr + (long) (base + fadeOffset) * 4L);
+            // CPU mirror of gpuFadeAlpha's "mode < 0 -> clipped out": a freed slot
+            // sits at anchor-relative (0,0,0), up to SQR_MAX_ANCHOR_DISTANCE (256
+            // blocks) from relCam, and must never drag cachedMinFade (the blend
+            // gate) below 1 regardless of that distance.
+            if (mode < 0.0f) {
+                continue;
+            }
+            if (mode >= InstancedStaticPartRenderer.FADE_MODE_NONE_DIVIDER) {
+                continue;
+            }
+            float dx = MemoryUtil.memGetFloat(addr + (long) base * 4L) - camX;
+            float dy = MemoryUtil.memGetFloat(addr + (long) (base + 1) * 4L) - camY;
+            float dz = MemoryUtil.memGetFloat(addr + (long) (base + 2) * 4L) - camZ;
+            float a = RenderDistanceHelper.evalInstanceAlpha(
+                    (double) dx * dx + (double) dy * dy + (double) dz * dz, mode);
+            if (a < min) {
+                min = a;
+                if (min <= 0f) {
+                    return 0f;
+                }
             }
         }
         return min;
@@ -884,7 +1112,7 @@ public final class MdiBatchCoordinator {
      */
     private static boolean uploadWindowsToAtlas(List<Pending> drawList,
                                                 MdiGeometryAtlas atlas, int instanceFloatsPerInstance) {
-        boolean shadowValid = atlas.isInstanceShadowValid();
+        boolean shadowValid = atlas.isInstanceWindowsValid();
         for (int i = 0; i < drawList.size(); i++) {
             Pending p = drawList.get(i);
             if (p.instanceData == null) {
@@ -894,14 +1122,34 @@ public final class MdiBatchCoordinator {
             if (p.instanceData.remaining() < floats) {
                 return false;
             }
+            if (!shadowValid) {
+                // Atlas instance VBO was invalidated (realloc/anchor shift/reset):
+                // the shadow claims to mirror GPU contents that no longer exist.
+                p.windowUploaded = false;
+                recycleShadow(p);
+            }
             if (shadowValid && p.windowUploaded) {
                 continue;
             }
+            // Undersized shadow (window grew since the transfer): recycle - the
+            // diff base must cover the whole window or it is not a base at all.
+            if (p.gpuShadowData != null && p.gpuShadowData.capacity() < floats) {
+                recycleShadow(p);
+            }
             atlas.uploadInstanceWindowSpanned(p.atlasWindowBase * instanceFloatsPerInstance,
-                    p.instanceData, 0, floats);
+                    p.instanceData, 0, floats, p.gpuShadowData, p.gpuShadowValidFloats);
+            if (p.gpuShadowData == null && floats > 0) {
+                // First upload without a transferred shadow (full upload): seed
+                // the CPU mirror so the NEXT dirty submit can span-diff instead
+                // of re-uploading the whole window again.
+                FloatBuffer shadow = takeSnapshot(floats);
+                GpuSpanUploader.syncShadow(shadow, 0, p.instanceData, 0, floats);
+                p.gpuShadowData = shadow;
+            }
+            p.gpuShadowValidFloats = floats;
             p.windowUploaded = true;
         }
-        atlas.markInstanceShadowValid();
+        atlas.markInstanceWindowsValid();
         return true;
     }
 
@@ -933,8 +1181,7 @@ public final class MdiBatchCoordinator {
     private static void executeMdiGlDraw(PreparedMdi prepared, Matrix4f projection, long gameTime) {
         List<Pending> drawList = prepared.drawList;
         List<SubDraw> opaqueSubs = prepared.opaqueSubs();
-        List<FadeSlot> fadeSlots = prepared.fadeSlots();
-        if (drawList.isEmpty() || (opaqueSubs.isEmpty() && fadeSlots.isEmpty())) {
+        if (drawList.isEmpty() || opaqueSubs.isEmpty()) {
             return;
         }
         // Embeddium/Iris dispatch stage events from shadow terrain passes as well —
@@ -946,6 +1193,13 @@ public final class MdiBatchCoordinator {
 
         MdiGeometryAtlas atlas = MdiGeometryAtlas.getOrCreate();
         if (atlas == null || !atlas.isReady()) {
+            return;
+        }
+        // Defensive VAO-liveness gate (render thread): a dead/recycled atlas VAO
+        // would make this bind fall through to a foreign VAO and fault the MDI
+        // draw in the driver. On failure the atlas was reset (slot table empty,
+        // prepared commands stale) - bail out of this frame's draw.
+        if (!atlas.ensureVaoAlive()) {
             return;
         }
 
@@ -961,7 +1215,7 @@ public final class MdiBatchCoordinator {
         var target = mc.getMainRenderTarget();
         boolean gpuCullActive = gpuCullEligible && target != null && target.getDepthTextureId() > 0;
 
-        int nCmd = opaqueSubs.size() + fadeSlots.size();
+        int nCmd = opaqueSubs.size();
         int totalInstances = 0;
         // Persistent growing buffer: memAlloc/memFree per dispatch would mean an extra
         // trip to the allocator and malloc churn on weak CPUs.
@@ -976,8 +1230,7 @@ public final class MdiBatchCoordinator {
         }
         cmdBuf.clear();
         cmdBuf.order(ByteOrder.nativeOrder());
-        // Command order matches upload order (baseInstance synchronized):
-        // [opaque windows...][fading slots globally back-to-front].
+        int globalOffset = 0;
         for (int i = 0; i < opaqueSubs.size(); i++) {
             SubDraw sub = opaqueSubs.get(i);
             Pending p = sub.owner;
@@ -988,25 +1241,13 @@ public final class MdiBatchCoordinator {
             cmdBuf.putInt(p.baseVertex);
             cmdBuf.putInt(sub.baseInstance);
             cmdBuf.putInt(sub.count);
+            cmdBuf.putInt(globalOffset); // pad1 -> globalInstanceOffset
+            cmdBuf.putInt(0);            // pad2
             while (cmdBuf.position() < rowStart + INDIRECT_CMD_STRIDE_BYTES) {
                 cmdBuf.putInt(0);
             }
+            globalOffset += sub.count;
             totalInstances += sub.count;
-        }
-        for (int i = 0; i < fadeSlots.size(); i++) {
-            FadeSlot s = fadeSlots.get(i);
-            Pending p = s.owner;
-            int rowStart = cmdBuf.position();
-            cmdBuf.putInt(p.indexCount);
-            cmdBuf.putInt(gpuCullActive ? 0 : 1);
-            cmdBuf.putInt(p.firstIndexBytes >>> 2);
-            cmdBuf.putInt(p.baseVertex);
-            cmdBuf.putInt(s.baseInstance);
-            cmdBuf.putInt(1);
-            while (cmdBuf.position() < rowStart + INDIRECT_CMD_STRIDE_BYTES) {
-                cmdBuf.putInt(0);
-            }
-            totalInstances++;
         }
         cmdBuf.flip();
 
@@ -1031,34 +1272,26 @@ public final class MdiBatchCoordinator {
             occlusionEnabled = occlusionLatch;
         }
 
+        com.hbm_m.client.render.debug.GlDebugMarkers.pushGroup("HBM_Vanilla_MDI_Dispatch");
         try {
-            int prevVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
-            int prevArrayBuf = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
-            int prevIndirectBuf = 0;
-            try {
-                prevIndirectBuf = GL11.glGetInteger(GL40.GL_DRAW_INDIRECT_BUFFER_BINDING);
-            } catch (Throwable ignored) {
-            }
-            boolean cullWas = GL11.glIsEnabled(GL11.GL_CULL_FACE);
-            boolean depthTestWas = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
-            boolean depthMaskWas = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
-            int prevDepthFunc = GL11.glGetInteger(GL11.GL_DEPTH_FUNC);
-            boolean blendWas = GL11.glIsEnabled(GL11.GL_BLEND);
-            int prevSrcRgb = GL11.glGetInteger(GL14.GL_BLEND_SRC_RGB);
-            int prevDstRgb = GL11.glGetInteger(GL14.GL_BLEND_DST_RGB);
-            int prevSrcA = GL11.glGetInteger(GL14.GL_BLEND_SRC_ALPHA);
-            int prevDstA = GL11.glGetInteger(GL14.GL_BLEND_DST_ALPHA);
-            boolean primitiveRestartWas = false;
-            try {
-                primitiveRestartWas = GL11.glIsEnabled(GL31.GL_PRIMITIVE_RESTART);
-            } catch (Throwable ignored) {
-            }
-
             String dispatchDrawMode = "MULTI";
             boolean gpuCulled = false;
 
             try {
                 GL30.glBindVertexArray(atlas.getVaoId());
+                // The driver can silently ignore the bind when the name was deleted or
+                // recycled behind our back (GL_INVALID_OPERATION "VAO names must be
+                // generated..."): the next line would then enable attribs 4..15 on a
+                // FOREIGN VAO and glMultiDrawElementsIndirect faults in the driver
+                // (native crash, hs_err_pid50040). Verify the binding actually stuck.
+                int bound = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
+                if (bound != atlas.getVaoId()) {
+                    MainRegistry.LOGGER.error(
+                            "[HBM-M MDI] Atlas VAO {} bind was rejected by the driver (GL_VERTEX_ARRAY_BINDING={}, foreign VAO); resetting atlas and skipping this frame's MDI draw",
+                            atlas.getVaoId(), bound);
+                    MdiGeometryAtlas.resetForResourceLifecycle();
+                    return;
+                }
                 atlas.enableVertexAttribArraysOnBoundVao();
 
                 // Lightmap freshness is owned by RenderFrameLight.ensureLightTextureUpdated()
@@ -1067,40 +1300,55 @@ public final class MdiBatchCoordinator {
                 // of a 256×256 CPU upload.
 
                 RenderSystem.setShader(() -> shader);
-                applyCommonUniforms(shader, projection);
+                // Min fade over the batch must be known BEFORE uniform upload:
+                // when any instance is fading, the screen-door dither path is
+                // forced (uDitherFade = 1) regardless of the config flag — see
+                // the forced-dither decision in applyCommonUniforms below.
+                // Cached minima: cachedMinFade
+                // precomputed during snapshot partition, fade of individual
+                // slots captured during enumeration — per-frame strided scan
+                // of all instances is unnecessary.
+                boolean ditherFade = prepared.ditherFade();
+                applyCommonUniforms(shader, projection, ditherFade);
                 // REGRESSION-STOP (MDI): same block_lit contract as VanillaInstancedBatchRenderer — otherwise white batches.
                 SingleMeshVboRenderer.prepareBlockLitSamplers(shader);
+                // PROGRAM CACHE DESYNC PROTECTION: the compute cull passes below (and
+                // Oculus's per-frame raw glUseProgram(0)) desync static lastProgramId
+                // from the physical program - force an honest bind here (same guard as
+                // VanillaInstancedBatchRenderer / SingleMeshVboRenderer).
+                com.hbm_m.client.render.shader.ShaderBindResync.ensureFreshBind(shader);
                 shader.apply();
                 InstancedStaticPartRenderer.bindBlockLitTexturesBeforeDraw(shader);
-
-                float minFade = prepared.minFade();
-                // Cached minima: cachedMinFade precomputed during snapshot partition,
-                // fade of individual slots captured during enumeration — per-frame
-                // strided scan of all instances is unnecessary.
-                for (int i = 0; i < opaqueSubs.size(); i++) {
-                    SubDraw sub = opaqueSubs.get(i);
-                    if (sub.owner.instanceData != null && sub.owner.cachedMinFade < minFade) {
-                        minFade = sub.owner.cachedMinFade;
-                    }
-                }
-                for (int i = 0; i < fadeSlots.size(); i++) {
-                    if (fadeSlots.get(i).fade < minFade) {
-                        minFade = fadeSlots.get(i).fade;
-                    }
-                }
 
                 RenderSystem.enableDepthTest();
                 RenderSystem.depthFunc(GL11.GL_LEQUAL);
                 RenderSystem.depthMask(true);
                 RenderSystem.disableCull();
-                if (minFade < 0.99f) {
+                if (!ditherFade) {
+                    // Smooth alpha fade mode (nucleusDitherFade == false): for every
+                    // opaque instance (vFadeAlpha == 1.0) GL_SRC_ALPHA /
+                    // GL_ONE_MINUS_SRC_ALPHA with depthMask(true) writes 100% srcColor
+                    // and full depth - visually identical to blending off - while the
+                    // far fade ring alpha-blends into the already-drawn terrain/sky.
+                    // No CPU-side min-fade scan is needed for this decision.
                     RenderSystem.enableBlend();
                     RenderSystem.defaultBlendFunc();
                 }
-
-                if (primitiveRestartWas) {
-                    GL11.glDisable(GL31.GL_PRIMITIVE_RESTART);
-                }
+                // No alpha blending on the MDI path, ever. Dither mode never
+                // blends - the FSH discards by screen hash. When the batch
+                // contains fading instances (minFade < 1), the dither path is
+                // FORCED (uDitherFade uploaded as 1 in applyCommonUniforms) even
+                // if the config flag is off: the command order of the single
+                // unsorted glMultiDrawElementsIndirect below is the stable
+                // retained-list order, not back-to-front, so alpha blending is
+                // unusable here — depthMask(false) for the whole batch would
+                // leave fully opaque machines without depth writes (self-overlap
+                // mess with cull disabled), while depth writes on would let a
+                // near translucent fragment depth-reject the geometry drawn
+                // after it (punch holes in machines behind it). The dither
+                // discard needs no blending, so depth writes stay enabled and
+                // fading renders as screen-door. A batch without fading
+                // instances (minFade >= 1) has nothing to blend either.
 
                 // REGRESSION-FIX: capacity must accommodate ALL commands (nCmd =
                 // opaque sub-draws + 1-instance fading slots), not just renderer count —
@@ -1111,17 +1359,26 @@ public final class MdiBatchCoordinator {
                 GL15.glBufferSubData(GL40.GL_DRAW_INDIRECT_BUFFER, 0, cmdBuf);
 
                 if (gpuCullActive) {
+                    com.hbm_m.client.render.debug.GlDebugMarkers.pushGroup("HBM_MDI_HiZ_Cull");
                     try {
                         // Full pyramid rebuild - only when occlusion is enabled by the gate;
                         // in frustum-only mode the culler does not sample the pyramid (it holds
                         // the previous-frame/placeholder one), saving a full SPD screen downsample.
                         if (occlusionEnabled) {
-                            HiZDepthPyramid.get().regenerate(target.getDepthTextureId(), target.width, target.height);
+                            int depthTex = target.getDepthTextureId();
+                            if (ShaderCompatibilityDetector.isExternalShaderActive()) {
+                                int irisDepth = getActiveGbufferDepthTexture();
+                                if (irisDepth > 0) {
+                                    depthTex = irisDepth;
+                                }
+                            }
+                            HiZDepthPyramid.get().regenerate(depthTex, target.width, target.height);
                         }
                         float zFar = mc.gameRenderer != null ? mc.gameRenderer.getDepthFar() : 1024.0f;
                         gpuCulled = NucleusGpuCuller.cull(
                                 atlas,
                                 nCmd,
+                                totalInstances,
                                 HiZDepthPyramid.get(),
                                 FrameViewState.viewMatrix(),
                                 projection,
@@ -1131,13 +1388,23 @@ public final class MdiBatchCoordinator {
                                 target.height,
                                 !occlusionEnabled
                         );
-                    } catch (Throwable t) {
+                    } catch (Exception t) {
                         MainRegistry.LOGGER.warn("[HBM-M MDI] GPU occlusion culling failed, falling back to full batch: {}", t.getMessage());
                         gpuCulled = false;
+                    } finally {
+                        com.hbm_m.client.render.debug.GlDebugMarkers.popGroup();
+                    }
+
+                    // Stamp EVERY dispatch (outside the 1 Hz readback gate): the F3
+                    // freshness gate compares against the current frame, and a stamp
+                    // written only by the readback made a working culler print
+                    // "Waiting/No depth" 59 of 60 frames (10-09).
+                    if (gpuCulled) {
+                        NucleusDebug.noteGpuCullDispatch(nCmd, totalInstances);
                     }
                     
                     // RESTORE SHADER PROGRAM OVERWRITTEN BY COMPUTE PASSES
-                    GL20.glUseProgram(shader.getId());
+                    GlStateManager._glUseProgram(shader.getId());
 
                     if (gpuCulled) {
                         atlas.bindCompactedInstanceVbo();
@@ -1176,14 +1443,18 @@ public final class MdiBatchCoordinator {
                                     MainRegistry.LOGGER.info("[HBM-M GPU Cull] NOTE: 0 instances were culled (100% passed frustum + Hi-Z occlusion test).");
                                 }
                                 NucleusDebug.recordGpuCull(true, nCmd, totalIn, totalOut);
-                            } catch (Throwable t) {
+                            } catch (Exception t) {
                                 MainRegistry.LOGGER.warn("[HBM-M GPU Cull] Diagnostic readback failed: {}", t.getMessage());
                             }
                         }
                     } else {
+                        // Persistent F3 state: the fallback is otherwise invisible
+                        // (the 2 Hz log below only writes the console).
+                        NucleusDebug.noteGpuCullFallback(nCmd);
                         // Safe CPU fallback / unculled restoration:
                         // Rewrite original instance counts to indirect buffer and retain default instance VBO
                         cmdBuf.clear();
+                        globalOffset = 0;
                         for (int i = 0; i < opaqueSubs.size(); i++) {
                             SubDraw sub = opaqueSubs.get(i);
                             Pending p = sub.owner;
@@ -1194,23 +1465,12 @@ public final class MdiBatchCoordinator {
                             cmdBuf.putInt(p.baseVertex);
                             cmdBuf.putInt(sub.baseInstance);
                             cmdBuf.putInt(sub.count);
+                            cmdBuf.putInt(globalOffset); // pad1 -> globalInstanceOffset
+                            cmdBuf.putInt(0);            // pad2
                             while (cmdBuf.position() < rowStart + INDIRECT_CMD_STRIDE_BYTES) {
                                 cmdBuf.putInt(0);
                             }
-                        }
-                        for (int i = 0; i < fadeSlots.size(); i++) {
-                            FadeSlot s = fadeSlots.get(i);
-                            Pending p = s.owner;
-                            int rowStart = cmdBuf.position();
-                            cmdBuf.putInt(p.indexCount);
-                            cmdBuf.putInt(1);
-                            cmdBuf.putInt(p.firstIndexBytes >>> 2);
-                            cmdBuf.putInt(p.baseVertex);
-                            cmdBuf.putInt(s.baseInstance);
-                            cmdBuf.putInt(1);
-                            while (cmdBuf.position() < rowStart + INDIRECT_CMD_STRIDE_BYTES) {
-                                cmdBuf.putInt(0);
-                            }
+                            globalOffset += sub.count;
                         }
                         cmdBuf.flip();
                         GL15.glBufferSubData(GL40.GL_DRAW_INDIRECT_BUFFER, 0, cmdBuf);
@@ -1223,17 +1483,23 @@ public final class MdiBatchCoordinator {
                         }
                     }
                 } else {
-                    long now = System.currentTimeMillis();
-                    if (now - lastGpuCullLogTimeMs >= 3000L) {
-                        lastGpuCullLogTimeMs = now;
-                        MainRegistry.LOGGER.info("[HBM-M GPU Cull] Inactive: eligible={}, targetNull={}, depthTexId={}, mode={}, gpuSupported={}, shadowPass={}",
-                                gpuCullEligible,
-                                target == null,
-                                target != null ? target.getDepthTextureId() : -1,
-                                ModClothConfig.get().getEffectiveOcclusionCullingMode(),
-                                GpuCullingCapability.isSupported(),
-                                ShaderCompatibilityDetector.isRenderingShadowPass());
-                        NucleusDebug.recordGpuCull(false, nCmd, 0, 0);
+                    // Culling intentionally OFF (config or unsupported HW): that is the
+                    // steady state, not an incident - do not log it, it only spams.
+                    boolean modeOff = ModClothConfig.get().getEffectiveOcclusionCullingMode()
+                            == ModClothConfig.OcclusionCullingMode.OFF;
+                    if (!modeOff) {
+                        long now = System.currentTimeMillis();
+                        if (now - lastGpuCullLogTimeMs >= 3000L) {
+                            lastGpuCullLogTimeMs = now;
+                            MainRegistry.LOGGER.info("[HBM-M GPU Cull] Inactive: eligible={}, targetNull={}, depthTexId={}, mode={}, gpuSupported={}, shadowPass={}",
+                                    gpuCullEligible,
+                                    target == null,
+                                    target != null ? target.getDepthTextureId() : -1,
+                                    ModClothConfig.get().getEffectiveOcclusionCullingMode(),
+                                    GpuCullingCapability.isSupported(),
+                                    ShaderCompatibilityDetector.isRenderingShadowPass());
+                            NucleusDebug.recordGpuCull(false, nCmd, 0, 0);
+                        }
                     }
                 }
                 try {
@@ -1241,7 +1507,7 @@ public final class MdiBatchCoordinator {
                     if (capsBarrier != null && capsBarrier.glMemoryBarrier != 0L) {
                         GL42.glMemoryBarrier(GL42.GL_COMMAND_BARRIER_BIT);
                     }
-                } catch (Throwable ignored) {
+                } catch (Exception ignored) {
                 }
 
                 // CRITICAL SAFETY FOR MDI:
@@ -1262,103 +1528,113 @@ public final class MdiBatchCoordinator {
                 boolean canSingle = caps2 != null
                         && (caps2.glDrawElementsIndirect != 0L || caps2.GL_ARB_draw_indirect);
 
-                // Depth is written during BOTH phases: opaque seals volume, fading
-                // provides self-overlap inside model (spikes inside casing).
-                // Mutual depth-rejection of fading machines is prevented by global
-                // back-to-front sorting of fadeSlots (distant in command buffer before near).
-                if (canMulti) {
-                    if (caps2.glMultiDrawElementsIndirect != 0L) {
-                        GL43.glMultiDrawElementsIndirect(GL11.GL_TRIANGLES,
-                                GL11.GL_UNSIGNED_INT, 0L, nCmd, INDIRECT_CMD_STRIDE_BYTES);
-                    } else {
-                        ARBMultiDrawIndirect.glMultiDrawElementsIndirect(GL11.GL_TRIANGLES,
-                                GL11.GL_UNSIGNED_INT, 0L, nCmd, INDIRECT_CMD_STRIDE_BYTES);
-                    }
-                    dispatchDrawMode = "MULTI";
-                } else if (canSingle) {
-                    for (int i = 0; i < nCmd; i++) {
-                        long cmdOff = (long) i * INDIRECT_CMD_STRIDE_BYTES;
-                        if (caps2.glDrawElementsIndirect != 0L) {
-                            GL40.glDrawElementsIndirect(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, cmdOff);
-                        } else {
-                            ARBDrawIndirect.glDrawElementsIndirect(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, cmdOff);
+                // Depth writes are always ON here: the MDI path never blends
+                // (see the gate comment above) - fading is screen-door dither,
+                // so opaque machines keep depth-correct self-overlap.
+                try {
+                    if (canMulti) {
+                        if (com.hbm_m.client.render.debug.GlDebugMarkers.ENABLED && com.hbm_m.client.render.debug.GlDebugMarkers.isActive()) {
+                            for (int i = 0; i < opaqueSubs.size(); i++) {
+                                SubDraw sub = opaqueSubs.get(i);
+                                Pending p = sub.owner;
+                                String tag = (p != null && p.renderer != null && p.renderer.getMdiTraceTag() != null)
+                                        ? p.renderer.getMdiTraceTag()
+                                        : (p != null && p.renderer != null ? p.renderer.getClass().getSimpleName() : "unknown");
+                                int ic = p != null ? p.indexCount : 0;
+                                int bv = p != null ? p.baseVertex : 0;
+                                int fi = p != null ? (p.firstIndexBytes >>> 2) : 0;
+                                int bi = sub.baseInstance;
+                                com.hbm_m.client.render.debug.GlDebugMarkers.insertMarker(i, "SubDraw[" + i + "]: tag=" + tag
+                                        + " idxCount=" + ic
+                                        + " inst=" + sub.count
+                                        + " baseVert=" + bv
+                                        + " firstIdx=" + fi
+                                        + " baseInst=" + bi);
+                            }
                         }
+                        if (caps2.glMultiDrawElementsIndirect != 0L) {
+                            GL43.glMultiDrawElementsIndirect(GL11.GL_TRIANGLES,
+                                    GL11.GL_UNSIGNED_INT, 0L, nCmd, INDIRECT_CMD_STRIDE_BYTES);
+                        } else {
+                            ARBMultiDrawIndirect.glMultiDrawElementsIndirect(GL11.GL_TRIANGLES,
+                                    GL11.GL_UNSIGNED_INT, 0L, nCmd, INDIRECT_CMD_STRIDE_BYTES);
+                        }
+                        dispatchDrawMode = "MULTI";
+                    } else if (canSingle) {
+                        for (int i = 0; i < nCmd; i++) {
+                            long cmdOff = (long) i * INDIRECT_CMD_STRIDE_BYTES;
+                            if (caps2.glDrawElementsIndirect != 0L) {
+                                GL40.glDrawElementsIndirect(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, cmdOff);
+                            } else {
+                                ARBDrawIndirect.glDrawElementsIndirect(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, cmdOff);
+                            }
+                        }
+                        dispatchDrawMode = "IND_LOOP";
+                    } else {
+                        MainRegistry.LOGGER.error(
+                                "[HBM-M MDI] Neither glDrawElementsIndirect nor glMultiDrawElementsIndirect available — skipping atlas draw");
+                        dispatchDrawMode = "NONE";
+                        HardwareTierManager.triggerRuntimeDegradation("MdiBatchCoordinator.executeMdiGlDraw (no indirect entrypoint)", null);
                     }
-                    dispatchDrawMode = "IND_LOOP";
-                } else {
-                    MainRegistry.LOGGER.error(
-                            "[HBM-M MDI] Neither glDrawElementsIndirect nor glMultiDrawElementsIndirect available — skipping atlas draw");
+                } catch (Throwable t) {
+                    MainRegistry.LOGGER.error("[HBM-M MDI] Draw dispatch failed - triggering runtime degradation", t);
                     dispatchDrawMode = "NONE";
+                    HardwareTierManager.triggerRuntimeDegradation("MdiBatchCoordinator.executeMdiGlDraw", t);
                 }
 
-                if (minFade < 0.99f) {
-                    RenderSystem.disableBlend();
-                }
                 if (!"NONE".equals(dispatchDrawMode)) {
                     NucleusDebug.recordDraw("MULTI".equals(dispatchDrawMode) ? 1 : nCmd,
                             prepared.drawTotalInstances(),
                             "MULTI".equals(dispatchDrawMode) ? "MDI (multi)" : "MDI (indirect loop)");
                 }
-                logDispatchDiagStatic(prepared.pendingSize, opaqueSubs, fadeSlots, prepared.drawTotalInstances,
+                logDispatchDiagStatic(prepared.pendingSize, opaqueSubs, prepared.drawTotalInstances,
                         atlas, prepared.droppedNoSlot, dispatchDrawMode, gameTime);
             } finally {
                 if (gpuCulled) {
                     atlas.restoreDefaultInstanceVbo();
                 }
-                if (primitiveRestartWas) {
-                    GL11.glEnable(GL31.GL_PRIMITIVE_RESTART);
-                }
-                GL15.glBindBuffer(GL40.GL_DRAW_INDIRECT_BUFFER, prevIndirectBuf);
-                GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, prevArrayBuf);
-                GL30.glBindVertexArray(prevVao);
-                RenderSystem.depthMask(depthMaskWas);
-                RenderSystem.depthFunc(prevDepthFunc);
-                if (depthTestWas) {
-                    RenderSystem.enableDepthTest();
-                } else {
-                    RenderSystem.disableDepthTest();
-                }
-                if (cullWas) {
-                    RenderSystem.enableCull();
-                } else {
-                    RenderSystem.disableCull();
-                }
-                RenderSystem.blendFuncSeparate(prevSrcRgb, prevDstRgb, prevSrcA, prevDstA);
-                if (blendWas) {
-                    RenderSystem.enableBlend();
-                } else {
-                    RenderSystem.disableBlend();
-                }
+                GL15.glBindBuffer(GL40.GL_DRAW_INDIRECT_BUFFER, 0);
+                GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+
+                // Explicitly restore active texture back to unit 0
+                GlStateManager._activeTexture(GL13.GL_TEXTURE0);
+
+                // Exiting to VAO 0: force the next vanilla/TACZ immediate draw to
+                // rebind its VAO honestly (bindVertexArray(0) does this too - kept
+                // explicit so this exit stays safe if the bind call is ever replaced).
+                com.mojang.blaze3d.vertex.BufferUploader.invalidate();
+                GlVaoSafety.bindVertexArray(0);
+
+                RenderSystem.depthMask(true);
+                RenderSystem.depthFunc(GL11.GL_LEQUAL);
+                RenderSystem.enableDepthTest();
+                RenderSystem.enableCull();
+                RenderSystem.disableBlend();
+                RenderSystem.defaultBlendFunc();
+
+                // Explicitly unbind custom shader program to prevent leaking into subsequent passes
+                GlStateManager._glUseProgram(0);
                 restoreVanillaSolidShader();
             }
         } finally {
-            // cmdBufScratch is persistent - do not free (reused by the next dispatch).
+            com.hbm_m.client.render.debug.GlDebugMarkers.popGroup();
+            // cmdBufScratch is persistent across frames (reused by the next dispatch);
+            // freed only at session end via clearCachedRedraw.
         }
     }
+
 
     private static void restoreVanillaSolidShader() {
-        RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
-        RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
+        // Leave the program unbound but invalidate the vanilla static so the next
+        // apply() of ANY vanilla shader performs an honest bind: with the static
+        // left claiming "solid is current" while program 0 is really bound, a
+        // repeated solid apply would skip its bind and draw at program 0.
+        GlStateManager._glUseProgram(0);
+        com.hbm_m.client.render.shader.ShaderBindResync.invalidateStaticProgramCache();
+        RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);        RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
     }
 
-    /**
-     * Reorders snapshot records to [opaque in original order | fading back-to-front]
-     * and sets {@link Pending#opaqueCount}.
-     *
-     * <p>Logic delegates to shared helper {@link InstancedStaticPartRenderer#partitionInstancesOpaqueFirst}:
-     * direct path (GPU bones chain parts) partitions its buffers with identical code
-     * so phase order (opaque before fading) matches across all render paths.
-     */
-    private static void partitionOpaqueFirst(Pending p, int floatsPerInstance, int fadeOffset) {
-        p.opaqueCount = 0;
-        if (p.instanceData == null || p.instanceCount <= 0) {
-            return;
-        }
-        p.opaqueCount = InstancedStaticPartRenderer.partitionInstancesOpaqueFirst(
-                p.instanceData, p.instanceCount, floatsPerInstance, fadeOffset, null);
-    }
-
-    private static void applyCommonUniforms(ShaderInstance shader, Matrix4f projection) {
+    private static void applyCommonUniforms(ShaderInstance shader, Matrix4f projection, boolean forceDitherFade) {
         if (shader.PROJECTION_MATRIX != null) shader.PROJECTION_MATRIX.set(projection);
         // InstPos/InstRot are anchor-relative: ModelViewMat = R_cam * T(-relCam) (FrameViewState).
         if (shader.MODEL_VIEW_MATRIX != null) shader.MODEL_VIEW_MATRIX.set(FrameViewState.viewMatrix());
@@ -1373,9 +1649,12 @@ public final class MdiBatchCoordinator {
         }
         var fade = shader.getUniform("FadeAlpha");
         if (fade != null) fade.set(1.0f);
+        // GPU fade ramp endpoints: the record stores a static fade MODE, the ramp
+        // is evaluated per instance in the vertex shader (block_lit_instanced.vsh).
+        SingleMeshVboRenderer.applyFadeRampUniforms(shader, forceDitherFade);
     }
 
-    private static void logDispatchDiagStatic(int pendingSize, List<SubDraw> opaqueSubs, List<FadeSlot> fadeSlots,
+    private static void logDispatchDiagStatic(int pendingSize, List<SubDraw> opaqueSubs,
                                               int drawTotalInstances,
                                               MdiGeometryAtlas atlas, int droppedNoSlot, String drawMode, long gameTime) {
         if (!MdiRenderDiag.isDebugEnabled() && !MdiRenderDiag.isVerboseEnabled()) {
@@ -1384,7 +1663,7 @@ public final class MdiBatchCoordinator {
         String summary = String.format(
                 "[HBM-M MDI] dispatch gameTime=%s draws=%d/%d droppedNoSlot=%d instances=%d atlasParts=%d mode=%s",
                 gameTime == -1L ? "?" : Long.toString(gameTime),
-                opaqueSubs.size() + fadeSlots.size(), pendingSize, droppedNoSlot, drawTotalInstances,
+                opaqueSubs.size(), pendingSize, droppedNoSlot, drawTotalInstances,
                 atlas.getRegisteredGeometryCount(), drawMode);
         if (MdiRenderDiag.isDebugEnabled() || MdiRenderDiag.isVerboseEnabled()) {
             MainRegistry.LOGGER.info(summary);
@@ -1410,21 +1689,22 @@ public final class MdiBatchCoordinator {
                     p.baseVertex,
                     p.firstIndexBytes);
         }
-        for (FadeSlot s : fadeSlots) {
-            Pending p = s.owner;
-            String tag = p.renderer.getMdiTraceTag();
-            if (tag == null) {
-                tag = "?";
-            }
-            MainRegistry.LOGGER.info(
-                    "[HBM-M MDI]   sub tag={} rid=0x{} idxCount={} instances=1 baseInstance={} baseVertex={} firstIndexBytes={} phase=FADE distSq={}",
-                    tag,
-                    Integer.toHexString(System.identityHashCode(p.renderer)),
-                    p.indexCount,
-                    s.baseInstance,
-                    p.baseVertex,
-                    p.firstIndexBytes,
-                    String.format(java.util.Locale.ROOT, "%.1f", s.distSq));
+    }
+
+    /** Package-visible: NucleusGpuBaker's optional bake Hi-Z phase uses the same
+     * depth-source selection (active gbuffer depth attachment under a pack). */
+    static int getActiveGbufferDepthTexture() {
+        int depthType = org.lwjgl.opengl.GL30.glGetFramebufferAttachmentParameteri(
+                org.lwjgl.opengl.GL30.GL_DRAW_FRAMEBUFFER,
+                org.lwjgl.opengl.GL30.GL_DEPTH_ATTACHMENT,
+                org.lwjgl.opengl.GL30.GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE);
+        if (depthType == org.lwjgl.opengl.GL11.GL_TEXTURE) {
+            return org.lwjgl.opengl.GL30.glGetFramebufferAttachmentParameteri(
+                    org.lwjgl.opengl.GL30.GL_DRAW_FRAMEBUFFER,
+                    org.lwjgl.opengl.GL30.GL_DEPTH_ATTACHMENT,
+                    org.lwjgl.opengl.GL30.GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME);
         }
+        return -1;
     }
 }
+

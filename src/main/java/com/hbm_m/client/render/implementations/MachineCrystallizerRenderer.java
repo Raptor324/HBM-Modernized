@@ -11,6 +11,7 @@ import com.hbm_m.blockentity.machines.MachineCrystallizerBlockEntity;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.cache.RenderCacheManager;
 import com.hbm_m.client.render.machine.MachineRenderApi;
+import com.hbm_m.client.render.machine.MachineRenderHook;
 import com.hbm_m.client.render.machine.MachineRenderers;
 import com.hbm_m.client.render.shader.IrisPhaseGuard;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
@@ -33,7 +34,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.material.Fluid;
@@ -50,15 +50,37 @@ import com.hbm_m.platform.ClientFluidHooks;
  */
 public final class MachineCrystallizerRenderer {
 
-    private static final float DEG_TO_RAD = (float) (Math.PI / 180.0);
     private static final RandomSource RANDOM = RandomSource.create(42L);
 
     public static void register() {
         MachineRenderers.machine("crystallizer", ModBlockEntities.CRYSTALLIZER.get(),
                 MachineCrystallizerBlockEntity.class)
-            .dynamicPart("Spinner", MachineCrystallizerRenderer::animateSpinner, be -> spinnerQuads(), be -> "spinner")
+            .spinningPart("Spinner", "Spinner", 0f, 1f, 0f, 0.5f, 0f, 0.5f, 0f, 0f, 0f,
+                be -> spinnerQuads(), be -> "spinner",
+                // Segment starts the tick the angle changes (epoch words are written once per segment)
+                be -> (be.angle != be.prevAngle) ? 1L : 0L,
+                // Ticks per revolution from this segment's delta (angle wraps at 360)
+                be -> {
+                    float delta = be.angle - be.prevAngle;
+                    if (delta < 0f) delta += 360f;
+                    return delta > 1.0e-3f ? (360.0 / delta) : 0.0;
+                },
+                be -> 0.0)
             .blockTransform(MachineCrystallizerRenderer::applyBlockTransform)
-            .hook(MachineCrystallizerRenderer::scheduleFluid)
+            .hook(new MachineRenderHook<MachineCrystallizerBlockEntity>() {
+                @Override
+                public void render(MachineCrystallizerBlockEntity be, float partialTick,
+                                   PoseStack poseStack, MultiBufferSource bufferSource,
+                                   int packedLight, int packedOverlay, MachineRenderApi api) {
+                    MachineCrystallizerRenderer.scheduleFluid(be, partialTick, poseStack,
+                            bufferSource, packedLight, packedOverlay, api);
+                }
+
+                @Override
+                public boolean mayDrawContent(MachineCrystallizerBlockEntity be) {
+                    return !be.getTank().isEmpty();
+                }
+            })
             .register();
 
         // The spinner quad cache is invalidated centrally
@@ -84,16 +106,6 @@ public final class MachineCrystallizerRenderer {
             animator.rotate(rot, 0, 1, 0);
             animator.translate(-0.5, 0, -0.5);
         }
-    }
-
-    private static boolean animateSpinner(MachineCrystallizerBlockEntity be, float partialTick,
-                                          long gameTime, PoseStack pose) {
-        float angle = Mth.lerp(partialTick, be.prevAngle, be.angle);
-        pose.last().pose()
-                .translate(0.5f, 0f, 0.5f)
-                .rotateY(angle * DEG_TO_RAD)
-                .translate(-0.5f, 0f, -0.5f);
-        return true;
     }
 
     // -- Spinner: injected model, quad cache -----------------------------

@@ -5,6 +5,8 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.machines.MachineElectricFurnaceBlock;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
+import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.recipe.index.CachedRecipeResolver;
 import com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType;
 import com.hbm_m.handler.pollution.PollutionHandler;
 import com.hbm_m.inventory.fluid.trait.PollutionType;
@@ -99,6 +101,10 @@ public class MachineElectricFurnaceBlockEntity extends BaseMachineBlockEntity {
 
     private final SimpleContainer recipeInput = new SimpleContainer(1);
 
+    /** Кэш SMELTING-скана: подпись = фингерпринт входного стека; RecipeHooks.getRecipeFor
+     *  (SimpleContainer-сборка) вызывается только при открытом гейте — в лямбде сканера. */
+    private final CachedRecipeResolver<SmeltingRecipe> recipeResolver = new CachedRecipeResolver<>();
+
     public MachineElectricFurnaceBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.ELECTRIC_FURNACE_BE.get(), pos, state, SLOT_COUNT, MAX_POWER, MAX_POWER);
     }
@@ -146,8 +152,9 @@ public class MachineElectricFurnaceBlockEntity extends BaseMachineBlockEntity {
             level.setBlock(pos, state.setValue(MachineElectricFurnaceBlock.LIT, isLit), 3);
         }
 
-        be.setChanged();
-        be.sendUpdateToClient();
+        // Анти-sync-spam: BE-пакет только при изменении отрисовываемого состояния (P6);
+        // isLit = progress > 0, LIT-blockstate шлётся отдельно через setBlock.
+        be.syncIfStateChanged(be.energy, be.progress);
     }
 
     private boolean canSmelt(Level level) {
@@ -189,8 +196,13 @@ public class MachineElectricFurnaceBlockEntity extends BaseMachineBlockEntity {
     }
 
     private java.util.Optional<SmeltingRecipe> getRecipe(Level level, ItemStack input) {
-        // 1.21.1: getRecipeFor требует RecipeInput (SingleRecipeInput) и возвращает RecipeHolder.
-        return com.hbm_m.platform.recipe.RecipeHooks.getRecipeFor(level, RecipeType.SMELTING, input);
+        // 1.21.1: getRecipeFor требует RecipeInput (SingleRecipeInput) и возвращает RecipeHolder —
+        // через CachedRecipeResolver, чтобы RecipeHooks.getRecipeFor звался только при открытом гейте.
+        SmeltingRecipe cached = recipeResolver.resolve(level, RecipeType.SMELTING,
+                CachedRecipeResolver.sign(0L, PlatformHooks.stackFingerprint(input)),
+                (lvl, all) -> com.hbm_m.platform.recipe.RecipeHooks.getRecipeFor(lvl, RecipeType.SMELTING, input)
+                        .orElse(null));
+        return java.util.Optional.ofNullable(cached);
     }
 
     // ==================== NBT ====================

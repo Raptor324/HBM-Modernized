@@ -3,7 +3,6 @@ package com.hbm_m.client.render.implementations;
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix4f;
 
 import com.hbm_m.block.machines.MachineChemicalFactoryBlock;
 import com.hbm_m.blockentity.ModBlockEntities;
@@ -12,8 +11,8 @@ import com.hbm_m.client.model.AbstractMultipartBakedModel;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.machine.MachineRenderers;
+import com.hbm_m.client.render.machine.MachineSpec;
 import com.hbm_m.util.MultipartFacingTransforms;
-import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.BakedQuad;
@@ -28,7 +27,8 @@ import net.minecraft.client.resources.model.BakedModel;
  *       as computed server-side by {@code MultiblockFrameHelper} -- the same system as
  *       advassembler; the 1.7.10 original only checked the block directly above the core);</li>
  *   <li>{@code Fan1}/{@code Fan2} spin around their own pivots
- *       (+-1, 0, 0) at {@code -anim*45 deg}/tick while at least one line is running
+ *       (+-1, 0, 0) at -45 deg/tick (tracked rig, {@code Track.linear(-360, 0)},
+ *       8-tick cycle) while at least one line is running
  *       (anim is incremented in the BE only on didProcess, as in the original);</li>
  *   <li>FACING rotation -- as in the original: rotate(90) + table
  *       (N=0, W=90, S=180, E=270), i.e. {@code 90 + legacyFacingRotationYDegrees};</li>
@@ -41,22 +41,40 @@ import net.minecraft.client.resources.model.BakedModel;
  */
 public final class MachineChemicalFactoryRenderer {
 
-    private static final float DEG_TO_RAD = (float) (Math.PI / 180.0);
-
     private static final float FAN1_PIVOT_X = 1.5f;
     private static final float FAN2_PIVOT_X = -0.5f;
     private static final float FAN_PIVOT_Z = 0.5f;
+
+    // Fans spin -45 deg/tick: -360 deg over an 8-tick cycle (ANIM TRACK v2).
+    private static final MachineSpec.Track FAN_SPIN_TRACK = MachineSpec.Track.linear(-360f, 0f);
+
+    /** The fan segment runs while anim advanced this tick (didProcess on an active lane). */
+    private static boolean isFanSpinning(MachineChemicalFactoryBlockEntity be) {
+        return be.getAnim(1.0F) != be.getAnim(0.0F);
+    }
 
     public static void register() {
         MachineRenderers.machine("chemfactory", ModBlockEntities.CHEMICAL_FACTORY_BE.get(),
                 MachineChemicalFactoryBlockEntity.class)
             .part("Base")
-            .part("Fan1", MachineChemicalFactoryRenderer::animateFan1)
-            .part("Fan2", MachineChemicalFactoryRenderer::animateFan2)
-            .dynamicPart("Frame", MachineChemicalFactoryRenderer::frameQuads,
-                    // The key must distinguish FRAME=false/true: a constant key would cache
-                    // the renderer from the first state seen, forever (see advassembler/chemplant).
-                    MachineChemicalFactoryRenderer::frameCacheKey)
+            .trackedChainPart("Fan1",
+                    be -> MachineChemicalFactoryRenderer.isFanSpinning(be) ? 1L : 0L,
+                    be -> 0.0,
+                    be -> isFanSpinning(be) ? 8.0 : 0.0,
+                    MachineSpec.JointNode.rotate(0f, 1f, 0f, FAN1_PIVOT_X, 0f, FAN_PIVOT_Z,
+                            (be, pt, gt, out, off) -> true, FAN_SPIN_TRACK))
+            .trackedChainPart("Fan2",
+                    be -> MachineChemicalFactoryRenderer.isFanSpinning(be) ? 1L : 0L,
+                    be -> 0.0,
+                    be -> isFanSpinning(be) ? 8.0 : 0.0,
+                    MachineSpec.JointNode.rotate(0f, 1f, 0f, FAN2_PIVOT_X, 0f, FAN_PIVOT_Z,
+                            (be, pt, gt, out, off) -> true, FAN_SPIN_TRACK))
+            .conditionalPart("Frame", be -> {
+                var state = be.getBlockState();
+                return state.hasProperty(MachineChemicalFactoryBlock.FRAME)
+                        && state.getValue(MachineChemicalFactoryBlock.FRAME);
+            })
+            .itemExcept("Frame")
             .blockTransform(MachineChemicalFactoryRenderer::applyBlockTransform)
             .chunkRenderTypes(net.minecraft.client.renderer.RenderType.cutout())
             .register();
@@ -80,53 +98,5 @@ public final class MachineChemicalFactoryRenderer {
         animator.translate(-0.5f, 0.0f, -0.5f);
     }
 
-    // -- Parts ----------------------------------------------------------
-
-    private static boolean animateFan1(MachineChemicalFactoryBlockEntity be, float partialTick,
-                                       long gameTime, PoseStack pose) {
-        return animateFan(be, partialTick, pose, FAN1_PIVOT_X);
-    }
-
-    private static boolean animateFan2(MachineChemicalFactoryBlockEntity be, float partialTick,
-                                       long gameTime, PoseStack pose) {
-        return animateFan(be, partialTick, pose, FAN2_PIVOT_X);
-    }
-
-    /** Original: translate(+-1,0,0) -> rotate(-anim*45 % 360) -> translate(-+1,0,0). */
-    private static boolean animateFan(MachineChemicalFactoryBlockEntity be, float partialTick,
-                                      PoseStack pose, float pivotX) {
-        float anim = be.getAnim(partialTick);
-        float deg = (-anim * 45f) % 360f;
-        if (deg < 0f) deg += 360f;
-        pose.last().pose()
-                .translate(pivotX, 0f, FAN_PIVOT_Z)
-                .rotateY(deg * DEG_TO_RAD)
-                .translate(-pivotX, 0f, -FAN_PIVOT_Z);
-        return true;
-    }
-
-    // -- Frame: visible only per the FRAME property ---------------------
-
-    private static String frameCacheKey(MachineChemicalFactoryBlockEntity be) {
-        var state = be.getBlockState();
-        boolean frame = state.hasProperty(MachineChemicalFactoryBlock.FRAME)
-                && state.getValue(MachineChemicalFactoryBlock.FRAME);
-        return String.valueOf(frame);
-    }
-
-    private static List<BakedQuad> frameQuads(MachineChemicalFactoryBlockEntity be) {
-        var state = be.getBlockState();
-        if (!state.hasProperty(MachineChemicalFactoryBlock.FRAME)
-                || !state.getValue(MachineChemicalFactoryBlock.FRAME)) {
-            return List.of();
-        }
-        BakedModel part = factoryPart(be, "Frame");
-        if (part == null) return List.of();
-        return MeshRenderCache.getOrCompile("chemfactory_Frame", part);
-    }
-
-    private static @Nullable BakedModel factoryPart(MachineChemicalFactoryBlockEntity be, String partName) {
-        BakedModel raw = Minecraft.getInstance().getBlockRenderer().getBlockModel(be.getBlockState());
-        return raw instanceof AbstractMultipartBakedModel mp ? mp.getPart(partName) : null;
-    }
 }
+

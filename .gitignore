@@ -119,3 +119,24 @@ __pycache__/
 
 # nightly porting pipeline state, machine-local
 docs/porting/machine_porting_matrix.json
+
+# ================= Workflow reports (local working journal) =================
+# Рабочие отчёты воркфлоу-аудитов не коммитятся; справочные доки в docs/render
+# (crankshaft study, engine architecture, cpu audit 09-25) удержаны negation'ом.
+docs/render/*
+!docs/render/crankshaft_nucleus_comparative_study.md
+!docs/render/crankshaft_nucleus_comparative_study_ru.md
+!docs/render/nucleus_cpu_audit_2026-09-25.md
+!docs/render/nucleus_engine_architecture.md
+docs/audit/
+docs/replay/
+docs/weekly_report_*.md
+docs/ntm_upstream_week*.md
+build_out_*.txt
+
+# Декомпайл Minecraft и одноразовые стресс-харнессы
+/net/
+tools/*.class
+docs/*_2026-*.md
+docs/render_gl_*.md
+

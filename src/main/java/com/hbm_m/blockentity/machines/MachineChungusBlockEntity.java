@@ -123,18 +123,24 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
 
         be.ensureNetworkInitialized();
 
-        boolean wasActive = be.isActive;
-
         be.processTurbine();
 
         if (be.energy > 0 && level.getGameTime() % 10L == 0L) {
             be.updateEnergyDelta(be.getEnergyStored());
         }
 
-        if (wasActive != be.isActive) {
-            be.setChanged();
-            be.sendUpdateToClient();
-        }
+        // Anti-sync-spam: setChanged/sendBlockUpdated only when energy/rpm/flags moved
+        // (subsumes the old isActive-edge packet).
+        be.syncIfStateChanged(be.energy, be.syncSignature());
+    }
+
+    /** 128-битная подпись синхронизируемого состояния: rpm (spin) + flywheel/maxPower + флаги. */
+    private long syncSignature() {
+        long hi = Double.doubleToLongBits(spin);
+        hi = hi * 31L + maxPower;
+        hi = hi * 31L + flywheelEnergy;
+        hi = hi * 31L + (isActive ? 1L : 0L);
+        return hi | (operational ? 2L : 0L);
     }
 
     /**
@@ -225,8 +231,6 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
         if (generating) {
             flywheelEnergy -= output;
             setEnergyStored(getEnergyStored() + output);
-            setChanged();
-            sendUpdateToClient();
         }
 
         isActive = generating || flywheelEnergy > 0;

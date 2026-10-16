@@ -168,9 +168,14 @@ public class MachineOreSlopperBlockEntity extends BaseMachineBlockEntity impleme
             dirty = true;
         }
 
+        // Anti-sync-spam: шлём пакет только при изменении состояния (энергия, прогресс/флаги,
+        // накопленные руды, бак) — содержимое пакета прежнее.
         if (dirty) {
-            setChanged();
-            sendUpdateToClient();
+            long oresSig = 0L;
+            for (double ore : ores) oresSig = oresSig * 31L + Double.doubleToLongBits(ore);
+            syncIfStateChanged(getEnergyStored(),
+                    progressTicks * 31L + (active ? 1L : 0L) * 31L * 31L
+                            + oresSig * 31L + tank.getFluidAmountMb());
         }
     }
 

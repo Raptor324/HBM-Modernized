@@ -95,8 +95,6 @@ public class MachineIndustrialGeneratorBlockEntity extends BaseMachineBlockEntit
             }
         }
 
-        boolean dirty = false;
-
         if (burnTime <= 0) {
             tryConsumeSolidFuel();
         }
@@ -112,7 +110,6 @@ public class MachineIndustrialGeneratorBlockEntity extends BaseMachineBlockEntit
             long output = (long) (BASE_RATE * genMult);
             if (getEnergyStored() < getMaxEnergyStored()) {
                 setEnergyStored(Math.min(getMaxEnergyStored(), getEnergyStored() + output));
-                dirty = true;
             }
 
             if (burningSolid) {
@@ -122,10 +119,14 @@ public class MachineIndustrialGeneratorBlockEntity extends BaseMachineBlockEntit
             }
         }
 
-        if (dirty) {
-            setChanged();
-            sendUpdateToClient();
-        }
+        // P6: пакет клиенту только при изменении состояния (энергия, горение, топливо)
+        syncIfStateChanged(getEnergyStored(),
+                (burnTime * 31L + maxBurnTime) * 31L + fp(fuelTank));
+    }
+
+    /** Подпись бака: тип жидкости + уровень заполнения. */
+    private static long fp(FluidTank tank) {
+        return tank.getTankType().hashCode() * 31L + tank.getFill();
     }
 
     private void tryConsumeSolidFuel() {

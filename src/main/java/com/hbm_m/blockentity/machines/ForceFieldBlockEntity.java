@@ -139,7 +139,12 @@ public class ForceFieldBlockEntity extends BaseMachineBlockEntity {
         }
 
         if (be.isOn && be.cooldown == 0 && be.health > 0 && be.getEnergyStored() >= be.powerCons) {
-            be.doField(level, pos, be.radius);
+            // PR-note: der radius+25 Entity-Query laeuft auf 4 Hz (probeDue(5)) statt 20 Hz -
+            // der Rueckstoss/damage-Scan ist der teuerste Teil des Ticks. Zwischen den Scans
+            // bleiben outside/inside erhalten, das Feld reagiert bis zu 4 Ticks versaetzt.
+            if (be.probeDue(5)) {
+                be.doField(level, pos, be.radius);
+            }
             be.setEnergyStored(be.getEnergyStored() - be.powerCons);
         } else {
             be.outside.clear();
@@ -149,8 +154,19 @@ public class ForceFieldBlockEntity extends BaseMachineBlockEntity {
         // Original: reicht die Energie nicht fuer einen Tick, verfaellt der ganze Rest.
         if (be.getEnergyStored() < be.powerCons) be.setEnergyStored(0L);
 
-        be.setChanged();
-        be.sendUpdateToClient();
+        // Anti-sync-spam (P6): volle Paketwurst nur bei geaenderter Signatur. Signatur deckt
+        // ALLE in writeNbtData verschickten Felder ab (Energie, Inventar-Fingerprints, Radius-
+        // float, health/maxHealth/cooldown/isOn/muffled/blink/color).
+        long lo = com.hbm_m.recipe.index.CachedRecipeResolver.sign(1L,
+                be.getEnergyStored(),
+                Float.floatToIntBits(be.radius),
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(be.getInventory().getStackInSlot(SLOT_BATTERY)),
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(be.getInventory().getStackInSlot(SLOT_UPGRADE_RADIUS)),
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(be.getInventory().getStackInSlot(SLOT_UPGRADE_HEALTH)));
+        long hi = com.hbm_m.recipe.index.CachedRecipeResolver.sign(2L,
+                be.health, be.maxHealth, be.cooldown,
+                be.isOn ? 1L : 0L, be.muffled ? 1L : 0L, be.blink, be.color);
+        be.syncIfStateChanged(lo, hi);
     }
 
     /** Original: die Aufwertungen werden nach Stapelgroesse gewertet. */

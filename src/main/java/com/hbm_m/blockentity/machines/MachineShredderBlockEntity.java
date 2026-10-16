@@ -4,7 +4,6 @@ import com.hbm_m.platform.PlatformHooks;
 
 
 import java.util.Map;
-import java.util.Optional;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -17,7 +16,6 @@ import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
 import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.recipe.ShredderRecipe;
-import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.platform.recipe.RecipeInputWrapper;
 import com.hbm_m.sound.ClientSoundBootstrap;
 
@@ -68,8 +66,10 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
     private int progress = 0;
     private boolean isActive = false;
     private boolean clientIsActive = false;
-    private int syncCounter = 0;
-    private static final int SYNC_INTERVAL = 20;
+
+    /** Кэш скана рецептов измельчения: сигнатура = фингерпринт входного стака (включая damage). */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<ShredderRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
 
     private final ContainerData containerData = new ContainerData() {
         @Override
@@ -197,8 +197,6 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
     private void serverTick(Level level, BlockPos pos) {
         ensureNetworkInitialized();
 
-        boolean dirty = false;
-
         chargeFromBattery();
 
         if (level.getGameTime() % 10L == 0L) {
@@ -206,7 +204,6 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
         }
 
         boolean canProcess = canProcess();
-        boolean wasActive = isActive;
 
         boolean canWork = false;
         if (canProcess) {
@@ -214,7 +211,6 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
             if (currentEnergy >= ENERGY_PER_TICK) {
                 this.setEnergyStored(currentEnergy - ENERGY_PER_TICK);
                 canWork = true;
-                dirty = true;
             }
         }
 
@@ -230,7 +226,6 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
                             int newDamage = Math.min(maxDamage, oldDamage + 1);
                             if (newDamage != oldDamage) {
                                 blade.setDamageValue(newDamage);
-                                dirty = true;
                                 if (oldDamage < maxDamage && newDamage >= maxDamage) {
                                     level.playSound(null, pos, SoundEvents.ITEM_BREAK, SoundSource.BLOCKS, 1.0F, 0.8F);
                                 }
@@ -240,36 +235,24 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
                 }
                 progress = 0;
                 processItem();
-                dirty = true;
             } else {
-                dirty = true;
+                // прогресс растёт — снапшот в syncIfStateChanged изменится
             }
         } else {
             if (progress > 0) {
                 progress = 0;
-                dirty = true;
             }
         }
 
         isActive = canWork;
-        if (wasActive != isActive) {
-            dirty = true;
-        }
-        
-        if (isActive || wasActive) {
-            dirty = true;
-        }
 
-        syncCounter++;
-        if (syncCounter >= SYNC_INTERVAL) {
-            syncCounter = 0;
-            dirty = true;
-        }
-
-        if (dirty) {
-            setChanged();
-            sendUpdateToClient();
-        }
+        // Anti-sync-spam (P6): снапшот энергии + прогресс/активность + фингерпринты лезвий
+        // (stackFingerprint включает damage на обеих версиях — гейт parity-стабилен).
+        long lo = this.getEnergyStored();
+        long hi = progress * 31L + (isActive ? 1L : 0L);
+        hi = hi * 31L + PlatformHooks.stackFingerprint(inventory.getStackInSlot(BLADE_LEFT));
+        hi = hi * 31L + PlatformHooks.stackFingerprint(inventory.getStackInSlot(BLADE_RIGHT));
+        syncIfStateChanged(lo, hi);
     }
 
     // ==================== ENERGY ====================
@@ -373,27 +356,35 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
     }
 
     private ItemStack getRecipeResult(ItemStack input) {
+        // Пустая ветка ДО резолвера: пустая сигнатура = 0 и не должна отравлять кэш.
         if (input.isEmpty() || level == null) {
             return new ItemStack(ModMaterialItems.item(ModMaterials.SCRAP, MaterialShape.SCRAP), 1);
         }
 
-        SimpleContainer container = new SimpleContainer(1);
-        container.setItem(0, input);
-        RecipeInputWrapper wrapper = new RecipeInputWrapper(container);
-        Optional<ShredderRecipe> recipe = RecipeHooks.getAllRecipes(level, ShredderRecipe.Type.INSTANCE).stream()
-                .filter(r -> r.matchesRecipe(wrapper, level))
-                .findFirst();
-        
-        if (recipe.isPresent()) {
-            return recipe.get().getResultItem(level.registryAccess()).copy();
+        // Чистый матч рецепта по фингерпринту входа (CONTRACT 1): проверка места под выход
+        // (hasSpace) остаётся ВНЕ резолвера и переоценивается каждый тик — закэшированный
+        // рецепт никогда не блокирует измельчитель после освобождения выходов.
+        ShredderRecipe recipe = recipeResolver.resolve(level, ShredderRecipe.Type.INSTANCE,
+                PlatformHooks.stackFingerprint(input), (lvl, all) -> {
+                    SimpleContainer container = new SimpleContainer(1);
+                    container.setItem(0, input);
+                    RecipeInputWrapper wrapper = new RecipeInputWrapper(container);
+                    for (ShredderRecipe r : all) {
+                        if (r.matchesRecipe(wrapper, lvl)) return r;
+                    }
+                    return null;
+                });
+
+        if (recipe != null) {
+            return recipe.getResultItem(level.registryAccess()).copy();
         }
-        
+
         if (isDustLike(input)) {
             ItemStack copy = input.copy();
             copy.setCount(1);
             return copy;
         }
-        
+
         return new ItemStack(ModMaterialItems.item(ModMaterials.SCRAP, MaterialShape.SCRAP), 1);
     }
 
