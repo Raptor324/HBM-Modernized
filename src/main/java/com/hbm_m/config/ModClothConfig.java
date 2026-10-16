@@ -294,6 +294,52 @@ public class ModClothConfig {
     public boolean doorPartCulling = true;
 
     /**
+     * Графические эффекты - вложенный объект группы «Графические эффекты»
+     * (аккордеон во вкладке Rendering). Имя поля = parentObject полей схемы
+     * graphicEffects.* (ConfigField.resolveTarget резолвит его рефлексией).
+     */
+    public GraphicEffectsSettings graphicEffects = new GraphicEffectsSettings();
+
+    /** Поля группы «Графические эффекты»; ключи схемы - graphicEffects.<имя поля>. */
+    public static class GraphicEffectsSettings {
+        /**
+         * Позиционный свет ядерного взрыва (RawScreenSpaceLight: экранный пасс
+         * поверх картинки шейдерпака, инъекция в Iris/Oculus finalizeLevelRendering).
+         * Выключите для A/B-проверки артефактов или аварийного отключения; ванильный
+         * рендер без пака не затрагивается. Флаг: {@code -Dhbm.screenSpaceLight=false}.
+         */
+        public boolean screenSpaceLightFill = true;
+
+        /**
+         * Интенсивность позиционного света ядерного взрыва (аддитив после тонемапа
+         * пака). Ориентиры: 1.5 едва заметно в ночном мире, 50 - белая сатурация
+         * всего радиуса на всё время жизни гриба.
+         */
+        public float nukeLightIntensity = 4.0F;
+
+        /**
+         * Модификатор РАДИУСА ореола (независимо от яркости): итоговый радиус
+         * источника = базовый (растёт с масштабом гриба, 384..3840 блоков) *
+         * это значение. Меньше 1 - компактный ореол, больше 1 - зарево на
+         * весь горизонт.
+         */
+        public float nukeLightRadiusScale = 1.0F;
+
+        /**
+         * Кинематографические эффекты ядерного света (RawScreenSpaceLight):
+         * альбедо-освещение поверхностей (текстура сцены сохраняет рельеф),
+         * спектральный цвет вспышки (белое ядро → янтарь → багровое тление),
+         * Mie-рассеяние ореола, экранные godrays за рельефом, преломляющая
+         * ударная волна с хроматической аберрацией. 0 - классический
+         * аддитивный свет (round-8), 1 - штатная сила, до 2 - утрированно.
+         */
+        public float nukeCinematics = 1.0F;
+
+        /** Режим рендера тепловизора. */
+        public ThermalRenderMode thermalRenderMode = ThermalRenderMode.FULL_SHADER;
+    }
+
+    /**
      * Одноразовый дебаг-дамп клипа дверей в лог ('[HBM-M][DoorClipDebug]'):
      * почему резолвер вернул/не вернул плоскости и какие спрайты/UV реально
      * приходят в клип-тир. Для диагностики артефактов скрытия створок.
@@ -428,9 +474,8 @@ public class ModClothConfig {
     public int bombMaxThreads = -1;
 
     // ════════════════════════════════════════════════════════════════
-    // Тепловизор
+    // Тепловизор (переключатель - в graphicEffects.thermalRenderMode)
     // ════════════════════════════════════════════════════════════════
-    public ThermalRenderMode thermalRenderMode = ThermalRenderMode.FULL_SHADER;
 
     public enum ThermalRenderMode {
         FULL_SHADER,

@@ -123,6 +123,10 @@ public final class MachineDoorRenderer {
         com.hbm_m.main.MainRegistry.LOGGER.info("[HBM-M][DoorClipDebug] {}: {}", key, msg.get());
     }
     private static boolean skinSharing() {
+        // Share-пайплайн восстановлен до контракта первой рабочей итерации:
+        // кеш — нормализованные квадами (normalizeQuadUvsPerQuad), ремап — по-квадный
+        // в клиппере. Партовые копии uvRect (не общий скретч) обязательны: rect живёт
+        // до флаша инстанс-батча, общий скретч портил текстуры всех партов.
         return com.hbm_m.config.ModClothConfig.get().nucleusDoorSkinSharing && SKIN_SHARING_FLAG;
     }
 
@@ -503,11 +507,7 @@ public final class MachineDoorRenderer {
         if (!shareSkins() || !isDaeModelActive(be)) return null;
         TextureAtlasSprite s = daeNodeSprite(node, enrichedSelection(be), decl);
         if (s == null) return null;
-        UV_RECT_SCRATCH[0] = s.getU0();
-        UV_RECT_SCRATCH[1] = s.getV0();
-        UV_RECT_SCRATCH[2] = s.getU1() - s.getU0();
-        UV_RECT_SCRATCH[3] = s.getV1() - s.getV0();
-        return UV_RECT_SCRATCH;
+        return cachedUvRect("dae/" + decl.getBlockId() + "/" + node.name, s);
     }
 
     /**
@@ -637,6 +637,22 @@ public final class MachineDoorRenderer {
      * rect per part). The return value is the shared UV_RECT_SCRATCH -- every consumer
      * MUST snapshot the values in the same frame (the DoorPartClipper memo key does).
      */
+    /** Партовые копии uvRect: партов конечное число, ключ уникален по decl/парту. */
+    private static final java.util.HashMap<String, float[]> UV_RECT_COPIES = new java.util.HashMap<>();
+
+    /** Снимок атласного rect спрайта в переиспользуемый партовый массив. */
+    private static float[] cachedUvRect(String key, TextureAtlasSprite s) {
+        float[] r = UV_RECT_COPIES.get(key);
+        if (r == null) {
+            r = new float[4];
+            UV_RECT_COPIES.put(key, r);
+        }
+        r[0] = s.getU0();
+        r[1] = s.getV0();
+        r[2] = s.getU1() - s.getU0();
+        r[3] = s.getV1() - s.getV0();
+        return r;
+    }
     private static float[] doorUvRect(DoorBlockEntity be, String partName) {
         if (!shareSkins()) return null;
         if (!(resolveModel(be) instanceof DoorBakedModel dm)) return null;
@@ -644,11 +660,10 @@ public final class MachineDoorRenderer {
         if (part == null) return null;
         TextureAtlasSprite s = partSprite(part);
         if (s == null) return null;
-        UV_RECT_SCRATCH[0] = s.getU0();
-        UV_RECT_SCRATCH[1] = s.getV0();
-        UV_RECT_SCRATCH[2] = s.getU1() - s.getU0();
-        UV_RECT_SCRATCH[3] = s.getV1() - s.getV0();
-        return UV_RECT_SCRATCH;
+        // Партовая КОПИЯ rect (не общий UV_RECT_SCRATCH): rect живёт до флаша
+        // инстанс-батча; общий скретч давал всем партам rect последнего парта —
+        // «все текстуры дверей сломаны» в share-режиме.
+        return cachedUvRect("door/" + partName, s);
     }
 
     /** OBJ part quads from DoorBakedModel; empty if the part is missing / the skin is not OBJ.
@@ -678,7 +693,7 @@ public final class MachineDoorRenderer {
             // Композиция tile-split → frac → sprite-нормализация (рев.2). На этом
             // call-site вход атласный (DoorBakedModel/RemappedPartModel quads),
             // split-фаза no-op, путь тождественен normalizeQuadUvsPerQuad.
-            out = com.hbm_m.client.model.ModelHelper.normalizeWithTileSplit(out);
+            out = com.hbm_m.client.model.ModelHelper.normalizeQuadUvsPerQuad(out);
         }
         return out;
     }
@@ -842,9 +857,12 @@ public final class MachineDoorRenderer {
             applyDaeRootOffset(CLIP_POSE, decl);
             mulPoseChain(CLIP_POSE, model, chain, time);
             float[][] inverted = invertPosePlanes(planes);
+            final org.joml.Vector3f dbgC = CLIP_POSE.last().pose().transformPosition(new org.joml.Vector3f());
+            final org.joml.Matrix3f dbgM = new org.joml.Matrix3f(CLIP_POSE.last().pose());
             debugClipLog("dae-invert/" + partName, () ->
                     "src=" + java.util.Arrays.deepToString(planes)
-                    + " inverted=" + java.util.Arrays.deepToString(inverted));
+                    + " inverted=" + java.util.Arrays.deepToString(inverted)
+                    + " poseC=" + dbgC + " poseCols=" + dbgM.getColumn(0, new org.joml.Vector3f()) + "|" + dbgM.getColumn(1, new org.joml.Vector3f()) + "|" + dbgM.getColumn(2, new org.joml.Vector3f()));
             return inverted;
         } finally {
             CLIP_POSE.popPose();
@@ -936,7 +954,7 @@ public final class MachineDoorRenderer {
             // Композиция tile-split → frac → sprite-нормализация (рев.2): вход здесь
             // атласный (DaeQuadBaker лерпит raw UV в rect спрайта), split-фаза no-op.
             if (normalize) {
-                quads = com.hbm_m.client.model.ModelHelper.normalizeWithTileSplit(quads);
+                quads = com.hbm_m.client.model.ModelHelper.normalizeQuadUvsPerQuad(quads);
             }
             return quads;
         } catch (Exception e) {

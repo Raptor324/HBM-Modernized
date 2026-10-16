@@ -183,7 +183,7 @@ public final class DhRenderBridge extends DhApiBeforeApplyShaderRenderEvent {
      * любом активном паке (isExternalShaderActive): у большинства паков
      * с DH-поддержкой это так.
      */
-    private static boolean isIrisLodOverrideActive() {
+    public static boolean isIrisLodOverrideActive() {
         try {
             if (!dhCompatQueryInitialized) {
                 dhCompatQueryInitialized = true;

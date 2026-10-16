@@ -1935,10 +1935,8 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("hud.hbm_m.thermal.off", "Thermal Vision: OFF");
         add("hud.hbm_m.thermal.warning", "Warning: the shader thermal vision mode is experimental and may be unstable. If problems occur, switch to a simpler mode in the config (Alt + 0, Rendering tab). To enable thermal vision, press again. This message will not be shown again for this world.");
         add("hud.hbm_m.dash.perform", "Dash Performed");
-        add("text.autoconfig.hbm_m.option.thermalRenderMode", "Thermal Vision Render Mode");
-        add("text.autoconfig.hbm_m.option.thermalRenderMode.@Tooltip", "Choose how thermal vision is rendered.");
-        add("text.autoconfig.hbm_m.option.thermalRenderMode.FULL_SHADER", "Full shader");
-        add("text.autoconfig.hbm_m.option.thermalRenderMode.ORIGINAL_FALLBACK", "Spectral fallback");
+        add("text.autoconfig.hbm_m.option.graphicEffects.thermalRenderMode", "Thermal Vision Render Mode");
+        add("text.autoconfig.hbm_m.option.graphicEffects.thermalRenderMode.@Tooltip", "Choose how thermal vision is rendered.");
 
 
         // POWER ARMOR CONTROLS
@@ -3275,6 +3273,24 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("config.hbm_m.field.doorClipDebug.tooltip", "One-shot per-part log dump ([HBM-M][DoorClipDebug]) of the door clip pipeline: which gate disabled the clip and which sprites/UVs actually reach the clipped tier. For diagnosing door culling artifacts.");
         add("text.autoconfig.hbm_m.option.doorClipDebug", "Door Clip Debug Dump");
         add("text.autoconfig.hbm_m.option.doorClipDebug.@Tooltip", "One-shot per-part log dump of the door clip pipeline. For diagnosing door culling artifacts.");
+        add("config.hbm_m.group.graphicEffects", "Graphic Effects");
+        add("text.autoconfig.hbm_m.option.graphicEffects", "Graphic Effects");
+        add("config.hbm_m.field.graphicEffects.screenSpaceLightFill", "Nuke Explosion Light");
+        add("config.hbm_m.field.graphicEffects.screenSpaceLightFill.tooltip", "Positional light of nuclear explosions composited over the shader pack image (screen-space pass injected into Iris/Oculus finalizeLevelRendering). Toggle for A/B tests or to emergency-disable the effect; vanilla no-pack rendering is unaffected.");
+        add("text.autoconfig.hbm_m.option.graphicEffects.screenSpaceLightFill", "Nuke Explosion Light");
+        add("text.autoconfig.hbm_m.option.graphicEffects.screenSpaceLightFill.@Tooltip", "Positional light of nuclear explosions composited over the shader pack image (screen-space pass injected into Iris/Oculus). Toggle for A/B tests or to emergency-disable the effect.");
+        add("config.hbm_m.field.graphicEffects.nukeLightIntensity", "Nuke Light Intensity");
+        add("config.hbm_m.field.graphicEffects.nukeLightIntensity.tooltip", "Brightness of the positional nuke light, added after the pack tonemap. Reference points: 1.5 barely visible at night, 4.0 default, 50 whites out the whole radius for the mushroom's lifetime.");
+        add("text.autoconfig.hbm_m.option.graphicEffects.nukeLightIntensity", "Nuke Light Intensity");
+        add("text.autoconfig.hbm_m.option.graphicEffects.nukeLightIntensity.@Tooltip", "Brightness of the positional nuke light (0..50), added after the pack tonemap.");
+        add("config.hbm_m.field.graphicEffects.nukeLightRadiusScale", "Nuke Light Radius Scale");
+        add("config.hbm_m.field.graphicEffects.nukeLightRadiusScale.tooltip", "Halo size multiplier, independent of brightness. The base radius grows with the mushroom's scale (384..3840 blocks); this multiplies it. Below 1 - a compact halo, above 1 - a glow reaching the horizon.");
+        add("text.autoconfig.hbm_m.option.graphicEffects.nukeLightRadiusScale", "Nuke Light Radius Scale");
+        add("text.autoconfig.hbm_m.option.graphicEffects.nukeLightRadiusScale.@Tooltip", "Halo size multiplier (0.1..8), independent of the brightness setting.");
+        add("config.hbm_m.field.graphicEffects.nukeCinematics", "Nuke Light Cinematics");
+        add("config.hbm_m.field.graphicEffects.nukeCinematics.tooltip", "Cinematic layer of the nuke light: albedo-lit surfaces (textures keep their relief), flash color spectrum (white core to amber to crimson), Mie glow, godrays behind terrain, refracting shockwave with chromatic aberration. 0 = classic additive light.");
+        add("text.autoconfig.hbm_m.option.graphicEffects.nukeCinematics", "Nuke Light Cinematics");
+        add("text.autoconfig.hbm_m.option.graphicEffects.nukeCinematics.@Tooltip", "Cinematic effects strength (0..2). 0 disables the layer, 1 is default.");
         add("text.autoconfig.hbm_m.option.nucleusDispatcherBypass", "Nucleus: dispatcher bypass");
         add("text.autoconfig.hbm_m.option.nucleusDispatcherBypass.@Tooltip", "Collect factory machines with a flat pass instead of the vanilla/Sodium block-entity dispatcher. Disable if machines disappear or render twice.");
         add("text.autoconfig.hbm_m.option.nucleusGpuBake", "Nucleus: GPU bake (Iris Tier 1)");
@@ -3292,9 +3308,8 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.debugAnimCacheLog", "Log animation cache stats");
         add("text.autoconfig.hbm_m.option.debugAnimCacheLog.@Tooltip", "Periodic (every 5 s) hit/miss statistics of the Nucleus animation delta cache.");
 
-        // ── Audit 0928: labels for fields that had none ──────────────
         add("text.autoconfig.hbm_m.option.enableDhRenderBridge", "Distant Horizons render bridge");
-        add("text.autoconfig.hbm_m.option.enableDhRenderBridge.@Tooltip", "Render distant missiles/fungus inside the DH framebuffer. Disable to A/B rendering artifacts (cave see-through, foliage order): if artifacts persist without the bridge, they come from DH itself.");
+        add("text.autoconfig.hbm_m.option.enableDhRenderBridge.@Tooltip", "Render distant missiles/particles inside the DH framebuffer. Disable if you facing rendering artifacts (cave see-through, foliage order, etc).");
         add("text.autoconfig.hbm_m.option.enableExtendedLogging", "Extended action logging");
         add("text.autoconfig.hbm_m.option.enableExtendedLogging.@Tooltip", "Logs uses of the detonator, nuclear explosions, missile launches, grenades, etc.");
         add("text.autoconfig.hbm_m.option.nucleusRenderDirtySkip", "Nucleus: fast-path dirty skip");

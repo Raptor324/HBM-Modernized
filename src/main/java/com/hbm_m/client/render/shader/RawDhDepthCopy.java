@@ -66,12 +66,13 @@ public final class RawDhDepthCopy {
                 float d = texture(uDepthTex, uv).r;
                 bool reverseZ = uReverseZ > 0.5;
                 if (reverseZ ? (d <= 1.0e-6) : (d >= 0.999999)) { discard; }
-                float ndc = d * 2.0 - 1.0;
-                // REVERSE_Z (DH 3.3.1+): DH's reverse matrix gives
-                // ndc = (n/(f-n))*(f/dist - 1)  =>  dist = fn/(ndc*(f-n) + n).
+                // REVERSE_Z (DH 3.3.1+): d in [0..1] (1 = near, 0 = far),
+                // dist = fn/(n + d*(f-n)). The ndc [-1..1] mapping is WRONG here:
+                // for d < 0.5 the denominator goes negative, clamps to 1e-6 and
+                // every LOD beyond ~15 blocks decoded to ~3e10 blocks.
                 float dist = reverseZ
-                    ? (uDhFar * uDhNear) / max(uDhNear + ndc * (uDhFar - uDhNear), 1e-6)
-                    : (2.0 * uDhFar * uDhNear) / max((uDhFar + uDhNear) - ndc * (uDhFar - uDhNear), 1e-6);
+                    ? (uDhFar * uDhNear) / max(uDhNear + d * (uDhFar - uDhNear), 1e-6)
+                    : (2.0 * uDhFar * uDhNear) / max((uDhFar + uDhNear) - (d * 2.0 - 1.0) * (uDhFar - uDhNear), 1e-6);
                 // DH dither-fade zone ("Fade Nearby DH LODs"): DEPTH32F there is noise.
                 if (dist < uFadeMaskDist) { discard; }
                 // Exact window of our projection: window = 1 - fnEff/dist,

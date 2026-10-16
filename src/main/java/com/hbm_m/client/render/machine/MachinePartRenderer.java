@@ -211,9 +211,14 @@ final class MachinePartRenderer {
         if (quads == null || quads.isEmpty() || bufferSource == null) return;
         // Дебаг-дамп клип-тира (конфиг doorClipDebug): фактические спрайт/UV входных квадов.
         if (com.hbm_m.config.ModClothConfig.get().doorClipDebug) {
-            debugDumpQuads();
+            debugDumpQuads(uvRect);
         }
         List<BakedQuad> clipped = DoorPartClipper.clipQuads(quads, clipPlanes, uvRect);
+        // Дебаг: UV-диапазон ПОСЛЕ клипа/разбивки (одноразово на парт) — видно,
+        // попали ли куски разбивки тайлов в rect спрайта.
+        if (com.hbm_m.config.ModClothConfig.get().doorClipDebug) {
+            debugDumpUv("out", clipped, uvRect);
+        }
         if (clipped.isEmpty()) return;
         com.hbm_m.client.render.NucleusDebug.recordDraw(1, 1, "Immediate (clipped)");
         float fade = SingleMeshVboRenderer.getFadeAlpha();
@@ -272,9 +277,13 @@ final class MachinePartRenderer {
     // ==== Дебаг клип-тира (конфиг doorClipDebug): одноразовый дамп спрайтов/UV партов ====
     private static final java.util.Set<String> CLIP_DEBUG_DUMPED = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
-    private void debugDumpQuads() {
-        if (!CLIP_DEBUG_DUMPED.add(key)) return;
-        StringBuilder sb = new StringBuilder("part='").append(key).append("' quads=").append(quads.size());
+    private void debugDumpQuads(@Nullable float[] uvRect) {
+        debugDumpUv("in", quads, uvRect);
+    }
+
+    private void debugDumpUv(String tag, List<BakedQuad> quads, @Nullable float[] uvRect) {
+        if (!CLIP_DEBUG_DUMPED.add(key + ":" + tag)) return;
+        StringBuilder sb = new StringBuilder(tag + " part='").append(key).append("' quads=").append(quads.size()).append(" uvRect=").append(uvRect == null ? "null" : java.util.Arrays.toString(uvRect));
         int n = Math.min(quads.size(), 6);
         for (int i = 0; i < n; i++) {
             BakedQuad q = quads.get(i);

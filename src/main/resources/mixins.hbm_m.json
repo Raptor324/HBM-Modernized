@@ -38,6 +38,7 @@
     "client.MixinItemRendererTemplatePreview",
     "client.MixinAbstractClientPlayerSkin",
     "client.MixinIrisShadowRenderer",
+    "client.MixinIrisRenderingPipelinePreComposite",
     "client.MixinBlockEntityRenderDispatcher",
     "client.ClientPayloadHandlerInvoker",
     "client.MixinClientPayloadHandlerMissingTile",

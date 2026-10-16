@@ -24,7 +24,7 @@ public class GameRendererMixin {
         if (!PowerArmorClientState.isThermalActive()) {
             return;
         }
-        if (ModClothConfig.get().thermalRenderMode != ModClothConfig.ThermalRenderMode.ORIGINAL_FALLBACK) {
+        if (ModClothConfig.get().graphicEffects.thermalRenderMode != ModClothConfig.ThermalRenderMode.ORIGINAL_FALLBACK) {
             return;
         }
 

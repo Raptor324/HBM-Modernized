@@ -117,6 +117,22 @@ public final class HbmConfigStore {
                         cfg.occlusionCullingMode = legacy ? ModClothConfig.OcclusionCullingMode.CPU : ModClothConfig.OcclusionCullingMode.OFF;
                     }
                     cfg.enableOcclusionCulling = (cfg.occlusionCullingMode != ModClothConfig.OcclusionCullingMode.OFF);
+                    // 0.2.2: тепловизор и свет ядерного взрыва переехали во вложенный
+                    // объект graphicEffects (группа «Графические эффекты» во вкладке
+                    // rendering). Старые верхнеуровневые ключи client.json переносим.
+                    if (!map.containsKey("graphicEffects.thermalRenderMode") && map.containsKey("thermalRenderMode")) {
+                        try {
+                            cfg.graphicEffects.thermalRenderMode = ModClothConfig.ThermalRenderMode.valueOf(map.get("thermalRenderMode"));
+                        } catch (IllegalArgumentException ignored) {}
+                    }
+                    if (!map.containsKey("graphicEffects.screenSpaceLightFill") && map.containsKey("screenSpaceLightFill")) {
+                        cfg.graphicEffects.screenSpaceLightFill = Boolean.parseBoolean(map.get("screenSpaceLightFill"));
+                    }
+                    if (!map.containsKey("graphicEffects.nukeLightIntensity") && map.containsKey("nukeLightIntensity")) {
+                        try {
+                            cfg.graphicEffects.nukeLightIntensity = Float.parseFloat(map.get("nukeLightIntensity"));
+                        } catch (NumberFormatException ignored) {}
+                    }
                 }
 
                 String currentVersion = currentModVersion();

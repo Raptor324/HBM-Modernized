@@ -48,6 +48,14 @@ public final class DhDepthCopy {
         if (Minecraft.useShaderTransparency()) {
             return;
         }
+        // Внешний шейдерпак активен: копия глубины DH (энкод OutNear/OutFar)
+        // поверх ванильной глубины (энкод gbufferProjection) делает главный
+        // z-buffer гибридом двух проекций — RawScreenSpaceLight читает uDepthTex0
+        // как единый слой и разворачивает DH-часть в неверные позиции. DH-слой
+        // под паком читается напрямую (uDhDepthTex), копия здесь не нужна.
+        if (com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive()) {
+            return;
+        }
 
         Minecraft mc = Minecraft.getInstance();
         mc.getMainRenderTarget().bindWrite(false);

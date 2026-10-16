@@ -15,16 +15,17 @@
 //  - FORWARD_Z (DH <= 3.2.x; 3.3.1+ only under the Iris pack without reverse-Z):
 //    near=0, far=1, sky=1. Standard perspective:
 //    ndc = 2d-1, dist = 2fn/((F+N) - ndc(F-N)).
-//  - REVERSE_Z (DH 3.3.1+ default without the pack; GlDhRenderApiDefinition
-//    .getRenderDepth(), glClearDepth = farDepth = 0): near=1, far=0.
-//    DH reverse matrix (RenderUtil.setClipPlanes, 3.3.1 bytecode):
-//    A = m22 = n/(f-n), B = m23 = fn/(f-n)  =>  ndc = A*(f/dist - 1),
-//    hence dist = f*n / (ndc*(f-n) + n) with the usual ndc = 2d-1.
-//    Numeric check (n=73.41, f=7512.3): d=1000 -> decode 1000.2,
-//    d=200 -> 200.02. Sky now decodes to d = 0.
-//    (IRRELEVANT: an earlier attempt, "ndc = 1-2d + forward formula",
-//    matched the STANDARD reverse perspective m22=(f+n)/(f-n), while DH uses
-//    its own, see above - with it the mushroom stayed unoccluded.)
+    //  - REVERSE_Z (DH 3.3.1+ default without the pack; GlDhRenderApiDefinition
+    //    .getRenderDepth(), glClearDepth = farDepth = 0): near=1, far=0.
+    //    DH reverse matrix (RenderUtil.setClipPlanes, 3.3.1 bytecode):
+    //    A = m22 = n/(f-n), B = m23 = fn/(f-n)  =>  stored depth d = A*(f/dist - 1),
+    //    which is exactly 1 at near and 0 at far/sky - d is ALREADY the [0..1]
+    //    reverse value, no ndc = 2d-1 remap. Hence dist = f*n / (d*(f-n) + n).
+    //    Numeric check (n=73.41, f=7512.3): d for dist=1000 is 0.0643 ->
+    //    decode 73.41*7512.3/(0.0643*7438.9+73.41) = 1000.2.
+    //    (IRRELEVANT: an earlier attempt, "ndc = 1-2d + forward formula",
+    //    matched the STANDARD reverse perspective m22=(f+n)/(f-n), while DH uses
+    //    its own, see above - with it the mushroom stayed unoccluded.)
 
 uniform sampler2D Sampler0;
 uniform float DhNear;
@@ -49,10 +50,12 @@ void main() {
     if (reverseZ ? (d <= 1.0e-6) : (d >= 0.999999)) {
         discard;
     }
-    float ndc = d * 2.0 - 1.0;
+    // REVERSE_Z: d in [0..1] (1 = near, 0 = far), feed d directly - feeding
+    // ndc = 2d-1 made the denominator negative for d < 0.5, clamped to 1e-6,
+    // and every LOD beyond ~15 blocks decoded to ~5e13 (depth copy no-op).
     float dist = reverseZ
-        ? (DhFar * DhNear) / max(DhNear + ndc * (DhFar - DhNear), 1.0e-6)
-        : (2.0 * DhFar * DhNear) / max((DhFar + DhNear) - ndc * (DhFar - DhNear), 1.0e-6);
+        ? (DhFar * DhNear) / max(DhNear + d * (DhFar - DhNear), 1.0e-6)
+        : (2.0 * DhFar * DhNear) / max((DhFar + DhNear) - (d * 2.0 - 1.0) * (DhFar - DhNear), 1.0e-6);
     if (dist < DhFadeMaskDist) {
         discard;
     }

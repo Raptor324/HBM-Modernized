@@ -184,7 +184,17 @@ public final class ConfigSchema {
         reg(ConfigField.integer("nucleusGpuCullMinInstances", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", 0, 1_000_000));
         reg(ConfigField.integer("nucleusGpuScatterMinSpans", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", 2, 512));
         reg(ConfigField.integer("vatsRenderDistanceChunks", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", 1, 32));
-        reg(ConfigField.enumField("thermalRenderMode", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        // ── Графические эффекты: сворачиваемая группа (аккордеон по parentObject)
+        // внутри вкладки «rendering». parentObject = публичное поле ModClothConfig
+        // graphicEffects (ConfigField.resolveTarget резолвит его рефлексией),
+        // fieldName = хвост ключа после точки. Ключи в JSON - плоские
+        // «graphicEffects.<поле>» (миграция старых верхнеуровневых - HbmConfigStore).
+        reg(ConfigField.builder("graphicEffects.thermalRenderMode", ConfigField.FieldType.ENUM).client().live()
+                .category("rendering").parent("graphicEffects").build());
+        reg(ConfigField.boolNested("graphicEffects.screenSpaceLightFill", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", "graphicEffects"));
+        reg(ConfigField.floatNested("graphicEffects.nukeLightIntensity", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", "graphicEffects", 0F, 50F));
+        reg(ConfigField.floatNested("graphicEffects.nukeLightRadiusScale", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", "graphicEffects", 0.1F, 8F));
+        reg(ConfigField.floatNested("graphicEffects.nukeCinematics", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", "graphicEffects", 0F, 2F));
 
         // ── CLIENT: оверлеи ─────────────────────────────────────────
         reg(ConfigField.boolNested("radiationPixelEffect.enableRadiationPixelEffect", ConfigSide.CLIENT, ApplyMode.LIVE, "overlay", "radiationPixelEffect"));

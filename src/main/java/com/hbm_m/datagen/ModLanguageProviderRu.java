@@ -3013,10 +3013,8 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("hud.hbm_m.thermal.off", "Тепловизор: OFF");
         add("hud.hbm_m.thermal.warning", "Внимание: шейдерная версия тепловизора экспериментальная и может быть нестабильной. В случае проблем переключитесь на более простую версию в конфиге (Alt + 0, вкладка Рендеринг). Чтобы включить тепловизор, нажмите еще раз. Это сообщение больше не будет показано для данного мира.");
         add("hud.hbm_m.dash.perform", "Рывок выполнен");
-        add("text.autoconfig.hbm_m.option.thermalRenderMode", "Режим рендера тепловизора");
-        add("text.autoconfig.hbm_m.option.thermalRenderMode.@Tooltip", "Выберите способ рендера тепловизора.");
-        add("text.autoconfig.hbm_m.option.thermalRenderMode.FULL_SHADER", "Полный шейдер");
-        add("text.autoconfig.hbm_m.option.thermalRenderMode.ORIGINAL_FALLBACK", "Спектральный фолбэк");
+        add("text.autoconfig.hbm_m.option.graphicEffects.thermalRenderMode", "Режим рендера тепловизора");
+        add("text.autoconfig.hbm_m.option.graphicEffects.thermalRenderMode.@Tooltip", "Выберите способ рендера тепловизора.");
 
         // ARMOR BATTERIES
         add("item.hbm_m.armor_battery", "Батарея брони");
@@ -3732,6 +3730,24 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("config.hbm_m.field.doorClipDebug.tooltip", "Одноразовый дамп в лог ([HBM-M][DoorClipDebug]): какой гейт выключил клип и какие спрайты/UV реально доходят до клип-тира. Для диагностики артефактов скрытия створок.");
         add("text.autoconfig.hbm_m.option.doorClipDebug", "Дебаг-дамп клипа дверей");
         add("text.autoconfig.hbm_m.option.doorClipDebug.@Tooltip", "Одноразовый дамп клип-пайплайна дверей в лог. Для диагностики артефактов скрытия створок.");
+        add("config.hbm_m.group.graphicEffects", "Графические эффекты");
+        add("text.autoconfig.hbm_m.option.graphicEffects", "Графические эффекты");
+        add("config.hbm_m.field.graphicEffects.screenSpaceLightFill", "Свет ядерного взрыва");
+        add("config.hbm_m.field.graphicEffects.screenSpaceLightFill.tooltip", "Позиционный свет ядерных взрывов поверх картинки шейдерпака (экранный пасс, инъекция в Iris/Oculus finalizeLevelRendering). Тумблер для A/B-тестов и аварийного отключения; ванильный рендер без пака не затрагивается.");
+        add("text.autoconfig.hbm_m.option.graphicEffects.screenSpaceLightFill", "Свет ядерного взрыва");
+        add("text.autoconfig.hbm_m.option.graphicEffects.screenSpaceLightFill.@Tooltip", "Позиционный свет ядерных взрывов поверх картинки шейдерпака (экранный пасс, инъекция в Iris/Oculus). Тумблер для A/B-тестов и аварийного отключения.");
+        add("config.hbm_m.field.graphicEffects.nukeLightIntensity", "Интенсивность света взрыва");
+        add("config.hbm_m.field.graphicEffects.nukeLightIntensity.tooltip", "Яркость позиционного света, добавляемая ПОСЛЕ тонемапа пака. Ориентиры: 1.5 едва заметно ночью, 4.0 по умолчанию, 50 - белая сатурация всего радиуса на всё время жизни гриба.");
+        add("text.autoconfig.hbm_m.option.graphicEffects.nukeLightIntensity", "Интенсивность света взрыва");
+        add("text.autoconfig.hbm_m.option.graphicEffects.nukeLightIntensity.@Tooltip", "Яркость позиционного света взрыва (0..50), добавляемая после тонемапа пака.");
+        add("config.hbm_m.field.graphicEffects.nukeLightRadiusScale", "Масштаб ореола света");
+        add("config.hbm_m.field.graphicEffects.nukeLightRadiusScale.tooltip", "Множитель размера ореола, независимый от яркости. Базовый радиус растёт с масштабом гриба (384..3840 блоков); это значение умножает его. Меньше 1 - компактный ореол, больше 1 - зарево до горизонта.");
+        add("text.autoconfig.hbm_m.option.graphicEffects.nukeLightRadiusScale", "Масштаб ореола света");
+        add("text.autoconfig.hbm_m.option.graphicEffects.nukeLightRadiusScale.@Tooltip", "Множитель размера ореола (0.1..8), независимый от настройки яркости.");
+        add("config.hbm_m.field.graphicEffects.nukeCinematics", "Кинематика света");
+        add("config.hbm_m.field.graphicEffects.nukeCinematics.tooltip", "Кинематографический слой света взрыва: альбедо-освещение поверхностей (текстуры сохраняют рельеф), спектр вспышки (белое ядро → янтарь → багровое тление), Mie-ореол, godrays за рельефом, преломляющая ударная волна с хроматической аберрацией. 0 - классический аддитивный свет.");
+        add("text.autoconfig.hbm_m.option.graphicEffects.nukeCinematics", "Кинематика света");
+        add("text.autoconfig.hbm_m.option.graphicEffects.nukeCinematics.@Tooltip", "Сила кинематографических эффектов (0..2). 0 отключает слой, 1 - стандарт.");
         add("text.autoconfig.hbm_m.option.nucleusDispatcherBypass", "Nucleus: байпас диспетчера");
         add("text.autoconfig.hbm_m.option.nucleusDispatcherBypass.@Tooltip", "Сбор станков фабрики плоским обходом вместо ванильного/Sodium-диспетчера BlockEntity. Отключать при исчезновении или задвоении станков.");
         add("text.autoconfig.hbm_m.option.nucleusGpuBake", "Nucleus: GPU-bake (Iris Tier 1)");
@@ -3748,10 +3764,9 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.glDebugOutput.@Tooltip", "Лог HIGH/MEDIUM сообщений OpenGL-драйвера через KHR_debug. Вступает в силу после перезапуска.");
         add("text.autoconfig.hbm_m.option.debugAnimCacheLog", "Лог статистики кэша анимаций");
         add("text.autoconfig.hbm_m.option.debugAnimCacheLog.@Tooltip", "Периодическая (раз в 5 с) статистика попаданий кэша дельт анимаций Nucleus.");
-
-        // ── Аудит 0928: лейблы для полей, у которых их не было ──────
+        
         add("text.autoconfig.hbm_m.option.enableDhRenderBridge", "DH-мост рендера");
-        add("text.autoconfig.hbm_m.option.enableDhRenderBridge.@Tooltip", "Рендер дальних ракет/гриба внутри фреймбуфера Distant Horizons. Отключите для A/B-теста артефактов (просвечивание пещер, порядок листвы): если артефакты остаются без моста — их источник сам DH.");
+        add("text.autoconfig.hbm_m.option.enableDhRenderBridge.@Tooltip", "Рендер далеких ракет/частиц внутри фреймбуфера Distant Horizons. Отключите для при наличии артефактов (просвечивание пещер, порядок листвы).");
         add("text.autoconfig.hbm_m.option.enableExtendedLogging", "Расширенный лог действий");
         add("text.autoconfig.hbm_m.option.enableExtendedLogging.@Tooltip", "Логирует использование детонатора, ядерные взрывы, пуски ракет, гранаты и т.д.");
         add("text.autoconfig.hbm_m.option.nucleusRenderDirtySkip", "Nucleus: fast-path dirty-skip");
