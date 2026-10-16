@@ -15,7 +15,6 @@ import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.platform.ModItemStackHandler;
 import com.hbm_m.platform.PlatformHooks;
 import com.hbm_m.recipe.BlastFurnaceRecipe;
-import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.platform.recipe.RecipeInputWrapper;
 
 import net.minecraft.core.BlockPos;
@@ -104,14 +103,6 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
     private double speed;
     private int fuel;
     private boolean progressing;
-
-    // Кэш последнего синка — шлём обновление клиенту только при изменении.
-    private int lastProgress = Integer.MIN_VALUE;
-    private int lastSpeed = Integer.MIN_VALUE;
-    private int lastFuel = Integer.MIN_VALUE;
-    private int lastAir = Integer.MIN_VALUE;
-    private int lastFlue = Integer.MIN_VALUE;
-    private boolean lastProgressing;
 
     private static final int DATA_COUNT = 6;
     private static final int DATA_PROGRESS = 0;
@@ -333,8 +324,17 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
             level.setBlock(pos, state.setValue(BlastFurnaceBlock.LIT, progressing), 3);
         }
 
-        syncIfChanged();
-        setChanged();
+        // Anti-sync-spam: setChanged + полный BE-пакет только при изменении отрисовываемого
+        // состояния (прогресс/скорость/топливо/баки/прогресс = isLit). Подпись покрывает всё,
+        // что пишет writeNbtData, кроме инвентаря — слоты сами зовут setChanged через
+        // onContentsChanged и меняются только вместе с прогрессом.
+        long lo = (int) Math.round(progress * 1_000_000D);
+        lo = lo * 31L + (int) Math.round(speed * 1_000D);
+        lo = lo * 31L + fuel;
+        long hi = progressing ? 1L : 0L;
+        hi = hi * 31L + airTank.getFluidAmountMb();
+        hi = hi * 31L + flueTank.getFluidAmountMb();
+        syncIfStateChanged(lo, hi);
     }
 
     private void clientTick(Level level, BlockPos pos) {
@@ -352,32 +352,6 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
                         pos.getZ() + 0.5D + (level.random.nextDouble() - 0.5D) * 0.25D,
                         0D, 0.1D, 0D);
             }
-        }
-    }
-
-    private void syncIfChanged() {
-        int progressValue = (int) Math.round(progress * 1_000_000D);
-        int speedValue = (int) Math.round(speed * 1_000D);
-        if (progressValue != lastProgress || speedValue != lastSpeed || fuel != lastFuel
-                || airTank.getFluidAmountMb() != lastAir || flueTank.getFluidAmountMb() != lastFlue
-                || progressing != lastProgressing) {
-            lastProgress = progressValue;
-            lastSpeed = speedValue;
-            lastFuel = fuel;
-            lastAir = airTank.getFluidAmountMb();
-            lastFlue = flueTank.getFluidAmountMb();
-            lastProgressing = progressing;
-            sendUpdateToClient();
-        }
-    }
-
-    /**
-     * Синк BE на клиент через block update (аналог {@code BaseMachineBlockEntity#sendUpdateToClient}):
-     * печать доменной печи не наследует энергомашину, поэтому helper дублируется локально.
-     */
-    protected void sendUpdateToClient() {
-        if (level != null && !level.isClientSide && !isRemoved()) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
     }
 
@@ -438,20 +412,31 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
 
     // ==================== PROCESSING ====================
 
+    /** Кэшированный скан рецептов: подпись — фингерпринты обоих входных слотов (P3-правило). */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<BlastFurnaceRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+
     @Nullable
     private BlastFurnaceRecipe findRecipe() {
         if (level == null) return null;
-        SimpleContainer inventory = new SimpleContainer(itemHandler.getSlots());
-        for (int i = 0; i < itemHandler.getSlots(); i++) {
-            inventory.setItem(i, itemHandler.getStackInSlot(i));
-        }
-        RecipeInputWrapper wrapper = new RecipeInputWrapper(inventory);
-        for (BlastFurnaceRecipe recipe : RecipeHooks.getAllRecipes(level, BlastFurnaceRecipe.Type.INSTANCE)) {
-            if (recipe.matchesRecipe(wrapper, level)) {
-                return recipe;
+        long signature = com.hbm_m.recipe.index.CachedRecipeResolver.sign(10,
+                PlatformHooks.stackFingerprint(itemHandler.getStackInSlot(INPUT_SLOT_FIRST)),
+                PlatformHooks.stackFingerprint(itemHandler.getStackInSlot(INPUT_SLOT_SECOND)));
+        return recipeResolver.resolve(level, BlastFurnaceRecipe.Type.INSTANCE, signature, (lvl, all) -> {
+            // CONTRACT 1: сканер — только матч рецепта по входам; топливо/headroom выходов —
+            // per-tick в canProcess вне сканера.
+            SimpleContainer inventory = new SimpleContainer(itemHandler.getSlots());
+            for (int i = 0; i < itemHandler.getSlots(); i++) {
+                inventory.setItem(i, itemHandler.getStackInSlot(i));
             }
-        }
-        return null;
+            RecipeInputWrapper wrapper = new RecipeInputWrapper(inventory);
+            for (BlastFurnaceRecipe recipe : all) {
+                if (recipe.matchesRecipe(wrapper, lvl)) {
+                    return recipe;
+                }
+            }
+            return null;
+        });
     }
 
     private boolean canProcess(BlastFurnaceRecipe recipe) {

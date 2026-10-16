@@ -25,12 +25,15 @@ public class DeconBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity {
 
     public static void tick(Level level, BlockPos pos, BlockState state, DeconBlockEntity blockEntity) {
         if (!level.isClientSide) {
-            AABB box = new AABB(pos.getX() - 0.5, pos.getY(), pos.getZ() - 0.5,
-                    pos.getX() + 1.5, pos.getY() + 2, pos.getZ() + 1.5);
-            List<LivingEntity> entities = level.getEntitiesOfClass(LivingEntity.class, box);
+            // Дорогой entity-query (объём 2×2×2) — раз в 10 тиков, фаза по позиции.
+            if (blockEntity.probeDue(10)) {
+                AABB box = new AABB(pos.getX() - 0.5, pos.getY(), pos.getZ() - 0.5,
+                        pos.getX() + 1.5, pos.getY() + 2, pos.getZ() + 1.5);
+                List<LivingEntity> entities = level.getEntitiesOfClass(LivingEntity.class, box);
 
-            for (LivingEntity entity : entities) {
-                HbmLivingProps.incrementRadiation(entity, -0.5F);
+                for (LivingEntity entity : entities) {
+                    HbmLivingProps.incrementRadiation(entity, -0.5F);
+                }
             }
         } else {
             RandomSource random = level.getRandom();

@@ -68,11 +68,13 @@ public class MachineSteamEngineBlockEntity extends BaseMachineBlockEntity implem
     }
 
     private void serverTick(Level level, BlockPos pos) {
-        if (level.getGameTime() % 20 == 0) {
-            for (Direction dir : Direction.values()) {
-                trySubscribe(steamTank, level, pos.relative(dir), dir);
-                tryProvide(spentSteamTank, level, pos.relative(dir), dir);
-            }
+        // trySubscribe — раз в 20 тиков (регистрация, идемпотентно). tryProvide — каждый тик:
+        // его вторая ветка — прямой пуш спент-стима в соседний приёмник, гейт делит пропускную
+        // способность выдачи. Fill-проверка пропускает зонд, пока бак пуст.
+        boolean subscribeDue = level.getGameTime() % 20 == 0;
+        for (Direction dir : Direction.values()) {
+            if (spentSteamTank.getFill() > 0) tryProvide(spentSteamTank, level, pos.relative(dir), dir);
+            if (subscribeDue) trySubscribe(steamTank, level, pos.relative(dir), dir);
         }
 
         boolean dirty = false;

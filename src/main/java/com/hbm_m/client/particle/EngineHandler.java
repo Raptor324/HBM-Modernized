@@ -45,11 +45,40 @@ public class EngineHandler {
         initialized = true;
         ClientPlayerEvent.CLIENT_PLAYER_QUIT.register(player -> ParticleEngineNT.INSTANCE.clear());
         ClientTickEvent.CLIENT_PRE.register(client -> {
+            handleFlashbackExportTransition();
             // Гейт паузы + /tick freeze — общий с треками ракет (ClientWorldFreeze).
             if (com.hbm_m.client.ClientWorldFreeze.worldRunsNormally()) {
                 doParticleTick(true);
             }
         });
+    }
+
+    /** true = идёт экспорт Flashback (состояние на прошлом клиентском тике). */
+    private static boolean flashbackExportActive = false;
+
+    /**
+     * Граница старта/конца экспорта Flashback (переход флага isExporting).
+     * Экспорт переигрывает запись с чистого листа: на старте гасим всё, что
+     * дожило из сессии просмотрщика (после скраббинга таймлайна движок держит
+     * эффекты от чужих позиций плейхеда — без очистки они наслаивались бы на
+     * пересобранные), дальше движок детерминированно восстанавливается из
+     * пере-доставленных payload, ReplaceOnRespawn гасит наложение.
+     */
+    private static void handleFlashbackExportTransition() {
+        boolean exporting = com.hbm_m.client.ClientWorldFreeze.isFlashbackExporting();
+        if (exporting == flashbackExportActive) {
+            return;
+        }
+        flashbackExportActive = exporting;
+        if (exporting) {
+            int ghosted = ParticleEngineNT.INSTANCE.countParticles();
+            ParticleEngineNT.INSTANCE.clear();
+            com.hbm_m.main.MainRegistry.LOGGER.info(
+                    "[Flashback export] start: cleared {} live NT particle(s) carried over from the viewer session, rewind purge suppressed for the export run",
+                    ghosted);
+        } else {
+            com.hbm_m.main.MainRegistry.LOGGER.info("[Flashback export] end: rewind purge re-enabled");
+        }
     }
 
     //? if forge {
@@ -99,8 +128,24 @@ public class EngineHandler {
         }
     }
 
-    private static void renderAfterWeather(RenderLevelStageEvent event) {
-        // РАДИКАЛЬНАЯ СТРАХОВКА: если рисовать нечего (DH не рендерит, NT-частиц
+    /**
+     * Флаш NT-батчей под окном {@link com.hbm_m.client.render.shader.NtDirectPass}:
+     * под паком begin() пре-биндит FBO пайплайна пака (иначе наши кастомные
+     * ShaderInstance ушли бы в ванильный main, который Iris затирает финальным
+     * блитом), а VertexBufferMixin снимает маскирование Iris с наших шейдеров
+     * между apply() и draw - блендинг/цвет берутся из JSON нашего шейдера, а не
+     * из материала пака. Без пака окно - no-op, путь прежний.
+     */
+    private static void flushNtBatches() {
+        com.hbm_m.client.render.shader.NtDirectPass.begin();
+        try {
+            ParticleEngineNT.buffer().endBatch();
+        } finally {
+            com.hbm_m.client.render.shader.NtDirectPass.end();
+        }
+    }
+
+    private static void renderAfterWeather(RenderLevelStageEvent event) {        // РАДИКАЛЬНАЯ СТРАХОВКА: если рисовать нечего (DH не рендерит, NT-частиц
         // нет, треков ракет нет) — НЕ ТРОГАЕМ НИЧЕГО в кадре вообще. Любая наша
         // манипуляция состоянием/FBO в этом окне — чистый риск для ванильного
         // рендера; на пустом проходе она и была источником артефактов.
@@ -183,7 +228,7 @@ public class EngineHandler {
             // Чужие батчи флашим ДО биндинга DH depth в Sampler1, иначе они
             // улетели бы в GPU с нашей depth-текстурой вместо их сэмплеров.
             buffer.endBatch();
-            ParticleEngineNT.buffer().endBatch();
+            flushNtBatches();
             try {
                 // ОККЛЮЗИЯ ПРОТИВ LOD:
                 //  - без Iris: копия DH-глубины в главный z-buffer (композит DH
@@ -216,6 +261,8 @@ public class EngineHandler {
                             net.minecraft.client.renderer.ShaderInstance contentShader =
                                     com.hbm_m.client.render.shader.FarContentShaders.resolveTexColor();
                             if (contentShader != null) {
+                                // PROGRAM CACHE DESYNC PROTECTION: same lastApplied skip guard as DhDepthCopy:76.
+                                com.hbm_m.client.render.shader.ShaderBindResync.ensureFreshBind(contentShader);
                                 contentShader.apply(); // биндит целевой FB пайплайна
                             }
                             com.hbm_m.client.render.shader.RawDhDepthCopy.copyIntoBoundFramebuffer(
@@ -243,7 +290,7 @@ public class EngineHandler {
                         com.hbm_m.client.compat.dh.DhClientState.dhProjection());
                 ParticleEngineNT.INSTANCE.renderFiltered(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack(), splitSq, true);
                 buffer.endBatch();
-                ParticleEngineNT.buffer().endBatch();
+                flushNtBatches();
             } finally {
                 // Сброс Sampler1 сразу после флаша: RenderSystem.shaderTextures —
                 // глобальное состояние, следующее чужое дро не должно получить
@@ -263,13 +310,13 @@ public class EngineHandler {
             MissileTrackWorldRender.renderFiltered(partialTick, splitSq, false);
             ParticleEngineNT.INSTANCE.renderFiltered(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack(), splitSq, false);
             buffer.endBatch();
-            ParticleEngineNT.buffer().endBatch();
+            flushNtBatches();
             com.hbm_m.client.compat.dh.DhClientCompat.endVanillaExtendedPass();
 
             // 3. Вспышка — оверлей поверх всего.
             ParticleEngineNT.INSTANCE.renderFlashOnly(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack());
             buffer.endBatch();
-            ParticleEngineNT.buffer().endBatch();
+            flushNtBatches();
         } else {
             // DH не рендерит: полный проход, тоже на захваченной матрице.
             // ЕДИНСТВЕННЫЙ источник отрисовки мешей ракет (дубль в
@@ -280,7 +327,7 @@ public class EngineHandler {
             MissileTrackWorldRender.renderFiltered(partialTick, Double.NaN, false);
             ParticleEngineNT.INSTANCE.render(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack());
             buffer.endBatch();
-            ParticleEngineNT.buffer().endBatch();
+            flushNtBatches();
             // ФИКС «чёрного экрана» при совместном рендере меш+частицы:
             // диаг fsp показала, что после флаша NT-батчей физические бинды
             // TU1/TU2 уезжают в ноль ([0/0/0]), а кеш GlStateManager продолжает
@@ -292,7 +339,7 @@ public class EngineHandler {
             com.mojang.blaze3d.systems.RenderSystem.activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
             ParticleEngineNT.INSTANCE.renderFlashOnly(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack());
             buffer.endBatch();
-            ParticleEngineNT.buffer().endBatch();
+            flushNtBatches();
             com.hbm_m.client.compat.dh.DhClientCompat.endVanillaExtendedPass();
         }
 
@@ -389,7 +436,12 @@ public class EngineHandler {
         ParticleEngineNT engine = ParticleEngineNT.INSTANCE;
         ClientLevel level = Minecraft.getInstance().level;
         if (level != null) {
-            engine.onWorldGameTime(level.getGameTime());
+            // Экспорт Flashback: rewind-purge гасим на весь его прогон —
+            // отмотки setup/кейфреймов понижают gameTime (SetTime из снапшота
+            // чанка), а поток окно переигрывает ВПЕРЁД, так что зачищенные
+            // эффекты без повторной доставки пропали бы до конца рендера.
+            engine.onWorldGameTime(level.getGameTime(),
+                    !com.hbm_m.client.ClientWorldFreeze.isFlashbackExporting());
         }
         engine.tick();
     }

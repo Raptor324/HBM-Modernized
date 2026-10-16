@@ -45,6 +45,11 @@ public class MachineCatalyticReformerBlockEntity extends BaseMachineBlockEntity 
 
     private final FluidTank[] tanks = new FluidTank[4];
 
+    /** Cached recipe-scan: keyed on the input tank fluid identity (P2: tank VALIDITY is the signature;
+     *  output tank headroom stays per-tick inside {@link #reform()}). */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<CatalyticReformerRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+
     public MachineCatalyticReformerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.CATALYTIC_REFORMER_BE.get(), pos, state, SLOT_COUNT, MAX_POWER, MAX_POWER, 0L);
         tanks[0] = new FluidTank(INPUT_CAPACITY_MB) {
@@ -65,21 +70,50 @@ public class MachineCatalyticReformerBlockEntity extends BaseMachineBlockEntity 
         be.chargeFromBatterySlot(SLOT_BATTERY);
         be.reform();
 
+        // Neighbor handling: subscribe is throttled (registration only, idempotent); tryProvide
+        // stays per tick — its direct-push branch must not lose throughput to the gate. The
+        // per-tank fill check skips the probe while the output tank is empty.
+        boolean subscribeDue = be.probeDue(5);
         for (Direction dir : Direction.values()) {
             BlockPos neighborPos = pos.relative(dir);
-            be.trySubscribe(be.tanks[0], level, neighborPos, dir);
-            be.tryProvide(be.tanks[1], level, neighborPos, dir);
-            be.tryProvide(be.tanks[2], level, neighborPos, dir);
-            be.tryProvide(be.tanks[3], level, neighborPos, dir);
+            if (subscribeDue) be.trySubscribe(be.tanks[0], level, neighborPos, dir);
+            if (be.tanks[1].getFill() > 0) be.tryProvide(be.tanks[1], level, neighborPos, dir);
+            if (be.tanks[2].getFill() > 0) be.tryProvide(be.tanks[2], level, neighborPos, dir);
+            if (be.tanks[3].getFill() > 0) be.tryProvide(be.tanks[3], level, neighborPos, dir);
         }
 
-        be.setChanged();
-        be.sendUpdateToClient();
+        // Anti-sync-spam: setChanged/sendBlockUpdated only when energy or tank contents moved.
+        be.syncIfStateChanged(be.energy, be.tankSyncSignature());
+    }
+
+    /** Cached поиск CatalyticReformerRecipe по входной жидкости (подпись = идентичность жидкости). */
+    @Nullable
+    private CatalyticReformerRecipe findRecipe(Level level, Fluid input) {
+        if (level == null || input == null) return null;
+        long signature = com.hbm_m.recipe.index.CachedRecipeResolver.sign(3L, input.hashCode());
+        return recipeResolver.resolve(level, CatalyticReformerRecipe.Type.INSTANCE, signature, (lvl, all) -> {
+            for (CatalyticReformerRecipe recipe : all) {
+                if (recipe.matches(input)) return recipe;
+            }
+            return null;
+        });
+    }
+
+    private long tankSyncSignature() {
+        long h = tankFingerprint(tanks[0]);
+        h = h * 31L + tankFingerprint(tanks[1]);
+        h = h * 31L + tankFingerprint(tanks[2]);
+        return h * 31L + tankFingerprint(tanks[3]);
+    }
+
+    private static long tankFingerprint(FluidTank tank) {
+        Fluid type = tank.getTankType();
+        return (type == null ? 0L : type.hashCode() * 31L) + tank.getFill();
     }
 
     /** Direktport von {@code reform()}. */
     private void reform() {
-        CatalyticReformerRecipe recipe = CatalyticReformerRecipe.getRecipe(level, tanks[0].getTankType());
+        CatalyticReformerRecipe recipe = findRecipe(level, tanks[0].getTankType());
         if (recipe == null) {
             tanks[1].conform(com.hbm_m.inventory.fluid.ModFluids.NONE.getSource());
             tanks[2].conform(com.hbm_m.inventory.fluid.ModFluids.NONE.getSource());
@@ -139,7 +173,7 @@ public class MachineCatalyticReformerBlockEntity extends BaseMachineBlockEntity 
 
     @Override
     public boolean canConnect(Fluid fluid, Direction fromDir) {
-        return fromDir != null && (CatalyticReformerRecipe.hasRecipe(level, fluid)
+        return fromDir != null && (findRecipe(level, fluid) != null
                 || tanks[1].getTankType() == fluid || tanks[2].getTankType() == fluid || tanks[3].getTankType() == fluid);
     }
 

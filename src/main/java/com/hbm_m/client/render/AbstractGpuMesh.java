@@ -67,22 +67,34 @@ public abstract class AbstractGpuMesh {
         this.initialized = false;
         this.initFailed = false;
 
-        // Schedule the actual GL calls on the render thread
-        RenderSystem.recordRenderCall(() -> {
+        // Delete synchronously when already on the render thread: recordRenderCall
+        // ALWAYS queues (both 1.20.1 and 1.21.1) and only replays at flipFrame, so a
+        // cleanup during RESOURCE_RELOAD would park the delete until end of frame -
+        // after the driver has re-issued the freed numeric IDs to freshly created
+        // objects (e.g. the new MdiGeometryAtlas VAO), and the replayed delete kills
+        // the live object (native crash in the next MDI draw).
+        // Belt and braces: skip any name the live atlas owns RIGHT NOW - a stale
+        // queued delete must never reach a re-issued ID.
+        Runnable deleter = () -> {
             try {
-                if (vboToDelete != -1) {
+                if (vboToDelete != -1 && !MdiGeometryAtlas.isLiveAtlasName(vboToDelete)) {
                     GL15.glDeleteBuffers(vboToDelete);
                 }
-                if (eboToDelete != -1) {
+                if (eboToDelete != -1 && !MdiGeometryAtlas.isLiveAtlasName(eboToDelete)) {
                     GL15.glDeleteBuffers(eboToDelete);
                 }
-                if (vaoToDelete != -1) {
+                if (vaoToDelete != -1 && !MdiGeometryAtlas.isLiveAtlasName(vaoToDelete)) {
                     GL30.glDeleteVertexArrays(vaoToDelete);
                 }
             } catch (Exception e) {
                 MainRegistry.LOGGER.error("Error during GPU mesh cleanup", e);
             }
-        });
+        };
+        if (RenderSystem.isOnRenderThread()) {
+            deleter.run();
+        } else {
+            RenderSystem.recordRenderCall(deleter::run);
+        }
     }
 }
 

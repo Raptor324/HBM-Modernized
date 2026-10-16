@@ -5,8 +5,9 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.MachineBreederMenu;
-import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.platform.PlatformHooks;
 import com.hbm_m.recipe.BreederRecipe;
+import com.hbm_m.recipe.index.CachedRecipeResolver;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -60,6 +61,9 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
     /** Original: {@code flux} - Summe des Flusses aller angrenzenden Forschungsreaktoren. */
     private int flux = 0;
 
+    /** Cached recipe-scan: keyed on the input stack fingerprint (output/energy checks stay per-tick). */
+    private final CachedRecipeResolver<BreederRecipe> recipeResolver = new CachedRecipeResolver<>();
+
     protected final ContainerData data = new ContainerData() {
         @Override
         public int get(int index) {
@@ -106,14 +110,17 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
                 entity.progress = 0;
                 entity.processItem();
             }
-            entity.setChanged();
-            entity.sendUpdateToClient();
-        } else {
-            if (entity.progress != 0) {
-                entity.progress = 0;
-                entity.setChanged();
-            }
+        } else if (entity.progress != 0) {
+            entity.progress = 0;
         }
+
+        // Anti-sync-spam: setChanged/sendBlockUpdated only when energy/progress/flux/isOn moved.
+        entity.syncIfStateChanged(entity.energy, entity.syncSignature());
+    }
+
+    /** 128-битная подпись синхронизируемого состояния (progress|flux|isOn в hi-слове). */
+    private long syncSignature() {
+        return ((long) flux << 33) | ((long) progress << 1) | (isOn ? 1L : 0L);
     }
 
     /**
@@ -125,6 +132,10 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
      * entspricht dem {@code findCore(...)} des Originals.</p>
      */
     private void gatherFlux(Level level, BlockPos pos) {
+        // Neighbor-scan gate: probe the 4 horizontal neighbors every 20 ticks (phase-spread);
+        // the result is held in this.flux between probes.
+        if (!probeDue(20)) return;
+
         int sum = 0;
 
         for (Direction dir : Direction.Plane.HORIZONTAL) {
@@ -194,10 +205,13 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
     private BreederRecipe findRecipe(ItemStack input) {
         Level level = getLevel();
         if (level == null || input.isEmpty()) return null;
-        for (BreederRecipe recipe : RecipeHooks.getAllRecipes(level, BreederRecipe.Type.INSTANCE)) {
-            if (recipe.matches(input)) return recipe;
-        }
-        return null;
+        long signature = CachedRecipeResolver.sign(1L, PlatformHooks.stackFingerprint(input));
+        return recipeResolver.resolve(level, BreederRecipe.Type.INSTANCE, signature, (lvl, all) -> {
+            for (BreederRecipe recipe : all) {
+                if (recipe.matches(input)) return recipe;
+            }
+            return null;
+        });
     }
 
     /** Reuses the current recipe's "flux" balance number 1:1 as an FE-per-tick draw (see class javadoc). */

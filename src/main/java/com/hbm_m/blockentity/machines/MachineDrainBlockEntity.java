@@ -90,6 +90,7 @@ public class MachineDrainBlockEntity extends BaseMachineBlockEntity implements I
                 level.explode(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
                         10.0F, Level.ExplosionInteraction.BLOCK);
                 tank.drainMb(tank.getFluidAmountMb());
+                setChanged();
                 return;
             }
 
@@ -101,9 +102,10 @@ public class MachineDrainBlockEntity extends BaseMachineBlockEntity implements I
                     com.hbm_m.inventory.fluid.trait.FluidTrait.FluidReleaseType.SPILL, toSpill);
 
             spillPuddle(level, pos, toSpill);
-        }
 
-        setChanged();
+            // Анти-sync-spam: пометка грязного чанка только при фактическом сбросе жидкости.
+            setChanged();
+        }
     }
 
     /**

@@ -136,18 +136,23 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
         be.tryConvert();
 
         // MK2 network: steam out via UP, input fluid via sides/bottom.
-        net.minecraft.world.level.material.Fluid requestedInput = be.getRequestedInputFluid();
+        // trySubscribe (регистрация, идемпотентно) — раз в 20 тиков (probeDue). tryProvide —
+        // каждый тик: его вторая ветка — прямой пуш в соседний приёмник, гейт делит пропускную
+        // способность выдачи пара, а не только стоимость скана. Fill-проверка пропускает зонд,
+        // пока паровой бак пуст.
+        boolean subscribeDue = be.probeDue(20);
         for (Direction dir : Direction.values()) {
             BlockPos pipePos = pos.relative(dir);
-            BlockEntity pipeBe = level.getBlockEntity(pipePos);
-            if (!(pipeBe instanceof com.hbm_m.api.fluids.IFluidConnectorMK2)) continue;
-
             if (dir == Direction.UP) {
                 if (be.steamTank.getFill() > 0) {
                     be.tryProvide(be.steamTank, level, pipePos, dir);
                 }
-            } else {
-                be.trySubscribe(requestedInput, level, pipePos, dir);
+            } else if (subscribeDue) {
+                net.minecraft.world.level.material.Fluid requestedInput = be.getRequestedInputFluid();
+                BlockEntity pipeBe = level.getBlockEntity(pipePos);
+                if (pipeBe instanceof com.hbm_m.api.fluids.IFluidConnectorMK2) {
+                    be.trySubscribe(requestedInput, level, pipePos, dir);
+                }
             }
         }
 
@@ -156,7 +161,15 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
             level.setBlock(pos, state.setValue(MachineIndustrialBoilerBlock.LIT, be.isOn), 3);
         }
 
-        be.setChanged();
+        // P6: setChanged/пакет клиенту только при изменении состояния (баки, энергия, LIT-флаг)
+        be.syncIfStateChanged(
+                (be.fp(be.waterTank) * 31L + be.fp(be.steamTank)) * 31L + be.energy,
+                be.isOn ? 1L : 0L);
+    }
+
+    /** Подпись бака: тип жидкости + уровень заполнения. */
+    private static long fp(FluidTank tank) {
+        return tank.getTankType().hashCode() * 31L + tank.getFill();
     }
 
     // =====================================================================================

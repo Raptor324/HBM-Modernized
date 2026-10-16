@@ -19,6 +19,14 @@ public final class IrisShaderApply {
     public static boolean tryApply(ShaderInstance shader) {
         if (shader == null) return false;
         try {
+            // If GL_CURRENT_PROGRAM disagrees with the shader's cache (Oculus/FallbackShader
+            // rebind past the statics, or our raw compute binds), apply() would skip its
+            // honest bind and push uniforms into a foreign program. ensureFreshBind binds
+            // the shader's own program directly: for an Iris ExtendedShader the bind is
+            // gated on the static lastApplied (object identity), which only an actual
+            // bind or clear() can satisfy - and clear() also re-binds the main render
+            // target, so it is never acceptable mid-frame.
+            ShaderBindResync.ensureFreshBind(shader);
             shader.apply();
             return true;
         } catch (IllegalStateException e) {

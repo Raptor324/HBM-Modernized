@@ -360,19 +360,37 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
                outputSlot.getDamageValue() == result.getDamageValue();
     }
     
-    private Optional<PressRecipe> getCurrentRecipe() {
-        SimpleContainer container = new SimpleContainer(inventory.getSlots());
-        for (int i = 0; i < inventory.getSlots(); i++) {
-            container.setItem(i, inventory.getStackInSlot(i));
-        }
+    /**
+     * Кэшированный скан рецептов: подпись — фингерпринты всех 13 слотов (изменение любого
+     * слота, включая износ штампа, меняет подпись). SimpleContainer собирается ТОЛЬКО внутри
+     * сканера; output-headroom проверяется per-tick в canProcess — CachedRecipeResolver
+     * CONTRACT 1. craftItem использует тот же кэш через getCurrentRecipe().
+     */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<PressRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
 
-        RecipeInputWrapper wrapper = new RecipeInputWrapper(container);
-        for (PressRecipe recipe : RecipeHooks.getAllRecipes(level, PressRecipe.Type.INSTANCE)) {
-            if (recipe.matchesRecipe(wrapper, level)) {
-                return Optional.of(recipe);
-            }
+    private Optional<PressRecipe> getCurrentRecipe() {
+        if (level == null) return Optional.empty();
+        long[] slotSigs = new long[inventory.getSlots()];
+        for (int i = 0; i < slotSigs.length; i++) {
+            slotSigs[i] = com.hbm_m.platform.PlatformHooks.stackFingerprint(inventory.getStackInSlot(i));
         }
-        return Optional.empty();
+        long signature = com.hbm_m.recipe.index.CachedRecipeResolver.sign(5, slotSigs);
+        PressRecipe cached = recipeResolver.resolve(level, PressRecipe.Type.INSTANCE, signature, (lvl, all) -> {
+            SimpleContainer container = new SimpleContainer(inventory.getSlots());
+            for (int i = 0; i < inventory.getSlots(); i++) {
+                container.setItem(i, inventory.getStackInSlot(i));
+            }
+
+            RecipeInputWrapper wrapper = new RecipeInputWrapper(container);
+            for (PressRecipe recipe : all) {
+                if (recipe.matchesRecipe(wrapper, lvl)) {
+                    return recipe;
+                }
+            }
+            return null;
+        });
+        return Optional.ofNullable(cached);
     }
     
     // ─────────────────────────── Автоматизация ───────────────────────────
@@ -471,6 +489,10 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
 
     public ItemStack getStampStack() {
         return inventory.getStackInSlot(STAMP_SLOT);
+    }
+
+    public boolean isPressing() {
+        return this.press > 0 || this.isRetracting || this.speed > 0;
     }
 
     private float convertPressToProgress() {

@@ -6,6 +6,8 @@ import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.recipe.BlastFurnaceRecipe;
 import com.hbm_m.item.machine.ItemRTGPellet;
+import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.recipe.index.CachedRecipeResolver;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -38,6 +40,9 @@ public class MachineDifurnaceRtgBlockEntity extends BaseMachineBlockEntity {
 
     private int progress = 0;
 
+    /** Кэш скана рецептов: подпись = фингерпринты ОБОИХ входных слотов (P3 rule). */
+    private final CachedRecipeResolver<BlastFurnaceRecipe> recipeResolver = new CachedRecipeResolver<>();
+
     public MachineDifurnaceRtgBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MACHINE_DIFURNACE_RTG_BE.get(), pos, state, INVENTORY_SIZE, 0L, 0L, 0L);
     }
@@ -62,7 +67,8 @@ public class MachineDifurnaceRtgBlockEntity extends BaseMachineBlockEntity {
             be.progress = 0;
         }
 
-        be.setChanged();
+        // Анти-sync-spam: setChanged/пакет только при изменении тепла или прогресса (P6).
+        be.syncIfStateChanged(heat, be.progress);
     }
 
     private boolean canProcess(Level level) {
@@ -74,14 +80,24 @@ public class MachineDifurnaceRtgBlockEntity extends BaseMachineBlockEntity {
         ItemStack bottom = inventory.getStackInSlot(SLOT_INPUT_BOTTOM);
         if (top.isEmpty() || bottom.isEmpty()) return Optional.empty();
 
-        SimpleContainer container = new SimpleContainer(4);
-        container.setItem(1, top);
-        container.setItem(2, bottom);
-        // 1.21.1: getRecipeFor требует RecipeInput — используем getAllRecipes + matchesRecipe.
-        return com.hbm_m.platform.recipe.RecipeHooks
-                .getAllRecipes(level, BlastFurnaceRecipe.Type.INSTANCE).stream()
-                .filter(r -> r.matchesRecipe(new com.hbm_m.platform.recipe.RecipeInputWrapper(container), level))
-                .findFirst();
+        // 1.21.1: getRecipeFor требует RecipeInput — используем getAllRecipes + matchesRecipe,
+        // кэшированный на тик+подпись через CachedRecipeResolver.
+        BlastFurnaceRecipe recipe = recipeResolver.resolve(level, BlastFurnaceRecipe.Type.INSTANCE,
+                CachedRecipeResolver.sign(0L,
+                        PlatformHooks.stackFingerprint(top),
+                        PlatformHooks.stackFingerprint(bottom)),
+                (lvl, all) -> {
+                    SimpleContainer container = new SimpleContainer(4);
+                    container.setItem(1, top);
+                    container.setItem(2, bottom);
+                    for (BlastFurnaceRecipe r : all) {
+                        if (r.matchesRecipe(new com.hbm_m.platform.recipe.RecipeInputWrapper(container), lvl)) {
+                            return r;
+                        }
+                    }
+                    return null;
+                });
+        return Optional.ofNullable(recipe);
     }
 
     private void craftItem(Level level) {

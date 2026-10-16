@@ -96,6 +96,10 @@ public class MachineHephaestusBlockEntity extends BaseMachineBlockEntity impleme
 
         heatFluid();
 
+        // Выдача — каждый тик: tryProvide содержит прямой пуш в соседний приёмник, гейт делит
+        // пропускную способность выдачи, а не только стоимость скана. Гейт снят целиком
+        // (Pump-паттерн) — раздача единственная работа блока; fill-проверка не даёт зондировать
+        // соседей, пока бак пуст.
         if (outputTank.getFill() > 0) {
             for (Direction dir : Direction.values()) {
                 if (dir == Direction.UP || dir == Direction.DOWN) continue;
@@ -106,8 +110,14 @@ public class MachineHephaestusBlockEntity extends BaseMachineBlockEntity impleme
             }
         }
 
-        setChanged();
-        sendUpdateToClient();
+        // P6: пакет клиенту только при изменении отрисовываемого состояния — баки + суммарное
+        // тепло (getTotalHeat уже вбирает и скан слоёв, и 20-тиковое окно тройного тепла fissure).
+        syncIfStateChanged(fp(inputTank) * 31L + fp(outputTank), getTotalHeat());
+    }
+
+    /** Подпись бака: тип жидкости + уровень заполнения. */
+    private static long fp(FluidTank tank) {
+        return tank.getTankType().hashCode() * 31L + tank.getFill();
     }
 
     private int heatFromBlock(Level level, int x, int y, int z) {

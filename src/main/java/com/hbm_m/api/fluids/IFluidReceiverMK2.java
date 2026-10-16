@@ -62,10 +62,17 @@ public interface IFluidReceiverMK2 extends IFluidUserMK2 {
      * @param dirFromMeToPipe направление от этой машины к трубе
      */
     default void trySubscribe(Fluid fluid, Level level, BlockPos pipePos, Direction dirFromMeToPipe) {
-        if (!(level instanceof ServerLevel serverLevel)) return;
+        // Координатный вариант делегирует BE-варианту; здесь один getBlockEntity на вызов.
+        trySubscribe(fluid, level.getBlockEntity(pipePos), level, pipePos, dirFromMeToPipe);
+    }
 
-        BlockEntity be = level.getBlockEntity(pipePos);
-        if (!(be instanceof IFluidConnectorMK2 con)) return;
+    /**
+     * BE-вариант: вызывающий уже достал BlockEntity трубы (цикл тика, коннектор мультиблока) —
+     * внутренний {@code getBlockEntity} пропускается.
+     */
+    default void trySubscribe(Fluid fluid, @org.jetbrains.annotations.Nullable BlockEntity pipeBe, Level level, BlockPos pipePos, Direction dirFromMeToPipe) {
+        if (!(level instanceof ServerLevel serverLevel)) return;
+        if (!(pipeBe instanceof IFluidConnectorMK2 con)) return;
         if (!con.canConnect(fluid, dirFromMeToPipe.getOpposite())) return;
 
         var node = UniNodespace.getNode(serverLevel, pipePos, FluidNetProvider.forFluid(fluid));

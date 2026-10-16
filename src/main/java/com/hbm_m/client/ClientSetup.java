@@ -1404,6 +1404,19 @@ public class ClientSetup {
         );
         MainRegistry.LOGGER.info("Successfully registered nuke_add shader");
 
+        // Vanilla position_color_tex_lightmap clone: NT particle render types
+        // (gas flame, cooling tower, ashes) bind OUR instance so the pack's
+        // translucent material treatment never replaces the vanilla look.
+        event.registerShader(
+            new ShaderInstance(
+                event.getResourceProvider(),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "nt_color_tex_lightmap"),
+                DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP
+            ),
+            ModShaders::setNtColorTexLightmapShader
+        );
+        MainRegistry.LOGGER.info("Successfully registered nt_color_tex_lightmap shader");
+
         // Копия DH-глубины в главный z-buffer (окклюзия дальних мешей против LOD).
         event.registerShader(
             new ShaderInstance(

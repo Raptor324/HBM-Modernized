@@ -17,6 +17,7 @@ import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.machine.MachineRenderApi;
 import com.hbm_m.client.render.machine.MachineRenderers;
+import com.hbm_m.client.render.machine.MachineSpec;
 import com.hbm_m.client.render.shader.IrisPhaseGuard;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.main.MainRegistry;
@@ -53,8 +54,6 @@ import net.minecraft.world.level.block.state.BlockState;
  */
 public final class MachineChemicalPlantRenderer {
 
-    private static final float DEG_TO_RAD = (float) (Math.PI / 180.0);
-
     /**
      * The spinner's rotation pivot in baked coordinates = OBJ center (0.5, 0.5) + JSON
      * root translation (0.5, 0.5). If you change the JSON translation -- pivot = OBJ_CENTER + JSON_translation.
@@ -62,22 +61,65 @@ public final class MachineChemicalPlantRenderer {
     private static final float CHEMPLANT_BAKE_PIVOT_X = 1.0f;
     private static final float CHEMPLANT_BAKE_PIVOT_Z = 1.0f;
 
+    /**
+     * Slider: one chemicalSps stroke pre-baked as a 33-point cyclic track
+     * (u = i/32, value = chemicalSps(u * 2pi) * 0.375); the cycle wrap erases the seam
+     * since sample 32 == sample 0. Driven by the tracked segment header.
+     */
+    private static final MachineSpec.Track SLIDER_TRACK = buildSliderTrack();
+
+    private static MachineSpec.Track buildSliderTrack() {
+        int n = 33;
+        float[] times = new float[n];
+        float[] values = new float[n];
+        for (int i = 0; i < n; i++) {
+            float u = i / 32f;
+            times[i] = u;
+            values[i] = (float) (chemicalSps(u * 2.0 * Math.PI) * 0.375);
+        }
+        return MachineSpec.Track.samplesOf(times, values, true);
+    }
+
+    /** Tracked KIND_TRANSLATE_AXIS node along +X; the value comes from {@link #SLIDER_TRACK}. */
+    private static final MachineSpec.JointNode<MachineChemicalPlantBlockEntity> SLIDER_NODE =
+            MachineSpec.JointNode.translate(1f, 0f, 0f,
+                    (be, pt, gt, out, off) -> true, SLIDER_TRACK);
+
     public static void register() {
         MachineRenderers.machine("chemplant", ModBlockEntities.CHEMICAL_PLANT_BE.get(),
                 MachineChemicalPlantBlockEntity.class)
             .part("Base")
-            .dynamicPart("Frame", MachineChemicalPlantRenderer::frameQuads,
-                    // Key by FRAME state: a constant "frame" key would cache an empty
-                    // renderer from the first state seen, forever (see advassembler).
-                    be -> {
-                        var st = be.getBlockState();
-                        return String.valueOf(st.hasProperty(MachineChemicalPlantBlock.FRAME)
-                                && st.getValue(MachineChemicalPlantBlock.FRAME));
-                    })
-            .part("Slider", MachineChemicalPlantRenderer::animateSlider)
-            .part("Spinner", MachineChemicalPlantRenderer::animateSpinner)
+            .conditionalPart("Frame", be -> {
+                var st = be.getBlockState();
+                return st.hasProperty(MachineChemicalPlantBlock.FRAME)
+                        && st.getValue(MachineChemicalPlantBlock.FRAME);
+            })
+            .itemExcept("Frame")
+            // Slider as a tracked rig: a pre-baked cyclic 33-point sample track of the
+            // chemicalSps stroke; the epoch flips on start/stop so the duration change
+            // (0.0 <-> 50.25) re-keys the word cache instead of freezing mid-stroke.
+            .trackedChainPart("Slider",
+                    be -> be.isChemplantEffectsActive() ? 1L : 0L,
+                    be -> 0.0,
+                    be -> be.isChemplantEffectsActive() ? 50.25 : 0.0,
+                    SLIDER_NODE)
+            .spinningPart("Spinner", 0f, 1f, 0f, CHEMPLANT_BAKE_PIVOT_X, 0f, CHEMPLANT_BAKE_PIVOT_Z, 0f, 0f, 0f,
+                    be -> be.isChemplantEffectsActive() ? 1L : 0L,
+                    be -> be.isChemplantEffectsActive() ? 24.0 : 0.0,
+                    be -> 0.0)
             .blockTransform(MachineChemicalPlantRenderer::applyBlockTransform)
-            .hook(MachineChemicalPlantRenderer::scheduleFluid)
+            .hook(new com.hbm_m.client.render.machine.MachineRenderHook<MachineChemicalPlantBlockEntity>() {
+                @Override
+                public void render(MachineChemicalPlantBlockEntity be, float pt, PoseStack ps,
+                                   MultiBufferSource bs, int light, int overlay, MachineRenderApi api) {
+                    scheduleFluid(be, pt, ps, bs, light, overlay, api);
+                }
+
+                @Override
+                public boolean mayDrawContent(MachineChemicalPlantBlockEntity be) {
+                    return isChemplantProcessVisible(be);
+                }
+            })
             .chunkRenderTypes(net.minecraft.client.renderer.RenderType.cutout())
             .register();
     }
@@ -102,43 +144,6 @@ public final class MachineChemicalPlantRenderer {
         animator.translate(-0.5f, 0.0f, -0.5f);
     }
 
-    // -- Parts ----------------------------------------------------------
-
-    private static List<BakedQuad> frameQuads(MachineChemicalPlantBlockEntity be) {
-        var state = be.getBlockState();
-        if (!state.hasProperty(MachineChemicalPlantBlock.FRAME)
-                || !state.getValue(MachineChemicalPlantBlock.FRAME)) {
-            return List.of();
-        }
-        BakedModel part = plantPart(be, "Frame");
-        if (part == null) return List.of();
-        return MeshRenderCache.getOrCompile("chemplant_Frame", part);
-    }
-
-    private static @Nullable BakedModel plantPart(MachineChemicalPlantBlockEntity be, String partName) {
-        ConfiguredMultipartBakedModel model = plantModel(be);
-        return model == null ? null : model.getPart(partName);
-    }
-
-    private static boolean animateSlider(MachineChemicalPlantBlockEntity be, float partialTick,
-                                         long gameTime, PoseStack pose) {
-        float anim = be.getAnim(partialTick);
-        double sdx = chemicalSps(anim * 0.125) * 0.375;
-        pose.last().pose().translate((float) sdx, 0f, 0f);
-        return true;
-    }
-
-    private static boolean animateSpinner(MachineChemicalPlantBlockEntity be, float partialTick,
-                                          long gameTime, PoseStack pose) {
-        float anim = be.getAnim(partialTick);
-        float deg = (anim * 15f) % 360f;
-        if (deg < 0f) deg += 360f;
-        pose.last().pose()
-                .translate(CHEMPLANT_BAKE_PIVOT_X, 0f, CHEMPLANT_BAKE_PIVOT_Z)
-                .rotateY(deg * DEG_TO_RAD)
-                .translate(-CHEMPLANT_BAKE_PIVOT_X, 0f, -CHEMPLANT_BAKE_PIVOT_Z);
-        return true;
-    }
 
     /** Soft peak sine (BobMathUtil.sps). */
     private static double chemicalSps(double x) {

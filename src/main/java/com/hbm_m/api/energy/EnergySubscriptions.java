@@ -99,6 +99,16 @@ public final class EnergySubscriptions {
      * и поддерживает подписки receiver/provider.
      */
     public static void update(BlockEntity be, BlockPos... extraPositions) {
+        // Varargs overload delegates; the array is materialized only at subscribeAt/provideAt.
+        update(be, () -> extraPositions);
+    }
+
+    /**
+     * Вариант с ленивым поставщиком: массив доп. портов (дорогой обход структуры мультиблока)
+     * материализуется ТОЛЬКО когда дошли до подписки — после per-tick гейтов
+     * (дедупликация, backoff-декременты). Убирает двойное жадное вычисление аргумента на тик.
+     */
+    public static void update(BlockEntity be, java.util.function.Supplier<BlockPos[]> extraPositionsSupplier) {
         if (!(be.getLevel() instanceof ServerLevel level) || be.isRemoved()) return;
 
         BackoffState st = REGISTRY.computeIfAbsent(be, k -> new BackoffState());
@@ -148,7 +158,7 @@ public final class EnergySubscriptions {
         if (isReceiver) {
             if (--st.receiverDelay <= 0) {
                 IEnergyReceiver rec = (IEnergyReceiver) be;
-                boolean any = subscribeAt(level, rec, be.getBlockPos(), extraPositions);
+                boolean any = subscribeAt(level, rec, be.getBlockPos(), extraPositionsSupplier.get());
                 st.receiverDelay = any ? DELAY_CONNECT_NET : DELAY_NOTHING;
             }
         }
@@ -158,7 +168,7 @@ public final class EnergySubscriptions {
         if (isProvider) {
             if (--st.providerDelay <= 0) {
                 IEnergyProvider prov = (IEnergyProvider) be;
-                boolean any = provideAt(level, prov, be.getBlockPos(), extraPositions);
+                boolean any = provideAt(level, prov, be.getBlockPos(), extraPositionsSupplier.get());
                 st.providerDelay = any ? DELAY_PROVIDE_DIRECT : DELAY_NOTHING;
             }
         }

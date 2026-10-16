@@ -27,6 +27,7 @@ import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL15;
+import com.mojang.blaze3d.platform.GlStateManager;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 
@@ -74,7 +75,9 @@ final class IrisInstancedBatchRenderer {
     private final Matrix4f tmpSingleMv = new Matrix4f();
     /** Scratch: composed shadow model-view matrix for recording into the global shadow batch. */
     private final Matrix4f tmpShadowMv = new Matrix4f();
-    /** Scratch: instance world transformation = inv(shadowMV) * composed. */
+    /** Scratch: the composed BER pose recovered for recording (name is historical — the
+     * value is exactly {@code poseStack.last().pose()}, since inv(MV) * MV cancels; it is
+     * a light-space shadow poseStack decomposition, not a world-space transform). */
     private final Matrix4f tmpShadowWorld = new Matrix4f();
     private final Vector3f tmpShadowPos = new Vector3f();
     private final Quaternionf tmpShadowRot = new Quaternionf();
@@ -82,9 +85,9 @@ final class IrisInstancedBatchRenderer {
     private final Matrix4f shadowMvCache = new Matrix4f();
     private final Matrix4f shadowInvMvCache = new Matrix4f();
     private boolean shadowInvValid = false;
-    /** Scratch: R_cam (view rotation) for converting world-space records to view space. */
+    /** Scratch: R_cam (view rotation) for converting anchor-relative (main-pass) records to view space. */
     private final Matrix4f irisCamRotMat = new Matrix4f();
-    /** Scratch: instance view-space pose = R_cam * T(world - cam) * R_world. */
+    /** Scratch: instance view-space pose = R_cam * T(record - cam) * R (main pass). */
     private final Matrix4f irisViewPoseMat = new Matrix4f();
     private final Quaternionf irisQuatTmp = new Quaternionf();
     private static final Matrix4f IDENTITY = new Matrix4f();
@@ -120,9 +123,20 @@ final class IrisInstancedBatchRenderer {
         }
         if (irisCompanion == null) {
             irisCompanion = new IrisCompanionMesh(parent.quadsForIris);
+            String tag = parent.getMdiTraceTag();
+            if (tag == null || tag.isEmpty()) {
+                tag = parent.getClass().getSimpleName();
+            }
+            irisCompanion.setDebugName(tag);
             irisCompanionAttempted = true;
         }
         return irisCompanion.ensureBuilt() ? irisCompanion : null;
+    }
+
+    void onTraceTagUpdated(String tag) {
+        if (irisCompanion != null && tag != null && !tag.isEmpty()) {
+            irisCompanion.setDebugName(tag);
+        }
     }
 
     @Nullable
@@ -162,14 +176,9 @@ final class IrisInstancedBatchRenderer {
                 parent.tmpLocalPose.set(LightSampleCache.BASE_POSE.get()).invert().mul(poseStack.last().pose());
         } else {
             var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
-            //? if < 1.21.1 {
-            parent.tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
-            //?} else {
-            /*// rotation(camera.rotation()) = R_cam⁻¹ without extra invert (see
-            // FrameViewState.capture and fillInstanceCornerLight).
-            parent.tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation());
-            *///?}
-            parent.tmpLocalPose.set(parent.tmpInvViewRot).mul(poseStack.last().pose());
+            // L^-1 (FrameViewState): strips R_cam AND the view bob - the local pose
+            // is static while walking, light sample points stop jittering.
+            parent.tmpLocalPose.set(FrameViewState.poseToWorldRotation()).mul(poseStack.last().pose());
             parent.tmpLocalPose.m30(parent.tmpLocalPose.m30() - (float) (anchor.getX() - cam.x));
             parent.tmpLocalPose.m31(parent.tmpLocalPose.m31() - (float) (anchor.getY() - cam.y));
             parent.tmpLocalPose.m32(parent.tmpLocalPose.m32() - (float) (anchor.getZ() - cam.z));
@@ -198,6 +207,13 @@ final class IrisInstancedBatchRenderer {
         if (!IrisShadowBatchCollector.isBatchingEnabled()) {
             return false;
         }
+        // Invisible part (pending fade mode < 0 or a fully faded global alpha):
+        // the shadow record path forces fade 1.0, so the part would cast an
+        // opaque shadow. Consume the draw (return true - the fallback BER must
+        // not draw it either) but write no record.
+        if (parent.tmpFadeMode < 0.0f || SingleMeshVboRenderer.getFadeAlpha() <= 0.0f) {
+            return true;
+        }
         Matrix4f currentMv = RenderSystem.getModelViewMatrix();
         // Stash every frame (flush resets stashValid; conditional calls broke batching from the second frame).
         IrisShadowBatchCollector.stashShadowMatrices(RenderSystem.getProjectionMatrix());
@@ -206,16 +222,33 @@ final class IrisInstancedBatchRenderer {
             shadowInvMvCache.set(shadowMvCache).invertAffine();
             shadowInvValid = true;
         }
+        // NOTE: inv(currentMv) * currentMv cancels algebraically, so tmpShadowWorld is
+        // exactly poseStack.last().pose() — this composition is a mathematical no-op.
+        // The record handed to the collector is therefore an exact pos/quat
+        // decomposition of the Iris shadow poseStack MV_shadow * T(bePos - camPos) *
+        // part, i.e. LIGHT-space (the light rotation rides inside the record), NOT a
+        // camera-converted world-space transform.
         tmpShadowMv.set(currentMv).mul(poseStack.last().pose());
         tmpShadowWorld.set(shadowInvMvCache).mul(tmpShadowMv);
         // Light is unneeded in shadow pass (depth/shadowcolor only) — write zeros instead of expensive 8-corner sampling.
         java.util.Arrays.fill(parent.tmpCornerUV, 0.0f);
         IrisShadowBatchCollector.record(parent, tmpShadowWorld, parent.objBbox, parent.tmpCornerUV);
+        // SHADOW-EPOCH: feed the prebake calibration. While uncalibrated NO machine is
+        // skipped, so these fallback records always flow for at least the first
+        // dispatched machines; a posQuat-stable slot solves the shadow basis, a second
+        // independent solve validates it (see IrisShadowBatchCollector).
+        IrisShadowBatchCollector.notePrebakeCalibration(parent, blockPos, tmpShadowWorld);
         return true;
     }
 
     boolean drawSingleWithIrisExtended(PoseStack poseStack, int packedLight,
                                        BlockPos blockPos, @Nullable BlockEntity blockEntity) {
+        // Fully faded part (global alpha <= 0): consumed - draw nothing. The
+        // vanilla MDI path discards instFade <= 0 in the vsh; this single-draw
+        // path has no such discard, so the early-out is its mirror.
+        if (SingleMeshVboRenderer.getFadeAlpha() <= 0.0f) {
+            return true;
+        }
         // Shadow pass: only through ACTIVE per-BE batch (see SingleMeshVboRenderer.renderWithIrisExtended
         // and IrisRenderBatch.begin). Standalone path in shadow pass is prohibited. Without batching,
         // returns false so caller falls through to bufferSource.putBulkData (SHADOW_BLOCK on endBatch).
@@ -320,15 +353,19 @@ final class IrisInstancedBatchRenderer {
     // ── Batch flush (Iris) ─────────────────────────────────────────────
 
     /**
-     * True instanced flush under Iris: our {@code ExtendedShader}
-     * (hbm_m:iris/block_lit_instanced_iris — custom GLSL with iris_* uniforms) +
-     * parent VAO (instance attributes 4..11, divisors configured in VAO state) +
-     * ONE {@code glDrawElementsInstanced} call per part renderer.
+     * True instanced flush under Iris: our {@code ExtendedShader} selected per
+     * pack layout by IrisInstancedEncoders.shaderName — base single-target
+     * (shadow) or block_lit_instanced_packed (byte-paired packing scheme, the
+     * only main-pass layout with a verified encoder) — custom GLSL with
+     * iris_* uniforms + parent VAO (instance attributes 4..11, divisors
+     * configured in VAO state) + ONE {@code glDrawElementsInstanced} call per
+     * part renderer.
      * <p>
      * Order is mandatory: pack shader is applied FIRST (its apply() binds
-     * the active gbuffer FBO) -> {@link IrisInstancedShaders#prepare(boolean)}
-     * snapshots attachments of the live FBO -> our shader draws into the same render targets.
-     * If our shader is unavailable, falls back to the legacy companion per-instance path.
+     * the active gbuffer FBO with the pack's own draw-buffers directive) ->
+     * our program is swapped in and its outputs land in the pack's render
+     * targets. If our shader is unavailable, falls back to the legacy
+     * companion per-instance path.
      */
     void flushBatchIris(Matrix4f projectionMatrix) {
         if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
@@ -345,26 +382,37 @@ final class IrisInstancedBatchRenderer {
         }
 
         // ── Tier 1: GPU Compute Bake (main) ─────────────────────────────
-        // ONE glDrawElements per part renderer using the pack's NATIVE gbuffers program —
-        // the shaderpack natively encodes its own gbuffer formats. Unrecognized schemas
-        // (BSL: per-instance companion = 1618 draw calls) collapse to ~27 draw calls,
-        // identical to recognized ones (Photon). Instance records are anchor-relative (FrameViewState),
-        // with trilinear lighting evaluated from the 8-corner bounding records.
+        // BAKE-COLLECT on the global-batch path: the bake writes into this mesh's
+        // range of the per-pass pool and the draw is DEFERRED to the single
+        // end-of-phase glMultiDrawElementsIndirect (NucleusGpuBaker.presentMainBatch,
+        // called from InstancedRenderFrame.presentAfterBlockEntities right after this
+        // walk). A refused bake (cache-budget admission, upload or expansion
+        // failure) returns false here and this mesh falls back to the Tier-2/3
+        // instanced path below. The pooled flush still uses the pack's NATIVE
+        // gbuffers program - the shaderpack natively encodes its own gbuffer
+        // formats.
+        // Instance records are anchor-relative (FrameViewState), with trilinear
+        // lighting evaluated from the 8-corner bounding records.
         if (NucleusGpuBaker.isEnabled()) {
             IrisCompanionMesh bakeMesh = getOrBuildIrisCompanion();
             if (bakeMesh != null && parent.instanceCount > 0 && parent.instanceBuffer != null) {
                 java.nio.FloatBuffer bakeRecords = parent.instanceBuffer.duplicate();
                 bakeRecords.flip();
-                Matrix4f viewRot = new Matrix4f(FrameViewState.inverseViewRotation()).transpose();
+                // modelView * L (level basis incl. view bob): the baker multiplies
+                // T(-relCam) on top, reproducing FrameViewState.viewMatrix().
+                Matrix4f viewRot = new Matrix4f(FrameViewState.viewBasisRotation());
                 boolean baked = false;
                 try (IrisPhaseGuard guard = IrisPhaseGuard.pushBlockEntities()) {
-                    if (IrisShaderApply.tryApply(packShader)) {
-                        baked = NucleusGpuBaker.bakeAndDrawMain(bakeRecords, parent.instanceCount,
-                                bakeMesh, packShader,
-                                parent.vanillaHelper.stripViewRotationForInstanced(projectionMatrix),
-                                viewRot, FrameViewState.relCamX(), FrameViewState.relCamY(),
-                                FrameViewState.relCamZ());
-                    }
+                    // No IrisShaderApply.tryApply here: bakeMain only runs compute
+                    // shaders and queues PENDING_MAIN - the pack shader is applied
+                    // later in NucleusGpuBaker.presentMainBatch. An unbalanced apply
+                    // here polluted ExtendedShader.lastApplied and broke the later
+                    // matrix restore (first-person hand/weapon vanish).
+                    baked = NucleusGpuBaker.bakeMain(bakeRecords, parent.instanceCount,
+                            bakeMesh, packShader,
+                            parent.vanillaHelper.stripViewRotationForInstanced(projectionMatrix),
+                            viewRot, FrameViewState.relCamX(), FrameViewState.relCamY(),
+                            FrameViewState.relCamZ());
                 }
                 if (baked) {
                     return;
@@ -373,13 +421,16 @@ final class IrisInstancedBatchRenderer {
         }
 
         // REGRESSION-STOP (black base under shaderpacks): deferred packs write gbuffers
-        // using their OWN programs in custom formats (e.g. "packed" schema packs
-        // albedo + flat normal + light levels via pack_unorm_2x8 into a single target
-        // with RENDERTARGETS: 1). Single-target FSH with unpacked albedo*lightmap composite
-        // decodes into garbage (correct geometry, black color). Therefore, without a
-        // recognized encoder (IrisInstancedEncoders), instanced ExtendedShader is bypassed:
-        // render through the pack's BLOCK_ENTITY program (companion per-instance — same path
-        // used by animated parts, universally correct under all packs).
+        // using their OWN programs in custom formats routed through the pack's
+        // RENDERTARGETS/DRAWBUFFERS directive (byte-packed pairs, octahedral normals in
+        // high attachments, ...). IrisInstancedEncoders classifies the pack's layout:
+        // only PACKED_SCHEME (pack_unorm_2x8 + encode_unit_vector signature) enables
+        // our instanced encoder (block_lit_instanced_packed, byte-paired scheme); every
+        // other layout (EXOTIC - including identity-directive packs whose content
+        // encoding we cannot verify, e.g. the BSL family) keeps the companion path
+        // through the pack's BLOCK_ENTITY program - writing our vanilla-parity data
+        // through any other layout composites as black (correct per-instance draws,
+        // universally valid under all packs).
         if (!ClientRenderFlags.irisTrueInstancing()) {
             flushBatchIrisCompanionLegacy(projectionMatrix);
             return;
@@ -422,6 +473,15 @@ final class IrisInstancedBatchRenderer {
         // (ExtendedShader.clear -> mainRenderTarget.bindWrite) — without re-applying
         // the pack shader, machines were drawn into main-RT and cleared by subsequent passes.
         // tryApply binds the actual gbuffer FBO; IrisPhaseGuard maintains BLOCK_ENTITIES phase.
+        // The direct draw below is Tier 2 (the GPU bake above did not take the batch):
+        // build the renderer's own VAO/VBO/EBO/instance VBO on first need (lazy own-GL).
+        if (!parent.ensureOwnGlObjects()) {
+            parent.instanceCount = 0;
+            if (parent.instanceBuffer != null) {
+                parent.instanceBuffer.clear();
+            }
+            return;
+        }
         try (IrisPhaseGuard phaseGuard = IrisPhaseGuard.pushBlockEntities()) {
             if (!IrisShaderApply.tryApply(packShader)) {
                 return;
@@ -463,7 +523,7 @@ final class IrisInstancedBatchRenderer {
             // ExtendedShader.lastApplied continues tracking the pack program as active
             // and skips glUseProgram on subsequent tryApply calls, causing uniforms to target program 0.
             // Explicitly restore the pack program to keep Iris state tracking consistent.
-            GL20.glUseProgram(packShader.getId());
+            GlStateManager._glUseProgram(packShader.getId());
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error during instanced flush (Iris instanced)", e);
         } finally {
@@ -497,6 +557,12 @@ final class IrisInstancedBatchRenderer {
         boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
         ShaderInstance shader = IrisExtendedShaderAccess.getBlockShader(shadowPass);
         if (shader == null) {
+            return;
+        }
+
+        // Companion build failed: the fallback draw below binds the parent VAO -
+        // build it on first need (lazy own-GL).
+        if (companion == null && !parent.ensureOwnGlObjects()) {
             return;
         }
 
@@ -562,14 +628,27 @@ final class IrisInstancedBatchRenderer {
             if (perVertexLight) {
                 companion.ensureLightmapCapacity(Math.max(8, parent.instanceCount));
                 for (int i = 0; i < parent.instanceCount; i++) {
+                    // FADE_MODE_INVISIBLE slot: freed/dead records draw with a
+                    // degenerate (0,0,0,0) quaternion at anchorOrigin - skip them.
+                    if (parent.instanceBuffer.get(i * parent.instanceDataSize + parent.instanceFadeFloatOffset) < 0.0f) {
+                        continue;
+                    }
                     int cornerBase = i * parent.instanceDataSize + InstancedStaticPartRenderer.LIGHT_FLOAT_OFFSET;
                     long key = 1469598103934665603L;
-                    for (int k = 0; k < parent.lightFloatCount; k++) {
-                        float f = parent.instanceBuffer.get(cornerBase + k);
-                        int q = Math.round(f);
-                        if (q < 0) q = 0; else if (q > 240) q = 240;
-                        tmpCornerShort[k] = (short) q;
-                        key ^= (q & 0xFFFF);
+                    // The record's corner light is 4 packed u8 words (2 corners per
+                    // word, low byte first): word j = c2j.u, c2j.v, c2j+1.u, c2j+1.v.
+                    // Float-staging index k (u at even k, v at odd k) -> word k>>2,
+                    // u/v byte shift (k & 2) * 8. Decode to the 0..240 texel grid.
+                    for (int k = 0; k < parent.lightFloatCount; k += 2) {
+                        int word = Float.floatToRawIntBits(parent.instanceBuffer.get(cornerBase + (k >> 2)));
+                        int sh = (k & 2) * 8;
+                        int qu = Math.round(InstancedStaticPartRenderer.decodeLightU8(word >>> sh));
+                        int qv = Math.round(InstancedStaticPartRenderer.decodeLightU8(word >>> (sh + 8)));
+                        tmpCornerShort[k] = (short) qu;
+                        key ^= (qu & 0xFFFF);
+                        key *= 1099511628211L;
+                        tmpCornerShort[k + 1] = (short) qv;
+                        key ^= (qv & 0xFFFF);
                         key *= 1099511628211L;
                     }
                     long alloc = companion.allocLightmapSlot(key);
@@ -603,21 +682,33 @@ final class IrisInstancedBatchRenderer {
             int lastSkyV = Integer.MIN_VALUE;
 
             // Anchor-relative coordinates (FrameViewState): Iris shader expects view-space instance pose
-            // -> compute R_cam * T(world - cam) * R_world for each instance.
-            irisCamRotMat.set(FrameViewState.inverseViewRotation()).transpose();
+            // -> compute (modelView * L) * T(world - cam) * R_world per instance
+            // (L carries the view bob, re-applied here for the pack's view space).
+            irisCamRotMat.set(FrameViewState.viewBasisRotation());
             final float camX = FrameViewState.relCamX();
             final float camY = FrameViewState.relCamY();
             final float camZ = FrameViewState.relCamZ();
 
             for (int i = 0; i < parent.instanceCount; i++) {
                 int base = i * parent.instanceDataSize;
+                // FADE_MODE_INVISIBLE slot: freed/dead records carry a degenerate
+                // (0,0,0,0) quaternion at anchorOrigin - skip them (the vanilla
+                // MDI path discards instFade <= 0 in the vsh; this legacy path
+                // has no such discard).
+                if (parent.instanceBuffer.get(base + parent.instanceFadeFloatOffset) < 0.0f) {
+                    continue;
+                }
                 float px = parent.instanceBuffer.get(base);
                 float py = parent.instanceBuffer.get(base + 1);
                 float pz = parent.instanceBuffer.get(base + 2);
-                float qx = parent.instanceBuffer.get(base + 3);
-                float qy = parent.instanceBuffer.get(base + 4);
-                float qz = parent.instanceBuffer.get(base + 5);
-                float qw = parent.instanceBuffer.get(base + 6);
+                // Quat: 4 snorm16 halves packed in words 3-4 (decode mirrors the
+                // VAO's GL_SHORT normalized fetch).
+                int qxy = Float.floatToRawIntBits(parent.instanceBuffer.get(base + InstancedStaticPartRenderer.QUAT_FLOAT_OFFSET));
+                int qzw = Float.floatToRawIntBits(parent.instanceBuffer.get(base + InstancedStaticPartRenderer.QUAT_FLOAT_OFFSET + 1));
+                float qx = InstancedStaticPartRenderer.decodeSnorm16(qxy);
+                float qy = InstancedStaticPartRenderer.decodeSnorm16(qxy >>> 16);
+                float qz = InstancedStaticPartRenderer.decodeSnorm16(qzw);
+                float qw = InstancedStaticPartRenderer.decodeSnorm16(qzw >>> 16);
 
                 boolean rotChanged = qx != lastQx || qy != lastQy || qz != lastQz || qw != lastQw;
                 boolean posChanged = px != lastPx || py != lastPy || pz != lastPz;

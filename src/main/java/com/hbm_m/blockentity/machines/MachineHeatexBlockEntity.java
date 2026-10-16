@@ -98,9 +98,14 @@ public class MachineHeatexBlockEntity extends BaseMachineBlockEntity implements 
 
         this.tryConvert(level);
 
-        // Оригинал: sendFluid(tanks[1], ...) каждый тик по всем conPos
-        for (ConPos con : getConPos()) {
-            if (this.coldTank.getFill() > 0) tryProvide(coldTank, level, con.pos, con.dir);
+        // Оригинал: sendFluid(tanks[1], ...) каждый тик по всем conPos. tryProvide — каждый тик:
+        // его вторая ветка — прямой пуш в соседний приёмник, гейт делит пропускную способность
+        // выдачи, а не только стоимость скана. Гейт снят (Pump-паттерн); fill-проверка не даёт
+        // зондировать соседей, пока бак пуст.
+        if (this.coldTank.getFill() > 0) {
+            for (ConPos con : getConPos()) {
+                tryProvide(coldTank, level, con.pos, con.dir);
+            }
         }
 
         // Оригинал: networkPackNT(25)
@@ -137,6 +142,7 @@ public class MachineHeatexBlockEntity extends BaseMachineBlockEntity implements 
         int opCap = this.amountToCool;
 
         int ops = Math.min(inputOps, Math.min(outputOps, opCap));
+        if (ops <= 0) return; // setChanged только при фактической конвертации
         hotTank.setFill(hotTank.getFill() - trait.amountReq * ops);
         coldTank.setFill(coldTank.getFill() + trait.amountProduced * ops);
         this.heatEnergy += (int) (trait.heatEnergy * ops * eff);

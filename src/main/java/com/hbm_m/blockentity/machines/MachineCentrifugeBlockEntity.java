@@ -39,6 +39,10 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
 
     private int progress = 0;
 
+    /** Cached recipe-scan: keyed on the input stack fingerprint. */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<com.hbm_m.recipe.CentrifugeRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+
     private final ContainerData containerData = new ContainerData() {
         @Override
         public int get(int index) {
@@ -115,28 +119,20 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
             blockEntity.updateEnergyDelta(blockEntity.getEnergyStored());
         }
 
-        boolean dirty = false;
-
         if (blockEntity.canProcess() && blockEntity.getEnergyStored() >= ENERGY_PER_TICK) {
             blockEntity.setEnergyStored(blockEntity.getEnergyStored() - ENERGY_PER_TICK);
             blockEntity.progress++;
-            dirty = true;
 
             if (blockEntity.progress >= MAX_PROGRESS) {
                 blockEntity.progress = 0;
                 blockEntity.finishCycle();
             }
-        } else {
-            if (blockEntity.progress != 0) {
-                blockEntity.progress = 0;
-                dirty = true;
-            }
+        } else if (blockEntity.progress != 0) {
+            blockEntity.progress = 0;
         }
 
-        if (dirty) {
-            blockEntity.setChanged();
-            blockEntity.sendUpdateToClient();
-        }
+        // Anti-sync-spam: setChanged/sendBlockUpdated only when energy or progress moved.
+        blockEntity.syncIfStateChanged(blockEntity.energy, blockEntity.progress);
     }
 
     private boolean canProcess() {
@@ -201,15 +197,17 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
             return null;
         }
 
-        // 1.21.1: getRecipeFor требует RecipeInput, а SimpleContainer им не является —
-        // используем устоявшийся в проекте паттерн: getAllRecipes + matchesRecipe(RecipeInputWrapper).
-        com.hbm_m.platform.recipe.RecipeInputWrapper wrapper =
-                new com.hbm_m.platform.recipe.RecipeInputWrapper(new net.minecraft.world.SimpleContainer(input));
-        return com.hbm_m.platform.recipe.RecipeHooks
-                .getAllRecipes(level, com.hbm_m.recipe.ModRecipes.CENTRIFUGE_TYPE.get()).stream()
-                .filter(r -> r.matchesRecipe(wrapper, level))
-                .findFirst()
-                .orElse(null);
+        long signature = com.hbm_m.recipe.index.CachedRecipeResolver.sign(2L, PlatformHooks.stackFingerprint(input));
+        return recipeResolver.resolve(level, com.hbm_m.recipe.ModRecipes.CENTRIFUGE_TYPE.get(), signature, (lvl, all) -> {
+            // 1.21.1: getRecipeFor требует RecipeInput, а SimpleContainer им не является —
+            // используем устоявшийся в проекте паттерн: getAllRecipes + matchesRecipe(RecipeInputWrapper).
+            com.hbm_m.platform.recipe.RecipeInputWrapper wrapper =
+                    new com.hbm_m.platform.recipe.RecipeInputWrapper(new net.minecraft.world.SimpleContainer(input));
+            for (com.hbm_m.recipe.CentrifugeRecipe r : all) {
+                if (r.matchesRecipe(wrapper, lvl)) return r;
+            }
+            return null;
+        });
     }
 
     private void chargeFromBattery() {

@@ -143,6 +143,6 @@ public class MukeFlashParticle extends ParticleNT implements ReplaceOnRespawn {
 
     @Override
     public RenderType getRenderType() {
-        return ClientRenderHandler.CustomRenderTypes.NUKE_FLASH.apply(TEXTURE);
+        return ClientRenderHandler.CustomRenderTypes.nukeFlash(TEXTURE);
     }
 }

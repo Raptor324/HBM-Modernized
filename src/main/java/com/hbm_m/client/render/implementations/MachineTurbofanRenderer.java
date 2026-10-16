@@ -3,15 +3,16 @@ package com.hbm_m.client.render.implementations;
 import com.hbm_m.blockentity.machines.MachineTurbofanBlockEntity;
 import com.hbm_m.client.render.machine.MachineRenderers;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Axis;
 
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 
 /**
- * Turbofan on the {@link MachineRenderers} factory: Body is static, Blades is
- * the rotor (rotation around Z at height 1.5), AfterburnerCold/Hot are mutually
- * exclusive nozzle variants (switched by whether the afterburner is burning).
+ * Turbofan on the {@link MachineRenderers} factory: Body and Blades are per-frame
+ * animator parts (Blades is the rotor, rotation around -Z at height 1.5 - the
+ * original 1.7.10 transform), AfterburnerCold/Hot are mutually exclusive nozzle
+ * variants (switched by whether the afterburner is burning). All per-frame
+ * animators so the run shake in the block transform reaches every part.
  * Orientation is an explicit rotation map relative to the facing; the effect-zone
  * axis in the BE is aligned with it.
  * <p>
@@ -43,8 +44,17 @@ public final class MachineTurbofanRenderer {
             .tintFalloff("Blades", 2, -3.0F, 1.0F)
             .tintFalloff("AfterburnerCold", 2, -3.0F, 1.0F)
             .tintFalloff("AfterburnerHot", 2, -3.0F, 1.0F)
-            .part("Body")
-            .part("Blades", MachineTurbofanRenderer::animateBlades)
+            // Body/Blades are per-frame animator parts (NOT the static trust path
+            // and NOT the tracked spinningPart): the block transform carries the
+            // run shake - a static-trusted Body would freeze the jitter, and the
+            // tracked rig records a frame-invariant static pose. The Blades
+            // animator reproduces the ORIGINAL 1.7.10 renderer exactly:
+            // T(0,1.5,0) . R(spin around -Z) . T(0,-1.5,0) with the angle
+            // lerp(lastSpin, spin, partialTick) - same axis, pivot, direction
+            // and momentum/2 deg/tick rate the tracked rig gave (360/(mom/2)
+            // ticks per cycle = mom/2 deg/tick).
+            .staticPart("Body", MachineTurbofanRenderer::animateStatic)
+            .staticPart("Blades", MachineTurbofanRenderer::animateBlades)
             .part("AfterburnerCold", MachineTurbofanRenderer::animateCold)
             .part("AfterburnerHot", MachineTurbofanRenderer::animateHot)
             .itemParts("Body", "Blades", "AfterburnerCold")
@@ -106,25 +116,39 @@ public final class MachineTurbofanRenderer {
 
     // Block transform: same rotation map as the effect-zone axis.
 
+    /**
+     * Centering + facing rotation + the run shake. The ORIGINAL 1.7.10 renderer
+     * has NO shake (RenderTurbofan only translates/rotates), so the amplitude is
+     * calibrated small: an aesthetic "running engine" wobble of about a
+     * hundredth of a block at full momentum, slightly stronger with the
+     * afterburner installed (0.012 base + 0.006 per afterburner level, clamped
+     * at 3, scaled by momentum/100). Deterministic per (render frame, position):
+     * both the main and the shadow pass (and every degradation path that
+     * re-applies the block transform) land on the SAME jitter within a frame.
+     */
     private static void applyBlockTransform(MachineTurbofanBlockEntity be,
                                             com.hbm_m.client.render.LegacyAnimator animator) {
-        // Vibration of the running turbine: a light shake of the hull in world axes
-        // (before the model rotation). Grows with rotor speed and is slightly stronger
-        // on afterburner; amplitudes are fractions of a block so the machine "trembles"
-        // rather than rattles. blockTransform is only called from the block BER, so
-        // the item icon does not jitter.
-        double amplitude = be.getMomentum() / 100.0D * 0.010D
-                + (be.wasOn() && be.getAfterburner() > 0 ? 0.015D : 0.0D);
-        if (amplitude > 0.0D && be.getLevel() != null) {
-            var random = be.getLevel().random;
-            animator.translate(
-                    (random.nextDouble() * 2.0D - 1.0D) * amplitude,
-                    (random.nextDouble() * 2.0D - 1.0D) * amplitude,
-                    (random.nextDouble() * 2.0D - 1.0D) * amplitude);
-        }
         animator.translate(0.5D, 0.0D, 0.5D);
+        int momentum = be.getMomentum();
+        if (momentum > 0) {
+            double amplitude = (momentum / 100.0D)
+                    * (0.012D + Math.min(be.getAfterburner(), 3) * 0.006D);
+            long seed = com.hbm_m.client.render.IrisShadowBatchCollector.renderFrame() * 31L
+                    + be.getBlockPos().asLong();
+            animator.translate((hashUnit(seed) - 0.5D) * 2.0D * amplitude,
+                    (hashUnit(seed ^ 0x9E3779B97F4A7C15L) - 0.5D) * 2.0D * amplitude,
+                    0.0D);
+        }
         animator.rotate(facingRotation(be.getBlockState().getValue(
                 com.hbm_m.block.machines.MachineTurbofanBlock.FACING)), 0, 1, 0);
+    }
+
+    /** Deterministic [0, 1) hash of a long seed (SplitMix64 finalizer, top 28 bits). */
+    private static double hashUnit(long s) {
+        s ^= s >>> 33;
+        s *= 0xFF51AFD7ED558CCDL;
+        s ^= s >>> 33;
+        return (s >>> 36) / (double) (1L << 28);
     }
 
     /** EAST 0 / NORTH 90 / WEST 180 / SOUTH 270 - the model intake points ClockWise from FACING. */
@@ -140,14 +164,25 @@ public final class MachineTurbofanRenderer {
 
     // Animations.
 
-    /** Rotor: spin/lastSpin interpolation, rotation around Z at height 1.5. */
+    /** Static body: drawn every frame, no transform of its own (the run shake rides the block transform). */
+    private static boolean animateStatic(MachineTurbofanBlockEntity be, float partialTick,
+                                         long gameTime, PoseStack pose) {
+        return true;
+    }
+
+    /**
+     * Rotor: the ORIGINAL 1.7.10 renderer's exact transform - T(0,1.5,0)
+     * . R(spin degrees around -Z) . T(0,-1.5,0), the angle being
+     * lerp(lastSpin, spin, partialTick) of the client-side spin fields
+     * (spin advances by momentum/2 degrees per tick, as in the original).
+     */
     private static boolean animateBlades(MachineTurbofanBlockEntity be, float partialTick,
                                          long gameTime, PoseStack pose) {
         be.ensureClientAnimationTick();
-        float spin = Mth.lerp(partialTick, be.getLastSpin(), be.getSpin());
-        pose.translate(0.0D, 1.5D, 0.0D);
-        pose.mulPose(Axis.ZN.rotationDegrees(spin));
-        pose.translate(0.0D, -1.5D, 0.0D);
+        float angle = Mth.lerp(partialTick, be.getLastSpin(), be.getSpin());
+        pose.translate(0.0F, 1.5F, 0.0F);
+        pose.mulPose(new org.joml.Quaternionf().rotationZ((float) Math.toRadians(-angle)));
+        pose.translate(0.0F, -1.5F, 0.0F);
         return true;
     }
 

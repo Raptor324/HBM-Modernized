@@ -6,6 +6,7 @@ import com.hbm_m.blockentity.machines.rbmk.RBMKControlBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKControlManualBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKRodBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKColumnBlockEntity.ColumnType;
+import com.hbm_m.client.render.cache.RenderCacheManager;
 import com.hbm_m.handler.rbmk.RBMKDials;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -47,6 +48,18 @@ public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements com.
     private static final Map<String, Map<String, List<float[]>>> OBJ_CACHE   = new HashMap<>();
     /** Texture sprite cache. */
     private static final Map<String, TextureAtlasSprite>         SPRITE_CACHE = new HashMap<>();
+
+    // Cached sprites hold the UV rects of the atlas layout they were fetched under (u0/v0 are
+    // final on TextureAtlasSprite and a re-stitch builds fresh instances), so both caches must be
+    // dropped on reload/session end - the next sprite()/getObj() call lazily re-fetches from the
+    // re-stitched atlas / current resource pack. Clears the shared cache for every RBMK-family
+    // renderer that routes through sprite()/getObj().
+    static {
+        RenderCacheManager.register(reason -> {
+            OBJ_CACHE.clear();
+            SPRITE_CACHE.clear();
+        });
+    }
 
     // ─── Constructor ─────────────────────────────────────────────────────────
 

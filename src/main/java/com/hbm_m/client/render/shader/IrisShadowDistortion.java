@@ -11,6 +11,12 @@ import com.hbm_m.main.MainRegistry;
  * Detects the shadow-map distortion ("fisheye" around the player) of the
  * active shader pack.
  *
+ * <p>Attribution / Credits:
+ * Adapted from Iris (https://github.com/IrisShaders/Iris, LGPL-3.0) and
+ * Oculus (https://github.com/Asek3/Oculus, LGPL-3.0).
+ * Authors: coderbot, IMS212, Iris Team, Asek3.
+ * Cross-referenced with CrankShaft GuestShadows (https://github.com/Engine-Room/CrankShaft, LGPL-3.0).</p>
+ *
  * <p>The pack distorts the shadow map in its shadow vertex shader
  * ({@code gl_Position.xy /= distortionFactor; gl_Position.z *= scale}) and
  * compensates for the distortion when sampling shadows. Any geometry drawn
@@ -35,6 +41,23 @@ import com.hbm_m.main.MainRegistry;
  * (values already substituted by pack settings at load time).</p>
  */
 public final class IrisShadowDistortion {
+
+    private static final String[] IRIS_PACKAGES = {
+            "net.irisshaders.iris",
+            "net.coderbot.iris"
+    };
+
+    private static Class<?> findIrisClass(String suffix) throws ClassNotFoundException {
+        ClassNotFoundException lastEx = null;
+        for (String pkg : IRIS_PACKAGES) {
+            try {
+                return Class.forName(pkg + "." + suffix);
+            } catch (ClassNotFoundException e) {
+                lastEx = e;
+            }
+        }
+        throw lastEx != null ? lastEx : new ClassNotFoundException(suffix);
+    }
 
     /** 0 = no distortion, 1 = quartic (Photon family), 2 = linear (BSL classic). */
     private static volatile int mode = 0;
@@ -86,21 +109,20 @@ public final class IrisShadowDistortion {
         boolean wasCompatible = compatible;
         try {
             if (!reflected) {
-                reflected = true;
-                Class<?> programSet = Class.forName("net.irisshaders.iris.shaderpack.programs.ProgramSet");
+                Class<?> programSet = findIrisClass("shaderpack.programs.ProgramSet");
                 // Iris 1.8+ (1.21.1) removed getShadow() in favor of the unified
                 // get(ProgramId) - try both (Oculus 1.20.1 keeps getShadow).
                 try {
                     getShadow = programSet.getMethod("getShadow");
                 } catch (NoSuchMethodException e) {
-                    Class<?> programIdClass = Class.forName("net.irisshaders.iris.shaderpack.loading.ProgramId");
+                    Class<?> programIdClass = findIrisClass("shaderpack.loading.ProgramId");
                     shadowProgramId = enumValueOf(programIdClass, "Shadow");
                     if (shadowProgramId == null) {
                         throw e;
                     }
                     getShadow = programSet.getMethod("get", programIdClass);
                 }
-                Class<?> programSource = Class.forName("net.irisshaders.iris.shaderpack.programs.ProgramSource");
+                Class<?> programSource = findIrisClass("shaderpack.programs.ProgramSource");
                 getVertexSource = programSource.getMethod("getVertexSource");
                 // Call order mirrors IrisInstancedEncoders (that chain works):
                 // ShaderPack.getProgramSet(NamespacedId) -> ProgramSet, and ONLY then
@@ -108,21 +130,27 @@ public final class IrisShadowDistortion {
                 // IllegalArgumentException "not an instance of declaring class"
                 // (debug.log 0913 23:33) and permanently pushed instanced shadows
                 // into the per-record fallback.
-                Class<?> shaderPack = Class.forName("net.irisshaders.iris.shaderpack.ShaderPack");
-                getProgramSet = shaderPack.getMethod("getProgramSet",
-                        Class.forName("net.irisshaders.iris.shaderpack.materialmap.NamespacedId"));
-                Class<?> namespacedId = Class.forName("net.irisshaders.iris.shaderpack.materialmap.NamespacedId");
+                Class<?> shaderPack = findIrisClass("shaderpack.ShaderPack");
+                Class<?> namespacedId = findIrisClass("shaderpack.materialmap.NamespacedId");
+                getProgramSet = shaderPack.getMethod("getProgramSet", namespacedId);
                 overworldId = namespacedId.getConstructor(String.class, String.class)
                         .newInstance("minecraft", "overworld");
                 // Pack directives: the real shadowDistance (BSL-classic derives the
                 // bias from it: const float shadowMapBias = 1.0 - 25.6 /
                 // shadowDistance; lib/settings.glsl does NOT appear in the
                 // include-expanded source - see the quartic branch below).
-                getPackDirectives = programSet.getMethod("getPackDirectives");
-                getShadowDirectives = Class.forName(
-                        "net.irisshaders.iris.shaderpack.properties.PackDirectives").getMethod("getShadowDirectives");
-                getShadowDistance = Class.forName(
-                        "net.irisshaders.iris.shaderpack.properties.PackShadowDirectives").getMethod("getDistance");
+                try {
+                    getPackDirectives = programSet.getMethod("getPackDirectives");
+                    getShadowDirectives = findIrisClass(
+                            "shaderpack.properties.PackDirectives").getMethod("getShadowDirectives");
+                    getShadowDistance = findIrisClass(
+                            "shaderpack.properties.PackShadowDirectives").getMethod("getDistance");
+                } catch (Throwable t) {
+                    getPackDirectives = null;
+                    getShadowDirectives = null;
+                    getShadowDistance = null;
+                }
+                reflected = true;
             }
             // Default: no distortion
             mode = 0;
@@ -253,12 +281,12 @@ public final class IrisShadowDistortion {
      * a single class failed here and silently disabled instanced shadows.
      */
     private static Object[] currentPackHolder() throws Exception {
-        Object manager = Class.forName("net.irisshaders.iris.Iris")
+        Object manager = findIrisClass("Iris")
                 .getMethod("getPipelineManager").invoke(null);
         if (manager == null) {
             throw new IllegalStateException("pipeline manager null");
         }
-        Object pipeline = Class.forName("net.irisshaders.iris.pipeline.PipelineManager")
+        Object pipeline = findIrisClass("pipeline.PipelineManager")
                 .getMethod("getPipelineNullable").invoke(manager);
         if (pipeline == null) {
             throw new IllegalStateException("pipeline null");

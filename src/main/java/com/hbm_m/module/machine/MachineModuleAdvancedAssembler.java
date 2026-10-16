@@ -54,7 +54,15 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
         if (level == null) return null;
 
         ItemStack blueprint = itemHandler.getStackInSlot(1);
-        for (AssemblerRecipe recipe : ModRecipeIndex.of(level.getRecipeManager()).getAll(getRecipeType())) {
+        // Candidate subset from the byIngredient index (dynamic-ingredient recipes always
+        // included; full-list fallback when the union is empty — see ModRecipeIndex).
+        List<ItemStack> inputs = new java.util.ArrayList<>(inputSlots.length);
+        for (int slot : inputSlots) {
+            ItemStack s = itemHandler.getStackInSlot(slot);
+            if (!s.isEmpty()) inputs.add(s);
+        }
+        for (AssemblerRecipe recipe : ModRecipeIndex.of(level.getRecipeManager())
+                .getCandidatesContaining(getRecipeType(), inputs)) {
             if (matchesRecipe(recipe) && isRecipeAllowedByBlueprint(recipe, blueprint)) return recipe;
         }
         return null;
@@ -166,9 +174,10 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
     @Override
     @Nullable
     protected AssemblerRecipe findRecipeForItem(ItemStack stack) {
-        if (level == null) return null;
+        if (level == null || stack == null || stack.isEmpty()) return null;
 
-        for (AssemblerRecipe recipe : ModRecipeIndex.of(level.getRecipeManager()).getAll(getRecipeType())) {
+        for (AssemblerRecipe recipe : ModRecipeIndex.of(level.getRecipeManager())
+                .getCandidatesContaining(getRecipeType(), java.util.List.of(stack))) {
             for (Ingredient ingredient : recipe.getIngredients()) {
                 if (ingredient.test(stack)) {
                     return recipe;

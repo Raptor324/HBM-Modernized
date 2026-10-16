@@ -15,8 +15,8 @@ import com.hbm_m.inventory.material.MaterialType;
 import com.hbm_m.inventory.menu.MachineStrandCasterMenu;
 import com.hbm_m.item.material.ItemCastMold;
 import com.hbm_m.platform.ModItemStackHandler;
-import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.recipe.MoldCastingRecipe;
+import com.hbm_m.recipe.index.CachedRecipeResolver;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -170,16 +170,27 @@ public class MachineStrandCasterBlockEntity extends BaseHbmBlockEntity implement
         return Math.max(1, mold.getMoldType().getCost() * 5);
     }
 
-    /** Data-driven поиск результата (mold, material) — замена {@code mold.getOutput(type)}. */
+    /** Кэшированный скан рецептов: подпись — (изложница, материал), сканер — только матч по списку. */
+    private final CachedRecipeResolver<MoldCastingRecipe> castingResolver = new CachedRecipeResolver<>();
+
+    /** Data-driven поиск результата (mold, material) — замена {@code mold.getOutput(type)}.
+     *  Подпись кэша: (mold, material); проверка headroom выходных слотов остаётся per-tick
+     *  в {@link #maxProcessable()} (CachedRecipeResolver CONTRACT 1). */
     private @Nullable ItemStack getResultFor(MaterialType mat, ItemCastMold.MoldType mold) {
         if (level == null) return null;
-        for (MoldCastingRecipe r : RecipeHooks.getAllRecipes(level, MoldCastingRecipe.Type.INSTANCE)) {
-            if (r.matches(mold, mat)) {
-                ItemStack out = r.getOutput();
-                return out.isEmpty() ? null : out;
-            }
-        }
-        return null;
+        long signature = CachedRecipeResolver.sign(3,
+                mold == null ? 0L : mold.ordinal(),
+                mat == null ? 0L : mat.name.hashCode());
+        MoldCastingRecipe r = castingResolver.resolve(level, MoldCastingRecipe.Type.INSTANCE, signature,
+                (lvl, all) -> {
+                    for (MoldCastingRecipe recipe : all) {
+                        if (recipe.matches(mold, mat)) return recipe;
+                    }
+                    return null;
+                });
+        if (r == null) return null;
+        ItemStack out = r.getOutput();
+        return out.isEmpty() ? null : out;
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineStrandCasterBlockEntity be) {

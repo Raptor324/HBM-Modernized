@@ -180,30 +180,27 @@ public class RecipeHooks {
         *///?}
     }
 
-    /** Удобная обёртка: {@code getAllRecipes(level.getRecipeManager(), type)}. */
+    /**
+     * Удобная обёртка: {@code getAllRecipes(level.getRecipeManager(), type)}.
+     * ВНИМАНИЕ: делает копию списка на каждый вызов. Для per-tick кэшированного
+     * скана рецептов используйте {@link com.hbm_m.recipe.index.CachedRecipeResolver}
+     * (сканит по общему PerManagerCache-списку ModRecipeIndex без копии).
+     */
     public static <R extends Recipe<?>> List<R> getAllRecipes(Level level, RecipeType<R> type) {
         return getAllRecipes(level.getRecipeManager(), type);
     }
 
     /**
-     * id → recipe. На 1.21.1 id берётся из {@code holder.id()} (recipe.id ненадёжен — dummy).
+     * id → recipe. Возвращается кэшированная (неизменяемая, разделяемая) карта из
+     * {@link com.hbm_m.recipe.index.ModRecipeIndex} — без перестройки LinkedHashMap на каждый вызов.
+     * На 1.21.1 id берётся из {@code holder.id()} (recipe.id ненадёжен — dummy).
      * Заменяет итерации с {@code recipe.getId()} в потребителях.
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static <R extends Recipe<?>> Map<ResourceLocation, R> getAllRecipesById(RecipeManager manager, RecipeType<R> type) {
-        Map<ResourceLocation, R> map = new LinkedHashMap<>();
-        //? if < 1.21.1 {
-        List<R> recipes = (List<R>) manager.getAllRecipesFor((RecipeType) type);
-        for (R r : recipes) {
-            map.put(r.getId(), r);
-        }
-        //?} else {
-        /*List<RecipeHolder<R>> holders = (List<RecipeHolder<R>>) (Object) manager.getAllRecipesFor((RecipeType) type);
-        for (RecipeHolder<R> holder : holders) {
-            map.put(holder.id(), holder.value());
-        }
-        *///?}
-        return map;
+        // Cached shared map from the central index (rebuilt only on reload/sync/tag events or
+        // a genuine recipe-count change) — callers must treat it as unmodifiable.
+        return (Map<ResourceLocation, R>) com.hbm_m.recipe.index.ModRecipeIndex.of(manager).getByIdMap(type);
     }
 
     /** Удобная обёртка: {@code getAllRecipesById(level.getRecipeManager(), type)}. */
@@ -314,22 +311,15 @@ public class RecipeHooks {
     }
 
     /**
-     * Reverse-lookup id рецепта по ссылке. На 1.20.1 — {@code recipe.getId()} напрямую;
-     * на 1.21.1 — поиск по {@link #getAllRecipesById} (id живёт на holder, не на recipe,
-     * т.к. сериализатор передаёт dummy-id при декоде).
+     * Reverse-lookup id рецепта по ссылке — O(1) через кэшированную карту byRecipe
+     * в {@link com.hbm_m.recipe.index.ModRecipeIndex} (IdentityHashMap, строится в build()).
+     * getById отображает только id→recipe и не может дать обратное соответствие.
      *
      * <p>Drop-in замена для {@code recipe.getId()}. Для редких UI/модульных вызовов;
      * в per-tick hot-loop кэшируйте результат или итерируйте id-карту напрямую.
      */
     public static <R extends Recipe<?>> ResourceLocation recipeId(RecipeManager manager, RecipeType<R> type, R recipe) {
         if (recipe == null) return null;
-        //? if < 1.21.1 {
-        return recipe.getId();
-        //?} else {
-        /*for (Map.Entry<ResourceLocation, R> e : getAllRecipesById(manager, type).entrySet()) {
-            if (e.getValue() == recipe) return e.getKey();
-        }
-        return null;
-        *///?}
+        return com.hbm_m.recipe.index.ModRecipeIndex.of(manager).getIdOf(type, recipe);
     }
 }

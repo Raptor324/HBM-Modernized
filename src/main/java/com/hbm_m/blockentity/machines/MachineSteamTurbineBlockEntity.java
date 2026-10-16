@@ -66,7 +66,6 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
     public static void tick(Level level, BlockPos pos, BlockState state, MachineSteamTurbineBlockEntity be) {
         if (level.isClientSide()) return;
         be.ensureNetworkInitialized();
-        boolean wasActive = be.active;
 
         be.active = be.processSteam();
         if (be.active) {
@@ -79,10 +78,26 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
             be.updateEnergyDelta(be.getEnergyStored());
         }
 
-        if (wasActive != be.active || be.active) {
-            be.setChanged();
-            be.sendUpdateToClient();
-        }
+        // Анти-спам синхронизации: был безусловный 'wasActive != active || active' (тавтология,
+        // активная турбина синхронизировалась каждый тик). Теперь пакет только при реальном
+        // изменении состояния, которое уезжает в NBT/клиенту (энергия, active|progress, баки, инвентарь).
+        long lo = com.hbm_m.recipe.index.CachedRecipeResolver.sign(7,
+                be.energy, be.progress, be.active ? 1L : 0L,
+                tankFingerprint(be.tanks[0]), tankFingerprint(be.tanks[1]));
+        long hi = com.hbm_m.recipe.index.CachedRecipeResolver.sign(8,
+                PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_FLUID_ID_IN)),
+                PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_FLUID_ID_OUT)),
+                PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_INPUT_IO_IN)),
+                PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_INPUT_IO_OUT)),
+                PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_BATTERY)),
+                PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_OUTPUT_IO_IN)),
+                PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_OUTPUT_IO_OUT)));
+        be.syncIfStateChanged(lo, hi);
+    }
+
+    /** Фингерпринт HBM-бака: тип жидкости + заполнение. */
+    private static long tankFingerprint(FluidTank tank) {
+        return (tank.getTankType() == null ? 0L : tank.getTankType().hashCode()) * 31L + tank.getFill();
     }
 
     /**

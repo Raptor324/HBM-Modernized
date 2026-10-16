@@ -281,6 +281,66 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
     }
 
     /**
+     * GPU fade ramp endpoints (uStaticFadeStart/End, uAnimFadeStart/End) for the
+     * instanced vertex shaders: the instance record stores a static fade MODE
+     * (see {@link InstancedStaticPartRenderer#FADE_MODE_STATIC}), the distance
+     * ramp is evaluated per instance on the GPU, so records stay
+     * camera-independent and the span-diff converges to zero in a static scene.
+     * Shaders without the ramp (the iris/ variants) resolve null uniforms - skipped.
+     */
+    public static void applyFadeRampUniforms(ShaderInstance shader) {
+        applyFadeRampUniforms(shader, false);
+    }
+
+    /**
+     * As {@link #applyFadeRampUniforms(ShaderInstance)}, but with an override that
+     * forces the screen-door dither path even when the config flag is off. Used by
+     * the MDI coordinator when the batch contains fading instances: the MDI command
+     * order is unsorted, so alpha blending would require depthMask(false) for the
+     * whole batch (self-overlap mess on opaque machines) or punch holes in
+     * machines behind near translucent fragments with depth writes on. The dither
+     * discard needs no blending, so depth writes stay enabled.
+     */
+    public static void applyFadeRampUniforms(ShaderInstance shader, boolean forceDitherFade) {
+        if (shader == null) {
+            return;
+        }
+        Uniform u;
+        if ((u = shader.getUniform("uStaticFadeStart")) != null) u.set(RenderDistanceHelper.gpuStaticFadeStart());
+        if ((u = shader.getUniform("uStaticFadeEnd")) != null) u.set(RenderDistanceHelper.gpuStaticFadeEnd());
+        if ((u = shader.getUniform("uAnimFadeStart")) != null) u.set(RenderDistanceHelper.gpuAnimFadeStart());
+        if ((u = shader.getUniform("uAnimFadeEnd")) != null) u.set(RenderDistanceHelper.gpuAnimFadeEnd());
+        // Dither mode: the FSH discards fading pixels by screen hash - blending
+        // and the CPU fade-tail machinery are disabled for the frame.
+        if ((u = shader.getUniform("uDitherFade")) != null) {
+            u.set(forceDitherFade || com.hbm_m.config.ModClothConfig.get().nucleusDitherFade ? 1.0f : 0.0f);
+        }
+        // Keyframed joint tracks (anim track v2): continuous animation time
+        // for the u -> trackSample evaluation in the vsh. Frame-stable
+        // (memoized per render frame in FrameViewState.animTime - shadow and
+        // main passes of one frame upload the same value, and the CPU mirror
+        // reads the identical float). Shaders without the uniform (the iris/
+        // variants, block_lit_simple) resolve null - skipped, matching the
+        // ramp uniforms above. Every instanced apply site of the
+        // block_lit_instanced program flows through this helper (the MDI
+        // coordinator's applyCommonUniforms and all three
+        // VanillaInstancedBatchRenderer applyCommonUniforms callers); the Iris
+        // companion path (useIrisProgram) never calls it and stays untouched.
+        // Two scalar uniforms, NOT a vec2: the vanilla shader-JSON type parser
+        // (Uniform.getTypeFromString) knows only int/float/matrixNxN - "vec2"
+        // parses to type -1, the Uniform allocates its INTEGER buffer and
+        // set(float,float) NPEs the whole MDI dispatch (models invisible,
+        // 2026-10-08). Splitting the clock keeps the partial tick exact at
+        // worlds past 2^22 ticks (see FrameViewState.animTicks).
+        if ((u = shader.getUniform("uAnimTicks")) != null) {
+            u.set(FrameViewState.animTicks());
+        }
+        if ((u = shader.getUniform("uPartialTick")) != null) {
+            u.set(FrameViewState.animPartialTick());
+        }
+    }
+
+    /**
      * Fills {@code samplerMap} so {@link ShaderInstance#apply()} binds atlas → unit 0 and
      * lightmap → unit 1. Mirrors {@code LevelRenderer} / {@code VertexBuffer._drawWithShader}.
      */
@@ -312,6 +372,11 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         if (lightmapGlId > 0) {
             shader.setSampler("iris_Sampler2", lightmapGlId);
         }
+        int jointTexId = NucleusJointSpecs.getTextureId();
+        if (jointTexId > 0) {
+            shader.setSampler("iris_uJointSpecs", jointTexId);
+        }
+        NucleusJointSpecs.bindSampler();
         // Sampler unit uniforms (MUST be called after glUseProgram of our shader).
         // NOTE: getUniform on ExtendedShader automatically prefixes "iris_" — pass
         // BASE names, otherwise looking for "iris_iris_Sampler2" fails and uniform remains 0
@@ -320,6 +385,8 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         if (s0 != null) { s0.set(0); s0.upload(); }
         com.mojang.blaze3d.shaders.Uniform s2 = shader.getUniform("Sampler2");
         if (s2 != null) { s2.set(1); s2.upload(); }
+        com.mojang.blaze3d.shaders.Uniform sJoint = shader.getUniform("uJointSpecs");
+        if (sJoint != null) { sJoint.set(NucleusJointSpecs.SAMPLER_UNIT); sJoint.upload(); }
     }
 
     private static void primeBlockLitSamplerMap(ShaderInstance shader, Minecraft mc) {
@@ -350,11 +417,11 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         if (lightmapGlId > 0) {
             shader.setSampler("Sampler2", lightmapGlId);
         }
-        // Parametric joint specs (attrib 15 AnimParams.w): the 4th JSON sampler -
-        // setSampler registers it; NucleusJointSpecs.applyBinding pins the actual
-        // unit (SAMPLER_UNIT = 4) because apply()'s declaration-index mapping is
-        // unreliable. Id 0 (no joints) is valid: a joint delta only executes when
-        // AnimParams.w >= 0.
+        // Parametric joint specs (chain base index in GradParams.w): the 4th JSON
+        // sampler - setSampler registers it; NucleusJointSpecs.applyBinding pins
+        // the actual unit (SAMPLER_UNIT = 4) because apply()'s declaration-index
+        // mapping is unreliable. Id 0 (no joints) is valid: a joint delta only
+        // executes when GradParams.w >= 0.
         shader.setSampler("uJointSpecs", NucleusJointSpecs.getTextureId());
     }
 
@@ -396,6 +463,30 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
      * Must be invoked <b>after</b> {@link ShaderInstance#apply()} and <b>before</b> any instanced glDraw*.
      * Omitting this call causes white models (see REGRESSION GUARD above).
      */
+    /**
+     * Cached {@code glGetUniformLocation} results for the explicit sampler-unit
+     * assignment in {@link #bindBlockLitSamplerTextures}, keyed by
+     * {@code (programId << 32) | pipelineGeneration} (ids recycle on relink -
+     * the generation counter invalidates stale entries, same pattern as the
+     * per-renderer uniform caches).
+     */
+    private static final java.util.Map<Long, int[]> SAMPLER_UNIT_LOCATIONS =
+            new java.util.HashMap<>();
+
+    /**
+     * Upper bound on {@link #SAMPLER_UNIT_LOCATIONS}: the key embeds the pipeline
+     * generation, so Iris pipeline reloads mint a fresh key per program per
+     * generation and the map would grow unbounded across a long session. The
+     * cache is a pure lookup accelerator - wholesale eviction is always safe
+     * (the next draw just re-runs glGetUniformLocation).
+     */
+    private static final int SAMPLER_LOCATIONS_MAX = 64;
+
+    /** Render-thread cache teardown (RenderCacheManager invalidation). */
+    public static void clearSamplerLocationCache() {
+        SAMPLER_UNIT_LOCATIONS.clear();
+    }
+
     public static void bindBlockLitSamplerTextures(ShaderInstance shader) {
         if (shader == null) return;
         RenderSystem.assertOnRenderThread();
@@ -431,9 +522,30 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         // joint specs fetch read lightmap pixels and parametric joints went wild
         // the moment their angle left identity. The program is still active here
         // (this runs right after apply()); uniform values persist per program.
+        // Location lookup is cached per (program id, pipeline generation) - drivers
+        // recycle deleted program ids on relink, so the generation counter (same
+        // pattern as updateBlockLitUniformCache) guards against stale cached
+        // locations; glGetUniformLocation per draw was an uncached string search
+        // on the hot per-part path.
         int program = shader.getId();
-        GL20.glUniform1i(GL20.glGetUniformLocation(program, "Sampler0"), 0);
-        GL20.glUniform1i(GL20.glGetUniformLocation(program, "Sampler2"), 2);
+        long samplerLocKey = ((long) program << 32)
+                | (IrisExtendedShaderAccess.getPipelineGeneration() & 0xFFFFFFFFL);
+        int[] samplerLocs = SAMPLER_UNIT_LOCATIONS.get(samplerLocKey);
+        if (samplerLocs == null) {
+            samplerLocs = new int[] {
+                    GL20.glGetUniformLocation(program, "Sampler0"),
+                    GL20.glGetUniformLocation(program, "Sampler2") };
+            if (SAMPLER_UNIT_LOCATIONS.size() >= SAMPLER_LOCATIONS_MAX) {
+                // Cap before put: never let the keyed cache outgrow a session of
+                // repeated pipeline reloads.
+                SAMPLER_UNIT_LOCATIONS.clear();
+            }
+            SAMPLER_UNIT_LOCATIONS.put(samplerLocKey, samplerLocs);
+        }
+        // glUniform1i with location -1 is a defined no-op (same as before when the
+        // uniform was absent).
+        GL20.glUniform1i(samplerLocs[0], 0);
+        GL20.glUniform1i(samplerLocs[1], 2);
         NucleusJointSpecs.applyBinding(program);
 
         var uSampler0 = shader.getUniform("Sampler0");
@@ -475,6 +587,7 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         }
         if (irisCompanion == null) {
             irisCompanion = new IrisCompanionMesh(quads);
+            irisCompanion.setDebugName(getClass().getSimpleName());
             irisCompanionAttempted = true;
         }
         return irisCompanion.ensureBuilt() ? irisCompanion : null;
@@ -716,14 +829,9 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                 tmpLocalPose.set(LightSampleCache.BASE_POSE.get()).invert().mul(poseStack.last().pose());
             } else {
                 var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
-                //? if < 1.21.1 {
-                tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
-                //?} else {
-                /*// rotation(camera.rotation()) = R_cam⁻¹ without extra invert (see
-                // FrameViewState.capture) — earlier extraneous invert rotated 8-corner light sample points.
-                tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation());
-                *///?}
-                tmpLocalPose.set(tmpInvViewRot).mul(poseStack.last().pose());
+                // L^-1 (FrameViewState): strips R_cam AND the view bob - the local
+                // pose is static while walking, light sample points stop jittering.
+                tmpLocalPose.set(FrameViewState.poseToWorldRotation()).mul(poseStack.last().pose());
                 tmpLocalPose.m30(tmpLocalPose.m30() - (float) (blockPos.getX() - cam.x));
                 tmpLocalPose.m31(tmpLocalPose.m31() - (float) (blockPos.getY() - cam.y));
                 tmpLocalPose.m32(tmpLocalPose.m32() - (float) (blockPos.getZ() - cam.z));
@@ -860,9 +968,14 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             if (IrisShadowBatchCollector.isBatchingEnabled()) {
                 IrisCompanionMesh companionMesh = getOrBuildIrisCompanion();
                 if (companionMesh != null && companionMesh.isBuilt()) {
-                    Matrix4f currentMv = RenderSystem.getModelViewMatrix();
                     IrisShadowBatchCollector.stashShadowMatrices(RenderSystem.getProjectionMatrix());
-                    Matrix4f shadowWorld = new Matrix4f(currentMv).invertAffine().mul(new Matrix4f(currentMv).mul(poseStack.last().pose()));
+                    // invMv * (Mv * pose) == pose (up to float32 noise of the old
+                    // invert+two-multiplies chain) - pass the pose directly; the
+                    // collector decomposes it to pos/quat immediately (scratch OK).
+                    Matrix4f shadowWorld = tmpFullMv.set(poseStack.last().pose());
+                    // Recorders hand in the CAMERA-RELATIVE pose; IrisShadowBatchCollector
+                    // .appendRecord owns the camera add (world-space records) - adding it
+                    // here too would displace custom-mesh shadows by +camera.
                     IrisShadowBatchCollector.recordCustomMesh(companionMesh, shadowWorld);
                     return true;
                 }
@@ -900,14 +1013,8 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                 tmpLocalPose.set(LightSampleCache.BASE_POSE.get()).invert().mul(poseStack.last().pose());
             } else {
                 var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
-                //? if < 1.21.1 {
-                tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
-                //?} else {
-                /*// rotation(camera.rotation()) = R_cam⁻¹ without extra invert (see
-                // FrameViewState.capture).
-                tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation());
-                *///?}
-                tmpLocalPose.set(tmpInvViewRot).mul(poseStack.last().pose());
+                // L^-1 (FrameViewState): strips R_cam AND the view bob (see render()).
+                tmpLocalPose.set(FrameViewState.poseToWorldRotation()).mul(poseStack.last().pose());
                 tmpLocalPose.m30(tmpLocalPose.m30() - (float) (anchor.getX() - cam.x));
                 tmpLocalPose.m31(tmpLocalPose.m31() - (float) (anchor.getY() - cam.y));
                 tmpLocalPose.m32(tmpLocalPose.m32() - (float) (anchor.getZ() - cam.z));

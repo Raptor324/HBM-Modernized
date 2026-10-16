@@ -4,6 +4,7 @@ import com.hbm_m.block.machines.MachineRbmkConsoleBlock;
 import com.hbm_m.platform.RenderHooks;
 import com.hbm_m.blockentity.machines.MachineRbmkConsoleBlockEntity;
 import com.hbm_m.blockentity.machines.MachineRbmkConsoleBlockEntity.RBMKColumnData;
+import com.hbm_m.client.render.cache.RenderCacheManager;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -63,6 +64,12 @@ public class MachineRbmkConsoleRenderer implements BlockEntityRenderer<MachineRb
     public MachineRbmkConsoleRenderer(BlockEntityRendererProvider.Context ctx) {}
 
     private static TextureAtlasSprite whiteSprite;
+
+    // A re-stitch replaces the atlas sprites wholesale (u0/v0 are final on TextureAtlasSprite),
+    // so the latch must be dropped on reload/session end - whiteSprite() re-fetches lazily.
+    static {
+        RenderCacheManager.register(reason -> whiteSprite = null);
+    }
 
     /** A plain, uniformly-light vanilla sprite used purely as a tinting base for the flat dots
      *  below - RenderType.solid() always samples a texture, so an arbitrary raw UV rect on

@@ -50,6 +50,8 @@ public abstract class PumpBlockEntity extends com.hbm_m.blockentity.BaseHbmBlock
     }
 
     protected void serverTick(ServerLevel level, BlockPos pos) {
+        // 4-position direct push — every tick: tryProvide IS the pump's transfer path, gating it
+        // would divide output throughput by 20. The fill check keeps the probe free when dry.
         for (Direction dir : Direction.Plane.HORIZONTAL) {
             BlockPos conPos = pos.relative(dir, 2);
             if (water.getFill() > 0) {
@@ -70,8 +72,9 @@ public abstract class PumpBlockEntity extends com.hbm_m.blockentity.BaseHbmBlock
             operate();
         }
 
-        setChanged();
-        level.sendBlockUpdated(pos, getBlockState(), getBlockState(), 3);
+        // Sync only on a state delta: tank fill + shipped flags (isOn/onGround). Covers every
+        // field writeNbtData ships; the tank only ever holds the fixed WATER source.
+        syncIfStateChanged(water.getFill(), (isOn ? 1L : 0L) | (onGround ? 2L : 0L));
     }
 
     protected void clientTick() {

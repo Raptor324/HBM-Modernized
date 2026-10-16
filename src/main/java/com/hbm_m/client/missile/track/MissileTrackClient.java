@@ -35,6 +35,9 @@ public final class MissileTrackClient {
     private static int lockedRenderFrameId = -1;
     private static final Map<Integer, Boolean> frameUseTrack = new HashMap<>();
 
+    /** true = идёт экспорт Flashback (состояние на прошлом клиентском тике) — для диагностического лога. */
+    private static boolean flashbackExportActive = false;
+
     private MissileTrackClient() {}
 
     public static boolean isEnabled() {
@@ -100,14 +103,47 @@ public final class MissileTrackClient {
         // поток поз остановлен, но клиентские тики продолжаются. Экстраполяцию
         // выключаем — иначе ракета улетает от записанной траектории, а tickStale
         // заодно удаляет «протухший» трек. Детект общий с NT-частицами:
-        // com.hbm_m.client.ClientWorldFreeze.
+        // com.hbm_m.client.ClientWorldFreeze. Экспорт Flashback — НЕ пауза:
+        // поток поз на всём его прогоне идёт, поэтому frozen здесь false.
         boolean frozen = com.hbm_m.client.ClientWorldFreeze.isWorldFrozen();
+
+        logFlashbackExportStart();
 
         tickStale(frozen);
 
         for (TrackEntry entry : TRACKS.values()) {
             entry.tick(level, frozen);
         }
+    }
+
+    /**
+     * Диагностика старта экспорта Flashback: одним INFO-логом состояние всех
+     * треков на входе (поза, скорость, решённый путь рендера). Если ракета
+     * всё же не летит в конкретном экспорте, этот лог — первая точка, куда
+     * смотреть (признак — chunkBoundary=false при «залипшем» wasTrack).
+     */
+    private static void logFlashbackExportStart() {
+        boolean exporting = com.hbm_m.client.ClientWorldFreeze.isFlashbackExporting();
+        if (exporting == flashbackExportActive) {
+            return;
+        }
+        flashbackExportActive = exporting;
+        if (!exporting) {
+            return;
+        }
+        StringBuilder sb = new StringBuilder("[Flashback export] start: ").append(TRACKS.size()).append(" missile track(s)");
+        int logged = 0;
+        for (TrackEntry e : TRACKS.values()) {
+            if (e.curr == null) continue;
+            if (logged++ == 8) {
+                sb.append(" | ...");
+                break;
+            }
+            sb.append(String.format(" | #%d (%.0f,%.0f,%.0f) vy=%.1f chunkBoundary=%b wasTrack=%b launch=%b",
+                    e.entityId, e.curr.x(), e.curr.y(), e.curr.z(), e.curr.vy(),
+                    e.crossedChunkBoundary, e.wasTrackWorldRender, e.isLaunchPhase()));
+        }
+        com.hbm_m.main.MainRegistry.LOGGER.info(sb.toString());
     }
 
     private static void tickStale(boolean frozen) {

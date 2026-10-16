@@ -97,6 +97,8 @@ public class MachineMiningLaserBlockEntity extends BaseMachineBlockEntity {
     private long curConsumption = ENERGY_PER_TICK;
 
     private boolean operational = false;
+    /** true, если последний пройденный слой содержал реальную работу (блок/жидкость), — гейт sync. */
+    private boolean lastLayerMined = false;
     private int targetDepth = 0;
     private int ticksWorked = 0;
     private int currentTicksToWork = 100;
@@ -128,8 +130,12 @@ public class MachineMiningLaserBlockEntity extends BaseMachineBlockEntity {
 
                 if (tryMine(level, pos)) {
                     targetDepth++;
-                    setChanged();
-                    sendUpdateToClient();
+                    // Anti-sync-spam: sync только если слой содержал реальную работу
+                    // (air-слой проходит бесплатно — сервер и так знает глубину).
+                    if (lastLayerMined) {
+                        setChanged();
+                        sendUpdateToClient();
+                    }
 
                     if (targetDepth > maxDepth(level, pos)) {
                         operational = false;
@@ -197,6 +203,7 @@ public class MachineMiningLaserBlockEntity extends BaseMachineBlockEntity {
 
     /** Bohrt eine 3x3-Ebene direkt unterhalb der Maschine, Schicht fuer Schicht (analog Mining Drill). */
     private boolean tryMine(ServerLevel level, BlockPos pos) {
+        lastLayerMined = false;
         int y = getTargetY(pos);
 
         boolean ignoreAll = true;
@@ -223,14 +230,16 @@ public class MachineMiningLaserBlockEntity extends BaseMachineBlockEntity {
         currentTicksToWork = Math.max(1, (int) Math.ceil(combinedHardness / (BASE_SPEED * curSpeed)));
 
         if (ticksWorked >= currentTicksToWork) {
-            breakLayer(level, pos, y);
+            lastLayerMined = breakLayer(level, pos, y);
             ticksWorked = 0;
         }
 
         return false;
     }
 
-    private void breakLayer(ServerLevel level, BlockPos pos, int y) {
+    /** @return true, если слой содержал реальную работу (снят хотя бы один блок/жидкость). */
+    private boolean breakLayer(ServerLevel level, BlockPos pos, int y) {
+        boolean minedAny = false;
         for (int x = pos.getX() - curRadius; x <= pos.getX() + curRadius; x++) {
             for (int z = pos.getZ() - curRadius; z <= pos.getZ() + curRadius; z++) {
                 BlockPos target = new BlockPos(x, y, z);
@@ -238,16 +247,19 @@ public class MachineMiningLaserBlockEntity extends BaseMachineBlockEntity {
 
                 if (!state.getFluidState().isEmpty()) {
                     level.setBlockAndUpdate(target, Blocks.AIR.defaultBlockState());
+                    minedAny = true;
                     continue;
                 }
                 if (shouldIgnoreBlock(level, state, target)) continue;
 
                 mineSingleBlock(level, target, state);
+                minedAny = true;
             }
         }
 
         igniteNearbyEntities(level, pos, y);
         level.playSound(null, pos, SoundEvents.FIRECHARGE_USE, SoundSource.BLOCKS, 1.0F, 1.4F);
+        return minedAny;
     }
 
    private void mineSingleBlock(ServerLevel level, BlockPos pos, BlockState state) {

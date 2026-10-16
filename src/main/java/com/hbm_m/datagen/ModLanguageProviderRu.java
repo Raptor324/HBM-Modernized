@@ -108,6 +108,15 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("config.hbm_m.category.debug.tooltip", "Отладочный рендер и логирование.");
         add("config.hbm_m.category.rendering.tooltip", "Клиентские опции рендеринга.");
         add("config.hbm_m.category.overlay.tooltip", "Экранные оверлеи (пиксельный эффект, подсветка).");
+
+        add("config.hbm_m.field.occlusionCullingMode", "GPU-окклюзия мультиблоков");
+        add("config.hbm_m.field.occlusionCullingMode.tooltip", "Режим окклюзии для мультиблоков.\nGPU: Иерархическая Z-пирамида глубины через compute-шейдеры OpenGL 4.3.\nCPU: Трассировка вокселей по блокам мира.\nOFF: Окклюзия выключена.\nСовет: включайте CPU, когда много машин скрыто за блоками/террейном — это экономит GPU. В открытых биомах прироста почти нет, но расходуется CPU.");
+        add("config.hbm_m.rendering.occlusionCullingMode.gpu_unsupported", "GPU-окклюзия не поддерживается вашим видеоадаптером: %s");
+        add("text.autoconfig.hbm_m.option.occlusionCullingMode", "GPU-окклюзия мультиблоков");
+        add("text.autoconfig.hbm_m.option.occlusionCullingMode.@Tooltip", "Режим окклюзии для мультиблоков.\nGPU: Иерархическая Z-пирамида глубины через compute-шейдеры OpenGL 4.3.\nCPU: Трассировка вокселей по блокам мира.\nOFF: Окклюзия выключена.\nСовет: включайте CPU, когда много машин скрыто за блоками/террейном — это экономит GPU. В открытых биомах прироста почти нет, но расходуется CPU.");
+        add("text.autoconfig.hbm_m.option.occlusionCullingMode.GPU", "GPU");
+        add("text.autoconfig.hbm_m.option.occlusionCullingMode.CPU", "CPU");
+        add("text.autoconfig.hbm_m.option.occlusionCullingMode.OFF", "ВЫКЛ");
     }
 
         @Override
@@ -3682,6 +3691,8 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.nucleusDispatcherBypass.@Tooltip", "Сбор станков фабрики плоским обходом вместо ванильного/Sodium-диспетчера BlockEntity. Отключать при исчезновении или задвоении станков.");
         add("text.autoconfig.hbm_m.option.nucleusGpuBake", "Nucleus: GPU-bake (Iris Tier 1)");
         add("text.autoconfig.hbm_m.option.nucleusGpuBake.@Tooltip", "Запекание инстансов станков в вершинный буфер compute-шейдером (один draw на part). Требует OpenGL 4.3; без поддержки автоматически используется Tier 2/3.");
+        add("text.autoconfig.hbm_m.option.nucleusBakeHiZ", "Nucleus: Hi-Z окклюзия bake-cull");
+        add("text.autoconfig.hbm_m.option.nucleusBakeHiZ.@Tooltip", "Добавляет окклюзию по глубине в bake-cull (Tier 1): инстансы, полностью скрытые за глубиной сцены (Hi-Z пирамида), пропускаются. Строго опционально; при недоступной глубине или ошибке GL тихо откатывается на frustum-only.");
         add("text.autoconfig.hbm_m.option.nucleusGpuScatter", "Nucleus: compute-скаттер аплоадов");
         add("text.autoconfig.hbm_m.option.nucleusGpuScatter.@Tooltip", "Заливка многих изменившихся span'ов одним compute-диспетчем вместо последовательных копий. Требует OpenGL 4.3 и не-Intel GPU; иначе DMA-путь.");
         add("text.autoconfig.hbm_m.option.nucleusStagingDirect", "Nucleus: прямые аплоады спанов");
@@ -3690,6 +3701,8 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.nucleusGpuCullMinInstances.@Tooltip", "Общее число инстансов, выше которого GPU-culler включает окклюзию (перестройка Hi-Z пирамиды; гистерезис 2:1). Уменьшите, чтобы окклюзия включалась раньше; 0 = всегда.");
         add("text.autoconfig.hbm_m.option.nucleusGpuScatterMinSpans", "Nucleus: минимум span'ов для скаттера");
         add("text.autoconfig.hbm_m.option.nucleusGpuScatterMinSpans.@Tooltip", "Минимум изменившихся span'ов в окне, при котором заливка переключается с последовательных копий на compute-скаттер.");
+        add("text.autoconfig.hbm_m.option.nucleusBakeCacheMB", "Nucleus: бюджет bake-кэша (МБ)");
+        add("text.autoconfig.hbm_m.option.nucleusBakeCacheMB.@Tooltip", "Общий бюджет VRAM для bake-кэшей Tier 1 (output + record SSBO). Записи, не влезающие в бюджет после LRU-выселения, остаются на immediate-пути — бюджет не может трэшиться. 0 отключает кэширование.");
         add("text.autoconfig.hbm_m.option.glDebugOutput", "GL debug callback");
         add("text.autoconfig.hbm_m.option.glDebugOutput.@Tooltip", "Лог HIGH/MEDIUM сообщений OpenGL-драйвера через KHR_debug. Вступает в силу после перезапуска.");
         add("text.autoconfig.hbm_m.option.debugAnimCacheLog", "Лог статистики кэша анимаций");

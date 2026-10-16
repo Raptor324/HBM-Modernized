@@ -897,7 +897,14 @@ public final class MachineDoorRenderer {
 
     // ==================== CACHE INVALIDATION ====================
 
+    public static void resetUvRectAttribCheck() {
+        uvRectAttribChecked = false;
+        uvRectAttribSupported = false;
+        clearPartSpriteCache();
+    }
+
     public static void clearDaeCaches() {
+        resetUvRectAttribCheck();
         for (String key : DAE_RENDERER_CACHE.keySet()) {
             MeshRenderCache.removeRenderer(key);
         }

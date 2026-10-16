@@ -39,6 +39,9 @@ public class BroadcasterPcBlockEntity extends com.hbm_m.blockentity.BaseHbmBlock
             return;
         }
 
+        // Дорогой entity-query (объём 51³) — раз в 10 тиков, фаза по позиции.
+        if (!be.probeDue(10)) return;
+
         AABB box = new AABB(pos).inflate(CONFUSION_RADIUS);
         double cx = pos.getX() + 0.5D, cy = pos.getY() + 0.5D, cz = pos.getZ() + 0.5D;
 

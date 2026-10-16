@@ -44,6 +44,11 @@ public class MachineConveyorPressBlockEntity extends BaseMachineBlockEntity {
     private static final long MAX_POWER = 50_000L;
     private static final long POWER_PER_OPERATION = 100L;
 
+    /** Кэш скана рецептов: ключ — фингерпринты (штамп, материал); одинаковые предметы на ленте не пересканируют список. */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<PressRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+    private static final long RECIPE_SEED = 0xC00F1E5L;
+
     public MachineConveyorPressBlockEntity(BlockPos pos, BlockState state) {
         super(com.hbm_m.blockentity.ModBlockEntities.CONVEYOR_PRESS_BE.get(), pos, state, SLOT_COUNT, MAX_POWER, MAX_POWER);
     }
@@ -56,6 +61,9 @@ public class MachineConveyorPressBlockEntity extends BaseMachineBlockEntity {
     private void serverTick(Level level, BlockPos pos) {
         ItemStack stamp = inventory.getStackInSlot(SLOT_STAMP);
         if (stamp.isEmpty() || getEnergyStored() < POWER_PER_OPERATION) return;
+
+        // Дорогой entity-query (скан AABB) — раз в 2 тика, фаза размазана по позиции.
+        if (!probeDue(2)) return;
 
         AABB scanArea = new AABB(pos).inflate(0.1, 0.0, 0.1).expandTowards(0, 1.5, 0);
         List<MovingConveyorItemEntity> items = level.getEntitiesOfClass(MovingConveyorItemEntity.class, scanArea);
@@ -92,20 +100,31 @@ public class MachineConveyorPressBlockEntity extends BaseMachineBlockEntity {
         }
     }
 
+    /**
+     * Поиск рецепта через кэш {@link com.hbm_m.recipe.index.CachedRecipeResolver}:
+     * сигнатура — фингерпринты (штамп, материал), поэтому подряд идущие одинаковые
+     * предметы на ленте переиспользуют результат вместо полного скана списка.
+     */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private Optional<PressRecipe> findRecipe(Level level, ItemStack stamp, ItemStack material) {
-        SimpleContainer container = new SimpleContainer(3);
-        container.setItem(1, stamp);
-        container.setItem(2, material);
+        long sig = com.hbm_m.recipe.index.CachedRecipeResolver.sign(com.hbm_m.platform.PlatformHooks.stackFingerprint(stamp),
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(material));
+        PressRecipe resolved = recipeResolver.resolve(level,
+                (RecipeType<PressRecipe>) (RecipeType<?>) PressRecipe.Type.INSTANCE, sig, (lvl, all) -> {
+                    SimpleContainer container = new SimpleContainer(3);
+                    container.setItem(1, stamp.copy());
+                    container.setItem(2, material.copy());
 
-        // 1.21.1: Recipe.matches требует RecipeInput, а рецепты завёрнуты в RecipeHolder —
-        // используем RecipeHooks.getAllRecipes + matchesRecipe(RecipeInputWrapper).
-        for (PressRecipe recipe : com.hbm_m.platform.recipe.RecipeHooks.getAllRecipes(level, (RecipeType<PressRecipe>) (RecipeType<?>) PressRecipe.Type.INSTANCE)) {
-            if (recipe.matchesRecipe(new com.hbm_m.platform.recipe.RecipeInputWrapper(container), level)) {
-                return Optional.of(recipe);
-            }
-        }
-        return Optional.empty();
+                    // 1.21.1: Recipe.matches требует RecipeInput, а рецепты завёрнуты в RecipeHolder —
+                    // используем RecipeHooks.getAllRecipes + matchesRecipe(RecipeInputWrapper).
+                    for (PressRecipe recipe : all) {
+                        if (recipe.matchesRecipe(new com.hbm_m.platform.recipe.RecipeInputWrapper(container), lvl)) {
+                            return recipe;
+                        }
+                    }
+                    return null;
+                });
+        return Optional.ofNullable(resolved);
     }
 
     /** Rechtsklick mit Stempel installiert ihn (Original: {@code onBlockActivated}, kein GUI). */

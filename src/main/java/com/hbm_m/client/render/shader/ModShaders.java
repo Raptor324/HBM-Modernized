@@ -18,6 +18,7 @@ public class ModShaders {
     private static ShaderInstance thermalVisionShader;
     private static ShaderInstance nukeCloudShader;
     private static ShaderInstance nukeAddShader;
+    private static ShaderInstance ntColorTexLightmapShader;
     private static ShaderInstance dhDepthBlitShader;
 
     public static ShaderInstance getNukeCloudShader() {
@@ -34,6 +35,15 @@ public class ModShaders {
 
     public static void setNukeAddShader(ShaderInstance shader) {
         nukeAddShader = shader;
+    }
+
+    /** Vanilla position_color_tex_lightmap clone for NT particle render types (see the shader header). */
+    public static ShaderInstance getNtColorTexLightmapShader() {
+        return ntColorTexLightmapShader;
+    }
+
+    public static void setNtColorTexLightmapShader(ShaderInstance shader) {
+        ntColorTexLightmapShader = shader;
     }
 
     public static ShaderInstance getDhDepthBlitShader() {

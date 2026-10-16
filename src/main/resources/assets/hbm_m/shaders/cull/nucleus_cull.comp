@@ -7,19 +7,36 @@
  *  - Ballot path (NUCLEUS_BALLOT, injected by NucleusGpuCuller when
  *    GL_KHR_shader_subgroup is present and subgroup size is 32): warp-level
  *    subgroupBallot compaction — ONE atomicAdd per tile, no shared memory, no barriers.
- *  - Fallback: shared-memory inclusive prefix sum (Hillis-Steele) — ONE atomicAdd
- *    per tile, ordered dense slots.
- * Both paths produce the same dense deterministic slot layout.
+ *  - Fallback (hardware without a 1:1 subgroup/workgroup match, or no ballot
+ *    extension at all): per-visible-invocation atomicAdd on instanceCount.
+ *    A shared-memory Hillis-Steele scan was considered here but NOT implemented:
+ *    the fallback is cold-path, and per-thread atomicAdd keeps the code free of
+ *    LDS pressure and barriers. Slot order in the fallback is nondeterministic
+ *    across lanes, which is harmless - every slot of a command's window is
+ *    written exactly once and the draw reads the whole window.
+ * Both paths produce a dense window of survivors per command.
  *
  * @credit CrankShaft / fewizz / Jdb100
  */
 #version 430 core
-// Instance record stride in floats — injected at load time by NucleusGpuCuller from
-// InstancedStaticPartRenderer.INSTANCE_DATA_SIZE (the literal below is only a fallback
-// so the file stays readable standalone; a drift here tore every GPU-culled batch apart).
-#define INST_STRIDE 42u
+// Instance record layout (float words) — injected at load time by NucleusGpuCuller
+// from the InstancedStaticPartRenderer offset constants (the literals below are only
+// a fallback so the file stays readable standalone; a drift here tore every GPU-culled
+// batch apart). Layout: pos @0, quat @3 (4 snorm16 halves packed in 2 words),
+// bboxMin @5, bboxSize @8 (32 words = 128 bytes per record).
+#define INST_STRIDE 32u
+#define INST_POS_WORD 0u
+#define INST_QUAT_WORD 3u
+#define INST_BMIN_WORD 5u
+#define INST_BSIZE_WORD 8u
 
+#if defined(SUBGROUP_SIZE) && SUBGROUP_SIZE == 64
+#define WORKGROUP_SIZE 64u
+layout(local_size_x = 64) in;
+#else
+#define WORKGROUP_SIZE 32u
 layout(local_size_x = 32) in;
+#endif
 
 struct DrawCommand {
     uint count;
@@ -28,7 +45,7 @@ struct DrawCommand {
     int  baseVertex;
     uint baseInstance;
     uint originalCount;
-    uint pad1;
+    uint globalInstanceOffset;
     uint pad2;
 };
 
@@ -47,8 +64,13 @@ layout(std430, binding = 2) buffer DrawCommands {
 layout(binding = 10) uniform sampler2D uDepthPyramid;
 
 uniform uint uNumCommands;
+uniform uint uTotalInstances;
 uniform int uPyramidLevels;
 uniform vec2 uViewSize;
+// Actual mip-0 (pow2-snapped) pyramid dimensions - screen coords map to mip-0
+// texels through this, not through a fixed >>1 (R3-2.2.3: with a 1920px screen
+// the pow2 snap gives 1024 texels, so >>1 left a ~6% skew at the right/top edge).
+uniform vec2 uMip0Size;
 uniform mat4 uViewMat;
 uniform float uZNear;
 uniform float uZFar;
@@ -57,11 +79,25 @@ uniform float uP11;
 uniform vec4 uFrustumPlanes[6];
 uniform uint uFrustumOnly;
 
-shared uint sVis[32];
-shared uint sScanBase;
-
 vec3 quatRotate(vec4 q, vec3 v) {
     return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
+}
+
+// snorm16 decode (plain ALU): the record packs the quat as 4 signed 16-bit
+// halves in 2 float words (low half first) - the CPU encoder is
+// InstancedStaticPartRenderer.packSnorm16, the VAO reads the same bytes as
+// GL_SHORT normalized.
+float snorm16ToFloat(uint h) {
+    // int overload sign-extends the 16-bit field (mirrors the VAO's
+    // GL_SHORT normalized fetch).
+    return clamp(float(bitfieldExtract(int(h), 0, 16)) / 32767.0, -1.0, 1.0);
+}
+
+vec4 instQuat(uint base) {
+    uint wxy = floatBitsToUint(inData[base + INST_QUAT_WORD]);
+    uint wzw = floatBitsToUint(inData[base + INST_QUAT_WORD + 1u]);
+    return vec4(snorm16ToFloat(wxy), snorm16ToFloat(wxy >> 16u),
+                snorm16ToFloat(wzw), snorm16ToFloat(wzw >> 16u));
 }
 
 bool testFrustum(vec3 center, float radius) {
@@ -97,7 +133,11 @@ bool projectSphere(vec3 c, float r, float znear, float P00, float P11, out vec4 
 
 float hizOccluder(vec4 aabb) {
     vec4 uv = clamp(vec4(min(aabb.xy, aabb.zw), max(aabb.xy, aabb.zw)), 0.0, 1.0);
-    ivec4 rect = ivec4(uv * uViewSize.xyxy + vec4(0.5, 0.5, -0.5, -0.5));
+    // Map directly into actual mip-0 texels (uViewSize is the FULL framebuffer;
+    // the pyramid mip-0 is the pow2-snapped lower half). The +-0.5 bias is the
+    // standard round-to-nearest for a half-open rect; sub-pixel rects return
+    // the conservative VISIBLE below.
+    ivec4 rect = ivec4(uv * uMip0Size.xyxy + vec4(0.5, 0.5, -0.5, -0.5));
     if (any(lessThan(rect.zw, rect.xy))) {
         // Sub-pixel sphere (rounded rect is empty): the pyramid cannot answer
         // the occlusion query at this resolution. Conservative answer = far
@@ -105,11 +145,13 @@ float hizOccluder(vec4 aabb) {
         // legitimate distant instances every frame.
         return 1.0;
     }
-    rect = min(rect, ivec4(uViewSize.xyxy) - 1) >> 1;
+    rect = min(rect, ivec4(uMip0Size.xyxy) - 1);
 
     ivec2 extent = rect.zw - rect.xy;
     int level = max(findMSB(max(extent.x, extent.y)), 0);
-    level += any(greaterThan((rect.zw >> level) - (rect.xy >> level), ivec2(1))) ? 1 : 0;
+    if (any(greaterThan((rect.zw >> level) - (rect.xy >> level), ivec2(1)))) {
+        level += 1;
+    }
     level = min(level, uPyramidLevels - 1);
 
     ivec4 bounds = rect >> level;
@@ -125,13 +167,33 @@ float hizOccluder(vec4 aabb) {
 bool testInstanceVisibility(uint inIdx) {
     uint inFloatOff = inIdx * INST_STRIDE;
 
-    vec3 instPos = vec3(inData[inFloatOff + 0u], inData[inFloatOff + 1u], inData[inFloatOff + 2u]);
-    vec4 instRot = vec4(inData[inFloatOff + 3u], inData[inFloatOff + 4u], inData[inFloatOff + 5u], inData[inFloatOff + 6u]);
-    vec3 bboxMin = vec3(inData[inFloatOff + 7u], inData[inFloatOff + 8u], inData[inFloatOff + 9u]);
-    vec3 bboxSize = vec3(inData[inFloatOff + 10u], inData[inFloatOff + 11u], inData[inFloatOff + 12u]);
+    float fadeMode = inData[inFloatOff + 11u];
+    if (fadeMode < 0.0) {
+        return false;
+    }
+
+    vec3 instPos = vec3(inData[inFloatOff + INST_POS_WORD],
+                        inData[inFloatOff + INST_POS_WORD + 1u],
+                        inData[inFloatOff + INST_POS_WORD + 2u]);
+    vec4 instRot = instQuat(inFloatOff);
+    vec3 bboxMin = vec3(inData[inFloatOff + INST_BMIN_WORD],
+                        inData[inFloatOff + INST_BMIN_WORD + 1u],
+                        inData[inFloatOff + INST_BMIN_WORD + 2u]);
+    vec3 bboxSize = vec3(inData[inFloatOff + INST_BSIZE_WORD],
+                         inData[inFloatOff + INST_BSIZE_WORD + 1u],
+                         inData[inFloatOff + INST_BSIZE_WORD + 2u]);
 
     vec3 localCenter = bboxMin + 0.5 * bboxSize;
     float radius = 0.5 * length(bboxSize);
+    // Word 27 is GradParams.w - the parametric joint chain base index (< 0 = not
+    // GPU-animated). GPU-parametric parts sweep beyond their static bbox (the CPU
+    // no longer pads the record bbox: block_lit_instanced.vsh interpolates the
+    // 8-corner lightmap with (vPos - bboxMin)/safeSize, and a padded bbox corrupts
+    // that gradient). Expand the cull sphere here instead - over-inclusive is the
+    // safe direction (looser frustum/occlusion test, never a false cull).
+    if (inData[inFloatOff + 27u] >= 0.0) {
+        radius = radius * 2.0 + 2.5;
+    }
 
     vec3 worldCenter = instPos + quatRotate(instRot, localCenter);
     vec3 viewCenter = (uViewMat * vec4(worldCenter, 1.0)).xyz;
@@ -161,76 +223,95 @@ void copyInstance(uint inIdx, uint outIdx) {
     }
 }
 
-/**
- * Shared-memory compaction of one 32-instance tile (Hillis-Steele inclusive scan).
- * Must be called workgroup-uniform (all 32 lanes, no divergence).
- */
-void tileCompactionShared(uint cmdIdx, uint i, bool isVisible, uint origCount, uint baseInstance) {
-    sVis[gl_LocalInvocationID.x] = isVisible ? 1u : 0u;
-    barrier();
-    for (uint off = 1u; off < 32u; off <<= 1u) {
-        uint v = (gl_LocalInvocationID.x >= off) ? sVis[gl_LocalInvocationID.x - off] : 0u;
-        barrier();
-        sVis[gl_LocalInvocationID.x] += v;
-        barrier();
-    }
-    if (gl_LocalInvocationID.x == 31u) {
-        sScanBase = atomicAdd(commands[cmdIdx].instanceCount, sVis[31u]);
-    }
-    barrier();
-
-    if (isVisible) {
-        uint slot = sScanBase + sVis[gl_LocalInvocationID.x] - 1u;
-        if (slot < origCount) {
-            copyInstance(baseInstance + i, baseInstance + slot);
+uint findCommandIndex(uint globalInstIdx) {
+    uint low = 0u;
+    uint high = uNumCommands - 1u;
+    while (low < high) {
+        uint mid = (low + high + 1u) >> 1u;
+        if (commands[mid].globalInstanceOffset <= globalInstIdx) {
+            low = mid;
+        } else {
+            high = mid - 1u;
         }
     }
-    barrier();
+    return low;
 }
 
 void main() {
-    uint cmdIdx = gl_WorkGroupID.x;
-    if (cmdIdx >= uNumCommands) return;
+    uint globalInstIdx = gl_GlobalInvocationID.x;
+    bool isValid = (globalInstIdx < uTotalInstances);
 
-    uint origCount = commands[cmdIdx].originalCount;
-    uint baseInstance = commands[cmdIdx].baseInstance;
+    uint cmdIdx = 0u;
+    uint inIdx = 0u;
+    bool isVisible = false;
+
+    if (isValid) {
+        cmdIdx = findCommandIndex(globalInstIdx);
+        uint localIdx = globalInstIdx - commands[cmdIdx].globalInstanceOffset;
+        inIdx = commands[cmdIdx].baseInstance + localIdx;
+        isVisible = testInstanceVisibility(inIdx);
+    }
 
 #if defined(NUCLEUS_BALLOT)
-    // CrankShaft-style runtime verification: the workgroup must be exactly one
-    // full 32-lane subgroup (subgroupInvocationID maps 1:1 onto localInvocationID).
-    // Otherwise (e.g. AMD wave64) fall through to the shared-memory path.
-    bool useBallot = subgroupBallot(gl_SubgroupInvocationID == gl_LocalInvocationID.x) == 0xFFFFFFFFu;
+#if defined(SUBGROUP_SIZE) && SUBGROUP_SIZE == 64
+    // AMD Wave64: workgroup is one 64-lane wavefront. Ballot mask spans two 32-bit words (uvec2).
+    uvec4 matchBallot = subgroupBallot(gl_SubgroupInvocationID == gl_LocalInvocationID.x);
+    bool useBallot = (matchBallot.xy == uvec2(0xFFFFFFFFu, 0xFFFFFFFFu));
+#else
+    // NVIDIA/Wave32: workgroup is one 32-lane warp. Ballot mask fits in one 32-bit word (uint).
+    uvec4 matchBallot = subgroupBallot(gl_SubgroupInvocationID == gl_LocalInvocationID.x);
+    bool useBallot = (matchBallot.x == 0xFFFFFFFFu);
 #endif
 
-    for (uint tileStart = 0u; tileStart < origCount; tileStart += 32u) {
-        uint i = tileStart + gl_LocalInvocationID.x;
-        bool isVisible = false;
-        if (i < origCount) {
-            isVisible = testInstanceVisibility(baseInstance + i);
-        }
+    if (useBallot) {
+        uint firstCmd = subgroupBroadcastFirst(cmdIdx);
+        bool matchesFirst = (cmdIdx == firstCmd) && isValid;
+        uvec4 sameBallot = subgroupBallot(matchesFirst);
+        bool allSameCommand = (subgroupBallotBitCount(sameBallot) == gl_WorkGroupSize.x);
 
-#if defined(NUCLEUS_BALLOT)
-        if (useBallot) {
-            // Warp-level compaction: the elected lane issues ONE atomicAdd for
-            // the whole tile; every visible lane derives its dense slot from
-            // the ballot mask (no shared memory, no barriers).
+        if (allSameCommand) {
             uvec4 ballot = subgroupBallot(isVisible);
             uint visCount = subgroupBallotBitCount(ballot);
             uint scanBase = 0u;
-            if (visCount != 0u && subgroupElect()) {
+            // The lane doing the atomicAdd must be EXACTLY the lane
+            // subgroupBroadcastFirst reads - the FIRST ACTIVE invocation.
+            // subgroupElect() may elect ANY active lane; when it elected another
+            // one, the broadcast returned scanBase's initializer 0, every lane
+            // compacted to the window front and overwrote each other (parts
+            // displaced/vanished/duplicated, alternating frame to frame - the
+            // elected lane is the only per-frame variable on a static scene).
+            if (visCount != 0u
+                    && gl_SubgroupInvocationID == subgroupBallotFindLSB(subgroupBallot(true))) {
                 scanBase = atomicAdd(commands[cmdIdx].instanceCount, visCount);
             }
             scanBase = subgroupBroadcastFirst(scanBase);
             if (isVisible) {
                 uint slot = scanBase + subgroupBallotExclusiveBitCount(ballot);
-                if (slot < origCount) {
-                    copyInstance(baseInstance + i, baseInstance + slot);
-                }
+                uint outIdx = commands[cmdIdx].baseInstance + slot;
+                copyInstance(inIdx, outIdx);
             }
-        } else
-#endif
-        {
-            tileCompactionShared(cmdIdx, i, isVisible, origCount, baseInstance);
+        } else {
+            // Command boundary lane handling
+            if (isVisible) {
+                uint slot = atomicAdd(commands[cmdIdx].instanceCount, 1u);
+                uint outIdx = commands[cmdIdx].baseInstance + slot;
+                copyInstance(inIdx, outIdx);
+            }
+        }
+    } else {
+        // Fallback when hardware subgroup ballot didn't match 1:1 with workgroup
+        if (isVisible) {
+            uint slot = atomicAdd(commands[cmdIdx].instanceCount, 1u);
+            uint outIdx = commands[cmdIdx].baseInstance + slot;
+            copyInstance(inIdx, outIdx);
         }
     }
+#else
+    // Generic fallback without hardware subgroup ballot
+    if (isVisible) {
+        uint slot = atomicAdd(commands[cmdIdx].instanceCount, 1u);
+        uint outIdx = commands[cmdIdx].baseInstance + slot;
+        copyInstance(inIdx, outIdx);
+    }
+#endif
 }

@@ -98,18 +98,25 @@ public class MachineStirlingBlockEntity extends BaseMachineBlockEntity {
 
         handleOverspeed(level, pos);
 
-        setChanged();
-        sendUpdateToClient();
+        // Анти-спам синхронизации: пакет только при реальном изменении состояния,
+        // которое уезжает в NBT/клиенту (энергия, heat, overspeed, hasCog).
+        syncIfStateChanged(
+                com.hbm_m.recipe.index.CachedRecipeResolver.sign(9,
+                        getEnergyStored(), heat, overspeedTicks, hasCog ? 1L : 0L),
+                0L);
     }
 
     private void pullOrDecayHeat(Level level, BlockPos pos) {
-        BlockEntity below = level.getBlockEntity(pos.below());
-        if (below instanceof IHeatSource source && source.getHeatStored() > 0) {
-            int pulled = (int) (source.getHeatStored() * DIFFUSION);
-            if (pulled > 0) {
-                source.useUpHeat(pulled);
-                heat += pulled;
-                return;
+        // Ниже-проба (getBlockEntity + pull) — раз в 20 тиков; распад тепла идёт каждый тик.
+        if (probeDue(20)) {
+            BlockEntity below = level.getBlockEntity(pos.below());
+            if (below instanceof IHeatSource source && source.getHeatStored() > 0) {
+                int pulled = (int) (source.getHeatStored() * DIFFUSION);
+                if (pulled > 0) {
+                    source.useUpHeat(pulled);
+                    heat += pulled;
+                    return;
+                }
             }
         }
         heat = Math.max(heat - Math.max(heat / 1000, 1), 0);

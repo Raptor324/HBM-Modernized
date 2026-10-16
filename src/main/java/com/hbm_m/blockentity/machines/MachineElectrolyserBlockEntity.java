@@ -8,7 +8,6 @@ import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineElectrolyserMenu;
-import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.recipe.ElectrolyserFluidRecipe;
 import com.hbm_m.recipe.ElectrolyserMetalRecipe;
 
@@ -83,12 +82,14 @@ public class MachineElectrolyserBlockEntity extends BaseMachineBlockEntity imple
         ItemStack[] slots = be.inventorySlotArray();
         if (be.tanks[0].setType(SLOT_FLUID_ID, slots)) be.applySlotsArray(slots);
 
-        if (level.getGameTime() % 20 == 0) {
-            for (Direction dir : Direction.values()) {
-                be.trySubscribe(be.tanks[0], level, pos.relative(dir), dir);
-                if (be.tanks[1].getFill() > 0) be.tryProvide(be.tanks[1], level, pos.relative(dir), dir);
-                if (be.tanks[2].getFill() > 0) be.tryProvide(be.tanks[2], level, pos.relative(dir), dir);
-            }
+        // trySubscribe — раз в 20 тиков (регистрация, идемпотентно). tryProvide — каждый тик:
+        // его вторая ветка — прямой пуш в соседний приёмник, гейт делит пропускную способность
+        // выдачи. Fill-проверки пропускают зонд, пока выходные баки пусты.
+        boolean subscribeDue = level.getGameTime() % 20 == 0;
+        for (Direction dir : Direction.values()) {
+            if (subscribeDue) be.trySubscribe(be.tanks[0], level, pos.relative(dir), dir);
+            if (be.tanks[1].getFill() > 0) be.tryProvide(be.tanks[1], level, pos.relative(dir), dir);
+            if (be.tanks[2].getFill() > 0) be.tryProvide(be.tanks[2], level, pos.relative(dir), dir);
         }
 
         if (be.canProcessFluid()) {
@@ -113,20 +114,39 @@ public class MachineElectrolyserBlockEntity extends BaseMachineBlockEntity imple
             be.progressMetal = 0;
         }
 
-        be.setChanged();
-        be.sendUpdateToClient();
+        // Anti-sync-spam: полный пакет только при изменении синхронизируемого состояния
+        // (энергия, прогресс, баки). Инвентарь сам зовёт setChanged из onContentsChanged.
+        long tankFp = tankFingerprint(be.tanks[0]) ^ (tankFingerprint(be.tanks[1]) * 31L)
+                ^ (tankFingerprint(be.tanks[2]) * 961L) ^ (tankFingerprint(be.tanks[3]) * 31497L);
+        be.syncIfStateChanged(
+                com.hbm_m.recipe.index.CachedRecipeResolver.sign(0, be.energy, be.progressFluid, be.progressMetal),
+                tankFp);
+    }
+
+    private static long tankFingerprint(FluidTank tank) {
+        Fluid t = tank.getTankType();
+        return (t == null ? 0L : t.hashCode()) * 31L + tank.getFill();
     }
 
     // ==================== Fluid mode ====================
+
+    /** Кэширующий резолвер: скан списка рецептов только при смене подписи входа (/reload покрывает epoch). */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<ElectrolyserFluidRecipe> fluidResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
 
     /** Data-driven поиск Fluid-рецепта по типу входного бака (заменяет статический map-lookup). */
     @Nullable
     private ElectrolyserFluidRecipe findFluidRecipe() {
         if (level == null) return null;
-        for (ElectrolyserFluidRecipe recipe : RecipeHooks.getAllRecipes(level, ElectrolyserFluidRecipe.Type.INSTANCE)) {
-            if (recipe.matchesFluidType(tanks[0].getTankType())) return recipe;
-        }
-        return null;
+        Fluid type = tanks[0].getTankType();
+        long sig = com.hbm_m.recipe.index.CachedRecipeResolver.sign(1, type == null ? 0L : type.hashCode());
+        return fluidResolver.resolve(level, ElectrolyserFluidRecipe.Type.INSTANCE, sig,
+                (lvl, all) -> {
+                    for (ElectrolyserFluidRecipe recipe : all) {
+                        if (recipe.matchesFluidType(type)) return recipe;
+                    }
+                    return null;
+                });
     }
 
     private boolean canProcessFluid() {
@@ -155,14 +175,23 @@ public class MachineElectrolyserBlockEntity extends BaseMachineBlockEntity imple
 
     // ==================== Metal mode ====================
 
+    /** Кэширующий резолвер Metal-режима, ключ — фингерпринт стака кристалла. */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<ElectrolyserMetalRecipe> metalResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+
     /** Data-driven поиск Metal-рецепта по слоту кристалла (заменяет статический map-lookup). */
     @Nullable
     private ElectrolyserMetalRecipe findMetalRecipe(ItemStack crystal) {
         if (level == null || crystal.isEmpty()) return null;
-        for (ElectrolyserMetalRecipe recipe : RecipeHooks.getAllRecipes(level, ElectrolyserMetalRecipe.Type.INSTANCE)) {
-            if (recipe.matchesInput(crystal)) return recipe;
-        }
-        return null;
+        long sig = com.hbm_m.recipe.index.CachedRecipeResolver.sign(2,
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(crystal));
+        return metalResolver.resolve(level, ElectrolyserMetalRecipe.Type.INSTANCE, sig,
+                (lvl, all) -> {
+                    for (ElectrolyserMetalRecipe recipe : all) {
+                        if (recipe.matchesInput(crystal)) return recipe;
+                    }
+                    return null;
+                });
     }
 
     private boolean canProcessMetal() {

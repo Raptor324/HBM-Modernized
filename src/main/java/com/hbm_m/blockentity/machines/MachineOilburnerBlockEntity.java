@@ -151,10 +151,18 @@ public class MachineOilburnerBlockEntity extends BaseMachineBlockEntity
         if (slotsChanged) applySlotsArray(slots);
 
         // Подписка на сеть масла + отправка дыма (оригинал: trySubscribe + sendSmoke по каждой позиции).
-        for (BlockPos conPos : getConPos(level, pos)) {
-            Direction dir = getDirectionTo(pos, conPos);
-            trySubscribe(oilTank.getTankType(), level, conPos, dir);
-            sendSmoke(level, conPos, dir);
+        // trySubscribe (регистрация, идемпотентно) — раз в 5 тиков (фаза по позиции).
+        // tryProvide внутри sendSmoke — прямой пуш дыма в соседний приёмник: каждый тик,
+        // иначе гейт делит пропускную способность отвода дыма. sendSmoke сам проверяет
+        // заполнение баков, а обход getConPos выполняется только при дыме или подписке.
+        boolean subscribeDue = probeDue(5);
+        boolean hasSmoke = smoke.getFill() > 0 || smokeLeaded.getFill() > 0 || smokePoison.getFill() > 0;
+        if (subscribeDue || hasSmoke) {
+            for (BlockPos conPos : getConPos(level, pos)) {
+                Direction dir = getDirectionTo(pos, conPos);
+                if (subscribeDue) trySubscribe(oilTank.getTankType(), level, conPos, dir);
+                sendSmoke(level, conPos, dir);
+            }
         }
 
         // Точное портирование shouldCool-логики оригинала.
@@ -185,8 +193,19 @@ public class MachineOilburnerBlockEntity extends BaseMachineBlockEntity
         if (shouldCool)
             this.heatEnergy = Math.max(this.heatEnergy - Math.max(this.heatEnergy / 1000, 1), 0);
 
-        setChanged();
-        sendUpdateToClient();
+        // Anti-sync-spam: шлём пакет только при изменении отрисовываемого/NBT-состояния
+        // (подпись покрывает всё, что пишет writeNbtData: баки, isOn, heatEnergy, setting).
+        syncIfStateChanged(
+                // lo: тепло + isOn + setting
+                heatEnergy * 31L + (isOn ? 1L : 0L) * 31L + setting,
+                // hi: фингерпринты всех четырёх баков (тип + заполнение)
+                fluidSig(oilTank) * 31L + fluidSig(smoke) * 31L * 31L
+                        + fluidSig(smokeLeaded) * 31L * 31L * 31L + fluidSig(smokePoison));
+    }
+
+    /** Дешёвая подпись бака (тип + заполнение) для sync-гейта. */
+    private static long fluidSig(FluidTank tank) {
+        return tank.getTankType().hashCode() * 31L + tank.getFill();
     }
 
     /**

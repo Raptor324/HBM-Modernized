@@ -109,8 +109,12 @@ public class MachineReactorControlBlockEntity extends BaseMachineBlockEntity {
             reactor.setTarget(Math.max(0D, Math.min(1D, fauxLevel * 0.01D)));
         }
 
-        be.setChanged();
-        be.sendUpdateToClient();
+        // P6: клиентский пакет только при реальном изменении отображаемых значений
+        // (уровень стержней/тепло | поток/линк/функция). Пороги меняются только из GUI
+        // (applySettings/setFunction сами зовут setChanged) — в подпись не включены.
+        be.syncIfStateChanged(
+                Double.doubleToRawLongBits(be.rodLevel) * 31L + be.heat,
+                be.flux * 961L + (be.isLinked ? 31L : 0L) + be.function.ordinal());
     }
 
     /**

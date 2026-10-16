@@ -18,6 +18,11 @@ import org.joml.Vector4f;
  * Safe {@code POSITION_TEX_COLOR} writing for the Embeddium {@code SodiumBufferBuilder}:
  * int color, {@code uv} before {@code color}, or the full {@code vertex(...)} via a MethodHandle.
  *
+ * <p>Attribution / Credits:
+ * Adapted from Embeddium (https://github.com/embeddedt/embeddium, LGPL-3.0) and
+ * Sodium (https://github.com/CaffeineMC/sodium-fabric, LGPL-3.0).
+ * Authors: jellysquid3, embeddedt, CaffeineMC.</p>
+ *
  * <p>Hot path (mushroom-cloud billboards): the Sodium-buffer check is hoisted out of the
  * hot loop once per batch ({@link #isSodiumBuffer} plus boolean overloads) to avoid running
  * getClass().getName() for every quad corner; matrix transformation goes through a
@@ -27,37 +32,71 @@ import org.joml.Vector4f;
 @OnlyIn(Dist.CLIENT)
 public final class ImmediateVertexWriter {
 
-    private static final String SODIUM_BUILDER =
-            "me.jellysquid.mods.sodium.client.render.vertex.buffer.SodiumBufferBuilder";
+    private static final String[] SODIUM_BUILDER_CLASSES = {
+            "me.jellysquid.mods.sodium.client.render.vertex.buffer.SodiumBufferBuilder",
+            "net.caffeinemc.mods.sodium.client.render.vertex.buffer.SodiumBufferBuilder"
+    };
+
+    private static final String[] EXTENDED_BUILDER_CLASSES = {
+            "me.jellysquid.mods.sodium.client.render.vertex.buffer.ExtendedBufferBuilder",
+            "net.caffeinemc.mods.sodium.client.render.vertex.buffer.ExtendedBufferBuilder"
+    };
 
     private static volatile boolean sodiumResolved = false;
+    private static Class<?> sodiumBufferBuilderClass;
+    private static Class<?> extendedBufferBuilderClass;
     private static java.lang.invoke.MethodHandle sodiumFullVertex;
+    private static java.lang.invoke.MethodHandle getDelegateHandle;
 
     /** Scratch vector for matrix transformation - rendering is single-threaded, so reuse it. */
     private static final Vector4f SCRATCH_POS = new Vector4f();
 
     private ImmediateVertexWriter() {}
 
-    /** Fast Embeddium buffer check, hoisted out of the hot loop. */
+    /**
+     * Fast Embeddium buffer check, hoisted out of the hot loop.
+     * Returns true only when a fast-path 14-parameter MethodHandle is available.
+     */
     public static boolean isSodiumBuffer(VertexConsumer consumer) {
-        return SODIUM_BUILDER.equals(consumer.getClass().getName());
+        if (consumer == null) return false;
+        resolveSodium();
+        if (sodiumFullVertex == null) return false;
+        Class<?> clazz = consumer.getClass();
+        if (clazz == sodiumBufferBuilderClass) return true;
+        return extendedBufferBuilderClass != null && extendedBufferBuilderClass.isInstance(consumer);
     }
 
     private static void resolveSodium() {
         if (sodiumResolved) return;
         synchronized (ImmediateVertexWriter.class) {
             if (sodiumResolved) return;
-            try {
-                Class<?> cls = Class.forName(SODIUM_BUILDER);
-                sodiumFullVertex = java.lang.invoke.MethodHandles.lookup().findVirtual(cls, "vertex",
-                        java.lang.invoke.MethodType.methodType(void.class,
-                                float.class, float.class, float.class,
-                                float.class, float.class, float.class, float.class,
-                                float.class, float.class,
-                                int.class, int.class,
-                                float.class, float.class, float.class));
-            } catch (ReflectiveOperationException | LinkageError ignored) {
-                sodiumFullVertex = null;
+            for (String name : SODIUM_BUILDER_CLASSES) {
+                try {
+                    Class<?> cls = Class.forName(name);
+                    sodiumFullVertex = java.lang.invoke.MethodHandles.lookup().findVirtual(cls, "vertex",
+                            java.lang.invoke.MethodType.methodType(void.class,
+                                    float.class, float.class, float.class,
+                                    float.class, float.class, float.class, float.class,
+                                    float.class, float.class,
+                                    int.class, int.class,
+                                    float.class, float.class, float.class));
+                    sodiumBufferBuilderClass = cls;
+                    break;
+                } catch (Throwable ignored) {
+                }
+            }
+
+            for (String name : EXTENDED_BUILDER_CLASSES) {
+                try {
+                    Class<?> cls = Class.forName(name);
+                    extendedBufferBuilderClass = cls;
+                    if (sodiumBufferBuilderClass != null) {
+                        getDelegateHandle = java.lang.invoke.MethodHandles.lookup().findVirtual(cls, "sodium$getDelegate",
+                                java.lang.invoke.MethodType.methodType(sodiumBufferBuilderClass));
+                    }
+                    break;
+                } catch (Throwable ignored) {
+                }
             }
             sodiumResolved = true;
         }
@@ -114,17 +153,9 @@ public final class ImmediateVertexWriter {
             return;
         }
         if (matrix != null) {
-            //? if < 1.21.1 {
-            consumer.vertex(matrix, x, y, z).uv(u, v).color(r, g, b, a).endVertex();
-            //?} else {
-            /*consumer.addVertex(matrix, x, y, z).setUv(u, v).setColor(r, g, b, a);
-            *///?}
+            com.hbm_m.platform.RenderHooks.vertexTexColor(consumer, matrix, x, y, z, u, v, r, g, b, a);
         } else {
-            //? if < 1.21.1 {
-            consumer.vertex(x, y, z).uv(u, v).color(r, g, b, a).endVertex();
-            //?} else {
-            /*consumer.addVertex(x, y, z).setUv(u, v).setColor(r, g, b, a);
-            *///?}
+            com.hbm_m.platform.RenderHooks.vertexTexColor(consumer, x, y, z, u, v, r, g, b, a);
         }
     }
 
@@ -156,15 +187,26 @@ public final class ImmediateVertexWriter {
             float u, float v) {
         resolveSodium();
         java.lang.invoke.MethodHandle mh = sodiumFullVertex;
-        if (mh == null) {
+        if (mh == null || consumer == null) {
             return false;
         }
         try {
+            Object target = consumer;
+            if (extendedBufferBuilderClass != null && extendedBufferBuilderClass.isInstance(consumer)) {
+                if (getDelegateHandle != null) {
+                    target = getDelegateHandle.invoke(consumer);
+                    if (target == null) {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+            }
             SCRATCH_POS.set(x, y, z, 1.0F);
             if (matrix != null) {
                 matrix.transform(SCRATCH_POS);
             }
-            mh.invoke(consumer,
+            mh.invoke(target,
                     SCRATCH_POS.x(), SCRATCH_POS.y(), SCRATCH_POS.z(),
                     r / 255.0F, g / 255.0F, b / 255.0F, a / 255.0F,
                     u, v,
@@ -172,8 +214,6 @@ public final class ImmediateVertexWriter {
                     0.0F, 0.0F, 1.0F);
             return true;
         } catch (Throwable ignored) {
-            // Sodium path failure - fall back to vanilla writing
-            sodiumFullVertex = null;
             return false;
         }
     }

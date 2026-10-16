@@ -21,6 +21,8 @@ import net.minecraft.sounds.SoundSource;
 @OnlyIn(Dist.CLIENT)
 public class ElectricHeaterHumSoundInstance extends AbstractTickableSoundInstance {
 
+    private final BlockPos origin;
+
     public ElectricHeaterHumSoundInstance(BlockPos pos) {
         super(ModSounds.ELECTRIC_HUM.get(), SoundSource.BLOCKS, SoundInstance.createUnseededRandom());
         this.looping = true;
@@ -29,13 +31,21 @@ public class ElectricHeaterHumSoundInstance extends AbstractTickableSoundInstanc
         this.attenuation = Attenuation.LINEAR;
         this.volume = 0.25F;
         this.pitch = 1.0F;
-        this.x = pos.getX() + 0.5;
-        this.y = pos.getY() + 0.5;
-        this.z = pos.getZ() + 0.5;
+        this.origin = pos;
+        updatePosition();
+    }
+
+    // Sable ships move - re-anchor in world space every tick (raw plot-grid
+    // coords are millions of blocks out and vanilla mutes the loop).
+    private void updatePosition() {
+        net.minecraft.world.phys.Vec3 world = SableSoundPosition.project(origin, 0.5D);
+        this.x = world.x;
+        this.y = world.y;
+        this.z = world.z;
     }
 
     @Override
     public void tick() {
-        // Жизненный цикл управляется через ClientSoundManager.updateSound
+        updatePosition();
     }
 }

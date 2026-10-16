@@ -37,6 +37,12 @@ public final class ClientRenderFlags {
     /** Call from {@link com.hbm_m.client.render.culling.InstancedRenderFrame#onBeforeBlockEntities}. */
     public static void onFrameStart() {
         ModClothConfig cfg = ModClothConfig.get();
+        // Fallback flipped live (either direction): retained MDI records and
+        // coordinator caches hold instanced draws - drop them so no stale copy
+        // survives the switch (part-renderer buffers are discarded in flush()).
+        if (forceVanillaImmediate != cfg.forceVanillaImmediatePath) {
+            MdiBatchCoordinator.clearCachedRedraw();
+        }
         enableOcclusionCulling = cfg.enableOcclusionCulling;
         maxInstances = cfg.maxInstancedInstancesPerPart;
         forceVanillaImmediate = cfg.forceVanillaImmediatePath;
@@ -44,6 +50,7 @@ public final class ClientRenderFlags {
         nucleusDirtySkip = cfg.nucleusRenderDirtySkip && DIRTY_SKIP_FLAG;
         // One Iris API poll per frame - isExternalShaderActive() reads the cache afterwards.
         com.hbm_m.client.render.shader.ShaderCompatibilityDetector.updateState();
+        com.hbm_m.client.render.shader.ShaderCompatibilityDetector.setRenderingShadowPass(false);
         // Iris state change: fast-path records lack instanceLightUV, which only Iris
         // paths fill in - global invalidation via worldGen.
         boolean irisExternal = com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive();
@@ -95,16 +102,23 @@ public final class ClientRenderFlags {
 
     /**
      * True {@code glDrawElementsInstanced} under Iris/Oculus via our ExtendedShader.
-     * Enabled automatically when the active pack's gbuffer scheme is recognized and
-     * an encoder exists ({@link com.hbm_m.client.render.shader.IrisInstancedEncoders} -
-     * detected from the pack's gbuffer program source, not pack names; the "packed"
-     * scheme packs gbuffer into unorm8 pairs: albedo/normal/light).
+     * Enabled automatically when the active pack's gbuffer layout has a VERIFIED
+     * encoder ({@link com.hbm_m.client.render.shader.IrisInstancedEncoders},
+     * detected from the pack's gbuffer program source, never pack names): the
+     * byte-paired packing scheme (albedo/normal/light packed into unorm8 pairs -
+     * verified against Photon). This is the ONLY recognized scheme: a general
+     * vanilla-parity encoder for identity-directive packs was tried and removed -
+     * an identity directive alone does not guarantee content parity, and BSL 10.x
+     * / Insanity / Flashlight composited black through it (in-game verified
+     * 2026-10-05).
      * <p>
-     * Without a recognized scheme, main-pass instancing falls back to per-instance
-     * companion via the pack's BLOCK_ENTITY program, and the shadow batch to the
-     * pack's SHADOW_* program: correct under any pack. A single-target "vanilla"
-     * FSH under a deferred pack renders black machines (the composite decodes
-     * garbage), so instancing is never enabled blindly.
+     * For every other pack there is no valid generic encoder, so main-pass
+     * instancing falls back to per-instance companion via the pack's
+     * BLOCK_ENTITY program, and the shadow batch to the pack's SHADOW_* program:
+     * correct under any pack (verified: the Complementary family renders through
+     * exactly this path). A wrong-content instanced write under a deferred pack
+     * renders black/corrupted machines (the composite decodes garbage), so
+     * instancing is never enabled blindly.
      */
     public static boolean irisTrueInstancing() {
         return com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive()

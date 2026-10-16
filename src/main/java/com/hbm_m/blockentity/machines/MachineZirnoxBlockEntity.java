@@ -150,6 +150,12 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
         }
 
         // Push steam out / pull water in via pipes
+        // trySubscribe (registration only, idempotent) stays behind the probeDue(20) gate —
+        // pipe connections don't change per-tick, event/miss self-heals within 1 s.
+        // tryProvide runs EVERY tick: its second branch is a DIRECT push to the adjacent
+        // receiver, and gating it would divide steam throughput. The fill check skips the
+        // probe while the steam tank is empty.
+        boolean subscribeDue = probeDue(20);
         for (Direction dir : Direction.values()) {
             if (fluidSidesFromMultiblockStructure) {
                 if (!allowedFluidSides.contains(dir)) continue;
@@ -157,12 +163,12 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
                 continue;
             }
             BlockPos pipePos = pos.relative(dir);
-            BlockEntity pipeBe = level.getBlockEntity(pipePos);
-            if (!(pipeBe instanceof com.hbm_m.api.fluids.IFluidConnectorMK2)) continue;
-
             if (steamTank.getFill() > 0) {
                 tryProvide(steamTank, level, pipePos, dir);
             }
+            if (!subscribeDue) continue;
+            BlockEntity pipeBe = level.getBlockEntity(pipePos);
+            if (!(pipeBe instanceof com.hbm_m.api.fluids.IFluidConnectorMK2)) continue;
             if (waterTank.getFill() < waterTank.getMaxFill()) {
                 trySubscribe(Fluids.WATER, level, pipePos, dir);
             }

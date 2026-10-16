@@ -11,7 +11,6 @@ import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineMixerMenu;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
-import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.recipe.MixerRecipe;
 
 import net.minecraft.core.BlockPos;
@@ -135,17 +134,7 @@ public class MachineMixerBlockEntity extends BaseMachineBlockEntity implements I
     private boolean mix() {
         // Рецепты data-driven (JSON) — поиск по двум бакам через RecipeManager (кросс-версионный RecipeHooks).
         // level доступен из BaseMachineBlockEntity на момент serverTick().
-        MixerRecipe recipe = null;
-        if (level != null) {
-            Fluid tankAFluid = tanks[TANK_INPUT_A].getTankType();
-            Fluid tankBFluid = tanks[TANK_INPUT_B].getTankType();
-            for (MixerRecipe r : RecipeHooks.getAllRecipes(level, MixerRecipe.Type.INSTANCE)) {
-                if (r.matches(tankAFluid, tankBFluid)) {
-                    recipe = r;
-                    break;
-                }
-            }
-        }
+        MixerRecipe recipe = findRecipe();
 
         if (recipe == null) {
             if (active || progress != 0) {
@@ -197,6 +186,26 @@ public class MachineMixerBlockEntity extends BaseMachineBlockEntity implements I
         }
 
         return changed;
+    }
+
+    /** Кэшированный скан рецептов: подпись — типы обоих входных баков (количество жидкости
+     *  проверяется per-tick в mix(), вне сканера — CachedRecipeResolver CONTRACT 1). */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<MixerRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+
+    @Nullable
+    private MixerRecipe findRecipe() {
+        if (level == null) return null;
+        Fluid tankAFluid = tanks[TANK_INPUT_A].getTankType();
+        Fluid tankBFluid = tanks[TANK_INPUT_B].getTankType();
+        long signature = com.hbm_m.recipe.index.CachedRecipeResolver.sign(2,
+                tankAFluid.hashCode(), tankBFluid.hashCode());
+        return recipeResolver.resolve(level, MixerRecipe.Type.INSTANCE, signature, (lvl, all) -> {
+            for (MixerRecipe r : all) {
+                if (r.matches(tankAFluid, tankBFluid)) return r;
+            }
+            return null;
+        });
     }
 
     private boolean canFillOutput(Fluid output, int amount) {

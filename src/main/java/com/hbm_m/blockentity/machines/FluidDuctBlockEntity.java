@@ -72,9 +72,33 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
 
     /**
      * Кэш адаптеров для соседних Forge-машин.
-     * Ключ — направление от duct к машине.
+     * Ключ — направление от duct к машине; валидность — по (позиция, blockstate, identity BE).
      */
     private final Map<Direction, ForgeFluidHandlerAdapter> adapterCache = new EnumMap<>(Direction.class);
+    private final Map<Direction, AdapterKey> adapterKeys = new EnumMap<>(Direction.class);
+
+    /** Ключ валидности кэшированного адаптера: сосед, его состояние и позиция. */
+    private static final class AdapterKey {
+        final BlockPos pos;
+        final BlockState state;
+        final BlockEntity be;
+        AdapterKey(BlockPos pos, BlockState state, BlockEntity be) { this.pos = pos; this.state = state; this.be = be; }
+        boolean matches(BlockPos pos, BlockState state, BlockEntity be) {
+            return this.pos.equals(pos) && this.state == state && this.be == be;
+        }
+    }
+
+    private void invalidateAdapterCache() {
+        adapterCache.clear();
+        adapterKeys.clear();
+    }
+
+    @Override
+    public void setBlockState(BlockState state) {
+        super.setBlockState(state);
+        // Смена blockstate (подключения/поворот трубы) — кэш соседей мог устареть.
+        invalidateAdapterCache();
+    }
 
     public FluidDuctBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.FLUID_DUCT_BE.get(), pos, state);
@@ -107,7 +131,7 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
     public void setFluidTypeSilent(Fluid fluid) {
         Fluid prev = this.fluidType;
         this.fluidType = fluid != null ? fluid : Fluids.EMPTY;
-        adapterCache.clear();
+        invalidateAdapterCache();
         setChanged();
 
         if (level instanceof ServerLevel serverLevel) {
@@ -192,7 +216,7 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
             UniNodespace.destroyNode(serverLevel, node);
         }
         node = null;
-        adapterCache.clear();
+        invalidateAdapterCache();
         super.setRemoved();
     }
 
@@ -202,7 +226,7 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
             UniNodespace.destroyNode(serverLevel, node);
         }
         node = null;
-        adapterCache.clear();
+        invalidateAdapterCache();
         super.onChunkUnloaded();
     }
 
@@ -236,7 +260,10 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
         entity.ensureNode(serverLevel);
         if (entity.node == null || entity.node.isExpired()) return;
 
-        // Для каждого подключённого соседа, не являющегося трубой, создать адаптер и подписать его
+        // Для каждого подключённого соседа, не являющегося трубой, создать адаптер и подписать его.
+        // Троттлинг подписок до 2 Гц (%10): FluidNet отбрасывает записи по таймауту 3 с —
+        // 2 Гц с запасом покрывает 0.33 Гц; сразу после инвалидации кэша подписка идёт без гейта.
+        boolean throttled = serverLevel.getGameTime() % 10 != 0;
         for (Direction dir : Direction.values()) {
             if (!state.getValue(FluidDuctBlock.PROPERTY_BY_DIRECTION.get(dir))) continue;
 
@@ -248,23 +275,32 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
             // Пропускаем машины, реализующие MK2 напрямую (они вызывают trySubscribe/tryProvide сами)
             if (neighbor instanceof IFluidConnectorMK2) continue;
 
-            // Проверяем, что у соседа есть IFluidHandler на нашей стороне
             Direction sideOfNeighborFacingDuct = dir.getOpposite();
-            boolean hasFluidHandler = checkNeighborFluidHandler(level, neighbor, sideOfNeighborFacingDuct);
-
-            if (!hasFluidHandler) {
+            boolean subscribeNow = !throttled;
+            AdapterKey key = entity.adapterKeys.get(dir);
+            boolean cacheValid = key != null && key.matches(neighborPos, state, neighbor);
+            if (!cacheValid) {
                 entity.adapterCache.remove(dir);
-                continue;
+                entity.adapterKeys.remove(dir);
+                // Проверяем, что у соседа есть IFluidHandler на нашей стороне (дорого — только при инвалидации)
+                if (!checkNeighborFluidHandler(level, neighbor, sideOfNeighborFacingDuct)) {
+                    continue;
+                }
+                ForgeFluidHandlerAdapter fresh = new ForgeFluidHandlerAdapter(level, neighborPos, sideOfNeighborFacingDuct, entity.fluidType);
+                entity.adapterCache.put(dir, fresh);
+                entity.adapterKeys.put(dir, new AdapterKey(neighborPos, state, neighbor));
+                subscribeNow = true; // сразу после (пере)создания — подписываем немедленно
             }
 
             ForgeFluidHandlerAdapter adapter = entity.adapterCache.get(dir);
-            if (adapter == null) {
-                adapter = new ForgeFluidHandlerAdapter(level, neighborPos, sideOfNeighborFacingDuct, entity.fluidType);
-                entity.adapterCache.put(dir, adapter);
-            }
+            if (adapter == null) continue;
 
-            adapter.trySubscribe(entity.fluidType, serverLevel, pos, dir.getOpposite());
+            // Прямой перенос к соседу — каждый тик: троттлинг делит пропускную способность,
+            // а не только стоимость скана. На троттлинге остаётся только подписка в сеть.
             adapter.tryProvide(entity.fluidType, serverLevel, pos, dir.getOpposite());
+            if (subscribeNow) {
+                adapter.trySubscribe(entity.fluidType, serverLevel, pos, dir.getOpposite());
+            }
         }
     }
 
@@ -313,7 +349,7 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
             Fluid f = BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(tag.getString(NBT_FLUID_TYPE)));
             this.fluidType = f != null ? f : Fluids.EMPTY;
         }
-        adapterCache.clear();
+        invalidateAdapterCache();
         if (level != null && level.isClientSide && !Objects.equals(before, this.fluidType)) {
             refreshClientTintMesh();
         }

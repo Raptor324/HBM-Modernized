@@ -23,12 +23,28 @@ import net.minecraft.client.resources.model.BakedModel;
 public class MeshRenderCache {
 
     private static final int MAX_CACHE_SIZE = 256;
+    /** A failed part is blacklisted only briefly - a transient failure (e.g. mid-resource-reload bake)
+     *  must not pin the key forever; the retry after the TTL re-runs createRendererForPart once. */
+    private static final long FAILED_RETRY_MS = 30_000L;
     // Strong references: GPU resource lifecycle MUST be deterministic. A WeakReference
     // cache risks the renderer being GC'd while still owning a VAO/VBO/EBO, which would
     // never get freed because cleanup() can't be called on a collected object.
     // Cleanup is driven explicitly by clearAll() on resource reload / client disconnect.
-    private static final ConcurrentHashMap<String, SingleMeshVboRenderer> PART_RENDERERS = new ConcurrentHashMap<>();
-    private static final java.util.Set<String> FAILED_RENDERER_KEYS = ConcurrentHashMap.newKeySet();
+    // LRU-capped like IRIS_COMPANION_MESHES: keys are finite ("class:part"), but the cap
+    // bounds the worst case and evicted renderers get an explicit GL cleanup.
+    private static final Map<String, SingleMeshVboRenderer> PART_RENDERERS = Collections.synchronizedMap(
+        new LinkedHashMap<String, SingleMeshVboRenderer>(MAX_CACHE_SIZE + 1, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<String, SingleMeshVboRenderer> eldest) {
+                if (size() > MAX_CACHE_SIZE) {
+                    SingleMeshVboRenderer r = eldest.getValue();
+                    if (r != null) r.cleanup();
+                    return true;
+                }
+                return false;
+            }
+        });
+    private static final ConcurrentHashMap<String, Long> FAILED_RENDERER_KEYS = new ConcurrentHashMap<>();
 
     private static final Map<String, PartGeometry> COMPILED_GEOMETRY = Collections.synchronizedMap(
         new LinkedHashMap<String, PartGeometry>(MAX_CACHE_SIZE + 1, 0.75f, true) {
@@ -91,15 +107,24 @@ public class MeshRenderCache {
     }
 
     public static SingleMeshVboRenderer getOrCreateRenderer(String partKey, BakedModel model) {
-        if (FAILED_RENDERER_KEYS.contains(partKey)) return null;
+        if (isRecentlyFailed(partKey)) return null;
 
         return PART_RENDERERS.computeIfAbsent(partKey, key -> {
             SingleMeshVboRenderer renderer = createRendererForPart(key, model);
             if (renderer == null) {
-                FAILED_RENDERER_KEYS.add(key);
+                FAILED_RENDERER_KEYS.put(key, System.currentTimeMillis());
             }
             return renderer;
         });
+    }
+
+    /** TTL-gated blacklist: recent failures short-circuit, stale ones get one retry. */
+    private static boolean isRecentlyFailed(String partKey) {
+        Long failedAt = FAILED_RENDERER_KEYS.get(partKey);
+        if (failedAt == null) return false;
+        if (System.currentTimeMillis() - failedAt < FAILED_RETRY_MS) return true;
+        FAILED_RENDERER_KEYS.remove(partKey);
+        return false;
     }
 
     /**
@@ -133,7 +158,7 @@ public class MeshRenderCache {
      * The quads are copied into an immutable list for the Iris path; the key must be unique within the cache.
      */
     public static SingleMeshVboRenderer getOrCreateRendererFromQuadList(String partKey, List<BakedQuad> quads) {
-        if (FAILED_RENDERER_KEYS.contains(partKey)) {
+        if (isRecentlyFailed(partKey)) {
             return null;
         }
         if (quads == null || quads.isEmpty()) {
@@ -143,7 +168,7 @@ public class MeshRenderCache {
             String partName = partNameFromKey(key);
             final SingleMeshVboRenderer.VboData prebuiltData = PartGeometry.buildVboDataFromQuads(quads, partName);
             if (prebuiltData == null) {
-                FAILED_RENDERER_KEYS.add(key);
+                FAILED_RENDERER_KEYS.put(key, System.currentTimeMillis());
                 return null;
             }
             final List<BakedQuad> quadsForIris = List.copyOf(quads);
@@ -267,9 +292,11 @@ public class MeshRenderCache {
     }
 
     public static void clearAll() {
-        for (SingleMeshVboRenderer renderer : PART_RENDERERS.values()) {
-            if (renderer != null) {
-                renderer.cleanup();
+        synchronized (PART_RENDERERS) {
+            for (SingleMeshVboRenderer renderer : PART_RENDERERS.values()) {
+                if (renderer != null) {
+                    renderer.cleanup();
+                }
             }
         }
         PART_RENDERERS.clear();
@@ -294,6 +321,25 @@ public class MeshRenderCache {
 
     public static int getCachedRenderersCount() {
         return PART_RENDERERS.size();
+    }
+
+    /**
+     * Total GPU bytes held by the cached Iris companion meshes (VBO + EBO +
+     * lightmap ring + staging, per mesh - see
+     * {@link IrisCompanionMesh#getVramBytes()}). LRU eviction and clearAll
+     * destroy meshes through the same path, so this tracks the live footprint
+     * exactly. F3 VRAM breakdown only - iterates the map, no GL queries.
+     */
+    public static long irisCompanionVramBytes() {
+        long total = 0L;
+        synchronized (IRIS_COMPANION_MESHES) {
+            for (IrisCompanionMesh m : IRIS_COMPANION_MESHES.values()) {
+                if (m != null) {
+                    total += m.getVramBytes();
+                }
+            }
+        }
+        return total;
     }
 
     public static void logCacheStats() {

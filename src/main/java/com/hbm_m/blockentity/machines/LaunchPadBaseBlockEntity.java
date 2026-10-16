@@ -288,9 +288,16 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
         if (missileChanged || tanksChanged || fluidsChanged) {
             be.setChanged();
             be.sendUpdateToClient();
-        } else if (level.getGameTime() % 10 == 0) {
-            be.setChanged();
-            be.sendUpdateToClient();
+        } else {
+            // Anti-sync-spam: без real-изменений полный пакет раз в 20 тиков (фаза размазана),
+            // либо раньше, если изменилась подпись синхронизируемого состояния
+            // (state/delay/energy + оба бака: тип и уровень заполнения).
+            long lo = com.hbm_m.recipe.index.CachedRecipeResolver.sign(1L,
+                    be.state, be.delay, be.getEnergyStored());
+            long hi = com.hbm_m.recipe.index.CachedRecipeResolver.sign(2L,
+                    be.tanks[0].getTankType().hashCode(), be.tanks[0].getFill(),
+                    be.tanks[1].getTankType().hashCode(), be.tanks[1].getFill());
+            be.syncIfChangedOrEvery(lo, hi, 20);
         }
     }
 

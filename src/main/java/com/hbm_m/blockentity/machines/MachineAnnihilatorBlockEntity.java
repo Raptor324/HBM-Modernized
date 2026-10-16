@@ -105,8 +105,16 @@ public class MachineAnnihilatorBlockEntity extends BaseMachineBlockEntity implem
         be.destroyFluid(serverLevel);
         be.updateMonitor(serverLevel);
 
-        be.setChanged();
-        be.sendUpdateToClient();
+        // Anti-sync-spam: полный BE-пакет только при изменении отрисовываемого состояния
+        // (пул/монитор, содержимое бака, энергия). Уничтоженные предметы/жидкость отражаются
+        // в monitorDisplay/баке; сам input-слот опустошается в тот же тик.
+        Fluid tankType = be.tank.getTankType();
+        long hi = com.hbm_m.recipe.index.CachedRecipeResolver.sign(11,
+                be.poolName.hashCode(),
+                be.monitorDisplay.hashCode(),
+                tankType == null ? 0L : BuiltInRegistries.FLUID.getKey(tankType).hashCode(),
+                be.tank.getFill());
+        be.syncIfStateChanged(be.energy, hi);
     }
 
     private void destroyInput(ServerLevel level) {

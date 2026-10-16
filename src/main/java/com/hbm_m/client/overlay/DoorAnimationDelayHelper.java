@@ -63,4 +63,15 @@ public final class DoorAnimationDelayHelper {
         Long untilMs = DELAY_UNTIL_MAP.get(be);
         return untilMs != null && System.currentTimeMillis() < untilMs;
     }
+
+    /** Unconditionally clears any pending delay for the specified door entity. */
+    public static void clear(DoorBlockEntity be) {
+        if (be == null) return;
+        DELAY_UNTIL_MAP.remove(be);
+        QUEUE.removeIf(entry -> {
+            DoorBlockEntity target = entry.ref.get();
+            return target == null || target == be;
+        });
+        be.clearAnimationDelayClient();
+    }
 }

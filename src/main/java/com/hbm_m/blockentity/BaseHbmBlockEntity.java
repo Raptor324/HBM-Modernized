@@ -58,8 +58,8 @@ public abstract class BaseHbmBlockEntity extends BlockEntity
     //  обновляются TTL-пересбором (штамп gameTick, фаза размазана по позиции).
     // ═════════════════════════════════════════════════════════════════════════════════════
 
-    /** TTL пересбора света/fade в тиках — консистентен с LightSampleCache.LIGHT_TTL_TICKS. */
-    private static final long NUCLEUS_RENDER_REFRESH_TICKS = 15;
+    /** Safety TTL horizon in ticks — matches LightSampleCache.LIGHT_TTL_TICKS (light is event-driven, fade is GPU-side). */
+    private static final long NUCLEUS_RENDER_REFRESH_TICKS = 1200;
 
     private boolean nucleusRenderDirty = true;
     private long nucleusLastRenderTick = Long.MIN_VALUE;
@@ -73,6 +73,10 @@ public abstract class BaseHbmBlockEntity extends BlockEntity
     @Override
     public void markRenderDirty() {
         nucleusRenderDirty = true;
+        if (this.level != null && this.level.isClientSide()) {
+            com.hbm_m.client.render.retained.RetainedInstanceGraph.get()
+                    .onMachineDirtyAsync(this, com.hbm_m.client.render.retained.DirtyMask.ALL);
+        }
     }
 
     @Override
@@ -84,8 +88,8 @@ public abstract class BaseHbmBlockEntity extends BlockEntity
         if (since < 0) {
             return true; // смена измерения/откат времени
         }
-        // Фаза по позиции: машины фермы не пересобираются все в один тик.
-        long phase = (worldPosition.asLong() >>> 4) & 7;
+        // Spread safety refreshes across 64 ticks by position.
+        long phase = (worldPosition.asLong() >>> 4) & 63L;
         return since >= NUCLEUS_RENDER_REFRESH_TICKS + phase;
     }
 
@@ -108,6 +112,64 @@ public abstract class BaseHbmBlockEntity extends BlockEntity
         super.setBlockState(state);
         // LevelChunk переиспользует BE-инстанс при смене состояния того же блока.
         nucleusRenderDirty = true;
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════════════════
+    //  Anti-sync-spam гейт: 128-битная подпись отрисовываемого состояния (P6).
+    //  Контракт и ограничения — в javadoc syncIfStateChanged.
+    // ═════════════════════════════════════════════════════════════════════════════════════
+
+    private long syncSnapLo, syncSnapHi;
+    private boolean syncSnapValid;
+
+    /**
+     * CONTRACT (P6): lo/hi must cover EVERY field that writeNbtData ships and the client renders.
+     * If the rendered state exceeds 128 bits, or contains stack state the extended stackFingerprint
+     * does not cover (non-CUSTOM_DATA components on 1.21.1), do NOT use this gate — use
+     * BaseMachineBlockEntity.syncIf(boolean) with explicit per-field comparisons instead.
+     * Fires once on the first tick after load (syncSnapValid=false) — one extra full-BE packet per
+     * machine per chunk load, accepted.
+     */
+    protected final boolean syncIfStateChanged(long lo, long hi) {
+        if (syncSnapValid && lo == syncSnapLo && hi == syncSnapHi) return false;
+        syncSnapValid = true;
+        syncSnapLo = lo;
+        syncSnapHi = hi;
+        setChanged();
+        if (level != null && !level.isClientSide && !isRemoved())
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        return true;
+    }
+
+    /**
+     * Как {@link #syncIfStateChanged}, но при неизменной подписи принудительно шлёт пакет
+     * раз в {@code intervalTicks} (фаза размазана по позиции) — для состояний, меняющихся
+     * без изменения подписи (прогрев, кулдауны, heartbeats).
+     */
+    protected final boolean syncIfChangedOrEvery(long lo, long hi, int intervalTicks) {
+        if (syncIfStateChanged(lo, hi)) return true;
+        if (probeDue(intervalTicks)) {
+            syncSnapLo = lo;
+            syncSnapHi = hi;
+            syncSnapValid = true;
+            setChanged();
+            if (level != null && !level.isClientSide && !isRemoved())
+                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * true раз в {@code intervalTicks} тиков, фаза размазана по позиции блока.
+     * Шкала интервалов: 5 — fluid subscribe/provide loops и continuous force/damage boxes;
+     * 10 — effect/entity queries (decon, radiobox, charger, turret...);
+     * 20 — heat pulls, connector scans, radar neighbors, display heartbeats;
+     * 40 — чистые re-validation sweeps.
+     */
+    protected final boolean probeDue(int intervalTicks) {
+        if (level == null || level.isClientSide || intervalTicks <= 0) return false;
+        return (level.getGameTime() + (worldPosition.hashCode() & 15)) % intervalTicks == 0;
     }
 
     /**

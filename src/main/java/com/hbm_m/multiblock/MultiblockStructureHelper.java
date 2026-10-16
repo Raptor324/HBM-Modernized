@@ -1669,8 +1669,22 @@ public class MultiblockStructureHelper {
             MainRegistry.LOGGER.debug(
                 "[HBM] destroyStructure подавлен (окно сборки контрапшена), контроллер {}",
                 controllerPos.toShortString());
+            com.hbm_m.multiblock.TeardownTrace.log("server: destroyStructure SUPPRESSED (contraption window), controller={} facing={}",
+                    controllerPos.toShortString(), facing);
             return;
         }
+        com.hbm_m.multiblock.TeardownTrace.trace("server: destroyStructure BEGIN controller={} facing={} level={}",
+                controllerPos.toShortString(), facing, level.dimension().location());
+        // Зеркало лога постановки в placeStructure: кто и что снёс.
+        String breakerName = "unknown";
+        Player breaker = level.getNearestPlayer(
+            controllerPos.getX() + 0.5, controllerPos.getY() + 0.5, controllerPos.getZ() + 0.5,
+            8.0, false);
+        if (breaker != null) {
+            breakerName = breaker.getGameProfile().getName();
+        }
+        MainRegistry.LOGGER.info("Player {} demolished multiblock at {} (controller, facing {})",
+            breakerName, controllerPos.toShortString(), facing);
         IS_DESTROYING.set(true);
         try {
             // Two things have to go: every part on a position this structure owns, and every part
@@ -1722,13 +1736,18 @@ public class MultiblockStructureHelper {
                         fluidPositionsToRefresh.add(pos.immutable());
                     }
                 }
+                com.hbm_m.multiblock.TeardownTrace.log("server: clearing part pos={} owner={} ownPosition={}",
+                        pos.toShortString(), owner, controllerPos.equals(owner));
                 level.setBlock(pos.immutable(), Blocks.AIR.defaultBlockState(), 3);
             }
 
             for (BlockPos pos : fluidPositionsToRefresh) {
                 com.hbm_m.block.machines.FluidDuctBlock.refreshAdjacentDucts(level, pos);
             }
-        } finally { IS_DESTROYING.set(false); }
+        } finally {
+            IS_DESTROYING.set(false);
+            com.hbm_m.multiblock.TeardownTrace.log("server: destroyStructure END controller={}", controllerPos.toShortString());
+        }
     }
 
     public Map<BlockPos, Supplier<BlockState>> getStructureMap() {

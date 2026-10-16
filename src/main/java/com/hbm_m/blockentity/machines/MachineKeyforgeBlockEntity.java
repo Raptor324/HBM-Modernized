@@ -38,15 +38,22 @@ public class MachineKeyforgeBlockEntity extends BaseMachineBlockEntity {
             int code = ItemKeyPin.getCode(source);
             if (code >= 0 && ItemKeyPin.getCode(dupe) != code) {
                 ItemKeyPin.setCode(dupe, code);
-                be.setChanged();
             }
         }
 
         ItemStack cut = be.inventory.getStackInSlot(SLOT_CUT);
         if (ItemKeyPin.isTransferable(cut)) {
             ItemKeyPin.setCode(cut, level.random.nextInt(900) + 100);
-            be.setChanged();
         }
+
+        // Anti-sync-spam гейт: подпись = фингерпринты всех трёх слотов (то, что пишет writeNbtData).
+        // Случайный код cutter'а меняет подпись почти каждый тик — by-design per-tick поведение
+        // (fidelity-решение отложено, см. план миграции); гейт гарантирует, что спокойная машина
+        // (нет ключей) не спамит setChanged/sendBlockUpdated.
+        long fp = com.hbm_m.platform.PlatformHooks.stackFingerprint(source) * 31L
+                + com.hbm_m.platform.PlatformHooks.stackFingerprint(dupe);
+        fp = fp * 31L + com.hbm_m.platform.PlatformHooks.stackFingerprint(cut);
+        be.syncIfStateChanged(fp, 0L);
     }
 
     @Override

@@ -66,6 +66,26 @@ public final class HiZDepthPyramid {
     }
 
     /**
+     * GPU bytes of the R32F mip pyramid (full mip chain of the pow2-snapped
+     * mip-0 size). Pure field math for the F3 VRAM breakdown; 0 when no
+     * pyramid is allocated (recreated on resize only, so used == allocated).
+     */
+    public static synchronized long getPyramidVramBytes() {
+        HiZDepthPyramid inst = INSTANCE;
+        if (inst == null || inst.pyramidTextureId <= 0 || inst.lastWidth <= 0 || inst.lastHeight <= 0) {
+            return 0L;
+        }
+        long total = 0L;
+        int w = inst.lastWidth, h = inst.lastHeight;
+        for (int level = 0; level < inst.mipLevels; level++) {
+            total += (long) w * h * 4L; // GL_R32F
+            w = Math.max(1, w >> 1);
+            h = Math.max(1, h >> 1);
+        }
+        return total;
+    }
+
+    /**
      * Computes the Mip 0 dimension snapped to the lower power of two of the screen dimension.
      */
     public static int mip0Size(int screenSize) {
@@ -93,9 +113,11 @@ public final class HiZDepthPyramid {
         initialized = true;
         try {
             downsampleFirstProgram = compileComputeShader("/assets/hbm_m/shaders/cull/downsample_first.comp");
+            com.hbm_m.client.render.debug.GlDebugMarkers.labelProgram(downsampleFirstProgram, "HBM_HiZ_DownsampleFirst_CS");
             uDepthTexLoc = GL20.glGetUniformLocation(downsampleFirstProgram, "depth_tex");
 
             downsampleSecondProgram = compileComputeShader("/assets/hbm_m/shaders/cull/downsample_second.comp");
+            com.hbm_m.client.render.debug.GlDebugMarkers.labelProgram(downsampleSecondProgram, "HBM_HiZ_DownsampleSecond_CS");
             uMipLevelsLoc = GL20.glGetUniformLocation(downsampleSecondProgram, "mip_levels");
             uBaseMipLevelLoc = GL20.glGetUniformLocation(downsampleSecondProgram, "base_mip_level");
 
@@ -160,6 +182,7 @@ public final class HiZDepthPyramid {
         mipLevels = targetMipLevels;
 
         pyramidTextureId = GL11.glGenTextures();
+        com.hbm_m.client.render.debug.GlDebugMarkers.labelTexture(pyramidTextureId, "HBM_HiZ_Pyramid_TEX");
         // Texture setup binds go through GlStateManager (cache-coherent): a raw
         // glBindTexture on the current unit would desync the per-unit bind cache.
         GlStateManager._activeTexture(GL13.GL_TEXTURE0);
@@ -172,13 +195,16 @@ public final class HiZDepthPyramid {
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
         GlStateManager._bindTexture(0);
 
-        LOGGER.info("[HBM-M] HiZDepthPyramid reallocated (texId={}, size={}x{}, mips={})",
+        // DEBUG: reallocation is expected on window resize only; INFO here
+        // would spam on every viewport change.
+        LOGGER.debug("[HBM-M] HiZDepthPyramid reallocated (texId={}, size={}x{}, mips={})",
                 pyramidTextureId, width, height, mipLevels);
     }
 
     private int ensurePlaceholder() {
         if (placeholderTextureId <= 0) {
             placeholderTextureId = GL11.glGenTextures();
+            com.hbm_m.client.render.debug.GlDebugMarkers.labelTexture(placeholderTextureId, "HBM_HiZ_Placeholder_TEX");
             GlStateManager._activeTexture(GL13.GL_TEXTURE0);
             GlStateManager._bindTexture(placeholderTextureId);
             GL42.glTexStorage2D(GL11.GL_TEXTURE_2D, 1, GL30.GL_R32F, 1, 1);
@@ -225,47 +251,65 @@ public final class HiZDepthPyramid {
         // 2. Bind source depth texture to texture unit 10 through GlStateManager:
         // raw binds desync the per-unit cache (the exact recipe for the stale-binding
         // bug CrankShaft fixed in 1.5.2 — silently sampling a dead texture).
+        int previousProgram = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
         GlStateManager._activeTexture(GL13.GL_TEXTURE10);
-        GlStateManager._bindTexture(sourceDepthTextureId);
+        try {
+            GlStateManager._bindTexture(sourceDepthTextureId);
 
-        // 3. Dispatch first downsample pass (full framebuffer -> Mip 0)
-        GL20.glUseProgram(downsampleFirstProgram);
-        if (uDepthTexLoc >= 0) {
-            GL20.glUniform1i(uDepthTexLoc, 10);
-        }
-
-        GL42.glBindImageTexture(1, pyramidTextureId, 0, false, 0, GL15.GL_WRITE_ONLY, GL30.GL_R32F);
-        GL43.glDispatchCompute((width * 2 + 63) / 64, (height * 2 + 63) / 64, 1);
-
-        // 4. Dispatch second downsample passes (Mip 0 -> Mip 1..N)
-        GL20.glUseProgram(downsampleSecondProgram);
-        if (uMipLevelsLoc >= 0) {
-            GL30.glUniform1ui(uMipLevelsLoc, targetMipLevels);
-        }
-
-        for (int baseMipLevel = 0; baseMipLevel + 1 < targetMipLevels; baseMipLevel += 6) {
-            GL42.glMemoryBarrier(GL42.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-            if (uBaseMipLevelLoc >= 0) {
-                GL30.glUniform1ui(uBaseMipLevelLoc, baseMipLevel);
+            // 3. Dispatch first downsample pass (full framebuffer -> Mip 0)
+            // Save/restore the caller's program at the exit instead of binding 0:
+            // a leftover foreign program desyncs Iris's ExtendedShader.lastApplied
+            // skip-gate for every pack-shader apply that follows this pass.
+            GlStateManager._glUseProgram(downsampleFirstProgram);
+            if (uDepthTexLoc >= 0) {
+                GL20.glUniform1i(uDepthTexLoc, 10);
             }
 
-            for (int i = 0; i < Math.min(7, targetMipLevels - baseMipLevel); i++) {
-                int access = (i == 0) ? GL15.GL_READ_ONLY : GL15.GL_WRITE_ONLY;
-                GL42.glBindImageTexture(i, pyramidTextureId, baseMipLevel + i, false, 0, access, GL30.GL_R32F);
+            GL42.glBindImageTexture(1, pyramidTextureId, 0, false, 0, GL15.GL_WRITE_ONLY, GL30.GL_R32F);
+            GL43.glDispatchCompute((width * 2 + 63) / 64, (height * 2 + 63) / 64, 1);
+
+            // 4. Dispatch second downsample passes (Mip 0 -> Mip 1..N)
+            GlStateManager._glUseProgram(downsampleSecondProgram);
+            if (uMipLevelsLoc >= 0) {
+                GL30.glUniform1ui(uMipLevelsLoc, targetMipLevels);
             }
 
-            int mipW = Math.max(1, width >> baseMipLevel);
-            int mipH = Math.max(1, height >> baseMipLevel);
-            GL43.glDispatchCompute((mipW + 63) / 64, (mipH + 63) / 64, 1);
+            for (int baseMipLevel = 0; baseMipLevel + 1 < targetMipLevels; baseMipLevel += 6) {
+                GL42.glMemoryBarrier(GL42.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+                if (uBaseMipLevelLoc >= 0) {
+                    GL30.glUniform1ui(uBaseMipLevelLoc, baseMipLevel);
+                }
+
+                for (int i = 0; i < Math.min(7, targetMipLevels - baseMipLevel); i++) {
+                    int access = (i == 0) ? GL15.GL_READ_ONLY : GL15.GL_WRITE_ONLY;
+                    GL42.glBindImageTexture(i, pyramidTextureId, baseMipLevel + i, false, 0, access, GL30.GL_R32F);
+                }
+
+                int mipW = Math.max(1, width >> baseMipLevel);
+                int mipH = Math.max(1, height >> baseMipLevel);
+                GL43.glDispatchCompute((mipW + 63) / 64, (mipH + 63) / 64, 1);
+            }
+
+            // 5. Memory barrier for subsequent texture sampling in compute cull shader
+            GL42.glMemoryBarrier(GL42.GL_TEXTURE_FETCH_BARRIER_BIT);
+        } finally {
+            // Explicitly unbind compute image load/store units 0..6 to eliminate GL image feedback loop hazards
+            for (int i = 0; i < 7; i++) {
+                GL42.glBindImageTexture(i, 0, 0, false, 0, GL15.GL_READ_ONLY, GL30.GL_R32F);
+            }
+
+            // Explicitly unbind source depth texture from unit 10 (cache-coherent with GlStateManager)
+            GlStateManager._activeTexture(GL13.GL_TEXTURE10);
+            GlStateManager._bindTexture(0);
+
+            // Restore OpenGL bindings
+            GlStateManager._glUseProgram(previousProgram);
+            GlStateManager._activeTexture(GL13.GL_TEXTURE0);
+            // Downsample compute passes left a foreign program (0) bound: make the next
+            // ensureFreshBind force an honest shader rebind (recycled-id-safe).
+            com.hbm_m.client.render.shader.ShaderBindResync.markForeignProgramBind();
         }
-
-        // 5. Memory barrier for subsequent texture sampling in compute cull shader
-        GL42.glMemoryBarrier(GL42.GL_TEXTURE_FETCH_BARRIER_BIT);
-
-        // Restore OpenGL bindings
-        GL20.glUseProgram(0);
-        GlStateManager._activeTexture(GL13.GL_TEXTURE0);
     }
 
     /**
@@ -287,6 +331,22 @@ public final class HiZDepthPyramid {
 
     public int getMipLevels() {
         return mipLevels > 0 ? mipLevels : 1;
+    }
+
+    /**
+     * Whether a REAL (non-placeholder) pyramid texture exists, i.e. the last
+     * {@link #regenerate} call actually built (or had previously built) the
+     * pyramid. When the downsample shaders failed to compile (or their resources
+     * are missing), {@code ensureShaders} latches destroyed with NO GL error and
+     * {@code regenerate} silently early-returns - {@link #getPyramidTextureId}
+     * then serves the 1x1 placeholder (all 1.0) while a caller's screen-space
+     * coordinates describe the full viewport. Callers activating Hi-Z sampling
+     * MUST gate on this instead of inferring success from the absence of
+     * glGetError(): out-of-bounds texelFetches on the 1x1 placeholder are
+     * undefined (commonly 0.0) and would cull every instance.
+     */
+    public boolean isReady() {
+        return pyramidTextureId > 0;
     }
 
     public void destroy() {

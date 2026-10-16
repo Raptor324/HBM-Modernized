@@ -93,7 +93,9 @@ public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity
         });
 
         // Data-driven поиск рецепта: итерируем SolderingRecipe из RecipeManager (заменяет статику SolderingRecipes).
-        SolderingRecipe recipe = findSolderingRecipe(level, be);
+        // Кэшированный скан: подпись — фингерпринты 6 входных слотов; matchesFluid(tank)
+        // переоценивается каждый тик против кэшированного рецепта (CachedRecipeResolver CONTRACT 1).
+        SolderingRecipe recipe = be.findSolderingRecipe(level);
         if (recipe != null) {
             be.processTime  = recipe.getDuration();
             be.consumption  = recipe.getConsumption();
@@ -122,7 +124,30 @@ public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity
             be.progress = 0;
         }
 
-        level.sendBlockUpdated(pos, state, state, 3);
+        // Анти-спам синхронизации: пакет только при реальном изменении состояния,
+        // которое уезжает в NBT/клиенту (энергия, прогресс, флаги, бак, инвентарь).
+        long lo = com.hbm_m.recipe.index.CachedRecipeResolver.sign(11,
+                be.energy, be.progress, be.processTime, be.consumption,
+                be.collisionPrevention ? 1L : 0L,
+                tankFingerprint(be.tank));
+        long hi = com.hbm_m.recipe.index.CachedRecipeResolver.sign(12,
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_TOP0)),
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_TOP1)),
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_TOP2)),
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_PCB0)),
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_PCB1)),
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_SOLDER)),
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_OUT)),
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_BAT)),
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_FLUID)),
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_UPG1)),
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_UPG2)));
+        be.syncIfStateChanged(lo, hi);
+    }
+
+    /** Фингерпринт HBM-бака: тип жидкости + заполнение. */
+    private static long tankFingerprint(FluidTank tank) {
+        return (tank.getTankType() == null ? 0L : tank.getTankType().hashCode()) * 31L + tank.getFill();
     }
 
     private void consumeItems(SolderingRecipe recipe) {
@@ -144,17 +169,34 @@ public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity
         }
     }
 
-    /** Data-driven поиск SolderingRecipe по 6 слотам машины (заменяет статический SolderingRecipes.getRecipe). */
+    /**
+     * Data-driven поиск SolderingRecipe по 6 слотам машины (заменяет статический SolderingRecipes.getRecipe).
+     * Кэшируется через {@link CachedRecipeResolver}: подпись — фингерпринты входных стаков,
+     * сканер — только матч по списку рецептов (CONTRACT 1).
+     */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<SolderingRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+
     @org.jetbrains.annotations.Nullable
-    private static SolderingRecipe findSolderingRecipe(Level level, MachineSolderingStationBlockEntity be) {
-        for (SolderingRecipe recipe : RecipeHooks.getAllRecipes(level, SolderingRecipe.Type.INSTANCE)) {
-            if (recipe.matches(be.inventory.getStackInSlot(SLOT_TOP0), be.inventory.getStackInSlot(SLOT_TOP1), be.inventory.getStackInSlot(SLOT_TOP2),
-                              be.inventory.getStackInSlot(SLOT_PCB0), be.inventory.getStackInSlot(SLOT_PCB1),
-                              be.inventory.getStackInSlot(SLOT_SOLDER))) {
-                return recipe;
+    private SolderingRecipe findSolderingRecipe(Level level) {
+        if (level == null) return null;
+        long signature = com.hbm_m.recipe.index.CachedRecipeResolver.sign(3,
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(inventory.getStackInSlot(SLOT_TOP0)),
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(inventory.getStackInSlot(SLOT_TOP1)),
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(inventory.getStackInSlot(SLOT_TOP2)),
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(inventory.getStackInSlot(SLOT_PCB0)),
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(inventory.getStackInSlot(SLOT_PCB1)),
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(inventory.getStackInSlot(SLOT_SOLDER)));
+        return recipeResolver.resolve(level, SolderingRecipe.Type.INSTANCE, signature, (lvl, all) -> {
+            for (SolderingRecipe recipe : all) {
+                if (recipe.matches(inventory.getStackInSlot(SLOT_TOP0), inventory.getStackInSlot(SLOT_TOP1), inventory.getStackInSlot(SLOT_TOP2),
+                                  inventory.getStackInSlot(SLOT_PCB0), inventory.getStackInSlot(SLOT_PCB1),
+                                  inventory.getStackInSlot(SLOT_SOLDER))) {
+                    return recipe;
+                }
             }
-        }
-        return null;
+            return null;
+        });
     }
 
     public boolean canProcess() {

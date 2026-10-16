@@ -38,6 +38,16 @@ public final class RawDhDepthCopy {
     private static int vao = -1;
     private static int vbo = -1;
 
+    // One-way session latch for program construction failures (pattern:
+    // IrisInstancedShaders.constructionFailed). Deliberately NEVER reset - this
+    // class has no pipeline-generation concept. A build that fails here (e.g. a
+    // driver rejecting the #version 150 pair) fails permanently; without the
+    // latch ensureProgram would re-run the full compile+link on EVERY frame and
+    // leak the freshly created shader/program objects each time. Only the Iris
+    // path reaches this class, so the latch only disables the DH depth copy for
+    // the session.
+    private static boolean constructionFailed = false;
+
     private RawDhDepthCopy() {}
 
     private static final String VSH = """
@@ -110,7 +120,7 @@ public final class RawDhDepthCopy {
         RenderSystem.depthFunc(GL11.GL_LESS);
         RenderSystem.disableCull();
 
-        GL20.glUseProgram(program);
+        GlStateManager._glUseProgram(program);
         GL20.glUniform1f(uDhNear, dhNear);
         GL20.glUniform1f(uDhFar, dhFar);
         GL20.glUniform1f(uOutNear, com.hbm_m.client.compat.dh.DhClientCompat.extendedNear());
@@ -135,42 +145,73 @@ public final class RawDhDepthCopy {
             RenderSystem.enableCull();
         }
         GlStateManager._glBindVertexArray(prevVao);
-        GL20.glUseProgram(prevProgram);
+        GlStateManager._glUseProgram(prevProgram);
         GlStateManager._activeTexture(prevActiveTex);
     }
 
     private static boolean ensureProgram() {
+        if (constructionFailed) {
+            return false; // latched - never retry the compile/link per frame
+        }
         if (program != -1 && GL20.glIsProgram(program)) {
             return true;
         }
+        // Hoisted so every failure path can free what was already created.
+        int vs = 0;
+        int fs = 0;
+        int newProgram = 0;
         try {
-            int vs = compile(GL20.GL_VERTEX_SHADER, VSH);
-            int fs = compile(GL20.GL_FRAGMENT_SHADER, FSH);
-            if (vs == 0 || fs == 0) return false;
-            program = GL20.glCreateProgram();
-            GL20.glAttachShader(program, vs);
-            GL20.glAttachShader(program, fs);
-            GL20.glBindAttribLocation(program, 0, "Position");
-            GL20.glLinkProgram(program);
-            if (GL20.glGetProgrami(program, GL20.GL_LINK_STATUS) == GL11.GL_FALSE) {
-                com.hbm_m.main.MainRegistry.LOGGER.warn(
-                        "RawDhDepthCopy: link failed: {}", GL20.glGetProgramInfoLog(program, 4096));
-                program = -1;
+            vs = compile(GL20.GL_VERTEX_SHADER, VSH);
+            fs = compile(GL20.GL_FRAGMENT_SHADER, FSH);
+            if (vs == 0 || fs == 0) {
+                // compile() already freed the failed stage; the other one is
+                // still unattached, so glDeleteShader frees it immediately
+                // (GL 4.6 spec §7.1; zero is silently ignored).
+                GL20.glDeleteShader(vs);
+                GL20.glDeleteShader(fs);
+                constructionFailed = true;
                 return false;
             }
+            newProgram = GL20.glCreateProgram();
+            GL20.glAttachShader(newProgram, vs);
+            GL20.glAttachShader(newProgram, fs);
+            GL20.glBindAttribLocation(newProgram, 0, "Position");
+            GL20.glLinkProgram(newProgram);
+            if (GL20.glGetProgrami(newProgram, GL20.GL_LINK_STATUS) == GL11.GL_FALSE) {
+                com.hbm_m.main.MainRegistry.LOGGER.warn(
+                        "RawDhDepthCopy: link failed: {}", GL20.glGetProgramInfoLog(newProgram, 4096));
+                // A failed link leaves the program allocated (docs.gl glLinkProgram):
+                // flag both attached shaders, then delete the program. Deleting the
+                // program detaches them (GL 4.6 spec §7.3) and a flagged, detached
+                // shader is freed (§7.1).
+                GL20.glDeleteShader(vs);
+                GL20.glDeleteShader(fs);
+                GL20.glDeleteProgram(newProgram);
+                constructionFailed = true;
+                return false;
+            }
+            // Both shaders are attached: glDeleteShader only FLAGS them (GL 4.6
+            // spec §7.1) and they are freed when the program is deleted - the
+            // same process lifetime as the program itself.
             GL20.glDeleteShader(vs);
             GL20.glDeleteShader(fs);
-            uDhNear = GL20.glGetUniformLocation(program, "uDhNear");
-            uDhFar = GL20.glGetUniformLocation(program, "uDhFar");
-            uOutNear = GL20.glGetUniformLocation(program, "uOutNear");
-            uOutFar = GL20.glGetUniformLocation(program, "uOutFar");
-            uFadeMaskDist = GL20.glGetUniformLocation(program, "uFadeMaskDist");
-            uReverseZ = GL20.glGetUniformLocation(program, "uReverseZ");
-            uSampler = GL20.glGetUniformLocation(program, "uDepthTex");
+            uDhNear = GL20.glGetUniformLocation(newProgram, "uDhNear");
+            uDhFar = GL20.glGetUniformLocation(newProgram, "uDhFar");
+            uOutNear = GL20.glGetUniformLocation(newProgram, "uOutNear");
+            uOutFar = GL20.glGetUniformLocation(newProgram, "uOutFar");
+            uFadeMaskDist = GL20.glGetUniformLocation(newProgram, "uFadeMaskDist");
+            uReverseZ = GL20.glGetUniformLocation(newProgram, "uReverseZ");
+            uSampler = GL20.glGetUniformLocation(newProgram, "uDepthTex");
+            program = newProgram;
             return true;
         } catch (Throwable t) {
             com.hbm_m.main.MainRegistry.LOGGER.warn("RawDhDepthCopy: program init failed: {}", t.toString());
-            program = -1;
+            // Free everything created before the throw (compile() already freed
+            // a stage whose compile failed; zero names are silently ignored).
+            GL20.glDeleteShader(vs);
+            GL20.glDeleteShader(fs);
+            GL20.glDeleteProgram(newProgram);
+            constructionFailed = true;
             return false;
         }
     }
@@ -182,6 +223,9 @@ public final class RawDhDepthCopy {
         if (GL20.glGetShaderi(sh, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
             com.hbm_m.main.MainRegistry.LOGGER.warn(
                     "RawDhDepthCopy: compile failed: {}", GL20.glGetShaderInfoLog(sh, 4096));
+            // The failed shader is not attached anywhere yet, so glDeleteShader
+            // frees it immediately (GL 4.6 spec §7.1) - without this it leaks.
+            GL20.glDeleteShader(sh);
             return 0;
         }
         return sh;

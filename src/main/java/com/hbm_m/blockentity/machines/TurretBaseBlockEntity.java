@@ -56,6 +56,16 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity {
     private int cooldown = 0;
     private boolean hasTarget = false;
 
+    /**
+     * Cached target entity. The {@code getEntitiesOfClass} query plus the per-candidate LOS
+     * clips are the most expensive part of the tick, so re-acquisition runs only on
+     * {@code probeDue(5)} (4 Hz); between probes the cached target is reused while it stays
+     * alive. PR-note: a newly-arrived enemy is picked up with up to 5 ticks delay, and a
+     * target that leaves range is kept until it dies or the next re-acquisition - the 4 Hz
+     * re-acquisition latency is the accepted fidelity cost.
+     */
+    private LivingEntity cachedTarget;
+
     /** On/Off-Schalter + Ziel-Kategorien (Original: {@code TileEntityTurretBaseNT}), per GUI-Button umschaltbar. */
     private boolean isOn = true;
     private boolean targetPlayers = false;
@@ -143,7 +153,15 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity {
             return;
         }
 
-        LivingEntity target = findTarget(level, pos);
+        // 4 Hz re-acquisition (PR-note): full entity query + LOS clips only on probeDue(5);
+        // between probes the cached target is reused while alive.
+        if (probeDue(5)) {
+            cachedTarget = findTarget(level, pos);
+        }
+        if (cachedTarget != null && (!cachedTarget.isAlive() || cachedTarget.isRemoved())) {
+            cachedTarget = null;
+        }
+        LivingEntity target = cachedTarget;
         hasTarget = target != null;
 
         prevYaw = yaw;
@@ -165,11 +183,8 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity {
 
         if (target == null) {
             if (isGatling) tickGatlingSpin(false);
-            if (hasTarget != wasActiveLastTick) {
-                setChanged();
-                sendUpdateToClient();
-            }
             wasActiveLastTick = hasTarget;
+            syncTargetState();
             return;
         }
 
@@ -204,9 +219,32 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity {
             }
         }
 
-        setChanged();
-        sendUpdateToClient();
         wasActiveLastTick = true;
+        syncTargetState();
+    }
+
+    /**
+     * Anti-sync-spam (P6): the per-tick {@code setChanged(); sendUpdateToClient();} while a
+     * target is tracked is replaced by a change-gated sync with a 10-tick heartbeat.
+     * PR-note: yaw/pitch are quantized to 5-degree buckets in the signature, so fine-grained
+     * tracking motion syncs on the heartbeat only - up to 10 ticks of sub-bucket client-side
+     * aim lag is the accepted fidelity cost.
+     */
+    private void syncTargetState() {
+        long lo = com.hbm_m.recipe.index.CachedRecipeResolver.sign(11L,
+                quantize(yaw), quantize(pitch),
+                (long) (spin * 2.0F), (long) (barrelSpinAngle / 22.5F),
+                hasTarget ? 1L : 0L, isOn ? 1L : 0L, fireMode,
+                (long) (himarsCraneProgress * 10.0F));
+        long hi = com.hbm_m.recipe.index.CachedRecipeResolver.sign(12L,
+                cachedTarget != null ? cachedTarget.getId() : -1L,
+                howardLoaded, richardLoaded, cooldown);
+        syncIfChangedOrEvery(lo, hi, 10);
+    }
+
+    /** 5-degree quantization bucket for float aim angles. */
+    private static long quantize(float angle) {
+        return (long) Math.floor(angle / 5.0F);
     }
 
     /**

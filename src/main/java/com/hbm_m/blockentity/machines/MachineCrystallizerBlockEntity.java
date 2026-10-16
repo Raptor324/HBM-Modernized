@@ -19,6 +19,7 @@ import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.recipe.CrystallizerRecipe;
+import com.hbm_m.recipe.index.CachedRecipeResolver;
 
 import dev.architectury.fluid.FluidStack;
 
@@ -83,6 +84,9 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
     private int duration = DEFAULT_DURATION;
     private boolean isOn = false;
 
+    /** Кэш скана рецептов: подпись = фингерпринт входного стека + жидкости бака (CachedRecipeResolver CONTRACT 2). */
+    private final CachedRecipeResolver<CrystallizerRecipe> recipeResolver = new CachedRecipeResolver<>();
+
     // Client-side visual state for the rotating center part.
     public float angle = 0.0F;
     public float prevAngle = 0.0F;
@@ -127,11 +131,16 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
 
         ItemStack inputStack = entity.inventory.getStackInSlot(SLOT_INPUT);
         FluidStack tankFluid = entity.getTankFluidStack();
-        // Рецепты теперь data-driven (JSON) — поиск через RecipeManager (кросс-версионный RecipeHooks).
-        CrystallizerRecipe recipe = RecipeHooks.getAllRecipes(level, CrystallizerRecipe.Type.INSTANCE).stream()
-                .filter(r -> r.matchesInput(inputStack) && r.matchesAcid(tankFluid))
-                .findFirst()
-                .orElse(null);
+        // Рецепты теперь data-driven (JSON) — поиск через RecipeManager (кросс-версионный RecipeHooks),
+        // кэшированный на тик+подпись через CachedRecipeResolver.
+        CrystallizerRecipe recipe = entity.recipeResolver.resolve(level, CrystallizerRecipe.Type.INSTANCE,
+                CachedRecipeResolver.sign(0L,
+                        PlatformHooks.stackFingerprint(inputStack),
+                        PlatformHooks.fluidFingerprint(tankFluid)),
+                (lvl, all) -> all.stream()
+                        .filter(r -> r.matchesInput(inputStack) && r.matchesAcid(tankFluid))
+                        .findFirst()
+                        .orElse(null));
 
         boolean wasOn = entity.isOn;
         entity.isOn = false;
@@ -149,8 +158,9 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
                     entity.progress = 0;
                     entity.processItem(recipe);
                 }
-                entity.setChanged();
-                entity.sendUpdateToClient();
+                // Анти-sync-spam: пакет только при изменении отрисовываемого состояния (P6).
+                entity.syncIfStateChanged(entity.getEnergyStored(),
+                        (long) entity.progress | ((long) entity.duration << 32));
             } else {
                 if (entity.progress != 0) {
                     entity.progress = 0;

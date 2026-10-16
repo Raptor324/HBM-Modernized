@@ -28,8 +28,7 @@
     "compat.sable.TurbofanSableMixin",
     "GameTestServerMassSaveMixin"
   ],
-  "server": [
-],
+  "server": [],
   "client": [
     "GameRendererMixin",
     "LightTextureMixin",
@@ -39,11 +38,23 @@
     "client.MixinAbstractClientPlayerSkin",
     "client.MixinIrisShadowRenderer",
     "client.MixinBlockEntityRenderDispatcher",
+    "client.VertexBufferMixin",
+    "client.ShaderInstanceAccessor",
     "client.ClientPayloadHandlerInvoker",
     "client.MixinClientPayloadHandlerMissingTile",
-    "client.SuperGlueSelectionOutlineMixin"
+    "client.SuperGlueSelectionOutlineMixin",
+    "client.MixinLevelChunkSetBlockEntity",
+    "client.MixinBlockEntitySetRemoved",
+    "client.MixinBlockEntityType",
+    "client.MixinClientChunkCacheLight",
+    "client.SodiumRenderBoundsMixin",
+    "client.MixinBlockEntity",
+    "client.SodiumWorldRendererMixin",
+    "client.SodiumWorldRendererMixin121",
+    "client.MixinClientLevelChunkLifecycle"
   ],
   "injectors": {
     "defaultRequire": 1
   }
 }
+

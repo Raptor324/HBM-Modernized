@@ -8,7 +8,6 @@ import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineLiquefactorMenu;
-import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.recipe.LiquefactorRecipe;
 
 import net.minecraft.core.BlockPos;
@@ -45,6 +44,10 @@ public class MachineLiquefactorBlockEntity extends BaseMachineBlockEntity implem
     private final FluidTank tank = new FluidTank(TANK_CAPACITY_MB);
     private int progress = 0;
 
+    /** Кэш скана рецептов по фингерпринту входного стека (value-keyed, CONTRACT 2 CachedRecipeResolver). */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<LiquefactorRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+
     public MachineLiquefactorBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.LIQUEFACTOR_BE.get(), pos, state, SLOT_COUNT, MAX_POWER, MAX_POWER, 0L);
     }
@@ -60,12 +63,19 @@ public class MachineLiquefactorBlockEntity extends BaseMachineBlockEntity implem
             be.progress = 0;
         }
 
-        for (Direction dir : Direction.values()) {
-            be.tryProvide(be.tank, level, pos.relative(dir), dir);
+        // Fluid-раздача соседям — каждый тик: tryProvide содержит прямой пуш в соседний
+        // приёмник, гейт делит пропускную способность выдачи, а не только стоимость скана.
+        // Гейт снят целиком (Pump-паттерн) — tryProvide единственная работа блока;
+        // fill-проверка не даёт зондировать соседей, пока бак пуст.
+        if (be.tank.getFill() > 0) {
+            for (Direction dir : Direction.values()) {
+                be.tryProvide(be.tank, level, pos.relative(dir), dir);
+            }
         }
 
-        be.setChanged();
-        be.sendUpdateToClient();
+        // Anti-sync-spam: подпись покрывает энергию, бак и прогресс — всё, что пишет writeNbtData.
+        long tankSig = be.tank.getTankType().hashCode() * 31L + be.tank.getFill();
+        be.syncIfStateChanged(be.getEnergyStored(), tankSig * 31L + be.progress);
     }
 
     private boolean canProcess() {
@@ -97,14 +107,21 @@ public class MachineLiquefactorBlockEntity extends BaseMachineBlockEntity implem
     /**
      * Data-driven поиск LiquefactorRecipe по входному предмету
      * (заменяет статический LiquefactorRecipes.getOutput).
+     * Скан кэшируется: {@link com.hbm_m.recipe.index.CachedRecipeResolver} с подписью от
+     * фингерпринта входного стека (value-keyed); per-tick условия (энергия, головroom бака)
+     * остаются снаружи в {@link #canProcess()} — CONTRACT 1.
      */
     @Nullable
     private LiquefactorRecipe findLiquefactorRecipe(ItemStack input) {
         if (level == null) return null;
-        for (LiquefactorRecipe recipe : RecipeHooks.getAllRecipes(level, LiquefactorRecipe.Type.INSTANCE)) {
-            if (recipe.matchesInput(input)) return recipe;
-        }
-        return null;
+        return recipeResolver.resolve(level, LiquefactorRecipe.Type.INSTANCE,
+                com.hbm_m.platform.PlatformHooks.stackFingerprint(input),
+                (lvl, all) -> {
+                    for (LiquefactorRecipe recipe : all) {
+                        if (recipe.matchesInput(input)) return recipe;
+                    }
+                    return null;
+                });
     }
 
     // ==================== GUI ====================

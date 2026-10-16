@@ -77,25 +77,22 @@ public class MachineCoolingTowerBlockEntity extends BaseMachineBlockEntity imple
                 && coolantOut.getSpaceMb() > 0
                 && be.hasSkyAccess(level, pos);
 
-        boolean changed = false;
         if (canConvert) {
             int amount = Math.min(CONVERSION_RATE_MB, Math.min(hotIn.getFill(), coolantOut.getSpaceMb()));
             if (amount > 0) {
                 hotIn.drainMb(amount);
                 coolantOut.fillMb(ModFluids.COOLANT.getSource(), amount);
-                changed = true;
             }
         }
 
         if (be.isCooling != canConvert) {
             be.isCooling = canConvert;
-            changed = true;
         }
 
-        if (changed) {
-            be.setChanged();
-            be.sendUpdateToClient();
-        }
+        // P6 sync gate: steady conversion больше не шлёт пакет + setChanged каждый тик —
+        // подпись покрывает всё, что writeNbtData отдаёт клиенту (оба танка + isCooling).
+        be.syncIfStateChanged(tankFingerprint(hotIn),
+                tankFingerprint(coolantOut) * 31L + (be.isCooling ? 1L : 0L));
 
         be.ensureNetworkInitialized();
     }
@@ -104,6 +101,12 @@ public class MachineCoolingTowerBlockEntity extends BaseMachineBlockEntity imple
     private boolean hasSkyAccess(Level level, BlockPos pos) {
         BlockPos topPos = pos.above(STRUCTURE_HEIGHT - 1);
         return level.canSeeSky(topPos);
+    }
+
+    /** 64-битный фингерпринт танка (тип жидкости + заполнение) для sync-подписи. */
+    private static long tankFingerprint(FluidTank tank) {
+        net.minecraft.world.level.material.Fluid f = tank.getTankType();
+        return (f == null ? 0L : f.hashCode()) * 31L + tank.getFill();
     }
 
     private void clientTick(Level level, BlockPos pos) {

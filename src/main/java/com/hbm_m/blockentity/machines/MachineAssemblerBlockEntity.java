@@ -22,7 +22,6 @@ import com.hbm_m.item.industrial.ItemAssemblyTemplate;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 import com.hbm_m.recipe.AssemblerRecipe;
-import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.platform.recipe.RecipeInputWrapper;
 import com.hbm_m.sound.ClientSoundBootstrap;
 
@@ -386,6 +385,10 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
 
     // ==================== CRAFTING ====================
 
+    /** Кэшированный скан рецептов: подпись — фингерпринты шаблона и его выходного стака (P4, value-keyed). */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<AssemblerRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+
     private Optional<AssemblerRecipe> getRecipeFromTemplate() {
         ItemStack templateStack = inventory.getStackInSlot(TEMPLATE_SLOT);
         if (!(templateStack.getItem() instanceof ItemAssemblyTemplate)) {
@@ -393,13 +396,20 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         }
 
         ItemStack outputStack = ItemAssemblyTemplate.getRecipeOutput(templateStack);
-        if (outputStack.isEmpty()) {
+        if (outputStack.isEmpty() || level == null) {
             return Optional.empty();
         }
 
-        return RecipeHooks.getAllRecipes(level, AssemblerRecipe.Type.INSTANCE).stream()
-                .filter(r -> PlatformHooks.isSameItemSameTags(r.getResultItemSafe(), outputStack))
-                .findFirst();
+        // CONTRACT 1: сканер — только матч результата по шаблону; hasResources/canInsertResult — per-tick вне сканера.
+        long signature = com.hbm_m.recipe.index.CachedRecipeResolver.sign(8,
+                PlatformHooks.stackFingerprint(templateStack),
+                PlatformHooks.stackFingerprint(outputStack));
+        AssemblerRecipe found = recipeResolver.resolve(level, AssemblerRecipe.Type.INSTANCE, signature, (lvl, all) ->
+                all.stream()
+                        .filter(r -> PlatformHooks.isSameItemSameTags(r.getResultItemSafe(), outputStack))
+                        .findFirst()
+                        .orElse(null));
+        return Optional.ofNullable(found);
     }
 
     @Override

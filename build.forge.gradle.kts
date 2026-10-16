@@ -68,7 +68,8 @@ legacyForge {
 			programArgument("--username=Dev")
 			// user.language=en: локаль по умолчанию даёт русские месяцы в паттерне
 			// даты log4j; в Cp1251-файле они читаются как «ёхэЄ» — лог ломается.
-			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8", "-Dconsole.encoding=UTF-8",
+			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-XX:+UnlockDiagnosticVMOptions", "-XX:+DebugNonSafepoints",
+				"-Dfile.encoding=UTF-8", "-Dconsole.encoding=UTF-8",
 				"-Duser.language=en", "-Duser.country=US")
 		}
 		register("server") {
@@ -236,6 +237,24 @@ tasks.named<Jar>("jar") {
 }
 
 tasks.withType<JavaCompile>().configureEach { options.encoding = "UTF-8" }
+
+tasks.withType<Test>().configureEach {
+	failOnNoDiscoveredTests = false
+}
+
+tasks.register<JavaExec>("runMilestone1RemedTest") {
+	dependsOn(tasks.named("compileTestJava"))
+	classpath = sourceSets["test"].runtimeClasspath + configurations["compileClasspath"]
+	mainClass.set("com.hbm_m.test.Milestone1RemediationTest")
+	jvmArgs("-ea")
+}
+
+tasks.register<JavaExec>("runSpatialLightingTest") {
+	dependsOn(tasks.named("compileTestJava"))
+	classpath = sourceSets["test"].runtimeClasspath + configurations["compileClasspath"]
+	mainClass.set("com.hbm_m.test.MultiblockSpatialLightingTest")
+	jvmArgs("-ea")
+}
 
 stonecutter {
 }

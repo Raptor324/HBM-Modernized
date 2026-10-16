@@ -38,18 +38,36 @@ public final class MachineMiningDrillRenderer {
     private static final ResourceLocation CRUSHER1_MODEL_ID = id("mining_drill_crusher1");
     private static final ResourceLocation CRUSHER2_MODEL_ID = id("mining_drill_crusher2");
 
-    // Original pivots (OBJ space) + 0.5 offset for our baked block space.
-    private static final double CRUSHER1_PIVOT_Z = 2.8125 + 0.5;
-    private static final double CRUSHER2_PIVOT_Z = 2.1875 + 0.5;
-    private static final double CRUSHER_PIVOT_Y = 2.0;
+    /** Legacy spin: {@code crusherRotation += 15F} per operational tick -> 360/15 = 24 ticks per revolution. */
+    private static final double CRUSHER_TICKS_PER_REV = 24.0;
+
+    /** Crusher spin gate (synced state, pure - the tracked segment classifier). */
+    private static boolean crusherOn(MachineMiningDrillBlockEntity be) {
+        return be.isActive() && be.enableCrusher;
+    }
 
     public static void register() {
         MachineRenderers.machine("miningdrill", ModBlockEntities.MINING_DRILL_BE.get(),
                 MachineMiningDrillBlockEntity.class)
-            .dynamicPart("Crusher1", MachineMiningDrillRenderer::animateCrusher1,
-                    be -> partQuads("drill/crusher1", CRUSHER1_MODEL_ID), be -> "c1")
-            .dynamicPart("Crusher2", MachineMiningDrillRenderer::animateCrusher2,
-                    be -> partQuads("drill/crusher2", CRUSHER2_MODEL_ID), be -> "c2")
+            // Crushers: TRACKED SPIN rigs - one full revolution per spin segment.
+            // Legacy: +15 deg/tick about the declared axis while operational ->
+            // 24 ticks per revolution; the positive track angle about the same
+            // (normalized) axis reproduces the old direction (counter-rotating
+            // via the opposite axis signs). Segment classifier: crusher on ->
+            // t0 = 1, duration 24; off -> duration 0 = FROZEN at u0 = 0. Words
+            // are a pure function of the epoch (the segment start), so the
+            // epoch-keyed AnimParams word cache in MachineBer hits while the
+            // crushers spin and the CPU skips rig evaluation entirely.
+            .spinningPart("Crusher1", "Crusher1", -1f, 0f, 0f, 0.5f, 2.0f, 3.3125f, 0f, 0f, 0f,
+                    be -> partQuads("drill/crusher1", CRUSHER1_MODEL_ID), be -> "c1",
+                    be -> crusherOn(be) ? 1L : 0L,
+                    be -> crusherOn(be) ? CRUSHER_TICKS_PER_REV : 0.0,
+                    be -> 0.0)
+            .spinningPart("Crusher2", "Crusher2", 1f, 0f, 0f, 0.5f, 2.0f, 2.6875f, 0f, 0f, 0f,
+                    be -> partQuads("drill/crusher2", CRUSHER2_MODEL_ID), be -> "c2",
+                    be -> crusherOn(be) ? 1L : 0L,
+                    be -> crusherOn(be) ? CRUSHER_TICKS_PER_REV : 0.0,
+                    be -> 0.0)
             .dynamicPart("Drillbit", MachineMiningDrillRenderer::animateDrillbit,
                     be -> partQuads("drill/bit", DRILLBIT_MODEL_ID), be -> "bit")
             .blockTransform(MachineMiningDrillRenderer::applyBlockTransform)
@@ -88,24 +106,6 @@ public final class MachineMiningDrillRenderer {
         animator.translate(0.5, 0.0, 0.5);
         animator.rotate(facingYRot, 0, 1, 0);
         animator.translate(-0.5, 0.0, -0.5);
-    }
-
-    private static boolean animateCrusher1(MachineMiningDrillBlockEntity be, float partialTick,
-                                           long gameTime, PoseStack pose) {
-        float crusher = Mth.lerp(partialTick, be.prevCrusherRotation, be.crusherRotation);
-        pose.translate(0.5, CRUSHER_PIVOT_Y, CRUSHER1_PIVOT_Z);
-        pose.mulPose(Axis.XP.rotationDegrees(-crusher));
-        pose.translate(-0.5, -CRUSHER_PIVOT_Y, -CRUSHER1_PIVOT_Z);
-        return true;
-    }
-
-    private static boolean animateCrusher2(MachineMiningDrillBlockEntity be, float partialTick,
-                                           long gameTime, PoseStack pose) {
-        float crusher = Mth.lerp(partialTick, be.prevCrusherRotation, be.crusherRotation);
-        pose.translate(0.5, CRUSHER_PIVOT_Y, CRUSHER2_PIVOT_Z);
-        pose.mulPose(Axis.XP.rotationDegrees(crusher));
-        pose.translate(-0.5, -CRUSHER_PIVOT_Y, -CRUSHER2_PIVOT_Z);
-        return true;
     }
 
     private static boolean animateDrillbit(MachineMiningDrillBlockEntity be, float partialTick,

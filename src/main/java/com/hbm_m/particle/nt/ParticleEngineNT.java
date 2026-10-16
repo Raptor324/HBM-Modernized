@@ -46,13 +46,21 @@ public class ParticleEngineNT {
      * Раз в клиентский тик ПЕРЕД tick(): записывает мировое время в историю
      * и при уменьшении (реплеер отмотал таймлайн назад) вычисляет границу
      * отката и удаляет частицы «из будущего».
+     *
+     * @param rewindPurgeAllowed false на время экспорта Flashback: его
+     *        setup-отмотка к startTick-40 понижает gameTime (SetTime из
+     *        снапшота чанка записи), но поток далее переигрывает окно
+     *        ВПЕРЁД — эффекты, пере-доставленные до момента обнаружения
+     *        понижения, purge вычистил бы навсегда (их payload остался до
+     *        окна, повторной доставки не будет). История и штамп ведутся
+     *        как обычно, гасится только сама зачистка.
      */
-    public void onWorldGameTime(long gameTime) {
+    public void onWorldGameTime(long gameTime, boolean rewindPurgeAllowed) {
         // Сначала purge-проверка и поиск границы, ПОТОМ штамп: слот текущего тика
         // уже перезаписан отмотанным временем, и скан с него давал всегда
         // cutoff == tickCounter (no-op). Скан ведётся с tickCounter-1 — по истории
         // ДО отмотки; сам слот текущего тика штампуется ниже честным значением.
-        if (gameTime < this.lastWorldGameTime) {
+        if (rewindPurgeAllowed && gameTime < this.lastWorldGameTime) {
             this.purgeCutoff = findRewindCutoff(gameTime);
             purgeFutureParticles();
         }
@@ -200,6 +208,15 @@ public class ParticleEngineNT {
         this.newParticles.clear();
         this.purgeCutoff = Long.MAX_VALUE;
         this.lastWorldGameTime = Long.MIN_VALUE;
+    }
+
+    /** Живые частицы (батчи + очередь новых) — для диагностического лога экспорта. */
+    public int countParticles() {
+        int n = this.newParticles.size();
+        for (List<ParticleNT> list : this.particlesByType.values()) {
+            n += list.size();
+        }
+        return n;
     }
 
     public void render(MultiBufferSource.BufferSource buffer, Camera camera, float partialTick, PoseStack levelPoseStack) {

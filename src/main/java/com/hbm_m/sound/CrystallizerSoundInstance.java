@@ -17,25 +17,34 @@ import net.neoforged.api.distmarker.OnlyIn;
 
 public class CrystallizerSoundInstance extends AbstractTickableSoundInstance {
 
+    private final BlockPos origin;
+
     public CrystallizerSoundInstance(BlockPos pos) {
         super(ModSounds.CHEMICAL_PLANT.get(), SoundSource.BLOCKS, SoundInstance.createUnseededRandom());
         this.looping = true;
         this.delay = 0;
         this.relative = false;
         this.attenuation = Attenuation.LINEAR;
-
-        // Controller is at the base of the tall multiblock, so place the loop near the middle.
-        this.x = pos.getX() + 0.5D;
-        this.y = pos.getY() + 3.0D;
-        this.z = pos.getZ() + 0.5D;
+        this.origin = pos;
 
         // Original Crystallizer uses chemicalPlant.ogg with pitch lowered to 0.75.
         this.volume = 1.0F;
         this.pitch = 0.75F;
+        // Controller is at the base of the tall multiblock, so place the loop near the middle.
+        updatePosition();
+    }
+
+    // Sable ships move - re-anchor in world space every tick (raw plot-grid
+    // coords are millions of blocks out and vanilla mutes the loop).
+    private void updatePosition() {
+        net.minecraft.world.phys.Vec3 world = SableSoundPosition.project(origin, 3.0D);
+        this.x = world.x;
+        this.y = world.y;
+        this.z = world.z;
     }
 
     @Override
     public void tick() {
-        // Lifecycle is controlled by ClientSoundManager via MachineCrystallizerBlockEntity.clientTick().
+        updatePosition();
     }
 }

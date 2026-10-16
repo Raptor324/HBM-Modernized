@@ -278,8 +278,30 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
         }
 
         entity.indicator = 0; // Норма
-        entity.setChanged();
-        entity.sendUpdateToClient();
+        entity.syncIfStateChanged(frackSyncLo(entity), frackSyncHi(entity));
+    }
+
+    // P6 anti-sync-spam: 128-битная подпись отрисовываемого состояния (прогресс, индикатор,
+    // уровни апгрейдов и все три танка как fluid-фингерпринты). setChanged/sendBlockUpdated
+    // только при реальном изменении — контент пакета прежний (весь writeNbtData).
+    private static long frackSyncLo(MachineFrackingTowerBlockEntity e) {
+        return (e.progressTimer & 0xFFFFFFFFL)
+                | ((long) (e.indicator & 0xF)) << 32
+                | ((long) (e.speedUpgradeLevel & 0xF)) << 36
+                | ((long) (e.powerUpgradeLevel & 0xF)) << 40
+                | ((long) (e.afterburnerUpgradeLevel & 0xF)) << 44
+                | ((long) (e.overdriveUpgradeLevel & 0xF)) << 48;
+    }
+
+    private static long frackSyncHi(MachineFrackingTowerBlockEntity e) {
+        return com.hbm_m.recipe.index.CachedRecipeResolver.sign(1L,
+                tankFingerprint(e.oilTank), tankFingerprint(e.gasTank), tankFingerprint(e.fracksolTank));
+    }
+
+    private static long tankFingerprint(com.hbm_m.inventory.fluid.tank.FluidTank tank) {
+        Fluid type = tank.getTankType();
+        return com.hbm_m.recipe.index.CachedRecipeResolver.sign(2L,
+                type == null ? 0L : type.hashCode(), tank.getFill());
     }
 
     private static final java.util.Map<com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType, Integer> VALID_UPGRADES_FRACK = java.util.Map.of(

@@ -8,7 +8,9 @@ import org.joml.Matrix4f;
 import com.hbm_m.client.render.ClientRenderFlags;
 import com.hbm_m.client.render.InstancedGlCompat;
 import com.hbm_m.client.render.InstancedStaticPartRenderer;
+import com.hbm_m.client.render.IrisShadowBatchCollector;
 import com.hbm_m.client.render.MeshRenderCache;
+import com.hbm_m.client.render.PartEnqueueRequest;
 import com.hbm_m.client.render.PartGeometry;
 import com.hbm_m.client.render.SingleMeshVboRenderer;
 import com.hbm_m.platform.RenderHooks;
@@ -21,7 +23,6 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
@@ -48,15 +49,28 @@ final class MachinePartRenderer {
     @Nullable private SingleMeshVboRenderer single;
     @Nullable private List<BakedQuad> quads;
     private boolean attempted;
+    /**
+     * Render frame of the last use - the LRU stamp for the per-dynKey sweep
+     * (MachineSpec, audit 2026-10-05 §3.5). Stamped at creation and on every
+     * cache find (full loop or roster assert), so a holder of a machine
+     * visible in ANY pass never goes stale.
+     */
+    private long lastUseFrame;
 
     MachinePartRenderer(String key, String partName, boolean dynamic) {
         this.key = key;
         this.partName = partName;
         this.dynamic = dynamic;
+        this.lastUseFrame = IrisShadowBatchCollector.renderFrame();
     }
 
     /** true if a build attempt has already been made (successful or not) - do not call the quad resolver again. */
     boolean isAttempted() { return attempted; }
+
+    long lastUseFrame() { return lastUseFrame; }
+
+    /** LRU stamp update on a cache hit (frame source: IrisShadowBatchCollector.renderFrame). */
+    void markUsed(long frame) { lastUseFrame = frame; }
 
     boolean matches(MachineSpec.PartDef<?> part, String cacheKey) {
         return this.key.equals(cacheKey);
@@ -108,21 +122,20 @@ final class MachinePartRenderer {
     InstancedStaticPartRenderer instanced() { return instanced; }
 
     /**
-     * Adds the current frame instance or draws via a fallback path.
-     *
-     * @param poseStack  stack with the block transform + part animator (composed pose)
-     * @param sharedLight shared 8-corner light sample of the machine (or null)
-     * @param uvRect {u0,v0,du,dv} remap of sprite-local VBO -> atlas, or null (atlas UVs).
-     *               Non-null means the cached quads are normalized - the single-VBO path
-     *               (no remap in the shader) is replaced by the immediate fallback.
-     * @param tint {r,g,b,a} per-instance color multiplier or null (white). A non-white
-     *               tint on the single-VBO path also degrades to immediate (the
-     *               block_lit shader does not read tint); RGB may be &gt; 1 - overbright.
+     * Adds the current frame instance or draws via a fallback path. All
+     * per-instance parameters (pose, light, uvRect, tint, falloff, anim params,
+     * fade mode, static-pose flag) travel inside {@code rq} - the BER fills it
+     * per part; there is no global pending state to clear on the degradation
+     * exits below (an unread request simply goes stale, the next
+     * {@link PartEnqueueRequest#obtain()} resets it).
      */
-    void enqueue(PoseStack poseStack,
-                 int packedLight, BlockPos blockPos, BlockEntity blockEntity,
-                 @Nullable MultiBufferSource bufferSource, @Nullable float[] sharedLight,
-                 @Nullable float[] uvRect, @Nullable float[] tint, @Nullable float[] gradFalloff) {
+    void enqueue(PartEnqueueRequest rq) {
+        PoseStack poseStack = rq.poseStack;
+        int packedLight = rq.packedLight;
+        BlockEntity blockEntity = rq.blockEntity;
+        MultiBufferSource bufferSource = rq.bufferSource;
+        float[] uvRect = rq.uvRect;
+        float[] tint = rq.tint;
         // Diagram capture renders BEs into a bound offscreen FBO with a fake ortho projection;
         // deferred paths (instancing/single-VBO) flush only in the main pass, so machines would
         // vanish from the sketch - draw immediately into the shared buffer source instead.
@@ -133,11 +146,11 @@ final class MachinePartRenderer {
             return;
         }
         if (instanced != null && instanced.isInitialized() && ClientRenderFlags.useInstancedBatching()) {
-            instanced.addInstance(poseStack, packedLight, blockPos, blockEntity, bufferSource, sharedLight, uvRect, tint, gradFalloff);
+            instanced.addInstance(rq);
             return;
         }
         if (uvRect == null && isWhiteTint(tint) && single != null) {
-            single.render(poseStack, packedLight, blockPos, blockEntity, bufferSource);
+            single.render(poseStack, packedLight, rq.blockPos, blockEntity, bufferSource);
             return;
         }
         // uvRect != null: the single-VBO path keeps normalized UVs, and block_lit_simple

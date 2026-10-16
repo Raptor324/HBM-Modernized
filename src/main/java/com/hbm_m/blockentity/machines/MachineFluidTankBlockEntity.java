@@ -280,7 +280,17 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
         // FluidDuctBlockEntity#tick сам по себе нас не подключит, потому что мы IFluidConnectorMK2
         // (это сделано умышленно — нативный MK2-путь даёт давление/приоритет/per-(fluid,pressure)).
         Fluid mk2Type = entity.fluidTank.getTankType();
-        if (mk2Type != null && mk2Type != Fluids.EMPTY && mk2Type != ModFluids.NONE.getSource()) {
+        // Neighbor-scan (6 направлений: getBlockEntity + trySubscribe/tryProvide).
+        // trySubscribe — раз в 5 тиков (probeDue, фаза размазана по позиции; покрывает все
+        // наследники barrel/steel/tcalloy/BAT9000/Orbus/BAT) — регистрация идемпотентна.
+        // tryProvide — каждый тик: его вторая ветка — прямой пуш в соседний приёмник, гейт
+        // делил бы пропускную способность выдачи. Fill-проверка не даёт сканировать соседей,
+        // пока бак пуст или режим — только приём.
+        boolean mk2Ready = mk2Type != null && mk2Type != Fluids.EMPTY && mk2Type != ModFluids.NONE.getSource();
+        boolean subscribeDue = mk2Ready && entity.probeDue(5);
+        boolean provideNow = mk2Ready && !entity.hasExploded && entity.mode != 0 && entity.mode != 3
+                && entity.fluidTank.getFill() > 0;
+        if (subscribeDue || provideNow) {
             for (Direction dir : Direction.values()) {
                 if (!entity.isFluidSideAllowed(dir)) continue;
                 BlockPos pipePos = pos.relative(dir);
@@ -290,12 +300,12 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
                 if (!(pipeBe instanceof com.hbm_m.api.fluids.IFluidConnectorMK2)) continue;
 
                 // mode != 2/3 → принимаем
-                if (!entity.hasExploded && entity.mode != 2 && entity.mode != 3) {
-                    entity.trySubscribe(mk2Type, level, pipePos, dir);
+                if (subscribeDue && !entity.hasExploded && entity.mode != 2 && entity.mode != 3) {
+                    entity.trySubscribe(mk2Type, pipeBe, level, pipePos, dir);
                 }
                 // mode != 0/3 и есть содержимое → отдаём
-                if (!entity.hasExploded && entity.mode != 0 && entity.mode != 3 && entity.fluidTank.getFill() > 0) {
-                    entity.tryProvide(entity.fluidTank, level, pipePos, dir);
+                if (provideNow) {
+                    entity.tryProvide(entity.fluidTank.getTankType(), entity.fluidTank.getPressure(), pipeBe, level, pipePos, dir);
                 }
             }
         }
@@ -573,10 +583,13 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
         if (ftype.isAntimatter()) {
             level.explode(null, worldPosition.getX() + 0.5, worldPosition.getY() + 1.5, worldPosition.getZ() + 0.5, 5F, ExplosionInteraction.BLOCK);
         } else if (ftype.hasTrait(FT_Flammable.class) && onFire) {
-            AABB fireBox = new AABB(worldPosition).inflate(2.5, 5.0, 2.5);
-            List<LivingEntity> affected = level.getEntitiesOfClass(LivingEntity.class, fireBox);
-            for (LivingEntity e : affected) {
-                PlatformHooks.setSecondsOnFire(e, 5);
+            // Entity-query (поджог сущностей в радиусе утечки) раз в 10 тиков; частицы — каждый тик.
+            if (probeDue(10)) {
+                AABB fireBox = new AABB(worldPosition).inflate(2.5, 5.0, 2.5);
+                List<LivingEntity> affected = level.getEntitiesOfClass(LivingEntity.class, fireBox);
+                for (LivingEntity e : affected) {
+                    PlatformHooks.setSecondsOnFire(e, 5);
+                }
             }
             if (level instanceof ServerLevel serverLevel) {
                 serverLevel.sendParticles(ParticleTypes.FLAME, worldPosition.getX() + level.random.nextDouble(), worldPosition.getY() + 0.5 + level.random.nextDouble(), worldPosition.getZ() + level.random.nextDouble(), 3, 0.1, 0.1, 0.1, 0.05);

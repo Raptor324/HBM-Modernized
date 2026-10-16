@@ -4,9 +4,9 @@ import com.hbm_m.platform.PlatformHooks;
 
 import java.util.EnumMap;
 import java.util.Map;
-import java.util.Optional;
 
 import com.hbm_m.platform.ModItemStackHandler;
+import com.hbm_m.recipe.index.CachedRecipeResolver;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,7 +22,6 @@ import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
 import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.recipe.BlastFurnaceRecipe;
-import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.platform.recipe.RecipeInputWrapper;
 
 import net.minecraft.core.BlockPos;
@@ -300,11 +299,13 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
     }
 
     private boolean hasRecipe() {
-        Optional<BlastFurnaceRecipe> recipe = getCurrentRecipe();
-        if (recipe.isEmpty() || level == null) {
+        BlastFurnaceRecipe recipe = getCurrentRecipe();
+        if (recipe == null || level == null) {
             return false;
         }
-        ItemStack result = recipe.get().getResultItem(level.registryAccess());
+        // canAcceptResult depends on output-slot state outside the scan signature —
+        // re-evaluated per tick against the cached recipe (CachedRecipeResolver CONTRACT 1).
+        ItemStack result = recipe.getResultItem(level.registryAccess());
         return !result.isEmpty() && canAcceptResult(result);
     }
 
@@ -320,29 +321,38 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
         return PlatformHooks.isSameItemSameTags(a, b);
     }
 
-    private Optional<BlastFurnaceRecipe> getCurrentRecipe() {
+    /** Кэшированный скан рецептов: подпись — оба входных слота, сканер — только матч по списку. */
+    private final CachedRecipeResolver<BlastFurnaceRecipe> recipeResolver = new CachedRecipeResolver<>();
+
+    @Nullable
+    private BlastFurnaceRecipe getCurrentRecipe() {
         if (level == null) {
-            return Optional.empty();
+            return null;
         }
-        SimpleContainer inventory = new SimpleContainer(itemHandler.getSlots());
-        for (int i = 0; i < itemHandler.getSlots(); i++) {
-            inventory.setItem(i, itemHandler.getStackInSlot(i));
-        }
-        RecipeInputWrapper wrapper = new RecipeInputWrapper(inventory);
-        for (BlastFurnaceRecipe recipe : RecipeHooks.getAllRecipes(level, BlastFurnaceRecipe.Type.INSTANCE)) {
-            if (recipe.matchesRecipe(wrapper, level)) {
-                return Optional.of(recipe);
+        long signature = CachedRecipeResolver.sign(1,
+                PlatformHooks.stackFingerprint(itemHandler.getStackInSlot(INPUT_SLOT_TOP)),
+                PlatformHooks.stackFingerprint(itemHandler.getStackInSlot(INPUT_SLOT_BOTTOM)));
+        return recipeResolver.resolve(level, BlastFurnaceRecipe.Type.INSTANCE, signature, (lvl, all) -> {
+            SimpleContainer inventory = new SimpleContainer(itemHandler.getSlots());
+            for (int i = 0; i < itemHandler.getSlots(); i++) {
+                inventory.setItem(i, itemHandler.getStackInSlot(i));
             }
-        }
-        return Optional.empty();
+            RecipeInputWrapper wrapper = new RecipeInputWrapper(inventory);
+            for (BlastFurnaceRecipe recipe : all) {
+                if (recipe.matchesRecipe(wrapper, lvl)) {
+                    return recipe;
+                }
+            }
+            return null;
+        });
     }
 
     private void craftItem() {
-        Optional<BlastFurnaceRecipe> recipe = getCurrentRecipe();
-        if (recipe.isEmpty() || level == null) {
+        BlastFurnaceRecipe recipe = getCurrentRecipe();
+        if (recipe == null || level == null) {
             return;
         }
-        ItemStack result = recipe.get().getResultItem(level.registryAccess()).copy();
+        ItemStack result = recipe.getResultItem(level.registryAccess()).copy();
 
         itemHandler.extractItem(INPUT_SLOT_TOP, 1, false);
         itemHandler.extractItem(INPUT_SLOT_BOTTOM, 1, false);

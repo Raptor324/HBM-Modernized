@@ -155,6 +155,12 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
         heat *= PASSIVE_COOLING;
 
         // push hot coolant + waste out / pull cold coolant in via pipes
+        // trySubscribe (registration only, idempotent) stays behind the probeDue(20) gate —
+        // pipe connections don't change per-tick, event/miss self-heals within 1 s.
+        // tryProvide runs EVERY tick: its second branch is a DIRECT push to the adjacent
+        // receiver, and gating it would divide coolant/waste throughput. The per-tank fill
+        // check skips the probe while the tank is empty.
+        boolean subscribeDue = probeDue(20);
         for (Direction dir : Direction.values()) {
             if (fluidSidesFromMultiblockStructure) {
                 if (!allowedFluidSides.contains(dir)) continue;
@@ -162,12 +168,14 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
                 continue;
             }
             BlockPos pipePos = pos.relative(dir);
-            BlockEntity pipeBe = level.getBlockEntity(pipePos);
-            if (!(pipeBe instanceof com.hbm_m.api.fluids.IFluidConnectorMK2)) continue;
-
             if (coolantHotTank.getFill() > 0) tryProvide(coolantHotTank, level, pipePos, dir);
             if (wasteTank.getFill() > 0) tryProvide(wasteTank, level, pipePos, dir);
-            if (coolantTank.getFill() < coolantTank.getMaxFill()) trySubscribe(coolantTank, level, pipePos, dir);
+            if (subscribeDue && coolantTank.getFill() < coolantTank.getMaxFill()) {
+                BlockEntity pipeBe = level.getBlockEntity(pipePos);
+                if (pipeBe instanceof com.hbm_m.api.fluids.IFluidConnectorMK2) {
+                    trySubscribe(coolantTank, level, pipePos, dir);
+                }
+            }
         }
 
         checkWasteOverflow(level);

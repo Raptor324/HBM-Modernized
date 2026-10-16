@@ -86,7 +86,11 @@ public class MachineStorageDrumBlockEntity extends BaseMachineBlockEntity {
             ChunkRadiationManager.incrementRad(level, pos.getX(), pos.getY(), pos.getZ(), rad);
         }
 
-        be.setChanged();
+        // setChanged() только при реальной дельте: содержимое (распад — setStackInSlot сам
+        // дергает onContentsChanged), заполнение баков или применённая радиация.
+        if (liquid > 0 || be.pendingGas > 0 || (rad > 0 && level.getGameTime() % 20 == 0)) {
+            be.setChanged();
+        }
     }
 
     /** Zwischenspeicher fuer das Gas eines Ticks - siehe {@link #tryDecay}. */

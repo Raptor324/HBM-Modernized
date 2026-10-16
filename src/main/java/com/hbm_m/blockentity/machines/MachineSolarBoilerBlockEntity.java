@@ -190,6 +190,8 @@ public class MachineSolarBoilerBlockEntity extends BaseMachineBlockEntity implem
      */
     private boolean processSolarBoiling(Level level, BlockPos pos) {
         if (!hasSkyAccess(level, pos) || !level.isDay()) {
+            // Предусловие осталось per-tick: инвалидируем кэш сразу, а не ждём probeDue(40).
+            mirrorCacheValid = false;
             if (activeMirrorCount != 0) {
                 activeMirrorCount = 0;
                 return true;
@@ -237,12 +239,29 @@ public class MachineSolarBoilerBlockEntity extends BaseMachineBlockEntity implem
         return level.canSeeSky(pos.above(2));
     }
 
+    /** Cached mirror scan: rescan on probeDue(40) (фаза размазана по позиции); сбрасывается
+     * немедленно, когда дневное/небесное предусловие перестаёт выполняться (processSolarBoiling). */
+    private boolean mirrorCacheValid = false;
+
+    /**
+     * Cached wrapper: скан области 15x15x2 дорогой — пересканируем на probeDue(40), между
+     * ними возвращаем закэшированное количество.
+     */
+    private int countActiveMirrors(Level level, BlockPos pos) {
+        if (mirrorCacheValid && !probeDue(40)) {
+            return activeMirrorCount;
+        }
+        activeMirrorCount = scanActiveMirrors(level, pos);
+        mirrorCacheValid = true;
+        return activeMirrorCount;
+    }
+
     /**
      * Scans a horizontal area around the boiler for "Solar Mirror" blocks that themselves
      * have sky access. Scanned at the boiler's controller Y level and one level below it,
      * within {@link #MIRROR_SCAN_RADIUS} blocks horizontally.
      */
-    private int countActiveMirrors(Level level, BlockPos pos) {
+    private int scanActiveMirrors(Level level, BlockPos pos) {
         int count = 0;
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
 

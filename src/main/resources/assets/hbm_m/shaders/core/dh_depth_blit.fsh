@@ -46,13 +46,22 @@ void main() {
     float d = texture(Sampler0, uv).r;
     bool reverseZ = DhReverseZ > 0.5;
     // DH sky (no LOD drawn): leave depth untouched. The conventions are opposite.
-    if (reverseZ ? (d <= 1.0e-6) : (d >= 0.999999)) {
+    if ((reverseZ && d <= 1.0e-6) || (!reverseZ && d >= 0.999999)) {
+        discard;
+    }
+    // Reverse-Z beyond DhFar (d < 0.5 => ndc < 0): the denominator below
+    // degenerates and gl_FragDepth clamps to 1.0 = sky anyway. DH never draws
+    // past its far plane - treat it as sky instead of a degenerate decode.
+    if (reverseZ && d <= 0.5) {
         discard;
     }
     float ndc = d * 2.0 - 1.0;
-    float dist = reverseZ
-        ? (DhFar * DhNear) / max(DhNear + ndc * (DhFar - DhNear), 1.0e-6)
-        : (2.0 * DhFar * DhNear) / max((DhFar + DhNear) - ndc * (DhFar - DhNear), 1.0e-6);
+    float dist;
+    if (reverseZ) {
+        dist = (DhFar * DhNear) / max(DhNear + ndc * (DhFar - DhNear), 1.0e-6);
+    } else {
+        dist = (2.0 * DhFar * DhNear) / max((DhFar + DhNear) - ndc * (DhFar - DhNear), 1.0e-6);
+    }
     if (dist < DhFadeMaskDist) {
         discard;
     }

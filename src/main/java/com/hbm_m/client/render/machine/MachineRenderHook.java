@@ -17,4 +17,19 @@ public interface MachineRenderHook<T extends BlockEntity> {
     void render(T blockEntity, float partialTick, PoseStack poseStack,
                 MultiBufferSource bufferSource, int packedLight, int packedOverlay,
                 MachineRenderApi api);
+
+    /**
+     * Whether this hook has immediate content for this BE this frame. Consulted
+     * by the fast-assert path: hooks reporting false on a machine whose
+     * animation epoch is stable let the WHOLE machine roster-assert (renderAll
+     * is skipped entirely - a hook that would draw must veto). Contract: the
+     * predicate is re-evaluated every frame, and any state change that can
+     * produce content must also flip the spec's animation epoch (the
+     * assembler's recipe icon is gated on the crafting state, which the ring
+     * segment epoch covers) - otherwise the frame the content appears would
+     * still assert it away.
+     */
+    default boolean mayDrawContent(T blockEntity) {
+        return true;
+    }
 }

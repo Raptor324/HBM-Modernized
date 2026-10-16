@@ -65,7 +65,8 @@ public class TeslaBlockEntity extends BaseMachineBlockEntity {
         be.ensureNetworkInitialized();
         be.targets.clear();
 
-        if (be.getEnergyStored() >= POWER_PER_ZAP) {
+        // Discharge (entity query + per-candidate clips) phase-spread, not every tick.
+        if (be.probeDue(5) && be.getEnergyStored() >= POWER_PER_ZAP) {
             be.setEnergyStored(be.getEnergyStored() - POWER_PER_ZAP);
 
             // World-space origin: on a Sable ship the block position is in the plot grid.
@@ -74,8 +75,21 @@ public class TeslaBlockEntity extends BaseMachineBlockEntity {
             be.targets.addAll(zap(level, origin.x, origin.y, origin.z, RANGE, null));
         }
 
-        be.setChanged();
-        be.sendUpdateToClient();
+        // Sync only on a state delta: energy + arc-list fingerprint. No targets (and no prior
+        // arcs to clear) means no sync — the renderer has nothing new to draw.
+        be.syncIfStateChanged(be.getEnergyStored(), be.arcFingerprint());
+    }
+
+    /** Fingerprint of the arc end-point list shipped by writeNbtData. */
+    private long arcFingerprint() {
+        long h = targets.size();
+        for (int i = 0; i < targets.size(); i++) {
+            Vec3 t = targets.get(i);
+            h = h * 31L + Double.doubleToRawLongBits(t.x);
+            h = h * 31L + Double.doubleToRawLongBits(t.y);
+            h = h * 31L + Double.doubleToRawLongBits(t.z);
+        }
+        return h;
     }
 
     /**

@@ -35,7 +35,6 @@ public class MachineSubstationBlockEntity extends BaseMachineBlockEntity {
     private void serverTick() {
         ensureNetworkInitialized();
 
-        boolean wasActive = active;
         active = getEnergyStored() > 0;
 
         if (active) {
@@ -47,10 +46,11 @@ public class MachineSubstationBlockEntity extends BaseMachineBlockEntity {
             progress = 0;
         }
 
-        if (wasActive != active || active || progress == 0) {
-            setChanged();
-            sendUpdateToClient();
-        }
+        // Анти-sync-спам: старое условие (wasActive != active || active || progress == 0)
+        // было тавтологией — синк шёл каждый тик. Теперь подпись (energy, active|bucket прогресса)
+        // шлёт пакет только при реальном изменении отображаемого состояния.
+        long progressBucket = maxProgress > 0 ? (long) progress * 16L / maxProgress : 0L;
+        syncIfStateChanged(getEnergyStored(), (active ? 1L : 0L) | (progressBucket << 1));
     }
 
     public int getProgressScaled(int scale) {

@@ -669,7 +669,14 @@ public final class RenderHooks {
         //? if < 1.21.1 {
         return net.minecraft.client.Minecraft.getInstance().getFrameTime();
         //?} else {
-        /*return net.minecraft.client.Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true);
+        /*// The FALSE variant - the exact value LevelRenderer feeds the BER
+        // pipeline and RenderSystem.setShaderGameTime. The TRUE variant skips
+        // DeltaTracker's frozen branch (frozen = the level not running
+        // normally - regular on an overloaded client) and returns the raw
+        // residual there, a full tick away from what every BlockEntity lerp
+        // uses - our tracked rigs' uPartialTick disagreed with the arms' lerp
+        // by up to a whole tick, frame to frame = the assembler ring's jerk.
+        return net.minecraft.client.Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
         *///?}
     }
 
@@ -700,10 +707,83 @@ public final class RenderHooks {
     public static void safeShaderSource(int shaderId, CharSequence source) {
         try (org.lwjgl.system.MemoryStack stack = org.lwjgl.system.MemoryStack.stackPush()) {
             java.nio.ByteBuffer sourceBuffer = org.lwjgl.system.MemoryUtil.memUTF8(source, true);
-            org.lwjgl.PointerBuffer pointers = stack.mallocPointer(1);
-            pointers.put(sourceBuffer);
-            org.lwjgl.opengl.GL20C.nglShaderSource(shaderId, 1, pointers.address0(), 0L);
-            org.lwjgl.system.MemoryUtil.memFree(sourceBuffer);
+            try {
+                org.lwjgl.PointerBuffer pointers = stack.mallocPointer(1);
+                pointers.put(sourceBuffer);
+                org.lwjgl.opengl.GL20C.nglShaderSource(shaderId, 1, pointers.address0(), 0L);
+            } finally {
+                // glShaderSource copies the source strings before returning
+                // (docs.gl/gl4/glShaderSource), so the native copy is always safe to free here -
+                // and must be freed on every exit path: MemoryStack.close() only pops the frame,
+                // it never frees this malloc'd buffer.
+                org.lwjgl.system.MemoryUtil.memFree(sourceBuffer);
+            }
+        }
+    }
+
+    /**
+     * Client-safe notification when a multiblock part/casing is removed.
+     * Routes to NucleusDispatcherBypass on the client side without referencing
+     * client classes on dedicated servers.
+     */
+    public static void onMultiblockPartRemoved(net.minecraft.world.level.Level level, net.minecraft.core.BlockPos partPos, net.minecraft.core.BlockPos controllerPos) {
+        if (level != null && level.isClientSide() && controllerPos != null) {
+            com.hbm_m.multiblock.TeardownTrace.log("channel B: RenderHooks.onMultiblockPartRemoved part={} -> controller={}",
+                    partPos.toShortString(), controllerPos.toShortString());
+            //? if < 1.21.1 {
+            if (net.minecraftforge.fml.loading.FMLEnvironment.dist.isClient()) {
+                com.hbm_m.client.render.NucleusDispatcherBypass.onMachineControllerRemoved(level, controllerPos);
+            }
+            //?} else {
+            /*if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {
+                com.hbm_m.client.render.NucleusDispatcherBypass.onMachineControllerRemoved(level, controllerPos);
+            }
+            *///?}
+        } else {
+            com.hbm_m.multiblock.TeardownTrace.trace(
+                    "channel B: onMultiblockPartRemoved NO-OP levelNull={} clientSide={} controllerPosNull={} part={}",
+                    level == null, level != null && level.isClientSide(), controllerPos == null,
+                    partPos == null ? "?" : partPos.toShortString());
+        }
+    }
+
+    public static void onDoorSkinChanged(net.minecraft.world.level.block.entity.BlockEntity door) {
+        if (door != null && door.getLevel() != null && door.getLevel().isClientSide()) {
+            //? if < 1.21.1 {
+            if (net.minecraftforge.fml.loading.FMLEnvironment.dist.isClient()) {
+                if (door instanceof com.hbm_m.block.entity.doors.DoorBlockEntity dbe) {
+                    com.hbm_m.client.overlay.DoorAnimationDelayHelper.clear(dbe);
+                }
+                com.hbm_m.client.render.NucleusDispatcherBypass.onDoorSkinChanged(door);
+            }
+            //?} else {
+            /*if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {
+                if (door instanceof com.hbm_m.block.entity.doors.DoorBlockEntity dbe) {
+                    com.hbm_m.client.overlay.DoorAnimationDelayHelper.clear(dbe);
+                }
+                com.hbm_m.client.render.NucleusDispatcherBypass.onDoorSkinChanged(door);
+            }
+            *///?}
+        }
+    }
+
+    public static void onDoorRemoved(net.minecraft.world.level.block.entity.BlockEntity door) {
+        if (door != null && door.getLevel() != null && door.getLevel().isClientSide()) {
+            //? if < 1.21.1 {
+            if (net.minecraftforge.fml.loading.FMLEnvironment.dist.isClient()) {
+                if (door instanceof com.hbm_m.block.entity.doors.DoorBlockEntity dbe) {
+                    com.hbm_m.client.overlay.DoorAnimationDelayHelper.clear(dbe);
+                }
+                com.hbm_m.client.render.NucleusDispatcherBypass.onMachineRemoved(door);
+            }
+            //?} else {
+            /*if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {
+                if (door instanceof com.hbm_m.block.entity.doors.DoorBlockEntity dbe) {
+                    com.hbm_m.client.overlay.DoorAnimationDelayHelper.clear(dbe);
+                }
+                com.hbm_m.client.render.NucleusDispatcherBypass.onMachineRemoved(door);
+            }
+            *///?}
         }
     }
 }

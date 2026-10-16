@@ -64,6 +64,8 @@ public class MachineChimneyBlockEntity extends BaseMachineBlockEntity implements
     public static void tick(Level level, BlockPos pos, BlockState state, MachineChimneyBlockEntity be) {
         if (level.isClientSide()) return;
 
+        int before = be.tank.getFluidAmountMb();
+
         if (level.getGameTime() % 20 == 0) {
             for (Direction dir : Direction.values()) {
                 be.trySubscribe(be.tank, level, pos.relative(dir), dir);
@@ -74,6 +76,11 @@ public class MachineChimneyBlockEntity extends BaseMachineBlockEntity implements
         if (amount > 0) {
             be.pollute(level, pos, be.tank.getTankType(), amount);
             be.tank.drainMb(amount);
+        }
+
+        // Anti-sync-spam: setChanged only when the tank level actually moved this tick
+        // (subscribe fill or the drain above).
+        if (be.tank.getFluidAmountMb() != before) {
             be.setChanged();
         }
     }

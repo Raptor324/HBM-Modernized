@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.hbm_m.blockentity.machines.CargoElevatorBlockEntity;
+import com.hbm_m.client.render.cache.RenderCacheManager;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.platform.RenderHooks;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -43,6 +44,16 @@ public class CargoElevatorRenderer implements BlockEntityRenderer<CargoElevatorB
     private static final Map<String, TextureAtlasSprite> SPRITE_CACHE = new HashMap<>();
     private static final String OBJ_PATH = "models/machines/elevator.obj";
     private static final String TEXTURE = "block/machine/elevator";
+
+    // Cached sprites hold the UV rects of the atlas layout they were fetched under, so both
+    // caches must be dropped on reload/session end - the next sprite()/getObj() call lazily
+    // re-fetches from the re-stitched atlas / current resource pack.
+    static {
+        RenderCacheManager.register(reason -> {
+            OBJ_CACHE.clear();
+            SPRITE_CACHE.clear();
+        });
+    }
 
     public CargoElevatorRenderer(BlockEntityRendererProvider.Context ctx) {}
 

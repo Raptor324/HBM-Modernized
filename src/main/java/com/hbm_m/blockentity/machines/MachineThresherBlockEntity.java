@@ -112,17 +112,26 @@ public class MachineThresherBlockEntity extends com.hbm_m.blockentity.BaseHbmBlo
                 }
             }
 
-            AABB aabb = new AABB(armTip).inflate(3.5, 0.5, 3.5);
-            for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, aabb)) {
-                if (e.isAlive() && e.hurt(level.damageSources().generic(), 100)) {
-                    level.playSound(null, e.getX(), e.getY(), e.getZ(), net.minecraft.sounds.SoundEvents.WOOD_BREAK,
-                            net.minecraft.sounds.SoundSource.BLOCKS, 2.0F, 0.95F + level.getRandom().nextFloat() * 0.2F);
+            // Урон по сущностям — скан не каждый тик: probeDue(10) даёт максимум 10 тиков
+            // (2 Гц) задержки удара. Принято (PR-note). Сбор урожая остаётся per-tick.
+            if (be.probeDue(10)) {
+                AABB aabb = new AABB(armTip).inflate(3.5, 0.5, 3.5);
+                for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, aabb)) {
+                    if (e.isAlive() && e.hurt(level.damageSources().generic(), 100)) {
+                        level.playSound(null, e.getX(), e.getY(), e.getZ(), net.minecraft.sounds.SoundEvents.WOOD_BREAK,
+                                net.minecraft.sounds.SoundSource.BLOCKS, 2.0F, 0.95F + level.getRandom().nextFloat() * 0.2F);
+                    }
                 }
             }
         }
 
-        be.setChanged();
-        level.sendBlockUpdated(pos, blockState, blockState, 3);
+        // Анти-sync-спам: раньше setChanged + sendBlockUpdated шли каждый тик. Теперь пакет
+        // уходит при изменении подписи (угол руки, isOn, state, бак) или раз в 2 тика (10 Гц),
+        // пока рука в движении — плавность стрелки на клиенте сохранена.
+        be.syncIfChangedOrEvery(
+                Float.floatToIntBits(be.angle),
+                (be.isOn ? 1L : 0L) | ((long) be.state << 1) | ((long) be.tank.getFill() << 4),
+                2);
     }
 
     private void harvestCrop(ServerLevel level, CropBlock crop, BlockPos target, BlockState state, BlockPos machinePos, Direction facing) {

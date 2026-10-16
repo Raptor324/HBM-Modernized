@@ -61,6 +61,10 @@ public class ClientModEvents {
         // handler because - unlike the block below - it must also apply to armour.
         NeutronActivationTooltip.init();
 
+        dev.architectury.event.events.client.ClientLifecycleEvent.CLIENT_LEVEL_LOAD.register(level -> {
+            com.hbm_m.client.render.NucleusDispatcherBypass.clearPresence();
+        });
+
         // Версионно-зависимая регистрация тултипов: на 1.20.1 Architectury даёт 3-параметровый
         // callback (stack, lines, flag), на 1.21.1+ — 4-параметровый с Item.TooltipContext.
         // Тело вынесено в handleItemTooltip, чтобы логика не дублировалась.
@@ -193,8 +197,21 @@ public class ClientModEvents {
         }
 
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_ENTITIES) {
+            // Diagram capture pass (Simulated): the deferred Nucleus pipeline is
+            // fully disengaged there - no frame-basis stamping, no frame
+            // bookkeeping, no instanced collect; the vanilla BER + immediate
+            // per-part path serves the capture (see DiagramRenderCompat).
+            // Early return is safe: the stage ifs below cannot match this event.
+            if (com.hbm_m.compat.simulated.DiagramRenderCompat.isRenderingDiagram()) {
+                return;
+            }
             ModClothConfig cfg = ModClothConfig.get();
             Minecraft mc = Minecraft.getInstance();
+            // Level pose basis (R_cam*bob on 1.20.1): records are built bob-stripped,
+            // the bob is re-applied at draw time via FrameViewState.viewMatrix() -
+            // without this the roster asserts / bake memcmp freeze records at a
+            // stale bob phase and animated parts float while walking.
+            com.hbm_m.client.render.FrameViewState.noteFrameBasis(event.getPoseStack().last().pose());
             var cameraPos = mc.gameRenderer.getMainCamera().getPosition();
             var frustum = cfg.getEffectiveOcclusionCullingMode() == ModClothConfig.OcclusionCullingMode.CPU
                     ? event.getFrustum() : null;
@@ -206,7 +223,8 @@ public class ClientModEvents {
             // события = базис диспетчера (R_cam без трансляции, 1.20.1).
             com.hbm_m.client.render.NucleusDispatcherBypass.collectMain(
                     event.getPoseStack(), mc.renderBuffers().bufferSource(),
-                    com.hbm_m.platform.RenderHooks.getPartialTick());
+                    com.hbm_m.platform.RenderHooks.getPartialTick(),
+                    event.getFrustum());
 
             // РЕГРЕССИЯ-СТОП (двойная отрисовка): меши ракет рисуются ТОЛЬКО
             // в EngineHandler на AFTER_WEATHER (renderFiltered) — единый
@@ -222,7 +240,13 @@ public class ClientModEvents {
                     mc.renderBuffers().bufferSource(),
                     event.getPoseStack(),
                     cameraPos);
-            InstancedRenderFrame.presentAfterBlockEntities(event.getProjectionMatrix(), cameraPos);
+            // Retained instanced/MDI flush is main-pass-only: a diagram pass bound
+            // to its own FBO with an ortho projection must neither consume the main
+            // batch nor present records collected during the capture (none survive
+            // - collect is gated off for that pass).
+            if (!com.hbm_m.compat.simulated.DiagramRenderCompat.isRenderingDiagram()) {
+                InstancedRenderFrame.presentAfterBlockEntities(event.getProjectionMatrix(), cameraPos);
+            }
             return;
         }
 
@@ -259,6 +283,15 @@ public class ClientModEvents {
     }
     //?} elif neoforge {
     /*@SubscribeEvent
+    public static void onRenderGuiPre(net.neoforged.neoforge.client.event.RenderGuiEvent.Pre event) {
+        // Виньетка использует multiply-блендинг (ZERO/ONE_MINUS_SRC_COLOR) и
+        // молча ломается при расхождении кеша факторов блендинга с физикой
+        // (GlStateManager._blendFuncSeparate но-опится при «совпадении»).
+        // Форсируем честный блендинг ДО Gui.render.
+        com.hbm_m.client.render.shader.ShaderBindResync.forceHonestBlendState();
+    }
+
+    @SubscribeEvent
     public static void onBlockLookOverlay(net.neoforged.neoforge.client.event.RenderGuiEvent.Pre event) {
         // Паритет с Forge: прицельный HUD блоков ILookOverlay (раньше был только на 1.20.1).
         com.hbm_m.client.overlay.BlockLookOverlayHud.render(event.getGuiGraphics());
@@ -298,4 +331,20 @@ public class ClientModEvents {
             lastLoggedShadowBerCount = count;
         }
     }
+
+    //? if forge {
+    @SubscribeEvent
+    public static void onClientLevelUnload(net.minecraftforge.event.level.LevelEvent.Unload event) {
+        if (event.getLevel() instanceof net.minecraft.client.multiplayer.ClientLevel) {
+            com.hbm_m.client.render.NucleusDispatcherBypass.clearPresence();
+        }
+    }
+    //?} elif neoforge {
+    /*@SubscribeEvent
+    public static void onClientLevelUnload(net.neoforged.neoforge.event.level.LevelEvent.Unload event) {
+        if (event.getLevel() instanceof net.minecraft.client.multiplayer.ClientLevel) {
+            com.hbm_m.client.render.NucleusDispatcherBypass.clearPresence();
+        }
+    }
+    *///?}
 }

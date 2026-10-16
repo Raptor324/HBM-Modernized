@@ -127,18 +127,11 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
 
         be.ensureNetworkInitialized();
 
-        boolean wasActive = be.isActive;
-
         be.processTurbine();
 
         // Push energy to network
         if (be.energy > 0 && level.getGameTime() % 10L == 0L) {
             be.updateEnergyDelta(be.getEnergyStored());
-        }
-
-        if (wasActive != be.isActive) {
-            be.setChanged();
-            be.sendUpdateToClient();
         }
     }
 
@@ -235,11 +228,14 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
         if (generating) {
             flywheelEnergy -= output;
             setEnergyStored(getEnergyStored() + output);
-            setChanged();
-            sendUpdateToClient();
         }
 
         isActive = generating || flywheelEnergy > 0;
+
+        // P6: пакет клиенту только при изменении отрисовываемого состояния
+        // (энергия, обороты flywheel, active/operational флаги)
+        syncIfStateChanged(getEnergyStored(),
+                Double.doubleToLongBits(spin) ^ (isActive ? 0x1L : 0L) ^ (operational ? 0x2L : 0L));
     }
 
     /**

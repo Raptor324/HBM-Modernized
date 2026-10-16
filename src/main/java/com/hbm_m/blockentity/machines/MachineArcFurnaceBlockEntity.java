@@ -138,19 +138,27 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity impleme
         }
     }
 
+    /** Кэшированный скан рецептов: подпись — фингерпринт значения входного стака (P4, value-keyed). */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<ArcFurnaceRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+
     @SuppressWarnings({"unchecked", "rawtypes"})
     @Nullable
     private ArcFurnaceRecipe findRecipe(Level level) {
         ItemStack input = inventory.getStackInSlot(SLOT_INPUT);
         if (input.isEmpty()) return null;
 
-        List<ArcFurnaceRecipe> recipes = RecipeHooks.getAllRecipes(level, ArcFurnaceRecipe.Type.INSTANCE);
-        for (ArcFurnaceRecipe recipe : recipes) {
-            if (recipe.matchesInput(input)) {
-                return recipe;
+        long signature = com.hbm_m.recipe.index.CachedRecipeResolver.sign(2, PlatformHooks.stackFingerprint(input));
+        return recipeResolver.resolve(level, ArcFurnaceRecipe.Type.INSTANCE, signature, (lvl, all) -> {
+            // CONTRACT 1: сканер — только матч по входу; headroom выходов проверяется
+            // per-tick в canProcess вне сканера.
+            for (ArcFurnaceRecipe recipe : all) {
+                if (recipe.matchesInput(input)) {
+                    return recipe;
+                }
             }
-        }
-        return null;
+            return null;
+        });
     }
 
     private boolean canProcess(ArcFurnaceRecipe recipe) {

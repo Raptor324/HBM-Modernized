@@ -10,8 +10,10 @@ import com.hbm_m.interfaces.IHeatSource;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineCokerMenu;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
+import com.hbm_m.platform.PlatformHooks;
 import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.recipe.CokerRecipe;
+import com.hbm_m.recipe.index.CachedRecipeResolver;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -56,6 +58,11 @@ public class MachineCokerBlockEntity extends BaseMachineBlockEntity implements I
     private int heat;
     private int progress;
     private boolean wasOn;
+
+    /** Кэш скана рецептов: ключ — тип жидкости бака 0 (подпись), пересканирование только на /reload или смену типа. */
+    private final CachedRecipeResolver<CokerRecipe> recipeResolver = new CachedRecipeResolver<>();
+
+    private static final long RECIPE_SEED = 0xC0CA01L;
 
     public MachineCokerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.COKER_BE.get(), pos, state, INVENTORY_SIZE, 0L, 0L, 0L);
@@ -140,19 +147,38 @@ public class MachineCokerBlockEntity extends BaseMachineBlockEntity implements I
             }
         }
 
-        for (Direction dir : Direction.values()) {
-            BlockPos neighborPos = pos.relative(dir);
-            BlockEntity neighborBe = level.getBlockEntity(neighborPos);
-            if (!(neighborBe instanceof IFluidConnectorMK2)) continue;
-            if (tank1.getFill() > 0) {
+        // Раздача побочного продукта. tryProvide — каждый тик: его вторая ветка — прямой пуш
+        // в соседний приёмник, гейт делит пропускную способность выдачи, а не только стоимость
+        // скана (6 getBlockEntity). Формально гейт убран целиком (Pump-паттерн): tryProvide
+        // здесь единственная работа блока. Fill-проверка не даёт зондировать соседей,
+        // пока бак пуст.
+        if (tank1.getFill() > 0) {
+            for (Direction dir : Direction.values()) {
+                BlockPos neighborPos = pos.relative(dir);
+                BlockEntity neighborBe = level.getBlockEntity(neighborPos);
+                if (!(neighborBe instanceof IFluidConnectorMK2)) continue;
                 tryProvide(tank1, level, neighborPos, dir);
             }
         }
 
         spawnPlume(level, pos);
 
-        setChanged();
-        sendUpdateToClient();
+        // Anti-sync-spam: полный BE-пакет только при изменении отрисовываемого состояния
+        // (прогрев/прогресс/баки/инвентарь). Подпись покрывает всё, что пишет writeNbtData.
+        long lo = progress;
+        lo = lo * 31L + heat;
+        lo = lo * 31L + (wasOn ? 1L : 0L);
+        long hi = tankFingerprint(tank0);
+        hi = hi * 31L + tankFingerprint(tank1);
+        hi = hi * 31L + PlatformHooks.stackFingerprint(inventory.getStackInSlot(SLOT_FLUID_ID));
+        hi = hi * 31L + PlatformHooks.stackFingerprint(inventory.getStackInSlot(SLOT_OUTPUT));
+        syncIfStateChanged(lo, hi);
+    }
+
+    /** Дешёвый фингерпринт содержимого HBM-бака (тип жидкости + количество mB). */
+    private static long tankFingerprint(FluidTank tank) {
+        Fluid type = tank.getTankType();
+        return (type == null ? 0L : type.hashCode()) * 31L + tank.getFluidAmountMb();
     }
 
     private void pullOrDecayHeat(Level level, BlockPos pos) {
@@ -195,14 +221,19 @@ public class MachineCokerBlockEntity extends BaseMachineBlockEntity implements I
     }
 
 
-    /** Data-driven поиск CokerRecipe по типу жидкости бака 0 (заменяет статический CokerRecipes.get). */
+    /** Data-driven поиск CokerRecipe по типу жидкости бака 0 (заменяет статический CokerRecipes.get).
+     *  Скан кэшируется ({@link CachedRecipeResolver}) по фингерпринту типа жидкости бака 0. */
     @org.jetbrains.annotations.Nullable
     private CokerRecipe findCokerRecipe() {
         if (level == null) return null;
-        for (CokerRecipe recipe : RecipeHooks.getAllRecipes(level, CokerRecipe.Type.INSTANCE)) {
-            if (recipe.matchesFluidType(tank0.getTankType())) return recipe;
-        }
-        return null;
+        final Fluid tankType = tank0.getTankType();
+        long sig = CachedRecipeResolver.sign(RECIPE_SEED, tankType == null ? 0L : tankType.hashCode());
+        return recipeResolver.resolve(level, CokerRecipe.Type.INSTANCE, sig, (lvl, all) -> {
+            for (CokerRecipe recipe : all) {
+                if (recipe.matchesFluidType(tankType)) return recipe;
+            }
+            return null;
+        });
     }
 
 
