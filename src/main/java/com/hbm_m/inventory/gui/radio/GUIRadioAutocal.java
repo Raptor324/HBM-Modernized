@@ -12,6 +12,13 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Port of {@code GUIScreenRadioAUTOCAL} (1.7.10 Original). Plain vanilla-widget screen (no
@@ -19,6 +26,7 @@ import net.minecraft.network.chat.Component;
  * {@link EditBox} script-line fields (no multi-line text widget exists in this Minecraft version's
  * vanilla component set), matching the same-line-count convention used by {@code GUIRadioTelex}.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIRadioAutocal extends Screen {
 
     private static final int SCRIPT_LINES = 16;

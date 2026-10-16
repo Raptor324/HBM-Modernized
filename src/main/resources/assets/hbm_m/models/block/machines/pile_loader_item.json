@@ -1,0 +1,168 @@
+{
+	"textures": {
+		"particle": "hbm_m:block/machine/pile_loader"
+	},
+	"loader": "forge:composite",
+	"children": {
+		"pile_loader_model": {
+			"loader": "forge:obj",
+			"model": "hbm_m:models/block/machines/pile_loader_item.obj",
+			"flip_v": true,
+			"render_type": "minecraft:cutout",
+			"textures": {
+				"default": "hbm_m:block/machine/pile_loader"
+			}
+		}
+	},
+	"transform": {
+		"translation": [
+			0.5,
+			0,
+			0.5
+		],
+		"rotation": [
+			0,
+			0,
+			0
+		],
+		"scale": 1.0
+	},
+	"display": {
+		"thirdperson_righthand": {
+			"rotation": [
+				75,
+				45,
+				0
+			],
+			"translation": [
+				0.129,
+				2.5,
+				0.0
+			],
+			"scale": [
+				0.3636,
+				0.3636,
+				0.3636
+			]
+		},
+		"thirdperson_lefthand": {
+			"rotation": [
+				75,
+				45,
+				0
+			],
+			"translation": [
+				0.129,
+				2.5,
+				0.0
+			],
+			"scale": [
+				0.3636,
+				0.3636,
+				0.3636
+			]
+		},
+		"firstperson_righthand": {
+			"rotation": [
+				0,
+				45,
+				0
+			],
+			"translation": [
+				0.137,
+				0.0,
+				0.0
+			],
+			"scale": [
+				0.3879,
+				0.3879,
+				0.3879
+			]
+		},
+		"firstperson_lefthand": {
+			"rotation": [
+				0,
+				225,
+				0
+			],
+			"translation": [
+				-0.137,
+				0.0,
+				-0.0
+			],
+			"scale": [
+				0.3879,
+				0.3879,
+				0.3879
+			]
+		},
+		"gui": {
+			"rotation": [
+				30,
+				225,
+				0
+			],
+			"translation": [
+				-0.214,
+				0.0,
+				-0.0
+			],
+			"scale": [
+				0.6061,
+				0.6061,
+				0.6061
+			]
+		},
+		"ground": {
+			"rotation": [
+				0,
+				0,
+				0
+			],
+			"translation": [
+				0.061,
+				3.0,
+				0.061
+			],
+			"scale": [
+				0.2424,
+				0.2424,
+				0.2424
+			]
+		},
+		"fixed": {
+			"rotation": [
+				0,
+				180,
+				0
+			],
+			"translation": [
+				-0.121,
+				0.0,
+				-0.121
+			],
+			"scale": [
+				0.4848,
+				0.4848,
+				0.4848
+			]
+		},
+		"head": {
+			"rotation": [
+				0,
+				0,
+				0
+			],
+			"translation": [
+				0,
+				0,
+				0
+			],
+			"scale": [
+				1,
+				1,
+				1
+			]
+		}
+	}
+}

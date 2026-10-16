@@ -9,6 +9,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderHighlightEvent;
+import net.neoforged.api.distmarker.OnlyIn;
 
 /^*
  * NeoForge-only подписчик: при удержании предмета мультиблока отменяет ванильный
@@ -16,6 +17,7 @@ import net.neoforged.neoforge.client.event.RenderHighlightEvent;
  * Зеркалирует MultiblockPlacementHighlightForge.
  ^/
 @EventBusSubscriber(value = Dist.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public final class MultiblockPlacementHighlightNeoForge {
     private MultiblockPlacementHighlightNeoForge() {}
 

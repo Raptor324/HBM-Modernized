@@ -7,14 +7,13 @@ import java.util.Optional;
 
 import com.hbm_m.block.machines.anvils.AnvilTier;
 import com.hbm_m.platform.recipe.RecipeHooks;
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
 //? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -29,12 +28,7 @@ public final class AnvilRecipeManager {
         return RecipeHooks.getAllRecipes(level, AnvilRecipe.Type.INSTANCE);
     }
 
-    //? if fabric {
-    /*@Environment(EnvType.CLIENT)
-    *///?}
-    //? if forge {
     @OnlyIn(Dist.CLIENT)
-    //?}
     public static List<AnvilRecipe> getClientRecipes() {
         Minecraft minecraft = Minecraft.getInstance();
         Level level = minecraft.level;

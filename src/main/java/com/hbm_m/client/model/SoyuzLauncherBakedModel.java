@@ -12,9 +12,13 @@ import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.model.data.ModelData;
 //?} elif neoforge {
-/*import net.neoforged.neoforge.client.model.data.ModelData;
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.model.data.ModelData;
 *///?}
 
 /**
@@ -29,6 +33,7 @@ import net.minecraftforge.client.model.data.ModelData;
  * is skipped entirely here and handled instead by a BlockEntityRenderer
  * using direct float-precision VBOs (see SoyuzLauncherRenderer).
  */
+@OnlyIn(Dist.CLIENT)
 public class SoyuzLauncherBakedModel extends AbstractMultipartBakedModel {
 
     public static final String TABLE = "Table";
@@ -66,7 +71,6 @@ public class SoyuzLauncherBakedModel extends AbstractMultipartBakedModel {
         return result;
     }
 
-    //? if forge || neoforge {
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
                                      RandomSource rand, ModelData modelData, @Nullable net.minecraft.client.renderer.RenderType renderType) {
@@ -82,7 +86,6 @@ public class SoyuzLauncherBakedModel extends AbstractMultipartBakedModel {
         }
         return result;
     }
-    //?}
 
     @Override
     protected List<String> getItemRenderPartNames() {

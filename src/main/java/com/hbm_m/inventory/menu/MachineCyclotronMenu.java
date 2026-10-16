@@ -98,7 +98,7 @@ public class MachineCyclotronMenu extends AbstractContainerMenu {
         if (inventory.player.level().isClientSide) {
             return null;
         }
-        throw new IllegalStateException("No MachineCyclotronBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":cyclotron_menu");
+        throw new MenuBlockEntityMissingException("No MachineCyclotronBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":cyclotron_menu");
     }
 
     public MachineCyclotronBlockEntity getBlockEntity() {
@@ -110,7 +110,7 @@ public class MachineCyclotronMenu extends AbstractContainerMenu {
         if (blockEntity == null) {
             return false; // тайл может отсутствовать на клиенте (реплей Flashback)
         }
-        return stillValid(this.access, player, this.blockEntity.getBlockState().getBlock());
+        return MenuReach.stillValid(player, blockEntity, this.blockEntity.getBlockState().getBlock());
     }
 
     @Override

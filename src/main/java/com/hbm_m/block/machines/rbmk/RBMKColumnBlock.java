@@ -30,7 +30,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import dev.architectury.registry.menu.MenuRegistry;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class RBMKColumnBlock extends BaseEntityBlock {
+public abstract class RBMKColumnBlock extends BaseEntityBlock implements com.hbm_m.interfaces.ILookOverlay {
 
     /** Set to false to suppress lid drops globally (e.g. during world gen). */
     public static boolean dropLids = true;
@@ -113,6 +113,70 @@ public abstract class RBMKColumnBlock extends BaseEntityBlock {
         return InteractionResult.PASS;
     }
 
+    // ─── DODD diagnostic overlay ─────────────────────────────────────────────
+
+    /**
+     * Port of the original {@code RBMKBase.printHook} → {@code TileEntityRBMKBase.diagnosticPrintHook}.
+     * The green "Dump of Ordered Data Diagnostic (DODD)" title is drawn higher than usual
+     * (pZ-20, with the block name below it at pZ-10) to leave room for the data lines, so
+     * {@link com.hbm_m.interfaces.ILookOverlay#printGeneric} (title pinned at pZ-10) can't
+     * express this layout and the rendering is done inline, copying printGeneric's structure.
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof RBMKColumnBlockEntity col)) return;
+
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+        if (!mc.options.getCameraType().isFirstPerson() || mc.options.hideGui) return;
+        if (mc.gameMode != null && mc.gameMode.getPlayerMode() == net.minecraft.world.level.GameType.SPECTATOR) return;
+
+        net.minecraft.nbt.CompoundTag flush = new net.minecraft.nbt.CompoundTag();
+        col.getDiagData(flush);
+
+        int pX = mc.getWindow().getGuiScaledWidth() / 2 + 8;
+        int pZ = mc.getWindow().getGuiScaledHeight() / 2;
+
+        java.util.List<String> exceptions = java.util.List.of("x", "y", "z", "items", "id", "muffled");
+
+        //Keep the title unlocalized is cool.
+        String title = "Dump of Ordered Data Diagnostic (DODD)";
+        guiGraphics.drawString(mc.font, title, pX + 1, pZ - 19, 0x006000, false);
+        guiGraphics.drawString(mc.font, title, pX, pZ - 20, 0x00FF00, false);
+
+        String blockName = net.minecraft.network.chat.Component.translatable(getDescriptionId()).getString();
+        guiGraphics.drawString(mc.font, blockName, pX + 1, pZ - 9, 0x606000, false);
+        guiGraphics.drawString(mc.font, blockName, pX, pZ - 10, 0xffff00, false);
+
+        String[] ents = flush.getAllKeys().toArray(new String[0]);
+        java.util.Arrays.sort(ents);
+
+        for (String key : ents) {
+
+            if (exceptions.contains(key))
+                continue;
+            net.minecraft.nbt.Tag valueTag = flush.get(key);
+            if (valueTag == null)
+                continue;
+            // 1.7.10's NBTTagString.toString() printed raw text; modern toString() SNBT-quotes
+            // strings, so strings are printed as-is while numeric tags keep their type suffix.
+            String value = valueTag instanceof net.minecraft.nbt.StringTag
+                    ? valueTag.getAsString() : valueTag.toString();
+            //No...'d' doesn't refer to "day" and 's' doesn't refer to "second". Meaningless.
+            if (!value.isEmpty()) {
+                char lastChar = value.charAt(value.length() - 1);
+                if (lastChar == 'd' || lastChar == 's' || lastChar == 'b') {
+                    value = value.substring(0, value.length() - 1);
+                }
+            }
+            // Оригинал локализует ключ через tile.rbmk.dodd.<key> (I18nUtil.resolveKey);
+            // ключи добавлены в оба lang-файла, неизвестные ключи падают в raw-вид сами.
+            String localized = net.minecraft.network.chat.Component.translatable("tile.rbmk.dodd." + key).getString();
+            guiGraphics.drawString(mc.font, localized + ": " + value, pX, pZ, 0xFFFFFF, false);
+            pZ += 10;
+        }
+    }
+
     // ─── Placement ────────────────────────────────────────────────────────────
 
     /**
@@ -130,14 +194,45 @@ public abstract class RBMKColumnBlock extends BaseEntityBlock {
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
         super.setPlacedBy(level, pos, state, placer, stack);
         if (level.isClientSide) return;
-        int height = RBMKDials.getColumnHeight(level);
-        BlockState filler = ModBlocks.RBMK_COLUMN_FILLER.get().defaultBlockState();
-        for (int i = 1; i <= height; i++) {
-            level.setBlock(pos.above(i), filler, 3);
-        }
+        fillFillers(level, pos, false);
     }
 
     // ─── Break ────────────────────────────────────────────────────────────────
+
+    @Override
+    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
+        super.onPlace(state, level, pos, oldState, isMoving);
+        // setPlacedBy only runs for a player placement. An assembly engine, /setblock or a
+        // structure writes the column straight into the chunk, so the fillers would be missing;
+        // the deferred tick fills whatever gaps are left once everything else has landed.
+        if (!level.isClientSide && !state.is(oldState.getBlock())) {
+            level.scheduleTick(pos, this, 2);
+        }
+    }
+
+    @Override
+    public void tick(BlockState state, net.minecraft.server.level.ServerLevel level, BlockPos pos,
+                     net.minecraft.util.RandomSource random) {
+        // Deferred from onPlace: the engine has put its own blocks back by now.
+        fillFillers(level, pos, true);
+    }
+
+    /**
+     * Fills the column's collision segments.
+     *
+     * <p>skipOccupied is for the deferred path only: placing a column has always overwritten
+     * whatever stood above it, and the recovery tick must not do that to blocks an assembly
+     * engine has just put back.
+     */
+    private static void fillFillers(Level level, BlockPos pos, boolean skipOccupied) {
+        int height = RBMKDials.getColumnHeight(level);
+        BlockState filler = ModBlocks.RBMK_COLUMN_FILLER.get().defaultBlockState();
+        for (int i = 1; i <= height; i++) {
+            BlockPos above = pos.above(i);
+            if (skipOccupied && !level.getBlockState(above).canBeReplaced()) continue;
+            level.setBlock(above, filler, 3);
+        }
+    }
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
@@ -146,7 +241,9 @@ public abstract class RBMKColumnBlock extends BaseEntityBlock {
             if (be instanceof RBMKColumnBlockEntity col) {
                 onColumnRemoved(col, level, pos);
             }
-            if (!level.isClientSide) {
+            // Only setPlacedBy ever creates fillers, and no assembly engine calls it - deleting
+            // them during a move left the moved column without collision for good.
+            if (!level.isClientSide && !com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {
                 int height = RBMKDials.getColumnHeight(level);
                 for (int i = 1; i <= height; i++) {
                     BlockPos fillerPos = pos.above(i);
@@ -160,7 +257,8 @@ public abstract class RBMKColumnBlock extends BaseEntityBlock {
     }
 
     protected void onColumnRemoved(RBMKColumnBlockEntity col, Level level, BlockPos pos) {
-        if (!level.isClientSide && dropLids && col.hasLid() && col.isLidRemovable()) {
+        if (!level.isClientSide && dropLids && col.hasLid() && col.isLidRemovable()
+                && !com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {
             dropLid(col, level, pos);
         }
     }

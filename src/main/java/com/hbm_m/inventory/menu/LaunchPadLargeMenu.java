@@ -122,7 +122,7 @@ public class LaunchPadLargeMenu extends AbstractContainerMenu implements ILongEn
         if (inv.player.level().isClientSide) {
             return null;
         }
-        throw new IllegalStateException("No LaunchPadBaseBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":launch_pad_large_menu");
+        throw new MenuBlockEntityMissingException("No LaunchPadBaseBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":launch_pad_large_menu");
     }
 
     private static MenuType<?> getMenuType() {
@@ -181,15 +181,16 @@ public class LaunchPadLargeMenu extends AbstractContainerMenu implements ILongEn
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
+        return MenuReach.stillValid(player, blockEntity);
+    }
+
+    /** Tries each machine slot that actually accepts the stack, in order. */
+    private boolean moveIntoMachineSlots(net.minecraft.world.item.ItemStack stack) {
+        for (int i = 0; i < MACHINE_SLOTS; i++) {
+            if (!this.slots.get(i).mayPlace(stack)) continue;
+            if (this.moveItemStackTo(stack, i, i + 1, false)) return true;
         }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(
-                pos.getX() + 0.5D,
-                pos.getY() + 0.5D,
-                pos.getZ() + 0.5D
-        ) <= 64.0D;
+        return false;
     }
 
     @Override
@@ -206,8 +207,10 @@ public class LaunchPadLargeMenu extends AbstractContainerMenu implements ILongEn
                     return net.minecraft.world.item.ItemStack.EMPTY;
                 }
             } else {
-                // Из инвентаря игрока в слоты машины (просто первая подходящая позиция)
-                if (!this.moveItemStackTo(stack, 0, MACHINE_SLOTS, false)) {
+                // Из инвентаря игрока в слоты машины — по одному слоту, с проверкой mayPlace:
+                // vanilla moveItemStackTo skips mayPlace when it merges onto an existing stack, so a
+                // whole-range move could drop items into the take-only fuel and oxidiser outputs.
+                if (!moveIntoMachineSlots(stack)) {
                     return net.minecraft.world.item.ItemStack.EMPTY;
                 }
             }

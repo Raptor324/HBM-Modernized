@@ -1,0 +1,145 @@
+# ================= Gradle & Build Artifacts =================
+# Эти файлы создаются при сборке и не должны быть в репозитории.
+/build/
+/.gradle/
+/run/
+/run-data/
+
+# ================= IDE Specific =================
+# Файлы настроек для разных сред разработки.
+# Они специфичны для каждого пользователя и не должны быть общими.
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Eclipse
+.classpath
+.project
+.settings/
+bin/
+
+# Visual Studio Code
+.vscode/
+.cursor
+.cursorignore
+.zcode
+.roo
+.rooignore
+.claudeignore
+opencode.json
+# ================= Generated Files =================
+src/generated/resources/.cache
+src/generated/resources/assets/hbm_m/blockstates/
+src/generated/resources/assets/hbm_m/models/
+src/generated/resources/data/
+AGENTS.md
+*.diff
+/plans
+/plans
+.cursorignore
+build-logic/build
+build-logic/.gradle
+build-logic/build
+versions/*/build
+versions/*/.gradle
+versions/*/run
+versions/*/.eclipse
+versions/*/runGameTest
+versions/datagen/
+legacy/forgegradle/.gradle
+legacy/forgegradle/build
+
+# ================= Logs & Temporary Files =================
+# Логи, дампы ошибок и временные файлы.
+*.log
+hs_err_pid*
+replay_pid*
+temp/
+logs/
+/ExampleProject/
+/OLD/
+agent
+ideas
+libs/*
+design.md
+# ================= OS Specific =================
+# Системные файлы, которые могут случайно появиться.
+.DS_Store
+Thumbs.db
+.kilocode
+
+# ================= Minecraft/Forge Specific =================
+# Файлы, генерируемые средой разработки Forge.
+natives/
+*.srg
+*.tsrg
+forge*changelog.txt
+.fake
+.editorconfig
+.github/copilot-instructions.md
+.gitignore
+.cursor/
+desktop.ini
+HBM-Modernized.code-workspace
+java_pid*
+AGENTS.md
+libs/
+.aider*
+.agents/
+# Локальный контекст для Claude Code
+CLAUDE.md
+
+# Датаген пишет в assets только blockstates, models и lang. Первые два игнорируются выше,
+# lang отслеживается намеренно (его забирают переводчики), а всё остальное, что провайдеры
+# сгенерируют в будущем, в репозиторий попадать не должно.
+src/generated/resources/assets/*
+!src/generated/resources/assets/hbm_m/
+src/generated/resources/assets/hbm_m/*
+!src/generated/resources/assets/hbm_m/lang/
+
+# Черновики и следы инструментов: nul появляется от перенаправления вывода в git bash,
+# остальное — резервные копии редакторов и хвосты неудачных патчей.
+nul
+NUL
+*.bak
+*.orig
+*.rej
+*.tmp
+scratch/
+notes/
+
+# ===== ↑ 以上同步自 .gitignore（「从 .gitignore 同步」只重写以上部分）=====
+.git/
+.hg/
+.svn/
+node_modules/
+bower_components/
+jspm_packages/
+__pycache__/
+site-packages/
+venv/
+coverage/
+htmlcov/
+lcov-report/
+cmakefiles/
+cmake-build-*/
+bazel-*/
+pods/
+deriveddata/
+storybook-static/
+playwright-report/
+test-results/
+allure-results/
+allure-report/
+cdk.out/
+*.egg-info/
+*.dist-info/
+eggs/
+pip-wheel-metadata/
+wheels/
+# ----- ↑ 以上为 ZCode 默认排除规则（自定义规则请写在本行下方，不会被同步/恢复改动）-----
+# 自定义规则写在下方（本行提示可删除）

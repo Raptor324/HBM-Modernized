@@ -11,11 +11,22 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Экран кастомной бомбы: сетка 9x3 + расчётный состав заряда.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUINukeCustom extends GuiInfoScreen<NukeCustomMenu> {
+
+    private static final net.minecraft.resources.ResourceLocation TEXTURE =
+            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(com.hbm_m.lib.RefStrings.MODID, "textures/gui/weapon/gun_bomb_schematic.png");
 
     private final NukeCustomBlockEntity be;
 
@@ -23,7 +34,7 @@ public class GUINukeCustom extends GuiInfoScreen<NukeCustomMenu> {
         super(menu, playerInventory, title);
         this.be = menu.be;
         this.imageWidth = 176;
-        this.imageHeight = 166;
+        this.imageHeight = 222;
     }
 
     @Override
@@ -50,14 +61,7 @@ public class GUINukeCustom extends GuiInfoScreen<NukeCustomMenu> {
 
     @Override
     protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-        guiGraphics.fill(this.leftPos, this.topPos, this.leftPos + imageWidth, this.topPos + imageHeight, 0xFFC6C6C6);
-        guiGraphics.renderOutline(this.leftPos, this.topPos, imageWidth, imageHeight, 0xFF000000);
-        for (int slot = 0; slot < NukeCustomBlockEntity.SLOTS; slot++) {
-            int sx = this.leftPos + 8 + (slot % 9) * 18 - 1;
-            int sy = this.topPos + 18 + (slot / 9) * 18 - 1;
-            guiGraphics.fill(sx, sy, sx + 18, sy + 18, 0xFF8B8B8B);
-            guiGraphics.renderOutline(sx, sy, 18, 18, 0xFF373737);
-        }
+        guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
     }
 
     @Override

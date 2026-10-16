@@ -9,6 +9,13 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Direct port of the layout baked into {@code gui_breeder.png}: input slot -> vertical flux bar
@@ -17,6 +24,7 @@ import net.minecraft.world.entity.player.Inventory;
  * previous version of this class assumed a much richer battery/fluid-tank/upgrade-slot layout that
  * has no art anywhere in this texture and was removed (see {@code MachineBreederBlockEntity}).
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineBreeder extends GuiInfoScreen<MachineBreederMenu> {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
@@ -56,6 +64,10 @@ public class GUIMachineBreeder extends GuiInfoScreen<MachineBreederMenu> {
         String name = this.title.getString();
         guiGraphics.drawString(this.font, name, this.imageWidth / 2 - this.font.width(name) / 2, 6, 0x404040, false);
         guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, this.imageHeight - 96 + 2, 0x404040, false);
+
+        // Original: der anliegende Fluss steht gruen mittig ueber der Anzeige.
+        String flux = String.valueOf(menu.getFlux());
+        guiGraphics.drawString(this.font, flux, 88 - this.font.width(flux) / 2, 21, 0x08FF00, false);
     }
 
     @Override
@@ -69,8 +81,14 @@ public class GUIMachineBreeder extends GuiInfoScreen<MachineBreederMenu> {
     protected void renderTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         super.renderTooltip(guiGraphics, mouseX, mouseY);
 
-        drawElectricityInfo(guiGraphics, mouseX, mouseY,
-                FLUX_X, FLUX_Y, FLUX_WIDTH, FLUX_HEIGHT,
-                menu.getEnergyLong(), menu.getMaxEnergyLong());
+        // Original: ein Hinweisfeld statt einer Energieanzeige - der Brutreaktor braucht keinen Strom.
+        if (mouseX >= this.leftPos + FLUX_X && mouseX < this.leftPos + FLUX_X + FLUX_WIDTH
+                && mouseY >= this.topPos + FLUX_Y && mouseY < this.topPos + FLUX_Y + FLUX_HEIGHT) {
+            guiGraphics.renderComponentTooltip(this.font,
+                    java.util.List.of(
+                            net.minecraft.network.chat.Component.translatable("gui.hbm_m.breeder.flux", menu.getFlux()),
+                            net.minecraft.network.chat.Component.translatable("gui.hbm_m.breeder.hint")),
+                    mouseX, mouseY);
+        }
     }
 }

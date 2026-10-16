@@ -143,6 +143,10 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
             } else {
                 heat = Math.max(0L, heat - 10L);
             }
+
+            if (level != null && level.getGameTime() % 100 == 0) {
+                com.hbm_m.satellite.RayScanEvents.reportEvent(level, worldPosition, com.hbm_m.satellite.RayScanEvents.INFO_NUCLEAR, 200);
+            }
         }
 
         // Push steam out / pull water in via pipes
@@ -251,6 +255,13 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
         tag.putBoolean("isOn", isOn);
         tag.putBoolean("redstonePowered", redstonePowered);
         tag.putInt("output", output);
+        // The multiblock's controller side configuration is applied only when the structure is
+        // placed or rebuilt, never on chunk load: without persisting it, a restart re-opened the
+        // face the structure had deliberately closed.
+        int fluidSideMask = 0;
+        for (Direction dir : allowedFluidSides) fluidSideMask |= (1 << dir.get3DDataValue());
+        tag.putInt("AllowedFluidSides", fluidSideMask);
+        tag.putBoolean("FluidSidesFromMbStructure", fluidSidesFromMultiblockStructure);
     }
 
     @Override
@@ -267,6 +278,14 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
         isOn           = tag.getBoolean("isOn");
         redstonePowered= tag.getBoolean("redstonePowered");
         output         = tag.getInt("output");
+        if (tag.contains("AllowedFluidSides")) {
+            int fluidSideMask = tag.getInt("AllowedFluidSides");
+            allowedFluidSides.clear();
+            for (Direction dir : Direction.values()) {
+                if ((fluidSideMask & (1 << dir.get3DDataValue())) != 0) allowedFluidSides.add(dir);
+            }
+        }
+        fluidSidesFromMultiblockStructure = tag.getBoolean("FluidSidesFromMbStructure");
     }
 
     // ── Redstone ──────────────────────────────────────────────────────────

@@ -1,5 +1,6 @@
 package com.hbm_m.network;
 
+import com.hbm_m.config.ConfigDebugLogger;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.config.schema.ConfigSchema;
 import com.hbm_m.config.schema.ConfigSide;
@@ -57,6 +58,8 @@ public class ConfigSyncS2CPacket implements S2CPacket {
             // Применяем только серверные поля к клиентскому синглтону.
             // applyAll игнорирует неизвестные ключи и клэмпит по границам схемы.
             ConfigSchema.applyAll(ModClothConfig.get(), ConfigSide.SERVER, msg.values);
+            // Debug-лог: первый снапшот за сессию = полный дамп, повторные = изменения.
+            ConfigDebugLogger.onClientSyncReceived(msg.values);
         });
     }
 

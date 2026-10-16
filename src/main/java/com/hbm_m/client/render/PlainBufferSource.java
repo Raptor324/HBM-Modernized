@@ -5,35 +5,33 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 
 /**
- * Прямой наследник ванильного {@link MultiBufferSource.BufferSource} — в
- * обход фабрики {@code MultiBufferSource.immediate/immediateWithBuffers}.
+ * Direct subclass of the vanilla {@link MultiBufferSource.BufferSource} - bypassing
+ * the {@code MultiBufferSource.immediate/immediateWithBuffers} factories.
  *
- * ЗАЧЕМ: ImmediatelyFast редиректит эти фабрики и подменяет ЛЮБОЙ созданный
- * ими источник на свой BatchableBufferSource, чей no-arg endBatch() флашит
- * все зарегистрированные слои безусловно — и падает
- * «Sorting state uninitialized» на ПУСТОМ батче RenderType с
- * sortOnUpload=true (наши nuke_clouds/nuke_flash, когда фильтр near/far или
- * flash-only не записал в тип ни одной вершины). Поэтому ВСЕ наши кастомные
- * sortOnUpload-рендертайпы должны рисоваться только через источник этого
- * класса (см. ParticleEngineNT.buffer()).
+ * WHY: ImmediatelyFast redirects those factories and swaps ANY source created by
+ * them for its own BatchableBufferSource, whose no-arg endBatch() flushes all
+ * registered layers unconditionally - and fails with "Sorting state uninitialized"
+ * on an EMPTY RenderType batch with sortOnUpload=true (our nuke_clouds/nuke_flash,
+ * when the near/far filter or flash-only mode wrote no vertices into the type).
+ * Therefore ALL of our custom sortOnUpload render types must be drawn only through
+ * a source of this class (see ParticleEngineNT.buffer()).
  *
- * ВТОРОЕ (главное): на 1.20.1 мы НЕ используем ванильную бухгалтерию батчей
- * (lastState + startedBuffers), а ведём СВОЮ симметричную: begin(X) при
- * первом getBuffer(X), RenderType.end(X) строго в паре — в endCurrentBatch().
- * У ванильной машины есть пути рассинхрона (например endBatch(rt) при
- * lastState != rt просто скипается по startedBuffers.remove() == false,
- * оставляя lastState указывающим на уже закрытый батч; после такого
- * skip-а последующий end() может увидеть sorting-состояние прошлого батча —
- * отсюда «Sorting state uninitialized»). При симметричной паре состояние
- * билдера всегда согласовано с типом: end() вызывается только для типа,
- * чей begin открыт, и сортировка (попиксельная, по дистанции до камеры)
- * работает как в ваниле. Пустой батч не рисуется вовсе
- * (endOrDiscardIfEmpty — терять нечего, вершин ноль).
+ * SECOND (main) point: on 1.20.1 we do NOT use the vanilla batch bookkeeping
+ * (lastState + startedBuffers) but keep our own symmetric one: begin(X) at the
+ * first getBuffer(X), RenderType.end(X) strictly paired - in endCurrentBatch().
+ * The vanilla machinery has desync paths (e.g. endBatch(rt) with lastState != rt
+ * is simply skipped via startedBuffers.remove() == false, leaving lastState
+ * pointing at an already-closed batch; after such a skip a subsequent end() may
+ * see the previous batch's sorting state - hence "Sorting state uninitialized").
+ * With a symmetric pair the builder state always agrees with the type: end() is
+ * called only for the type whose begin is open, and sorting (per-pixel, by
+ * distance to camera) works as in vanilla. An empty batch is not drawn at all
+ * (endOrDiscardIfEmpty - nothing to lose, zero vertices).
  */
 public class PlainBufferSource extends MultiBufferSource.BufferSource {
 
     //? if < 1.21.1 {
-    /** Тип, чей begin() сейчас открыт на shared-билдере; null — ничего. */
+    /** The type whose begin() is currently open on the shared builder; null = none. */
     private RenderType buildingType;
 
     public PlainBufferSource(com.mojang.blaze3d.vertex.BufferBuilder sharedBuffer) {
@@ -74,25 +72,26 @@ public class PlainBufferSource extends MultiBufferSource.BufferSource {
         }
         this.buildingType = null;
         if (this.builder.isCurrentBatchEmpty()) {
-            // Пустой батч: сбрасываем билдер без отрисовки (и без
-            // сортировочной машины — именно пустые sortOnUpload-батчи и были
-            // источником «Sorting state uninitialized» под ImmediatelyFast).
+            // Empty batch: reset the builder without drawing (and without the
+            // sorting machinery - empty sortOnUpload batches were exactly the
+            // source of "Sorting state uninitialized" under ImmediatelyFast).
             this.builder.endOrDiscardIfEmpty();
         } else {
-            // Полный ванильный путь отрисовки: setQuadSorting (если тип
-            // сортируемый) -> end -> setupRenderState -> drawWithShader.
+            // Full vanilla draw path: setQuadSorting (if the type is sortable)
+            // -> end -> setupRenderState -> drawWithShader.
             type.end(this.builder, com.mojang.blaze3d.systems.RenderSystem.getVertexSorting());
         }
     }
     //?} else {
-    /*// 1.21.1: ванильный BufferSource уже хранит отдельный BufferBuilder на
-    // тип (startedBuilders) и сортирует MeshData.sortQuads — уязвимой
-    // разделяемой машины 1.20.1 там нет; достаточно честного наследника.
-    // ВАЖНО: fixedBuffers НЕ может быть Collections.emptySortedMap() — под
-    // капотом это TreeMap, чей get() кастует ключ к Comparable, а кастомные
-    // RenderType не Comparable (краш «CompositeRenderType cannot be cast to
-    // Comparable» при первом getBuffer). Ванильная фабрика immediate()
-    // использует пустую fastutil-мапу — делаем так же.
+    /*// 1.21.1: the vanilla BufferSource already keeps a separate BufferBuilder
+    // per type (startedBuilders) and sorts via MeshData.sortQuads - the
+    // vulnerable shared machinery of 1.20.1 does not exist here; a plain
+    // subclass is enough.
+    // IMPORTANT: fixedBuffers must NOT be Collections.emptySortedMap() - under
+    // the hood it is a TreeMap whose get() casts the key to Comparable, and
+    // custom RenderTypes are not Comparable (crash "CompositeRenderType cannot
+    // be cast to Comparable" on the first getBuffer). The vanilla immediate()
+    // factory uses an empty fastutil map - we do the same.
     public PlainBufferSource(com.mojang.blaze3d.vertex.ByteBufferBuilder sharedBuffer) {
         super(sharedBuffer, it.unimi.dsi.fastutil.objects.Object2ObjectSortedMaps.emptyMap());
     }

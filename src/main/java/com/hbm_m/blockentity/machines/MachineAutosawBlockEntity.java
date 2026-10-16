@@ -67,7 +67,7 @@ public class MachineAutosawBlockEntity extends com.hbm_m.blockentity.BaseHbmBloc
                 be.isOn = false;
             }
             for (Direction dir : Direction.values()) {
-                if (dir != Direction.UP) be.trySubscribe(be.tank.getTankType(), level, pos.relative(dir), dir);
+                if (dir != Direction.UP) be.trySubscribe(be.tank, level, pos.relative(dir), dir);
             }
         }
 
@@ -104,6 +104,9 @@ public class MachineAutosawBlockEntity extends com.hbm_m.blockentity.BaseHbmBloc
                         if (relAngle > CUT_ANGLE) continue;
 
                         BlockPos target = pos.offset(dx, 1, dz);
+                        // Radius 9 crosses the chunk border: unguarded, the scan loaded neighbours
+                        // from the tick thread.
+                        if (!level.isLoaded(target)) continue;
                         BlockState targetState = level.getBlockState(target);
                         if (targetState.is(BlockTags.LOGS) || targetState.is(BlockTags.LEAVES) || targetState.is(BlockTags.SAPLINGS)) {
                             if (level instanceof ServerLevel serverLevel) {

@@ -25,16 +25,16 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 
 /**
- * Радар (малый и крупный) на фабрике {@link MachineRenderers}: Base — статика,
- * Dish — анимированная часть; геометрия обеих зависит от варианта модели
- * (MachineRadarBakedModel.isLargeRadar), поэтому обе объявлены динамическими
- * частями с per-BE ключом кеша (small/large). Вращение тарелки — по
- * prevRotation/rotation при наличии энергии.
+ * Radar (small and large) on the {@link MachineRenderers} factory: Base is
+ * static, Dish is animated. Geometry of both depends on the model variant
+ * ({@link MachineRadarBakedModel#isLargeRadar()}), so both are declared as
+ * dynamic parts with a per-BE cache key (small/large). The dish spins via
+ * prevRotation/rotation while powered.
  */
 public final class MachineRadarRenderer {
 
     private static final float DEG_TO_RAD = (float) (Math.PI / 180.0);
-    /** Смещение пивота тарелки малого радара (оригинал {@code glTranslated(-0.125, 0, 0)}). */
+    /** Dish pivot offset for the small radar (original {@code glTranslated(-0.125, 0, 0)}). */
     private static final float SMALL_DISH_PIVOT_OFFSET_X = -0.125F;
 
     private static volatile boolean loggedModelResolveFailure;
@@ -99,15 +99,15 @@ public final class MachineRadarRenderer {
         boolean powered = be.isActive() || be.getEnergyStored() > 0;
         float angle = powered ? Mth.lerp(partialTick, be.prevRotation, be.rotation) : be.rotation;
 
-        pose.last().pose().mul(new Matrix4f()
+        pose.last().pose()
                 .translate(0.5f, 0f, 0.5f)
                 .rotateY(-angle * DEG_TO_RAD)
                 .translate(large ? 0f : SMALL_DISH_PIVOT_OFFSET_X, 0f, 0f)
-                .translate(-0.5f, 0f, -0.5f));
+                .translate(-0.5f, 0f, -0.5f);
         return true;
     }
 
-    /** Трансформ блока (вербатим легаси applyFacingRotation). */
+    /** Block transform (verbatim from legacy applyFacingRotation). */
     private static void applyBlockTransform(MachineRadarBlockEntity be, LegacyAnimator animator) {
         BlockState state = be.getBlockState();
         if (!state.hasProperty(HorizontalDirectionalBlock.FACING)) return;

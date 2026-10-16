@@ -200,7 +200,7 @@ public class MachineRbmkConsoleRenderer implements BlockEntityRenderer<MachineRb
         ps.popPose();
     }
 
-    // ─── Screen markers ──────────────────────────────────────────────────────
+    // --- Screen markers ------------------------------------------------------
 
     /** 1:1 with {@code RenderRBMKConsole.drawDot}: a three-quad diamond of fixed size on the
      *  panel face (normal +X), whose color - not size - carries the value. */
@@ -230,7 +230,7 @@ public class MachineRbmkConsoleRenderer implements BlockEntityRenderer<MachineRb
                 1, 0, 0, sprite, r, g, b, light, overlay);
     }
 
-    // ─── Text screens ────────────────────────────────────────────────────────
+    // --- Text screens --------------------------------------------------------
 
     /**
      * Draws the 6 per-screen aggregate readouts (see
@@ -284,7 +284,7 @@ public class MachineRbmkConsoleRenderer implements BlockEntityRenderer<MachineRb
         RenderHooks.vertexFull(vc, m, x3, y3, z3, color(r), color(g), color(b), 0xFF, u, v, overlay, light, nx, ny, nz);
     }
 
-    /** float 0..1 -> byte для int-цвета хуков. */
+    /** Converts a {@code float} in 0..1 to a byte value for the hooks' int color. */
     private static int color(float c) {
         return (int) (c * 255.0f + 0.5f);
     }

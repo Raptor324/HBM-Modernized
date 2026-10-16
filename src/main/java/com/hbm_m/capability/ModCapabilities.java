@@ -79,15 +79,15 @@ public class ModCapabilities {
             event.registerBlockEntity(
                 Capabilities.EnergyStorage.BLOCK, type,
                 (be, side) -> {
-                    if (be instanceof com.hbm_m.api.energy.ConverterBlockEntity conv)
-                        return new com.hbm_m.api.energy.HbmForgeWrapper(conv);
+                    if (be instanceof com.hbm_m.api.energy.WireBlockEntity wire) return wire.getFeStorage();
+                    if (be instanceof BaseHbmBlockEntity hbm && !hbm.joinsEnergyNetwork()) return null; // машины без энергии (пресс)
                     return (be instanceof BaseHbmBlockEntity hbm) ? (net.neoforged.neoforge.energy.IEnergyStorage) hbm.getEnergyStorage(side) : null;
                 }
             );
 
             // 4. HBM Custom Energy
-            event.registerBlockEntity(HBM_ENERGY_PROVIDER, type, (be, side) -> (be instanceof IEnergyProvider p) ? p : null);
-            event.registerBlockEntity(HBM_ENERGY_RECEIVER, type, (be, side) -> (be instanceof IEnergyReceiver r) ? r : null);
+            event.registerBlockEntity(HBM_ENERGY_PROVIDER, type, (be, side) -> (be instanceof BaseHbmBlockEntity hbm && !hbm.joinsEnergyNetwork()) ? null : (be instanceof IEnergyProvider p) ? p : null);
+            event.registerBlockEntity(HBM_ENERGY_RECEIVER, type, (be, side) -> (be instanceof BaseHbmBlockEntity hbm && !hbm.joinsEnergyNetwork()) ? null : (be instanceof IEnergyReceiver r) ? r : null);
             event.registerBlockEntity(HBM_ENERGY_CONNECTOR, type, (be, side) -> (be instanceof IEnergyConnector c && c.canConnectEnergy(side)) ? c : null);
         }
 
@@ -112,6 +112,23 @@ public class ModCapabilities {
                 continue;
             }
 
+            // Powered FSB armour: on Forge this came from ModArmorFSBPowered.initCapabilities, which
+            // is inside a //? if forge block and therefore absent here - charge slots refused the
+            // armour and it could never be charged by a machine.
+            if (item instanceof com.hbm_m.powerarmor.ModArmorFSBPowered armor) {
+                event.registerItem(HBM_ITEM_ENERGY_PROVIDER, (stack, ctx) ->
+                        new com.hbm_m.api.energy.EnergyCapabilityProvider.ItemEnergyStorage(
+                                stack, armor.getMaxCharge(stack), armor.chargeRate, armor.getMaxCharge(stack)), item);
+                event.registerItem(HBM_ITEM_ENERGY_RECEIVER, (stack, ctx) ->
+                        new com.hbm_m.api.energy.EnergyCapabilityProvider.ItemEnergyStorage(
+                                stack, armor.getMaxCharge(stack), armor.chargeRate, armor.getMaxCharge(stack)), item);
+                event.registerItem(Capabilities.EnergyStorage.ITEM, (stack, ctx) ->
+                        new com.hbm_m.api.energy.LongEnergyWrapper(
+                                new com.hbm_m.api.energy.EnergyCapabilityProvider.ItemEnergyStorage(
+                                        stack, armor.getMaxCharge(stack), armor.chargeRate, armor.getMaxCharge(stack))), item);
+                continue;
+            }
+
             if (!(item instanceof com.hbm_m.item.fekal_electric.ModBatteryItem battery)) continue;
 
             event.registerItem(HBM_ITEM_ENERGY_PROVIDER, (stack, ctx) ->
@@ -124,8 +141,7 @@ public class ModCapabilities {
             event.registerItem(Capabilities.EnergyStorage.ITEM, (stack, ctx) ->
                     new com.hbm_m.api.energy.LongEnergyWrapper(
                             new com.hbm_m.api.energy.EnergyCapabilityProvider.ItemEnergyStorage(
-                                    stack, battery.getCapacity(), battery.getMaxReceive(), battery.getMaxExtract()),
-                            com.hbm_m.api.energy.LongEnergyWrapper.BitMode.LOW), item);
+                                    stack, battery.getCapacity(), battery.getMaxReceive(), battery.getMaxExtract())), item);
         }
     }
 

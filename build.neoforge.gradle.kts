@@ -94,10 +94,23 @@ neoForge {
 			ideName = "NeoForge GameTest (${stonecutter.active?.version})"
 			systemProperty("neoforge.gameTestServer", "true")
 			systemProperty("neoforge.enableGameTest", "true")
-			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8",
-				"-Duser.language=en", "-Duser.country=US")
-			// TODO(other-agent WIP): doFirst недоступен в runs-DSL — перенести в tasks.named("gameTestServer")
+				jvmArguments.addAll("-Xmx12G", "-Xms2G", "-Dfile.encoding=UTF-8",
+					"-Duser.language=en", "-Duser.country=US",
+					// Точечный прогон одного класса: все тесты зарегистрированы в неймспейс hbm_m,
+					// а тяжёлый интеграционный турбины - в tf_integration (см. TurbofanIntegrationGameTest).
+					// Оверрайд неймспейса: -PgameTestNamespace=hbm_m (NukeProfileGameTest и др.)
+					"-Dneoforge.enabledGameTestNamespaces=${project.findProperty("gameTestNamespace") ?: "tf_integration"}")
+			// Оверрайды NukeProfileGameTest: -PnukeStrength=300 -PnukeBudget=15
+			if (project.hasProperty("nukeStrength")) systemProperty("hbm.nukeProfileStrength", project.property("nukeStrength") as String)
+			if (project.hasProperty("nukeBudget")) systemProperty("hbm.nukeProfileBudgetMinutes", project.property("nukeBudget") as String)
 		}
+	}
+
+	// Регенерация мира гейм-тестов: каждый прогон стартует со свежим ванильным
+	// террейном (кратер ядерного профиля NukeProfileGameTest не должен портить
+	// следующие тесты, а автосейв на кратеризованном мире душил прогон).
+	tasks.matching { it.name == "runGameTestServer" }.configureEach {
+		doFirst { delete("runGameTest/world") }
 	}
 
 	mods {
@@ -106,6 +119,17 @@ neoForge {
 		}
 	}
 	sourceSets["main"].resources.srcDir(rootProject.file("src/generated/resources"))
+}
+
+// NeoForge в собранном jar применяет AT только из META-INF/accesstransformer.cfg.
+// accessTransformers{} в neoForge{} ModDevGradle использует лишь для дев-окружения,
+// поэтому пакуем per-версию cfg сами, а сырые aw/* из ресурсов вычищаем.
+tasks.processResources {
+	from(rootProject.file("src/main/resources/aw/${stonecutter.current.version}.cfg")) {
+		rename { "accesstransformer.cfg" }
+		into("META-INF")
+	}
+	exclude("aw/")
 }
 
 repositories {
@@ -118,6 +142,8 @@ repositories {
 	// Curios API (опционально): слот лица для противогазов. См. com.hbm_m.compat.curios.
 	maven("https://maven.theillusivec4.top/") { name = "Illusive Soul Works" }
 	maven("https://maven.caffeinemc.net/releases") { name = "CaffeineMC" }
+	// Sable Companion (dev.ryanhcode) — API-типы для Sable-миксинов, compileOnly
+	maven("https://maven.ryanhcode.dev/releases") { name = "RyanHCode" }
 
 }
 
@@ -137,11 +163,23 @@ dependencies {
 	// строковых таргетов миксинов (@Mixin(targets = "...")) на этапе компиляции.
 	// В рантайм не пакуется; в отсутствие Sable миксины просто не применяются.
 	"compileOnly"("maven.modrinth:sable:2.0.5+mc1.21.1")
+	// The modrinth artifact does not expose BoundingBox3ic - it lives in sable-companion,
+	// which SubLevelAssembleExpansionMixin has to name in its handler signature.
+	// compileOnly: nothing is packed into the mod.
+	if (stonecutter.current.version == "1.21.1") {
+		"compileOnly"("dev.ryanhcode.sable-companion:sable-companion-common-1.21.1:1.6.0") {
+			isTransitive = false
+		}
+	}
 
 	// Рантайм-зависимости для ручного тестирования интеграции с Create
 	// Aeronautics / Sable в runClient (только 1.21.1 - на других версиях
 	// этих модов нет). Create 6.x тащит Flywheel/Ponder внутри себя (jarJar).
-	if (stonecutter.current.version == "1.21.1") {
+	// noClientMods (runData / gameTestServer) их выключает: на геймтест-сервере
+	// Sable в отсутствие игроков всё равно тикает свою физику и зависает
+	// навечно в нативном степе Rapier (SubLevelPhysicsSystem.tickPipelinePhysics
+	// -> Rapier3D.step, CPU 100% на Server thread, см. thread dump 2026-10-01).
+	if (stonecutter.current.version == "1.21.1" && !project.hasProperty("noClientMods")) {
 		"runtimeOnly"("maven.modrinth:create:6.0.10+mc1.21.1")
 		"runtimeOnly"("maven.modrinth:sable:2.0.5+mc1.21.1")
 		"runtimeOnly"("maven.modrinth:create-aeronautics:1.3.1+mc1.21.1") // bundled: simulated + offroad внутри
@@ -150,11 +188,17 @@ dependencies {
 	"compileOnly"("dev.engine-room.flywheel:flywheel-neoforge-api-$mcVer:${prop("deps.flywheel")}")
 	// Distant Horizons: compileOnly для официального API (см. DhRenderBridge).
 	// Класс моста грузится только при установленном DH.
-	"compileOnly"("maven.modrinth:distanthorizons:3.2.0-b-1.21.1") // 3.2.0-b-1.21.1
+	"compileOnly"("maven.modrinth:distanthorizons:3.3.2-1.21.1") // 3.3.2-1.21.1 (latest 2026-09-21)
 	// "runtimeOnly"("maven.modrinth:distanthorizons:3.2.0-b-1.21.1")
 
 	"compileOnly"("maven.modrinth:u6dRKJwZ:${prop("deps.jei")}")
 	"runtimeOnly"("maven.modrinth:u6dRKJwZ:${prop("deps.jei")}")
+
+	// Jade (WAILA fork): плагин com.hbm_m.compat.jade (см. комментарий в build.forge.gradle.kts).
+	// Классы плагина грузит только сканер @WailaPlugin самого Jade — без Jade в рантайме
+	// они никогда не загружаются, поэтому compileOnly-зависимость в прод безопасна.
+	"compileOnly"("maven.modrinth:jade:15.10.6+neoforge")
+	"runtimeOnly"("maven.modrinth:jade:15.10.6+neoforge")
 
 	// Curios (опционально): API для компиляции, сам мод — в рантайм для тестов.
 	"compileOnly"("top.theillusivec4.curios:curios-neoforge:9.5.1+1.21.1:api")
@@ -246,6 +290,19 @@ tasks.named<ProcessResources>("processResources") {
 			}
 		}
 
+		// The block above moves the tag files, but references inside JSON stay "forge:".
+		// Unremapped, recipes match an empty tag and silently stop crafting.
+		// The leading quote in the pattern keeps "neoforge:add_features" intact.
+		// glass is the only tag whose name also changed: NeoForge calls it c:glass_blocks.
+		dataDir.walkTopDown().filter { it.isFile && it.extension == "json" }.forEach { file ->
+			val text = file.readText()
+			if (!text.contains("forge:")) return@forEach
+			val out = text.replace("\"#forge:", "\"#c:").replace("\"forge:", "\"c:")
+				.replace("\"c:glass\"", "\"c:glass_blocks\"").replace("\"#c:glass\"", "\"#c:glass_blocks\"")
+			// "neoforge:" also matches the guard above, so only write when something actually changed.
+			if (out != text) file.writeText(out)
+		}
+
 		// Remap silk-touch условия в loot-таблицах: датаген (1.20.1) пишет
 		// match_tool-предикат с полем "enchantments" внутри ItemPredicate,
 		// а на 1.21.1 это поле удалено — проверки зачарований переехали в
@@ -313,22 +370,15 @@ tasks.named<ProcessResources>("processResources") {
 			}
 		}
 
-		// Ссылки на теги forge:* внутри рецептов → c:* (неймспейс переименован выше).
-		dataDir.resolve("hbm_m").resolve("recipe").walkTopDown()
-			.filter { it.isFile && it.extension == "json" }.forEach { file ->
-				val text = file.readText()
-				if (text.contains("\"forge:")) {
-					file.writeText(text.replace(Regex("\"(tag)\"\\s*:\\s*\"forge:"), "\"$1\": \"c:"))
-				}
-			}
-
 		// Лут-таблицы батарей используют minecraft:copy_nbt, удалённый в 1.20.5+.
 		// На 1.21.1 состояние батареи переносится кодом
 		// (MachineBatteryBlock#playerWillDestroy → MachineBatteryBlockEntity#saveToItemStack),
 		// поэтому таблицы просто исключаем из сборки.
 		listOf("loot_table", "loot_tables").forEach { dirName ->
 			File(File(dataDir, "hbm_m"), dirName).walkTopDown()
-				.filter { it.isFile && it.name.startsWith("machine_battery") }
+				// machine_fensu is a MachineBatteryBlock too - its name just does not start with
+				// machine_battery, so it kept its loot table and dropped a second copy of itself.
+				.filter { it.isFile && (it.name.startsWith("machine_battery") || it.name == "machine_fensu.json") }
 				.forEach { it.delete() }
 		}
 
@@ -370,7 +420,12 @@ stonecutter {
 tasks.matching { it.name == "runGameTestServer" }.configureEach {
 	doFirst {
 		file("runGameTest").mkdirs()
+		// Гейтест-сервер хранит мир в runGameTest/world (level-name из server.properties),
+		// а НЕ в "Test Level" - форс-загруженные чанки арен сохраняются в level.dat, и
+		// неубитый мир копит их от упавших прогонов, пока сервер не начнёт грузить
+		// сотни тысяч чанков на старте и не умрёт по OOM.
 		delete(file("runGameTest/Test Level"))
+		delete(file("runGameTest/world"))
 		file("runGameTest/eula.txt").writeText("eula=true")
 	}
 }

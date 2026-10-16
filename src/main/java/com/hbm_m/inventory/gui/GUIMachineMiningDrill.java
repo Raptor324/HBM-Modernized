@@ -12,6 +12,13 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * 1:1-Port von {@code GUIMachineExcavator} (1.7.10, vom User bereitgestellt) auf GuiGraphics.
@@ -20,6 +27,7 @@ import net.minecraft.world.entity.player.Inventory;
  * "versteckten" Sprite-Region rechts/unterhalb von (204,96) fuer Zustands-Overlays (Schalter-an,
  * Lampen gruen/rot-blinkend, Blitz-Symbol, fehlendes-Drillbit-Warnsymbol, Energie-Fuellbalken).
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineMiningDrill extends GuiInfoScreen<MachineMiningDrillMenu> {
 
     private static final ResourceLocation TEXTURE =

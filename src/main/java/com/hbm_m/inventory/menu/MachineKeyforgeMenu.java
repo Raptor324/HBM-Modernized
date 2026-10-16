@@ -30,9 +30,9 @@ public class MachineKeyforgeMenu extends AbstractContainerMenu {
         this.blockEntity = blockEntity;
 
         var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
-        this.addSlot(new Slot(container, MachineKeyforgeBlockEntity.SLOT_SOURCE, 44, 36));
-        this.addSlot(new Slot(container, MachineKeyforgeBlockEntity.SLOT_DUPE, 80, 36));
-        this.addSlot(new Slot(container, MachineKeyforgeBlockEntity.SLOT_CUT, 116, 36));
+        this.addSlot(keyforgeSlot(container, MachineKeyforgeBlockEntity.SLOT_SOURCE, 44, 36));
+        this.addSlot(keyforgeSlot(container, MachineKeyforgeBlockEntity.SLOT_DUPE, 80, 36));
+        this.addSlot(keyforgeSlot(container, MachineKeyforgeBlockEntity.SLOT_CUT, 116, 36));
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
@@ -48,13 +48,29 @@ public class MachineKeyforgeMenu extends AbstractContainerMenu {
         return new MachineKeyforgeMenu(id, inventory, blockEntity);
     }
 
+    /**
+     * Слот кейфорджа. Правило вставки — как в контейнере оригинала
+     * ({@code ContainerMachineKeyForge}): только переносимые кодовые предметы
+     * (ключи и навесные замки; {@code key_fake} исключён). Специально НЕ через
+     * {@code isItemValidForSlot} BE — тот возвращает false, гася только
+     * автоматизацию (воронки), как в 1.7.10; ручная вставка идёт через mayPlace.
+     */
+    private static Slot keyforgeSlot(ModItemStackHandlerContainer container, int slot, int x, int y) {
+        return new Slot(container, slot, x, y) {
+            @Override
+            public boolean mayPlace(ItemStack stack) {
+                return com.hbm_m.item.ItemKeyPin.isTransferable(stack);
+            }
+        };
+    }
+
     private static MachineKeyforgeBlockEntity getBlockEntity(Inventory inventory, FriendlyByteBuf buffer) {
         BlockPos pos = buffer.readBlockPos();
         BlockEntity blockEntity = inventory.player.level().getBlockEntity(pos);
         if (blockEntity instanceof MachineKeyforgeBlockEntity keyforgeBlockEntity) {
             return keyforgeBlockEntity;
         }
-        throw new IllegalStateException("No MachineKeyforgeBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":machine_keyforge_menu");
+        throw new MenuBlockEntityMissingException("No MachineKeyforgeBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":machine_keyforge_menu");
     }
 
     public MachineKeyforgeBlockEntity getBlockEntity() {
@@ -63,11 +79,7 @@ public class MachineKeyforgeMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

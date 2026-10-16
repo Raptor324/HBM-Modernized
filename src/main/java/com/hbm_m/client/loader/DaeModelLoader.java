@@ -34,6 +34,13 @@ import net.minecraftforge.client.model.geometry.IUnbakedGeometry;
 import net.neoforged.neoforge.client.model.geometry.IGeometryLoader;
 import net.neoforged.neoforge.client.model.geometry.IUnbakedGeometry;
 *///?}
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Bakes a COLLADA (.dae) model into a static item model. The model is sampled at the
@@ -43,6 +50,7 @@ import net.neoforged.neoforge.client.model.geometry.IUnbakedGeometry;
  * block entity renderer.
  */
 
+@OnlyIn(Dist.CLIENT)
 public class DaeModelLoader implements IGeometryLoader<DaeModelLoader.DaeUnbakedGeometry> {
 
     private static final String CLIP_NAME = "animation";

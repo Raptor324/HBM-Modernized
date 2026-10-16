@@ -1,9 +1,9 @@
 #version 150
 
-// Постпроцессинговый шейдер тепловизора.
-// Использует:
-//  - DiffuseSampler: уже отрендеренный мир
-//  - ThermalSampler: наш отдельный буфер с "горячими" сущностями (белые силуэты)
+// Thermal vision post-processing shader.
+// Uses:
+//  - DiffuseSampler: the already-rendered world
+//  - ThermalSampler: our separate buffer with "hot" entities (white silhouettes)
 
 uniform sampler2D DiffuseSampler;
 uniform sampler2D ThermalSampler;
@@ -13,28 +13,28 @@ in vec2 texCoord;
 
 out vec4 fragColor;
 
-// Линейная яркость
+// Linear luminance
 float luma(vec3 color) {
     return dot(color, vec3(0.299, 0.587, 0.114));
 }
 
-// Простейший хеш для псевдослучайных значений (для шумовых полос)
+// Simple hash for pseudo-random values (for noise bands)
 float rand(vec2 n) {
     return fract(sin(dot(n, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
-// Упрощённый блюр из старого thermal_vision.fsh:
-// лёгкое размытие для подавления текстур, но с сохранением деталей.
+// Simplified blur from the old thermal_vision.fsh:
+// light blur to suppress textures while keeping detail.
 vec3 blurSample(sampler2D tex, vec2 uv, vec2 texelSize) {
-    // Более сильный 3x3‑блюр, чтобы скрыть "квадратики" текстур,
-    // но всё ещё достаточно дешёвый для постпроцесса.
+    // Stronger 3x3 blur to hide texture "blockiness",
+    // still cheap enough for post-processing.
     vec3 sum = vec3(0.0);
     float weight = 0.0;
 
     for (int x = -1; x <= 1; x++) {
         for (int y = -1; y <= 1; y++) {
             vec2 offset = vec2(x, y) * texelSize;
-            float w = (x == 0 && y == 0) ? 4.0 : 1.0; // центр весим сильнее
+            float w = (x == 0 && y == 0) ? 4.0 : 1.0; // weight the center more
             sum += texture(tex, uv + offset).rgb * w;
             weight += w;
         }
@@ -44,14 +44,14 @@ vec3 blurSample(sampler2D tex, vec2 uv, vec2 texelSize) {
 }
 
 void main() {
-    // Маска "горячих" сущностей
+    // Mask of "hot" entities
     vec4 thermalMask = textureLod(ThermalSampler, texCoord, 0.0);
     bool isEntityHot = thermalMask.a > 0.01 || dot(thermalMask.rgb, vec3(1.0)) > 0.01;
 
-    // Размер экрана берём из основного буфера
+    // Screen size from the main buffer
     vec2 texSize = vec2(textureSize(DiffuseSampler, 0));
 
-    // Пикселизация в экранном пространстве - ретро‑эффект тепловизора
+    // Screen-space pixelation - retro thermal vision effect
     float pixelSize = 2.0;
     vec2 fragCoord = gl_FragCoord.xy;
     vec2 pixelated = floor(fragCoord / pixelSize) * pixelSize + (pixelSize * 0.5);
@@ -59,64 +59,64 @@ void main() {
 
     vec2 texelSize = vec2(1.0 / texSize.x, 1.0 / texSize.y);
 
-    // Оригинальный цвет и яркость мира
+    // Original world color and luminance
     vec3 originalColor = texture(DiffuseSampler, uv).rgb;
     float originalLuminance = luma(originalColor);
 
-    // Более сильный блюр мира для подавления "квадратных" текстур
+    // Stronger world blur to suppress "blocky" textures
     vec3 blurred = blurSample(DiffuseSampler, uv, texelSize);
 
-    // Для простоты считаем, что всегда "ночной" режим (state=0),
-    // как в старом шейдере ночью.
+    // For simplicity, always assume "night" mode (state=0),
+    // like the old shader at night.
     float state = 0.0;
 
-    // Яркость для термал‑канала берём из размытого мира,
-    // чтобы формы ландшафта читались, но текстурные детали сгладились.
+    // Thermal-channel luminance is taken from the blurred world,
+    // so landforms stay readable but texture detail is smoothed.
     float luminance = luma(blurred);
 
-    // Усиление яркости в тёмных областях.
-    // Чуть менее агрессивно, чем в самом первом варианте,
-    // но сильнее, чем в прошлом шаге, чтобы ночью не было "true darkness".
+    // Brightness boost in dark areas.
+    // Slightly less aggressive than the very first variant,
+    // but stronger than the previous step, so night has no "true darkness".
     float brightnessBoost = 1.0;
     float darkFactor = 1.0 - smoothstep(0.0, 0.3, originalLuminance);
     brightnessBoost = 1.0 + darkFactor * 1.5;
 
     luminance = clamp(luminance * brightnessBoost, 0.0, 1.0);
 
-    // Квантизация яркости - "ступенчатый" серый как у тепловизора
+    // Luminance quantization - "stepped" gray like a thermal imager
     float quantized = floor(luminance * 12.0) / 12.0;
 
-    // Повышенный контраст вокруг середины
+    // Increased contrast around the middle
     quantized = 0.5 + (quantized - 0.5) * 1.0;
 
-    // Подсветка "горячих" зон по яркости сцены
+    // Highlight "hot" zones by scene brightness
     float heat = pow(quantized, 0.45);
     heat = smoothstep(0.35, 0.9, heat);
     float hotspotStrength = 0.70;
     vec3 hotspot = vec3(heat * hotspotStrength);
 
-    // Базовая серость фона
+    // Base background gray level
     float ambient = 0.25;
     float baseMultiplier = 1.1;
     vec3 baseThermal = vec3(quantized) * (ambient + baseMultiplier);
 
-    // Итоговый B/W‑термал до доп. эффектов
+    // Final B/W thermal image before extra effects
     vec3 thermal = clamp(baseThermal + hotspot, 0.0, 1.0);
 
-    // Горизонтальные скан‑линии (с анимацией по времени).
+    // Horizontal scanlines (time-animated).
     float scanlinePeriod = 12.0;
     float scanlineWidth = 0.33;
-    // Смещаем координату по Y с течением времени, чтобы полосы "ползли".
+    // Offset the Y coordinate over time so the bands "crawl".
     float animatedY = gl_FragCoord.y + Time * 40.0;
     float scanline = step(1.0 - scanlineWidth, fract(animatedY / scanlinePeriod)) * 0.06;
     thermal -= vec3(scanline);
 
-    // Дополнительные хаотичные серые полоски поверх всего:
-    // на каждом "ряду" по Y с небольшой вероятностью добавляем шумовую линию.
-    float band = floor(gl_FragCoord.y / 8.0);          // высота "полосы"
+    // Additional chaotic gray stripes on top of everything:
+    // each Y "row" has a small chance of adding a noise line.
+    float band = floor(gl_FragCoord.y / 8.0);          // band height
     float noiseVal = rand(vec2(band, floor(Time * 3.0)));
     if (noiseVal > 0.96) {
-        // Чем выше noiseVal, тем ярче полоса, но она остаётся довольно тонкой.
+        // The higher noiseVal, the brighter the stripe, but it stays quite thin.
         float stripeIntensity = (noiseVal - 0.96) / 0.04; // 0..1
         thermal += vec3(0.05 * stripeIntensity);
     }
@@ -126,27 +126,29 @@ void main() {
     float darkMask = 1.0 - smoothstep(0.0, 0.40, thermal.r);
     thermal = thermal + vec3(nightLift * darkMask);
     
-    // Финальная гамма‑коррекция.
-    // Берём чуть меньшую гамму, чтобы итоговая картинка была заметно светлее ночью.
+    // Final gamma correction.
+    // A slightly smaller gamma is used so the image is noticeably brighter at night.
     float gamma = 0.75;
     thermal = pow(thermal, vec3(gamma));
     
-    // Жёсткий нижний порог яркости - гарантируем, что экран никогда не становится слишком тёмным.
-    // Это имитирует поведение ПНВ: даже в полной темноте мир виден в тускло‑серых тонах.
+    // Hard lower brightness floor - guarantees the screen never gets too dark.
+    // This mimics night vision behavior: even in total darkness the world is
+    // visible in dim gray tones.
     float minBrightness = 0.25;
     thermal = max(thermal, vec3(minBrightness));
 
-    //Виньетка
-    // Чуть более заметное затемнение краёв, чтобы взгляд тянуло к центру.
+    // Vignette
+    // Slightly stronger edge darkening to draw the eye toward the center.
     vec2 centered = (uv - 0.5) * vec2(texSize.x / texSize.y, 1.0);
     float r = length(centered);
-    // r ≈ 0 в центре, растёт к углам. На краях уменьшаем яркость примерно до ~55–60%.
+    // r ~ 0 at the center, grows toward the corners. At the edges brightness
+    // drops to roughly ~55-60%.
     float vignetteStrength = 0.5;
-    float edgeFactor = smoothstep(0.4, 0.9, r); // 0 в центре, 1 ближе к углам
+    float edgeFactor = smoothstep(0.4, 0.9, r); // 0 at the center, 1 near the corners
     float vignette = 1.0 - vignetteStrength * edgeFactor;
     thermal *= vignette;
 
-    // Силуэты сущностей из нашего буфера - всегда чисто белые
+    // Entity silhouettes from our buffer - always pure white
     if (isEntityHot) {
         thermal = vec3(1.0);
     }

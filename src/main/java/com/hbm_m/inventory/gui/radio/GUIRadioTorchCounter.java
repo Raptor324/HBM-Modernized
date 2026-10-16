@@ -16,8 +16,16 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /** Port of {@code GUICounterTorch} (1.7.10 Original). 3 filter slots, each with its own channel field. */
+@OnlyIn(Dist.CLIENT)
 public class GUIRadioTorchCounter extends AbstractContainerScreen<RadioTorchCounterMenu> {
 
     private final BlockPos pos;

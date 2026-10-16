@@ -18,6 +18,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Eigenes Layout (das Original {@code GUIMachineAnnihilator} zeigt zusaetzlich Payout-Slots/Claim-
@@ -26,14 +33,11 @@ import net.minecraft.world.item.ItemStack;
  * (nur der statische 176x208-Rahmen, keine geratenen Icon-Koordinaten daraus), Tankanzeige und
  * Monitor-Tooltip als eigene Overlays, sowie ein editierbares Pool-Namensfeld analog zum Original.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineAnnihilator extends GuiInfoScreen<MachineAnnihilatorMenu> {
 
     private static final ResourceLocation TEXTURE =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/gui/processing/gui_annihilator.png");
-            *///?} else {
                         ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_annihilator.png");
-            //?}
 
     private static final int TANK_X = 152;
     private static final int TANK_Y = 18;

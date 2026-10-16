@@ -1,4 +1,3 @@
-//? if forge || neoforge {
 package com.hbm_m.client.compat.create;
 
 import com.hbm_m.compat.ContraptionDoorState;
@@ -43,4 +42,3 @@ public final class DoorClientInit {
         }
     }
 }
-//?}

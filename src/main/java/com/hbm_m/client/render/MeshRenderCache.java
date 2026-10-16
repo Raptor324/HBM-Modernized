@@ -1,32 +1,25 @@
 package com.hbm_m.client.render;
 
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.hbm_m.client.render.shader.IrisBufferHelper;
 import com.hbm_m.main.MainRegistry;
-import com.hbm_m.platform.RenderHooks;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexBuffer;
-import com.mojang.blaze3d.vertex.VertexFormat;
 
 import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
 
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
 public class MeshRenderCache {
 
     private static final int MAX_CACHE_SIZE = 256;
@@ -42,20 +35,6 @@ public class MeshRenderCache {
             @Override
             protected boolean removeEldestEntry(Map.Entry<String, PartGeometry> eldest) {
                 return size() > MAX_CACHE_SIZE;
-            }
-        }
-    );
-
-    private static final Map<String, VertexBuffer> GPU_BUFFERS = Collections.synchronizedMap(
-        new LinkedHashMap<String, VertexBuffer>(MAX_CACHE_SIZE + 1, 0.75f, true) {
-            @Override
-            protected boolean removeEldestEntry(Map.Entry<String, VertexBuffer> eldest) {
-                if (size() > MAX_CACHE_SIZE) {
-                    VertexBuffer vb = eldest.getValue();
-                    if (vb != null) vb.close();
-                    return true;
-                }
-                return false;
             }
         }
     );
@@ -84,8 +63,8 @@ public class MeshRenderCache {
     }
 
     /**
-     * Интернированные ключи "class:part" / "entity:part": пары конечны, а конкатенация
-     * на каждый кадр создавала две новые строки на часть перед каждым lookup.
+     * Interned "class:part" / "entity:part" keys: the pairs are finite, while per-frame
+     * concatenation created two new strings per part before every lookup.
      */
     private static final ConcurrentHashMap<Class<?>, ConcurrentHashMap<String, String>> CLASS_KEY_CACHE = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<String, ConcurrentHashMap<String, String>> OWNER_KEY_CACHE = new ConcurrentHashMap<>();
@@ -101,7 +80,7 @@ public class MeshRenderCache {
     }
 
     /**
-     * Один кэшированный проход getQuads + общий список для Iris/VBO.
+     * A single cached getQuads pass plus a shared quad list for Iris/VBO.
      */
     public static PartGeometry getOrCompilePartGeometry(String cacheKey, BakedModel modelPart) {
         if (modelPart == null) {
@@ -109,15 +88,6 @@ public class MeshRenderCache {
         }
         return COMPILED_GEOMETRY.computeIfAbsent(cacheKey,
             k -> PartGeometry.compile(modelPart, partNameFromKey(cacheKey)));
-    }
-
-    public static VertexBuffer getOrCreateGPUBuffer(String cacheKey, BakedModel modelPart) {
-        RenderSystem.assertOnRenderThread();
-
-        return GPU_BUFFERS.computeIfAbsent(cacheKey, k -> {
-            List<BakedQuad> quads = getOrCompile(cacheKey, modelPart);
-            return uploadToGPU(quads);
-        });
     }
 
     public static SingleMeshVboRenderer getOrCreateRenderer(String partKey, BakedModel model) {
@@ -133,11 +103,10 @@ public class MeshRenderCache {
     }
 
     /**
-     * Возвращает уже кешированный {@link SingleMeshVboRenderer} по ключу или {@code null},
-     * если VBO ещё не создан. В отличие от {@link #getOrCreateRenderer}, НЕ строит новый
-     * рендерер — используется для ретекстурированных мешей, где квады собирает caller
-     * (см. {@link #getOrCreateRendererFromQuads}), чтобы избежать повторной ретекстуризации
-     * каждый кадр.
+     * Returns the already-cached {@link SingleMeshVboRenderer} for the key, or {@code null}
+     * if the VBO does not exist yet. Unlike {@link #getOrCreateRenderer}, it does NOT build a
+     * new renderer - used for retextured meshes where the caller collects the quads itself
+     * (see {@link #getOrCreateRendererFromQuads}) to avoid re-texturing every frame.
      */
     public static @org.jetbrains.annotations.Nullable SingleMeshVboRenderer peekRenderer(String partKey) {
         return PART_RENDERERS.get(partKey);
@@ -151,10 +120,6 @@ public class MeshRenderCache {
         return getOrCompilePartGeometry(ownerKey(entityType, partName), modelPart);
     }
 
-    public static VertexBuffer getOrCreateGPUBuffer(String entityType, String partName, BakedModel modelPart) {
-        return getOrCreateGPUBuffer(ownerKey(entityType, partName), modelPart);
-    }
-
     public static SingleMeshVboRenderer getOrCreateRenderer(String entityType, String partName, BakedModel model) {
         return getOrCreateRenderer(ownerKey(entityType, partName), model);
     }
@@ -163,39 +128,9 @@ public class MeshRenderCache {
         return cacheKey.contains(":") ? cacheKey.substring(cacheKey.lastIndexOf(":") + 1) : cacheKey;
     }
 
-    private static VertexBuffer uploadToGPU(List<BakedQuad> quads) {
-        if (quads.isEmpty()) return null;
-
-        BufferBuilder builder = IrisBufferHelper.create(VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK, quads.size() * 32);
-
-        PoseStack.Pose neutralPose = new PoseStack().last();
-        float r = 1.0F, g = 1.0F, b = 1.0F, a = 1.0F;
-        int neutralLight = 0;
-
-        for (BakedQuad quad : quads) {
-            RenderHooks.putBulkData(builder, neutralPose, quad, r, g, b, a, neutralLight, OverlayTexture.NO_OVERLAY, false);
-        }
-
-        //? if < 1.21.1 {
-        BufferBuilder.RenderedBuffer renderedBuffer = builder.end();
-        VertexBuffer vbo = new VertexBuffer(VertexBuffer.Usage.STATIC);
-        vbo.bind();
-        vbo.upload(renderedBuffer);
-        VertexBuffer.unbind();
-        //?} else {
-        /*com.mojang.blaze3d.vertex.MeshData renderedBuffer = builder.buildOrThrow();
-        VertexBuffer vbo = new VertexBuffer(VertexBuffer.Usage.STATIC);
-        vbo.bind();
-        vbo.upload(renderedBuffer);
-        VertexBuffer.unbind();
-        *///?}
-
-        return vbo;
-    }
-
     /**
-     * Один {@link SingleMeshVboRenderer} из явного списка квадов (например merge нескольких частей).
-     * Квады копируются в immutable-список для Iris-пути; ключ должен быть уникален в рамках кэша.
+     * One {@link SingleMeshVboRenderer} from an explicit quad list (e.g. a merge of several parts).
+     * The quads are copied into an immutable list for the Iris path; the key must be unique within the cache.
      */
     public static SingleMeshVboRenderer getOrCreateRendererFromQuadList(String partKey, List<BakedQuad> quads) {
         if (FAILED_RENDERER_KEYS.contains(partKey)) {
@@ -230,8 +165,8 @@ public class MeshRenderCache {
 
                 @Override
                 public void cleanup() {
-                    // См. cleanup() в createRendererForPart: закрываем нативный VboData,
-                    // если initVbo() ни разу не потребил его до очистки кэша.
+                    // See cleanup() in createRendererForPart: close the native VboData
+                    // if initVbo() never consumed it before the cache was cleared.
                     if (pendingData != null) {
                         pendingData.close();
                         pendingData = null;
@@ -283,10 +218,11 @@ public class MeshRenderCache {
 
                 @Override
                 public void cleanup() {
-                    // Если initVbo() ни разу не выполнился (часть закэширована, но не
-                    // отрисована до reload/disconnect), super.cleanup() выходит рано по
-                    // !initialized — а pendingData держит native memAlloc-буферы вершин
-                    // и индексов. Закрываем явно; close() идемпотентен (флаг consumed).
+                    // If initVbo() never ran (the part was cached but not rendered
+                    // before reload/disconnect), super.cleanup() exits early on
+                    // !initialized - while pendingData still holds native memAlloc
+                    // vertex/index buffers. Close them explicitly; close() is
+                    // idempotent (consumed flag).
                     if (pendingData != null) {
                         pendingData.close();
                         pendingData = null;
@@ -326,8 +262,6 @@ public class MeshRenderCache {
 
     public static void clear() {
         COMPILED_GEOMETRY.clear();
-        GPU_BUFFERS.values().forEach(vb -> { if (vb != null) vb.close(); });
-        GPU_BUFFERS.clear();
         IRIS_COMPANION_MESHES.values().forEach(m -> { if (m != null) m.destroy(); });
         IRIS_COMPANION_MESHES.clear();
     }
@@ -344,7 +278,7 @@ public class MeshRenderCache {
     }
 
     /**
-     * Удаляет конкретный рендерер из кэша и выполняет его GL-очистку.
+     * Removes a specific renderer from the cache and performs its GL cleanup.
      */
     public static void removeRenderer(String partKey) {
         SingleMeshVboRenderer renderer = PART_RENDERERS.remove(partKey);
@@ -358,10 +292,6 @@ public class MeshRenderCache {
         return COMPILED_GEOMETRY.size();
     }
 
-    public static int getCachedBuffersCount() {
-        return GPU_BUFFERS.size();
-    }
-
     public static int getCachedRenderersCount() {
         return PART_RENDERERS.size();
     }
@@ -369,7 +299,6 @@ public class MeshRenderCache {
     public static void logCacheStats() {
         MainRegistry.LOGGER.debug("MeshRenderCache stats:");
         MainRegistry.LOGGER.debug("  Compiled part geometry entries: " + getCachedQuadsCount());
-        MainRegistry.LOGGER.debug("  GPU buffers: " + getCachedBuffersCount());
         MainRegistry.LOGGER.debug("  Renderers: " + getCachedRenderersCount());
     }
 }

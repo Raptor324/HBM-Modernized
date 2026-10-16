@@ -64,7 +64,7 @@ public class MachineCraneRouterMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineCraneRouterBlockEntity routerBlockEntity) {
             return routerBlockEntity;
         }
-        throw new IllegalStateException("No MachineCraneRouterBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":crane_router_menu");
+        throw new MenuBlockEntityMissingException("No MachineCraneRouterBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":crane_router_menu");
     }
 
     public MachineCraneRouterBlockEntity getBlockEntity() {
@@ -73,11 +73,7 @@ public class MachineCraneRouterMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     /** Filter slots are never shift-click transferable, matching the original. */

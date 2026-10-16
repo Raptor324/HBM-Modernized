@@ -19,6 +19,57 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<MachineCrystallizerMenu>> CRYSTALLIZER_MENU =
             MENUS.register("crystallizer_menu", () -> MenuRegistry.ofExtended(MachineCrystallizerMenu::new));
 
+    // ── Teilchenbeschleuniger ────────────────────────────────────────────
+    public static final RegistrySupplier<net.minecraft.world.inventory.MenuType<PASourceMenu>> PA_SOURCE_MENU =
+            MENUS.register("pa_source_menu", () -> MenuRegistry.ofExtended(PASourceMenu::new));
+    public static final RegistrySupplier<net.minecraft.world.inventory.MenuType<PADetectorMenu>> PA_DETECTOR_MENU =
+            MENUS.register("pa_detector_menu", () -> MenuRegistry.ofExtended(PADetectorMenu::new));
+    public static final RegistrySupplier<net.minecraft.world.inventory.MenuType<PAQuadrupoleMenu>> PA_QUADRUPOLE_MENU =
+            MENUS.register("pa_quadrupole_menu", () -> MenuRegistry.ofExtended(PAQuadrupoleMenu::new));
+    public static final RegistrySupplier<net.minecraft.world.inventory.MenuType<PADipoleMenu>> PA_DIPOLE_MENU =
+            MENUS.register("pa_dipole_menu", () -> MenuRegistry.ofExtended(PADipoleMenu::new));
+    public static final RegistrySupplier<net.minecraft.world.inventory.MenuType<PARFCMenu>> PA_RFC_MENU =
+            MENUS.register("pa_rfc_menu", () -> MenuRegistry.ofExtended(PARFCMenu::new));
+
+    public static final RegistrySupplier<net.minecraft.world.inventory.MenuType<MachineRTGMenu>> RTG_MENU =
+            MENUS.register("rtg_menu", () -> MenuRegistry.ofExtended(MachineRTGMenu::new));
+
+    public static final RegistrySupplier<MenuType<PneumoStorageAccessMenu>> PNEUMO_STORAGE_ACCESS_MENU =
+            MENUS.register("pneumo_storage_access_menu", () -> MenuRegistry.ofExtended(PneumoStorageAccessMenu::new));
+
+    public static final RegistrySupplier<MenuType<PneumoStorageClutterMenu>> PNEUMO_STORAGE_CLUTTER_MENU =
+            MENUS.register("pneumo_storage_clutter_menu", () -> MenuRegistry.ofExtended(PneumoStorageClutterMenu::new));
+
+    public static final RegistrySupplier<MenuType<PneumoStorageMonoMenu>> PNEUMO_STORAGE_MONO_MENU =
+            MENUS.register("pneumo_storage_mono_menu", () -> MenuRegistry.ofExtended(PneumoStorageMonoMenu::new));
+
+    public static final RegistrySupplier<MenuType<PneumoStorageImporterMenu>> PNEUMO_STORAGE_IMPORTER_MENU =
+            MENUS.register("pneumo_storage_importer_menu", () -> MenuRegistry.ofExtended(PneumoStorageImporterMenu::new));
+
+    public static final RegistrySupplier<MenuType<PneumoStorageExporterMenu>> PNEUMO_STORAGE_EXPORTER_MENU =
+            MENUS.register("pneumo_storage_exporter_menu", () -> MenuRegistry.ofExtended(PneumoStorageExporterMenu::new));
+
+    public static final RegistrySupplier<MenuType<DFCCoreMenu>> DFC_CORE_MENU =
+            MENUS.register("dfc_core_menu", () -> MenuRegistry.ofExtended(DFCCoreMenu::new));
+
+    public static final RegistrySupplier<MenuType<DFCStabilizerMenu>> DFC_STABILIZER_MENU =
+            MENUS.register("dfc_stabilizer_menu", () -> MenuRegistry.ofExtended(DFCStabilizerMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineICFMenu>> MACHINE_ICF_MENU =
+            MENUS.register("machine_icf_menu", () -> MenuRegistry.ofExtended(MachineICFMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineICFPressMenu>> MACHINE_ICF_PRESS_MENU =
+            MENUS.register("machine_icf_press_menu", () -> MenuRegistry.ofExtended(MachineICFPressMenu::new));
+
+    public static final RegistrySupplier<MenuType<PneumoTubeMenu>> PNEUMO_TUBE_MENU =
+            MENUS.register("pneumo_tube_menu", () -> MenuRegistry.ofExtended(PneumoTubeMenu::new));
+
+    public static final RegistrySupplier<MenuType<ForceFieldMenu>> FORCE_FIELD_MENU =
+            MENUS.register("force_field_menu", () -> MenuRegistry.ofExtended(ForceFieldMenu::new));
+
+    public static final RegistrySupplier<net.minecraft.world.inventory.MenuType<MachineReactorControlMenu>> REACTOR_CONTROL_MENU =
+            MENUS.register("reactor_control_menu", () -> MenuRegistry.ofExtended(MachineReactorControlMenu::new));
+
     public static final RegistrySupplier<MenuType<MachineLargeTurbineMenu>> LARGE_TURBINE_MENU =
             MENUS.register("large_turbine_menu", () -> MenuRegistry.ofExtended(MachineLargeTurbineMenu::new));
 
@@ -107,14 +158,14 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<com.hbm_m.inventory.menu.MachinePUREXMenu>> PUREX_MENU =
             MENUS.register("purex_menu", () -> MenuRegistry.ofExtended(com.hbm_m.inventory.menu.MachinePUREXMenu::new));
 
-    public static final RegistrySupplier<MenuType<MachineCentrifugeMenu>> CENTRIFUGE_MENU =
-            MENUS.register("centrifuge_menu", () -> MenuRegistry.ofExtended(MachineCentrifugeMenu::new));
+    public static final RegistrySupplier<MenuType<MachineCentrifugeMenu>> MACHINE_CENTRIFUGE_MENU =
+            MENUS.register("machine_centrifuge_menu", () -> MenuRegistry.ofExtended(MachineCentrifugeMenu::new));
 
     public static final RegistrySupplier<MenuType<MachineCrucibleMenu>> CRUCIBLE_MENU =
             MENUS.register("crucible_menu", () -> MenuRegistry.ofExtended(MachineCrucibleMenu::new));
 
-    public static final RegistrySupplier<MenuType<MachineGasCentrifugeMenu>> GAS_CENTRIFUGE_MENU =
-            MENUS.register("gas_centrifuge_menu", () -> MenuRegistry.ofExtended(MachineGasCentrifugeMenu::new));
+    public static final RegistrySupplier<MenuType<MachineGasCentMenu>> MACHINE_GASCENT_MENU =
+            MENUS.register("machine_gascent_menu", () -> MenuRegistry.ofExtended(MachineGasCentMenu::new));
 
     public static final RegistrySupplier<MenuType<MachineIndustrialBoilerMenu>> INDUSTRIAL_BOILER_MENU =
             MENUS.register("industrial_boiler_menu", () -> MenuRegistry.ofExtended(MachineIndustrialBoilerMenu::new));
@@ -300,6 +351,19 @@ public class ModMenuTypes {
 
     public static final RegistrySupplier<MenuType<MachineHeatexMenu>> HEATEX_MENU =
             MENUS.register("heatex_menu", () -> MenuRegistry.ofExtended(MachineHeatexMenu::new));
+
+    // ===== Fusionsreaktor =====
+    public static final RegistrySupplier<MenuType<MachineFusionTorusMenu>> FUSION_TORUS_MENU =
+            MENUS.register("fusion_torus_menu", () -> MenuRegistry.ofExtended(MachineFusionTorusMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineFusionKlystronMenu>> FUSION_KLYSTRON_MENU =
+            MENUS.register("fusion_klystron_menu", () -> MenuRegistry.ofExtended(MachineFusionKlystronMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineFusionBreederMenu>> FUSION_BREEDER_MENU =
+            MENUS.register("fusion_breeder_menu", () -> MenuRegistry.ofExtended(MachineFusionBreederMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineFusionPlasmaForgeMenu>> FUSION_PLASMA_FORGE_MENU =
+            MENUS.register("fusion_plasma_forge_menu", () -> MenuRegistry.ofExtended(MachineFusionPlasmaForgeMenu::new));
 
     public static final RegistrySupplier<MenuType<MachinePumpjackMenu>> PUMPJACK_MENU =
             MENUS.register("pumpjack_menu", () -> MenuRegistry.ofExtended(MachinePumpjackMenu::new));

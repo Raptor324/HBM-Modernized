@@ -25,7 +25,7 @@ import net.minecraft.world.level.Level;
  * Datapack-facing газо-центрифужный рецепт ({@code hbm_m:gas_centrifuge}).
  *
  * <p><b>Только для JEI-отображения.</b> Runtime-логика Gas Centrifuge — каскадное обогащение
- * через {@code PseudoFluidType} (см. {@code MachineGasCentrifugeBlockEntity}), а не поиск рецептов.
+ * через {@code PseudoFluidType} (см. {@code MachineGasCentBlockEntity}), а не поиск рецептов.
  * Этот JSON-рецепт описывает «полный каскад-результат» для статичного показа в JEI (как в
  * оригинале 1.7.10 NEI {@code GasCentrifugeHandler}, который показывал полностью обогащённый
  * результат, а не per-tick логику).</p>
@@ -93,11 +93,7 @@ public class GasCentrifugeRecipe extends PlatformRecipe {
 
     public static class Serializer extends PlatformRecipeSerializer<GasCentrifugeRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-        //? if fabric && < 1.21.1 {
-        /*public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "gas_centrifuge");
-        *///?} else {
         public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "gas_centrifuge");
-        //?}
 
         @Override
         public GasCentrifugeRecipe readJson(ResourceLocation recipeId, JsonObject json) {

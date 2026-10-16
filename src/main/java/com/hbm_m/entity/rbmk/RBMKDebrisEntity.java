@@ -59,14 +59,14 @@ public class RBMKDebrisEntity extends Entity {
     //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
-        entityData.define(TYPE, 0);
-    }
+        var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     //?} else {
     /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
-        builder.define(TYPE, 0);
-    }
+        var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
     *///?}
+        defs.define(TYPE, 0);
+    }
 
     public void setDebrisType(DebrisType type) { entityData.set(TYPE, type.ordinal()); }
 
@@ -91,6 +91,10 @@ public class RBMKDebrisEntity extends Entity {
 
     @Override
     public void tick() {
+        // Entity.tick() is the only thing that advances tickCount, and the despawn check below
+        // reads it. Without this, debris lived forever even with the perma-scrap dial off.
+        baseTick();
+
         if (!hasSizeSet) {
             hasSizeSet = true;
             refreshDimensions();

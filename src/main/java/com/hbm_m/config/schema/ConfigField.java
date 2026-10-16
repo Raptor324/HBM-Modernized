@@ -3,6 +3,8 @@ package com.hbm_m.config.schema;
 import com.hbm_m.config.ModClothConfig;
 import net.minecraft.util.Mth;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -42,6 +44,7 @@ public final class ConfigField {
     private final Double min;           // Нижняя граница (для числовых полей; null = без клэмпа)
     private final Double max;           // Верхняя граница
     private String comment = null;      // Комментарий в JSON (для ручного редактирования пользователем; null = без комментария)
+    private boolean resetOnUpgrade = false; // Сброс к дефолту при миграции (смена версии мода), см. HbmConfigStore.load
 
     private ConfigField(Builder b) {
         this.key = Objects.requireNonNull(b.key);
@@ -53,6 +56,7 @@ public final class ConfigField {
         this.type = Objects.requireNonNull(b.type);
         this.min = b.min;
         this.max = b.max;
+        this.resetOnUpgrade = b.resetOnUpgrade;
     }
 
     // ================================================================
@@ -79,6 +83,7 @@ public final class ConfigField {
         private String fieldName;      // null → last(key)
         private Double min;
         private Double max;
+        private boolean resetOnUpgrade;
 
         private Builder(String key, FieldType type) {
             this.key = Objects.requireNonNull(key);
@@ -101,6 +106,13 @@ public final class ConfigField {
 
         /** Границы числового поля (clamping). Для boolean/enum игнорируются. */
         public Builder range(double min, double max) { this.min = min; this.max = max; return this; }
+
+        /**
+         * Пометить поле обязательным к сбросу при миграции конфига: при первом запуске
+         * новой версии мода пользовательское значение (если отличается от дефолта)
+         * сбрасывается до дефолта. См. {@code HbmConfigStore.load}.
+         */
+        public Builder resetOnUpgrade() { this.resetOnUpgrade = true; return this; }
 
         /** Явное имя поля (по умолчанию — сегмент ключа после последней точки). */
         public Builder fieldName(String name) { this.fieldName = name; return this; }
@@ -302,6 +314,30 @@ public final class ConfigField {
         return comment;
     }
 
+    /** Помечено ли поле к сбросу при миграции (смена версии мода). */
+    public boolean isResetOnUpgrade() {
+        return resetOnUpgrade;
+    }
+
+    /** Чейнинг после компактных фабрик (возвращает {@code ConfigField}, как {@link #withComment}). */
+    public ConfigField resetOnUpgrade() {
+        this.resetOnUpgrade = true;
+        return this;
+    }
+
+    /**
+     * Имена констант enum-поля в порядке объявления (пустой список для не-enum полей).
+     * Используется для строки [Values: ...] в JSON-комментарии.
+     */
+    public List<String> getEnumValueNames() {
+        if (type != FieldType.ENUM) return List.of();
+        Class<?> c = resolveFieldClass();
+        if (c == null || !c.isEnum()) return List.of();
+        List<String> out = new ArrayList<>();
+        for (Object constant : c.getEnumConstants()) out.add(((Enum<?>) constant).name());
+        return out;
+    }
+
 
     // ================================================================
     // Accessors для GUI/сериализации
@@ -312,6 +348,7 @@ public final class ConfigField {
     public ApplyMode getApplyMode() { return applyMode; }
     public String getCategory() { return category; }
     public String getFieldName() { return fieldName; }
+    public String name() { return fieldName; }
     public String getParentObject() { return parentObject; }
     public FieldType getType() { return type; }
     public Double getMin() { return min; }

@@ -7,6 +7,7 @@ import com.hbm_m.blockentity.machines.MachineSawmillBlockEntity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -32,7 +33,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * als einzelner Block. Kein Spieler-GUI (siehe {@link MachineSawmillBlockEntity}) - rein
  * automatisierungsgesteuert per Hopper/ItemHandler-Capability, genau wie im Original.
  */
-public class MachineSawmillBlock extends BaseEntityBlock {
+public class MachineSawmillBlock extends BaseEntityBlock implements com.hbm_m.interfaces.ILookOverlay {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 16, 16);
 
@@ -81,6 +82,45 @@ public class MachineSawmillBlock extends BaseEntityBlock {
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineSawmillBlockEntity(pos, state);
+    }
+
+    /**
+     * Fadenkreuz-HUD: Port von {@code MachineSawmill.printHook} - Fortschrittsbalken und
+     * Slotbelegung (Eingang "->", Ausgaenge "<-"). Die Original-Zeilen fuer Hitze ("TU/t",
+     * Prozent, OVERSPEED) und die fehlende Saegeblatt-Klinge entfallen: dieses Port arbeitet
+     * passiv ohne Heiznetzwerk und Klinge (siehe {@link MachineSawmillBlockEntity}).
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineSawmillBlockEntity sawmill)) return;
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+
+        // Original: 25 Balkensegmente, gruen bis zum Limiter (progress * 26 / processingTime),
+        // danach weiss. Die Anzeige hier zeichnet jede Zeile einfarbig - darum bleibt der
+        // Farbwechsel als Leerstellen-Form erhalten (gefuellt "▏", restlich " ").
+        int limiter = sawmill.progress * 26 / sawmill.getProcessingTime();
+        StringBuilder bar = new StringBuilder("[ ");
+        for (int i = 0; i < 25; i++) {
+            bar.append(i <= limiter ? "▏" : " ");
+        }
+        bar.append(" ]");
+        text.add(net.minecraft.network.chat.Component.literal(bar.toString())
+                .withStyle(net.minecraft.ChatFormatting.GREEN));
+
+        for (int i = 0; i < 3; i++) {
+            ItemStack stack = sawmill.getInventory().getStackInSlot(i);
+            if (!stack.isEmpty()) {
+                text.add(net.minecraft.network.chat.Component.literal(i == 0 ? "-> " : "<- ")
+                        .withStyle(i == 0 ? net.minecraft.ChatFormatting.GREEN : net.minecraft.ChatFormatting.RED)
+                        .append(stack.getHoverName())
+                        .append(stack.getCount() > 1 ? " x" + stack.getCount() : ""));
+            }
+        }
+
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     @Override

@@ -12,11 +12,19 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Screen for the "Satellite ID Manager" - direct port of legacy {@code GUIMachineSatLinker}
  * (same texture/layout): slot 1 copies its frequency onto slot 2, slot 3 randomizes its own.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineSatLinker extends AbstractContainerScreen<MachineSatLinkerMenu> {
 
     private static final ResourceLocation TEXTURE =

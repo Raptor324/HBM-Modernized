@@ -12,6 +12,13 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Port of {@code GUIScreenRadioTorch} (1.7.10 Original, shared by Sender/Receiver/Logic's base
@@ -22,6 +29,7 @@ import net.minecraft.network.chat.Component;
  * vollstaendig aequivalent, spart die aufwendige Custom-Textur-Layout-Arbeit fuer eine reine
  * Text-Konfigurationsmaske.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIRadioTorchSimple extends Screen {
 
     public static final int MAX_CHANNEL_LENGTH = 15;

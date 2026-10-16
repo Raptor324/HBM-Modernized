@@ -17,10 +17,19 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import dev.architectury.fluid.FluidStack;
 
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+
 /**
  * Direct clone of {@link GUIMachineFluidTank} for the BAT9000 — same texture/layout, just a much
  * larger dummy-tank capacity for the client-side fill bar.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIBat9000 extends AbstractContainerScreen<Bat9000Menu> {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/storage/gui_tank.png");
@@ -35,12 +44,12 @@ public class GUIBat9000 extends AbstractContainerScreen<Bat9000Menu> {
     private static final int MODE_BUTTON_Y = 34;
     private static final int MODE_BUTTON_SIZE = 18;
 
+    /**
+     * Ряд иконки режима в текстуре = нумерация режимов 1.7.10 (0=input, 1=buffer,
+     * 2=output, 3=off), совпадающая с логической после выравнивания на оригинал.
+     */
     private static int modeButtonSpriteRow(int logicalMode) {
-        return switch (logicalMode) {
-            case 0 -> 2;
-            case 2 -> 0;
-            default -> logicalMode;
-        };
+        return logicalMode;
     }
 
     public GUIBat9000(Bat9000Menu menu, Inventory inv, Component title) {

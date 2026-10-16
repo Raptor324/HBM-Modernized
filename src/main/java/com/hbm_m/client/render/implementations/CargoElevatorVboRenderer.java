@@ -13,9 +13,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
- * VBO-хелпер для CargoElevator. Кэширует и рендерит отдельные части
- * через {@link MeshRenderCache#getOrCreateRenderer}.
- * Аналог {@link MachineAssemblerVboRenderer}.
+ * VBO helper for the cargo elevator. Caches and renders individual parts
+ * via {@link MeshRenderCache#getOrCreateRenderer}.
+ * Analog of {@link MachineAssemblerVboRenderer}.
  */
 
 //? if < 1.21.1 {
@@ -32,7 +32,7 @@ public class CargoElevatorVboRenderer {
     }
 
     /**
-     * Рендерит статичную часть (Base, Guides) без трансформации.
+     * Renders a static part (Base, Guides) without transformation.
      */
     public void renderStaticPart(PoseStack poseStack, int packedLight, String partName,
                                   BlockPos blockPos, @Nullable BlockEntity blockEntity,
@@ -45,7 +45,7 @@ public class CargoElevatorVboRenderer {
     }
 
     /**
-     * Рендерит анимированную часть (Platform, Piston) с трансформацией.
+     * Renders an animated part (Platform, Piston) with transformation.
      */
     public void renderAnimatedPart(PoseStack poseStack, int packedLight, String partName,
                                     double translateY, BlockPos blockPos,

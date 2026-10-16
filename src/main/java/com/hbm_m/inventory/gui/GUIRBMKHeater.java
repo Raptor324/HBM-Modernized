@@ -11,6 +11,13 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * 1:1-Port von {@code GUIRBMKHeater} (1.7.10-Original, {@code ContainerRBMKHeater}):
@@ -28,6 +35,7 @@ import net.minecraft.world.entity.player.Inventory;
  * (nur Fluid-Tanks), daher entfaellt dieser Slot analog zu {@code GUIRBMKBoiler} - siehe
  * {@link RBMKHeaterMenu}.</p>
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIRBMKHeater extends GuiInfoScreen<RBMKHeaterMenu> {
 
     private static final ResourceLocation TEXTURE =

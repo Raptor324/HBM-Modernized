@@ -16,6 +16,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Industrial Boiler GUI: two fluid-container slot pairs (water in/out, steam in/out) flanking
@@ -23,6 +30,7 @@ import net.minecraft.world.level.material.Fluids;
  * the unused {@code gui_boiler.png} asset - coordinates were reverse-engineered from its pixel
  * layout since no Java code referenced it before).
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineIndustrialBoiler extends GuiInfoScreen<MachineIndustrialBoilerMenu> {
 
     private static final ResourceLocation TEXTURE =

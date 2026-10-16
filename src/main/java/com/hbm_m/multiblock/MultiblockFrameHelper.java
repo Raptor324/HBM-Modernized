@@ -153,6 +153,11 @@ public final class MultiblockFrameHelper {
         }
 
         BlockPos worldOffset = partPos.subtract(ctrlPos);
+        // Контроллеры без facing (например, Orbus-мультиблок) нельзя развернуть назад в
+        // локальную сетку - для них обновление пояса не определено, выходим молча.
+        if (!controllerState.hasProperty(HorizontalDirectionalBlock.FACING)) {
+            return;
+        }
         Direction facing = controllerState.getValue(HorizontalDirectionalBlock.FACING);
         BlockPos localOffset = MultiblockStructureHelper.rotateBack(worldOffset, facing);
 

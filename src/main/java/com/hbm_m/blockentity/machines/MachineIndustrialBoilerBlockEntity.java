@@ -38,9 +38,6 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 //?}
 
-//? if fabric {
-/*import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
-*///?}
 
 /**
  * Industrial Boiler BlockEntity - converts heatable fluids to steam products.
@@ -315,6 +312,11 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
         isOn = true;
     }
 
+    /** TU-Waermepuffer fuer das Look-Overlay-HUD (Original: {@code boiler.heat}). */
+    public int getHeat() {
+        return heat;
+    }
+
     public boolean isActive() {
         return isOn;
     }
@@ -414,10 +416,6 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
             case SLOT_WATER_IN -> stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
             case SLOT_STEAM_IN -> stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
             //?}
-            //? if fabric {
-            /*case SLOT_WATER_IN -> FluidStorage.ITEM.find(stack, null) != null;
-            case SLOT_STEAM_IN -> FluidStorage.ITEM.find(stack, null) != null;
-            *///?}
             //? if neoforge {
             /*case SLOT_WATER_IN -> stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM) != null;
             case SLOT_STEAM_IN -> stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM) != null;

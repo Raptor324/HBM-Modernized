@@ -14,6 +14,13 @@ import net.minecraft.network.chat.Component;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Port of {@code GUIScreenRBMKTerminal} - a free-text RTTY command console. Commands are
@@ -21,6 +28,7 @@ import java.util.Deque;
  * was typed locally since there's no S2C reply channel for this port (see the block entity's
  * class doc for the accepted scope trim).
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIRBMKTerminal extends Screen {
 
     private static final int MAX_LOG_LINES = 10;

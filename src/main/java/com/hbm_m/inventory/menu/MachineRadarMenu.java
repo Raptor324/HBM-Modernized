@@ -55,7 +55,7 @@ public class MachineRadarMenu extends AbstractContainerMenu {
         if (inventory.player.level().isClientSide) {
             return null;
         }
-        throw new IllegalStateException("No MachineRadarBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":radar_menu");
+        throw new MenuBlockEntityMissingException("No MachineRadarBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":radar_menu");
     }
 
     public MachineRadarBlockEntity getBlockEntity() {

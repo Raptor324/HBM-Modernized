@@ -44,16 +44,15 @@ public abstract class EntityDroneBase extends Entity {
     //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
-        this.entityData.define(HAS_TARGET, false);
-        this.entityData.define(APPEARANCE, APPEARANCE_EMPTY);
-    }
+        var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     //?} else {
     /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
-        builder.define(HAS_TARGET, false);
-        builder.define(APPEARANCE, APPEARANCE_EMPTY);
-    }
+        var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
     *///?}
+        defs.define(HAS_TARGET, false);
+        defs.define(APPEARANCE, APPEARANCE_EMPTY);
+    }
 
     public void setTarget(double x, double y, double z) {
         this.targetX = x;
@@ -91,33 +90,40 @@ public abstract class EntityDroneBase extends Entity {
     public void tick() {
         super.tick();
 
-        this.setDeltaMovement(Vec3.ZERO);
+        // Server only, as in the original: there the whole target-following block sits in the
+        // else branch of if(worldObj.isRemote), and the client just interpolates the synced
+        // position. Here targetX/Y/Z are plain fields that are never synced while HAS_TARGET is,
+        // so the client saw "has a target" with the target at (0,0,0) and drove the drone toward
+        // the world origin between position packets.
+        if (!level().isClientSide) {
+            this.setDeltaMovement(Vec3.ZERO);
 
-        if (hasTarget()) {
-            double dx = targetX - getX();
-            double dy = targetY - getY();
-            double dz = targetZ - getZ();
-            Vec3 toTarget = new Vec3(dx, dy, dz);
-            double dist = toTarget.length();
+            if (hasTarget()) {
+                double dx = targetX - getX();
+                double dy = targetY - getY();
+                double dz = targetZ - getZ();
+                Vec3 toTarget = new Vec3(dx, dy, dz);
+                double dist = toTarget.length();
 
-            if (dist < 0.05) {
-                clearTarget();
-                onTargetReached();
-            } else {
-                double speed = Math.min(getSpeed(), dist);
-                Vec3 motion = toTarget.scale(speed / dist);
-                this.setDeltaMovement(motion);
+                if (dist < 0.05) {
+                    clearTarget();
+                    onTargetReached();
+                } else {
+                    double speed = Math.min(getSpeed(), dist);
+                    Vec3 motion = toTarget.scale(speed / dist);
+                    this.setDeltaMovement(motion);
+                }
             }
+
+            move(MoverType.SELF, getDeltaMovement());
+
+            if (horizontalCollision) {
+                // Original's crude escape hatch: nudge upward to try to clear the obstruction.
+                this.setDeltaMovement(getDeltaMovement().add(0, 1, 0));
+            }
+
+            loadNeighboringChunks();
         }
-
-        move(MoverType.SELF, getDeltaMovement());
-
-        if (horizontalCollision) {
-            // Original's crude escape hatch: nudge upward to try to clear the obstruction.
-            this.setDeltaMovement(getDeltaMovement().add(0, 1, 0));
-        }
-
-        loadNeighboringChunks();
 
         if (level().isClientSide) {
             spawnTrailParticles();

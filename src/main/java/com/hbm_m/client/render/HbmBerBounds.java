@@ -6,15 +6,14 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
 
 /**
- * См. {@link RenderBoundsProvider}.
+ * See {@link RenderBoundsProvider}.
  *
- * На 1.21.1 NeoForge ванильный BER-пасс куллит block entities через
- * {@code BlockEntityRenderer#getRenderBoundingBox(be)} (default = 1 блок у
- * позиции BE), из-за чего мультиблоки исчезали, как только блок-контроллер
- * выходил за экран. Делегируем в BE: если он реализует
- * {@link RenderBoundsProvider}, используем его AABB (обычно вся структура).
- * На 1.20.1 оверрайда нет — BlockEntity#getRenderBoundingBox зовётся самим
- * Forge, и интерфейс пуст.
+ * <p>On 1.21.1 NeoForge the vanilla BER pass culls block entities via
+ * {@code BlockEntityRenderer#getRenderBoundingBox(be)} (default = a 1-block cube at the BE
+ * position), which made multiblocks disappear as soon as the controller block left the screen.
+ * We delegate to the BE: if it implements {@link RenderBoundsProvider}, its AABB (usually the
+ * whole structure) is used. On 1.20.1 there is no override - BlockEntity#getRenderBoundingBox
+ * is called by Forge itself, so this interface is empty there.
  */
 public interface HbmBerBounds<T extends BlockEntity> extends BlockEntityRenderer<T> {
 

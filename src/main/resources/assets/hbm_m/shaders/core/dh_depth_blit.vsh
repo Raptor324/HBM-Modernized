@@ -1,6 +1,6 @@
 #version 150
 
-// Фуллскрин-квад в NDC: глубину берём напрямую из DH depth-текстуры по UV.
+// Fullscreen quad in NDC: depth is read directly from the DH depth texture by UV.
 in vec3 Position;
 
 out vec2 uv;

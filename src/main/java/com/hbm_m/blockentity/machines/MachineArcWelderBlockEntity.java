@@ -77,6 +77,25 @@ public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity {
             be.progress++;
             be.energy = Math.max(0, be.energy - be.consumption);
 
+            // 1:1-Port: alle zwei Ticks ein Schwall Funken ueber der Schweissstelle, jeden
+            // zwanzigsten davon als voller Lichtbogen.
+            if (level.getGameTime() % 2 == 0 && level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+                net.minecraft.core.Direction dir = state.hasProperty(
+                        com.hbm_m.block.machines.MachineArcWelderBlock.FACING)
+                        ? state.getValue(com.hbm_m.block.machines.MachineArcWelderBlock.FACING)
+                        : net.minecraft.core.Direction.NORTH;
+
+                net.minecraft.nbt.CompoundTag dPart = new net.minecraft.nbt.CompoundTag();
+                dPart.putString("type", level.getGameTime() % 20 == 0 ? "tau" : "hadron");
+                dPart.putByte("count", (byte) 5);
+
+                com.hbm_m.particle.helper.IParticleCreator.sendPacket(serverLevel,
+                        pos.getX() + 0.5 - dir.getStepX() * 0.5,
+                        pos.getY() + 1.25,
+                        pos.getZ() + 0.5 - dir.getStepZ() * 0.5,
+                        25, dPart);
+            }
+
             if (be.progress >= be.processTime) {
                 be.progress = 0;
                 be.processRecipe(recipe);

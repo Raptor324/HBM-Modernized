@@ -5,6 +5,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.api.distmarker.OnlyIn;
 
 /^*
  * NeoForge-only event hook for {@link ChunkRadiationDebugRenderer}.
@@ -13,6 +14,7 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
  * event hook отдельно, чтобы сам рендерер оставался loader-agnostic.
  ^/
 @EventBusSubscriber(value = Dist.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public final class ChunkRadiationDebugRendererNeoForge {
     private ChunkRadiationDebugRendererNeoForge() {}
 

@@ -59,7 +59,7 @@ public class ModItemModelProvider extends ItemModelProvider {
             java.util.Map.entry("rbmk_control_reasim_auto", "block/rbmk/rbmk_control_auto_side"),
             java.util.Map.entry("rbmk_steam_inlet", "block/rbmk/rbmk_boiler_pipe_side"),
             java.util.Map.entry("rbmk_steam_outlet", "block/rbmk/rbmk_boiler_pipe_side"),
-            java.util.Map.entry("rbmk_loader", "block/rbmk/rbmk_blank_side"),
+            java.util.Map.entry("rbmk_loader", "block/rbmk/standalone_rbmk_loader"),
             java.util.Map.entry("rbmk_autoloader", "block/rbmk/rbmk_blank_side"),
             java.util.Map.entry("rbmk_crane_console", "block/rbmk/rbmk_console"),
             java.util.Map.entry("rbmk_display", "block/rbmk/rbmk_display"),
@@ -83,6 +83,12 @@ public class ModItemModelProvider extends ItemModelProvider {
     @Override
     protected void registerModels() {
         generateMissileItemModels();
+
+        // ICF-Pellet: zwei Lagen wie im Original (requiresMultipleRenderPasses) - unten der
+        // eingefaerbte Huellring icf_pellet_bg, darueber die unveraenderte Pelletgrafik.
+        withExistingParent("icf_pellet", "item/generated")
+                .texture("layer0", modLoc("item/icf_pellet_bg"))
+                .texture("layer1", modLoc("item/icf_pellet"));
 
         // Мета-предметы вкладки Parts (PartTabMetaItems): плоская модель на свою текстуру
         // (или заданную layer0) либо двухслойная база+оверлей (dye/crayon).
@@ -327,6 +333,12 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.FAT_MAN_EXPLOSIVE);
         simpleItem(ModItems.FAT_MAN_IGNITER);
         simpleItem(ModItems.FAT_MAN_CORE);
+        // Ported from the 1.7.10 assets: these had no texture, so no model was generated.
+        simpleItem(ModItems.IGNITER);
+        simpleItem(ModItems.CELL_SAS3);
+        simpleItem(ModItems.ROD_QUAD_LEAD);
+        simpleItem(ModItems.ROD_QUAD_NP237);
+        simpleItem(ModItems.ROD_QUAD_URANIUM);
         simpleItem(ModItems.DESIGNATOR);
         simpleItem(ModItems.RANGEFINDER);
         simpleItem(ModItems.DESIGNATOR_RANGE);
@@ -344,7 +356,6 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.CRT_DISPLAY);
         simpleItem(ModItems.MAGNETRON);
         simpleItem(ModItems.TURBINE_TITANIUM);
-        simpleItem(ModItems.SEQUESTRUM);
         simpleItem(ModItems.BLADE_STEEL);
         simpleItem(ModItems.BLADE_TITANIUM);
         simpleItem(ModItems.BLADE_ALLOY);
@@ -502,6 +513,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.BATTERY_SPARK_CELL_2500);
         simpleItem(ModItems.BATTERY_SPARK_CELL_10000);
         simpleItem(ModItems.BATTERY_SPARK_CELL_POWER);
+
+        generateBatteryPackModels();
 
         simpleItem(ModItems.DEPTH_ORES_SCANNER);
         simpleItem(ModItems.ZIRCONIUM_SHARP);
@@ -792,10 +805,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         trimmedArmorItem(ModItems.LIQUIDATOR_CHESTPLATE);
         trimmedArmorItem(ModItems.LIQUIDATOR_LEGGINGS);
         trimmedArmorItem(ModItems.LIQUIDATOR_BOOTS);
-        trimmedArmorItem(ModItems.HAZMAT_HELMET);
-        trimmedArmorItem(ModItems.HAZMAT_CHESTPLATE);
-        trimmedArmorItem(ModItems.HAZMAT_LEGGINGS);
-        trimmedArmorItem(ModItems.HAZMAT_BOOTS);
+        // Жёлтый костюм химзащиты переехал на OBJ-модели (src/main/resources), trimmed-иконки удалены.
         trimmedArmorItem(ModItems.STARMETAL_HELMET);
         trimmedArmorItem(ModItems.STARMETAL_CHESTPLATE);
         trimmedArmorItem(ModItems.STARMETAL_LEGGINGS);
@@ -830,12 +840,18 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.FOUNDRY_CHANNEL, "foundry_channel_inventory");
         blockItemFromBlockModelMachine(ModBlocks.FOUNDRY_MOLD);
         blockItemFromBlockModelMachine(ModBlocks.FOUNDRY_TANK);
-        blockItemFromBlockModelMachine(ModBlocks.CENTRIFUGE);
-        blockItemFromBlockModelMachine(ModBlocks.GAS_CENTRIFUGE);
+        blockItemFromBlockModelMachine(ModBlocks.MACHINE_CENTRIFUGE);
+        blockItemFromBlockModelMachine(ModBlocks.MACHINE_GASCENT);
         // Газовые блоки: blockstate = invisible_gas, поэтому item-модель делаем прямо
         // из block-текстуры (в 1.7.10 предмет был в machineTab и рендерился текстурой газа).
-        withExistingParent(ModBlocks.GAS_ASBESTOS.getId().getPath(), "item/generated").texture("layer0", modLoc("block/gas_asbestos"));
-        withExistingParent(ModBlocks.GAS_COAL.getId().getPath(), "item/generated").texture("layer0", modLoc("block/gas_coal"));
+        // Die Gasbloecke selbst sind unsichtbar, ihr Item braucht darum ein eigenes flaches Modell.
+        for (var gas : java.util.List.of(
+                ModBlocks.GAS_ASBESTOS, ModBlocks.GAS_COAL, ModBlocks.GAS_EXPLOSIVE,
+                ModBlocks.GAS_FLAMMABLE, ModBlocks.GAS_MELTDOWN, ModBlocks.GAS_MONOXIDE,
+                ModBlocks.GAS_RADON, ModBlocks.GAS_RADON_DENSE, ModBlocks.GAS_RADON_TOMB)) {
+            String name = gas.getId().getPath();
+            withExistingParent(name, "item/generated").texture("layer0", modLoc("block/" + name));
+        }
         blockItemFromBlockModelMachine(ModBlocks.CRYSTALLIZER, "crystallizer_item");
         blockItemFromBlockModelMachine(ModBlocks.BREEDER);
         blockItemFromBlockModelMachine(ModBlocks.LARGE_PYLON);
@@ -905,7 +921,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.SILEX);
         blockItemFromBlockModelMachine(ModBlocks.MACHINE_ASSEMBLER);
         blockItemFromBlockModelMachine(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
-        blockItemFromBlockModelMachine(ModBlocks.FLUID_TANK);
+        // fluid_tank: item-модель НЕ датагенится — см. assets/hbm_m/models/item/fluid_tank.json
+        // (main/resources): parent "builtin/entity" как сырая строка, датаген её выдать не может.
         blockItemFromBlockModelMachine(ModBlocks.BAT9000);
         blockItemFromBlockModelMachine(ModBlocks.LAUNCH_PAD);
         blockItemFromBlockModelMachine(ModBlocks.LAUNCH_PAD_RUSTED);
@@ -915,6 +932,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelBomb(ModBlocks.NUKE_MIKE);
         blockItemFromBlockModelBomb(ModBlocks.NUKE_TSAR);
         blockItemFromBlockModelBomb(ModBlocks.NUKE_FLEIJA);
+        blockItemFromBlockModelBomb(ModBlocks.NUKE_PROTOTYPE);
         blockItemFromBlockModelBomb(ModBlocks.NUKE_N2);
         blockItemFromBlockModelBomb(ModBlocks.NUKE_SOLINIUM);
         blockItemFromBlockModelBomb(ModBlocks.NUKE_FSTBMB);
@@ -979,12 +997,15 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.FIREBOX);
         blockItemFromBlockModelMachine(ModBlocks.FRACTION_SPACER);
         blockItemFromBlockModelMachine(ModBlocks.FURNACE_IRON);
+        blockItemFromBlockModelMachine(ModBlocks.ELECTRIC_FURNACE);
+        blockItemFromBlockModelMachine(ModBlocks.FURNACE_BRICK);
         blockItemFromBlockModelMachine(ModBlocks.FURNACE_STEEL);
         blockItemFromBlockModelMachine(ModBlocks.HEATEX);
         blockItemFromBlockModelMachine(ModBlocks.HEPHAESTUS);
         blockItemFromBlockModelMachine(ModBlocks.ICF);
         blockItemFromBlockModelMachine(ModBlocks.INTAKE);
         blockItemFromBlockModelMachine(ModBlocks.KLYSTRON);
+        blockItemFromBlockModelMachine(ModBlocks.KLYSTRON_CREATIVE);
         blockItemFromBlockModelMachine(ModBlocks.MHDT);
         blockItemFromBlockModelMachine(ModBlocks.MICROWAVE);
         blockItemFromBlockModelMachine(ModBlocks.MINING_LASER);
@@ -1029,7 +1050,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelBomb(ModBlocks.DUD_SALTED);
 
         blockItemFromBlockModel(ModBlocks.FLUID_VALVE);
-        blockItemFromBlockModel(ModBlocks.FLUID_PUMP);
+        blockItemFromBlockModelMachine(ModBlocks.FLUID_PUMP);
         blockItemFromBlockModel(ModBlocks.FLUID_EXHAUST);
 
         // Ранее: assets/.../models/item/*.json с parent = блок или простая generated/handheld-текстура
@@ -1081,6 +1102,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModel(ModBlocks.FLUORITE_ORE);
         blockItemFromBlockModel(ModBlocks.FREAKY_ALIEN_BLOCK);
         blockItemFromBlockModel(ModBlocks.GEIGER_COUNTER_BLOCK);
+        blockItemFromBlockModel(ModBlocks.LAMP_DEMON);
         blockItemFromBlockModel(ModBlocks.LEAD_ORE);
         blockItemFromBlockModel(ModBlocks.LEAD_ORE_DEEPSLATE);
         blockItemFromBlockModel(ModBlocks.LIGNITE_ORE);
@@ -1154,7 +1176,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItemModelByName("iron_plate", "iron_plate");
         simpleItemModelByName("titanium_stamp_plate", "titanium_stamp_plate");
         withExistingParent(ModItems.BLUEPRINT_FOLDER.getId().getPath(), "item/generated")
-                .texture("layer0", modLoc("item/template_folder"));
+                .texture("layer0", modLoc("item/blueprint_folder"));
         blockItemFromBlockModel(ModBlocks.STRAWBERRY_BUSH);
 
         java.util.List.of(
@@ -1503,7 +1525,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.COTTON_CANDY,
                 ModItems.CRACKPIPE,
                 ModItems.CRATE_CALLER,
-                ModItems.CRUCIBLE_TEMPLATE,
                 ModItems.CUBE_POWER,
                 ModItems.CUSTOM_AMAT,
                 ModItems.CUSTOM_DIRTY,
@@ -1657,22 +1678,16 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.GUN_PA_RANGED,
                 ModItems.HAND_DRILL,
                 ModItems.HAND_DRILL_DESH,
-                ModItems.HAZMAT_BOOTS_GREY,
-                ModItems.HAZMAT_BOOTS_RED,
+                // Наборы red/grey костюма химзащиты теперь броня с OBJ-моделями (src/main/resources),
+                // их simpleItem-модели удалены. Остаются плейсхолдеры и наборы-киты.
                 ModItems.HAZMAT_GREY_KIT,
-                ModItems.HAZMAT_HELMET_GREY,
-                ModItems.HAZMAT_HELMET_RED,
                 ModItems.HAZMAT_KIT,
                 ModItems.HAZMAT_LEGS,
-                ModItems.HAZMAT_LEGS_GREY,
-                ModItems.HAZMAT_LEGS_RED,
                 ModItems.HAZMAT_PAA_BOOTS,
                 ModItems.HAZMAT_PAA_HELMET,
                 ModItems.HAZMAT_PAA_LEGS,
                 ModItems.HAZMAT_PAA_PLATE,
                 ModItems.HAZMAT_PLATE,
-                ModItems.HAZMAT_PLATE_GREY,
-                ModItems.HAZMAT_PLATE_RED,
                 ModItems.HAZMAT_RED_KIT,
                 ModItems.HEAVY_COMPONENT,
                 ModItems.HEV_BOOTS,
@@ -1686,7 +1701,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.HULL_BIG_TITANIUM,
                 ModItems.HULL_SMALL_ALUMINIUM,
                 ModItems.HULL_SMALL_STEEL,
-                ModItems.ICF_PELLET,
                 ModItems.ICF_PELLET_DEPLETED,
                 ModItems.ICF_PELLET_EMPTY,
                 ModItems.INDUSTRIAL_MAGNET,
@@ -1720,6 +1734,8 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.JOURNAL_PIP,
                 ModItems.JOURNAL_SILVER,
                 ModItems.KEY,
+                ModItems.KEY_FAKE,
+                ModItems.KEY_KIT,
                 ModItems.KEY_RED,
                 ModItems.KEY_RED_CRACKED,
                 ModItems.LASER_CRYSTAL_BISMUTH,
@@ -1765,7 +1781,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.MIKE_DEUT,
                 ModItems.MIKE_KIT,
                 ModItems.MIRROR_TOOL,
-                ModItems.MISSILE_ANTI_BALLISTIC,
                 ModItems.MISSILE_CARRIER,
                 ModItems.MISSILE_CUSTOM,
                 ModItems.MISSILE_ENDO,
@@ -1910,6 +1925,12 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.PELLET_RTG_RADIUM,
                 ModItems.PELLET_RTG_STRONTIUM,
                 ModItems.PELLET_RTG_WEAK,
+                ModItems.PELLET_RTG_DEPLETED_BISMUTH,
+                ModItems.PELLET_RTG_DEPLETED_LEAD,
+                ModItems.PELLET_RTG_DEPLETED_MERCURY,
+                ModItems.PELLET_RTG_DEPLETED_NEPTUNIUM,
+                ModItems.PELLET_RTG_DEPLETED_NICKEL,
+                ModItems.PELLET_RTG_DEPLETED_ZIRCONIUM,
                 ModItems.PHOTO_PANEL,
                 ModItems.PILE_ROD_BORON,
                 ModItems.PILE_ROD_DETECTOR,
@@ -1921,6 +1942,11 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.PILL_HERBAL,
                 ModItems.PILL_IODINE,
                 ModItems.PILL_RED,
+                ModItems.RADX,
+                ModItems.PA_COIL_GOLD,
+                ModItems.PA_COIL_NIOBIUM,
+                ModItems.PA_COIL_BSCCO,
+                ModItems.PA_COIL_CHLOROPHYTE,
                 ModItems.PIN,
                 ModItems.PIPES_STEEL,
                 ModItems.PIPETTE,
@@ -2169,6 +2195,15 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.SHELL,
                 ModItems.UPGRADE_MUFFLER,
                 ModItems.UPGRADE_TEMPLATE,
+                ModItems.PILE_ROD_RA226BE,
+                ModItems.PILE_ROD_PO210BE,
+                ModItems.PILE_ROD_ZR,
+                ModItems.PILE_ROD_NU,
+                ModItems.PILE_ROD_MK2_PU239,
+                ModItems.PILE_ROD_RGP,
+                ModItems.PILE_ROD_WASTE,
+                ModItems.UPGRADE_RADIUS,
+                ModItems.UPGRADE_HEALTH,
                 ModItems.WASTE_NATURAL_URANIUM,
                 ModItems.WASTE_U233,
                 ModItems.WASTE_U235,
@@ -2240,11 +2275,7 @@ public class ModItemModelProvider extends ItemModelProvider {
     private ItemModelBuilder simpleBlockItem(RegistrySupplier<Block> item) {
         return withExistingParent(item.getId().getPath(),
                 ResourceLocation.tryParse("item/generated")).texture("layer0",
-                //? if fabric && < 1.21.1 {
-                /*new ResourceLocation(MainRegistry.MOD_ID,"item/" + item.getId().getPath()));
-                *///?} else {
                                 ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID,"item/" + item.getId().getPath()));
-                //?}
 
     }
 
@@ -2368,18 +2399,10 @@ public class ModItemModelProvider extends ItemModelProvider {
                 String armorItemPath = "item/" + armorItem;
                 String trimPath = "trims/items/" + armorType + "_trim_" + trimMaterial.location().getPath();
                 String currentTrimName = armorItemPath + "_" + trimMaterial.location().getPath() + "_trim";
-                //? if fabric && < 1.21.1 {
-                /*ResourceLocation armorItemResLoc = new ResourceLocation(MOD_ID, armorItemPath);
-                *///?} else {
                                 ResourceLocation armorItemResLoc = ResourceLocation.fromNamespaceAndPath(MOD_ID, armorItemPath);
-                //?}
 
                 ResourceLocation trimResLoc = ResourceLocation.tryParse(trimPath); // minecraft namespace
-                //? if fabric && < 1.21.1 {
-                /*ResourceLocation trimNameResLoc = new ResourceLocation(MOD_ID, currentTrimName);
-                *///?} else {
                                 ResourceLocation trimNameResLoc = ResourceLocation.fromNamespaceAndPath(MOD_ID, currentTrimName);
-                //?}
 
 
                 existingFileHelper.trackGenerated(trimResLoc, PackType.CLIENT_RESOURCES, ".png", "textures");
@@ -2395,13 +2418,8 @@ public class ModItemModelProvider extends ItemModelProvider {
                         .model(new ModelFile.UncheckedModelFile(trimNameResLoc))
                         .predicate(mcLoc("trim_type"), trimValue).end()
                         .texture("layer0",
-                                //? if fabric && < 1.21.1 {
-                                /*new ResourceLocation(MOD_ID,
-                                        "item/" + itemRegistrySupplier.getId().getPath()));
-                                *///?} else {
                                                                 ResourceLocation.fromNamespaceAndPath(MOD_ID,
                                         "item/" + itemRegistrySupplier.getId().getPath()));
-                                //?}
 
             });
         }
@@ -2451,6 +2469,66 @@ public class ModItemModelProvider extends ItemModelProvider {
     private void generateMissileItemModels() {
         for (MissileItemModelDefinitions.Definition definition : MissileItemModelDefinitions.all()) {
             missileItemFromObjModel(definition.itemPath(), definition.hull(), definition.texture());
+        }
+    }
+
+    /**
+     * Item-модели больших батарей-паков (бэкпорт оригинала battery_pack_*.json): одна OBJ-часть
+     * (Battery/Capacitor) модели сокета с текстурой тира через {@code hbm_m:battery_pack_loader}.
+     * Display-трансформы скопированы из оригинала — геометрия OBJ идентична.
+     */
+    private void generateBatteryPackModels() {
+        for (RegistrySupplier<Item> pack : ModItems.BATTERY_PACKS) {
+            com.hbm_m.item.fekal_electric.ItemBatteryPack item = (com.hbm_m.item.fekal_electric.ItemBatteryPack) pack.get();
+            String tierTex = "hbm_m:block/machine/" + item.tier.tex;
+            String part = item.tier.isCapacitor() ? "Capacitor" : "Battery";
+            getBuilder(pack.getId().getPath())
+                    .transforms()
+                            .transform(net.minecraft.world.item.ItemDisplayContext.THIRD_PERSON_RIGHT_HAND)
+                                    .rotation(-164.5f, 11.35f, 165.04f).translation(-1.574f, 2.807f, 1.284f).scale(0.1406f)
+                            .end()
+                            .transform(net.minecraft.world.item.ItemDisplayContext.THIRD_PERSON_LEFT_HAND)
+                                    .rotation(-164.5f, 11.35f, 165.04f).translation(-0.4145f, 3.049f, 1.592f).scale(0.1406f)
+                            .end()
+                            .transform(net.minecraft.world.item.ItemDisplayContext.FIRST_PERSON_RIGHT_HAND)
+                                    .rotation(154.92f, -4.53f, 177.88f).translation(0.177f, 3.661f, 2.024f).scale(0.15f)
+                            .end()
+                            .transform(net.minecraft.world.item.ItemDisplayContext.FIRST_PERSON_LEFT_HAND)
+                                    .rotation(154.92f, -4.53f, 177.88f).translation(0.177f, 3.661f, 2.024f).scale(0.15f)
+                            .end()
+                            .transform(net.minecraft.world.item.ItemDisplayContext.GUI)
+                                    .rotation(-150f, -45f, -180f).translation(0f, -0.268f, -7f).scale(0.3125f)
+                            .end()
+                            .transform(net.minecraft.world.item.ItemDisplayContext.HEAD)
+                                    .rotation(0f, -50f, 155f).translation(5.223f, -21.046f, 6.225f).scale(0.6f)
+                            .end()
+                            .transform(net.minecraft.world.item.ItemDisplayContext.GROUND)
+                                    .rotation(0f, 90f, 0f).translation(0f, -1f, 0f).scale(0.1875f)
+                            .end()
+                            .transform(net.minecraft.world.item.ItemDisplayContext.FIXED)
+                                    .rotation(0f, -90f, 0f).translation(0f, 3.44f, 0.5f).scale(0.375f)
+                            .end()
+                    .end()
+                    .guiLight(net.minecraft.client.renderer.block.model.BlockModel.GuiLight.SIDE)
+                    .customLoader((parent, helper) ->
+                            new CustomLoaderBuilder<ItemModelBuilder>(
+                                    ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "battery_pack"), parent, helper) {
+                                @Override
+                                public JsonObject toJson(JsonObject json) {
+                                    super.toJson(json);
+                                    json.addProperty("model", "hbm_m:models/block/machines/machine_battery_socket.obj");
+                                    json.addProperty("flip_v", true);
+                                    json.addProperty("part", part);
+                                    json.addProperty("texture", tierTex);
+                                    // Стандартная карта текстур: гарантия прошивки спрайта тира
+                                    // в блок-атлас (иначе в мире будет missing tex).
+                                    JsonObject textures = new JsonObject();
+                                    textures.addProperty("default", tierTex);
+                                    textures.addProperty("particle", tierTex);
+                                    json.add("textures", textures);
+                                    return json;
+                                }
+                            });
         }
     }
 

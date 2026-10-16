@@ -11,8 +11,16 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /** Port of {@code GUIScreenRBMKLever} - 2 flip-switches, each with an RTTY channel and on/off command strings. */
+@OnlyIn(Dist.CLIENT)
 public class GUIRBMKLever extends Screen {
 
     private final BlockPos pos;

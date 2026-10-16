@@ -1,5 +1,13 @@
 package com.hbm_m.config;
 
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+
 import org.lwjgl.glfw.GLFW;
 
 import com.hbm_m.client.overlay.OverlayInfoToast;
@@ -7,7 +15,6 @@ import com.hbm_m.inventory.gui.GUIMultiDetonator;
 import com.hbm_m.item.grenades_and_activators.MultiDetonatorItem;
 import com.hbm_m.powerarmor.ModPowerArmorItem;
 import com.hbm_m.powerarmor.PowerArmorClientState;
-import com.hbm_m.powerarmor.PowerArmorHandlers;
 import com.mojang.blaze3d.platform.InputConstants;
 
 import dev.architectury.event.events.client.ClientTickEvent;
@@ -17,13 +24,7 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
 public class ModConfigKeybindHandler {
     public static final String CATEGORY = "key.categories.hbm_m";
     private static boolean INITIALIZED = false;
@@ -112,19 +113,6 @@ public class ModConfigKeybindHandler {
         if (INITIALIZED) return;
         INITIALIZED = true;
 
-        //? if fabric {
-        /*// Fabric: KeyBindingHelper-обвязка Architectury, регистрация в любой момент валидна.
-        KeyMappingRegistry.register(OPEN_CONFIG);
-        KeyMappingRegistry.register(POWER_ARMOR_DASH);
-        KeyMappingRegistry.register(POWER_ARMOR_VATS);
-        KeyMappingRegistry.register(POWER_ARMOR_THERMAL);
-        KeyMappingRegistry.register(OPEN_MULTI_DETONATOR);
-        KeyMappingRegistry.register(RBMK_CRANE_UP);
-        KeyMappingRegistry.register(RBMK_CRANE_DOWN);
-        KeyMappingRegistry.register(RBMK_CRANE_LEFT);
-        KeyMappingRegistry.register(RBMK_CRANE_RIGHT);
-        KeyMappingRegistry.register(RBMK_CRANE_LOAD);
-        *///?}
 
         // Аналог END-фазы ClientTickEvent на Forge: выполняем после стандартного тика клиента.
         ClientTickEvent.CLIENT_POST.register(client -> onClientPostTick());
@@ -147,6 +135,13 @@ public class ModConfigKeybindHandler {
         registrar.accept(OPEN_MULTI_DETONATOR);
         registrar.accept(COPY_TOOL_ALT);
         registrar.accept(COPY_TOOL_CTRL);
+        // The five RBMK crane binds were missing here while the Fabric path registers all ten:
+        // they never reached the controls screen and consumeClick never fired for them.
+        registrar.accept(RBMK_CRANE_UP);
+        registrar.accept(RBMK_CRANE_DOWN);
+        registrar.accept(RBMK_CRANE_LEFT);
+        registrar.accept(RBMK_CRANE_RIGHT);
+        registrar.accept(RBMK_CRANE_LOAD);
     }
 
     private static void onClientPostTick() {
@@ -155,9 +150,6 @@ public class ModConfigKeybindHandler {
 
         // Обработка открытия конфига
         if (OPEN_CONFIG.consumeClick()
-        //? if fabric {
-                /*&& net.minecraft.client.gui.screens.Screen.hasAltDown()
-        *///?}
         ) {
             if (mc.screen == null) {
                 mc.setScreen(new ConfigScreen());
@@ -171,8 +163,8 @@ public class ModConfigKeybindHandler {
                 if (chestplate.getItem() instanceof ModPowerArmorItem armorItem) {
                     var specs = armorItem.getSpecs();
                     if (specs.dashCount > 0) {
-                        // TODO: Отправить пакет на сервер для выполнения dash
-                        PowerArmorHandlers.performDash(mc.player);
+                        // performDash is server-only; the client just asks for it.
+                        com.hbm_m.network.packets.PowerArmorDashC2SPacket.sendToServer();
                         OverlayInfoToast.show(Component.translatable("hud.hbm_m.dash.perform"), 60, OverlayInfoToast.ID_DASH, 0x00FF00);
                     }
                 }

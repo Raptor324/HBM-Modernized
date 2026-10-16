@@ -30,23 +30,23 @@ public class MachineDifurnaceRtgMenu extends AbstractContainerMenu {
         this.blockEntity = blockEntity;
 
         var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
-        this.addSlot(new Slot(container, MachineDifurnaceRtgBlockEntity.SLOT_INPUT_TOP, 56, 17));
-        this.addSlot(new Slot(container, MachineDifurnaceRtgBlockEntity.SLOT_INPUT_BOTTOM, 56, 53));
-        this.addSlot(new Slot(container, MachineDifurnaceRtgBlockEntity.SLOT_OUTPUT, 116, 35) {
+        this.addSlot(new Slot(container, MachineDifurnaceRtgBlockEntity.SLOT_INPUT_TOP, 80, 18));
+        this.addSlot(new Slot(container, MachineDifurnaceRtgBlockEntity.SLOT_INPUT_BOTTOM, 80, 54));
+        this.addSlot(new Slot(container, MachineDifurnaceRtgBlockEntity.SLOT_OUTPUT, 134, 36) {
             @Override
             public boolean mayPlace(ItemStack stack) { return false; }
         });
         for (int i = 0; i < MachineDifurnaceRtgBlockEntity.PELLET_SLOT_COUNT; i++) {
-            this.addSlot(new Slot(container, MachineDifurnaceRtgBlockEntity.PELLET_SLOT_START + i, 8 + i * 18, 71));
+            this.addSlot(new Slot(container, MachineDifurnaceRtgBlockEntity.PELLET_SLOT_START + i, 22 + (i % 2) * 18, 18 + (i / 2) * 18));
         }
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 103 + row * 18));
+                this.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
             }
         }
         for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(inventory, col, 8 + col * 18, 161));
+            this.addSlot(new Slot(inventory, col, 8 + col * 18, 142));
         }
     }
 
@@ -60,7 +60,7 @@ public class MachineDifurnaceRtgMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineDifurnaceRtgBlockEntity difurnace) {
             return difurnace;
         }
-        throw new IllegalStateException("No MachineDifurnaceRtgBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":machine_difurnace_rtg_menu");
+        throw new MenuBlockEntityMissingException("No MachineDifurnaceRtgBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":machine_difurnace_rtg_menu");
     }
 
     public MachineDifurnaceRtgBlockEntity getBlockEntity() {
@@ -69,11 +69,7 @@ public class MachineDifurnaceRtgMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

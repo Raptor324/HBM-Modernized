@@ -13,6 +13,13 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureManager;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Additive particle blending: {@code glBlendFunc(GL_SRC_ALPHA, GL_ONE)}, as used by every
@@ -24,6 +31,7 @@ import net.minecraft.client.renderer.texture.TextureManager;
  * square around every flame. Additively, black contributes nothing and only the lit pixels
  * show, which is what the original relies on.</p>
  */
+@OnlyIn(Dist.CLIENT)
 public class AdditiveParticleRenderType implements ParticleRenderType {
 
     public static final AdditiveParticleRenderType INSTANCE = new AdditiveParticleRenderType();

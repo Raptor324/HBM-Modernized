@@ -75,7 +75,7 @@ public class MachineCraneUnboxerMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineCraneUnboxerBlockEntity unboxerBlockEntity) {
             return unboxerBlockEntity;
         }
-        throw new IllegalStateException("No MachineCraneUnboxerBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":crane_unboxer_menu");
+        throw new MenuBlockEntityMissingException("No MachineCraneUnboxerBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":crane_unboxer_menu");
     }
 
     public MachineCraneUnboxerBlockEntity getBlockEntity() {
@@ -84,11 +84,7 @@ public class MachineCraneUnboxerMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

@@ -15,9 +15,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Порт RenderPylonBase (1.7.10): рисует кабели между подключёнными пилонами.
- * Каждый пилон рисует свою половину провода (от крепления до середины пролёта),
- * провис — четверть-синус; текстура wire.png с тайлингом UV каждые 1/8 блока — 1:1.
+ * Port of RenderPylonBase (1.7.10): draws cables between connected pylons.
+ * Each pylon draws its half of the wire (from the mount point to the middle of
+ * the span), the sag is a quarter-sine; the wire.png texture tiles UVs every
+ * 1/8 of a block - a 1:1 port.
  */
 public class RedPylonWireRenderer implements BlockEntityRenderer<PylonBaseBlockEntity> {
 
@@ -59,7 +60,7 @@ public class RedPylonWireRenderer implements BlockEntityRenderer<PylonBaseBlockE
                 Vec3 first = m1[line % m1.length];
                 int secondIndex = line % m2.length;
 
-                // Хак оригинала против пересечения проводов на QUAD-пилонах (meta 12 и 15: EAST vs NORTH).
+                // Original hack to prevent wires crossing on QUAD pylons (meta 12 and 15: EAST vs NORTH).
                 if (lineCount == 4 && crosses(getFacing(pylon), getFacing(other))) {
                     secondIndex = (secondIndex + 2) % m2.length;
                 }
@@ -85,12 +86,12 @@ public class RedPylonWireRenderer implements BlockEntityRenderer<PylonBaseBlockE
         return Direction.NORTH;
     }
 
-    /** Оригинал: ((meta-10==5 && other==2) || (2 && 5)) → EAST vs NORTH. */
+    /** Original: ((meta-10==5 && other==2) || (2 && 5)) - EAST vs NORTH. */
     private static boolean crosses(Direction a, Direction b) {
         return (a == Direction.EAST && b == Direction.NORTH) || (a == Direction.NORTH && b == Direction.EAST);
     }
 
-    /** Половина провода: от крепления (относительно блока) до середины пролёта. Порт renderLine. */
+    /** Half of the wire: from the mount point (relative to the block) to the middle of the span. Port of renderLine. */
     private static void renderHalf(com.mojang.blaze3d.vertex.VertexConsumer consumer, Level level, Vec3 origin,
                                    double x0, double y0, double z0, double x1, double y1, double z1,
                                    float cr, float cg, float cb) {
@@ -98,7 +99,7 @@ public class RedPylonWireRenderer implements BlockEntityRenderer<PylonBaseBlockE
         double span = Math.sqrt(dX * dX + dY * dY + dZ * dZ);
         double hang = Math.min(span / 15D, 2.5D);
 
-        // Ортогональные оси сечения (аналог i/j из оригинала).
+        // Orthogonal cross-section axes (analog of i/j from the original).
         double jX = -dZ, jZ = dX;
         double jLen = Math.sqrt(jX * jX + jZ * jZ);
         if (jLen < 1.0E-4) { jX = 1; jZ = 0; jLen = 1; }
@@ -158,7 +159,7 @@ public class RedPylonWireRenderer implements BlockEntityRenderer<PylonBaseBlockE
         }
     }
 
-    /** Лента-квад с UV (порядок вершин и UV — как в drawLineSegment оригинала). */
+    /** Ribbon quad with UVs (vertex and UV order as in the original drawLineSegment). */
     private static void quad(com.mojang.blaze3d.vertex.VertexConsumer consumer,
                              double x0, double y0, double z0,
                              double x1, double y1, double z1,
@@ -173,7 +174,7 @@ public class RedPylonWireRenderer implements BlockEntityRenderer<PylonBaseBlockE
     }
 
 
-    /** double 0..1 -> byte для int-цвета хуков. */
+    /** double 0..1 -> byte for the hooks' int color. */
     private static int color(double c) {
         return (int) (c * 255.0 + 0.5);
     }

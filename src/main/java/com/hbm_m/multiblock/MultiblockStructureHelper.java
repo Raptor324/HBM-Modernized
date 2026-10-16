@@ -47,6 +47,13 @@ public class MultiblockStructureHelper {
     private static final ThreadLocal<Boolean> IS_REPAIRING = ThreadLocal.withInitial(() -> false);
 
     /**
+     * Set while a part deletes itself after failing to find its controller. The part's own
+     * onRemove then skips the radius search: that lookup has just failed sixty times, and paying
+     * a 49-block cube per phantom is what makes a whole abandoned footprint expensive.
+     */
+    private static final ThreadLocal<Boolean> IS_ORPHAN_CLEANUP = ThreadLocal.withInitial(() -> false);
+
+    /**
      * Радиус fallback-поиска контроллера для осиротевшей части (только когда у части
      * НЕТ {@code localOffsetFromController} — legacy NBT). Должен покрывать большие
      * структуры (двери 20x20): половина диагонали такой двери ~14 блоков, берём с запасом.
@@ -60,6 +67,21 @@ public class MultiblockStructureHelper {
     }
     public static boolean isRepairing() {
         return IS_REPAIRING.get();
+    }
+
+    /** @see #IS_ORPHAN_CLEANUP */
+    public static boolean isOrphanCleanup() {
+        return IS_ORPHAN_CLEANUP.get();
+    }
+
+    /** Runs the orphan's own removal with {@link #IS_ORPHAN_CLEANUP} raised. */
+    public static void runOrphanCleanup(Runnable removal) {
+        IS_ORPHAN_CLEANUP.set(true);
+        try {
+            removal.run();
+        } finally {
+            IS_ORPHAN_CLEANUP.set(false);
+        }
     }
 
     /**
@@ -741,12 +763,8 @@ public class MultiblockStructureHelper {
                 net.minecraft.nbt.CompoundTag nbt = null;
                 
                 if (oldBE != null) {
-                    //? if < 1.21.1 {
-                    nbt = oldBE.saveWithFullMetadata();
-                    //?} else {
-                    /*// 1.21.1: saveWithFullMetadata требует HolderLookup.Provider.
-                    nbt = oldBE.saveWithFullMetadata(level.registryAccess());
-                    *///?}
+                    // Хук кросс-версионный; x/y/z проставляются ниже вручную.
+                    nbt = com.hbm_m.platform.PlatformHooks.saveBlockEntityWithoutMetadata(oldBE, level.registryAccess());
                     level.removeBlockEntity(currentCtrlPos);
                 }
                 
@@ -759,12 +777,7 @@ public class MultiblockStructureHelper {
                     nbt.putInt("z", newCtrlPos.getZ());
                     BlockEntity newBE = level.getBlockEntity(newCtrlPos);
                     if (newBE != null) {
-                        //? if < 1.21.1 {
-                        newBE.load(nbt);
-                        //?} else {
-                        /*// 1.21.1: BlockEntity.load(CompoundTag) удалён — loadCustomOnly с Provider.
-                        newBE.loadCustomOnly(nbt, level.registryAccess());
-                        *///?}
+                        com.hbm_m.platform.PlatformHooks.loadBlockEntityTag(newBE, nbt, level.registryAccess());
                     }
                 }
                 level.updateNeighborsAt(currentCtrlPos, state.getBlock());
@@ -826,7 +839,22 @@ public class MultiblockStructureHelper {
         BlockPos bestGridPos = null;
         int candidateCount = 0;
 
+        // Level.getBlockState loads the chunk it lands in, and this scan is 49^3 positions retried
+        // per orphaned part. Resolve the loaded columns once and skip the rest, the way
+        // attemptAutoRepair already guards its own writes.
+        int minChunkX = min.getX() >> 4;
+        int maxChunkX = max.getX() >> 4;
+        int minChunkZ = min.getZ() >> 4;
+        int maxChunkZ = max.getZ() >> 4;
+        boolean[][] loadedColumns = new boolean[maxChunkX - minChunkX + 1][maxChunkZ - minChunkZ + 1];
+        for (int cx = minChunkX; cx <= maxChunkX; cx++) {
+            for (int cz = minChunkZ; cz <= maxChunkZ; cz++) {
+                loadedColumns[cx - minChunkX][cz - minChunkZ] = level.hasChunk(cx, cz);
+            }
+        }
+
         for (BlockPos candidate : BlockPos.betweenClosed(min, max)) {
+            if (!loadedColumns[(candidate.getX() >> 4) - minChunkX][(candidate.getZ() >> 4) - minChunkZ]) continue;
             BlockState candState = level.getBlockState(candidate);
             if (!(candState.getBlock() instanceof IMultiblockController controller)) continue;
             if (!candState.hasProperty(HorizontalDirectionalBlock.FACING)) continue;
@@ -886,16 +914,36 @@ public class MultiblockStructureHelper {
      * @param part сама часть (для чтения localOffsetFromController)
      */
     public static void relinkOrphanedPartDeterministic(Level level, BlockPos partPos, IMultiblockPart part) {
+        relinkOrphanedPartDeterministic(level, partPos, part, true);
+    }
+
+    /**
+     * The radius fallback is a 49-block cube of lookups. The orphan sweep passes false: that
+     * lookup has just failed sixty times for this part, and a whole abandoned footprint would pay
+     * the scan once per phantom.
+     */
+    public static void relinkOrphanedPartDeterministic(Level level, BlockPos partPos, IMultiblockPart part,
+                                                       boolean allowRadiusFallback) {
+        relinkOrphanedPartDeterministic(level, partPos, part, allowRadiusFallback, null);
+    }
+
+    /**
+     * @param knownPartState the part's own state when the caller already holds it. onRemove runs
+     *        after the chunk section was overwritten, so reading the world there returns air and
+     *        the facing would silently default to NORTH - which resolves the controller correctly
+     *        for exactly one of the four rotations.
+     */
+    public static void relinkOrphanedPartDeterministic(Level level, BlockPos partPos, IMultiblockPart part,
+                                                       boolean allowRadiusFallback, BlockState knownPartState) {
         if (level.isClientSide) return;
         if (!(part instanceof BlockEntity be)) {
-            // На всякий случай: если кто-то передал не-BE, fallback к радиус-поиску.
-            relinkOrphanedPart(level, partPos);
+            if (allowRadiusFallback) relinkOrphanedPart(level, partPos);
             return;
         }
         BlockPos localOffset = part.getLocalOffsetFromController();
         if (localOffset == null) {
             // Старый NBT (без localOffset) — fallback к радиус-поиску.
-            relinkOrphanedPart(level, partPos);
+            if (allowRadiusFallback) relinkOrphanedPart(level, partPos);
             return;
         }
 
@@ -906,7 +954,7 @@ public class MultiblockStructureHelper {
         //    при relink, но для только-что-загруженной части из contraption — это
         //    текущий FACING фантомного блока, который Create тоже поворачивал
         //    тем же Y-поворотом, что и позицию).
-        BlockState partState = level.getBlockState(partPosImmutable);
+        BlockState partState = knownPartState != null ? knownPartState : level.getBlockState(partPosImmutable);
         Direction facing = Direction.NORTH;
         if (partState.hasProperty(HorizontalDirectionalBlock.FACING)) {
             facing = partState.getValue(HorizontalDirectionalBlock.FACING);
@@ -920,12 +968,12 @@ public class MultiblockStructureHelper {
         BlockState ctrlState = level.getBlockState(expectedController);
         if (!(ctrlState.getBlock() instanceof IMultiblockController controller)) {
             // Контрапшен с pitch/roll (Aeronautics) — fallback к радиус-поиску.
-            relinkOrphanedPart(level, partPos);
+            if (allowRadiusFallback) relinkOrphanedPart(level, partPos);
             return;
         }
         MultiblockStructureHelper helper = controller.getStructureHelper();
         if (helper == null) {
-            relinkOrphanedPart(level, partPos);
+            if (allowRadiusFallback) relinkOrphanedPart(level, partPos);
             return;
         }
 
@@ -936,7 +984,7 @@ public class MultiblockStructureHelper {
         BlockPos backLocal = rotateBack(worldOffset, facing);
         BlockPos gridPos = backLocal.offset(helper.getControllerOffset());
         if (!helper.getPartOffsets().contains(gridPos)) {
-            relinkOrphanedPart(level, partPos);
+            if (allowRadiusFallback) relinkOrphanedPart(level, partPos);
             return;
         }
 
@@ -1405,13 +1453,14 @@ public class MultiblockStructureHelper {
         // клеток, сдвигает структуру и плодит контроллеры-дубликаты («зомби-станки»).
         // После закрытия окна осиротевшие части перепривяжутся через relink.
         if (ContraptionAssemblyGuard.isMoving()) {
-            MainRegistry.LOGGER.info(
-                "[HBM] placeStructure подавлен (окно сборки контрапшена), контроллер {}",
+            MainRegistry.LOGGER.debug(
+                "[HBM] placeStructure suppressed (contraption move window), controller {}",
                 controllerPos.toShortString());
             return;
         }
 
         List<BlockPos> energyConnectorPositions = new ArrayList<>();
+        List<BlockPos> fluidConnectorPositions = new ArrayList<>();
         List<BlockPos> allPlacedPositions = new ArrayList<>();
 
         markRecentlyPlaced(level, controllerPos);
@@ -1424,6 +1473,15 @@ public class MultiblockStructureHelper {
                 continue;
             }
             
+            // checkPlacement only guards the item path, so a controller placed by /setblock, a
+            // datapack or another mod overwrites whatever stands in the footprint. Dropping it
+            // first at least keeps chests and their contents out of the void.
+            BlockState occupied = level.getBlockState(worldPos);
+            if (!occupied.isAir() && !occupied.canBeReplaced()
+                    && level instanceof net.minecraft.server.level.ServerLevel placeLevel) {
+                Block.dropResources(occupied, placeLevel, worldPos, level.getBlockEntity(worldPos));
+            }
+
             BlockState partState = phantomBlockState.get().setValue(HorizontalDirectionalBlock.FACING, facing);
             level.setBlock(worldPos, partState, 2);
             allPlacedPositions.add(worldPos);
@@ -1497,6 +1555,7 @@ public class MultiblockStructureHelper {
                         Collections.addAll(worldFluid, Direction.values());
                     }
                     partBe.setAllowedFluidSides(worldFluid);
+                    fluidConnectorPositions.add(worldPos);
                 }
                 
                 // === ЗАГЛУШКА ДЛЯ CONVEYOR СИСТЕМЫ ===
@@ -1539,6 +1598,34 @@ public class MultiblockStructureHelper {
                 }
             }
         }
+
+        // Массовое обновление труб вокруг жидкостных коннекторов
+        for (BlockPos connectorPos : fluidConnectorPositions) {
+            com.hbm_m.block.machines.FluidDuctBlock.refreshAdjacentDucts(level, connectorPos);
+            level.updateNeighborsAt(connectorPos, phantomBlockState.get().getBlock());
+        }
+    }
+
+    /**
+     * Повторное обновление труб вокруг всех жидкостных коннекторов структуры.
+     *
+     * <p>Нужно вызывать после {@code setPlacedBy}: ваниль восстанавливает NBT предмета
+     * (тип/заполнение бака) ПОСЛЕ {@code onPlace}, где вызывается {@link #placeStructure}.
+     * Пересчёт труб при постановке видел ещё пустой контроллер, поэтому окрашенная труба
+     * рядом с цистерной, поставленной с уже заданным типом, не рисовала «руку» до
+     * первого ручного обновления (клик по трубе, ANY update сети).</p>
+     */
+    public void refreshFluidConnectorDucts(Level level, BlockPos controllerPos, Direction facing,
+            IMultiblockController controller) {
+        if (level.isClientSide) return;
+        for (BlockPos gridPos : structureMap.keySet()) {
+            PartRole role = resolvePartRole(gridPos, controller);
+            if (role != PartRole.FLUID_CONNECTOR && role != PartRole.UNIVERSAL_CONNECTOR) {
+                continue;
+            }
+            com.hbm_m.block.machines.FluidDuctBlock.refreshAdjacentDucts(level,
+                    getRotatedPos(controllerPos, gridPos, facing));
+        }
     }
 
     private void applyControllerSideConfig(Level level, BlockPos controllerPos, Direction facing) {
@@ -1568,43 +1655,78 @@ public class MultiblockStructureHelper {
     // Вспомогательный метод для красивого форматирования координат
     private String formatPositions(List<BlockPos> positions) {
         if (positions.isEmpty()) return "[]";
-        
-        StringBuilder sb = new StringBuilder("[");
-        for (int i = 0; i < positions.size(); i++) {
-            BlockPos pos = positions.get(i);
-            sb.append(String.format("(%d,%d,%d)", pos.getX(), pos.getY(), pos.getZ()));
-            if (i < positions.size() - 1) {
-                sb.append(", ");
-            }
-        }
-        sb.append("]");
-        return sb.toString();
+        if (positions.size() == 1) return "[" + positions.get(0).toShortString() + "]";
+        return "[" + positions.get(0).toShortString() + " ... " + 
+               positions.get(positions.size() - 1).toShortString() + 
+               " (" + positions.size() + " total)]";
     }    
     
+    /**
+     * Helper to clear multiblock structure, including custom blocks
+     */
     public void destroyStructure(Level level, BlockPos controllerPos, Direction facing) {
-        if (level.isClientSide || IS_DESTROYING.get()) return;
-        // Перенос блоков движком сборки (Create/Sable): разрушать структуру нельзя -
-        // движок уже сохранил state+NBT и вернёт её на месте. Разрушение здесь = дюп.
         if (ContraptionAssemblyGuard.isMoving()) {
-            MainRegistry.LOGGER.info(
+            MainRegistry.LOGGER.debug(
                 "[HBM] destroyStructure подавлен (окно сборки контрапшена), контроллер {}",
                 controllerPos.toShortString());
             return;
         }
         IS_DESTROYING.set(true);
         try {
+            // Two things have to go: every part on a position this structure owns, and every part
+            // that names this controller but drifted off its expected position during a Create or
+            // Sable move. Both live inside the structure's own bounding box, so one walk does it.
+            java.util.Set<BlockPos> ownPositions = new java.util.HashSet<>();
+            int minX = 0, minY = 0, minZ = 0, maxX = 0, maxY = 0, maxZ = 0;
+            boolean first = true;
             for (BlockPos gridPos : structureMap.keySet()) {
                 BlockPos worldPos = getRotatedPos(controllerPos, gridPos, facing);
-                if (level.getBlockState(worldPos).getBlock() instanceof UniversalMachinePartBlock) {
-                    BlockEntity be = level.getBlockEntity(worldPos);
-                    if (be instanceof IMultiblockPart part) {
-                        PartRole role = part.getPartRole();
-                        if (role.canReceiveEnergy() || role.canSendEnergy()) {
-                            com.hbm_m.api.energy.EnergySubscriptions.unsubscribeAll(be);
-                        }
-                    }
-                    level.setBlock(worldPos, Blocks.AIR.defaultBlockState(), 3);
+                ownPositions.add(worldPos);
+                if (first) {
+                    minX = maxX = worldPos.getX();
+                    minY = maxY = worldPos.getY();
+                    minZ = maxZ = worldPos.getZ();
+                    first = false;
+                    continue;
                 }
+                minX = Math.min(minX, worldPos.getX()); maxX = Math.max(maxX, worldPos.getX());
+                minY = Math.min(minY, worldPos.getY()); maxY = Math.max(maxY, worldPos.getY());
+                minZ = Math.min(minZ, worldPos.getZ()); maxZ = Math.max(maxZ, worldPos.getZ());
+            }
+            if (first) return;
+
+            List<BlockPos> fluidPositionsToRefresh = new ArrayList<>();
+            for (BlockPos pos : BlockPos.betweenClosed(minX, minY, minZ, maxX, maxY, maxZ)) {
+                if (!(level.getBlockState(pos).getBlock() instanceof UniversalMachinePartBlock)) continue;
+                BlockEntity be = level.getBlockEntity(pos);
+                BlockPos owner = be instanceof IMultiblockPart part ? part.getControllerPos() : null;
+
+                if (!controllerPos.equals(owner)) {
+                    if (!ownPositions.contains(pos)) continue;
+                    // Footprints can overlap, so a part that still belongs to a LIVE foreign
+                    // controller stays. A stale pointer does not protect it: after a move a part
+                    // names its pre-move controller until relink runs, and skipping those left
+                    // phantom casings behind.
+                    if (owner != null
+                            && level.getBlockState(owner).getBlock() instanceof IMultiblockController) {
+                        continue;
+                    }
+                }
+
+                if (be instanceof IMultiblockPart part) {
+                    PartRole role = part.getPartRole();
+                    if (role.canReceiveEnergy() || role.canSendEnergy()) {
+                        com.hbm_m.api.energy.EnergySubscriptions.unsubscribeAll(be);
+                    }
+                    if (role == PartRole.FLUID_CONNECTOR || role == PartRole.UNIVERSAL_CONNECTOR) {
+                        fluidPositionsToRefresh.add(pos.immutable());
+                    }
+                }
+                level.setBlock(pos.immutable(), Blocks.AIR.defaultBlockState(), 3);
+            }
+
+            for (BlockPos pos : fluidPositionsToRefresh) {
+                com.hbm_m.block.machines.FluidDuctBlock.refreshAdjacentDucts(level, pos);
             }
         } finally { IS_DESTROYING.set(false); }
     }

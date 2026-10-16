@@ -12,6 +12,13 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Simple, self-drawn layout on top of the original's {@code gui_watz.png}/{@code fluids/watz.png}
@@ -20,6 +27,7 @@ import net.minecraft.world.entity.player.Inventory;
  * {@code FluidTank#renderTank} helper (same approach as {@code GUIMachineArcFurnace}) instead of
  * hand-placed gauge sprites.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineWatzPowerplant extends GuiInfoScreen<MachineWatzPowerplantMenu> {
 
     private static final ResourceLocation TEXTURE =

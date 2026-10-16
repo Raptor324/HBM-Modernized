@@ -15,6 +15,7 @@ import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -35,9 +36,16 @@ import net.minecraft.world.phys.Vec3;
  * {@code WeightedRandomChestContent.generateChestContents}; современный эквивалент —
  * JSON лут-таблица, назначаемая {@link com.hbm_m.worldgen.StructureLootProcessor}.</p>
  */
-public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements MenuProvider {
+public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements MenuProvider, com.hbm_m.interfaces.ILockable {
 
     protected final ModItemStackHandler itemHandler;
+
+    // ==================== Замок (порт TileEntityCrateBase extends TileEntityLockableBase) ====================
+    /** Пин-код замка. 0 = не установлен. */
+    private int lock = 0;
+    private boolean locked = false;
+    private double lockMod = 0.1D;
+    private boolean cheesable = true;
 
     /** Лут-таблица структуры (null у размещённых игроком ящиков). */
     @Nullable
@@ -74,6 +82,11 @@ public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements
             }
         }
         tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(itemHandler, registries));
+        // Замок (ключи как в оригинальном TileEntityLockableBase)
+        tag.putInt("lock", lock);
+        tag.putBoolean("locked", locked);
+        tag.putDouble("lockMod", lockMod);
+        tag.putBoolean("cheesable", cheesable);
     }
 
     @Override
@@ -86,9 +99,81 @@ public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements
         if (tag.contains("inventory")) {
             com.hbm_m.platform.ItemStackSerialization.deserialize(itemHandler, tag.getCompound("inventory"), registries);
         }
+        this.lock = tag.getInt("lock");
+        this.locked = tag.getBoolean("locked");
+        this.lockMod = tag.contains("lockMod") ? tag.getDouble("lockMod") : 0.1D;
+        this.cheesable = !tag.contains("cheesable") || tag.getBoolean("cheesable");
+    }
+
+    // ==================== ILockable ====================
+
+    @Override
+    public int getPins() {
+        return lock;
+    }
+
+    @Override
+    public void setPins(int pins) {
+        this.lock = pins;
+        setChanged();
+    }
+
+    @Override
+    public boolean isLocked() {
+        return locked;
+    }
+
+    @Override
+    public void lock() {
+        if (lock == 0) {
+            com.hbm_m.main.MainRegistry.LOGGER.error("Attempted to lock a crate with no pins set at {}", worldPosition);
+        }
+        this.locked = true;
+        setChanged();
+    }
+
+    @Override
+    public void unlock() {
+        this.locked = false;
+        setChanged();
+    }
+
+    @Override
+    public double getLockMod() {
+        return lockMod;
+    }
+
+    @Override
+    public void setLockMod(double mod) {
+        this.lockMod = mod;
+        setChanged();
+    }
+
+    @Override
+    public boolean isCheesable() {
+        return cheesable;
+    }
+
+    @Override
+    public void setCheesable(boolean cheesable) {
+        this.cheesable = cheesable;
+        setChanged();
+    }
+
+    @Override
+    public BlockPos getLockPos() {
+        return worldPosition;
+    }
+
+    @Override
+    public Level getLockLevel() {
+        return level;
     }
 
     public boolean isEmpty() {
+        // A structure crate holds its loot as a pending LootTable until first opened; without this a
+        // crate mined before opening was packed as empty and its loot was lost.
+        if (lootTable != null) return false;
         for (int i = 0; i < itemHandler.getSlots(); i++) {
             if (!itemHandler.getStackInSlot(i).isEmpty()) {
                 return false;
@@ -96,6 +181,20 @@ public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements
         }
         return true;
     }
+
+    // The chunk packet does not need every stack of every crate in render distance: nothing on the
+    // client reads them (the menu syncs its own slots, and there is no crate renderer).
+    //? if < 1.21.1 {
+    @Override
+    public @NotNull CompoundTag getUpdateTag() {
+        return new CompoundTag();
+    }
+    //?} else {
+    /*@Override
+    public @NotNull CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
+        return new CompoundTag();
+    }
+    *///?}
 
     public void saveToItem(ItemStack stack) {
         //? if < 1.21.1 {
@@ -115,6 +214,22 @@ public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements
                     net.minecraft.world.item.component.CustomData.of(tag));
         }
         *///?}
+    }
+
+    // Upstream TileEntityCrateBase is an ISidedInventory open on every side; the port dropped the
+    // item capability during the Fabric port, so hoppers, pipes and every automation mod saw nothing.
+    @Override
+    public @Nullable Object getItemHandler(@Nullable net.minecraft.core.Direction side) {
+        return itemHandler;
+    }
+
+    /** Leert Inventar und Loot-Tabelle - nach dem Packen in das Kisten-Item. */
+    public void clearContents() {
+        for (int i = 0; i < itemHandler.getSlots(); i++) {
+            itemHandler.setStackInSlot(i, ItemStack.EMPTY);
+        }
+        lootTable = null;
+        lootTableSeed = 0L;
     }
 
     public ModItemStackHandler getItemHandler() {

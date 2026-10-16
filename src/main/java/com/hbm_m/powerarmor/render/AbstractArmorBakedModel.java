@@ -23,6 +23,13 @@ import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
 import net.minecraftforge.client.model.data.ModelData;
 //?}
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Абстрактный базовый класс для рендеринга иконок брони в GUI.
@@ -30,6 +37,7 @@ import net.minecraftforge.client.model.data.ModelData;
  * Forge 1.20.1 — ModelData/RenderType overload getQuads;
  * NeoForge 1.21.1 — ванильный 3-арговый getQuads.
  */
+@OnlyIn(Dist.CLIENT)
 public abstract class AbstractArmorBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
 
     protected final IArmorModelConfig config;

@@ -91,16 +91,7 @@ public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockContro
                 MultiblockStructureHelper helper = getStructureHelper();
                 Direction facing = state.getValue(FACING);
 
-                BlockEntity blockEntity = level.getBlockEntity(pos);
-                if (blockEntity instanceof LaunchPadBaseBlockEntity launchPadBe) {
-                    var handler = launchPadBe.getInventory();
-                    for (int i = 0; i < handler.getSlots(); i++) {
-                        ItemStack stack = handler.getStackInSlot(i);
-                        if (!stack.isEmpty()) {
-                            Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), stack);
-                        }
-                    }
-                }
+                // Инвентарь дропается автоматически в BaseHbmBlockEntity#setRemoved.
 
                 helper.destroyStructure(level, pos, facing);
             }

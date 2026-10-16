@@ -23,9 +23,6 @@ import net.neoforged.neoforge.event.level.ChunkEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 *///?}
 
-//? if fabric {
-/*import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
-*///?}
 
 /**
  * ЕДИНЫЙ менеджер радиации, управляющий обработчиками и ВСЕМИ связанными событиями.
@@ -106,25 +103,9 @@ public class ChunkRadiationManager {
         });
 
         // 5. События чанков для Fabric
-        //? if fabric {
-        /*ServerChunkEvents.CHUNK_LOAD.register((level, chunk) -> {
-            if (ModClothConfig.get().enableChunkRads && !level.isClientSide()) {
-                getProxy().receiveChunkLoad(chunk);
-            }
-        });
-
-        ServerChunkEvents.CHUNK_UNLOAD.register((level, chunk) -> {
-            if (ModClothConfig.get().enableChunkRads && !level.isClientSide()) {
-                if (getProxy() instanceof ChunkRadiationHandlerSimple handler) {
-                    handler.receiveChunkUnload(chunk);
-                }
-            }
-        });
-        *///?}
     }
 
     // События чанков для Forge и NeoForge
-    //? if forge || neoforge {
     @SubscribeEvent
     public static void onChunkLoad(ChunkEvent.Load event) {
         if (ModClothConfig.get().enableChunkRads && !event.getLevel().isClientSide() && event.getChunk() instanceof LevelChunk chunk) {
@@ -144,7 +125,6 @@ public class ChunkRadiationManager {
             *///?}
         }
     }
-    //?}
 
     // СТАТИЧЕСКИЕ МЕТОДЫ-ОБЕРТКИ
 

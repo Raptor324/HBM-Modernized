@@ -39,4 +39,15 @@ public class MixinIrisShadowRenderer {
     private void nucleus$flushGlobalShadowBatch(CallbackInfo ci) {
         com.hbm_m.client.render.IrisShadowBatchCollector.flushGlobalShadowBatch();
     }
+
+    /**
+     * Истинный старт теневой фазы кадра: сброс теневых счётчиков F3
+     * ({@link NucleusDebug}). Сбрасывать их в {@code NucleusDebug.onFrameStart}
+     * нельзя — тот зовётся на main-фазе, которая идёт ПОСЛЕ теневой, и затирал
+     * бы накопленное до отрисовки F3 (строка Shadow не показывалась вовсе).
+     */
+    @Inject(method = "renderShadows", at = @At("HEAD"), remap = false, expect = 0, require = 0)
+    private void nucleus$onShadowPassStart(CallbackInfo ci) {
+        com.hbm_m.client.render.NucleusDebug.onShadowPassStart();
+    }
 }

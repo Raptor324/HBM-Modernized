@@ -10,7 +10,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.item.ItemStack;
@@ -69,7 +68,7 @@ public class MachineRotaryFurnaceMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineRotaryFurnaceBlockEntity be) {
             return be;
         }
-        throw new IllegalStateException("No MachineRotaryFurnaceBlockEntity found at " + pos);
+        throw new MenuBlockEntityMissingException("No MachineRotaryFurnaceBlockEntity found at " + pos);
     }
 
     public int getLitTime() { return data.get(0); }
@@ -87,8 +86,7 @@ public class MachineRotaryFurnaceMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos()),
-                player, ModBlocks.ROTARY_FURNACE.get());
+        return MenuReach.stillValid(player, blockEntity, ModBlocks.ROTARY_FURNACE.get());
     }
 
     @Override

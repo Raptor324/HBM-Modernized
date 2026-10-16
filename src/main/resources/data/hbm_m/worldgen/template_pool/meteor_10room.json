@@ -6,7 +6,7 @@
       "element": {
         "element_type": "minecraft:single_pool_element",
         "projection": "rigid",
-        "location": "hbm_m:meteor/room-basic",
+        "location": "hbm_m:meteor/room10/room-basic",
         "processors": "hbm_m:connection_fix"
       }
     },
@@ -15,7 +15,7 @@
       "element": {
         "element_type": "minecraft:single_pool_element",
         "projection": "rigid",
-        "location": "hbm_m:meteor/room-balcony",
+        "location": "hbm_m:meteor/room10/room-balcony",
         "processors": "hbm_m:connection_fix"
       }
     },
@@ -24,7 +24,7 @@
       "element": {
         "element_type": "minecraft:single_pool_element",
         "projection": "rigid",
-        "location": "hbm_m:meteor/room-dragon",
+        "location": "hbm_m:meteor/room10/room-dragon",
         "processors": "hbm_m:connection_fix"
       }
     },
@@ -33,7 +33,7 @@
       "element": {
         "element_type": "minecraft:single_pool_element",
         "projection": "rigid",
-        "location": "hbm_m:meteor/room-ladder",
+        "location": "hbm_m:meteor/room10/room-ladder",
         "processors": "hbm_m:connection_fix"
       }
     },
@@ -42,7 +42,7 @@
       "element": {
         "element_type": "minecraft:single_pool_element",
         "projection": "rigid",
-        "location": "hbm_m:meteor/room-ooze",
+        "location": "hbm_m:meteor/room10/room-ooze",
         "processors": "hbm_m:connection_fix"
       }
     },
@@ -51,7 +51,7 @@
       "element": {
         "element_type": "minecraft:single_pool_element",
         "projection": "rigid",
-        "location": "hbm_m:meteor/room-split",
+        "location": "hbm_m:meteor/room10/room-split",
         "processors": "hbm_m:connection_fix"
       }
     },
@@ -60,7 +60,7 @@
       "element": {
         "element_type": "minecraft:single_pool_element",
         "projection": "rigid",
-        "location": "hbm_m:meteor/room-stairs",
+        "location": "hbm_m:meteor/room10/room-stairs",
         "processors": "hbm_m:connection_fix"
       }
     },
@@ -69,7 +69,7 @@
       "element": {
         "element_type": "minecraft:single_pool_element",
         "projection": "rigid",
-        "location": "hbm_m:meteor/room-triple",
+        "location": "hbm_m:meteor/room10/room-triple",
         "processors": "hbm_m:connection_fix"
       }
     }

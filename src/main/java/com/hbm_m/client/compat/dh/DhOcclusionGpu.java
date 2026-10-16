@@ -63,29 +63,39 @@ public final class DhOcclusionGpu {
     /**
      * Репликация зоны недостоверной глубины DH — dither-fade «Fade Nearby DH LODs».
      *
-     * КАК РАБОТАЕТ FADE У DH: в фрагментном шейдере террейна
-     * (terrain/blaze/frag.fsh) фрагменты в кольце [uClipDistance, 1.5·uClipDistance]
-     * отбрасываются стохастически (bayerMatrix4x4 по gl_FragCoord + smoothstep).
-     * Отброшенный фрагмент не пишет НИ цвета, НИ глубины → внутри кольца
-     * DEPTH32F содержит шум: половина пикселей пустая, половина — с глубиной
-     * полурастворённых склонов. Копировать эту глубину в главный z-buffer
-     * нельзя: гриб получает ту же байерову рябь и ложные срезы, ползущие
-     * вместе с камерой.
+     * КАК РАБОТАЕТ FADE У DH: в фрагментном шейдере террейна фрагменты в
+     * кольце [uClipDistance, 1.5·uClipDistance] отбрасываются стохастически
+     * (bayerMatrix4x4 по gl_FragCoord + smoothstep). Отброшенный фрагмент не
+     * пишет НИ цвета, НИ глубины → внутри кольца DEPTH32F содержит шум:
+     * половина пикселей пустая, половина — с глубиной полурастворённых
+     * склонов. Копировать эту глубину в главный z-buffer нельзя: гриб
+     * получает ту же байерову рябь и ложные срезы, ползущие вместе с камерой.
      *
-     * Формула uClipDistance из RenderUtil.getNearClipPlaneInBlocks():
-     *   ratio = overdrawPrevention (конфиг; <0 = авто по ванильному RD,
-     *           под паком Iris авто = 0.2)
-     *   dist  = max(1, vanillaRD*16 * ratio)
-     *   R     = dist / sqrt(1 + tan(35°)²·(aspect² + 1))   // FOV захардкожен у DH = 70°
-     *   uClipDistance = R + 16
-     * Маска = верх dither-зоны = 1.5·(R + 16).
-     *
-     * reduceOverdrawWithFastMovement сознательно НЕ реплицируем: без него
-     * маска при быстром движении чуть БОЛЬШЕ реального кольца — консервативно.
+     * ИСТОЧНИК uClipDistance (байткод 3.3.1, GlDhTerrainShaderProgram):
+     * uClipDistance = RenderUtil.getNearClipPlaneInBlocks() + 16 (без
+     * lodOnlyMode). Рефлексия даёт точное значение — включая height-based
+     * override и reduceOverdrawWithFastMovement, которые ручная репликация
+     * не покрывала (при высоком игроке R растёт до десятков блоков, и маска
+     * по таблице оставалась маленькой → копировался шум dither-зоны).
+     * Маска = верх dither-зоны = 1.5·uClipDistance.
      *
      * @return дистанция в блоках; 0 = маска не определена (не применять).
      */
     public static float ditherFadeMaskDistance() {
+        // Точный путь: значение из самой DH.
+        try {
+            if (nearClipBlocksMethod == null) {
+                nearClipBlocksMethod = Class.forName(
+                        "com.seibel.distanthorizons.core.util.RenderUtil").getMethod("getNearClipPlaneInBlocks");
+            }
+            float r = (Float) nearClipBlocksMethod.invoke(null);
+            if (r > 0.0F && Float.isFinite(r)) {
+                float mask = 1.5F * (r + 16.0F);
+                return mask > Float.MAX_VALUE ? Float.MAX_VALUE : mask;
+            }
+        } catch (Throwable ignored) {}
+        // Фолбэк (DH отсутствует / рефлексия не удалась): ручная репликация
+        // R-формулы по ванильному RD (auto-таблица overdrawPrevention).
         try {
             var mc = net.minecraft.client.Minecraft.getInstance();
             int rd = mc.options.getEffectiveRenderDistance();
@@ -119,6 +129,8 @@ public final class DhOcclusionGpu {
         } catch (Throwable ignored) {}
         return 0.0F;
     }
+
+    private static java.lang.reflect.Method nearClipBlocksMethod;
 
     /**
      * Конфиг «Overdraw Prevention» (<0 = авто).

@@ -32,7 +32,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * als einzelner Block. Kein Spieler-GUI (das Original hat keins - reiner Fluid-Tank-Anschluss ueber
  * MK2-Netz), siehe {@link MachineAutosawBlockEntity} fuer Details zur Vereinfachung.
  */
-public class MachineAutosawBlock extends BaseEntityBlock {
+public class MachineAutosawBlock extends BaseEntityBlock implements com.hbm_m.interfaces.ILookOverlay {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 16, 16);
 
@@ -81,6 +81,25 @@ public class MachineAutosawBlock extends BaseEntityBlock {
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineAutosawBlockEntity(pos, state);
+    }
+
+    /** Fadenkreuz-HUD: Port von {@code MachineAutosaw.printHook} (Schmiermitteltank). */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineAutosawBlockEntity saw)) return;
+
+        com.hbm_m.inventory.fluid.tank.FluidTank tank = saw.getTank();
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal(
+                com.hbm_m.inventory.fluid.FluidType.forFluid(tank.getTankType()).getLocalizedName().getString()
+                        + ": " + tank.getFill() + "/" + tank.getMaxFill() + "mB"));
+
+        // Original zeigt hier zusaetzlich die rote "suspended"-Warnung (Schraubenzieher-Stop) -
+        // diese Mechanik ist in diesem Port nicht enthalten.
+
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     @Nullable

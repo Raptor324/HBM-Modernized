@@ -10,16 +10,20 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /** Port of {@code GUIRBMKAutoloader} (1.7.10 Original). */
+@OnlyIn(Dist.CLIENT)
 public class GUIRBMKAutoloader extends GuiInfoScreen<RBMKAutoloaderMenu> {
 
     private static final ResourceLocation TEXTURE =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/gui/machine/gui_autoloader.png");
-            *///?} else {
                         ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/machine/gui_autoloader.png");
-            //?}
 
     public GUIRBMKAutoloader(RBMKAutoloaderMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);

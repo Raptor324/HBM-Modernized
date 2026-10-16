@@ -36,7 +36,10 @@ public final class ColorUtil {
 
     public static int getColorFromDye(ItemStack stack) {
         if (stack.getItem() instanceof DyeItem dye) {
-            String name = dye.getDyeColor().getName().toLowerCase(Locale.US);
+// The table keys come from the original, where they were derived from OreDict names
+            // ("dyeLightBlue" -> "lightblue"). DyeColor.getName() returns "light_blue"/"light_gray",
+            // so without stripping the underscore those two dyes silently returned 0.
+            String name = dye.getDyeColor().getName().toLowerCase(Locale.US).replace("_", "");
             Integer color = NAME_TO_COLOR.get(name);
             return color != null ? color : 0;
         }

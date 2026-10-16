@@ -1,5 +1,7 @@
 package com.hbm_m.datagen.assets;
 
+import java.util.List;
+
 import java.util.Map;
 //? if forge {
 import com.hbm_m.block.ModBlocks;
@@ -62,6 +64,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // Блоки слитков теперь генерируются автоматически в цикле ниже
 
         blockWithItem(ModBlocks.GIGA_DET);
+        // Textures ported from the 1.7.10 assets - these three had no blockstate at all.
+        blockWithItem(ModBlocks.ORE_OIL_EMPTY);
+        blockWithItem(ModBlocks.GEIGER);
+        blockWithItem(ModBlocks.BROADCASTER);
         blockWithItem(ModBlocks.POLONIUM210_BLOCK);
         blockWithItem(ModBlocks.EXPLOSIVE_CHARGE);
         blockWithItem(ModBlocks.CRATE_WEAPON);
@@ -138,15 +144,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.RESOURCE_LIMESTONE);
         blockWithItem(ModBlocks.RESOURCE_MALACHITE);
         blockWithItem(ModBlocks.RESOURCE_SULFUR);
-        blockWithItem(ModBlocks.DEPTH_IRON);
-        blockWithItem(ModBlocks.DEPTH_TITANIUM);
-        blockWithItem(ModBlocks.DEPTH_TUNGSTEN);
         blockWithItem(ModBlocks.DEPTH_CINNABAR);
         blockWithItem(ModBlocks.DEPTH_ZIRCONIUM);
         blockWithItem(ModBlocks.DEPTH_STONE);
         blockWithItem(ModBlocks.DEPTH_BORAX);
         blockWithItem(ModBlocks.WASTE_LEAVES);
-        blockWithItem(ModBlocks.BEDROCK_OIL);
         blockWithItem(ModBlocks.REINFORCED_STONE);
         blockWithItem(ModBlocks.CONCRETE_HAZARD);
         blockWithItem(ModBlocks.BRICK_CONCRETE);
@@ -270,47 +272,34 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockWithItem(ModBlocks.EVENT_TESTER.get(), models().cubeAll("event_tester", modLoc("block/ported/event_tester")));
         simpleBlockWithItem(ModBlocks.FLUID_DUCT_PAINTABLE_BLOCK_EXHAUST.get(), models().cubeAll("fluid_duct_paintable_block_exhaust", modLoc("block/ported/fluid_duct_paintable_block_exhaust")));
         simpleBlockWithItem(ModBlocks.GEYSIR_NETHER.get(), models().cubeAll("geysir_nether", modLoc("block/ported/geysir_nether")));
-        simpleBlockWithItem(ModBlocks.ICF_BLOCK.get(), models().cubeAll("icf_block", modLoc("block/ported/icf_block")));
+        icfPhantomState();
         simpleBlockWithItem(ModBlocks.LAUNCH_TABLE.get(), models().cubeAll("launch_table", modLoc("block/ported/launch_table")));
         simpleBlockWithItem(ModBlocks.LOGIC_BLOCK.get(), models().cubeAll("logic_block", modLoc("block/ported/logic_block")));
         simpleBlockWithItem(ModBlocks.MACHINE_RADAR.get(), models().cubeAll("machine_radar", modLoc("block/ported/machine_radar")));
         simpleBlockWithItem(ModBlocks.MUSH_BLOCK_STEM.get(), models().cubeAll("mush_block_stem", modLoc("block/ported/mush_block_stem")));
-        simpleBlockWithItem(ModBlocks.ORE_ALEXANDRITE.get(), models().cubeAll("ore_alexandrite", modLoc("block/ported/ore_alexandrite")));
-        simpleBlockWithItem(ModBlocks.ORE_ALUMINIUM.get(), models().cubeAll("ore_aluminium", modLoc("block/ported/ore_aluminium")));
-        simpleBlockWithItem(ModBlocks.ORE_AUSTRALIUM.get(), models().cubeAll("ore_australium", modLoc("block/ported/ore_australium")));
-        simpleBlockWithItem(ModBlocks.ORE_CINNEBAR.get(), models().cubeAll("ore_cinnebar", modLoc("block/ported/ore_cinnebar")));
-        simpleBlockWithItem(ModBlocks.ORE_COLTAN.get(), models().cubeAll("ore_coltan", modLoc("block/ported/ore_coltan")));
-        simpleBlockWithItem(ModBlocks.ORE_COPPER.get(), models().cubeAll("ore_copper", modLoc("block/ported/ore_copper")));
-        simpleBlockWithItem(ModBlocks.ORE_DEPTH_BORAX.get(), models().cubeAll("ore_depth_borax", modLoc("block/ported/ore_depth_borax")));
-        simpleBlockWithItem(ModBlocks.ORE_DEPTH_CINNEBAR.get(), models().cubeAll("ore_depth_cinnebar", modLoc("block/ported/ore_depth_cinnebar")));
-        simpleBlockWithItem(ModBlocks.ORE_DEPTH_NETHER_NEODYMIUM.get(), models().cubeAll("ore_depth_nether_neodymium", modLoc("block/ported/ore_depth_nether_neodymium")));
-        simpleBlockWithItem(ModBlocks.ORE_DEPTH_ZIRCONIUM.get(), models().cubeAll("ore_depth_zirconium", modLoc("block/ported/ore_depth_zirconium")));
-        simpleBlockWithItem(ModBlocks.ORE_GNEISS_ASBESTOS.get(), models().cubeAll("ore_gneiss_asbestos", modLoc("block/ported/ore_gneiss_asbestos")));
-        simpleBlockWithItem(ModBlocks.ORE_GNEISS_COPPER.get(), models().cubeAll("ore_gneiss_copper", modLoc("block/ported/ore_gneiss_copper")));
-        simpleBlockWithItem(ModBlocks.ORE_GNEISS_GAS.get(), models().cubeAll("ore_gneiss_gas", modLoc("block/ported/ore_gneiss_gas")));
-        simpleBlockWithItem(ModBlocks.ORE_GNEISS_GOLD.get(), models().cubeAll("ore_gneiss_gold", modLoc("block/ported/ore_gneiss_gold")));
-        simpleBlockWithItem(ModBlocks.ORE_GNEISS_IRON.get(), models().cubeAll("ore_gneiss_iron", modLoc("block/ported/ore_gneiss_iron")));
-        simpleBlockWithItem(ModBlocks.ORE_GNEISS_LITHIUM.get(), models().cubeAll("ore_gneiss_lithium", modLoc("block/ported/ore_gneiss_lithium")));
-        simpleBlockWithItem(ModBlocks.ORE_GNEISS_RARE.get(), models().cubeAll("ore_gneiss_rare", modLoc("block/ported/ore_gneiss_rare")));
-        simpleBlockWithItem(ModBlocks.ORE_GNEISS_URANIUM.get(), models().cubeAll("ore_gneiss_uranium", modLoc("block/ported/ore_gneiss_uranium")));
         simpleBlockWithItem(ModBlocks.ORE_GNEISS_URANIUM_SCORCHED.get(), models().cubeAll("ore_gneiss_uranium_scorched", modLoc("block/ported/ore_gneiss_uranium_scorched")));
-        simpleBlockWithItem(ModBlocks.ORE_NETHER_COAL.get(), models().cubeAll("ore_nether_coal", modLoc("block/ported/ore_nether_coal")));
-        simpleBlockWithItem(ModBlocks.ORE_NETHER_COBALT.get(), models().cubeAll("ore_nether_cobalt", modLoc("block/ported/ore_nether_cobalt")));
-        simpleBlockWithItem(ModBlocks.ORE_NETHER_FIRE.get(), models().cubeAll("ore_nether_fire", modLoc("block/ported/ore_nether_fire")));
-        simpleBlockWithItem(ModBlocks.ORE_NETHER_PLUTONIUM.get(), models().cubeAll("ore_nether_plutonium", modLoc("block/ported/ore_nether_plutonium")));
-        simpleBlockWithItem(ModBlocks.ORE_NETHER_SMOLDERING.get(), models().cubeAll("ore_nether_smoldering", modLoc("block/ported/ore_nether_smoldering")));
-        simpleBlockWithItem(ModBlocks.ORE_NETHER_SULFUR.get(), models().cubeAll("ore_nether_sulfur", modLoc("block/ported/ore_nether_sulfur")));
-        simpleBlockWithItem(ModBlocks.ORE_NETHER_TUNGSTEN.get(), models().cubeAll("ore_nether_tungsten", modLoc("block/ported/ore_nether_tungsten")));
-        simpleBlockWithItem(ModBlocks.ORE_NETHER_URANIUM.get(), models().cubeAll("ore_nether_uranium", modLoc("block/ported/ore_nether_uranium")));
         simpleBlockWithItem(ModBlocks.ORE_NETHER_URANIUM_SCORCHED.get(), models().cubeAll("ore_nether_uranium_scorched", modLoc("block/ported/ore_nether_uranium_scorched")));
-        simpleBlockWithItem(ModBlocks.ORE_RARE.get(), models().cubeAll("ore_rare", modLoc("block/ported/ore_rare")));
         simpleBlockWithItem(ModBlocks.ORE_TEKTITE_OSMIRIDIUM.get(), models().cubeAll("ore_tektite_osmiridium", modLoc("block/ported/ore_tektite_osmiridium")));
-        simpleBlockWithItem(ModBlocks.ORE_TIKITE.get(), models().cubeAll("ore_tikite", modLoc("block/ported/ore_tikite")));
         simpleBlockWithItem(ModBlocks.ORE_URANIUM_SCORCHED.get(), models().cubeAll("ore_uranium_scorched", modLoc("block/ported/ore_uranium_scorched")));
-        simpleBlockWithItem(ModBlocks.PILE_BLOCK.get(), models().cubeAll("pile_block", modLoc("block/ported/pile_block")));
+        pileBlockStates();
         simpleBlockWithItem(ModBlocks.PILE_BRICK.get(), models().cubeBottomTop("pile_brick",
                 modLoc("block/ported/pile_brick_side"), modLoc("block/ported/pile_brick_bottom"), modLoc("block/ported/pile_brick_top")));
-        simpleBlockWithItem(ModBlocks.PNEUMATIC_STORAGE_ACCESS.get(), models().cubeAll("pneumatic_storage_access", modLoc("block/ported/pneumatic_storage_access")));
+        pileDeviceStates();
+        // Original: the terminal shows its screen on the side facing the player (piston orientation).
+        {
+            ModelFile access = models().cube("pneumatic_storage_access",
+                    modLoc("block/ported/pneumatic_storage_access"), modLoc("block/ported/pneumatic_storage_access"),
+                    modLoc("block/ported/pneumatic_storage_access_front"), modLoc("block/ported/pneumatic_storage_access"),
+                    modLoc("block/ported/pneumatic_storage_access"), modLoc("block/ported/pneumatic_storage_access"))
+                    .texture("particle", modLoc("block/ported/pneumatic_storage_access"));
+            getVariantBuilder(ModBlocks.PNEUMATIC_STORAGE_ACCESS.get()).forAllStates(state -> {
+                Direction facing = state.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING);
+                int x = facing == Direction.UP ? 270 : facing == Direction.DOWN ? 90 : 0;
+                int y = facing.getAxis().isHorizontal() ? ((int) facing.toYRot() + 180) % 360 : 0;
+                return ConfiguredModel.builder().modelFile(access).rotationX(x).rotationY(y).build();
+            });
+            simpleBlockItem(ModBlocks.PNEUMATIC_STORAGE_ACCESS.get(), access);
+        }
         simpleBlockWithItem(ModBlocks.PNEUMATIC_STORAGE_CLUTTER.get(), models().cubeAll("pneumatic_storage_clutter", modLoc("block/ported/pneumatic_storage_clutter")));
         simpleBlockWithItem(ModBlocks.PNEUMATIC_STORAGE_EXPORTER.get(), models().cubeAll("pneumatic_storage_exporter", modLoc("block/ported/pneumatic_storage_exporter")));
         simpleBlockWithItem(ModBlocks.PNEUMATIC_STORAGE_IMPORTER.get(), models().cubeAll("pneumatic_storage_importer", modLoc("block/ported/pneumatic_storage_importer")));
@@ -610,19 +599,19 @@ public class ModBlockStateProvider extends BlockStateProvider {
             models().getExistingFile(modLoc("block/machines/autosaw")));
         horizontalBlock(ModBlocks.THRESHER.get(),
             models().getExistingFile(modLoc("block/machines/thresher")));
-        simpleMachineBlock(ModBlocks.BEAMLINE);
+        customMachineBlock(ModBlocks.BEAMLINE);
         explodableMachineBlock(ModBlocks.BOILER,
                 "block/machines/boiler", "block/machines/boiler_burst");
         horizontalBlock(ModBlocks.PUMP_STEAM.get(),
             models().cubeAll(ModBlocks.PUMP_STEAM.getId().getPath(), modLoc("block/machine/pump_steam")));
         horizontalBlock(ModBlocks.PUMP_ELECTRIC.get(),
             models().cubeAll(ModBlocks.PUMP_ELECTRIC.getId().getPath(), modLoc("block/machine/pump_electric")));
-        simpleMachineBlock(ModBlocks.BOILER_FUSION);
-        simpleMachineBlock(ModBlocks.BREEDER_FUSION);
+        customMachineBlock(ModBlocks.BOILER_FUSION);
+        customMachineBlock(ModBlocks.BREEDER_FUSION);
         customMachineBlock(ModBlocks.CHIMNEY_BRICK);
         customMachineBlock(ModBlocks.CHIMNEY_INDUSTRIAL);
         customMachineBlock(ModBlocks.COKER);
-        simpleMachineBlock(ModBlocks.COLLECTOR);
+        customMachineBlock(ModBlocks.COLLECTOR);
         simpleMachineBlock(ModBlocks.COMBINATION_OVEN);
         customMachineBlock(ModBlocks.COMBUSTION_ENGINE);
         horizontalBlock(ModBlocks.COMPRESSOR.get(),
@@ -630,13 +619,14 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customMachineBlock(ModBlocks.CONDENSER_POWERED);
         customMachineBlock(ModBlocks.LPW2);
         customMachineBlock(ModBlocks.CONVEYOR_PRESS);
-        simpleMachineBlock(ModBlocks.COUPLER);
+        customMachineBlock(ModBlocks.COUPLER);
         simpleMachineBlock(ModBlocks.DETECTOR);
         customMachineBlock(ModBlocks.DIESELGEN);
-        simpleMachineBlock(ModBlocks.DIPOLE);
+        customMachineBlock(ModBlocks.DIPOLE);
         simpleMachineBlock(ModBlocks.DRONE);
+        // Multiblock mit Ausrichtung: das Modell dreht sich jetzt mit der Struktur.
         horizontalBlock(ModBlocks.ELECTRIC_HEATER.get(),
-            models().getExistingFile(modLoc("block/machines/electric_heater")));
+                models().getExistingFile(modLoc("block/machines/electric_heater")));
         horizontalBlock(ModBlocks.ELECTROLYSER.get(),
             models().getExistingFile(modLoc("block/machines/electrolyser")));
         customMachineBlock(ModBlocks.EPRESS);
@@ -648,30 +638,37 @@ public class ModBlockStateProvider extends BlockStateProvider {
             models().getExistingFile(modLoc("block/machines/firebox")));
         simpleMachineBlock(ModBlocks.FRACTION_SPACER);
         horizontalBlock(ModBlocks.HEATEX.get(),
-            models().getExistingFile(modLoc("block/machines/heatex")));
+                models().getExistingFile(modLoc("block/machines/heatex")));
         customMachineBlock(ModBlocks.HEPHAESTUS);
-        simpleMachineBlock(ModBlocks.ICF);
+        // Der Reaktor hat seit dem Port eine Blickrichtung - das Modell dreht sich mit.
+        horizontalBlock(ModBlocks.ICF.get(), models().getExistingFile(modLoc("block/machines/icf")));
+        icfLaserStates();
+        // Der Aufbaukern zeigt in die Richtung, in die der fertige Reaktor blickt.
+        horizontalBlock(ModBlocks.STRUCT_ICF_CORE.get(),
+                models().cubeAll("struct_icf_core", modLoc("block/struct_icf_core")));
+        simpleBlockItem(ModBlocks.STRUCT_ICF_CORE.get(), models().getExistingFile(modLoc("block/struct_icf_core")));
         simpleMachineBlock(ModBlocks.INTAKE);
-        simpleMachineBlock(ModBlocks.KLYSTRON);
-        simpleMachineBlock(ModBlocks.MHDT);
+        customMachineBlock(ModBlocks.KLYSTRON);
+        customMachineBlock(ModBlocks.KLYSTRON_CREATIVE);
+        customMachineBlock(ModBlocks.MHDT);
         horizontalBlock(ModBlocks.MICROWAVE.get(),
             models().getExistingFile(modLoc("block/machines/microwave")));
         customMachineBlock(ModBlocks.MINING_LASER);
         horizontalBlock(ModBlocks.OILBURNER.get(),
-            models().getExistingFile(modLoc("block/machines/oilburner")));
+                models().getExistingFile(modLoc("block/machines/oilburner")));
         horizontalBlock(ModBlocks.OILBURNER_HP.get(),
-            models().getExistingFile(modLoc("block/machines/oilburner_hp")));
+                models().getExistingFile(modLoc("block/machines/oilburner_hp")));
         // ORBUS is now a BarrelTankBlock (FACING blockstate) instead of a static "" variant.
         horizontalBlock(ModBlocks.ORBUS.get(), models().getExistingFile(modLoc("block/machines/orbus")));
         simpleMachineBlock(ModBlocks.ORE_SLOPPER);
-        simpleMachineBlock(ModBlocks.PLASMA_FORGE);
+        customMachineBlock(ModBlocks.PLASMA_FORGE);
         customMachineBlock(ModBlocks.PYROOVEN);
-        simpleMachineBlock(ModBlocks.QUADRUPOLE);
+        customMachineBlock(ModBlocks.QUADRUPOLE);
         simpleMachineBlock(ModBlocks.RADGEN);
         horizontalBlock(ModBlocks.RADIOLYSIS.get(),
             models().getExistingFile(modLoc("block/machines/radiolysis")));
         simpleMachineBlock(ModBlocks.REACTOR_SMALL);
-        simpleMachineBlock(ModBlocks.RFC);
+        customMachineBlock(ModBlocks.RFC);
         horizontalBlock(ModBlocks.SAWMILL.get(),
             models().getExistingFile(modLoc("block/machines/sawmill")));
         customMachineBlock(ModBlocks.SOLIDIFIER);
@@ -685,11 +682,12 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // Strand Caster: eigenes OBJ-Modell bereits vorhanden (block/machines/strand_caster.json), FACING-Rotation.
         horizontalBlock(ModBlocks.STRAND_CASTER.get(),
             models().getExistingFile(modLoc("block/machines/strand_caster")));
-        simpleMachineBlock(ModBlocks.TORUS);
+        customMachineBlock(ModBlocks.TORUS);
         simpleMachineBlock(ModBlocks.TURBINEGAS);
         simpleMachineBlock(ModBlocks.WATZ_PUMP);
         simpleMachineBlock(ModBlocks.CHUNGUS);
-        customMachineBlock(ModBlocks.CENTRIFUGE);
+        customMachineBlock(ModBlocks.MACHINE_CENTRIFUGE);
+        customMachineBlock(ModBlocks.MACHINE_GASCENT);
         customMachineBlock(ModBlocks.BREEDER);
         customMachineBlock(ModBlocks.LARGE_PYLON);
         customMachineBlock(ModBlocks.LAUNCH_PAD);
@@ -700,6 +698,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customBombBlock(ModBlocks.NUKE_MIKE);
         customBombBlock(ModBlocks.NUKE_TSAR);
         customBombBlock(ModBlocks.NUKE_FLEIJA);
+        // The model and its OBJ were already ported, only the blockstate was never emitted.
+        customBombBlock(ModBlocks.NUKE_PROTOTYPE);
         customMachineBlock(ModBlocks.CORE_EMITTER);
         customMachineBlock(ModBlocks.CORE_INJECTOR);
         customMachineBlock(ModBlocks.CORE_RECEIVER);
@@ -749,16 +749,15 @@ public class ModBlockStateProvider extends BlockStateProvider {
         registerLitMachineBlock(ModBlocks.FURNACE_STEEL,
             com.hbm_m.block.machines.MachineFurnaceSteelBlock.FACING, com.hbm_m.block.machines.MachineFurnaceSteelBlock.LIT,
             "furnace_steel", "furnace_steel");
-        // Electric Furnace / Brick Furnace: kein eigenes Modell/Textur-Set portiert (nicht in den
-        // vorhandenen Assets vorhanden) - als Platzhalter wird das bereits existierende
-        // furnace_iron-Modell (inkl. Textur) wiederverwendet, damit die Bloecke kompilieren und
-        // sichtbar sind. Sollte spaeter durch dedizierte Modelle ersetzt werden.
+        // Electric Furnace / Brick Furnace: own texture sets ported from the 1.7.10 assets
+        // (machine_electric_furnace_*, machine_furnace_brick_*), so both stop borrowing the iron
+        // furnace model. Separate front texture for the lit state, like vanilla's furnace.
         registerLitMachineBlock(ModBlocks.ELECTRIC_FURNACE,
             com.hbm_m.block.machines.MachineElectricFurnaceBlock.FACING, com.hbm_m.block.machines.MachineElectricFurnaceBlock.LIT,
-            "furnace_iron", "furnace_iron");
+            "electric_furnace", "electric_furnace_on");
         registerLitMachineBlock(ModBlocks.FURNACE_BRICK,
             com.hbm_m.block.machines.MachineFurnaceBrickBlock.FACING, com.hbm_m.block.machines.MachineFurnaceBrickBlock.LIT,
-            "furnace_iron", "furnace_iron");
+            "furnace_brick", "furnace_brick_on");
         // Rotary Furnace: eigenes OBJ-Modell bereits vorhanden (block/machines/rotary_furnace.json),
         // kein separates LIT-Modell portiert - gleiches Modell fuer beide Zustaende.
         registerLitMachineBlock(ModBlocks.ROTARY_FURNACE,
@@ -777,14 +776,12 @@ public class ModBlockStateProvider extends BlockStateProvider {
             models().getExistingFile(modLoc("block/machines/machine_battery_socket")));
 
         // Жидкостный насос / клапан / выхлоп — временно ванильный iron cube (отдельные модели позже)
-        ModelFile fluidPumpModel = models().withExistingParent(ModBlocks.FLUID_PUMP.getId().getPath(), mcLoc("block/cube_all"))
-                .texture("all", mcLoc("block/iron_block"))
-                .texture("particle", mcLoc("block/iron_block"));
-        horizontalBlock(ModBlocks.FLUID_PUMP.get(), fluidPumpModel);
+        // 1.7.10 "fluid_diode" OBJ (RenderFluidPump).
+        horizontalBlock(ModBlocks.FLUID_PUMP.get(), models().getExistingFile(modLoc("block/machines/fluid_pump")));
 
         ModelFile fluidValveModel = models().withExistingParent(ModBlocks.FLUID_VALVE.getId().getPath(), mcLoc("block/cube_all"))
-                .texture("all", mcLoc("block/iron_block"))
-                .texture("particle", mcLoc("block/iron_block"));
+                .texture("all", modLoc("block/fluid_valve_off"))
+                .texture("particle", modLoc("block/fluid_valve_off"));
         simpleBlock(ModBlocks.FLUID_VALVE.get(), fluidValveModel);
 
         ModelFile fluidExhaustModel = models().withExistingParent(ModBlocks.FLUID_EXHAUST.getId().getPath(), mcLoc("block/cube_all"))
@@ -794,6 +791,13 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         // Decor
         customObjBlock(ModBlocks.REBAR);
+        // Hand-written OBJ models existed, the blockstates never did: every barbed wire
+        // block logged "missing model for variant" and rendered as the missing model.
+        customObjBlock(ModBlocks.BARBED_WIRE);
+        customObjBlock(ModBlocks.BARBED_WIRE_FIRE);
+        customObjBlock(ModBlocks.BARBED_WIRE_POISON);
+        customObjBlock(ModBlocks.BARBED_WIRE_WITHER);
+        customObjBlock(ModBlocks.BARBED_WIRE_RAD);
 
         // Decor
         customObjBlock(ModBlocks.CRT_BROKEN);
@@ -842,12 +846,13 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customObjBlock(ModBlocks.CRATE_CONSERVE);
         customObjBlock(ModBlocks.FILE_CABINET);
 
-        simpleBlock(ModBlocks.UNIVERSAL_MACHINE_PART.get(), models().getBuilder(ModBlocks.UNIVERSAL_MACHINE_PART.getId().getPath()));
+        // Технический блок без визуала; particle нужен, чтобы партиклы разрушения не были missing tex.
+        simpleBlock(ModBlocks.UNIVERSAL_MACHINE_PART.get(), models().getBuilder(ModBlocks.UNIVERSAL_MACHINE_PART.getId().getPath())
+                .texture("particle", modLoc("block/block_steel_machine")));
         // wire_coated: manual multipart blockstate + OBJ visibility (see assets/hbm_m/blockstates/wire_coated.json)
         // red_* ЛЭП (коннекторы/пилоны): ручные blockstates с OBJ-моделями и поворотами (assets/hbm_m/blockstates).
         // PYLON_DUMMY не датагенится вовсе (invisible).
 
-        blockWithItem(ModBlocks.CONVERTER_BLOCK);
         blockWithItem(ModBlocks.STEAM_CONDENSER);
 
         orientableBlockWithItem(
@@ -1587,15 +1592,12 @@ public class ModBlockStateProvider extends BlockStateProvider {
         oreWithItem(ModBlocks.TITANIUM_ORE_DEEPSLATE);
         oreWithItem(ModBlocks.SULFUR_ORE);
         oreWithItem(ModBlocks.ORE_OIL);
-        oreWithItem(ModBlocks.SEQUESTRUM_ORE);
         oreWithItem(ModBlocks.SCHRABIDIUM_ORE);
         oreWithItem(ModBlocks.SCHRABIDIUM_ORE_NETHER);
         oreWithItem(ModBlocks.SCHRABIDIUM_ORE_GNEISS);
         // Руды паритета генерации с 1.7.10 (медная руда не нужна — есть ванильная)
         oreWithItem(ModBlocks.NITER_ORE);
         oreWithItem(ModBlocks.NITER_ORE_DEEPSLATE);
-        oreWithItem(ModBlocks.LITHIUM_ORE);
-        oreWithItem(ModBlocks.LITHIUM_ORE_DEEPSLATE);
         oreWithItem(ModBlocks.ALEXANDRITE_ORE);
         oreWithItem(ModBlocks.COLTAN_ORE);
         oreWithItem(ModBlocks.COLTAN_ORE_DEEPSLATE);
@@ -1624,6 +1626,27 @@ public class ModBlockStateProvider extends BlockStateProvider {
         oreWithItem(ModBlocks.GNEISS_GAS_ORE);
         oreWithItem(ModBlocks.TIKITE_ORE);
         oreWithItem(ModBlocks.ORE_OIL_SAND);
+
+        // Метеоритные руды (порт BlockMeteorOre 1.7.10, ore_meteor.*)
+        oreWithItem(ModBlocks.ORE_METEOR_IRON);
+        oreWithItem(ModBlocks.ORE_METEOR_COPPER);
+        oreWithItem(ModBlocks.ORE_METEOR_ALUMINIUM);
+        oreWithItem(ModBlocks.ORE_METEOR_RAREEARTH);
+        oreWithItem(ModBlocks.ORE_METEOR_COBALT);
+
+        // Руды базальта (порт BlockOreBasalt 1.7.10): боковая текстура + "_top" для верхней
+        // и нижней граней (ориг. getIcon: side <= 1 -> topIcons).
+        basaltOreWithItem(ModBlocks.ORE_BASALT_SULFUR);
+        basaltOreWithItem(ModBlocks.ORE_BASALT_FLUORITE);
+        basaltOreWithItem(ModBlocks.ORE_BASALT_ASBESTOS);
+        basaltOreWithItem(ModBlocks.ORE_BASALT_GEM);
+        basaltOreWithItem(ModBlocks.ORE_BASALT_MOLYSITE);
+
+        // ore_volcano (порт BlockFissure 1.7.10, Geothermal Vent): рендерится как bedrock
+        // (первый мультипасс оригинала; оверлей molten_overlay не портирован).
+        simpleBlockWithItem(ModBlocks.ORE_VOLCANO.get(),
+                models().withExistingParent("ore_volcano", mcLoc("block/cube_all"))
+                        .texture("all", mcLoc("block/bedrock")));
 
         simpleBlockWithItem(ModBlocks.BLOCK_SCHRABIDIUM_CLUSTER.get(),
                 models().cubeBottomTop(
@@ -1801,12 +1824,14 @@ public class ModBlockStateProvider extends BlockStateProvider {
         ModelFile brickRedNone = models().cubeAll("block/brick_red_none", modLoc("block/brick_base"));
         ResourceLocation bb = modLoc("block/brick_base");
         ResourceLocation red = modLoc("block/brick_red"), redTop = modLoc("block/brick_red_top");
-        ModelFile brickRedDown = models().cube("block/brick_red_down", redTop, bb, bb, bb, bb, bb);
-        ModelFile brickRedUp = models().cube("block/brick_red_up", bb, redTop, bb, bb, bb, bb);
-        ModelFile brickRedNorth = models().cube("block/brick_red_north", bb, bb, red, bb, bb, bb);
-        ModelFile brickRedSouth = models().cube("block/brick_red_south", bb, bb, bb, red, bb, bb);
-        ModelFile brickRedEast = models().cube("block/brick_red_east", bb, bb, bb, bb, red, bb);
-        ModelFile brickRedWest = models().cube("block/brick_red_west", bb, bb, bb, bb, bb, red);
+        // Ванильный шаблон block/cube НЕ определяет "particle" (в отличие от cube_all) —
+        // без явной текстуры партиклы разрушения будут missing tex.
+        ModelFile brickRedDown = models().cube("block/brick_red_down", redTop, bb, bb, bb, bb, bb).texture("particle", redTop);
+        ModelFile brickRedUp = models().cube("block/brick_red_up", bb, redTop, bb, bb, bb, bb).texture("particle", redTop);
+        ModelFile brickRedNorth = models().cube("block/brick_red_north", bb, bb, red, bb, bb, bb).texture("particle", red);
+        ModelFile brickRedSouth = models().cube("block/brick_red_south", bb, bb, bb, red, bb, bb).texture("particle", red);
+        ModelFile brickRedEast = models().cube("block/brick_red_east", bb, bb, bb, bb, red, bb).texture("particle", red);
+        ModelFile brickRedWest = models().cube("block/brick_red_west", bb, bb, bb, bb, bb, red).texture("particle", red);
         VariantBlockStateBuilder brickRedBuilder = getVariantBuilder(ModBlocks.BRICK_RED.get());
         brickRedBuilder.partialState().with(RedBrickBlock.RED_FACE, RedFace.NONE).setModels(ConfiguredModel.builder().modelFile(brickRedNone).build());
         brickRedBuilder.partialState().with(RedBrickBlock.RED_FACE, RedFace.DOWN).setModels(ConfiguredModel.builder().modelFile(brickRedDown).build());
@@ -2145,12 +2170,19 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/dfc_receiver")
                 )
         );
-        simpleBlockWithItem(ModBlocks.DFC_STABILIZER.get(),
-                models().cubeAll(
-                        ModBlocks.DFC_STABILIZER.getId().getPath(),
-                        modLoc("block/dfc_stabilizer")
-                )
-        );
+        // Der Stabilisator schiesst in seine Blickrichtung, das Modell dreht sich mit.
+        // 1.7.10 draws the injector OBJ with the stabilizer texture. The mesh faces NORTH; the
+        // vanilla directionalBlock helper expects an UP-facing model, so the six rotations are spelled out.
+        {
+            ModelFile stabilizer = models().getExistingFile(modLoc("block/machines/dfc_stabilizer"));
+            getVariantBuilder(ModBlocks.DFC_STABILIZER.get()).forAllStates(state -> {
+                Direction facing = state.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING);
+                int x = facing == Direction.UP ? 270 : facing == Direction.DOWN ? 90 : 0;
+                int y = facing.getAxis().isHorizontal() ? ((int) facing.toYRot() + 180) % 360 : 0;
+                return ConfiguredModel.builder().modelFile(stabilizer).rotationX(x).rotationY(y).build();
+            });
+            simpleBlockItem(ModBlocks.DFC_STABILIZER.get(), stabilizer);
+        }
         simpleBlockWithItem(ModBlocks.DIRT_DEAD.get(),
                 models().cubeAll(
                         ModBlocks.DIRT_DEAD.getId().getPath(),
@@ -2428,50 +2460,37 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 )
         );
         // Газовые блоки невидимы (см. com.hbm_m.block.gas.BlockGasBase): пустая модель + дымовые частицы.
-        simpleBlock(ModBlocks.GAS_ASBESTOS.get(), models().getExistingFile(modLoc("block/invisible_gas")));
-        simpleBlock(ModBlocks.GAS_COAL.get(), models().getExistingFile(modLoc("block/invisible_gas")));
-        simpleBlockWithItem(ModBlocks.GAS_EXPLOSIVE.get(),
-                models().cubeAll(
-                        ModBlocks.GAS_EXPLOSIVE.getId().getPath(),
-                        modLoc("block/gas_explosive")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.GAS_FLAMMABLE.get(),
-                models().cubeAll(
-                        ModBlocks.GAS_FLAMMABLE.getId().getPath(),
-                        modLoc("block/gas_flammable")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.GAS_MELTDOWN.get(),
-                models().cubeAll(
-                        ModBlocks.GAS_MELTDOWN.getId().getPath(),
-                        modLoc("block/gas_meltdown")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.GAS_MONOXIDE.get(),
-                models().cubeAll(
-                        ModBlocks.GAS_MONOXIDE.getId().getPath(),
-                        modLoc("block/gas_monoxide")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.GAS_RADON.get(),
-                models().cubeAll(
-                        ModBlocks.GAS_RADON.getId().getPath(),
-                        modLoc("block/gas_radon")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.GAS_RADON_DENSE.get(),
-                models().cubeAll(
-                        ModBlocks.GAS_RADON_DENSE.getId().getPath(),
-                        modLoc("block/gas_radon_dense")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.GAS_RADON_TOMB.get(),
-                models().cubeAll(
-                        ModBlocks.GAS_RADON_TOMB.getId().getPath(),
-                        modLoc("block/gas_radon_tomb")
-                )
-        );
+        // Die Gasbloecke sind im Original unsichtbar (BlockGasBase.getRenderType() == -1):
+        // leeres Modell, das Item-Modell traegt die Textur. Einzige Ausnahme ist Chlorgas.
+        for (RegistrySupplier<Block> gas : List.of(
+                ModBlocks.GAS_ASBESTOS, ModBlocks.GAS_COAL, ModBlocks.GAS_EXPLOSIVE,
+                ModBlocks.GAS_FLAMMABLE, ModBlocks.GAS_MELTDOWN, ModBlocks.GAS_MONOXIDE,
+                ModBlocks.GAS_RADON, ModBlocks.GAS_RADON_DENSE, ModBlocks.GAS_RADON_TOMB)) {
+            simpleBlock(gas.get(), models().getExistingFile(modLoc("block/invisible_gas")));
+        }
+        // Teilchenbeschleuniger: Quelle und Detektor. Die uebrigen vier Bauteile hatten als
+        // Platzhalter schon Eintraege weiter unten.
+        // The OBJ models of the source and detector already exist (used by the old decorative blocks).
+        horizontalBlock(ModBlocks.PA_SOURCE.get(), models().getExistingFile(modLoc("block/machines/source")));
+        simpleBlockItem(ModBlocks.PA_SOURCE.get(), models().getExistingFile(modLoc("block/machines/source")));
+        horizontalBlock(ModBlocks.PA_DETECTOR.get(), models().getExistingFile(modLoc("block/machines/detector")));
+        simpleBlockItem(ModBlocks.PA_DETECTOR.get(), models().getExistingFile(modLoc("block/machines/detector")));
+        simpleBlockWithItem(ModBlocks.YELLOW_BARREL.get(),
+                models().cubeAll(ModBlocks.YELLOW_BARREL.getId().getPath(), modLoc("block/barrel_yellow")));
+        // Die Ladeplatte nutzt im Original die Stahlblock-Textur (die Teslaspule hat weiter unten
+        // schon einen eigenen Eintrag mit passenderen Texturen).
+        // Das Ladegeraet haengt an der Wand und hat eine Blickrichtung - das Modell muss mitdrehen,
+        // sonst passt die Hitbox nicht zum Bild.
+        // 1.7.10 OBJ: the base is the block model, the arms are drawn by ChargerRenderer.
+        horizontalBlock(ModBlocks.CHARGER.get(), models().getExistingFile(modLoc("block/machines/charger")));
+        simpleBlockItem(ModBlocks.CHARGER.get(), models().getExistingFile(modLoc("block/machines/charger_item")));
+        // Original: der Grosstank nutzt ebenfalls die Stahlblock-Textur.
+        simpleBlockWithItem(ModBlocks.MACHINE_BIGASSTANK.get(),
+                models().cubeAll(ModBlocks.MACHINE_BIGASSTANK.getId().getPath(), modLoc("block/block_steel")));
+        // Original: der RTG ist ein schlichter Wuerfel mit der Textur "rtg" auf allen Seiten.
+        // 1.7.10 OBJ: the generator is the block model, the cable connectors are drawn by RtgRenderer.
+        simpleBlock(ModBlocks.MACHINE_RTG.get(), models().getExistingFile(modLoc("block/machines/rtg")));
+        simpleBlockItem(ModBlocks.MACHINE_RTG.get(), models().getExistingFile(modLoc("block/machines/rtg_item")));
         simpleBlockWithItem(ModBlocks.GLASS_ASH.get(),
                 models().cubeAll(
                         ModBlocks.GLASS_ASH.getId().getPath(),
@@ -2628,12 +2647,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/icf_component_vessel_welded")
                 )
         );
-        simpleBlockWithItem(ModBlocks.ICF_CONTROLLER.get(),
-                models().cubeAll(
-                        ModBlocks.ICF_CONTROLLER.getId().getPath(),
-                        modLoc("block/icf_controller")
-                )
-        );
+        // Das Steuerpult zeigt mit der bedruckten Seite nach vorn.
+        horizontalBlock(ModBlocks.ICF_CONTROLLER.get(), models().orientableWithBottom("icf_controller",
+                modLoc("block/icf_casing"), modLoc("block/icf_controller"),
+                modLoc("block/icf_casing"), modLoc("block/icf_casing")));
+        simpleBlockItem(ModBlocks.ICF_CONTROLLER.get(), models().getExistingFile(modLoc("block/icf_controller")));
         simpleBlockWithItem(ModBlocks.ITER.get(),
                 models().cubeAll(
                         ModBlocks.ITER.getId().getPath(),
@@ -2650,12 +2668,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         ladderBlockWithItem(ModBlocks.LADDER_STURDY.get(), "block/ladder_sturdy");
         ladderBlockWithItem(ModBlocks.LADDER_TITANIUM.get(), "block/ladder_titanium");
         ladderBlockWithItem(ModBlocks.LADDER_TUNGSTEN.get(), "block/ladder_tungsten");
-        simpleBlockWithItem(ModBlocks.LAMP_DEMON.get(),
-                models().cubeAll(
-                        ModBlocks.LAMP_DEMON.getId().getPath(),
-                        modLoc("block/lamp_demon")
-                )
-        );
+        // lamp_demon: blockstate + block model hand-written (OBJ via forge:composite,
+        // 6-way facing), only the item model is generated.
         simpleBlockWithItem(ModBlocks.LAMP_TRITIUM_BLUE_OFF.get(),
                 models().cubeAll(
                         ModBlocks.LAMP_TRITIUM_BLUE_OFF.getId().getPath(),
@@ -2724,31 +2738,22 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/machine_boiler_base")
                 )
         );
-        simpleBlockWithItem(ModBlocks.MACHINE_CENTRIFUGE.get(),
-                models().cubeAll(
-                        ModBlocks.MACHINE_CENTRIFUGE.getId().getPath(),
-                        modLoc("block/machine_centrifuge")
-                )
-        );
+        // Das Steuerpult ist im Original nur halb hoch ({@code setBlockBounds(0,0,0, 1,0.5F,1)}),
+        // darum ein eigenes Modell statt eines vollen Wuerfels - sonst passte die Hitbox nicht zum Bild.
         simpleBlockWithItem(ModBlocks.MACHINE_CONTROLLER.get(),
-                models().cubeBottomTop(
-                        ModBlocks.MACHINE_CONTROLLER.getId().getPath(),
-                        modLoc("block/machine_controller_side"),
-                        modLoc("block/machine_controller_side"),
-                        modLoc("block/machine_controller_top")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.MACHINE_CONVERTER_HE_RF.get(),
-                models().cubeAll(
-                        ModBlocks.MACHINE_CONVERTER_HE_RF.getId().getPath(),
-                        modLoc("block/machine_converter_he_rf")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.MACHINE_CONVERTER_RF_HE.get(),
-                models().cubeAll(
-                        ModBlocks.MACHINE_CONVERTER_RF_HE.getId().getPath(),
-                        modLoc("block/machine_converter_rf_he")
-                )
+                models().withExistingParent(ModBlocks.MACHINE_CONTROLLER.getId().getPath(), "block/block")
+                        .texture("particle", modLoc("block/machine_controller_side"))
+                        .texture("side", modLoc("block/machine_controller_side"))
+                        .texture("top", modLoc("block/machine_controller_top"))
+                        .element()
+                                .from(0, 0, 0).to(16, 8, 16)
+                                .face(net.minecraft.core.Direction.DOWN).texture("#top").end()
+                                .face(net.minecraft.core.Direction.UP).texture("#top").end()
+                                .face(net.minecraft.core.Direction.NORTH).texture("#side").end()
+                                .face(net.minecraft.core.Direction.SOUTH).texture("#side").end()
+                                .face(net.minecraft.core.Direction.WEST).texture("#side").end()
+                                .face(net.minecraft.core.Direction.EAST).texture("#side").end()
+                        .end()
         );
         simpleBlockWithItem(ModBlocks.MACHINE_CRYSTALLIZER.get(),
                 models().cubeAll(
@@ -2789,24 +2794,14 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/machine_funnel_top")
                 )
         );
-        simpleBlockWithItem(ModBlocks.PUREX.get(),
-                models().cubeAll(
-                        ModBlocks.PUREX.getId().getPath(),
-                        modLoc("block/machine/purex")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.INDUSTRIAL_GENERATOR.get(),
-                models().cubeAll(
-                        ModBlocks.INDUSTRIAL_GENERATOR.getId().getPath(),
-                        modLoc("block/block_steel_machine")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.MACHINE_GASCENT.get(),
-                models().cubeAll(
-                        ModBlocks.MACHINE_GASCENT.getId().getPath(),
-                        modLoc("block/machine_gascent")
-                )
-        );
+        {
+            // Multiblock mit Ausrichtung: das Modell dreht sich mit der Struktur.
+            var purex = models().cubeAll(ModBlocks.PUREX.getId().getPath(), modLoc("block/machine/purex"));
+            horizontalBlock(ModBlocks.PUREX.get(), purex);
+            simpleBlockItem(ModBlocks.PUREX.get(), purex);
+        }
+        // 1.7.10 "igen" OBJ (RenderIGenerator); the block has no facing, so it stands the one way.
+        simpleBlockWithItem(ModBlocks.INDUSTRIAL_GENERATOR.get(), models().getExistingFile(modLoc("block/machines/igen")));
         simpleBlockWithItem(ModBlocks.MACHINE_ICF_PRESS.get(),
                 models().cubeBottomTop(
                         ModBlocks.MACHINE_ICF_PRESS.getId().getPath(),
@@ -2836,12 +2831,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/machine_mining_laser")
                 )
         );
-        simpleBlockWithItem(ModBlocks.MACHINE_MISSILE_ASSEMBLY.get(),
-                models().cubeAll(
-                        ModBlocks.MACHINE_MISSILE_ASSEMBLY.getId().getPath(),
-                        modLoc("block/machine_missile_assembly")
-                )
-        );
+        // 1.7.10 OBJ (RenderMissileAssembly); the block has no facing, so it stands the one way.
+        simpleBlockWithItem(ModBlocks.MACHINE_MISSILE_ASSEMBLY.get(), models().getExistingFile(modLoc("block/machines/missile_assembly")));
         simpleBlockWithItem(ModBlocks.MACHINE_PRESS.get(),
                 models().cubeAll(
                         ModBlocks.MACHINE_PRESS.getId().getPath(),
@@ -2854,8 +2845,13 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/machine_puf6_tank")
                 )
         );
-        simpleBlockWithItem(ModBlocks.MACHINE_DRAIN.get(),
-                models().cubeAll(ModBlocks.MACHINE_DRAIN.getId().getPath(), modLoc("block/concrete")));
+        {
+            // Multiblock mit Ausrichtung: das Modell dreht sich jetzt mit der Struktur.
+            // 1.7.10 OBJ (RenderDrain), three blocks long like the structure.
+            var drain = models().getExistingFile(modLoc("block/machines/drain"));
+            horizontalBlock(ModBlocks.MACHINE_DRAIN.get(), drain);
+            simpleBlockItem(ModBlocks.MACHINE_DRAIN.get(), drain);
+        }
         orientableBlockWithItem(
                 ModBlocks.MACHINE_DIFURNACE_RTG,
                 modLoc("block/difurnace_side_tall"),
@@ -2946,14 +2942,25 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/machine_uf6_tank")
                 )
         );
-        simpleBlockWithItem(ModBlocks.MASS_STORAGE.get(),
-                models().cubeBottomTop(
-                        ModBlocks.MASS_STORAGE.getId().getPath(),
-                        modLoc("block/mass_storage_side"),
-                        modLoc("block/mass_storage_side"),
-                        modLoc("block/mass_storage_top")
-                )
-        );
+        // Die vier Groessen des Originals - jede mit ihrem eigenen Texturzusatz.
+        for (var entry : java.util.List.of(
+                java.util.Map.entry(ModBlocks.MASS_STORAGE, ""),
+                java.util.Map.entry(ModBlocks.MASS_STORAGE_WOOD, "_wood"),
+                java.util.Map.entry(ModBlocks.MASS_STORAGE_IRON, "_iron"),
+                java.util.Map.entry(ModBlocks.MASS_STORAGE_DESH, "_desh"))) {
+
+            var storage = entry.getKey();
+            String suffix = entry.getValue();
+
+            simpleBlockWithItem(storage.get(),
+                    models().cubeBottomTop(
+                            storage.getId().getPath(),
+                            modLoc("block/mass_storage_side" + suffix),
+                            modLoc("block/mass_storage_side" + suffix),
+                            modLoc("block/mass_storage_top" + suffix)
+                    )
+            );
+        }
         simpleBlockWithItem(ModBlocks.METEOR_SPAWNER.get(),
                 models().cubeBottomTop(
                         ModBlocks.METEOR_SPAWNER.getId().getPath(),
@@ -3012,7 +3019,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 .end()
                 .element().from(0.0F, 12.0F, 0.0F).to(16.0F, 16.0F, 16.0F)
                         .allFaces((dir, face) -> face.texture(dir.getAxis() == Direction.Axis.Y ? "#top" : "#side"))
-                .end();
+                .end()
+                .texture("particle", modLoc("block/pedestal_side"));
         simpleBlock(ModBlocks.PEDESTAL.get(), pedestalModel);
         simpleBlockItem(ModBlocks.PEDESTAL.get(), pedestalModel);
         simpleBlockWithItem(ModBlocks.PINK_LOG.get(),
@@ -3069,18 +3077,19 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/plasma_heater")
                 )
         );
-        simpleBlockWithItem(ModBlocks.PNEUMATIC_TUBE.get(),
-                models().cubeAll(
-                        ModBlocks.PNEUMATIC_TUBE.getId().getPath(),
-                        modLoc("block/pneumatic_tube")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.PNEUMATIC_TUBE_PAINTABLE.get(),
-                models().cubeAll(
-                        ModBlocks.PNEUMATIC_TUBE_PAINTABLE.getId().getPath(),
-                        modLoc("block/pneumatic_tube_paintable")
-                )
-        );
+        pneumoTubeState();
+        // Die bemalbare Fassung ist ein Vollblock und traegt dieselben sechs Anschlussmerkmale
+        // wie das Rohr - gezeichnet wird sie im Renderer, das Modell dient nur dem Gegenstand.
+        {
+            var paintable = ModBlocks.PNEUMATIC_TUBE_PAINTABLE.get();
+            var model = models().cubeAll("pneumatic_tube_paintable", modLoc("block/pneumatic_tube_paintable"));
+
+            getVariantBuilder(paintable).forAllStates(state ->
+                    net.minecraftforge.client.model.generators.ConfiguredModel.builder()
+                            .modelFile(model).build());
+
+            simpleBlockItem(paintable, model);
+        }
         simpleBlockWithItem(ModBlocks.PRESS_PREHEATER.get(),
                 models().cubeAll(
                         ModBlocks.PRESS_PREHEATER.getId().getPath(),
@@ -3158,12 +3167,12 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/pwr_reflector")
                 )
         );
-        simpleBlockWithItem(ModBlocks.RADIO_TELEX.get(),
-                models().cubeAll(
-                        ModBlocks.RADIO_TELEX.getId().getPath(),
-                        modLoc("block/radio_telex")
-                )
-        );
+        {
+            var telex = models().cubeAll(
+                    ModBlocks.RADIO_TELEX.getId().getPath(), modLoc("block/radio_telex"));
+            horizontalBlock(ModBlocks.RADIO_TELEX.get(), telex);
+            simpleBlockItem(ModBlocks.RADIO_TELEX.get(), telex);
+        }
         simpleBlockWithItem(ModBlocks.RADIOBOX.get(),
                 models().cubeAll(
                         ModBlocks.RADIOBOX.getId().getPath(),
@@ -3239,8 +3248,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 )
         );
         // Порт BlockNTMGlassPane: ванильная панель (Post/Side/NoSide)
-        paneBlock((net.minecraft.world.level.block.IronBarsBlock) ModBlocks.REINFORCED_GLASS_PANE.get(),
-                modLoc("block/reinforced_glass_pane"), modLoc("block/reinforced_glass_pane_edge"));
+        // Glass needs the cutout layer: paneBlock leaves render_type unset, so the pane baked
+        // into the solid layer and its edges came out opaque.
+        paneBlockWithRenderType((net.minecraft.world.level.block.IronBarsBlock) ModBlocks.REINFORCED_GLASS_PANE.get(),
+                modLoc("block/reinforced_glass_pane"), modLoc("block/reinforced_glass_pane_edge"),
+                mcLoc("cutout"));
         simpleBlockItem(ModBlocks.REINFORCED_GLASS_PANE.get(), models().getExistingFile(modLoc("block/reinforced_glass_pane_post")));
         simpleBlockWithItem(ModBlocks.REINFORCED_LAMINATE.get(),
                 models().cubeAll(
@@ -3524,12 +3536,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/stone_resource_sulfur")
                 )
         );
-        simpleBlockWithItem(ModBlocks.STRUCT_ICF_CORE.get(),
-                models().cubeAll(
-                        ModBlocks.STRUCT_ICF_CORE.getId().getPath(),
-                        modLoc("block/struct_icf_core")
-                )
-        );
         simpleBlockWithItem(ModBlocks.STRUCT_LAUNCHER.get(),
                 models().cubeAll(
                         ModBlocks.STRUCT_LAUNCHER.getId().getPath(),
@@ -3590,12 +3596,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/tektite")
                 )
         );
-        simpleBlockWithItem(ModBlocks.TESLA.get(),
-                models().cubeAll(
-                        ModBlocks.TESLA.getId().getPath(),
-                        modLoc("block/tesla")
-                )
-        );
+        simpleBlockWithItem(ModBlocks.TESLA.get(), models().getExistingFile(modLoc("block/machines/tesla")));
         simpleBlockWithItem(ModBlocks.THERM_ENDO.get(),
                 models().cubeAll(
                         ModBlocks.THERM_ENDO.getId().getPath(),
@@ -3676,17 +3677,42 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/vinyl_tile_large")
                 )
         );
-        simpleBlockWithItem(ModBlocks.VOLCANO_CORE.get(),
-                models().cubeAll(
-                        ModBlocks.VOLCANO_CORE.getId().getPath(),
-                        modLoc("block/volcano_core")
-                )
+        // Ядро вулкана: 5 состояний (меты BlockVolcano 1.7.10), одна текстура на все
+        getVariantBuilder(ModBlocks.VOLCANO_CORE.get()).partialState().setModels(
+                ConfiguredModel.builder().modelFile(
+                        models().cubeAll(
+                                ModBlocks.VOLCANO_CORE.getId().getPath(),
+                                modLoc("block/volcano_core")
+                        )
+                ).build()
         );
-        simpleBlockWithItem(ModBlocks.VOLCANO_RAD_CORE.get(),
-                models().cubeAll(
-                        ModBlocks.VOLCANO_RAD_CORE.getId().getPath(),
-                        modLoc("block/volcano_rad_core")
-                )
+        itemModels().withExistingParent(ModBlocks.VOLCANO_CORE.getId().getPath(), modLoc("block/volcano_core"));
+        getVariantBuilder(ModBlocks.VOLCANO_RAD_CORE.get()).partialState().setModels(
+                ConfiguredModel.builder().modelFile(
+                        models().cubeAll(
+                                ModBlocks.VOLCANO_RAD_CORE.getId().getPath(),
+                                modLoc("block/volcano_rad_core")
+                        )
+                ).build()
+        );
+        itemModels().withExistingParent(ModBlocks.VOLCANO_RAD_CORE.getId().getPath(), modLoc("block/volcano_rad_core"));
+        // Вулканические лавы — флюид-блоки (LEVEL×FALLING): модель нужна только для
+        // частиц разрушения, реальный рендер — флюидный по текстурам ModFluids
+        getVariantBuilder(ModBlocks.VOLCANIC_LAVA_BLOCK.get()).partialState().setModels(
+                ConfiguredModel.builder().modelFile(
+                        models().cubeAll(
+                                ModBlocks.VOLCANIC_LAVA_BLOCK.getId().getPath(),
+                                modLoc("block/volcanic_lava_still")
+                        )
+                ).build()
+        );
+        getVariantBuilder(ModBlocks.RAD_LAVA_BLOCK.get()).partialState().setModels(
+                ConfiguredModel.builder().modelFile(
+                        models().cubeAll(
+                                ModBlocks.RAD_LAVA_BLOCK.getId().getPath(),
+                                modLoc("block/rad_lava_still")
+                        )
+                ).build()
         );
         simpleBlockWithItem(ModBlocks.WAND_AIR.get(),
                 models().cubeAll(
@@ -3803,6 +3829,21 @@ public class ModBlockStateProvider extends BlockStateProvider {
     }
 
     /**
+     * Руда базальта (порт BlockOreBasalt 1.7.10): боковая текстура {@code ore_basalt_<subtype>}
+     * и верхняя {@code ore_basalt_<subtype>_top} — она же идёт в низ (в оригинале side <= 1
+     * возвращает topIcons, т.е. и верх, и низ показывают "_top").
+     */
+    private void basaltOreWithItem(RegistrySupplier<Block> blockObject) {
+        String name = blockObject.getId().getPath(); // например "ore_basalt_sulfur"
+        ModelFile model = models().cubeBottomTop(
+                name,
+                modLoc("block/" + name),
+                modLoc("block/" + name + "_top"),
+                modLoc("block/" + name + "_top"));
+        simpleBlockWithItem(blockObject.get(), model);
+    }
+
+    /**
      * Поглотитель радиации — варианты по уровню ({@link BlockAbsorber.EnumAbsorberTier}).
      */
     private void registerRadAbsorber() {
@@ -3861,14 +3902,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 .texture("east", modLoc("block/rbmk/rbmk_absorber_side"))
                 .texture("west", modLoc("block/rbmk/rbmk_absorber_side"))
                 .texture("particle", modLoc("block/rbmk/rbmk_absorber_side"));
-        ModelFile mrbmk_rbmk_autoloader = models().withExistingParent("block/rbmk/rbmk_autoloader", mcLoc("block/cube"))
-                .texture("down", modLoc("block/rbmk/rbmk_blank_top"))
-                .texture("up", modLoc("block/rbmk/rbmk_blank_top"))
-                .texture("north", modLoc("block/rbmk/rbmk_blank_side"))
-                .texture("south", modLoc("block/rbmk/rbmk_blank_side"))
-                .texture("east", modLoc("block/rbmk/rbmk_blank_side"))
-                .texture("west", modLoc("block/rbmk/rbmk_blank_side"))
-                .texture("particle", modLoc("block/rbmk/rbmk_blank_side"));
+        ModelFile mrbmk_rbmk_autoloader = models().withExistingParent("block/rbmk/rbmk_autoloader", mcLoc("block/cube_all"))
+                .texture("all", modLoc("block/rbmk/standalone_rbmk_autoloader"))
+                .texture("particle", modLoc("block/rbmk/standalone_rbmk_autoloader"));
         ModelFile mrbmk_rbmk_blank = models().withExistingParent("block/rbmk/rbmk_blank", mcLoc("block/cube"))
                 .texture("down", modLoc("block/rbmk/rbmk_blank_top"))
                 .texture("up", modLoc("block/rbmk/rbmk_blank_top"))
@@ -4109,14 +4145,12 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 .texture("east", modLoc("block/rbmk/rbmk_control_side"))
                 .texture("west", modLoc("block/rbmk/rbmk_control_side"))
                 .texture("particle", modLoc("block/rbmk/rbmk_control_side"));
-        ModelFile mrbmk_rbmk_loader = models().withExistingParent("block/rbmk/rbmk_loader", mcLoc("block/cube"))
-                .texture("down", modLoc("block/rbmk/rbmk_blank_top"))
-                .texture("up", modLoc("block/rbmk/rbmk_blank_top"))
-                .texture("north", modLoc("block/rbmk/rbmk_blank_side"))
-                .texture("south", modLoc("block/rbmk/rbmk_blank_side"))
-                .texture("east", modLoc("block/rbmk/rbmk_blank_side"))
-                .texture("west", modLoc("block/rbmk/rbmk_blank_side"))
-                .texture("particle", modLoc("block/rbmk/rbmk_blank_side"));
+        // The connector ships its own texture (standalone_rbmk_loader, byte-identical to the
+        // original's blocks/rbmk_loader.png) on all six faces, as setBlockTextureName does in the
+        // original - it was wearing the blank column's side/top instead.
+        ModelFile mrbmk_rbmk_loader = models().withExistingParent("block/rbmk/rbmk_loader", mcLoc("block/cube_all"))
+                .texture("all", modLoc("block/rbmk/standalone_rbmk_loader"))
+                .texture("particle", modLoc("block/rbmk/standalone_rbmk_loader"));
         ModelFile mrbmk_rbmk_moderator = models().withExistingParent("block/rbmk/rbmk_moderator", mcLoc("block/cube"))
                 .texture("down", modLoc("block/rbmk/rbmk_moderator_top"))
                 .texture("up", modLoc("block/rbmk/rbmk_moderator_top"))
@@ -4934,5 +4968,127 @@ public class ModBlockStateProvider extends BlockStateProvider {
         }
         simpleBlockItem(block, model);
     }
+
+    /**
+     * Der Meilerblock hat neun Rollen (siehe {@code PileBlockType}). Das Original setzt sie mit
+     * einem Verbundtexturen-Renderer zusammen; hier bekommt jede Rolle ihr eigenes Modell aus den
+     * Originaltexturen. Kanaleingaenge und -ausgaenge tragen dieselbe Oeffnungstextur auf allen
+     * vier Seiten, weil ohne Metadatenrichtung nicht feststeht, wohin der Kanal laeuft.
+     */
+    private void pileBlockStates() {
+        var block = (com.hbm_m.block.machines.pile.PileBlock) ModBlocks.PILE_BLOCK.get();
+
+        getVariantBuilder(block).forAllStates(state -> {
+            var type = state.getValue(com.hbm_m.block.machines.pile.PileBlock.TYPE);
+            String name = "pile_block_" + type.getSerializedName();
+
+            net.minecraft.resources.ResourceLocation side = modLoc("block/ported/pile_block");
+            net.minecraft.resources.ResourceLocation top = modLoc("block/ported/pile_block_top");
+
+            switch (type) {
+                case CORE -> top = modLoc("block/ported/pile_block_core_ct");
+                case CONTROL -> top = modLoc("block/ported/pile_block_control_top_ct");
+                case FUEL_IN, AIR_IN -> side = modLoc("block/ported/pile_block_input_ct");
+                case FUEL_OUT, AIR_OUT -> side = modLoc("block/ported/pile_block_output_ct");
+                default -> { }
+            }
+
+            return net.minecraftforge.client.model.generators.ConfiguredModel.builder()
+                    .modelFile(models().cubeBottomTop(name, side, top, top))
+                    .build();
+        });
+    }
+
+    /** Die drei Meilergeraete: ein Wuerfel mit ihrer Modelltextur, nach der Blickrichtung gedreht. */
+    private void pileDeviceStates() {
+        // 1.7.10 OBJ models; the moving parts (fan, lever, rod) come from the renderers.
+        horizontalBlock(ModBlocks.PILE_LOADER.get(), models().getExistingFile(modLoc("block/machines/pile_loader")));
+        simpleBlockItem(ModBlocks.PILE_LOADER.get(), models().getExistingFile(modLoc("block/machines/pile_loader_item")));
+
+        horizontalBlock(ModBlocks.PILE_VENT.get(), models().getExistingFile(modLoc("block/machines/pile_vent")));
+        simpleBlockItem(ModBlocks.PILE_VENT.get(), models().getExistingFile(modLoc("block/machines/pile_vent_item")));
+
+        horizontalBlock(ModBlocks.PILE_CONTROL.get(), models().getExistingFile(modLoc("block/machines/pile_control")));
+        simpleBlockItem(ModBlocks.PILE_CONTROL.get(), models().getExistingFile(modLoc("block/machines/pile_control_item")));
+    }
+    /**
+     * Das Druckluftrohr: ein Kern plus je ein Arm zu den Seiten, an denen etwas angeschlossen ist.
+     * Das Original setzt das mit einem eigenen Renderer zusammen ({@code RenderPneumoTube}), hier
+     * uebernimmt das die Mehrteil-Blockstate.
+     */
+    private void pneumoTubeState() {
+        var block = ModBlocks.PNEUMATIC_TUBE.get();
+
+        var core = models().withExistingParent("pneumatic_tube_core", mcLoc("block/block"))
+                .texture("all", modLoc("block/pneumatic_tube"))
+                .texture("particle", modLoc("block/pneumatic_tube"))
+                .element().from(5, 5, 5).to(11, 11, 11)
+                .allFaces((dir, face) -> face.texture("#all")).end();
+
+        var arm = models().withExistingParent("pneumatic_tube_arm", mcLoc("block/block"))
+                .texture("all", modLoc("block/pneumatic_tube_straight"))
+                .texture("particle", modLoc("block/pneumatic_tube_straight"))
+                .element().from(5, 5, 0).to(11, 11, 5)
+                .allFaces((dir, face) -> face.texture("#all")).end();
+
+        var builder = getMultipartBuilder(block);
+        builder.part().modelFile(core).addModel().end();
+
+        // Norden ist die Grundstellung des Arms, die uebrigen Seiten entstehen durch Drehung.
+        builder.part().modelFile(arm).addModel()
+                .condition(com.hbm_m.block.network.PneumoTubeBlock.NORTH, true).end();
+        builder.part().modelFile(arm).rotationY(90).addModel()
+                .condition(com.hbm_m.block.network.PneumoTubeBlock.EAST, true).end();
+        builder.part().modelFile(arm).rotationY(180).addModel()
+                .condition(com.hbm_m.block.network.PneumoTubeBlock.SOUTH, true).end();
+        builder.part().modelFile(arm).rotationY(270).addModel()
+                .condition(com.hbm_m.block.network.PneumoTubeBlock.WEST, true).end();
+        builder.part().modelFile(arm).rotationX(270).addModel()
+                .condition(com.hbm_m.block.network.PneumoTubeBlock.UP, true).end();
+        builder.part().modelFile(arm).rotationX(90).addModel()
+                .condition(com.hbm_m.block.network.PneumoTubeBlock.DOWN, true).end();
+
+        simpleBlockItem(block, models().cubeAll("pneumatic_tube_inventory", modLoc("block/pneumatic_tube")));
+    }
+
+    /**
+     * Der Platzhalter des ICF-Lasers. Die Anschlussstellen tragen eine eigene Textur, sonst sieht
+     * er wie die uebrige Aussenhaut aus. Ein Gegenstand entfaellt - er faellt nie.
+     */
+    private void icfPhantomState() {
+        var block = ModBlocks.ICF_BLOCK.get();
+
+        getVariantBuilder(block).forAllStates(state -> {
+            boolean port = state.getValue(com.hbm_m.block.machines.icf.ICFPhantomBlock.PORT);
+            String name = port ? "icf_block_port" : "icf_block";
+            var tex = modLoc("block/" + (port ? "icf_block_port" : "ported/icf_block"));
+
+            return net.minecraftforge.client.model.generators.ConfiguredModel.builder()
+                    .modelFile(models().cubeAll(name, tex))
+                    .build();
+        });
+    }
+
+    /**
+     * Die sechs Laserbauteile. Kondensator und Turbolader tragen oben und unten eine andere
+     * Textur als an den Seiten, genau wie im Original.
+     */
+    private void icfLaserStates() {
+        simpleBlockWithItem(ModBlocks.ICF_LASER_CASING.get(),
+                models().cubeAll("icf_laser_casing", modLoc("block/icf_casing")));
+        simpleBlockWithItem(ModBlocks.ICF_LASER_PORT.get(),
+                models().cubeAll("icf_laser_port", modLoc("block/icf_port")));
+        simpleBlockWithItem(ModBlocks.ICF_LASER_CELL.get(),
+                models().cubeAll("icf_laser_cell", modLoc("block/icf_cell")));
+        simpleBlockWithItem(ModBlocks.ICF_LASER_EMITTER.get(),
+                models().cubeAll("icf_laser_emitter", modLoc("block/icf_emitter")));
+        simpleBlockWithItem(ModBlocks.ICF_LASER_CAPACITOR.get(),
+                models().cubeBottomTop("icf_laser_capacitor", modLoc("block/icf_capacitor_side"),
+                        modLoc("block/icf_capacitor_top"), modLoc("block/icf_capacitor_top")));
+        simpleBlockWithItem(ModBlocks.ICF_LASER_TURBOCHARGER.get(),
+                models().cubeBottomTop("icf_laser_turbocharger", modLoc("block/icf_turbocharger"),
+                        modLoc("block/icf_capacitor_top"), modLoc("block/icf_capacitor_top")));
+    }
+
 }
 //?}

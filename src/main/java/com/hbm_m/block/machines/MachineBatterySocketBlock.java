@@ -11,6 +11,7 @@ import com.hbm_m.blockentity.machines.BatterySocketBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
+import com.hbm_m.util.EnergyFormatter;
 
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
@@ -40,16 +41,14 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
 //?}
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
 
 //?}
 /**
  * 2×2×2 multiblock cube.
  */
-public class MachineBatterySocketBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachineBatterySocketBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.interfaces.ILookOverlay {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
@@ -209,6 +208,36 @@ public class MachineBatterySocketBlock extends BaseEntityBlock implements IMulti
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new BatterySocketBlockEntity(pos, state);
+    }
+
+    /**
+     * Порт MachineBatterySocket.printHook: заряд вставленной батареи.
+     * Логика передачи энергии в порту ещё не доделана, но HUD показывает
+     * фактическое содержимое слота (ориг. socket.syncStack/syncPower/syncMaxPower).
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof BatterySocketBlockEntity socket)) return;
+
+        net.minecraft.world.item.ItemStack stack = socket.getBatteryStack();
+        if (stack.isEmpty()) return;
+
+        long power = socket.getEnergyStored();
+        long max = socket.getMaxEnergyStored();
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal(
+                EnergyFormatter.format(power) + " / " + EnergyFormatter.format(max) + " HE"));
+
+        double percent = (double) power / (double) max;
+        int charge = (int) Math.floor(percent * 10_000D);
+        int color = ((int) (0xFF - 0xFF * percent)) << 16 | ((int) (0xFF * percent) << 8);
+        text.add(net.minecraft.network.chat.Component.literal((charge / 100D) + "%")
+                .withStyle(style -> style.withColor(net.minecraft.network.chat.TextColor.fromRgb(color))));
+
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                stack.getHoverName(), 0xffff00, 0x404000, text);
     }
 
     @Nullable

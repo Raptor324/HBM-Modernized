@@ -30,6 +30,7 @@ public class ModShovelItem extends ShovelItem implements ITooltipProvider {
     private static final String NBT_VEIN_MINER = "VeinMinerEnabled";
     private static final String NBT_SILK_TOUCH = "SilkTouchEnabled";
     private static final String NBT_FORTUNE = "FortuneEnabled";
+    private static final String NBT_PRE_FORTUNE = "PreModeFortune";
     private static final String NBT_PRE_SILK = "PreModeSilk";
 
     private static final Set<Block> EXCLUDED_BLOCKS = Set.of(
@@ -81,6 +82,14 @@ public class ModShovelItem extends ShovelItem implements ITooltipProvider {
                             .withStyle(color)));
         }
 
+        if (fortuneLevel > 0) {
+            boolean isActive = isFortuneEnabled(stack);
+            ChatFormatting color = isActive ? ChatFormatting.YELLOW : ChatFormatting.GOLD;
+            tooltip.add(Component.literal("  ")
+                    .append(Component.translatable("tooltip.hbm_m.fortune", fortuneLevel)
+                            .withStyle(color)));
+        }
+
         tooltip.add(Component.literal(""));
         tooltip.add(Component.translatable("tooltip.hbm_m.right_click").withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.translatable("tooltip.hbm_m.shift_right_click").withStyle(ChatFormatting.GRAY));
@@ -88,7 +97,8 @@ public class ModShovelItem extends ShovelItem implements ITooltipProvider {
 
     @Override
     public boolean isFoil(ItemStack stack) {
-        return super.isFoil(stack) || isVeinMinerEnabled(stack) || isSilkTouchEnabled(stack);
+        return super.isFoil(stack) || isVeinMinerEnabled(stack) || isSilkTouchEnabled(stack)
+                || isFortuneEnabled(stack);
     }
 
     private record ModeFeedback(Component text, ChatFormatting color) {}
@@ -113,22 +123,33 @@ public class ModShovelItem extends ShovelItem implements ITooltipProvider {
 
     private ModeFeedback cycleAbilities(ItemStack stack, Player player, boolean apply) {
         ModeFeedback feedback = null;
-        boolean anyActive = isVeinMinerEnabled(stack) || isSilkTouchEnabled(stack);
+        boolean anyActive = isVeinMinerEnabled(stack) || isSilkTouchEnabled(stack) || isFortuneEnabled(stack);
 
         if (!anyActive) {
             if (veinMinerLevel > 0) {
                 feedback = toggleVeinMiner(stack, player, true, apply);
             } else if (silkTouchLevel > 0) {
                 feedback = toggleSilkTouch(stack, player, true, apply);
+            } else if (fortuneLevel > 0) {
+                feedback = toggleFortune(stack, player, true, apply);
             }
         } else if (isVeinMinerEnabled(stack)) {
             feedback = toggleVeinMiner(stack, player, false, apply);
             if (silkTouchLevel > 0) {
                 feedback = toggleSilkTouch(stack, player, true, apply);
+            } else if (fortuneLevel > 0) {
+                feedback = toggleFortune(stack, player, true, apply);
             } else {
                 feedback = disableAllAbilities(stack, player, apply);
             }
         } else if (isSilkTouchEnabled(stack)) {
+            feedback = toggleSilkTouch(stack, player, false, apply);
+            if (fortuneLevel > 0) {
+                feedback = toggleFortune(stack, player, true, apply);
+            } else {
+                feedback = disableAllAbilities(stack, player, apply);
+            }
+        } else if (isFortuneEnabled(stack)) {
             feedback = disableAllAbilities(stack, player, apply);
         }
         return feedback;
@@ -138,7 +159,9 @@ public class ModShovelItem extends ShovelItem implements ITooltipProvider {
         if (apply) {
             PlatformHooks.putBoolean(stack, NBT_VEIN_MINER, false);
             PlatformHooks.putBoolean(stack, NBT_SILK_TOUCH, false);
+            PlatformHooks.putBoolean(stack, NBT_FORTUNE, false);
             clearModeSilkTouch(stack, player.level());
+            clearModeFortune(stack, player.level());
             playToggleSound(player, false);
         }
         return new ModeFeedback(
@@ -168,7 +191,9 @@ public class ModShovelItem extends ShovelItem implements ITooltipProvider {
             PlatformHooks.putBoolean(stack, NBT_VEIN_MINER, enable);
             if (enable) {
                 PlatformHooks.putBoolean(stack, NBT_SILK_TOUCH, false);
+                PlatformHooks.putBoolean(stack, NBT_FORTUNE, false);
                 clearModeSilkTouch(stack, player.level());
+                clearModeFortune(stack, player.level());
             }
             playToggleSound(player, enable);
         }
@@ -187,6 +212,8 @@ public class ModShovelItem extends ShovelItem implements ITooltipProvider {
             PlatformHooks.putBoolean(stack, NBT_SILK_TOUCH, enable);
             if (enable) {
                 PlatformHooks.putBoolean(stack, NBT_VEIN_MINER, false);
+                PlatformHooks.putBoolean(stack, NBT_FORTUNE, false);
+                clearModeFortune(stack, player.level());
                 applyModeSilkTouch(stack, player.level());
             } else {
                 clearModeSilkTouch(stack, player.level());
@@ -200,6 +227,48 @@ public class ModShovelItem extends ShovelItem implements ITooltipProvider {
                 ).withStyle(color),
                 color
         );
+    }
+
+    private ModeFeedback toggleFortune(ItemStack stack, Player player, boolean enable, boolean apply) {
+        if (apply) {
+            PlatformHooks.putBoolean(stack, NBT_FORTUNE, enable);
+            if (enable) {
+                PlatformHooks.putBoolean(stack, NBT_VEIN_MINER, false);
+                PlatformHooks.putBoolean(stack, NBT_SILK_TOUCH, false);
+                clearModeSilkTouch(stack, player.level());
+                applyModeFortune(stack, player.level());
+            } else {
+                clearModeFortune(stack, player.level());
+            }
+            playToggleSound(player, enable);
+        }
+        ChatFormatting color = enable ? ChatFormatting.YELLOW : ChatFormatting.RED;
+        return new ModeFeedback(
+                Component.translatable(
+                        enable ? "message.hbm_m.fortune.enabled" : "message.hbm_m.fortune.disabled",
+                        fortuneLevel
+                ).withStyle(color),
+                color
+        );
+    }
+
+    private void applyModeFortune(ItemStack stack, Level level) {
+        int vanilla = ItemHooks.getEnchantmentLevel(stack, level, "minecraft:fortune");
+        PlatformHooks.putInt(stack, NBT_PRE_FORTUNE, vanilla);
+        ItemHooks.setEnchantmentLevel(stack, level, "minecraft:fortune", Math.max(vanilla, fortuneLevel));
+    }
+
+    private void clearModeFortune(ItemStack stack, Level level) {
+        if (!PlatformHooks.hasItemTag(stack) || !PlatformHooks.contains(stack, NBT_PRE_FORTUNE)) {
+            return;
+        }
+        int vanilla = PlatformHooks.getInt(stack, NBT_PRE_FORTUNE);
+        if (vanilla > 0) {
+            ItemHooks.setEnchantmentLevel(stack, level, "minecraft:fortune", vanilla);
+        } else {
+            ItemHooks.removeEnchantment(stack, level, "minecraft:fortune");
+        }
+        PlatformHooks.remove(stack, NBT_PRE_FORTUNE);
     }
 
     private void applyModeSilkTouch(ItemStack stack, Level level) {
@@ -223,11 +292,14 @@ public class ModShovelItem extends ShovelItem implements ITooltipProvider {
 
     private ItemStack getToolForDrops(ItemStack stack, Level level) {
         ItemStack tool = stack.copy();
-        if (!isSilkTouchEnabled(stack)) {
-            return tool;
+        if (isFortuneEnabled(stack)) {
+            int vanilla = ItemHooks.getEnchantmentLevel(stack, level, "minecraft:fortune");
+            ItemHooks.setEnchantmentLevel(tool, level, "minecraft:fortune", Math.max(vanilla, fortuneLevel));
         }
-        int silk = ItemHooks.getEnchantmentLevel(stack, level, "minecraft:silk_touch");
-        ItemHooks.setEnchantmentLevel(tool, level, "minecraft:silk_touch", Math.max(silk, 1));
+        if (isSilkTouchEnabled(stack)) {
+            int silk = ItemHooks.getEnchantmentLevel(stack, level, "minecraft:silk_touch");
+            ItemHooks.setEnchantmentLevel(tool, level, "minecraft:silk_touch", Math.max(silk, 1));
+        }
         return tool;
     }
 
@@ -243,6 +315,10 @@ public class ModShovelItem extends ShovelItem implements ITooltipProvider {
 
     private boolean isSilkTouchEnabled(ItemStack stack) {
         return PlatformHooks.hasItemTag(stack) && PlatformHooks.getBoolean(stack, NBT_SILK_TOUCH);
+    }
+
+    private boolean isFortuneEnabled(ItemStack stack) {
+        return PlatformHooks.hasItemTag(stack) && PlatformHooks.getBoolean(stack, NBT_FORTUNE);
     }
 
     private void veinMine(Level level, BlockPos startPos, Block targetBlock, ItemStack stack, LivingEntity entity, int radius) {

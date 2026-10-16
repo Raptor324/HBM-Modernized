@@ -472,20 +472,22 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
     //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
-        this.entityData.define(DATA_LAUNCH_FACING, Direction.NORTH);
+        var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
+    *///?}
+        defs.define(DATA_LAUNCH_FACING, Direction.NORTH);
     }
 
+    //? if < 1.21.1 {
     @Override
     public Packet<ClientGamePacketListener> getAddEntityPacket() {
         return new ClientboundAddEntityPacket(this, MobCategory.MISC.ordinal());
     }
     //?} else {
     /*@Override
-    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
-        builder.define(DATA_LAUNCH_FACING, Direction.NORTH);
-    }
-
-    @Override
     public Packet<ClientGamePacketListener> getAddEntityPacket(net.minecraft.server.level.ServerEntity serverEntity) {
         return new ClientboundAddEntityPacket(this, serverEntity);
     }

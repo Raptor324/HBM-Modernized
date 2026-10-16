@@ -35,7 +35,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * Klassenkommentar in {@link MachineStirlingBlockEntity}. Kein GUI - Rechtsklick mit einem
  * Grosszahnrad repariert die Maschine nach einer Overspeed-Explosion, sonst passiert nichts.
  */
-public class MachineStirlingBlock extends BaseEntityBlock {
+public class MachineStirlingBlock extends BaseEntityBlock implements com.hbm_m.interfaces.ILookOverlay {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 16, 16);
 
@@ -74,6 +74,45 @@ public class MachineStirlingBlock extends BaseEntityBlock {
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineStirlingBlockEntity(pos, state);
+    }
+
+    /** Порт MachineStirling.printHook: тепло, отдача HE/t, процент и перегрев. */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineStirlingBlockEntity stirling)) return;
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal(stirling.getHeat() + "TU/t"));
+        text.add(net.minecraft.network.chat.Component.literal(
+                (stirling.hasCog() ? stirling.getEnergyStored() : 0) + "HE/t"));
+
+        if (!stirling.isCreative()) {
+            int maxHeat = stirling.getMaxHeat();
+            double percent = (double) stirling.getHeat() / (double) maxHeat;
+            int color = ((int) (0xFF - 0xFF * percent)) << 16 | ((int) (0xFF * percent) << 8);
+
+            if (percent > 1D)
+                color = 0xff0000;
+
+            final int heatColor = color;
+            text.add(net.minecraft.network.chat.Component.literal(((stirling.getHeat() * 1000 / maxHeat) / 10D) + "%")
+                    .withStyle(style -> style.withColor(net.minecraft.network.chat.TextColor.fromRgb(heatColor))));
+
+            if (stirling.getHeat() > maxHeat) {
+                boolean blink = System.currentTimeMillis() % 1000 < 500;
+                text.add(net.minecraft.network.chat.Component.literal("! ! ! OVERSPEED ! ! !")
+                        .withStyle(style -> style.withColor(net.minecraft.network.chat.TextColor.fromRgb(blink ? 0xff0000 : 0xffff00))));
+            }
+
+            if (!stirling.hasCog()) {
+                text.add(net.minecraft.network.chat.Component.literal("Gear missing!")
+                        .withStyle(style -> style.withColor(net.minecraft.network.chat.TextColor.fromRgb(0xff0000))));
+            }
+        }
+
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     //? if < 1.21.1 {

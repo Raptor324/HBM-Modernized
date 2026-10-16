@@ -77,7 +77,7 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
             if (level.isClientSide) {
                 return InteractionResult.SUCCESS;
             }
-            tankBE.setFilterFromIdentifier(stack);
+            tankBE.setTankTypeFromIdentifier(stack);
             Fluid tankType = tankBE.getFluidTank().getTankType();
             String nameKey;
             if (tankType == ModFluids.NONE.getSource() || tankType == Fluids.EMPTY) {

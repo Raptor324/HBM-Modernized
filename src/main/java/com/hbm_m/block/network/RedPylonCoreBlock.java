@@ -91,7 +91,20 @@ public abstract class RedPylonCoreBlock extends BaseEntityBlock {
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
+        // Contraption re-placement writes the core first: stamping dummies here would bury the
+        // blocks the engine still has to put back.
         if (level.isClientSide || oldState.getBlock() == this) return;
+        if (com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {
+            level.scheduleTick(pos, this, 2);
+            return;
+        }
+        fillDummies(level, pos);
+    }
+
+    @Override
+    public void tick(net.minecraft.world.level.block.state.BlockState state, net.minecraft.server.level.ServerLevel level,
+                        BlockPos pos, net.minecraft.util.RandomSource random) {
+        // Deferred from onPlace: the engine has finished putting its blocks back by now.
         fillDummies(level, pos);
     }
 
@@ -117,7 +130,12 @@ public abstract class RedPylonCoreBlock extends BaseEntityBlock {
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!level.isClientSide && newState.getBlock() != this) {
-            clearDummies(level, pos);
+            // The dummies travel with the engine like any other block, so wiping them inside a
+            // move window would take them out of the contraption. The wire bookkeeping still has
+            // to run: it is the only thing that clears this position out of the partners' lists.
+            if (!com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {
+                clearDummies(level, pos);
+            }
             if (level.getBlockEntity(pos) instanceof PylonBaseBlockEntity pylon) {
                 pylon.disconnectAll();
             }
@@ -177,12 +195,10 @@ public abstract class RedPylonCoreBlock extends BaseEntityBlock {
     //? if < 1.21.1 {
     @Override
     public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
-        addTooltip(tooltip);
-    }
     //?} else {
     /*@Override
     public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+    *///?}
         addTooltip(tooltip);
     }
-    *///?}
 }

@@ -43,7 +43,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * {@link MachineCokerBlock}. Kein GUI (siehe Klassenkommentar in
  * {@link MachineHephaestusBlockEntity}) - Rechtsklick tut nichts.
  */
-public class MachineHephaestusBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachineHephaestusBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.interfaces.ILookOverlay {
 
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
@@ -123,6 +123,32 @@ public class MachineHephaestusBlock extends BaseEntityBlock implements IMultiblo
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineHephaestusBlockEntity(pos, state);
+    }
+
+    /**
+     * Fadenkreuz-HUD: Port von {@code MachineHephaestus.printHook} - die Zeile "X TU"
+     * (ориг. bufferedHeat, синхронизируется через hud_heat в writeNbtData), Eingangstank
+     * ("->") und Ausgangstank ("<-").
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineHephaestusBlockEntity heatex)) return;
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal(
+                String.format(java.util.Locale.US, "%,d", heatex.getTotalHeat()) + " TU"));
+        com.hbm_m.inventory.fluid.tank.FluidTank[] tanks = heatex.getAllTanks();
+        for (int i = 0; i < tanks.length; i++) {
+            text.add(net.minecraft.network.chat.Component.literal(i == 0 ? "-> " : "<- ")
+                    .withStyle(i == 0 ? net.minecraft.ChatFormatting.GREEN : net.minecraft.ChatFormatting.RED)
+                    .append(net.minecraft.network.chat.Component.literal(
+                            com.hbm_m.inventory.fluid.FluidType.forFluid(tanks[i].getTankType()).getLocalizedName().getString()
+                                    + ": " + tanks[i].getFill() + "/" + tanks[i].getMaxFill() + "mB")));
+        }
+
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     @Nullable

@@ -16,14 +16,18 @@ import net.minecraft.world.entity.player.Inventory;
 
 import java.util.List;
 import java.util.Optional;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineBlastFurnace extends AbstractContainerScreen<MachineBlastFurnaceMenu> {
     private static final ResourceLocation GUI_TEXTURE =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/gui_blast_furnace.png");
-             *///?} else {
                         ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/gui_blast_furnace.png");
-            //?}
     private static final ResourceLocation AIRBLAST_TEXTURE =
             ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/fluids/airblast.png");
     private static final ResourceLocation FLUE_TEXTURE =

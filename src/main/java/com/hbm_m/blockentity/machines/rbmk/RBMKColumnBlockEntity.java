@@ -230,6 +230,9 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
         // it every column that still had a lid dropped it as an item *and* launched it as debris,
         // so a meltdown quietly duplicated the entire reactor's lids across the crater floor.
         com.hbm_m.block.machines.rbmk.RBMKColumnBlock.dropLids = false;
+        // try/finally: without it an exception inside the meltdown left the global flag cleared for
+        // the rest of the process, and RBMK lids stopped dropping when dismantled.
+        try {
         overpressureNets.clear();
 
         BlockPos originPos = origin.getBlockPos();
@@ -335,8 +338,10 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
             }
         }
 
-        com.hbm_m.block.machines.rbmk.RBMKColumnBlock.dropLids = true;
-        digamma = false;
+        } finally {
+            com.hbm_m.block.machines.rbmk.RBMKColumnBlock.dropLids = true;
+            digamma = false;
+        }
     }
 
     /**
@@ -551,6 +556,18 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
         reasimWater = tag.getInt("reasimWater");
         reasimSteam = tag.getInt("reasimSteam");
         lidState    = tag.contains("lidState") ? tag.getInt("lidState") : 1;
+    }
+
+    /**
+     * Порт оригинального TileEntityRBMKBase.getDiagData — источник данных для DODD-оверлея
+     * («Dump of Ordered Data Diagnostic», см. {@link com.hbm_m.block.machines.rbmk.RBMKColumnBlock#printHook}).
+     * Пишет только данные колонки: x/y/z/id ванилла сюда не добавляет (их пишет
+     * saveWithFullMetadata, а не writeNbtData), а виртуальный вызов writeNbtData доходит
+     * до переопределений конкретного типа колонки. bestEffortProvider() на 1.20.1 возвращает
+     * null (как в load), на 1.21.1 — клиентский Provider, нужный для записи ItemStack'ов.
+     */
+    public void getDiagData(CompoundTag tag) {
+        writeNbtData(tag, PlatformHooks.bestEffortProvider());
     }
 
 }

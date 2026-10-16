@@ -178,11 +178,7 @@ public class ChemicalPlantRecipe extends PlatformRecipe {
 
     public static final class Serializer extends PlatformRecipeSerializer<ChemicalPlantRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-        //? if fabric && < 1.21.1 {
-        /*public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "chemical_plant");
-        *///?} else {
         public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "chemical_plant");
-        //?}
 
 
         @Override

@@ -1,6 +1,7 @@
 package com.hbm_m.particle.custom;
 
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.main.MainRegistry;
 import com.hbm_m.particle.explosions.AbstractExplosionParticle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -127,7 +128,7 @@ public class AgentOrangeParticle extends AbstractExplosionParticle {
                     false
             );
 
-            System.out.println("[AgentOrange] Частица исчезла при касании блока: " + belowState.getBlock());
+            MainRegistry.LOGGER.debug("[AgentOrange] Частица исчезла при касании блока: {}", belowState.getBlock());
             this.remove();
             return;
         }
@@ -162,7 +163,7 @@ public class AgentOrangeParticle extends AbstractExplosionParticle {
 
         //  ВЫПОЛНЯЕМ НА СЕРВЕРНОМ ПОТОКЕ!
         if (!nearbyMobs.isEmpty()) {
-            System.out.println("[AgentOrange] Найдено " + nearbyMobs.size() + " сущностей");
+            MainRegistry.LOGGER.debug("[AgentOrange] Найдено {} сущностей", nearbyMobs.size());
 
             server.execute(() -> {
                 for (LivingEntity living : nearbyMobs) {
@@ -175,7 +176,7 @@ public class AgentOrangeParticle extends AbstractExplosionParticle {
                     boolean damaged = living.hurt(serverLevel.damageSources().magic(), 8.0F);
 
                     if (damaged) {
-                        System.out.println("[AgentOrange]  Нанесён урон: " + living.getName().getString());
+                        MainRegistry.LOGGER.debug("[AgentOrange]  Нанесён урон: {}", living.getName().getString());
 
                         //  WITHER 2 на 10 секунд
                         MobEffectInstance wither = new MobEffectInstance(
@@ -188,7 +189,7 @@ public class AgentOrangeParticle extends AbstractExplosionParticle {
                         );
                         living.addEffect(wither);
 
-                        System.out.println("[AgentOrange]  Применён Wither 2");
+                        MainRegistry.LOGGER.debug("[AgentOrange]  Применён Wither 2");
                     }
                 }
             });
@@ -242,7 +243,7 @@ public class AgentOrangeParticle extends AbstractExplosionParticle {
                                     3
                             );
                             if (success) {
-                                System.out.println("[AgentOrange] Земля заменена: " + finalPos);
+                                MainRegistry.LOGGER.debug("[AgentOrange] Земля заменена: {}", finalPos);
                                }
                         });
                         blocksCorrupted++;
@@ -271,7 +272,7 @@ public class AgentOrangeParticle extends AbstractExplosionParticle {
                                     3
                             );
                             if (success) {
-                                System.out.println("[AgentOrange] Листва заменена: " + finalPos);
+                                MainRegistry.LOGGER.debug("[AgentOrange] Листва заменена: {}", finalPos);
                                }
                         });
                         blocksCorrupted++;
@@ -281,7 +282,7 @@ public class AgentOrangeParticle extends AbstractExplosionParticle {
         }
 
         if (blocksCorrupted > 0) {
-            System.out.println("[AgentOrange] Проверено блоков: " + blocksChecked + ", коррумпировано: " + blocksCorrupted);
+            MainRegistry.LOGGER.debug("[AgentOrange] Проверено блоков: {}, коррумпировано: {}", blocksChecked, blocksCorrupted);
         }
     }
 

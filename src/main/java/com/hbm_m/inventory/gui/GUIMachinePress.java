@@ -14,9 +14,17 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /** Порт GUIMachinePress 1.7.10: текстура 176x214, слоты топлива/штампа/входа/выхода + 9 слотов хранилища,
  *  пламя-индикатор, вертикальная полоса прогресса и спидометр. */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachinePress extends AbstractContainerScreen<MachinePressMenu> {
 
     private static final ResourceLocation TEXTURE =

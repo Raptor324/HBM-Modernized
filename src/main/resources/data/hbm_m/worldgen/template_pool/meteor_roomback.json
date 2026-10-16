@@ -6,7 +6,7 @@
       "element": {
         "element_type": "minecraft:single_pool_element",
         "projection": "rigid",
-        "location": "hbm_m:meteor/room-fallback",
+        "location": "hbm_m:meteor/room10/room-fallback",
         "processors": "hbm_m:connection_fix"
       }
     }

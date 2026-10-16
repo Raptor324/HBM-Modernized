@@ -1,5 +1,13 @@
 package com.hbm_m.inventory.fluid.tank;
 
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
@@ -340,24 +348,12 @@ public class FluidTank implements Cloneable {
         return type != null && type != Fluids.EMPTY && type != ModFluids.NONE.getSource();
     }
 
-    //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif fabric {
-    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-    *///?} elif neoforge {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-    *///?}
+    @OnlyIn(Dist.CLIENT)
     public void renderTank(net.minecraft.client.gui.GuiGraphics guiGraphics, int x, int y, int width, int height) {
         renderTank(guiGraphics, x, y, width, height, 0);
     }
 
-    //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif fabric {
-    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-    *///?} elif neoforge {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-    *///?}
+    @OnlyIn(Dist.CLIENT)
     public void renderTank(net.minecraft.client.gui.GuiGraphics guiGraphics, int x, int y, int width, int height, int orientation) {
         Fluid drawType = getConfiguredFluid();
         int fluidAmt = getFluidAmountMb();
@@ -395,13 +391,7 @@ public class FluidTank implements Cloneable {
         com.mojang.blaze3d.systems.RenderSystem.disableBlend();
     }
 
-    //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif fabric {
-    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-    *///?} elif neoforge {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-    *///?}
+    @OnlyIn(Dist.CLIENT)
     public void renderTankInfo(net.minecraft.client.gui.GuiGraphics guiGraphics, net.minecraft.client.gui.Font font, int mouseX, int mouseY, int x, int y, int width, int height) {
         if (!(mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height)) return;
 

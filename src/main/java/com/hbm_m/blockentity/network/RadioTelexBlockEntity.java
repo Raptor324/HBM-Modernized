@@ -26,11 +26,11 @@ import java.util.List;
  * tick on {@code txChannel}, decodes incoming characters from {@code rxChannel} into a 5-line rx
  * buffer, and can print the received message as a physical paper item.
  * <p>
- * SCOPE-Vereinfachung: Das Original ist ein {@code BlockDummyable}-Multiblock (wie u.a. bereits bei
- * Boiler/Foundry dieses Ports vereinfacht) - hier ein einzelnes Block. Die OpenComputers-Komponente
- * ({@code ntm_telex}) entfaellt (keine OpenComputers-Entsprechung in diesem Fork). Die
- * Pause-Steuerzeichen-Verzoegerung des Originals entfaellt - Zeichen werden gleichmaessig 1/Tick
- * gesendet, End-of-Line/-Transmission-Steuerzeichen bleiben erhalten.
+ * <p>Er belegt wie im Original zwei Felder nebeneinander ({@code getDimensions {0,0,0,0,1,0}}).</p>
+ *
+ * <p><b>Nicht portiert:</b> die OpenComputers-Komponente ({@code ntm_telex}) - dafuer gibt es hier
+ * keine Anbindung. <b>Offen:</b> die Verzoegerung durch Pause-Steuerzeichen; Zeichen gehen
+ * gleichmaessig eines je Tick heraus, End-of-Line und End-of-Transmission bleiben erhalten.
  */
 public class RadioTelexBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IRadioTorchConfigurable {
 

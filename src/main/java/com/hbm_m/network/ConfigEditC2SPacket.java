@@ -1,5 +1,6 @@
 package com.hbm_m.network;
 
+import com.hbm_m.config.ConfigDebugLogger;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.config.schema.ConfigSchema;
 import com.hbm_m.config.schema.ConfigSide;
@@ -65,8 +66,11 @@ public class ConfigEditC2SPacket implements C2SPacket {
             // applyAll применяет только поля совпадающей стороны (SERVER),
             // игнорирует неизвестные ключи и клэмпит по границам схемы + валидирует.
             ModClothConfig cfg = ModClothConfig.get();
+            Map<String, String> before = ConfigSchema.snapshot(cfg, ConfigSide.SERVER);
             ConfigSchema.applyAll(cfg, ConfigSide.SERVER, msg.edits);
             ModClothConfig.saveServer();
+            // Debug-лог изменений: только фактически изменившиеся ключи (после клэмпа).
+            ConfigDebugLogger.logChanges(ConfigSide.SERVER, before);
 
             // Широковещательная синхронизация: все клиенты обновят серверные поля.
             MinecraftServer server = player.getServer();

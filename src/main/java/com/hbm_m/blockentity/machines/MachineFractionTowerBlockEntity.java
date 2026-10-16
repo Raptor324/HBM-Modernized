@@ -29,7 +29,7 @@ import net.minecraft.world.level.material.Fluid;
  * Vereinfachung ggue. Original: das 1.7.10-Original ist ein 4-hohes Multiblock, das Fluid zwischen gestapelten
  * Tuermen weiterreicht (Oel steigt auf, Fraktionen sinken ab). Diese Portierung ist bewusst ein Einzelblock -
  * Ein-/Ausgabe erfolgt direkt ueber das MK2-Rohrnetz an allen 6 Seiten, analog zum bereits portierten
- * {@link MachineGasCentrifugeBlockEntity}.
+ * {@link MachineGasCentBlockEntity}.
  */
 public class MachineFractionTowerBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
 
@@ -63,7 +63,7 @@ public class MachineFractionTowerBlockEntity extends BaseMachineBlockEntity impl
 
         for (Direction dir : Direction.values()) {
             BlockPos neighborPos = pos.relative(dir);
-            be.trySubscribe(be.tanks[0].getTankType(), level, neighborPos, dir);
+            be.trySubscribe(be.tanks[0], level, neighborPos, dir);
             be.tryProvide(be.tanks[1], level, neighborPos, dir);
             be.tryProvide(be.tanks[2], level, neighborPos, dir);
         }

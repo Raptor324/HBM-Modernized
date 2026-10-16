@@ -44,7 +44,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * vereinfacht-aber-funktional-aequivalenten Multiblocks in diesem Port), Textur aus den
  * vorhandenen crane_splitter_*-Assets zusammengesetzt.
  */
-public class MachineCraneSplitterBlock extends BaseEntityBlock implements IConveyorBelt, IEnterableBlock {
+public class MachineCraneSplitterBlock extends BaseEntityBlock implements IConveyorBelt, IEnterableBlock, com.hbm_m.interfaces.ILookOverlay {
 
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 4, 16);
@@ -147,6 +147,21 @@ public class MachineCraneSplitterBlock extends BaseEntityBlock implements IConve
         if (be instanceof MachineCraneSplitterBlockEntity splitter) {
             splitter.onItemEnter(level, pos, item);
         }
+    }
+
+    /**
+     * Порт {@code CraneSplitter.printHook}: "Splitter ratio: N:1". Оригинал показывает
+     * leftRatio:rightRatio; в этом порту отношение выражено одним значением ratio:1
+     * (см. SCOPE-упрощение в {@link MachineCraneSplitterBlockEntity}).
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineCraneSplitterBlockEntity splitter)) return;
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal("Splitter ratio: " + splitter.getRatio() + ":1"));
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     // ==================== screwdriver reconfiguration ====================

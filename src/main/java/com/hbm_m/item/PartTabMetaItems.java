@@ -8,6 +8,8 @@ import java.util.Map;
 import com.hbm_m.platform.PlatformHooks;
 
 import dev.architectury.registry.registries.RegistrySupplier;
+import java.util.function.Supplier;
+import net.minecraft.world.level.ItemLike;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
@@ -492,14 +494,16 @@ public final class PartTabMetaItems {
         return 0xFFFFFF;
     }
 
-    /** Все предметы с тинтом (для регистрации ItemColor в ClientSetup). */
-    public static Item[] tintedItems() {
-        List<Item> out = new ArrayList<>();
+    /** Поставщики предметов с тинтом — для Architectury ColorHandlerRegistry, вызываемого
+     * на фазе конструктора мода (реестры ещё не разрешены, .get() нельзя). */
+    @SuppressWarnings("unchecked")
+    public static Supplier<? extends ItemLike>[] tintedSuppliers() {
+        List<Supplier<? extends ItemLike>> out = new ArrayList<>();
         for (Entry e : ENTRIES) {
             if (e.tint == 0) continue;
             RegistrySupplier<Item> sup = ITEMS.get(e.id);
-            if (sup != null && sup.isPresent()) out.add(sup.get());
+            if (sup != null) out.add(sup);
         }
-        return out.toArray(new Item[0]);
+        return out.toArray(new Supplier[0]);
     }
 }

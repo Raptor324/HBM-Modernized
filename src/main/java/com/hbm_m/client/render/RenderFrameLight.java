@@ -1,5 +1,13 @@
 package com.hbm_m.client.render;
 
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+
 import net.minecraft.client.Minecraft;
 
 /**
@@ -8,13 +16,7 @@ import net.minecraft.client.Minecraft;
  * instanced draw; call {@link #ensureLightTextureUpdated()} at most once per client render frame.
  */
 
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
 public final class RenderFrameLight {
 
     private static int frameSerial;
@@ -37,7 +39,7 @@ public final class RenderFrameLight {
             //? if < 1.21.1 {
             mc.gameRenderer.lightTexture().updateLightTexture(mc.getFrameTime());
             //?} else {
-            /*// 1.21.1: getPartialTick() удалён — частичное время тика через DeltaTracker.Timer.
+            /*// 1.21.1: getPartialTick() was removed - partial tick time via DeltaTracker.Timer.
             mc.gameRenderer.lightTexture().updateLightTexture(mc.getTimer().getGameTimeDeltaPartialTick(true));
             *///?}
         }

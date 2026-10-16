@@ -89,25 +89,28 @@ public final class MissileTrackClient {
             return;
         }
         Minecraft mc = Minecraft.getInstance();
-        // SP pause menu: client tick still runs; do not predict ahead of frozen server pose.
-        if (mc.isPaused()) {
-            return;
-        }
-        
+
         ClientLevel level = mc.level;
         if (level == null) {
             clear(); // Очищаем ракеты, чтобы они не переносились в другую сессию
             return;
         }
 
-        tickStale();
+        // Мир на паузе (пауза-меню SP, Flashback-реплей на паузе, /tick freeze):
+        // поток поз остановлен, но клиентские тики продолжаются. Экстраполяцию
+        // выключаем — иначе ракета улетает от записанной траектории, а tickStale
+        // заодно удаляет «протухший» трек. Детект общий с NT-частицами:
+        // com.hbm_m.client.ClientWorldFreeze.
+        boolean frozen = com.hbm_m.client.ClientWorldFreeze.isWorldFrozen();
+
+        tickStale(frozen);
 
         for (TrackEntry entry : TRACKS.values()) {
-            entry.tick(level);
+            entry.tick(level, frozen);
         }
     }
 
-    private static void tickStale() {
+    private static void tickStale(boolean frozen) {
         long now = System.currentTimeMillis();
         ClientLevel level = Minecraft.getInstance().level;
         Iterator<Map.Entry<Integer, TrackEntry>> it = TRACKS.entrySet().iterator();
@@ -117,7 +120,16 @@ public final class MissileTrackClient {
                 it.remove();
                 continue;
             }
-            if (entry.curr != null && now - entry.lastPacketMillis > STALE_MS) {
+            if (entry.curr == null) {
+                continue;
+            }
+            if (frozen) {
+                // Пауза реплея: пакеты не идут, но данные трека считаем «свежими»
+                // сколько бы реального времени ни прошло — трек держим до разморозки.
+                entry.markFresh(now);
+                continue;
+            }
+            if (now - entry.lastPacketMillis > STALE_MS) {
                 it.remove();
             }
         }
@@ -253,8 +265,25 @@ public final class MissileTrackClient {
             return curr;
         }
 
-        void tick(ClientLevel level) {
+        /** Пока мир на паузе пакеты не идут: освежаем «свежесть», чтобы tickStale не удалил трек. */
+        void markFresh(long nowMillis) {
+            this.lastPacketMillis = nowMillis;
+        }
+
+        void tick(ClientLevel level, boolean frozen) {
             if (curr == null) {
+                return;
+            }
+
+            if (frozen) {
+                // Время не идёт: поза статична (xo = x ⇒ interpolate(partialTick) не двигает
+                // меш, экстраполяция не улетает), контрейл/факел не спавним — иначе в
+                // застывшей точке фонтан частиц.
+                xo = x;
+                yo = y;
+                zo = z;
+                yRotO = yaw;
+                xRotO = pitch;
                 return;
             }
 

@@ -72,7 +72,7 @@ public class VATSRenderHandler {
 
         ps.translate(0.0D, entity.getBbHeight() + 0.6D, 0.0D);
         ps.mulPose(mc.getEntityRenderDispatcher().cameraOrientation());
-        ps.scale(-0.025F, -0.025F, 0.025F);
+        com.hbm_m.platform.RenderHooks.scaleBillboardText(ps, 0.025F);
 
         Font font = mc.font;
         float x = -font.width(bar) / 2.0F;

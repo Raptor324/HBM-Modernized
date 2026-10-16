@@ -1,8 +1,5 @@
 package com.hbm_m.blockentity.machines;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,6 +30,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
@@ -56,6 +54,10 @@ public class MachineStrandCasterBlockEntity extends BaseHbmBlockEntity implement
     @Nullable public MaterialType type = null;
     public int amount = 0;
     private long lastProgressTick = 0;
+
+    /** Последние отправленные клиенту уровни баков (транзиентные; для синка GUI по изменению). */
+    private transient int lastSyncedWater = -1;
+    private transient int lastSyncedSteam = -1;
 
     private final FluidTank water = new FluidTank(ModFluids.WATER.getSource(), TANK_CAPACITY);
     private final FluidTank steam = new FluidTank(ModFluids.SPENTSTEAM.getSource(), TANK_CAPACITY);
@@ -144,28 +146,28 @@ public class MachineStrandCasterBlockEntity extends BaseHbmBlockEntity implement
 
     // ═══════════════════════════════ Логика ═══════════════════════════════
 
-    private @Nullable ItemCastMold getInstalledMold() {
+    public @Nullable ItemCastMold getInstalledMold() {
         ItemStack stack = inventory.getStackInSlot(SLOT_MOLD);
         return stack.getItem() instanceof ItemCastMold mold ? mold : null;
     }
 
-    /** Стоимость изложницы (mB за отливку) для рендера; 0 если изложницы нет. */
-    public int getMoldCostMb() {
+    /** Стоимость изложницы (квантов за отливку) для рендера; 0 если изложницы нет. */
+    public int getMoldCost() {
         ItemCastMold mold = getInstalledMold();
-        return mold == null ? 0 : mold.getMoldType().getCostMb();
+        return mold == null ? 0 : mold.getMoldType().getCost();
     }
 
-    /** Порт getCapacity: без изложницы буфер вмещает 50000 mB, с изложницей — 10 стоимостей. */
+    /** Порт getCapacity: без изложницы буфер вмещает 50 000 квантов, с изложницей — 10 стоимостей. */
     public int getCapacity() {
         ItemCastMold mold = getInstalledMold();
-        return mold == null ? 50_000 : mold.getMoldType().getCostMb() * 10;
+        return mold == null ? 50_000 : mold.getMoldType().getCost() * 10;
     }
 
+    /** Порт getWaterRequired: 5 mB воды на каждый квант стоимости изложницы. */
     private int getWaterRequired() {
         ItemCastMold mold = getInstalledMold();
         if (mold == null) return 50;
-        int quanta = (int) Math.round((double) mold.getMoldType().getCostMb() * com.hbm_m.item.material.ScrapItem.QUANTA_PER_INGOT / MaterialStack.MB_PER_INGOT);
-        return Math.max(1, quanta * 5);
+        return Math.max(1, mold.getMoldType().getCost() * 5);
     }
 
     /** Data-driven поиск результата (mold, material) — замена {@code mold.getOutput(type)}. */
@@ -202,18 +204,21 @@ public class MachineStrandCasterBlockEntity extends BaseHbmBlockEntity implement
             be.type = null;
         }
 
-        be.updateConnections(level, pos);
-
         int moldsToCast = be.maxProcessable();
 
         // Партия сливается после 10 секунд простоя или когда слоты почти полны
         if (moldsToCast > 0 && (moldsToCast >= 9 || level.getGameTime() >= be.lastProgressTick + 200)) {
             ItemCastMold mold = be.getInstalledMold();
 
-            be.amount -= moldsToCast * mold.getMoldType().getCostMb();
-
+            // Результат ищем ДО списания металла. В 1.7.10 mold.getOutput(type)
+            // детерминирован, здесь же data-driven поиск по рецептам: если рецепта
+            // нет — металл не расходуем (раньше металл уходил «в нишу», а слоты
+            // выхода оставались пустыми).
             ItemStack out = be.getResultFor(be.type, mold.getMoldType());
-            if (out != null) {
+
+            if (out != null && !out.isEmpty()) {
+                be.amount -= moldsToCast * mold.getMoldType().getCost();
+
                 int remaining = out.getCount() * moldsToCast;
                 int maxStackSize = out.getMaxStackSize();
 
@@ -234,17 +239,27 @@ public class MachineStrandCasterBlockEntity extends BaseHbmBlockEntity implement
                         }
                     }
                 }
+
+                be.water.drainMb(be.getWaterRequired() * moldsToCast);
+                be.steam.setFill(Math.min(be.steam.getMaxFill(),
+                        be.steam.getFill() + be.getWaterRequired() * moldsToCast));
+
+                be.lastProgressTick = level.getGameTime();
+                be.setChanged();
+            } else {
+                // Рецепта нет — откладываем следующую попытку как завершённую партию.
+                be.lastProgressTick = level.getGameTime();
             }
-
-            be.water.drainMb(be.getWaterRequired() * moldsToCast);
-            be.steam.setFill(Math.min(be.steam.getMaxFill(),
-                    be.steam.getFill() + be.getWaterRequired() * moldsToCast));
-
-            be.lastProgressTick = level.getGameTime();
-            be.setChanged();
         }
 
-        if (oldAmount != be.amount || oldType != be.type) {
+        // Порт networkPackNT(150) — в 1.7.10 баки рассылались клиенту каждый тик.
+        // Уровни воды/пара меняются БЕЗ изменения amount/type, поэтому без этого
+        // синка баки в GUI навсегда оставались пустыми («нет воды»).
+        if (oldAmount != be.amount || oldType != be.type
+                || be.water.getFill() != be.lastSyncedWater
+                || be.steam.getFill() != be.lastSyncedSteam) {
+            be.lastSyncedWater = be.water.getFill();
+            be.lastSyncedSteam = be.steam.getFill();
             be.syncToClient();
         }
     }
@@ -256,7 +271,7 @@ public class MachineStrandCasterBlockEntity extends BaseHbmBlockEntity implement
         ItemStack out = getResultFor(type, mold.getMoldType());
         if (out == null || out.isEmpty()) return 0;
 
-        int cost = mold.getMoldType().getCostMb();
+        int cost = mold.getMoldType().getCost();
         if (cost <= 0) return 0;
 
         int freeSlots = 0;
@@ -279,45 +294,10 @@ public class MachineStrandCasterBlockEntity extends BaseHbmBlockEntity implement
         return moldsToCast;
     }
 
-    private static class FluidPort {
-        final BlockPos pos;
-        final Direction dir;
-        FluidPort(BlockPos pos, Direction dir) {
-            this.pos = pos;
-            this.dir = dir;
-        }
-    }
-
-    /**
-     * Порт getFluidConPos: 4 порта вдоль стола — 2 у башни (влево-назад и вправо-назад)
-     * и 2 у конца стола (на 5 назад).
-     */
-    private List<FluidPort> getFluidConPositions(BlockPos corePos) {
-        Direction dir = getFacing();
-        Direction rot = dir.getCounterClockWise();
-        List<FluidPort> ports = new ArrayList<>(4);
-
-        // Port 1: rot * 2 - dir, facing rot
-        ports.add(new FluidPort(corePos.offset(rot.getStepX() * 2 - dir.getStepX(), 0, rot.getStepZ() * 2 - dir.getStepZ()), rot));
-        // Port 2: -rot - dir, facing rot.getOpposite()
-        ports.add(new FluidPort(corePos.offset(-rot.getStepX() - dir.getStepX(), 0, -rot.getStepZ() - dir.getStepZ()), rot.getOpposite()));
-        // Port 3: rot * 2 - dir * 5, facing rot
-        ports.add(new FluidPort(corePos.offset(rot.getStepX() * 2 - dir.getStepX() * 5, 0, rot.getStepZ() * 2 - dir.getStepZ() * 5), rot));
-        // Port 4: -rot - dir * 5, facing rot.getOpposite()
-        ports.add(new FluidPort(corePos.offset(-rot.getStepX() - dir.getStepX() * 5, 0, -rot.getStepZ() - dir.getStepZ() * 5), rot.getOpposite()));
-
-        return ports;
-    }
-
-    /** Порт updateConnections: вода и пар на 4 порта вдоль стола. */
-    private void updateConnections(Level level, BlockPos pos) {
-        for (FluidPort port : getFluidConPositions(pos)) {
-            trySubscribe(water.getTankType(), level, port.pos, port.dir);
-            if (steam.getFill() > 0) {
-                tryProvide(steam, level, port.pos, port.dir);
-            }
-        }
-    }
+    // Подписка в трубные сети НЕ здесь: в оригинале (fluidmk2) ей занимается система
+    // портов (setupAllPorts по getPorts()), у нас — тик частей с ролью FLUID_CONNECTOR
+    // (UniversalMachinePartBlockEntity.tickFluidConnector), который создаёт узлы FluidNet
+    // на клетках портов и подписывает этот контроллер (getReceivingTanks/getSendingTanks).
 
     private Direction getFacing() {
         BlockState state = getBlockState();
@@ -343,7 +323,7 @@ public class MachineStrandCasterBlockEntity extends BaseHbmBlockEntity implement
     /** Проверка: позиция налива — одна из 4 клеток верха башни (порт getMetalPourPos). */
     private boolean isTowerTopPourPos(BlockPos pourPos) {
         Direction dir = getFacing();
-        Direction rot = dir.getCounterClockWise();
+        Direction rot = dir.getClockWise();
         BlockPos rel = pourPos.subtract(worldPosition);
         if (rel.getY() != 2) return false;
 
@@ -365,7 +345,7 @@ public class MachineStrandCasterBlockEntity extends BaseHbmBlockEntity implement
     private boolean standardCheck(MaterialStack stack) {
         if (this.type != null && this.type != stack.type) return false;
         ItemCastMold mold = getInstalledMold();
-        int limit = mold != null ? mold.getMoldType().getCostMb() * 9 : this.getCapacity();
+        int limit = mold != null ? mold.getMoldType().getCost() * 9 : this.getCapacity();
         return !(this.amount >= limit || getInstalledMold() == null);
     }
 
@@ -374,7 +354,7 @@ public class MachineStrandCasterBlockEntity extends BaseHbmBlockEntity implement
     public @Nullable MaterialStack pour(Level level, BlockPos pos, Direction side, MaterialStack stack) {
         this.type = stack.type;
         ItemCastMold mold = getInstalledMold();
-        int limit = mold != null ? mold.getMoldType().getCostMb() * 9 : this.getCapacity();
+        int limit = mold != null ? mold.getMoldType().getCost() * 9 : this.getCapacity();
 
         if (stack.amount + this.amount <= limit) {
             this.amount += stack.amount;
@@ -406,6 +386,23 @@ public class MachineStrandCasterBlockEntity extends BaseHbmBlockEntity implement
 
     @Override
     public FluidTank[] getSendingTanks() { return new FluidTank[] { steam }; }
+
+    /**
+     * Порт getMaxRenderDistanceSquared/getRenderBoundingBox (1.7.10): AABB всей
+     * структуры (стол 2×7 + башня 2×2×3), иначе фрустум-куллинг отсекает машину,
+     * как только клетка-ядро уходит за экран. Бокс берётся из схемы хелпера
+     * (кэш по FACING) и на 1.20.1, и на 1.21.1 попадает в culler через
+     * {@link com.hbm_m.api.render.RenderBoundsProvider}.
+     */
+    @Override
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        BlockState state = getBlockState();
+        if (state.getBlock() instanceof com.hbm_m.block.machines.MachineStrandCasterBlock block) {
+            return block.getStructureHelper()
+                    .getRenderBoundingBox(worldPosition, getFacing(), 1.0);
+        }
+        return super.getRenderBoundingBox();
+    }
 
     @Override
     public boolean isLoaded() {
@@ -481,10 +478,12 @@ public class MachineStrandCasterBlockEntity extends BaseHbmBlockEntity implement
 
     // ═══════════════════════════ Синхронизация/GUI ═══════════════════════════
 
-    /** Полный NBT-sync клиенту (рендер уровня расплава). */
+    /** Полный NBT-sync клиенту (рендер уровня расплава + баки GUI). UPDATE_CLIENTS без
+     *  соседних апдейтов — в 1.7.10 networkPackNT соседей не трогал, а синк теперь может
+     *  идти каждый тик при активной подаче воды. */
     public void syncToClient() {
         if (level != null && !level.isClientSide()) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
         }
     }
 

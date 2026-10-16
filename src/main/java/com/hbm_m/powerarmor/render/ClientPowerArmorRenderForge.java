@@ -77,6 +77,10 @@ public final class ClientPowerArmorRenderForge {
         accessor.hbm_m$getLayers().add(new BismuthPowerArmorLayer((LivingEntityRenderer) renderer));
         accessor.hbm_m$getLayers().add(new DNTPowerArmorLayer((LivingEntityRenderer) renderer));
         accessor.hbm_m$getLayers().add(new GasMaskLayer((LivingEntityRenderer) renderer));
+        // Костюмы химзащиты - по слою на окрас (общая геометрия, разные текстуры).
+        for (com.hbm_m.item.hazmat.HazmatArmorItem.Variant variant : com.hbm_m.item.hazmat.HazmatArmorItem.Variant.values()) {
+            accessor.hbm_m$getLayers().add(new com.hbm_m.item.hazmat.render.HazmatArmorLayer<>((LivingEntityRenderer) renderer, variant));
+        }
     }
 
     private ClientPowerArmorRenderForge() {}

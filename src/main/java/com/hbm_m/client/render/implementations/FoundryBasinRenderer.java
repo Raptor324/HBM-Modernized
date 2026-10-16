@@ -12,32 +12,25 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.RandomSource;
-import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.state.BlockState;
 
 import org.joml.Matrix4f;
 
 /**
- * Порт {@code RenderFoundry} (1.7.10) — общий TESR бассейна и изложницы:
- *  - поверхность расплава: серая текстура {@code lava_gray} с тинтом moltenColor,
- *    полный яр свет (оригинал: lightmap 240/240, lighting off) + второй аддитивный
- *    проход (белый, alpha 0.3, SRC_ALPHA/ONE, depthMask off) — свечение раскалённого
- *    металла; поверхность двусторонняя (оригинал glDisable(GL_CULL_FACE));
- *  - установленная форма (слот 0) — плоским предметом на moldHeight (0.13);
- *  - отлитый предмет (слот 1) — плоским предметом на outHeight, а блочные отливки —
- *    полупрозрачным (alpha 0.3) верхним квадом с текстурой блока.
- * Геометрия высот 1:1 через {@link MachineFoundryBasinBlockEntity} (basin 0.75/0.875,
+ * Port of {@code RenderFoundry} (1.7.10) -- the shared TESR for the basin and the mold:
+ *  - melt surface: the gray {@code lava_gray} texture tinted with moltenColor,
+ *    full brightness (original: lightmap 240/240, lighting off) plus a second additive
+ *    pass (white, alpha 0.3, SRC_ALPHA/ONE, depthMask off) -- the glow of hot metal;
+ *    the surface is double-sided (the original called glDisable(GL_CULL_FACE));
+ *  - the installed mold (slot 0) -- as a flat item at moldHeight (0.13);
+ *  - the cast item (slot 1) -- as a flat item at outHeight, while block casts are drawn
+ *    as a real baked block model (ItemRenderer, as in the inventory), fitted
+ *    into the basin's cavity.
+ * Heights are 1:1 via {@link MachineFoundryBasinBlockEntity} (basin 0.75/0.875,
  * mold 0.25/0.25).
  */
 //? if < 1.21.1 {
@@ -53,38 +46,33 @@ public class FoundryBasinRenderer implements com.hbm_m.client.render.HbmBerBound
     private static final float INNER = 2f / 16f;
     private static final float INNER_MAX = 1f - INNER;
 
-    /** Базовый проход: полупрозрачный, без отсечения задних граней (оригинал double-sided). */
+    /** Base pass: translucent, no backface culling (the original was double-sided). */
     private static final RenderType METAL_RT = MetalRenderTypes.METAL;
-    /** Аддитивный проход свечения: белый, alpha 0.3, SRC_ALPHA/ONE, без записи глубины. */
+    /** Additive glow pass: white, alpha 0.3, SRC_ALPHA/ONE, no depth write. */
     private static final RenderType GLOW_RT = MetalRenderTypes.GLOW;
-    /** Отлитый блок: СПЛОШНОЙ квад из блочного атласа (оригинал: blend выключен → alpha 0.3 игнорировался). */
-    private static final RenderType BLOCK_GHOST_RT = RenderType.entityCutout(InventoryMenu.BLOCK_ATLAS);
-
     public FoundryBasinRenderer(BlockEntityRendererProvider.Context context) { }
-
-    private static final RandomSource RANDOM = RandomSource.create();
 
     @Override
     public void render(MachineFoundryBasinBlockEntity be, float partialTick, PoseStack poseStack,
                        MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
 
-        // ── Установленная форма (плоский предмет, оригинал drawItem) ──
+        // -- Installed mold (flat item, original drawItem) --
         ItemStack mold = be.getMoldSlot();
         if (!mold.isEmpty()) {
             drawFlatItem(be, bufferSource, poseStack, mold, be.getMoldHeight(), packedLight, packedOverlay);
         }
 
-        // ── Отлитый предмет ──
+        // -- Cast item --
         ItemStack out = be.getOutputSlot();
         if (!out.isEmpty()) {
-            if (out.getItem() instanceof BlockItem blockItem) {
-                drawGhostBlockTop(bufferSource, poseStack, blockItem, be.getOutputHeight(), packedLight);
+            if (out.getItem() instanceof BlockItem) {
+                drawSolidBlock(be, bufferSource, poseStack, out, packedLight, packedOverlay);
             } else {
                 drawFlatItem(be, bufferSource, poseStack, out, be.getOutputHeight(), packedLight, packedOverlay);
             }
         }
 
-        // ── Поверхность расплава ──
+        // -- Melt surface --
         float fill = be.getFillLevel();
         if (fill <= 0f) return;
 
@@ -98,18 +86,18 @@ public class FoundryBasinRenderer implements com.hbm_m.client.render.HbmBerBound
         Matrix4f m = poseStack.last().pose();
         int fullbright = 0xF000F0;
 
-        // Проход 1: тонированный металл (полный яр свет, двусторонний).
+        // Pass 1: tinted metal (full brightness, double-sided).
         VertexConsumer base = bufferSource.getBuffer(METAL_RT);
         metalQuad(base, m, surfaceY, r, g, b, 1f, fullbright);
 
-        // Проход 2: аддитивное свечение цветом металла (оригинал добавлял белый 0.3,
-        // но на fullbright-базе это клипало в чистый белый — тинт сохраняет оттенок).
+        // Pass 2: additive glow in the metal's color (the original added white at 0.3,
+        // but on the fullbright base that clipped to pure white -- the tint preserves the hue).
         VertexConsumer glow = bufferSource.getBuffer(GLOW_RT);
         metalQuad(glow, m, surfaceY, r, g, b, 0.3f, fullbright);
     }
 
 
-    /** float 0..1 -> byte для int-цвета хуков. */
+    /** Converts a {@code float} in 0..1 to a byte value for the hooks' int color. */
     private static int color(float c) {
         return (int) (c * 255.0f + 0.5f);
     }
@@ -123,10 +111,10 @@ public class FoundryBasinRenderer implements com.hbm_m.client.render.HbmBerBound
     }
 
     /**
-     * Позиционирование плоского предмета (форма или отливка) по центру чаши.
-     * Модели предметов центрированы вокруг (0,0,0), поэтому трансляция в (0.5, h, 0.5)
-     * со скейлом 0.75 точно центрирует предмет в каверне чаши (0.125..0.875).
-     * Вращение -90° вокруг X кладёт предмет лицом вверх без зеркалирования текстуры.
+     * Positions a flat item (mold or cast) at the center of the basin.
+     * Item models are centered around (0,0,0), so translating to (0.5, h, 0.5)
+     * with a 0.75 scale centers the item exactly in the basin's cavity (0.125..0.875).
+     * The -90 degree X rotation lays the item face-up without mirroring the texture.
      */
     private static void drawFlatItem(MachineFoundryBasinBlockEntity be, MultiBufferSource bufferSource,
                                      PoseStack poseStack, ItemStack stack, float height,
@@ -142,27 +130,27 @@ public class FoundryBasinRenderer implements com.hbm_m.client.render.HbmBerBound
         poseStack.popPose();
     }
 
-    /** Оригинал drawBlock: верхний квад блока на высоте отливки с обычным освещением мира (не fullbright). */
-    private static void drawGhostBlockTop(MultiBufferSource bufferSource, PoseStack poseStack,
-                                          BlockItem blockItem, float height, int packedLight) {
-        BlockState state = blockItem.getBlock().defaultBlockState();
-        BakedModel model = Minecraft.getInstance().getBlockRenderer()
-                .getBlockModelShaper().getBlockModel(state);
-        // Спрайт верхней грани (оригинал b.getIcon(1, meta)); фоллбек — particle icon.
-        TextureAtlasSprite sprite = model.getParticleIcon();
-        for (BakedQuad quad : model.getQuads(state, Direction.UP, RANDOM)) {
-            sprite = quad.getSprite();
-            break;
-        }
+    /**
+     * Cast BLOCK: render the real baked block model (as in the inventory) through
+     * ItemRenderer -- the same path as the ingot (drawFlatItem).
+     * Original (drawBlock): footprint 0.125..0.875 (scale 0.75), block top at outHeight
+     * (0.875). ItemRenderer.renderStatic centers the model itself via an internal
+     * translate(-0.5), so no extra compensation is needed -- a double shift pushed the
+     * block half a block sideways and sank it.
+     */
+    private static final float BLOCK_SCALE = 0.75F;
 
-        VertexConsumer vc = bufferSource.getBuffer(BLOCK_GHOST_RT);
-        Matrix4f m = poseStack.last().pose();
-
-        // NEW_ENTITY требует нормаль на вершину (иначе IllegalStateException — краш 1.21.1).
-        RenderHooks.vertexFull(vc, m, INNER,     height, INNER,     0xFF, 0xFF, 0xFF, 0xFF, sprite.getU(0f), sprite.getV(1f), OverlayTexture.NO_OVERLAY, packedLight, 0, 1, 0);
-        RenderHooks.vertexFull(vc, m, INNER,     height, INNER_MAX, 0xFF, 0xFF, 0xFF, 0xFF, sprite.getU(0f), sprite.getV(0f), OverlayTexture.NO_OVERLAY, packedLight, 0, 1, 0);
-        RenderHooks.vertexFull(vc, m, INNER_MAX, height, INNER_MAX, 0xFF, 0xFF, 0xFF, 0xFF, sprite.getU(1f), sprite.getV(0f), OverlayTexture.NO_OVERLAY, packedLight, 0, 1, 0);
-        RenderHooks.vertexFull(vc, m, INNER_MAX, height, INNER,     0xFF, 0xFF, 0xFF, 0xFF, sprite.getU(1f), sprite.getV(1f), OverlayTexture.NO_OVERLAY, packedLight, 0, 1, 0);
+    private static void drawSolidBlock(MachineFoundryBasinBlockEntity be, MultiBufferSource bufferSource,
+                                       PoseStack poseStack, ItemStack stack,
+                                       int packedLight, int packedOverlay) {
+        float baseY = be.getOutputHeight() - BLOCK_SCALE + 0.001f;
+        poseStack.pushPose();
+        poseStack.translate(0.5D, baseY, 0.5D);
+        poseStack.scale(BLOCK_SCALE, BLOCK_SCALE, BLOCK_SCALE);
+        Minecraft.getInstance().getItemRenderer().renderStatic(
+                stack, net.minecraft.world.item.ItemDisplayContext.NONE,
+                packedLight, packedOverlay, poseStack, bufferSource, be.getLevel(), 0);
+        poseStack.popPose();
     }
 
     @Override
@@ -170,7 +158,7 @@ public class FoundryBasinRenderer implements com.hbm_m.client.render.HbmBerBound
         return ShaderCompatibilityDetector.shouldRenderBlockEntityOffScreen();
     }
 
-    /** Кастомные слои: металл (translucent no-cull), свечение (additive, без глубины), призрак блока. */
+    /** Custom layers: metal (translucent no-cull), glow (additive, no depth), block ghost. */
     private static final class MetalRenderTypes extends RenderType {
         private static final RenderType METAL = create("hbm_m_foundry_metal",
                 DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP,

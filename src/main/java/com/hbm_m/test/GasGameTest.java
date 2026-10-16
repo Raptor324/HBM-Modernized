@@ -967,17 +967,29 @@ public final class GasGameTest {
     public static void gas_meltdownPumpsChunkRadiationUnderSky(GameTestHelper helper) {
         fillBox(helper, 0, 0, 0, 4, 4, 4, Blocks.STONE);
         // Колонка: воздух y=1..3, стекло y=4 (небо видно, свет проходит)
-        helper.setBlock(new BlockPos(2, 1, 2), Blocks.AIR);
+        helper.setBlock(CENTER, Blocks.AIR);
         helper.setBlock(new BlockPos(2, 2, 2), Blocks.AIR);
         helper.setBlock(new BlockPos(2, 3, 2), Blocks.AIR);
         helper.setBlock(new BlockPos(2, 4, 2), Blocks.GLASS);
-        BlockPos abs = helper.absolutePos(new BlockPos(2, 1, 2));
+        BlockPos abs = helper.absolutePos(CENTER);
         Level level = helper.getLevel();
         float baseline = ChunkRadiationManager.getRadiation(level, abs.getX(), abs.getY(), abs.getZ());
-        helper.setBlock(new BlockPos(2, 1, 2), ModBlocks.GAS_MELTDOWN.get());
+        Block gas = ModBlocks.GAS_MELTDOWN.get();
+        helper.setBlock(CENTER, gas);
         // Система чанк-радиации имеет собственный распад (×0.99 − 0.05 за цикл):
         // при непрерывной накачке +5/тик значение выходит на равновесие ~30 RAD.
-        helper.startSequence().thenExecuteAfter(160, () -> {
+        helper.startSequence().thenExecuteFor(160, () -> {
+            // The gas both drifts upward (tryMove) and disperses on a roll, so the source leaves
+            // (2,1,2) on most runs and the pump stops early. Re-seed only when the whole air column
+            // is empty — replacing it while the old block still floats above would stack sources
+            // and let the test pass on inflated output.
+            for (int y = 1; y <= 3; y++) {
+                if (helper.getBlockState(new BlockPos(2, y, 2)).is(gas)) {
+                    return;
+                }
+            }
+            helper.setBlock(CENTER, gas);
+        }).thenExecute(() -> {
             float rad = ChunkRadiationManager.getRadiation(level, abs.getX(), abs.getY(), abs.getZ());
             if (level.canSeeSky(abs)) {
                 // Арена под открытым небом — газ качает +5 RAD/тик в чанк.

@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.hbm_m.main.MainRegistry;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
@@ -168,11 +170,7 @@ public class CraterGenerator {
         }
 
         long startTime = System.currentTimeMillis();
-        System.out.println("\n========================================");
-        System.out.println("[CRATER_GENERATOR] START: Generating crater...");
-        System.out.println("Bomb Position: " + centerPos);
-        System.out.println("Total Rays: " + TOTAL_RAYS);
-        System.out.println("========================================\n");
+        MainRegistry.LOGGER.info("[CRATER_GENERATOR] START: generating crater at {}, total rays: {}", centerPos, TOTAL_RAYS);
 
         BlockPos below = groundCenterPos.below();
         BlockState belowState = level.getBlockState(below);
@@ -183,10 +181,10 @@ public class CraterGenerator {
         }
 
         collectSphericRaysAsync(level, groundCenterPos, craterBlocksSet, rings, terminationData, currentRayDebugList, () -> {
-            System.out.println("\n[CRATER_GENERATOR] Step 1: Finalizing crater structure...");
+            MainRegistry.LOGGER.debug("[CRATER_GENERATOR] Step 1: Finalizing crater structure...");
             if (!currentRayDebugList.isEmpty()) {
                 rayDebugData.put(groundCenterPos, new ArrayList<>(currentRayDebugList));
-                System.out.println("[DEBUG] Stored " + currentRayDebugList.size() + " rays for visualization");
+                MainRegistry.LOGGER.debug("[CRATER_GENERATOR] Stored {} rays for visualization", currentRayDebugList.size());
             }
 
             finalizeCrater(level, groundCenterPos, rings, craterBlocksSet,
@@ -196,17 +194,17 @@ public class CraterGenerator {
             MinecraftServer server = level.getServer();
             if (server != null) {
                 server.tell(new TickTask(5, () -> {
-                    System.out.println("\n[CRATER_GENERATOR] Step 1.5: Cleaning center sphere...");
+                    MainRegistry.LOGGER.debug("[CRATER_GENERATOR] Step 1.5: Cleaning center sphere...");
                     cleanupCenterSphere(level, groundCenterPos);
 
                     // [ЗАМЕНА ДЛЯ STEP 2]
                     server.tell(new TickTask(5, () -> {
-                        System.out.println("\n[CRATER_GENERATOR] Step 2: Calculating and applying dynamic damage zones SEQUENTIALLY...");
+                        MainRegistry.LOGGER.debug("[CRATER_GENERATOR] Step 2: Calculating and applying dynamic damage zones SEQUENTIALLY...");
 
                         double zone3Radius = Math.max(terminationData.maxDistance * ZONE_3_RADIUS_MULTIPLIER, 50);
                         double zone4Radius = Math.max(terminationData.maxDistance * ZONE_4_RADIUS_MULTIPLIER, 80);
 
-                        System.out.println("[CRATER_GENERATOR] Starting Zone Sequence...");
+                        MainRegistry.LOGGER.debug("[CRATER_GENERATOR] Starting Zone Sequence...");
 
                         // Запускаем цепочку с Зоны 3. Когда она закончится, она сама запустит Зону 4 и так далее.
                         processZone3(level, groundCenterPos, zone3Radius, zone4Radius,
@@ -303,7 +301,7 @@ public class CraterGenerator {
             }
         }
 
-        System.out.println("[CRATER] Center sphere cleanup: " + removed + " blocks removed");
+        MainRegistry.LOGGER.debug("[CRATER] Center sphere cleanup: {} blocks removed", removed);
     }
 
     private static double calculatePenetrationFromAngle(double verticalAngleDegrees) {
@@ -626,8 +624,7 @@ public class CraterGenerator {
         removeItemsInRadiusBatched(level, centerPos, (int) MAX_RAY_DISTANCE + 20);
 
         long endTime = System.currentTimeMillis();
-        System.out.println("[CRATER] Generation complete! Time: " +
-                (endTime - startTime) + "ms | Total Rays: " + TOTAL_RAYS);
+        MainRegistry.LOGGER.info("[CRATER] Generation complete! Time: {} ms | Total Rays: {}", endTime - startTime, TOTAL_RAYS);
     }
 
     private static void processAllRingsBatched(
@@ -791,7 +788,7 @@ public class CraterGenerator {
                     MinecraftServer server = level.getServer();
                     if (server != null) {
                         server.tell(new TickTask(server.getTickCount() + 1, () -> {
-                            System.out.println("\n[CRATER_GENERATOR] Step 3: Finalizing...");
+                            MainRegistry.LOGGER.debug("[CRATER_GENERATOR] Step 3: Finalizing...");
                             if (genFlags.applyBiomes()) {
                                 CraterBiomeHelper.applyBiomesAsync(level, centerPos, r3, r4);
                             }
@@ -799,7 +796,7 @@ public class CraterGenerator {
                                 applyDamageToEntities(level, centerPos, r3, r4, random);
                             }
                             cleanupItems(level, centerPos, r3 + 10);
-                            System.out.println("\n[CRATER_GENERATOR] All steps complete!");
+                            MainRegistry.LOGGER.info("[CRATER_GENERATOR] All steps complete!");
                         }));
                     }
                 });

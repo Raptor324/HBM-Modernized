@@ -19,9 +19,9 @@ import net.minecraft.world.level.block.state.BlockState;
  * {@link MachineFluidTankBlockEntity} (fill/drain, mode, explosion, MK2 network participation);
  * only the capacity and registration differ, same pattern as {@link Bat9000BlockEntity}.
  * <p>
- * SCOPE-Vereinfachung: Das Original ist ein {@code BlockDummyable}-Multiblock ({@code {4,0,2,1,2,1}}) -
- * hier reines Einzelblock ueber {@link com.hbm_m.block.machines.BarrelTankBlock} (wie bereits bei
- * Iron/Steel-Fass dieses Ports), statt der originalen mehrblockigen Struktur.
+ * <p>Er belegt wie im Original fuenf Felder in der Hoehe und drei mal drei in der Flaeche
+ * ({@code getDimensions {4,0,2,1,2,1}}). Angeschlossen wird ganz unten und ganz oben - je vier
+ * Zellen, damit sich ein Orbus von beiden Enden her verrohren laesst.
  */
 public class OrbusBlockEntity extends MachineFluidTankBlockEntity {
 

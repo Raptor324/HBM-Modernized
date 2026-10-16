@@ -351,4 +351,54 @@ public final class CrossLoaderParityGameTest {
                 "last putLong for same key must win on both versions");
         helper.succeed();
     }
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  Parity 13: GPU Culling Capability & Occlusion Config Parity (Milestone 1)
+    // ════════════════════════════════════════════════════════════════════════
+
+    @GameTest(template = "empty3x3x3", batch = "parity", timeoutTicks = 100)
+    public static void parity_gpuCullingCapability_safeInHeadless(GameTestHelper helper) {
+        // GpuCullingCapability must never crash when queried in headless server/GameTest
+        boolean supported = com.hbm_m.client.render.culling.GpuCullingCapability.isSupported();
+        String reason = com.hbm_m.client.render.culling.GpuCullingCapability.getUnsupportedReason();
+        // In headless GameTest, GLFW context is 0 or non-client, so supported must be false
+        check(!supported, "GPU culling must report unsupported in headless GameTest environment");
+        check(reason != null && !reason.isEmpty(), "Unsupported reason must be provided in headless GameTest");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty3x3x3", batch = "parity", timeoutTicks = 100)
+    public static void parity_occlusionCullingMode_configResolution(GameTestHelper helper) {
+        com.hbm_m.config.ModClothConfig cfg = new com.hbm_m.config.ModClothConfig();
+        // Default mode is GPU
+        check(cfg.occlusionCullingMode == com.hbm_m.config.ModClothConfig.OcclusionCullingMode.GPU,
+                "Default mode must be GPU");
+
+        // When GPU is unsupported (like in headless), getEffectiveOcclusionCullingMode falls back to OFF
+        check(cfg.getEffectiveOcclusionCullingMode() == com.hbm_m.config.ModClothConfig.OcclusionCullingMode.OFF,
+                "GPU mode on unsupported hardware must resolve to OFF");
+
+        // Manual CPU selection is always honored
+        cfg.occlusionCullingMode = com.hbm_m.config.ModClothConfig.OcclusionCullingMode.CPU;
+        check(cfg.getEffectiveOcclusionCullingMode() == com.hbm_m.config.ModClothConfig.OcclusionCullingMode.CPU,
+                "CPU mode must resolve to CPU");
+
+        // Manual OFF selection is always honored
+        cfg.occlusionCullingMode = com.hbm_m.config.ModClothConfig.OcclusionCullingMode.OFF;
+        check(cfg.getEffectiveOcclusionCullingMode() == com.hbm_m.config.ModClothConfig.OcclusionCullingMode.OFF,
+                "OFF mode must resolve to OFF");
+
+        // ConfigSchema registration verification
+        com.hbm_m.config.schema.ConfigField field = com.hbm_m.config.schema.ConfigSchema.get("occlusionCullingMode");
+        check(field != null, "occlusionCullingMode field must be registered in ConfigSchema");
+        check("occlusionCullingMode".equals(field.name()), "field.name() must match occlusionCullingMode");
+        check(field.getType() == com.hbm_m.config.schema.ConfigField.FieldType.ENUM, "Field type must be ENUM");
+
+        // Parse verification
+        check(field.parse("CPU") == com.hbm_m.config.ModClothConfig.OcclusionCullingMode.CPU, "parse CPU");
+        check(field.parse("GPU") == com.hbm_m.config.ModClothConfig.OcclusionCullingMode.GPU, "parse GPU");
+        check(field.parse("OFF") == com.hbm_m.config.ModClothConfig.OcclusionCullingMode.OFF, "parse OFF");
+
+        helper.succeed();
+    }
 }

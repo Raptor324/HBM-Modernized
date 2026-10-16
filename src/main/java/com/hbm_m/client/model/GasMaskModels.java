@@ -6,12 +6,20 @@ import net.minecraft.client.model.geom.builders.CubeListBuilder;
 import net.minecraft.client.model.geom.builders.LayerDefinition;
 import net.minecraft.client.model.geom.builders.MeshDefinition;
 import net.minecraft.client.model.geom.builders.PartDefinition;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Java-модели противогазов. Порты Techne-моделей {@link com.hbm.render.model.ModelGasMask}
  * и {@link com.hbm.render.model.ModelM65} (1.7.10): координаты кубов переносятся 1:1,
  * корневая часть "mask"/"filter" наследует позу головы игрока (см. GasMaskLayer).
  */
+@OnlyIn(Dist.CLIENT)
 public final class GasMaskModels {
 
     private GasMaskModels() {

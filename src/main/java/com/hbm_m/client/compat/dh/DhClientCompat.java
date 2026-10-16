@@ -1,5 +1,13 @@
 package com.hbm_m.client.compat.dh;
 
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+
 import org.joml.Matrix4f;
 
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -16,11 +24,7 @@ import net.minecraft.client.Minecraft;
  * EngineHandler в главном FBO — рисование в DH FBO полностью удалено
  * (запись геометрии в их FBO отравляла композит apply.frag — «чёрная земля»).
  */
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
- *///?}
+@OnlyIn(Dist.CLIENT)
 public final class DhClientCompat {
 
     private DhClientCompat() {}

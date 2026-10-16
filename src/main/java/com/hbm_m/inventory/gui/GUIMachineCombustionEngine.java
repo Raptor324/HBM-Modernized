@@ -20,6 +20,13 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Порт {@code GUICombustionEngine} (1.7.10): кнопка зажигания (79,13 / 35x15, оверлей
@@ -27,6 +34,7 @@ import net.minecraft.world.item.ItemStack;
  * (192,15) 4x8, расход = setting * 2 mB/t), индикатор комплекта поршней (80,51) из
  * (176,52+i*12), превью выработки HE/t. Позиции и регионы текстуры 1:1 с оригиналом.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineCombustionEngine extends AbstractContainerScreen<MachineCombustionEngineMenu> {
 
     private static final ResourceLocation TEXTURE =

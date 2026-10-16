@@ -42,7 +42,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * zu {@link MachinePressBlock}. Kein GUI (siehe Klassenkommentar in
  * {@link MachineSteamEngineBlockEntity}) - Rechtsklick tut nichts.
  */
-public class MachineSteamEngineBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachineSteamEngineBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.interfaces.ILookOverlay {
 
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
@@ -123,6 +123,37 @@ public class MachineSteamEngineBlock extends BaseEntityBlock implements IMultibl
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineSteamEngineBlockEntity(pos, state);
+    }
+
+    /** Порт MachineSteamEngine.printHook: паровой и выхлопной баки. */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineSteamEngineBlockEntity engine)) return;
+
+        var steam = engine.getSteamTank();
+        var spent = engine.getSpentSteamTank();
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal("-> ").withStyle(net.minecraft.ChatFormatting.GREEN)
+                .append(net.minecraft.network.chat.Component.literal("")
+                        .append(com.hbm_m.inventory.fluid.FluidType.forFluid(steam.getTankType()).getLocalizedName())
+                        .withStyle(net.minecraft.ChatFormatting.WHITE))
+                .append(net.minecraft.network.chat.Component.literal(
+                        ": " + String.format(java.util.Locale.US, "%,d", steam.getFill())
+                        + " / " + String.format(java.util.Locale.US, "%,d", steam.getMaxFill()) + "mB")
+                        .withStyle(net.minecraft.ChatFormatting.WHITE)));
+        text.add(net.minecraft.network.chat.Component.literal("<- ").withStyle(net.minecraft.ChatFormatting.RED)
+                .append(net.minecraft.network.chat.Component.literal("")
+                        .append(com.hbm_m.inventory.fluid.FluidType.forFluid(spent.getTankType()).getLocalizedName())
+                        .withStyle(net.minecraft.ChatFormatting.WHITE))
+                .append(net.minecraft.network.chat.Component.literal(
+                        ": " + String.format(java.util.Locale.US, "%,d", spent.getFill())
+                        + " / " + String.format(java.util.Locale.US, "%,d", spent.getMaxFill()) + "mB")
+                        .withStyle(net.minecraft.ChatFormatting.WHITE)));
+
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     @Nullable

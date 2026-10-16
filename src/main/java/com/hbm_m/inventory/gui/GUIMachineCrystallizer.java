@@ -19,20 +19,23 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import dev.architectury.fluid.FluidStack;
 import net.minecraft.world.level.material.Fluid;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * GUI для Crystallizer - порт с 1.7.10 GUICrystallizer.
  * UV-координаты и layout соответствуют оригиналу.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineCrystallizer extends GuiInfoScreen<MachineCrystallizerMenu> {
 
-    //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation TEXTURE = new ResourceLocation(
-            RefStrings.MODID, "textures/gui/processing/gui_crystallizer_alt.png");
-    *///?} else {
         private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             RefStrings.MODID, "textures/gui/processing/gui_crystallizer_alt.png");
-    //?}
 
 
     private static final int TANK_WIDTH = 16;

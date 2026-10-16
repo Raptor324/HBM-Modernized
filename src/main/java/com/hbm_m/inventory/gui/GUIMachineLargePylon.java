@@ -9,12 +9,20 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * GUI для Large Pylon (WIP).
  * Использует текстуру кристаллизатора как заглушку — замените на gui_large_pylon.png,
  * когда текстура будет готова.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineLargePylon extends GuiInfoScreen<MachineLargePylonMenu> {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(

@@ -31,15 +31,18 @@ public final class EnergySubscriptions {
     private static final int DELAY_NOTHING = 20;
     private static final int DELAY_CONNECT_NET = 10;
     private static final int DELAY_PROVIDE_DIRECT = 1;
-
     /**
      * Единая карта backoff-состояний и реестр для централизованного драйвера подписок.
-     * Слабые ключи и значения: выгрузка чанка/GC сами убирают запись — отдельная
+     * Слабые ключи: выгрузка чанка/GC сами убирают запись — отдельная
      * периодическая чистка не нужна (раньше тут был второй strong-key HashMap с
      * full-scan removeIf при каждом update() — главный пожиратель TPS).
      */
+    // Weak KEYS only. BackoffState is referenced by nothing but this map, so weakValues() made
+    // every entry weakly reachable the moment it was created and the first GC emptied the whole
+    // registry while the block entities were still alive. Machines whose own ticker does not call
+    // ensureNetworkInitialized (71 of them) then never subscribed again and got no power at all.
     private static final Map<BlockEntity, BackoffState> REGISTRY =
-            new MapMaker().concurrencyLevel(1).weakKeys().weakValues().makeMap();
+            new MapMaker().concurrencyLevel(1).weakKeys().makeMap();
 
     private static final class BackoffState {
         int receiverDelay;
@@ -125,6 +128,9 @@ public final class EnergySubscriptions {
                 if (node.net != null && node.net.isValid()) {
                     if (be instanceof IEnergyProvider prov) node.net.addProvider(prov);
                     if (be instanceof IEnergyReceiver rec) node.net.addReceiver(rec);
+                    // Buffer-режим подписывается в обход trySubscribe — скан чужих FE
+                    // у граней junction-нода запускаем здесь.
+                    node.net.refreshForeign(level, be.getBlockPos());
                 }
                 return;
             } else {
@@ -216,11 +222,13 @@ public final class EnergySubscriptions {
         boolean any = false;
         for (Direction dir : Direction.values()) {
             BlockPos p = center.relative(dir);
+            if (!level.hasChunkAt(p)) continue;
             any |= rec.trySubscribe(level, p.getX(), p.getY(), p.getZ(), dir);
         }
         for (BlockPos pos : extra) {
             for (Direction dir : Direction.values()) {
                 BlockPos p = pos.relative(dir);
+                if (!level.hasChunkAt(p)) continue;
                 any |= rec.trySubscribe(level, p.getX(), p.getY(), p.getZ(), dir);
             }
         }
@@ -231,11 +239,13 @@ public final class EnergySubscriptions {
         boolean any = false;
         for (Direction dir : Direction.values()) {
             BlockPos p = center.relative(dir);
+            if (!level.hasChunkAt(p)) continue;
             any |= prov.tryProvide(level, p.getX(), p.getY(), p.getZ(), dir);
         }
         for (BlockPos pos : extra) {
             for (Direction dir : Direction.values()) {
                 BlockPos p = pos.relative(dir);
+                if (!level.hasChunkAt(p)) continue;
                 any |= prov.tryProvide(level, p.getX(), p.getY(), p.getZ(), dir);
             }
         }

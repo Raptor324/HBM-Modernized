@@ -12,8 +12,16 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /** Port of {@code GUIMachineDiFurnaceRTG} (1.7.10 Original). */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineDifurnaceRtg extends AbstractContainerScreen<MachineDifurnaceRtgMenu> {
 
     private static final ResourceLocation TEXTURE =
@@ -25,7 +33,7 @@ public class GUIMachineDifurnaceRtg extends AbstractContainerScreen<MachineDifur
         super(menu, playerInventory, title);
         this.difurnace = menu.getBlockEntity();
         this.imageWidth = 176;
-        this.imageHeight = 184;
+        this.imageHeight = 166;
         this.inventoryLabelY = this.imageHeight - 96 + 2;
     }
 
@@ -43,7 +51,7 @@ public class GUIMachineDifurnaceRtg extends AbstractContainerScreen<MachineDifur
 
         if (difurnace != null) { // тайл может отсутствовать в реплее Flashback
             String progress = "Progress: " + difurnace.getProgress() + " / " + difurnace.getMaxProgress();
-            guiGraphics.drawString(this.font, progress, this.leftPos + 8, this.topPos + 90, 0x404040, false);
+            guiGraphics.drawString(this.font, progress, this.leftPos + 8, this.topPos + 74, 0x404040, false);
         }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);

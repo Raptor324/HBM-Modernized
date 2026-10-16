@@ -24,11 +24,7 @@ import net.minecraft.world.entity.player.Inventory;
 public class GUIBatterySocket extends AbstractContainerScreen<BatterySocketMenu> {
 
     private static final ResourceLocation TEXTURE =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/gui/storage/gui_battery_socket.png");
-            *///?} else {
                         ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/storage/gui_battery_socket.png");
-            //?}
 
 
     public GUIBatterySocket(BatterySocketMenu menu, Inventory inv, Component title) {
@@ -124,7 +120,9 @@ public class GUIBatterySocket extends AbstractContainerScreen<BatterySocketMenu>
             graphics.renderTooltip(font, tooltip, Optional.empty(), mouseX, mouseY);
         }
         if (isMouseOver(mouseX, mouseY, 125, 35, 16, 16)) {
-            int ord = menu.getPriorityOrdinal();
+            // Ординал 5-уровневого enum'а циклится 1..3 (LOW..HIGH); лейблы —
+            // старые 3-уровневые, ключи смещены на -1.
+            int ord = Math.max(1, Math.min(menu.getPriorityOrdinal(), 3)) - 1;
             String key = "gui.hbm_m.battery.priority." + ord;
             List<Component> tooltip = new ArrayList<>();
             tooltip.add(Component.translatable(key));

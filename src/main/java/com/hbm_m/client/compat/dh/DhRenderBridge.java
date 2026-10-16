@@ -1,5 +1,13 @@
 package com.hbm_m.client.compat.dh;
 
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+
 import org.joml.Matrix4f;
 
 import com.hbm_m.main.MainRegistry;
@@ -25,11 +33,7 @@ import com.seibel.distanthorizons.api.methods.events.sharedParameterObjects.DhAp
  * ВАЖНО: класс трогается только при установленном DH (см. register()/EngineHandler),
  * поэтому compileOnly-зависимость безопасна в рантайме без DH.
  */
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
- *///?}
+@OnlyIn(Dist.CLIENT)
 public final class DhRenderBridge extends DhApiBeforeApplyShaderRenderEvent {
 
     private static volatile boolean registered = false;
@@ -105,14 +109,29 @@ public final class DhRenderBridge extends DhApiBeforeApplyShaderRenderEvent {
             // факт DH-кадра и его проекцию; весь дальний контент рисует
             // EngineHandler (AFTER_WEATHER) в главный FBO.
             boolean irisLod = isIrisLodOverrideActive();
-            DhClientState.beginDhPass(dhProj, rp.nearClipPlane, rp.farClipPlane, irisLod);
+            boolean reverseDepth = isReverseZDepthActive();
+            // Клип-плоскости декода: нативный рендер — точная репликация
+            // RenderUtil.setDhProjectionMatrix (с клампом near до 7.5 без
+            // height-override); под Iris-override — сырые rp-значения (Iris
+            // строит перспективу из них без клампа).
+            float[] nativePlanes = irisLod ? null : resolveNativeRenderPlanes();
+            float near, far;
+            if (nativePlanes != null) {
+                near = nativePlanes[0];
+                far = nativePlanes[1];
+            } else {
+                near = rp.nearClipPlane;
+                far = rp.farClipPlane;
+            }
+            DhClientState.beginDhPass(dhProj, near, far, irisLod, reverseDepth);
             DhClientState.endDhPass();
             if (++clipDiagCounter % 600 == 1) {
                 MainRegistry.LOGGER.debug(
-                        "HBM DH depth clips: rp=(near={}, far={}), irisLodOverride={}, effective=(near={}, far={})",
+                        "HBM DH depth clips: rp=(near={}, far={}), nativePlanes={}, reverseZ={}, decode=(near={}, far={})",
                         String.format("%.2f", rp.nearClipPlane), String.format("%.2f", rp.farClipPlane),
-                        irisLod,
-                        String.format("%.2f", DhClientState.dhNear()), String.format("%.2f", DhClientState.dhFar()));
+                        nativePlanes != null,
+                        reverseDepth,
+                        String.format("%.2f", near), String.format("%.2f", far));
             }
         } catch (Throwable t) {
             // Никогда не роняем рендер DH. Полный стек — один раз, дальше кратко.
@@ -205,6 +224,139 @@ public final class DhRenderBridge extends DhApiBeforeApplyShaderRenderEvent {
         } catch (Throwable ignored) {}
         // Фолбэк: активный пак → предполагаем override
         return com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive();
+    }
+
+    /**
+     * true, если DH 3.3.1+ рендерит LOD-глубину в конвенции REVERSE_Z
+     * (близко=1, даль/небо=0, glClearDepth = EDhRenderDepth.farDepth = 0).
+     *
+     * ИСТОЧНИК ИСТИНЫ — сама DH: приватное поле RenderUtil.RENDER_DEF
+     * хранит забинденный AbstractDhRenderApiDefinition, и его запрос
+     * направления глубины — ровно то, чем DH сам выбирает конвенцию
+     * (REVERSE_Z везде, кроме «Iris-пак активен и пак не reverse-Z»;
+     * байткод GlDhRenderApiDefinition 3.3.2 подтверждает). Опрашивается
+     * каждый DH-кадр: пользователь может включать/выключать шейдеры на лету.
+     *
+     * ИМЯ МЕТОДА ЗАВИСИТ ОТ ВЕРСИИ DH (оба возвращают енум с name()=="REVERSE_Z"):
+     *  - DH <= 3.3.1: getRenderDepth();
+     *  - DH >= 3.3.2: getDepthDirection() (переименование, семантика та же).
+     *   БЕЗ фолбэка на getDepthDirection детект в 3.3.2 молча падал в
+     *   FORWARD_Z, реверс-глубина без пака декодировалась форвард-формулой
+     *   (близкий LOD → «дальний» depth ≈ 1.0) — гриб просвечивал сквозь
+     *   LOD-рельеф.
+     *
+     * ПОЧЕМУ НЕ МАТРИЦА ИЗ СОБЫТИЯ: rp.dhProjectionMatrix — это ФОРВАРД-копия
+     * с сырыми клип-плоскостями (проверено логом 3.3.1: декод матрицы даёт
+     * ровно rp.near/far, признаков реверса нет), реальную реверс-матрицу DH
+     * строит отдельно для своего GL-стейта (RenderUtil.setClipPlanes мутирует
+     * другой экземпляр). Детект по знаку m32 события давал ложно-FORWARD и
+     * реверс-глубина декодировалась форвард-формулой — вся копия глубины
+     * уходила под fade-маску («гриб сквозь блоки», DH 3.3.1 без пака).
+     *
+     * Фолбэк (рефлексия не удалась): false — семантика DH <= 3.2.x.
+     */
+    private static boolean isReverseZDepthActive() {
+        try {
+            if (reverseDefField == null) {
+                Class<?> renderUtil = Class.forName("com.seibel.distanthorizons.core.util.RenderUtil");
+                try {
+                    reverseDefField = renderUtil.getDeclaredField("RENDER_DEF");
+                } catch (NoSuchFieldException ignored) {}
+                if (reverseDefField == null) {
+                    try {
+                        reverseDefField = renderUtil.getDeclaredField("RENDER_API_DEF");
+                    } catch (NoSuchFieldException ignored) {}
+                }
+                if (reverseDefField == null) {
+                    return false;
+                }
+                reverseDefField.setAccessible(true);
+                Class<?> defClass = Class.forName(
+                        "com.seibel.distanthorizons.core.wrapperInterfaces.render.AbstractDhRenderApiDefinition");
+                // DH <= 3.3.1 → getRenderDepth(); DH >= 3.3.2 → getDepthDirection().
+                try {
+                    reverseDepthMethod = defClass.getMethod("getRenderDepth");
+                } catch (NoSuchMethodException ignored) {
+                    reverseDepthMethod = defClass.getMethod("getDepthDirection");
+                }
+            }
+            Object def = reverseDefField.get(null);
+            if (def == null) {
+                return false; // DH ещё не инициализирован — форвард по умолчанию
+            }
+            Object depth = reverseDepthMethod.invoke(def);
+            boolean reverse = depth instanceof Enum<?> e && "REVERSE_Z".equals(e.name());
+            if (reverse != lastReverseDepth) {
+                lastReverseDepth = reverse;
+                MainRegistry.LOGGER.info("HBM DH depth convention: {}", reverse ? "REVERSE_Z" : "FORWARD_Z");
+            }
+            return reverse;
+        } catch (Throwable ignored) {}
+        return false;
+    }
+
+    private static java.lang.reflect.Field reverseDefField;
+    private static java.lang.reflect.Method reverseDepthMethod;
+    private static boolean lastReverseDepth;
+
+    // ── Нативные клип-плоскости рендера DH ──────────────────────────────────
+
+    private static java.lang.reflect.Method nearClipBlocksMethod;
+    private static java.lang.reflect.Method heightOverrideMethod;
+    private static java.lang.reflect.Method farClipMethod;
+    private static boolean nativePlanesResolved;
+
+    /**
+     * Клип-плоскости, КОТОРЫМИ DH реально растеризовал LOD-глубину в этом
+     * кадре — точная репликация RenderUtil.setDhProjectionMatrix (байткод
+     * 3.2.x/3.3.x идентичен в этой части):
+     * <pre>
+     * near = getNearClipPlaneInBlocks();                      // R-формула, RD-зависимая
+     * if (getHeightBasedNearClipOverrideBlockDistance() == -1)
+     *     near = min(near, 7.5f);                             // кламп БЕЗ override
+     * far  = getFarClipPlaneDistanceInBlocks();
+     * </pre>
+     *
+     * КРИТИЧНО (DH 3.3.1, rd≥3): rp.nearClipPlane несёт НЕклампленное R
+     * (при rd=8 R≈44, матрица же использует 7.5). Декод реверс-глубины по
+     * сырому R кодировал горы в разы дальше реального (1000 → 3570) —
+     * «гриб перед LOD-горами, чем больше RD тем ближе». При rd≤2 R&lt;7.5,
+     * кламп не срабатывал — потому маленькие RD выглядели корректными.
+     *
+     * @return {near, far} или null (рефлексия не удалась — фолбэк на rp).
+     */
+    private static float[] resolveNativeRenderPlanes() {
+        if (!nativePlanesResolved) {
+            nativePlanesResolved = true;
+            try {
+                Class<?> renderUtil = Class.forName("com.seibel.distanthorizons.core.util.RenderUtil");
+                nearClipBlocksMethod = renderUtil.getMethod("getNearClipPlaneInBlocks");
+                farClipMethod = renderUtil.getMethod("getFarClipPlaneDistanceInBlocks");
+                try {
+                    heightOverrideMethod = renderUtil.getMethod("getHeightBasedNearClipOverrideBlockDistance");
+                } catch (NoSuchMethodException ignored) {}
+            } catch (Throwable t) {
+                MainRegistry.LOGGER.debug("HBM DH native planes reflection unavailable: {}", t.toString());
+                return null;
+            }
+        }
+        try {
+            float near = (Float) nearClipBlocksMethod.invoke(null);
+            // Кламп только при НЕактивном height-based override (ровно как в DH).
+            if (heightOverrideMethod != null) {
+                float override = (Float) heightOverrideMethod.invoke(null);
+                if (override == -1.0F) {
+                    near = Math.min(near, 7.5F);
+                }
+            } else {
+                near = Math.min(near, 7.5F);
+            }
+            float far = (Float) farClipMethod.invoke(null);
+            if (near > 0.0F && far > near && Float.isFinite(near) && Float.isFinite(far)) {
+                return new float[] {near, far};
+            }
+        } catch (Throwable ignored) {}
+        return null;
     }
 
     /**

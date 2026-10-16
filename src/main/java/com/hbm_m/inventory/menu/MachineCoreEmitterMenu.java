@@ -53,7 +53,7 @@ public class MachineCoreEmitterMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineCoreEmitterBlockEntity coreEmitterBlockEntity) {
             return coreEmitterBlockEntity;
         }
-        throw new IllegalStateException("No MachineCoreEmitterBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":core_emitter_menu");
+        throw new MenuBlockEntityMissingException("No MachineCoreEmitterBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":core_emitter_menu");
     }
 
     public MachineCoreEmitterBlockEntity getBlockEntity() {
@@ -62,11 +62,7 @@ public class MachineCoreEmitterMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

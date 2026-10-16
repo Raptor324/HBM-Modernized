@@ -1,70 +1,174 @@
 {
-  "textures": {
-    "particle": "hbm_m:block/machine/mining_drill"
-  },
-  "loader": "forge:composite",
-  "children": {
-    "mining_drill_model": {
-      "loader": "forge:obj",
-      "model": "hbm_m:models/block/machines/mining_drill.obj",
-      "flip_v": true,
-      "render_type": "minecraft:solid",
-      "textures": {
-        "default": "hbm_m:block/machine/mining_drill"
-      },
-      "visibility": {
-        "Shaft": false,
-        "Crusher1": false,
-        "Crusher2": false,
-        "Drillbit": false
-      }
-    }
-  },
-  "transform": {
-    "translation": [0.5, 0, 0.5],
-    "rotation": [0, 0, 0],
-    "scale": 1.0
-  },
-  "display": {
-    "thirdperson_righthand": {
-        "rotation": [ 75, 45, 0 ],
-        "translation": [ 0.00, 2.50, 0.00 ],
-        "scale": [ 0.09, 0.09, 0.09 ]
-    },
-    "thirdperson_lefthand": {
-        "rotation": [ 75, 45, 0 ],
-        "translation": [ 0.00, 2.50, 0.00 ],
-        "scale": [ 0.09, 0.09, 0.09 ]
-    },
-    "firstperson_righthand": {
-        "rotation": [ 0, 45, 0 ],
-        "translation": [ 0.25, 0.25, -0.50 ],
-        "scale": [ 0.035, 0.035, 0.035 ]
-    },
-    "firstperson_lefthand": {
-        "rotation": [ 0, 45, 0 ],
-        "translation": [ 0.75, 1.00, 0.00 ],
-        "scale": [ 0.09, 0.09, 0.09 ]
-    },
-    "gui": {
-        "rotation": [ 30, 225, 0 ],
-        "translation": [ 0.00, -3.25, 0.00 ],
-        "scale": [ 0.04, 0.04, 0.04 ]
-    },
-    "head": {
-        "rotation": [ 0, 0, 0 ],
-        "translation": [ 0.00, 0.00, 0.00 ],
-        "scale": [ 1.00, 1.00, 1.00 ]
-    },
-    "fixed": {
-        "rotation": [ 0, 180, 0 ],
-        "translation": [ 0.00, 0.00, 0.00 ],
-        "scale": [ 0.13, 0.13, 0.13 ]
-    },
-    "ground": {
-        "rotation": [ 0, 0, 0 ],
-        "translation": [ 0.00, 3.00, 0.00 ],
-        "scale": [ 0.09, 0.09, 0.09 ]
-    }
-  }
+	"textures": {
+		"particle": "hbm_m:block/machine/mining_drill"
+	},
+	"loader": "forge:composite",
+	"children": {
+		"mining_drill_model": {
+			"loader": "forge:obj",
+			"model": "hbm_m:models/block/machines/mining_drill.obj",
+			"flip_v": true,
+			"render_type": "minecraft:solid",
+			"textures": {
+				"default": "hbm_m:block/machine/mining_drill"
+			},
+			"visibility": {
+				"Shaft": false,
+				"Crusher1": false,
+				"Crusher2": false,
+				"Drillbit": false
+			}
+		}
+	},
+	"transform": {
+		"translation": [
+			0.5,
+			0,
+			0.5
+		],
+		"rotation": [
+			0,
+			0,
+			0
+		],
+		"scale": 1.0
+	},
+	"display": {
+		"thirdperson_righthand": {
+			"rotation": [
+				75,
+				45,
+				0
+			],
+			"translation": [
+				0.0,
+				1.912,
+				-2.195
+			],
+			"scale": [
+				0.0455,
+				0.0455,
+				0.0455
+			]
+		},
+		"thirdperson_lefthand": {
+			"rotation": [
+				75,
+				45,
+				0
+			],
+			"translation": [
+				0.0,
+				1.912,
+				-2.195
+			],
+			"scale": [
+				0.0455,
+				0.0455,
+				0.0455
+			]
+		},
+		"firstperson_righthand": {
+			"rotation": [
+				0,
+				45,
+				0
+			],
+			"translation": [
+				0.0,
+				-2.424,
+				0.0
+			],
+			"scale": [
+				0.0485,
+				0.0485,
+				0.0485
+			]
+		},
+		"firstperson_lefthand": {
+			"rotation": [
+				0,
+				225,
+				0
+			],
+			"translation": [
+				0.0,
+				-2.424,
+				0.0
+			],
+			"scale": [
+				0.0485,
+				0.0485,
+				0.0485
+			]
+		},
+		"gui": {
+			"rotation": [
+				30,
+				225,
+				0
+			],
+			"translation": [
+				0.0,
+				-3.28,
+				-1.894
+			],
+			"scale": [
+				0.0758,
+				0.0758,
+				0.0758
+			]
+		},
+		"ground": {
+			"rotation": [
+				0,
+				0,
+				0
+			],
+			"translation": [
+				0.0,
+				1.485,
+				0.0
+			],
+			"scale": [
+				0.0303,
+				0.0303,
+				0.0303
+			]
+		},
+		"fixed": {
+			"rotation": [
+				0,
+				180,
+				0
+			],
+			"translation": [
+				0.0,
+				-3.03,
+				0.0
+			],
+			"scale": [
+				0.0606,
+				0.0606,
+				0.0606
+			]
+		},
+		"head": {
+			"rotation": [
+				0,
+				0,
+				0
+			],
+			"translation": [
+				0,
+				0,
+				0
+			],
+			"scale": [
+				1,
+				1,
+				1
+			]
+		}
+	}
 }

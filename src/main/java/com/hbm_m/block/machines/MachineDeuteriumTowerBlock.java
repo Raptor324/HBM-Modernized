@@ -40,11 +40,10 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
 //?}
 import dev.architectury.registry.menu.MenuRegistry;
 
-public class MachineDeuteriumTowerBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachineDeuteriumTowerBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.interfaces.ILookOverlay {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     private final MultiblockStructureHelper structureHelper;
@@ -96,6 +95,50 @@ public class MachineDeuteriumTowerBlock extends BaseEntityBlock implements IMult
             energySideMap,
             fluidSideMap
         );
+    }
+
+    /**
+     * Порт {@code DeuteriumTower.printHook}: запас энергии (красный, если меньше maxPower/20),
+     * затем вода (→) и тяжёлая вода (←) в формате "имя: fill/max mB".
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineDeuteriumTowerBlockEntity tower)) return;
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        net.minecraft.ChatFormatting powerColor = tower.getEnergyStored() < tower.getMaxEnergyStored() / 20
+                ? net.minecraft.ChatFormatting.RED : net.minecraft.ChatFormatting.GREEN;
+        text.add(net.minecraft.network.chat.Component.literal("Power: " + shortNumber(tower.getEnergyStored()) + "HE")
+                .withStyle(powerColor));
+
+        com.hbm_m.inventory.fluid.tank.FluidTank[] tanks = tower.getAllTanks();
+        for (int i = 0; i < tanks.length; i++) {
+            String body = com.hbm_m.inventory.fluid.FluidType.forFluid(tanks[i].getTankType()).getLocalizedName().getString()
+                    + ": " + tanks[i].getFill() + "/" + tanks[i].getMaxFill() + "mB";
+            text.add(net.minecraft.network.chat.Component.literal(i < 1 ? "-> " : "<- ")
+                    .withStyle(i < 1 ? net.minecraft.ChatFormatting.GREEN : net.minecraft.ChatFormatting.RED)
+                    .append(net.minecraft.network.chat.Component.literal(body).withStyle(net.minecraft.ChatFormatting.WHITE)));
+        }
+
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
+    }
+
+    /** Порт {@code BobMathUtil.getShortNumber} (как в оригинале: k/M/G/T/P/E с двумя знаками). */
+    private static String shortNumber(long value) {
+        double res;
+        String suffix = "";
+        long abs = Math.abs(value);
+        if (abs >= 1_000_000_000_000_000_000L) { res = value / 1.0E18; suffix = "E"; }
+        else if (abs >= 1_000_000_000_000_000L) { res = value / 1.0E15; suffix = "P"; }
+        else if (abs >= 1_000_000_000_000L) { res = value / 1.0E12; suffix = "T"; }
+        else if (abs >= 1_000_000_000L) { res = value / 1.0E9; suffix = "G"; }
+        else if (abs >= 1_000_000L) { res = value / 1.0E6; suffix = "M"; }
+        else if (abs >= 1_000L) { res = value / 1.0E3; suffix = "k"; }
+        else { return Long.toString(value); }
+        res = res <= -100.0 ? Math.round(res * 10.0) / 10.0 : Math.round(res * 100.0) / 100.0;
+        return res + suffix;
     }
 
     @Override

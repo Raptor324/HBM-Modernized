@@ -7,16 +7,20 @@ import java.util.function.Supplier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.blockentity.IPersistentNBT;
 import com.hbm_m.blockentity.machines.MachineFluidTankBlockEntity;
+import com.hbm_m.platform.PlatformHooks;
 
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -47,11 +51,20 @@ import net.minecraft.world.item.Item;
  * Parametrized by a BlockEntity factory + type supplier so each capacity variant (iron/steel)
  * can share this single Block class.
  */
-public class BarrelTankBlock extends BaseEntityBlock {
+public class BarrelTankBlock extends BaseEntityBlock implements com.hbm_m.interfaces.IMultiblockController {
 
     public static final DirectionProperty FACING = DirectionProperty.create("facing", Direction.Plane.HORIZONTAL);
 
-    private static final VoxelShape SHAPE = Shapes.box(0, 0, 0, 1, 1, 1);
+    // Паритет 1.7.10 BlockFluidBarrel.setBlockBoundsBasedOnState: 2/16..14/16 по горизонтали, полная высота.
+    private static final VoxelShape SHAPE = Shapes.box(2 / 16.0, 0, 2 / 16.0, 14 / 16.0, 1, 14 / 16.0);
+
+    /**
+     * Die meisten Faesser sind Einzelbloecke; der Orbus ist im Original ein Multiblock. Steht hier
+     * eine Struktur, verhaelt sich der Block wie ein {@link DummyableMachineBlock} - sonst bleibt
+     * alles wie bisher.
+     */
+    @Nullable
+    private final com.hbm_m.multiblock.MultiblockStructureHelper structureHelper;
 
     private final BiFunction<BlockPos, BlockState, ? extends MachineFluidTankBlockEntity> beFactory;
     private final Supplier<BlockEntityType<? extends MachineFluidTankBlockEntity>> beTypeSupplier;
@@ -63,9 +76,14 @@ public class BarrelTankBlock extends BaseEntityBlock {
      * mod's per-material barrel info panel (capacity + hot/corrosive/highly-corrosive/antimatter
      * storage permissions). Declared statically here (rather than read off a live BlockEntity)
      * so it also shows up on the item in inventory/JEI, before the block is ever placed.
+     * <p>
+     * Parity notes (1.7.10 {@code BlockFluidBarrel.addInformation}): {@code canStoreHighlyCorrosive}
+     * is nullable — {@code null} hides the line entirely (the original plastic barrel only lists
+     * 3 permission lines); {@code leaky} adds the red "Leaky" line of the corroded barrel.
      */
     public record TooltipInfo(int capacityMb, boolean canStoreHot, boolean canStoreCorrosive,
-                               boolean canStoreHighlyCorrosive, boolean canStoreAntimatter) {}
+                              @Nullable Boolean canStoreHighlyCorrosive, boolean canStoreAntimatter,
+                              boolean leaky) {}
 
     public BarrelTankBlock(Properties properties,
                            BiFunction<BlockPos, BlockState, ? extends MachineFluidTankBlockEntity> beFactory,
@@ -77,11 +95,56 @@ public class BarrelTankBlock extends BaseEntityBlock {
                            BiFunction<BlockPos, BlockState, ? extends MachineFluidTankBlockEntity> beFactory,
                            Supplier<BlockEntityType<? extends MachineFluidTankBlockEntity>> beTypeSupplier,
                            @Nullable TooltipInfo tooltipInfo) {
+        this(properties, beFactory, beTypeSupplier, tooltipInfo, null);
+    }
+
+    public BarrelTankBlock(Properties properties,
+                           BiFunction<BlockPos, BlockState, ? extends MachineFluidTankBlockEntity> beFactory,
+                           Supplier<BlockEntityType<? extends MachineFluidTankBlockEntity>> beTypeSupplier,
+                           @Nullable TooltipInfo tooltipInfo,
+                           @Nullable Supplier<com.hbm_m.multiblock.MultiblockStructureHelper> structure) {
         super(properties);
         this.beFactory = beFactory;
         this.beTypeSupplier = beTypeSupplier;
         this.tooltipInfo = tooltipInfo;
+        this.structureHelper = structure == null ? null : structure.get();
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+    }
+
+    // ── Mehrblock, sofern eine Struktur mitgegeben wurde ──
+
+    @Override
+    public com.hbm_m.multiblock.MultiblockStructureHelper getStructureHelper() {
+        return this.structureHelper;
+    }
+
+    @Override
+    public com.hbm_m.multiblock.PartRole getPartRole(BlockPos localOffset) {
+        return structureHelper != null
+                ? structureHelper.resolvePartRole(localOffset, this)
+                : com.hbm_m.multiblock.PartRole.DEFAULT;
+    }
+
+    @Override
+    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
+        super.onPlace(state, level, pos, oldState, isMoving);
+        if (structureHelper != null && !state.is(oldState.getBlock()) && !level.isClientSide()) {
+            placeMultiblockStructure(level, pos, state);
+        }
+    }
+
+    @Override
+    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
+        if (!super.canSurvive(state, level, pos)) return false;
+        return structureHelper == null || canSurviveMultiblockPlacement(state, level, pos);
+    }
+
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+        if (structureHelper != null && !state.is(newState.getBlock()) && !level.isClientSide()) {
+            structureHelper.destroyStructure(level, pos, state.getValue(FACING));
+        }
+        super.onRemove(state, level, pos, newState, isMoving);
     }
 
     //? if < 1.21.1 {
@@ -99,8 +162,13 @@ public class BarrelTankBlock extends BaseEntityBlock {
                 .withStyle(ChatFormatting.AQUA));
         tooltip.add(storageLine(tooltipInfo.canStoreHot(), "tooltip.hbm_m.barrel.hot"));
         tooltip.add(storageLine(tooltipInfo.canStoreCorrosive(), "tooltip.hbm_m.barrel.corrosive"));
-        tooltip.add(storageLine(tooltipInfo.canStoreHighlyCorrosive(), "tooltip.hbm_m.barrel.highly_corrosive"));
+        if (tooltipInfo.canStoreHighlyCorrosive() != null) {
+            tooltip.add(storageLine(tooltipInfo.canStoreHighlyCorrosive(), "tooltip.hbm_m.barrel.highly_corrosive"));
+        }
         tooltip.add(storageLine(tooltipInfo.canStoreAntimatter(), "tooltip.hbm_m.barrel.antimatter"));
+        if (tooltipInfo.leaky()) {
+            tooltip.add(Component.translatable("tooltip.hbm_m.barrel.leaky").withStyle(ChatFormatting.RED));
+        }
     }
 
     private static Component storageLine(boolean can, String baseKey) {
@@ -121,12 +189,16 @@ public class BarrelTankBlock extends BaseEntityBlock {
 
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
-        return SHAPE;
+        return structureHelper != null
+                ? structureHelper.getSpecificPartShape(structureHelper.getControllerOffset(), state.getValue(FACING))
+                : SHAPE;
     }
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
-        return SHAPE;
+        return structureHelper != null
+                ? structureHelper.generateShapeFromParts(state.getValue(FACING))
+                : SHAPE;
     }
 
     @Override
@@ -164,6 +236,43 @@ public class BarrelTankBlock extends BaseEntityBlock {
     @Override
     public BlockEntity newBlockEntity(@NotNull BlockPos pos, @NotNull BlockState state) {
         return beFactory.apply(pos, state);
+    }
+
+
+    /**
+     * 1:1 порт {@code BlockFluidBarrel.getDrops} → {@code IPersistentNBT.getDrops}:
+     * дропнутая бочка несёт {@code persistent}-тег с жидкостью.
+     */
+    @Override
+    public List<ItemStack> getDrops(BlockState state, net.minecraft.world.level.storage.loot.LootParams.Builder builder) {
+        BlockEntity be = builder.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.BLOCK_ENTITY);
+        if (be instanceof IPersistentNBT persistent) {
+            ItemStack stack = new ItemStack(this.asItem());
+            CompoundTag data = new CompoundTag();
+            persistent.writeNBT(data);
+            if (!data.isEmpty()) {
+                PlatformHooks.setItemTag(stack, data);
+            }
+            return List.of(stack);
+        }
+        return super.getDrops(state, builder);
+    }
+
+    /**
+     * Порт {@code BlockFluidBarrel.onBlockPlacedBy} → {@code IPersistentNBT.restoreData}.
+     */
+    @Override
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
+        super.setPlacedBy(level, pos, state, placer, stack);
+        if (level.isClientSide) return;
+        CompoundTag tag = PlatformHooks.getItemTag(stack);
+        if (tag == null || !tag.contains(IPersistentNBT.NBT_PERSISTENT_KEY)) return;
+        if (level.getBlockEntity(pos) instanceof IPersistentNBT persistent) {
+            persistent.readNBT(tag);
+            // NBT (тип бочки) восстановлен после постановки: обновляем трубы-соседи,
+            // чей пересчёт при установке видел ещё пустую бочку.
+            com.hbm_m.block.machines.FluidDuctBlock.refreshAdjacentDucts(level, pos);
+        }
     }
 
     @Nullable

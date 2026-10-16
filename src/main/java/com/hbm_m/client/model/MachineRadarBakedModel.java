@@ -18,12 +18,23 @@ import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
 import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.model.data.ModelData;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.neoforge.client.ChunkRenderTypeSet;
+import net.neoforged.neoforge.client.model.data.ModelData;
+*///?}
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Малый радар: {@code Base} + {@code Dish}; большой — {@code Radar} + {@code Dish}.
  * При {@link ShaderCompatibilityDetector#useVboGeometry()} chunk mesh пуст — геометрия в BER/VBO.
  */
+@OnlyIn(Dist.CLIENT)
 public class MachineRadarBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
 
     private static final String[] PRIORITY = { "Base", "Radar", "Dish" };
@@ -93,12 +104,11 @@ public class MachineRadarBakedModel extends AbstractMultipartBakedModel implemen
         return true;
     }
 
-    //? if forge {
+    // Без ветки neoforge слой падал в solid, и прозрачные участки рисовались непрозрачными.
     @Override
     public ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand, ModelData data) {
         return ChunkRenderTypeSet.of(RenderType.cutout());
     }
-    //?}
 
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
@@ -122,19 +132,6 @@ public class MachineRadarBakedModel extends AbstractMultipartBakedModel implemen
         return staticPart.getQuads(state, side, rand);
         *///?}
 
-        //? if fabric {
-        /*if (state == null) {
-            return getItemQuads(side, rand);
-        }
-        if (ShaderCompatibilityDetector.useVboGeometry()) {
-            return List.of();
-        }
-        BakedModel staticPart = parts.get(getStaticPartName());
-        if (staticPart == null) {
-            return List.of();
-        }
-        return staticPart.getQuads(state, side, rand);
-        *///?}
     }
 
     //? if neoforge {

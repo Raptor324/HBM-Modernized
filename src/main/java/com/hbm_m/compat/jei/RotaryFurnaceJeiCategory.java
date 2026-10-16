@@ -24,13 +24,20 @@ import mezz.jei.api.recipe.RecipeType;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * JEI category for Rotary Furnace recipes - bis zu 3 Item-Eingaenge + optionales Eingangs-Fluid
  * -&gt; 1 Ausgabe. Arbeitet direkt mit dem data-driven {@link RotaryFurnaceRecipe} (JSON) -
  * Eingaenge aus {@link RotaryFurnaceRecipe#getInputs()}, Ausgabe aus {@link RotaryFurnaceRecipe#getOutput()}.
  */
-//? if forge {
+@OnlyIn(Dist.CLIENT)
 public class RotaryFurnaceJeiCategory extends JeiGenericRecipeCategory<RotaryFurnaceRecipe> {
 
     public static final RecipeType<RotaryFurnaceRecipe> RECIPE_TYPE =
@@ -113,7 +120,3 @@ public class RotaryFurnaceJeiCategory extends JeiGenericRecipeCategory<RotaryFur
         JeiNeiRendering.drawGenericRecipeExtras(graphics, recipe.getDuration(), 0);
     }
 }
-//?} else {
-/*public final class RotaryFurnaceJeiCategory {
-    private RotaryFurnaceJeiCategory() {}
-}*///?}

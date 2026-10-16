@@ -16,6 +16,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * Item Transform Helper wraps every {@link BakedModel} in a thin delegate that does not forward
@@ -24,6 +26,7 @@ import java.util.Map;
  * after baking (always, not only when ITH is loaded) so BEWLR display transforms behave the same
  * with or without the helper mod.
  */
+@OnlyIn(Dist.CLIENT)
 public final class ItemTransformHelperCompat {
 
     private static final String MOD_ID = "itemtransformhelper";

@@ -53,16 +53,15 @@ public class EntityBomber extends Entity {
     //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
-        this.entityData.define(PLANE_TYPE, 1);
-        this.entityData.define(HEALTH, MAX_HEALTH);
-    }
+        var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     //?} else {
     /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
-        builder.define(PLANE_TYPE, 1);
-        builder.define(HEALTH, MAX_HEALTH);
-    }
+        var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
     *///?}
+        defs.define(PLANE_TYPE, 1);
+        defs.define(HEALTH, MAX_HEALTH);
+    }
 
     public int getPlaneType()  { return this.entityData.get(PLANE_TYPE); }
     public float getHealth()   { return this.entityData.get(HEALTH); }

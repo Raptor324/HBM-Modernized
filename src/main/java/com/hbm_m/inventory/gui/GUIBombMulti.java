@@ -9,10 +9,18 @@ import com.hbm_m.inventory.menu.BombMultiMenu;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Экран многоцелевой бомбы (плоский фон, 4 заряда + 2 модификатора).
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIBombMulti extends GuiInfoScreen<BombMultiMenu> {
 
     private final BombMultiBlockEntity be;

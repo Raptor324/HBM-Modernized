@@ -11,7 +11,15 @@ import com.hbm_m.client.model.MachineRadarBakedModel;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.resources.ResourceLocation;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
+@OnlyIn(Dist.CLIENT)
 public class MachineRadarModelLoader extends AbstractObjPartModelLoader<MachineRadarBakedModel> {
 
     private static final Set<String> DEFAULT_PART_NAMES = Set.of("Base", "Dish");

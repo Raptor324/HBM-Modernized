@@ -47,7 +47,7 @@ public class FoundryChannelRenderer implements com.hbm_m.client.render.HbmBerBou
         float fill = Math.min(1f, (float) be.amount / MachineFoundryChannelBlockEntity.CAPACITY);
         float surfaceY = FLOOR + fill * (MAX_LEVEL - FLOOR);
 
-        // Оригинал: new Color(moltenColor).brighter() — осветление х1.43 с клампом.
+        // Original: new Color(moltenColor).brighter() -- brightening by 1.43x, clamped.
         int raw = be.type.color;
         int br = Math.min(255, (int) (raw >> 16 & 0xFF) * 100 / 70);
         int bg = Math.min(255, (int) (raw >> 8 & 0xFF) * 100 / 70);

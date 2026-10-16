@@ -30,19 +30,19 @@ public abstract class LoadedMachineBlockEntity extends BaseHbmBlockEntity {
         super.setRemoved();
         this.isLoaded = false;
     }
-    //? if forge {
+    // Оба метода добавляются лоадером и есть и на Forge, и на NeoForge; под forge-only гардом
+    // флаг isLoaded на 1.21.1 никогда не сбрасывался.
     @Override
     public void onChunkUnloaded() {
         super.onChunkUnloaded();
         this.isLoaded = false;
     }
-    
+
     @Override
     public void onLoad() {
         super.onLoad();
         this.isLoaded = true;
     }
-    //?}
     
     public boolean isMuffled() {
         return muffled;

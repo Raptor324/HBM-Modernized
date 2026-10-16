@@ -33,16 +33,43 @@ import dev.architectury.registry.menu.MenuRegistry;
  * texturierten Wuerfel ohne Facing-State, analog zu {@code MachineFunnelBlock} - siehe
  * Klassenkommentar in {@link MachinePUREXBlockEntity} fuer die Mechanik-Vereinfachungen).
  */
-public class MachinePUREXBlock extends BaseEntityBlock {
+public class MachinePUREXBlock extends com.hbm_m.block.machines.DummyableMachineBlock {
     public static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 16, 16);
 
     public MachinePUREXBlock(BlockBehaviour.Properties properties) {
         super(properties);
     }
 
+    /**
+     * 1:1-Port von {@code MachinePUREX} (1.7.10): fuenf Felder hoch, fuenf mal fuenf breit
+     * ({@code getDimensions {4,0,2,2,2,2}}, Setzversatz 2).
+     *
+     * <p>Der ganze <b>Rand des Sockels</b> - alle sechzehn Aussenzellen - sind Anschlusspunkte.
+     * Eine PUREX-Anlage laesst sich damit von jeder Seite verrohren, was bei sechs Fluessigkeiten
+     * auch noetig ist.</p>
+     */
     @Override
-    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return SHAPE;
+    protected com.hbm_m.multiblock.MultiblockStructureHelper defineStructure() {
+        return com.hbm_m.multiblock.DummyableStructureBuilder.create()
+                .box(4, 0, 2, 2, 2, 2)
+                .extra(-2, 0, -2)
+                .extra(-2, 0, -1)
+                .extra(-2, 0, 0)
+                .extra(-2, 0, 1)
+                .extra(-2, 0, 2)
+                .extra(-1, 0, -2)
+                .extra(-1, 0, 2)
+                .extra(0, 0, -2)
+                .extra(0, 0, 2)
+                .extra(1, 0, -2)
+                .extra(1, 0, 2)
+                .extra(2, 0, -2)
+                .extra(2, 0, -1)
+                .extra(2, 0, 0)
+                .extra(2, 0, 1)
+                .extra(2, 0, 2)
+                .placementOffset(2)
+                .build(() -> com.hbm_m.block.ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
     }
 
     @Override

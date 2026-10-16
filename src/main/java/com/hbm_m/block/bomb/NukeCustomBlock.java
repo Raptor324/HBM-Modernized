@@ -45,7 +45,6 @@ public class NukeCustomBlock extends NukeBaseBlock implements IBomb {
         if (level.isClientSide) return BombReturnCode.UNDEFINED;
         if (level.getBlockEntity(pos) instanceof NukeCustomBlockEntity nuke && nuke.isReady()) {
             CustomNukeExplosion.Yields yields = CustomNukeExplosion.computeYields(nuke.slots);
-            Containers.dropContents(level, pos, nuke);
             nuke.clearContent();
             level.setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
             if (level instanceof ServerLevel server) {

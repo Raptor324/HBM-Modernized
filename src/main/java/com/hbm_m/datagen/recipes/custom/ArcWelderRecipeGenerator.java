@@ -172,7 +172,7 @@ public final class ArcWelderRecipeGenerator {
                 p(new ItemStack(ModItems.FUEL_TANK_SMALL.get())),
                 p(new ItemStack(ModItems.WARHEAD_INCENDIARY_SMALL.get())));
 
-        emit(writer, "missile_abm", new ItemStack(ModItems.MISSILE_ABM.get()), 60, 1_000L,
+        emit(writer, "missile_anti_ballistic", new ItemStack(ModItems.MISSILE_ANTI_BALLISTIC.get()), 60, 1_000L,
                 p(new ItemStack(ModItems.THRUSTER_SMALL.get(), 4)),
                 p(new ItemStack(ModItems.MISSILE_ASSEMBLY.get())),
                 p(new ItemStack(ModItems.BALL_TNT.get(), 3)));

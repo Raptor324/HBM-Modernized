@@ -21,7 +21,9 @@ public class BlockMutatorBulkie implements IBlockMutator {
 
     @Override
     public void mutatePre(ExplosionVNT explosion, BlockState state, BlockPos pos) {
-        if (!blockState.isSolidRender(explosion.level, pos)) return;
+        // `state` is the block being replaced; `blockState` is the replacement, so testing the field
+        // made the guard loop-invariant and leaves, glass and grass all turned into the target block.
+        if (!state.isSolidRender(explosion.level, pos)) return;
         Vec3 vec = new Vec3(pos.getX() + 0.5 - explosion.x, pos.getY() + 0.5 - explosion.y, pos.getZ() + 0.5 - explosion.z);
         if (vec.length() >= explosion.size - 0.5) {
             explosion.level.setBlock(pos, blockState, 3);

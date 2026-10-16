@@ -17,9 +17,9 @@ import java.util.List;
  * JEI listing for nuclear waste decaying inside a storage drum, ported from the original's
  * {@code RBMKWasteDecayHandler}.
  *
- * <p>The original enumerates every {@code WasteClass} metadata variant; this port collapsed those
- * into plain items (see {@code MachineStorageDrumBlockEntity} and {@code RadGenRecipes} for that
- * scope decision), so the same listing here is the four item pairs those variants reduce to.</p>
+ * <p>Wie im Original steht hier jede Abfallklasse einzeln: welcher Muell zu welchem
+ * abgereicherten Stueck wird, haengt an der Klasse, und nur die entscheidet auch darueber, wieviel
+ * Fluessigkeit und Gas das Fass dabei abwirft.</p>
  */
 public class RBMKWasteDecayJeiCategory extends JeiGenericRecipeCategory<RBMKWasteDecayJeiCategory.Decay> {
 
@@ -33,16 +33,22 @@ public class RBMKWasteDecayJeiCategory extends JeiGenericRecipeCategory<RBMKWast
     }
 
     public static List<Decay> all() {
-        return List.of(
-                new Decay(new ItemStack(ModItems.NUCLEAR_WASTE_SHORT.get()),
-                          new ItemStack(ModItems.NUCLEAR_WASTE_SHORT_DEPLETED.get())),
-                new Decay(new ItemStack(ModItems.NUCLEAR_WASTE_SHORT_TINY.get()),
-                          new ItemStack(ModItems.NUCLEAR_WASTE_SHORT_DEPLETED_TINY.get())),
-                new Decay(new ItemStack(ModItems.NUCLEAR_WASTE_LONG.get()),
-                          new ItemStack(ModItems.NUCLEAR_WASTE_LONG_DEPLETED.get())),
-                new Decay(new ItemStack(ModItems.NUCLEAR_WASTE_LONG_TINY.get()),
-                          new ItemStack(ModItems.NUCLEAR_WASTE_LONG_DEPLETED_TINY.get()))
-        );
+        List<Decay> out = new java.util.ArrayList<>();
+        addGroup(out, "nw_short", "nw_short_dep");
+        addGroup(out, "nw_short_tiny", "nw_short_dep_tiny");
+        addGroup(out, "nw_long", "nw_long_dep");
+        addGroup(out, "nw_long_tiny", "nw_long_dep_tiny");
+        return out;
+    }
+
+    /** Frische und abgereicherte Gruppe stehen in derselben Klassenreihenfolge. */
+    private static void addGroup(List<Decay> out, String fresh, String spent) {
+        var freshItems = com.hbm_m.item.PartTabMetaItems.group(fresh);
+        var spentItems = com.hbm_m.item.PartTabMetaItems.group(spent);
+
+        for (int i = 0; i < freshItems.size() && i < spentItems.size(); i++) {
+            out.add(new Decay(new ItemStack(freshItems.get(i)), new ItemStack(spentItems.get(i))));
+        }
     }
 
     @Override public RecipeType<Decay> getRecipeType() { return RECIPE_TYPE; }

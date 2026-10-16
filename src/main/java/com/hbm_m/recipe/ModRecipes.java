@@ -20,6 +20,17 @@ public class ModRecipes {
 
 
 
+    /** Die inhaltserhaltende Aufwertung des Massenspeichers - siehe {@link MassStorageUpgradeRecipe}. */
+    public static final dev.architectury.registry.registries.RegistrySupplier<RecipeSerializer<?>> MASS_STORAGE_UPGRADE =
+            SERIALIZERS.register("mass_storage_upgrade",
+                    () -> new net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer<>(
+                            //? if < 1.21.1 {
+                            MassStorageUpgradeRecipe::new
+                            //?} else {
+                            /*MassStorageUpgradeRecipe::new
+                            *///?}
+                    ));
+
     public static final RegistrySupplier<RecipeSerializer<AssemblerRecipe>> ASSEMBLER_SERIALIZER =
             SERIALIZERS.register("assembler", () -> AssemblerRecipe.Serializer.INSTANCE);
 
@@ -31,6 +42,20 @@ public class ModRecipes {
 
     public static final RegistrySupplier<RecipeType<ChemicalPlantRecipe>> CHEMICAL_PLANT_TYPE =
             RECIPE_TYPES.register("chemical_plant", () -> ChemicalPlantRecipe.Type.INSTANCE);
+
+    // Fusion - Fusionstorus. ID = "fusion" (siehe FusionRecipe.Type.ID).
+    public static final RegistrySupplier<RecipeSerializer<FusionRecipe>> FUSION_SERIALIZER =
+            SERIALIZERS.register("fusion", () -> FusionRecipe.Serializer.INSTANCE);
+
+    public static final RegistrySupplier<RecipeType<FusionRecipe>> FUSION_TYPE =
+            RECIPE_TYPES.register("fusion", () -> FusionRecipe.Type.INSTANCE);
+
+    // Plasma Forge - Plasmaschmiede. ID = "plasma_forge" (siehe PlasmaForgeRecipe.Type.ID).
+    public static final RegistrySupplier<RecipeSerializer<PlasmaForgeRecipe>> PLASMA_FORGE_SERIALIZER =
+            SERIALIZERS.register("plasma_forge", () -> PlasmaForgeRecipe.Serializer.INSTANCE);
+
+    public static final RegistrySupplier<RecipeType<PlasmaForgeRecipe>> PLASMA_FORGE_TYPE =
+            RECIPE_TYPES.register("plasma_forge", () -> PlasmaForgeRecipe.Type.INSTANCE);
 
     public static final RegistrySupplier<RecipeSerializer<PressRecipe>> PRESS_SERIALIZER =
             SERIALIZERS.register("press", () -> PressRecipe.Serializer.INSTANCE);
@@ -233,6 +258,13 @@ public class ModRecipes {
     public static final RegistrySupplier<RecipeType<CatalyticReformerRecipe>> CATALYTIC_REFORMER_TYPE =
             RECIPE_TYPES.register("catalytic_reformer", () -> CatalyticReformerRecipe.Type.INSTANCE);
 
+    // Teilchenbeschleuniger - ersetzt die Statik ParticleAcceleratorRecipes durch JSON-Rezepte.
+    public static final RegistrySupplier<RecipeSerializer<ParticleAcceleratorRecipe>> PARTICLE_ACCELERATOR_SERIALIZER =
+            SERIALIZERS.register("particle_accelerator", () -> ParticleAcceleratorRecipe.Serializer.INSTANCE);
+
+    public static final RegistrySupplier<RecipeType<ParticleAcceleratorRecipe>> PARTICLE_ACCELERATOR_TYPE =
+            RECIPE_TYPES.register("particle_accelerator", () -> ParticleAcceleratorRecipe.Type.INSTANCE);
+
     // Liquefactor — ликвейфактор. ID = "liquefactor" (см. LiquefactorRecipe.Type.ID).
     // Замена статике LiquefactorRecipes — теперь data-driven (JSON).
     public static final RegistrySupplier<RecipeSerializer<LiquefactorRecipe>> LIQUEFACTOR_SERIALIZER =
@@ -302,55 +334,4 @@ public class ModRecipes {
         RECIPE_TYPES.register();
     }
 
-    /**
-     * Диагностика загрузки рецептов — вызывается из {@link MainRegistry#commonSetup()},
-     * т.е. ПОСЛЕ RegisterEvent, когда Deferred-записи уже разрешены в реестрах.
-     */
-    //? if >= 1.21.1 {
-    /*public static void debugRecipeSerializerRegistry() {
-        try {
-            var reg = net.minecraft.core.registries.BuiltInRegistries.RECIPE_SERIALIZER;
-            System.err.println("[HBM DEBUG] commonSetup: ASSEMBLER_SERIALIZER present=" + ASSEMBLER_SERIALIZER.isPresent()
-                    + " id=" + ASSEMBLER_SERIALIZER.getId());
-            System.err.println("[HBM DEBUG] commonSetup: RECIPE_SERIALIZER registry contains hbm_m:assembler = "
-                    + (reg.get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("hbm_m", "assembler")) != null));
-
-            // Manual codec test: parse a minimal assembler recipe JSON via Recipe.CODEC
-            // to see the exact dispatch error.
-            String testJson = "{"
-                + "\"type\": \"hbm_m:assembler\","
-                + "\"duration\": 100,"
-                + "\"ingredients\": [ { \"item\": \"minecraft:iron_ingot\", \"count\": 1 } ],"
-                + "\"output\": { \"item\": \"minecraft:iron_nugget\", \"count\": 9 },"
-                + "\"power\": 50"
-                + "}";
-            com.google.gson.JsonObject obj = com.google.gson.JsonParser.parseString(testJson).getAsJsonObject();
-            com.mojang.serialization.DataResult<net.minecraft.world.item.crafting.Recipe<?>> result =
-                    net.minecraft.world.item.crafting.Recipe.CODEC.parse(com.mojang.serialization.JsonOps.INSTANCE, obj);
-            result.resultOrPartial(err -> {
-                System.err.println("[HBM DEBUG] Recipe.CODEC.parse FAILED: " + err);
-            }).ifPresent(recipe -> {
-                System.err.println("[HBM DEBUG] Recipe.CODEC.parse SUCCESS: " + recipe.getClass().getSimpleName()
-                        + " type=" + recipe.getType());
-            });
-
-            // Test CONDITIONAL_CODEC — this is what RecipeManager.apply actually uses.
-            com.mojang.serialization.DataResult<java.util.Optional<net.neoforged.neoforge.common.conditions.WithConditions<net.minecraft.world.item.crafting.Recipe<?>>>> condResult =
-                    net.minecraft.world.item.crafting.Recipe.CONDITIONAL_CODEC.parse(com.mojang.serialization.JsonOps.INSTANCE, obj);
-            condResult.resultOrPartial(err -> {
-                System.err.println("[HBM DEBUG] CONDITIONAL_CODEC.parse FAILED: " + err);
-            }).ifPresent(opt -> {
-                if (opt.isPresent()) {
-                    System.err.println("[HBM DEBUG] CONDITIONAL_CODEC.parse SUCCESS: WithConditions present, recipe="
-                            + opt.get().carrier().getClass().getSimpleName());
-                } else {
-                    System.err.println("[HBM DEBUG] CONDITIONAL_CODEC.parse returned Optional.empty() — conditions not met!");
-                }
-            });
-        } catch (Throwable t) {
-            System.err.println("[HBM DEBUG] commonSetup: RECIPE_SERIALIZER check failed: " + t);
-            t.printStackTrace();
-        }
-    }
-    *///?}
 }

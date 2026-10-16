@@ -16,8 +16,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import org.joml.Matrix4f;
 
 /**
  * A COLLADA (.dae) model parsed from a resource: geometry, the visual scene node tree,
@@ -67,6 +71,7 @@ public class DaeModel {
         } catch(IOException e) {
             throw new DaeModelFormatException("Failed to read DAE model " + resource, e);
         }
+        normalizeConstantNodeScales();
     }
 
     public void clear() {
@@ -603,6 +608,148 @@ public class DaeModel {
         }
         return null;
     }
+
+    // ---------------------------------------------------------------- constant scale baking
+
+    /**
+     * COLLADA node matrices may carry an object scale, but the instanced render record stores
+     * only position + rotation: any scale left in the animated matrices is silently dropped on
+     * the MDI path (the part "collapses" toward its node origin while the fallback path, which
+     * composes the full matrix through the PoseStack, renders it correctly - the two paths
+     * visibly disagree). For every leaf mesh node whose scale is provably constant (rest pose
+     * and all matrix keyframes share one uniform factor) that factor is baked into the mesh
+     * positions and stripped from the transforms, making every remaining matrix rigid.
+     */
+    private void normalizeConstantNodeScales() {
+        Set<DaeMesh> scaledMeshes = Collections.newSetFromMap(new IdentityHashMap<>());
+        for(DaeNode root : sceneRoots) {
+            normalizeNodeScale(root, scaledMeshes);
+        }
+    }
+
+    private void normalizeNodeScale(DaeNode node, Set<DaeMesh> scaledMeshes) {
+        for(DaeNode child : node.children) {
+            normalizeNodeScale(child, scaledMeshes);
+        }
+        // Only leaf mesh nodes: a group node's scale is inherited by children and
+        // cannot be moved into geometry, and a mesh without a node matrix is a no-op.
+        if(node.mesh == null || !node.children.isEmpty()) return;
+
+        float scale = uniformMatrixScale(node.localMatrix());
+        if(scale <= 0F) return;
+        if(Math.abs(scale - 1F) <= SCALE_EPSILON) return;
+
+        // Every matrix keyframe of this node must carry the same uniform scale.
+        for(DaeAnimation clip : animations.values()) {
+            Map<String, DaeCurve> channels = clip.getChannels(node.name);
+            if(channels == null && node.colladaId != null && !node.colladaId.equals(node.name)) {
+                channels = clip.getChannels(node.colladaId);
+            }
+            if(channels == null) continue;
+            for(Map.Entry<String, DaeCurve> entry : channels.entrySet()) {
+                DaeCurve curve = entry.getValue();
+                if(curve.stride() == 16) {
+                    for(int i = 0; i < curve.keyFrameCount(); i++) {
+                        if(!uniformKeyScaleMatches(curve.keyFrame(i), scale)) return;
+                    }
+                } else if(hasScaleTransform(node)) {
+                    // A non-matrix channel animating a SCALE transform would make the
+                    // scale vary over time - leave the node untouched.
+                    return;
+                }
+            }
+        }
+
+        // Bake the scale into the geometry exactly once even if two nodes share a mesh;
+        // a later sharer keeps its own scale in the matrices (it is not stripped).
+        if(!scaledMeshes.add(node.mesh)) return;
+
+        float[] positions = node.mesh.positions;
+        if(positions != null) {
+            for(int i = 0; i < positions.length; i++) {
+                positions[i] *= scale;
+            }
+        }
+
+        for(DaeTransform t : node.transforms) {
+            switch(t.type) {
+                // COLLADA basis columns sit at [0..2], [4..6], [8..10]; translation at
+                // [3, 7, 11] stays. Uniform scale does not change normal directions.
+                case MATRIX -> {
+                    for(int c : new int[] {0, 4, 8}) {
+                        t.data[c] /= scale;
+                        t.data[c + 1] /= scale;
+                        t.data[c + 2] /= scale;
+                    }
+                }
+                case SCALE -> {
+                    t.data[0] /= scale;
+                    t.data[1] /= scale;
+                    t.data[2] /= scale;
+                }
+                default -> { }
+            }
+        }
+
+        for(DaeAnimation clip : animations.values()) {
+            Map<String, DaeCurve> channels = clip.getChannels(node.name);
+            if(channels == null && node.colladaId != null && !node.colladaId.equals(node.name)) {
+                channels = clip.getChannels(node.colladaId);
+            }
+            if(channels == null) continue;
+            for(DaeCurve curve : channels.values()) {
+                if(curve.stride() != 16) continue;
+                for(int i = 0; i < curve.keyFrameCount(); i++) {
+                    float[] key = curve.keyFrame(i);
+                    for(int c : new int[] {0, 4, 8}) {
+                        key[c] /= scale;
+                        key[c + 1] /= scale;
+                        key[c + 2] /= scale;
+                    }
+                }
+            }
+        }
+    }
+
+    private static boolean hasScaleTransform(DaeNode node) {
+        for(DaeTransform t : node.transforms) {
+            if(t.type == DaeTransform.Type.SCALE) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Uniform scale factor of a JOML matrix's basis columns, or -1 when the three
+     * column lengths disagree (non-uniform scale / shear cannot be baked into geometry).
+     */
+    private static float uniformMatrixScale(Matrix4f m) {
+        float c0 = columnLength(m.m00(), m.m10(), m.m20());
+        float c1 = columnLength(m.m01(), m.m11(), m.m21());
+        float c2 = columnLength(m.m02(), m.m12(), m.m22());
+        return uniformScale(c0, c1, c2);
+    }
+
+    private static boolean uniformKeyScaleMatches(float[] collada16, float scale) {
+        float c0 = columnLength(collada16[0], collada16[1], collada16[2]);
+        float c1 = columnLength(collada16[4], collada16[5], collada16[6]);
+        float c2 = columnLength(collada16[8], collada16[9], collada16[10]);
+        float s = uniformScale(c0, c1, c2);
+        return s > 0F && Math.abs(s - scale) <= SCALE_EPSILON * Math.max(1F, scale);
+    }
+
+    private static float uniformScale(float c0, float c1, float c2) {
+        float s = c0;
+        if(Math.abs(c1 - s) > SCALE_EPSILON * Math.max(1F, s) || Math.abs(c2 - s) > SCALE_EPSILON * Math.max(1F, s)) {
+            return -1F;
+        }
+        return s;
+    }
+
+    private static float columnLength(float x, float y, float z) {
+        return (float) Math.sqrt(x * x + y * y + z * z);
+    }
+
+    private static final float SCALE_EPSILON = 1e-4F;
 
     // ---------------------------------------------------------------- helpers
 

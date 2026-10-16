@@ -40,6 +40,9 @@ public class TurretBulletEntity extends ThrowableItemProjectile {
         bullet.setDeltaMovement(dx, dy, dz);
         bullet.damage = damage;
         bullet.entityData.set(ICON_ITEM_ID, net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(iconItem).toString());
+        // DATA_ITEM_STACK is filled from getDefaultItem() inside the super constructor, i.e. before
+        // ICON_ITEM_ID exists - without this every bullet rendered as the default turret ammo.
+        bullet.setItem(new net.minecraft.world.item.ItemStack(iconItem));
         bullet.setNoGravity(true);
         return bullet;
     }
@@ -49,20 +52,25 @@ public class TurretBulletEntity extends ThrowableItemProjectile {
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
-        this.entityData.define(ICON_ITEM_ID, "");
-    }
+
+var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     //?} else {
     /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
-
         super.defineSynchedData(builder);
-        builder.define(ICON_ITEM_ID, "");
+
+var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
+    *///?}
+
+        defs.define(ICON_ITEM_ID, "");
     
     }
-    *///?}
 
     @Override
     protected Item getDefaultItem() {
+        // 1.21.1 calls this from defineSynchedData(Builder), i.e. from the super constructor
+        // before entityData is assigned; the icon is set explicitly in create() anyway.
+        if (this.entityData == null) return ModItems.TURRET_AMMO.get();
         String id = this.entityData.get(ICON_ITEM_ID);
         if (id.isEmpty()) return ModItems.TURRET_AMMO.get();
         Item item = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(

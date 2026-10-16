@@ -20,7 +20,7 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import org.jetbrains.annotations.Nullable;
 
 /** Port of {@code MachineCapacitor} (1.7.10 Original). Directional HE buffer, no GUI. */
-public class MachineCapacitorBlock extends BaseEntityBlock {
+public class MachineCapacitorBlock extends BaseEntityBlock implements com.hbm_m.interfaces.ILookOverlay {
 
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
 
@@ -52,6 +52,31 @@ public class MachineCapacitorBlock extends BaseEntityBlock {
     @Nullable @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineCapacitorBlockEntity(pos, state);
+    }
+
+    /** Port of {@code MachineCapacitor.printHook}: charge level, percent and per-tick rates. */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineCapacitorBlockEntity battery)) return;
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal(
+                com.hbm_m.util.EnergyFormatter.format(battery.getEnergyStored()) + " / "
+                        + com.hbm_m.util.EnergyFormatter.format(battery.getMaxEnergyStored()) + "HE"));
+
+        double percent = (double) battery.getEnergyStored() / (double) battery.getMaxEnergyStored();
+        int charge = (int) Math.floor(percent * 10_000D);
+        int color = ((int) (0xFF - 0xFF * percent)) << 16 | ((int) (0xFF * percent) << 8);
+        text.add(net.minecraft.network.chat.Component.literal((charge / 100D) + "%")
+                .withStyle(style -> style.withColor(net.minecraft.network.chat.TextColor.fromRgb(color))));
+        text.add(net.minecraft.network.chat.Component.literal("-> ").withStyle(net.minecraft.ChatFormatting.GREEN)
+                .append(net.minecraft.network.chat.Component.literal("+" + com.hbm_m.util.EnergyFormatter.format(battery.getReceiveSpeed()) + "HE/t")));
+        text.add(net.minecraft.network.chat.Component.literal("<- ").withStyle(net.minecraft.ChatFormatting.RED)
+                .append(net.minecraft.network.chat.Component.literal("-" + com.hbm_m.util.EnergyFormatter.format(battery.getProvideSpeed()) + "HE/t")));
+
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     @Nullable @Override

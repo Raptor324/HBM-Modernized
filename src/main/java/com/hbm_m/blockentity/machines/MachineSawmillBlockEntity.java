@@ -66,6 +66,9 @@ public class MachineSawmillBlockEntity extends com.hbm_m.blockentity.BaseHbmBloc
 
     public ModItemStackHandler getInventory() { return inventory; }
 
+    /** Original: {@code processingTime} - fuer den Fortschrittsbalken im Fadenkreuz-HUD. */
+    public int getProcessingTime() { return PROCESSING_TIME; }
+
     public static void tick(Level level, BlockPos pos, BlockState state, MachineSawmillBlockEntity be) {
         if (level.isClientSide()) return;
 

@@ -52,7 +52,7 @@ public class MachineSirenMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineSirenBlockEntity sirenBlockEntity) {
             return sirenBlockEntity;
         }
-        throw new IllegalStateException("No MachineSirenBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":machine_siren_menu");
+        throw new MenuBlockEntityMissingException("No MachineSirenBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":machine_siren_menu");
     }
 
     public MachineSirenBlockEntity getBlockEntity() {
@@ -61,11 +61,7 @@ public class MachineSirenMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

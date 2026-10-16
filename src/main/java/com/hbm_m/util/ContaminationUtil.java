@@ -141,8 +141,13 @@ public final class ContaminationUtil {
     }
 
     public static boolean isRadImmune(Entity e) {
-        if (!(e instanceof LivingEntity)) {
+        if (!(e instanceof LivingEntity living)) {
             return false;
+        }
+
+        // Original: if(((EntityLivingBase)e).isPotionActive(HbmPotion.mutation)) return true;
+        if (com.hbm_m.platform.PlatformHooks.hasEffect(living, com.hbm_m.effect.ModEffects.MUTATION)) {
+            return true;
         }
 
         Class<?> entityClass = e.getClass();
@@ -183,6 +188,10 @@ public final class ContaminationUtil {
             return;
         }
         if (e instanceof Player player && player.tickCount < 200) {
+            return;
+        }
+        // Original: if(entity.isPotionActive(HbmPotion.stability.id)) return;
+        if (com.hbm_m.platform.PlatformHooks.hasEffect(living, com.hbm_m.effect.ModEffects.STABILITY)) {
             return;
         }
         if (living instanceof Player player && ArmorUtil.checkForDigamma(player)) {

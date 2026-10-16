@@ -29,16 +29,22 @@ public class HbmThermalHandler implements ResourceManagerReloadListener {
 
     public static final HbmThermalHandler INSTANCE = new HbmThermalHandler();
 
-    //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation THERMAL_EFFECT = new ResourceLocation(MainRegistry.MOD_ID, "shaders/post/thermal.json");
-    *///?} else {
     private static final ResourceLocation THERMAL_EFFECT = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/post/thermal.json");
-    //?}
 
     private static @Nullable PostChain thermalChain;
     private static int lastWidth = 0;
     private static int lastHeight = 0;
     private static boolean hasHotEntitiesThisFrame = false;
+
+    /**
+     * Закешированный immediate BufferSource термалки. Создаётся один раз (BufferBuilder
+     * держит NIO-буфер — аллокация per-frame даёт GC-микрофризы). Не shared с
+     * mc.renderBuffers(): endBatch() здесь должен флашить только нашу геометрию.
+     */
+    private static final net.minecraft.client.renderer.MultiBufferSource.BufferSource THERMAL_BUFFER_SOURCE =
+            com.hbm_m.platform.RenderHooks.immediateBufferSource(256);
+    private static final ShadowIgnoringBufferSource THERMAL_BUFFER_WRAPPER =
+            new ShadowIgnoringBufferSource(THERMAL_BUFFER_SOURCE);
 
     private HbmThermalHandler() {}
 
@@ -147,9 +153,7 @@ public class HbmThermalHandler implements ResourceManagerReloadListener {
 
             poseStack.pushPose();
             pushedPose = true;
-            net.minecraft.client.renderer.MultiBufferSource.BufferSource originalBufferSource =
-                    com.hbm_m.platform.RenderHooks.immediateBufferSource(256);
-            ShadowIgnoringBufferSource bufferSource = new ShadowIgnoringBufferSource(originalBufferSource);
+            ShadowIgnoringBufferSource bufferSource = THERMAL_BUFFER_WRAPPER;
 
             for (Entity entity : mc.level.entitiesForRendering()) {
                 if (isHotEntity(entity)) {
@@ -171,7 +175,7 @@ public class HbmThermalHandler implements ResourceManagerReloadListener {
                 }
             }
 
-            originalBufferSource.endBatch();
+            THERMAL_BUFFER_SOURCE.endBatch();
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error rendering thermal entities", e);
         } finally {
@@ -196,7 +200,7 @@ public class HbmThermalHandler implements ResourceManagerReloadListener {
         try {
             thermalChain.process(partialTick);
         } catch (Exception e) {
-            e.printStackTrace();
+            MainRegistry.LOGGER.error("Thermal vision post-chain failed; cleaning up", e);
             cleanup();
         }
         RenderSystem.disableBlend();

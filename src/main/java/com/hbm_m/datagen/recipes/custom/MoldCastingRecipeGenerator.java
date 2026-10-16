@@ -29,8 +29,9 @@ import java.util.function.Consumer;
  * больше не обращается к статическому реестру — он ищет {@link com.hbm_m.recipe.MoldCastingRecipe}
  * через {@code RecipeManager} (JSON).</p>
  *
- * <p>Каждое {@code MaterialType} из {@code MaterialType.values()} (27 значений) × 33
- * {@code MoldType} = 891 пара; после фильтра пустых выходов остаётся ~80 фактических рецептов.</p>
+ * <p>Каждое {@code MaterialType} из {@code MaterialType.values()} (41 значение) × 26
+ * {@code MoldType} — после фильтра пустых выходов остаётся 459+ фактических рецептов;
+ * точное число видно по JSON в {@code data/hbm_m/recipes/mold_casting/}.</p>
  */
 public final class MoldCastingRecipeGenerator {
 
@@ -103,8 +104,27 @@ public final class MoldCastingRecipeGenerator {
                 ItemStack gemItem = byId("gem_", mat, 1);
                 yield !gemItem.isEmpty() ? itemOrEmpty(gemItem) : tagOutput("forge:gems/" + tagName(mat), 1);
             }
+            // Казённые формы (ориг. c9/c50): gunmetal → casing_small/large,
+            // weaponsteel → casing_small_steel/large_steel (ItemMold.MoldMulti #79-84).
+            case C357           -> casingOutput(mat, "casing_small", "casing_small_steel");
+            case CBUCKSHOT      -> casingOutput(mat, "casing_large", "casing_large_steel");
             default             -> Output.EMPTY;
         };
+    }
+
+    /** Выход казённой формы: только gunmetal/weaponsteel, остальные материалы — пусто. */
+    private static Output casingOutput(MaterialType mat, String gunmetalId, String weaponsteelId) {
+        if (mat == MaterialType.GUNMETAL)    return itemOrEmpty(byDirectId(gunmetalId));
+        if (mat == MaterialType.WEAPONSTEEL) return itemOrEmpty(byDirectId(weaponsteelId));
+        return Output.EMPTY;
+    }
+
+    /** Предмет по точному id ({@code hbm_m:<id>}), без суффикса материала. */
+    private static ItemStack byDirectId(String id) {
+        ResourceLocation rl = ResourceLocation.fromNamespaceAndPath("hbm_m", id);
+        return BuiltInRegistries.ITEM.containsKey(rl)
+                ? new ItemStack(BuiltInRegistries.ITEM.get(rl), 1)
+                : ItemStack.EMPTY;
     }
 
     /** Использует {@code MaterialType.name} как tag-суффикс (с тем же fallback的其他 spelling не поддерживается). */

@@ -26,23 +26,15 @@ public class ModCreativeTabs {
         DeferredRegister.create(RefStrings.MODID, Registries.CREATIVE_MODE_TAB);
 
     private static CreativeModeTab.Builder tabBuilder() {
-        //? if forge || neoforge {
         return CreativeModeTab.builder();
-        //?} else {
-        /*return CreativeModeTab.builder(CreativeModeTab.Row.TOP, 0);
-        *///?}
     }
 
     /**
      * Forge/NeoForge: {@code withTabsBefore} — порядок вкладок (не по registry ID).
      */
     private static CreativeModeTab.Builder tabBuilderAfter(String previousTabId) {
-        //? if forge || neoforge {
         return CreativeModeTab.builder()
                 .withTabsBefore(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, previousTabId));
-        //?} else {
-        /*return CreativeModeTab.builder(CreativeModeTab.Row.TOP, 0);
-        *///?}
     }
 
     // Оригинал: PartsTab (иконка — ingot_uranium)
@@ -122,20 +114,13 @@ public class ModCreativeTabs {
 
 
 
-    /**
-     * Временная вкладка для новых, ещё не отсортированных по основным вкладкам предметов/блоков.
-     */
-//     public static final RegistrySupplier<CreativeModeTab> NTM_DEV_TAB = CREATIVE_MODE_TABS.register("ntm_dev_tab",
-
-//             () -> tabBuilderAfter("ntm_consumables_tab", 11)
-
-//                     .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_dev_tab"))
-
-//                     .icon(() -> new ItemStack(ModBlocks.BROADCASTER.get()))
-
-//                     .displayItems((params, output) -> CreativeModeTabEventHandler.populateDevItemsTab(CreativeModeTabEventHandler.deduplicated(output::accept)))
-
-//                     .build());
+    // DEV-вкладка: автонаполнение всеми предметами мода, сгруппированными по типам
+    public static final RegistrySupplier<CreativeModeTab> NTM_DEV_TAB = CREATIVE_MODE_TABS.register("ntm_dev_tab",
+            () -> tabBuilderAfter("ntm_consumable_tab")
+                    .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_dev_tab"))
+                    .icon(() -> new ItemStack(ModBlocks.BROADCASTER.get()))
+                    .displayItems((params, output) -> CreativeModeTabEventHandler.populateDevItemsTab(CreativeModeTabEventHandler.deduplicated(output::accept)))
+                    .build());
 
 
 

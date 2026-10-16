@@ -23,16 +23,17 @@ import net.minecraft.world.inventory.InventoryMenu;
 
 
 /**
- * Strand Caster (машина непрерывного литья) на фабрике {@link MachineRenderers} —
- * порт {@code RenderStrandCaster} (1.7.10). Корпус "caster" — статика; "plate"
- * (плита расплава) — динамическая часть: в оригинале перед отрисовкой ставился
- * GL clip plane {0,0,-1,0.5} в МОДЕЛЬНЫХ координатах, затем вся часть
- * сдвигалась на {@code z = max(-offset + 3.4, 0)} — здесь клиппинг заменён
- * фильтрацией квадов (отбрасываются квадов, все 4 вершины которых имеют
- * натуральный z > 0.51), а сдвиг — статическим трансформом. Поверхность расплава
- * "Surface" синтезируется: 2×2 (x ±0.9, z ±0.999) на {@code y = 2.3 + level},
- * fullbright (240/240), спрайт {@code lava_gray} с запечённым в вершины цветом
- * {@code type.color} (moltenColor).
+ * Strand Caster (continuous casting machine) on the {@link MachineRenderers} factory --
+ * port of {@code RenderStrandCaster} (1.7.10). The "caster" body is static; "plate"
+ * (the melt slab) is a dynamic part: in the original, before drawing, a GL clip plane
+ * {0,0,-1,0.5} was set in MODEL coordinates BEFORE the shift, then the whole part was
+ * shifted by {@code z = max(-offset + 3.4, 0)} -- here the clipping is replaced by a
+ * Sutherland-Hodgman cut of the quads with the plane {@code v.z + t <= 0.5}
+ * (equivalent to per-fragment culling: only the "sponge" of the slab sticking out of
+ * the machine as it fills remains visible), and the shift becomes a static transform.
+ * Both parts are tinted with the melt color {@code type.color} (moltenColor);
+ * the "Surface" is synthesized: 2x2 (x +-0.9, z +-0.999) at
+ * {@code y = 2.3 + level}, fullbright (240/240), sprite {@code lava_gray}.
  */
 public final class StrandCasterRenderer {
 
@@ -42,38 +43,51 @@ public final class StrandCasterRenderer {
 
     private StrandCasterRenderer() {}
 
+    /** Plate cache key: quantized shift + metal color (the tint is baked into the vertices). */
+    private static String plateCacheKey(MachineStrandCasterBlockEntity be) {
+        return (int) (moldOffset(be) * 64) + "_" + (be.type != null ? be.type.color : 0);
+    }
+
+    /** Surface cache key: melt level + metal color. */
+    private static String surfaceCacheKey(MachineStrandCasterBlockEntity be) {
+        return (int) (meltLevel(be) * 256) + "_" + (be.type != null ? be.type.color : 0);
+    }
+
     public static void register() {
         MachineRenderers.machine("strand_caster",
                 com.hbm_m.blockentity.ModBlockEntities.STRAND_CASTER_BE.get(),
                 MachineStrandCasterBlockEntity.class)
+            // The melt glows (original: glDisable(GL_LIGHTING) for plate, fullbright for Surface)
+            .lightOverride("plate", be -> hasMoltenMetal(be)
+                    ? net.minecraft.client.renderer.LightTexture.FULL_BRIGHT : -1)
             .part("caster")
             .dynamicPart("plate", StrandCasterRenderer::plateQuads,
-                    be -> String.valueOf((int) (moldOffset(be) * 64)),
+                    StrandCasterRenderer::plateCacheKey,
                     StrandCasterRenderer::plateTransform)
             .dynamicPart("Surface", StrandCasterRenderer::surfaceQuads,
-                    be -> String.valueOf((int) (meltLevel(be) * 256)))
+                    StrandCasterRenderer::surfaceCacheKey)
             .blockTransform(StrandCasterRenderer::applyBlockTransform)
             .itemParts("caster", "plate")
             .register();
     }
 
-    // ── Математика оригинала ───────────────────────────────────────────
+    // -- Original math --------------------------------------------------
 
-    /** Порт level = amount/capacity * 0.675 (высота поверхности расплава). */
+    /** Port of level = amount/capacity * 0.675 (melt surface height). */
     private static double meltLevel(MachineStrandCasterBlockEntity be) {
         if (be.amount == 0) return 0;
         int capacity = be.getCapacity();
         return capacity > 0 ? (double) be.amount / capacity * 0.675 : 0;
     }
 
-    /** Порт offset = amount/cost * 0.375 (сдвиг плиты к изложнице). */
+    /** Port of offset = amount/cost * 0.375 (slab shift toward the mold). */
     private static double moldOffset(MachineStrandCasterBlockEntity be) {
         if (be.amount == 0) return 0;
-        int cost = be.getMoldCostMb();
+        int cost = be.getMoldCost();
         return cost > 0 ? (double) be.amount / cost * 0.375 : 0;
     }
 
-    // ── Блочный трансформ (легаси GL-цепочка оригинала) ───────────────
+    // -- Block transform (the original's legacy GL chain) ---------------
 
     private static Direction facing(MachineStrandCasterBlockEntity be) {
         var state = be.getBlockState();
@@ -82,63 +96,160 @@ public final class StrandCasterRenderer {
     }
 
     /**
-     * Оригинал: rotateY(legacy facing) → translate(0.5,0,0.5) → rotateY(180).
-     * PoseStack применяет вызовы по порядку (последний — к вершинам первым).
+     * Original: rotateY(legacy facing) -> translate(0.5,0,0.5) -> rotateY(180).
+     * PoseStack applies the calls in order (the last one reaches the vertices first).
      */
     private static void applyBlockTransform(MachineStrandCasterBlockEntity be,
                                             com.hbm_m.client.render.LegacyAnimator animator) {
+        // Port of glTranslated(x + 0.5, y, z + 0.5): the BER basis is the block corner; in 1.7.10
+        // the TESR started with centering -- without it the model drifts half a block diagonally.
+        animator.translate(0.5f, 0f, 0.5f);
         animator.rotate(MultipartFacingTransforms.legacyFacingRotationYDegrees(facing(be)), 0, 1, 0);
         animator.translate(0.5f, 0f, 0.5f);
         animator.rotate(180f, 0f, 1f, 0f);
     }
 
-    // ── Plate: клип по натуральном z + сдвиг (порт GL_CLIP_PLANE0) ────
+    // -- Plate: clip at natural z + shift (port of GL_CLIP_PLANE0) ------
 
-    /** Трансформ плиты: z = max(-offset + 3.4, 0) в модельных координатах. */
+    /** Plate transform: z = max(-offset + 3.4, 0) in model coordinates. */
     private static boolean plateTransform(MachineStrandCasterBlockEntity be, float partialTick,
                                           long gameTime, com.mojang.blaze3d.vertex.PoseStack pose) {
         pose.translate(0, 0, Math.max(-moldOffset(be) + 3.4, 0));
         return true;
     }
 
+    /** Port of the render condition: metal is visible only with amount > 0 and a mold installed. */
+    private static boolean hasMoltenMetal(MachineStrandCasterBlockEntity be) {
+        return be.amount != 0 && be.getInstalledMold() != null;
+    }
+
     /**
-     * Квады части "plate", отфильтрованные по клип-плоскости {0,0,-1,0.5}:
-     * квад рисуется, только если хотя бы одна вершина имеет натуральный z <= 0.51.
+     * "plate" part quads with clipping and tint. Port of the GL_CLIP_PLANE0 {0,0,-1,0.5} +
+     * glTranslated(0,0,t) combo: the plane is set in model coordinates BEFORE the shift, so
+     * a fragment is visible when {@code v.z + t <= 0.5}. Polygons are cut by the plane
+     * Sutherland-Hodgman style with UV/color interpolation (per-fragment equivalent); the
+     * vertex color is multiplied by moltenColor (port of the original's glColor3f).
      */
     private static List<BakedQuad> plateQuads(MachineStrandCasterBlockEntity be) {
+        if (!hasMoltenMetal(be)) return List.of();
+
         List<BakedQuad> all = collectPartQuads(be, "plate");
         if (all.isEmpty()) return List.of();
 
+        double t = Math.max(-moldOffset(be) + 3.4, 0);
+        float clipZ = (float) (0.5 - t);
+        int tint = moltenColorRgba(be);
+
         List<BakedQuad> result = new ArrayList<>();
         for (BakedQuad quad : all) {
-            if (!isFullyBeyondClip(quad)) {
-                result.add(quad);
-            }
+            clipQuad(quad, clipZ, tint, result);
         }
         return result;
     }
 
-    /** true — все 4 вершины квада имеют натуральный (модельный) z > 0.5 + эпсилон. */
-    private static boolean isFullyBeyondClip(BakedQuad quad) {
+    /**
+     * Cuts a quad with the half-plane {@code z <= clipZ} and appends the result to {@code out}.
+     * BLOCK vertex format (8 ints: position x3, color, uv x2, light, normal); at edge
+     * intersections position/uv/color are interpolated linearly, light and normal come from
+     * the interior vertex. A 4-vertex polygon stays a quad, 3 becomes a quad with a duplicated
+     * vertex, 5 becomes a quad + triangle.
+     */
+    private static void clipQuad(BakedQuad quad, float clipZ, int tint, List<BakedQuad> out) {
         int[] data = quad.getVertices();
         int vertexSize = data.length / 4;
+        if (vertexSize != 8) return; // BLOCK format
+
+        int[][] v = new int[4][];
+        float[] z = new float[4];
         for (int i = 0; i < 4; i++) {
-            int off = i * vertexSize;
-            float z = Float.intBitsToFloat(data[off + 2]);
-            if (z <= 0.5f + 0.01f) return false;
+            v[i] = java.util.Arrays.copyOfRange(data, i * vertexSize, (i + 1) * vertexSize);
+            z[i] = Float.intBitsToFloat(v[i][2]);
         }
-        return true;
+
+        java.util.List<int[]> poly = new ArrayList<>(5);
+        for (int i = 0; i < 4; i++) {
+            int j = (i + 1) % 4;
+            boolean inI = z[i] <= clipZ;
+            boolean inJ = z[j] <= clipZ;
+            if (inI) poly.add(v[i]);
+            if (inI != inJ) {
+                float s = (clipZ - z[i]) / (z[j] - z[i]);
+                poly.add(lerpVertex(v[i], v[j], s));
+            }
+        }
+
+        int n = poly.size();
+        if (n == 0) return;
+
+        int[][] fan;
+        if (n == 4) {
+            fan = new int[][] { poly.get(0), poly.get(1), poly.get(2), poly.get(3) };
+        } else if (n == 3) {
+            fan = new int[][] { poly.get(0), poly.get(1), poly.get(2), poly.get(2) };
+        } else { // n == 5
+            fan = new int[][] {
+                    poly.get(0), poly.get(1), poly.get(2), poly.get(3),
+                    poly.get(0), poly.get(3), poly.get(4), poly.get(4)
+            };
+        }
+
+        for (int q = 0; q < fan.length / 4; q++) {
+            int[] nd = new int[4 * vertexSize];
+            for (int i = 0; i < 4; i++) {
+                int[] vert = tintVertex(fan[q * 4 + i], tint);
+                System.arraycopy(vert, 0, nd, i * vertexSize, vertexSize);
+            }
+            out.add(new BakedQuad(nd, quad.getTintIndex(), quad.getDirection(), quad.getSprite(), quad.isShade()));
+        }
     }
 
-    // ── Surface: синтез поверхности расплава ──────────────────────────
+    /** Linear interpolation of position/uv/color between vertices; light and normal come from {@code a}. */
+    private static int[] lerpVertex(int[] a, int[] b, float s) {
+        int[] r = new int[a.length];
+        r[0] = Float.floatToRawIntBits(lerp(Float.intBitsToFloat(a[0]), Float.intBitsToFloat(b[0]), s));
+        r[1] = Float.floatToRawIntBits(lerp(Float.intBitsToFloat(a[1]), Float.intBitsToFloat(b[1]), s));
+        r[2] = Float.floatToRawIntBits(lerp(Float.intBitsToFloat(a[2]), Float.intBitsToFloat(b[2]), s));
+        r[3] = lerpColor(a[3], b[3], s);
+        r[4] = Float.floatToRawIntBits(lerp(Float.intBitsToFloat(a[4]), Float.intBitsToFloat(b[4]), s));
+        r[5] = Float.floatToRawIntBits(lerp(Float.intBitsToFloat(a[5]), Float.intBitsToFloat(b[5]), s));
+        r[6] = a[6]; // light
+        r[7] = a[7]; // normal
+        return r;
+    }
+
+    private static float lerp(float a, float b, float s) {
+        return a + (b - a) * s;
+    }
+
+    /** Per-channel interpolation of a packed color (vertex format: r in the lowest byte). */
+    private static int lerpColor(int a, int b, float s) {
+        int r = Math.round(lerp(a & 0xFF, b & 0xFF, s));
+        int g = Math.round(lerp((a >> 8) & 0xFF, (b >> 8) & 0xFF, s));
+        int bl = Math.round(lerp((a >> 16) & 0xFF, (b >> 16) & 0xFF, s));
+        int al = Math.round(lerp((a >> 24) & 0xFF, (b >> 24) & 0xFF, s));
+        return (al << 24) | (bl << 16) | (g << 8) | r;
+    }
+
+    /** Multiplies the vertex color by the melt tint (port of glColor3f: component-wise multiplication). */
+    private static int[] tintVertex(int[] vert, int tint) {
+        int c = vert[3];
+        int r = ((c & 0xFF) * (tint & 0xFF)) / 255;
+        int g = (((c >> 8) & 0xFF) * ((tint >> 8) & 0xFF)) / 255;
+        int b = (((c >> 16) & 0xFF) * ((tint >> 16) & 0xFF)) / 255;
+        int a = (c >>> 24) * ((tint >>> 24) & 0xFF) / 255;
+        vert[3] = (a << 24) | (b << 16) | (g << 8) | r;
+        return vert;
+    }
+
+    // -- Surface: synthesized melt surface ------------------------------
 
     /**
-     * Поверхность расплава: один горизонтальный квад 2×2 (x ±0.9, z ±0.999),
-     * y = 2.3 + level, fullbright, спрайт lava_gray, цвет расплава запечён
-     * в вершины (RGBA, alpha 255). Шаблон формата — первый квад части "plate".
+     * Melt surface: a single horizontal 2x2 quad (x +-0.9, z +-0.999),
+     * y = 2.3 + level, fullbright, lava_gray sprite, melt color baked
+     * into the vertices (RGBA, alpha 255). Format template: the first quad of the "plate" part.
      */
     private static List<BakedQuad> surfaceQuads(MachineStrandCasterBlockEntity be) {
-        if (be.amount == 0 || be.type == null) return List.of();
+        if (!hasMoltenMetal(be) || be.type == null) return List.of();
 
         List<BakedQuad> templateQuads = collectPartQuads(be, "plate");
         if (templateQuads.isEmpty()) {
@@ -149,13 +260,13 @@ public final class StrandCasterRenderer {
 
         int[] oldData = template.getVertices();
         int vertexSize = oldData.length / 4;
-        if (vertexSize != 8) return List.of(); // формат BLOCK: 8 int на вершину
+        if (vertexSize != 8) return List.of(); // BLOCK format: 8 ints per vertex
 
         TextureAtlasSprite sprite = Minecraft.getInstance()
                 .getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(LAVA_GRAY_SPRITE);
 
         int[] data = new int[oldData.length];
-        // Порядок вершин: обход CCW сверху → нормаль +Y (winding шаблона-«верха»)
+        // Vertex order: CCW seen from above -> normal +Y (the winding of the "top" template)
         // v0(-x,-z) uv(0,0), v1(-x,+z) uv(0,1), v2(+x,+z) uv(1,1), v3(+x,-z) uv(1,0)
         float level = (float) meltLevel(be);
         float y = 2.3f + level;
@@ -175,14 +286,14 @@ public final class StrandCasterRenderer {
             data[off + 4] = Float.floatToRawIntBits(sprite.getU(u));
             data[off + 5] = Float.floatToRawIntBits(sprite.getV(v));
             data[off + 6] = LightTexture.FULL_BRIGHT; // fullbright 240/240
-            // нормаль не трогаем — байт-упаковка шаблона (горизонтальный квад)
+            // leave the normal untouched -- the template's byte packing (horizontal quad)
             data[off + 7] = oldData[off + 7];
         }
 
         return List.of(new BakedQuad(data, -1, Direction.UP, sprite, false));
     }
 
-    /** moltenColor, запечённый в цвет вершин: RGBA, alpha 255. */
+    /** moltenColor baked into the vertex color: RGBA, alpha 255. */
     private static int moltenColorRgba(MachineStrandCasterBlockEntity be) {
         int c = be.type != null ? be.type.color : 0xFFFFFF;
         int r = (c >> 16) & 0xFF;
@@ -191,9 +302,9 @@ public final class StrandCasterRenderer {
         return (255 << 24) | (b << 16) | (g << 8) | r;
     }
 
-    // ── Общие хелперы ─────────────────────────────────────────────────
+    // -- Shared helpers -------------------------------------------------
 
-    /** Сбор всех квадов части модели strand_caster (натуральные OBJ-координаты). */
+    /** Collects all quads of a strand_caster model part (natural OBJ coordinates). */
     private static List<BakedQuad> collectPartQuads(MachineStrandCasterBlockEntity be, String partName) {
         BakedModel raw = Minecraft.getInstance().getBlockRenderer().getBlockModel(be.getBlockState());
         if (!(raw instanceof com.hbm_m.client.model.AbstractMultipartBakedModel model)) return List.of();

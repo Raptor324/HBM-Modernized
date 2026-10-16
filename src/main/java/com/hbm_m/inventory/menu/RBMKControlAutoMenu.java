@@ -31,9 +31,9 @@ public class RBMKControlAutoMenu extends AbstractContainerMenu {
 
         for (int row = 0; row < 3; row++)
             for (int col = 0; col < 9; col++)
-                addSlot(new Slot(inv, col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
+                addSlot(new Slot(inv, col + row * 9 + 9, 8 + col * 18, 104 + row * 18));
         for (int col = 0; col < 9; col++)
-            addSlot(new Slot(inv, col, 8 + col * 18, 142));
+            addSlot(new Slot(inv, col, 8 + col * 18, 162));
     }
 
     private static RBMKControlAutoBlockEntity getBlockEntity(Inventory inv, FriendlyByteBuf buf) {
@@ -43,7 +43,7 @@ public class RBMKControlAutoMenu extends AbstractContainerMenu {
         // На клиенте тайл может отсутствовать (реплей Flashback) — возвращаем null.
         // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
         if (inv.player.level().isClientSide) return null;
-        throw new IllegalStateException("No RBMKControlAutoBlockEntity at " + pos);
+        throw new MenuBlockEntityMissingException("No RBMKControlAutoBlockEntity at " + pos);
     }
 
     public RBMKControlAutoBlockEntity getBlockEntity() { return blockEntity; }
@@ -54,8 +54,7 @@ public class RBMKControlAutoMenu extends AbstractContainerMenu {
         if (blockEntity == null) {
             return false;
         }
-        return blockEntity.getLevel() == player.level()
-            && player.distanceToSqr(blockEntity.getBlockPos().getCenter()) <= 64;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

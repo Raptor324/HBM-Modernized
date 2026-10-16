@@ -1,5 +1,13 @@
 package com.hbm_m.client.render.implementations;
 
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -28,11 +36,7 @@ import org.joml.Matrix4f;
  * platform+pistons) from the core position only — non-core cells render nothing. Uses the same
  * manual named-group OBJ rendering approach as {@link RBMKColumnRenderer}.
  */
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
 public class CargoElevatorRenderer implements BlockEntityRenderer<CargoElevatorBlockEntity> {
 
     private static final Map<String, Map<String, List<float[]>>> OBJ_CACHE = new HashMap<>();

@@ -13,6 +13,8 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.machines.BlastFurnaceBlock;
 import com.hbm_m.blockentity.BaseHbmBlockEntity;
+import com.hbm_m.handler.pollution.PollutionHandler;
+import com.hbm_m.inventory.fluid.trait.PollutionType;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.BlastFurnaceMenu;
 import com.hbm_m.item.ModItems;
@@ -50,15 +52,6 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
 //?}
 
-//? if fabric {
-/*import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
-import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
-import net.fabricmc.fabric.api.transfer.v1.storage.base.CombinedStorage;
-import net.fabricmc.fabric.api.transfer.v1.storage.base.FilteringStorage;
-
-import java.util.ArrayList;
-import java.util.List;
-*///?}
 
 @SuppressWarnings("UnstableApiUsage")
 public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuProvider {
@@ -101,9 +94,6 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
     private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
     //?}
 
-    //? if fabric {
-    /*private final Map<Direction, Storage<ItemVariant>> sidedStorages = new EnumMap<>(Direction.class);
-    *///?}
 
     private final ContainerData data;
     private int progress;
@@ -186,46 +176,6 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
     }
     //?}
 
-    //? if fabric {
-    /*@Override
-    public void setLevel(Level level) {
-        super.setLevel(level);
-        buildSidedStorages();
-    }
-
-    @Nullable
-    public Storage<ItemVariant> getItemStorage(@Nullable Direction side) {
-        if (side == null) return itemHandler.getStorage();
-        return sidedStorages.getOrDefault(side, null);
-    }
-
-    private void buildSidedStorages() {
-        sidedStorages.clear();
-        for (Direction dir : Direction.values()) {
-            sidedStorages.put(dir, buildStorageForSide(dir));
-        }
-    }
-
-    @SuppressWarnings("UnstableApiUsage")
-    private Storage<ItemVariant> buildStorageForSide(Direction direction) {
-        List<Storage<ItemVariant>> parts = new ArrayList<>();
-        for (int s = 0; s < itemHandler.getSlots(); s++) {
-            final int slot = s;
-            parts.add(new FilteringStorage<>(itemHandler.getSlotStorage(slot)) {
-                @Override
-                protected boolean canInsert(ItemVariant resource) {
-                    return canInsertFromDirection(slot, direction)
-                            && itemHandler.isItemValid(slot, resource.toStack());
-                }
-                @Override
-                protected boolean canExtract(ItemVariant resource) {
-                    return canExtractFromDirection(slot);
-                }
-            });
-        }
-        return new CombinedStorage<>(parts);
-    }
-    *///?}
 
     public void drops() {
         SimpleContainer inventory = new SimpleContainer(itemHandler.getSlots());
@@ -286,6 +236,12 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
         if (canProcess) {
             fuel = Math.max(0, fuel - 1);
             progress += getProgressPerTick();
+
+            // Original (TileEntityFurnaceSteel): SOOT_PER_SECOND * 2 im Sekundentakt.
+            if (level.getGameTime() % 20 == 0) {
+                PollutionHandler.incrementPollution(level, worldPosition, PollutionType.SOOT,
+                        PollutionHandler.SOOT_PER_SECOND * 2);
+            }
             if (progress >= PROCESS_TIME) {
                 craftItem();
                 progress -= PROCESS_TIME;
@@ -527,12 +483,55 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
     }
     //?}
 
+    //? if neoforge {
+    /*/^*
+     * NeoForge had no sided handler at all: {@link #getItemHandler} handed out the raw one, so the
+     * insert/extract restrictions that Forge and Fabric both enforce simply did not exist here -
+     * a hopper could pull unsmelted input or push into the output slot. Mirrors the Forge
+     * DirectionalItemHandler above.
+     ^/
+    private final class DirectionalItemHandler implements net.neoforged.neoforge.items.IItemHandler {
+        private final net.minecraft.core.Direction direction;
+
+        private DirectionalItemHandler(net.minecraft.core.Direction direction) { this.direction = direction; }
+
+        @Override public int getSlots() { return itemHandler.getSlots(); }
+
+        @Override public ItemStack getStackInSlot(int slot) { return itemHandler.getStackInSlot(slot); }
+
+        @Override
+        public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
+            if (!canInsertFromDirection(slot, direction) || !itemHandler.isItemValid(slot, stack)) return stack;
+            return itemHandler.insertItem(slot, stack, simulate);
+        }
+
+        @Override
+        public ItemStack extractItem(int slot, int amount, boolean simulate) {
+            if (!canExtractFromDirection(slot)) return ItemStack.EMPTY;
+            return itemHandler.extractItem(slot, amount, simulate);
+        }
+
+        @Override public int getSlotLimit(int slot) { return itemHandler.getSlotLimit(slot); }
+
+        @Override
+        public boolean isItemValid(int slot, ItemStack stack) {
+            return itemHandler.isItemValid(slot, stack) && canInsertFromDirection(slot, direction);
+        }
+    }
+
+    private final java.util.EnumMap<net.minecraft.core.Direction, DirectionalItemHandler> neoSidedHandlers =
+            new java.util.EnumMap<>(net.minecraft.core.Direction.class);
+    *///?}
+
     @Override
     public @Nullable Object getItemHandler(@Nullable net.minecraft.core.Direction side) {
         //? if forge {
         if (side == null) return this.itemHandler;
         return this.sidedItemHandlers.getOrDefault(side, this.lazyItemHandler).resolve().orElse(null);
-        //?} else {
+        //?} elif neoforge {
+        /*if (side == null) return this.itemHandler;
+        return neoSidedHandlers.computeIfAbsent(side, DirectionalItemHandler::new);
+        *///?} else {
         /*return this.itemHandler;
         *///?}
     }

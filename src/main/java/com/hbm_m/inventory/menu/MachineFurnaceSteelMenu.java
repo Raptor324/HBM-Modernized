@@ -10,7 +10,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.item.ItemStack;
@@ -77,7 +76,7 @@ public class MachineFurnaceSteelMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineFurnaceSteelBlockEntity be) {
             return be;
         }
-        throw new IllegalStateException("No MachineFurnaceSteelBlockEntity found at " + pos);
+        throw new MenuBlockEntityMissingException("No MachineFurnaceSteelBlockEntity found at " + pos);
     }
 
     public int getLitTime() { return data.get(DATA_LIT_TIME); }
@@ -99,8 +98,18 @@ public class MachineFurnaceSteelMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos()),
-                player, ModBlocks.FURNACE_STEEL.get());
+        return MenuReach.stillValid(player, blockEntity, ModBlocks.FURNACE_STEEL.get());
+    }
+
+    /** Menu index of the first fuel slot: three interleaved lanes come first. */
+    private static final int MENU_FUEL_1 = 6;
+
+    /** Tries each lane's input slot in menu order, skipping the outputs between them. */
+    private boolean moveToLaneInputs(ItemStack stack) {
+        for (int lane = 0; lane < 3; lane++) {
+            if (this.moveItemStackTo(stack, lane * 2, lane * 2 + 1, false)) return true;
+        }
+        return false;
     }
 
     @Override
@@ -117,13 +126,15 @@ public class MachineFurnaceSteelMenu extends AbstractContainerMenu {
                     return ItemStack.EMPTY;
                 }
             } else {
+                // Menu order interleaves the lanes (in, out, in, out, in, out, fuel, fuel), so the
+                // handler constants are not menu indices: the old range [0,3) covered lane 0's
+                // output and never reached lane 2's input.
                 if (MachineFurnaceSteelBlockEntity.isFuel(slotStack)) {
-                    if (!this.moveItemStackTo(slotStack, SLOT_FUEL_1, SLOT_FUEL_2 + 1, false)) {
-                        if (!this.moveItemStackTo(slotStack, SLOT_INPUT_0, SLOT_INPUT_0 + 3, false)) {
-                            return ItemStack.EMPTY;
-                        }
+                    if (!this.moveItemStackTo(slotStack, MENU_FUEL_1, MENU_FUEL_1 + 2, false)
+                            && !moveToLaneInputs(slotStack)) {
+                        return ItemStack.EMPTY;
                     }
-                } else if (!this.moveItemStackTo(slotStack, SLOT_INPUT_0, SLOT_INPUT_0 + 3, false)) {
+                } else if (!moveToLaneInputs(slotStack)) {
                     return ItemStack.EMPTY;
                 }
             }

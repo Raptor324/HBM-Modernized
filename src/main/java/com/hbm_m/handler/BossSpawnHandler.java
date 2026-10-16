@@ -1,6 +1,6 @@
 package com.hbm_m.handler;
 
-import com.hbm_m.block.ModBlocks;
+import com.hbm_m.item.ModItems;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.mob.EntityMaskMan;
@@ -102,7 +102,7 @@ public class BossSpawnHandler {
         if (!ModClothConfig.get().enableRadiation) return false;
 
         // The original tracks whether the acidizer was ever crafted or placed via the stats list.
-        var item = ModBlocks.MACHINE_CRYSTALLIZER.get().asItem();
+        var item = ModItems.CRYSTALLIZER.get();
         boolean acidizer = player.getStats().getValue(Stats.ITEM_CRAFTED.get(item)) > 0
                 || player.getStats().getValue(Stats.ITEM_USED.get(item)) > 0;
         if (!acidizer) return false;
@@ -186,9 +186,19 @@ public class BossSpawnHandler {
         return true;
     }
 
+    /** Vanilla-Untertag "PlayerPersisted" — das Einzige, was einen Tod ueberlebt. */
+    private static final String PERSISTED = "PlayerPersisted";
+
     private static CompoundTag persistentData(ServerPlayer player) {
         // getPersistentData() ist Forge-spezifisch; PlayerPersistentData kapselt beide Plattformen.
-        return com.hbm_m.platform.PlayerPersistentData.get(player);
+        // ServerPlayer.restoreFrom copies only the PlayerPersisted sub-tag across a respawn, so the
+        // MaskMan timer and the RAD mark used to be wiped by every death - exactly what upstream
+        // avoids by reading getCompoundTag(PERSISTED_NBT_TAG).
+        CompoundTag root = com.hbm_m.platform.PlayerPersistentData.get(player);
+        if (!root.contains(PERSISTED)) {
+            root.put(PERSISTED, new CompoundTag());
+        }
+        return root.getCompound(PERSISTED);
     }
 
     private static int getTimer(ServerPlayer player) {

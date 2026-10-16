@@ -16,9 +16,7 @@
 
 // //? if forge {
 // @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-// //?} elif fabric {
-// /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-// *///?} elif neoforge {
+// //?} elif neoforge {
 // /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 // *///?}
 // public class TestBlockRenderer implements BlockEntityRenderer<TestBlockEntity> {
@@ -39,12 +37,12 @@
 
 //         BakedModel part = model.getPart(TestBakedModel.PART_DEFAULT);
 //         if (part == null) {
-//             MainRegistry.LOGGER.error("ЧАСТЬ 'default' НЕ НАЙДЕНА В МОДЕЛИ! Доступные части: {}", String.join(", ", model.getPartNames()));
+//             MainRegistry.LOGGER.error("PART 'default' NOT FOUND IN MODEL! Available parts: {}", String.join(", ", model.getPartNames()));
 //             return;
 //         }
 
-//         // Статический меш: компилируется один раз, кэшируется в MeshRenderCache (LRU),
-//         // при reload/disconnect чистится вместе со всеми остальными через clearAll().
+//         // Static mesh: compiled once, cached in MeshRenderCache (LRU);
+//         // cleared on reload/disconnect together with all others via clearAll().
 //         SingleMeshVboRenderer renderer = MeshRenderCache.getOrCreateRenderer(CACHE_KEY, part);
 //         if (renderer != null) {
 //             renderer.render(poseStack, packedLight, blockEntity.getBlockPos(), blockEntity, bufferSource);

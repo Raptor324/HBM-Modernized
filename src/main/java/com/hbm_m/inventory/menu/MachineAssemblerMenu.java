@@ -15,15 +15,11 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-//? if fabric {
-/*import team.reborn.energy.api.EnergyStorage;
-*///?}
 
 @SuppressWarnings("UnstableApiUsage")
 public class MachineAssemblerMenu extends AbstractContainerMenu implements ILongEnergyMenu {
@@ -227,9 +223,12 @@ public class MachineAssemblerMenu extends AbstractContainerMenu implements ILong
                 moved = this.moveItemStackTo(sourceStack, TE_INVENTORY_FIRST_SLOT_INDEX + 6, TE_INVENTORY_FIRST_SLOT_INDEX + TE_INVENTORY_SLOT_COUNT, false);
             }
 
-            // If none of the prioritized moves succeeded, as a fallback try the full TE range
+            // Fallback: the three upgrade slots (1-3). The old fallback used the whole TE range, which
+            // includes the output slot (5) - vanilla moveItemStackTo ignores mayPlace when it merges
+            // onto an existing stack, so a shift-click could land in the output.
             if (!moved) {
-                if (!this.moveItemStackTo(sourceStack, TE_INVENTORY_FIRST_SLOT_INDEX, TE_INVENTORY_FIRST_SLOT_INDEX + TE_INVENTORY_SLOT_COUNT, false)) {
+                if (!this.moveItemStackTo(sourceStack, TE_INVENTORY_FIRST_SLOT_INDEX + 1,
+                        TE_INVENTORY_FIRST_SLOT_INDEX + 4, false)) {
                     return ItemStack.EMPTY;
                 }
             }
@@ -254,8 +253,7 @@ public class MachineAssemblerMenu extends AbstractContainerMenu implements ILong
 
     @Override
     public boolean stillValid(@NotNull Player pPlayer) {
-        return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()),
-                pPlayer, ModBlocks.MACHINE_ASSEMBLER.get());
+        return MenuReach.stillValid(pPlayer, blockEntity, ModBlocks.MACHINE_ASSEMBLER.get());
     }
 
     private void addPlayerInventory(Inventory playerInventory) {

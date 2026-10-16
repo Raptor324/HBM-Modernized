@@ -11,8 +11,16 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /** Port of {@code GUIWasteDrum} (1.7.10 Original). */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineWasteDrum extends AbstractContainerScreen<MachineWasteDrumMenu> {
 
     private static final ResourceLocation TEXTURE =
@@ -21,7 +29,7 @@ public class GUIMachineWasteDrum extends AbstractContainerScreen<MachineWasteDru
     public GUIMachineWasteDrum(MachineWasteDrumMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 176;
-        this.imageHeight = 184;
+        this.imageHeight = 189;
         this.inventoryLabelY = this.imageHeight - 96 + 2;
     }
 

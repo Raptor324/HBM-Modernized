@@ -10,9 +10,17 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /** GUI des Elektrolyseurs - beide Modi (Fluid + Metall) in einem Fenster, Fortschritts-/
  *  Fuellstandsanzeigen als Fuellrechtecke (siehe {@code GUIMachineElectricFurnace}). */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineElectrolyser extends AbstractContainerScreen<MachineElectrolyserMenu> {
 
     private static final ResourceLocation TEXTURE =
@@ -23,8 +31,8 @@ public class GUIMachineElectrolyser extends AbstractContainerScreen<MachineElect
     public GUIMachineElectrolyser(MachineElectrolyserMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
         this.blockEntity = menu.getBlockEntity();
-        this.imageWidth = 176;
-        this.imageHeight = 176;
+        this.imageWidth = 210;
+        this.imageHeight = 247;
         this.inventoryLabelY = imageHeight - 96 + 2;
     }
 

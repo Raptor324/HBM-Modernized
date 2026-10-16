@@ -17,10 +17,10 @@ import net.minecraft.server.packs.resources.ResourceProvider;
 //? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Wraps a {@link ResourceProvider} so that resources matching a target {@link ResourceLocation}
@@ -31,11 +31,7 @@ import net.fabricmc.api.Environment;*///?}
  * variants of the same shader source with different preprocessor defines (e.g. with and
  * without {@code #define USE_INSTANCING}).
  */
-//? if forge {
 @OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
 public final class ShaderPreDefinitions {
 
     private ShaderPreDefinitions() {}

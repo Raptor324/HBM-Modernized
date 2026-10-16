@@ -142,9 +142,7 @@ public class GUIMachineCrucible extends GuiInfoScreen<MachineCrucibleMenu> {
         for (MaterialStack sta : stack) {
             list.add(Component.literal("").withStyle(ChatFormatting.YELLOW)
                     .append(GUIScreenRecipeSelector.materialNameOf(sta))
-                    .append(Component.literal(": " + ScrapItem.formatAmount(
-                            (int) ((long) sta.amount * ScrapItem.QUANTA_PER_INGOT / MaterialStack.MB_PER_INGOT),
-                            shift).getString())));
+                    .append(Component.literal(": " + ScrapItem.formatAmount(sta.amount, shift).getString())));
         }
         drawCustomInfoStat(g, (int) mouseX, (int) mouseY,
                 x, y, INFO_W, INFO_H, (int) mouseX, (int) mouseY,

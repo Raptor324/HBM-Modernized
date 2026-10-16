@@ -62,6 +62,9 @@ public final class DhDepthCopy {
         RenderSystem.setShaderTexture(0, texId);
         shader.safeGetUniform("DhNear").set(dhNear);
         shader.safeGetUniform("DhFar").set(dhFar);
+        // Конвенция глубины DH (DH 3.3.1+ без пака = REVERSE_Z): ветка декода
+        // и порог discard неба в dh_depth_blit.fsh.
+        shader.safeGetUniform("DhReverseZ").set(DhClientState.dhReverseZ() ? 1.0F : 0.0F);
         // Точные плоскости нашей расширенной проекции (для честного энкода)
         shader.safeGetUniform("OutNear").set(com.hbm_m.client.compat.dh.DhClientCompat.extendedNear());
         shader.safeGetUniform("OutFar").set(com.hbm_m.client.compat.dh.DhClientCompat.extendedFar());
@@ -73,23 +76,7 @@ public final class DhDepthCopy {
         com.hbm_m.client.render.shader.ShaderBindResync.ensureFreshBind(shader);
 
         try {
-            //? if < 1.21.1 {
-            BufferBuilder bb = Tesselator.getInstance().getBuilder();
-            bb.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
-            bb.vertex(-1.0F, -1.0F, 0.0F).endVertex();
-            bb.vertex(1.0F, -1.0F, 0.0F).endVertex();
-            bb.vertex(1.0F, 1.0F, 0.0F).endVertex();
-            bb.vertex(-1.0F, 1.0F, 0.0F).endVertex();
-            Tesselator.getInstance().end();
-            //?} else {
-            /*BufferBuilder bb = Tesselator.getInstance().begin(
-                    VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
-            bb.addVertex(-1.0F, -1.0F, 0.0F);
-            bb.addVertex(1.0F, -1.0F, 0.0F);
-            bb.addVertex(1.0F, 1.0F, 0.0F);
-            bb.addVertex(-1.0F, 1.0F, 0.0F);
-            BufferUploader.drawWithShader(bb.build());
-            *///?}
+            com.hbm_m.platform.RenderHooks.drawQuad(-1.0F, -1.0F, 1.0F, 1.0F, 0.0F);
         } finally {
             GlStateManager._colorMask(true, true, true, true);
             RenderSystem.depthFunc(org.lwjgl.opengl.GL43.GL_LEQUAL);

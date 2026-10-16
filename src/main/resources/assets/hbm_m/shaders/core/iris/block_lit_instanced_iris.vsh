@@ -1,13 +1,14 @@
 #version 330 core
-// Iris ExtendedShader-вариант block_lit_instanced: чистый instanced путь (BoneId-раскладка),
-// юниформы с префиксом iris_ — ExtendedShader.getUniform() резолвит ванильные имена
-// через "iris_" + name (см. Iris pipeline/programs/ExtendedShader).
-// Конвенции вывода — vanilla-parity: один fragColor в FSH (как iris-fallback ShaderSynthesizer).
+// Iris ExtendedShader variant of block_lit_instanced: pure instanced path
+// (BoneId layout), uniforms use the iris_ prefix: ExtendedShader.getUniform()
+// resolves vanilla names via "iris_" + name (see Iris pipeline/programs/ExtendedShader).
+// Output conventions are vanilla parity: a single fragColor in the FSH
+// (like the iris-fallback ShaderSynthesizer).
 
 layout(location = 0) in vec3 Position;
 layout(location = 1) in vec3 Normal;
 layout(location = 2) in vec2 UV0;
-// int bone_id: резерв под merged mesh (CPU pose уже в InstPos/InstRot).
+// int bone_id: reserved for merged meshes (CPU pose already in InstPos/InstRot).
 layout(location = 3) in int BoneId;
 layout(location = 4) in vec3 InstPos;
 layout(location = 5) in vec4 InstRot;
@@ -18,14 +19,26 @@ layout(location = 8)  in vec4 InstLightC01;  // corner0.uv, corner1.uv
 layout(location = 9)  in vec4 InstLightC23;
 layout(location = 10) in vec4 InstLightC45;
 layout(location = 11) in vec4 InstLightC67;
+// Sprite-rect remap (identity 0,0,1,1 = passthrough), see block_lit_instanced.vsh.
+layout(location = 12) in vec4 InstUvRect;
+// Per-instance RGBA tint (heat/glow of parts; RGB may exceed 1 = overbright).
+layout(location = 13) in vec4 InstColor;
+// Spatial tint falloff in model coordinates: x = axis (0/1/2, <0 = off),
+// y = coordinate of full tint, z = coordinate of zero (smoothstep in between).
+layout(location = 14) in vec4 GradParams;
+// Parametric GPU animation (mirror of block_lit_instanced.vsh). Not yet active
+// on Iris paths (CPU animator, see MachineBer.isParametricPath); the attribute
+// is declared to keep the VAO layout consistent (16 attributes, divisor 1).
+layout(location = 15) in vec4 AnimParams;
 
 uniform mat4 iris_ModelViewMat;
 uniform mat4 iris_ProjMat;
-// Паковская тене-дисторсия (только shadow-проход): пак искажает shadow-map
-// "рыбьим глазом" вокруг игрока в своём shadow-vsh и компенсирует при
-// сэмплировании. Без идентичного искажения наш контент сэмплируется не в тех
-// текселях — тени «ползают» за игроком. Режим и константы извлекаются из
-// исходника shadow-программы пака (IrisShadowDistortion). 0 = без дисторсии.
+// Pack-specific shadow distortion (shadow pass only): the pack applies a
+// "fisheye" distortion to its shadow map around the player in its shadow vsh
+// and compensates when sampling. Without applying the identical distortion,
+// our content samples the wrong texels and shadows "crawl" behind the player.
+// Mode and constants are extracted from the pack's shadow program source
+// (IrisShadowDistortion). 0 = no distortion.
 uniform float iris_hbmShadowDistortionMode; // 0 none, 1 quartic (Photon), 2 linear (BSL/classic)
 uniform float iris_hbmShadowDistortion;
 uniform float iris_hbmShadowDepthScale;
@@ -36,6 +49,7 @@ out float vertexDistance;
 out vec3 fragNormal;
 out vec3 worldNormal;
 out float vFadeAlpha;
+out vec4 vColor;
 
 mat4 quatToMat4(vec4 q) {
     float xx = q.x * q.x;
@@ -79,15 +93,15 @@ void main() {
     mat4 rotMatrix = quatToMat4(InstRot);
     mat4 translation = mat4(1.0);
     translation[3] = vec4(InstPos, 1.0);
-    // InstPos/InstRot — мировые координаты (FrameViewState): камера приходит
-    // через iris_ModelViewMat (R_cam·T(-cam)); в shadow-флаш — shadow MODELVIEW.
+    // InstPos/InstRot are world coordinates (FrameViewState): the camera comes
+    // via iris_ModelViewMat (R_cam*T(-cam)); in the shadow pass, shadow MODELVIEW.
     mat4 instBase = translation * rotMatrix;
     mat4 modelView = iris_ModelViewMat * instBase;
 
     fragNormal = mat3(instBase) * Normal;
     worldNormal = mat3(rotMatrix) * Normal;
 
-    // Safeguard: нулевая ось bbox дала бы NaN на всей вершине.
+    // Safeguard: a zero bbox axis would produce NaN for the whole vertex.
     vec3 safeSize = max(InstBboxSize.xyz, vec3(1e-4));
     vec3 w = clamp((Position - InstBboxMin) / safeSize, 0.0, 1.0);
 
@@ -96,10 +110,26 @@ void main() {
     vec4 viewPos = modelView * vec4(Position, 1.0);
     gl_Position = iris_ProjMat * viewPos;
 
+    // Spatial tint falloff + emission: gt is the gradient weight (1 at the
+    // source, 0 at the far end, smoothstep); vColor = mix(white, tint, gt);
+    // the lightmap is pushed toward fullbright by InstColor.a (heat) * gt, so
+    // the glow follows the tint across the whole texture (hot metal), see
+    // MachineSpecBuilder.tintOverride.
+    float glow = 0.0;
+    vColor = InstColor;
+    if (GradParams.x >= 0.0) {
+        float gCoord = GradParams.x < 0.5 ? Position.x : (GradParams.x < 1.5 ? Position.y : Position.z);
+        float gt = clamp((gCoord - GradParams.z) / (GradParams.y - GradParams.z), 0.0, 1.0);
+        gt = gt * gt * (3.0 - 2.0 * gt);
+        vColor = mix(vec4(1.0), InstColor, gt);
+        glow = gt;
+    }
+    uvLm = mix(uvLm, vec2(240.0), clamp(InstColor.a * glow, 0.0, 1.0));
+
     if (iris_hbmShadowDistortionMode > 0.5) {
         float d = iris_hbmShadowDistortion;
-        // quartic_length (Photon): sqrt(sqrt(x^4+y^4)) — через умножения:
-        // pow(x, 4.0) с отрицательным x в GLSL undefined.
+        // quartic_length (Photon): sqrt(sqrt(x^4+y^4)) via multiplications;
+        // pow(x, 4.0) with negative x is undefined in GLSL.
         vec2 p = gl_Position.xy;
         vec2 p2 = p * p;
         float factor = iris_hbmShadowDistortionMode > 1.5
@@ -108,8 +138,8 @@ void main() {
         gl_Position = vec4(p / factor, gl_Position.z * iris_hbmShadowDepthScale, 1.0);
     }
 
-    texCoord = UV0;
-    // Центр 16×16 ячейки lightmap — как ванильный блок UV2 → texcoord.
+    texCoord = InstUvRect.xy + UV0 * InstUvRect.zw;
+    // Center of the 16x16 lightmap cell, like the vanilla UV2 -> texcoord block.
     lightmapUV = (uvLm + vec2(8.0)) / 256.0;
     vertexDistance = length(viewPos.xyz);
     vFadeAlpha = InstBboxSize.w;

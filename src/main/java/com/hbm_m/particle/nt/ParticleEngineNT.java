@@ -48,18 +48,24 @@ public class ParticleEngineNT {
      * отката и удаляет частицы «из будущего».
      */
     public void onWorldGameTime(long gameTime) {
-        this.gameTimeHistory[(int) (this.tickCounter % GAME_TIME_HISTORY)] = gameTime;
+        // Сначала purge-проверка и поиск границы, ПОТОМ штамп: слот текущего тика
+        // уже перезаписан отмотанным временем, и скан с него давал всегда
+        // cutoff == tickCounter (no-op). Скан ведётся с tickCounter-1 — по истории
+        // ДО отмотки; сам слот текущего тика штампуется ниже честным значением.
         if (gameTime < this.lastWorldGameTime) {
             this.purgeCutoff = findRewindCutoff(gameTime);
             purgeFutureParticles();
         }
+        this.gameTimeHistory[(int) (this.tickCounter % GAME_TIME_HISTORY)] = gameTime;
         this.lastWorldGameTime = gameTime;
     }
 
     /** Новейший тик движка, на котором мировое время было <= gameTime. */
     private long findRewindCutoff(long gameTime) {
         long oldest = Math.max(0, this.tickCounter - GAME_TIME_HISTORY + 1);
-        for (long e = this.tickCounter; e >= oldest; e--) {
+        // tickCounter-1: слот tickCounter на момент скана ещё не штампован/перезаписан
+        // (см. onWorldGameTime) — история прошлого начинается с предыдущего тика.
+        for (long e = this.tickCounter - 1; e >= oldest; e--) {
             if (this.gameTimeHistory[(int) (e % GAME_TIME_HISTORY)] <= gameTime) {
                 return e;
             }
@@ -75,6 +81,26 @@ public class ParticleEngineNT {
     }
 
     public void add(ParticleNT effect) {
+        // This engine draws in world space and knows nothing of Sable ships: a particle born at a
+        // ship machine's block position sits in the plot grid, millions of blocks away. The vanilla
+        // engine gets the same treatment from Sable itself (ParticleExtension.initialKickOut).
+        if (com.hbm_m.compat.sable.SableCompat.isLoaded()) {
+            net.minecraft.world.phys.Vec3 world = com.hbm_m.compat.sable.SableCompat.toWorld(effect.level, effect.x, effect.y, effect.z);
+            if (world.x != effect.x || world.y != effect.y || world.z != effect.z) {
+                // Скорость задана в осях корабля (plot-сетки): без поворота вместе с позицией
+                // пламя форсажа на повёрнутом судне улетает не в ту сторону.
+                net.minecraft.world.phys.Vec3 motion = com.hbm_m.compat.sable.SableCompat.toWorldVector(
+                        effect.level, new net.minecraft.world.phys.Vec3(effect.x, effect.y, effect.z),
+                        new net.minecraft.world.phys.Vec3(effect.xd, effect.yd, effect.zd));
+                effect.setPos(world.x, world.y, world.z);
+                effect.xo = world.x;
+                effect.yo = world.y;
+                effect.zo = world.z;
+                effect.xd = motion.x;
+                effect.yd = motion.y;
+                effect.zd = motion.z;
+            }
+        }
         // В нормальном режиме = текущий тик; в режиме отката новые частицы
         // (шлейф у отмотанной ракеты) штампуются границей и выживают.
         effect.spawnTick = Math.min(this.tickCounter, this.purgeCutoff);

@@ -4,14 +4,16 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
- * Анимация части модели станка. Единственное, что пишет разработчик конкретной машины.
+ * Animation of a machine model part - the only thing a specific machine's
+ * developer writes.
  * <p>
- * Контракт: {@code pose} уже несёт блочный трансформ (центр блока + поворот по facing)
- * и УЖЕ спушен движком — просто делайте translate/rotate/scale относительно блока
- * и НЕ вызывайте push/pop: движок сам снимет итоговую матрицу и откатит стек после возврата.
+ * Contract: {@code pose} already carries the block transform (block center +
+ * facing rotation) and is ALREADY pushed by the engine - just do
+ * translate/rotate/scale relative to the block and DO NOT call push/pop: the
+ * engine takes the final matrix itself and unwinds the stack after return.
  *
- * @return {@code true} — часть рисуется в этом кадре; {@code false} — пропустить
- *         (например, анимационные данные ещё не готовы).
+ * @return {@code true} - the part is drawn this frame; {@code false} - skip it
+ *         (e.g. animation data not ready yet).
  */
 @FunctionalInterface
 public interface PartAnimator<T extends BlockEntity> {

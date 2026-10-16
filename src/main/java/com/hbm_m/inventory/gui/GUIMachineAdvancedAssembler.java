@@ -25,19 +25,23 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 
 import com.hbm_m.util.EnergyFormatter;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 
 // TODO: РќСѓР¶РµРЅ СѓС‚РёР»РёС‚Р°СЂРЅС‹Р№ РєР»Р°СЃСЃ РґР»СЏ РѕС‚СЂРёСЃРѕРІРєРё РїРѕРґСЃРєР°Р·РѕРє Рё Р¶РёРґРєРѕСЃС‚РµР№.
 // Р­С‚РѕС‚ С„СѓРЅРєС†РёРѕРЅР°Р» СЃРµР№С‡Р°СЃ РІСЃС‚СЂРѕРµРЅ РІ СЌС‚РѕС‚ РєР»Р°СЃСЃ
 
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<MachineAdvancedAssemblerMenu> {
 
     // РўРµРєСЃС‚СѓСЂР° РёР· СЃС‚Р°СЂРѕРіРѕ GUI
-    //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation TEXTURE = new ResourceLocation(RefStrings.MODID, "textures/gui/processing/gui_assembler.png");
-    *///?} else {
         private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_assembler.png");
-    //?}
 
     // private static final ResourceLocation TEMPLATE_FOLDER_ICON = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/item/template_folder.png");
 

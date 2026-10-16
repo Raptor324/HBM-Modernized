@@ -9,12 +9,20 @@ package com.hbm_m.config;
 // что позволяет убрать обязательную зависимость cloth-config, сохранив ~120 call-сайтов
 // вида ModClothConfig.get().field без изменений.
 
+import com.hbm_m.client.render.culling.GpuCullingCapability;
 import com.hbm_m.config.schema.ConfigSchema;
 import com.hbm_m.config.schema.ConfigSide;
 
 public class ModClothConfig {
 
-    // Общие настройки 
+    /**
+     * Курс конверсии HBM Energy (HE) ↔ Forge Energy (FE): по умолчанию 5 HE = 1 FE.
+     * Применяется на всех границах с чужими FE-предметами/машинами и мостом сети.
+     */
+    public int energyRatioHe = 5;
+    public int energyRatioFe = 1;
+
+    // Общие настройки
     /**
      * The RBMK simulation dials that vanilla game rules cannot carry. In the original every dial
      * is a world game rule; the boolean and integer ones are registered as such in
@@ -59,6 +67,22 @@ public class ModClothConfig {
 
     public boolean enableRadiation = true;
     public boolean enableChunkRads = true;
+
+    // ════════════════════════════════════════════════════════════════
+    // Verschmutzung (1.7.10 RadiationConfig / MobConfig)
+    // ════════════════════════════════════════════════════════════════
+    /** Original: RadiationConfig.enablePollution - schaltet das gesamte Verschmutzungsraster. */
+    public boolean enablePollution = true;
+    /** Original: MobConfig.pollutionMult - Faktor auf jeden Eintrag ins Raster. */
+    public double pollutionMult = 1.0D;
+    /** Original: RadiationConfig.buffMobThreshold - ab so viel Russ spawnen verstaerkte Monster. */
+    public float buffMobThreshold = 50F;
+    /** Original: RadiationConfig.enablePoison - Giftwirkung auf Kreaturen in der Zelle. */
+    public boolean enablePoison = true;
+    /** Original: RadiationConfig.enableLeadPoisoning - Bleivergiftung durch Schwermetall in der Luft. */
+    public boolean enableLeadPoisoning = true;
+    /** Original: RadiationConfig.enableLeadFromBlocks - Bleivergiftung beim Abbauen in belasteten Zellen. */
+    public boolean enableLeadFromBlocks = true;
 
     /** MOTD при входе в мир и уведомление о новой версии на Modrinth (ориг. GeneralConfig.enableMOTD). */
     public boolean enableMOTD = true;
@@ -169,11 +193,30 @@ public class ModClothConfig {
      */
     public boolean enableDhRenderBridge = true;
 
-    /** CPU voxel ray-march окклюзии в OcclusionCullingHelper (frustum vanilla + raycast по блокам). Выключите, если модели рендерятся некорректно. */
+    public enum OcclusionCullingMode {
+        GPU, CPU, OFF
+    }
+
+    public OcclusionCullingMode occlusionCullingMode = OcclusionCullingMode.GPU;
+
+    /**
+     * Legacy boolean preserved for backwards compatibility with existing client.json and external callers.
+     * @deprecated Use {@link #occlusionCullingMode} and {@link #getEffectiveOcclusionCullingMode()} instead.
+     */
+    @Deprecated
     public boolean enableOcclusionCulling = false;
 
-    /** Перед заливкой instance VBO вызывать glBufferData(..., NULL) того же размера — orphaning буфера. */
-    public boolean instanceVboOrphanBeforeUpload = true;
+    /**
+     * Resolves the effective occlusion culling mode based on user setting and hardware capabilities.
+     * If configured to GPU but hardware does not support OpenGL 4.3 compute shaders, automatically
+     * falls back to OFF. Manual CPU selection is always honored.
+     */
+    public OcclusionCullingMode getEffectiveOcclusionCullingMode() {
+        if (occlusionCullingMode == OcclusionCullingMode.GPU) {
+            return GpuCullingCapability.isSupported() ? OcclusionCullingMode.GPU : OcclusionCullingMode.OFF;
+        }
+        return occlusionCullingMode;
+    }
 
     /**
      * Инстансинг, MDI и GPU-bone skinning включаются автоматически (переключателей больше нет).
@@ -195,6 +238,84 @@ public class ModClothConfig {
      * fade-кэши и окна аплоада. Kill-switch на случай регрессии картинки.
      */
     public boolean mdiCleanFrameReuse = true;
+
+    /**
+     * Fast-path dirty-skip: BlockEntity с {@code RenderDirtyTracker} (базовые машины)
+     * не пересобираются каждый кадр — матрицы/свет/сравнение записей выполняются
+     * только для грязных машин (onLoad/смена state/серверный update-пакет) и
+     * периодического TTL-освежения света/fade (~0.75-1.1 с, размазано по позициям).
+     * Требует GPU-куллинга (фрустум/окклюзию берёт на себя compute-куллер).
+     * Kill-switch: {@code -Dhbm.dirtySkip=false}.
+     */
+    public boolean nucleusRenderDirtySkip = true;
+
+    /**
+     * Кэш дельт анимаций: аниматор части исполняется один раз на кадр, второй
+     * проход (main/shadow) берёт готовую дельту. Kill-switch регрессии картинки.
+     * Аварийный JVM-флаг: {@code -Dhbm.animCache=false} (вынуждает OFF).
+     */
+    public boolean nucleusAnimCache = true;
+
+    /**
+     * Параметрическая GPU-анимация (attrib 15 AnimParams): вращение/сдвиг деталей
+     * считается в вершинном шейдере, CPU пишет только параметры сустава —
+     * работающая машина льёт 4 флоата на инстанс, стоящая — ноль. Выключить при
+     * артефактах анимации (детали на месте/улетели). Флаг: {@code -Dhbm.parametricAnim=false}.
+     */
+    public boolean nucleusParametricAnim = true;
+
+    /**
+     * Глобальный теневой батч под Iris: все части теневого прохода уходят одной
+     * пачкой инстансных дроуков вместо per-BE отрисовки. Флаг: {@code -Dhbm.shadowInstancing=false}.
+     */
+    public boolean nucleusShadowInstancing = true;
+
+    /**
+     * Шеринг скинов дверей: один VBO на геометрию, скин — per-instance uvRect.
+     * Выключить при неправильных текстурах дверей (переключит в per-skin VBO).
+     * Флаг: {@code -Dhbm.doorSkinSharing=false}.
+     */
+    public boolean nucleusDoorSkinSharing = true;
+
+    /**
+     * Байпас диспетчера BE: машины фабрики собираются плоским обходом до
+     * Sodium/ванильного обхода BlockEntity. Флаг: {@code -Dhbm.dispatcherBypass=false}.
+     */
+    public boolean nucleusDispatcherBypass = true;
+
+    /**
+     * Tier 1 GPU-bake под Iris: compute-шейдер запекает инстансы в вершинный буфер
+     * (один draw на part). Требует OpenGL 4.3; без поддержки автоматически
+     * деградирует в Tier 2/3. Флаг: {@code -Dhbm.gpuBake=false}.
+     */
+    public boolean nucleusGpuBake = true;
+
+    /**
+     * Compute-скаттер массовых аплоадов инстансов (один dispatch вместо N
+     * копий). Требует OpenGL 4.3 и не-Intel GPU; иначе DMA-путь.
+     * Флаг: {@code -Dhbm.gpuScatter=false}.
+     */
+    public boolean nucleusGpuScatter = true;
+
+    /**
+     * Прямой glBufferSubData вместо staging-кольца при аплоаде спанов (A/B для
+     * UMA-встроек, где GPU-GPU копия = лишний memcpy). Флаг: {@code -Dhbm.stagingDirect=true}.
+     */
+    public boolean nucleusStagingDirect = false;
+
+    /**
+     * Порог общего числа MDI-инстансов, выше которого GPU-culler включает
+     * окклюзию (Hi-Z rebuild фиксированно дорог; гистерезис 2:1).
+     * Флаг: {@code -Dhbm.gpuCull.minInstances=N}.
+     */
+    public int nucleusGpuCullMinInstances = 4096;
+
+    /**
+     * Минимум изменившихся span'ов в окне, при котором аплоад уходит в
+     * compute-скаттер вместо последовательных копий.
+     * Флаг: {@code -Dhbm.gpuScatter.minSpans=N}.
+     */
+    public int nucleusGpuScatterMinSpans = 16;
 
     /** Max instances per InstancedStaticPartRenderer (one OBJ part). Large machine fields need 4096+. */
     public int maxInstancedInstancesPerPart = 4096;
@@ -273,12 +394,14 @@ public class ModClothConfig {
     public int falloutDelay = 4;
     /** Включить принудительную прогрузку чанков взрывом (chunk ticket). Ориг. ключ: 6.05_enableChunkLoading = true */
     public boolean enableChunkLoading = true;
-    /** Алгоритм взрыва: 0 = Legacy (однопоточный), 1/2 = многопоточный движок с той же энергомоделью Legacy (идентичны). Ориг. ключ: 6.06_explosionAlgorithm (в 1.7.10 дефолт 2, но фактически всегда работал Legacy). */
-    public int explosionAlgorithm = 0;
+    /** Алгоритм взрыва: 0 = Legacy (однопоточный; работает ТОЛЬКО по уже загруженным чанкам, принудительной загрузки нет), 1 = Threaded DDA (асинхронная загрузка чанков, рекомендуется), 2 = Threaded DDA с накоплением урона. Ориг. ключ: 6.06_explosionAlgorithm (в оригинале дефолт 2). */
+    public int explosionAlgorithm = 1;
     /** Лимит жизни невыгруженного взрыва в секундах; 0 = без лимита (ориг. BombConfig.limitExplosionLifespan, ключ 6.00). */
     public int limitExplosionLifespan = 0;
-    /** Сохранять состояние взрыва MK5 в NBT — после перезахода взрыв продолжается с места остановки (ориг. BombConfig.enableNukeNBTSaving). */
-    public boolean enableNukeNBTSaving = true;
+    /** Кап одновременно загружаемых взрывом чанков; 0 = авто (max(64, ядра*8)). */
+    public int blastChunksInFlight = 0;
+    /** Максимум потоков ForkJoinPool взрывов; <=0 = ядра + значение (по умолчанию -1). */
+    public int bombMaxThreads = -1;
 
     // ════════════════════════════════════════════════════════════════
     // Тепловизор
@@ -298,6 +421,15 @@ public class ModClothConfig {
     public float debugRenderTextSize = 0.2F;
     public int debugRenderDistance = 4;
     public boolean enableDebugLogging = false;
+
+    /**
+     * GL debug callback (KHR_debug): HIGH/MEDIUM сообщения драйвера в лог.
+     * Вступает в силу после перезапуска. Флаг: {@code -Dhbm.glDebug=0} или env HBM_GL_DEBUG=0.
+     */
+    public boolean glDebugOutput = true;
+
+    /** Периодический лог статистики кэша анимаций Nucleus (раз в 5 с, при включённом). */
+    public boolean debugAnimCacheLog = false;
 
     // ════════════════════════════════════════════════════════════════
     // Singleton + загрузка/сохранение (замена AutoConfig)

@@ -43,7 +43,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * {@code {3,0,1,1,1,1}} (matches the same adaptation already used by {@code MachineBoilerBlock}).
  * No GUI (original only shows status via hover tooltip).
  */
-public class MachinePumpBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachinePumpBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.interfaces.ILookOverlay {
 
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
@@ -148,6 +148,65 @@ public class MachinePumpBlock extends BaseEntityBlock implements IMultiblockCont
                 ModBlockEntities.MACHINE_PUMP_STEAM_BE.get(),
                 (lvl, pos, st, be) -> MachinePumpSteamBlockEntity.tick(lvl, pos, st, (MachinePumpSteamBlockEntity) be)
         );
+    }
+
+    /**
+     * Порт {@code MachinePump.printHook}: паровые баки (пар →, ЛПС ←, вода ←) либо заряд
+     * электрической версии (→ HE) и вода (←), плюс мигающие предупреждения о высоте
+     * (ядро выше 70) и отсутствии грунта — как в оригинале.
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachinePumpSteamBlockEntity) && !(be instanceof MachinePumpElectricBlockEntity)) return;
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+
+        if (be instanceof MachinePumpSteamBlockEntity pump) {
+            addTankLine(text, "-> ", net.minecraft.ChatFormatting.GREEN, pump.getSteamTank());
+            addTankLine(text, "<- ", net.minecraft.ChatFormatting.RED, pump.getLpsTank());
+            addTankLine(text, "<- ", net.minecraft.ChatFormatting.RED, pump.getWaterTank());
+        }
+
+        if (be instanceof MachinePumpElectricBlockEntity pump) {
+            text.add(net.minecraft.network.chat.Component.literal("-> ").withStyle(net.minecraft.ChatFormatting.GREEN)
+                    .append(net.minecraft.network.chat.Component.literal(
+                            String.format(java.util.Locale.US, "%,d", pump.getEnergyStored())
+                                    + " / " + String.format(java.util.Locale.US, "%,d", MachinePumpElectricBlockEntity.MAX_POWER) + "HE")
+                            .withStyle(net.minecraft.ChatFormatting.WHITE)));
+            addTankLine(text, "<- ", net.minecraft.ChatFormatting.RED, pump.getWaterTank());
+        }
+
+        if (pos.getY() > 70) {
+            text.add(blinking("! ! ! ALTITUDE ! ! !"));
+        }
+
+        boolean onGround = (be instanceof MachinePumpSteamBlockEntity steam) ? steam.onGround
+                : (be instanceof MachinePumpElectricBlockEntity electric) ? electric.onGround : true;
+        if (!onGround) {
+            text.add(blinking("! ! ! NO VALID GROUND ! ! !"));
+        }
+
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
+    }
+
+    /** Строка "стрелка имя: fill / max mB" — формат MachinePump.printHook (стрелка цветная, текст белый). */
+    private static void addTankLine(java.util.List<net.minecraft.network.chat.Component> text, String arrow,
+            net.minecraft.ChatFormatting arrowColor, com.hbm_m.inventory.fluid.tank.FluidTank tank) {
+        String body = com.hbm_m.inventory.fluid.FluidType.forFluid(tank.getTankType()).getLocalizedName().getString()
+                + ": " + String.format(java.util.Locale.US, "%,d", tank.getFill())
+                + " / " + String.format(java.util.Locale.US, "%,d", tank.getMaxFill()) + "mB";
+        text.add(net.minecraft.network.chat.Component.literal(arrow).withStyle(arrowColor)
+                .append(net.minecraft.network.chat.Component.literal(body).withStyle(net.minecraft.ChatFormatting.WHITE)));
+    }
+
+    /** Мигающая строка (оригинальный {@code "&[" + (getBlink() ? красный : жёлтый) + "&]"}). */
+    private static net.minecraft.network.chat.Component blinking(String message) {
+        int color = System.currentTimeMillis() % 1000 < 500 ? 0xff0000 : 0xffff00;
+        return net.minecraft.network.chat.Component.literal(message)
+                .withStyle(net.minecraft.network.chat.Style.EMPTY
+                        .withColor(net.minecraft.network.chat.TextColor.fromRgb(color)));
     }
 
     @Override

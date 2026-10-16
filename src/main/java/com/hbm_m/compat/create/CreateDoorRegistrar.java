@@ -1,4 +1,3 @@
-//? if forge || neoforge {
 package com.hbm_m.compat.create;
 
 import com.hbm_m.block.ModBlocks;
@@ -72,4 +71,3 @@ public final class CreateDoorRegistrar {
         }
     }
 }
-//?}

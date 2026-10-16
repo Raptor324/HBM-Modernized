@@ -131,7 +131,12 @@ public abstract class OilDrillBaseBlockEntity extends BaseMachineBlockEntity imp
                         break;
                     }
                     for (Direction hDir : Direction.Plane.HORIZONTAL) {
-                        if (level.getBlockState(colPos.relative(hDir)).getBlock() == ModBlocks.ORE_OIL.get()) {
+                        // The column itself sits in the drill's chunk, but horizontal neighbours on
+                        // the border cross into the next one - the scan pulled it in from the tick
+                        // thread.
+                        BlockPos sidePos = colPos.relative(hDir);
+                        if (!level.isLoaded(sidePos)) continue;
+                        if (level.getBlockState(sidePos).getBlock() == ModBlocks.ORE_OIL.get()) {
                             oilInColumn = true;
                             break outer;
                         }
@@ -265,7 +270,7 @@ public abstract class OilDrillBaseBlockEntity extends BaseMachineBlockEntity imp
         Block b = level.getBlockState(pos).getBlock();
 
         // suck filled oil blocks directly
-        if (b == ModBlocks.ORE_OIL.get() || b == ModBlocks.BEDROCK_OIL.get()) {
+        if (b == ModBlocks.ORE_OIL.get() || b == ModBlocks.ORE_BEDROCK_OIL.get()) {
             doSuck(pos);
             return true;
         }

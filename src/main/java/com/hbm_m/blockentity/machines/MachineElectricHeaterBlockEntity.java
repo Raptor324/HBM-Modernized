@@ -131,6 +131,11 @@ public class MachineElectricHeaterBlockEntity extends BaseMachineBlockEntity imp
         return setting * 100;
     }
 
+    /** Текущий запас тепла для тултипа printHook. */
+    public int getHeat() {
+        return heat;
+    }
+
     @Override
     public int getHeatStored() {
         return heat;

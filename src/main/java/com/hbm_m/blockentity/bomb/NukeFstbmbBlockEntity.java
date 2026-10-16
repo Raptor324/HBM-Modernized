@@ -47,6 +47,13 @@ public class NukeFstbmbBlockEntity extends NukeBaseBlockEntity {
                     net.minecraft.sounds.SoundEvents.BEACON_ACTIVATE,
                     net.minecraft.sounds.SoundSource.BLOCKS, 3.0F, 1.0F);
             setChanged();
+            syncToClient();
+        }
+    }
+
+    private void syncToClient() {
+        if (level != null && !level.isClientSide && !isRemoved()) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
     }
 
@@ -64,6 +71,8 @@ public class NukeFstbmbBlockEntity extends NukeBaseBlockEntity {
             PlatformHooks.playSound(level, worldPosition,
                     net.minecraft.sounds.SoundEvents.NOTE_BLOCK_HAT,
                     net.minecraft.sounds.SoundSource.BLOCKS, 2.0F, 1.5F);
+            // Once a second, so the open GUI can show the countdown at all.
+            syncToClient();
         }
         if (timer <= 0) {
             started = false;

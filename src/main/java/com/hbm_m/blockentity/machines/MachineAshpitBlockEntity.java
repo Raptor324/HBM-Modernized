@@ -23,10 +23,10 @@ import net.minecraft.world.level.block.state.BlockState;
  * Sobald ein Schwellwert erreicht ist, wird ein Aschepulver-Item in einen freien/passenden der 5
  * Ausgabeslots gelegt (1:1 aus {@code processAsh}).
  * <p>
- * SCOPE-Entscheidung: Aktuell speist noch keine andere Maschine dieses Ports in den Ash Pit ein
- * (Firebox/WoodBurner/Chimney-Feuerungslogik ist noch nicht so weit integriert) - {@code addAsh}
- * steht bereit, sobald diese Maschinen portiert/erweitert werden, analog zur bereits vorhandenen
- * {@code IHeatSource}-Schnittstelle.
+ * <p>Gefuettert wird sie von der {@link MachineFireboxBlockEntity Feuerbuechse} direkt darueber -
+ * je nach Brennstoff faellt Holz-, Kohle- oder sonstige Asche an. Weitere Feuerungen des Originals
+ * (Holzbrenner, Ziegelofen, Schornstein) koennen sich ueber {@link #addAsh(AshType, int)}
+ * anhaengen, sobald sie so weit sind.
  */
 public class MachineAshpitBlockEntity extends BaseMachineBlockEntity {
 
@@ -74,6 +74,28 @@ public class MachineAshpitBlockEntity extends BaseMachineBlockEntity {
     /** Von Feuerungs-Maschinen aufzurufen, die unter sich einen Ash Pit finden (siehe Klassenkommentar). */
     public void addAsh(AshType type, int amount) {
         ashLevel[type.ordinal()] += amount;
+    }
+
+    /** GIT TileEntityFireboxBase: a burner dumps the fuel's raw burn time into an ash pit right below it. */
+    public static void feedFromBurner(Level level, BlockPos burnerPos, ItemStack fuel, int baseTime) {
+        if (level == null || baseTime <= 0) return;
+        if (!(level.getBlockEntity(burnerPos.below()) instanceof MachineAshpitBlockEntity ashpit)) return;
+        ashpit.addAsh(ashFromFuel(fuel), baseTime);
+        ashpit.setChanged();
+    }
+
+    /** GIT TileEntityFireboxBase.getAshFromFuel; the 1.7.10 ore dict names map onto tags plus item ids. */
+    public static AshType ashFromFuel(ItemStack stack) {
+        String id = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath();
+        if (stack.is(net.minecraft.tags.ItemTags.COALS) || id.contains("coke") || id.contains("coal") || id.contains("lignite")) {
+            return AshType.COAL;
+        }
+        if (stack.is(net.minecraft.tags.ItemTags.LOGS) || stack.is(net.minecraft.tags.ItemTags.PLANKS)
+                || stack.is(net.minecraft.tags.ItemTags.SAPLINGS)
+                || id.contains("log") || id.contains("wood") || id.contains("sapling")) {
+            return AshType.WOOD;
+        }
+        return AshType.MISC;
     }
 
     private boolean processAsh(AshType type) {

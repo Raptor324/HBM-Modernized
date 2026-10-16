@@ -14,6 +14,13 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Verwendet die portierte Original-Panel-Textur (nur der statische Rahmen). Der grafische Modus-
@@ -21,6 +28,7 @@ import net.minecraft.world.entity.player.Inventory;
  * Text-Button ersetzt (keine geratenen Icon-Koordinaten aus der unbekannten Textur - siehe
  * etablierte GUI-Konvention dieser Session).
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineFunnel extends AbstractContainerScreen<MachineFunnelMenu> {
 
     private static final ResourceLocation TEXTURE =

@@ -20,9 +20,6 @@ import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.client.render.DoorChunkInvalidationHelper;
 
-//? if fabric {
-/*import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
-*///?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -37,17 +34,15 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
  //?}
 
  /**
  * BlockEntity трубы. Хранит тип жидкости и управляет MK2 узлом в UniNodespace.
  * <p>
- * Визуал оверлея (neo / colored / silver): в Forge OBJ MTL задаётся {@code forge_TintIndex 1} для слоя
- * «skin»; на Fabric {@link com.hbm_m.client.model.loading.MtlData} читает это поле, JSON {@code mtl_override}
- * подставляет MTL для bake (base / overlay), а блоки труб зарегистрированы в {@code BlockRenderLayerMap}
- * как {@code cutout} в {@link com.hbm_m.client.ClientSetup}, чтобы оверлей с альфой и tint из
- * {@code ColorProviderRegistry.BLOCK} отображался как на Forge (multipart solid + cutout).
+ * Визуал оверлея (neo / colored / silver): в OBJ MTL слой «skin» помечен {@code forge_TintIndex 1},
+ * JSON {@code mtl_override} подставляет MTL для bake (base / overlay), а блоки труб зарегистрированы
+ * как {@code cutout} в {@link com.hbm_m.client.ClientSetup}, чтобы оверлей с альфой отображался
+ * поверх основы.
  *
  * Логика передачи жидкостей:
  *  - Узел (FluidNode) создаётся при загрузке блока/смене типа и разрушается при выгрузке.
@@ -165,7 +160,6 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
         }
     }
 
-    //? if forge {
     @Override
     public void onLoad() {
         super.onLoad();
@@ -190,17 +184,7 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
             FluidDuctBlock.refreshAdjacentDucts(level, worldPosition);
         }
     }
-    //?}
 
-    //? if fabric {
-    /*@Override
-    public void setLevel(Level level) {
-        super.setLevel(level);
-        if (level instanceof ServerLevel serverLevel) {
-            ensureNode(serverLevel);
-        }
-    }
-    *///?}
 
     @Override
     public void setRemoved() {
@@ -212,7 +196,6 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
         super.setRemoved();
     }
 
-    //? if forge {
     @Override
     public void onChunkUnloaded() {
         if (level instanceof ServerLevel serverLevel && node != null && !node.isExpired()) {
@@ -222,7 +205,6 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
         adapterCache.clear();
         super.onChunkUnloaded();
     }
-    //?}
 
     // =====================================================================================
     // Tick — регистрация Forge-машин в сети
@@ -293,17 +275,7 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
      * на Fabric — через Fabric Transfer API FluidStorage.SIDED.
      */
     private static boolean checkNeighborFluidHandler(Level level, BlockEntity neighbor, Direction side) {
-        //? if forge {
-        return neighbor.getCapability(ForgeCapabilities.FLUID_HANDLER, side).isPresent();
-         //?}
-        //? if fabric {
-        /*return FluidStorage.SIDED.find(level, neighbor.getBlockPos(), neighbor.getBlockState(), neighbor, side) != null;
-        *///?}
-        //? if neoforge {
-        /*// NeoForge 1.21.1: FluidHandler.BLOCK через level.getCapability (BlockEntity.getCapability убран).
-        return level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.BLOCK,
-                neighbor.getBlockPos(), neighbor.getBlockState(), neighbor, side) != null;
-        *///?}
+        return com.hbm_m.api.fluids.FluidCapabilityAccess.hasFluidHandler(level, neighbor.getBlockPos(), side);
     }
 
     // =====================================================================================
@@ -353,9 +325,7 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
      */
     private void refreshClientTintMesh() {
         if (level == null || !level.isClientSide) return;
-        //? if forge {
         requestModelDataUpdate();
-         //?}
         level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_IMMEDIATE);
         DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
     }

@@ -37,7 +37,7 @@ public class NukeFleijaMenu extends AbstractContainerMenu {
         // На клиенте тайл может отсутствовать (реплей Flashback) — возвращаем null.
         // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
         if (playerInv.player.level().isClientSide) return null;
-        throw new IllegalStateException("BlockEntity is not a NukeFleijaBlockEntity");
+        throw new MenuBlockEntityMissingException("BlockEntity is not a NukeFleijaBlockEntity");
     }
 
     public NukeFleijaMenu(int id, Inventory inventory, NukeFleijaBlockEntity blockEntity) {

@@ -93,7 +93,7 @@ public class MachineEPressBlock extends BaseEntityBlock implements IMultiblockCo
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moved) {
-        if (state.getBlock() != newState.getBlock()) {
+        if (state.getBlock() != newState.getBlock() && !level.isClientSide()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof MachineEPressBlockEntity ePress) {
                 ePress.drops();

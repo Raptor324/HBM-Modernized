@@ -57,7 +57,7 @@ public class MachineAshpitMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineAshpitBlockEntity ashpitBlockEntity) {
             return ashpitBlockEntity;
         }
-        throw new IllegalStateException("No MachineAshpitBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":ashpit_menu");
+        throw new MenuBlockEntityMissingException("No MachineAshpitBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":ashpit_menu");
     }
 
     public MachineAshpitBlockEntity getBlockEntity() {
@@ -66,11 +66,7 @@ public class MachineAshpitMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

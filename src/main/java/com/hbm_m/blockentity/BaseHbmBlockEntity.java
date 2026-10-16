@@ -43,10 +43,71 @@ import com.hbm_m.platform.PlatformHooks;
  * используйте {@link #applyClientUpdate(CompoundTag)} (метод для переопределения, вызывается
  * прослойкой при получении пакета) — он должен делегировать в {@link #readNbtData}.
  */
-public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_m.api.render.RenderBoundsProvider {
+public abstract class BaseHbmBlockEntity extends BlockEntity
+        implements com.hbm_m.api.render.RenderBoundsProvider, com.hbm_m.api.render.RenderDirtyTracker {
 
     public BaseHbmBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
+    }
+
+
+    // ═════════════════════════════════════════════════════════════════════════════════════
+    //  Render dirty tracking (GPU-driven сбор машин: см. com.hbm_m.api.render.RenderDirtyTracker)
+    //  Чистая машина пропускает ежекадровую сборку (матрицы/свет/сравнение записей) и
+    //  подтверждает присутствие roster-assert'ом. Свет/fade не имеют событийной модели —
+    //  обновляются TTL-пересбором (штамп gameTick, фаза размазана по позиции).
+    // ═════════════════════════════════════════════════════════════════════════════════════
+
+    /** TTL пересбора света/fade в тиках — консистентен с LightSampleCache.LIGHT_TTL_TICKS. */
+    private static final long NUCLEUS_RENDER_REFRESH_TICKS = 15;
+
+    private boolean nucleusRenderDirty = true;
+    private long nucleusLastRenderTick = Long.MIN_VALUE;
+    private long nucleusLastRenderWorldGen = -1L;
+
+    @Override
+    public boolean isRenderDirty() {
+        return nucleusRenderDirty;
+    }
+
+    @Override
+    public void markRenderDirty() {
+        nucleusRenderDirty = true;
+    }
+
+    @Override
+    public boolean isRenderStale(long gameTick, long worldGen) {
+        if (nucleusRenderDirty || nucleusLastRenderWorldGen != worldGen) {
+            return true;
+        }
+        long since = gameTick - nucleusLastRenderTick;
+        if (since < 0) {
+            return true; // смена измерения/откат времени
+        }
+        // Фаза по позиции: машины фермы не пересобираются все в один тик.
+        long phase = (worldPosition.asLong() >>> 4) & 7;
+        return since >= NUCLEUS_RENDER_REFRESH_TICKS + phase;
+    }
+
+    @Override
+    public void onRenderCollected(long gameTick, long worldGen) {
+        nucleusRenderDirty = false;
+        nucleusLastRenderTick = gameTick;
+        nucleusLastRenderWorldGen = worldGen;
+    }
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        // Загрузка чанка / пересоздание BE при смене blockstate — запись надо собрать заново.
+        nucleusRenderDirty = true;
+    }
+
+    @Override
+    public void setBlockState(BlockState state) {
+        super.setBlockState(state);
+        // LevelChunk переиспользует BE-инстанс при смене состояния того же блока.
+        nucleusRenderDirty = true;
     }
 
     /**
@@ -60,6 +121,38 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
     //?}
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
         return new net.minecraft.world.phys.AABB(worldPosition).inflate(0.5D);
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════════════════
+    //  Централизованный дроп инвентаря при разрушении блока. Платформенно-независимо:
+    //  один источник правды — {@link #getItemHandler(net.minecraft.core.Direction)},
+    //  который переопределяют машины с инвентарём.
+    //  ВАЖНО: НЕ переопределять setRemoved() для дропа, так как на 1.21.1 / NeoForge
+    //  при выгрузке чанков и сохранении мира ваниль вызывает setRemoved(), что приводило
+    //  к дюпу предметов на пол при перезаходе в мир.
+    // ═════════════════════════════════════════════════════════════════════════════════════
+
+    /** Переопределить и вернуть {@code false}, если машина дропает инвентарь сама или хранит в NBT предмета. */
+    protected boolean dropInventoryOnRemove() { return true; }
+
+    /**
+     * Выбрасывает содержимое инвентаря в мир при фактическом разрушении блока / мультиблока.
+     * Очищает слоты после выброса для предотвращения повторного дропа.
+     */
+    public void dropInventory() {
+        if (level == null || level.isClientSide || !dropInventoryOnRemove()) return;
+        if (com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) return;
+        Object handler = getItemHandler(null);
+        if (handler instanceof com.hbm_m.platform.ModItemStackHandler h) {
+            for (int i = 0; i < h.getSlots(); i++) {
+                net.minecraft.world.item.ItemStack stack = h.getStackInSlot(i);
+                if (stack != null && !stack.isEmpty()) {
+                    net.minecraft.world.Containers.dropItemStack(level,
+                            worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(), stack);
+                    h.setStackInSlot(i, net.minecraft.world.item.ItemStack.EMPTY);
+                }
+            }
+        }
     }
 
     // ═════════════════════════════════════════════════════════════════════════════════════
@@ -177,11 +270,13 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
     //? if forge {
     @Override
     public void handleUpdateTag(@NotNull CompoundTag tag) {
+        nucleusRenderDirty = true;
         applyClientUpdate(tag);
     }
 
     @Override
     public void onDataPacket(@NotNull Connection net, @NotNull ClientboundBlockEntityDataPacket pkt) {
+        nucleusRenderDirty = true;
         CompoundTag tag = PlatformHooks.getItemTag(pkt);
         if (tag != null) applyClientUpdate(tag);
     }
@@ -192,11 +287,13 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
     // Переопределяем с безусловным применением.
     @Override
     public void handleUpdateTag(@NotNull CompoundTag tag, HolderLookup.Provider registries) {
+        nucleusRenderDirty = true;
         applyClientUpdate(tag, registries);
     }
 
     @Override
     public void onDataPacket(@NotNull Connection net, @NotNull ClientboundBlockEntityDataPacket pkt, HolderLookup.Provider registries) {
+        nucleusRenderDirty = true;
         applyClientUpdate(pkt.getTag(), registries);
     }
     *///?}
@@ -216,6 +313,7 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
      * Возвращает IFluidHandler (NeoForge / Forge) для указанной стороны
      */
     public @Nullable Object getFluidHandler(@Nullable net.minecraft.core.Direction side) {
+        if (!isFluidSideAllowed(side)) return null;
         if (this instanceof com.hbm_m.api.fluids.IFluidUserMK2 mk2) {
             //? if forge {
             return null; // На Forge разруливается через getCapability
@@ -227,9 +325,27 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
     }
 
     /**
+     * Пускает ли машина жидкость через эту грань. {@code side == null} — несторонний запрос.
+     * На Forge то же самое делал сторонний фильтр в {@code getCapability}; на NeoForge капабилити
+     * вешается через ModCapabilities и сторону не проверяет, поэтому фильтр живёт здесь.
+     */
+    protected boolean isFluidSideAllowed(@Nullable net.minecraft.core.Direction side) {
+        return true;
+    }
+
+    /**
      * Возвращает IEnergyStorage для указанной стороны
      */
     public @Nullable Object getEnergyStorage(@Nullable net.minecraft.core.Direction side) {
         return null;
+    }
+
+    /**
+     * Участвует ли BE в энергетической сети вообще (провода, зарядка, выдача).
+     * Машины без энергии (пресс) переопределяют в {@code false}: на Forge их getCapability
+     * возвращает empty, на NeoForge ModCapabilities не регистрирует на них energy-капы.
+     */
+    public boolean joinsEnergyNetwork() {
+        return true;
     }
 }

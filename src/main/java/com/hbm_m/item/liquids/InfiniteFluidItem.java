@@ -168,7 +168,6 @@ public class InfiniteFluidItem extends Item implements ITooltipProvider {
     //  FORGE / NEOFORGE — тонкий адаптер IFluidHandlerItem над InfiniteAccess //
     // ================================================================== //
 
-    //? if forge || neoforge {
     public static class InfiniteFluidCapabilityHandler implements IFluidHandlerItem {
         protected final InfiniteAccess access;
 
@@ -215,7 +214,6 @@ public class InfiniteFluidItem extends Item implements ITooltipProvider {
                     : new FluidStack(arch.getFluid(), (int) arch.getAmount());
         }
     }
-    //?}
 
     //? if forge {
     @Override

@@ -12,7 +12,7 @@ import com.hbm_m.entity.mob.EntityCreeperPhosgene;
 import com.hbm_m.entity.mob.EntityCreeperTainted;
 import com.hbm_m.entity.mob.EntityCreeperVolatile;
 import com.hbm_m.entity.mob.NoloEntity;
-import com.hbm_m.entity.missile.MissileABMEntity;
+import com.hbm_m.entity.missile.MissileAntiBallisticEntity;
 import com.hbm_m.entity.missile.MissileBaseEntity;
 import com.hbm_m.entity.missile.MissileTestEntity;
 import com.hbm_m.entity.missile.MissileShuttleEntity;
@@ -85,6 +85,14 @@ public class ModEntities {
                     () -> EntityType.Builder.<AirstrikeNukeEntity>of(AirstrikeNukeEntity::new, MobCategory.MISC)
                             .sized(2.0F, 1.0F)
                             .build("airstrikenuke"));
+
+    // Both heavy and agent used to be constructed with AIRSTRIKE_ENTITY: after a reload the game
+    // rebuilt them through that type's factory, so a heavy bomber came back as a plain one.
+    public static final RegistrySupplier<EntityType<AirstrikeHeavyEntity>> AIRSTRIKE_HEAVY_ENTITY =
+            ENTITY_TYPES.register("airstrikeheavy",
+                    () -> EntityType.Builder.<AirstrikeHeavyEntity>of(AirstrikeHeavyEntity::new, MobCategory.MISC)
+                            .sized(2.0F, 1.0F)
+                            .build("airstrikeheavy"));
 
     public static final RegistrySupplier<EntityType<AirstrikeAgentEntity>> AIRSTRIKE_AGENT_ENTITY =
             ENTITY_TYPES.register("airstrikeagent",
@@ -166,13 +174,13 @@ public class ModEntities {
                             .updateInterval(3)
                             .build("missile_test"));
 
-    public static final RegistrySupplier<EntityType<MissileABMEntity>> MISSILE_ABM =
-            ENTITY_TYPES.register("missile_abm",
-                    () -> EntityType.Builder.<MissileABMEntity>of(MissileABMEntity::new, MobCategory.MISC)
+    public static final RegistrySupplier<EntityType<MissileAntiBallisticEntity>> MISSILE_ANTI_BALLISTIC =
+            ENTITY_TYPES.register("missile_anti_ballistic",
+                    () -> EntityType.Builder.<MissileAntiBallisticEntity>of(MissileAntiBallisticEntity::new, MobCategory.MISC)
                             .sized(0.5F, 0.5F)
                             .clientTrackingRange(256)
                             .updateInterval(3)
-                            .build("missile_abm"));
+                            .build("missile_anti_ballistic"));
 
     // Soyuz Launcher: flight entity + cargo-mode descent capsule (see SoyuzLauncherBlockEntity)
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.missile.SoyuzEntity>> SOYUZ =
@@ -489,6 +497,17 @@ public class ModEntities {
                             .updateInterval(1)
                             .build("bomblet_zeta"));
 
+    /** Port of {@code EntityShrapnel}: шрапнель и вулканические лавовые сгустки (ядро вулкана). */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.projectile.ShrapnelEntity>> SHRAPNEL =
+            ENTITY_TYPES.register("shrapnel",
+                    () -> EntityType.Builder.<com.hbm_m.entity.projectile.ShrapnelEntity>of(
+                                    com.hbm_m.entity.projectile.ShrapnelEntity::new, MobCategory.MISC)
+                            .sized(0.25F, 0.25F)
+                            .fireImmune()
+                            .clientTrackingRange(64)
+                            .updateInterval(10)
+                            .build("shrapnel"));
+
     /** 1:1 port of {@code EntityUFO}: 15x4 flying fortress, 20000 HP. */
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.mob.EntityUFO>> UFO =
             ENTITY_TYPES.register("ufo",
@@ -631,26 +650,28 @@ public class ModEntities {
                             .updateInterval(3)
                             .build("zirnox_debris"));
 
+    /** 1:1-Port von {@code EntityCog}: das Zahnrad aus einem geplatzten Stirlingmotor. */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.projectile.CogEntity>> COG =
+            ENTITY_TYPES.register("cog",
+                    () -> EntityType.Builder.<com.hbm_m.entity.projectile.CogEntity>of(
+                                    com.hbm_m.entity.projectile.CogEntity::new, MobCategory.MISC)
+                            // Original: setSize(1F, 1F).
+                            .sized(1F, 1F)
+                            .clientTrackingRange(10)
+                            .updateInterval(3)
+                            .build("cog"));
+
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.projectile.PileDebrisEntity>> PILE_DEBRIS =
+            ENTITY_TYPES.register("pile_debris",
+                    () -> EntityType.Builder.<com.hbm_m.entity.projectile.PileDebrisEntity>of(
+                                    com.hbm_m.entity.projectile.PileDebrisEntity::new, MobCategory.MISC)
+                            // Original: die Trefferbreite 0.35F aus dem Aufruf in handleMeltdown.
+                            .sized(0.35F, 0.35F)
+                            .clientTrackingRange(10)
+                            .updateInterval(3)
+                            .build("pile_debris"));
+
     public static void init() {
         ENTITY_TYPES.register();
-        //? if fabric {
-        /*net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry.register(
-                NOLO.get(), NoloEntity.createAttributes());
-        net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry.register(
-                ENTITY_MOB_TAINTED_CREEPER.get(), EntityCreeperTainted.createAttributes());
-        net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry.register(
-                ENTITY_MOB_VOLATILE_CREEPER.get(), EntityCreeperVolatile.createAttributes());
-        net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry.register(
-                ENTITY_MOB_PHOSGENE_CREEPER.get(), EntityCreeperPhosgene.createAttributes());
-        net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry.register(
-                ENTITY_MOB_GOLD_CREEPER.get(), EntityCreeperGold.createAttributes());
-        net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry.register(
-                ENTITY_MOB_NUCLEAR_CREEPER.get(), EntityCreeperNuclear.createAttributes());
-        net.minecraft.world.entity.SpawnRestriction.register(
-                NOLO.get(),
-                net.minecraft.world.entity.SpawnPlacements.Type.ON_GROUND,
-                net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
-                NoloEntity::checkNoloSpawnRules);
-        *///?}
     }
 }

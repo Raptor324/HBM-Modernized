@@ -1,5 +1,13 @@
 package com.hbm_m.compat.jei;
 
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+
 import java.util.List;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
@@ -28,13 +36,7 @@ import net.minecraft.world.level.material.Fluids;
  * instead of the vanilla extension mechanism; this renderer reuses that same path for JEI.
  */
 
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
 public class HbmFluidJeiRenderer implements IIngredientRenderer<FluidStack> {
 
     private final int width;

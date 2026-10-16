@@ -45,14 +45,24 @@ public enum ModArmorMaterials implements ArmorMaterial {
     SECURITY("security", 26, new int[]{ 4, 6, 4, 3 }, 25,
             SoundEvents.ARMOR_EQUIP_CHAIN, 1.25f, 0.03f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))),
 
-    HAZMAT("hazmat", 26, new int[]{ 2, 4, 2, 1 }, 25,
-            SoundEvents.ARMOR_EQUIP_LEATHER, 0f, 0f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))),
+    // Хазмат: оригинал HBM_HAZMAT/HBM_HAZMAT2/HBM_HAZMAT3 - factor 60, {2,5,4,1}, ench 5,
+    // ремонт hazmat_cloth(_red/_grey). Радиацию и газы сверх этого считают
+    // HazmatRegistry/ArmorRegistry.
+    HAZMAT("hazmat", 60, new int[]{ 2, 5, 4, 1 }, 5,
+            SoundEvents.ARMOR_EQUIP_LEATHER, 0f, 0f, () -> Ingredient.of(ModItems.HAZMAT_CLOTH.get())),
+
+    HAZMAT_RED("hazmat_red", 60, new int[]{ 2, 5, 4, 1 }, 5,
+            SoundEvents.ARMOR_EQUIP_LEATHER, 0f, 0f, () -> Ingredient.of(ModItems.HAZMAT_CLOTH_RED.get())),
+
+    HAZMAT_GREY("hazmat_grey", 60, new int[]{ 2, 5, 4, 1 }, 5,
+            SoundEvents.ARMOR_EQUIP_LEATHER, 0f, 0f, () -> Ingredient.of(ModItems.HAZMAT_CLOTH_GREY.get())),
 
     PAA("paa", 26, new int[]{ 5, 7, 5, 4 }, 25,
             SoundEvents.ARMOR_EQUIP_GOLD, 1.75f, 0.07f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))),
 
-    LIQUIDATOR("liquidator", 26, new int[]{ 5, 7, 6, 4 }, 25,
-            SoundEvents.ARMOR_EQUIP_IRON, 1.5f, 0.1f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))),
+    // Оригинал HBM_LIQUIDATOR: factor 750, {3,8,6,3}, ench 10, ремонт plate_lead.
+    LIQUIDATOR("liquidator", 750, new int[]{ 3, 8, 6, 3 }, 10,
+            SoundEvents.ARMOR_EQUIP_IRON, 1.5f, 0.1f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.PLATE))),
 
     STEEL("steel", 26, new int[]{ 4, 5, 3, 2 }, 25,
             SoundEvents.ARMOR_EQUIP_IRON, 1f, 0.03f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))),
@@ -95,6 +105,11 @@ public enum ModArmorMaterials implements ArmorMaterial {
     private final Supplier<Ingredient> repairIngredient;
 
     private static final int[] BASE_DURABILITY = { 11, 16, 16, 13 };
+
+    /** Version-agnostic form of the 1.20.1-only getDurabilityForType override. */
+    public int durabilityFor(ArmorItem.Type type) {
+        return BASE_DURABILITY[type.ordinal()] * this.durabilityMultiplier;
+    }
 
     ModArmorMaterials(String name, int durabilityMultiplier, int[] protectionAmounts, int enchantmentValue, Object equipSound,
                       float toughness, float knockbackResistance, Supplier<Ingredient> repairIngredient) {

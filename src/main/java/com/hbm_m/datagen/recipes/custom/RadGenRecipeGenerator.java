@@ -26,14 +26,13 @@ public final class RadGenRecipeGenerator {
     private RadGenRecipeGenerator() {}
 
     public static void generate(Consumer<FinishedRecipe> writer) {
-        radgen(writer, "waste_short", ModItems.NUCLEAR_WASTE_SHORT.get(),
-                1500, 30 * 60 * 20, new ItemStack(ModItems.NUCLEAR_WASTE_SHORT_DEPLETED.get()));
-        radgen(writer, "waste_short_tiny", ModItems.NUCLEAR_WASTE_SHORT_TINY.get(),
-                150, 3 * 60 * 20, new ItemStack(ModItems.NUCLEAR_WASTE_SHORT_DEPLETED_TINY.get()));
-        radgen(writer, "waste_long", ModItems.NUCLEAR_WASTE_LONG.get(),
-                500, 2 * 60 * 60 * 20, new ItemStack(ModItems.NUCLEAR_WASTE_LONG_DEPLETED.get()));
-        radgen(writer, "waste_long_tiny", ModItems.NUCLEAR_WASTE_LONG_TINY.get(),
-                50, 12 * 60 * 20, new ItemStack(ModItems.NUCLEAR_WASTE_LONG_DEPLETED_TINY.get()));
+        // Original: die Schleifen ueber {@code WasteClass.values()} - jede Abfallklasse hat ihr
+        // eigenes Rezept, damit das abgereicherte Stueck dieselbe Klasse behaelt. Leistung und
+        // Dauer sind fuer alle Klassen gleich.
+        wasteGroup(writer, "waste_short", "nw_short", "nw_short_dep", 1500, 30 * 60 * 20);
+        wasteGroup(writer, "waste_short_tiny", "nw_short_tiny", "nw_short_dep_tiny", 150, 3 * 60 * 20);
+        wasteGroup(writer, "waste_long", "nw_long", "nw_long_dep", 500, 2 * 60 * 60 * 20);
+        wasteGroup(writer, "waste_long_tiny", "nw_long_tiny", "nw_long_dep_tiny", 50, 12 * 60 * 20);
         // Scrap: сгорает без выхода (result опускается).
         radgen(writer, "scrap", ModMaterialItems.item(ModMaterials.SCRAP_NUCLEAR, MaterialShape.SCRAP),
                 50, 5 * 60 * 20, ItemStack.EMPTY);
@@ -42,6 +41,22 @@ public final class RadGenRecipeGenerator {
     }
 
     // ─── helpers ──────────────────────────────────────────────────────────────────
+
+    /**
+     * Ein Rezept je Abfallklasse einer Gruppe. Frische und abgereicherte Gruppe stehen in
+     * derselben Reihenfolge, Listenplatz {@code i} gehoert also zusammen.
+     */
+    private static void wasteGroup(Consumer<FinishedRecipe> writer, String idPrefix,
+                                   String fresh, String spent, int power, int duration) {
+
+        var freshItems = com.hbm_m.item.PartTabMetaItems.group(fresh);
+        var spentItems = com.hbm_m.item.PartTabMetaItems.group(spent);
+
+        for (int i = 0; i < freshItems.size(); i++) {
+            ItemStack out = i < spentItems.size() ? new ItemStack(spentItems.get(i)) : ItemStack.EMPTY;
+            radgen(writer, idPrefix + "_" + i, freshItems.get(i), power, duration, out);
+        }
+    }
 
     private static void radgen(Consumer<FinishedRecipe> writer, String id,
                                net.minecraft.world.item.Item input, int power, int duration, ItemStack output) {

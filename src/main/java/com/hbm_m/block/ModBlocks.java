@@ -8,7 +8,6 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import com.hbm_m.platform.BlockProps;
-import com.hbm_m.api.energy.ConverterBlock;
 import com.hbm_m.api.energy.SwitchBlock;
 import com.hbm_m.api.energy.WireBlock;
 import com.hbm_m.block.bomb.BlockTaint;
@@ -23,6 +22,7 @@ import com.hbm_m.block.decorations.CageLampBlock;
 import com.hbm_m.block.decorations.CrateCanBlock;
 import com.hbm_m.block.decorations.CrtBlock;
 import com.hbm_m.block.decorations.DecorShapeBlock;
+import com.hbm_m.block.decorations.DemonLampBlock;
 import com.hbm_m.block.decorations.DoorBlock;
 import com.hbm_m.block.decorations.GrateBlock;
 import com.hbm_m.block.decorations.KeyholeBlock;
@@ -80,6 +80,17 @@ import com.hbm_m.block.machines.MachineCrackingTowerBlock;
 import com.hbm_m.block.machines.MachineCrucibleBlock;
 import com.hbm_m.block.machines.MachineCrystallizerBlock;
 import com.hbm_m.block.machines.MachineCyclotronBlock;
+import com.hbm_m.block.machines.fusion.MachineFusionTorusBlock;
+import com.hbm_m.block.machines.fusion.MachineFusionKlystronBlock;
+import com.hbm_m.block.machines.fusion.MachineFusionKlystronCreativeBlock;
+import com.hbm_m.block.machines.fusion.MachineFusionBreederBlock;
+import com.hbm_m.block.machines.fusion.MachineFusionCollectorBlock;
+import com.hbm_m.block.machines.fusion.MachineFusionCouplerBlock;
+import com.hbm_m.block.machines.fusion.MachineFusionBoilerBlock;
+import com.hbm_m.block.machines.fusion.MachineFusionMhdtBlock;
+import com.hbm_m.block.machines.fusion.FusionComponentBlock;
+import com.hbm_m.block.machines.fusion.MachineFusionPlasmaForgeBlock;
+import com.hbm_m.block.machines.fusion.StructTorusCoreBlock;
 import com.hbm_m.block.machines.MachineDerrickBlock;
 import com.hbm_m.block.machines.MachineDeuteriumTowerBlock;
 import com.hbm_m.block.machines.MachineFelBlock;
@@ -87,7 +98,7 @@ import com.hbm_m.block.machines.MachineFlareStackBlock;
 import com.hbm_m.block.machines.MachineFluidTankBlock;
 import com.hbm_m.block.machines.MachineFrackingTowerBlock;
 import com.hbm_m.block.machines.MachineFractionTowerBlock;
-import com.hbm_m.block.machines.MachineGasCentrifugeBlock;
+import com.hbm_m.block.machines.MachineGasCentBlock;
 import com.hbm_m.block.machines.MachineHydrotreaterBlock;
 import com.hbm_m.block.machines.MachineIndustrialBoilerBlock;
 import com.hbm_m.block.machines.MachineIndustrialTurbineBlock;
@@ -183,14 +194,16 @@ import dev.architectury.registry.registries.DeferredRegister;
 import net.minecraft.core.registries.Registries;
 import dev.architectury.registry.registries.RegistrySupplier;
 
+import static com.hbm_m.util.CompletionStatus.*;
+
 public class ModBlocks {
     public static final DeferredRegister<Block> BLOCKS =
             DeferredRegister.create(RefStrings.MODID, Registries.BLOCK);
 
-    public static final RegistrySupplier<Block> GEIGER_COUNTER_BLOCK = registerBlock("geiger_counter_block",
+    public static final RegistrySupplier<Block> GEIGER_COUNTER_BLOCK = registerBlock("geiger_counter_block", COMPLETE,
             () -> new GeigerCounterBlock(BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion()));
 
-    public static final RegistrySupplier<Block> DECON = registerBlock("decon",
+    public static final RegistrySupplier<Block> DECON = registerBlock("decon", COMPLETE,
             () -> new BlockDecon(BlockProps.copy(Blocks.IRON_BLOCK)
                     .strength(5.0F, 10.0F)
                     .requiresCorrectToolForDrops()));
@@ -203,6 +216,7 @@ public class ModBlocks {
 
     private static final BlockBehaviour.Properties TABLE_PROPERTIES =
             BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(5.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops();
+
     private static final BlockBehaviour.Properties ANVIL_PROPERTIES =
             BlockProps.copy(Blocks.ANVIL).sound(SoundType.ANVIL).noOcclusion();
 
@@ -346,9 +360,6 @@ public class ModBlocks {
     public static List<RegistrySupplier<Block>> getAnvilBlocks() {
         return List.of(ANVIL_IRON, ANVIL_LEAD, ANVIL_STEEL, ANVIL_DESH, ANVIL_FERROURANIUM, ANVIL_SATURNITE, ANVIL_BISMUTH_BRONZE, ANVIL_ARSENIC_BRONZE, ANVIL_SCHRABIDATE, ANVIL_DNT, ANVIL_OSMIRIDIUM, ANVIL_MURKY);
     }
-
-    public static final RegistrySupplier<Block> CONVERTER_BLOCK = registerBlock("converter_block",
-            () -> new ConverterBlock(BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion()));
 
     public static final RegistrySupplier<Block> EMP = registerBlock("emp",
             () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK)
@@ -530,24 +541,21 @@ public class ModBlocks {
             () -> new com.hbm_m.block.machines.MachineFoundryOutletBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(3.0f, 3.0f).sound(SoundType.NETHER_BRICKS).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     // ─── Trophies ─────────────────────────────────────────────────────────────
-    public static final RegistrySupplier<Block> GAS_CENTRIFUGE = registerBlockWithoutItem("gas_centrifuge",
-            () -> new MachineGasCentrifugeBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+    public static final RegistrySupplier<Block> MACHINE_GASCENT = registerBlockWithoutItem("machine_gascent",
+            () -> new MachineGasCentBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
-    public static final RegistrySupplier<Block> CENTRIFUGE = registerBlockWithoutItem("centrifuge",
+    public static final RegistrySupplier<Block> MACHINE_CENTRIFUGE = registerBlockWithoutItem("machine_centrifuge",
             () -> new MachineCentrifugeBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).isSuffocating((state, world, pos) -> false)));
 
     public static final RegistrySupplier<Block> STEAM_CONDENSER = registerBlock("steam_condenser",
             () -> new MachineSteamCondenserBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(3.0f, 4.0f).sound(SoundType.METAL)));
 
     public static final RegistrySupplier<Block> UNIVERSAL_MACHINE_PART = registerBlockWithoutItem("universal_machine_part",
-            //? if < 1.21.1 {
             // dynamicShape() обязателен: без него ваниль кэширует collision shape при регистрации
             // (EmptyBlockGetter, без BE) и MTS/др. моды, зовущие 2-арг getCollisionShape,
             // всегда получают полную коллизию вместо формы из BE контроллера
-            () -> new UniversalMachinePartBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().isSuffocating((state, world, pos) -> false).dynamicShape().noParticlesOnBreak()));
-            //?} else {
-            /*() -> new UniversalMachinePartBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().isSuffocating((state, world, pos) -> false).dynamicShape()));
-            *///?}
+            () -> new UniversalMachinePartBlock(BlockProps.noParticlesOnBreak(
+                    BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().isSuffocating((state, world, pos) -> false).dynamicShape())));
 
 	public static final RegistrySupplier<Block> FLUID_TANK = registerBlockWithoutItem("fluid_tank",
             () -> new MachineFluidTankBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f).requiresCorrectToolForDrops().noOcclusion().isSuffocating((state, world, pos) -> false)));
@@ -649,7 +657,7 @@ public class ModBlocks {
 
     //---------------------------<ДВЕРИ>-------------------------------------
 
-    public static final RegistrySupplier<DoorBlock> LARGE_VEHICLE_DOOR = registerBlockWithoutItem("large_vehicle_door",
+    public static final RegistrySupplier<DoorBlock> LARGE_VEHICLE_DOOR = registerBlockWithoutItem("large_vehicle_door", COMPLETE,
             () -> new DoorBlock(
                     BlockBehaviour.Properties.of()
                             .strength(10.0F, 1000.0F)
@@ -660,7 +668,7 @@ public class ModBlocks {
                     "large_vehicle_door"
             ));
 
-    public static final RegistrySupplier<DoorBlock> ROUND_AIRLOCK_DOOR = registerBlockWithoutItem("round_airlock_door",
+    public static final RegistrySupplier<DoorBlock> ROUND_AIRLOCK_DOOR = registerBlockWithoutItem("round_airlock_door", COMPLETE,
             () -> new DoorBlock(
                     BlockBehaviour.Properties.of()
                             .strength(10.0F, 1000.0F)
@@ -671,7 +679,7 @@ public class ModBlocks {
                     "round_airlock_door"
             ));
 
-    public static final RegistrySupplier<Block> TRANSITION_SEAL = registerBlockWithoutItem("transition_seal",
+    public static final RegistrySupplier<Block> TRANSITION_SEAL = registerBlockWithoutItem("transition_seal", COMPLETE,
             () -> new TransitionSealBlock(
                     BlockBehaviour.Properties.of()
                             .strength(10.0F, 1000.0F)
@@ -680,7 +688,7 @@ public class ModBlocks {
                             .noOcclusion()
                             .dynamicShape().isViewBlocking((state, level, pos) -> false)));
 
-    public static final RegistrySupplier<Block> FIRE_DOOR = registerBlockWithoutItem("fire_door",
+    public static final RegistrySupplier<Block> FIRE_DOOR = registerBlockWithoutItem("fire_door", COMPLETE,
             () -> new DoorBlock(
                     BlockBehaviour.Properties.of()
                             .strength(10.0F, 1000.0F)
@@ -691,7 +699,7 @@ public class ModBlocks {
                     "fire_door"
             ));
 
-    public static final RegistrySupplier<Block> SLIDE_DOOR = registerBlockWithoutItem("sliding_blast_door",
+    public static final RegistrySupplier<Block> SLIDE_DOOR = registerBlockWithoutItem("sliding_blast_door", COMPLETE,
             () -> new DoorBlock(
                     BlockBehaviour.Properties.of()
                             .strength(10.0F, 1000.0F)
@@ -702,7 +710,7 @@ public class ModBlocks {
                     "sliding_blast_door"
             ));
 
-    public static final RegistrySupplier<Block> SLIDING_SEAL_DOOR = registerBlockWithoutItem("sliding_seal_door",
+    public static final RegistrySupplier<Block> SLIDING_SEAL_DOOR = registerBlockWithoutItem("sliding_seal_door", COMPLETE,
             () -> new DoorBlock(
                     BlockBehaviour.Properties.of()
                             .strength(10.0F, 1000.0F)
@@ -713,7 +721,7 @@ public class ModBlocks {
                     "sliding_seal_door"
             ));
 
-    public static final RegistrySupplier<Block> SECURE_ACCESS_DOOR = registerBlockWithoutItem("secure_access_door",
+    public static final RegistrySupplier<Block> SECURE_ACCESS_DOOR = registerBlockWithoutItem("secure_access_door", COMPLETE,
             () -> new DoorBlock(
                     BlockBehaviour.Properties.of()
                             .strength(10.0F, 1000.0F)
@@ -724,7 +732,7 @@ public class ModBlocks {
                     "secure_access_door"
             ));
 
-    public static final RegistrySupplier<Block> QE_SLIDING = registerBlockWithoutItem("qe_sliding_door",
+    public static final RegistrySupplier<Block> QE_SLIDING = registerBlockWithoutItem("qe_sliding_door", COMPLETE,
             () -> new DoorBlock(
                     BlockBehaviour.Properties.of()
                             .strength(10.0F, 1000.0F)
@@ -735,7 +743,7 @@ public class ModBlocks {
                     "qe_sliding_door"
             ));
 
-    public static final RegistrySupplier<Block> QE_CONTAINMENT = registerBlockWithoutItem("qe_containment_door",
+    public static final RegistrySupplier<Block> QE_CONTAINMENT = registerBlockWithoutItem("qe_containment_door", COMPLETE,
             () -> new DoorBlock(
                     BlockBehaviour.Properties.of()
                             .strength(10.0F, 1000.0F)
@@ -746,7 +754,7 @@ public class ModBlocks {
                     "qe_containment_door"
             ));
 
-    public static final RegistrySupplier<Block> WATER_DOOR = registerBlockWithoutItem("water_door",
+    public static final RegistrySupplier<Block> WATER_DOOR = registerBlockWithoutItem("water_door", COMPLETE,
             () -> new DoorBlock(
                     BlockBehaviour.Properties.of()
                             .strength(10.0F, 1000.0F)
@@ -757,7 +765,7 @@ public class ModBlocks {
                     "water_door"
             ));
 
-    public static final RegistrySupplier<Block> SILO_HATCH = registerBlockWithoutItem("silo_hatch",
+    public static final RegistrySupplier<Block> SILO_HATCH = registerBlockWithoutItem("silo_hatch", COMPLETE,
             () -> new DoorBlock(
                     BlockBehaviour.Properties.of()
                             .strength(10.0F, 1000.0F)
@@ -768,7 +776,7 @@ public class ModBlocks {
                     "silo_hatch"
             ));
 
-    public static final RegistrySupplier<Block> SILO_HATCH_LARGE = registerBlockWithoutItem("silo_hatch_large",
+    public static final RegistrySupplier<Block> SILO_HATCH_LARGE = registerBlockWithoutItem("silo_hatch_large", COMPLETE,
             () -> new DoorBlock(
                     BlockBehaviour.Properties.of()
                             .strength(10.0F, 1000.0F)
@@ -779,7 +787,7 @@ public class ModBlocks {
                     "silo_hatch_large"
             ));
 
-    public static final RegistrySupplier<DoorBlock> VAULT_DOOR = registerBlockWithoutItem("vault_door",
+    public static final RegistrySupplier<DoorBlock> VAULT_DOOR = registerBlockWithoutItem("vault_door", COMPLETE,
             () -> new DoorBlock(
                     BlockBehaviour.Properties.of()
                             .strength(10.0F, 1000.0F)
@@ -790,7 +798,7 @@ public class ModBlocks {
                     "vault_door"
             ));
 
-    public static final RegistrySupplier<Block> CARGO_DOOR = registerBlockWithoutItem("cargo_door",
+    public static final RegistrySupplier<Block> CARGO_DOOR = registerBlockWithoutItem("cargo_door", COMPLETE,
             () -> new DoorBlock(
                     BlockBehaviour.Properties.of()
                             .strength(10.0F, 1000.0F)
@@ -1149,12 +1157,6 @@ public class ModBlocks {
             () -> new DepthOreBlock(BlockProps.copy(Blocks.DEEPSLATE).strength(4.5F, 6.0F).noOcclusion()));
     public static final RegistrySupplier<Block> DEPTH_CINNABAR = registerBlock("depth_cinnabar",
             () -> new DepthOreBlock(BlockProps.copy(Blocks.DEEPSLATE).strength(4.5F, 6.0F).noOcclusion()));
-    public static final RegistrySupplier<Block> DEPTH_IRON = registerBlock("depth_iron",
-            () -> new DepthOreBlock(BlockProps.copy(Blocks.DEEPSLATE).strength(4.5F, 6.0F).noOcclusion()));
-    public static final RegistrySupplier<Block> DEPTH_TUNGSTEN = registerBlock("depth_tungsten",
-            () -> new DepthOreBlock(BlockProps.copy(Blocks.DEEPSLATE).strength(4.5F, 6.0F).noOcclusion()));
-    public static final RegistrySupplier<Block> DEPTH_TITANIUM = registerBlock("depth_titanium",
-            () -> new DepthOreBlock(BlockProps.copy(Blocks.DEEPSLATE).strength(4.5F, 6.0F).noOcclusion()));
     public static final RegistrySupplier<Block> DEPTH_ZIRCONIUM = registerBlock("depth_zirconium",
             () -> new DepthOreBlock(BlockProps.copy(Blocks.DEEPSLATE).strength(4.5F, 6.0F).noOcclusion()));
 
@@ -1224,14 +1226,17 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> BARREL_CORRODED = registerBlock("barrel_corroded",
             () -> new com.hbm_m.block.machines.BarrelTankBlock(BlockProps.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion(),
                     com.hbm_m.blockentity.machines.BarrelCorrodedBlockEntity::new,
-                    () -> com.hbm_m.blockentity.ModBlockEntities.BARREL_CORRODED_BE.get()));
+                    () -> com.hbm_m.blockentity.ModBlockEntities.BARREL_CORRODED_BE.get(),
+                    new com.hbm_m.block.machines.BarrelTankBlock.TooltipInfo(
+                            com.hbm_m.blockentity.machines.BarrelCorrodedBlockEntity.CAPACITY,
+                            true, true, true, false, true)));
     public static final RegistrySupplier<Block> BARREL_IRON = registerBlock("barrel_iron",
             () -> new com.hbm_m.block.machines.BarrelTankBlock(BlockProps.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion(),
                     com.hbm_m.blockentity.machines.BarrelIronBlockEntity::new,
                     () -> com.hbm_m.blockentity.ModBlockEntities.BARREL_IRON_BE.get(),
                     new com.hbm_m.block.machines.BarrelTankBlock.TooltipInfo(
                             com.hbm_m.blockentity.machines.BarrelIronBlockEntity.CAPACITY,
-                            false, false, false, false)));
+                            false, false, false, false, false)));
     public static final RegistrySupplier<Block> BARREL_PINK = registerBlock("barrel_pink",
             () -> new CrtBlock(BlockProps.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion()));
     public static final RegistrySupplier<Block> BARREL_PLASTIC = registerBlock("barrel_plastic",
@@ -1240,7 +1245,7 @@ public class ModBlocks {
                     () -> com.hbm_m.blockentity.ModBlockEntities.BARREL_PLASTIC_BE.get(),
                     new com.hbm_m.block.machines.BarrelTankBlock.TooltipInfo(
                             com.hbm_m.blockentity.machines.BarrelPlasticBlockEntity.CAPACITY,
-                            false, false, false, false)));
+                            false, false, null, false, false)));
     public static final RegistrySupplier<Block> BARREL_RED = registerBlock("barrel_red",
             () -> new CrtBlock(BlockProps.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion()));
     public static final RegistrySupplier<Block> BARREL_STEEL = registerBlock("barrel_steel",
@@ -1249,7 +1254,7 @@ public class ModBlocks {
                     () -> com.hbm_m.blockentity.ModBlockEntities.BARREL_STEEL_BE.get(),
                     new com.hbm_m.block.machines.BarrelTankBlock.TooltipInfo(
                             com.hbm_m.blockentity.machines.BarrelSteelBlockEntity.CAPACITY,
-                            true, true, false, false)));
+                            true, true, false, false, false)));
     public static final RegistrySupplier<Block> BARREL_TAINT = registerBlock("barrel_taint",
             () -> new CrtBlock(BlockProps.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion()));
 
@@ -1266,7 +1271,7 @@ public class ModBlocks {
                     () -> com.hbm_m.blockentity.ModBlockEntities.BARREL_TCALLOY_BE.get(),
                     new com.hbm_m.block.machines.BarrelTankBlock.TooltipInfo(
                             com.hbm_m.blockentity.machines.BarrelTcalloyBlockEntity.CAPACITY,
-                            true, true, true, false)));
+                            true, true, true, false, false)));
     public static final RegistrySupplier<Block> BARREL_VITRIFIED = registerBlock("barrel_vitrified",
             () -> new CrtBlock(BlockProps.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion()));
     public static final RegistrySupplier<Block> BARREL_YELLOW = registerBlock("barrel_yellow",
@@ -1277,7 +1282,7 @@ public class ModBlocks {
                     () -> com.hbm_m.blockentity.ModBlockEntities.BARREL_ANTIMATTER_BE.get(),
                     new com.hbm_m.block.machines.BarrelTankBlock.TooltipInfo(
                             com.hbm_m.blockentity.machines.BarrelAntimatterBlockEntity.CAPACITY,
-                            true, true, true, true)));
+                            true, true, true, true, false)));
 
     public static final RegistrySupplier<Block> BARBED_WIRE = registerBlock("barbed_wire",
             () -> new BarbedWireBlock(BlockProps.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
@@ -1945,10 +1950,6 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> RESOURCE_SULFUR = registerBlock("resource_sulfur",
             () -> new Block(BlockProps.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
 
-    public static final RegistrySupplier<Block> SEQUESTRUM_ORE = registerBlock("sequestrum_ore",
-            () -> new Block(BlockProps.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
-
-
     public static final RegistrySupplier<Block> LIGNITE_ORE = registerBlock("lignite_ore",
             () -> new Block(BlockProps.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
 
@@ -1956,8 +1957,10 @@ public class ModBlocks {
             () -> new Block(BlockProps.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
 
 
-	public static final RegistrySupplier<Block> URANIUM_ORE = registerBlock("uranium_ore",
-            () -> PlatformHooks.createDropExperienceBlock(BlockProps.copy(Blocks.STONE).strength(3.0F, 3.0F).requiresCorrectToolForDrops()));
+	/** Original: {@code ore_uranium} ist ein {@code BlockOutgas} und gast Radon aus. */
+    public static final RegistrySupplier<Block> URANIUM_ORE = registerBlock("uranium_ore",
+            () -> new com.hbm_m.block.gas.OutgasBlock(BlockProps.copy(Blocks.STONE).strength(3.0F, 3.0F).requiresCorrectToolForDrops(),
+                    () -> ModBlocks.GAS_RADON.get(), true, true));
 
     public static final RegistrySupplier<Block> LEAD_ORE = registerBlock("lead_ore",
             () -> new Block(BlockProps.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
@@ -1971,8 +1974,10 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> BERYLLIUM_ORE = registerBlock("beryllium_ore",
             () -> new Block(BlockProps.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
 
+    /** Original: {@code ore_asbestos} ist ein {@code BlockOutgas} und wirbelt Asbestfasern auf. */
     public static final RegistrySupplier<Block> ASBESTOS_ORE = registerBlock("asbestos_ore",
-            () -> new Block(BlockProps.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
+            () -> new com.hbm_m.block.gas.OutgasBlock(BlockProps.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops(),
+                    () -> ModBlocks.GAS_ASBESTOS.get(), true, true, false, false, true));
 
     public static final RegistrySupplier<Block> CINNABAR_ORE = registerBlock("cinnabar_ore",
             () -> new Block(BlockProps.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
@@ -2047,17 +2052,12 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> NITER_ORE_DEEPSLATE = registerBlock("niter_ore_deepslate",
             () -> new Block(BlockProps.copy(Blocks.DEEPSLATE).strength(5.0f, 5.0f).requiresCorrectToolForDrops()));
 
-    public static final RegistrySupplier<Block> LITHIUM_ORE = registerBlock("lithium_ore",
-            () -> new Block(BlockProps.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
-
-    public static final RegistrySupplier<Block> LITHIUM_ORE_DEEPSLATE = registerBlock("lithium_ore_deepslate",
-            () -> new Block(BlockProps.copy(Blocks.DEEPSLATE).strength(5.0f, 5.0f).requiresCorrectToolForDrops()));
-
     public static final RegistrySupplier<Block> ALEXANDRITE_ORE = registerBlock("alexandrite_ore",
-            () -> new Block(BlockProps.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
+            // Оригинал: BlockDepthOre — глубинная порода, добывается ломателем породы
+            () -> new DepthOreBlock(BlockProps.copy(Blocks.STONE)));
 
     public static final RegistrySupplier<Block> COLTAN_ORE = registerBlock("coltan_ore",
-            () -> new Block(BlockProps.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
+            () -> new Block(BlockProps.copy(Blocks.STONE).strength(15.0F, 6.0F).requiresCorrectToolForDrops()));
 
     public static final RegistrySupplier<Block> COLTAN_ORE_DEEPSLATE = registerBlock("coltan_ore_deepslate",
             () -> new Block(BlockProps.copy(Blocks.DEEPSLATE).strength(5.0f, 5.0f).requiresCorrectToolForDrops()));
@@ -2079,8 +2079,10 @@ public class ModBlocks {
             () -> new Block(BlockProps.copy(Blocks.DEEPSLATE).strength(5.0f, 5.0f).requiresCorrectToolForDrops()));
 
     // Незерские руды (ore_nether_* оригинала)
+    /** Original: {@code ore_nether_uranium} ist ein {@code BlockOutgas} und gast Radon aus. */
     public static final RegistrySupplier<Block> NETHER_URANIUM_ORE = registerBlock("nether_uranium_ore",
-            () -> new Block(BlockProps.copy(Blocks.NETHERRACK).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
+            () -> new com.hbm_m.block.gas.OutgasBlock(BlockProps.copy(Blocks.NETHERRACK).strength(3.0f, 3.0f).requiresCorrectToolForDrops(),
+                    () -> ModBlocks.GAS_RADON.get(), true, true));
 
     public static final RegistrySupplier<Block> NETHER_TUNGSTEN_ORE = registerBlock("nether_tungsten_ore",
             () -> new Block(BlockProps.copy(Blocks.NETHERRACK).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
@@ -2120,14 +2122,18 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> GNEISS_GOLD_ORE = registerBlock("gneiss_gold_ore",
             () -> new Block(BlockProps.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
 
+    /** Original: {@code ore_gneiss_uranium} ist ein {@code BlockOutgas} und gast Radon aus. */
     public static final RegistrySupplier<Block> GNEISS_URANIUM_ORE = registerBlock("gneiss_uranium_ore",
-            () -> new Block(BlockProps.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
+            () -> new com.hbm_m.block.gas.OutgasBlock(BlockProps.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops(),
+                    () -> ModBlocks.GAS_RADON.get(), true, true));
 
     public static final RegistrySupplier<Block> GNEISS_COPPER_ORE = registerBlock("gneiss_copper_ore",
             () -> new Block(BlockProps.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
 
+    /** Original: {@code ore_gneiss_asbestos} ist ein {@code BlockOutgas}. */
     public static final RegistrySupplier<Block> GNEISS_ASBESTOS_ORE = registerBlock("gneiss_asbestos_ore",
-            () -> new Block(BlockProps.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
+            () -> new com.hbm_m.block.gas.OutgasBlock(BlockProps.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops(),
+                    () -> ModBlocks.GAS_ASBESTOS.get(), true, true, false, false, true));
 
     public static final RegistrySupplier<Block> GNEISS_LITHIUM_ORE = registerBlock("gneiss_lithium_ore",
             () -> new Block(BlockProps.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
@@ -2138,9 +2144,9 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> GNEISS_GAS_ORE = registerBlock("gneiss_gas_ore",
             () -> new Block(BlockProps.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
 
-    /** Порт {@code ore_tikite} (BlockDragonProof; дракон-стойкость опущена). */
+    /** Порт {@code ore_tikite} (BlockDragonProof — Эндер-дракон не может разрушить блок). */
     public static final RegistrySupplier<Block> TIKITE_ORE = registerBlock("tikite_ore",
-            () -> new Block(BlockProps.copy(Blocks.END_STONE).strength(5.0f, 10.0f).requiresCorrectToolForDrops()));
+            () -> new com.hbm_m.block.generic.BlockDragonProof(BlockProps.copy(Blocks.END_STONE).strength(5.0f, 10.0f).requiresCorrectToolForDrops()));
 
     /** Порт {@code ore_oil_sand} (песчаные нефтяные месторождения в пустынях). */
     public static final RegistrySupplier<Block> ORE_OIL_SAND = registerBlock("ore_oil_sand",
@@ -2223,8 +2229,16 @@ public class ModBlocks {
      *  {@link com.hbm_m.block.machines.rbmk.RBMKColumnFillerBlock}). Not directly placeable;
      *  breaking it cascades into destroying the real column below (same feel/hardness as the
      *  column itself, matched via {@link #rbmkProps()}). */
+    // dynamicShape() is load-bearing, not decoration: RBMKColumnFillerBlock returns a
+    // position-dependent collision box (the topmost filler of a lidded column is 1.25 blocks tall).
+    // Without it Minecraft builds a BlockState shape cache from
+    // getCollisionShape(state, EmptyBlockGetter, BlockPos.ZERO), which resolves to a plain full
+    // block - so hasLargeCollisionShape() reports false, and BlockCollisions then SKIPS this block
+    // whenever it is only reached through the one-block ring around the entity's box. Standing on a
+    // lid put the player exactly in that case: the real 1.25 shape was never queried and they sank
+    // a quarter block into the lid.
     public static final RegistrySupplier<Block> RBMK_COLUMN_FILLER = registerBlockWithoutItem("rbmk_column_filler",
-            () -> new com.hbm_m.block.machines.rbmk.RBMKColumnFillerBlock(rbmkProps().noLootTable()));
+            () -> new com.hbm_m.block.machines.rbmk.RBMKColumnFillerBlock(rbmkProps().noLootTable().dynamicShape()));
 
     // ── Decorative / support blocks used by the original's RBMK recipes ──────
     // com.hbm.blocks.ModBlocks:1436-1437 - plain deco blocks reusing the rbmk column textures.
@@ -2337,12 +2351,30 @@ public class ModBlocks {
     // DEV: Blöcke aus dem Original-HBM-Mod, die hier noch fehlen (zur Sichtung)
     // Texturen importiert, generische Block-Properties als Platzhalter.
     // ══════════════════════════════════════════════════════════════════════
-    public static final RegistrySupplier<Block> ANCIENT_SCRAP = registerBlock("ancient_scrap", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    /**
+     * Original: {@code ancient_scrap} ist ein {@code BlockOutgas} mit {@code onNeighbour} und dem
+     * Sonderfall in {@code breakBlock} - beim Abbau entsteht eine 5x5x5-Wolke Grabgas.
+     */
+    public static final RegistrySupplier<Block> ANCIENT_SCRAP = registerBlock("ancient_scrap",
+            () -> new com.hbm_m.block.gas.OutgasBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(100.0F, 6000.0F),
+                    () -> ModBlocks.GAS_RADON_TOMB.get(), true, true, true, true, false));
     public static final RegistrySupplier<Block> ASH_DIGAMMA = registerBlock("ash_digamma", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ASPHALT_LIGHT = registerBlock("asphalt_light", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BARBED_WIRE_ACID = registerBlock("barbed_wire_acid", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BARBED_WIRE_ULTRADEATH = registerBlock("barbed_wire_ultradeath", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BASALT = registerBlock("basalt", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    // Руды базальта (ориг. BlockOreBasalt 1.7.10, меты 0-4): застывшая volcanic_lava_block.
+    public static final RegistrySupplier<Block> ORE_BASALT_SULFUR = registerBlock("ore_basalt_sulfur", () -> new Block(BlockProps.copy(Blocks.STONE).requiresCorrectToolForDrops()));
+    public static final RegistrySupplier<Block> ORE_BASALT_FLUORITE = registerBlock("ore_basalt_fluorite", () -> new Block(BlockProps.copy(Blocks.STONE).requiresCorrectToolForDrops()));
+    public static final RegistrySupplier<Block> ORE_BASALT_ASBESTOS = registerBlock("ore_basalt_asbestos", () -> new Block(BlockProps.copy(Blocks.STONE).requiresCorrectToolForDrops()));
+    public static final RegistrySupplier<Block> ORE_BASALT_GEM = registerBlock("ore_basalt_gem", () -> new Block(BlockProps.copy(Blocks.STONE).requiresCorrectToolForDrops()));
+    public static final RegistrySupplier<Block> ORE_BASALT_MOLYSITE = registerBlock("ore_basalt_molysite", () -> new Block(BlockProps.copy(Blocks.STONE).requiresCorrectToolForDrops()));
+    // Метеоритные руды (порт BlockMeteorOre 1.7.10).
+    public static final RegistrySupplier<Block> ORE_METEOR_IRON = registerBlock("ore_meteor_iron", () -> new Block(BlockProps.copy(Blocks.STONE).requiresCorrectToolForDrops()));
+    public static final RegistrySupplier<Block> ORE_METEOR_COPPER = registerBlock("ore_meteor_copper", () -> new Block(BlockProps.copy(Blocks.STONE).requiresCorrectToolForDrops()));
+    public static final RegistrySupplier<Block> ORE_METEOR_ALUMINIUM = registerBlock("ore_meteor_aluminium", () -> new Block(BlockProps.copy(Blocks.STONE).requiresCorrectToolForDrops()));
+    public static final RegistrySupplier<Block> ORE_METEOR_RAREEARTH = registerBlock("ore_meteor_rareearth", () -> new Block(BlockProps.copy(Blocks.STONE).requiresCorrectToolForDrops()));
+    public static final RegistrySupplier<Block> ORE_METEOR_COBALT = registerBlock("ore_meteor_cobalt", () -> new Block(BlockProps.copy(Blocks.STONE).requiresCorrectToolForDrops()));
     public static final RegistrySupplier<Block> BASALT_SMOOTH = registerBlock("basalt_smooth", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BASALT_TILES = registerBlock("basalt_tiles", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BATTERY_LITHIUM_BLOCK = registerBlock("battery_lithium_block", () -> new Block(BlockProps.copy(Blocks.STONE)));
@@ -2351,7 +2383,10 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> BLAST_DOOR = registerBlock("blast_door", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_ALUMINIUM = registerBlock("block_aluminium", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BOXCAR = registerBlock("boxcar", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> BRICK_ASBESTOS = registerBlock("brick_asbestos", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    /** Original: {@code brick_asbestos} ist ein {@code BlockOutgas} (Haerte 5, Widerstand 1000). */
+    public static final RegistrySupplier<Block> BRICK_ASBESTOS = registerBlock("brick_asbestos",
+            () -> new com.hbm_m.block.gas.OutgasBlock(BlockProps.copy(Blocks.STONE).strength(5.0F, 1000.0F),
+                    () -> ModBlocks.GAS_ASBESTOS.get(), true, true, false, false, true));
     public static final RegistrySupplier<Block> BRICK_COMPOUND = registerBlock("brick_compound", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BRICK_JUNGLE = registerBlock("brick_jungle", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BRICK_JUNGLE_CIRCLE = registerBlock("brick_jungle_circle", () -> new Block(BlockProps.copy(Blocks.STONE)));
@@ -2390,14 +2425,20 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> CHARGE_DYNAMITE = registerBlock("charge_dynamite", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> CHARGE_MINER = registerBlock("charge_miner", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> CHARGE_SEMTEX = registerBlock("charge_semtex", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    /**
+     * Original: {@code BlockGasClorine} - der einzige Gasblock, der nicht dem {@code gas_*}-Schema
+     * folgt, und der einzige, der ueberhaupt sichtbar ist.
+     */
     public static final RegistrySupplier<Block> CHLORINE_GAS = registerBlock("chlorine_gas", com.hbm_m.block.gas.BlockGasChlorine::new);
-    public static final RegistrySupplier<Block> CLUSTER_ALUMINIUM = registerBlock("cluster_aluminium", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> CLUSTER_COPPER = registerBlock("cluster_copper", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> CLUSTER_DEPTH_IRON = registerBlock("cluster_depth_iron", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> CLUSTER_DEPTH_TITANIUM = registerBlock("cluster_depth_titanium", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> CLUSTER_DEPTH_TUNGSTEN = registerBlock("cluster_depth_tungsten", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> CLUSTER_IRON = registerBlock("cluster_iron", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> CLUSTER_TITANIUM = registerBlock("cluster_titanium", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> CLUSTER_ALUMINIUM = registerBlock("cluster_aluminium", () -> new Block(BlockProps.copy(Blocks.STONE).strength(5.0F, 15.0F).requiresCorrectToolForDrops()));
+    public static final RegistrySupplier<Block> CLUSTER_COPPER = registerBlock("cluster_copper", () -> new Block(BlockProps.copy(Blocks.STONE).strength(5.0F, 15.0F).requiresCorrectToolForDrops()));
+    // Глубинные кластеры (оригинал: BlockDepthOre — неразрушимая порода,
+    // добывается только IDepthRockTool; дропают crystal_iron/titanium/tungsten)
+    public static final RegistrySupplier<Block> CLUSTER_DEPTH_IRON = registerBlock("cluster_depth_iron", () -> new DepthOreBlock(BlockProps.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> CLUSTER_DEPTH_TITANIUM = registerBlock("cluster_depth_titanium", () -> new DepthOreBlock(BlockProps.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> CLUSTER_DEPTH_TUNGSTEN = registerBlock("cluster_depth_tungsten", () -> new DepthOreBlock(BlockProps.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> CLUSTER_IRON = registerBlock("cluster_iron", () -> new Block(BlockProps.copy(Blocks.STONE).strength(5.0F, 15.0F).requiresCorrectToolForDrops()));
+    public static final RegistrySupplier<Block> CLUSTER_TITANIUM = registerBlock("cluster_titanium", () -> new Block(BlockProps.copy(Blocks.STONE).strength(5.0F, 15.0F).requiresCorrectToolForDrops()));
     public static final RegistrySupplier<Block> CM_FLUX = registerBlock("cm_flux", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> CM_HEAT = registerBlock("cm_heat", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> CMB_BRICK = registerBlock("cmb_brick", () -> new Block(BlockProps.copy(Blocks.STONE)));
@@ -2447,11 +2488,13 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> DET_CHARGE = registerBlock("det_charge", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> DET_CORD = registerBlock("det_cord", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> DET_NUKE = registerBlock("det_nuke", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> DFC_CORE = registerBlock("dfc_core", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> DFC_CORE = registerBlock("dfc_core",
+            () -> new com.hbm_m.block.machines.dfc.DFCCoreBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).sound(SoundType.METAL).lightLevel(s -> 10)));
     public static final RegistrySupplier<Block> DFC_EMITTER = registerBlock("dfc_emitter", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> DFC_INJECTOR = registerBlock("dfc_injector", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> DFC_RECEIVER = registerBlock("dfc_receiver", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> DFC_STABILIZER = registerBlock("dfc_stabilizer", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> DFC_STABILIZER = registerBlock("dfc_stabilizer",
+            () -> new com.hbm_m.block.machines.dfc.DFCStabilizerBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).sound(SoundType.METAL)));
     public static final RegistrySupplier<Block> DIRT_DEAD = registerBlock("dirt_dead", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> DIRT_OILY = registerBlock("dirt_oily", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> DRONE_CRATE = registerBlock("drone_crate",
@@ -2490,7 +2533,22 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> FIELD_DISTURBER = registerBlock("field_disturber", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> FIRE_DIGAMMA = registerBlock("fire_digamma", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> FIREWORKS = registerBlock("fireworks", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> FISSURE_BOMB = registerBlock("fissure_bomb", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> FISSURE_BOMB = registerBlock("fissure_bomb",
+            () -> new com.hbm_m.block.bomb.FissureBombBlock(BlockProps.copy(Blocks.TNT).strength(0.0F)));
+
+    // World fluid blocks volcanic_lava_block / rad_lava_block (VolcanicLavaBlock / RadLavaBlock,
+    // Architectury world fluid) are registered further below, right before the WAND_* blocks.
+
+    // Порт BlockFissure 1.7.10 ("ore_volcano", Geothermal Vent): создаётся кратером Fissure Bomb.
+    // Неразрушимый (hardness -1, resistance 1 000 000), свет 1. Random tick изливает
+    // volcanic_lava_block (rad-вариант — rad_lava_block) сверху, 1:1 из оригинала.
+    public static final RegistrySupplier<Block> ORE_VOLCANO = registerBlockWithoutItem("ore_volcano",
+            () -> new com.hbm_m.block.generic.BlockFissure(BlockProps.copy(Blocks.BEDROCK)
+                    .strength(-1.0F, 1000000.0F).lightLevel(state -> 1).randomTicks(), false));
+    /** Rad variant of the geothermal vent (original block metadata != 0): erupts rad_lava_block. */
+    public static final RegistrySupplier<Block> ORE_VOLCANO_RAD = registerBlockWithoutItem("ore_volcano_rad",
+            () -> new com.hbm_m.block.generic.BlockFissure(BlockProps.copy(Blocks.BEDROCK)
+                    .strength(-1.0F, 1000000.0F).lightLevel(state -> 1).randomTicks(), true));
     public static final RegistrySupplier<Block> FLAME_WAR = registerBlock("flame_war", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> FLUID_COUNTER_VALVE = registerBlock("fluid_counter_valve", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> FLUID_DUCT_BOX = registerBlock("fluid_duct_box", () -> new Block(BlockProps.copy(Blocks.STONE)));
@@ -2516,7 +2574,9 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> FROZEN_GRASS = registerBlock("frozen_grass", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> FROZEN_LOG = registerBlock("frozen_log", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> FROZEN_PLANKS = registerBlock("frozen_planks", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> FUSION_COMPONENT = registerBlock("fusion_component", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    /** 1:1-Port von {@code BlockFusionComponent} (1.7.10): mit dem Schneidbrenner zur geschweissten Spule. */
+    public static final RegistrySupplier<Block> FUSION_COMPONENT = registerBlock("fusion_component",
+            () -> new FusionComponentBlock(BlockProps.copy(Blocks.STONE).strength(5.0f, 30.0f)));
     public static final RegistrySupplier<Block> FUSION_COMPONENT_BLANKET = registerBlock("fusion_component_blanket", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> FUSION_COMPONENT_BSCCO_WELDED = registerBlock("fusion_component_bscco_welded", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> FUSION_COMPONENT_MOTOR = registerBlock("fusion_component_motor", () -> new Block(BlockProps.copy(Blocks.STONE)));
@@ -2553,12 +2613,21 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> HADRON_COIL_STARMETAL = registerBlock("hadron_coil_starmetal", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> HEV_BATTERY = registerBlock("hev_battery",
             () -> new com.hbm_m.block.generic.HevBatteryBlock(BlockProps.copy(Blocks.STONE).noOcclusion().noCollission()));
-    public static final RegistrySupplier<Block> ICF_COMPONENT = registerBlock("icf_component", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> ICF_COMPONENT_STRUCTURE = registerBlock("icf_component_structure", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> ICF_COMPONENT_STRUCTURE_BOLTED = registerBlock("icf_component_structure_bolted", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> ICF_COMPONENT_VESSEL = registerBlock("icf_component_vessel", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> ICF_COMPONENT_VESSEL_WELDED = registerBlock("icf_component_vessel_welded", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> ICF_CONTROLLER = registerBlock("icf_controller", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> ICF_COMPONENT = registerBlock("icf_component",
+            () -> new com.hbm_m.block.machines.icf.ICFComponentBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 60.0f).sound(SoundType.METAL)));
+    public static final RegistrySupplier<Block> ICF_COMPONENT_STRUCTURE = registerBlock("icf_component_structure",
+            () -> new com.hbm_m.block.machines.icf.ICFComponentBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 60.0f).sound(SoundType.METAL),
+                    com.hbm_m.block.machines.icf.ICFComponentBlock.Tool.BOLT, () -> ModBlocks.ICF_COMPONENT_STRUCTURE_BOLTED.get()));
+    public static final RegistrySupplier<Block> ICF_COMPONENT_STRUCTURE_BOLTED = registerBlock("icf_component_structure_bolted",
+            () -> new com.hbm_m.block.machines.icf.ICFComponentBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 60.0f).sound(SoundType.METAL)));
+    public static final RegistrySupplier<Block> ICF_COMPONENT_VESSEL = registerBlock("icf_component_vessel",
+            () -> new com.hbm_m.block.machines.icf.ICFComponentBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 60.0f).sound(SoundType.METAL),
+                    com.hbm_m.block.machines.icf.ICFComponentBlock.Tool.TORCH, () -> ModBlocks.ICF_COMPONENT_VESSEL_WELDED.get()));
+    public static final RegistrySupplier<Block> ICF_COMPONENT_VESSEL_WELDED = registerBlock("icf_component_vessel_welded",
+            () -> new com.hbm_m.block.machines.icf.ICFComponentBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 60.0f).sound(SoundType.METAL)));
+    public static final RegistrySupplier<Block> ICF_CONTROLLER = registerBlock("icf_controller",
+            () -> new com.hbm_m.block.machines.icf.ICFControllerBlock(
+                    BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 60.0f).sound(SoundType.METAL)));
     public static final RegistrySupplier<Block> ITER = registerBlock("iter", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> LADDER_ALUMINIUM = registerBlock("ladder_aluminium", () -> new net.minecraft.world.level.block.LadderBlock(BlockProps.copy(Blocks.LADDER)));
     public static final RegistrySupplier<Block> LADDER_COBALT = registerBlock("ladder_cobalt", () -> new net.minecraft.world.level.block.LadderBlock(BlockProps.copy(Blocks.LADDER)));
@@ -2570,7 +2639,11 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> LADDER_STURDY = registerBlock("ladder_sturdy", () -> new net.minecraft.world.level.block.LadderBlock(BlockProps.copy(Blocks.LADDER)));
     public static final RegistrySupplier<Block> LADDER_TITANIUM = registerBlock("ladder_titanium", () -> new net.minecraft.world.level.block.LadderBlock(BlockProps.copy(Blocks.LADDER)));
     public static final RegistrySupplier<Block> LADDER_TUNGSTEN = registerBlock("ladder_tungsten", () -> new net.minecraft.world.level.block.LadderBlock(BlockProps.copy(Blocks.LADDER)));
-    public static final RegistrySupplier<Block> LAMP_DEMON = registerBlock("lamp_demon", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> LAMP_DEMON = registerBlock("lamp_demon",
+            () -> new DemonLampBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL).sound(SoundType.METAL).strength(3.0F)
+                    .lightLevel(state -> 15)
+                    .noOcclusion().requiresCorrectToolForDrops()));
     public static final RegistrySupplier<Block> LAMP_TRITIUM_BLUE_OFF = registerBlock("lamp_tritium_blue_off", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> LAMP_TRITIUM_BLUE_ON = registerBlock("lamp_tritium_blue_on", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> LAMP_TRITIUM_GREEN_OFF = registerBlock("lamp_tritium_green_off", () -> new Block(BlockProps.copy(Blocks.STONE)));
@@ -2582,23 +2655,26 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> LIGHTSTONE_UNREFINED = registerBlock("lightstone_unrefined", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MACHINE_AUTOCRAFTER = registerBlock("machine_autocrafter", () -> new com.hbm_m.block.machines.MachineAutocrafterBlock(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MACHINE_BOILER = registerBlock("machine_boiler", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> MACHINE_CENTRIFUGE = registerBlock("machine_centrifuge", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MACHINE_CHUNGUS = registerBlockWithoutItem("machine_chungus",
             () -> new com.hbm_m.block.machines.MachineChungusBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
-    public static final RegistrySupplier<Block> MACHINE_CONTROLLER = registerBlock("machine_controller", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> MACHINE_CONVERTER_HE_RF = registerBlock("machine_converter_he_rf",
-            () -> new com.hbm_m.block.machines.MachineConverterHeRfBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).noOcclusion()));
-    public static final RegistrySupplier<Block> MACHINE_CONVERTER_RF_HE = registerBlock("machine_converter_rf_he",
-            () -> new com.hbm_m.block.machines.MachineConverterRfHeBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).noOcclusion()));
+    /**
+     * Original: {@code machine_controller} - das Reaktorsteuerpult, Haerte 5 / Widerstand 10.
+     * Halbhohe Hitbox wie im Original, siehe {@code MachineReactorControlBlock}.
+     */
+    public static final RegistrySupplier<Block> MACHINE_CONTROLLER = registerBlock("machine_controller",
+            () -> new com.hbm_m.block.machines.MachineReactorControlBlock(
+                    BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0F, 10.0F).requiresCorrectToolForDrops().noOcclusion()));
     public static final RegistrySupplier<Block> MACHINE_CRYSTALLIZER = registerBlock("machine_crystallizer", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MACHINE_DETECTOR = registerBlock("machine_detector", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MACHINE_EPRESS = registerBlock("machine_epress", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MACHINE_FENSU = registerBattery("machine_fensu", Long.MAX_VALUE);
     public static final RegistrySupplier<Block> MACHINE_FLUIDTANK = registerBlock("machine_fluidtank", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> MACHINE_FORCEFIELD = registerBlock("machine_forcefield", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> MACHINE_FORCEFIELD = registerBlock("machine_forcefield",
+            () -> new com.hbm_m.block.machines.ForceFieldBlock(BlockProps.copy(Blocks.IRON_BLOCK)));
     public static final RegistrySupplier<Block> MACHINE_FUNNEL = registerBlock("machine_funnel", () -> new com.hbm_m.block.machines.MachineFunnelBlock(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> MACHINE_GASCENT = registerBlock("machine_gascent", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> MACHINE_ICF_PRESS = registerBlock("machine_icf_press", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> MACHINE_ICF_PRESS = registerBlock("machine_icf_press",
+            () -> new com.hbm_m.block.machines.icf.MachineICFPressBlock(
+                    BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 60.0f).sound(SoundType.METAL)));
     public static final RegistrySupplier<Block> MACHINE_KEYFORGE = registerBlock("machine_keyforge",
             () -> new com.hbm_m.block.machines.MachineKeyforgeBlock(BlockProps.copy(Blocks.STONE).noOcclusion()));
     public static final RegistrySupplier<Block> MACHINE_LARGE_TURBINE = registerBlock("machine_large_turbine",
@@ -2632,6 +2708,26 @@ public class ModBlocks {
             () -> new com.hbm_m.block.machines.MachineWasteDrumBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).sound(SoundType.METAL).noOcclusion()));
     public static final RegistrySupplier<Block> MACHINE_RADGEN = registerBlock("machine_radgen",
             () -> new com.hbm_m.block.machines.MachineRadGenBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).sound(SoundType.METAL).noOcclusion()));
+    /**
+     * Original: {@code machine_rtg} (Anzeigename "machine_rtg_grey"), Haerte 5 / Widerstand 10.
+     * Radioisotopengenerator - wandelt die Waerme von RTG-Pellets unmittelbar in Energie.
+     */
+    /**
+     * Original: {@code machine_bigasstank} - Grosstank mit 16 Millionen mB, Textur block_steel.
+     */
+    public static final RegistrySupplier<Block> MACHINE_BIGASSTANK = registerBlock("machine_bigasstank",
+            () -> new com.hbm_m.block.machines.BarrelTankBlock(
+                    BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0F, 10.0F).requiresCorrectToolForDrops().noOcclusion(),
+                    com.hbm_m.blockentity.machines.MachineBigAssTankBlockEntity::new,
+                    () -> com.hbm_m.blockentity.ModBlockEntities.BIGASSTANK_BE.get(),
+                    new com.hbm_m.block.machines.BarrelTankBlock.TooltipInfo(
+                            com.hbm_m.blockentity.machines.MachineBigAssTankBlockEntity.CAPACITY,
+                            true, true, false, false, false)));
+
+    public static final RegistrySupplier<Block> MACHINE_RTG = registerBlock("machine_rtg",
+            () -> new com.hbm_m.block.machines.MachineRTGBlock(
+                    BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0F, 10.0F).requiresCorrectToolForDrops()));
+
     public static final RegistrySupplier<Block> MACHINE_REACTOR = registerBlock("machine_reactor", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MACHINE_REACTOR_SMALL = registerBlock("machine_reactor_small", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MACHINE_REFINERY = registerBlock("machine_refinery", () -> new Block(BlockProps.copy(Blocks.STONE)));
@@ -2645,6 +2741,24 @@ public class ModBlocks {
             () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).noOcclusion()));
     public static final RegistrySupplier<Block> MASS_STORAGE = registerBlock("mass_storage",
             () -> new com.hbm_m.block.machines.MachineMassStorageBlock(BlockProps.copy(Blocks.STONE).noOcclusion()));
+
+    /** 1:1 aus {@code BlockMassStorage}: Holz fasst hundert Stueck. */
+    public static final RegistrySupplier<Block> MASS_STORAGE_WOOD = registerBlock("mass_storage_wood",
+            () -> new com.hbm_m.block.machines.MachineMassStorageBlock(
+                    BlockProps.copy(Blocks.OAK_PLANKS).strength(2.0f, 3.0f).sound(SoundType.WOOD),
+                    com.hbm_m.block.machines.MachineMassStorageBlock.Tier.WOOD));
+
+    /** 1:1: Eisen fasst zehntausend. */
+    public static final RegistrySupplier<Block> MASS_STORAGE_IRON = registerBlock("mass_storage_iron",
+            () -> new com.hbm_m.block.machines.MachineMassStorageBlock(
+                    BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL),
+                    com.hbm_m.block.machines.MachineMassStorageBlock.Tier.IRON));
+
+    /** 1:1: Desh fasst hunderttausend. */
+    public static final RegistrySupplier<Block> MASS_STORAGE_DESH = registerBlock("mass_storage_desh",
+            () -> new com.hbm_m.block.machines.MachineMassStorageBlock(
+                    BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 6.0f).sound(SoundType.METAL),
+                    com.hbm_m.block.machines.MachineMassStorageBlock.Tier.DESH));
     public static final RegistrySupplier<Block> METEOR_SPAWNER = registerBlock("meteor_spawner", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MINE_HE = registerBlock("mine_he", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MINE_NAVAL = registerBlock("mine_naval", () -> new Block(BlockProps.copy(Blocks.STONE)));
@@ -2676,9 +2790,13 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> PLANT_FLOWER_TOBACCO = registerBlock("plant_flower_tobacco", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> PLANT_FLOWER_WEED = registerBlock("plant_flower_weed", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> PLASMA_HEATER = registerBlock("plasma_heater", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> PNEUMATIC_TUBE = registerBlock("pneumatic_tube", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> PNEUMATIC_TUBE_PAINTABLE = registerBlock("pneumatic_tube_paintable", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> PRESS_PREHEATER = registerBlock("press_preheater", () -> new Block(BlockProps.copy(Blocks.STONE).strength(5.0f, 10.0f)));
+    public static final RegistrySupplier<Block> PNEUMATIC_TUBE = registerBlock("pneumatic_tube",
+            () -> new com.hbm_m.block.network.PneumoTubeBlock(
+                    BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion()));
+    public static final RegistrySupplier<Block> PNEUMATIC_TUBE_PAINTABLE = registerBlock("pneumatic_tube_paintable",
+            () -> new com.hbm_m.block.network.PneumoTubePaintableBlock(
+                    BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion()));
+    public static final RegistrySupplier<Block> PRESS_PREHEATER = registerBlock("press_preheater", () -> new Block(BlockProps.copy(Blocks.STONE)));
     /** Unused now that assembly no longer converts parts into a generic carrier block; see PWRPartBlockEntity. */
     public static final RegistrySupplier<Block> PWR_BLOCK = registerBlock("pwr_block", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> PWR_CASING = registerBlock("pwr_casing",
@@ -2830,34 +2948,68 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> STONE_RESOURCE_LIMESTONE = registerBlock("stone_resource_limestone", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> STONE_RESOURCE_MALACHITE = registerBlock("stone_resource_malachite", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> STONE_RESOURCE_SULFUR = registerBlock("stone_resource_sulfur", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> STRUCT_ICF_CORE = registerBlock("struct_icf_core", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> STRUCT_ICF_CORE = registerBlock("struct_icf_core",
+            () -> new com.hbm_m.block.machines.icf.ICFStructBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).sound(SoundType.METAL).lightLevel(s -> 15)));
     public static final RegistrySupplier<Block> STRUCT_LAUNCHER = registerBlock("struct_launcher", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> STRUCT_LAUNCHER_CORE = registerBlock("struct_launcher_core", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> STRUCT_LAUNCHER_CORE_LARGE = registerBlock("struct_launcher_core_large", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> STRUCT_SCAFFOLD = registerBlock("struct_scaffold", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> STRUCT_SOYUZ_CORE = registerBlock("struct_soyuz_core", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> STRUCT_TORUS_CORE = registerBlock("struct_torus_core", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    /** 1:1-Port von {@code BlockFusionTorusStruct} (1.7.10): wird zum Torus, sobald die Form steht. */
+    public static final RegistrySupplier<Block> STRUCT_TORUS_CORE = registerBlock("struct_torus_core",
+            () -> new StructTorusCoreBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).lightLevel(state -> 15).noOcclusion()));
     public static final RegistrySupplier<Block> STRUCT_WATZ_CORE = registerBlock("struct_watz_core", () -> new Block(BlockProps.copy(Blocks.STONE)));
     /** Decorative casing end-cap; original toggled bolted/unbolted via screwdriver, ported here as two plain block variants. */
     public static final RegistrySupplier<Block> WATZ_END = registerBlock("watz_end", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> WATZ_END_BOLTED = registerBlock("watz_end_bolted", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> TEKTITE = registerBlock("tektite", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> TESLA = registerBlock("tesla", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    /** Original: {@code YellowBarrel} - Fass mit hochradioaktivem Abfall, 5 RAD/s. */
+    public static final RegistrySupplier<Block> YELLOW_BARREL = registerBlock("yellow_barrel",
+            () -> new com.hbm_m.block.generic.YellowBarrelBlock(
+                    BlockProps.copy(Blocks.IRON_BLOCK).strength(0.5F, 2.5F).noOcclusion()));
+
+    /** Original: {@code Charger} - laedt die Ausruestung der darauf stehenden Spieler. */
+    public static final RegistrySupplier<Block> CHARGER = registerBlock("charger",
+            () -> new com.hbm_m.block.machines.ChargerBlock(
+                    BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0F, 10.0F).requiresCorrectToolForDrops().noOcclusion()));
+
+    /** Original: {@code MachineTesla} - setzt alles Lebende im Umkreis unter Strom. */
+    public static final RegistrySupplier<Block> TESLA = registerBlock("tesla",
+            () -> new com.hbm_m.block.machines.TeslaBlock(
+                    BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0F, 10.0F).requiresCorrectToolForDrops().noOcclusion()));
     public static final RegistrySupplier<Block> THERM_ENDO = registerBlock("therm_endo", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> THERM_EXO = registerBlock("therm_exo", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> TILE_LAB = registerBlock("tile_lab", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> TILE_LAB_BROKEN = registerBlock("tile_lab_broken", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> TILE_LAB_CRACKED = registerBlock("tile_lab_cracked", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    /** Original: {@code tile_lab} ist ein {@code BlockOutgas} (Asbest, Glasklang, Haerte 1/20). */
+    public static final RegistrySupplier<Block> TILE_LAB = registerBlock("tile_lab",
+            () -> new com.hbm_m.block.gas.OutgasBlock(BlockProps.copy(Blocks.GLASS).strength(1.0F, 20.0F),
+                    () -> ModBlocks.GAS_ASBESTOS.get(), false, true, false, false, true));
+    /** Original: {@code tile_lab_broken} ist ein {@code BlockOutgas} (Asbest, Glasklang, Haerte 1/20). */
+    public static final RegistrySupplier<Block> TILE_LAB_BROKEN = registerBlock("tile_lab_broken",
+            () -> new com.hbm_m.block.gas.OutgasBlock(BlockProps.copy(Blocks.GLASS).strength(1.0F, 20.0F),
+                    () -> ModBlocks.GAS_ASBESTOS.get(), true, true, false, false, true));
+    /** Original: {@code tile_lab_cracked} ist ein {@code BlockOutgas} (Asbest, Glasklang, Haerte 1/20). */
+    public static final RegistrySupplier<Block> TILE_LAB_CRACKED = registerBlock("tile_lab_cracked",
+            () -> new com.hbm_m.block.gas.OutgasBlock(BlockProps.copy(Blocks.GLASS).strength(1.0F, 20.0F),
+                    () -> ModBlocks.GAS_ASBESTOS.get(), false, true, false, false, true));
     public static final RegistrySupplier<Block> TRAPDOOR_STEEL = registerBlock("trapdoor_steel", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> VACUUM = registerBlock("vacuum", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> VENT_CHLORINE = registerBlock("vent_chlorine", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> VENT_CHLORINE_SEAL = registerBlock("vent_chlorine_seal", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    /** Original: {@code BlockClorineSeal} - fuellt unter Redstonestrom den Raum mit Chlorgas. */
+    public static final RegistrySupplier<Block> VENT_CHLORINE_SEAL = registerBlock("vent_chlorine_seal", com.hbm_m.block.machines.ChlorineSealBlock::new);
     public static final RegistrySupplier<Block> VENT_CLOUD = registerBlock("vent_cloud", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> VENT_PINK_CLOUD = registerBlock("vent_pink_cloud", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> VINE_PHOSPHOR = registerBlock("vine_phosphor", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> VINYL_TILE_LARGE = registerBlock("vinyl_tile_large", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> VOLCANO_CORE = registerBlock("volcano_core", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> VOLCANO_RAD_CORE = registerBlock("volcano_rad_core", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    // Растущее ядро вулкана (порт BlockVolcano 1.7.10, 5 состояний: static/growing × active/extinguishing + smoldering)
+    public static final RegistrySupplier<Block> VOLCANO_CORE = registerBlock("volcano_core",
+            () -> new com.hbm_m.block.bomb.VolcanoCoreBlock(BlockProps.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> VOLCANO_RAD_CORE = registerBlock("volcano_rad_core",
+            () -> new com.hbm_m.block.bomb.VolcanoCoreBlock(BlockProps.copy(Blocks.STONE)));
+    // Вулканические лавы — мировые флюид-блоки (VolcanicBlock/RadBlock 1.7.10), флюиды в ModFluids
+    public static final RegistrySupplier<com.hbm_m.block.fluid.VolcanicLavaBlock> VOLCANIC_LAVA_BLOCK = registerBlockWithoutItem("volcanic_lava_block",
+            () -> new com.hbm_m.block.fluid.VolcanicLavaBlock(() -> com.hbm_m.inventory.fluid.ModFluids.VOLCANIC_LAVA.getSource(), BlockProps.copy(Blocks.LAVA)));
+    public static final RegistrySupplier<com.hbm_m.block.fluid.RadLavaBlock> RAD_LAVA_BLOCK = registerBlockWithoutItem("rad_lava_block",
+            () -> new com.hbm_m.block.fluid.RadLavaBlock(() -> com.hbm_m.inventory.fluid.ModFluids.RAD_LAVA.getSource(), BlockProps.copy(Blocks.LAVA)));
     public static final RegistrySupplier<Block> WAND_AIR = registerBlock("wand_air", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> WAND_JIGSAW = registerBlock("wand_jigsaw", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> WAND_LOGIC = registerBlock("wand_logic", () -> new Block(BlockProps.copy(Blocks.STONE)));
@@ -2884,8 +3036,17 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> BAT9000 = registerBlockWithoutItem("bat9000",
             () -> new MachineBat9000Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f).requiresCorrectToolForDrops().noOcclusion().isSuffocating((state, world, pos) -> false)));
 
+    /** Die Teilchenquelle - Kopf des Beschleunigers. */
+    public static final RegistrySupplier<Block> PA_SOURCE = registerBlock("pa_source",
+            () -> new com.hbm_m.block.machines.albion.PASourceBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+
+    /** Der Detektor - hier wird das Rezept abgerechnet. */
+    public static final RegistrySupplier<Block> PA_DETECTOR = registerBlock("pa_detector",
+            () -> new com.hbm_m.block.machines.albion.PADetectorBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+
+    /** Strahlrohr des Teilchenbeschleunigers. */
     public static final RegistrySupplier<Block> BEAMLINE = registerBlock("beamline",
-            () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+            () -> new com.hbm_m.block.machines.albion.PABeamlineBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
     public static final RegistrySupplier<Block> BOILER = registerBlock("boiler",
             () -> new com.hbm_m.block.machines.MachineBoilerBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
@@ -2895,11 +3056,13 @@ public class ModBlocks {
 
     public static final RegistrySupplier<Block> PUMP_ELECTRIC = registerBlock("pump_electric",
             () -> new com.hbm_m.block.machines.MachinePumpBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion(), true));
-    public static final RegistrySupplier<Block> BOILER_FUSION = registerBlock("boiler_fusion",
-            () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+    /** 1:1-Port von {@code MachineFusionBoiler} (1.7.10, dort {@code fusion_boiler}). */
+    public static final RegistrySupplier<Block> BOILER_FUSION = registerBlockWithoutItem("boiler_fusion",
+            () -> new MachineFusionBoilerBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 60.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
-    public static final RegistrySupplier<Block> BREEDER_FUSION = registerBlock("breeder_fusion",
-            () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+    /** 1:1-Port von {@code MachineFusionBreeder} (1.7.10, dort {@code fusion_breeder}). */
+    public static final RegistrySupplier<Block> BREEDER_FUSION = registerBlockWithoutItem("breeder_fusion",
+            () -> new MachineFusionBreederBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 60.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     public static final RegistrySupplier<Block> CHIMNEY_BRICK = registerBlock("chimney_brick",
             () -> new com.hbm_m.block.machines.MachineChimneyBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion(), 12));
@@ -2909,8 +3072,9 @@ public class ModBlocks {
 
     public static final RegistrySupplier<Block> COKER = registerBlock("coker",
             () -> new com.hbm_m.block.machines.MachineCokerBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
-    public static final RegistrySupplier<Block> COLLECTOR = registerBlock("collector",
-            () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+    /** 1:1-Port von {@code MachineFusionCollector} (1.7.10, dort {@code fusion_collector}). */
+    public static final RegistrySupplier<Block> COLLECTOR = registerBlockWithoutItem("collector",
+            () -> new MachineFusionCollectorBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 60.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     public static final RegistrySupplier<Block> COMBINATION_OVEN = registerBlock("combination_oven",
             () -> new MachineCombinationOvenBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
@@ -2938,16 +3102,18 @@ public class ModBlocks {
 
     public static final RegistrySupplier<Block> CONVEYOR_PRESS = registerBlock("conveyor_press",
             () -> new com.hbm_m.block.machines.MachineConveyorPressBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
-    public static final RegistrySupplier<Block> COUPLER = registerBlock("coupler",
-            () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+    /** 1:1-Port von {@code MachineFusionCoupler} (1.7.10, dort {@code fusion_coupler}). */
+    public static final RegistrySupplier<Block> COUPLER = registerBlockWithoutItem("coupler",
+            () -> new MachineFusionCouplerBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 60.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     public static final RegistrySupplier<Block> DETECTOR = registerBlock("detector",
             () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
     public static final RegistrySupplier<Block> DIESELGEN = registerBlock("dieselgen",
             () -> new com.hbm_m.block.machines.MachineDieselGeneratorBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+    /** Ablenkmagnet - die Weiche des Rings. */
     public static final RegistrySupplier<Block> DIPOLE = registerBlock("dipole",
-            () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+            () -> new com.hbm_m.block.machines.albion.PADipoleBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
     public static final RegistrySupplier<Block> DRONE = registerBlock("drone",
             () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
@@ -2993,16 +3159,63 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> HEPHAESTUS = registerBlock("hephaestus",
             () -> new com.hbm_m.block.machines.MachineHephaestusBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
     public static final RegistrySupplier<Block> ICF = registerBlock("icf",
-            () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+            () -> new com.hbm_m.block.machines.icf.MachineICFBlock(
+                    BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 60.0f).sound(SoundType.METAL).noOcclusion()));
+
+    // Der ICF-Laser besteht aus sechs Bauteilen. Original: ein Block "icf_laser_component" mit
+    // sechs Metadaten - die gibt es in 1.20 nicht mehr, darum sechs eigene Bloecke.
+    public static final RegistrySupplier<Block> ICF_LASER_CASING = registerBlock("icf_laser_casing",
+            () -> new com.hbm_m.block.machines.icf.ICFLaserComponentBlock(
+                    BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 60.0f).sound(SoundType.METAL),
+                    com.hbm_m.block.machines.icf.ICFLaserPart.CASING));
+    public static final RegistrySupplier<Block> ICF_LASER_PORT = registerBlock("icf_laser_port",
+            () -> new com.hbm_m.block.machines.icf.ICFLaserComponentBlock(
+                    BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 60.0f).sound(SoundType.METAL),
+                    com.hbm_m.block.machines.icf.ICFLaserPart.PORT));
+    public static final RegistrySupplier<Block> ICF_LASER_CELL = registerBlock("icf_laser_cell",
+            () -> new com.hbm_m.block.machines.icf.ICFLaserComponentBlock(
+                    BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 60.0f).sound(SoundType.METAL),
+                    com.hbm_m.block.machines.icf.ICFLaserPart.CELL));
+    public static final RegistrySupplier<Block> ICF_LASER_EMITTER = registerBlock("icf_laser_emitter",
+            () -> new com.hbm_m.block.machines.icf.ICFLaserComponentBlock(
+                    BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 60.0f).sound(SoundType.METAL),
+                    com.hbm_m.block.machines.icf.ICFLaserPart.EMITTER));
+    public static final RegistrySupplier<Block> ICF_LASER_CAPACITOR = registerBlock("icf_laser_capacitor",
+            () -> new com.hbm_m.block.machines.icf.ICFLaserComponentBlock(
+                    BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 60.0f).sound(SoundType.METAL),
+                    com.hbm_m.block.machines.icf.ICFLaserPart.CAPACITOR));
+    public static final RegistrySupplier<Block> ICF_LASER_TURBOCHARGER = registerBlock("icf_laser_turbocharger",
+            () -> new com.hbm_m.block.machines.icf.ICFLaserComponentBlock(
+                    BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 60.0f).sound(SoundType.METAL),
+                    com.hbm_m.block.machines.icf.ICFLaserPart.TURBO));
+
+    /** Der Block zu einem Laserbauteil - der Platzhalter braucht ihn zum Zuruecksetzen. */
+    public static Block icfLaserPart(com.hbm_m.block.machines.icf.ICFLaserPart part) {
+        return switch (part) {
+            case CASING    -> ICF_LASER_CASING.get();
+            case PORT      -> ICF_LASER_PORT.get();
+            case CELL      -> ICF_LASER_CELL.get();
+            case EMITTER   -> ICF_LASER_EMITTER.get();
+            case CAPACITOR -> ICF_LASER_CAPACITOR.get();
+            case TURBO     -> ICF_LASER_TURBOCHARGER.get();
+        };
+    }
+
 
     public static final RegistrySupplier<Block> INTAKE = registerBlock("intake",
             () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
-    public static final RegistrySupplier<Block> KLYSTRON = registerBlock("klystron",
-            () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+    /** 1:1-Port von {@code MachineFusionKlystron} (1.7.10, dort {@code fusion_klystron}). */
+    public static final RegistrySupplier<Block> KLYSTRON = registerBlockWithoutItem("klystron",
+            () -> new MachineFusionKlystronBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 60.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
-    public static final RegistrySupplier<Block> MHDT = registerBlock("mhdt",
-            () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+    /** 1:1-Port von {@code MachineFusionKlystronCreative} (1.7.10, dort {@code fusion_klystron_creative}). */
+    public static final RegistrySupplier<Block> KLYSTRON_CREATIVE = registerBlockWithoutItem("klystron_creative",
+            () -> new MachineFusionKlystronCreativeBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 60.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    /** 1:1-Port von {@code MachineFusionMHDT} (1.7.10, dort {@code fusion_mhdt}). */
+    public static final RegistrySupplier<Block> MHDT = registerBlockWithoutItem("mhdt",
+            () -> new MachineFusionMhdtBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 60.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     public static final RegistrySupplier<Block> MICROWAVE = registerBlock("microwave",
             () -> new com.hbm_m.block.machines.MachineMicrowaveBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
@@ -3016,21 +3229,40 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> OILBURNER_HP = registerBlockWithoutItem("oilburner_hp",
             () -> new com.hbm_m.block.machines.MachineOilburnerBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
+    /**
+     * Der Orbus ist im Original ein Multiblock ({@code getDimensions {4,0,2,1,2,1}}, Setzversatz 1):
+     * fuenf Felder hoch, drei mal drei breit, mit je vier Anschlusszellen ganz unten und ganz oben.
+     */
     public static final RegistrySupplier<Block> ORBUS = registerBlock("orbus",
             () -> new com.hbm_m.block.machines.BarrelTankBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion(),
                     com.hbm_m.blockentity.machines.OrbusBlockEntity::new,
-                    () -> com.hbm_m.blockentity.ModBlockEntities.ORBUS_BE.get()));
+                    () -> com.hbm_m.blockentity.ModBlockEntities.ORBUS_BE.get(),
+                    null,
+                    () -> com.hbm_m.multiblock.DummyableStructureBuilder.create()
+                            .box(4, 0, 2, 1, 2, 1)
+                            // Original: je vier Zellen auf Hoehe 0 und 4, hinten und zur Seite.
+                            .extra(-1, 0, 0)
+                            .extra(0, 0, 1)
+                            .extra(-1, 0, 1)
+                            .extra(0, 4, 0)
+                            .extra(-1, 4, 0)
+                            .extra(0, 4, 1)
+                            .extra(-1, 4, 1)
+                            .placementOffset(1)
+                            .build(() -> UNIVERSAL_MACHINE_PART.get().defaultBlockState())));
                     
     public static final RegistrySupplier<Block> ORE_SLOPPER = registerBlock("ore_slopper",
             () -> new MachineOreSlopperBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
-    public static final RegistrySupplier<Block> PLASMA_FORGE = registerBlock("plasma_forge",
-            () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+    /** 1:1-Port von {@code MachineFusionPlasmaForge} (1.7.10, dort {@code fusion_plasma_forge}). */
+    public static final RegistrySupplier<Block> PLASMA_FORGE = registerBlockWithoutItem("plasma_forge",
+            () -> new MachineFusionPlasmaForgeBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 60.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     public static final RegistrySupplier<Block> PYROOVEN = registerBlock("pyrooven",
             () -> new com.hbm_m.block.machines.MachinePyroOvenBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+    /** Quadrupolmagnet - buendelt den Strahl. */
     public static final RegistrySupplier<Block> QUADRUPOLE = registerBlock("quadrupole",
-            () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+            () -> new com.hbm_m.block.machines.albion.PAQuadrupoleBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
     public static final RegistrySupplier<Block> RADGEN = registerBlock("radgen",
             () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
@@ -3040,8 +3272,9 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> REACTOR_SMALL = registerBlock("reactor_small",
             () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
+    /** Beschleunigerzelle - gibt dem Teilchen Impuls. */
     public static final RegistrySupplier<Block> RFC = registerBlock("rfc",
-            () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+            () -> new com.hbm_m.block.machines.albion.PARFCBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
     public static final RegistrySupplier<Block> ROTARY_FURNACE = registerBlock("rotary_furnace",
             () -> new com.hbm_m.block.machines.MachineRotaryFurnaceBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
@@ -3072,10 +3305,13 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> STIRLING_STEEL = registerBlock("stirling_steel",
             () -> new com.hbm_m.block.machines.MachineStirlingBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
-    public static final RegistrySupplier<Block> STRAND_CASTER = registerBlock("strand_caster",
+    // Айтем регистрируется в ModItems как MultiblockBlockItem (рамка футпринта +
+    // проверка препятствий при установке) — поэтому здесь registerBlockWithoutItem.
+    public static final RegistrySupplier<Block> STRAND_CASTER = registerBlockWithoutItem("strand_caster",
             () -> new com.hbm_m.block.machines.MachineStrandCasterBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
-    public static final RegistrySupplier<Block> TORUS = registerBlock("torus",
-            () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+    /** 1:1-Port von {@code MachineFusionTorus} (1.7.10, dort {@code fusion_torus}). */
+    public static final RegistrySupplier<Block> TORUS = registerBlockWithoutItem("torus",
+            () -> new MachineFusionTorusBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 60.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     public static final RegistrySupplier<Block> TURBINEGAS = registerBlock("turbinegas",
             () -> new com.hbm_m.block.machines.MachineTurbineGasBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
@@ -3091,8 +3327,10 @@ public class ModBlocks {
     // Platzhalter mit Stein-Eigenschaften - Varianten-, Deko- und OBJ-Modell-Bloecke
     // sind bewusst ausgelassen. Sichtbar NUR im Dev-Tab.
 
+    /** Original: {@code block_asbestos} ist ein {@code BlockOutgas} (Material Wolle, Haerte 5/15). */
     public static final RegistrySupplier<Block> BLOCK_ASBESTOS = registerBlock("block_asbestos",
-            () -> new Block(BlockProps.copy(Blocks.STONE)));
+            () -> new com.hbm_m.block.gas.OutgasBlock(BlockProps.copy(Blocks.WHITE_WOOL).strength(5.0F, 15.0F),
+                    () -> ModBlocks.GAS_ASBESTOS.get(), true, true, false, false, true));
     public static final RegistrySupplier<Block> BLOCK_BAKELITE = registerBlock("block_bakelite",
             () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_C4 = registerBlock("block_c4",
@@ -3181,8 +3419,10 @@ public class ModBlocks {
             () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> GEYSIR_NETHER = registerBlock("geysir_nether",
             () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> ICF_BLOCK = registerBlock("icf_block",
-            () -> new Block(BlockProps.copy(Blocks.STONE)));
+    // Der Platzhalter des zusammengebauten Lasers. Ohne Gegenstand - er faellt nie.
+    public static final RegistrySupplier<Block> ICF_BLOCK = registerBlockWithoutItem("icf_block",
+            () -> new com.hbm_m.block.machines.icf.ICFPhantomBlock(
+                    BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).sound(SoundType.METAL)));
     public static final RegistrySupplier<Block> LAUNCH_TABLE = registerBlock("launch_table",
             () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> LOGIC_BLOCK = registerBlock("logic_block",
@@ -3221,8 +3461,6 @@ public class ModBlocks {
             () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_GNEISS_IRON = registerBlock("ore_gneiss_iron",
             () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> ORE_GNEISS_LITHIUM = registerBlock("ore_gneiss_lithium",
-            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_GNEISS_RARE = registerBlock("ore_gneiss_rare",
             () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_GNEISS_URANIUM = registerBlock("ore_gneiss_uranium",
@@ -3249,26 +3487,37 @@ public class ModBlocks {
             () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_RARE = registerBlock("ore_rare",
             () -> new Block(BlockProps.copy(Blocks.STONE)));
+    /** Original: {@code BlockGeneric(Material.sand).setHardness(0.5F)} — копается лопатой, resistance 2.5 (0.5 x 5). */
     public static final RegistrySupplier<Block> ORE_TEKTITE_OSMIRIDIUM = registerBlock("ore_tektite_osmiridium",
-            () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> ORE_TIKITE = registerBlock("ore_tikite",
-            () -> new Block(BlockProps.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE).strength(0.5F, 2.5F)));
     public static final RegistrySupplier<Block> ORE_URANIUM_SCORCHED = registerBlock("ore_uranium_scorched",
             () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> PILE_BLOCK = registerBlock("pile_block",
-            () -> new Block(BlockProps.copy(Blocks.STONE)));
+    // Uranmeiler (Chicago Pile). Der Ziegel wird gemauert, der Bohrer macht daraus den Meiler.
+    public static final RegistrySupplier<Block> PILE_BLOCK = registerBlockWithoutItem("pile_block",
+            () -> new com.hbm_m.block.machines.pile.PileBlock(
+                    BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 15.0f)));
     public static final RegistrySupplier<Block> PILE_BRICK = registerBlock("pile_brick",
-            () -> new Block(BlockProps.copy(Blocks.STONE)));
+            () -> new com.hbm_m.block.machines.pile.PileBrickBlock(
+                    BlockProps.copy(Blocks.STONE).strength(2.0f, 5.0f)));
+    public static final RegistrySupplier<Block> PILE_LOADER = registerBlock("pile_loader",
+            () -> new com.hbm_m.block.machines.pile.PileLoaderBlock(
+                    BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion()));
+    public static final RegistrySupplier<Block> PILE_VENT = registerBlock("pile_vent",
+            () -> new com.hbm_m.block.machines.pile.PileVentBlock(
+                    BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion()));
+    public static final RegistrySupplier<Block> PILE_CONTROL = registerBlock("pile_control",
+            () -> new com.hbm_m.block.machines.pile.PileControlBlock(
+                    BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion()));
     public static final RegistrySupplier<Block> PNEUMATIC_STORAGE_ACCESS = registerBlock("pneumatic_storage_access",
-            () -> new Block(BlockProps.copy(Blocks.STONE)));
+            () -> new com.hbm_m.block.network.pneumatic.PneumoStorageAccessBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).sound(SoundType.METAL)));
     public static final RegistrySupplier<Block> PNEUMATIC_STORAGE_CLUTTER = registerBlock("pneumatic_storage_clutter",
-            () -> new Block(BlockProps.copy(Blocks.STONE)));
+            () -> new com.hbm_m.block.network.pneumatic.PneumoStorageClutterBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).sound(SoundType.METAL)));
     public static final RegistrySupplier<Block> PNEUMATIC_STORAGE_EXPORTER = registerBlock("pneumatic_storage_exporter",
-            () -> new Block(BlockProps.copy(Blocks.STONE)));
+            () -> new com.hbm_m.block.network.pneumatic.PneumoStorageExporterBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).sound(SoundType.METAL)));
     public static final RegistrySupplier<Block> PNEUMATIC_STORAGE_IMPORTER = registerBlock("pneumatic_storage_importer",
-            () -> new Block(BlockProps.copy(Blocks.STONE)));
+            () -> new com.hbm_m.block.network.pneumatic.PneumoStorageImporterBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).sound(SoundType.METAL)));
     public static final RegistrySupplier<Block> PNEUMATIC_STORAGE_MONO = registerBlock("pneumatic_storage_mono",
-            () -> new Block(BlockProps.copy(Blocks.STONE)));
+            () -> new com.hbm_m.block.network.pneumatic.PneumoStorageMonoBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).sound(SoundType.METAL)));
     public static final RegistrySupplier<Block> SOLAR_MIRROR = registerBlock("solar_mirror",
             () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> STRUCTURE_ANCHOR = registerBlock("structure_anchor",
@@ -3294,6 +3543,7 @@ public class ModBlocks {
             () -> new SlabBlock(BlockProps.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
     public static final RegistrySupplier<Block> BRICK_COMPOUND_SLAB = registerBlock("brick_compound_slab",
             () -> new SlabBlock(BlockProps.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+
     private static <T extends Block> RegistrySupplier<T> registerBlock(String name, Supplier<T> block) {
         RegistrySupplier<T> toReturn = BLOCKS.register(name, block);
         registerBlockItem(name, toReturn);
@@ -3327,6 +3577,10 @@ public class ModBlocks {
             if (b instanceof com.hbm_m.block.generic.RBMKSlabBlock slab && !slab.isDouble) {
                 return new com.hbm_m.block.generic.RBMKSlabItem(slab, new Item.Properties());
             }
+            // FFA-мультиблок (Альбион): предмет проверяет место под структуру и заполняет dummy-клетки.
+            if (b instanceof com.hbm_m.block.machines.albion.PAMultiblockBlock) {
+                return new com.hbm_m.multiblock.MultiblockBlockItem(b, new Item.Properties());
+            }
             // Блок металлолома — печное топливо (ориг. FuelHandler 1.7.10: 400 тиков).
             if (b == BLOCK_SCRAP.get()) {
                 return new com.hbm_m.item.industrial.FuelBlockItem(b, new Item.Properties(), 400);
@@ -3334,6 +3588,11 @@ public class ModBlocks {
             // Блоки кокса — печное топливо (ориг. FuelHandler 1.7.10: 32000 тиков на любой вариант).
             if (b instanceof com.hbm_m.block.generic.BlockCoke) {
                 return new com.hbm_m.item.industrial.FuelBlockItem(b, new Item.Properties(), 32000);
+            }
+            // Блоки с persistent-тултипом на дропнутом стеке ("x/y mB <жидкость>") — бочки
+            // и крупные резервуары (порт IPersistentInfoProvider из 1.7.10).
+            if (b instanceof com.hbm_m.block.machines.BarrelTankBlock) {
+                return new com.hbm_m.item.PersistentInfoBlockItem(b, new Item.Properties());
             }
             return new BlockItem(b, new Item.Properties());
         });

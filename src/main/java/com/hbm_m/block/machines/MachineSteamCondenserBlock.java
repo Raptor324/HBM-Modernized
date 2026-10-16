@@ -16,10 +16,31 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class MachineSteamCondenserBlock extends BaseEntityBlock {
+public class MachineSteamCondenserBlock extends BaseEntityBlock implements com.hbm_m.interfaces.ILookOverlay {
 
     public MachineSteamCondenserBlock(BlockBehaviour.Properties properties) {
         super(properties);
+    }
+
+    /** Порт MachineCondenser.printHook: баки входа/выхода. */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineSteamCondenserBlockEntity condenser)) return;
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        com.hbm_m.inventory.fluid.tank.FluidTank[] tanks = condenser.getAllTanks();
+        for (int i = 0; i < tanks.length; i++) {
+            com.hbm_m.inventory.fluid.tank.FluidTank tank = tanks[i];
+            text.add(net.minecraft.network.chat.Component.literal(i < 1 ? "-> " : "<- ")
+                    .withStyle(i < 1 ? net.minecraft.ChatFormatting.GREEN : net.minecraft.ChatFormatting.RED)
+                    .append(net.minecraft.network.chat.Component.literal(
+                            com.hbm_m.inventory.fluid.FluidType.forFluid(tank.getTankType()).getLocalizedName().getString()
+                            + ": " + tank.getFill() + "/" + tank.getMaxFill() + "mB")));
+        }
+
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     @Override

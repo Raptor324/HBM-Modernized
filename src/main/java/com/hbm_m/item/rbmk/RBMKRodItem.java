@@ -286,12 +286,15 @@ public class RBMKRodItem extends Item implements ITooltipProvider {
         net.minecraft.world.item.component.CustomData data =
             stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
         if (data != null) return data.copyTag();
+        // Read only: this used to WRITE the stack. It is reached from purely reading paths (hazard
+        // modifiers, tooltips), so the server wrote CUSTOM_DATA into an item merely because it sat
+        // in an inventory, and the client did the same while drawing a tooltip - leaving its copy
+        // different from the server's. Defaults are returned without saving; callers that actually
+        // change state go through saveTag.
         CompoundTag tag = new CompoundTag();
         if (stack.getItem() instanceof RBMKRodItem rod) tag.putDouble("yield", rod.yield);
         tag.putDouble("core", 20.0);
         tag.putDouble("hull", 20.0);
-        stack.set(net.minecraft.core.component.DataComponents.CUSTOM_DATA,
-            net.minecraft.world.item.component.CustomData.of(tag));
         return tag;
     }
     private static void saveTag(ItemStack stack, CompoundTag tag) {

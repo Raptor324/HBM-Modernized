@@ -5,12 +5,20 @@ import net.minecraftforge.client.model.data.ModelProperty;
  //?} elif neoforge {
 /*import net.neoforged.neoforge.client.model.data.ModelProperty;
 *///?}
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Client-only holder for ModelProperty constants used by door rendering.
  * Kept separate from DoorBlockEntity so the server never loads ModelProperty
  * or other client classes, avoiding NoSuchFieldError on dedicated server.
  */
+@OnlyIn(Dist.CLIENT)
 public final class DoorModelProperties {
 
     private DoorModelProperties() {}

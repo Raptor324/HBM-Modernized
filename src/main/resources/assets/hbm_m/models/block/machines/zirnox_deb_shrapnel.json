@@ -1,7 +1,7 @@
 {
   "textures": {
-    "particle": "hbm_m:block/machine/zirnox_destroyed",
-    "default": "hbm_m:block/machine/zirnox_destroyed"
+    "particle": "hbm_m:block/machine/zirnox",
+    "default": "hbm_m:block/machine/zirnox"
   },
   "loader": "forge:composite",
   "children": {
@@ -11,7 +11,7 @@
       "flip_v": true,
       "render_type": "minecraft:solid",
       "textures": {
-        "default": "hbm_m:block/machine/zirnox_destroyed"
+        "default": "hbm_m:block/machine/zirnox"
       }
     }
   }

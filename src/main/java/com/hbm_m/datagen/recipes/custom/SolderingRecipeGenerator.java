@@ -87,6 +87,22 @@ public final class SolderingRecipeGenerator {
                 new Pair[]{p(CHASSIS, 1), p(ModItems.UPGRADE_SPEED_3.get(), 1)},
                 new Pair[]{pTag("wires_fine/lead", 24)});
 
+        // Kraftfeldaufwertungen. Original: 200 Ticks, 1000 Energie, Glimmerstaub fuer den
+        // Radius und Lithiumstaub fuer das Schild.
+        solder(writer, "upgrade_radius", new ItemStack(ModItems.UPGRADE_RADIUS.get()),
+                200, 1_000, null,
+                new Pair[]{p(CHIP, 4), p(CAP, 4)},
+                new Pair[]{p(ModItems.UPGRADE_TEMPLATE.get()),
+                           p(net.minecraft.world.item.Items.GLOWSTONE_DUST, 4)},
+                new Pair[]{});
+
+        solder(writer, "upgrade_health", new ItemStack(ModItems.UPGRADE_HEALTH.get()),
+                200, 1_000, null,
+                new Pair[]{p(CHIP, 4), p(CAP, 4)},
+                new Pair[]{p(ModItems.UPGRADE_TEMPLATE.get()),
+                           p(ModMaterialItems.item(ModMaterials.LITHIUM, MaterialShape.POWDER), 4)},
+                new Pair[]{});
+
         // Upgrades tier1
         upgradeTier1(writer, ModItems.UPGRADE_SPEED_1.get(), ModItems.UPGRADE_SPEED_2.get());
         upgradeTier1(writer, ModItems.UPGRADE_EFFECT_1.get(), ModItems.UPGRADE_EFFECT_2.get());

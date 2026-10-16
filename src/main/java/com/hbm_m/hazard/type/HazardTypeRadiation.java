@@ -30,11 +30,7 @@ public class HazardTypeRadiation extends HazardTypeBase {
      */
     @Override
     public void onUpdate(LivingEntity target, float level, ItemStack stack) {
-        boolean reacher = false;
-
-        if (target instanceof Player player) {
-            reacher = player.getInventory().contains(new ItemStack(ModItems.REACHER.get()));
-        }
+        boolean reacher = target instanceof Player player && hasReacher(player);
 
         level *= stack.getCount();
 
@@ -49,6 +45,20 @@ public class HazardTypeRadiation extends HazardTypeBase {
 
             ContaminationUtil.contaminate(target, HazardType.RADIATION, ContaminationType.CREATIVE, rad);
         }
+    }
+
+    /**
+     * The original checks {@code inventory.hasItem(ModItems.reacher)}, which matches by item alone.
+     * This used to build a throwaway {@code new ItemStack(REACHER)} and hand it to
+     * {@code Inventory.contains(ItemStack)}, which compares components too - so a renamed reacher
+     * stopped counting - and it allocated on a path that runs every tick per hazardous stack.
+     */
+    private static boolean hasReacher(Player player) {
+        var inventory = player.getInventory();
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            if (inventory.getItem(i).is(ModItems.REACHER.get())) return true;
+        }
+        return false;
     }
 
     @Override

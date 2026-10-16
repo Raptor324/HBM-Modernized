@@ -103,7 +103,9 @@ public class RBMKDisplayBlockEntity extends RBMKPanelDeviceBlockEntity {
                 int      ri   = x - GRID_HALF, rj = z - GRID_HALF;
                 BlockPos cPos = target.offset(rotatedX(ri, rj), 0, rotatedZ(ri, rj));
 
-                if (level.getBlockEntity(cPos) instanceof RBMKColumnBlockEntity col) {
+                // Same 15x15 sweep as MachineRbmkConsoleBlockEntity.scanReactor, around a target
+                // read from NBT: without the guard it loads chunks off a persisted position.
+                if (com.hbm_m.util.Compat.getTileStandard(level, cPos) instanceof RBMKColumnBlockEntity col) {
                     CompoundTag d = col.getNBTForConsole();
                     d.putDouble("heat", col.heat);
                     d.putDouble("maxHeat", col.maxHeat());
@@ -154,29 +156,19 @@ public class RBMKDisplayBlockEntity extends RBMKPanelDeviceBlockEntity {
         syncToClient();
     }
 
-    //? if < 1.21.1 {
+    // Persisted through writeNbtData/readNbtData, NOT saveAdditional/load:
+    // BaseHbmBlockEntity builds the CLIENT update tag from writeNbtData alone, so a
+    // subclass overriding saveAdditional saves to disk correctly yet sends the client
+    // nothing - which is why these readouts stayed blank in world.
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         saveDisplay(tag);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         loadDisplay(tag);
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        saveDisplay(tag);
-    }
-
-    @Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        loadDisplay(tag);
-    }
-    *///?}
 }

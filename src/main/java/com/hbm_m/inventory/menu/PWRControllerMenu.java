@@ -40,8 +40,8 @@ public class PWRControllerMenu extends AbstractContainerMenu {
                 blockEntity != null ? blockEntity.getInventory() : new DummyItemStackHandler(MACHINE_SLOT_COUNT),
                 blockEntity != null ? blockEntity::setChanged : () -> {});
 
-        this.addSlot(new Slot(machineContainer, PWRControllerBlockEntity.SLOT_FUEL_IN, 44, 62));
-        this.addSlot(new Slot(machineContainer, PWRControllerBlockEntity.SLOT_FUEL_OUT, 116, 62) {
+        this.addSlot(new Slot(machineContainer, PWRControllerBlockEntity.SLOT_FUEL_IN, 53, 5));
+        this.addSlot(new Slot(machineContainer, PWRControllerBlockEntity.SLOT_FUEL_OUT, 89, 32) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false;
@@ -50,11 +50,11 @@ public class PWRControllerMenu extends AbstractContainerMenu {
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 147 + row * 18));
+                this.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 106 + row * 18));
             }
         }
         for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(inventory, col, 8 + col * 18, 205));
+            this.addSlot(new Slot(inventory, col, 8 + col * 18, 164));
         }
     }
 
@@ -73,7 +73,7 @@ public class PWRControllerMenu extends AbstractContainerMenu {
         if (inventory.player.level().isClientSide) {
             return null;
         }
-        throw new IllegalStateException("No PWRControllerBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":pwr_controller_menu");
+        throw new MenuBlockEntityMissingException("No PWRControllerBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":pwr_controller_menu");
     }
 
     public PWRControllerBlockEntity getBlockEntity() {
@@ -82,11 +82,7 @@ public class PWRControllerMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

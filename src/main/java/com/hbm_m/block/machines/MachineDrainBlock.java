@@ -20,13 +20,42 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
-/** Port of {@code MachineDrain} (1.7.10 Original). */
-public class MachineDrainBlock extends BaseEntityBlock {
+/**
+ * 1:1-Port von {@code MachineDrain} (1.7.10): der Ablauf.
+ *
+ * <p>Er belegt wie im Original drei Felder in einer Reihe ({@code getDimensions {0,0,2,0,0,0}}) -
+ * der Kern vorn, zwei Dummyzellen dahinter.</p>
+ */
+public class MachineDrainBlock extends com.hbm_m.block.machines.DummyableMachineBlock implements com.hbm_m.interfaces.ILookOverlay {
 
     public MachineDrainBlock(Properties properties) { super(properties); }
 
     @Override
-    public RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; }
+    protected com.hbm_m.multiblock.MultiblockStructureHelper defineStructure() {
+        return com.hbm_m.multiblock.DummyableStructureBuilder.create()
+                .box(0, 0, 2, 0, 0, 0)
+                .placementOffset(0)
+                .build(() -> com.hbm_m.block.ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
+    }
+
+    /** Порт {@code MachineDrain.printHook}: зелёная подача и содержимое единственного бака. */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineDrainBlockEntity drain)) return;
+
+        com.hbm_m.inventory.fluid.tank.FluidTank tank = drain.getTank();
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal("-> ").withStyle(net.minecraft.ChatFormatting.GREEN)
+                .append(net.minecraft.network.chat.Component.literal("")
+                        .append(com.hbm_m.inventory.fluid.FluidType.forFluid(tank.getTankType()).getLocalizedName())
+                        .withStyle(net.minecraft.ChatFormatting.WHITE))
+                .append(net.minecraft.network.chat.Component.literal(
+                        ": " + tank.getFill() + "/" + tank.getMaxFill() + "mB")
+                        .withStyle(net.minecraft.ChatFormatting.WHITE)));
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
+    }
 
     @Nullable @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {

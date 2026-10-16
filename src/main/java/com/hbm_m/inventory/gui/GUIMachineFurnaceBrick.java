@@ -9,8 +9,16 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /** GUI des Ziegelofens - Fortschrittspfeil + Brennstoffanzeige im Stil der Vanilla-Ofen-GUI. */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineFurnaceBrick extends AbstractContainerScreen<MachineFurnaceBrickMenu> {
 
     private static final ResourceLocation TEXTURE =

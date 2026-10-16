@@ -19,8 +19,10 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.api.distmarker.OnlyIn;
 
 @EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public final class ClientPowerArmorRenderNeoForge {
 
     @SubscribeEvent
@@ -84,6 +86,10 @@ public final class ClientPowerArmorRenderNeoForge {
         raw.addLayer(new BismuthPowerArmorLayer(raw));
         raw.addLayer(new DNTPowerArmorLayer(raw));
         raw.addLayer(new GasMaskLayer(raw));
+        // Костюмы химзащиты - по слою на окрас (общая геометрия, разные текстуры).
+        for (com.hbm_m.item.hazmat.HazmatArmorItem.Variant variant : com.hbm_m.item.hazmat.HazmatArmorItem.Variant.values()) {
+            raw.addLayer(new com.hbm_m.item.hazmat.render.HazmatArmorLayer<>(raw, variant));
+        }
     }
 
     private ClientPowerArmorRenderNeoForge() {}

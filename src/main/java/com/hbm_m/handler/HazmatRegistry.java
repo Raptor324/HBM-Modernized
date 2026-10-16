@@ -58,6 +58,12 @@ public final class HazmatRegistry {
         for (ItemStack stack : player.getArmorSlots()) {
             res += (float) getResistance(stack);
         }
+
+        // Original: if(player.isPotionActive(HbmPotion.radx)) res += 0.2F;
+        if (com.hbm_m.platform.PlatformHooks.hasEffect(player, com.hbm_m.effect.ModEffects.RADX)) {
+            res += com.hbm_m.effect.RadXEffect.RESISTANCE_BONUS;
+        }
+
         return res;
     }
 
@@ -100,6 +106,10 @@ public final class HazmatRegistry {
         registerSet(ModItems.TITANIUM_HELMET, ModItems.TITANIUM_CHESTPLATE, ModItems.TITANIUM_LEGGINGS, ModItems.TITANIUM_BOOTS, titanium);
         registerSet(ModItems.COBALT_HELMET, ModItems.COBALT_CHESTPLATE, ModItems.COBALT_LEGGINGS, ModItems.COBALT_BOOTS, cobalt);
         registerSet(ModItems.ALLOY_HELMET, ModItems.ALLOY_CHESTPLATE, ModItems.ALLOY_LEGGINGS, ModItems.ALLOY_BOOTS, alloy);
+
+        // Красный и серый костюмы (в оригинале hazRed = 1.0, hazGray = 2.0).
+        registerSet(ModItems.HAZMAT_HELMET_RED, ModItems.HAZMAT_PLATE_RED, ModItems.HAZMAT_LEGS_RED, ModItems.HAZMAT_BOOTS_RED, 1.0D);
+        registerSet(ModItems.HAZMAT_HELMET_GREY, ModItems.HAZMAT_PLATE_GREY, ModItems.HAZMAT_LEGS_GREY, ModItems.HAZMAT_BOOTS_GREY, 2.0D);
 
         registerHazmat(Items.IRON_HELMET, iron * HELMET);
         registerHazmat(Items.IRON_CHESTPLATE, iron * CHEST);

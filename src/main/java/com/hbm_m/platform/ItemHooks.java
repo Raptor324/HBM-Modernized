@@ -3,6 +3,7 @@ package com.hbm_m.platform;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
 
 /**
  * Платформенный и версионный слой для сглаживания различий работы с предметами,
@@ -27,7 +28,7 @@ public final class ItemHooks {
      * Кросс-версионное чтение уровня зачарования.
      * Скрывает переход от Enchantment (1.20.1) к Holder<Enchantment> и динамическому реестру (1.21.1).
      */
-    public static int getEnchantmentLevel(ItemStack stack, Level level, String enchName) {
+    public static int getEnchantmentLevel(ItemStack stack, LevelAccessor level, String enchName) {
         //? if < 1.21.1 {
         net.minecraft.world.item.enchantment.Enchantment ench = net.minecraft.core.registries.BuiltInRegistries.ENCHANTMENT.get(net.minecraft.resources.ResourceLocation.tryParse(enchName));
         if (ench == null) return 0;
@@ -44,7 +45,7 @@ public final class ItemHooks {
      * Кросс-версионная установка уровня зачарования (обновляет или добавляет).
      * Скрывает работу с Map в 1.20.1 и ItemEnchantments.Mutable в 1.21.1.
      */
-    public static void setEnchantmentLevel(ItemStack stack, Level level, String enchName, int enchLevel) {
+    public static void setEnchantmentLevel(ItemStack stack, LevelAccessor level, String enchName, int enchLevel) {
         //? if < 1.21.1 {
         net.minecraft.world.item.enchantment.Enchantment ench = net.minecraft.core.registries.BuiltInRegistries.ENCHANTMENT.get(net.minecraft.resources.ResourceLocation.tryParse(enchName));
         if (ench != null) {
@@ -64,7 +65,7 @@ public final class ItemHooks {
     /**
      * Кросс-версионное удаление зачарования.
      */
-    public static void removeEnchantment(ItemStack stack, Level level, String enchName) {
+    public static void removeEnchantment(ItemStack stack, LevelAccessor level, String enchName) {
         //? if < 1.21.1 {
         net.minecraft.world.item.enchantment.Enchantment ench = net.minecraft.core.registries.BuiltInRegistries.ENCHANTMENT.get(net.minecraft.resources.ResourceLocation.tryParse(enchName));
         if (ench != null) {

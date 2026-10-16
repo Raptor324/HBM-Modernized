@@ -86,20 +86,18 @@ public class ArmorGasMaskItem extends ArmorItem implements IGasMask, ITooltipPro
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         // Шифт+ПКМ по маске в руке — выкрутить фильтр (в оригинале то же самое).
-        if (player.isShiftKeyDown()) {
-            ItemStack mask = player.getItemInHand(hand);
-            ItemStack filter = GasMaskUtil.takeFilter(mask);
-            if (!filter.isEmpty()) {
-                if (!level.isClientSide()) {
-                    if (!player.getInventory().add(filter)) {
-                        player.drop(filter, false);
-                    }
-                    level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                            ModSounds.FILTER_SCREW.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+        ItemStack mask = player.getItemInHand(hand);
+        if (player.isShiftKeyDown() && IGasMask.hasFilter(mask)) {
+            // takeFilter edits the stack, so it must not run on the client: the tag is server state.
+            if (!level.isClientSide()) {
+                ItemStack filter = GasMaskUtil.takeFilter(mask);
+                if (!filter.isEmpty() && !player.getInventory().add(filter)) {
+                    player.drop(filter, false);
                 }
-                return InteractionResultHolder.sidedSuccess(mask, level.isClientSide());
+                level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                        ModSounds.FILTER_SCREW.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
             }
-            return InteractionResultHolder.pass(mask);
+            return InteractionResultHolder.sidedSuccess(mask, level.isClientSide());
         }
         return super.use(level, player, hand);
     }

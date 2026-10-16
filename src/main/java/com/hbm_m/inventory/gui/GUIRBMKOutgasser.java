@@ -11,6 +11,13 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * 1:1 port of {@code GUIRBMKOutgasser}: a flux progress bar at (66,58) and the gas tank gauge at
@@ -20,6 +27,7 @@ import net.minecraft.world.entity.player.Inventory;
  * xenon-poison meter and the tank gauge as a heat gauge, because the block entity had neither a
  * progress value nor a tank. It has both now.</p>
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIRBMKOutgasser extends GuiInfoScreen<RBMKOutgasserMenu> {
 
     private static final ResourceLocation TEXTURE =

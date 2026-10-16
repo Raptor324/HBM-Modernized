@@ -54,17 +54,16 @@ public class EntityDeliveryDrone extends EntityDroneBase {
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
-        this.entityData.define(EXPRESS, false);
-        this.entityData.define(CHUNK_LOADING, false);
-    }
+        var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     //?} else {
     /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
-        builder.define(EXPRESS, false);
-        builder.define(CHUNK_LOADING, false);
-    }
+        var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
     *///?}
+        defs.define(EXPRESS, false);
+        defs.define(CHUNK_LOADING, false);
+    }
 
     public boolean isExpress() { return this.entityData.get(EXPRESS); }
     public boolean isChunkLoading() { return this.entityData.get(CHUNK_LOADING); }
@@ -127,9 +126,13 @@ public class EntityDeliveryDrone extends EntityDroneBase {
 
     @Override
     public boolean hurt(net.minecraft.world.damagesource.DamageSource source, float amount) {
-        if (!level().isClientSide && !this.isRemoved()) {
-            hitByEntity(source.getEntity());
+        // The original's EntityDroneBase.hitByEntity only reacts when the attacker is a player, and
+        // it never overrides attackEntityFrom - so fire, lava, mobs and explosions leave a drone
+        // alone. Reacting to every source made a drone dump its cargo to a stray arrow on the way.
+        if (level().isClientSide || this.isRemoved() || !(source.getEntity() instanceof Player)) {
+            return false;
         }
+        hitByEntity(source.getEntity());
         return true;
     }
 

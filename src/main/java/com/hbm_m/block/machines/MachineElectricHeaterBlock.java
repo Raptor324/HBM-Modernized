@@ -44,7 +44,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * и 1 назад, контроллер у заднего торца по центру. Отвёртка крутит настройку
  * мощности 0..10, остальной клик — пустой (GUI у нагревателя нет).
  */
-public class MachineElectricHeaterBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachineElectricHeaterBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.interfaces.ILookOverlay {
 
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
@@ -127,6 +127,23 @@ public class MachineElectricHeaterBlock extends BaseEntityBlock implements IMult
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineElectricHeaterBlockEntity(pos, state);
+    }
+
+    /** Порт HeaterElectric.printHook: запас тепла, потребление HE/тик и тепловыделение TU/тик. */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineElectricHeaterBlockEntity heater)) return;
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal(
+                String.format(java.util.Locale.US, "%,d", heater.getHeat()) + " TU"));
+        text.add(net.minecraft.network.chat.Component.literal("-> ").withStyle(net.minecraft.ChatFormatting.GREEN)
+                .append(net.minecraft.network.chat.Component.literal(heater.getConsumption() + " HE/t")));
+        text.add(net.minecraft.network.chat.Component.literal("<- ").withStyle(net.minecraft.ChatFormatting.RED)
+                .append(net.minecraft.network.chat.Component.literal(heater.getHeatGen() + " TU/t")));
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     @Nullable

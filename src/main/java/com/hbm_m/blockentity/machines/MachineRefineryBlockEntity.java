@@ -4,6 +4,8 @@ import com.hbm_m.api.fluids.FluidItemAccess;
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
+import com.hbm_m.handler.pollution.PollutionHandler;
+import com.hbm_m.inventory.fluid.trait.PollutionType;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
@@ -128,6 +130,18 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
         this.onFire = false;
         this.setChanged();
         syncExplodedState();
+    }
+
+    /** 1.7.10 {@code IRepairable.isDamaged()}. */
+    public boolean isDamaged() {
+        return this.hasExploded;
+    }
+
+    /** 1.7.10 {@code IRepairable.getRepairMaterials()}: 8 стальных пластин + 4 рулона скотча. */
+    public java.util.List<ItemStack> getRepairMaterials() {
+        return java.util.List.of(
+                new ItemStack(com.hbm_m.item.ModItems.STEEL_PLATE.get(), 8),
+                new ItemStack(com.hbm_m.item.ModItems.DUCTTAPE.get(), 4));
     }
     /**
      * Pushes {@code hasExploded} into the blockstate so the wrecked model is used. The state is
@@ -276,6 +290,12 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
         }
 
         isOn = true;
+
+        // Original: SOOT_PER_SECOND * 70 im Sekundentakt - die dreckigste Maschine des Mods.
+        if (level.getGameTime() % 20 == 0) {
+            PollutionHandler.incrementPollution(level, worldPosition, PollutionType.SOOT,
+                    PollutionHandler.SOOT_PER_SECOND * 70);
+        }
         getTank(TANK_INPUT).setFill(getTank(TANK_INPUT).getFill() - INPUT_CONSUMPTION_MB);
 
         for (int i = 0; i < 4; i++) {
@@ -370,7 +390,6 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
 
         if (VanillaFluidEquivalence.sameSubstance(input, ModFluids.HOTCRACKOIL.getSource())
             || VanillaFluidEquivalence.sameSubstance(input, ModFluids.CRACKOIL.getSource())) {
-            // Original byproduct is oil_tar (CRACK), but oil_tar system is not ported yet.
             return new RefineryRecipe(
                 new Fluid[] {
                     ModFluids.NAPHTHA_CRACK.getSource(),
@@ -379,13 +398,12 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
                     ModFluids.UNSATURATEDS.getSource()
                 },
                 new int[] {CRACK_FRAC_NAPH, CRACK_FRAC_LIGHT, CRACK_FRAC_AROMA, CRACK_FRAC_UNSAT},
-                ItemStack.EMPTY
+                new ItemStack(ModItems.OIL_TAR_CRACK.get())
             );
         }
 
         if (VanillaFluidEquivalence.sameSubstance(input, ModFluids.HOTOIL_DS.getSource())
             || VanillaFluidEquivalence.sameSubstance(input, ModFluids.OIL_DS.getSource())) {
-            // Original byproduct is oil_tar (PARAFFIN), but oil_tar system is not ported yet.
             return new RefineryRecipe(
                 new Fluid[] {
                     ModFluids.HEAVYOIL.getSource(),
@@ -394,13 +412,12 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
                     ModFluids.UNSATURATEDS.getSource()
                 },
                 new int[] {OILDS_FRAC_HEAVY, OILDS_FRAC_NAPH, OILDS_FRAC_LIGHT, OILDS_FRAC_UNSAT},
-                ItemStack.EMPTY
+                new ItemStack(ModItems.OIL_TAR_PARAFFIN.get())
             );
         }
 
         if (VanillaFluidEquivalence.sameSubstance(input, ModFluids.HOTCRACKOIL_DS.getSource())
             || VanillaFluidEquivalence.sameSubstance(input, ModFluids.CRACKOIL_DS.getSource())) {
-            // Original byproduct is oil_tar (PARAFFIN), but oil_tar system is not ported yet.
             return new RefineryRecipe(
                 new Fluid[] {
                     ModFluids.NAPHTHA_DS.getSource(),
@@ -409,7 +426,7 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
                     ModFluids.UNSATURATEDS.getSource()
                 },
                 new int[] {CRACKDS_FRAC_NAPH, CRACKDS_FRAC_LIGHT, CRACKDS_FRAC_AROMA, CRACKDS_FRAC_UNSAT},
-                ItemStack.EMPTY
+                new ItemStack(ModItems.OIL_TAR_PARAFFIN.get())
             );
         }
 
@@ -430,10 +447,13 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
         }
     }
 
-    //? if < 1.21.1 {
+    // Persisted through writeNbtData/readNbtData, NOT saveAdditional/load:
+    // BaseHbmBlockEntity builds the CLIENT update tag from writeNbtData alone, so a
+    // subclass overriding saveAdditional saves to disk correctly yet sends the client
+    // nothing - which is why these readouts stayed blank in world.
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putBoolean("hasExploded", hasExploded);
         tag.putBoolean("onFire", onFire);
         for (int i = 0; i < tanks.length; i++) {
@@ -442,24 +462,10 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
         tag.putInt("sulfurProgress", sulfurProgress);
         tag.putBoolean("isOn", isOn);
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        tag.putBoolean("hasExploded", hasExploded);
-        tag.putBoolean("onFire", onFire);
-        for (int i = 0; i < tanks.length; i++) {
-            tanks[i].writeToNBT(tag, "tank_" + i);
-        }
-        tag.putInt("sulfurProgress", sulfurProgress);
-        tag.putBoolean("isOn", isOn);
-    }
-    *///?}
 
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         hasExploded = tag.getBoolean("hasExploded");
         onFire = tag.getBoolean("onFire");
         for (int i = 0; i < tanks.length; i++) {
@@ -468,19 +474,6 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
         sulfurProgress = tag.getInt("sulfurProgress");
         isOn = tag.getBoolean("isOn");
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        hasExploded = tag.getBoolean("hasExploded");
-        onFire = tag.getBoolean("onFire");
-        for (int i = 0; i < tanks.length; i++) {
-            tanks[i].readFromNBT(tag, "tank_" + i);
-        }
-        sulfurProgress = tag.getInt("sulfurProgress");
-        isOn = tag.getBoolean("isOn");
-    }
-    *///?}
 
     @Override
     public Component getDisplayName() {

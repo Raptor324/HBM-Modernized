@@ -35,7 +35,9 @@ public class ParticleGasFlame extends ParticleNT {
         this.xd = mx;
         this.yd = my * 1.5D;
         this.zd = mz;
-        this.quadSize = scale;
+        // Протокол несёт scale 1.7.10 (particleScale), где рендер давал полуразмер 0.1 * scale;
+        // современный quadSize = полуразмер, поэтому 8F -> 0.8 (квад 1.6 м, как в оригинале).
+        this.quadSize = scale * 0.1F;
         this.colorMod = 0.8F + this.random.nextFloat() * 0.2F;
         this.noClip = true;
         this.gravity = 0;
@@ -107,18 +109,7 @@ public class ParticleGasFlame extends ParticleNT {
             float oz = left.z * cn[0] * scale + up.z * cn[1] * scale;
             float u = cn[2];
             float v = cn[3];
-            //? if < 1.21.1 {
-            consumer.vertex(pX + ox, pY + oy, pZ + oz)
-                    .color(r, g, b, a)
-                    .uv(u, v)
-                    .uv2(light)
-                    .endVertex();
-            //?} else {
-            /*consumer.addVertex(pX + ox, pY + oy, pZ + oz)
-                    .setColor(r, g, b, a)
-                    .setUv(u, v)
-                    .setLight(light);
-            *///?}
+            com.hbm_m.platform.RenderHooks.vertexTexColorLight(consumer, pX + ox, pY + oy, pZ + oz, u, v, r, g, b, a, light);
         }
     }
 

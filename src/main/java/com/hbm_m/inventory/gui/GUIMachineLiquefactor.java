@@ -11,9 +11,17 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /** Direktport der Slot-/Tank-Koordinaten aus {@code GUILiquefactor} (1.7.10 Original). Die
  *  Lade-Icon-Deko (176,52 / 9x12) des Originals wurde nicht uebernommen (rein kosmetisch). */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineLiquefactor extends GuiInfoScreen<MachineLiquefactorMenu> {
 
     private static final ResourceLocation TEXTURE =

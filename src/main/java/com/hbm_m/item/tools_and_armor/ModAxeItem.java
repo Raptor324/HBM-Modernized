@@ -49,7 +49,9 @@ public class ModAxeItem extends AxeItem implements ITooltipProvider {
         //? if < 1.21.1 {
         super(tier, attackDamage, attackSpeed, properties);
         //?} else {
-        /*super(tier, properties);
+        /*// The three sibling wrappers all pass properties.attributes(...); this one dropped it, so
+        // attackDamage/attackSpeed were silently discarded and every mod axe dealt bare-hand damage.
+        super(tier, properties.attributes(AxeItem.createAttributes(tier, attackDamage, attackSpeed)));
         *///?}
         this.veinMinerLevel = Math.max(0, Math.min(6, veinMinerLevel));
         this.silkTouchLevel = Math.max(0, Math.min(1, silkTouchLevel));

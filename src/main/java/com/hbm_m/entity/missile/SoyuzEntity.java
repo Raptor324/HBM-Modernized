@@ -159,8 +159,11 @@ public class SoyuzEntity extends Entity {
             if (capsule != null) {
                 capsule.setPayload(payload);
                 capsule.setPos(targetX + 0.5, DEPLOY_HEIGHT, targetZ + 0.5);
-                server.getChunkSource().addRegionTicket(net.minecraft.server.level.TicketType.FORCED,
-                        new net.minecraft.world.level.ChunkPos(targetX >> 4, targetZ >> 4), 2, net.minecraft.world.level.ChunkPos.ZERO);
+                net.minecraft.world.level.ChunkPos landing =
+                        new net.minecraft.world.level.ChunkPos(targetX >> 4, targetZ >> 4);
+                server.getChunkSource().addRegionTicket(SoyuzCapsuleEntity.CHUNK_TICKET, landing,
+                        SoyuzCapsuleEntity.CHUNK_TICKET_RADIUS, capsule.getUUID());
+                capsule.setLoadedChunk(landing);
                 server.addFreshEntity(capsule);
             }
         }
@@ -172,16 +175,18 @@ public class SoyuzEntity extends Entity {
 
     @Override
     protected void defineSynchedData() {
-        // No synced fields needed - mode/skin only matter server-side and for our own render pose.
-    }
+
+var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     //?} else {
     /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
 
+var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
+    *///?}
+
         // No synced fields needed - mode/skin only matter server-side and for our own render pose.
     
     }
-    *///?}
 
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {

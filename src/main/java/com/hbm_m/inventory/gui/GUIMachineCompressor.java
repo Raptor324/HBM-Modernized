@@ -10,9 +10,17 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /** GUI des Kompressors - Fortschritts-/Fuellstands-/Energieanzeigen als Fuellrechtecke (siehe
  *  {@code GUIMachineElectricFurnace}). */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineCompressor extends AbstractContainerScreen<MachineCompressorMenu> {
 
     private static final ResourceLocation TEXTURE =
@@ -24,7 +32,7 @@ public class GUIMachineCompressor extends AbstractContainerScreen<MachineCompres
         super(menu, inventory, title);
         this.blockEntity = menu.getBlockEntity();
         this.imageWidth = 176;
-        this.imageHeight = 176;
+        this.imageHeight = 204;
         this.inventoryLabelY = imageHeight - 96 + 2;
     }
 

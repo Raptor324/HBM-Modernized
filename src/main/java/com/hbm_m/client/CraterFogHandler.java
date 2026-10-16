@@ -1,4 +1,3 @@
-//? if forge || neoforge {
 package com.hbm_m.client;
 
 import com.hbm_m.main.MainRegistry;
@@ -13,11 +12,18 @@ import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.api.distmarker.Dist;
-//?} else if neoforge {
+//?} elif neoforge {
 /*import net.neoforged.neoforge.client.event.ViewportEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.api.distmarker.Dist;
+*///?}
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 *///?}
 
 /**
@@ -25,9 +31,10 @@ import net.neoforged.api.distmarker.Dist;
  */
 //? if forge {
 @Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, value = Dist.CLIENT)
-//?} else if neoforge {
+//?} elif neoforge {
 /*@EventBusSubscriber(modid = MainRegistry.MOD_ID, value = Dist.CLIENT)
 *///?}
+@OnlyIn(Dist.CLIENT)
 public class CraterFogHandler {
 
     @SubscribeEvent
@@ -78,4 +85,3 @@ public class CraterFogHandler {
         }
     }
 }
-//?}

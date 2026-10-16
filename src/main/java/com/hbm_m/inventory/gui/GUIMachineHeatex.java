@@ -13,6 +13,13 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Port of {@code GUIHeaterHeatex} (1.7.10 Original).
@@ -20,6 +27,7 @@ import net.minecraft.world.entity.player.Inventory;
  * two borderless green EditBoxes ("amountToCool" at 73/31, "tickDelay" at 73/49) that send the
  * control packet on EVERY change (original: per-keystroke NBTControlPacket via textboxKeyTyped).
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineHeatex extends GuiInfoScreen<MachineHeatexMenu> {
 
     private static final ResourceLocation TEXTURE =

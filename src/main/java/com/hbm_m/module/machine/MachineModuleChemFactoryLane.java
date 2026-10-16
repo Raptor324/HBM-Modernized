@@ -65,7 +65,11 @@ public class MachineModuleChemFactoryLane extends MachineModuleBase<ChemicalPlan
 
         boolean wasProcessing = this.didProcess;
         super.update(speed, powerMul, extraCondition, blueprint);
-        if (wasProcessing && !this.didProcess) {
+        // didProcess drives the client-side fan anim/sound (see
+        // MachineChemicalFactoryBlockEntity#isChemFactoryEffectsActive), so BOTH edges must
+        // reach the client: true->false (lane stalled) and false->true (lane resumed).
+        // Strictly edge-triggered: steady state syncs nothing extra.
+        if (wasProcessing != this.didProcess) {
             this.needsSync = true;
         }
         return needsSync;

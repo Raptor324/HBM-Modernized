@@ -9,12 +9,14 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderHighlightEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * Forge-only подписчик: при удержании предмета мультиблока отменяет ванильный
  * контур цели и рисует рамку футпринта (порт drawPlacementHighlight из 1.7.10).
  */
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public final class MultiblockPlacementHighlightForge {
     private MultiblockPlacementHighlightForge() {}
 

@@ -5,6 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.rbmk.*;
 import com.hbm_m.blockentity.machines.rbmk.RBMKColumnBlockEntity.ColumnType;
+import com.hbm_m.util.Compat;
 import com.hbm_m.inventory.menu.MachineRbmkConsoleMenu;
 import com.hbm_m.platform.PlatformHooks;
 import net.minecraft.core.BlockPos;
@@ -172,7 +173,7 @@ public class MachineRbmkConsoleBlockEntity extends com.hbm_m.blockentity.BaseHbm
                 int      ri    = x - GRID_HALF, rj = z - GRID_HALF;
                 BlockPos cPos  = reactorOrigin.offset(rotatedX(ri, rj), 0, rotatedZ(ri, rj));
 
-                if (level.getBlockEntity(cPos) instanceof RBMKColumnBlockEntity col) {
+                if (Compat.getTileStandard(level, cPos) instanceof RBMKColumnBlockEntity col) {
                     CompoundTag d = col.getNBTForConsole();
                     d.putDouble("heat",      col.heat);
                     d.putDouble("maxHeat",   col.maxHeat());
@@ -261,10 +262,17 @@ public class MachineRbmkConsoleBlockEntity extends com.hbm_m.blockentity.BaseHbm
             }
 
             String text = ((int) (value / count * 10)) / 10D + "";
+            // 1:1 with CE's prepareScreenInfo: the readout is stored as "<lang key>=<value>" and
+            // resolved at draw time, so a screen reads "Temp: 123.4°C" rather than a bare
+            // "123.4°C" with no indication of WHICH statistic it shows. The port dropped the
+            // key half entirely, which left all six screens as unlabelled numbers.
             screenText[s] = switch (type) {
-                case COL_TEMP, FUEL_TEMP -> text + "\u00B0C";
-                case FUEL_DEPLETION, FUEL_POISON, ROD_EXTRACTION -> text + "%";
-                default -> text;
+                case COL_TEMP       -> "rbmk.screen.temp="      + text + "°C";
+                case FUEL_TEMP      -> "rbmk.screen.core="      + text + "°C";
+                case FUEL_DEPLETION -> "rbmk.screen.depletion=" + text + "%";
+                case FUEL_POISON    -> "rbmk.screen.xenon="     + text + "%";
+                case ROD_EXTRACTION -> "rbmk.screen.rod="       + text + "%";
+                default             -> text;
             };
         }
     }
@@ -276,14 +284,14 @@ public class MachineRbmkConsoleBlockEntity extends com.hbm_m.blockentity.BaseHbm
             case 0 -> { // set control rod level
                 for (int idx : selected) {
                     BlockPos cPos = idxToPos(idx);
-                    if (cPos != null && level.getBlockEntity(cPos) instanceof RBMKControlBlockEntity rod)
+                    if (cPos != null && Compat.getTileStandard(level, cPos) instanceof RBMKControlBlockEntity rod)
                         rod.setTarget(dVal);
                 }
             }
             case 1 -> { // AZ-5: retract ALL control rods immediately
                 for (int i = 0; i < AREA; i++) {
                     BlockPos cPos = idxToPos(i);
-                    if (cPos != null && level.getBlockEntity(cPos) instanceof RBMKControlBlockEntity rod) {
+                    if (cPos != null && Compat.getTileStandard(level, cPos) instanceof RBMKControlBlockEntity rod) {
                         rod.setTarget(0);
                         rod.level = 0;
                     }
@@ -292,7 +300,7 @@ public class MachineRbmkConsoleBlockEntity extends com.hbm_m.blockentity.BaseHbm
             case 2 -> { // assign color group
                 for (int idx : selected) {
                     BlockPos cPos = idxToPos(idx);
-                    if (cPos != null && level.getBlockEntity(cPos) instanceof RBMKControlBlockEntity rod) {
+                    if (cPos != null && Compat.getTileStandard(level, cPos) instanceof RBMKControlBlockEntity rod) {
                         rod.color = (short) iVal;
                         rod.setChanged();
                     }
@@ -319,7 +327,7 @@ public class MachineRbmkConsoleBlockEntity extends com.hbm_m.blockentity.BaseHbm
             case 6 -> { // cycle the steam compressor on every selected boiler channel
                 for (int idx : selected) {
                     BlockPos cPos = idxToPos(idx);
-                    if (cPos != null && level.getBlockEntity(cPos)
+                    if (cPos != null && Compat.getTileStandard(level, cPos)
                             instanceof com.hbm_m.blockentity.machines.rbmk.RBMKBoilerBlockEntity boiler) {
                         boiler.cycleCompressor();
                     }

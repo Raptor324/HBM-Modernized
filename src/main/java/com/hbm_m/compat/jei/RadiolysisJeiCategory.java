@@ -31,7 +31,6 @@ import net.minecraft.world.item.ItemStack;
  * <p>Data-driven: рецепты читаются напрямую aus {@code RecipeManager} (JSON {@code hbm_m:radiolysis}),
  * ранее — статический {@code RadiolysisRecipes} (делегат в {@code CrackingTowerRecipes}).</p>
  */
-//? if forge {
 public class RadiolysisJeiCategory extends JeiGenericRecipeCategory<RadiolysisRecipe> {
 
     public static final RecipeType<RadiolysisRecipe> RECIPE_TYPE =
@@ -107,7 +106,3 @@ public class RadiolysisJeiCategory extends JeiGenericRecipeCategory<RadiolysisRe
         // Kein Blueprint-Slot fuer Radiolysis-Rezepte.
     }
 }
-//?} else {
-/*public final class RadiolysisJeiCategory {
-    private RadiolysisJeiCategory() {}
-}*///?}

@@ -143,9 +143,9 @@ public final class AnvilRecipeGenerator {
     //  (расходуется), результат — форма. Оригинал матчил по ore-dict префиксу формы;
     //  в порту — конкретный предмет-представитель (для ванильных металлов — ваниль).
     //  Все кузнечные формы — тир 1. Оружейные формы id 22-28 — construction
-    //  (mold_base + сталь x4, тир 2). Казённые формы c9/c50 (id 16/17 оригинала)
-    //  не переносятся — в порту нет форм C9/C50, а порт-онли C357/CBUCKSHOT в
-    //  оригинале отсутствуют.
+    //  (mold_base + сталь x4, тир 2). Казённые формы c9/c50 (id 16/17, в порту
+    //  переименованы в C357/CBUCKSHOT) — construction в registerConstructionAmmo
+    //  (mold_base + железо x2, тир 1).
     // =====================================================================================
     private static void registerMoldRecipes(Consumer<FinishedRecipe> writer) {
 
@@ -218,6 +218,17 @@ public final class AnvilRecipeGenerator {
                 .addInventoryRequirement(stack(ModItems.MOLD_BASE))
                 .addInventoryRequirement(AnvilIngredient.ofCount(matStack(ModMaterials.STEEL, MaterialShape.INGOT, 1), 4))
                 .save(writer, anvilId("steel", "mold", name));
+    }
+
+    /** Казённые формы (ориг. #617-618): mold_base + железо x2, тир 1. */
+    private static void constructionMoldCasing(Consumer<FinishedRecipe> writer, String name, RegistrySupplier<Item> moldItem) {
+        AnvilRecipeBuilder.inventoryRecipe(stack(moldItem), AnvilTier.IRON)
+                .withOrder(nextOrder())
+                .withOverlay(AnvilRecipe.OverlayType.CONSTRUCTION)
+                .addInventoryRequirement(stack(ModItems.MOLD_BASE))
+                // Железный слиток в порту — ванильный предмет (см. smithing-форму "ingot").
+                .addInventoryRequirement(AnvilIngredient.ofCount(new ItemStack(Items.IRON_INGOT), 2))
+                .save(writer, anvilId("iron", "mold", name));
     }
 
     // =====================================================================================
@@ -798,8 +809,10 @@ public final class AnvilRecipeGenerator {
                 stack(ModItems.STAMP_DESH_50),
                 ing(stack(ModItems.STAMP_DESH_FLAT)),
                 ingCount(matStack(ModMaterials.WEAPONSTEEL, MaterialShape.INGOT, 1), 4)); // original: AnvilRecipes.java#615
-        // Формы c9/c50 (ориг. #617-618, id 16/17) — см. javadoc класса: в порту нет
-        // предметов форм C9/C50, а порт-онли C357/CBUCKSHOT в оригинале отсутствуют. SKIP.
+        // Казённые формы c9/c50 (ориг. #617-618, id 16/17, mold_base + железо x2, тир 1) —
+        // в порту они переименованы в C357/CBUCKSHOT (литьё гильз casing_small/large).
+        constructionMoldCasing(writer, "c357",     ModItems.MOLD_C357);       // original: AnvilRecipes.java#617
+        constructionMoldCasing(writer, "cbuckshot", ModItems.MOLD_CBUCKSHOT); // original: AnvilRecipes.java#618
         // Оружейные формы id 22-28 (ориг. #620-626, mold_base + сталь x4, тир 2):
         constructionMold(writer, "barrel_light",    ModItems.MOLD_BARREL_LIGHT);    // original: AnvilRecipes.java#620
         constructionMold(writer, "barrel_heavy",    ModItems.MOLD_BARREL_HEAVY);    // original: AnvilRecipes.java#621

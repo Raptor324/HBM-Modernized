@@ -123,11 +123,7 @@ public class CatalyticReformerRecipe extends PlatformRecipe {
 
     public static class Serializer extends PlatformRecipeSerializer<CatalyticReformerRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-        //? if fabric && < 1.21.1 {
-        /*public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "catalytic_reformer");
-        *///?} else {
         public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "catalytic_reformer");
-        //?}
 
         @Override
         public CatalyticReformerRecipe readJson(ResourceLocation recipeId, JsonObject json) {

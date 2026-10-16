@@ -21,16 +21,25 @@ public final class ItemEnergyAccess {
 
     public static boolean isEnergySource(ItemStack stack) {
         if (stack.isEmpty()) return false;
-        if (getHbmProvider(stack).isPresent()) return true;
+        return getHbmProvider(stack).isPresent() || hasLoaderEnergy(stack);
+    }
 
+    /** Слот питания принимает и отдающие, и заряжаемые батарейки, и чужие FE-предметы. */
+    public static boolean isEnergyItem(ItemStack stack) {
+        if (stack.isEmpty()) return false;
+        return getHbmProvider(stack).isPresent()
+                || getHbmReceiver(stack).isPresent()
+                || hasLoaderEnergy(stack);
+    }
+
+    /** Энергокапабилити самого лоадера (Forge FE / NeoForge FE). */
+    public static boolean hasLoaderEnergy(ItemStack stack) {
+        if (stack.isEmpty()) return false;
         //? if forge {
-        if (stack.getCapability(ForgeCapabilities.ENERGY).isPresent()) return true;
-        //?}
-        //? if neoforge {
-        /*if (stack.getCapability(Capabilities.EnergyStorage.ITEM) != null) return true;
+        return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
+        //?} elif neoforge {
+        /*return stack.getCapability(Capabilities.EnergyStorage.ITEM) != null;
         *///?}
-
-        return false;
     }
 
     public static Optional<IEnergyProvider> getHbmProvider(ItemStack stack) {
@@ -89,4 +98,79 @@ public final class ItemEnergyAccess {
         return java.util.Optional.ofNullable(stack.getCapability(Capabilities.EnergyStorage.ITEM));
     }
     *///?}
+
+    // ═══════ FE-конверсия чужих энергопредметов на HE (курс в EnergyConversion) ═══════
+
+    /** Запас чужого FE-предмета, пересчитанный в HE. */
+    public static long feStoredAsHe(ItemStack stack) {
+        //? if forge {
+        return getForgeEnergy(stack)
+                .map(fe -> EnergyConversion.heFromFe(fe.getEnergyStored()))
+                .orElse(0L);
+        //?}
+        //? if neoforge {
+        /*return getForgeEnergy(stack)
+                .map(fe -> EnergyConversion.heFromFe(fe.getEnergyStored()))
+                .orElse(0L);
+        *///?}
+    }
+
+    /** Ёмкость чужого FE-предмета, пересчитанная в HE (минимум 1 — против деления на ноль). */
+    public static long feMaxAsHe(ItemStack stack) {
+        //? if forge {
+        return getForgeEnergy(stack)
+                .map(fe -> Math.max(1L, EnergyConversion.heFromFe(fe.getMaxEnergyStored())))
+                .orElse(1L);
+        //?}
+        //? if neoforge {
+        /*return getForgeEnergy(stack)
+                .map(fe -> Math.max(1L, EnergyConversion.heFromFe(fe.getMaxEnergyStored())))
+                .orElse(1L);
+        *///?}
+    }
+
+    /**
+     * Снять HE с чужого FE-предмета: запрос конвертируется в FE и выравнивается
+     * по кванту, фактический перенос конвертируется обратно в HE.
+     */
+    public static long extractHeFromFe(ItemStack stack, long maxHe, boolean simulate) {
+        if (maxHe <= 0 || !canForgeExtract(stack)) return 0L;
+        long requestFe = EnergyConversion.feFromHe(maxHe) / EnergyConversion.feQuantum() * EnergyConversion.feQuantum();
+        int request = (int) Math.min(Integer.MAX_VALUE, requestFe);
+        if (request <= 0) return 0L;
+        //? if forge {
+        int movedFe = getForgeEnergy(stack)
+                .filter(net.minecraftforge.energy.IEnergyStorage::canExtract)
+                .map(fe -> fe.extractEnergy(request, simulate))
+                .orElse(0);
+        //?}
+        //? if neoforge {
+        /*int movedFe = getForgeEnergy(stack)
+                .filter(net.neoforged.neoforge.energy.IEnergyStorage::canExtract)
+                .map(fe -> fe.extractEnergy(request, simulate))
+                .orElse(0);
+        *///?}
+        return EnergyConversion.heFromFe(movedFe);
+    }
+
+    /** Влить HE в чужой FE-предмет (зарядка). */
+    public static long receiveHeIntoFe(ItemStack stack, long maxHe, boolean simulate) {
+        if (maxHe <= 0 || !canForgeReceive(stack)) return 0L;
+        long offerFe = EnergyConversion.feFromHe(maxHe) / EnergyConversion.feQuantum() * EnergyConversion.feQuantum();
+        int request = (int) Math.min(Integer.MAX_VALUE, offerFe);
+        if (request <= 0) return 0L;
+        //? if forge {
+        int movedFe = getForgeEnergy(stack)
+                .filter(net.minecraftforge.energy.IEnergyStorage::canReceive)
+                .map(fe -> fe.receiveEnergy(request, simulate))
+                .orElse(0);
+        //?}
+        //? if neoforge {
+        /*int movedFe = getForgeEnergy(stack)
+                .filter(net.neoforged.neoforge.energy.IEnergyStorage::canReceive)
+                .map(fe -> fe.receiveEnergy(request, simulate))
+                .orElse(0);
+        *///?}
+        return EnergyConversion.heFromFe(movedFe);
+    }
 }

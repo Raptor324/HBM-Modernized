@@ -16,6 +16,7 @@ import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineWatzPowerplantMenu;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.platform.ModItemStackHandler;
 import com.hbm_m.item.nuclear.WatzPelletItem;
 import com.hbm_m.item.nuclear.WatzPelletType;
 import com.hbm_m.radiation.ChunkRadiationManager;
@@ -166,7 +167,7 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
 
             if (coolantHotTank.getFill() > 0) tryProvide(coolantHotTank, level, pipePos, dir);
             if (wasteTank.getFill() > 0) tryProvide(wasteTank, level, pipePos, dir);
-            if (coolantTank.getFill() < coolantTank.getMaxFill()) trySubscribe(coolantTank.getTankType(), level, pipePos, dir);
+            if (coolantTank.getFill() < coolantTank.getMaxFill()) trySubscribe(coolantTank, level, pipePos, dir);
         }
 
         checkWasteOverflow(level);
@@ -191,6 +192,7 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
         if (!isOn) {
             fluxLastBase = 0D;
             fluxLastReaction = 0D;
+            depletePellets();
             return;
         }
 
@@ -241,6 +243,12 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
         fluxLastReaction = addedFlux;
 
         // deplete
+        depletePellets();
+    }
+
+    /** Upstream runs this outside the turned-on branch, so a pellet that hit zero on the last tick
+     * before shutdown still converts instead of sitting there as a "fresh" pellet with no yield. */
+    private void depletePellets() {
         for (int i = 0; i < PELLET_SLOTS; i++) {
             ItemStack stack = inventory.getStackInSlot(i);
             if (stack.getItem() instanceof WatzPelletItem pellet && WatzPelletItem.getEnrichment(stack) <= 0D) {
@@ -405,6 +413,13 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
         tag.putDouble("fluxLastReaction", fluxLastReaction);
         tag.putBoolean("isOn", isOn);
         tag.putBoolean("redstonePowered", redstonePowered);
+        // The multiblock's controller side configuration is applied only when the structure is placed
+        // or rebuilt, never on chunk load: without persisting it, a restart re-opened the face the
+        // structure had deliberately closed.
+        int fluidSideMask = 0;
+        for (Direction dir : allowedFluidSides) fluidSideMask |= (1 << dir.get3DDataValue());
+        tag.putInt("AllowedFluidSides", fluidSideMask);
+        tag.putBoolean("FluidSidesFromMbStructure", fluidSidesFromMultiblockStructure);
     }
 
     @Override
@@ -418,6 +433,14 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
         fluxLastReaction = tag.getDouble("fluxLastReaction");
         isOn = tag.getBoolean("isOn");
         redstonePowered = tag.getBoolean("redstonePowered");
+        if (tag.contains("AllowedFluidSides")) {
+            int fluidSideMask = tag.getInt("AllowedFluidSides");
+            allowedFluidSides.clear();
+            for (Direction dir : Direction.values()) {
+                if ((fluidSideMask & (1 << dir.get3DDataValue())) != 0) allowedFluidSides.add(dir);
+            }
+        }
+        fluidSidesFromMultiblockStructure = tag.getBoolean("FluidSidesFromMbStructure");
     }
 
     // ── Misc ──────────────────────────────────────────────────────────────
@@ -425,6 +448,30 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         return slot >= 0 && slot < PELLET_SLOTS && stack.getItem() instanceof WatzPelletItem;
+    }
+
+    // Upstream getInventoryStackLimit() is 1. Pellets stack to 16 and a slot shares a single yield
+    // tag, so a full slot burned as one pellet and was replaced by a single depleted item when it
+    // ran out - the rest of the stack was deleted.
+    @Override
+    protected ModItemStackHandler createInventoryHandler(int size) {
+        return new ModItemStackHandler(size) {
+            @Override
+            protected void onContentsChanged(int slot) {
+                setChanged();
+                if (isCriticalSlot(slot)) sendUpdateToClient();
+            }
+
+            @Override
+            public boolean isItemValid(int slot, @NotNull ItemStack stack) {
+                return isItemValidForSlot(slot, stack);
+            }
+
+            @Override
+            public int getSlotLimit(int slot) {
+                return 1;
+            }
+        };
     }
 
     @Override protected Component getDefaultName() { return Component.translatable("container.hbm_m.watz_powerplant"); }

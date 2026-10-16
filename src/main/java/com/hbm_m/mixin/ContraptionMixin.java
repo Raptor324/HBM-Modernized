@@ -1,6 +1,5 @@
 package com.hbm_m.mixin;
 
-//? if forge || neoforge {
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -91,7 +90,10 @@ public abstract class ContraptionMixin {
                         controllersToExpand.add(controllerPos);
                     }
                 }
-            } else if (be instanceof IMultiblockController) {
+            } else if (world.getBlockState(worldPos).getBlock() instanceof IMultiblockController) {
+                // The controller interface is on the Block, not the BlockEntity - the old check on
+                // the block entity was always false, so a controller grabbed on its own never
+                // pulled its parts along.
                 controllersToExpand.add(worldPos);
             }
         }
@@ -138,4 +140,3 @@ public abstract class ContraptionMixin {
     @Shadow
     private com.simibubi.create.content.contraptions.MountedStorageManager storage;
 }
-//?}

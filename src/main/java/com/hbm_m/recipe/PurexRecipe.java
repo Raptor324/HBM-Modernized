@@ -183,11 +183,7 @@ public class PurexRecipe extends PlatformRecipe {
 
     public static final class Serializer extends PlatformRecipeSerializer<PurexRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-        //? if fabric && < 1.21.1 {
-        /*public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "purex");
-        *///?} else {
                 public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "purex");
-        //?}
 
 
         @Override

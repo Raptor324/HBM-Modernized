@@ -20,6 +20,13 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * 1:1 port of {@code ParticleRBMKSteam} - the short, wide steam jet vented by an overfilled
@@ -29,6 +36,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
  * on an opaque black backdrop, so it needs per-frame UVs and additive blending rather than being
  * handed to the engine as one sprite.</p>
  */
+@OnlyIn(Dist.CLIENT)
 public class RBMKSteamParticle extends TextureSheetParticle {
 
     private static final int STRIP_COLUMNS = 20;

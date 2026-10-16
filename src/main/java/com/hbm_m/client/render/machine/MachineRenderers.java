@@ -1,5 +1,13 @@
 package com.hbm_m.client.render.machine;
 
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 
@@ -12,9 +20,9 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 
 /**
- * Фабрика рендеров станков — единственная точка входа.
+ * Machine render factory - the single entry point.
  * <p>
- * Имплементация выглядит так (полный файл):
+ * An implementation looks like this (full file):
  * <pre>{@code
  * public final class MachinePressRenderer {
  *     public static void register() {
@@ -31,36 +39,30 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
  *     }
  * }
  * }</pre>
- * Движок автоматически даёт: куллинг + fade, VBO на каждую часть, инстансинг,
- * MDI, Iris/Oculus-совместимость, GPU-bones для {@code .chain(...)}-групп и
- * ванильный immediate-фолбэк (автоматически при сломанном VBO или принудительно
- * через конфиг {@code forceVanillaImmediatePath}).
+ * The engine provides automatically: culling + fade, a VBO per part, instancing,
+ * MDI, Iris/Oculus compatibility and
+ * a vanilla immediate fallback (automatic on broken VBO, or forced via the
+ * {@code forceVanillaImmediatePath} config).
  */
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
 public final class MachineRenderers {
 
     private MachineRenderers() {}
 
-    /** Начало описания рендера станка. */
+    /** Starts a machine render description. */
     public static <T extends BlockEntity> MachineSpecBuilder<T> machine(
             String id, BlockEntityType<T> type, Class<T> beClass) {
         return new MachineSpecBuilder<>(id, beClass, type);
     }
 
-    // ── утилиты для билдера ─────────────────────────────────────────────
+    // -- builder utilities ------------------------------------------------
 
-    /** Модель по умолчанию — multipart-модель blockstate (hbm_m:*_loader). */
+    /** Default model - the blockstate multipart model (hbm_m:*_loader). */
     static BakedModel blockstateModel(BlockEntity be) {
         return Minecraft.getInstance().getBlockRenderer().getBlockModel(be.getBlockState());
     }
 
-    /** Facing по умолчанию — HORIZONTAL_FACING / FACING из blockstate, иначе NORTH. */
+    /** Default facing - HORIZONTAL_FACING / FACING from the blockstate, otherwise NORTH. */
     static Direction defaultFacing(BlockEntity be) {
         var state = be.getBlockState();
         if (state.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING)) {

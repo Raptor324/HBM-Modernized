@@ -2,6 +2,7 @@ package com.hbm_m.item.material;
 
 import java.util.List;
 
+import com.hbm_m.inventory.material.MaterialShapes;
 import com.hbm_m.item.ITooltipProvider;
 import com.hbm_m.platform.PlatformHooks;
 
@@ -16,17 +17,12 @@ import net.minecraft.world.level.Level;
 /**
  * Литейные отходы (порт ItemScraps 1.7.10). Тултип 1:1 с оригиналом:
  * количество материала в форме {@code Mats.formatAmount} — при зажатом shift
- * в миллисведрибах (mB), иначе разбивка на блоки/слитки/самородки/кванты.
- * По умолчанию предмет из креатива равен 1 слитку (72 кванта = 144 mB);
+ * в «mB» оригинала (2 mB на квант), иначе разбивка на блоки/слитки/самородки/кванты.
+ * По умолчанию предмет из креатива равен 1 слитку (72 кванта);
  * системы, выдающие лом, могут записать нестандартное количество в тег
  * предмета под ключом {@code amount} (как в оригинале).
  */
 public class ScrapItem extends Item implements ITooltipProvider {
-
-    // MaterialShapes оригинала: NUGGET=8, INGOT=8*9=72, BLOCK=72*9=648
-    public static final int QUANTA_PER_NUGGET = 8;
-    public static final int QUANTA_PER_INGOT = QUANTA_PER_NUGGET * 9;
-    public static final int QUANTA_PER_BLOCK = QUANTA_PER_INGOT * 9;
 
     private final ModMaterials material;
 
@@ -47,7 +43,22 @@ public class ScrapItem extends Item implements ITooltipProvider {
     public static int getAmount(ItemStack stack) {
         return PlatformHooks.contains(stack, "amount")
                 ? PlatformHooks.getInt(stack, "amount")
-                : QUANTA_PER_INGOT;
+                : MaterialShapes.INGOT;
+    }
+
+    /**
+     * Материал лома из стака: поле предмета, а для безымянной заготовки —
+     * поиск по реестру {@link ModMaterialItems#FOUNDRY_SCRAPS} (порт
+     * {@code ItemScraps.getMats}).
+     */
+    public static @org.jetbrains.annotations.Nullable ModMaterials getMaterial(ItemStack stack) {
+        if (!(stack.getItem() instanceof ScrapItem scrap)) return null;
+        ModMaterials mat = scrap.getMaterial();
+        if (mat != null) return mat;
+        for (ModMaterialItems.ScrapEntry entry : ModMaterialItems.FOUNDRY_SCRAPS) {
+            if (ModMaterialItems.scrapItem(entry.mat()) == stack.getItem()) return entry.mat();
+        }
+        return null;
     }
 
     @Override
@@ -63,12 +74,12 @@ public class ScrapItem extends Item implements ITooltipProvider {
 
         MutableComponent out = Component.empty().withStyle(ChatFormatting.GRAY);
 
-        int blocks = amount / QUANTA_PER_BLOCK;
-        amount -= QUANTA_PER_BLOCK * blocks;
-        int ingots = amount / QUANTA_PER_INGOT;
-        amount -= QUANTA_PER_INGOT * ingots;
-        int nuggets = amount / QUANTA_PER_NUGGET;
-        amount -= QUANTA_PER_NUGGET * nuggets;
+        int blocks = amount / MaterialShapes.BLOCK;
+        amount -= MaterialShapes.BLOCK * blocks;
+        int ingots = amount / MaterialShapes.INGOT;
+        amount -= MaterialShapes.INGOT * ingots;
+        int nuggets = amount / MaterialShapes.NUGGET;
+        amount -= MaterialShapes.NUGGET * nuggets;
         int quanta = amount;
 
         if (blocks > 0) out.append(key(blocks, "block", "blocks")).append(" ");

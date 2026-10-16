@@ -1,5 +1,13 @@
 package com.hbm_m.blockentity.machines;
 
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -475,9 +483,7 @@ public class MachineChemicalFactoryBlockEntity extends BaseMachineBlockEntity
 
     private static final String CHEMICAL_PLANT_SOUND_INSTANCE = "com.hbm_m.sound.ChemicalPlantSoundInstance";
 
-    //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?}
+    @OnlyIn(Dist.CLIENT)
     private void clientTick() {
         com.hbm_m.sound.ClientSoundBootstrap.updateSound(this, isChemFactoryEffectsActive(), this::newChemFactorySoundInstance);
     }

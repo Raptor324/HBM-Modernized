@@ -98,6 +98,11 @@ public class MachineTeleporterBlockEntity extends BaseMachineBlockEntity {
         setChanged();
     }
 
+    /** Тривиальный геттер для HUD ({@code MachineTeleporter.printHook}): потребление за телепорт. */
+    public long getConsumption() {
+        return CONSUMPTION;
+    }
+
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         return false;

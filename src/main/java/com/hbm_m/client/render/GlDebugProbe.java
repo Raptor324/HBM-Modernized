@@ -8,19 +8,18 @@ import org.lwjgl.system.MemoryUtil;
 import com.hbm_m.main.MainRegistry;
 
 /**
- * ВРЕМЕННАЯ диагностика «чёрного экрана»: колбэк KHR_debug без миксинов.
+ * Temporary "black screen" diagnostics: KHR_debug callback without mixins.
  *
- * <p>Включается один раз на первом RenderLevelStageEvent (render thread,
- * контекст гарантированно жив). Флаг GL_DEBUG_OUTPUT работает и без
- * GLFW_OPENGL_DEBUG_CONTEXT на десктопном GL — хинт при создании контекста
- * лишь добавляет дополнительные сообщения валидации.</p>
+ * <p>Enabled once at the first RenderLevelStageEvent (render thread, the context is
+ * guaranteed alive). The GL_DEBUG_OUTPUT flag works even without GLFW_OPENGL_DEBUG_CONTEXT
+ * on desktop GL - the context-creation hint only adds extra validation messages.</p>
  *
- * <p>Регистрирует сообщения драйвера severity HIGH и MEDIUM (невалидные
- * бинды, ошибки компиляции/линковки шейдеров, чтение незавершённых буферов,
- * фидбек-лупы и т.п.) в главный лог. Дедупликация: HIGH — всегда, MEDIUM —
- * один раз на id, чтобы перформанс-ворнинги драйвера не завалили лог.</p>
+ * <p>Registers driver messages of severity HIGH and MEDIUM (invalid binds, shader
+ * compile/link errors, reads of incomplete buffers, feedback loops, etc.) into the main
+ * log. Deduplication: HIGH - always, MEDIUM - once per id so driver performance warnings
+ * do not flood the log.</p>
  *
- * <p>Отключение: {@code -Dhbm.glDebug=0} или переменная окружения
+ * <p>Disable with {@code -Dhbm.glDebug=0} or the environment variable
  * {@code HBM_GL_DEBUG=0}.</p>
  */
 public final class GlDebugProbe {
@@ -36,8 +35,12 @@ public final class GlDebugProbe {
             return;
         }
         attempted = true;
-        if ("0".equals(System.getProperty("hbm.glDebug")) || "0".equals(System.getenv("HBM_GL_DEBUG"))) {
-            MainRegistry.LOGGER.info("HBM GlDebugProbe disabled by flag");
+        // The glDebugOutput config is the primary source (takes effect at the first enableOnce,
+        // i.e. after a restart); -Dhbm.glDebug=0 / env HBM_GL_DEBUG=0 is the emergency override.
+        if (!com.hbm_m.config.ModClothConfig.get().glDebugOutput
+                || "0".equals(System.getProperty("hbm.glDebug"))
+                || "0".equals(System.getenv("HBM_GL_DEBUG"))) {
+            MainRegistry.LOGGER.info("HBM GlDebugProbe disabled by config/flag");
             return;
         }
         if (!com.mojang.blaze3d.systems.RenderSystem.isOnRenderThread()) {
@@ -57,7 +60,7 @@ public final class GlDebugProbe {
                     }
                     String msg = MemoryUtil.memUTF8(message, length);
                     if (!high && !seenIds.add(id)) {
-                        return; // MEDIUM — не более одного раза на id
+                        return; // MEDIUM - at most once per id
                     }
                     MainRegistry.LOGGER.error(String.format(
                             "HBM GLDebug[sev=0x%X type=0x%X id=%d src=0x%X]: %s",

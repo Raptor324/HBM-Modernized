@@ -3,10 +3,10 @@ package com.hbm_m.client;
 //? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.platform.PlatformHooks;
@@ -18,11 +18,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
-//? if forge {
 @OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
 public class ClientEnergySyncHandler {
 
     private static final int ARMOR_SLOT_HEAD = ModArmorFSBPowered.ARMOR_SLOT_HEAD;

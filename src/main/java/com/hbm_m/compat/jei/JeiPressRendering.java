@@ -2,10 +2,18 @@ package com.hbm_m.compat.jei;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Draws NEI-style press overlays on top of {@link JeiPressTextures#GUI_NEI_PRESS}.
  */
+@OnlyIn(Dist.CLIENT)
 public final class JeiPressRendering {
 
     private JeiPressRendering() {

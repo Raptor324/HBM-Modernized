@@ -1,5 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
+import com.hbm_m.inventory.material.MaterialShapes;
 import com.hbm_m.inventory.material.MaterialStack;
 import com.hbm_m.inventory.material.MaterialType;
 
@@ -11,7 +12,7 @@ import java.util.function.Consumer;
  * Генератор {@code hbm_m:molten_alloy} (data-driven JSON).
  *
  * <p>Порт 6 рецептов сплавления из удалённого {@code MoltenAlloyRecipes.registerDefaults()}:
- * те же входы/выходы в {@link MaterialStack} (mB), те же {@code frequency}.
+ * те же входы/выходы в {@link MaterialStack} (кванты, 1:1 с оригиналом), те же {@code frequency}.
  * Материалы разрешаются статически (compile-time known enum), без поиска по реестру —
  * мод-предметы для сплавления не нужны (molten-only materials: carbon, arsenic,
  * technetium, redstone — числовые {@link MaterialType} constants).</p>
@@ -19,8 +20,8 @@ import java.util.function.Consumer;
 public final class MoltenAlloyRecipeGenerator {
 
     public static void generate(Consumer<FinishedRecipe> writer) {
-        int n = MaterialStack.MB_PER_NUGGET;
-        int i = MaterialStack.MB_PER_INGOT;
+        int n = MaterialShapes.NUGGET;   // 8
+        int i = MaterialShapes.INGOT;    // 72
 
         // Полный набор CrucibleRecipes.registerDefaults (1.7.10, без GT6-вариантов)
 

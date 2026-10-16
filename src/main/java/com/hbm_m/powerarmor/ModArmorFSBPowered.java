@@ -137,14 +137,12 @@ public class ModArmorFSBPowered extends ModArmorFSB implements ITooltipProvider 
      * Instead of damaging the item, we drain energy based on consumption.
      * (Forge/NeoForge: IItemExtension#setDamage; на Fabric такого хука нет.)
      */
-    //? if !fabric {
     @Override
     public void setDamage(ItemStack stack, int damage) {
         if (this.consumption > 0) {
             this.dischargeBattery(stack, (long) damage * this.consumption);
         }
     }
-    //?}
 
     private int getArmorContainerId(Player player, EquipmentSlot slot) {
         int slotIndex = switch (slot) {
@@ -172,7 +170,11 @@ public class ModArmorFSBPowered extends ModArmorFSB implements ITooltipProvider 
     /*@Override
     public void inventoryTick(ItemStack stack, Level world, Entity entity, int slotId, boolean selected) {
         super.inventoryTick(stack, world, entity, slotId, selected);
+        if (world.isClientSide()) return;
         if (!(entity instanceof Player player)) return;
+        // Both checks exist in the neighbouring overrides: without them spare armour pieces drained
+        // while sitting in the inventory, and the client drained its own copy of the stack too.
+        if (!stackIsEquippedArmor(player, stack)) return;
         tickPoweredDrain(stack, world, player);
     }
     *///?}

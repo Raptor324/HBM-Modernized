@@ -13,7 +13,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -44,7 +43,7 @@ public class BarrelSteelMenu extends AbstractContainerMenu {
     private static final int HOTBAR_END = HOTBAR_START + 9;
 
     public BarrelSteelMenu(int id, Inventory inv, FriendlyByteBuf extraData) {
-        this(id, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(7));
+        this(id, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(6));
     }
 
     public BarrelSteelMenu(int id, Inventory inv, BlockEntity entity, ContainerData data) {
@@ -52,7 +51,8 @@ public class BarrelSteelMenu extends AbstractContainerMenu {
         this.blockEntity = (MachineFluidTankBlockEntity) entity;
         this.data = data;
 
-        checkContainerDataCount(data, 7);
+        // Должно совпадать с getCount() ContainerData в MachineFluidTankBlockEntity
+        checkContainerDataCount(data, 6);
 
         // Слоты машины напрямую через ModItemStackHandler (кросс-платформенно, без Forge SlotItemHandler).
         Container handlerContainer = new ModItemStackHandlerContainer(blockEntity.getItemHandler(), blockEntity::setChanged);
@@ -145,10 +145,6 @@ public class BarrelSteelMenu extends AbstractContainerMenu {
         return this.data.get(5);
     }
 
-    public int getFilterFluidId() {
-        return this.data.get(6);
-    }
-
     @Override
     public ItemStack quickMoveStack(Player playerIn, int index) {
         ItemStack sourceStack = ItemStack.EMPTY;
@@ -164,7 +160,9 @@ public class BarrelSteelMenu extends AbstractContainerMenu {
                 }
             } else {
                 if (stackInSlot.getItem() instanceof IItemFluidIdentifier) {
-                    if (!moveItemStackTo(stackInSlot, MACHINE_SLOTS + 0, MACHINE_SLOTS + 1, false)) {
+                    // The ID-in slot is added first, so it is index 0. MACHINE_SLOTS equals
+                    // PLAYER_INVENTORY_START, so the old range pointed at the player inventory.
+                    if (!moveItemStackTo(stackInSlot, 0, 1, false)) {
                         return ItemStack.EMPTY;
                     }
                 } else if (FluidItemAccess.hasFluidHandler(stackInSlot)) {
@@ -195,7 +193,6 @@ public class BarrelSteelMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos()),
-                player, ModBlocks.BARREL_STEEL.get());
+        return MenuReach.stillValid(player, blockEntity, ModBlocks.BARREL_STEEL.get());
     }
 }

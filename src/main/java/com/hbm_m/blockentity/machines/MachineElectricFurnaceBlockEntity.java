@@ -6,6 +6,8 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.block.machines.MachineElectricFurnaceBlock;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType;
+import com.hbm_m.handler.pollution.PollutionHandler;
+import com.hbm_m.inventory.fluid.trait.PollutionType;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.MachineElectricFurnaceMenu;
 
@@ -27,11 +29,14 @@ import net.minecraft.world.level.block.state.BlockState;
  * Electric Furnace: Direktport der Kernlogik aus {@code TileEntityMachineElectricFurnace}
  * (1.7.10 Original). Bereits im Original ein einzelner Block (kein Multiblock).
  * <p>
- * Vereinfachung: Der Upgrade-Slot (SPEED/POWER, Slot 3) des Originals entfaellt, da dieser
- * Port kein Item-Upgrade-System besitzt (kein ItemMachineUpgrade/UpgradeManagerNT gefunden) -
- * stattdessen feste {@code consumption = 50}/Tick und {@code maxProgress = 100} Ticks wie im
- * Original ohne Upgrades. Der Pollution-Aufruf (SOOT) des Originals entfaellt ebenfalls, da
- * dieser Port kein PollutionHandler-Aequivalent fuer diese Maschine mitbringt.
+ * <p><b>Aufwertungen</b> wie im Original, Slot 3: jede Stufe Tempo nimmt fuenfundzwanzig Ticks
+ * vom Durchlauf und legt fuenfzig auf den Verbrauch; jede Stufe Sparsamkeit nimmt fuenfzehn vom
+ * Verbrauch und legt zehn Ticks drauf. Drei Stufen Tempo bringen den Ofen also auf ein Viertel der
+ * Zeit bei dem Vierfachen des Verbrauchs - und wer beides mischt, kann sich das genau
+ * ausrechnen.</p>
+ *
+ * <p>Der Russausstoss (SOOT_PER_SECOND im Sekundentakt) laeuft ueber
+ * {@link com.hbm_m.handler.pollution.PollutionHandler}.</p>
  * <p>
  * 100% Vanilla-Schmelzrezepte, Energie via {@link BaseMachineBlockEntity#chargeFromBatterySlot(int)}
  * aus Slot 0 (Batterie-Item), maxPower = 100'000.
@@ -53,10 +58,15 @@ public class MachineElectricFurnaceBlockEntity extends BaseMachineBlockEntity {
     private final com.hbm_m.inventory.UpgradeManager upgradeManager = new com.hbm_m.inventory.UpgradeManager();
 
     private static final long MAX_POWER = 100_000L;
+    /** Original: {@code consumption = 50} ohne Aufwertungen. */
     private static final long CONSUMPTION = 50L;
+    /** Original: {@code maxProgress = 100} ohne Aufwertungen. */
     private static final int MAX_PROGRESS = 100;
 
     private int progress = 0;
+    /** Der aus den Aufwertungen gerechnete Durchlauf und Verbrauch dieses Ticks. */
+    private int maxProgress = MAX_PROGRESS;
+    private long consumption = CONSUMPTION;
 
     private static final int DATA_PROGRESS = 0;
     private static final int DATA_MAX_PROGRESS = 1;
@@ -68,8 +78,8 @@ public class MachineElectricFurnaceBlockEntity extends BaseMachineBlockEntity {
         public int get(int index) {
             return switch (index) {
                 case DATA_PROGRESS -> progress;
-                case DATA_MAX_PROGRESS -> MAX_PROGRESS;
-                case DATA_HAS_POWER -> energy >= CONSUMPTION ? 1 : 0;
+                case DATA_MAX_PROGRESS -> maxProgress;
+                case DATA_HAS_POWER -> energy >= consumption ? 1 : 0;
                 default -> 0;
             };
         }
@@ -99,21 +109,31 @@ public class MachineElectricFurnaceBlockEntity extends BaseMachineBlockEntity {
         be.chargeFromBatterySlot(SLOT_BATTERY);
         be.upgradeManager.checkSlots(be.inventory, SLOT_UPGRADE, SLOT_UPGRADE, VALID_UPGRADES);
 
-        // Same scaling the chemical factory uses: speed shortens the cycle and costs more power,
-        // power upgrades take a quarter off the draw per level.
+        // 1:1 aus dem Original: die Werte werden jeden Tick neu aus den Aufwertungen gerechnet.
         int speedLevel = Math.min(be.upgradeManager.getLevel(UpgradeType.SPEED), 3);
         int powerLevel = Math.min(be.upgradeManager.getLevel(UpgradeType.POWER), 3);
-        int step = 1 + speedLevel;
-        long draw = Math.max(1L, (long) (CONSUMPTION * (1.0 + speedLevel) * (1.0 - 0.25 * powerLevel)));
+
+        be.maxProgress = MAX_PROGRESS - speedLevel * 25 + powerLevel * 10;
+        be.consumption = CONSUMPTION + speedLevel * 50L - powerLevel * 15L;
+        if (be.maxProgress < 1) be.maxProgress = 1;
+        if (be.consumption < 1L) be.consumption = 1L;
+
+        long draw = be.consumption;
 
         boolean wasLit = be.progress > 0;
         boolean hasPower = be.energy >= draw;
 
         if (hasPower && be.canSmelt(level)) {
-            be.progress += step;
+            be.progress++;
+
+            // Original: SOOT_PER_SECOND im Sekundentakt, solange geschmolzen wird.
+            if (level.getGameTime() % 20 == 0) {
+                PollutionHandler.incrementPollution(level, pos, PollutionType.SOOT,
+                        PollutionHandler.SOOT_PER_SECOND);
+            }
             be.setEnergyStored(be.energy - draw);
 
-            if (be.progress >= MAX_PROGRESS) {
+            if (be.progress >= be.maxProgress) {
                 be.progress = 0;
                 be.craftItem(level);
             }

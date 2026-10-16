@@ -1,5 +1,6 @@
 package com.hbm_m.client.gui;
 import com.hbm_m.client.GuiCompat;
+import com.hbm_m.client.render.culling.GpuCullingCapability;
 
 
 import com.hbm_m.config.ModClothConfig;
@@ -59,7 +60,10 @@ import java.util.Set;
  * маршрутизирует клики в дочерние виджеты, только если позиция скроллбара
  * сдвинута к правому краю списка (переопределение {@code getScrollbarPosition()}).
  * Без этого дефолтный {@code width/2 + 124} оказывается посередине экрана и
- * клики по правым виджетам отбрасываются.
+ * клики по правым виджетам отбрасываются. Позиция обязана оставаться минимум
+ * на 6px левее правой границы виджета: ванильная клик-зона перетаскивания —
+ * {@code [pos, pos+6)} — иначе лежит за пределами и drag умирает (см. комментарий
+ * у переопределения).
  */
 public class ConfigScreen extends Screen {
 
@@ -429,8 +433,11 @@ public class ConfigScreen extends Screen {
         }
 
         if (!clientEdits.isEmpty()) {
+            Map<String, String> before = ConfigSchema.snapshot(ModClothConfig.get(), ConfigSide.CLIENT);
             ConfigSchema.applyAll(ModClothConfig.get(), ConfigSide.CLIENT, clientEdits);
             ModClothConfig.saveClient();
+            // Debug-лог изменений: только фактически изменившиеся ключи (после клэмпа).
+            com.hbm_m.config.ConfigDebugLogger.logChanges(ConfigSide.CLIENT, before);
         }
         if (!serverEdits.isEmpty() && showServer) {
             // Сервер применит, сохранит и рассылает sync всем (включая нас).
@@ -635,6 +642,11 @@ public class ConfigScreen extends Screen {
         List<Component> desc = fieldDescription(f);
         if (desc != null) lines.addAll(desc);
 
+        if (f.name().equals("occlusionCullingMode") && !GpuCullingCapability.isSupported()) {
+            lines.add(Component.translatable("config.hbm_m.rendering.occlusionCullingMode.gpu_unsupported",
+                    GpuCullingCapability.getUnsupportedReason()).withStyle(ChatFormatting.RED));
+        }
+
         if (f.getMin() != null && f.getMax() != null) {
             lines.add(Component.literal("[" + fmtNum(f.getMin()) + " .. " + fmtNum(f.getMax()) + "]")
                     .withStyle(ChatFormatting.GRAY));
@@ -753,10 +765,28 @@ public class ConfigScreen extends Screen {
     /** Enum → циклическая кнопка по константам (без префикса CycleButton). */
     private AbstractWidget createEnumCycle(ConfigField f) {
         Object cur = readEnumValue(f);
-        Object[] constants = cur.getClass().getEnumConstants();
-        if (constants == null || constants.length == 0) {
+        Object[] rawConstants = cur.getClass().getEnumConstants();
+        if (rawConstants == null || rawConstants.length == 0) {
             return numericEditBox(f);
         }
+
+        final Object[] constants;
+        if (f.name().equals("occlusionCullingMode") && !GpuCullingCapability.isSupported()) {
+            List<Object> allowed = new ArrayList<>();
+            for (Object c : rawConstants) {
+                if (!"GPU".equals(c.toString())) {
+                    allowed.add(c);
+                }
+            }
+            constants = allowed.toArray();
+            if ("GPU".equals(cur.toString())) {
+                cur = ModClothConfig.OcclusionCullingMode.OFF;
+                pendingEdits.put(f.getKey(), String.valueOf(cur));
+            }
+        } else {
+            constants = rawConstants;
+        }
+
         int[] idx = { indexOf(constants, cur) };
         Button b = Button.builder(enumMessage(cur), btn -> {
             idx[0] = (idx[0] + 1) % constants.length;
@@ -932,10 +962,19 @@ public class ConfigScreen extends Screen {
          * экрана. При этом {@code getEntryAtPosition} отбрасывает клики с
          * {@code x >= getScrollbarPosition()}, из-за чего правые виджеты (тогглы,
          * слайдеры) не получают ввод. Сдвигаем скроллбар к правому краю списка.
+         *
+         * <p>Вторая половина контракта: клик-зона скроллбара — {@code [pos, pos+6)},
+         * и она обязана лежать ВНУТРИ границ виджета ({@code x <= getRight()}).
+         * Ванильный {@code updateScrollingState} ловит клик по зоне до проверки
+         * {@code isMouseOver}, но если зона торчит за правый край (pos = getRight()),
+         * клик не «потребляется» → список не получает focused+dragging →
+         * {@code ContainerEventHandler.mouseDragged} не пересылает drag в список,
+         * и перетаскивание полосы мышью умирает. Отступ 6px возвращает зону внутрь;
+         * правые виджеты строки заканчиваются на getRight()-10, так что они не задеты.
          */
         @Override
         protected int getScrollbarPosition() {
-            return this.getRight();
+            return this.getRight() - 6;
         }
 
         /**

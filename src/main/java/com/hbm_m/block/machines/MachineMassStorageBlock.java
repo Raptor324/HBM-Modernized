@@ -20,9 +20,82 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /** Port of {@code BlockMassStorage} (1.7.10 Original). */
-public class MachineMassStorageBlock extends BaseEntityBlock {
+public class MachineMassStorageBlock extends BaseEntityBlock implements com.hbm_m.interfaces.ILookOverlay {
 
-    public MachineMassStorageBlock(Properties properties) { super(properties); }
+    /**
+     * 1:1-Port der vier Metadatenstufen aus {@code BlockMassStorage}: von der Holzkiste mit
+     * hundert Plaetzen bis zum Stahlspeicher mit einer Million. Die Zahl ist der ganze
+     * Unterschied - alles andere verhaelt sich gleich.
+     */
+    public enum Tier {
+        WOOD(100L, "wood"),
+        IRON(10_000L, "iron"),
+        DESH(100_000L, "desh"),
+        STEEL(1_000_000L, null);
+
+        public final long capacity;
+        /** Der Texturzusatz des Originals; {@code null} ist die Grundtextur. */
+        public final String suffix;
+
+        Tier(long capacity, String suffix) {
+            this.capacity = capacity;
+            this.suffix = suffix;
+        }
+    }
+
+    private final Tier tier;
+
+    public Tier getTier() { return tier; }
+
+    /**
+     * Port of {@code BlockMassStorage.printHook}: empty storage shows a cyan "Empty" title; a
+     * filled one shows the stored item as the title plus "stockpile / capacity" and a red-to-green
+     * fill percentage line (original {@code "&[color&]"}-style colored line).
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineMassStorageBlockEntity storage)) return;
+
+        net.minecraft.world.item.ItemStack filter = storage.getFilterStack();
+        boolean full = !filter.isEmpty();
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        net.minecraft.network.chat.Component title;
+        int titleCol;
+        int bgCol;
+
+        if (full) {
+            title = filter.getHoverName();
+            text.add(net.minecraft.network.chat.Component.literal(
+                    String.format(java.util.Locale.US, "%,d", storage.getStockpile())
+                            + " / " + String.format(java.util.Locale.US, "%,d", storage.getCapacity())));
+
+            double percent = (double) storage.getStockpile() / (double) storage.getCapacity();
+            int charge = (int) Math.floor(percent * 10_000D);
+            int color = ((int) (0xFF - 0xFF * percent)) << 16 | ((int) (0xFF * percent) << 8);
+            text.add(net.minecraft.network.chat.Component.literal((charge / 100D) + "%")
+                    .withStyle(net.minecraft.network.chat.Style.EMPTY
+                            .withColor(net.minecraft.network.chat.TextColor.fromRgb(color))));
+
+            titleCol = 0xffff00;
+            bgCol = 0x404000;
+        } else {
+            title = net.minecraft.network.chat.Component.literal("Empty");
+            titleCol = 0x00ffff;
+            bgCol = 0x004040;
+        }
+
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics, title, titleCol, bgCol, text);
+    }
+
+    public MachineMassStorageBlock(Properties properties) {
+        this(properties, Tier.STEEL);
+    }
+
+    public MachineMassStorageBlock(Properties properties, Tier tier) {
+        super(properties);
+        this.tier = tier;
+    }
 
     @Override
     public RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; }
@@ -73,4 +146,13 @@ public class MachineMassStorageBlock extends BaseEntityBlock {
         return CODEC;
     }
     *///?}
+
+    @Override
+    public void onRemove(net.minecraft.world.level.block.state.BlockState state, net.minecraft.world.level.Level level,
+                            net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState newState, boolean isMoving) {
+        if (!state.is(newState.getBlock())) {
+            com.hbm_m.block.MachineDrops.dropInventory(level, pos);
+        }
+        super.onRemove(state, level, pos, newState, isMoving);
+    }
 }

@@ -85,22 +85,13 @@ public class LandmineBlock extends Block implements EntityBlock, IBomb {
                                  @Nullable BlockGetter level,
                                  List<Component> tooltip,
                                  TooltipFlag flag) {
-        if (this == ModBlocks.MINE_FAT.get()) {
-            tooltip.add(Component.translatable("tooltip.hbm_m.mine_nuke.line1").withStyle(ChatFormatting.DARK_RED));
-            tooltip.add(Component.translatable("tooltip.hbm_m.mine_nuke.line2").withStyle(ChatFormatting.RED));
-            tooltip.add(Component.translatable("tooltip.hbm_m.mine_nuke.line3").withStyle(ChatFormatting.GRAY));
-        } else if (this == ModBlocks.NAVAL_MINE.get()) {
-            tooltip.add(Component.translatable("tooltip.hbm_m.naval_mine.line1").withStyle(ChatFormatting.GRAY));
-        } else {
-            tooltip.add(Component.translatable("tooltip.hbm_m.mine.line1").withStyle(ChatFormatting.GRAY));
-        }
-    }
     //?} else {
     /*@Override
     public void appendHoverText(ItemStack stack,
                                  net.minecraft.world.item.Item.TooltipContext level,
                                  List<Component> tooltip,
                                  TooltipFlag flag) {
+    *///?}
         if (this == ModBlocks.MINE_FAT.get()) {
             tooltip.add(Component.translatable("tooltip.hbm_m.mine_nuke.line1").withStyle(ChatFormatting.DARK_RED));
             tooltip.add(Component.translatable("tooltip.hbm_m.mine_nuke.line2").withStyle(ChatFormatting.RED));
@@ -111,7 +102,6 @@ public class LandmineBlock extends Block implements EntityBlock, IBomb {
             tooltip.add(Component.translatable("tooltip.hbm_m.mine.line1").withStyle(ChatFormatting.GRAY));
         }
     }
-    *///?}
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
@@ -213,6 +203,9 @@ public class LandmineBlock extends Block implements EntityBlock, IBomb {
                 ModPacketHandler.sendToPlayersNear(serverLevel, x, y, z, 250.0D,
                         ModPacketHandler.AUX_PARTICLE, new AuxParticlePacket(data, x, y, z));
             }
+
+            com.hbm_m.satellite.DetectorEvents.reportEvent(level, com.hbm_m.satellite.DetectorEvents.DURATION_LOW,
+                    com.hbm_m.satellite.DetectorEvents.BurstIntensity.LOW, x, z);
 
             ModSounds.MUKE_EXPLOSION.ifPresent(sound -> level.playSound(
                     null, x, y, z, sound, SoundSource.BLOCKS, 25.0F, 0.9F));

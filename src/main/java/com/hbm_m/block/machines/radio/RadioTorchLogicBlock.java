@@ -17,9 +17,25 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /** Port of {@code RadioTorchLogic} (1.7.10 Original) - outputs the matched rule index as redstone power. */
-public class RadioTorchLogicBlock extends RadioTorchBaseBlock {
+public class RadioTorchLogicBlock extends RadioTorchBaseBlock implements com.hbm_m.interfaces.ILookOverlay {
 
     public RadioTorchLogicBlock(Properties properties) { super(properties); }
+
+    /** Port of {@code RadioTorchLogic.printHook} (identical to the RWBase one): "Freq:" and "Signal:". */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof RadioTorchLogicBlockEntity radio)) return;
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        if (radio.channel != null && !radio.channel.isEmpty()) {
+            text.add(net.minecraft.network.chat.Component.literal("Freq: " + radio.channel)
+                    .withStyle(net.minecraft.ChatFormatting.AQUA));
+        }
+        text.add(net.minecraft.network.chat.Component.literal("Signal: " + radio.lastState)
+                .withStyle(net.minecraft.ChatFormatting.RED));
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
+    }
 
     @Override
     public boolean isSignalSource(BlockState state) { return true; }

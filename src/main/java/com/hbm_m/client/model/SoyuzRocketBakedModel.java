@@ -47,7 +47,6 @@ public class SoyuzRocketBakedModel extends AbstractMultipartBakedModel {
         return part != null ? part.getQuads(state, side, rand) : List.of();
     }
 
-    //? if forge || neoforge {
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
                                      RandomSource rand, ModelData modelData, @Nullable net.minecraft.client.renderer.RenderType renderType) {
@@ -57,7 +56,6 @@ public class SoyuzRocketBakedModel extends AbstractMultipartBakedModel {
         BakedModel part = parts.get(ROCKET);
         return part != null ? part.getQuads(state, side, rand, modelData, renderType) : List.of();
     }
-    //?}
 
     @Override
     protected List<String> getItemRenderPartNames() {

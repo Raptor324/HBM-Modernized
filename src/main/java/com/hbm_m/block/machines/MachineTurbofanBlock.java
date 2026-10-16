@@ -1,23 +1,25 @@
 package com.hbm_m.block.machines;
 
+import java.util.Map;
+
 import javax.annotation.Nullable;
 
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineTurbofanBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
-import com.hbm_m.multiblock.MultiblockStructureStubs;
 import com.hbm_m.multiblock.PartRole;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
@@ -31,12 +33,22 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
 //?}
 import dev.architectury.registry.menu.MenuRegistry;
 
+/**
+ * Турбовентилятор - мультиблок 7 (ширина) x 3 (глубина) x 3 (высота).
+ * Оригинал: {@code MachineTurbofan} / {@code TileEntityMachineTurbofan} (1.7.10):
+ * габариты {2, 0, 1, 1, 3, 3}, ядро внизу по центру, четыре порта
+ * ({@code TileEntityProxyCombo} fluid+power) у нижнего ряда спереди и сзади.
+ * Топология портов 1:1: y0, ряды спереди/сзади, колонки 2-3 из 7.
+ */
 public class MachineTurbofanBlock extends BaseEntityBlock implements IMultiblockController {
+
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
     private final MultiblockStructureHelper structureHelper;
@@ -44,7 +56,37 @@ public class MachineTurbofanBlock extends BaseEntityBlock implements IMultiblock
     public MachineTurbofanBlock(BlockBehaviour.Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
-        this.structureHelper = MultiblockStructureStubs.singleController();
+        this.structureHelper = defineStructure();
+    }
+
+    private static MultiblockStructureHelper defineStructure() {
+        // Слои: Y (3). Строки в слое: Z (3, глубина). Символы в строке: X (7, ширина).
+        // Ядро - центр среднего ряда нижнего слоя; порты (P) - y0, ряды спереди/сзади, колонки 2-3.
+        String[] bottom = {
+                "OOPPOOO",
+                "OOOCOOO",
+                "OOPPOOO"
+        };
+        String[] full = {
+                "OOOOOOO",
+                "OOOOOOO",
+                "OOOOOOO"
+        };
+
+        Map<Character, PartRole> roleMap = Map.of(
+                'C', PartRole.CONTROLLER,
+                'O', PartRole.DEFAULT,
+                'P', PartRole.UNIVERSAL_CONNECTOR
+        );
+
+        return MultiblockStructureHelper.createFromLayersWithRoles(
+                new String[][] { bottom, full, full },
+                Map.of(),
+                () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
+                roleMap,
+                null,
+                null
+        );
     }
 
     @Override
@@ -64,11 +106,25 @@ public class MachineTurbofanBlock extends BaseEntityBlock implements IMultiblock
     }
 
     @Override
+    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
+        super.onPlace(state, level, pos, oldState, isMoving);
+        if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
+            placeMultiblockStructure(level, pos, state);
+        }
+    }
+
+    @Override
+    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
+        return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
+    }
+
+    @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (state.getBlock() != newState.getBlock()) {
+        if (state.getBlock() != newState.getBlock() && !level.isClientSide()) {
             if (level.getBlockEntity(pos) instanceof com.hbm_m.blockentity.BaseMachineBlockEntity machine) {
                 machine.dropInventoryContents();
             }
+            structureHelper.destroyStructure(level, pos, state.getValue(FACING));
         }
         super.onRemove(state, level, pos, newState, isMoving);
     }
@@ -103,6 +159,26 @@ public class MachineTurbofanBlock extends BaseEntityBlock implements IMultiblock
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return createTickerHelper(type, ModBlockEntities.TURBOFAN_BE.get(), MachineTurbofanBlockEntity::tick);
     }
+
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return structureHelper.generateShapeFromParts(state.getValue(FACING));
+    }
+
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return structureHelper.getSpecificCollisionShape(structureHelper.getControllerOffset(), state.getValue(FACING));
+    }
+
+    @Override
+    public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
+        if (structureHelper.isFullBlock(structureHelper.getControllerOffset(), state.getValue(FACING))) {
+            return Shapes.block();
+        }
+        return Shapes.empty();
+    }
+
+    // --- IMultiblockController ---
 
     @Override
     public MultiblockStructureHelper getStructureHelper() {

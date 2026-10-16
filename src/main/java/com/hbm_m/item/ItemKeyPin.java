@@ -17,10 +17,8 @@ import com.hbm_m.platform.PlatformHooks;
  * Port of {@code ItemKeyPin} (1.7.10 Original) - a key blank/cut key carrying a numeric pin-code in
  * NBT. Duplicated or randomized by {@code MachineKeyforgeBlockEntity}.
  * <p>
- * SCOPE-Vereinfachung: Das Original-Schloss-System ({@code TileEntityLockableBase} und Verwandte,
- * die den Pin-Code tatsaechlich zum Ver-/Entriegeln abgleichen) existiert in diesem Port nicht -
- * dieses Item traegt den Code getreu dem Original, aber nichts liest ihn ausserhalb der Keyforge
- * selbst aus.
+ * Пин-код проверяется замками ({@code ILockable}, порт {@code TileEntityLockableBase});
+ * также служит кодоносителем для навесного замка {@link ItemLock}.
  */
 public class ItemKeyPin extends Item implements com.hbm_m.item.ITooltipProvider {
 
@@ -36,8 +34,16 @@ public class ItemKeyPin extends Item implements com.hbm_m.item.ITooltipProvider 
         PlatformHooks.putInt(stack, "code", code);
     }
 
+    /**
+     * Порт {@code ItemKeyPin.canTransfer()}: поддельный ключ ({@code key_fake}) нельзя
+     * ни копировать на кейфордже, ни перекодировать — он исключён из всех слотов.
+     */
+    public boolean canTransfer() {
+        return true;
+    }
+
     public static boolean isTransferable(ItemStack stack) {
-        return stack.getItem() instanceof ItemKeyPin;
+        return stack.getItem() instanceof ItemKeyPin keyPin && keyPin.canTransfer();
     }
 
     @Override

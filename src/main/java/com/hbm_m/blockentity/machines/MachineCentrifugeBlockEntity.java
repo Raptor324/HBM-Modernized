@@ -61,7 +61,7 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
     };
 
     public MachineCentrifugeBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.CENTRIFUGE_BE.get(), pos, state, TOTAL_SLOTS, MAX_POWER, MAX_RECEIVE);
+        super(ModBlockEntities.MACHINE_CENTRIFUGE_BE.get(), pos, state, TOTAL_SLOTS, MAX_POWER, MAX_RECEIVE);
     }
 
     @Override

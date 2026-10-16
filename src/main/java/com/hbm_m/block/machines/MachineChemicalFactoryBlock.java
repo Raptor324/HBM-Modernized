@@ -41,11 +41,10 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
 //?}
 import dev.architectury.registry.menu.MenuRegistry;
 
-public class MachineChemicalFactoryBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachineChemicalFactoryBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.interfaces.ILookOverlay {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     /** Рама видима, когда над верхним поясом структуры стоят блоки (хелпер {{@code MultiblockFrameHelper}}). */
@@ -172,6 +171,31 @@ public class MachineChemicalFactoryBlock extends BaseEntityBlock implements IMul
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+    }
+
+    /**
+     * Порт {@code MachineChemicalFactory.printHook} (охлаждающие порты): зелёная подача воды и
+     * красный выход отработанного пара — как в оригинале, только имена жидкостей. Отличие от
+     * оригинала: там строки показывались лишь при взгляде на блок рядом с портом, а строка
+     * "Recipe field [n]" — у IO-портов; порт делегирует HUD частей контроллеру без позиции
+     * взгляда, поэтому охлаждающие строки показываются всегда, а IO-строка опущена.
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineChemicalFactoryBlockEntity chemfac)) return;
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal("-> ").withStyle(net.minecraft.ChatFormatting.GREEN)
+                .append(net.minecraft.network.chat.Component.literal("")
+                        .append(com.hbm_m.inventory.fluid.FluidType.forFluid(chemfac.getWaterTank().getTankType()).getLocalizedName())
+                        .withStyle(net.minecraft.ChatFormatting.WHITE)));
+        text.add(net.minecraft.network.chat.Component.literal("<- ").withStyle(net.minecraft.ChatFormatting.RED)
+                .append(net.minecraft.network.chat.Component.literal("")
+                        .append(com.hbm_m.inventory.fluid.FluidType.forFluid(chemfac.getSpentSteamTank().getTankType()).getLocalizedName())
+                        .withStyle(net.minecraft.ChatFormatting.WHITE)));
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     @Nullable

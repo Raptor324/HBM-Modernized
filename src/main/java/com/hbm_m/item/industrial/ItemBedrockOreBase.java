@@ -60,8 +60,13 @@ public class ItemBedrockOreBase extends Item implements ITooltipProvider {
     @Override
     public void appendHbmTooltip(@NotNull ItemStack stack, @Nullable Level level,
                                  @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
+        // The mining drill writes one double per type into the stack; the tooltip ignored the stack
+        // and printed six zeroes. A creative-tab stack has no tag and still reads 0, as upstream does.
+        net.minecraft.nbt.CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
         for (BedrockOreDensity.Type type : BedrockOreDensity.Type.values()) {
-            tooltip.add(typeLine(type, 0));
+            String key = type.name().toLowerCase(Locale.ROOT);
+            double amount = tag != null && tag.contains(key) ? tag.getDouble(key) : 0;
+            tooltip.add(typeLine(type, amount));
         }
     }
 }

@@ -20,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
  * Port of the 1.7.10 BlockDynamicSlag.TileEntitySlag - a world-placed "puddle" of molten material
  * dumped by a {@link MachineFoundrySlagtapBlockEntity} when its downstream target is full/missing.
  * Holds a single {@link MaterialType} + amount, up to 16 blocks' worth (original maxAmount =
- * MaterialShapes.BLOCK.q(16) = 144 000 mB).
+ * MaterialShapes.BLOCK.q(16) = 11 520 квантов).
  * <p>
  * Behaviour is 1:1 with the original updateTick (see {@link #tick}): flow down into a replaceable
  * block, merge into a same-material puddle below, or spread sideways once at least a fifth full.
@@ -29,8 +29,8 @@ import org.jetbrains.annotations.Nullable;
  */
 public class SlagBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements ICrucibleAcceptor {
 
-    /** Оригинал: BLOCK.q(16) = 648 × 16 = 10368 квантов = 144 000 mB (16 блоков). */
-    public static final int MAX_AMOUNT = 144_000;
+    /** Оригинал: BLOCK.q(16) = 648 × 16 = 11 520 квантов (16 блоков = 144 слитка). */
+    public static final int MAX_AMOUNT = com.hbm_m.inventory.material.MaterialShapes.BLOCK * 16;
 
     /** Период опроса тикера (в оригинале — запланированные обновления блока). */
     public static final int TICK_INTERVAL = 10;

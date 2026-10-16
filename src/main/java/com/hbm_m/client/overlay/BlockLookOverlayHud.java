@@ -7,6 +7,13 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Loader-agnostic crosshair HUD hook for blocks implementing {@link ILookOverlay}.
@@ -14,6 +21,7 @@ import net.minecraft.world.phys.HitResult;
  * Forge: typically called from RenderGuiEvent.
  * Fabric: called from HudRenderCallback.
  */
+@OnlyIn(Dist.CLIENT)
 public final class BlockLookOverlayHud {
     private BlockLookOverlayHud() {}
 

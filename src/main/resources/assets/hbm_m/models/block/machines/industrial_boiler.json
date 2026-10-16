@@ -5,59 +5,163 @@
 	},
 	"children": {
 		"industrial_boiler_model": {
-		"loader": "forge:obj",
-		"model": "hbm_m:models/block/machines/industrial_boiler.obj",
-		"flip_v": true,
-		"textures": {
-			"default": "hbm_m:block/machine/industrial_boiler"
-		}
+			"loader": "forge:obj",
+			"model": "hbm_m:models/block/machines/industrial_boiler.obj",
+			"flip_v": true,
+			"textures": {
+				"default": "hbm_m:block/machine/industrial_boiler"
+			}
 		}
 	},
 	"transform": {
-		"translation": [0.5, 0.0, 0.5],
-		"rotation": [0, 0, 0],
+		"translation": [
+			0.5,
+			0.0,
+			0.5
+		],
+		"rotation": [
+			0,
+			0,
+			0
+		],
 		"scale": 1.0
 	},
 	"display": {
 		"thirdperson_righthand": {
-			"rotation": [ 75, 45, 0 ],
-			"translation": [ 0.00, 2.50, 0.00 ],
-			"scale": [ 0.12, 0.12, 0.12 ]
+			"rotation": [
+				75,
+				45,
+				0
+			],
+			"translation": [
+				0.0,
+				1.879,
+				-2.318
+			],
+			"scale": [
+				0.075,
+				0.075,
+				0.075
+			]
 		},
 		"thirdperson_lefthand": {
-			"rotation": [ 75, 45, 0 ],
-			"translation": [ 0.00, 2.50, 0.00 ],
-			"scale": [ 0.15, 0.15, 0.15 ]
+			"rotation": [
+				75,
+				45,
+				0
+			],
+			"translation": [
+				0.0,
+				1.879,
+				-2.318
+			],
+			"scale": [
+				0.075,
+				0.075,
+				0.075
+			]
 		},
 		"firstperson_righthand": {
-			"rotation": [ 0, 45, 0 ],
-			"translation": [ 0.00, 0.00, 0.00 ],
-			"scale": [ 0.13, 0.13, 0.13 ]
+			"rotation": [
+				0,
+				45,
+				0
+			],
+			"translation": [
+				0.0,
+				-2.56,
+				0.0
+			],
+			"scale": [
+				0.08,
+				0.08,
+				0.08
+			]
 		},
 		"firstperson_lefthand": {
-			"rotation": [ 0, 45, 0 ],
-			"translation": [ 0.00, 0.00, 0.00 ],
-			"scale": [ 0.15, 0.15, 0.15 ]
+			"rotation": [
+				0,
+				225,
+				0
+			],
+			"translation": [
+				0.0,
+				-2.56,
+				0.0
+			],
+			"scale": [
+				0.08,
+				0.08,
+				0.08
+			]
 		},
 		"gui": {
-			"rotation": [ 30, 45, 0 ],
-			"translation": [ 0.25, -4.00, 0.00 ],
-			"scale": [ 0.16, 0.16, 0.16 ]
-		},
-		"head": {
-			"rotation": [ 0, 0, 0 ],
-			"translation": [ 0.00, 0.00, 0.00 ],
-			"scale": [ 1.00, 1.00, 1.00 ]
-		},
-		"fixed": {
-			"rotation": [ 0, 0, 0 ],
-			"translation": [ 0.00, 0.00, 0.00 ],
-			"scale": [ 0.50, 0.50, 0.50 ]
+			"rotation": [
+				30,
+				225,
+				0
+			],
+			"translation": [
+				0.0,
+				-3.464,
+				-2.0
+			],
+			"scale": [
+				0.125,
+				0.125,
+				0.125
+			]
 		},
 		"ground": {
-			"rotation": [ 0, 0, 0 ],
-			"translation": [ 0.00, 3.00, 0.00 ],
-			"scale": [ 0.20, 0.20, 0.20 ]
+			"rotation": [
+				0,
+				0,
+				0
+			],
+			"translation": [
+				0.0,
+				1.4,
+				0.0
+			],
+			"scale": [
+				0.05,
+				0.05,
+				0.05
+			]
+		},
+		"fixed": {
+			"rotation": [
+				0,
+				180,
+				0
+			],
+			"translation": [
+				0.0,
+				-3.2,
+				0.0
+			],
+			"scale": [
+				0.1,
+				0.1,
+				0.1
+			]
+		},
+		"head": {
+			"rotation": [
+				0,
+				0,
+				0
+			],
+			"translation": [
+				0,
+				0,
+				0
+			],
+			"scale": [
+				1,
+				1,
+				1
+			]
 		}
 	}
 }

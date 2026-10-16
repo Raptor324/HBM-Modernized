@@ -12,11 +12,19 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /** Direktport der Slot-/Tank-Koordinaten aus {@code GUICoreInjector} (1.7.10 Original).
  *  Die beiden Crafting-Slotpaare des Originals (Fusionsbrennstab-Rezeptur) entfallen,
  *  weil das BlockEntity diese Crafting-Logik noch nicht implementiert - siehe
  *  {@link MachineCoreInjectorMenu}. */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineCoreInjector extends GuiInfoScreen<MachineCoreInjectorMenu> {
 
     private static final ResourceLocation TEXTURE =

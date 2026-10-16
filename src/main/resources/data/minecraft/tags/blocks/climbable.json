@@ -1,0 +1,15 @@
+{
+  "replace": false,
+  "values": [
+    "hbm_m:ladder_aluminium",
+    "hbm_m:ladder_cobalt",
+    "hbm_m:ladder_copper",
+    "hbm_m:ladder_gold",
+    "hbm_m:ladder_iron",
+    "hbm_m:ladder_lead",
+    "hbm_m:ladder_steel",
+    "hbm_m:ladder_sturdy",
+    "hbm_m:ladder_titanium",
+    "hbm_m:ladder_tungsten"
+  ]
+}

@@ -33,6 +33,15 @@ public class ScrewdriverItem extends Item implements ITooltipProvider {
         super(properties.stacksTo(1));
     }
 
+    /**
+     * Отвёртка — «контейнерный» ингредиент, как ведро в торте: в shaped-рецептах
+     * (например, key_kit) возвращается в инвентарь после крафта.
+     */
+    @Override
+    public ItemStack getCraftingRemainingItem(ItemStack itemStack) {
+        return itemStack.copy();
+    }
+
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.translatable("tooltip." + RefStrings.MODID + ".screwdriver").withStyle(ChatFormatting.GRAY));

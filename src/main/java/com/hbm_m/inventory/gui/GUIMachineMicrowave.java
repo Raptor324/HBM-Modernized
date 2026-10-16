@@ -12,11 +12,19 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /** GUI der Mikrowelle - Fortschritts-/Energieanzeigen als Fuellrechtecke (siehe
  *  {@code GUIMachineElectricFurnace}) plus Geschwindigkeits-Regler (+/- Buttons), 1:1 zum
  *  Original ({@code handleButtonPacket}). ACHTUNG: Geschwindigkeit 5 (Maximum) laesst die
  *  Maschine explodieren statt schneller zu verarbeiten - absichtliches Originalverhalten. */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineMicrowave extends AbstractContainerScreen<MachineMicrowaveMenu> {
 
     private static final ResourceLocation TEXTURE =

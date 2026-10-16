@@ -3,10 +3,9 @@ package com.hbm_m.client.sound;
 //? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 *///?}
 
 import com.hbm_m.sound.ModSounds;
@@ -40,12 +39,7 @@ import org.jetbrains.annotations.Nullable;
  * Источник данных — snapshot-провайдер ({@link MissileSoundEngine}), подающий позу и
  * скорость ракеты независимо от загрузки ванильной сущности (сетевой трек).
  */
-//? if forge {
 @OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)
-*///?}
 public class MissileFlybySoundInstance extends AbstractTickableSoundInstance {
 
     /** Скорость звука в воздухе: 343 м/с, один тик = 1/20 с → блоков(метров) за тик. */

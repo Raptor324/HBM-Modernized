@@ -13,6 +13,13 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Port of {@code GUIRBMKControlAuto} (1.7.10 Original), rendered with the real
@@ -32,6 +39,7 @@ import net.minecraft.world.entity.player.Inventory;
  * {@code isPowered()} fields), matching the same limitation already documented
  * on {@link GUIRBMKControl}.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIRBMKControlAuto extends GuiInfoScreen<RBMKControlAutoMenu> {
 
     private static final ResourceLocation TEXTURE =

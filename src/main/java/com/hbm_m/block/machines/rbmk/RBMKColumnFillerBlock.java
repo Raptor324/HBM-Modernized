@@ -26,7 +26,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * Every interaction (right-click, breaking) is forwarded to the real column at the base position,
  * found by scanning downward (bounded by {@code RBMKDials.getColumnHeight}).
  */
-public class RBMKColumnFillerBlock extends Block {
+public class RBMKColumnFillerBlock extends Block implements com.hbm_m.interfaces.ILookOverlay {
 
     private static final VoxelShape SHAPE = Shapes.block();
     /** Matches the original's {@code getCollisionBoundingBoxFromPool} extra 0.25 lid height. */
@@ -36,19 +36,44 @@ public class RBMKColumnFillerBlock extends Block {
         super(props);
     }
 
-    /** Scans downward for the real column block this filler belongs to. */
     private static BlockPos findBase(BlockGetter level, BlockPos pos) {
-        BlockPos cursor = pos;
-        // getColumnHeight() ignores its parameter (a static dial constant); null is safe here and
-        // avoids needing a real Level in contexts where only a BlockGetter is available.
-        int maxHeight = com.hbm_m.handler.rbmk.RBMKDials.getColumnHeight(null);
+        return findBase(level, pos, false);
+    }
+
+    /**
+     * Scans downward for the real column block this filler belongs to.
+     *
+     * <p>contiguousOnly stops at the first block that is neither a filler nor the column. The
+     * break path needs that: without it the scan walks through the gap left by a column that is
+     * already gone and reaches a second reactor stacked underneath.
+     */
+    private static BlockPos findBase(BlockGetter level, BlockPos pos, boolean contiguousOnly) {
+        // The break path scans one deeper: it starts from a filler and has to reach the column
+        // through the whole stack, while the interaction paths start one segment lower.
+        int maxHeight = com.hbm_m.handler.rbmk.RBMKDials.getColumnHeight(
+                level instanceof net.minecraft.world.level.Level lvl ? lvl : null) + (contiguousOnly ? 1 : 0);
+        BlockPos.MutableBlockPos cursor = pos.mutable();
         for (int i = 0; i < maxHeight; i++) {
-            cursor = cursor.below();
-            if (level.getBlockState(cursor).getBlock() instanceof RBMKColumnBlock) {
-                return cursor;
-            }
+            cursor.move(net.minecraft.core.Direction.DOWN);
+            Block below = level.getBlockState(cursor).getBlock();
+            if (below instanceof RBMKColumnBlock) return cursor.immutable();
+            if (contiguousOnly && !(below instanceof RBMKColumnFillerBlock)) return null;
         }
         return null;
+    }
+
+    /**
+     * The original's DODD overlay (RBMKBase.printHook → diagnosticPrintHook) reached the core
+     * from any column segment via findCore - and the crosshair spends most of its time on a
+     * filler segment, not on the base block. Resolve the base and let the column block draw.
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockPos basePos = findBase(level, pos);
+        if (basePos == null) return;
+        if (level.getBlockState(basePos).getBlock() instanceof com.hbm_m.interfaces.ILookOverlay ilo) {
+            ilo.printHook(guiGraphics, level, basePos);
+        }
     }
 
     @Override
@@ -56,9 +81,10 @@ public class RBMKColumnFillerBlock extends Block {
         return RenderShape.INVISIBLE;
     }
 
+    /** Selection outline follows the collision box, so the lid is click- and highlight-able too. */
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
-        return SHAPE;
+        return getCollisionShape(state, level, pos, ctx);
     }
 
     @Override
@@ -97,15 +123,37 @@ public class RBMKColumnFillerBlock extends Block {
     *///?}
 
 
+    // The class contract is that breaking a filler breaks the column, but this only ever called
+    // super: the filler has no loot table, so mining one left a permanent hole in the reactor.
+    private static void breakColumn(Level level, BlockPos pos, boolean drop) {
+        if (level.isClientSide || com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) return;
+        BlockPos base = findBase(level, pos, true);
+        if (base != null) {
+            level.destroyBlock(base, drop);
+        }
+    }
+
     //? if < 1.21.1 {
     @Override
     public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        breakColumn(level, pos, !player.getAbilities().instabuild);
         super.playerWillDestroy(level, pos, state, player);
     }
     //?} else {
     /*@Override
     public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        breakColumn(level, pos, !player.getAbilities().instabuild);
         return super.playerWillDestroy(level, pos, state, player);
     }
     *///?}
+
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+        // Explosions and other non-player removals take the column with them, without a drop -
+        // upstream BlockDummyable.breakBlock does the same.
+        if (!state.is(newState.getBlock()) && newState.isAir()) {
+            breakColumn(level, pos, false);
+        }
+        super.onRemove(state, level, pos, newState, isMoving);
+    }
 }

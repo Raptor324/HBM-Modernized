@@ -1,0 +1,166 @@
+{
+    "loader": "hbm_m:door",
+    "model": "hbm_m:models/block/doors/sliding_blast_door.obj",
+    "parts": [
+        "Frame",
+        "LeftDoor",
+        "RightDoor",
+        "LeftLock",
+        "RightLock"
+    ],
+    "textures": {
+        "default": "hbm_m:block/doors/sliding_blast_door_industrial",
+        "particle": "hbm_m:block/doors/sliding_blast_door_industrial"
+    },
+    "transform": {
+        "rotation": [
+            0,
+            0,
+            0
+        ],
+        "translation": [
+            0,
+            0,
+            0
+        ],
+        "scale": 1
+    },
+    "display": {
+        "thirdperson_righthand": {
+            "rotation": [
+                75,
+                45,
+                0
+            ],
+            "translation": [
+                0.0,
+                2.5,
+                0.0
+            ],
+            "scale": [
+                0.2,
+                0.2,
+                0.2
+            ]
+        },
+        "thirdperson_lefthand": {
+            "rotation": [
+                75,
+                45,
+                0
+            ],
+            "translation": [
+                0.0,
+                2.5,
+                0.0
+            ],
+            "scale": [
+                0.2,
+                0.2,
+                0.2
+            ]
+        },
+        "firstperson_righthand": {
+            "rotation": [
+                0,
+                225,
+                0
+            ],
+            "translation": [
+                1.0,
+                -0.25,
+                0.0
+            ],
+            "scale": [
+                0.1,
+                0.1,
+                0.1
+            ]
+        },
+        "firstperson_lefthand": {
+            "rotation": [
+                0,
+                135,
+                0
+            ],
+            "translation": [
+                2.0,
+                -1.0,
+                0.0
+            ],
+            "scale": [
+                0.1,
+                0.1,
+                0.1
+            ]
+        },
+        "gui": {
+            "rotation": [
+                30,
+                225,
+                0
+            ],
+            "translation": [
+                -0.5,
+                -2.4,
+                0.0
+            ],
+            "scale": [
+                0.1,
+                0.1,
+                0.1
+            ]
+        },
+        "head": {
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "translation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        "fixed": {
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "translation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        "ground": {
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "translation": [
+                0.0,
+                3.0,
+                0.0
+            ],
+            "scale": [
+                0.25,
+                0.25,
+                0.25
+            ]
+        }
+    }
+}

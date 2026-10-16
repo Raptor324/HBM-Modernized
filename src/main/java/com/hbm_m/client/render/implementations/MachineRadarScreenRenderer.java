@@ -31,19 +31,23 @@ import net.minecraft.world.level.block.state.BlockState;
 import java.util.List;
 
 /**
- * BER экрана радара (порт {@code RenderRadarScreen} из 1.7.10).
+ * BER for the radar screen (port of {@code RenderRadarScreen} from 1.7.10).
  *
- * Рисует:
- *   1. ТЕЛО — OBJ-каркас 2×2×1 (порт {@code ResourceManager.radar_screen.renderAll()}),
- *      берётся из {@link MachineRadarScreenBakedModel} (часть {@code Plane}) и рендерится
- *      через VertexConsumer в позиции контроллера с поворотом по FACING.
- *   2. ОВЕРЛЕЙ — на лицевой грани:
- *           - слинкован с радаром — бегущая зелёная полоса развёртки + метки целей
- *        (UV как в GUI: 216/256, blipLevel*8);
- *      - не слинкован — статичный «шум» из текстуры gui_radar_nt.
+ * <p>Draws:
+ * <ol>
+ *   <li>BODY - 2x2x1 OBJ frame (port of {@code ResourceManager.radar_screen.renderAll()}),
+ *       taken from {@link MachineRadarScreenBakedModel} (part {@code Plane}) and rendered
+ *       via a VertexConsumer at the controller position with FACING rotation.</li>
+ *   <li>OVERLAY - on the front face:
+ *       <ul>
+ *         <li>linked to a radar - moving green sweep bar + target blips
+ *             (UVs as in the GUI: 216/256, blipLevel*8);</li>
+ *         <li>not linked - static "noise" from the gui_radar_nt texture.</li>
+ *       </ul></li>
+ * </ol>
  *
- * Блок имеет {@code RenderShape.INVISIBLE}, поэтому ваниль block-model не рисуется —
- * всё тело отдаёт BER.
+ * <p>The block uses {@code RenderShape.INVISIBLE}, so the vanilla block model is
+ * not drawn - the BER draws the whole body.
  */
 
 //? if < 1.21.1 {
@@ -68,16 +72,17 @@ public class MachineRadarScreenRenderer implements com.hbm_m.client.render.HbmBe
     @Override
     public void render(MachineRadarScreenBlockEntity screen, float partialTick, PoseStack pose,
                        MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
-        // 1. ТЕЛО — OBJ-каркас (порт ResourceManager.radar_screen.renderAll()).
+        // 1. BODY - OBJ frame (port of ResourceManager.radar_screen.renderAll()).
         pose.pushPose();
         pose.translate(0.5D, 0.0D, 0.5D);
         applyFacingRotation(screen.getBlockState(), pose);
         renderBody(pose, bufferSource, packedLight, packedOverlay, screen.getBlockState());
 
-        // ВАЖНО: тело идёт через deferred cutout-буфер, а оверлей — immediate-mode.
-        // Без flush тело рисуется ПОСЛЕ оверлея и перекрывает его. Сбрасываем буфер,
-        // чтобы тело (с записью depth) отрисовалось до оверлея (порт glDepthMask(false)
-        // в оригинале — оверлей тестировал depth уже записанного тела).
+        // IMPORTANT: the body goes through the deferred cutout buffer while the overlay is
+        // immediate-mode. Without a flush the body would render AFTER the overlay and cover
+        // it. Flush the cutout buffer so the body (which writes depth) draws before the
+        // overlay (port of glDepthMask(false) in the original - the overlay was depth-tested
+        // against the already-written body).
         if (bufferSource instanceof MultiBufferSource.BufferSource bs) {
             bs.endBatch(RenderType.cutout());
         }
@@ -109,9 +114,9 @@ public class MachineRadarScreenRenderer implements com.hbm_m.client.render.HbmBe
     }
 
     /**
-     * Рендер OBJ-тела (модель {@code forge:obj} из {@code radar_screen.json}).
-     * Порт {@code bindTexture(radar_screen_tex); radar_screen.renderAll();} —
-     * геометрия и UV запечены в стандартной BakedModel, рендерим все quads.
+     * Renders the OBJ body (the {@code forge:obj} model from {@code radar_screen.json}).
+     * Port of {@code bindTexture(radar_screen_tex); radar_screen.renderAll();} -
+     * geometry and UVs are baked into a standard BakedModel; render all quads.
      */
     private void renderBody(PoseStack pose, MultiBufferSource bufferSource,
                             int packedLight, int packedOverlay, BlockState state) {

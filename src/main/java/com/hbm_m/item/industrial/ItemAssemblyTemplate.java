@@ -33,7 +33,7 @@ public class ItemAssemblyTemplate extends Item implements ITooltipProvider {
             //?} else {
             /*// Item-метод без Level в области видимости: провайдер берётся из клиентского Level
             // (call-site'ы — tooltip/render/getName, все клиентские). saveItemStack совместим с null-провайдером.
-            outputNbt = PlatformHooks.saveItemStack(outputStack, outputNbt, PlatformHooks.clientProvider());
+            outputNbt = PlatformHooks.saveItemStack(outputStack, outputNbt, PlatformHooks.bestEffortProvider());
             *///?}
             final CompoundTag finalOutputNbt = outputNbt;
             PlatformHooks.editItemTag(templateStack, nbt -> nbt.put("recipeOutput", finalOutputNbt));
@@ -47,7 +47,7 @@ public class ItemAssemblyTemplate extends Item implements ITooltipProvider {
             return ItemStack.of(outputNbt);
             //?} else {
             /*// Без Level провайдер из клиентского Level; если недоступен — EMPTY (template treated as no-output).
-            net.minecraft.core.HolderLookup.Provider provider = PlatformHooks.clientProvider();
+            net.minecraft.core.HolderLookup.Provider provider = PlatformHooks.bestEffortProvider();
             return provider != null ? PlatformHooks.itemStackOf(outputNbt, provider) : ItemStack.EMPTY;
             *///?}
         }

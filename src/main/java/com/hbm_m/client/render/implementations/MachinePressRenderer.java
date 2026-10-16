@@ -19,9 +19,10 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Пресс на фабрике {@link MachineRenderers}: Base — статическая часть, Head —
- * анимированная; штамп и заготовка — immediate-хук (предметы, не OBJ).
- * Геометрия берётся из multipart-модели blockstate (hbm_m:press_loader).
+ * Press on the {@link MachineRenderers} factory: Base is the static part,
+ * Head is animated; the stamp and workpiece are drawn by an immediate-mode hook
+ * (items, not OBJ). Geometry comes from the multipart blockstate model
+ * ({@code hbm_m:press_loader}).
  */
 public final class MachinePressRenderer {
 
@@ -44,7 +45,7 @@ public final class MachinePressRenderer {
 
     private MachinePressRenderer() {}
 
-    // ── Анимация головы: смещение по прогрессу прессования ─────────────
+    // Head animation: vertical offset by pressing progress.
 
     private static boolean animateHead(MachinePressBlockEntity blockEntity, float partialTick,
                                        long gameTime, PoseStack pose) {
@@ -66,7 +67,7 @@ public final class MachinePressRenderer {
         return AbstractPartBasedRenderer.unwrapFabricForwardingModels(raw) instanceof PressBakedModel p ? p : null;
     }
 
-    // ── Хук: штамп на голове + заготовка на столе (предметы) ───────────
+    // Hook: stamp item on the head plus workpiece item on the table.
 
     private static void renderItems(MachinePressBlockEntity blockEntity, float partialTick,
                                     PoseStack poseStack, MultiBufferSource bufferSource,
@@ -87,7 +88,7 @@ public final class MachinePressRenderer {
         var mc = Minecraft.getInstance();
 
         poseStack.pushPose();
-        // Локальное (0, 0) здесь - центр блока после блочного трансформа
+        // Local (0, 0) here is the block center after the block transform
         poseStack.translate(0.32F, WORKPIECE_HEIGHT, 0.32F);
         poseStack.mulPose(Axis.XP.rotationDegrees(90.0F));
 
@@ -120,12 +121,12 @@ public final class MachinePressRenderer {
 
         var mc = Minecraft.getInstance();
 
-        // Достаём только трансляцию головы
+        // Extract only the head translation
         Vector3f headPos = new Vector3f();
         headTransform.getTranslation(headPos);
 
         poseStack.pushPose();
-        // Центр блока по X/Z, высота – как у головы, плюс небольшой отступ
+        // Block center on X/Z, at the head height plus a small offset
         poseStack.translate(0.32F, headPos.y() + 0.98F, 0.32F);
         poseStack.mulPose(Axis.XP.rotationDegrees(90.0F));
 

@@ -176,7 +176,7 @@ public class MachineCentrifugeBlock extends BaseEntityBlock implements IMultiblo
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return createTickerHelper(type, ModBlockEntities.CENTRIFUGE_BE.get(), MachineCentrifugeBlockEntity::tick);
+        return createTickerHelper(type, ModBlockEntities.MACHINE_CENTRIFUGE_BE.get(), MachineCentrifugeBlockEntity::tick);
     }
 
     //? if >1.20.1 {

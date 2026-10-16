@@ -15,8 +15,16 @@ import net.minecraft.world.entity.player.Inventory;
 
 import java.util.ArrayList;
 import java.util.List;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /** Generischer GUI-Screen fuer alle Turret-Varianten - Textur kommt aus {@link com.hbm_m.blockentity.machines.TurretStats}. */
+@OnlyIn(Dist.CLIENT)
 public class GUITurret extends AbstractContainerScreen<TurretMenu> {
 
     private final ResourceLocation texture;
@@ -38,7 +46,7 @@ public class GUITurret extends AbstractContainerScreen<TurretMenu> {
         super(pMenu, pPlayerInventory, pTitle);
         // тайл может отсутствовать в реплее Flashback
         this.texture = pMenu.blockEntity != null ? pMenu.blockEntity.getGuiTexture()
-                : ResourceLocation.fromNamespaceAndPath("hbm_m", "textures/gui/gui_turret.png");
+                : ResourceLocation.fromNamespaceAndPath(com.hbm_m.lib.RefStrings.MODID, "textures/gui/weapon/gui_turret_base.png");
         this.imageWidth = 176;
         this.imageHeight = 222;
     }
@@ -48,7 +56,7 @@ public class GUITurret extends AbstractContainerScreen<TurretMenu> {
         super.init();
         this.titleLabelX = 8;
         this.titleLabelY = 6;
-        this.inventoryLabelY = this.imageHeight - 96;
+        this.inventoryLabelY = this.imageHeight - 96 + 2;
     }
 
     @Override

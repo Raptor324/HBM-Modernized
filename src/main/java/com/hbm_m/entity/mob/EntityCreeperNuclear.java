@@ -4,9 +4,8 @@ import com.hbm_m.damagesource.ModDamageTypes;
 import com.hbm_m.mixin.CreeperAccessor;
 import com.hbm_m.entity.logic.EntityNukeExplosionMK5;
 import com.hbm_m.explosion.ExplosionNukeGeneric;
-import com.hbm_m.explosion.MissileWarheadEffects;
+import com.hbm_m.explosion.ExplosionNukeSmall;
 import com.hbm_m.particle.helper.IParticleCreator;
-import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.util.ContaminationUtil;
 import com.hbm_m.util.ContaminationUtil.ContaminationType;
@@ -95,7 +94,12 @@ public class EntityCreeperNuclear extends Creeper {
     /*@Override
     protected void dropCustomDeathLoot(net.minecraft.server.level.ServerLevel serverLevel, DamageSource source, boolean recentlyHit) {
         this.spawnAtLocation(new ItemStack(Blocks.TNT));
-        // coin_creeper, NUKE_STANDARD ammo, bossCreeper — после порта соответствующих систем
+        this.spawnAtLocation(new ItemStack(com.hbm_m.item.ModItems.COIN_CREEPER.get()));
+        // Everyone within 50 blocks is credited, as in the original - the kill may well have been
+        // a group effort, or nobody's in particular.
+        com.hbm_m.advancement.ModAdvancements.grantNearby(this, 50D,
+                com.hbm_m.advancement.ModAdvancements.BOSS_CREEPER);
+        // TODO: NUKE_STANDARD ammo drop still needs the ammo system.
     }
     *///?}
 
@@ -122,47 +126,12 @@ public class EntityCreeperNuclear extends Creeper {
                 ExplosionNukeGeneric.dealDamage(this.level(), x, y + 0.5, z, 100.0D);
             }
         } else if (griefing) {
-            explodeNukeSmall(this.level(), x, y + 0.5, z, 20.0F, 55.0F, 3.0F, false);
+            ExplosionNukeSmall.explode(this.level(), x, y, z, ExplosionNukeSmall.PARAMS_MEDIUM);
         } else {
-            explodeNukeSmall(this.level(), x, y + 0.5, z, 0.0F, 45.0F, 2.0F, true);
+            ExplosionNukeSmall.explode(this.level(), x, y, z, ExplosionNukeSmall.PARAMS_SAFE);
         }
 
         this.discard();
-    }
-
-    /** Логика {@link com.hbm.explosion.ExplosionNukeSmall#explode} для PARAMS_MEDIUM / PARAMS_SAFE. */
-    private static void explodeNukeSmall(Level level, double x, double y, double z,
-                                         float blastRadius, float killRadius, float radiationLevel, boolean safe) {
-        if (!(level instanceof ServerLevel serverLevel)) {
-            return;
-        }
-
-        sendMukeParticle(level, x, y, z);
-        playMukeSound(level, x, y, z);
-
-        MissileWarheadEffects.spawnShrapnelBurst(serverLevel, x, y, z, 25);
-
-        if (!safe && blastRadius > 0.0F) {
-            serverLevel.explode(null, x, y, z, blastRadius, Level.ExplosionInteraction.MOB);
-        }
-
-        if (killRadius > 0.0F) {
-            ExplosionNukeGeneric.dealDamage(level, x, y, z, killRadius);
-        }
-
-        float radMod = radiationLevel / 3.0F;
-        for (int i = -2; i <= 2; i++) {
-            for (int j = -2; j <= 2; j++) {
-                if (Math.abs(i) + Math.abs(j) < 4) {
-                    ChunkRadiationManager.incrementRad(
-                            level,
-                            (int) Math.floor(x + i * 16),
-                            (int) Math.floor(y),
-                            (int) Math.floor(z + j * 16),
-                            50.0F / (Math.abs(i) + Math.abs(j) + 1) * radMod);
-                }
-            }
-        }
     }
 
     private static void sendMukeParticle(Level level, double x, double y, double z) {
@@ -170,7 +139,7 @@ public class EntityCreeperNuclear extends Creeper {
             return;
         }
         CompoundTag data = new CompoundTag();
-        data.putString("type", "nuke");
+        data.putString("type", "muke");
         data.putDouble("posX", x);
         data.putDouble("posY", y);
         data.putDouble("posZ", z);

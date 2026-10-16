@@ -31,15 +31,10 @@ import net.minecraft.world.phys.AABB;
  * ueber dem Block schwebenden Foerderband-Item-Entities statt aus einem manuellen Material-Slot;
  * die Ausgabe wird wieder als Foerderband-Item-Entity an derselben Position erzeugt.
  * <p>
- * SCOPE-Entscheidung: Das Original ist zusaetzlich selbst ein {@code IConveyorBelt} (Items koennen
- * ueber die Oberseite laufen wie auf einem normalen Band) und ein echtes 1x1x2-Multiblock. Dieser
- * Port vereinfacht auf einen Einzelblock (kein Multiblock, konsistent mit anderen stark
- * vereinfachten "grosses Modell, aber im Kern 1 Block"-Maschinen dieser Session, siehe
- * {@code MachineAmmoPressBlockEntity}) und implementiert NICHT selbst {@code IConveyorBelt} - der
- * Block sucht stattdessen aktiv nach {@link MovingConveyorItemEntity}s in einer AABB direkt ueber
- * und an seiner eigenen Position (die von einem angrenzenden echten Foerderband dorthin
- * transportiert wurden) und verarbeitet sie. Praktisch: ein Foerderband muss ueber/an den Block
- * heranfuehren, nicht zwingend direkt "durch" ihn hindurch wie im Original.
+ * <p>Sie steht wie im Original <b>drei Felder hoch</b> ({@code getDimensions {2,0,0,0,0,0}}), und
+ * ihre Oberseite ist selbst ein Foerderband: Gegenstaende laufen oben durch und werden im
+ * Vorbeigehen gepresst. Man haengt sie also mitten in eine Bandstrecke, statt sie zu befuellen -
+ * genau dafuer ist sie da.
  */
 public class MachineConveyorPressBlockEntity extends BaseMachineBlockEntity {
 

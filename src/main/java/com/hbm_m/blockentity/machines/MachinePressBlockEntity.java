@@ -118,6 +118,11 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         return false;
     }
 
+    @Override
+    public boolean joinsEnergyNetwork() {
+        return false;
+    }
+
     //? if forge {
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
@@ -273,9 +278,7 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
             sendUpdateToClient();
         }
     }
-    //? if forge || neoforge {
     @OnlyIn(Dist.CLIENT)
-    //?}
     private void clientTick() {
         float target = convertPressToProgress();
         if (!clientPressInitialized) {
@@ -286,9 +289,7 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         prevVisualPressPosition = visualPressPosition;
         visualPressPosition = Mth.lerp(0.25F, visualPressPosition, target);
     }
-    //? if forge || neoforge {
     @OnlyIn(Dist.CLIENT)
-    //?}
     public float getPressAnimationProgress(float partialTick) {
         float interpolated = Mth.lerp(partialTick, prevVisualPressPosition, visualPressPosition);
         return Mth.clamp(interpolated, 0.0F, 1.0F);

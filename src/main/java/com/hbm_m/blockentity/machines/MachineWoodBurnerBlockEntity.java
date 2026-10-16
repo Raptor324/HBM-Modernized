@@ -82,6 +82,11 @@ public class MachineWoodBurnerBlockEntity extends BaseMachineBlockEntity impleme
     private boolean liquidBurn = false;
     /** Оригинальный {@code isOn} — кнопка GUI. */
     private boolean isOn = false;
+
+    /** Доступ для {@code ToggleWoodBurnerPacket} (GUI-кнопка вкл/выкл). */
+    public boolean isEnabled() { return isOn; }
+
+    public void setEnabled(boolean on) { this.isOn = on; }
     /** {@code powerGen} — сбрасывается в начале тика, синхронизируется для частиц/GUI. */
     public int powerGen = 0;
 

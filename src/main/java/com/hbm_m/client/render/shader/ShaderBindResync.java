@@ -7,32 +7,33 @@ import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL20;
 
 /**
- * Принудительная ресинхронизация статического кеша программы кастомного
- * {@link ShaderInstance} против реального GL-состояния.
+ * Forced resynchronization of the static program cache of a custom
+ * {@link ShaderInstance} against the real GL state.
  *
- * <p>Oculus при выключенном шейдерпаке раз за кадр делает сырой
- * {@code GlStateManager._glUseProgram(0)} (VanillaRenderingPipeline.beginLevelRendering),
- * не обновляя приватный статический {@code ShaderInstance.lastProgramId}.
- * Если прошлый кадр закончился нашим шейдером, следующий {@code apply()}
- * видит совпадение programId == lastProgramId и ПРОПУСКАЕТ реальный бинд —
- * все glUniform/glDrawElements уходят в программу 0 («No active program»,
- * чёрная геометрия с мусорной матрицей), причём состояние залипает на все
- * последующие кадры.</p>
+ * <p>With the shader pack disabled, Oculus once per frame performs a raw
+ * {@code GlStateManager._glUseProgram(0)} (VanillaRenderingPipeline
+ * .beginLevelRendering) without updating the private static
+ * {@code ShaderInstance.lastProgramId}. If the previous frame ended with our
+ * shader, the next {@code apply()} sees programId == lastProgramId and SKIPS
+ * the real bind - all glUniform/glDrawElements go to program 0 ("No active
+ * program", black geometry with a garbage matrix), and the state sticks for
+ * all subsequent frames.</p>
  *
- * <p>Лечение без миксинов: перед отрисовкой сравниваем GL_CURRENT_PROGRAM
- * с идентификатором шейдера; при расхождении {@code clear()} обнуляет
- * lastProgramId (-1) и форсирует честный glUseProgram в apply(). В норме
- * это один glGetInteger на проход.</p>
+ * <p>Fix without mixins: before drawing, compare GL_CURRENT_PROGRAM with the
+ * shader id; on a mismatch, {@code clear()} resets lastProgramId to -1 and
+ * forces an honest glUseProgram in apply(). Normally this is a single
+ * glGetInteger per pass.</p>
  *
- * <p>Точки вызова: {@code com.hbm_m.client.render.SingleMeshVboRenderer}
- * (меши ракет, block_lit), копия DH-глубины ({@code DhDepthCopy}) и входы
- * проходов AFTER_WEATHER в {@code EngineHandler} (облака/вспышка Torex).</p>
+ * <p>Call sites: {@code com.hbm_m.client.render.SingleMeshVboRenderer}
+ * (rocket meshes, block_lit), the DH depth copy ({@code DhDepthCopy}), and
+ * the AFTER_WEATHER pass entries in {@code EngineHandler} (Torex
+ * clouds/flash).</p>
  */
 public final class ShaderBindResync {
 
     private ShaderBindResync() {}
 
-    /** Убедиться, что следующий {@code apply()} шейдера выполнит честный бинд. */
+    /** Ensure the shader's next {@code apply()} performs an honest bind. */
     public static void ensureFreshBind(ShaderInstance shader) {
         if (shader == null) {
             return;
@@ -42,23 +43,24 @@ public final class ShaderBindResync {
                 shader.clear();
             }
         } catch (Throwable ignored) {
-            // GL-контекст недоступен/чужой патч — худший случай равен старому поведению
+            // GL context unavailable/foreign patch - worst case equals old behavior
         }
     }
 
     /**
-     * Ватчдог рассинхрона уровня «весь мир»: если RenderSystem считает текущим
-     * какой-то {@link ShaderInstance}, а фактическая GL-программа — 0
-     *(сырой сброс от Oculus без follow-up бинда), следующий Vanilla
-     * {@code apply()} пропустит честный бинд и МИР ПЕРЕСТАНЁТ ПЕРЕРИСОВЫВАТЬСЯ
-     * (экран консервируется до появления любого чужого честного apply).
-     * Диагностика fsp это показала напрямую: prog=0 при живом RS-шейдере
-     * держится на всех границах фаз, пока не появится другой SingleMeshVboRenderer.
+     * Whole-world desync watchdog: if RenderSystem considers some
+     * {@link ShaderInstance} current while the actual GL program is 0 (raw
+     * reset by Oculus with no follow-up bind), the next vanilla
+     * {@code apply()} will skip the honest bind and THE WORLD STOPS
+     * REDRAWING (the screen freezes until any foreign honest apply shows up).
+     * fsp diagnostics showed this directly: prog=0 with a live RS shader
+     * persists across all phase boundaries until another SingleMeshVboRenderer
+     * appears.
      *
-     * Вызывается на КАЖДОМ нашем RenderLevelStageEvent (см. ClientModEvents /
-     * EngineHandler) — задолго до следующего vanilla apply, поэтому после него
-     * любой {@code apply()} выполнит настоящий glUseProgram и кадр продолжит
-     * перерисовываться даже без наших мешей на экране.
+     * <p>Called on EVERY of our RenderLevelStageEvents (see ClientModEvents /
+     * EngineHandler) - well before the next vanilla apply, so afterwards any
+     * {@code apply()} performs a real glUseProgram and the frame keeps
+     * redrawing even with none of our meshes on screen.</p>
      */
     public static void enforceGlProgramConsistency() {
         try {
@@ -70,16 +72,16 @@ public final class ShaderBindResync {
         }
     }
 
-    // ── Iris DepthColorStorage watchdog ─────────────────────────────────────
+    // -- Iris DepthColorStorage watchdog -------------------------------------
     private static volatile boolean irisChecked;
     private static java.lang.reflect.Field irisDepthColorField;
 
     /**
-     * Читает статический флаг {@code net.irisshaders.iris.mixin.DepthColorStorage}
-     *(null, если Iris/Oculus отсутствует). Миксин onTail ставит его при КАЖДОМ
-     * apply неизвестного модового ShaderInstance; если флаг остался включённым к
-     * концу кадра, Oculus-VanillaPipeline уводит ПРЕЗЕНТ через свой композит
-     *(цветовой буфер при этом полностью корректен!) — это и есть «чёрный экран».
+     * Reads the static flag of {@code net.irisshaders.iris.mixin.DepthColorStorage}
+     * (null if Iris/Oculus is absent). The onTail mixin sets it on EVERY apply of
+     * an unknown mod ShaderInstance; if the flag is still set at the end of the
+     * frame, the Oculus vanilla pipeline routes the PRESENT through its composite
+     * (the color buffer itself is fully correct!) - that is the "black screen".
      */
     @org.jetbrains.annotations.Nullable
     public static Boolean irisDepthColorDisabled() {
@@ -103,10 +105,10 @@ public final class ShaderBindResync {
     }
 
     /**
-     * Принудительный сброс маскировки Iris (disableDepthColor): возвращает флаг
-     * в false и восстанавливает colorMask + depth test управляемым API.
-     * Вызывается в конце наших late-pass —,end кадра снова идёт по ванильному
-     * present'у.
+     * Forcibly resets Iris masking (disableDepthColor): sets the flag back to
+     * false and restores colorMask + depth test via the managed API. Called at
+     * the end of our late passes so the end of the frame goes through the
+     * vanilla present again.
      */
     public static void forceIrisDepthColorEnabled() {
         try {
@@ -123,21 +125,23 @@ public final class ShaderBindResync {
     }
 
     /**
-     * ПОЛНАЯ инвалидация статического кеша {@code ShaderInstance.lastProgramId}
-     * (установить в -1, чтобы СЛЕДУЮЩИЙ apply() любого шейдера сделал честный
+     * Full invalidation of the static {@code ShaderInstance.lastProgramId} cache
+     * (set to -1 so the NEXT apply() of any shader performs an honest
      * glUseProgram).
      *
-     * ЗАЧЕМ: клоббер Oculus (`_glUseProgram(0)`) прилетает в самом начале кадра,
-     * ДО отрисовки неба — а первое, что рисует мир, это skyBuffer через
-     * position_color. Если прошлый кадр закончился тем же шейдером (GUI пестрит
-     * position_color), apply() неба ПРОПУСКАЕТ бинд, quad неба не растеризуется
-     * (core-профиль, программа 0), и весь кадр показывает цвет очистки буфера —
-     * в мире на y<0 это почти чёрный (2,2,0). Пошаговые px-замеры подтвердили:
-     * кадр уже чёрный на fsp[px.sky]. Стадий раньше неба в Forge нет, поэтому
-     * единственная точка лечения — КОНЕЦ предыдущего кадра.
+     * <p>Why: the Oculus clobber ({@code _glUseProgram(0)}) arrives at the very
+     * start of the frame, BEFORE the sky is drawn - and the first thing the
+     * world draws is the skyBuffer via position_color. If the previous frame
+     * ended with the same shader (the GUI is full of position_color), the
+     * sky's apply() SKIPS the bind, the sky quad is not rasterized (core
+     * profile, program 0), and the whole frame shows the clear color - in a
+     * world below y&lt;0 that is almost black (2,2,0). Step-by-step px
+     * measurements confirmed the frame is already black at fsp[px.sky]. There
+     * is no Forge stage earlier than the sky, so the only fix point is the END
+     * of the previous frame.</p>
      *
-     * Имя поля ищется по ТИПУ (единственный статический int в ShaderInstance —
-     * lastProgramId), поэтому рефлексия работает и под SRG в проде.
+     * <p>The field is located by TYPE (the only static int in ShaderInstance -
+     * lastProgramId), so reflection works under SRG names in production.</p>
      */
     public static void invalidateStaticProgramCache() {
         try {
@@ -162,42 +166,46 @@ public final class ShaderBindResync {
     private static java.lang.reflect.Field lastProgramIdField;
 
     /**
-     * Восстановление стандартной текстурной троицы ВАНИЛЬНЫМИ управляемыми
-     * вызовами: атлас блоков (TU0), оверлей (TU1), лайтмап (TU2).
+     * Restores the standard texture trio via VANILLA managed calls: block atlas
+     * (TU0), overlay (TU1), lightmap (TU2).
      *
-     * ЗАЧЕМ: диагностика px.pad.* показала, что в кадрах под Oculus к началу
-     * BE-фазы физические бинды всех текстурных юнитов = 0 (units=[0/0/0]),
-     * при этом кеш GlStateManager считает их живыми — управляемые бинды
-     * ванили и модов но-опятся, и всё, что рисуется до первого «сырого»
-     * block_lit-дро (пусковая с ракетой), получает чёрные текстуры. Данный
-     * вызов ставит и физику, и кеш в согласованное состояние — вызывать
-     * как можно раньше в кадре (первый RenderLevelStageEvent, до энтити).
+     * <p>Why: px.pad.* diagnostics showed that in frames under Oculus, by the
+     * start of the BE phase the physical binds of all texture units are 0
+     * (units=[0/0/0]) while the GlStateManager cache considers them live - the
+     * managed binds of vanilla and mods no-op, and everything drawn before the
+     * first "raw" block_lit draw (the launcher with a rocket) gets black
+     * textures. This call puts both the physical state and the cache into a
+     * consistent state - call as early in the frame as possible (the first
+     * RenderLevelStageEvent, before entities).</p>
      */
     public static void restoreVanillaTextureBindings() {
         try {
             var mc = net.minecraft.client.Minecraft.getInstance();
             mc.getTextureManager().getTexture(net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS)
-                    .bind(); // управляемо: TU0 + кеш
-            mc.gameRenderer.overlayTexture().setupOverlayColor(); // TU1 управляемо
-            mc.gameRenderer.lightTexture().turnOnLightLayer();    // TU2 управляемо
-            // Управляемо: сырой glActiveTexture рассинхронизировал бы кеш юнита
+                    .bind(); // managed: TU0 + cache
+            mc.gameRenderer.overlayTexture().setupOverlayColor(); // TU1 managed
+            mc.gameRenderer.lightTexture().turnOnLightLayer();    // TU2 managed
+            // Managed: a raw glActiveTexture would desync the unit cache
             com.mojang.blaze3d.platform.GlStateManager._activeTexture(GL13.GL_TEXTURE0);
         } catch (Throwable ignored) {
         }
     }
 
     /**
-     * Принудительный честный ресинк факторов блендинга.
+     * Forces an honest resync of the blend factors.
      *
-     * GlStateManager._blendFuncSeparate НО-ОПИТСЯ при совпадении факторов с кешем.
-     * Если кеш разошёлся с физикой (кто угодно в кадре — наши RenderType'ы, чужие
-     * моды, состояние прошлого кадра), ванильные отрисовки с НЕСТАНДАРТНЫМ
-     * блендингом ломаются молча:
-     *  - виньетка (multiply ZERO/ONE_MINUS_SRC_COLOR) рисуется обычным блендом —
-     *    её квад кладётся на экран как непрозрачный тёмный слой («чёрный экран»);
-     *  - солнце/луна (аддитивный SRC_ALPHA/ONE) — «чёрный квадрат» вокруг.
-     * Sentinel (0,0,0,0) гарантирует реальный GL-вызов, затем восстанавливаем
-     * ванильное значение по умолчанию. Дро между вызовами нет — безопасно.
+     * <p>GlStateManager._blendFuncSeparate NO-OPS when the factors match the
+     * cache. If the cache diverged from the physical state (anyone in the
+     * frame - our RenderTypes, foreign mods, the previous frame's state),
+     * vanilla draws with NON-STANDARD blending break silently:</p>
+     * <ul>
+     *   <li>the vignette (multiply ZERO/ONE_MINUS_SRC_COLOR) draws with normal
+     *       blending - its quad lands on screen as an opaque dark layer
+     *       ("black screen");</li>
+     *   <li>sun/moon (additive SRC_ALPHA/ONE) - "black squares" around them.</li>
+     * </ul>
+     * <p>The (0,0,0,0) sentinel guarantees a real GL call, then the vanilla
+     * default is restored. No draws happen between the two calls - safe.</p>
      */
     public static void forceHonestBlendState() {
         try {
@@ -208,20 +216,20 @@ public final class ShaderBindResync {
     }
 
     /**
-     * Сброс статического кеша {@code com.mojang.blaze3d.shaders.BlendMode.lastApplied}.
+     * Resets the static cache of {@code com.mojang.blaze3d.shaders.BlendMode.lastApplied}.
      *
-     * КАК ЛОМАЕТ: {@code ShaderInstance.apply()} (1.20.1, строка ~337) применяет
-     * blend из JSON шейдера. Наши кастомные шейдеры (nuke_cloud/nuke_add)
-     * несут НЕ-opaque режимы (альфа/аддитив) — после их apply() кеш остаётся
-     * non-opaque. Следующий ВАНИЛЬНЫЙ шейдер без blend в json (position_tex и
-     * т.п., opaque) видит смену opacity и делает RenderSystem.disableBlend() —
-     * молча убивая блендинг для ванильных отрисовок, которые включили его
-     * вручную: виньетка (multiply) рисуется непрозрачной тёмной текстурой во
-     * весь экран («чёрный экран» на Fancy), солнце/луна (аддитив) — чёрными
-     * квадратами, полупрозрачные слои GUI — чёрными плашками.
-     * После сброса в null следующий apply() выполняет ПОЛНУЮ честную
-     * установку (enable/disable + факторы). Поле ищется по ТИПУ (единственный
-     * static BlendMode в классе) — работает и под SRG-именами в проде.
+     * <p>How it breaks: {@code ShaderInstance.apply()} (1.20.1, line ~337) applies
+     * the blend from the shader JSON. Our custom shaders (nuke_cloud/nuke_add)
+     * carry NON-opaque modes (alpha/additive) - after their apply() the cache
+     * stays non-opaque. The next VANILLA shader without blend in its json
+     * (position_tex etc., opaque) sees the opacity change and calls
+     * RenderSystem.disableBlend() - silently killing blending for vanilla draws
+     * that enabled it manually: the vignette (multiply) renders as an opaque
+     * dark texture fullscreen ("black screen" on Fancy), sun/moon (additive) as
+     * black squares, translucent GUI layers as black slabs. After the reset to
+     * null, the next apply() performs the FULL honest setup (enable/disable +
+     * factors). The field is located by TYPE (the only static BlendMode in the
+     * class) - works under SRG names in production too.</p>
      */
     public static void invalidateBlendModeCache() {
         try {

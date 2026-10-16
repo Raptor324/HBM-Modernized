@@ -23,13 +23,17 @@ import net.minecraft.world.level.block.state.BlockState;
  * slot has a small random per-tick chance to decay into its "depleted" form, releasing liquid/gas
  * waste byproduct into two internal tanks (16,000mB each) and irradiating the surroundings.
  * <p>
- * SCOPE-Vereinfachung: Das Original berechnet den Fluessig-/Gas-Ertrag pro Zerfall anhand einer
- * meta-abhaengigen {@code WasteClass}-Tabelle (unterschiedliche Ertragsmengen je nach Abfallklasse)
- * und strahlt Entities per Raytrace-Streuung entlang der Sichtlinie individuell an. Hier: fester
- * Ertrag pro Zerfallsart (voll/tiny) und einfache {@link ChunkRadiationManager}-Erhoehung statt
- * Entity-Raytracing - der Kernmechanismus (Abfall zerfaellt langsam zu Fluessigkeit/Gas plus
- * Strahlung) bleibt vollstaendig erhalten, nur die genaue Ertragstabelle/Streuphysik entfaellt.
- * Ebenso entfaellt die MK2-Rohrnetzwerk-Anbindung (kein Auto-Push, nur passive Kapazitaet) - siehe
+ * <p>Wieviel dabei anfaellt, haengt wie im Original an der <b>Abfallklasse</b> des Muells
+ * ({@link com.hbm_m.item.special.ItemWasteLong.WasteClass} /
+ * {@link com.hbm_m.item.special.ItemWasteShort.WasteClass}): Thorium-Muell gibt praktisch nichts
+ * ab, Plutonium-241 und aufwaerts je einen vollen Eimer Gas pro Zerfall. Ein Fasslager laesst sich
+ * also nicht pauschal auslegen - man dimensioniert es nach dem schmutzigsten Brennstoff, den man
+ * fahren will. Die Klasse bleibt beim Zerfall erhalten, das abgereicherte Stueck traegt sie weiter.
+ * Kleine Brocken liefern ein Zehntel, ebenfalls wie im Original.</p>
+ *
+ * <p>SCOPE-Vereinfachung: Das Original strahlt Entities per Raytrace-Streuung entlang der
+ * Sichtlinie individuell an; hier eine einfache {@link ChunkRadiationManager}-Erhoehung. Ebenso
+ * entfaellt die MK2-Rohrnetzwerk-Anbindung (kein Auto-Push, nur passive Kapazitaet) - siehe
  * dieselbe Vereinfachung bei der Drone-Crate-Fluessigkeitsvariante.
  */
 public class MachineStorageDrumBlockEntity extends BaseMachineBlockEntity {
@@ -37,8 +41,6 @@ public class MachineStorageDrumBlockEntity extends BaseMachineBlockEntity {
     public static final int INVENTORY_SIZE = 24;
     private static final int DECAY_CHANCE = 6000;
     private static final int TINY_DECAY_CHANCE = 600;
-    private static final int FULL_YIELD_MB = 200;
-    private static final int TINY_YIELD_MB = 20;
 
     private final FluidTank liquidTank = new FluidTank(ModFluids.WASTEFLUID.getSource(), 16_000);
     private final FluidTank gasTank = new FluidTank(ModFluids.WASTEGAS.getSource(), 16_000);
@@ -54,42 +56,31 @@ public class MachineStorageDrumBlockEntity extends BaseMachineBlockEntity {
         if (level.isClientSide) return;
 
         int liquid = 0;
-        int gas = 0;
+        // Der Gasanteil wandert ueber ein Feld, damit der Zerfall beides in einem Rutsch liefern kann.
+        be.pendingGas = 0;
         float rad = 0;
 
         for (int i = 0; i < INVENTORY_SIZE; i++) {
             ItemStack stack = be.inventory.getStackInSlot(i);
             if (stack.isEmpty()) continue;
-            Item item = stack.getItem();
 
-            if (item == ModItems.NUCLEAR_WASTE_LONG.get() && level.random.nextInt(DECAY_CHANCE) == 0) {
-                liquid += FULL_YIELD_MB;
-                gas += FULL_YIELD_MB;
-                be.inventory.setStackInSlot(i, new ItemStack(ModItems.NUCLEAR_WASTE_LONG_DEPLETED.get()));
-            } else if (item == ModItems.NUCLEAR_WASTE_LONG_TINY.get() && level.random.nextInt(TINY_DECAY_CHANCE) == 0) {
-                liquid += TINY_YIELD_MB;
-                gas += TINY_YIELD_MB;
-                be.inventory.setStackInSlot(i, new ItemStack(ModItems.NUCLEAR_WASTE_LONG_DEPLETED_TINY.get()));
-            } else if (item == ModItems.NUCLEAR_WASTE_SHORT.get() && level.random.nextInt(DECAY_CHANCE) == 0) {
-                liquid += FULL_YIELD_MB;
-                gas += FULL_YIELD_MB;
-                be.inventory.setStackInSlot(i, new ItemStack(ModItems.NUCLEAR_WASTE_SHORT_DEPLETED.get()));
-            } else if (item == ModItems.NUCLEAR_WASTE_SHORT_TINY.get() && level.random.nextInt(TINY_DECAY_CHANCE) == 0) {
-                liquid += TINY_YIELD_MB;
-                gas += TINY_YIELD_MB;
-                be.inventory.setStackInSlot(i, new ItemStack(ModItems.NUCLEAR_WASTE_SHORT_DEPLETED_TINY.get()));
-            }
+            // 1:1: der Ertrag kommt aus der Abfallklasse des jeweiligen Stapels.
+            liquid += be.tryDecay(level, i, stack);
+
+            // Nach einem Zerfall liegt hier bereits das abgereicherte Stueck.
+            stack = be.inventory.getStackInSlot(i);
+            if (stack.isEmpty()) continue;
 
             // Anything in the drum that has no waste recipe of its own instead has its induced
             // neutron activation bled off - CE's drum is the intended way to cool down something
             // you left sitting in an outgasser. DECAY_RATE is a ten-second half-life.
             com.hbm_m.util.ContaminationUtil.neutronActivateItem(stack, 0.0F, DECAY_RATE);
 
-            if (!stack.isEmpty()) rad += 0.1F;
+            rad += 0.1F;
         }
 
         if (liquid > 0) be.liquidTank.fill(Math.min(be.liquidTank.getMaxFill(), be.liquidTank.getFill() + liquid));
-        if (gas > 0) be.gasTank.fill(Math.min(be.gasTank.getMaxFill(), be.gasTank.getFill() + gas));
+        if (be.pendingGas > 0) be.gasTank.fill(Math.min(be.gasTank.getMaxFill(), be.gasTank.getFill() + be.pendingGas));
 
         if (rad > 0 && level.getGameTime() % 20 == 0) {
             ChunkRadiationManager.incrementRad(level, pos.getX(), pos.getY(), pos.getZ(), rad);
@@ -98,14 +89,53 @@ public class MachineStorageDrumBlockEntity extends BaseMachineBlockEntity {
         be.setChanged();
     }
 
+    /** Zwischenspeicher fuer das Gas eines Ticks - siehe {@link #tryDecay}. */
+    private int pendingGas = 0;
+
+    /**
+     * Prueft die vier Zerfallspfade des Originals fuer einen Stapel. Trifft einer zu, wird der
+     * Stapel durch sein abgereichertes Gegenstueck derselben Abfallklasse ersetzt; der Gasanteil
+     * landet in {@link #pendingGas}, der Fluessiganteil ist der Rueckgabewert.
+     */
+    private int tryDecay(Level level, int slot, ItemStack stack) {
+
+        for (var path : com.hbm_m.item.special.WasteClasses.LONG_PATHS) {
+            int index = path.indexOf(stack);
+            if (index < 0) continue;
+            // Original: kleine Brocken zerfallen zehnmal so oft.
+            if (level.random.nextInt(path.tiny() ? TINY_DECAY_CHANCE : DECAY_CHANCE) != 0) return 0;
+
+            inventory.setStackInSlot(slot, path.spentStack(index));
+            pendingGas += path.gasAt(index);
+            return path.liquidAt(index);
+        }
+
+        for (var path : com.hbm_m.item.special.WasteClasses.SHORT_PATHS) {
+            int index = path.indexOf(stack);
+            if (index < 0) continue;
+            if (level.random.nextInt(path.tiny() ? TINY_DECAY_CHANCE : DECAY_CHANCE) != 0) return 0;
+
+            inventory.setStackInSlot(slot, path.spentStack(index));
+            pendingGas += path.gasAt(index);
+            return path.liquidAt(index);
+        }
+
+        return 0;
+    }
+
     public FluidTank getLiquidTank() { return liquidTank; }
     public FluidTank getGasTank() { return gasTank; }
 
+    /** In das Fass passt jeder Muell, der einen Zerfallspfad hat - also jede Abfallklasse. */
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        Item item = stack.getItem();
-        return item == ModItems.NUCLEAR_WASTE_LONG.get() || item == ModItems.NUCLEAR_WASTE_LONG_TINY.get()
-                || item == ModItems.NUCLEAR_WASTE_SHORT.get() || item == ModItems.NUCLEAR_WASTE_SHORT_TINY.get();
+        for (var path : com.hbm_m.item.special.WasteClasses.LONG_PATHS) {
+            if (path.indexOf(stack) >= 0) return true;
+        }
+        for (var path : com.hbm_m.item.special.WasteClasses.SHORT_PATHS) {
+            if (path.indexOf(stack) >= 0) return true;
+        }
+        return false;
     }
 
     @Override

@@ -64,24 +64,24 @@
 // 		convertToChild(this.rightleg, this.Shape4);
 // 	}
 
-//     // Метод для Forge регистрации слоя (пустой, т.к. мы юзаем HbmModelRenderer)
+//     // Method for Forge layer registration (empty, since we use HbmModelRenderer)
 //     public static LayerDefinition createBodyLayer() {
-//         MeshDefinition mesh = HumanoidModel.createMesh(CubeDeformation.NONE, 0.0F); // Пустой меш
+//         MeshDefinition mesh = HumanoidModel.createMesh(CubeDeformation.NONE, 0.0F); // Empty mesh
 //         return LayerDefinition.create(mesh, 64, 32);
 //     }
 
 //     @Override
 //     public void setupAnim(LivingEntity entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
-//         // Вызываем ванильную анимацию (она повернет this.leftLeg, this.rightLeg и т.д.)
+//         // Call vanilla animation (it rotates this.leftLeg, this.rightLeg, etc.)
 //         super.setupAnim(entity, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
         
-//         // Копируем анимацию из ванильных частей в наши Hbm части
+//         // Copy the animation from the vanilla parts into our HBM parts
 //         copyProperties(this.leftLeg, this.leftleg);
 //         copyProperties(this.rightLeg, this.rightleg);
         
-//         // Корректировка позиции для сникинга (в ваниле это делается автоматически в render, но тут можно уточнить)
+//         // Position adjustment for sneaking (vanilla does this automatically in render, but it can be refined here)
 //         if (this.crouching) {
-//             this.leftleg.rotationPointY += 3.0F; // Примерные значения
+//             this.leftleg.rotationPointY += 3.0F; // Approximate values
 //             this.rightleg.rotationPointY += 3.0F;
 //         }
 //     }
@@ -134,8 +134,8 @@
 
 //     @Override
 //     public void renderToBuffer(PoseStack poseStack, VertexConsumer buffer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-//         // Рендерим наши части
-//         // Масштаб (1.125F) из старого кода применяем через PoseStack
+//         // Render our parts
+//         // The scale (1.125F) from the old code is applied via the PoseStack
 //         poseStack.pushPose();
 //         poseStack.scale(1.125F, 1.125F, 1.125F); // GL11.glScalef(1.125F...)
         
@@ -145,7 +145,7 @@
 //         poseStack.popPose();
 //     }
 
-// 	// === Хелперы ===
+// 	// === Helpers ===
     
 //     private void copyProperties(ModelPart vanilla, HbmModelRenderer hbm) {
 //         hbm.rotateAngleX = vanilla.xRot;

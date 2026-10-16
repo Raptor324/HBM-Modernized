@@ -12,10 +12,18 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Экран бомбы бейлфайра: слоты, таймер и кнопка запуска отсчёта.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUINukeFstbmb extends GuiInfoScreen<NukeFstbmbMenu> {
 
     private static final ResourceLocation TEXTURE =
@@ -28,15 +36,19 @@ public class GUINukeFstbmb extends GuiInfoScreen<NukeFstbmbMenu> {
         super(menu, playerInventory, title);
         this.be = menu.be;
         this.imageWidth = 176;
-        this.imageHeight = 166;
+        this.imageHeight = 222;
     }
 
     @Override
     protected void init() {
         super.init();
         this.startButton = Button.builder(Component.translatable("gui.hbm_m.nuke_fstbmb.start"), b -> {
+                    // The countdown only means anything on the server; calling it here just set a
+                    // client-side flag and the bomb never armed.
                     if (!be.started && be.isReady()) {
-                        be.startCountdown();
+                        com.hbm_m.network.ModPacketHandler.sendToServer(
+                                com.hbm_m.network.ModPacketHandler.NUKE_FSTBMB_CONTROL,
+                                new com.hbm_m.network.NukeFstbmbControlPacket(be.getBlockPos()));
                     }
                 })
                 .bounds(this.leftPos + 8, this.topPos + 60, 60, 18)

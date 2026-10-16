@@ -20,6 +20,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.level.material.Fluid;
 import dev.architectury.fluid.FluidStack;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * GUI Screen для Fracking Tower (Гидроразрывная вышка).
@@ -31,6 +38,7 @@ import dev.architectury.fluid.FluidStack;
  * - Индикатор состояния: UV (176, 52) размером 16x16 для каждого состояния
  * - Заглушка для 2 танков: UV (192, 0) размером 18x34
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineFrackingTower extends AbstractContainerScreen<MachineFrackingTowerMenu> {
 
     //=====================================================================================//
@@ -39,11 +47,7 @@ public class GUIMachineFrackingTower extends AbstractContainerScreen<MachineFrac
 
     /** Путь к текстуре GUI */
     private static final ResourceLocation GUI_TEXTURE = 
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/machine/gui_well.png");
-            *///?} else {
                         ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/machine/gui_well.png");
-            //?}
 
 
     //=====================================================================================//

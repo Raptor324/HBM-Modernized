@@ -9,7 +9,13 @@ import com.hbm_m.blockentity.machines.rbmk.RBMKColumnBlockEntity;
 
 public class NeutronNodeWorld {
 
-    private static final Map<Level, StreamWorld> streamWorlds = new WeakHashMap<>();
+    /**
+     * A plain map, as in CE. A WeakHashMap here never collected anything: the value reaches the key
+     * back through StreamWorld.nodeCache -> RBMKNeutronNode.tile -> BlockEntity.level, so every
+     * entry stayed strongly reachable and each unloaded ServerLevel was kept alive with all of its
+     * chunks. Cleanup is explicit instead, from the lifecycle hooks in MainRegistry.
+     */
+    private static final Map<Level, StreamWorld> streamWorlds = new HashMap<>();
 
     /**
      * CE freshens the node cache only every {@code CACHE_TIME} ticks, not every tick: the sweep is
@@ -36,6 +42,12 @@ public class NeutronNodeWorld {
     public static void removeAllWorlds() {
         streamWorlds.clear();
     }
+
+    /** Drops the stream world of a level that is going away. */
+    public static void removeWorld(Level level) {
+        streamWorlds.remove(level);
+    }
+
 
     /** CE's {@code removeEmptyWorlds}: drop stream worlds that carry no streams at all. */
     public static void removeEmptyWorlds() {

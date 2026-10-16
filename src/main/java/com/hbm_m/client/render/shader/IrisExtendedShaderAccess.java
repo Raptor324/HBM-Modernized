@@ -17,10 +17,10 @@ import dev.architectury.platform.Platform;
 //? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 
 /**
@@ -38,11 +38,7 @@ import net.fabricmc.api.Environment;*///?}
  * If Iris is not loaded, lookup fails, or any exception occurs, this class returns
  * the vanilla simple block_lit shader so the renderer still produces output.
  */
-//? if forge {
 @OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
 public final class IrisExtendedShaderAccess {
 
     private IrisExtendedShaderAccess() {}
@@ -87,8 +83,8 @@ public final class IrisExtendedShaderAccess {
 
     /**
      * Per-render-pass cache of the resolved {@link ShaderInstance}. The lookup
-     * walks several reflective hops (Iris → PipelineManager → ShaderRenderingPipeline
-     * → ShaderMap → ShaderKey enum lookup) and was the single largest CPU cost in
+     * walks several reflective hops (Iris -> PipelineManager -> ShaderRenderingPipeline
+     * -> ShaderMap -> ShaderKey enum lookup) and was the single largest CPU cost in
      * the per-part Iris path (~8.78% of frame time per profiler trace) because each
      * draw of each part of each visible machine repeated the entire chain.
      * <p>
@@ -340,12 +336,12 @@ public final class IrisExtendedShaderAccess {
         return reflectionAvailable;
     }
 
-    // ── POSITION_TEX_COLOR контент (частицы NT, вспышки) ────────────────────
-    // Под паком кастомные модовые ShaderInstance маскируются
-    // (MixinShaderInstance -> DepthColorStorage.disableDepthColor), поэтому
-    // такой контент нужно рисовать через ИЗВЕСТНЫЙ Iris ключ: TEXTURED_COLOR
-    // (ProgramId.Textured, формат DefaultVertexFormat.POSITION_TEX_COLOR).
-    // В shadow-проходе — SHADOW_TEX_COLOR.
+    // -- POSITION_TEX_COLOR content (NT particles, flashes) --------------------
+    // Under a pack, custom mod ShaderInstances are masked
+    // (MixinShaderInstance -> DepthColorStorage.disableDepthColor), so such
+    // content must be drawn through a KNOWN Iris key: TEXTURED_COLOR
+    // (ProgramId.Textured, DefaultVertexFormat.POSITION_TEX_COLOR format).
+    // In the shadow pass - SHADOW_TEX_COLOR.
 
     private static volatile Object[] texColorMainKeysResolved;
     private static volatile Object[] texColorShadowKeysResolved;
@@ -367,8 +363,8 @@ public final class IrisExtendedShaderAccess {
     }
 
     /**
-     * ExtendedShader для формата POSITION_TEX_COLOR под активным паком.
-     * Fallback — ванильный position_tex_color (без пака он и так корректен).
+     * ExtendedShader for the POSITION_TEX_COLOR format under the active pack.
+     * Fallback - vanilla position_tex_color (correct anyway without a pack).
      */
     public static ShaderInstance getTexColorShader(boolean shadowPass) {
         if (!reflectionInitialized) {
@@ -469,7 +465,7 @@ public final class IrisExtendedShaderAccess {
      * the cascaded shadow map (which BSL then samples from in the main pass -
      * that's the "missing pieces / broken textures, depends on camera angle"
      * symptom, since the shadow frustum follows the camera).
-     * SHADOW_ENTITIES_CUTOUT is ENTITY-format → safe.
+     * SHADOW_ENTITIES_CUTOUT is ENTITY-format -> safe.
      * <p>
      * Main pass: BLOCK_ENTITY is ENTITY-format, BLOCK is TERRAIN-format -
      * again prefer the ENTITY-formatted variant.

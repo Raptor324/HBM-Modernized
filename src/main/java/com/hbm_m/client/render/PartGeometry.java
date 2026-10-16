@@ -1,5 +1,13 @@
 package com.hbm_m.client.render;
 
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
@@ -16,25 +24,14 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 
-//? if forge {
-import net.minecraftforge.client.model.data.ModelData;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.client.model.data.ModelData;
-*///?}
-
 
 /**
- * Один проход {@link BakedModel#getQuads} для multipart-части: общий список квадов (Iris / putBulkData)
- * и построение {@link com.hbm_m.client.render.SingleMeshVboRenderer.VboData} из тех же квадов.
+ * One {@link BakedModel#getQuads} pass for a multipart part: the shared quad list
+ * (Iris / putBulkData) and construction of
+ * {@link com.hbm_m.client.render.SingleMeshVboRenderer.VboData} from those same quads.
  */
 
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
 public record PartGeometry(List<BakedQuad> solidQuads) {
 
     public static final long BAKE_SEED = 42L;
@@ -50,13 +47,13 @@ public record PartGeometry(List<BakedQuad> solidQuads) {
     }
 
     /**
-     * Собирает solid-квады; при отсутствии геометрии возвращает {@link #EMPTY}.
+     * Collects solid quads; returns {@link #EMPTY} when there is no geometry.
      */
     public static PartGeometry compile(BakedModel modelPart, String partName) {
         if (modelPart == null) {
             return EMPTY;
         }
-        // Разворачиваем FRAPI-обёртки (Continuity, Emissive и т.д.) если они есть на данной части
+        // Unwrap FRAPI wrappers (Continuity, Emissive, etc.) if present on this part
         modelPart = AbstractPartBasedRenderer.unwrapFabricForwardingModels(modelPart);
         List<BakedQuad> quads = collectSolidQuads(modelPart, partName);
         if (quads.isEmpty()) {
@@ -68,7 +65,7 @@ public record PartGeometry(List<BakedQuad> solidQuads) {
     }
 
     /**
-     * Детерминированный обход граней (тот же RNG/seed на каждый вызов getQuads).
+     * Deterministic face iteration (same RNG/seed on every getQuads call).
      */
     public static List<BakedQuad> collectSolidQuads(BakedModel modelPart, String partName) {
         if (modelPart == null) {
@@ -78,34 +75,27 @@ public record PartGeometry(List<BakedQuad> solidQuads) {
         RandomSource random = RandomSource.create(BAKE_SEED);
 
         random.setSeed(BAKE_SEED);
-        //? if forge || neoforge {
-        quads.addAll(modelPart.getQuads(null, null, random, ModelData.EMPTY, RenderType.solid()));
-        //?}
-        //? if fabric {
-        /*quads.addAll(modelPart.getQuads(null, null, random));
-        *///?}
+        quads.addAll(com.hbm_m.platform.RenderHooks.getModelQuads(modelPart, null, null, random, RenderType.solid()));
 
         for (Direction direction : Direction.values()) {
             random.setSeed(BAKE_SEED);
-            //? if forge || neoforge {
-            quads.addAll(modelPart.getQuads(null, direction, random, ModelData.EMPTY, RenderType.solid()));
-            //?}
+            quads.addAll(com.hbm_m.platform.RenderHooks.getModelQuads(modelPart, null, direction, random, RenderType.solid()));
         }
 
         return quads.isEmpty() ? List.of() : Collections.unmodifiableList(quads);
     }
 
     /**
-     * VBO из уже собранных квадов (без повторного getQuads).
-     * {@code bone_id} в вершинах = 0 (статика / кольцо).
+     * VBO built from the already-collected quads (no repeated getQuads).
+     * {@code bone_id} in vertices = 0 (static / ring).
      */
     public SingleMeshVboRenderer.VboData toVboData(String partName) {
         return buildVboDataFromQuads(solidQuads, partName, 0);
     }
 
     /**
-     * @param perVertexBoneId индекс кости для instanced GPU skinning (0=base, 1=lower arm, …);
-     *                        см. {@code MachineAdvancedAssemblerRenderer} и {@code block_lit.vsh}.
+     * @param perVertexBoneId bone index for instanced GPU skinning (0=base, 1=lower arm, ...);
+     *                        see {@code MachineAdvancedAssemblerRenderer} and {@code block_lit.vsh}.
      */
     public SingleMeshVboRenderer.VboData toVboData(String partName, int perVertexBoneId) {
         return buildVboDataFromQuads(solidQuads, partName, perVertexBoneId);
@@ -163,7 +153,7 @@ public record PartGeometry(List<BakedQuad> solidQuads) {
                     float ny = ((byte) ((normalPacked >> 8) & 0xFF)) / 127.0f;
                     float nz = ((byte) ((normalPacked >> 16) & 0xFF)) / 127.0f;
 
-                    // ОПТИМИЗАЦИЯ: Math.sqrt вызывается только если вектор нормали денормализован
+                    // Optimization: Math.sqrt only runs when the normal vector is denormalized
                     float lenSq = nx * nx + ny * ny + nz * nz;
                     if (lenSq > 1e-6f && Math.abs(lenSq - 1.0f) > 1e-3f) {
                         float invLen = (float) (1.0 / Math.sqrt(lenSq));

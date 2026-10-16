@@ -1,0 +1,168 @@
+{
+	"textures": {
+		"particle": "hbm_m:block/machine/igen"
+	},
+	"loader": "forge:composite",
+	"children": {
+		"igen_model": {
+			"loader": "forge:obj",
+			"model": "hbm_m:models/block/machines/igen.obj",
+			"flip_v": true,
+			"render_type": "minecraft:cutout",
+			"textures": {
+				"default": "hbm_m:block/machine/igen"
+			}
+		}
+	},
+	"transform": {
+		"translation": [
+			0.5,
+			0,
+			0.5
+		],
+		"rotation": [
+			0,
+			0,
+			0
+		],
+		"scale": 1.0
+	},
+	"display": {
+		"thirdperson_righthand": {
+			"rotation": [
+				75,
+				45,
+				0
+			],
+			"translation": [
+				0.354,
+				1.9,
+				-0.874
+			],
+			"scale": [
+				0.0625,
+				0.0625,
+				0.0625
+			]
+		},
+		"thirdperson_lefthand": {
+			"rotation": [
+				75,
+				45,
+				0
+			],
+			"translation": [
+				0.354,
+				1.9,
+				-0.874
+			],
+			"scale": [
+				0.0625,
+				0.0625,
+				0.0625
+			]
+		},
+		"firstperson_righthand": {
+			"rotation": [
+				0,
+				45,
+				0
+			],
+			"translation": [
+				0.377,
+				-1.067,
+				0.377
+			],
+			"scale": [
+				0.0667,
+				0.0667,
+				0.0667
+			]
+		},
+		"firstperson_lefthand": {
+			"rotation": [
+				0,
+				225,
+				0
+			],
+			"translation": [
+				-0.377,
+				-1.067,
+				-0.377
+			],
+			"scale": [
+				0.0667,
+				0.0667,
+				0.0667
+			]
+		},
+		"gui": {
+			"rotation": [
+				30,
+				225,
+				0
+			],
+			"translation": [
+				-0.589,
+				-1.149,
+				-1.344
+			],
+			"scale": [
+				0.1042,
+				0.1042,
+				0.1042
+			]
+		},
+		"ground": {
+			"rotation": [
+				0,
+				0,
+				0
+			],
+			"translation": [
+				0.0,
+				2.333,
+				0.333
+			],
+			"scale": [
+				0.0417,
+				0.0417,
+				0.0417
+			]
+		},
+		"fixed": {
+			"rotation": [
+				0,
+				180,
+				0
+			],
+			"translation": [
+				0.0,
+				-1.333,
+				-0.667
+			],
+			"scale": [
+				0.0833,
+				0.0833,
+				0.0833
+			]
+		},
+		"head": {
+			"rotation": [
+				0,
+				0,
+				0
+			],
+			"translation": [
+				0,
+				0,
+				0
+			],
+			"scale": [
+				1,
+				1,
+				1
+			]
+		}
+	}
+}

@@ -119,11 +119,7 @@ public class SilexRecipe extends PlatformRecipe {
 
     public static class Serializer extends PlatformRecipeSerializer<SilexRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-        //? if fabric && < 1.21.1 {
-        /*public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "silex");
-        *///?} else {
         public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "silex");
-        //?}
 
         @Override
         public SilexRecipe readJson(ResourceLocation recipeId, JsonObject json) {

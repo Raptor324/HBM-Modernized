@@ -2,7 +2,6 @@ package com.hbm_m.block.machines;
 
 import java.util.Map;
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
 //?}
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;

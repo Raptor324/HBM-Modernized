@@ -9,6 +9,13 @@ import net.minecraft.client.particle.ParticleRenderType;
 import net.minecraft.client.particle.SpriteSet;
 import net.minecraft.client.particle.TextureSheetParticle;
 import net.minecraft.core.particles.SimpleParticleType;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * 1:1 port of {@code ParticleDigammaSmoke} - the dark red pall the digamma spear drags along
@@ -17,6 +24,7 @@ import net.minecraft.core.particles.SimpleParticleType;
  * <p>A big, slow, plain quad on {@code particle_base}: scale 5, no gravity, no collision, a 0.99
  * drag on all three axes, and an alpha that walks linearly to zero over a 100-140 tick life.</p>
  */
+@OnlyIn(Dist.CLIENT)
 public class DigammaSmokeParticle extends TextureSheetParticle {
 
     private static final double DRAG = 0.99D;

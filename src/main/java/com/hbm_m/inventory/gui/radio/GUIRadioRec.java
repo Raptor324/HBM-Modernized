@@ -12,8 +12,16 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /** Port of {@code GUIRadioRec} (1.7.10 Original). Plain vanilla-widget config screen (no container). */
+@OnlyIn(Dist.CLIENT)
 public class GUIRadioRec extends Screen {
 
     public static final int MAX_CHANNEL_LENGTH = 15;

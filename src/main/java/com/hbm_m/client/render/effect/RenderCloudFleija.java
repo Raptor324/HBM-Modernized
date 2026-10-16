@@ -11,7 +11,7 @@ import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 /**
- * Порт {@code com.hbm.render.entity.effect.RenderCloudFleija} — сфера без текстуры, additive blend.
+ * Port of {@code com.hbm.render.entity.effect.RenderCloudFleija} - textureless sphere with additive blending.
  */
 public class RenderCloudFleija extends EntityRenderer<EntityCloudFleija> {
 
@@ -31,7 +31,7 @@ public class RenderCloudFleija extends EntityRenderer<EntityCloudFleija> {
 
         poseStack.pushPose();
 
-        // Внутренняя сфера (0, 1, 1)
+        // Inner sphere (0, 1, 1)
         poseStack.pushPose();
         double scale = ageScale * 1.2;
         if (scale > 1.0) {
@@ -42,7 +42,7 @@ public class RenderCloudFleija extends EntityRenderer<EntityCloudFleija> {
         FleijaSphereMesh.renderSphere(poseStack, innerConsumer, 0.0F, 1.0F, 1.0F, 1.0F);
         poseStack.popPose();
 
-        // Внешние слои (0, 0.125, 0.125), additive
+        // Outer layers (0, 0.125, 0.125), additive
         poseStack.pushPose();
         scale = ageScale * 1.2;
         if (scale > 1.0) {
@@ -56,7 +56,7 @@ public class RenderCloudFleija extends EntityRenderer<EntityCloudFleija> {
         }
         poseStack.popPose();
 
-        // Ударная волна
+        // Shockwave
         poseStack.pushPose();
         float shockwave = (float) (5.0 * baseScale);
         poseStack.scale(shockwave, shockwave, shockwave);

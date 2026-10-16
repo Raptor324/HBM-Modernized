@@ -24,6 +24,13 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * GUI для Chemical Factory — порт 1.7.10 {@code GUIMachineChemicalFactory}.
@@ -35,6 +42,7 @@ import org.jetbrains.annotations.Nullable;
  * ghost-предметы входов; колонки жидкостных баков по 3 входных + 3 выходных на линию,
  * справа — шкала энергии и баки воды/спент-стима.</p>
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineChemicalFactory extends AbstractContainerScreen<MachineChemicalFactoryMenu> {
 
     private static final int LANE_COUNT = 4;

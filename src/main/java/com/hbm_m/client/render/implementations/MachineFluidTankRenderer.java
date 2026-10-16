@@ -11,6 +11,7 @@ import com.hbm_m.platform.RenderHooks;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.machine.MachineRenderApi;
 import com.hbm_m.client.render.machine.MachineRenderers;
+import com.hbm_m.client.render.machine.MachineRenderHook;
 import com.hbm_m.client.render.util.DiamondPronter;
 import com.hbm_m.inventory.fluid.FluidType;
 import com.hbm_m.inventory.fluid.ModFluids;
@@ -35,32 +36,35 @@ import net.minecraft.world.level.material.Fluids;
 
 
 /**
- * Fluid Tank / BAT9000 на фабрике {@link MachineRenderers}: Frame — статика;
- * Tank — динамическая часть с ретекстурой под жидкость (VBO кешируется по
- * текстуре в MeshRenderCache: один VBO на уникальную жидкость); NFPA-алмазы —
- * immediate-хук. Вся геометрия в BER/VBO, chunk mesh пуст
- * ({@code ConfiguredMultipartBakedModel} world quads пусты).
+ * Fluid Tank / BAT9000 on the {@link MachineRenderers} factory: Frame is static;
+ * Tank is a dynamic part retextured per fluid (the VBO is cached per texture in
+ * MeshRenderCache: one VBO per unique fluid); NFPA diamonds are an immediate hook.
+ * All geometry lives in the BER/VBO, the chunk mesh is empty
+ * ({@code ConfiguredMultipartBakedModel} world quads are empty).
  */
 public final class MachineFluidTankRenderer {
 
     private static final RandomSource RANDOM = RandomSource.create(42);
 
     public static void register() {
-        buildSpec("fluidtank", ModBlockEntities.FLUID_TANK_BE.get(), MachineFluidTankBlockEntity.class);
-        buildSpec("bat9000", ModBlockEntities.BAT9000_BE.get(), com.hbm_m.blockentity.machines.Bat9000BlockEntity.class);
+        buildSpec("fluidtank", ModBlockEntities.FLUID_TANK_BE.get(), MachineFluidTankBlockEntity.class,
+                MachineFluidTankRenderer::renderDiamonds);
+        buildSpec("bat9000", ModBlockEntities.BAT9000_BE.get(), com.hbm_m.blockentity.machines.Bat9000BlockEntity.class,
+                MachineFluidTankRenderer::renderDiamondsBat9000);
     }
 
     private MachineFluidTankRenderer() {}
 
-    /** Одна спека на BE-тип; Bat9000 наследует MachineFluidTankBlockEntity — логика общая. */
+    /** One spec per BE type; Bat9000 extends MachineFluidTankBlockEntity -- the logic is shared. */
     private static <T extends MachineFluidTankBlockEntity> void buildSpec(
-            String id, net.minecraft.world.level.block.entity.BlockEntityType<T> type, Class<T> cls) {
+            String id, net.minecraft.world.level.block.entity.BlockEntityType<T> type, Class<T> cls,
+            MachineRenderHook<T> diamonds) {
         MachineRenderers.machine(id, type, cls)
             .part("Frame")
             .dynamicPart("Tank", MachineFluidTankRenderer::tankQuads,
                     be -> String.valueOf(be.getTankTextureLocation()))
             .blockTransform(MachineFluidTankRenderer::applyBlockTransform)
-            .hook(MachineFluidTankRenderer::renderDiamonds)
+            .hook(diamonds)
             .facing(MachineFluidTankRenderer::facing)
             .chunkRenderTypes(net.minecraft.client.renderer.RenderType.cutoutMipped())
             .itemParts("Frame", "Tank")
@@ -72,15 +76,15 @@ public final class MachineFluidTankRenderer {
     }
 
     /**
-     * Легаси: setupBlockTransform (T(0.5,0,0.5)+rotateY) затем T(-0.5,0,-0.5)
-     * вокруг всех VBO-частей (меши запечены в OBJ-координатах 0..1).
+     * Legacy: setupBlockTransform (T(0.5,0,0.5)+rotateY) then T(-0.5,0,-0.5)
+     * around all VBO parts (the meshes are baked in OBJ coordinates 0..1).
      */
     private static void applyBlockTransform(MachineFluidTankBlockEntity be, LegacyAnimator animator) {
         animator.setupBlockTransform(facing(be));
         animator.translate(-0.5f, 0.0f, -0.5f);
     }
 
-    // ── Tank: ретекстурированные квады ─────────────────────────────────
+    // -- Tank: retextured quads -----------------------------------------
 
     private static List<BakedQuad> tankQuads(MachineFluidTankBlockEntity be) {
         BakedModel raw = Minecraft.getInstance().getBlockRenderer().getBlockModel(be.getBlockState());
@@ -100,11 +104,13 @@ public final class MachineFluidTankRenderer {
     }
 
     /**
-     * Квады Tank с подменой спрайта на {@code textureLoc}. Нормализация UV: UV
-     * дефолтного спрайта → [0,1] → новый спрайт. VBO кешируется фабрикой по ключу
-     * texture path — один VBO на уникальную текстуру жидкости.
+     * Tank quads with the sprite swapped to {@code textureLoc}. UV normalization: UVs of the
+     * default sprite -> [0,1] -> the new sprite. The VBO is cached by the factory keyed on the
+     * texture path -- one VBO per unique fluid texture.
+     *
+     * <p>Public: reused by the item renderer {@code FluidTankItemRenderer}.</p>
      */
-    private static List<BakedQuad> buildRetexturedTankQuads(BakedModel tankPart, ResourceLocation textureLoc) {
+    public static List<BakedQuad> buildRetexturedTankQuads(BakedModel tankPart, ResourceLocation textureLoc) {
         List<BakedQuad> original = collectAllQuads(tankPart);
         if (original.isEmpty()) return List.of();
 
@@ -119,8 +125,8 @@ public final class MachineFluidTankRenderer {
         return result;
     }
 
-    /** Сбор всех квадов части (все стороны + null side, neutral RandomSource). */
-    private static List<BakedQuad> collectAllQuads(BakedModel part) {
+    /** Collects all quads of a part (all sides + null side, neutral RandomSource). */
+    public static List<BakedQuad> collectAllQuads(BakedModel part) {
         List<BakedQuad> quads = new ArrayList<>();
         for (Direction dir : Direction.values()) {
             quads.addAll(RenderHooks.getModelQuads(part, null, dir, RANDOM, null));
@@ -130,7 +136,7 @@ public final class MachineFluidTankRenderer {
     }
 
 
-    /** Перенос UV квада со старого спрайта на новый (формат BLOCK: 8 int на вершину). */
+    /** Remaps a quad's UVs from the old sprite to the new one (BLOCK format: 8 ints per vertex). */
     private static BakedQuad retextureAndFixUV(BakedQuad original, TextureAtlasSprite newSprite) {
         int[] oldData = original.getVertices();
         int[] newData = new int[oldData.length];
@@ -166,18 +172,23 @@ public final class MachineFluidTankRenderer {
         return new BakedQuad(newData, original.getTintIndex(), original.getDirection(), newSprite, original.isShade());
     }
 
-    // ── NFPA-алмазы (hook) ─────────────────────────────────────────────
+    // -- NFPA diamonds (hook) -------------------------------------------
 
     /**
-     * Алмазы опасности на двух боковых гранях бака (1.7.10 RenderFluidTank):
-     * translate(-0.25, 0.5, -1.501)/(0.25, 0.5, 1.501), rotateY ±90°, scale(1, 0.375, 0.375).
-     * Стек хука = setupTransform·T(-0.5); возвращаемся в модельный фрейм T(0.5).
+     * Frame compensation: the baked frame mesh is offset by -3 blocks along the model's X axis
+     * relative to the frame in which 1.7.10 set the legacy diamond offsets (in the original the
+     * TE sat at a different point of the structure). Tuned by hand on 2026-09-22, verified in game.
+     */
+    private static final float DIAMOND_FRAME_COMP_X = -3.0F;
+
+    /**
+     * Hazard diamonds on the two side faces of the tank (1.7.10 RenderFluidTank):
+     * translate(-0.25, 0.5, -1.501)/(0.25, 0.5, 1.501), rotateY +-90, scale(1, 0.375, 0.375).
+     * The hook stack = setupTransform*T(-0.5); we return to the model frame with T(0.5).
      * <p>
-     * ВАЖНО: в 1.7.10 оффсеты заданы в сыром OBJ-фрейме, а наш пайплайн запекает части
-     * С root-трансформом из fluid_tank.json (Forge ObjModel компоузит getRootTransform()
-     * всегда, даже с identity ModelState): baked = T(-0.5,0,-2.5)·RotY(90)·raw.
-     * Поэтому перед легаси-оффсетами вставляются те же T+R — иначе алмазы оказываются
-     * не на тех гранях (сырой Z-фрейм ≠ запечённый, корпус в хуке длинная коробка по Z').
+     * The model's root transform B = T(-0.5,0,-2.5)*RotY(90) is repeated in the hook
+     * (baked into the part quads, see the obj-part-loader-root-transform trap),
+     * followed by the frame compensation {@link #DIAMOND_FRAME_COMP_X}.
      */
     private static void renderDiamonds(MachineFluidTankBlockEntity be, float partialTick,
                                        PoseStack poseStack, MultiBufferSource buffer,
@@ -194,13 +205,10 @@ public final class MachineFluidTankRenderer {
 
         RenderSystem.disableCull();
 
-        // root-трансформ модели B = T(-0.5,0,-2.5)·RotY(90), затем легаси-оффсеты L:
-        // итого B·L — те же координаты, что в 1.7.10, но в запечённом фрейме модели.
-        // Компенсация T(0.5,0,0.5) из старого хука НЕ нужна: она должна была
-        // выравнивать сырой фрейм, а B·L уже даёт запечённые координаты напрямую.
         poseStack.pushPose();
         poseStack.translate(-0.5F, 0.0F, -2.5F);
         poseStack.mulPose(Axis.YP.rotationDegrees(90.0F));
+        poseStack.translate(DIAMOND_FRAME_COMP_X, 0.0F, 0.0F);
         poseStack.translate(-0.25F, 0.5F, -1.501F);
         poseStack.mulPose(Axis.YP.rotationDegrees(90.0F));
         poseStack.scale(1.0F, 0.375F, 0.375F);
@@ -210,6 +218,7 @@ public final class MachineFluidTankRenderer {
         poseStack.pushPose();
         poseStack.translate(-0.5F, 0.0F, -2.5F);
         poseStack.mulPose(Axis.YP.rotationDegrees(90.0F));
+        poseStack.translate(DIAMOND_FRAME_COMP_X, 0.0F, 0.0F);
         poseStack.translate(0.25F, 0.5F, 1.501F);
         poseStack.mulPose(Axis.YN.rotationDegrees(90.0F));
         poseStack.scale(1.0F, 0.375F, 0.375F);
@@ -217,5 +226,85 @@ public final class MachineFluidTankRenderer {
         poseStack.popPose();
 
         RenderSystem.enableCull();
+    }
+
+    /**
+     * BAT9000 NFPA diamonds (1.7.10 RenderBAT9000): the mesh is a vertical cylinder
+     * (radius 2.625, height 5, chunk mesh without facing), 4 diamonds around the circle:
+     * T(center)*rotY(45), then 4x[ T(2.5,2.25,0)*scale(1,0.75,0.75)*pront, rotY(90) ].
+     * The spec's facing rotation is unwound back to the block-angle frame --
+     * in 1.7.10 BAT9000 had no facing rotation at all.
+     * <p>
+     * The cylinder center is measured from the baked model's actual quads
+     * (raw center = 0, with the baked root transform T(0.5,0,0.5) = 0.5) --
+     * the hook stays in sync with the mesh regardless of whether the transform was applied.
+     */
+    private static void renderDiamondsBat9000(MachineFluidTankBlockEntity be, float partialTick,
+                                              PoseStack poseStack, MultiBufferSource buffer,
+                                              int packedLight, int packedOverlay, MachineRenderApi api) {
+        Fluid fluid = be.getFluidTank().getTankType();
+        if (fluid == null || fluid == Fluids.EMPTY || fluid == ModFluids.NONE.getSource()) {
+            return;
+        }
+
+        FluidType type = FluidType.forFluid(fluid);
+
+        int light = LevelRenderer.getLightColor(be.getLevel(), be.getBlockPos().above(2));
+
+        RenderSystem.disableCull();
+
+        // Center of the baked mesh in the block-angle frame (measured once)
+        float[] center = bat9000Center;
+        if (center == null) {
+            center = measureBat9000Center(be);
+            bat9000Center = center;
+        }
+
+        poseStack.pushPose();
+        // Unwind the spec's blockTransform (T(0.5)*R(90+f)*T(-0.5)) back to the block-angle frame:
+        // the inverse pass T(0.5)*R(-(90+f))*T(-0.5).
+        float facingDeg = 90.0F + com.hbm_m.util.MultipartFacingTransforms
+                .legacyFacingRotationYDegrees(facing(be));
+        poseStack.translate(0.5F, 0.0F, 0.5F);
+        poseStack.mulPose(Axis.YP.rotationDegrees(-facingDeg));
+        poseStack.translate(-0.5F, 0.0F, -0.5F);
+        // Then 1:1 RenderBAT9000 (T(x+0.5,y,z+0.5) and rotY(45)).
+        poseStack.translate(center[0], 0.0F, center[1]);
+        poseStack.mulPose(Axis.YP.rotationDegrees(45.0F));
+        for (int j = 0; j < 4; j++) {
+            poseStack.pushPose();
+            poseStack.translate(2.5F, 2.25F, 0.0F);
+            poseStack.scale(1.0F, 0.75F, 0.75F);
+            DiamondPronter.pront(poseStack, buffer, type.poison, type.flammability, type.reactivity, type.symbol, light, packedOverlay);
+            poseStack.popPose();
+            poseStack.mulPose(Axis.YP.rotationDegrees(90.0F));
+        }
+        poseStack.popPose();
+
+        RenderSystem.enableCull();
+    }
+
+    private static volatile float[] bat9000Center;
+
+    /** XZ center of the baked BAT9000 mesh in the block-angle frame (fallback: block center). */
+    private static float[] measureBat9000Center(MachineFluidTankBlockEntity be) {
+        BakedModel model = Minecraft.getInstance().getBlockRenderer().getBlockModel(be.getBlockState());
+        List<BakedQuad> quads = collectAllQuads(model);
+        float minX = Float.POSITIVE_INFINITY, maxX = Float.NEGATIVE_INFINITY;
+        float minZ = Float.POSITIVE_INFINITY, maxZ = Float.NEGATIVE_INFINITY;
+        for (BakedQuad quad : quads) {
+            int[] data = quad.getVertices();
+            int vertexSize = data.length / 4;
+            for (int i = 0; i < 4; i++) {
+                float x = Float.intBitsToFloat(data[i * vertexSize]);
+                float z = Float.intBitsToFloat(data[i * vertexSize + 2]);
+                minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+                minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
+            }
+        }
+        if (minX <= maxX) {
+            return new float[]{(minX + maxX) * 0.5F, (minZ + maxZ) * 0.5F};
+        }
+        return new float[]{0.5F, 0.5F};
     }
 }

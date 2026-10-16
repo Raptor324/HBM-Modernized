@@ -10,15 +10,24 @@ import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.resources.ResourceLocation;
 import com.hbm_m.lib.RefStrings;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
+@OnlyIn(Dist.CLIENT)
 public class MachineBatterySocketModelLoader extends AbstractObjPartModelLoader<MachineBatterySocketBakedModel> {
 
-    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "battery_socket");
+    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "battery_socket_loader");
 
 
     @Override
     protected Set<String> getPartNames(JsonObject jsonObject) {
-        return Set.of("Socket", "Battery");
+        // Capacitor печётся всегда: вставленный конденсаторный пак рендерится этой частью.
+        return Set.of("Socket", "Battery", "Capacitor");
     }
 
     @Override

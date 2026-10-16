@@ -1,48 +1,168 @@
 {
-  "textures": {
-    "particle": "hbm_m:block/machine/mixer"
-  },
-  "loader": "forge:composite",
-  "children": {
-    "mixer_model": {
-      "loader": "forge:obj",
-      "model": "hbm_m:models/block/machines/mixer.obj",
-      "flip_v": true,
-      "render_type": "minecraft:solid",
-      "textures": {
-        "default": "hbm_m:block/machine/mixer"
-      }
-    }
-  },
-  "transform": {
-    "translation": [0.5, 0, 0.5],
-    "rotation": [0, 0, 0],
-    "scale": 1.0
-  },
-  "display": {
-    "gui": {
-      "rotation": [30, 225, 0],
-      "translation": [0, -3.75, 0],
-      "scale": [0.18, 0.18, 0.18]
-    },
-    "fixed": {
-      "rotation": [0, 180, 0],
-      "translation": [0, 0, 0],
-      "scale": [0.3, 0.3, 0.3]
-    },
-    "ground": {
-      "translation": [0, 3, 0],
-      "scale": [0.18, 0.18, 0.18]
-    },
-    "thirdperson_righthand": {
-      "rotation": [75, 45, 0],
-      "translation": [0, 2.5, 0],
-      "scale": [0.2, 0.2, 0.2]
-    },
-    "firstperson_righthand": {
-      "rotation": [0, 45, 0],
-      "translation": [0.75, 1, 0],
-      "scale": [0.2, 0.2, 0.2]
-    }
-  }
+	"textures": {
+		"particle": "hbm_m:block/machine/mixer"
+	},
+	"loader": "forge:composite",
+	"children": {
+		"mixer_model": {
+			"loader": "forge:obj",
+			"model": "hbm_m:models/block/machines/mixer.obj",
+			"flip_v": true,
+			"render_type": "minecraft:solid",
+			"textures": {
+				"default": "hbm_m:block/machine/mixer"
+			}
+		}
+	},
+	"transform": {
+		"translation": [
+			0.5,
+			0,
+			0.5
+		],
+		"rotation": [
+			0,
+			0,
+			0
+		],
+		"scale": 1.0
+	},
+	"display": {
+		"thirdperson_righthand": {
+			"rotation": [
+				75,
+				45,
+				0
+			],
+			"translation": [
+				0.0,
+				1.982,
+				-1.932
+			],
+			"scale": [
+				0.125,
+				0.125,
+				0.125
+			]
+		},
+		"thirdperson_lefthand": {
+			"rotation": [
+				75,
+				45,
+				0
+			],
+			"translation": [
+				0.0,
+				1.982,
+				-1.932
+			],
+			"scale": [
+				0.125,
+				0.125,
+				0.125
+			]
+		},
+		"firstperson_righthand": {
+			"rotation": [
+				0,
+				45,
+				0
+			],
+			"translation": [
+				0.0,
+				-2.133,
+				0.0
+			],
+			"scale": [
+				0.1333,
+				0.1333,
+				0.1333
+			]
+		},
+		"firstperson_lefthand": {
+			"rotation": [
+				0,
+				225,
+				0
+			],
+			"translation": [
+				0.0,
+				-2.133,
+				0.0
+			],
+			"scale": [
+				0.1333,
+				0.1333,
+				0.1333
+			]
+		},
+		"gui": {
+			"rotation": [
+				30,
+				225,
+				0
+			],
+			"translation": [
+				0.0,
+				-2.887,
+				-1.667
+			],
+			"scale": [
+				0.2083,
+				0.2083,
+				0.2083
+			]
+		},
+		"ground": {
+			"rotation": [
+				0,
+				0,
+				0
+			],
+			"translation": [
+				0.0,
+				1.667,
+				0.0
+			],
+			"scale": [
+				0.0833,
+				0.0833,
+				0.0833
+			]
+		},
+		"fixed": {
+			"rotation": [
+				0,
+				180,
+				0
+			],
+			"translation": [
+				0.0,
+				-2.667,
+				0.0
+			],
+			"scale": [
+				0.1667,
+				0.1667,
+				0.1667
+			]
+		},
+		"head": {
+			"rotation": [
+				0,
+				0,
+				0
+			],
+			"translation": [
+				0,
+				0,
+				0
+			],
+			"scale": [
+				1,
+				1,
+				1
+			]
+		}
+	}
 }

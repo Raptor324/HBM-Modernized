@@ -108,6 +108,13 @@ public class BlockExplosionDefense {
             return 250.0F;
         }
 
+        // === УСИЛЕННЫЙ БЕТОН - 400 ===
+        // isSpecialConcreteBlock was declared and never called, so reinforced concrete fell through
+        // to the generic path and got its vanilla blast resistance instead of 400.
+        if (isSpecialConcreteBlock(block)) {
+            return 400.0F;
+        }
+
         // === МЕТЕОРИТ - 500 ===
         if (isMeteorBlock(block)) {
             return 500.0F;
@@ -164,48 +171,48 @@ public class BlockExplosionDefense {
         return 100.0F;
     }
 
-    //? if forge {
-    @net.minecraftforge.fml.common.Mod.EventBusSubscriber(
-            modid = "hbm_m",
-            bus = net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus.FORGE,
-            value = net.minecraftforge.api.distmarker.Dist.CLIENT
-    )
-    public static final class ForgeClientHooks {
-        private ForgeClientHooks() {}
+    /**
+     * Единая регистрация тултипа взрывостойкости через Architectury ClientTooltipEvent.ITEM
+     * (вместо forge-only @SubscribeEvent-хука и мёртвого NeoForge-близнеца, который никто
+     * не регистрировал). Вызывается из ClientSetup.initClient(). Сигнатура колбэка различается
+     * между версиями Architectury (на 1.21.1 добавился TooltipContext) — гейтится только лямбда.
+     */
+    public static void initClientTooltip() {
+        //? if < 1.21.1 {
+        dev.architectury.event.events.client.ClientTooltipEvent.ITEM.register(
+                (stack, lines, flag) -> appendExplosionDefenseTooltip(stack, lines));
+        //?} else {
+        /*dev.architectury.event.events.client.ClientTooltipEvent.ITEM.register(
+                (stack, lines, context, flag) -> appendExplosionDefenseTooltip(stack, lines));
+        *///?}
+    }
 
-        @net.minecraftforge.eventbus.api.SubscribeEvent
-        public static void onItemTooltip(net.minecraftforge.event.entity.player.ItemTooltipEvent event) {
-            ItemStack stack = event.getItemStack();
+    private static void appendExplosionDefenseTooltip(ItemStack stack, java.util.List<Component> lines) {
+        // Проверяем, это ли BlockItem (блок в виде предмета)
+        if (!(stack.getItem() instanceof net.minecraft.world.item.BlockItem blockItem)) {
+            return;
+        }
 
-            // Проверяем, это ли BlockItem (блок в виде предмета)
-            if (!(stack.getItem() instanceof net.minecraft.world.item.BlockItem blockItem)) {
-                return;
-            }
+        // Проверяем, это ли один из наших модульных блоков
+        if (!isModularBlock(blockItem.getBlock())) {
+            return;
+        }
 
-            // Получаем блок из предмета
-            var block = blockItem.getBlock();
-
-            // Проверяем, это ли один из наших модульных блоков
-            if (isModularBlock(block)) {
-                // Определяем коэффициент защиты по типу блока
-                float defenseValue = getDefenseValueForBlock(block);
-
-                // Добавляем локализованную строку в тултип
-                if (defenseValue >= 10_000.0F) {
-                    event.getToolTip().add(Component.translatable("tooltip.hbm_m.explosion_defense.unbreakable"));
-                } else if (defenseValue > 0) {
-                    event.getToolTip().add(Component.translatable("tooltip.hbm_m.explosion_defense.value", String.format("%.0f", defenseValue)));
-                }
-            }
+        // Определяем коэффициент защиты по типу блока и добавляем локализованную строку
+        float defenseValue = getDefenseValueForBlock(blockItem.getBlock());
+        if (defenseValue >= 10_000.0F) {
+            lines.add(Component.translatable("tooltip.hbm_m.explosion_defense.unbreakable"));
+        } else if (defenseValue > 0) {
+            lines.add(Component.translatable("tooltip.hbm_m.explosion_defense.value", String.format("%.0f", defenseValue)));
         }
     }
-    //?}
 
     /**
      *  Проверка: это ли один из наших модульных блоков
      */
     private static boolean isModularBlock(Block block) {
         return isConcreteBlock(block) ||
+                isSpecialConcreteBlock(block) ||
                 isMeteorBlock(block) ||
                 isBrickBlock(block) ||
                 isTileBlock(block) ||
@@ -220,6 +227,7 @@ public class BlockExplosionDefense {
      */
     private static float getDefenseValueForBlock(Block block) {
         if (isConcreteBlock(block)) return 250.0F;
+        if (isSpecialConcreteBlock(block)) return 400.0F;
         if (isMeteorBlock(block)) return 500.0F;
         if (isBrickBlock(block)) return 350.0F;
         if (isTileBlock(block)) return 200.0F;

@@ -9,7 +9,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -99,7 +98,7 @@ public class MachineIndustrialBoilerMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineIndustrialBoilerBlockEntity boiler) {
             return boiler;
         }
-        throw new IllegalStateException("BlockEntity is not an Industrial Boiler");
+        throw new MenuBlockEntityMissingException("BlockEntity is not an Industrial Boiler");
     }
 
     public MachineIndustrialBoilerBlockEntity getBlockEntity() {
@@ -170,6 +169,6 @@ public class MachineIndustrialBoilerMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()), player, ModBlocks.INDUSTRIAL_BOILER.get());
+        return MenuReach.stillValid(player, blockEntity, ModBlocks.INDUSTRIAL_BOILER.get());
     }
 }

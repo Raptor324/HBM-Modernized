@@ -42,7 +42,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * Heatex — порт {@code HeaterHeatex} (1.7.10, BlockDummyable {@code {0,0,1,1,1,1}}):
  * мультиблок 3×3×1, контроллер в центре. Модель — полный 3×3 OBJ с контроллера.
  */
-public class MachineHeatexBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachineHeatexBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.interfaces.ILookOverlay {
 
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
@@ -121,6 +121,19 @@ public class MachineHeatexBlock extends BaseEntityBlock implements IMultiblockCo
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineHeatexBlockEntity(pos, state);
+    }
+
+    /** Порт HeaterHeatex.printHook: запас тепла в TU. */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineHeatexBlockEntity heater)) return;
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal(
+                String.format(java.util.Locale.US, "%,d", heater.getHeatEnergy()) + " TU"));
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     @Nullable

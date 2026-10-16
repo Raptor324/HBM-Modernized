@@ -26,9 +26,16 @@ import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
 import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.model.data.ModelData;
-//?} else if neoforge {
+//?} elif neoforge {
 /*import net.neoforged.neoforge.client.ChunkRenderTypeSet;
 import net.neoforged.neoforge.client.model.data.ModelData;
+*///?}
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 *///?}
 
 /**
@@ -39,6 +46,7 @@ import net.neoforged.neoforge.client.model.data.ModelData;
  * Грань строго по параметру side; side == null при состоянии блока = пусто (квады уже
  * разложены по сторонам), иначе будет двойная отрисовка.
  */
+@OnlyIn(Dist.CLIENT)
 public class BoxCableBakedModel implements BakedModel {
 
     private static final ResourceLocation TEX_STRAIGHT = rl("boxduct_cable_straight");
@@ -391,7 +399,6 @@ public class BoxCableBakedModel implements BakedModel {
         return transforms != null ? transforms : ItemTransforms.NO_TRANSFORMS;
     }
 
-    //? if forge || neoforge {
     @Override
     public ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand, ModelData data) {
         // CUTOUT: текстуры короба с прозрачными полями, 1.7.10 рендерил их с alpha-тестом
@@ -399,5 +406,4 @@ public class BoxCableBakedModel implements BakedModel {
         // (см. face) закрывают вырезы стенками короба.
         return ChunkRenderTypeSet.of(RenderType.cutout());
     }
-    //?}
 }

@@ -91,15 +91,6 @@ public class FluidExhaustBlockEntity extends BaseHbmBlockEntity implements IFlui
     }
     //?}
 
-    //? if fabric {
-    /*@Override
-    public void setLevel(Level level) {
-        super.setLevel(level);
-        if (level instanceof ServerLevel serverLevel) {
-            initNodes(serverLevel);
-        }
-    }
-    *///?}
 
     @Override
     public void setRemoved() {
@@ -114,7 +105,6 @@ public class FluidExhaustBlockEntity extends BaseHbmBlockEntity implements IFlui
         super.setRemoved();
     }
 
-    //? if forge {
     @Override
     public void onChunkUnloaded() {
         if (level instanceof ServerLevel serverLevel) {
@@ -127,7 +117,6 @@ public class FluidExhaustBlockEntity extends BaseHbmBlockEntity implements IFlui
         }
         super.onChunkUnloaded();
     }
-    //?}
 
     private void ensureNode(ServerLevel serverLevel, int index, Fluid fluid) {
         if (nodes[index] == null || nodes[index].isExpired()) {
