@@ -83,7 +83,16 @@ public class DataGenerators {
                             try {
                                 @SuppressWarnings("unchecked")
                                 ResourceKey<DamageType> key = (ResourceKey<DamageType>) field.get(null);
-                                context.register(key, new DamageType(key.location().getPath(), 0.1F));
+                                DamageType value;
+                                if (key.location().getPath().equals("broadcast")) {
+                                    // NEXT data/hbm/damage_type/broadcast.json: exhaustion 0.0,
+                                    // scaling never — broadcast drains no hunger.
+                                    value = new DamageType(key.location().getPath(),
+                                            net.minecraft.world.damagesource.DamageScaling.NEVER, 0.0F);
+                                } else {
+                                    value = new DamageType(key.location().getPath(), 0.1F);
+                                }
+                                context.register(key, value);
                             } catch (IllegalAccessException e) {
                                 throw new RuntimeException("Could not access DamageType key field: " + field.getName(), e);
                             }

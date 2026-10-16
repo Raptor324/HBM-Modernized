@@ -81,6 +81,56 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         registerLockRecipes(writer);
         registerLadderRecipes(writer);
         registerScorchedOreWashing(writer);
+        registerFluidBarrelRecipes(writer);
+    }
+
+    /**
+     * Четыре функциональные бочки, 1:1 с NEXT data/hbm/recipe/barrel_*.json:
+     * паттерн "IPI"/"I I"/"IPI". Соответствия ингредиентов:
+     * steel: plates/steel + ingots/steel; plastic: plate_polymer + plates/aluminum;
+     * tcalloy: ingots/tc_alloy + plates/titanium; antimatter: plates/saturnite + wires_dense/bscco.
+     */
+    private void registerFluidBarrelRecipes(Consumer<FinishedRecipe> writer) {
+        RegistrySupplier<Item> steelIngot = ModMaterialItems.get(ModMaterials.STEEL, MaterialShape.INGOT);
+        // NEXT '#c:plates/steel' разрешается в hbm:plate_steel — материал-системная пластина,
+        // НЕ ModItems.STEEL_PLATE (это стальная кираса "Steel Chestplate").
+        RegistrySupplier<Item> steelPlate = ModMaterialItems.get(ModMaterials.STEEL, MaterialShape.PLATE);
+        RegistrySupplier<Item> polymerPlate = ModMaterialItems.get(ModMaterials.POLYMER, MaterialShape.PLATE);
+        RegistrySupplier<Item> aluminumPlate = ModMaterialItems.get(ModMaterials.ALUMINUM, MaterialShape.PLATE);
+        RegistrySupplier<Item> tcalloyIngot = ModMaterialItems.get(ModMaterials.TCALLOY, MaterialShape.INGOT);
+        RegistrySupplier<Item> titaniumPlate = ModMaterialItems.get(ModMaterials.TITANIUM, MaterialShape.PLATE);
+        RegistrySupplier<Item> saturnitePlate = ModMaterialItems.get(ModMaterials.SATURNITE, MaterialShape.PLATE);
+        RegistrySupplier<Item> bsccoWireDense = ModMaterialItems.get(ModMaterials.BSCCO, MaterialShape.WIRE_DENSE);
+
+        // "IPI", "I I", "IPI" — I = steel plate (материал), P = steel ingot → barrel_steel
+        shapedBarrel(writer, ModBlocks.BARREL_STEEL.get(), steelPlate,
+                steelIngot, "has_steel_plate", "crafting/barrel_steel");
+
+        // I = polymer plate, P = aluminium plate → barrel_plastic
+        shapedBarrel(writer, ModBlocks.BARREL_PLASTIC.get(), polymerPlate, aluminumPlate,
+                "has_polymer_plate", "crafting/barrel_plastic");
+
+        // I = tcalloy ingot, P = titanium plate → barrel_tcalloy
+        shapedBarrel(writer, ModBlocks.BARREL_TCALLOY.get(), tcalloyIngot, titaniumPlate,
+                "has_tcalloy_ingot", "crafting/barrel_tcalloy");
+
+        // I = saturnite plate, P = dense BSCCO wire → barrel_antimatter
+        shapedBarrel(writer, ModBlocks.BARREL_ANTIMATTER.get(), saturnitePlate, bsccoWireDense,
+                "has_saturnite_plate", "crafting/barrel_antimatter");
+    }
+
+    private void shapedBarrel(Consumer<FinishedRecipe> writer, ItemLike result,
+                              @Nullable RegistrySupplier<Item> shell, @Nullable RegistrySupplier<Item> core,
+                              String criterionName, String path) {
+        if (shell == null || !shell.isPresent() || core == null || !core.isPresent()) return;
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, result)
+                .define('I', shell.get())
+                .define('P', core.get())
+                .pattern("IPI")
+                .pattern("I I")
+                .pattern("IPI")
+                .unlockedBy(criterionName, has(shell.get()))
+                .save(writer, recipeId(path));
     }
 
     /**

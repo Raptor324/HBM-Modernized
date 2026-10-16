@@ -119,16 +119,20 @@ public final class ModFluidHazardBootstrap {
         h(Fluids.WATER, 0, 0, 0, FluidHazardSymbol.NONE);
         h(Fluids.FLOWING_WATER, 0, 0, 0, FluidHazardSymbol.NONE);
 
+        // Паритет NEXT fluid_property (у NEXT НЕТ nfpa-данных для ванильных воды/лавы —
+        // ромба на баках они не получают; у Modernized без переопределения так же).
         h(ModFluids.STEAM, 3, 0, 0, FluidHazardSymbol.NONE);
         h(ModFluids.HOTSTEAM, 4, 0, 0, FluidHazardSymbol.NONE);
         h(ModFluids.SUPERHOTSTEAM, 4, 0, 0, FluidHazardSymbol.NONE);
         h(ModFluids.ULTRAHOTSTEAM, 4, 0, 0, FluidHazardSymbol.NONE);
         h(ModFluids.LAVA, 4, 0, 0, FluidHazardSymbol.NOWATER);
-        h(Fluids.LAVA, 4, 0, 0, FluidHazardSymbol.NOWATER);
-        h(Fluids.FLOWING_LAVA, 4, 0, 0, FluidHazardSymbol.NOWATER);
 
         h(ModFluids.DEUTERIUM, 3, 4, 0, FluidHazardSymbol.NONE);
         h(ModFluids.TRITIUM, 3, 4, 0, FluidHazardSymbol.RADIATION);
+        // Паритет NEXT data/hbm/fluid_property/heavywater.json и heavywater_hot.json:
+        // nfpa {health:1, flame:0, react:0}, symbol NONE — обе тяжёлые воды дают ромб.
+        h(ModFluids.HEAVYWATER, 1, 0, 0, FluidHazardSymbol.NONE);
+        h(ModFluids.HEAVYWATER_HOT, 1, 0, 0, FluidHazardSymbol.NONE);
         h(ModFluids.KEROSENE, 1, 2, 0, FluidHazardSymbol.NONE);
         h(ModFluids.GAS, 1, 4, 1, FluidHazardSymbol.NONE);
         h(ModFluids.PEROXIDE, 3, 0, 3, FluidHazardSymbol.OXIDIZER);

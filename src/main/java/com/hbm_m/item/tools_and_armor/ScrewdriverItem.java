@@ -6,6 +6,7 @@ import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.entity.doors.DoorBlockEntity;
+import com.hbm_m.block.machines.pile.BlockGraphiteDrilledBase;
 import com.hbm_m.interfaces.IMultiblockPart;
 import com.hbm_m.lib.RefStrings;
 
@@ -22,6 +23,7 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * Отвертка для настройки дверей и конвертера энергии.
@@ -55,7 +57,16 @@ public class ScrewdriverItem extends Item implements ITooltipProvider {
         if (player == null) return InteractionResult.PASS;
 
         DoorBlockEntity doorEntity = resolveDoorController(level, pos);
-        if (doorEntity == null) return InteractionResult.PASS;
+        if (doorEntity == null) {
+            // NEXT: ItemTooling.useOn dispatches IToolable.onScrew with no sneak gate. The pile
+            // blocks' sneak interactions (detector flux readout / defuser limit, drilled
+            // unshroud) are only reachable from here: vanilla skips the block use hooks
+            // whenever the player sneaks with a non-empty hand.
+            BlockState pileState = level.getBlockState(pos);
+            if (pileState.getBlock() instanceof BlockGraphiteDrilledBase pile)
+                return pile.onScrewForTool(pileState, level, pos, player, context.getClickedFace(), context.getHand());
+            return InteractionResult.PASS;
+        }
 
         if (level.isClientSide) {
             EnvExecutor.runInEnv(Env.CLIENT, () -> () ->
@@ -67,6 +78,11 @@ public class ScrewdriverItem extends Item implements ITooltipProvider {
 
     private static DoorBlockEntity resolveDoorController(Level level, BlockPos clickedPos) {
         BlockEntity be = level.getBlockEntity(clickedPos);
+        // Blast door: GUI скинов нет (NEXT BlastDoor.java:99-105) — отвёртка тогглит дверь
+        // как пустая рука; не перехватываем клик (паритет BlastDoorBlock/UniversalMachinePartBlock)
+        if (be instanceof com.hbm_m.block.entity.doors.BlastDoorBlockEntity) {
+            return null;
+        }
         if (be instanceof DoorBlockEntity doorBE && doorBE.isController()) {
             return doorBE;
         }
@@ -74,7 +90,8 @@ public class ScrewdriverItem extends Item implements ITooltipProvider {
             BlockPos controllerPos = part.getControllerPos();
             if (controllerPos != null) {
                 BlockEntity ctrlBe = level.getBlockEntity(controllerPos);
-                if (ctrlBe instanceof DoorBlockEntity doorBE && doorBE.isController()) {
+                if (ctrlBe instanceof DoorBlockEntity doorBE && doorBE.isController()
+                        && !(doorBE instanceof com.hbm_m.block.entity.doors.BlastDoorBlockEntity)) {
                     return doorBE;
                 }
             }

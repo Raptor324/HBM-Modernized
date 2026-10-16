@@ -339,6 +339,63 @@ public abstract class DoorDecl {
 
     public double[][] getClippingPlanes() { return new double[0][]; }
 
+    /**
+     * Per-part clipping-плоскости в формате glClipPlane: {@code {A,B,C,D}}, «внутри» =
+     * {@code A*x + B*y + C*z + D >= 0} (конвенция «+D», см. DoorPartClipper). Система
+     * координат — ПОЗ-пространство запечённых партов (после DoorDecl-трансформации части);
+     * резолвер MachineDoorRenderer инвертирует позовую дельту doPartTransform и переводит
+     * плоскости в локальные координаты геометрии.
+     * <p>
+     * <b>Допущение no-wrap</b> (рабочее, не догма): поз-СК = {@code R·(v+t)}, БЕЗ
+     * blockCenterToCorner запекания модели. Прецедент — MachineZirnoxRenderer; эмпирика
+     * дверей его подтверждает, но exec-гейт обязателен: фактические bbox запечённых квадов
+     * логируются по {@code -Dhbm.debugDoorBakedBbox=true} (точка —
+     * MachinePartRenderer.ensureBuilt), пороги фиксируются только после совпадения лога
+     * с ожиданиями no-wrap. При center-коррекции порог = поз-край кармана ± 0.0001.
+     * <p>
+     * Пустой массив = «плоскостей нет» (маппится в null в резолвере — часть остаётся
+     * в обычном MDI-тире). По умолчанию: статичная рама (frame/base/DoorFrame) — без
+     * плоскостей (иначе рамы всех дверей навсегда деградировали бы в immediate-тир),
+     * остальные парты — общие {@link #getClippingPlanes()}.
+     */
+    public double[][] getClippingPlanes(String partName, float openTicks, @Nullable DoorModelSelection selection) {
+        if (isStaticFramePartName(partName)) return new double[0][];
+        return getClippingPlanes();
+    }
+
+    /**
+     * Целевой хук клип-плоскостей для DAE-партов ("dae/&lt;node&gt;"): плоскости
+     * {@code {A,B,C,D}} (конвенция «+D») в ЛОКАЛЬНОЙ СК узла .dae; инверсию в локальную
+     * СК rest-геометрии выполняет резолвер (doorDaeClipPlanes: та же цепочка
+     * applyDaeRootOffset + mulPoseChain с тем же {@code time}, что у аниматора узла).
+     * <p>
+     * НЕ путать с {@link #getClippingPlanes(String, float, DoorModelSelection)}: тот
+     * матчит doPartTransform-имена ("LeftLock"), а фактическое имя DAE-парта —
+     * "dae/LeftLock" — буквальное equals НИКОГДА не совпадало, именные override'ы были
+     * недостижимы, и все DAE-узлы получали generic OBJ-слэб (sliding_blast:
+     * SLIDING_BLAST_SLAB {0,0,±1,2.5} из OBJ-анимационной математики: ход ±2.125,
+     * lock pivot 1.8125), посаженный в СК узла, где он резал видимую геометрию.
+     * Корень старой поломки задокументирован здесь; плоскости хука — по фактическим
+     * экстентам мешей .dae, БЕЗ OBJ-чисел (см. переопределение в sliding_blast_door).
+     * <p>
+     * Базовая реализация — null (клип DAE отключён: вся геометрия узла, дыр нет).
+     *
+     * @param nodeName имя узла БЕЗ префикса "dae/" (doorLeft/DoorCircleLeft/...)
+     * @param node     узел .dae (com.hbm_m.client.loader.dae.DaeNode)
+     * @param time     время анимации (сек), то же, что у аниматора узла
+     */
+    public double[][] getDaeClippingPlanes(String nodeName, @Nullable com.hbm_m.client.loader.dae.DaeNode node,
+                                           float time) {
+        return null;
+    }
+
+    /** Зеркало MachineDoorRenderer.isStaticFramePart: рама рисуется без DoorDecl-трансформации. */
+    private static boolean isStaticFramePartName(String partName) {
+        return "frame".equalsIgnoreCase(partName)
+                || "base".equalsIgnoreCase(partName)
+                || "DoorFrame".equals(partName);
+    }
+
     // Трансформации
     public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
         trans[0] = 0; trans[1] = 0; trans[2] = 0;
@@ -378,6 +435,19 @@ public abstract class DoorDecl {
     }
 
     public boolean doesRender(String partName, boolean child) { return true; }
+
+    /**
+     * Куллинг части с учётом состояния конкретной двери (interpolated openTicks).
+     * Даёт декларации покадровую, state-aware отбраковку сегментов (blast door:
+     * сегменты створки исчезают при входе в корпус). По умолчанию — обычный хук.
+     * Переопределяется только дверями, чьи части физически заходят в корпус
+     * (сейчас — blast_door); остальным скрытие дают clipping-плоскости
+     * getClippingPlanes(partName, openTicks, selection) (CPU-клип в
+     * MachinePartRenderer через DoorPartClipper) и уход створок в solid-блоки карманов.
+     */
+    public boolean doesRender(DoorBlockEntity be, String partName, float openTicks, boolean child) {
+        return doesRender(partName, child);
+    }
 
     public String[] getChildren(String partName) { return new String[0]; }
 
@@ -699,9 +769,17 @@ public abstract class DoorDecl {
 
         @Override
         public double[][] getClippingPlanes() {
+            // no-wrap (рама z[-3.5, 3.5], створки закрыты до ±3.312, открыты до ±6.312):
+            // слэб по Z ±3.5. Заявленные ранее {±1,0,0,3.5} переосены в Z: ход створок
+            // в поз-СК идёт по Z (transform rotY(90)+t(0,0,-3)).
+            // FALLBACK при wrap-гипотезе (exec-лог bbox покажет карман рамы z[-5.5, 1.5]):
+            // {0,0,1,5.4999} (z >= -5.4999) и {0,0,-1,1.4999} (z <= 1.4999) — D-константы
+            // были записаны зеркально в предыдущей ревизии, {0,0,1,1.4999} отрезало бы у
+            // закрытой створки ~3.8 блока. Общее правило: порог = поз-край кармана ± 0.0001,
+            // карман = поз-экстент рамы (лог -Dhbm.debugDoorBakedBbox=true).
             return new double[][] {
-                { 1.0, 0.0, 0.0, 3.5 },
-                { -1.0, 0.0, 0.0, 3.5 }
+                { 0.0, 0.0, 1.0, 3.5 },
+                { 0.0, 0.0, -1.0, 3.5 }
             };
         }
 
@@ -786,9 +864,14 @@ public abstract class DoorDecl {
         }
 
         @Override public double[][] getClippingPlanes() {
+            // Асимметричный слэб (OBJ: frame z[-2.0, 2.0], doorLeft z[-0.125, 1.938];
+            // +t(0,0,0.5) => поз-карман z[-1.5, 2.5]): z >= -1.4999 и z <= 2.4999.
+            // Держит закрытую doorLeft (до 2.438) целиком, прячет открытую в solid-колонне
+            // кармана. Паритет ntm-next RenderAirlockDoor (slab + pose.translate(0,0,0.5)
+            // => поз-слэб [-1.499, 2.499]).
             return new double[][] {
-                { 0.0, 0.0, 1.0, 2.0001 },
-                { 0.0, 0.0, -1.0, 2.0001 }
+                { 0.0, 0.0, 1.0, 1.4999 },
+                { 0.0, 0.0, -1.0, 2.4999 }
             };
         }
 
@@ -929,6 +1012,11 @@ public abstract class DoorDecl {
             return new String[] { "Frame", "LeftDoor", "RightDoor", "LeftLock", "RightLock" };
         }
 
+        /** Общий слэб z in [-2.5, 2.5] створок и замков (см. getClippingPlanes ниже). */
+        private final double[][] SLIDING_BLAST_SLAB = {
+                { 0, 0, 1, 2.5 }, { 0, 0, -1, 2.5 }
+        };
+
         @Override
         public ResourceLocation getBlockId() {
             return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "sliding_blast_door");
@@ -1034,8 +1122,91 @@ public abstract class DoorDecl {
 
         @Override
         public double[][] getClippingPlanes() {
-            // (glClipPlane в современном MixedPipelineIndexVertex builder'е) — TODO.
-            return new double[][] { { 0, 0, 1, 2.5 }, { 0, 0, -1, 2.5 } };
+            // Створки: слэб z in [-2.5, 2.5] (glClipPlane в современном
+            // MixedPipelineIndexVertex builder'е). Transform identity, ход ±2.125.
+            return SLIDING_BLAST_SLAB;
+        }
+
+        @Override
+        public double[][] getClippingPlanes(String partName, float openTicks, @Nullable DoorModelSelection selection) {
+            boolean isLock = "LeftLock".equals(partName) || "RightLock".equals(partName);
+            // Замки (LeftLock/RightLock), MODERN-путь: ДИНАМИЧЕСКАЯ полуплоскость
+            // (порт ntm-next RenderSlidingBlastDoor.leaf: halfspace(0, side*sin(swing),
+            // side*cos(swing), 2.5 - |travel|)), приведённая к позовой СК
+            // doPartTransform (p' = R·(p - o + t) + o, o = (0, 1.8125, 0), R = rotX(swing)).
+            //
+            // ВЫВОД. Требуемый локальный колпак: s·z_local <= 2.5 - travel
+            // (s = сторона замка; кончик, торчащий из кармана |z'| > 2.5, срезается ровно
+            // при protrusion). Перевод в позовую СК: n = R·(0,0,-s), D = D_l - n·c,
+            // c = R·t + (I-R)·o. Подстановка (t = s·travel, sin/cos от swing) даёт
+            // n = (0, s·sin, -s·cos) и D = 2.5 - s·o_y·sin — |travel| сокращается
+            // ТОЧНО (проверено подстановкой в 4 точках: закрыто/открыто × Left/Right).
+            //
+            // ЗНАК s: LeftLock ходит в +Z (getTranslation: +maxOpen·doorProg),
+            // RightLock в -Z; s = sign(travel) — как side в ntm-next (там travel>0
+            // несёт RightLock, в Modernized — LeftLock; обе стороны симметричны).
+            //
+            // КРИТЕРИИ (замер: OBJ LeftLock/RightLock local z [0.000, 0.483],
+            // поворот вокруг origin (0, 1.8125, 0)):
+            //  - закрыто (swing=90°, travel=0): Left {0,1,0,0.6875} → y' >= -0.6875,
+            //    y' = 1.8125 - z_local ∈ [1.33, 1.81]; Right {0,-1,0,4.3125} →
+            //    y' <= 4.3125 — крутилка НЕ режется (статичный слэб ±2.5 в позовой СК
+            //    после инверсии требовал y_local >= -0.6875 и срезал нижнюю часть
+            //    замка — «пропавшая крутилка» при openTicks=0);
+            //  - открыто (swing=180°, travel=2.125): LeftLock z' = -z_local - 2.125 ∈
+            //    [-2.608, -2.125] → плоскость {0,0,1,2.5} срезает торчащий кончик
+            //    z_local > 0.375 (те же ~0.108, что были задокументированы для слэба);
+            //    RightLock z' ∈ [1.642, 2.125] — не торчит, плоскость {0,0,-1,2.5}
+            //    не режет ничего.
+            if (isLock && selection != null && !selection.isLegacy()) {
+                float lockProg = Math.max(0f, Math.min(1f, openTicks / 4f)); // 0..4 → 0..1 (getRotation)
+                double theta = Math.toRadians(90f + 90f * lockProg);
+                double sin = Math.sin(theta), cos = Math.cos(theta);
+                int side = "LeftLock".equals(partName) ? 1 : -1;
+                return new double[][] { { 0.0, side * sin, -side * cos, 2.5 - side * 1.8125 * sin } };
+            }
+            if (isLock) {
+                // LEGACY-путь: замки не вращаются (getRotation выше — modern-only) и
+                // ходят на ±3.0 без поворота; позовая СК совпадает с локальной (R=I).
+                // Статичный слэб ±2.5 — прежнее валидированное поведение (при fully open
+                // замок уходит за z'=+2.5 и скрывается целиком).
+                return SLIDING_BLAST_SLAB;
+            }
+            return super.getClippingPlanes(partName, openTicks, selection);
+        }
+
+        // ==================== DAE-хук: плоскости в локальной СК узла .dae ====================
+
+        /** Слэб листьев: z ∈ [-0.3, 0.3] — фактический экстент Cube_007 (DoorLeft) / Cube_016 (DoorRight). */
+        private final double[][] DAE_LEAF_SLAB = {
+                { 0, 0, 1, 0.3 }, { 0, 0, -1, 0.3 }
+        };
+        /** Слэб замков: z ∈ [-0.32, 0.32] — экстент Cube_008 (DoorCircleLeft) / Cube_017 (DoorCircleRight) z[-0.3176, 0.2827] с запасом. */
+        private final double[][] DAE_LOCK_SLAB = {
+                { 0, 0, 1, 0.32 }, { 0, 0, -1, 0.32 }
+        };
+
+        /**
+         * DAE-плоскости по фактическим z-экстентам узлов .dae (замер позиций мешей:
+         * DoorLeft Cube_007 x[-0.15,2.5] z[-0.3,0.3]; DoorRight Cube_016 x[-2.5,0]
+         * z[-0.3,0.3]; замки Cube_008/017 z[-0.3176,0.2827]) — НЕ OBJ-числа 2.5 /
+         * 1.8125 / 2.125, которые через старый путь decl.getClippingPlanes("dae/...")
+         * доставались всем DAE-узлам (именной override "LeftLock" недостижим для
+         * "dae/LeftLock" — буквальное equals) и резали видимую геометрию. Для
+         * вращающихся замков (DoorCircle*, transform-канал — матрица поворота) слэб
+         * в локальной СК узла срезает качающиеся из кармана части; для листьев
+         * (трансляция вдоль X) слэб по собственному z-экстенту — no-op по построению:
+         * числовая эффективность скрытия листьев «в карман» требует игровой валидации
+         * (приёмка DAE-створок на open=0/24 — вне статической проверки).
+         */
+        @Override
+        public double[][] getDaeClippingPlanes(String nodeName, @Nullable com.hbm_m.client.loader.dae.DaeNode node,
+                                               float time) {
+            switch (nodeName) {
+                case "DoorLeft", "DoorRight" -> { return DAE_LEAF_SLAB; }
+                case "DoorCircleLeft", "DoorCircleRight" -> { return DAE_LOCK_SLAB; }
+                default -> { return null; } // DoorFrame / Window / уникализированные имена — без клипа
+            }
         }
 
         @Override
@@ -1972,10 +2143,8 @@ public abstract class DoorDecl {
             return getNormTime(openTicks, 40, 120);
         }
 
-        @Override 
-        public double[][] getClippingPlanes() {
-            return new double[][] { { 0, -1, 0, 3.0001 } };
-        }
+        // Clipping-плоскостей НЕТ (переопределение {0,-1,0,3.0001} удалено — артефакт
+        // копипасты, оно резало бы витринную створку). Паритет RenderVaultDoor без planes.
 
         // Динамической поколоночной коллизии нет: проходимость управляется
         // getCollisionProgress ниже (30 тиков = 1.5 с из openTime 120).

@@ -144,6 +144,10 @@ public final class MainRegistry {
             for (ServerLevel rbmkLevel : server.getAllLevels()) {
                 NeutronNodeWorld.tick(rbmkLevel, rbmkCacheClear);
             }
+            // CP-1 pile neutron streams drain after all BE ticks: neutrons received this tick
+            // are consumed next tick (NEXT's 1-tick latency is load-bearing for critical masses).
+            // FQN: NeutronNodeWorld collides with the imported rbmk class above.
+            com.hbm_m.handler.neutron.NeutronHandler.onServerTick(server);
             // Отложенный фикс соединений решёток/паней после спавна структур
             com.hbm_m.worldgen.StructureConnectionFixProcessor.tickIfReady(server);
 
@@ -158,6 +162,7 @@ public final class MainRegistry {
             com.hbm_m.api.network.UniNodespace.onLevelUnload(level);
             com.hbm_m.blockentity.network.radio.RTTYNetwork.onLevelUnload(level);
             com.hbm_m.handler.rbmk.NeutronNodeWorld.removeWorld(level);
+            com.hbm_m.handler.neutron.NeutronNodeWorld.removeWorld(level);
             com.hbm_m.worldgen.StructureConnectionFixProcessor.onLevelUnload(level);
         });
 
@@ -166,6 +171,7 @@ public final class MainRegistry {
             com.hbm_m.api.fluids.FluidNetProvider.clearAll();
             com.hbm_m.blockentity.network.radio.RTTYNetwork.onServerStop();
             com.hbm_m.handler.rbmk.NeutronNodeWorld.removeAllWorlds();
+            com.hbm_m.handler.neutron.NeutronNodeWorld.removeAllWorlds();
             com.hbm_m.worldgen.StructureConnectionFixProcessor.onServerStop();
             nukeTestReset();
         });

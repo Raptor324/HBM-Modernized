@@ -310,6 +310,9 @@ public class ModItemModelProvider extends ItemModelProvider {
         withExistingParent("cargo_door",
             modLoc("block/doors/cargo_door"));
 
+        withExistingParent("blast_door",
+            modLoc("block/doors/blast_door"));
+
         // Door items (flat icons like vanilla doors)
         withExistingParent(ModBlocks.METAL_DOOR.getId().getPath(), "item/generated")
             .texture("layer0", modLoc("item/" + ModBlocks.METAL_DOOR.getId().getPath()));

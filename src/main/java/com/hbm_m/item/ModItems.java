@@ -899,8 +899,8 @@ public class ModItems {
             () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> CAN_KEY = registerItem("can_key", 
             () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> DEFUSER = registerItem("defuser", 
-            () -> new LoreTooltipItem(List.of(
+    public static final RegistrySupplier<Item> DEFUSER = registerItem("defuser",
+            () -> new com.hbm_m.item.tools_and_armor.ItemDefuser(List.of(
                     Component.translatable("tooltip.hbm_m.defuser.line1").withStyle(ChatFormatting.GRAY)),
                     new Item.Properties()));
 
@@ -1791,9 +1791,12 @@ public class ModItems {
     public static final RegistrySupplier<Item> FIRE_DOOR = registerItem("fire_door", 
         () -> new DoorBlockItem(ModBlocks.FIRE_DOOR.get(), new Item.Properties()));
 
-    public static final RegistrySupplier<Item> SLIDE_DOOR = registerItem("sliding_blast_door", 
+    public static final RegistrySupplier<Item> SLIDE_DOOR = registerItem("sliding_blast_door",
         () -> new DoorBlockItem(ModBlocks.SLIDE_DOOR.get(), new Item.Properties()));
-        
+
+    public static final RegistrySupplier<Item> BLAST_DOOR = registerItem("blast_door",
+        () -> new DoorBlockItem(ModBlocks.BLAST_DOOR.get(), new Item.Properties()));
+
     public static final RegistrySupplier<Item> SLIDING_SEAL_DOOR = registerItem("sliding_seal_door", 
         () -> new DoorBlockItem(ModBlocks.SLIDING_SEAL_DOOR.get(), new Item.Properties()));
 
@@ -3278,9 +3281,9 @@ public class ModItems {
             () -> new com.hbm_m.item.machine.ItemPileRodMK2(new Item.Properties(),
                     com.hbm_m.item.machine.ItemPileRodMK2.EnumPileRod.WASTE));
 
-    public static final RegistrySupplier<Item> PILE_ROD_BORON = registerItem("pile_rod_boron", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> PILE_ROD_DETECTOR = registerItem("pile_rod_detector", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> PILE_ROD_LITHIUM = registerItem("pile_rod_lithium", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PILE_ROD_BORON = registerItem("pile_rod_boron", () -> new com.hbm_m.item.machine.ItemPileRod(new Item.Properties()));
+    public static final RegistrySupplier<Item> PILE_ROD_DETECTOR = registerItem("pile_rod_detector", () -> new com.hbm_m.item.machine.ItemPileRod(new Item.Properties()));
+    public static final RegistrySupplier<Item> PILE_ROD_LITHIUM = registerItem("pile_rod_lithium", () -> new com.hbm_m.item.machine.ItemPileRod(new Item.Properties()));
     public static final RegistrySupplier<Item> PILE_ROD_PLUTONIUM = registerItem("pile_rod_plutonium", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> PILE_ROD_PU239 = registerItem("pile_rod_pu239", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> PILE_ROD_SOURCE = registerItem("pile_rod_source", () -> new Item(new Item.Properties()));

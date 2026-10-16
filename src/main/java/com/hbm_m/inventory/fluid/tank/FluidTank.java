@@ -232,14 +232,33 @@ public class FluidTank implements Cloneable {
         if (slots[in] == null || slots[in].isEmpty() || !(slots[in].getItem() instanceof FluidIdentifierItem)) return false;
         Fluid newType = FluidIdentifierItem.resolvePrimaryForTank(slots[in]);
         if (newType == null) return false;
+        // Паритет NEXT FluidTankNTM.setType: "unchanged" = бак уже закреплён (pin) за ТОЧНО этой
+        // жидкостью. Наш эквивалент pin — conformedFluid: бак, заполненный по трубам без
+        // установленного типа (conformedFluid сброшен), считается НЕ закреплённым — как у NEXT —
+        // идентификатор перекрепляет точную жидкость (fill сохраняется) и переезжает в слот приёма.
         if (in == out) {
-            if (getConfiguredFluid() == newType) return false;
+            if (getConfiguredFluid() == newType) {
+                if (!isFluidTypeExplicitlySet(conformedFluid)) {
+                    this.conformedFluid = newType;
+                    return true;
+                }
+                return false;
+            }
             this.conformedFluid = newType;
             drainMb(getFluidAmountMb());
             return true;
         } else {
             if (slots[out] != null && !slots[out].isEmpty()) return false;
-            if (getConfiguredFluid() == newType) return false;
+            if (getConfiguredFluid() == newType) {
+                if (!isFluidTypeExplicitlySet(conformedFluid)) {
+                    // setTankTypeByIdentifier: перекрепление той же жидкости — fill сохраняется.
+                    this.conformedFluid = newType;
+                    slots[out] = slots[in].copy();
+                    slots[in] = ItemStack.EMPTY;
+                    return true;
+                }
+                return false;
+            }
             this.conformedFluid = newType;
             drainMb(getFluidAmountMb());
             slots[out] = slots[in].copy();

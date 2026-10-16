@@ -55,6 +55,11 @@ public class ScrewdriverInteractionHandler {
 
     private static DoorBlockEntity resolveDoorController(Level level, BlockPos clickedPos) {
         BlockEntity be = level.getBlockEntity(clickedPos);
+        // Blast door: GUI скинов нет (NEXT BlastDoor.java:99-105) — отвёртка тогглит дверь
+        // как пустая рука; не перехватываем клик (паритет BlastDoorBlock/UniversalMachinePartBlock)
+        if (be instanceof com.hbm_m.block.entity.doors.BlastDoorBlockEntity) {
+            return null;
+        }
         if (be instanceof DoorBlockEntity doorBE && doorBE.isController()) {
             return doorBE;
         }
@@ -62,7 +67,8 @@ public class ScrewdriverInteractionHandler {
             BlockPos controllerPos = part.getControllerPos();
             if (controllerPos != null) {
                 BlockEntity ctrlBe = level.getBlockEntity(controllerPos);
-                if (ctrlBe instanceof DoorBlockEntity doorBE && doorBE.isController()) {
+                if (ctrlBe instanceof DoorBlockEntity doorBE && doorBE.isController()
+                        && !(doorBE instanceof com.hbm_m.block.entity.doors.BlastDoorBlockEntity)) {
                     return doorBE;
                 }
             }

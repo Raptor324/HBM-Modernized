@@ -18,6 +18,7 @@ import com.hbm_m.block.generic.BlockSellafieldSlaked;
 import com.hbm_m.block.generic.BlockSlag;
 import com.hbm_m.block.generic.WasteEarth;
 import com.hbm_m.block.bomb.NukeFatManBlock;
+import com.hbm_m.block.decorations.BlastDoorBlock;
 import com.hbm_m.block.decorations.CageLampBlock;
 import com.hbm_m.block.decorations.CrateCanBlock;
 import com.hbm_m.block.decorations.CrtBlock;
@@ -710,6 +711,18 @@ public class ModBlocks {
                     "sliding_blast_door"
             ));
 
+    /** Порт 1.7.10 ModBlocks.java:2041 (hardness 10, resistance 1000) / NEXT BlastDoor. */
+    public static final RegistrySupplier<DoorBlock> BLAST_DOOR = registerBlockWithoutItem("blast_door", COMPLETE,
+            () -> new BlastDoorBlock(
+                    BlockBehaviour.Properties.of()
+                            .strength(10.0F, 1000.0F)
+                            .requiresCorrectToolForDrops()
+                            .sound(SoundType.METAL)
+                            .noOcclusion()
+                            .dynamicShape().isViewBlocking((state, level, pos) -> false),
+                    "blast_door"
+            ));
+
     public static final RegistrySupplier<Block> SLIDING_SEAL_DOOR = registerBlockWithoutItem("sliding_seal_door", COMPLETE,
             () -> new DoorBlock(
                     BlockBehaviour.Properties.of()
@@ -1224,14 +1237,16 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> BARREL_LOX = registerBlock("barrel_lox",
             () -> new CrtBlock(BlockProps.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion()));
     public static final RegistrySupplier<Block> BARREL_CORRODED = registerBlock("barrel_corroded",
-            () -> new com.hbm_m.block.machines.BarrelTankBlock(BlockProps.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion(),
+            () -> new com.hbm_m.block.machines.BarrelTankBlock(BlockProps.copy(Blocks.STONE).strength(2.0F, 3.0F)
+                            .sound(net.minecraft.world.level.block.SoundType.METAL).noOcclusion().requiresCorrectToolForDrops(),
                     com.hbm_m.blockentity.machines.BarrelCorrodedBlockEntity::new,
                     () -> com.hbm_m.blockentity.ModBlockEntities.BARREL_CORRODED_BE.get(),
                     new com.hbm_m.block.machines.BarrelTankBlock.TooltipInfo(
                             com.hbm_m.blockentity.machines.BarrelCorrodedBlockEntity.CAPACITY,
-                            true, true, true, false, true)));
+                            true, null, true, false, true)));
     public static final RegistrySupplier<Block> BARREL_IRON = registerBlock("barrel_iron",
-            () -> new com.hbm_m.block.machines.BarrelTankBlock(BlockProps.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion(),
+            () -> new com.hbm_m.block.machines.BarrelTankBlock(BlockProps.copy(Blocks.STONE).strength(2.0F, 3.0F)
+                            .sound(net.minecraft.world.level.block.SoundType.METAL).noOcclusion().requiresCorrectToolForDrops(),
                     com.hbm_m.blockentity.machines.BarrelIronBlockEntity::new,
                     () -> com.hbm_m.blockentity.ModBlockEntities.BARREL_IRON_BE.get(),
                     new com.hbm_m.block.machines.BarrelTankBlock.TooltipInfo(
@@ -1240,7 +1255,8 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> BARREL_PINK = registerBlock("barrel_pink",
             () -> new CrtBlock(BlockProps.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion()));
     public static final RegistrySupplier<Block> BARREL_PLASTIC = registerBlock("barrel_plastic",
-            () -> new com.hbm_m.block.machines.BarrelTankBlock(BlockProps.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion(),
+            () -> new com.hbm_m.block.machines.BarrelTankBlock(BlockProps.copy(Blocks.STONE).strength(2.0F, 3.0F)
+                            .noOcclusion().requiresCorrectToolForDrops(),
                     com.hbm_m.blockentity.machines.BarrelPlasticBlockEntity::new,
                     () -> com.hbm_m.blockentity.ModBlockEntities.BARREL_PLASTIC_BE.get(),
                     new com.hbm_m.block.machines.BarrelTankBlock.TooltipInfo(
@@ -1249,7 +1265,8 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> BARREL_RED = registerBlock("barrel_red",
             () -> new CrtBlock(BlockProps.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion()));
     public static final RegistrySupplier<Block> BARREL_STEEL = registerBlock("barrel_steel",
-            () -> new com.hbm_m.block.machines.BarrelTankBlock(BlockProps.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion(),
+            () -> new com.hbm_m.block.machines.BarrelTankBlock(BlockProps.copy(Blocks.STONE).strength(2.0F, 3.0F)
+                            .sound(net.minecraft.world.level.block.SoundType.METAL).noOcclusion().requiresCorrectToolForDrops(),
                     com.hbm_m.blockentity.machines.BarrelSteelBlockEntity::new,
                     () -> com.hbm_m.blockentity.ModBlockEntities.BARREL_STEEL_BE.get(),
                     new com.hbm_m.block.machines.BarrelTankBlock.TooltipInfo(
@@ -1266,23 +1283,25 @@ public class ModBlocks {
                     .randomTicks()
                     .noLootTable()));
     public static final RegistrySupplier<Block> BARREL_TCALLOY = registerBlock("barrel_tcalloy",
-            () -> new com.hbm_m.block.machines.BarrelTankBlock(BlockProps.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion(),
+            () -> new com.hbm_m.block.machines.BarrelTankBlock(BlockProps.copy(Blocks.STONE).strength(2.0F, 3.0F)
+                            .sound(net.minecraft.world.level.block.SoundType.METAL).noOcclusion().requiresCorrectToolForDrops(),
                     com.hbm_m.blockentity.machines.BarrelTcalloyBlockEntity::new,
                     () -> com.hbm_m.blockentity.ModBlockEntities.BARREL_TCALLOY_BE.get(),
                     new com.hbm_m.block.machines.BarrelTankBlock.TooltipInfo(
                             com.hbm_m.blockentity.machines.BarrelTcalloyBlockEntity.CAPACITY,
-                            true, true, true, false, false)));
+                            true, null, true, false, false)));
     public static final RegistrySupplier<Block> BARREL_VITRIFIED = registerBlock("barrel_vitrified",
             () -> new CrtBlock(BlockProps.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion()));
     public static final RegistrySupplier<Block> BARREL_YELLOW = registerBlock("barrel_yellow",
             () -> new CrtBlock(BlockProps.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion()));
     public static final RegistrySupplier<Block> BARREL_ANTIMATTER = registerBlock("barrel_antimatter",
-            () -> new com.hbm_m.block.machines.BarrelTankBlock(BlockProps.copy(Blocks.STONE).strength(2.0F, 5.0F).noOcclusion(),
+            () -> new com.hbm_m.block.machines.BarrelTankBlock(BlockProps.copy(Blocks.STONE).strength(2.0F, 3.0F)
+                            .sound(net.minecraft.world.level.block.SoundType.METAL).noOcclusion().requiresCorrectToolForDrops(),
                     com.hbm_m.blockentity.machines.BarrelAntimatterBlockEntity::new,
                     () -> com.hbm_m.blockentity.ModBlockEntities.BARREL_ANTIMATTER_BE.get(),
                     new com.hbm_m.block.machines.BarrelTankBlock.TooltipInfo(
                             com.hbm_m.blockentity.machines.BarrelAntimatterBlockEntity.CAPACITY,
-                            true, true, true, true, false)));
+                            true, null, true, true, false)));
 
     public static final RegistrySupplier<Block> BARBED_WIRE = registerBlock("barbed_wire",
             () -> new BarbedWireBlock(BlockProps.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
@@ -2380,7 +2399,6 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> BATTERY_LITHIUM_BLOCK = registerBlock("battery_lithium_block", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BATTERY_POTATO_BLOCK = registerBlock("battery_potato_block", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BATTERY_SCHRABIDIUM_BLOCK = registerBlock("battery_schrabidium_block", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> BLAST_DOOR = registerBlock("blast_door", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_ALUMINIUM = registerBlock("block_aluminium", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BOXCAR = registerBlock("boxcar", () -> new Block(BlockProps.copy(Blocks.STONE)));
     /** Original: {@code brick_asbestos} ist ein {@code BlockOutgas} (Haerte 5, Widerstand 1000). */
@@ -2399,25 +2417,40 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> BRICK_JUNGLE_TRAP = registerBlock("brick_jungle_trap", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BRICK_RED = registerBlock("brick_red", () -> new RedBrickBlock(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BROADCASTER_PC = registerBlock("broadcaster_pc",
-            () -> new com.hbm_m.block.machines.BroadcasterPcBlock(BlockProps.copy(Blocks.STONE).noOcclusion()));
+            // Original: setHardness(5.0F).setResistance(15.0F) on Material.iron; NEXT kept
+            // hardness 5.0 (resistance rebalanced to 9.0), mapColor METAL. Original is the
+            // gameplay ground truth.
+            () -> new com.hbm_m.block.machines.BroadcasterPcBlock(BlockProps.copy(Blocks.STONE)
+                    .mapColor(MapColor.METAL).strength(5.0F, 15.0F).noOcclusion().requiresCorrectToolForDrops()));
     public static final RegistrySupplier<Block> CABLE_DETECTOR = registerBlock("cable_detector", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> CABLE_DIODE = registerBlock("cable_diode", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> CABLE_SWITCH = registerBlock("cable_switch", () -> new Block(BlockProps.copy(Blocks.STONE)));
     // capacitor_bus/gold/niobium/tantalium/schrabidate are all @Deprecated + hidden from the creative
-    // tab in the 1.7.10 original (only capacitor_copper is player-facing); ported for completeness
-    // using the shared MachineCapacitorBlock, no bus-chaining mechanic (see MachineCapacitorBlockEntity).
+    // tab in the 1.7.10 original (only capacitor_copper is player-facing); ported for completeness.
+    // capacitor_bus is the original's TE-less passive orientation block (player look direction) -
+    // the capacitor walks over a straight chain of them and feeds the network at the chain end
+    // (MachineCapacitorBlockEntity#walkBusChain); the bus itself stores nothing.
+    // Props: original Material.iron, hardness 5.0F, resistance 10.0F (ModBlocks 1.7.10:1836-1841).
+    private static BlockBehaviour.Properties capacitorProps() {
+        return BlockProps.copy(Blocks.STONE)
+                .mapColor(MapColor.METAL)
+                .sound(SoundType.METAL)
+                .strength(5.0F, 10.0F)
+                .noOcclusion()
+                .requiresCorrectToolForDrops();
+    }
     public static final RegistrySupplier<Block> CAPACITOR_BUS = registerBlock("capacitor_bus",
-            () -> new com.hbm_m.block.machines.MachineCapacitorBlock(BlockProps.copy(Blocks.STONE).noOcclusion(), 1_000_000L));
+            () -> new com.hbm_m.block.machines.MachineCapacitorBusBlock(capacitorProps()));
     public static final RegistrySupplier<Block> CAPACITOR_COPPER = registerBlock("capacitor_copper",
-            () -> new com.hbm_m.block.machines.MachineCapacitorBlock(BlockProps.copy(Blocks.STONE).noOcclusion(), 1_000_000L));
+            () -> new com.hbm_m.block.machines.MachineCapacitorBlock(capacitorProps(), 1_000_000L));
     public static final RegistrySupplier<Block> CAPACITOR_GOLD = registerBlock("capacitor_gold",
-            () -> new com.hbm_m.block.machines.MachineCapacitorBlock(BlockProps.copy(Blocks.STONE).noOcclusion(), 5_000_000L));
+            () -> new com.hbm_m.block.machines.MachineCapacitorBlock(capacitorProps(), 5_000_000L));
     public static final RegistrySupplier<Block> CAPACITOR_NIOBIUM = registerBlock("capacitor_niobium",
-            () -> new com.hbm_m.block.machines.MachineCapacitorBlock(BlockProps.copy(Blocks.STONE).noOcclusion(), 25_000_000L));
+            () -> new com.hbm_m.block.machines.MachineCapacitorBlock(capacitorProps(), 25_000_000L));
     public static final RegistrySupplier<Block> CAPACITOR_SCHRABIDATE = registerBlock("capacitor_schrabidate",
-            () -> new com.hbm_m.block.machines.MachineCapacitorBlock(BlockProps.copy(Blocks.STONE).noOcclusion(), 50_000_000_000L));
+            () -> new com.hbm_m.block.machines.MachineCapacitorBlock(capacitorProps(), 50_000_000_000L));
     public static final RegistrySupplier<Block> CAPACITOR_TANTALIUM = registerBlock("capacitor_tantalium",
-            () -> new com.hbm_m.block.machines.MachineCapacitorBlock(BlockProps.copy(Blocks.STONE).noOcclusion(), 150_000_000L));
+            () -> new com.hbm_m.block.machines.MachineCapacitorBlock(capacitorProps(), 150_000_000L));
     /** Self-stacking 3x3 elevator shaft; see com.hbm_m.block.machines.CargoElevatorBlock. */
     public static final RegistrySupplier<Block> CARGO_ELEVATOR = registerBlock("cargo_elevator",
             () -> new com.hbm_m.block.machines.CargoElevatorBlock(BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion()));
@@ -3347,18 +3380,22 @@ public class ModBlocks {
             () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_FLUORITE = registerBlock("block_fluorite",
             () -> new Block(BlockProps.copy(Blocks.STONE)));
+    // CP-1 pile channel blocks (Port BlockGraphiteDrilledBase-Familie, NEXT behavior).
+    // TRITIUM below bleibt bewusst Stub (scope anderer Ports).
     public static final RegistrySupplier<Block> BLOCK_GRAPHITE_DETECTOR = registerBlock("block_graphite_detector",
-            () -> new Block(BlockProps.copy(Blocks.STONE)));
+            () -> new com.hbm_m.block.machines.pile.BlockGraphiteNeutronDetector(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops()));
     public static final RegistrySupplier<Block> BLOCK_GRAPHITE_DRILLED = registerBlock("block_graphite_drilled",
-            () -> new Block(BlockProps.copy(Blocks.STONE)));
+            () -> new com.hbm_m.block.machines.pile.BlockGraphiteDrilled(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops()));
+    public static final RegistrySupplier<Block> BLOCK_GRAPHITE_ROD = registerBlock("block_graphite_rod",
+            () -> new com.hbm_m.block.machines.pile.BlockGraphiteRod(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops()));
     public static final RegistrySupplier<Block> BLOCK_GRAPHITE_FUEL = registerBlock("block_graphite_fuel",
-            () -> new Block(BlockProps.copy(Blocks.STONE)));
+            () -> new com.hbm_m.block.machines.pile.BlockGraphiteFuel(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops()));
     public static final RegistrySupplier<Block> BLOCK_GRAPHITE_LITHIUM = registerBlock("block_graphite_lithium",
-            () -> new Block(BlockProps.copy(Blocks.STONE)));
+            () -> new com.hbm_m.block.machines.pile.BlockGraphiteBreedingFuel(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops()));
     public static final RegistrySupplier<Block> BLOCK_GRAPHITE_PLUTONIUM = registerBlock("block_graphite_plutonium",
-            () -> new Block(BlockProps.copy(Blocks.STONE)));
+            () -> new com.hbm_m.block.machines.pile.BlockGraphiteSource(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops(), () -> ModItems.PILE_ROD_PLUTONIUM.get()));
     public static final RegistrySupplier<Block> BLOCK_GRAPHITE_SOURCE = registerBlock("block_graphite_source",
-            () -> new Block(BlockProps.copy(Blocks.STONE)));
+            () -> new com.hbm_m.block.machines.pile.BlockGraphiteSource(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops(), () -> ModItems.PILE_ROD_SOURCE.get()));
     public static final RegistrySupplier<Block> BLOCK_GRAPHITE_TRITIUM = registerBlock("block_graphite_tritium",
             () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_INSULATOR = registerBlock("block_insulator",

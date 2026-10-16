@@ -90,6 +90,13 @@ public class ModClothConfig {
     /** Логирование использования детонатора, взрывов, пусков ракет (ориг. GeneralConfig.enableExtendedLogging). */
     public boolean enableExtendedLogging = false;
 
+    /**
+     * Центральный тумблер 528-режима (NEXT ContentConfig {@code mode_528.enabled} →
+     * NEXT {@code BalanceConfig.enable528}); зеркалируется в
+     * {@link GeneralConfig#enable528} через {@code GeneralConfig.syncFrom}.
+     */
+    public boolean enable528 = false;
+
     // ════════════════════════════════════════════════════════════════
     // Эффекты мира
     // ════════════════════════════════════════════════════════════════
@@ -276,6 +283,23 @@ public class ModClothConfig {
      * Флаг: {@code -Dhbm.doorSkinSharing=false}.
      */
     public boolean nucleusDoorSkinSharing = true;
+
+    /**
+     * Покадровое скрытие частей дверей при открывании (куллинг в корпус): у blast door
+     * сегменты створки исчезают по мере входа в корпус (порт RenderBlastDoor).
+     * Выключите, если части двери пропадают раньше времени — все двери будут
+     * рисоваться целиком всю анимацию.
+     * Флаг: {@code -Dhbm.doorPartCulling=false}.
+     */
+    public boolean doorPartCulling = true;
+
+    /**
+     * Одноразовый дебаг-дамп клипа дверей в лог ('[HBM-M][DoorClipDebug]'):
+     * почему резолвер вернул/не вернул плоскости и какие спрайты/UV реально
+     * приходят в клип-тир. Для диагностики артефактов скрытия створок.
+     */
+    public boolean doorClipDebug = false;
+
 
     /**
      * Байпас диспетчера BE: машины фабрики собираются плоским обходом до

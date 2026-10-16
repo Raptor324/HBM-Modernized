@@ -1,0 +1,11 @@
+{
+    "door_id": "blast_door",
+    "legacy_model": "hbm_m:block/doors/blast_door",
+    "modern_model": {
+        "model": "hbm_m:block/doors/blast_door",
+        "skins": [
+            {"id": "default", "name": "Standard", "texture": "hbm_m:block/doors/blast_door_base"}
+        ]
+    },
+    "default": {"type": "legacy", "skin": "default"}
+}

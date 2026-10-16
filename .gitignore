@@ -60,6 +60,7 @@ hs_err_pid*
 replay_pid*
 temp/
 logs/
+tools/nightly/
 /ExampleProject/
 /OLD/
 agent

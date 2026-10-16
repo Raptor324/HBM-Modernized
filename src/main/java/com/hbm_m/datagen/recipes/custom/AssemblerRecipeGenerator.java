@@ -1599,6 +1599,18 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.MOTOR.get(), 2)
                 .addIngredient(Ingredient.of(Tags.Items.DYES_GRAY), 1)
                 .save(writer, "cargo_door");
+
+        // Blast door: NEXT ass.blastdoor.json (200 тиков, 100 power) —
+        // #c:ingots/steel×12, #c:plates/lead×6, rubber×2, #c:bolts/dura_steel×8,
+        // motor×1. DURA_STEEL = «High-Speed Steel» → BOLT_HIGHSPEED_STEEL.
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.BLAST_DOOR.get(), 1), 200, 100)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT), 12)
+                .addIngredient(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.PLATE), 6)
+                .addIngredient(ModMaterialItems.item(ModMaterials.RUBBER, MaterialShape.INGOT), 2)
+                .addIngredient(ModItems.BOLT_HIGHSPEED_STEEL.get(), 8)
+                .addIngredient(ModItems.MOTOR.get(), 1)
+                .save(writer, "blast_door");
     }
 
     private static void registerElectronics(Consumer<FinishedRecipe> writer) {

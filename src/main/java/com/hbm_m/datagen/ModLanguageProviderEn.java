@@ -378,7 +378,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("itemGroup.hbm_m.ntm_weapons_tab", "NTM Weapons and Turrets");
         add("itemGroup.hbm_m.ntm_consumables_tab", "NTM Consumables and Equipment");
         add("itemGroup.hbm_m.ntm_dev_tab", "Dev Items");
-        add("itemGroup.hbm_m.ntm_spareparts_tab", "NTM Spare Parts");
+        add("itemGroup.hbm_m.ntm_nightly_tab", "Ported Overnight");
         add("itemGroup.hbm_m.ntm_instruments_tab", "NTM Instruments");
         add("itemGroup.hbm_m.ntm_building_tab", "NTM Building Blocks");
 
@@ -387,6 +387,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         // GUI titles that had no entry at all: the screens showed the raw key.
         add("container.frackingTower", "Fracking Tower");
         add("container.hbm_m.ashpit", "Ashpit");
+        add("container.hbm_m.barrel", "Barrel");
         add("container.hbm_m.coker", "Coker");
         add("container.hbm_m.condenser_powered", "Powered Condenser");
         add("container.hbm_m.conveyor_press", "Conveyor Press");
@@ -1372,9 +1373,9 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("gui.hbm_m.fluid_tank.empty", "Empty");
         add("gui.hbm_m.fluid_tank.empty_locked", "Empty (tank type: %s)");
         add("gui.hbm_m.fluid_tank.empty_filter", "Empty (filter: %s)");
-        add("gui.hbm_m.fluid_tank.filter_set", "Type set to %s!");
+        add("gui.hbm_m.fluid_tank.filter_set", "Changed type to %s!");
         add("gui.hbm_m.fluid_tank.mode.0", "Mode: Input only");
-        add("gui.hbm_m.fluid_tank.mode.1", "Mode: Buffer");
+        add("gui.hbm_m.fluid_tank.mode.1", "Mode: Buffer (in+out)");
         add("gui.hbm_m.fluid_tank.mode.2", "Mode: Output only");
         add("gui.hbm_m.fluid_tank.mode.3", "Mode: Disabled");
         add("gui.hbm_m.fluid_tank.pressure", "Pressure: %s PU");
@@ -2114,11 +2115,12 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("block.hbm_m.block_fiberglass", "Block Fiberglass");
         add("block.hbm_m.block_fluorite", "Block Fluorite");
         add("block.hbm_m.block_graphite", "Block of Graphite");
-        add("block.hbm_m.block_graphite_detector", "Block Graphite Detector");
-        add("block.hbm_m.block_graphite_drilled", "Block Graphite Drilled");
+        add("block.hbm_m.block_graphite_detector", "Pile Neutron Detector");
+        add("block.hbm_m.block_graphite_drilled", "Drilled Graphite");
         add("block.hbm_m.block_graphite_fuel", "Block Graphite Fuel");
-        add("block.hbm_m.block_graphite_lithium", "Block Graphite Lithium");
+        add("block.hbm_m.block_graphite_lithium", "Pile Lithium Fuel (LEGACY)");
         add("block.hbm_m.block_graphite_plutonium", "Block Graphite Plutonium");
+        add("block.hbm_m.block_graphite_rod", "Pile Control Rod");
         add("block.hbm_m.block_graphite_source", "Block Graphite Source");
         add("block.hbm_m.block_graphite_tritium", "Block Graphite Tritium");
         add("block.hbm_m.block_insulator", "Block Insulator");
@@ -2192,6 +2194,20 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("tooltip.hbm_m.pile_rod.lifetime", "Lifetime: %s");
         add("tooltip.hbm_m.pile_rod.depletion", "Depletion: %s%%");
         add("tooltip.hbm_m.pile_rod.source", "Neutron source - does not deplete");
+        // CP-1 detector readout (keys verbatim from NEXT en_us)
+        add("desc.shared.cp1FuelAssembly", "CP1 FUEL ASSEMBLY %s %s %s");
+        add("desc.shared.flux", "FLUX: %s");
+        // CP-1 pile rod tooltips (NEXT ItemPileRod; keys/values verbatim from NEXT en_us;
+        // rendered by the ItemPileRod port)
+        add("desc.item.pileRod", "§eUse on drilled graphite to insert\n§eUse screwdriver to extract\n");
+        add("item.hbm_m.pile_rod_boron.desc", "§9[Neutron Absorber]\n§eClick to toggle");
+        add("item.hbm_m.pile_rod_detector.desc",
+                "§9[Neutron Detector/Absorber]\n§eUse defuser to increase/decrease neutron limit\n§eUse screwdriver w/o sneaking to inspect flux");
+        add("item.hbm_m.pile_rod_lithium.desc", "§a[Breedable Fuel]\n§eUse hand drill to inspect core (LEGACY)");
+        // CP-1 fuel readout (keys verbatim from NEXT en_us)
+        add("desc.block.graphiteFuel.depletion", "DEPLETION: %s");
+        add("desc.block.graphiteFuel.heat", "HEAT: %s");
+        add("desc.block.graphiteFuel.pu239Rich", "PU-239 RICH");
         add("block.hbm_m.pneumatic_storage_access", "Pneumatic Storage Access");
         add("block.hbm_m.pneumatic_storage_clutter", "Pneumatic Storage Clutter");
         add("block.hbm_m.pneumatic_storage_exporter", "Pneumatic Storage Exporter");
@@ -2269,6 +2285,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("gui.hbm_m.rbmk_keypad", "RBMK Keypad");
         add("gui.hbm_m.rbmk_terminal", "RBMK Terminal");
         add("sounds.hbm_m.subtitle.upgrade_plug", "Fuel rod inserted");
+        add("sounds.hbm_m.techbleep", "Tech bleep");
         add("msg.hbm_m.rbmk_console.no_console_found", "No RBMK console found nearby");
         add("msg.hbm_m.rbmk_tool.stored", "Stored position: %s, %s, %s");
         add("msg.hbm_m.rbmk_tool.no_position", "No column linked yet - right-click a column first");
@@ -2488,6 +2505,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("container.hbm_m.fusion_breeder", "Fusion Breeder");
         add("container.hbm_m.plasma_forge", "Plasma Forge");
         add("sounds.hbm_m.subtitle.boiler_groan", "Boiler groans");
+        add("sounds.hbm_m.subtitle.broadcast", "Corrupted broadcast");
         add("sounds.hbm_m.subtitle.fel", "Klystron hums");
         add("sounds.hbm_m.subtitle.fusion_reactor_spin", "Fusion reactor spins");
         add(ModBlocks.TURBINEGAS.get(), "Gas Turbine");
@@ -2756,7 +2774,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("gui.hbm_m.solar_boiler.sunlight", "Sunlight");
         add("gui.hbm_m.solar_boiler.mirrors", "Active mirrors: %s");
         add("container.hbm_m.solar_boiler", "Solar Boiler");
-        add("tooltip.hbm_m.barrel.capacity", "Capacity: %s mB");
+        add("tooltip.hbm_m.barrel.capacity", "Capacity: %smB");
         add("tooltip.hbm_m.barrel.hot.yes", "Can store hot fluids");
         add("tooltip.hbm_m.barrel.hot.no", "Cannot store hot fluids");
         add("tooltip.hbm_m.barrel.corrosive.yes", "Can store corrosive fluids");
@@ -2896,6 +2914,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("door.skin.hbm_m.vault_door.skin_99", "Vault 99");
         add("door.skin.hbm_m.vault_door.skin_81", "Vault 81");
         add("door.skin.hbm_m.vault_door.skin_111", "Vault 111");
+        add("door.skin.hbm_m.blast_door.default", "Standard");
 
         add(ModItems.SCREWDRIVER.get(), "Screwdriver");
         add("tooltip.hbm_m.screwdriver", "RMB click - Configure energy converter or change door skin");
@@ -3177,6 +3196,8 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.enableRadiation", "Enable radiation");
         add("text.autoconfig.hbm_m.option.enableChunkRads", "Enable chunk radiation");
         add("text.autoconfig.hbm_m.option.enableMOTD", "Join MOTD and update notice");
+        add("text.autoconfig.hbm_m.option.enable528", "Enable 528 mode");
+        add("text.autoconfig.hbm_m.option.enable528.@Tooltip", "The central toggle for 528 mode, required TRUE for most subsequent toggles to work.");
 
         add("text.autoconfig.hbm_m.category.world_effects", "World Effects");
 
@@ -3246,6 +3267,14 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.nucleusShadowInstancing.@Tooltip", "Batch all machine shadow-pass geometry into instanced draws instead of per-block-entity rendering. Disable if machine shadows flicker or disappear under a shader pack.");
         add("text.autoconfig.hbm_m.option.nucleusDoorSkinSharing", "Nucleus: door skin sharing");
         add("text.autoconfig.hbm_m.option.nucleusDoorSkinSharing.@Tooltip", "One VBO per door geometry with per-instance skin UV remap. Disable if door skins render with wrong textures (falls back to per-skin VBOs).");
+        add("config.hbm_m.field.doorPartCulling", "Door Part Culling");
+        add("config.hbm_m.field.doorPartCulling.tooltip", "Hide door parts as they enter the housing pocket - both frame-by-frame (blast door segments) and by a clip-plane cut at the pocket boundary. Disable to render all door geometry fully.");
+        add("text.autoconfig.hbm_m.option.doorPartCulling", "Door Part Culling");
+        add("text.autoconfig.hbm_m.option.doorPartCulling.@Tooltip", "Hide door parts as they enter the housing pocket - both frame-by-frame (blast door segments) and by a clip-plane cut at the pocket boundary. Disable to render all door geometry fully.");
+        add("config.hbm_m.field.doorClipDebug", "Door Clip Debug Dump");
+        add("config.hbm_m.field.doorClipDebug.tooltip", "One-shot per-part log dump ([HBM-M][DoorClipDebug]) of the door clip pipeline: which gate disabled the clip and which sprites/UVs actually reach the clipped tier. For diagnosing door culling artifacts.");
+        add("text.autoconfig.hbm_m.option.doorClipDebug", "Door Clip Debug Dump");
+        add("text.autoconfig.hbm_m.option.doorClipDebug.@Tooltip", "One-shot per-part log dump of the door clip pipeline. For diagnosing door culling artifacts.");
         add("text.autoconfig.hbm_m.option.nucleusDispatcherBypass", "Nucleus: dispatcher bypass");
         add("text.autoconfig.hbm_m.option.nucleusDispatcherBypass.@Tooltip", "Collect factory machines with a flat pass instead of the vanilla/Sodium block-entity dispatcher. Disable if machines disappear or render twice.");
         add("text.autoconfig.hbm_m.option.nucleusGpuBake", "Nucleus: GPU bake (Iris Tier 1)");
@@ -3536,6 +3565,14 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModBlocks.CAPACITOR_TANTALIUM.get(), "Tantalum Capacitor (LEGACY)");
         add(ModBlocks.CARGO_ELEVATOR.get(), "Cargo Elevator");
         add("container.hbm_m.machine_capacitor", "Capacitor");
+        // Port of tile.capacitor.desc / tile.capacitor_bus.desc + the ITooltipProvider stat lines.
+        // The original's tooltip claimed /200 + /600, but its code (and NEXT) use /100 + /300.
+        add("tooltip.hbm_m.capacitor.desc", "Input: Top\nOutput: Bottom, via Capacitor Bus");
+        add("tooltip.hbm_m.capacitor_bus.desc", "Output block for capacitors\nCan be chained up in a straight line");
+        add("tooltip.hbm_m.capacitor.capacity", "Stores up to %s HE");
+        add("tooltip.hbm_m.capacitor.charge_speed", "Charge speed: %s HE");
+        add("tooltip.hbm_m.capacitor.discharge_speed", "Discharge speed: %s HE");
+        add("tooltip.hbm_m.capacitor.stored", "%s / %s HE");
         add(ModBlocks.CHARGE_C4.get(), "Demolition Charge");
         add(ModBlocks.CHARGE_DYNAMITE.get(), "Time Bomb");
         add(ModBlocks.CHARGE_MINER.get(), "Timed Mining Charge");
@@ -5100,7 +5137,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.PHOTO_PANEL.get(), "Photovoltaic Panel");
         add(ModItems.PILE_ROD_BORON.get(), "Chicago Pile Control Rod");
         add(ModItems.PILE_ROD_DETECTOR.get(), "Chicago Pile Control & Detector Rod");
-        add(ModItems.PILE_ROD_LITHIUM.get(), "Chicago Pile Lithium Cell");
+        add(ModItems.PILE_ROD_LITHIUM.get(), "Chicago Pile Lithium Cell (LEGACY)");
         add(ModItems.PILE_ROD_PLUTONIUM.get(), "Chicago Pile Plutonium Rod");
         add(ModItems.PILE_ROD_PU239.get(), "Chicago Pile Bred Uranium Rod");
         add(ModItems.PILE_ROD_SOURCE.get(), "Chicago Pile Ra226Be Neutron Source");

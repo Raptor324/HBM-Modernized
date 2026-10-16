@@ -44,7 +44,8 @@ public final class MachineSpec<T extends BlockEntity> {
             @Nullable Function<T, float[]> tintOverride, // null/white = no tint; else {r,g,b,a} per-instance color multiplier
             @Nullable float[] tintFalloff, // null = no falloff; else {axis(0/1/2), fullCoord, zeroCoord} in model coordinates
             @Nullable ParametricAnim parametric, // null = CPU animator; else GPU joint (attrib 15)
-            @Nullable ParametricParams<T> parametricParams // per-frame joint parameters
+            @Nullable ParametricParams<T> parametricParams, // per-frame joint parameters
+            @Nullable java.util.function.BiFunction<T, Float, float[][]> clipPlanesResolver // null = no per-part CPU clip
     ) {
         boolean dynamic() { return dynamicQuads != null; }
     }
@@ -286,6 +287,22 @@ public final class MachineSpec<T extends BlockEntity> {
             return part.tintOverride().apply(be);
         } catch (Throwable t) {
             com.hbm_m.main.MainRegistry.LOGGER.error("[MachineRenderers:{}] part '{}' tint failed", id, part.name(), t);
+            return null;
+        }
+    }
+
+    /**
+     * Per-part clip-плоскости для этого BE ({@code float[][]} из {A,B,C,D} в конвенции
+     * «+D», локальные координаты геометрии) или null (обычный тир). Вызывается каждый
+     * кадр для партов с резолвером — резолвер должен быть дешёвым и переиспользовать
+     * скратч-массивы.
+     */
+    @Nullable float[][] resolveClipPlanes(PartDef<T> part, T be, float partialTick) {
+        if (part.clipPlanesResolver() == null) return null;
+        try {
+            return part.clipPlanesResolver().apply(be, partialTick);
+        } catch (Throwable t) {
+            com.hbm_m.main.MainRegistry.LOGGER.error("[MachineRenderers:{}] part '{}' clipPlanes failed", id, part.name(), t);
             return null;
         }
     }

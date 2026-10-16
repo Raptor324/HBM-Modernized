@@ -252,6 +252,7 @@ public class GUIDoorModelSelection extends Screen {
             case "silo_hatch_large" -> ModItems.SILO_HATCH_LARGE.get();
             case "vault_door" -> ModItems.VAULT_DOOR.get();
             case "cargo_door" -> ModItems.CARGO_DOOR.get();
+            case "blast_door" -> ModItems.BLAST_DOOR.get();
             default -> ModItems.LARGE_VEHICLE_DOOR.get();
         };
     }

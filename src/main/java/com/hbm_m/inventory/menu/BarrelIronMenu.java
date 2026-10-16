@@ -57,10 +57,12 @@ public class BarrelIronMenu extends AbstractContainerMenu {
         // Слоты машины напрямую через ModItemStackHandler (кросс-платформенно, без Forge SlotItemHandler).
         Container handlerContainer = new ModItemStackHandlerContainer(blockEntity.getItemHandler(), blockEntity::setChanged);
 
+        // NEXT MenuBarrel: слоты plain, mayPlace идёт через container.canPlaceItem —
+        // гейчим все входы тем же canPlaceItem BlockEntity, что и автоматизацию.
         this.addSlot(new Slot(handlerContainer, MachineFluidTankBlockEntity.SLOT_ID_IN, 8, 17) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
-                return stack.getItem() instanceof IItemFluidIdentifier;
+                return blockEntity.canPlaceItem(MachineFluidTankBlockEntity.SLOT_ID_IN, stack);
             }
         });
 
@@ -74,7 +76,7 @@ public class BarrelIronMenu extends AbstractContainerMenu {
         this.addSlot(new Slot(handlerContainer, MachineFluidTankBlockEntity.SLOT_LOAD_IN, 35, 17) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
-                return FluidItemAccess.hasFluidHandler(stack);
+                return blockEntity.canPlaceItem(MachineFluidTankBlockEntity.SLOT_LOAD_IN, stack);
             }
         });
 
@@ -88,7 +90,7 @@ public class BarrelIronMenu extends AbstractContainerMenu {
         this.addSlot(new Slot(handlerContainer, MachineFluidTankBlockEntity.SLOT_UNLOAD_IN, 125, 17) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
-                return FluidItemAccess.hasFluidHandler(stack);
+                return blockEntity.canPlaceItem(MachineFluidTankBlockEntity.SLOT_UNLOAD_IN, stack);
             }
         });
 

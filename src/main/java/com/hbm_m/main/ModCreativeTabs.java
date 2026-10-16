@@ -2,6 +2,7 @@ package com.hbm_m.main;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.creativetabs.MissileTab;
+import com.hbm_m.creativetabs.NightlyTab;
 import com.hbm_m.creativetabs.NukeTab;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.material.MaterialShape;
@@ -135,6 +136,14 @@ public class ModCreativeTabs {
 //                     .build());
 
 
+
+    // Служебная вкладка «портировано за ночь» (нет в оригинале): наполняют портирующие агенты
+    public static final RegistrySupplier<CreativeModeTab> NTM_NIGHTLY_TAB = CREATIVE_MODE_TABS.register("ntm_nightly_tab",
+            () -> tabBuilderAfter("ntm_dev_tab")
+                    .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_nightly_tab"))
+                    .icon(() -> new ItemStack(ModBlocks.BLOCK_GRAPHITE_DETECTOR.get()))
+                    .displayItems((params, output) -> NightlyTab.populate(CreativeModeTabEventHandler.deduplicated(output::accept)))
+                    .build());
 
     public static void init() {
         CREATIVE_MODE_TABS.register();

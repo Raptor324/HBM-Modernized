@@ -413,6 +413,12 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
     private void doCollectRender(BlockEntity be, float partialTick, PoseStack poseStack,
                                  MultiBufferSource bufferSource, int packedLight, boolean applyFrustum) {
         T blockEntity = (T) be;
+        // Двери: per-frame детект flip'а share-состояния (Iris on/off, конфиг-тумблер,
+        // момент загрузки шейдера) -> shareEpoch++ и полная инвалидация PART/VBO/dae
+        // кешей ДО чтения любых кеш-ключей этого кадра (детерминизм share, рев.2).
+        if (blockEntity instanceof com.hbm_m.block.entity.doors.DoorBlockEntity) {
+            com.hbm_m.client.render.implementations.MachineDoorRenderer.syncShareState();
+        }
         if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
             SHADOW_BER_INVOCATIONS++;
         } else if (applyFrustum && !isInViewFrustum(blockEntity, frameBounds(blockEntity))) {
@@ -461,6 +467,11 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
     public boolean tryFastAssertRender(BlockEntity beRaw, long gameTick) {
         if (!ClientRenderFlags.nucleusDirtySkip()) {
             return false;
+        }
+        // Двери: per-frame sync share-состояния ДО фазы 1 (roster-assert читает кеш-ключи,
+        // зависящие от shareEpoch). Frame-stamped -- один расчёт на кадр.
+        if (beRaw instanceof com.hbm_m.block.entity.doors.DoorBlockEntity) {
+            com.hbm_m.client.render.implementations.MachineDoorRenderer.syncShareState();
         }
         // Specs with time-varying dynamic parts (doors: animated=false, but the
         // animator depends on openTicks, which advances the client tick WITHOUT
@@ -815,7 +826,8 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
                             jointIndexFor(partIdx, part));
                     renderer.enqueue(poseStack, partLight, blockPos, blockEntity, bufferSource,
                             partSharedLight, spec.resolveUvRect(part, blockEntity),
-                            spec.resolveTint(part, blockEntity), part.tintFalloff());
+                            spec.resolveTint(part, blockEntity), part.tintFalloff(),
+                            spec.resolveClipPlanes(part, blockEntity, partialTick));
                     if (shifted) {
                         poseStack.popPose();
                     }
@@ -965,7 +977,8 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
                             blockEntity, bufferSource, partSharedLight,
                             spec.resolveUvRect(part, blockEntity),
                             spec.resolveTint(part, blockEntity),
-                            part.tintFalloff());
+                            part.tintFalloff(),
+                            spec.resolveClipPlanes(part, blockEntity, partialTick));
                 }
             } catch (Throwable t) {
                 com.hbm_m.main.MainRegistry.LOGGER.error("[MachineRenderers:{}] part '{}' render failed",

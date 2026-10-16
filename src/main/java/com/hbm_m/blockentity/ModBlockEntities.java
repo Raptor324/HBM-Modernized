@@ -2,6 +2,7 @@ package com.hbm_m.blockentity;
 import com.hbm_m.api.energy.SwitchBlockEntity;
 import com.hbm_m.api.energy.WireBlockEntity;
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.entity.doors.BlastDoorBlockEntity;
 import com.hbm_m.block.entity.doors.DoorBlockEntity;
 import com.hbm_m.blockentity.bomb.LandMineBlockEntity;
 import com.hbm_m.blockentity.bomb.NukeFatManBlockEntity;
@@ -809,6 +810,31 @@ public class ModBlockEntities {
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.pile.PileControlBlockEntity::new,
                             ModBlocks.PILE_CONTROL.get()).build(null));
 
+    // Registry-Name bewusst exakt wie NEXT ("pile_neutrondetector", ohne Projekt-_be-Suffix).
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.pile.BlockEntityPileNeutronDetector>> PILE_NEUTRONDETECTOR =
+            BLOCK_ENTITIES.register("pile_neutrondetector", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.pile.BlockEntityPileNeutronDetector::new,
+                            ModBlocks.BLOCK_GRAPHITE_DETECTOR.get()).build(null));
+
+    // Registry-Name bewusst exakt wie NEXT ("pile_fuel", ohne Projekt-_be-Suffix).
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.pile.BlockEntityPileFuel>> PILE_FUEL =
+            BLOCK_ENTITIES.register("pile_fuel", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.pile.BlockEntityPileFuel::new,
+                            ModBlocks.BLOCK_GRAPHITE_FUEL.get()).build(null));
+
+    // Registry-Name bewusst exakt wie NEXT ("pile_breedingfuel", ohne Projekt-_be-Suffix).
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.pile.BlockEntityPileBreedingFuel>> PILE_BREEDINGFUEL =
+            BLOCK_ENTITIES.register("pile_breedingfuel", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.pile.BlockEntityPileBreedingFuel::new,
+                            ModBlocks.BLOCK_GRAPHITE_LITHIUM.get()).build(null));
+
+    // Registry-Name bewusst exakt wie NEXT ("pile_source", ohne Projekt-_be-Suffix).
+    // NEXT legt beide Bloecke als valid ab: Quelle (Flux 1) + gebruetetes Plutonium (Flux 2).
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.pile.BlockEntityPileSource>> PILE_SOURCE =
+            BLOCK_ENTITIES.register("pile_source", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.pile.BlockEntityPileSource::new,
+                            ModBlocks.BLOCK_GRAPHITE_SOURCE.get(), ModBlocks.BLOCK_GRAPHITE_PLUTONIUM.get()).build(null));
+
     public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.ForceFieldBlockEntity>> FORCE_FIELD_BE =
             BLOCK_ENTITIES.register("force_field_be", () ->
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.ForceFieldBlockEntity::new,
@@ -839,10 +865,12 @@ public class ModBlockEntities {
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachinePumpElectricBlockEntity::new,
                             ModBlocks.PUMP_ELECTRIC.get()).build(null));
 
+    // capacitor_bus is the original's TE-less orientation block - only the five real
+    // capacitors carry a MachineCapacitorBlockEntity.
     public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineCapacitorBlockEntity>> MACHINE_CAPACITOR_BE =
             BLOCK_ENTITIES.register("machine_capacitor_be", () ->
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineCapacitorBlockEntity::new,
-                            ModBlocks.CAPACITOR_BUS.get(), ModBlocks.CAPACITOR_COPPER.get(), ModBlocks.CAPACITOR_GOLD.get(),
+                            ModBlocks.CAPACITOR_COPPER.get(), ModBlocks.CAPACITOR_GOLD.get(),
                             ModBlocks.CAPACITOR_NIOBIUM.get(), ModBlocks.CAPACITOR_SCHRABIDATE.get(), ModBlocks.CAPACITOR_TANTALIUM.get())
                             .build(null));
 
@@ -1333,7 +1361,21 @@ public class ModBlockEntities {
                         ModBlocks.SILO_HATCH.get(),
                         ModBlocks.SILO_HATCH_LARGE.get(),
                         ModBlocks.VAULT_DOOR.get(),
-                        ModBlocks.CARGO_DOOR.get())
+                        ModBlocks.CARGO_DOOR.get(),
+                        ModBlocks.BLAST_DOOR.get())
+                    .build(null));
+
+    /**
+     * Отдельный BlockEntity-тип blast door: BE восстанавливается из NBT фабрикой
+     * своего типа, поэтому при загрузке мира выживает класс BlastDoorBlockEntity
+     * (rising-edge редстоун, tryToggle из терминальных состояний, BFS-каскад).
+     * Старые сейвы с hbm_m:door по-прежнему дают базовый DoorBlockEntity — их
+     * безопасно тикает fallback в BlastDoorBlock.getTicker.
+     */
+    public static final RegistrySupplier<BlockEntityType<BlastDoorBlockEntity>> BLAST_DOOR_ENTITY =
+        BLOCK_ENTITIES.register("blast_door", () ->
+                BlockEntityType.Builder.of(BlastDoorBlockEntity::new,
+                        ModBlocks.BLAST_DOOR.get())
                     .build(null));
 
     public static final RegistrySupplier<BlockEntityType<TransitionSealBlockEntity>> TRANSITION_SEAL_BE =

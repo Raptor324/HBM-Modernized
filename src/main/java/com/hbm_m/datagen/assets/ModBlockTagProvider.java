@@ -223,6 +223,12 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 // ModBlocks.HARD_WOOD_LOG.get() // Пример
         );
 
+        // Д. Блоки, добываемые ЛЮБОЙ киркой (без needs-тега): broadcaster_pc в оригинале —
+        // Material.iron без setHarvestLevel (уровень 0); NEXT не задаёт для него needs_*.
+        Set<Block> anyPickaxeBlocks = Set.of(
+                ModBlocks.BROADCASTER_PC.get()
+        );
+
         // --- 3. Автоматический цикл ---
         for (RegistrySupplier<Block> regObject : ModBlocks.BLOCKS) {
             Block block = regObject.get();
@@ -264,7 +270,11 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 } else {
                     // -> КИРКА (По умолчанию для всех машин и прочих блоков)
                     pickaxeTag.add(block);
-                    ironToolTag.add(block); // Железная (по умолчанию)
+                    if (anyPickaxeBlocks.contains(block)) {
+                        // Любая кирка (уровень 0, без needs-тега)
+                    } else {
+                        ironToolTag.add(block); // Железная (по умолчанию)
+                    }
                 }
             }
         }
@@ -336,6 +346,35 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 .add(Blocks.RED_STAINED_GLASS_PANE)
                 .add(Blocks.BLACK_STAINED_GLASS_PANE)
                 .add(ModBlocks.REINFORCED_GLASS_PANE.get());
+
+        // ============ CP-1 PILE NEUTRON TAGS (hbm_m namespace, port of NEXT data/hbm/tags/block/pile) ============
+        // NEXT flux_absorber contains only hbm:block_boron, which has no Modernized analog
+        // (only glass_boron/sand_boron exist) - the empty tag makes the absorber check a no-op,
+        // exact parity for the blocks actually available.
+        this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "pile/flux_absorber")));
+        // NEXT flux_attenuator: brick_concrete + concrete + concrete_asbestos + concrete_smooth +
+        // 16 colored concretes = 20 entries. concrete_smooth is the one deliberate omission (no
+        // Modernized block exists); all other 19 analogs are mapped, incl. concrete_red.
+        this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "pile/flux_attenuator")))
+                .add(ModBlocks.BRICK_CONCRETE.get())
+                .add(ModBlocks.CONCRETE.get())
+                .add(ModBlocks.CONCRETE_ASBESTOS.get())
+                .add(ModBlocks.CONCRETE_WHITE.get())
+                .add(ModBlocks.CONCRETE_ORANGE.get())
+                .add(ModBlocks.CONCRETE_MAGENTA.get())
+                .add(ModBlocks.CONCRETE_LIGHT_BLUE.get())
+                .add(ModBlocks.CONCRETE_YELLOW.get())
+                .add(ModBlocks.CONCRETE_LIME.get())
+                .add(ModBlocks.CONCRETE_PINK.get())
+                .add(ModBlocks.CONCRETE_GRAY.get())
+                .add(ModBlocks.CONCRETE_SILVER.get())
+                .add(ModBlocks.CONCRETE_CYAN.get())
+                .add(ModBlocks.CONCRETE_PURPLE.get())
+                .add(ModBlocks.CONCRETE_BLUE.get())
+                .add(ModBlocks.CONCRETE_BROWN.get())
+                .add(ModBlocks.CONCRETE_GREEN.get())
+                .add(ModBlocks.CONCRETE_RED.get())
+                .add(ModBlocks.CONCRETE_BLACK.get());
 
 
         // ============ ТЕГИ СОВМЕСТИМОСТИ С ДРУГИМИ МОДАМИ ============

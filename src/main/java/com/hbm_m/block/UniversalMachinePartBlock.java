@@ -417,8 +417,11 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
             if (controllerState.getBlock() instanceof IMultiblockController) {
                 BlockEntity ctrlBe = pLevel.getBlockEntity(controllerPos);
                 // Отвёртка зарезервирована под GUI скинов, но на запертой двери клик уходит
-                // в tryToggle → canAccess → tryPick (взлом), как в 1.7.10
-                if (ctrlBe instanceof DoorBlockEntity door && !door.isLocked() && hasScrewdriver(pPlayer)) {
+                // в tryToggle → canAccess → tryPick (взлом), как в 1.7.10.
+                // У blast door GUI скинов нет (NEXT parity) — отвёртка тогглит дверь:
+                // не перехватываем клик, отдаём его в use ядра.
+                if (ctrlBe instanceof DoorBlockEntity door && !(door instanceof com.hbm_m.block.entity.doors.BlastDoorBlockEntity)
+                        && !door.isLocked() && hasScrewdriver(pPlayer)) {
                     return InteractionResult.sidedSuccess(pLevel.isClientSide());
                 }
                 //? if < 1.21.1 {

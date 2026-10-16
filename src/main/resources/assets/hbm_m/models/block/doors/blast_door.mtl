@@ -1,0 +1,4 @@
+# Per cargo_door.mtl convention: '#default' is a reference into the model JSON
+# textures map; SinglePartBakingContext.getMaterial re-resolves per part name.
+newmtl default
+map_Kd #default
