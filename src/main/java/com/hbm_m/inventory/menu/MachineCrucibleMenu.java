@@ -86,6 +86,10 @@ public class MachineCrucibleMenu extends AbstractContainerMenu {
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
+        // Without the block entity the nine machine slots are never added, but the ranges below still
+        // assume them: moveItemStackTo then walked past the end of a 36-slot menu and threw.
+        if (blockEntity == null) return ItemStack.EMPTY;
+
         ItemStack copy = ItemStack.EMPTY;
         Slot slot = this.slots.get(index);
 

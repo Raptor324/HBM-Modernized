@@ -38,9 +38,6 @@ import net.minecraft.world.phys.AABB;
 
 
 public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IMultiblockPart
-    //? if fabric {
-    /*, net.fabricmc.fabric.api.rendering.data.v1.RenderAttachmentBlockEntity
-    *///?}
 {
     private static final String DOOR_LOOP_SOUND_FACTORY = "com.hbm_m.client.sound.DoorLoopSoundFactory";
 
@@ -91,8 +88,6 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
 
     //? if forge {
     /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    *///?} elif fabric {
-    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
     *///?} elif neoforge {
     @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
     //?}
@@ -119,17 +114,6 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         return modelSelection;
     }
 
-    //? if fabric {
-    /*@Override
-    public @org.jetbrains.annotations.Nullable Object getRenderAttachmentData() {
-        boolean isMoving = state == 2 || state == 3;
-        boolean isOpen = state == 1;
-        boolean isOverlap = !isMoving && cachedModelData != null;
-        return new DoorRenderData(modelSelection, isMoving, isOpen, isOverlap);
-    }
-
-    public record DoorRenderData(DoorModelSelection selection, boolean moving, boolean open, boolean overlap) {}
-    *///?}
     
     /**
      * Установить выбор модели
@@ -612,8 +596,6 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     // ==================== Client Sound Handling ====================
     //? if forge {
     /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    *///?} elif fabric {
-    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
     *///?} elif neoforge {
     @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
     //?}
@@ -642,8 +624,6 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     }
     //? if forge {
     /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    *///?} elif fabric {
-    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
     *///?} elif neoforge {
     @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
     //?}
@@ -665,8 +645,6 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     }
     //? if forge {
     /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    *///?} elif fabric {
-    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
     *///?} elif neoforge {
     @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
     //?}
@@ -683,8 +661,6 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
 
     //? if forge {
     /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    *///?} elif fabric {
-    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
     *///?} elif neoforge {
     @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
     //?}
@@ -801,8 +777,6 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
 
     //? if forge {
     /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    *///?} elif fabric {
-    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
     *///?} elif neoforge {
     @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
     //?}

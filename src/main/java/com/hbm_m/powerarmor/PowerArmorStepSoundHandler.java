@@ -107,11 +107,7 @@ public final class PowerArmorStepSoundHandler {
         if (id.contains(":")) {
             rl = net.minecraft.resources.ResourceLocation.tryParse(id);
         } else {
-            //? if fabric && < 1.21.1 {
-            /*rl = new net.minecraft.resources.ResourceLocation(MainRegistry.MOD_ID, id);
-            *///?} else {
                         rl = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, id);
-            //?}
 
         }
 

@@ -86,6 +86,14 @@ public class ModEntities {
                             .sized(2.0F, 1.0F)
                             .build("airstrikenuke"));
 
+    // Both heavy and agent used to be constructed with AIRSTRIKE_ENTITY: after a reload the game
+    // rebuilt them through that type's factory, so a heavy bomber came back as a plain one.
+    public static final RegistrySupplier<EntityType<AirstrikeHeavyEntity>> AIRSTRIKE_HEAVY_ENTITY =
+            ENTITY_TYPES.register("airstrikeheavy",
+                    () -> EntityType.Builder.<AirstrikeHeavyEntity>of(AirstrikeHeavyEntity::new, MobCategory.MISC)
+                            .sized(2.0F, 1.0F)
+                            .build("airstrikeheavy"));
+
     public static final RegistrySupplier<EntityType<AirstrikeAgentEntity>> AIRSTRIKE_AGENT_ENTITY =
             ENTITY_TYPES.register("airstrikeagent",
                     () -> EntityType.Builder.<AirstrikeAgentEntity>of(AirstrikeAgentEntity::new, MobCategory.MISC)
@@ -633,24 +641,5 @@ public class ModEntities {
 
     public static void init() {
         ENTITY_TYPES.register();
-        //? if fabric {
-        /*net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry.register(
-                NOLO.get(), NoloEntity.createAttributes());
-        net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry.register(
-                ENTITY_MOB_TAINTED_CREEPER.get(), EntityCreeperTainted.createAttributes());
-        net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry.register(
-                ENTITY_MOB_VOLATILE_CREEPER.get(), EntityCreeperVolatile.createAttributes());
-        net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry.register(
-                ENTITY_MOB_PHOSGENE_CREEPER.get(), EntityCreeperPhosgene.createAttributes());
-        net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry.register(
-                ENTITY_MOB_GOLD_CREEPER.get(), EntityCreeperGold.createAttributes());
-        net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry.register(
-                ENTITY_MOB_NUCLEAR_CREEPER.get(), EntityCreeperNuclear.createAttributes());
-        net.minecraft.world.entity.SpawnRestriction.register(
-                NOLO.get(),
-                net.minecraft.world.entity.SpawnPlacements.Type.ON_GROUND,
-                net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
-                NoloEntity::checkNoloSpawnRules);
-        *///?}
     }
 }

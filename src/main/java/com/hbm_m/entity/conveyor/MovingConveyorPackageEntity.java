@@ -64,14 +64,14 @@ public class MovingConveyorPackageEntity extends Entity implements ItemSupplier 
     //? if < 1.21.1 {
     /*@Override
     protected void defineSynchedData() {
-        this.entityData.define(DISPLAY_ITEM, ItemStack.EMPTY);
-    }
+        var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     *///?} else {
     @Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
-        builder.define(DISPLAY_ITEM, ItemStack.EMPTY);
-    }
+        var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
     //?}
+        defs.define(DISPLAY_ITEM, ItemStack.EMPTY);
+    }
 
     public void setContents(ItemStack[] contents) {
         this.contents = contents;

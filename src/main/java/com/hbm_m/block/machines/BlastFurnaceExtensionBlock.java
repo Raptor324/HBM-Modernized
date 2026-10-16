@@ -37,7 +37,8 @@ public class BlastFurnaceExtensionBlock extends Block {
     @SuppressWarnings("deprecation")
     public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState,
                                   LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
-        if (direction == Direction.DOWN && !state.canSurvive(level, pos)) {
+        if (direction == Direction.DOWN && !com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()
+                && !state.canSurvive(level, pos)) {
             return Blocks.AIR.defaultBlockState();
         }
         return super.updateShape(state, direction, neighborState, level, pos, neighborPos);
@@ -47,7 +48,9 @@ public class BlastFurnaceExtensionBlock extends Block {
     @SuppressWarnings("deprecation")
     public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
         super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
-        if (!level.isClientSide() && !state.canSurvive(level, pos)) {
+        // Create puts the halves back one at a time: the first one must not break itself while
+        // the other is still on its way.
+        if (!level.isClientSide() && !com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving() && !state.canSurvive(level, pos)) {
             level.destroyBlock(pos, true);
         }
     }

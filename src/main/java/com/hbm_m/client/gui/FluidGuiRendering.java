@@ -38,15 +38,9 @@ public final class FluidGuiRendering {
      */
     public static ResourceLocation hbmGuiFluidPng(String fluidTextureBaseName) {
         String safe = fluidTextureBaseName == null ? "" : fluidTextureBaseName.toLowerCase(Locale.US);
-        //? if fabric && < 1.21.1 {
-        /*return new ResourceLocation(
-                MainRegistry.MOD_ID,
-                "textures/gui/fluids/" + safe + ".png");
-        *///?} else {
                 return ResourceLocation.fromNamespaceAndPath(
                 MainRegistry.MOD_ID,
                 "textures/gui/fluids/" + safe + ".png");
-        //?}
 
     }
 
@@ -56,15 +50,9 @@ public final class FluidGuiRendering {
      */
     public static ResourceLocation hbmGuiFluidPngCustom(String textureFileBaseName) {
         String name = textureFileBaseName == null ? "" : textureFileBaseName;
-        //? if fabric && < 1.21.1 {
-        /*return new ResourceLocation(
-                MainRegistry.MOD_ID,
-                "textures/gui/fluids/" + name + ".png");
-        *///?} else {
                 return ResourceLocation.fromNamespaceAndPath(
                 MainRegistry.MOD_ID,
                 "textures/gui/fluids/" + name + ".png");
-        //?}
 
     }
 
@@ -73,15 +61,9 @@ public final class FluidGuiRendering {
      * → полный {@link ResourceLocation} PNG для {@link GuiGraphics#blit(ResourceLocation, int, int, int, int, int, int, int, int)}.
      */
     public static ResourceLocation texturePngFromStillSpriteId(ResourceLocation stillId) {
-        //? if fabric && < 1.21.1 {
-        /*return new ResourceLocation(
-                stillId.getNamespace(),
-                "textures/" + stillId.getPath() + ".png");
-        *///?} else {
                 return ResourceLocation.fromNamespaceAndPath(
                 stillId.getNamespace(),
                 "textures/" + stillId.getPath() + ".png");
-        //?}
 
     }
 

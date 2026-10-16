@@ -119,9 +119,9 @@ public class MachineTurbineGasBlockEntity extends BaseMachineBlockEntity impleme
                 BlockEntity neighborBe = level.getBlockEntity(neighborPos);
                 if (!(neighborBe instanceof IFluidConnectorMK2)) continue;
 
-                trySubscribe(gasTank.getTankType(), level, neighborPos, dir);
-                trySubscribe(lubeTank.getTankType(), level, neighborPos, dir);
-                trySubscribe(waterTank.getTankType(), level, neighborPos, dir);
+                trySubscribe(gasTank, level, neighborPos, dir);
+                trySubscribe(lubeTank, level, neighborPos, dir);
+                trySubscribe(waterTank, level, neighborPos, dir);
                 if (hotsteamTank.getFill() > 0) {
                     tryProvide(hotsteamTank, level, neighborPos, dir);
                 }

@@ -45,7 +45,8 @@ import net.minecraft.world.level.material.Fluid;
  * Befuellung/-Leerung (slot 0/1) und das erzwungene Setzen des Tank-Typs per Identifier-Item (slot 3)
  * sind NICHT implementiert - der Tank wird ausschliesslich ueber das Fluid-Netz (Capability) befuellt.
  */
-public class MachineTurbofanBlockEntity extends BaseMachineBlockEntity {
+public class MachineTurbofanBlockEntity extends BaseMachineBlockEntity
+        implements com.hbm_m.api.fluids.IFluidStandardReceiverMK2 {
 
     public static final int SLOT_FUEL_CONTAINER = 0;
     public static final int SLOT_EMPTY_CONTAINER = 1;
@@ -61,19 +62,15 @@ public class MachineTurbofanBlockEntity extends BaseMachineBlockEntity {
         super(ModBlockEntities.TURBOFAN_BE.get(), pos, state, 4, 2_000_000L, 0L, 80_000L);
     }
 
-    //? if forge {
-    /*@Override
-    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
-            net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable net.minecraft.core.Direction side) {
-        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
-            return tank.getForgeFluidCapability().cast();
-        }
-        return super.getCapability(cap, side);
-    }
-    *///?}
-
     public static void tick(Level level, BlockPos pos, BlockState state, MachineTurbofanBlockEntity be) {
         if (level.isClientSide()) return;
+
+        // A receiver only joins a duct network by subscribing to the pipes next to it.
+        if (level.getGameTime() % 20 == 0) {
+            for (net.minecraft.core.Direction dir : net.minecraft.core.Direction.values()) {
+                be.trySubscribe(be.tank, level, pos.relative(dir), dir);
+            }
+        }
 
         be.chargeItemInSlot(SLOT_BATTERY);
 
@@ -101,6 +98,23 @@ public class MachineTurbofanBlockEntity extends BaseMachineBlockEntity {
 
     public FluidTank getTank() {
         return tank;
+    }
+
+    // The tank used to be reachable only through a forge-gated getCapability override, so on
+    // NeoForge no pipe could ever fill it. The mod's own MK2 interface works on both.
+    @Override
+    public com.hbm_m.inventory.fluid.tank.FluidTank[] getAllTanks() {
+        return new com.hbm_m.inventory.fluid.tank.FluidTank[] { tank };
+    }
+
+    @Override
+    public com.hbm_m.inventory.fluid.tank.FluidTank[] getReceivingTanks() {
+        return new com.hbm_m.inventory.fluid.tank.FluidTank[] { tank };
+    }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
     }
 
     @Override

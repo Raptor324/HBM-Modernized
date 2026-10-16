@@ -96,11 +96,7 @@ public class BreederRecipe extends PlatformRecipe {
 
     public static class Serializer extends PlatformRecipeSerializer<BreederRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-        //? if fabric && < 1.21.1 {
-        /*public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "breeder");
-        *///?} else {
         public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "breeder");
-        //?}
 
         @Override
         public BreederRecipe readJson(ResourceLocation recipeId, JsonObject json) {

@@ -22,6 +22,7 @@ public final class BedrockOreDensity {
     }
 
     private static final double SCALE = 0.01;
+    private static final int OCTAVES = 4;
     private static final long LEVEL_SEED = 2114043L;
     private static final long TYPE_SEED_BASE = 2082127L;
 
@@ -52,9 +53,27 @@ public final class BedrockOreDensity {
         return ix0 + (ix1 - ix0) * sz;
     }
 
+    /**
+     * Octave sum matching the original's {@code NoiseGeneratorPerlin(seed, 4)}: each octave halves
+     * the frequency and doubles the amplitude ({@code d2 += noise(x * d3, z * d3) / d3; d3 /= 2}).
+     *
+     * A single octave stays inside [-1, 1], so the original formula |level * type| * 0.05 could
+     * never exceed 0.05 - every bedrock ore in the world came out tier 1 with no bore fluid, and
+     * tiers 2-4 of the mining drill were unreachable content.
+     */
+    private static double fractalNoise(long seed, double x, double z) {
+        double sum = 0;
+        double freq = 1.0;
+        for (int octave = 0; octave < OCTAVES; octave++) {
+            sum += valueNoise(seed + octave * 6364136223L, x * freq, z * freq) / freq;
+            freq /= 2.0;
+        }
+        return sum;
+    }
+
     public static double getDensity(int x, int z, Type type) {
-        double level = valueNoise(LEVEL_SEED, x * SCALE, z * SCALE);
-        double t = valueNoise(TYPE_SEED_BASE + type.ordinal(), x * SCALE, z * SCALE);
+        double level = fractalNoise(LEVEL_SEED, x * SCALE, z * SCALE);
+        double t = fractalNoise(TYPE_SEED_BASE + type.ordinal(), x * SCALE, z * SCALE);
         double raw = Math.abs(level * t) * 0.05;
         return Math.max(0, Math.min(2, raw));
     }

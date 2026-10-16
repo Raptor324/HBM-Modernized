@@ -259,13 +259,6 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(Ingredient.of(Items.REDSTONE), 4)
                 .save(writer, "microwave");
 
-        // Exposure Chamber — no ass.* recipe existed in the original 1.7.10 either; invented here.
-        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.EXPOSURE_CHAMBER.get(), 1), 150, 80)
-                .addIngredient(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.PLATE), 16)
-                .addIngredient(ModMaterialItems.item(ModMaterials.ADVANCED_ALLOY, MaterialShape.INGOT), 6)
-                .addIngredient(ModItems.CIRCUIT_STAR.get(), 2)
-                .save(writer, "exposure_chamber");
-
         // Radiolysis Collector — no ass.* recipe existed in the original 1.7.10 either; invented here.
         AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.RADIOLYSIS.get(), 1), 150, 80)
                 .addIngredient(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.PLATE), 12)
@@ -411,14 +404,6 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.PIPE_STEEL.get(), 6)
                 .addIngredient(ModItems.CIRCUIT_STAR.get(), 2)
                 .save(writer, "annihilator");
-
-        // Strand Caster — no ass.* recipe existed in the original 1.7.10 either; invented here.
-        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.STRAND_CASTER.get(), 1), 200, 120)
-                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT), 32)
-                .addIngredient(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE_CAST), 12)
-                .addIngredient(ModItems.PIPE_STEEL.get(), 8)
-                .addIngredient(ModItems.MOTOR_BISMUTH.get(), 2)
-                .save(writer, "strand_caster");
 
         // Liquefactor — port of 1.7.10 ass.liquefactor.
         AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.LIQUEFACTOR.get(), 1), 200, 100)
@@ -1191,12 +1176,6 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 8)
                 .addIngredient(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE), 4)
                 .save(writer, "shredder");
-
-        AssemblerRecipeBuilder.assemblerRecipe(
-                        new ItemStack(ModItems.FAT_MAN_CORE.get(), 1), 160, 250)
-                .addIngredient(ModMaterialItems.item(ModMaterials.PLUTONIUM, MaterialShape.BILLET), 16)
-                .addIngredient(ModMaterialItems.item(ModMaterials.BERYLLIUM, MaterialShape.INGOT), 4)
-                .save(writer, "man_core");
 
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModItems.GRENADE_NUC.get(), 3), 160, 250)

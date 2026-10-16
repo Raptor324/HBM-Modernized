@@ -176,7 +176,6 @@ public class NukeFatManBlock extends BaseEntityBlock implements IMultiblockContr
         BlockEntity be = level.getBlockEntity(pos);
         if (be instanceof NukeFatManBlockEntity nukeBe) {
             if (nukeBe.isReady()) {
-                Containers.dropContents(level, pos, nukeBe);
                 nukeBe.clearContent();
                 Direction facing = level.getBlockState(pos).getValue(FACING);
                 structureHelper.destroyStructure(level, pos, facing);
@@ -185,7 +184,6 @@ public class NukeFatManBlock extends BaseEntityBlock implements IMultiblockContr
                 return BombReturnCode.DETONATED;
             }
             if (nukeBe.isFilled()) {
-                Containers.dropContents(level, pos, nukeBe);
                 nukeBe.clearContent();
                 Direction facing = level.getBlockState(pos).getValue(FACING);
                 structureHelper.destroyStructure(level, pos, facing);

@@ -3,7 +3,6 @@ pluginManagement {
 		mavenLocal()
 		mavenCentral()
 		gradlePluginPortal()
-		maven("https://maven.fabricmc.net/") { name = "Fabric" }
 		maven("https://maven.neoforged.net/releases/") { name = "NeoForged" }
 		maven("https://maven.kikugie.dev/snapshots") { name = "KikuGie Snapshots" }
 		maven("https://maven.kikugie.dev/releases") { name = "KikuGie Releases" }
@@ -29,10 +28,8 @@ stonecutter {
 		fun match(version: String, vararg loaders: String) =
 			loaders.forEach { version("$version-$it", version).buildscript = "build.$it.gradle.kts" }
 
-		// match("1.21.11", "fabric", "neoforge")
+		// match("1.21.11", "neoforge")
 		match("1.21.1", "neoforge")
-		// match("1.21.1", "fabric")
-		// match("1.20.1", "fabric", "forge")
 		match("1.20.1", "forge")
 
 		vcsVersion = "1.20.1-forge"

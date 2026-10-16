@@ -41,7 +41,14 @@ public class MachineWatzPowerplantMenu extends AbstractContainerMenu {
         for (int j = 0; j < 6; j++) {
             for (int i = 0; i < 6; i++) {
                 if (i + j > 1 && i + j < 9 && 5 - i + j > 1 && i + 5 - j > 1) {
-                    this.addSlot(new Slot(machineContainer, index, 17 + i * 18, 8 + j * 18));
+                    // One pellet per slot: the block entity burns a slot as a single pellet (upstream
+                    // getInventoryStackLimit() == 1), and the container wrapper reports 99 by default.
+                    this.addSlot(new Slot(machineContainer, index, 17 + i * 18, 8 + j * 18) {
+                        @Override
+                        public int getMaxStackSize() {
+                            return 1;
+                        }
+                    });
                     index++;
                 }
             }

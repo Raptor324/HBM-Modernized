@@ -62,6 +62,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // Блоки слитков теперь генерируются автоматически в цикле ниже
 
         blockWithItem(ModBlocks.GIGA_DET);
+        // Textures ported from the 1.7.10 assets - these three had no blockstate at all.
+        blockWithItem(ModBlocks.ORE_OIL_EMPTY);
+        blockWithItem(ModBlocks.GEIGER);
+        blockWithItem(ModBlocks.BROADCASTER);
         blockWithItem(ModBlocks.POLONIUM210_BLOCK);
         blockWithItem(ModBlocks.EXPLOSIVE_CHARGE);
         blockWithItem(ModBlocks.CRATE_WEAPON);
@@ -695,6 +699,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customBombBlock(ModBlocks.NUKE_MIKE);
         customBombBlock(ModBlocks.NUKE_TSAR);
         customBombBlock(ModBlocks.NUKE_FLEIJA);
+        // The model and its OBJ were already ported, only the blockstate was never emitted.
+        customBombBlock(ModBlocks.NUKE_PROTOTYPE);
         customMachineBlock(ModBlocks.CORE_EMITTER);
         customMachineBlock(ModBlocks.CORE_INJECTOR);
         customMachineBlock(ModBlocks.CORE_RECEIVER);
@@ -744,16 +750,15 @@ public class ModBlockStateProvider extends BlockStateProvider {
         registerLitMachineBlock(ModBlocks.FURNACE_STEEL,
             com.hbm_m.block.machines.MachineFurnaceSteelBlock.FACING, com.hbm_m.block.machines.MachineFurnaceSteelBlock.LIT,
             "furnace_steel", "furnace_steel");
-        // Electric Furnace / Brick Furnace: kein eigenes Modell/Textur-Set portiert (nicht in den
-        // vorhandenen Assets vorhanden) - als Platzhalter wird das bereits existierende
-        // furnace_iron-Modell (inkl. Textur) wiederverwendet, damit die Bloecke kompilieren und
-        // sichtbar sind. Sollte spaeter durch dedizierte Modelle ersetzt werden.
+        // Electric Furnace / Brick Furnace: own texture sets ported from the 1.7.10 assets
+        // (machine_electric_furnace_*, machine_furnace_brick_*), so both stop borrowing the iron
+        // furnace model. Separate front texture for the lit state, like vanilla's furnace.
         registerLitMachineBlock(ModBlocks.ELECTRIC_FURNACE,
             com.hbm_m.block.machines.MachineElectricFurnaceBlock.FACING, com.hbm_m.block.machines.MachineElectricFurnaceBlock.LIT,
-            "furnace_iron", "furnace_iron");
+            "electric_furnace", "electric_furnace_on");
         registerLitMachineBlock(ModBlocks.FURNACE_BRICK,
             com.hbm_m.block.machines.MachineFurnaceBrickBlock.FACING, com.hbm_m.block.machines.MachineFurnaceBrickBlock.LIT,
-            "furnace_iron", "furnace_iron");
+            "furnace_brick", "furnace_brick_on");
         // Rotary Furnace: eigenes OBJ-Modell bereits vorhanden (block/machines/rotary_furnace.json),
         // kein separates LIT-Modell portiert - gleiches Modell fuer beide Zustaende.
         registerLitMachineBlock(ModBlocks.ROTARY_FURNACE,
@@ -773,13 +778,13 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         // Жидкостный насос / клапан / выхлоп — временно ванильный iron cube (отдельные модели позже)
         ModelFile fluidPumpModel = models().withExistingParent(ModBlocks.FLUID_PUMP.getId().getPath(), mcLoc("block/cube_all"))
-                .texture("all", mcLoc("block/iron_block"))
-                .texture("particle", mcLoc("block/iron_block"));
+                .texture("all", modLoc("block/block_steel"))
+                .texture("particle", modLoc("block/block_steel"));
         horizontalBlock(ModBlocks.FLUID_PUMP.get(), fluidPumpModel);
 
         ModelFile fluidValveModel = models().withExistingParent(ModBlocks.FLUID_VALVE.getId().getPath(), mcLoc("block/cube_all"))
-                .texture("all", mcLoc("block/iron_block"))
-                .texture("particle", mcLoc("block/iron_block"));
+                .texture("all", modLoc("block/fluid_valve_off"))
+                .texture("particle", modLoc("block/fluid_valve_off"));
         simpleBlock(ModBlocks.FLUID_VALVE.get(), fluidValveModel);
 
         ModelFile fluidExhaustModel = models().withExistingParent(ModBlocks.FLUID_EXHAUST.getId().getPath(), mcLoc("block/cube_all"))
@@ -789,6 +794,13 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         // Decor
         customObjBlock(ModBlocks.REBAR);
+        // Hand-written OBJ models existed, the blockstates never did: every barbed wire
+        // block logged "missing model for variant" and rendered as the missing model.
+        customObjBlock(ModBlocks.BARBED_WIRE);
+        customObjBlock(ModBlocks.BARBED_WIRE_FIRE);
+        customObjBlock(ModBlocks.BARBED_WIRE_POISON);
+        customObjBlock(ModBlocks.BARBED_WIRE_WITHER);
+        customObjBlock(ModBlocks.BARBED_WIRE_RAD);
 
         // Decor
         customObjBlock(ModBlocks.CRT_BROKEN);
@@ -3243,8 +3255,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 )
         );
         // Порт BlockNTMGlassPane: ванильная панель (Post/Side/NoSide)
-        paneBlock((net.minecraft.world.level.block.IronBarsBlock) ModBlocks.REINFORCED_GLASS_PANE.get(),
-                modLoc("block/reinforced_glass_pane"), modLoc("block/reinforced_glass_pane_edge"));
+        // Glass needs the cutout layer: paneBlock leaves render_type unset, so the pane baked
+        // into the solid layer and its edges came out opaque.
+        paneBlockWithRenderType((net.minecraft.world.level.block.IronBarsBlock) ModBlocks.REINFORCED_GLASS_PANE.get(),
+                modLoc("block/reinforced_glass_pane"), modLoc("block/reinforced_glass_pane_edge"),
+                mcLoc("cutout"));
         simpleBlockItem(ModBlocks.REINFORCED_GLASS_PANE.get(), models().getExistingFile(modLoc("block/reinforced_glass_pane_post")));
         simpleBlockWithItem(ModBlocks.REINFORCED_LAMINATE.get(),
                 models().cubeAll(
@@ -3865,14 +3880,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 .texture("east", modLoc("block/rbmk/rbmk_absorber_side"))
                 .texture("west", modLoc("block/rbmk/rbmk_absorber_side"))
                 .texture("particle", modLoc("block/rbmk/rbmk_absorber_side"));
-        ModelFile mrbmk_rbmk_autoloader = models().withExistingParent("block/rbmk/rbmk_autoloader", mcLoc("block/cube"))
-                .texture("down", modLoc("block/rbmk/rbmk_blank_top"))
-                .texture("up", modLoc("block/rbmk/rbmk_blank_top"))
-                .texture("north", modLoc("block/rbmk/rbmk_blank_side"))
-                .texture("south", modLoc("block/rbmk/rbmk_blank_side"))
-                .texture("east", modLoc("block/rbmk/rbmk_blank_side"))
-                .texture("west", modLoc("block/rbmk/rbmk_blank_side"))
-                .texture("particle", modLoc("block/rbmk/rbmk_blank_side"));
+        ModelFile mrbmk_rbmk_autoloader = models().withExistingParent("block/rbmk/rbmk_autoloader", mcLoc("block/cube_all"))
+                .texture("all", modLoc("block/rbmk/standalone_rbmk_autoloader"))
+                .texture("particle", modLoc("block/rbmk/standalone_rbmk_autoloader"));
         ModelFile mrbmk_rbmk_blank = models().withExistingParent("block/rbmk/rbmk_blank", mcLoc("block/cube"))
                 .texture("down", modLoc("block/rbmk/rbmk_blank_top"))
                 .texture("up", modLoc("block/rbmk/rbmk_blank_top"))
@@ -4113,14 +4123,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 .texture("east", modLoc("block/rbmk/rbmk_control_side"))
                 .texture("west", modLoc("block/rbmk/rbmk_control_side"))
                 .texture("particle", modLoc("block/rbmk/rbmk_control_side"));
-        ModelFile mrbmk_rbmk_loader = models().withExistingParent("block/rbmk/rbmk_loader", mcLoc("block/cube"))
-                .texture("down", modLoc("block/rbmk/rbmk_blank_top"))
-                .texture("up", modLoc("block/rbmk/rbmk_blank_top"))
-                .texture("north", modLoc("block/rbmk/rbmk_blank_side"))
-                .texture("south", modLoc("block/rbmk/rbmk_blank_side"))
-                .texture("east", modLoc("block/rbmk/rbmk_blank_side"))
-                .texture("west", modLoc("block/rbmk/rbmk_blank_side"))
-                .texture("particle", modLoc("block/rbmk/rbmk_blank_side"));
+        ModelFile mrbmk_rbmk_loader = models().withExistingParent("block/rbmk/rbmk_loader", mcLoc("block/cube_all"))
+                .texture("all", modLoc("block/rbmk/standalone_rbmk_loader"))
+                .texture("particle", modLoc("block/rbmk/standalone_rbmk_loader"));
         ModelFile mrbmk_rbmk_moderator = models().withExistingParent("block/rbmk/rbmk_moderator", mcLoc("block/cube"))
                 .texture("down", modLoc("block/rbmk/rbmk_moderator_top"))
                 .texture("up", modLoc("block/rbmk/rbmk_moderator_top"))

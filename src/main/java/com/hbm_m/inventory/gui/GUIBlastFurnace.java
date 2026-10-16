@@ -16,11 +16,7 @@ import net.minecraft.world.inventory.Slot;
 
 public class GUIBlastFurnace extends AbstractContainerScreen<BlastFurnaceMenu> {
     private static final ResourceLocation GUI_TEXTURE =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/gui_blast_furnace_legacy.png");
-            *///?} else {
                         ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/gui_blast_furnace_legacy.png");
-            //?}
 
     public GUIBlastFurnace(BlastFurnaceMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);

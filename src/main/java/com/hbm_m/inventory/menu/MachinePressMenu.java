@@ -103,6 +103,9 @@ public class MachinePressMenu extends AbstractContainerMenu {
     private static final int VANILLA_FIRST_SLOT_INDEX = 0;
     private static final int TE_INVENTORY_FIRST_SLOT_INDEX = VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT;
     private static final int TE_INVENTORY_SLOT_COUNT = 4;
+    /** Fuel, stamp and material. The output is last and stays out of the insert range: vanilla
+     * moveItemStackTo ignores mayPlace when merging onto an existing stack. */
+    private static final int TE_INSERTABLE_SLOT_COUNT = 3;
 
     @Override
     public ItemStack quickMoveStack(Player playerIn, int index) {
@@ -114,7 +117,7 @@ public class MachinePressMenu extends AbstractContainerMenu {
 
         if (index < VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT) {
             if (!moveItemStackTo(sourceStack, TE_INVENTORY_FIRST_SLOT_INDEX, TE_INVENTORY_FIRST_SLOT_INDEX
-                    + TE_INVENTORY_SLOT_COUNT, false)) {
+                    + TE_INSERTABLE_SLOT_COUNT, false)) {
                 return ItemStack.EMPTY;
             }
         } else if (index < TE_INVENTORY_FIRST_SLOT_INDEX + TE_INVENTORY_SLOT_COUNT) {

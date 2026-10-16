@@ -122,11 +122,8 @@ public class ExplosiveChargeBlock extends Block implements IDetonatable {
                         BlockState checkState = serverLevel.getBlockState(checkPos);
                         Block block = checkState.getBlock();
                         if (block instanceof IDetonatable) {
-                            IDetonatable detonatable = (IDetonatable) block;
-                            int delay = (int)(dist * 2); // Задержка зависит от расстояния
-                            serverLevel.getServer().tell(new TickTask(delay, () -> {
-                                detonatable.onDetonate(serverLevel, checkPos, checkState, player);
-                            }));
+                            com.hbm_m.api.bomb.BombDetonation.triggerDetonatableLater(
+                                    serverLevel, checkPos, block, player, (int) (dist * 2));
                         }
                     }
                 }

@@ -7,14 +7,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
-//? if forge {
-/*import dev.architectury.fluid.FluidStack;
+//? if forge || neoforge {
+import dev.architectury.fluid.FluidStack;
 import mezz.jei.api.constants.VanillaTypes;
-//? if forge {
-/^import mezz.jei.api.forge.ForgeTypes;
-^///?} elif neoforge {
-import mezz.jei.api.neoforge.NeoForgeTypes;
-//?}
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.helpers.IGuiHelper;
@@ -22,14 +17,14 @@ import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
 
-/^*
+/**
  * JEI-категория рудного окислителя ({@code hbm_m:crystallizer}).
  *
  * <p>Работает напрямую с data-driven {@link CrystallizerRecipe} (JSON) — без промежуточной
  * {@code *JeiRecipe}-обёртки. Вход/выход берутся из {@link CrystallizerRecipe#getInput()},
  * {@link CrystallizerRecipe#getOutput()}, кислота — из {@link CrystallizerRecipe#getAcid()}
  * (Architectury {@link FluidStack}, mB).</p>
- ^/
+ */
 public class CrystallizerJeiCategory implements IRecipeCategory<CrystallizerRecipe> {
 
     public static final RecipeType<CrystallizerRecipe> RECIPE_TYPE =
@@ -68,11 +63,9 @@ public class CrystallizerJeiCategory implements IRecipeCategory<CrystallizerReci
         FluidStack acid = recipe.getAcid();
         if (acid != null && !acid.isEmpty()) {
             builder.addSlot(RecipeIngredientRole.INPUT, 17, 18)
-                    .setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
+                    .setCustomRenderer(JeiTypes.FLUID, new HbmFluidJeiRenderer(16, 16))
                     .addFluidStack(acid.getFluid(), acid.getAmount());
         }
     }
 }
-*///?} else {
-public final class CrystallizerJeiCategory { private CrystallizerJeiCategory() {} }
 //?}

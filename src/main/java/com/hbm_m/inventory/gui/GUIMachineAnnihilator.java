@@ -29,11 +29,7 @@ import net.minecraft.world.item.ItemStack;
 public class GUIMachineAnnihilator extends GuiInfoScreen<MachineAnnihilatorMenu> {
 
     private static final ResourceLocation TEXTURE =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/gui/processing/gui_annihilator.png");
-            *///?} else {
                         ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_annihilator.png");
-            //?}
 
     private static final int TANK_X = 152;
     private static final int TANK_Y = 18;

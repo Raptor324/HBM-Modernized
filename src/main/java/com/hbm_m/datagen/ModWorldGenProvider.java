@@ -332,6 +332,20 @@ public final class ModWorldGenProvider {
                         net.minecraft.world.level.biome.Biomes.WINDSWEPT_SAVANNA,
                         net.minecraft.world.level.biome.Biomes.BEACH),
                 List.of("sand_oil_deposit"), GenerationStep.Decoration.UNDERGROUND_ORES);
+
+        // Natural mob spawns. The port registered SpawnPlacement predicates for the three creepers
+        // but no biome ever carried a spawn entry, so they only ever came from spawn eggs. Upstream
+        // EntityMappings adds phosgene (5), volatile (10) and gold (1) to every biome, monster
+        // category; the port's own placement rules already gate them to the overworld and y <= 40.
+        ctx.register(bm("add_spawns"), new ForgeBiomeModifiers.AddSpawnsBiomeModifier(
+                biomes.getOrThrow(BiomeTags.IS_OVERWORLD),
+                List.of(
+                        new net.minecraft.world.level.biome.MobSpawnSettings.SpawnerData(
+                                com.hbm_m.entity.ModEntities.ENTITY_MOB_PHOSGENE_CREEPER.get(), 5, 1, 1),
+                        new net.minecraft.world.level.biome.MobSpawnSettings.SpawnerData(
+                                com.hbm_m.entity.ModEntities.ENTITY_MOB_VOLATILE_CREEPER.get(), 10, 1, 1),
+                        new net.minecraft.world.level.biome.MobSpawnSettings.SpawnerData(
+                                com.hbm_m.entity.ModEntities.ENTITY_MOB_GOLD_CREEPER.get(), 1, 1, 1))));
     }
 
     private static void addModifier(BootstapContext<BiomeModifier> ctx,

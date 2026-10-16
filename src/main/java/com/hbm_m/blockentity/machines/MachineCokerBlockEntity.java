@@ -76,7 +76,7 @@ public class MachineCokerBlockEntity extends BaseMachineBlockEntity implements I
                 BlockPos neighborPos = pos.relative(dir);
                 BlockEntity neighborBe = level.getBlockEntity(neighborPos);
                 if (!(neighborBe instanceof IFluidConnectorMK2)) continue;
-                trySubscribe(tank0.getTankType(), level, neighborPos, dir);
+                trySubscribe(tank0, level, neighborPos, dir);
             }
         }
 

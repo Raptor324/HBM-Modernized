@@ -52,15 +52,30 @@ public abstract class SubLevelAssembleExpansionMixin {
             ServerLevel level,
             BlockPos anchor,
             Iterable<BlockPos> blocks,
+            // Sable exists only on 1.21.1 and its companion jar is built for Java 21, so it cannot
+            // be on the 1.20.1 classpath at all. The mixin never applies there (the target class is
+            // absent), so the parameter type is irrelevant - but naming the class broke compileJava
+            // on 1.20.1, and with it the whole datagen run.
+            //? if >= 1.21.1 {
             dev.ryanhcode.sable.companion.math.BoundingBox3ic bounds,
+            //?} else {
+            /*Object bounds,
+            *///?}
             CallbackInfoReturnable<?> cir) {
         if (!(blocks instanceof Set<BlockPos> set) || set.isEmpty()) {
             return;
         }
         // Набор — мировые позиции (ObjectOpenHashSet из SimAssemblyContraption).
-        Set<BlockPos> expanded = MultiblockExpander.expandToFullMultiblock(level, set);
-        if (expanded.size() > set.size()) {
-            set.addAll(expanded);
+        // The set belongs to the caller: if it ever hands us an immutable one, addAll throws and
+        // would abort the assembly. Expansion is an enhancement, never a reason to fail the move.
+        try {
+            Set<BlockPos> expanded = MultiblockExpander.expandToFullMultiblock(level, set);
+            if (expanded.size() > set.size()) {
+                set.addAll(expanded);
+            }
+        } catch (Throwable t) {
+            com.hbm_m.main.MainRegistry.LOGGER.warn(
+                    "[HBM] Не удалось расширить набор сборки до полного мультиблока", t);
         }
     }
 }

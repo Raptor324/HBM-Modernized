@@ -54,17 +54,16 @@ public class EntityDeliveryDrone extends EntityDroneBase {
     /*@Override
     protected void defineSynchedData() {
         super.defineSynchedData();
-        this.entityData.define(EXPRESS, false);
-        this.entityData.define(CHUNK_LOADING, false);
-    }
+        var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     *///?} else {
     @Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
-        builder.define(EXPRESS, false);
-        builder.define(CHUNK_LOADING, false);
-    }
+        var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
     //?}
+        defs.define(EXPRESS, false);
+        defs.define(CHUNK_LOADING, false);
+    }
 
     public boolean isExpress() { return this.entityData.get(EXPRESS); }
     public boolean isChunkLoading() { return this.entityData.get(CHUNK_LOADING); }

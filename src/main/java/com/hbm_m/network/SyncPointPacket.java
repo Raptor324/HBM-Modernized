@@ -57,7 +57,10 @@ public class SyncPointPacket implements C2SPacket {
     public static void handle(SyncPointPacket msg, PacketContext context) {
         context.queue(() -> {
             if (!(context.getPlayer() instanceof ServerPlayer player)) return;
-            if (msg.pointIndex < 0) return;
+            // The index comes from the client and only the lower bound was checked, while the loop
+            // below allocates one CompoundTag per missing entry - an arbitrary index meant an
+            // arbitrary allocation. Every other detonator path is bounded by MAX_POINTS.
+            if (msg.pointIndex < 0 || msg.pointIndex >= MultiDetonatorItem.MAX_POINTS) return;
 
             ItemStack mainItem = player.getMainHandItem();
             ItemStack offItem  = player.getOffhandItem();

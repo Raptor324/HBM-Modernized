@@ -18,9 +18,6 @@ import net.minecraft.server.packs.resources.ResourceProvider;
 /*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 *///?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
 
 /**
  * Wraps a {@link ResourceProvider} so that resources matching a target {@link ResourceLocation}
@@ -34,8 +31,6 @@ import net.fabricmc.api.Environment;*///?}
 //? if forge {
 /*@OnlyIn(Dist.CLIENT)
 *///?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
 public final class ShaderPreDefinitions {
 
     private ShaderPreDefinitions() {}

@@ -107,6 +107,30 @@ public final class CrystallizerRecipeGenerator {
                         Items.BLACK_DYE, 1, fluid(ModFluids.SULFURIC_ACID, 250),
                         new ItemStack(Items.SLIME_BALL, 4), MIXING_TIME, 0f)
                 .save(writer, "crystallizer/black_dye_to_slime");
+
+        // Смолы (GIT CrystallizerRecipes: три вида смолы уходят в воск хлором, воск и парафин
+        // дают заряженную гранулу и красную таблетку). Замыкает ветку нефтехимии: рафинёр
+        // теперь выдаёт смолу побочным продуктом.
+        CrystallizerRecipeBuilder.crystallizerRecipe(
+                        ModItems.OIL_TAR_CRUDE.get(), 1, fluid(ModFluids.CHLORINE, 250),
+                        new ItemStack(ModItems.OIL_TAR_WAX.get()), 20, 0f)
+                .save(writer, "crystallizer/tar_crude_to_wax");
+        CrystallizerRecipeBuilder.crystallizerRecipe(
+                        ModItems.OIL_TAR_CRACK.get(), 1, fluid(ModFluids.CHLORINE, 100),
+                        new ItemStack(ModItems.OIL_TAR_WAX.get()), 20, 0f)
+                .save(writer, "crystallizer/tar_crack_to_wax");
+        CrystallizerRecipeBuilder.crystallizerRecipe(
+                        ModItems.OIL_TAR_PARAFFIN.get(), 1, fluid(ModFluids.CHLORINE, 100),
+                        new ItemStack(ModItems.OIL_TAR_WAX.get()), 20, 0f)
+                .save(writer, "crystallizer/tar_paraffin_to_wax");
+        CrystallizerRecipeBuilder.crystallizerRecipe(
+                        ModItems.OIL_TAR_WAX.get(), 1, fluid(ModFluids.IONGEL, 500),
+                        new ItemStack(ModItems.PELLET_CHARGED.get()), 200, 0f)
+                .save(writer, "crystallizer/tar_wax_to_pellet_charged");
+        CrystallizerRecipeBuilder.crystallizerRecipe(
+                        ModItems.OIL_TAR_PARAFFIN.get(), 1, fluid(ModFluids.ESTRADIOL, 250),
+                        new ItemStack(ModItems.PILL_RED.get()), 200, 0f)
+                .save(writer, "crystallizer/tar_paraffin_to_pill_red");
     }
 
     /^* Руда по forge-тегу с перекисью 500 mB, baseTime, productivity 0.05 (базовый случай). ^/

@@ -22,11 +22,7 @@ import net.minecraft.world.entity.player.Inventory;
 public class GUIMachineCoreEmitter extends GuiInfoScreen<MachineCoreEmitterMenu> {
 
     private static final ResourceLocation TEXTURE =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/gui/dfc/gui_emitter.png");
-            *///?} else {
                         ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/dfc/gui_emitter.png");
-            //?}
 
     private final MachineCoreEmitterBlockEntity emitter;
 

@@ -68,7 +68,9 @@ public abstract class RBMKControlBlockEntity extends RBMKColumnBlockEntity imple
     public double getMult() { return level; }
 
     public void setTarget(double target) {
-        this.targetLevel = Math.max(0, Math.min(1, target));
+        // Math.min/max propagate NaN, and every later comparison against NaN is false, which freezes
+        // the rod. The value comes straight off a client packet.
+        this.targetLevel = Double.isNaN(target) ? 0D : Math.max(0, Math.min(1, target));
     }
 
     /**

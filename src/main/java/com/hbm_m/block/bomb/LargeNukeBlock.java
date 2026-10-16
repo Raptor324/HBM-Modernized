@@ -51,7 +51,6 @@ public class LargeNukeBlock extends NukeBaseBlock implements IBomb {
             net.minecraft.world.item.ItemStack[] items = nuke.slots.toArray(new net.minecraft.world.item.ItemStack[0]);
             int radius = type.detonationRadius(items);
             if (nuke.isReady()) {
-                Containers.dropContents(level, pos, nuke);
                 nuke.clearContent();
                 level.setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
                 NuclearExplosionAPI.startLargeNuke(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, radius);

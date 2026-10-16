@@ -30,8 +30,8 @@ import net.minecraft.world.item.ItemStack;
  * -&gt; 1 Ausgabe. Arbeitet direkt mit dem data-driven {@link RotaryFurnaceRecipe} (JSON) -
  * Eingaenge aus {@link RotaryFurnaceRecipe#getInputs()}, Ausgabe aus {@link RotaryFurnaceRecipe#getOutput()}.
  */
-//? if forge {
-/*public class RotaryFurnaceJeiCategory extends JeiGenericRecipeCategory<RotaryFurnaceRecipe> {
+//? if forge || neoforge {
+public class RotaryFurnaceJeiCategory extends JeiGenericRecipeCategory<RotaryFurnaceRecipe> {
 
     public static final RecipeType<RotaryFurnaceRecipe> RECIPE_TYPE =
             RecipeType.create(RefStrings.MODID, "rotary_furnace", RotaryFurnaceRecipe.class);
@@ -88,9 +88,9 @@ import net.minecraft.world.item.ItemStack;
                     positions[slotIndex][0] + inputXOffset, positions[slotIndex][1])
                     .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
                     //? if forge {
-                    /^.setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
+                    /*.setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                     .addIngredient(ForgeTypes.FLUID_STACK, FluidStackHooksForge.toForge(fluid));
-                    ^///?} elif neoforge {
+                    *///?} elif neoforge {
                     .setCustomRenderer(NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                     .addIngredient(NeoForgeTypes.FLUID_STACK, new net.neoforged.neoforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
                     //?}
@@ -113,7 +113,4 @@ import net.minecraft.world.item.ItemStack;
         JeiNeiRendering.drawGenericRecipeExtras(graphics, recipe.getDuration(), 0);
     }
 }
-*///?} else {
-public final class RotaryFurnaceJeiCategory {
-    private RotaryFurnaceJeiCategory() {}
-}//?}
+//?}

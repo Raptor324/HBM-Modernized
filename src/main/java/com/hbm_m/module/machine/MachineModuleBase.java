@@ -323,11 +323,15 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
             T prev = currentRecipe;
             currentRecipe = pickRecipeForTick();
             if (currentRecipe != null) {
+                int savedMax = maxProgress;
                 maxProgress = getRecipeDuration(currentRecipe);
                 // Only a genuine switch clears progress. currentRecipe is transient while progress
                 // is persisted, so resolving the recipe for the first time after a chunk load used
                 // to wipe the saved progress - the original keeps it, storing the recipe name too.
-                if (prev != null) {
+                // The duration has to match what the progress was saved against, though: otherwise
+                // swapping the inputs while unloaded would hand a short recipe the progress of a
+                // long one, and the overdrive loop below would finish several crafts on one tick.
+                if (prev != null || maxProgress != savedMax) {
                     progress = 0.0;
                 }
                 needsSync = true;

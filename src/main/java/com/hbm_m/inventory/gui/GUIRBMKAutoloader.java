@@ -15,11 +15,7 @@ import net.minecraft.world.entity.player.Inventory;
 public class GUIRBMKAutoloader extends GuiInfoScreen<RBMKAutoloaderMenu> {
 
     private static final ResourceLocation TEXTURE =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/gui/machine/gui_autoloader.png");
-            *///?} else {
                         ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/machine/gui_autoloader.png");
-            //?}
 
     public GUIRBMKAutoloader(RBMKAutoloaderMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);

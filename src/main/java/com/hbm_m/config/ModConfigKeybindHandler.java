@@ -18,8 +18,6 @@ import net.minecraft.network.chat.Component;
 
 //? if forge {
 /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-*///?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
 *///?} elif neoforge {
 @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 //?}
@@ -102,19 +100,6 @@ public class ModConfigKeybindHandler {
         if (INITIALIZED) return;
         INITIALIZED = true;
 
-        //? if fabric {
-        /*// Fabric: KeyBindingHelper-обвязка Architectury, регистрация в любой момент валидна.
-        KeyMappingRegistry.register(OPEN_CONFIG);
-        KeyMappingRegistry.register(POWER_ARMOR_DASH);
-        KeyMappingRegistry.register(POWER_ARMOR_VATS);
-        KeyMappingRegistry.register(POWER_ARMOR_THERMAL);
-        KeyMappingRegistry.register(OPEN_MULTI_DETONATOR);
-        KeyMappingRegistry.register(RBMK_CRANE_UP);
-        KeyMappingRegistry.register(RBMK_CRANE_DOWN);
-        KeyMappingRegistry.register(RBMK_CRANE_LEFT);
-        KeyMappingRegistry.register(RBMK_CRANE_RIGHT);
-        KeyMappingRegistry.register(RBMK_CRANE_LOAD);
-        *///?}
 
         // Аналог END-фазы ClientTickEvent на Forge: выполняем после стандартного тика клиента.
         ClientTickEvent.CLIENT_POST.register(client -> onClientPostTick());
@@ -150,9 +135,6 @@ public class ModConfigKeybindHandler {
 
         // Обработка открытия конфига
         if (OPEN_CONFIG.consumeClick()
-        //? if fabric {
-                /*&& net.minecraft.client.gui.screens.Screen.hasAltDown()
-        *///?}
         ) {
             if (mc.screen == null) {
                 mc.setScreen(new ConfigScreen());

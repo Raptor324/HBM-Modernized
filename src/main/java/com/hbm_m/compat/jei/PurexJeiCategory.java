@@ -39,8 +39,8 @@ import net.minecraft.world.level.material.Fluids;
 /**
  * JEI port of {@code PurexRecipeHandler} (extends {@code NEIGenericRecipeHandler}).
  */
-//? if forge {
-/*public class PurexJeiCategory extends JeiGenericRecipeCategory<PurexRecipe> {
+//? if forge || neoforge {
+public class PurexJeiCategory extends JeiGenericRecipeCategory<PurexRecipe> {
 
     public static final RecipeType<PurexRecipe> RECIPE_TYPE =
             RecipeType.create(RefStrings.MODID, "purex", PurexRecipe.class);
@@ -126,9 +126,9 @@ import net.minecraft.world.level.material.Fluids;
                     positions[slotIndex][0] + inputXOffset, positions[slotIndex][1])
                     .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
                     //? if forge {
-                    /^.setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
+                    /*.setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                     .addIngredient(ForgeTypes.FLUID_STACK, FluidStackHooksForge.toForge(fluid));
-                    ^///?} elif neoforge {
+                    *///?} elif neoforge {
                     .setCustomRenderer(NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                     .addIngredient(NeoForgeTypes.FLUID_STACK, new net.neoforged.neoforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
                     //?}
@@ -160,9 +160,9 @@ import net.minecraft.world.level.material.Fluids;
                     positions[slotIndex][0] + outputXOffset, positions[slotIndex][1])
                     .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
                     //? if forge {
-                    /^.setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
+                    /*.setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                     .addIngredient(ForgeTypes.FLUID_STACK, FluidStackHooksForge.toForge(fluid));
-                    ^///?} elif neoforge {
+                    *///?} elif neoforge {
                     .setCustomRenderer(NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                     .addIngredient(NeoForgeTypes.FLUID_STACK, new net.neoforged.neoforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
                     //?}
@@ -235,7 +235,4 @@ import net.minecraft.world.level.material.Fluids;
         return FluidStack.create(fluid, fluidInput.amount());
     }
 }
-*///?} else {
-public final class PurexJeiCategory {
-    private PurexJeiCategory() {}
-}//?}
+//?}

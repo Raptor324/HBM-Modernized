@@ -125,7 +125,7 @@ public class MachineStrandCasterBlockEntity extends com.hbm_m.blockentity.BaseHb
 
         if (level.getGameTime() % 10 == 0) {
             for (Direction dir : Direction.values()) {
-                be.trySubscribe(be.water.getTankType(), level, pos.relative(dir), dir);
+                be.trySubscribe(be.water, level, pos.relative(dir), dir);
             }
         }
 

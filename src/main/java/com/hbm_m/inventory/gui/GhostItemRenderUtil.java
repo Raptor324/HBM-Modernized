@@ -28,8 +28,6 @@ import net.minecraft.world.item.ItemStack;
 
 //? if forge {
 /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-*///?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
 *///?} elif neoforge {
 @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 //?}
@@ -149,11 +147,6 @@ public final class GhostItemRenderUtil {
             }
             ^///?}
 
-            //? if fabric {
-            /^public void putBulkData(PoseStack.Pose matrix, BakedQuad quad, float r, float g, float b, int light, int overlay) {
-                inner.putBulkData(matrix, quad, r * alpha, g * alpha, b * alpha, light, overlay);
-            }
-            ^///?}
 
             // ─── дефолтный цвет (для путей, использующих defaultColor) ───
             @Override

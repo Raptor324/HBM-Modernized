@@ -67,6 +67,7 @@ public class MachineFireboxBlockEntity extends BaseMachineBlockEntity implements
 
             this.maxBurnTime = burnTicks;
             this.burnTime = burnTicks;
+            MachineAshpitBlockEntity.feedFromBurner(this.level, this.worldPosition, fuelStack, burnTicks);
 
             if (fuelStack.getItem() == Items.LAVA_BUCKET) {
                 this.inventory.setStackInSlot(slot, new ItemStack(Items.BUCKET));

@@ -87,11 +87,7 @@ public class MoltenAlloyRecipe extends PlatformRecipe {
 
     public static class Serializer extends PlatformRecipeSerializer<MoltenAlloyRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-        //? if fabric && < 1.21.1 {
-        /*public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "molten_alloy");
-        *///?} else {
         public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "molten_alloy");
-        //?}
 
         @Override
         public MoltenAlloyRecipe readJson(ResourceLocation recipeId, JsonObject json) {

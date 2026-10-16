@@ -86,16 +86,18 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 
     /*@Override
     protected void defineSynchedData() {
-        // нет синхронизируемых полей
-    }
+
+var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     *///?} else {
     @Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
 
+var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
+    //?}
+
         // нет синхронизируемых полей
     
     }
-    //?}
 
     @Override
     public void tick() {
@@ -264,6 +266,7 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
         com.hbm_m.entity.effect.EntityFalloutRain fallout = new com.hbm_m.entity.effect.EntityFalloutRain(ModEntities.NUKE_FALLOUT_RAIN.get(), level());
         fallout.setPos(getX(), getY(), getZ());
         fallout.setScale(scale);
+        fallout.applyCraterBiomes = this.applyCraterBiomes;
         WorldUtil.loadAndSpawnEntityInWorld(fallout);
     }
 
@@ -283,7 +286,7 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
         this.destroyTerrain = tag.getBoolean("destroyTerrain");
         this.applyEntityDamage = tag.getBoolean("applyEntityDamage");
         this.applyInstantPlayerRads = tag.getBoolean("applyInstantPlayerRads");
-        this.applyCraterBiomes = tag.getBoolean("applyCraterBiomes");
+        this.applyCraterBiomes = !tag.contains("applyCraterBiomes") || tag.getBoolean("applyCraterBiomes");
         this.fallout = tag.getBoolean("fallout");
         this.falloutAdd = tag.getInt("falloutAdd");
         // Снапшот состояния ChunkEater (алгоритм 0) — взрыв продолжится с места остановки.

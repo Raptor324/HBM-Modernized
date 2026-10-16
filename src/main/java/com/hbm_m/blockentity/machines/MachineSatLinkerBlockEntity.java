@@ -97,4 +97,15 @@ public class MachineSatLinkerBlockEntity extends BaseHbmBlockEntity implements M
     public AbstractContainerMenu createMenu(int containerId, @NotNull Inventory playerInventory, @NotNull Player player) {
         return new MachineSatLinkerMenu(containerId, playerInventory, this);
     }
+
+    /**
+     * Exposes the inventory as an item capability, like MachineCrucibleBlockEntity does. Without
+     * this the block published no handler at all, so hoppers could not reach it and, more to the
+     * point, MachineDrops.dropInventory had nothing to go through and the contents were still
+     * destroyed when the block was broken.
+     */
+    @Override
+    public @Nullable Object getItemHandler(@Nullable net.minecraft.core.Direction side) {
+        return this.inventory;
+    }
 }

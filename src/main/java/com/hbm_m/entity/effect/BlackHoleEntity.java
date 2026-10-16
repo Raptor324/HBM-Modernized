@@ -164,16 +164,18 @@ public class BlackHoleEntity extends Entity {
 
     /*@Override
     protected void defineSynchedData() {
-        this.entityData.define(SIZE, 0.5F);
-    }
+
+var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     *///?} else {
     @Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
 
-        builder.define(SIZE, 0.5F);
+var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
+    //?}
+
+        defs.define(SIZE, 0.5F);
     
     }
-    //?}
 
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {

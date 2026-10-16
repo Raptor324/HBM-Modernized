@@ -9,10 +9,6 @@ import java.util.stream.Collectors;
 
 import com.hbm_m.block.machines.anvils.AnvilTier;
 import com.hbm_m.platform.recipe.RecipeHooks;
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
 //? if forge {
 /*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -31,9 +27,6 @@ public final class AnvilRecipeManager {
         return RecipeHooks.getAllRecipes(level, AnvilRecipe.Type.INSTANCE);
     }
 
-    //? if fabric {
-    /*@Environment(EnvType.CLIENT)
-    *///?}
     //? if forge {
     /*@OnlyIn(Dist.CLIENT)
     *///?}

@@ -55,13 +55,8 @@ public class ModFluids {
         // Holder для cross-reference между source и flowing
         final RegistrySupplier<?>[] sourceRef   = new RegistrySupplier[1];
         final RegistrySupplier<?>[] flowingRef  = new RegistrySupplier[1];
-        //? if fabric && < 1.21.1 {
-        /*ResourceLocation stillTex   = new ResourceLocation(MainRegistry.MOD_ID, "gui/fluids/" + name);
-        ResourceLocation flowingTex = new ResourceLocation(MainRegistry.MOD_ID, "gui/fluids/" + name);
-         *///?} else {
         ResourceLocation stillTex   = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "gui/fluids/" + name);
         ResourceLocation flowingTex = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "gui/fluids/" + name);
-        //?}
         // Атрибуты жидкости — единые для обеих платформ через Architectury API
         // source/flowing передаём через supplier, чтобы избежать circular init
         SimpleArchitecturyFluidAttributes attributes = SimpleArchitecturyFluidAttributes
@@ -79,21 +74,13 @@ public class ModFluids {
 
         // Регистрируем source
         RegistrySupplier<Fluid> source = FLUIDS.register(
-                //? if fabric && < 1.21.1 {
-                /*new ResourceLocation(MainRegistry.MOD_ID, name),
-                *///?} else {
                 ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, name),
-                //?}
                 () -> new ArchitecturyFlowingFluid.Source(attributes)
         );
 
         // Регистрируем flowing
         RegistrySupplier<Fluid> flowing = FLUIDS.register(
-                //? if fabric && < 1.21.1 {
-                /*new ResourceLocation(MainRegistry.MOD_ID, name + "_flowing"),
-                 *///?} else {
                 ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, name + "_flowing"),
-                //?}
                 () -> new ArchitecturyFlowingFluid.Flowing(attributes)
         );
 
@@ -358,7 +345,7 @@ public class ModFluids {
 
     // На Fabric и NeoForge параметр mod-bus не нужен: Architectury DeferredRegister
     // сам резолвит шину по mod id. Подключается из FabricEntrypoint / NeoForgeEntrypoint.
-    //? if fabric || neoforge {
+    //? if neoforge {
     public static void register() {
         FLUIDS.register();
     }

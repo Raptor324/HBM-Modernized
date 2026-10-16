@@ -54,8 +54,6 @@ import net.minecraft.world.phys.AABB;
 //? if forge {
 /*import net.minecraftforge.client.model.data.ModelData;
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-*///?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
 *///?} elif neoforge {
 import net.neoforged.neoforge.client.model.data.ModelData;
 @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
@@ -369,13 +367,8 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
         // node.texture: в .dae часто стоит битая ссылка <init_from>door0.png</init_from>
         // (Blender-экспорт), которая ведёт на несуществующий ресурс и даёт missing tex.
         String basePath = doorDecl.getBlockId().getPath();
-        //? if fabric && < 1.21.1 {
-        /*return new ResourceLocation(RefStrings.MODID,
-                "block/doors/" + basePath + (selection.isLegacy() ? "_old" : ""));
-        *///?} else {
         return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID,
                 "block/doors/" + basePath + (selection.isLegacy() ? "_old" : ""));
-        //?}
     }
 
     // ================= OBJ RENDER PIPELINE =================

@@ -246,7 +246,10 @@ public class SoyuzLauncherBlockEntity extends BaseMachineBlockEntity {
     }
 
     public boolean canLaunch() {
-        return hasRocket() && hasFuel() && hasPower() && designator() != 1 && orbital() != 1 && satellite() != 1;
+        // hasOxy was only wired to the GUI lamp, so a launch drained tanks[1] whether or not it held
+        // any oxidiser. Upstream canLaunch requires hasAllFuel() = jet fuel AND oxidiser.
+        return hasRocket() && hasFuel() && hasOxy() && hasPower()
+                && designator() != 1 && orbital() != 1 && satellite() != 1;
     }
 
     public boolean hasFuel() {

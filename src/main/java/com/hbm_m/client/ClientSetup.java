@@ -1,9 +1,6 @@
 package com.hbm_m.client;
 
 import com.hbm_m.particle.custom.MissileContrailParticle;
-import com.hbm_m.particle.custom.RadFogParticle;
-import com.hbm_m.particle.custom.SchrabfogParticle;
-import com.hbm_m.particle.custom.TownauraParticle;
 import com.hbm_m.particle.ModParticleTypes;
 import java.io.IOException;
 import java.util.HashSet;
@@ -35,7 +32,6 @@ import com.hbm_m.client.loader.MachineRadarModelLoader;
 import com.hbm_m.client.loader.MachineZirnoxDestroyedModelLoader;
 import com.hbm_m.client.loader.MachineZirnoxModelLoader;
 import com.hbm_m.client.loader.MissileModelLoader;
-import com.hbm_m.client.render.missile.MissileRenderHelper;
 import com.hbm_m.client.loader.PressModelLoader;
 import com.hbm_m.client.loader.TemplateModelLoader;
 // import com.hbm_m.client.loader.TestModelLoader;
@@ -198,8 +194,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
 //? if forge {
-/*import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.ModelEvent;
@@ -269,6 +264,11 @@ public class ClientSetup {
         PowerArmorSounds.register();
         PowerArmorStepSoundHandler.initClient();
 
+        // Both used to self-register from a forge-only FMLClientSetupEvent subscriber, so on NeoForge
+        // the armour-mod tooltips never appeared.
+        com.hbm_m.armormod.client.ModTooltipHandler.init();
+        com.hbm_m.armormod.client.ArmorModificationClientEvents.init();
+
         // MOTD при входе в мир — решение принимает клиент (client.json -> enableMOTD).
         com.hbm_m.client.ClientMotdHandler.register();
 
@@ -276,6 +276,13 @@ public class ClientSetup {
             com.hbm_m.config.ModClothConfig.reloadServer();
             ClientRadiationData.clearAll();
         });
+
+        // Кэш радиации нельзя тащить в новый мир или измерение. Раньше вход чистился
+        // forge-only обработчиком, и на NeoForge кэш переживал смену мира.
+        dev.architectury.event.events.client.ClientPlayerEvent.CLIENT_PLAYER_JOIN.register(
+                player -> ClientRadiationData.clearAll());
+        dev.architectury.event.events.client.ClientPlayerEvent.CLIENT_PLAYER_RESPAWN.register(
+                (oldPlayer, newPlayer) -> ClientRadiationData.clearAll());
 
         // Экраны меню: на Forge регистрируются напрямую, на NeoForge 1.21.1+ — через RegisterMenuScreensEvent ниже.
         //? if forge {
@@ -301,6 +308,7 @@ public class ClientSetup {
         *///?} elif neoforge {
         NeoForge.EVENT_BUS.addListener(ClientSetup::onClientDisconnect);
         NeoForge.EVENT_BUS.addListener(ClientSetup::registerDebugClientCommands);
+        NeoForge.EVENT_BUS.addListener(com.hbm_m.util.explosions.nuclear.BlockExplosionDefense::onItemTooltipNeo);
         //?}
 
         event.enqueueWork(ClientSetup::registerRadAbsorberItemProperties);
@@ -901,10 +909,12 @@ public class ClientSetup {
         PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_106"));
         PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_111"));
 
+        // The missile models are generated as models/item/missile_*.json. registerAdditionalModel
+        // asks for models/<path>.json instead, so every missile logged "Unable to load model" on
+        // every resource reload; registerItemModel is the one that adds the item/ prefix.
         for (MissileItemModelDefinitions.Definition definition : MissileItemModelDefinitions.all()) {
-            ResourceLocation meshId = MissileRenderHelper.meshModelId(
+            PlatformHooks.registerItemModel(event,
                     ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, definition.itemPath()));
-            PlatformHooks.registerAdditionalModel(event, meshId);
         }
 
         MainRegistry.LOGGER.debug("Registered door and missile variant models for loading");
@@ -1035,8 +1045,9 @@ public class ClientSetup {
         event.registerEntityRenderer(ModEntities.AIRNUKEBOMB_PROJECTILE.get(), AirNukeBombProjectileEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.AIRBOMB_PROJECTILE.get(), AirBombProjectileEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.AIRSTRIKE_NUKE_ENTITY.get(), AirstrikeNukeEntityRenderer::new);
-        event.registerEntityRenderer(ModEntities.AIRSTRIKE_ENTITY.get(), AirstrikeEntityRenderer::new);
-        event.registerEntityRenderer(ModEntities.AIRSTRIKE_AGENT_ENTITY.get(), ctx -> new EmptyEntityRenderer<>(ctx));
+        event.registerEntityRenderer(ModEntities.AIRSTRIKE_ENTITY.get(), ctx -> new AirstrikeEntityRenderer<>(ctx));
+        event.registerEntityRenderer(ModEntities.AIRSTRIKE_HEAVY_ENTITY.get(), ctx -> new AirstrikeEntityRenderer<>(ctx));
+        event.registerEntityRenderer(ModEntities.AIRSTRIKE_AGENT_ENTITY.get(), ctx -> new AirstrikeEntityRenderer<>(ctx));
         event.registerEntityRenderer(ModEntities.NUKE_FALLOUT_RAIN.get(), RenderFallout::new);
         event.registerEntityRenderer(ModEntities.NUKE_MK3.get(), ctx -> new EmptyEntityRenderer<>(ctx));
         event.registerEntityRenderer(ModEntities.SOLINIUM_EXPLOSION.get(), ctx -> new EmptyEntityRenderer<>(ctx));
@@ -1131,19 +1142,6 @@ public class ClientSetup {
 
     //? if forge {
     /*@SubscribeEvent
-    public static void onRegisterParticleProviders(RegisterParticleProvidersEvent event) {
-        // Связываем наш ТИП частицы с ее ФАБРИКОЙ.
-        event.registerSpriteSet(ModParticleTypes.TOWNAURA.get(), TownauraParticle.Provider::new);
-        event.registerSpriteSet(ModParticleTypes.SCHRABFOG.get(), SchrabfogParticle.Provider::new);
-        event.registerSpriteSet(ModParticleTypes.RAD_FOG_PARTICLE.get(), RadFogParticle.Provider::new);
-        event.registerSpriteSet(ModParticleTypes.RBMK_FLAME.get(), com.hbm_m.particle.custom.RBMKFlameParticle.Provider::new);
-        event.registerSpriteSet(ModParticleTypes.RBMK_STEAM.get(), com.hbm_m.particle.custom.RBMKSteamParticle.Provider::new);
-        event.registerSpriteSet(ModParticleTypes.RBMK_MUSH.get(), com.hbm_m.particle.custom.RBMKMushParticle.Provider::new);
-        event.registerSpriteSet(ModParticleTypes.DIGAMMA_SMOKE.get(), com.hbm_m.particle.custom.DigammaSmokeParticle.Provider::new);
-        MainRegistry.LOGGER.info("Registered custom particle providers.");
-    }
-
-    @SubscribeEvent
     public static void onRegisterGuiOverlays(net.minecraftforge.client.event.RegisterGuiOverlaysEvent event) {
         MainRegistry.LOGGER.info("Registering GUI overlays...");
         event.registerAbove(net.minecraftforge.client.gui.overlay.VanillaGuiOverlay.HOTBAR.id(), "geiger_counter_hud", OverlayGeiger.GEIGER_HUD_OVERLAY);

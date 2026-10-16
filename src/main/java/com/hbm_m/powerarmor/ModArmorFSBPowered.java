@@ -137,14 +137,12 @@ public class ModArmorFSBPowered extends ModArmorFSB implements ITooltipProvider 
      * Instead of damaging the item, we drain energy based on consumption.
      * (Forge/NeoForge: IItemExtension#setDamage; на Fabric такого хука нет.)
      */
-    //? if !fabric {
     @Override
     public void setDamage(ItemStack stack, int damage) {
         if (this.consumption > 0) {
             this.dischargeBattery(stack, (long) damage * this.consumption);
         }
     }
-    //?}
 
     private int getArmorContainerId(Player player, EquipmentSlot slot) {
         int slotIndex = switch (slot) {

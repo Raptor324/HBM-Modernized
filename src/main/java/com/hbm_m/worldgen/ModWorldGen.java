@@ -91,11 +91,7 @@ public class ModWorldGen {
 
     public static final ResourceKey<PlacedFeature> STRAWBERRY_BUSH_PLACED =
             ResourceKey.create(Registries.PLACED_FEATURE,
-                    //? if fabric && < 1.21.1 {
-                    /*new ResourceLocation(RefStrings.MODID, "strawberry_bush_placed"));
-                    *///?} else {
                                         ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "strawberry_bush_placed"));
-                    //?}
 
 
     /** Регистрация worldgen DeferredRegister на всех лоадерах. */

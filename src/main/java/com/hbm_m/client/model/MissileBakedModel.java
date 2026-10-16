@@ -93,12 +93,6 @@ public class MissileBakedModel extends AbstractMultipartBakedModel implements Ab
         return List.of();
         //?}
 
-        //? if fabric {
-        /*if (state == null) {
-            return getItemQuads(side, rand);
-        }
-        return List.of();
-        *///?}
     }
 
     //? if forge || neoforge {

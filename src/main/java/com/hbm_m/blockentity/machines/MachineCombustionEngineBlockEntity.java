@@ -86,7 +86,7 @@ public class MachineCombustionEngineBlockEntity extends BaseMachineBlockEntity i
 
         if (level.getGameTime() % 20 == 0) {
             for (Direction dir : Direction.values()) {
-                trySubscribe(tank.getTankType(), level, pos.relative(dir), dir);
+                trySubscribe(tank, level, pos.relative(dir), dir);
             }
         }
 

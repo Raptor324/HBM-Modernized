@@ -23,11 +23,7 @@ import net.minecraft.world.item.ItemStack;
 public class GUILaunchPadLarge extends GuiInfoScreen<LaunchPadLargeMenu> {
 
     private static final ResourceLocation TEXTURE =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/gui/weapon/gui_launch_pad_large.png");
-            *///?} else {
                         ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/weapon/gui_launch_pad_large.png");
-            //?}
 
     private static final int TANK_X = 125;
     private static final int TANK_Y = 88;

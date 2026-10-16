@@ -75,15 +75,21 @@ public class RBMKControlPacket implements C2SPacket {
                 }
                 case ACTION_SET_PARAMS -> {
                     if (be instanceof RBMKControlAutoBlockEntity auto) {
-                        auto.levelUpper = pkt.doubleVal4[0];
-                        auto.levelLower = pkt.doubleVal4[1];
-                        auto.heatUpper  = pkt.doubleVal4[2];
-                        auto.heatLower  = pkt.doubleVal4[3];
+                        // Client-supplied doubles land straight in NBT; NaN would survive every
+                        // later comparison and jam the automation.
+                        auto.levelUpper = sanitize(pkt.doubleVal4[0]);
+                        auto.levelLower = sanitize(pkt.doubleVal4[1]);
+                        auto.heatUpper  = sanitize(pkt.doubleVal4[2]);
+                        auto.heatLower  = sanitize(pkt.doubleVal4[3]);
                     }
                 }
             }
             be.setChanged();
         });
+    }
+
+    private static double sanitize(double value) {
+        return Double.isFinite(value) ? value : 0D;
     }
 
     // ─── Static send helpers ──────────────────────────────────────────────────

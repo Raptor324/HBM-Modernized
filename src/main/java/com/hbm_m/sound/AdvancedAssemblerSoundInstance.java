@@ -8,14 +8,9 @@ import net.minecraft.sounds.SoundSource;
 /*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 *///?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
 //? if forge {
 /*@OnlyIn(Dist.CLIENT)
 *///?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
 public class AdvancedAssemblerSoundInstance extends AbstractTickableSoundInstance {
 
     // Конструктор теперь принимает только BlockPos, так как ему больше не нужно знать о BlockEntity.

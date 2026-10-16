@@ -24,11 +24,7 @@ import net.minecraft.server.packs.resources.ResourceManager;
  */
 public final class FleijaSphereMesh {
 
-    //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation SPHERE_OBJ = new ResourceLocation(RefStrings.MODID, "models/sphere_new.obj");
-    *///?} else {
         private static final ResourceLocation SPHERE_OBJ = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/sphere_new.obj");
-    //?}
 
     private record Vec3(float x, float y, float z) {}
     private record Tri(float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3) {}

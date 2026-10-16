@@ -73,17 +73,19 @@ public class AirNukeBombProjectileEntity extends ThrowableItemProjectile {
     /*@Override
     protected void defineSynchedData() {
         super.defineSynchedData();
-        this.entityData.define(SYNCHED_YAW, 0.0F);
-    }
+
+var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     *///?} else {
     @Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
-
         super.defineSynchedData(builder);
-        builder.define(SYNCHED_YAW, 0.0F);
+
+var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
+    //?}
+
+        defs.define(SYNCHED_YAW, 0.0F);
     
     }
-    //?}
 
     public void syncYawWithPlane(float planeYaw) {
         this.entityData.set(SYNCHED_YAW, planeYaw);
@@ -209,10 +211,9 @@ public class AirNukeBombProjectileEntity extends ThrowableItemProjectile {
                         BlockState checkState = serverLevel.getBlockState(checkPos);
                         Block block = checkState.getBlock();
 
-                        if (block instanceof IDetonatable detonatable) {
-                            int delay = (int) (dist * 2.0);
-                            serverLevel.getServer().tell(new TickTask(delay, () ->
-                                    detonatable.onDetonate(serverLevel, checkPos, checkState, player)));
+                        if (block instanceof IDetonatable) {
+                            com.hbm_m.api.bomb.BombDetonation.triggerDetonatableLater(
+                                    serverLevel, checkPos, block, player, (int) (dist * 2));
                         }
                     }
                 }

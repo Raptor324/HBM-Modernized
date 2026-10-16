@@ -20,7 +20,7 @@ public class GUIMachineStrandCaster extends AbstractContainerScreen<MachineStran
     public GUIMachineStrandCaster(MachineStrandCasterMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
         this.imageWidth = 176;
-        this.imageHeight = 186;
+        this.imageHeight = 214;
         this.inventoryLabelY = imageHeight - 96 + 2;
     }
 

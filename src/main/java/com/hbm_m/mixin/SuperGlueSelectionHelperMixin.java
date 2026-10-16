@@ -32,11 +32,14 @@ import net.minecraft.world.level.Level;
 @Mixin(targets = "com.simibubi.create.content.contraptions.glue.SuperGlueSelectionHelper")
 public abstract class SuperGlueSelectionHelperMixin {
 
+    // cancellable is required for setReturnValue below - without it Mixin throws
+    // CancellationException, which the catch turns into a warning and the expansion never applies.
     @Inject(
         method = "searchGlueGroup",
         at = @At("RETURN"),
         remap = false,
-        require = 1
+        require = 1,
+        cancellable = true
     )
     private static void hbm_m$expandGlueGroupToFullMultiblock(
             Level level,

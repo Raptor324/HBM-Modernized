@@ -327,6 +327,12 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.FAT_MAN_EXPLOSIVE);
         simpleItem(ModItems.FAT_MAN_IGNITER);
         simpleItem(ModItems.FAT_MAN_CORE);
+        // Ported from the 1.7.10 assets: these had no texture, so no model was generated.
+        simpleItem(ModItems.IGNITER);
+        simpleItem(ModItems.CELL_SAS3);
+        simpleItem(ModItems.ROD_QUAD_LEAD);
+        simpleItem(ModItems.ROD_QUAD_NP237);
+        simpleItem(ModItems.ROD_QUAD_URANIUM);
         simpleItem(ModItems.DESIGNATOR);
         simpleItem(ModItems.RANGEFINDER);
         simpleItem(ModItems.DESIGNATOR_RANGE);
@@ -913,6 +919,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelBomb(ModBlocks.NUKE_MIKE);
         blockItemFromBlockModelBomb(ModBlocks.NUKE_TSAR);
         blockItemFromBlockModelBomb(ModBlocks.NUKE_FLEIJA);
+        blockItemFromBlockModelBomb(ModBlocks.NUKE_PROTOTYPE);
         blockItemFromBlockModelBomb(ModBlocks.NUKE_N2);
         blockItemFromBlockModelBomb(ModBlocks.NUKE_SOLINIUM);
         blockItemFromBlockModelBomb(ModBlocks.NUKE_FSTBMB);
@@ -977,6 +984,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.FIREBOX);
         blockItemFromBlockModelMachine(ModBlocks.FRACTION_SPACER);
         blockItemFromBlockModelMachine(ModBlocks.FURNACE_IRON);
+        blockItemFromBlockModelMachine(ModBlocks.ELECTRIC_FURNACE);
+        blockItemFromBlockModelMachine(ModBlocks.FURNACE_BRICK);
         blockItemFromBlockModelMachine(ModBlocks.FURNACE_STEEL);
         blockItemFromBlockModelMachine(ModBlocks.HEATEX);
         blockItemFromBlockModelMachine(ModBlocks.HEPHAESTUS);
@@ -1151,7 +1160,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItemModelByName("iron_plate", "iron_plate");
         simpleItemModelByName("titanium_stamp_plate", "titanium_stamp_plate");
         withExistingParent(ModItems.BLUEPRINT_FOLDER.getId().getPath(), "item/generated")
-                .texture("layer0", modLoc("item/template_folder"));
+                .texture("layer0", modLoc("item/blueprint_folder"));
         blockItemFromBlockModel(ModBlocks.STRAWBERRY_BUSH);
 
         java.util.List.of(
@@ -2237,11 +2246,7 @@ public class ModItemModelProvider extends ItemModelProvider {
     private ItemModelBuilder simpleBlockItem(RegistrySupplier<Block> item) {
         return withExistingParent(item.getId().getPath(),
                 ResourceLocation.tryParse("item/generated")).texture("layer0",
-                //? if fabric && < 1.21.1 {
-                /^new ResourceLocation(MainRegistry.MOD_ID,"item/" + item.getId().getPath()));
-                ^///?} else {
                                 ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID,"item/" + item.getId().getPath()));
-                //?}
 
     }
 
@@ -2365,18 +2370,10 @@ public class ModItemModelProvider extends ItemModelProvider {
                 String armorItemPath = "item/" + armorItem;
                 String trimPath = "trims/items/" + armorType + "_trim_" + trimMaterial.location().getPath();
                 String currentTrimName = armorItemPath + "_" + trimMaterial.location().getPath() + "_trim";
-                //? if fabric && < 1.21.1 {
-                /^ResourceLocation armorItemResLoc = new ResourceLocation(MOD_ID, armorItemPath);
-                ^///?} else {
                                 ResourceLocation armorItemResLoc = ResourceLocation.fromNamespaceAndPath(MOD_ID, armorItemPath);
-                //?}
 
                 ResourceLocation trimResLoc = ResourceLocation.tryParse(trimPath); // minecraft namespace
-                //? if fabric && < 1.21.1 {
-                /^ResourceLocation trimNameResLoc = new ResourceLocation(MOD_ID, currentTrimName);
-                ^///?} else {
                                 ResourceLocation trimNameResLoc = ResourceLocation.fromNamespaceAndPath(MOD_ID, currentTrimName);
-                //?}
 
 
                 existingFileHelper.trackGenerated(trimResLoc, PackType.CLIENT_RESOURCES, ".png", "textures");
@@ -2392,13 +2389,8 @@ public class ModItemModelProvider extends ItemModelProvider {
                         .model(new ModelFile.UncheckedModelFile(trimNameResLoc))
                         .predicate(mcLoc("trim_type"), trimValue).end()
                         .texture("layer0",
-                                //? if fabric && < 1.21.1 {
-                                /^new ResourceLocation(MOD_ID,
-                                        "item/" + itemRegistrySupplier.getId().getPath()));
-                                ^///?} else {
                                                                 ResourceLocation.fromNamespaceAndPath(MOD_ID,
                                         "item/" + itemRegistrySupplier.getId().getPath()));
-                                //?}
 
             });
         }

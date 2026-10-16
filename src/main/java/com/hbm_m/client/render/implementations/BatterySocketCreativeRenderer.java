@@ -25,26 +25,16 @@ import net.minecraft.world.level.Level;
 
 //? if forge {
 /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-*///?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
 *///?} elif neoforge {
 @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 //?}
 public class BatterySocketCreativeRenderer implements com.hbm_m.client.render.HbmBerBounds<BatterySocketBlockEntity> {
 
     private static final ResourceLocation MOD_SKIN =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/entity/battery_socket/creative_avatar.png");
-            *///?} else {
                 ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/entity/battery_socket/creative_avatar.png");
-            //?}
 
     private static final ResourceLocation STEVE =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(ResourceLocation.DEFAULT_NAMESPACE, "textures/entity/player/wide/steve.png");
-             *///?} else {
                 ResourceLocation.withDefaultNamespace("textures/entity/player/wide/steve.png");
-            //?}
 
     private final PlayerModel<?> playerModel;
 

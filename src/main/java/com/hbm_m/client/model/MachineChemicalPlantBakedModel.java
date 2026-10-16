@@ -17,7 +17,10 @@ import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
 /*import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.model.data.ModelData;
-*///?}
+*///?} elif neoforge {
+import net.neoforged.neoforge.client.ChunkRenderTypeSet;
+import net.neoforged.neoforge.client.model.data.ModelData;
+//?}
 
 /**
  * World render: пустой chunk mesh — вся геометрия в BER/VBO.
@@ -71,12 +74,13 @@ public class MachineChemicalPlantBakedModel extends AbstractMultipartBakedModel 
         return true;
     }
 
-    //? if forge {
-    /*@Override
+    // Без ветки neoforge слой падал в solid, и прозрачные участки рисовались непрозрачными.
+    //? if forge || neoforge {
+    @Override
     public ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand, ModelData data) {
         return ChunkRenderTypeSet.of(RenderType.cutout());
     }
-    *///?}
+    //?}
 
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
@@ -93,12 +97,6 @@ public class MachineChemicalPlantBakedModel extends AbstractMultipartBakedModel 
         return List.of();
         //?}
 
-        //? if fabric {
-        /*if (state == null) {
-            return getItemQuads(side, rand);
-        }
-        return List.of();
-        *///?}
     }
 
     //? if neoforge {
@@ -155,34 +153,6 @@ public class MachineChemicalPlantBakedModel extends AbstractMultipartBakedModel 
     }
     *///?}
 
-    //? if fabric {
-    /*private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand) {
-        if (!itemQuadsCached) {
-            buildItemQuads(rand);
-            itemQuadsCached = true;
-        }
-        if (side != null) {
-            return cachedItemQuads.stream()
-                .filter(quad -> quad.getDirection() == side)
-                .toList();
-        }
-        return cachedItemQuads;
-    }
-
-    private void buildItemQuads(RandomSource rand) {
-        List<BakedQuad> allQuads = new ArrayList<>();
-        for (String partName : new String[] { "Base", "Slider", "Spinner" }) {
-            BakedModel part = parts.get(partName);
-            if (part != null) {
-                for (Direction dir : Direction.values()) {
-                    allQuads.addAll(part.getQuads(null, dir, rand));
-                }
-                allQuads.addAll(part.getQuads(null, null, rand));
-            }
-        }
-        this.cachedItemQuads = allQuads;
-    }
-    *///?}
 
     @Override
     protected List<String> getItemRenderPartNames() {
@@ -195,9 +165,6 @@ public class MachineChemicalPlantBakedModel extends AbstractMultipartBakedModel 
         /*return getParticleIcon(ModelData.EMPTY);
         *///?}
 
-        //? if fabric {
-        /*return super.getParticleIcon();
-        *///?}
 
         //? if neoforge {
         return super.getParticleIcon();

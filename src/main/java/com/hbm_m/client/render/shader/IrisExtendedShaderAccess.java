@@ -18,9 +18,6 @@ import dev.architectury.platform.Platform;
 /*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 *///?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
 
 
 /**
@@ -41,8 +38,6 @@ import net.fabricmc.api.Environment;*///?}
 //? if forge {
 /*@OnlyIn(Dist.CLIENT)
 *///?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
 public final class IrisExtendedShaderAccess {
 
     private IrisExtendedShaderAccess() {}

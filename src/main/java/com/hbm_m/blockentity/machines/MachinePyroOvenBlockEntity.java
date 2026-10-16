@@ -92,7 +92,7 @@ public class MachinePyroOvenBlockEntity extends BaseMachineBlockEntity implement
                 BlockPos neighborPos = pos.relative(dir);
                 BlockEntity neighborBe = level.getBlockEntity(neighborPos);
                 if (!(neighborBe instanceof IFluidConnectorMK2)) continue;
-                trySubscribe(tank0.getTankType(), level, neighborPos, dir);
+                trySubscribe(tank0, level, neighborPos, dir);
                 if (tank1.getFill() > 0) {
                     tryProvide(tank1, level, neighborPos, dir);
                 }

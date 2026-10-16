@@ -7,8 +7,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
-//? if forge {
-/*import mezz.jei.api.constants.VanillaTypes;
+//? if forge || neoforge {
+import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.helpers.IGuiHelper;
@@ -17,13 +17,13 @@ import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
 import net.minecraft.world.item.crafting.Ingredient;
 
-/^*
+/**
  * JEI-категория дуговой сварки ({@code hbm_m:arc_welder}).
  *
  * <p>Работает напрямую с data-driven {@link ArcWelderRecipe} (JSON) — без промежуточной
  * {@code *JeiRecipe}-обёртки. Входы берутся из {@link ArcWelderRecipe#getInputs()}, выход —
  * из {@link ArcWelderRecipe#getOutput()}.</p>
- ^/
+ */
 public class ArcWelderJeiCategory implements IRecipeCategory<ArcWelderRecipe> {
 
     public static final RecipeType<ArcWelderRecipe> RECIPE_TYPE =
@@ -61,6 +61,4 @@ public class ArcWelderJeiCategory implements IRecipeCategory<ArcWelderRecipe> {
         }
     }
 }
-*///?} else {
-public final class ArcWelderJeiCategory { private ArcWelderJeiCategory() {} }
 //?}

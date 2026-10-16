@@ -40,7 +40,8 @@ import net.minecraft.world.level.block.state.BlockState;
  *       Emitter pausiert stattdessen einfach, bis wieder Kuehlmittel verfuegbar ist.</li>
  * </ul>
  */
-public class MachineCoreEmitterBlockEntity extends BaseMachineBlockEntity {
+public class MachineCoreEmitterBlockEntity extends BaseMachineBlockEntity
+        implements com.hbm_m.api.fluids.IFluidStandardReceiverMK2 {
 
     private static final long ENERGY_PER_TICK = 40_000L;
     private static final int COOLANT_PER_TICK_MB = 20;
@@ -60,20 +61,16 @@ public class MachineCoreEmitterBlockEntity extends BaseMachineBlockEntity {
         super(ModBlockEntities.CORE_EMITTER_BE.get(), pos, state, 4, 2_000_000L, ENERGY_PER_TICK);
     }
 
-    //? if forge {
-    /*@Override
-    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
-            net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
-        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
-            return coolantTank.getForgeFluidCapability().cast();
-        }
-        return super.getCapability(cap, side);
-    }
-    *///?}
-
     public static void tick(Level level, BlockPos pos, BlockState state, MachineCoreEmitterBlockEntity be) {
         if (level.isClientSide()) {
             return;
+        }
+
+        // A receiver only joins a duct network by subscribing to the pipes next to it.
+        if (level.getGameTime() % 20 == 0) {
+            for (net.minecraft.core.Direction dir : net.minecraft.core.Direction.values()) {
+                be.trySubscribe(be.coolantTank, level, pos.relative(dir), dir);
+            }
         }
         be.ensureNetworkInitialized();
         be.serverTick(level, pos, state);
@@ -139,6 +136,23 @@ public class MachineCoreEmitterBlockEntity extends BaseMachineBlockEntity {
 
     public int getBeamLength() {
         return beamLength;
+    }
+
+    // The tank used to be reachable only through a forge-gated getCapability override, so on
+    // NeoForge no pipe could ever fill it. The mod's own MK2 interface works on both.
+    @Override
+    public com.hbm_m.inventory.fluid.tank.FluidTank[] getAllTanks() {
+        return new com.hbm_m.inventory.fluid.tank.FluidTank[] { coolantTank };
+    }
+
+    @Override
+    public com.hbm_m.inventory.fluid.tank.FluidTank[] getReceivingTanks() {
+        return new com.hbm_m.inventory.fluid.tank.FluidTank[] { coolantTank };
+    }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
     }
 
     @Override

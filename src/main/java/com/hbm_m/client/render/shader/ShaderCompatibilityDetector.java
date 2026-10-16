@@ -17,10 +17,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 *///?} else if neoforge {
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
-//?} else if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
+//?}
 
 /**
  * Кросс-лоадерный детектор состояния шейдеров Iris/Oculus.
@@ -36,9 +33,7 @@ import net.fabricmc.api.Environment;
  */
 //? if forge || neoforge {
 @OnlyIn(Dist.CLIENT)
-//?} else if fabric {
-/*@Environment(EnvType.CLIENT)
-*///?}
+//?}
 public class ShaderCompatibilityDetector {
 
     private ShaderCompatibilityDetector() {}

@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.menu;
 
 import com.hbm_m.blockentity.machines.MachineSolderingStationBlockEntity;
+import com.hbm_m.inventory.ModItemStackHandlerContainer;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -10,9 +11,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-//? if forge {
-/*import net.minecraftforge.items.SlotItemHandler;
-*///?}
 
 public class MachineSolderingStationMenu extends AbstractContainerMenu {
 
@@ -29,24 +27,26 @@ public class MachineSolderingStationMenu extends AbstractContainerMenu {
         super(ModMenuTypes.SOLDERING_STATION_MENU.get(), id);
         this.blockEntity = be;
 
-        //? if forge {
-        /*var h = be.getItemHandler();
+        // Every machine slot used to be inside a forge-only block, so on NeoForge the menu was just
+        // the 36 player slots while quickMoveStack still moved to indices 0-10 - the player's own
+        // inventory. ModItemStackHandlerContainer is the platform-neutral adapter used elsewhere.
+        ModItemStackHandlerContainer h =
+                new ModItemStackHandlerContainer(be.getItemHandler(), be::setChanged);
         // ── Machine slots (0-10) ─────────────────────────────────────────────
         // Inputs row 1 — toppings (slots 0-2)
         for (int j = 0; j < 3; j++)
-            addSlot(new SlotItemHandler(h, j, 17 + j * 18, 18));
+            addSlot(new Slot(h, j, 17 + j * 18, 18));
         // Inputs row 2 — PCB (slots 3-5)
         for (int j = 0; j < 3; j++)
-            addSlot(new SlotItemHandler(h, 3 + j, 17 + j * 18, 36));
+            addSlot(new Slot(h, 3 + j, 17 + j * 18, 36));
         // Output (slot 6) — extraction only
-        addSlot(new SlotItemHandler(h, 6, 107, 27) {
+        addSlot(new Slot(h, 6, 107, 27) {
             @Override public boolean mayPlace(ItemStack s) { return false; }
         });
-        addSlot(new SlotItemHandler(h, 7, 152, 72)); // Battery
-        addSlot(new SlotItemHandler(h, 8,  17, 63)); // Fluid-ID
-        addSlot(new SlotItemHandler(h, 9,  89, 63)); // Upgrade 1
-        addSlot(new SlotItemHandler(h, 10, 107, 63)); // Upgrade 2
-        *///?}
+        addSlot(new Slot(h, 7, 152, 72)); // Battery
+        addSlot(new Slot(h, 8,  17, 63)); // Fluid-ID
+        addSlot(new Slot(h, 9,  89, 63)); // Upgrade 1
+        addSlot(new Slot(h, 10, 107, 63)); // Upgrade 2
 
         // ── Player inventory (11-37) ─────────────────────────────────────────
         for (int row = 0; row < 3; row++)

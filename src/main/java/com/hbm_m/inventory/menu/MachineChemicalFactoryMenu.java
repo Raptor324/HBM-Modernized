@@ -19,9 +19,6 @@ import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-//? if fabric {
-/*import team.reborn.energy.api.EnergyStorage;
-*///?}
 
 /**
  * Menu для Chemical Factory — порт 1.7.10 {@code ContainerMachineChemicalFactory}.
@@ -62,11 +59,7 @@ public class MachineChemicalFactoryMenu extends AbstractContainerMenu {
         addSlot(new Slot(container, 0, 224, 88) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
-                if (ItemEnergyAccess.getHbmProvider(stack).isPresent() || ItemEnergyAccess.getHbmReceiver(stack).isPresent()) return true;
-                //? if neoforge {
-                if (stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null) return true;
-                //?}
-                return false;
+                return ItemEnergyAccess.isEnergyItem(stack);
             }
         });
         // Upgrades — вертикальная колонка от (206, 125)
@@ -178,12 +171,7 @@ public class MachineChemicalFactoryMenu extends AbstractContainerMenu {
                 return ItemStack.EMPTY;
             }
         } else {
-            if (ItemEnergyAccess.getHbmProvider(stack).isPresent()
-                    || ItemEnergyAccess.getHbmReceiver(stack).isPresent()
-                    //? if neoforge {
-                    || stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null
-                    //?}
-            ) {
+            if (ItemEnergyAccess.isEnergyItem(stack)) {
                 if (!moveItemStackTo(stack, 0, 1, false)) return ItemStack.EMPTY;
             } else if (stack.getItem() instanceof ItemBlueprintFolder) {
                 // Папка чертежей — в слот шаблона первой свободной линии (как в оригинале)

@@ -93,6 +93,8 @@ public class FluidPumpBlockEntity extends BaseHbmBlockEntity implements IFluidSt
     // Tick
     // =====================================================================================
 
+    private int lastKnownFill = -1;
+
     public static void tick(Level level, BlockPos pos, BlockState state, FluidPumpBlockEntity entity) {
         if (level.isClientSide || !(level instanceof ServerLevel)) return;
 
@@ -117,6 +119,13 @@ public class FluidPumpBlockEntity extends BaseHbmBlockEntity implements IFluidSt
         entity.trySubscribe(entity.fluidType, level, pos.relative(inDir), inDir);
         if (!entity.redstonePowered) {
             entity.tryProvide(entity.fluidType, level, pos.relative(outDir), outDir);
+        }
+
+        // The buffer is filled and drained by the fluid network, which never marks the block entity
+        // dirty, so its contents could be lost on chunk unload.
+        if (entity.tank.getFill() != entity.lastKnownFill) {
+            entity.lastKnownFill = entity.tank.getFill();
+            entity.setChanged();
         }
     }
 

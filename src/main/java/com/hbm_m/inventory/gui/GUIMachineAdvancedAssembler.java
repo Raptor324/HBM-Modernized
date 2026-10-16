@@ -33,11 +33,7 @@ import com.hbm_m.util.EnergyFormatter;
 public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<MachineAdvancedAssemblerMenu> {
 
     // РўРµРєСЃС‚СѓСЂР° РёР· СЃС‚Р°СЂРѕРіРѕ GUI
-    //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation TEXTURE = new ResourceLocation(RefStrings.MODID, "textures/gui/processing/gui_assembler.png");
-    *///?} else {
         private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_assembler.png");
-    //?}
 
     // private static final ResourceLocation TEMPLATE_FOLDER_ICON = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/item/template_folder.png");
 

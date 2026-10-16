@@ -108,6 +108,10 @@ public final class MainRegistry {
         LifecycleEvent.SETUP.register(MainRegistry::commonSetup);
 
         TickEvent.SERVER_POST.register(server -> {
+            // The move window lives for exactly one tick: pop() from the mixins can be skipped
+            // when another mod cancels the engine method at HEAD.
+            com.hbm_m.multiblock.ContraptionAssemblyGuard.endServerTick();
+
             // 1. Защита от фейковых/недогруженных серверов (Flashback)
             if (server == null) {
                 return; 
@@ -160,6 +164,7 @@ public final class MainRegistry {
         com.hbm_m.event.LungGasHandler.init();
         com.hbm_m.advancement.AchievementHandler.init();
         com.hbm_m.armormod.event.ArmorModTickHandler.init();
+        com.hbm_m.armormod.event.ArmorModificationServerEvents.init();
         com.hbm_m.handler.BossSpawnHandler.init();
         com.hbm_m.config.FalloutConfigJSON.initialize();
         DamageResistanceHandler.initArmorStats();

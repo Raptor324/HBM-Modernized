@@ -27,10 +27,7 @@ import net.minecraft.world.phys.Vec3;
 /*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 *///?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?} elif neoforge {
+//? if neoforge {
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 //?}
@@ -50,8 +47,6 @@ import net.neoforged.api.distmarker.OnlyIn;
 //? if forge || neoforge {
 @OnlyIn(Dist.CLIENT)
 //?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
 public final class InstancedRenderFrame {
 
     private InstancedRenderFrame() {}

@@ -192,6 +192,15 @@ public class LaunchPadLargeMenu extends AbstractContainerMenu implements ILongEn
         ) <= 64.0D;
     }
 
+    /** Tries each machine slot that actually accepts the stack, in order. */
+    private boolean moveIntoMachineSlots(net.minecraft.world.item.ItemStack stack) {
+        for (int i = 0; i < MACHINE_SLOTS; i++) {
+            if (!this.slots.get(i).mayPlace(stack)) continue;
+            if (this.moveItemStackTo(stack, i, i + 1, false)) return true;
+        }
+        return false;
+    }
+
     @Override
     public net.minecraft.world.item.ItemStack quickMoveStack(Player player, int index) {
         net.minecraft.world.item.ItemStack originalStack = net.minecraft.world.item.ItemStack.EMPTY;
@@ -206,8 +215,10 @@ public class LaunchPadLargeMenu extends AbstractContainerMenu implements ILongEn
                     return net.minecraft.world.item.ItemStack.EMPTY;
                 }
             } else {
-                // Из инвентаря игрока в слоты машины (просто первая подходящая позиция)
-                if (!this.moveItemStackTo(stack, 0, MACHINE_SLOTS, false)) {
+                // Из инвентаря игрока в слоты машины — по одному слоту, с проверкой mayPlace:
+                // vanilla moveItemStackTo skips mayPlace when it merges onto an existing stack, so a
+                // whole-range move could drop items into the take-only fuel and oxidiser outputs.
+                if (!moveIntoMachineSlots(stack)) {
                     return net.minecraft.world.item.ItemStack.EMPTY;
                 }
             }

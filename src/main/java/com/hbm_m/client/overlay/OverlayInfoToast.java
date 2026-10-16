@@ -11,9 +11,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 /*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 *///?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -26,8 +23,6 @@ import net.minecraft.network.chat.Component;
 //? if forge {
 /*@OnlyIn(Dist.CLIENT)
 *///?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
 public class OverlayInfoToast {
 
     private static final List<Entry> ENTRIES = new ArrayList<>();

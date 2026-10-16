@@ -32,8 +32,8 @@ import net.minecraft.world.item.ItemStack;
  * <p>Data-driven: рецепты читаются напрямую из {@code RecipeManager} (JSON {@code hbm_m:cracking_tower}),
  * ранее — статический {@code CrackingTowerRecipes}.</p>
  */
-//? if forge {
-/*public class CrackingTowerJeiCategory extends JeiGenericRecipeCategory<CrackingTowerRecipe> {
+//? if forge || neoforge {
+public class CrackingTowerJeiCategory extends JeiGenericRecipeCategory<CrackingTowerRecipe> {
 
     public static final RecipeType<CrackingTowerRecipe> RECIPE_TYPE =
             RecipeType.create(RefStrings.MODID, "cracking_tower", CrackingTowerRecipe.class);
@@ -110,9 +110,9 @@ import net.minecraft.world.item.ItemStack;
         addItemSlot(builder, role, x, y)
                 .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
                 //? if forge {
-                /^.setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
+                /*.setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                 .addIngredient(ForgeTypes.FLUID_STACK, FluidStackHooksForge.toForge(fluid));
-                ^///?} elif neoforge {
+                *///?} elif neoforge {
                 .setCustomRenderer(NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                 .addIngredient(NeoForgeTypes.FLUID_STACK, new net.neoforged.neoforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
                 //?}
@@ -123,7 +123,4 @@ import net.minecraft.world.item.ItemStack;
         // Kein Blueprint-Slot fuer Cracking-Tower-Rezepte.
     }
 }
-*///?} else {
-public final class CrackingTowerJeiCategory {
-    private CrackingTowerJeiCategory() {}
-}//?}
+//?}

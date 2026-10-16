@@ -463,22 +463,14 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
         }
     
         if (fluid == null || fluid == Fluids.EMPTY || fluid == ModFluids.NONE.getSource()) {
-            //? if fabric && < 1.21.1 {
-            /*return new ResourceLocation(MainRegistry.MOD_ID, "block/tank/tank_none");
-            *///?} else {
                         return ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block/tank/tank_none");
-            //?}
 
         }
     
         ResourceLocation typeId = BuiltInRegistries.FLUID.getKey(fluid);
         String fluidName = typeId != null ? typeId.getPath() : "none";
         
-        //? if fabric && < 1.21.1 {
-        /*return new ResourceLocation(MainRegistry.MOD_ID, "block/tank/tank_" + fluidName);
-        *///?} else {
                 return ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block/tank/tank_" + fluidName);
-        //?}
 
     }
 
@@ -586,6 +578,13 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
     public short getMode() { return mode; }
     public FluidTank getFluidTank() { return fluidTank; }
     public com.hbm_m.platform.ModItemStackHandler getItemHandler() { return itemHandler; }
+
+    // The ITEM_HANDLER capability was exposed only from the Forge getCapability above, so on NeoForge
+    // the tank's fluid-identifier and canister slots were invisible to hoppers and pipes.
+    @Override
+    public @Nullable Object getItemHandler(@Nullable Direction side) {
+        return itemHandler;
+    }
     
     private ItemStack[] getSlotsArray() {
         ItemStack[] arr = new ItemStack[6];
@@ -686,6 +685,13 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
         return super.getCapability(cap, side);
     }
     *///?}
+
+    @Override
+    protected boolean isFluidSideAllowed(@Nullable Direction side) {
+        if (side == null) return true;
+        if (fluidSidesFromMultiblockStructure) return allowedFluidSides.contains(side);
+        return allowedFluidSides.isEmpty() || allowedFluidSides.contains(side);
+    }
 
     @Override
     public void setAllowedFluidSidesFromMultiblockStructure(java.util.Set<Direction> sides) {

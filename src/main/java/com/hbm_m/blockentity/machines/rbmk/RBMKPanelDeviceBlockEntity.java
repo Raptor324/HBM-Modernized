@@ -77,31 +77,17 @@ public abstract class RBMKPanelDeviceBlockEntity extends RBMKColumnBlockEntity i
         }
     }
 
-    //? if < 1.21.1 {
-    /*@Override
-    protected void saveAdditional(net.minecraft.nbt.CompoundTag tag) {
-        super.saveAdditional(tag);
+    @Override
+    protected void writeNbtData(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         saveShared(tag);
     }
 
     @Override
-    public void load(net.minecraft.nbt.CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         loadShared(tag);
     }
-    *///?} else {
-    @Override
-    protected void saveAdditional(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        saveShared(tag);
-    }
-
-    @Override
-    protected void loadAdditional(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        loadShared(tag);
-    }
-    //?}
 
     public final void tickPanel(Level level, BlockPos pos) {
         baseTick(level, pos, getBlockState(), this);

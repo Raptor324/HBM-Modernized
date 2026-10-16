@@ -39,10 +39,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.OnlyIn;
 /^@OnlyIn(Dist.CLIENT)
 ^/*///?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-@Environment(EnvType.CLIENT)*///?}
 public class GUIDoorModelSelection extends Screen {
 
     // Масштаб GUI. Масштабирование через PoseStack - без дублирования текстуры.
@@ -91,11 +87,7 @@ public class GUIDoorModelSelection extends Screen {
     private static final int ITEMS_PER_PAGE = SKIN_GRID_COLS * SKIN_GRID_ROWS;
 
     private static final ResourceLocation TEXTURE =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/gui/gui_door_modification.png");
-            *///?} else {
                         ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_door_modification.png");
-            //?}
 
 
     // Данные двери

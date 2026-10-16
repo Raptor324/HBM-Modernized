@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.menu;
 
 import com.hbm_m.blockentity.machines.MachineRadiolysisBlockEntity;
+import com.hbm_m.inventory.ModItemStackHandlerContainer;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -10,9 +11,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-//? if forge {
-/*import net.minecraftforge.items.SlotItemHandler;
-*///?}
 
 /** Slot-Koordinaten angelehnt an {@code ContainerRadiolysis} (1.7.10 Original): Fluid-ID (34,17),
  *  Batterie (8,53). RTG- und Sterilisations-Slots des Originals entfallen (siehe
@@ -30,11 +28,13 @@ public class MachineRadiolysisMenu extends AbstractContainerMenu {
         super(ModMenuTypes.RADIOLYSIS_MENU.get(), id);
         this.blockEntity = be;
 
-        //? if forge {
-        /*var handler = be.getInventory();
-        addSlot(new SlotItemHandler(handler, MachineRadiolysisBlockEntity.SLOT_FLUID_ID, 34, 17));
-        addSlot(new SlotItemHandler(handler, MachineRadiolysisBlockEntity.SLOT_BATTERY, 8, 53));
-        *///?}
+        // Both machine slots used to be inside a forge-only block: on NeoForge the menu was 36 player
+        // slots, while quickMoveStack still moved to indices 0-1 - i.e. into the player's own
+        // inventory. ModItemStackHandlerContainer is the platform-neutral adapter used elsewhere.
+        ModItemStackHandlerContainer machineContainer =
+                new ModItemStackHandlerContainer(be.getInventory(), be::setChanged);
+        addSlot(new Slot(machineContainer, MachineRadiolysisBlockEntity.SLOT_FLUID_ID, 34, 17));
+        addSlot(new Slot(machineContainer, MachineRadiolysisBlockEntity.SLOT_BATTERY, 8, 53));
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {

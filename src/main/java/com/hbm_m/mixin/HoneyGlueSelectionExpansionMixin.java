@@ -87,7 +87,9 @@ public abstract class HoneyGlueSelectionExpansionMixin {
                     BlockPos.containing(box.maxX, box.maxY, box.maxZ).offset(1, 1, 1))) {
                 if (++scanned > 16384) break;
                 BlockEntity be = clientLevel.getBlockEntity(pos);
-                if (be instanceof IMultiblockPart || be instanceof IMultiblockController) {
+                // IMultiblockPart lives on the block entity, IMultiblockController on the block.
+                if (be instanceof IMultiblockPart
+                        || clientLevel.getBlockState(pos).getBlock() instanceof IMultiblockController) {
                     if (seeds == null) seeds = new HashSet<>();
                     seeds.add(pos.immutable());
                 }

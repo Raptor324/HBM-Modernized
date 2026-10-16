@@ -36,7 +36,7 @@ public class ArmorModTickHandler {
      * Mod-Ruestung am Spieler). Getrennt gehalten, damit auf Forge nichts doppelt tickt.
      */
     public static void init() {
-        //? if fabric || neoforge {
+        //? if neoforge {
         dev.architectury.event.events.common.TickEvent.PLAYER_POST.register(
                 player -> tickArmorMods(player));
         //?}

@@ -29,8 +29,8 @@ import net.minecraft.world.item.ItemStack;
  * JEI category for Arc Furnace recipes - 1 Item-Eingang -&gt; optionaler Item-Ausgang + bis zu 2
  * Fluid-Ausgaenge (siehe {@link ArcFurnaceRecipe}).
  */
-//? if forge {
-/*public class ArcFurnaceJeiCategory extends JeiGenericRecipeCategory<ArcFurnaceRecipe> {
+//? if forge || neoforge {
+public class ArcFurnaceJeiCategory extends JeiGenericRecipeCategory<ArcFurnaceRecipe> {
 
     public static final RecipeType<ArcFurnaceRecipe> RECIPE_TYPE =
             RecipeType.create(RefStrings.MODID, "arc_furnace", ArcFurnaceRecipe.class);
@@ -104,9 +104,9 @@ import net.minecraft.world.item.ItemStack;
         addItemSlot(builder, RecipeIngredientRole.OUTPUT, x, y)
                 .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
                 //? if forge {
-                /^.setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
+                /*.setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                 .addIngredient(ForgeTypes.FLUID_STACK, FluidStackHooksForge.toForge(fluid));
-                ^///?} elif neoforge {
+                *///?} elif neoforge {
                 .setCustomRenderer(NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                 .addIngredient(NeoForgeTypes.FLUID_STACK, new net.neoforged.neoforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
                 //?}
@@ -122,7 +122,4 @@ import net.minecraft.world.item.ItemStack;
         JeiNeiRendering.drawGenericRecipeExtras(graphics, recipe.getDuration(), 0);
     }
 }
-*///?} else {
-public final class ArcFurnaceJeiCategory {
-    private ArcFurnaceJeiCategory() {}
-}//?}
+//?}

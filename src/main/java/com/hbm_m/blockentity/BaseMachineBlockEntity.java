@@ -117,7 +117,7 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
      * Используй это вместо Forge-only доступа через ITEM_HANDLER capability.
      */
     public void dropInventoryContents() {
-        if (level == null) return;
+        if (level == null || level.isClientSide()) return;
         // Во время переноса блоков движком сборки (Create/Sable) содержимое уезжает
         // в NBT-снимок контрапшена; высыпание на пол здесь = дюп предметов.
         if (com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {
@@ -395,6 +395,17 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
     }
     *///?}
 
+    // NeoForge has no getCapability/invalidateCaps on BlockEntity, so the Forge onLoad above is
+    // commented out here - and with it the only call to setupFluidCapability(), which left every
+    // custom fluid handler (chem plant, turbine, ZIRNOX, arc furnace...) unregistered.
+    //? if neoforge {
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        setupFluidCapability();
+    }
+    //?}
+
     /**
      * Handler, который видит автоматика (воронки/трубы) через ITEM_HANDLER-капабилити и
      * полиморфный {@link #getItemHandler}. GUI работает с полным инвентарём через
@@ -613,10 +624,7 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
     public @Nullable Object getEnergyStorage(@Nullable net.minecraft.core.Direction side) {
         if (!canConnectEnergy(side)) return null;
         //? if neoforge {
-        return new com.hbm_m.api.energy.LongEnergyWrapper(this,
-                side == Direction.DOWN
-                        ? com.hbm_m.api.energy.LongEnergyWrapper.BitMode.HIGH
-                        : com.hbm_m.api.energy.LongEnergyWrapper.BitMode.LOW);
+        return new com.hbm_m.api.energy.LongEnergyWrapper(this);
         //?} else {
         /*return null;
         *///?}

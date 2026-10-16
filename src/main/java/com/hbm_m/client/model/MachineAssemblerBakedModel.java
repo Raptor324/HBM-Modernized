@@ -17,7 +17,10 @@ import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
 /*import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.model.data.ModelData;
-*///?}
+*///?} elif neoforge {
+import net.neoforged.neoforge.client.ChunkRenderTypeSet;
+import net.neoforged.neoforge.client.model.data.ModelData;
+//?}
 
 public class MachineAssemblerBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
 
@@ -79,12 +82,6 @@ public class MachineAssemblerBakedModel extends AbstractMultipartBakedModel impl
         return List.of();
         //?}
 
-        //? if fabric {
-        /*if (state == null) {
-            return getItemQuads(side, rand);
-        }
-        return List.of();
-        *///?}
     }
 
     //? if neoforge {
@@ -142,34 +139,6 @@ public class MachineAssemblerBakedModel extends AbstractMultipartBakedModel impl
     }
     *///?}
 
-    //? if fabric {
-    /*private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand) {
-        if (!itemQuadsCached) {
-            buildItemQuads(rand);
-            itemQuadsCached = true;
-        }
-        if (side != null) {
-            return cachedItemQuads.stream()
-                .filter(quad -> quad.getDirection() == side)
-                .toList();
-        }
-        return cachedItemQuads;
-    }
-
-    private void buildItemQuads(RandomSource rand) {
-        List<BakedQuad> allQuads = new ArrayList<>();
-        for (String partName : getItemRenderPartNames()) {
-            BakedModel part = parts.get(partName);
-            if (part != null) {
-                for (Direction dir : Direction.values()) {
-                    allQuads.addAll(part.getQuads(null, dir, rand));
-                }
-                allQuads.addAll(part.getQuads(null, null, rand));
-            }
-        }
-        this.cachedItemQuads = allQuads;
-    }
-    *///?}
 
     @Override
     protected List<String> getItemRenderPartNames() {
@@ -180,12 +149,13 @@ public class MachineAssemblerBakedModel extends AbstractMultipartBakedModel impl
         return result;
     }
 
-    //? if forge {
-    /*@Override
+    // Без ветки neoforge слой падал в solid, и прозрачные участки рисовались непрозрачными.
+    //? if forge || neoforge {
+    @Override
     public ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand, ModelData data) {
         return ChunkRenderTypeSet.of(RenderType.cutoutMipped());
     }
-    *///?}
+    //?}
 
     @Override
     public TextureAtlasSprite getParticleIcon() {
@@ -193,9 +163,6 @@ public class MachineAssemblerBakedModel extends AbstractMultipartBakedModel impl
         /*return getParticleIcon(ModelData.EMPTY);
         *///?}
 
-        //? if fabric {
-        /*return super.getParticleIcon();
-        *///?}
 
         //? if neoforge {
         return super.getParticleIcon();

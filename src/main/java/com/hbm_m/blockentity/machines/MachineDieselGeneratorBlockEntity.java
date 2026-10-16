@@ -80,7 +80,7 @@ public class MachineDieselGeneratorBlockEntity extends BaseMachineBlockEntity im
 
         if (level.getGameTime() % 20 == 0) {
             for (Direction dir : Direction.values()) {
-                trySubscribe(tank.getTankType(), level, pos.relative(dir), dir);
+                trySubscribe(tank, level, pos.relative(dir), dir);
             }
         }
 

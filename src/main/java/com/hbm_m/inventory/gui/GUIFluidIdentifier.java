@@ -37,18 +37,10 @@ import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.api.distmarker.OnlyIn;
 /^@OnlyIn(Dist.CLIENT)
 ^/*///?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-@Environment(EnvType.CLIENT)*///?}
 public class GUIFluidIdentifier extends Screen {
 
     private static final ResourceLocation TEXTURE =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/gui/gui_fluid.png");
-            *///?} else {
                         ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_fluid.png");
-            //?}
 
 
     private static final int X_SIZE = 176;

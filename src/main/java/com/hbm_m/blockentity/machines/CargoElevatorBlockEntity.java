@@ -54,8 +54,15 @@ public class CargoElevatorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlock
         setChanged();
     }
 
+    /** Cells check their core on a slow cadence; the core itself has nothing to verify. */
+    private static final int PART_CHECK_INTERVAL = 40;
+
     public static void tick(Level level, BlockPos pos, BlockState state, CargoElevatorBlockEntity be) {
         if (!be.isCore()) {
+            if (!level.isClientSide
+                    && Math.floorMod(level.getGameTime() + pos.hashCode(), PART_CHECK_INTERVAL) == 0) {
+                be.verifyCore(level, pos);
+            }
             return;
         }
 
@@ -73,6 +80,30 @@ public class CargoElevatorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlock
                 be.setChanged();
                 be.sendUpdateToClient();
             }
+        }
+    }
+
+    /**
+     * Keeps a cell attached to its core, the way BlockDummyable.destroyIfOrphan does upstream.
+     *
+     * <p>An assembly engine moves the cells without touching the pointer they store, so a shaft
+     * that travelled on a ship names pre-move positions; the geometry of the shaft itself is the
+     * only thing that survived the trip, so the core is re-derived from it. A cell that has no
+     * core at all is litter and removes itself - but only once the position it names is loaded,
+     * otherwise an unlucky chunk boundary would eat a perfectly good shaft.
+     */
+    private void verifyCore(Level level, BlockPos pos) {
+        if (com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) return;
+        if (resolveCore(CargoElevatorBlockEntity.class) != null) return;
+
+        BlockPos found = com.hbm_m.block.machines.CargoElevatorBlock.findCoreByGeometry(level, pos);
+        if (found != null) {
+            setCorePos(found);
+            setChanged();
+            return;
+        }
+        if (level.hasChunkAt(getCorePos())) {
+            level.removeBlock(pos, false);
         }
     }
 

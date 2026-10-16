@@ -119,7 +119,7 @@ public class MachineRotaryFurnaceBlockEntity extends com.hbm_m.blockentity.BaseH
 
         if (level.getGameTime() % 10 == 0) {
             for (Direction dir : Direction.values()) {
-                be.trySubscribe(be.tank.getTankType(), level, pos.relative(dir), dir);
+                be.trySubscribe(be.tank, level, pos.relative(dir), dir);
             }
         }
 

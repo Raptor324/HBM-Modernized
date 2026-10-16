@@ -94,7 +94,7 @@ public class MachineAnnihilatorBlockEntity extends BaseMachineBlockEntity implem
 
         if (level.getGameTime() % 20 == 0) {
             for (Direction dir : Direction.values()) {
-                be.trySubscribe(be.tank.getTankType(), level, pos.relative(dir), dir);
+                be.trySubscribe(be.tank, level, pos.relative(dir), dir);
             }
         }
 

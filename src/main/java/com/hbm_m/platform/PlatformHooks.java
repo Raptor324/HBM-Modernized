@@ -916,4 +916,18 @@ public final class PlatformHooks {
         return living.getEffect((net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect>) (Object) effect);
         //?}
     }
+
+    /**
+     * Событие детонации взрыва: даёт чужим модам (защита территорий и т.п.) отфильтровать
+     * список задетых сущностей. Раньше звалось только на Forge.
+     */
+    public static void fireExplosionDetonate(net.minecraft.world.level.Level level,
+            net.minecraft.world.level.Explosion explosion,
+            java.util.List<net.minecraft.world.entity.Entity> entities, double size) {
+        //? if forge {
+        /*net.minecraftforge.event.ForgeEventFactory.onExplosionDetonate(level, explosion, entities, size);
+        *///?} elif neoforge {
+        net.neoforged.neoforge.event.EventHooks.onExplosionDetonate(level, explosion, entities, size);
+        //?}
+    }
 }

@@ -97,7 +97,7 @@ public class MachineOilburnerBlockEntity extends BaseMachineBlockEntity implemen
     private void serverTick(ServerLevel level, BlockPos pos) {
         if (level.getGameTime() % 20 == 0) {
             for (Direction dir : Direction.values()) {
-                trySubscribe(oilTank.getTankType(), level, pos.relative(dir), dir);
+                trySubscribe(oilTank, level, pos.relative(dir), dir);
             }
         }
 

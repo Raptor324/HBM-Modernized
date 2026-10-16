@@ -50,15 +50,6 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
 *///?}
 
-//? if fabric {
-/*import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
-import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
-import net.fabricmc.fabric.api.transfer.v1.storage.base.CombinedStorage;
-import net.fabricmc.fabric.api.transfer.v1.storage.base.FilteringStorage;
-
-import java.util.ArrayList;
-import java.util.List;
-*///?}
 
 @SuppressWarnings("UnstableApiUsage")
 public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuProvider {
@@ -101,9 +92,6 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
     private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
     *///?}
 
-    //? if fabric {
-    /*private final Map<Direction, Storage<ItemVariant>> sidedStorages = new EnumMap<>(Direction.class);
-    *///?}
 
     private final ContainerData data;
     private int progress;
@@ -186,46 +174,6 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
     }
     *///?}
 
-    //? if fabric {
-    /*@Override
-    public void setLevel(Level level) {
-        super.setLevel(level);
-        buildSidedStorages();
-    }
-
-    @Nullable
-    public Storage<ItemVariant> getItemStorage(@Nullable Direction side) {
-        if (side == null) return itemHandler.getStorage();
-        return sidedStorages.getOrDefault(side, null);
-    }
-
-    private void buildSidedStorages() {
-        sidedStorages.clear();
-        for (Direction dir : Direction.values()) {
-            sidedStorages.put(dir, buildStorageForSide(dir));
-        }
-    }
-
-    @SuppressWarnings("UnstableApiUsage")
-    private Storage<ItemVariant> buildStorageForSide(Direction direction) {
-        List<Storage<ItemVariant>> parts = new ArrayList<>();
-        for (int s = 0; s < itemHandler.getSlots(); s++) {
-            final int slot = s;
-            parts.add(new FilteringStorage<>(itemHandler.getSlotStorage(slot)) {
-                @Override
-                protected boolean canInsert(ItemVariant resource) {
-                    return canInsertFromDirection(slot, direction)
-                            && itemHandler.isItemValid(slot, resource.toStack());
-                }
-                @Override
-                protected boolean canExtract(ItemVariant resource) {
-                    return canExtractFromDirection(slot);
-                }
-            });
-        }
-        return new CombinedStorage<>(parts);
-    }
-    *///?}
 
     public void drops() {
         SimpleContainer inventory = new SimpleContainer(itemHandler.getSlots());

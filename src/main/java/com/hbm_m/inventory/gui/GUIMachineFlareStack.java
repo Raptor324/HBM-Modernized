@@ -23,7 +23,7 @@ public class GUIMachineFlareStack extends GuiInfoScreen<MachineFlareStackMenu> {
         super(menu, playerInventory, title);
         this.flareStack = menu.getBlockEntity();
         this.imageWidth = 176;
-        this.imageHeight = 204;
+        this.imageHeight = 203;
     }
 
     @Override

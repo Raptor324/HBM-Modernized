@@ -80,7 +80,7 @@ public class MachineSolidifierBlockEntity extends BaseMachineBlockEntity impleme
                 BlockPos neighborPos = pos.relative(dir);
                 BlockEntity neighborBe = level.getBlockEntity(neighborPos);
                 if (!(neighborBe instanceof IFluidConnectorMK2)) continue;
-                trySubscribe(tank.getTankType(), level, neighborPos, dir);
+                trySubscribe(tank, level, neighborPos, dir);
             }
         }
 

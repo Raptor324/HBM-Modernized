@@ -14,11 +14,7 @@ import net.minecraft.world.entity.player.Inventory;
 public class GUIMachineCombinationOven extends GuiInfoScreen<MachineCombinationOvenMenu> {
 
     private static final ResourceLocation TEXTURE =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/gui/processing/gui_furnace_combination.png");
-            *///?} else {
                         ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_furnace_combination.png");
-            //?}
 
     // Fluessigkeitstank - rechts im Panel (Koordinaten aus dem 1.7.10-Original, GUIFurnaceCombo:
     // renderTankInfo/renderTank bei guiLeft + 118, guiTop + 18/70, 16x52).

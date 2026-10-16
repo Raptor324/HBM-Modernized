@@ -57,8 +57,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-//? if forge {
-/*import mezz.jei.api.IModPlugin;
+//? if forge || neoforge {
+import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
@@ -72,11 +72,7 @@ import javax.annotation.Nonnull;
 public class HbmJeiPlugin implements IModPlugin {
 
     private static final ResourceLocation PLUGIN_UID =
-            //? if fabric && < 1.21.1 {
-            /^new ResourceLocation(RefStrings.MODID, "jei_plugin");
-            ^///?} else {
                         ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "jei_plugin");
-            //?}
 
 
     @Override
@@ -115,6 +111,12 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeCategories(new ElectrolyserMetalJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new CrackingTowerJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new RadiolysisJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+
+        // Машины, у которых категории не было вовсе (см. JeiExtraCategories).
+        for (mezz.jei.api.recipe.category.IRecipeCategory<?> extra
+                : JeiExtraCategories.create(registration.getJeiHelpers().getGuiHelper())) {
+            registration.addRecipeCategories(extra);
+        }
     }
 
     @Override
@@ -160,10 +162,13 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipes(RBMKDisassemblyJeiCategory.RECIPE_TYPE, RBMKDisassemblyJeiRecipe.all());
         registration.addRecipes(RBMKWasteDecayJeiCategory.RECIPE_TYPE, RBMKWasteDecayJeiCategory.all());
         registration.addRecipes(RBMKOutgasserJeiCategory.RECIPE_TYPE, RBMKOutgasserJeiCategory.all());
+
+        JeiExtraCategories.registerRecipes(registration, level);
     }
 
     @Override
     public void registerRecipeCatalysts(@Nonnull IRecipeCatalystRegistration registration) {
+        JeiExtraCategories.registerCatalysts(registration);
         for (var anvil : ModBlocks.getAnvilBlocks()) {
             registration.addRecipeCatalyst(new ItemStack(anvil.get()), AnvilJeiCategory.RECIPE_TYPE);
         }
@@ -291,7 +296,4 @@ public class HbmJeiPlugin implements IModPlugin {
         );
     }
 }
-*///?} else {
-public final class HbmJeiPlugin {
-    private HbmJeiPlugin() {}
-}//?}
+//?}

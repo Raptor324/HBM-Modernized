@@ -23,11 +23,7 @@ import java.util.Arrays;
 public abstract class GuiInfoScreen<T extends AbstractContainerMenu> extends AbstractContainerScreen<T> {
 
     protected static final ResourceLocation GUI_UTILITY =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/gui/gui_utility.png");
-            *///?} else {
                         ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_utility.png");
-            //?}
 
 
     protected GuiInfoScreen(T menu, Inventory playerInventory, Component title) {

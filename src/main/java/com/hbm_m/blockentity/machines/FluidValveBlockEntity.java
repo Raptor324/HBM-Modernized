@@ -154,13 +154,6 @@ public class FluidValveBlockEntity extends BaseHbmBlockEntity implements IFluidP
     }
     //?}
 
-    //? if fabric {
-    /*@Override
-    public void setLevel(Level level) {
-        super.setLevel(level);
-        initFromLevel(level);
-    }
-    *///?}
 
     @Override
     public void setRemoved() {
