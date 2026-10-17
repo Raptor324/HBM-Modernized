@@ -66,6 +66,12 @@ public final class IrisShadowBatchCollector {
         public final IrisCompanionMesh customMesh;
         public FloatBuffer data;
         public int count;
+        public FloatBuffer prebakeDirectView = null;
+        public long mutationEpoch = -1L;
+
+        public FloatBuffer activeBuffer() {
+            return prebakeDirectView != null ? prebakeDirectView : data;
+        }
 
         Entry(InstancedStaticPartRenderer renderer) {
             this.renderer = renderer;
@@ -163,8 +169,88 @@ public final class IrisShadowBatchCollector {
     // so the light rotation rides inside the record. The shadow MV itself is deliberately
     // NOT stashed: the contract forbids absorbing it into the records.
     private static final Matrix4f stashProj = new Matrix4f();
+    private static final Matrix4f stashShadowMv = new Matrix4f();
+    private static final Matrix4f stashShadowMvInv = new Matrix4f();
+    private static boolean stashShadowMvValid = false;
     private static float stashCamX, stashCamY, stashCamZ;
     private static boolean stashValid = false;
+    private static int shadowAnchorX, shadowAnchorY, shadowAnchorZ;
+    private static boolean anchorSpaceShadowActive = false;
+
+    public static void beginShadowPass(Matrix4f shadowMv, Matrix4f shadowProj, double camX, double camY, double camZ) {
+        stashShadowMv.set(shadowMv);
+        stashShadowMvInv.set(shadowMv).invertAffine();
+        stashProj.set(shadowProj);
+        stashCamX = (float) camX;
+        stashCamY = (float) camY;
+        stashCamZ = (float) camZ;
+        stashValid = true;
+        stashShadowMvValid = true;
+        anchorSpaceShadowActive = false;
+    }
+
+    public static boolean isAnchorSpaceShadowActive() {
+        return anchorSpaceShadowActive;
+    }
+
+    public static void buildShadowModelView(Matrix4f outMv, float camX, float camY, float camZ) {
+        if (anchorSpaceShadowActive && stashShadowMvValid) {
+            outMv.set(stashShadowMv).translate(
+                    (float) shadowAnchorX - camX,
+                    (float) shadowAnchorY - camY,
+                    (float) shadowAnchorZ - camZ);
+        } else {
+            outMv.translation(-camX, -camY, -camZ);
+        }
+    }
+
+    public static void activateAnchorSpacePrebakes() {
+        if (!batchingEnabled || !stashValid || !stashShadowMvValid) {
+            return;
+        }
+        BlockPos anchor = FrameViewState.anchorOrigin();
+        shadowAnchorX = anchor.getX();
+        shadowAnchorY = anchor.getY();
+        shadowAnchorZ = anchor.getZ();
+        anchorSpaceShadowActive = true;
+
+        for (java.util.Map.Entry<InstancedStaticPartRenderer, PrebakeSnapshot> pe : PREBAKES.entrySet()) {
+            InstancedStaticPartRenderer renderer = pe.getKey();
+            PrebakeSnapshot s = pe.getValue();
+            if (s.epoch != prebakeEpoch || s.count <= 0 || s.records == null) {
+                continue;
+            }
+            if (s.anchorX != shadowAnchorX || s.anchorY != shadowAnchorY || s.anchorZ != shadowAnchorZ) {
+                continue;
+            }
+            Entry e = BY_RENDERER.get(renderer);
+            if (e == null) {
+                e = new Entry(renderer);
+                BY_RENDERER.put(renderer, e);
+            }
+            if (e.count == 0) {
+                ENTRIES.add(e);
+            }
+            e.prebakeDirectView = s.records;
+            e.count = s.count;
+            e.mutationEpoch = s.bakedMutationEpoch;
+        }
+    }
+
+    private static final Matrix4f RECOVERED_SHADOW_MV = new Matrix4f();
+
+    public static void ensureAnchorSpaceShadowFromBePose(Matrix4f beShadowPose, BlockPos bePos) {
+        if (anchorSpaceShadowActive || !batchingEnabled || PREBAKES.isEmpty()) {
+            return;
+        }
+        var cam = net.minecraft.client.Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+        RECOVERED_SHADOW_MV.set(beShadowPose).translate(
+                (float) (cam.x - bePos.getX()),
+                (float) (cam.y - bePos.getY()),
+                (float) (cam.z - bePos.getZ()));
+        beginShadowPass(RECOVERED_SHADOW_MV, com.mojang.blaze3d.systems.RenderSystem.getProjectionMatrix(), cam.x, cam.y, cam.z);
+        activateAnchorSpacePrebakes();
+    }
 
     public static void stashShadowMatrices(Matrix4f proj) {
         stashProj.set(proj);
@@ -177,6 +263,8 @@ public final class IrisShadowBatchCollector {
 
     private static void clearStash() {
         stashValid = false;
+        stashShadowMvValid = false;
+        anchorSpaceShadowActive = false;
         // SHADOW-EPOCH: the shadow basis is only meaningful for the shadow pass that
         // stashed the matrices; the next pass recalibrates from fresh fallback records.
         prebakeCalibrated = false;
@@ -247,27 +335,47 @@ public final class IrisShadowBatchCollector {
     /** Render-thread-only scratch for the affine → pos/quat decomposition (hot record path). */
     private static final Vector3f SCRATCH_POS = new Vector3f();
     private static final Quaternionf SCRATCH_ROT = new Quaternionf();
+    private static final Matrix4f SCRATCH_FALLBACK_MAT = new Matrix4f();
 
     private static void appendRecord(Entry e, InstancedStaticPartRenderer renderer, Matrix4f fullTransform,
                                      float[] bboxMin, float[] cornerUV16) {
-        if ((e.count + 1) * FLOATS_PER_INSTANCE > e.data.capacity()) {
+        if (e.prebakeDirectView != null) {
+            int floats = e.count * FLOATS_PER_INSTANCE;
+            if (floats + FLOATS_PER_INSTANCE > e.data.capacity()) {
+                int newCap = e.data.capacity() * 2;
+                while (newCap < floats + FLOATS_PER_INSTANCE) newCap *= 2;
+                FloatBuffer grown = MemoryUtil.memAllocFloat(newCap);
+                MemoryUtil.memFree(e.data);
+                e.data = grown;
+            }
+            e.data.clear();
+            MemoryUtil.memCopy(MemoryUtil.memAddress0(e.prebakeDirectView), MemoryUtil.memAddress0(e.data), (long) floats * 4L);
+            e.data.position(floats);
+            e.prebakeDirectView = null;
+            e.mutationEpoch = -1L;
+        } else if ((e.count + 1) * FLOATS_PER_INSTANCE > e.data.capacity()) {
             FloatBuffer grown = MemoryUtil.memAllocFloat(e.data.capacity() * 2);
             e.data.flip();
             grown.put(e.data);
             MemoryUtil.memFree(e.data);
             e.data = grown;
         }
-        // Records are LIGHT-space, not world-space: the recorder's pose is the Iris
-        // shadow poseStack MV_shadow * T(bePos - camPos) * part (an exact affine
-        // decomposition — the light rotation MV_shadow rides INSIDE the record). The
-        // stashed player camera is added to the translation here, and consumers fold
-        // it back out at draw time: Tier 1 bakes with ModelViewMat = T(-cam) (keeps
-        // the bake output camera-independent), Tier 2 uses the same matrix, Tier 3
-        // subtracts the camera from the rebuilt pose.
-        SCRATCH_POS.set(fullTransform.m30() + stashCamX,
-                        fullTransform.m31() + stashCamY,
-                        fullTransform.m32() + stashCamZ);
-        fullTransform.getNormalizedRotation(SCRATCH_ROT);
+
+        if (anchorSpaceShadowActive && stashShadowMvValid) {
+            SCRATCH_FALLBACK_MAT.set(stashShadowMvInv).mul(fullTransform);
+            SCRATCH_POS.set(
+                SCRATCH_FALLBACK_MAT.m30() + (stashCamX - shadowAnchorX),
+                SCRATCH_FALLBACK_MAT.m31() + (stashCamY - shadowAnchorY),
+                SCRATCH_FALLBACK_MAT.m32() + (stashCamZ - shadowAnchorZ)
+            );
+            SCRATCH_FALLBACK_MAT.getNormalizedRotation(SCRATCH_ROT);
+        } else {
+            SCRATCH_POS.set(fullTransform.m30() + stashCamX,
+                            fullTransform.m31() + stashCamY,
+                            fullTransform.m32() + stashCamZ);
+            fullTransform.getNormalizedRotation(SCRATCH_ROT);
+        }
+
         float[] uvRect = (renderer != null) ? renderer.getActiveUvRect() : null;
         float[] tint = (renderer != null) ? renderer.getActiveTint() : null;
         float[] grad = (renderer != null) ? renderer.getActiveGrad() : null;
@@ -449,6 +557,8 @@ public final class IrisShadowBatchCollector {
         boolean[] posQuatVerified;
         int count;
         long epoch = -1L;
+        long bakedMutationEpoch = -1L;
+        long bakedLayoutEpoch = -1L;
         /**
          * Anchor origin at publish time. The records are anchor-relative (world
          * pos = record + anchor), so consumers MUST resolve them against the
@@ -486,6 +596,27 @@ public final class IrisShadowBatchCollector {
             s = new PrebakeSnapshot();
             PREBAKES.put(renderer, s);
         }
+        BlockPos anchor = FrameViewState.anchorOrigin();
+        int curAnchorX = anchor.getX(), curAnchorY = anchor.getY(), curAnchorZ = anchor.getZ();
+        long mutEpoch = renderer.getRecordMutationEpoch();
+        long layEpoch = renderer.getSlotLayoutEpoch();
+        boolean anchorSame = s.anchorX == curAnchorX && s.anchorY == curAnchorY && s.anchorZ == curAnchorZ;
+
+        if (s.count == count && anchorSame && s.bakedMutationEpoch == mutEpoch && s.records != null) {
+            // Records and slot layout are 100% unchanged since last publish!
+            // Just refresh the epoch stamp and verified/stable arrays if needed.
+            s.epoch = prebakeEpoch;
+            if (s.posQuatStable == null || s.posQuatStable.length < count) {
+                s.posQuatStable = new boolean[count];
+            }
+            System.arraycopy(posQuatStable, 0, s.posQuatStable, 0, count);
+            if (s.posQuatVerified == null || s.posQuatVerified.length < count) {
+                s.posQuatVerified = new boolean[count];
+            }
+            System.arraycopy(posQuatVerified, 0, s.posQuatVerified, 0, count);
+            return;
+        }
+
         int floats = count * FLOATS_PER_INSTANCE;
         s.records = ensurePrebakeCapacity(s.records, floats);
         s.records = shrinkOversizedPrebake(s.records, floats);
@@ -494,6 +625,7 @@ public final class IrisShadowBatchCollector {
         src.limit(floats);
         s.records.clear();
         s.records.put(src);
+        s.bakedMutationEpoch = mutEpoch;
         if (s.posQuatStable == null || s.posQuatStable.length < count) {
             s.posQuatStable = new boolean[count];
         }
@@ -502,26 +634,29 @@ public final class IrisShadowBatchCollector {
             s.posQuatVerified = new boolean[count];
         }
         System.arraycopy(posQuatVerified, 0, s.posQuatVerified, 0, count);
+        boolean layoutDirty = s.count != count || s.bakedLayoutEpoch != layEpoch || s.firstSlotByKey.isEmpty();
         s.count = count;
         s.epoch = prebakeEpoch;
-        BlockPos anchor = FrameViewState.anchorOrigin();
-        s.anchorX = anchor.getX();
-        s.anchorY = anchor.getY();
-        s.anchorZ = anchor.getZ();
-        s.firstSlotByKey.clear();
-        s.runLenByKey.clear();
-        int runStart = 0;
-        for (int i = 1; i <= count; i++) {
-            if (i == count || keys[i] != keys[runStart]) {
-                long k = keys[runStart];
-                if (s.firstSlotByKey.containsKey(k)) {
-                    s.runLenByKey.put(k, -1);   // ambiguous layout - fail closed for this machine
-                } else {
-                    s.firstSlotByKey.put(k, runStart);
-                    s.runLenByKey.put(k, i - runStart);
+        s.anchorX = curAnchorX;
+        s.anchorY = curAnchorY;
+        s.anchorZ = curAnchorZ;
+        if (layoutDirty) {
+            s.firstSlotByKey.clear();
+            s.runLenByKey.clear();
+            int runStart = 0;
+            for (int i = 1; i <= count; i++) {
+                if (i == count || keys[i] != keys[runStart]) {
+                    long k = keys[runStart];
+                    if (s.firstSlotByKey.containsKey(k)) {
+                        s.runLenByKey.put(k, -1);   // ambiguous layout - fail closed for this machine
+                    } else {
+                        s.firstSlotByKey.put(k, runStart);
+                        s.runLenByKey.put(k, i - runStart);
+                    }
+                    runStart = i;
                 }
-                runStart = i;
             }
+            s.bakedLayoutEpoch = layEpoch;
         }
     }
 
@@ -588,7 +723,13 @@ public final class IrisShadowBatchCollector {
      */
     public static boolean hasFreshPrebake(InstancedStaticPartRenderer renderer, long posKey) {
         PrebakeSnapshot s = PREBAKES.get(renderer);
-        return s != null && s.epoch == prebakeEpoch && s.runLenByKey.get(posKey) > 0;
+        if (s == null || s.epoch != prebakeEpoch || s.runLenByKey.get(posKey) <= 0) {
+            return false;
+        }
+        if (anchorSpaceShadowActive && (s.anchorX != shadowAnchorX || s.anchorY != shadowAnchorY || s.anchorZ != shadowAnchorZ)) {
+            return false;
+        }
+        return true;
     }
 
     /** Whether the shadow basis is calibrated for the CURRENT shadow pass. */
@@ -652,13 +793,6 @@ public final class IrisShadowBatchCollector {
             return;
         }
         int first = s.firstSlotByKey.get(posKey);
-        // Compare-verified stability only: stable-by-trust slots (roster assert /
-        // skip-write assumption) may hold a pose that moved since the snapshot -
-        // a mid-travel door solves t_shadow wrong by the part travel while R stays
-        // exact, slipping under the R tolerance. Fail closed instead.
-        if (!s.posQuatVerified[first]) {
-            return;
-        }
         if (s.posQuatStable[first]) {
             solveShadowBasis(s, first, blockPos, lightPose);
         }
@@ -815,67 +949,68 @@ public final class IrisShadowBatchCollector {
     /** Append loop body of {@link #consumePrebaked} (atomicity handled by the caller). */
     private static void appendPrebakedRange(Entry e, PrebakeSnapshot s, int first, int len,
                                             float ax, float ay, float az, float mx, float my, float mz) {
+        int neededFloats = (e.count + len) * FLOATS_PER_INSTANCE;
+        if (neededFloats > e.data.capacity()) {
+            int newCap = e.data.capacity() * 2;
+            while (newCap < neededFloats) newCap *= 2;
+            FloatBuffer grown = MemoryUtil.memAllocFloat(newCap);
+            e.data.flip();
+            grown.put(e.data);
+            MemoryUtil.memFree(e.data);
+            e.data = grown;
+        }
+        long srcBaseAddr = MemoryUtil.memAddress0(s.records);
+        long dstBaseAddr = MemoryUtil.memAddress0(e.data);
+        float offX = mx - ax; // = s.anchorX - stashCamX
+        float offY = my - ay; // = s.anchorY - stashCamY
+        float offZ = mz - az; // = s.anchorZ - stashCamZ
+        float addX = PREBAKE_T_SHADOW.x + stashCamX;
+        float addY = PREBAKE_T_SHADOW.y + stashCamY;
+        float addZ = PREBAKE_T_SHADOW.z + stashCamZ;
+
+        int written = 0;
         for (int i = first; i < first + len; i++) {
-            int base = i * FLOATS_PER_INSTANCE;
-            // FADE_MODE_INVISIBLE (fade word < 0): writeRecordFloats forces fade
-            // 1.0, so an invisible part would be shadow-cast as fully opaque -
-            // skip it entirely.
-            if (s.records.get(base + InstancedStaticPartRenderer.FADE_FLOAT_OFFSET) < 0.0f) {
+            long srcAddr = srcBaseAddr + (long) i * FLOATS_PER_INSTANCE * 4L;
+            if (MemoryUtil.memGetFloat(srcAddr + (long) InstancedStaticPartRenderer.FADE_FLOAT_OFFSET * 4L) < 0.0f) {
                 continue;
             }
-            // S_t = the part's world offset from the machine origin (bob-stripped
-            // main record); composed with the machine offset and rotated into light
-            // space in ONE transform, then t_shadow and the stashed camera are added
-            // exactly like appendRecord adds stashCam.
-            PREBAKE_V.set(s.records.get(base)     - ax + mx,
-                          s.records.get(base + 1) - ay + my,
-                          s.records.get(base + 2) - az + mz);
+            long dstAddr = dstBaseAddr + (long) (e.count + written) * FLOATS_PER_INSTANCE * 4L;
+            // Bulk copy all 128 bytes (32 floats) of the record (copies bboxMin, bboxSize, uvRect, tint, grad.xyz)
+            MemoryUtil.memCopy(srcAddr, dstAddr, (long) FLOATS_PER_INSTANCE * 4L);
+
+            // Transform position into light space
+            PREBAKE_V.set(MemoryUtil.memGetFloat(srcAddr) + offX,
+                          MemoryUtil.memGetFloat(srcAddr + 4L) + offY,
+                          MemoryUtil.memGetFloat(srcAddr + 8L) + offZ);
             PREBAKE_R_SHADOW.transform(PREBAKE_V);
-            PREBAKE_V.add(PREBAKE_T_SHADOW.x + stashCamX,
-                          PREBAKE_T_SHADOW.y + stashCamY,
-                          PREBAKE_T_SHADOW.z + stashCamZ);
-            decodeRecordQuat(s.records, base, PREBAKE_Q_TMP);
+            MemoryUtil.memPutFloat(dstAddr, PREBAKE_V.x + addX);
+            MemoryUtil.memPutFloat(dstAddr + 4L, PREBAKE_V.y + addY);
+            MemoryUtil.memPutFloat(dstAddr + 8L, PREBAKE_V.z + addZ);
+
+            // Transform packed quaternion into light space
+            int wxy = MemoryUtil.memGetInt(srcAddr + (long) InstancedStaticPartRenderer.QUAT_FLOAT_OFFSET * 4L);
+            int wzw = MemoryUtil.memGetInt(srcAddr + (long) (InstancedStaticPartRenderer.QUAT_FLOAT_OFFSET + 1) * 4L);
+            PREBAKE_Q_TMP.set(InstancedStaticPartRenderer.decodeSnorm16(wxy),
+                              InstancedStaticPartRenderer.decodeSnorm16(wxy >>> 16),
+                              InstancedStaticPartRenderer.decodeSnorm16(wzw),
+                              InstancedStaticPartRenderer.decodeSnorm16(wzw >>> 16));
             PREBAKE_Q_SHADOW.mul(PREBAKE_Q_TMP, PREBAKE_Q_OUT);
-            // The record stores bbox min (5..7) + size (8..10); the writer wants
-            // min + max (it re-derives the size).
-            PREBAKE_BBOX6[0] = s.records.get(base + 5);
-            PREBAKE_BBOX6[1] = s.records.get(base + 6);
-            PREBAKE_BBOX6[2] = s.records.get(base + 7);
-            PREBAKE_BBOX6[3] = PREBAKE_BBOX6[0] + s.records.get(base + 8);
-            PREBAKE_BBOX6[4] = PREBAKE_BBOX6[1] + s.records.get(base + 9);
-            PREBAKE_BBOX6[5] = PREBAKE_BBOX6[2] + s.records.get(base + 10);
-            // Corner light: ZERO words, byte-identical to the shadow-pass BER
-            // fallback (IrisInstancedBatchRenderer fills tmpCornerUV with 0.0f and
-            // packLightU8(0) == 0). The shadow program's FSH multiplies by the
-            // lightmap sample, so copying the main-pass light here would make a
-            // machine's shadowcolor flip lit<->black whenever the path selection
-            // toggles between consume and fallback (e.g. on the TTL calibration
-            // cadence); zeros on both paths keep the two paths pixel-equivalent.
-            for (int w = 0; w < 4; w++) {
-                PREBAKE_LIGHT_WORDS[w] = 0;
-            }
-            PREBAKE_UV4[0] = s.records.get(base + 16);
-            PREBAKE_UV4[1] = s.records.get(base + 17);
-            PREBAKE_UV4[2] = s.records.get(base + 18);
-            PREBAKE_UV4[3] = s.records.get(base + 19);
-            PREBAKE_TINT4[0] = s.records.get(base + 20);
-            PREBAKE_TINT4[1] = s.records.get(base + 21);
-            PREBAKE_TINT4[2] = s.records.get(base + 22);
-            PREBAKE_TINT4[3] = s.records.get(base + 23);
-            PREBAKE_GRAD3[0] = s.records.get(base + 24);
-            PREBAKE_GRAD3[1] = s.records.get(base + 25);
-            PREBAKE_GRAD3[2] = s.records.get(base + 26);
-            if ((e.count + 1) * FLOATS_PER_INSTANCE > e.data.capacity()) {
-                FloatBuffer grown = MemoryUtil.memAllocFloat(e.data.capacity() * 2);
-                e.data.flip();
-                grown.put(e.data);
-                MemoryUtil.memFree(e.data);
-                e.data = grown;
-            }
-            writeRecordFloats(e, PREBAKE_V, PREBAKE_Q_OUT, PREBAKE_BBOX6, PREBAKE_LIGHT_WORDS,
-                    PREBAKE_UV4, PREBAKE_TINT4, PREBAKE_GRAD3);
-            e.count++;
-            com.hbm_m.client.render.NucleusDebug.recordShadowRecord(1);
+            MemoryUtil.memPutInt(dstAddr + 12L, InstancedStaticPartRenderer.packQuatWord(PREBAKE_Q_OUT.x, PREBAKE_Q_OUT.y));
+            MemoryUtil.memPutInt(dstAddr + 16L, InstancedStaticPartRenderer.packQuatWord(PREBAKE_Q_OUT.z, PREBAKE_Q_OUT.w));
+
+            // Float 11: fade = 1.0f; Floats 12..15: light = 0; Floats 27..31: grad.w = -1.0f, animParams = 0
+            MemoryUtil.memPutFloat(dstAddr + 11L * 4L, 1.0f);
+            MemoryUtil.memPutLong(dstAddr + 12L * 4L, 0L);
+            MemoryUtil.memPutLong(dstAddr + 14L * 4L, 0L);
+            MemoryUtil.memPutFloat(dstAddr + 27L * 4L, -1.0f);
+            MemoryUtil.memPutLong(dstAddr + 28L * 4L, 0L);
+            MemoryUtil.memPutLong(dstAddr + 30L * 4L, 0L);
+            written++;
+        }
+        if (written > 0) {
+            e.count += written;
+            e.data.position(e.count * FLOATS_PER_INSTANCE);
+            com.hbm_m.client.render.NucleusDebug.recordShadowRecord(written);
         }
     }
 
@@ -976,7 +1111,7 @@ public final class IrisShadowBatchCollector {
                         if (e.count <= 0 || e.renderer == null) {
                             continue;
                         }
-                        if (e.renderer.drawShadowInstances(e.data, e.count, ours, shadowProj,
+                        if (e.renderer.drawShadowInstances(e.activeBuffer(), e.count, ours, shadowProj,
                                 stashCamX, stashCamY, stashCamZ)) {
                             drawCalls++;
                             total += e.count;
@@ -1033,19 +1168,23 @@ public final class IrisShadowBatchCollector {
                 if (companion == null) {
                     continue;
                 }
+                FloatBuffer buf = e.activeBuffer();
                 for (int r = 0; r < e.count; r++) {
                     int base = r * FLOATS_PER_INSTANCE;
-                    // Records are pos(3) + packed quat (2 words) + bbox: an exact
-                    // light-space decomposition of the Iris shadow poseStack
-                    // (see appendRecord), with the stashed camera added to the
-                    // translation. Subtracting it rebuilds the poseStack pose
-                    // itself, used directly as the per-record ModelViewMat
-                    // (ProjMat = shadow projection, ModelViewMat = pose).
-                    pos.set(e.data.get(base + 0) - camX,
-                            e.data.get(base + 1) - camY,
-                            e.data.get(base + 2) - camZ);
-                    decodeRecordQuat(e.data, base, rot);
-                    recordPose.translationRotate(pos, rot);
+                    if (anchorSpaceShadowActive && stashShadowMvValid) {
+                        pos.set(buf.get(base + 0),
+                                buf.get(base + 1),
+                                buf.get(base + 2));
+                        decodeRecordQuat(buf, base, rot);
+                        buildShadowModelView(recordPose, camX, camY, camZ);
+                        recordPose.translate(pos).rotate(rot);
+                    } else {
+                        pos.set(buf.get(base + 0) - camX,
+                                buf.get(base + 1) - camY,
+                                buf.get(base + 2) - camZ);
+                        decodeRecordQuat(buf, base, rot);
+                        recordPose.translationRotate(pos, rot);
+                    }
                     batch.drawCompanion(companion, recordPose, 0);
                     drawCalls++;
                 }
@@ -1069,11 +1208,50 @@ public final class IrisShadowBatchCollector {
         if (failed == null || failed.isEmpty() || !stashValid) {
             return;
         }
-        int calls = drawEntriesViaCompanionBatch(failed, shadowProj, camX, camY, camZ);
+        com.hbm_m.client.render.shader.IrisInstancedShaders.captureLiveFramebuffer(true);
+        ShaderInstance ours = com.hbm_m.client.render.shader.IrisInstancedShaders.getOrCreate(true);
+        boolean instancedSafe = com.hbm_m.config.ModClothConfig.get().nucleusShadowInstancing
+                && SHADOW_INSTANCING_FLAG
+                && com.hbm_m.client.render.shader.IrisShadowDistortion.isCompatible();
+
+        List<Entry> companionFallback = null;
+        if (ours != null && instancedSafe) {
+            ShaderInstance packShadow = IrisExtendedShaderAccess.getBlockShader(true);
+            int drawCalls = 0;
+            int instancedTotal = 0;
+            try (IrisPhaseGuard guard = IrisPhaseGuard.pushBlockEntities()) {
+                for (int i = 0; i < failed.size(); i++) {
+                    Entry e = failed.get(i);
+                    if (e.count <= 0) continue;
+                    if (e.renderer != null && e.renderer.drawShadowInstances(
+                            e.activeBuffer(), e.count, ours, shadowProj, camX, camY, camZ)) {
+                        drawCalls++;
+                        instancedTotal += e.count;
+                    } else {
+                        if (companionFallback == null) companionFallback = new java.util.ArrayList<>();
+                        companionFallback.add(e);
+                    }
+                }
+                if (packShadow != null) {
+                    GlStateManager._glUseProgram(packShadow.getId());
+                }
+            }
+            if (drawCalls > 0) {
+                NucleusDebug.recordDraw(drawCalls, instancedTotal, "Iris shadow bake-fallback-instanced");
+                NucleusDebug.recordShadowFlush("bake-fallback-instanced", drawCalls, instancedTotal);
+            }
+            if (companionFallback == null || companionFallback.isEmpty()) {
+                return;
+            }
+        } else {
+            companionFallback = failed;
+        }
+
+        int calls = drawEntriesViaCompanionBatch(companionFallback, shadowProj, camX, camY, camZ);
         if (calls >= 0) {
             int instances = 0;
-            for (int i = 0; i < failed.size(); i++) {
-                instances += failed.get(i).count;
+            for (int i = 0; i < companionFallback.size(); i++) {
+                instances += companionFallback.get(i).count;
             }
             NucleusDebug.recordDraw(calls, instances, "Iris shadow bake-fallback");
             NucleusDebug.recordShadowFlush("bake-fallback", calls, instances);
@@ -1125,6 +1303,8 @@ public final class IrisShadowBatchCollector {
         for (int i = 0; i < ENTRIES.size(); i++) {
             Entry e = ENTRIES.get(i);
             e.count = 0;
+            e.prebakeDirectView = null;
+            e.mutationEpoch = -1L;
             if (e.data != null) {
                 e.data.clear();
             }
@@ -1236,6 +1416,22 @@ public final class IrisShadowBatchCollector {
             }
         } else {
             staleFrames = 0;
+        }
+        var prebakeIt = PREBAKES.entrySet().iterator();
+        while (prebakeIt.hasNext()) {
+            PrebakeSnapshot ps = prebakeIt.next().getValue();
+            if (ps != null && prebakeEpoch - ps.epoch > 24L) {
+                if (ps.records != null) {
+                    MemoryUtil.memFree(ps.records);
+                    ps.records = null;
+                }
+                prebakeIt.remove();
+            }
+        }
+        for (Entry e : BY_RENDERER.values()) {
+            if (e != null && e.count == 0 && e.data != null) {
+                shrinkOversizedBuffer(e);
+            }
         }
     }
 }

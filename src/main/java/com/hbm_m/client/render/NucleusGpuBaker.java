@@ -143,9 +143,10 @@ public final class NucleusGpuBaker {
         Integer flag = Integer.getInteger("hbm.bakeCacheMB");
         int mb = flag != null ? flag : com.hbm_m.config.ModClothConfig.get().nucleusBakeCacheMB;
         if (mb <= 0) {
-            return 0L; // documented disable path
+            return 0L;
         }
-        return Math.max(16, Math.min(1024, mb)) * 1024L * 1024L;
+        int effectiveMb = flag != null ? mb : Math.max(1024, mb);
+        return Math.max(16L, (long) effectiveMb) * 1024L * 1024L;
     }
     /**
      * A cache unused for this many render frames may be evicted to admit a new one.
@@ -337,6 +338,7 @@ public final class NucleusGpuBaker {
         // Admission backoff stamp: frameStamp of the last budget refusal
         // (-1 = none). See ADMISSION_BACKOFF_FRAMES.
         long admissionRefusedFrame = -1L;
+        long sourceMutationEpoch = -1L;
     }
 
     // ── Global multi-draw batch (one indirect multi-draw per pass) ─────
@@ -350,7 +352,7 @@ public final class NucleusGpuBaker {
     /** Cull-program SSBO binding of the pool command store (pass 2 writes slots). */
     private static final int CULL_CMD_BINDING = 4;
     /** Minimum pool store once allocated (avoids VAO/buffer churn on eviction). */
-    private static final long MIN_POOL_BYTES = 1L << 20;
+    private static final long MIN_POOL_BYTES = 64L << 20; // 64 MB initial floor to absorb all machine parts without mid-walk store reallocations
     /**
      * Idle frames (no relayout of the pass) before the shrink policy may return
      * tail capacity. 600 frames ≈ 30 s at 20 fps: well past any chunk-load /
@@ -358,9 +360,14 @@ public final class NucleusGpuBaker {
      * from the flush path only (never per frame, never mid-walk - the walk's
      * own relayoutPool stamps lastRelayoutFrame).
      */
-    private static final long SHRINK_IDLE_FRAMES = 600;
+    private static final long SHRINK_IDLE_FRAMES = 60;
     /** Minimum SAVED bytes for a shrink to fire (avoids driver churn over crumbs). */
     private static final long SHRINK_MIN_SAVINGS = 8L << 20;
+
+    private static int roundUpInstanceCapacity(int count) {
+        int min = Math.max(count, 256);
+        return Integer.highestOneBit(min - 1) << 1;
+    }
 
     private static final class PassPool {
         final boolean slim;
@@ -427,7 +434,32 @@ public final class NucleusGpuBaker {
         }
     }
 
+    private static final class MainBakeQueueEntry {
+        final BakedMesh baked;
+        final FloatBuffer records;
+        final int count;
+        final Matrix4f proj;
+        final Matrix4f viewRot;
+        final float relCamX, relCamY, relCamZ;
+        final long mutationEpoch;
+
+        MainBakeQueueEntry(BakedMesh baked, FloatBuffer records, int count, Matrix4f proj,
+                           Matrix4f viewRot, float relCamX, float relCamY, float relCamZ,
+                           long mutationEpoch) {
+            this.baked = baked;
+            this.records = records;
+            this.count = count;
+            this.proj = proj;
+            this.viewRot = viewRot;
+            this.relCamX = relCamX;
+            this.relCamY = relCamY;
+            this.relCamZ = relCamZ;
+            this.mutationEpoch = mutationEpoch;
+        }
+    }
+
     private static final java.util.ArrayList<PendingDraw> PENDING_MAIN = new java.util.ArrayList<>(64);
+    private static final java.util.ArrayList<MainBakeQueueEntry> MAIN_BAKE_QUEUE = new java.util.ArrayList<>(64);
     private static final java.util.ArrayList<PendingDraw> PENDING_SHADOW = new java.util.ArrayList<>(64);
 
     /** F3 accessors: pool store realloc count of the last flush (per pass). */
@@ -579,6 +611,7 @@ public final class NucleusGpuBaker {
 
     /** Discards pending collect batches (exception path in the present hook). */
     public static void discardPendingBatches() {
+        MAIN_BAKE_QUEUE.clear();
         PENDING_MAIN.clear();
         PENDING_SHADOW.clear();
     }
@@ -996,7 +1029,11 @@ public final class NucleusGpuBaker {
                             + "flush - ignored (shadow ModelViewMat stays T(-cam); the light "
                             + "rotation lives inside the instance records)");
         }
-        SHADOW_MV.translation(-camX, -camY, -camZ);
+        if (IrisShadowBatchCollector.isAnchorSpaceShadowActive()) {
+            IrisShadowBatchCollector.buildShadowModelView(SHADOW_MV, camX, camY, camZ);
+        } else {
+            SHADOW_MV.translation(-camX, -camY, -camZ);
+        }
         Matrix4f worldToClip = new Matrix4f(shadowProj).mul(SHADOW_MV);
         float[] planes = new float[24];
         extractFrustumPlanes(worldToClip, planes);
@@ -1044,6 +1081,37 @@ public final class NucleusGpuBaker {
                 // 2/3 fallback OFF at the collector. They now join bakeFailed
                 // (same as a bakeEntry refusal) and the frame's outcome is
                 // decided by the flush's issued-command count below.
+                boolean needShadowRelayout = false;
+                for (int i = 0; i < entries.size(); i++) {
+                    IrisShadowBatchCollector.Entry e = entries.get(i);
+                    if (e.count <= 0) continue;
+                    IrisCompanionMesh mesh = e.getCompanionMesh();
+                    if (mesh == null || !mesh.isBuilt() || mesh.getMeshVertexCount() <= 0
+                            || mesh.getMeshStrideBytes() <= 0
+                            || mesh.getMeshIndices() == null || mesh.getMeshIndices().length == 0) {
+                        continue;
+                    }
+                    BakedMesh baked = getOrCreate(mesh);
+                    if (baked == null) continue;
+                    ModeCache mc = baked.shadow;
+                    if (!cacheAllocated(mc)) {
+                        if (preallocateCacheBuffers(baked, mc, e.count, MODE_SHADOW)) {
+                            needShadowRelayout = true;
+                        }
+                    } else {
+                        if (e.count > mc.outInstances) {
+                            mc.outInstances = roundUpInstanceCapacity(e.count);
+                            needShadowRelayout = true;
+                        }
+                        if (e.count > mc.eboInstances) {
+                            mc.eboInstances = roundUpInstanceCapacity(e.count);
+                            needShadowRelayout = true;
+                        }
+                    }
+                }
+                if (needShadowRelayout) {
+                    relayoutPool(MODE_SHADOW);
+                }
                 boolean anyCollected = false;
 
                 if (GlDebugMarkers.ENABLED) {
@@ -1081,9 +1149,9 @@ public final class NucleusGpuBaker {
                             bakeFailed.add(e);
                             continue;
                         }
-                        FloatBuffer records = e.data.duplicate();
+                        FloatBuffer records = e.activeBuffer().duplicate();
                         records.flip();
-                        if (!bakeEntry(baked, records, e.count, MODE_SHADOW, planes, frustumStamp, worldToClip)) {
+                        if (!bakeEntry(baked, records, e.count, MODE_SHADOW, planes, frustumStamp, worldToClip, e.mutationEpoch)) {
                             // Bake refused (budget refusal, upload or expansion
                             // failure): re-draw via the Tier-3 companion batch after
                             // the flush instead of skipping silently.
@@ -1139,6 +1207,8 @@ public final class NucleusGpuBaker {
                     }
                 }
 
+                boolean flushSucceeded = matricesOk && (issuedCommands > 0 || issuedCommands == -1);
+
                 // ── Tier-3 fallback for entries the bake refused this frame ──
                 // Runs after the pool flush and the VAO restore, so the
                 // companion batch captures the caller's GL state as its
@@ -1150,16 +1220,16 @@ public final class NucleusGpuBaker {
                 // refused or skipped are re-drawn; the batch walk reads the
                 // same light-space records the collector appended (ENTRIES is
                 // drained by the flush's finally, after this returns).
-                if (issuedCommands > 0 && bakeFailed != null) {
+                if (flushSucceeded && bakeFailed != null) {
                     IrisShadowBatchCollector.redrawFailedBakeEntries(
                             bakeFailed, shadowProj, camX, camY, camZ);
                 }
 
-                if (!matricesOk || issuedCommands == 0) {
+                if (!flushSucceeded) {
                     String reason = !matricesOk
                             ? "unresolved matrices (ModelViewMat/ProjMat not found on the pack shadow program)"
                             : (anyCollected
-                                    ? "pool flush issued 0 draw commands"
+                                    ? "pool flush evaluated 0 valid entries"
                                     : "all entries skipped (companion unavailable/empty)");
                     logShadowDecline(reason, shader);
                     return false;
@@ -1235,91 +1305,30 @@ public final class NucleusGpuBaker {
     public static boolean bakeMain(FloatBuffer records, int count, IrisCompanionMesh mesh,
                                    ShaderInstance packShader, Matrix4f proj, Matrix4f viewRot,
                                    float relCamX, float relCamY, float relCamZ) {
+        return bakeMain(records, count, mesh, packShader, proj, viewRot, relCamX, relCamY, relCamZ, -1L);
+    }
+
+    public static boolean bakeMain(FloatBuffer records, int count, IrisCompanionMesh mesh,
+                                   ShaderInstance packShader, Matrix4f proj, Matrix4f viewRot,
+                                   float relCamX, float relCamY, float relCamZ, long mutationEpoch) {
         if (!isEnabled() || !RenderSystem.isOnRenderThread() || packShader == null
                 || mesh == null || !mesh.isBuilt() || count <= 0 || records == null) {
             return false;
         }
-        bakeGlDrainForeign("main bake entry");
-        // Same matrix contract as the shadow bake (see bakeAndDrawShadow).
-        MAIN_MV.set(viewRot).translate(-relCamX, -relCamY, -relCamZ);
-        float[] planes = new float[24];
-        // worldToClip feeds both the frustum planes and the optional Hi-Z phase
-        // of the cull.
-        Matrix4f worldToClip = new Matrix4f(proj).mul(MAIN_MV);
-        extractFrustumPlanes(worldToClip, planes);
-        long frustumStamp = stampPlanes(planes);
-
-        int previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
-        int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
-        // *BINDING query pnames - see the note in bakeAndDrawShadow.
-        int prevDrawIndirect = GL11.glGetInteger(GL40.GL_DRAW_INDIRECT_BUFFER_BINDING);
-        int prevDispatchIndirect = GL11.glGetInteger(GL43.GL_DISPATCH_INDIRECT_BUFFER_BINDING);
-        // The compute dispatches below leave programId bound; restoring the caller's
-        // program keeps Iris's ExtendedShader.lastApplied skip-gate consistent with
-        // the real state for every consumer after this flush (the epilogue binds of
-        // 0 in the other compute passes were the per-frame poison of the same gate).
-        int previousProgram = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
-        int previousBlockEntityId = com.hbm_m.client.render.shader.IrisExtendedShaderAccess
-                .setCurrentRenderedBlockEntity(0);
-        try {
-            if (programId == -1 && !initProgram()) {
-                return false;
-            }
-            BakedMesh baked = getOrCreate(mesh);
-            if (baked == null) {
-                return false;
-            }
-            boolean success;
-            if (GlDebugMarkers.ENABLED) {
-                GlDebugMarkers.pushGroup("HBM_BakeMain_" + mesh.getDebugName());
-            }
-            try {
-                success = bakeEntry(baked, records, count, MODE_MAIN, planes, frustumStamp, worldToClip);
-            } finally {
-                if (GlDebugMarkers.ENABLED) {
-                    GlDebugMarkers.popGroup();
-                }
-            }
-            if (!success) {
-                return false;
-            }
-            // Successful bake: flushBatchIris returns here and the Tier-2/3
-            // companion fallback never runs, so IrisCompanionMesh's own low-demand
-            // decay would freeze with the lightmap ring parked at its old peak.
-            // Feed the idle counter instead; a sustained lull frees the buffers
-            // (see IrisCompanionMesh.noteBakeSuccess).
-            baked.mesh.noteBakeSuccess();
-            PENDING_MAIN.add(new PendingDraw(baked, baked.main, count));
-            return true;
-        } catch (IllegalArgumentException t) {
-            // Data-shape bug (buffer bounds, bad counts): the GL context is fine, so
-            // do NOT kill Tier 1 for the whole session (2026-10-05: one out-of-range
-            // dirty index permanently disabled bake). Skip the entry; uploadDirtyRecords
-            // invalidates its cache so the next call takes the clean full path.
-            long now = System.currentTimeMillis();
-            if (now - dataFailLogMs > 10000) {
-                dataFailLogMs = now;
-                com.hbm_m.main.MainRegistry.LOGGER.error(
-                        "[HBM-M] NucleusGpuBaker main bake failed (data error, bake stays enabled) "
-                                + "- falling back to companion path", t);
-            }
+        if (mesh.getMeshVertexCount() <= 0 || mesh.getMeshStrideBytes() <= 0
+                || mesh.getMeshIndices() == null || mesh.getMeshIndices().length == 0) {
             return false;
-        } catch (Exception t) {
-            com.hbm_m.main.MainRegistry.LOGGER.error("[HBM-M] NucleusGpuBaker main bake failed - "
-                    + "falling back to companion path", t);
-            available = false;
-            releaseResourcesInternal();
-            return false;
-        } finally {
-            com.hbm_m.client.render.shader.ShaderBindResync.markForeignProgramBind();
-            com.hbm_m.client.render.shader.IrisExtendedShaderAccess
-                    .restoreCurrentRenderedBlockEntity(previousBlockEntityId);
-            GL40.glBindBuffer(GL40.GL_DRAW_INDIRECT_BUFFER, prevDrawIndirect);
-            GL43.glBindBuffer(GL43.GL_DISPATCH_INDIRECT_BUFFER, prevDispatchIndirect);
-            com.mojang.blaze3d.platform.GlStateManager._glUseProgram(previousProgram);
-            com.hbm_m.client.render.GlVaoSafety.bindVertexArray(previousVao);
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
         }
+        if (programId == -1 && !initProgram()) {
+            return false;
+        }
+        BakedMesh baked = getOrCreate(mesh);
+        if (baked == null) {
+            return false;
+        }
+        MAIN_BAKE_QUEUE.add(new MainBakeQueueEntry(baked, records.duplicate(), count,
+                new Matrix4f(proj), new Matrix4f(viewRot), relCamX, relCamY, relCamZ, mutationEpoch));
+        return true;
     }
 
     // ── Bake entry: cache check + record upload + cull + expansion ─────
@@ -1340,7 +1349,8 @@ public final class NucleusGpuBaker {
      * the entry is refused (false) and the caller falls back to Tier 2/3.
      */
     private static boolean bakeEntry(BakedMesh baked, FloatBuffer records, int count, int mode,
-                                     float[] planes, long frustumStamp, Matrix4f worldToClip) {
+                                     float[] planes, long frustumStamp, Matrix4f worldToClip,
+                                     long mutationEpoch) {
         ModeCache mc = baked.cache(mode);
         // 2026-10-07 shadow-fix relayout deferral: snapshotted BEFORE this bake's
         // own relayouts stamp the pool (see relayoutPool) - admission, capacity
@@ -1385,9 +1395,15 @@ public final class NucleusGpuBaker {
         boolean dirtyMode = false;
         int dirtyCount = 0;
         if (mc.outputValid && mc.recordCount == count && mc.boneKey == boneKey(baked)) {
-            dirtyCount = diffRecords(mc, records, count, mode);
-            recordsChanged = dirtyCount > 0;
-            dirtyMode = dirtyCount > 0 && dirtyCount < count;
+            if (mutationEpoch > 0L && mc.sourceMutationEpoch == mutationEpoch) {
+                dirtyCount = 0;
+                recordsChanged = false;
+                dirtyMode = false;
+            } else {
+                dirtyCount = diffRecords(mc, records, count, mode);
+                recordsChanged = dirtyCount > 0;
+                dirtyMode = dirtyCount > 0 && dirtyCount < count;
+            }
         } else {
             recordsChanged = true;
         }
@@ -1401,6 +1417,9 @@ public final class NucleusGpuBaker {
                     + " dirtyCount=" + dirtyCount
                     + " cull=" + cull
                     + " frustumChanged=" + frustumChanged);
+        }
+        if (dirtyMode && !ensureDirtyBuffer(mc, count)) {
+            dirtyMode = false;
         }
 
         if (recordsChanged) {
@@ -1527,6 +1546,7 @@ public final class NucleusGpuBaker {
                 cull && mc.cullValid ? mc.lastOccludedCount : 0L,
                 cull && mc.cullValid && mc.lastCullHiZ);
         recordExpansionStats(mode, dirtyMode, dirtyCount);
+        mc.sourceMutationEpoch = mutationEpoch;
         return true;
     }
 
@@ -1576,7 +1596,9 @@ public final class NucleusGpuBaker {
      * ADMISSION_BACKOFF_FRAMES window.
      */
     private static boolean poolRelayoutDeferred(int mode) {
-        return pool(mode).lastRelayoutFrame == frameStamp();
+        // Never defer relayouts: relayoutPool only invalidates shifted ranges or reallocated stores,
+        // and we pre-allocate generous headroom (MIN_POOL_BYTES = 16MB below) so store reallocs are rare.
+        return false;
     }
 
     private static int meshBoneOffset(BakedMesh baked) {
@@ -1638,18 +1660,22 @@ public final class NucleusGpuBaker {
         if (mc.recordCopy == null || mc.recordCopy.length < floats) {
             return count; // no usable snapshot: full re-bake
         }
-        if (SCRATCH_CMP.length < floats) {
-            SCRATCH_CMP = new float[floats];
-        }
         if (mc.dirtyIdx == null || mc.dirtyIdx.length < count) {
             // Defensive growth (the allocation sized this for the admission count);
             // CPU heap scratch - deliberately NOT cacheBytes-accounted (VRAM-only
             // counter, see allocateCache).
             mc.dirtyIdx = new int[count];
         }
-        int pos = records.position();
-        records.get(SCRATCH_CMP, 0, floats);
-        records.position(pos);
+        boolean isDirect = records.isDirect();
+        long baseAddr = isDirect ? MemoryUtil.memAddress(records) : 0L;
+        if (!isDirect) {
+            if (SCRATCH_CMP.length < floats) {
+                SCRATCH_CMP = new float[floats];
+            }
+            int pos = records.position();
+            records.get(SCRATCH_CMP, 0, floats);
+            records.position(pos);
+        }
         boolean quant = mode == MODE_SHADOW;
         float[] snap = mc.recordCopy;
         int[] dirty = mc.dirtyIdx;
@@ -1657,21 +1683,23 @@ public final class NucleusGpuBaker {
         int o = 0;
         for (int r = 0; r < count; r++, o += stride) {
             for (int w = 0; w < stride; w++) {
-                float a = SCRATCH_CMP[o + w];
-                float b = snap[o + w];
-                if (Float.floatToRawIntBits(a) == Float.floatToRawIntBits(b)) {
+                int rawA = isDirect
+                        ? MemoryUtil.memGetInt(baseAddr + (long) (o + w) * 4L)
+                        : Float.floatToRawIntBits(SCRATCH_CMP[o + w]);
+                int rawB = Float.floatToRawIntBits(snap[o + w]);
+                if (rawA == rawB) {
                     // NaN poison guard: raw-bits equality can hold across two
                     // NaN-poisoned words forever. Any non-finite tint/grad word
                     // forces the record dirty so a poisoned record can never be
                     // cached instead of re-uploaded.
-                    if (Float.isFinite(a)) {
+                    if ((rawA & 0x7f800000) != 0x7f800000) {
                         continue; // bitwise equal: also equal under canonicalization
                     }
                     dirty[n++] = r;
                     break;
                 }
-                int ia = Float.floatToRawIntBits(canonicalize(a));
-                int ib = Float.floatToRawIntBits(canonicalize(b));
+                int ia = (rawA == 0x80000000) ? 0 : rawA;
+                int ib = (rawB == 0x80000000) ? 0 : rawB;
                 if (quant && w <= SHADOW_QUANT_LAST_WORD) {
                     ia = quantizeCmpBits(ia);
                     ib = quantizeCmpBits(ib);
@@ -1705,7 +1733,6 @@ public final class NucleusGpuBaker {
             // (word 0 = count, words 1.. = instance indices) right before the
             // dispatch that reads it. Full re-bakes skip this entirely and run
             // identity mode, so they can never read stale list contents.
-            ensureDirtyBuffer(mc, count);
             uploadDirtyList(mc, dirtyCount);
             bakeGlError("upload dirty list");
         }
@@ -1731,15 +1758,11 @@ public final class NucleusGpuBaker {
                 baked.mesh.getMeshOffset("genericFloat2", -1));
         int offTangent = baked.mesh.getMeshAttribByteOffsetOr("at_tangent",
                 baked.mesh.getMeshOffset("genericByte4", -1));
-        if (mode == MODE_SHADOW) {
-            // Shadow passes write only depth/shadowcolor; position and UV0 are strictly required.
-            if (offPos < 0 || offUv0 < 0) {
-                return false;
-            }
-        } else {
-            if ((offPos | offColor | offNormal | offUv0 | offUv1 | offUv2 | offMidTex | offTangent) < 0) {
-                return false;
-            }
+        // COMPUTE_SOURCE already guards < 0 offsets for color, normal, uv1, midTex, and tangent
+        // (and uOffUv2 is not read by COMPUTE_SOURCE at all because UV2 is computed from s_light).
+        // Only position and uv0 are strictly required.
+        if (offPos < 0 || offUv0 < 0) {
+            return false;
         }
 
         int strideBytes = baked.inputSsbo != -1 ? baked.inputStride : baked.mesh.getMeshStrideBytes();
@@ -1791,9 +1814,10 @@ public final class NucleusGpuBaker {
         GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 3, boneSsbo);
         GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 4, dirtyListMode ? dirtySsbo : 0);
         int numVertGroups = (baked.vertCount + LOCAL_SIZE - 1) / LOCAL_SIZE;
-        // Dirty-list mode dispatches ONE WORKGROUP ROW PER DIRTY INSTANCE (the
-        // shader maps y through the dirty list); identity mode covers all of them.
-        GL43.glDispatchCompute(numVertGroups, dirtyListMode ? dirtyCount : count, 1);
+        int totalInst = dirtyListMode ? dirtyCount : count;
+        int groupsY = Math.min(totalInst, 65535);
+        int groupsZ = (totalInst + 65534) / 65535;
+        GL43.glDispatchCompute(numVertGroups, groupsY, Math.max(groupsZ, 1));
         // Expansion is the LAST GPU op of a bake (bakeEntry runs the cull first),
         // so this unbind set is pipeline-exit hygiene: the pooled flush reaches
         // a foreign pack-program draw right after it (see also runCull's
@@ -1830,17 +1854,20 @@ public final class NucleusGpuBaker {
         GL15.glBufferSubData(GL43.GL_SHADER_STORAGE_BUFFER, 0L, CTL_ZERO_COUNT);
         GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
 
-        // Capture the PHYSICAL unit-10 binding BEFORE ensureBakeHiZ:
-        // HiZDepthPyramid.regenerate's finally binds texture 0 on unit 10, so a
-        // capture taken after the call would read 0 instead of the pack's texture.
-        com.mojang.blaze3d.platform.GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE10);
-        int prevUnit10Texture = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
-        com.mojang.blaze3d.platform.GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
-
         // Optional Hi-Z phase: build the pyramid BEFORE the cull program is bound
         // (regenerate switches programs itself) - at most once per frame per pass,
         // before the pass's first cull dispatch. 0 = frustum-only (current behavior).
-        int hiZMode = ensureBakeHiZ(mode);
+        int prevUnit10Texture = 0;
+        int hiZMode = 0;
+        if (bakeHiZPlanned(mode)) {
+            // Capture the PHYSICAL unit-10 binding BEFORE ensureBakeHiZ:
+            // HiZDepthPyramid.regenerate's finally binds texture 0 on unit 10, so a
+            // capture taken after the call would read 0 instead of the pack's texture.
+            com.mojang.blaze3d.platform.GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE10);
+            prevUnit10Texture = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
+            com.mojang.blaze3d.platform.GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
+            hiZMode = ensureBakeHiZ(mode);
+        }
 
         GlStateManager._glUseProgram(cullProgramId);
 
@@ -2032,13 +2059,7 @@ public final class NucleusGpuBaker {
             long delta = newBytes - Math.max(mc.recordSize[0], 0);
             synchronized (NucleusGpuBaker.class) {
                 if (cacheBytes + delta > cacheBudgetBytes()) {
-                    // Same anti-livelock as ensureOutputCapacity: evict LRU and
-                    // retry once before refusing, so an already-allocated cache
-                    // can free budget instead of being pinned at full capacity.
                     evictStaleCaches();
-                    if (cacheBytes + delta > cacheBudgetBytes()) {
-                        return false;
-                    }
                 }
                 cacheBytes += delta;
             }
@@ -2059,17 +2080,16 @@ public final class NucleusGpuBaker {
         if (records == null || records.remaining() < floats) {
             return false;
         }
-        PersistentUploadStaging staging = PersistentUploadStaging.getOrCreate();
-        if (staging != null && staging.copyRegion(records, records.position(), floats, destSsbo, 0L)) {
-            return true;
-        }
+        int pos = records.position();
+        int lim = records.limit();
         GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, destSsbo);
-        GL15.glBufferSubData(GL43.GL_SHADER_STORAGE_BUFFER, 0L, records);
-        GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
-        // No synchronous glGetError verification here: it polled every upload in
-        // a healthy state (see allowGlErrorDiag for the same cost argument), and
-        // the PopDebugGroup/GLDebug callback already reports GL errors with the
-        // stage context when debug logging is enabled.
+        try {
+            records.limit(pos + floats);
+            GL15.glBufferSubData(GL43.GL_SHADER_STORAGE_BUFFER, 0L, records);
+        } finally {
+            records.limit(lim).position(pos);
+            GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
+        }
         return true;
     }
 
@@ -2113,58 +2133,51 @@ public final class NucleusGpuBaker {
                 return false;
             }
         }
-        PersistentUploadStaging staging = PersistentUploadStaging.getOrCreate();
-        int base = records.position();
-        int firstUnstaged = 0;
-        if (staging != null) {
-            firstUnstaged = dirtyCount; // optimistic: all runs staged unless one fails
-            for (int i = 0; i < dirtyCount; ) {
-                int runStart = mc.dirtyIdx[i];
-                int j = i;
-                while (j + 1 < dirtyCount && mc.dirtyIdx[j + 1] == mc.dirtyIdx[j] + 1) {
-                    j++;
-                }
-                int runEnd = mc.dirtyIdx[j]; // inclusive
-                if (!staging.copyRegion(records, base + runStart * stride,
-                        (runEnd - runStart + 1) * stride, mc.recordSsbo,
-                        (long) runStart * stride * 4L)) {
-                    firstUnstaged = i; // this run and everything after: subdata fallback
-                    break;
-                }
-                i = j + 1;
+        // Coalesce dirty indices separated by <= 64 slots into contiguous spans.
+        // If more than 4 spans remain, collapse into a single bounding span [firstSlot .. lastSlot]
+        // so we NEVER issue thousands of tiny glCopyBufferSubData / glClientWaitSync calls per frame!
+        int spanCount = 0;
+        int[] spanStart = new int[4];
+        int[] spanEnd = new int[4];
+        int i = 0;
+        while (i < dirtyCount) {
+            int rStart = mc.dirtyIdx[i];
+            int j = i;
+            while (j + 1 < dirtyCount && mc.dirtyIdx[j + 1] - mc.dirtyIdx[j] <= 64) {
+                j++;
             }
+            int rEnd = mc.dirtyIdx[j];
+            if (spanCount < 4) {
+                spanStart[spanCount] = rStart;
+                spanEnd[spanCount] = rEnd;
+                spanCount++;
+            } else {
+                // More than 4 spans: collapse everything into 1 single bounding span [first .. last]
+                spanStart[0] = mc.dirtyIdx[0];
+                spanEnd[0] = mc.dirtyIdx[dirtyCount - 1];
+                spanCount = 1;
+                break;
+            }
+            i = j + 1;
         }
-        if (firstUnstaged < dirtyCount) {
-            // glBufferSubData fallback for the runs the staging ring could not take
-            // (runs before firstUnstaged already landed and are correct).
-            int pos = records.position();
-            int limit = records.limit();
-            try {
-                for (int i = firstUnstaged; i < dirtyCount; ) {
-                    int runStart = mc.dirtyIdx[i];
-                    int j = i;
-                    while (j + 1 < dirtyCount && mc.dirtyIdx[j + 1] == mc.dirtyIdx[j] + 1) {
-                        j++;
-                    }
-                    int runEnd = mc.dirtyIdx[j]; // inclusive
-                    int from = base + runStart * stride;
-                    // Reset the FULL window before each run: the previous run left
-                    // position/limit inside its own span, and position(from) for a
-                    // later run is validated against that stale limit - the observed
-                    // crash is exactly "newPosition > limit: (138 > 46)" for dirty
-                    // runs {0, 3} of a 4-record entry (run 0 set limit=46, run 3
-                    // wanted position 138).
-                    records.position(pos).limit(limit);
-                    records.position(from).limit(from + (runEnd - runStart + 1) * stride);
-                    GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, mc.recordSsbo);
-                    GL15.glBufferSubData(GL43.GL_SHADER_STORAGE_BUFFER,
-                            (long) runStart * stride * 4L, records);
-                    i = j + 1;
-                }
-            } finally {
-                records.position(pos).limit(limit);
-                GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
+
+        int base = records.position();
+        int limit = records.limit();
+        GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, mc.recordSsbo);
+        try {
+            for (int s = 0; s < spanCount; s++) {
+                int rStart = spanStart[s];
+                int rEnd = spanEnd[s];
+                int from = base + rStart * stride;
+                int floatLen = (rEnd - rStart + 1) * stride;
+                records.position(base).limit(limit);
+                records.position(from).limit(from + floatLen);
+                GL15.glBufferSubData(GL43.GL_SHADER_STORAGE_BUFFER,
+                        (long) rStart * stride * 4L, records);
             }
+        } finally {
+            records.position(base).limit(limit);
+            GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
         }
         return true;
     }
@@ -2173,18 +2186,31 @@ public final class NucleusGpuBaker {
     private static java.nio.IntBuffer SCRATCH_DIRTY_LIST = null;
 
     /** Grows the per-cache dirty-index SSBO (instance capacity + count word, budget-accounted). */
-    private static void ensureDirtyBuffer(ModeCache mc, int count) {
+    private static boolean ensureDirtyBuffer(ModeCache mc, int count) {
         long bytes = (long) (1 + count) * 4L;
         if (bytes > mc.dirtyBytes) {
             long newBytes = Math.max(bytes, Math.max(mc.dirtyBytes, 0) * 2);
+            long delta = newBytes - Math.max(mc.dirtyBytes, 0);
             synchronized (NucleusGpuBaker.class) {
-                cacheBytes += newBytes - Math.max(mc.dirtyBytes, 0);
+                if (cacheBytes + delta > cacheBudgetBytes()) {
+                    evictStaleCaches();
+                }
+            }
+            if (mc.dirtySsbo == -1) {
+                mc.dirtySsbo = GL15.glGenBuffers();
+                GlDebugMarkers.labelBuffer(mc.dirtySsbo, "HBM_Dirty_Grow_SSBO");
             }
             GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, mc.dirtySsbo);
             GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, newBytes, GL15.GL_DYNAMIC_COPY);
             GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
+            synchronized (NucleusGpuBaker.class) {
+                cacheBytes += delta;
+            }
             mc.dirtyBytes = newBytes;
+        } else if (mc.dirtySsbo == -1) {
+            return false;
         }
+        return true;
     }
 
     /** Uploads the CPU-side dirty list ([dirtyCount, instance indices...]) into the SSBO. */
@@ -2821,71 +2847,23 @@ public final class NucleusGpuBaker {
     // ── Cache allocation, budget, eviction ─────────────────────────────
 
     /**
-     * Allocates the per-mode cache objects. Returns false (the caller refuses the
-     * entry; the mesh renders via the Tier-2/3 fallback this frame) when the budget
-     * cannot admit this entry even after LRU eviction. Output is sized for the
-     * requested count and grows on demand.
+     * Pre-allocates per-cache buffers (recordSsbo, ctlSsbo, dirtySsbo, recordCopy, dirtyIdx)
+     * and sets outInstances and eboInstances WITHOUT calling relayoutPool.
+     * This is used by the capacity pre-pass in bakeAndDrawShadow and presentMainBatch.
      */
-    private static boolean allocateCache(BakedMesh baked, ModeCache mc, int count, int mode) {
-        long outBytes = (long) baked.vertCount * count * outStrideBytes(mode);
-        long recBytes = (long) count * InstancedStaticPartRenderer.INSTANCE_DATA_SIZE * 4L;
-        long recStorage = Math.max(recBytes, 1L << 16); // matches mc.recordSize[0] below
-        long ctlBytes = (long) (CTL_HEADER_WORDS + count) * 4L;
-        // Span re-expansion state: dirty-index SSBO (count word + instance capacity)
-        // and its CPU-side scratch. The SSBO is VRAM and budget-accounted; the CPU
-        // scratch (dirtyIdx) and the recordCopy heap snapshot are NOT - cacheBytes
-        // is a VRAM-only counter (matches allocatedGpuBytes coverage) and charging
-        // heap bytes to it stole budget from real GL allocations, pushing meshes
-        // onto the Tier-2/3 fallback for no VRAM reason.
-        long dirtySsboBytes = (long) (1 + count) * 4L;
-        // Global-batch path: the output+EBO live in the pass pool, accounted once
-        // there. For admission, reserve the worst-case pool growth this range can
-        // cause (full realloc); the estimate is rolled back right after allocation
-        // and the pool accounts its ACTUAL delta in ensurePoolStorage.
-        long eboBytes = (long) baked.idxCount * count * 4L;
-        long poolNeed = outBytes + eboBytes;
-        long need = recStorage + ctlBytes + dirtySsboBytes + poolNeed;
+    private static boolean preallocateCacheBuffers(BakedMesh baked, ModeCache mc, int count, int mode) {
+        int cap = roundUpInstanceCapacity(count);
+        long recBytes = (long) cap * InstancedStaticPartRenderer.INSTANCE_DATA_SIZE * 4L;
+        long recStorage = Math.max(recBytes, 1L << 16);
+        long ctlBytes = (long) (CTL_HEADER_WORDS + cap) * 4L;
+        long dirtySsboBytes = (long) (1 + cap) * 4L;
+        long localNeed = recStorage + ctlBytes + dirtySsboBytes;
         synchronized (NucleusGpuBaker.class) {
-            if (cacheBytes + need > cacheBudgetBytes()) {
-                evictStaleCaches();
-                if (cacheBytes + need > cacheBudgetBytes()) {
-                    admissionRefusals++;
-                    if (!cacheOverflowLogged) {
-                        cacheOverflowLogged = true;
-                        com.hbm_m.main.MainRegistry.LOGGER.info(
-                                "[HBM-M] NucleusGpuBaker: admission refused: entry needs {} MB, {} MB free after {} MB in use"
-                                        + " ({} refusals total) - oversized entries stay on the immediate path",
-                                Math.max(1L, need >> 20),
-                                Math.max(0L, (cacheBudgetBytes() - cacheBytes) >> 20),
-                                cacheBytes >> 20,
-                                admissionRefusals);
-                    }
-                    return false;
-                }
-            }
-            // Flat upfront reservation: every later accounting op (growth, free) moves
-            // cacheBytes by deltas against exactly these initial sizes, so a failure
-            // rollback subtracts `need` and the books stay balanced.
-            cacheBytes += need;
+            cacheBytes += localNeed;
         }
         try {
-            // Assign the mesh's pool range FIRST (may realloc the pool stores and
-            // invalidate other caches of this pass - this cache is fresh anyway).
-            mc.outInstances = count;
-            mc.eboInstances = count;
-            if (!relayoutPool(mode)) {
-                // Pool allocation failed: no per-cache objects exist yet, roll the
-                // whole reservation back (the pool already rolled back its own delta).
-                mc.outInstances = 0;
-                mc.eboInstances = 0;
-                synchronized (NucleusGpuBaker.class) {
-                    cacheBytes -= need;
-                }
-                return false;
-            }
-            synchronized (NucleusGpuBaker.class) {
-                cacheBytes -= poolNeed; // the pool accounted its actual delta
-            }
+            mc.outInstances = cap;
+            mc.eboInstances = cap;
             mc.recordSsbo = GL15.glGenBuffers();
             GlDebugMarkers.labelBuffer(mc.recordSsbo, "HBM_Record_" + baked.debugTag() + "_" + (mode == MODE_SHADOW ? "Shadow" : "Main"));
             GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, mc.recordSsbo);
@@ -2902,41 +2880,75 @@ public final class NucleusGpuBaker {
             GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, mc.dirtySsbo);
             GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, dirtySsboBytes, GL15.GL_DYNAMIC_COPY);
             mc.dirtyBytes = dirtySsboBytes;
-            mc.dirtyIdx = new int[count];
+            mc.dirtyIdx = new int[cap];
             mc.dirtyCount = 0;
             GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
             return true;
         } catch (Exception t) {
             com.hbm_m.main.MainRegistry.LOGGER.warn(
-                    "[HBM-M] NucleusGpuBaker: cache allocation failed - immediate path", t);
-            // Release partial objects WITHOUT the field-delta accounting (freeModeCache
-            // would subtract sizes that were never added) - drop the flat reservation.
+                    "[HBM-M] NucleusGpuBaker: preallocate cache buffers failed", t);
             if (mc.recordSsbo != -1) GL15.glDeleteBuffers(mc.recordSsbo);
             if (mc.ctlSsbo != -1) GL15.glDeleteBuffers(mc.ctlSsbo);
             if (mc.dirtySsbo != -1) GL15.glDeleteBuffers(mc.dirtySsbo);
             mc.recordSsbo = -1;
             mc.ctlSsbo = -1;
             mc.dirtySsbo = -1;
-            mc.recordSize[0] = -1;
-            mc.ctlBytes = -1;
-            mc.dirtyBytes = -1;
-            mc.dirtyIdx = null;
-            mc.dirtyCount = 0;
-            mc.recordCopy = null;
             mc.outInstances = 0;
             mc.eboInstances = 0;
             synchronized (NucleusGpuBaker.class) {
-                cacheBytes -= need - poolNeed;
+                cacheBytes -= localNeed;
             }
             return false;
         }
+    }
+
+    /**
+     * Allocates the per-mode cache objects. Returns false (the caller refuses the
+     * entry; the mesh renders via the Tier-2/3 fallback this frame) when the budget
+     * cannot admit this entry even after LRU eviction. Output is sized for the
+     * requested count and grows on demand.
+     */
+    private static boolean allocateCache(BakedMesh baked, ModeCache mc, int count, int mode) {
+        int cap = roundUpInstanceCapacity(count);
+        long outBytes = (long) baked.vertCount * cap * outStrideBytes(mode);
+        long eboBytes = (long) baked.idxCount * cap * 4L;
+        long recBytes = (long) cap * InstancedStaticPartRenderer.INSTANCE_DATA_SIZE * 4L;
+        long recStorage = Math.max(recBytes, 1L << 16);
+        long ctlBytes = (long) (CTL_HEADER_WORDS + cap) * 4L;
+        long dirtySsboBytes = (long) (1 + cap) * 4L;
+        long localNeed = recStorage + ctlBytes + dirtySsboBytes;
+        long poolNeed = outBytes + eboBytes;
+        long totalEstimate = localNeed + poolNeed;
+        synchronized (NucleusGpuBaker.class) {
+            if (cacheBytes + totalEstimate > cacheBudgetBytes()) {
+                evictStaleCaches();
+                if (cacheBytes + totalEstimate > cacheBudgetBytes()) {
+                    if (!cacheOverflowLogged) {
+                        cacheOverflowLogged = true;
+                        com.hbm_m.main.MainRegistry.LOGGER.warn(
+                                "[HBM-M] NucleusGpuBaker: cache budget exceeded (needs {} MB, {} MB in use, budget {} MB) - allowing active mesh allocation to avoid legacy fallback",
+                                Math.max(1L, totalEstimate >> 20),
+                                cacheBytes >> 20,
+                                cacheBudgetBytes() >> 20);
+                    }
+                }
+            }
+        }
+        if (!preallocateCacheBuffers(baked, mc, count, mode)) {
+            return false;
+        }
+        if (!relayoutPool(mode)) {
+            freeModeCache(mc);
+            return false;
+        }
+        return true;
     }
 
     /** Frees caches unused for LRU_FRAME_LIMIT frames to admit fresh allocations.
      * Fully releases BakedMesh entries whose companion mesh was closed (skin change,
      * world switch) - they can never bake again and would otherwise hold dead GL
      * objects until budget pressure. getOrCreate rebuilds on the next use. */
-    private static void evictStaleCaches() {
+    private static synchronized void evictStaleCaches() {
         long now = frameStamp();
         for (int i = BAKED.size() - 1; i >= 0; i--) {
             BakedMesh bm = BAKED.get(i);
@@ -3003,6 +3015,7 @@ public final class NucleusGpuBaker {
         mc.stagingSlot = -1;
         mc.frustumStamp = Long.MIN_VALUE;
         mc.admissionRefusedFrame = -1L;
+        mc.sourceMutationEpoch = -1L;
     }
 
     // ── Global-batch pool: range layout, storage, flush ────────────────
@@ -3025,16 +3038,11 @@ public final class NucleusGpuBaker {
         int oldOut = mc.outInstances;
         int oldEbo = mc.eboInstances;
         if (count > mc.outInstances) {
-            // 1.25x step aligned to 16 instances (was doubling): with the pool's
-            // own headroom the old 2x step stacked to ~3x live need in VRAM.
-            mc.outInstances = Math.max(count, mc.outInstances + Math.max(16, mc.outInstances >> 2));
+            mc.outInstances = roundUpInstanceCapacity(count);
             grew = true;
         }
-        // The EBO range must cover count instances too (the cull EBO-build writes
-        // idxCount entries per VISIBLE instance, visible <= count; the no-cull
-        // CPU fill grows it further via expandPoolEbo).
         if (count > mc.eboInstances) {
-            mc.eboInstances = Math.max(count, mc.eboInstances + Math.max(16, mc.eboInstances >> 2));
+            mc.eboInstances = roundUpInstanceCapacity(count);
             grew = true;
         }
         if (grew) {
@@ -3205,6 +3213,9 @@ public final class NucleusGpuBaker {
         int n = BAKED.size();
         int[] newVertBases = new int[n];
         int[] newEboBases = new int[n];
+        long validOutCopyBytes = 0L;
+        long validEboCopyBytes = 0L;
+        boolean firstShiftEncountered = false;
         for (int i = 0; i < n; i++) {
             BakedMesh bm = BAKED.get(i);
             ModeCache mc = bm.cache(mode);
@@ -3214,6 +3225,19 @@ public final class NucleusGpuBaker {
             words += (long) bm.idxCount * mc.eboInstances;
             outNeeded += (long) bm.vertCount * mc.outInstances * stride;
             eboNeeded += (long) bm.idxCount * mc.eboInstances * 4L;
+
+            if (!firstShiftEncountered) {
+                if (bm.vertBase[mode] != newVertBases[i] || bm.eboWordBase[mode] != newEboBases[i]) {
+                    firstShiftEncountered = true;
+                } else {
+                    if (mc.outInstances > 0 && mc.outputValid) {
+                        validOutCopyBytes = (long) newVertBases[i] * stride + (long) bm.vertCount * mc.outInstances * stride;
+                    }
+                    if (!cullEnabled() && mc.filled > 0) {
+                        validEboCopyBytes = (long) newEboBases[i] * 4L + (long) bm.idxCount * mc.eboInstances * 4L;
+                    }
+                }
+            }
         }
         if (verts > Integer.MAX_VALUE || words > Integer.MAX_VALUE) {
             return false; // cannot happen within the cache budget; guard anyway
@@ -3234,11 +3258,11 @@ public final class NucleusGpuBaker {
         if (delta > 0) {
             synchronized (NucleusGpuBaker.class) {
                 if (cacheBytes + delta > cacheBudgetBytes()) {
-                    return false; // callers roll their own capacity fields back
+                    evictStaleCaches();
                 }
             }
         }
-        if (!ensurePoolStorage(pool, outNeeded, eboNeeded)) {
+        if (!ensurePoolStorage(pool, outNeeded, eboNeeded, validOutCopyBytes, validEboCopyBytes)) {
             return false;
         }
         // Commit pass: write the bases and invalidate shifted live ranges (their
@@ -3260,15 +3284,14 @@ public final class NucleusGpuBaker {
 
     /**
      * Allocation target for a pool store given the summed live range size:
-     * 1.25x headroom over the current need (floor {@link #MIN_POOL_BYTES}) so a
+     * 1.5x headroom over the current need (floor {@link #MIN_POOL_BYTES}) so a
      * chunk-load admission wave does not re-orphan - and with it fully re-bake -
      * the whole pass on every single growth step. A realloc still rebakes every
      * mesh of the pass (unchanged invalidation model); the headroom only cuts
-     * HOW OFTEN that happens. (Was 1.5x, which stacked with the callers' old
-     * 2x range growth to ~3x live need in VRAM.)
+     * HOW OFTEN that happens.
      */
     private static long poolStoreTarget(long needed) {
-        return Math.max(needed + (needed >> 2), MIN_POOL_BYTES);
+        return Math.max(needed + (needed >> 1), MIN_POOL_BYTES);
     }
 
     /** Wipes everything derived from the pool-resident output/EBO bytes of a cache. */
@@ -3280,61 +3303,70 @@ public final class NucleusGpuBaker {
         mc.filled = -1;
         mc.eboCapacity = 0;
         mc.frustumStamp = Long.MIN_VALUE;
+        mc.sourceMutationEpoch = -1L;
     }
 
     /** Grows (or empties) the pool stores to cover the summed live ranges. */
-    private static boolean ensurePoolStorage(PassPool pool, long outNeeded, long eboNeeded) {
+    private static boolean ensurePoolStorage(PassPool pool, long outNeeded, long eboNeeded,
+                                            long validOutCopyBytes, long validEboCopyBytes) {
         try {
-            boolean resized = false;
+            boolean vaoNeedsRebuild = false;
             if (outNeeded > pool.outputAllocBytes) {
                 long target = poolStoreTarget(outNeeded);
-                if (pool.outputSsbo == -1) {
-                    pool.outputSsbo = GL15.glGenBuffers();
-                    GlDebugMarkers.labelBuffer(pool.outputSsbo, "HBM_PoolOut_" + poolName(pool) + "_SSBO");
-                }
-                GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, pool.outputSsbo);
+                int newSsbo = GL15.glGenBuffers();
+                GlDebugMarkers.labelBuffer(newSsbo, "HBM_PoolOut_" + poolName(pool) + "_SSBO");
+                GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, newSsbo);
                 GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, target, GL15.GL_DYNAMIC_COPY);
+                if (pool.outputSsbo != -1 && pool.outputAllocBytes > 0 && validOutCopyBytes > 0) {
+                    long copyBytes = Math.min(validOutCopyBytes, pool.outputAllocBytes);
+                    GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT | GL43.GL_BUFFER_UPDATE_BARRIER_BIT);
+                    GL15.glBindBuffer(GL31.GL_COPY_READ_BUFFER, pool.outputSsbo);
+                    GL15.glBindBuffer(GL31.GL_COPY_WRITE_BUFFER, newSsbo);
+                    GL31.glCopyBufferSubData(GL31.GL_COPY_READ_BUFFER, GL31.GL_COPY_WRITE_BUFFER, 0L, 0L, copyBytes);
+                    GL15.glBindBuffer(GL31.GL_COPY_READ_BUFFER, 0);
+                    GL15.glBindBuffer(GL31.GL_COPY_WRITE_BUFFER, 0);
+                }
+                if (pool.outputSsbo != -1) {
+                    GL15.glDeleteBuffers(pool.outputSsbo);
+                }
                 GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
                 synchronized (NucleusGpuBaker.class) {
                     cacheBytes += target - pool.outputAllocBytes;
                 }
+                pool.outputSsbo = newSsbo;
                 pool.outputAllocBytes = target;
-                resized = true;
-                // Invalidate per store, immediately: glBufferData orphaned every
-                // baked byte of this pass, so no cache may keep outputValid across
-                // the next statement (the previous after-BOTH invalidation left a
-                // window where an exception between the two reallocs returned
-                // false with caches claiming outputValid over an orphaned store).
-                for (int i = 0; i < BAKED.size(); i++) {
-                    invalidateBakedOutput(BAKED.get(i).cache(modeOfPool(pool)));
-                }
+                pool.reallocs++;
+                vaoNeedsRebuild = true;
             }
             if (eboNeeded > pool.eboAllocBytes) {
                 long target = poolStoreTarget(eboNeeded);
-                if (pool.eboSsbo == -1) {
-                    pool.eboSsbo = GL15.glGenBuffers();
-                    GlDebugMarkers.labelBuffer(pool.eboSsbo, "HBM_PoolEbo_" + poolName(pool) + "_EBO");
-                }
-                GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, pool.eboSsbo);
+                int newEbo = GL15.glGenBuffers();
+                GlDebugMarkers.labelBuffer(newEbo, "HBM_PoolEbo_" + poolName(pool) + "_EBO");
+                GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, newEbo);
                 GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, target, GL15.GL_DYNAMIC_COPY);
+                if (!cullEnabled() && pool.eboSsbo != -1 && pool.eboAllocBytes > 0 && validEboCopyBytes > 0) {
+                    long copyBytes = Math.min(validEboCopyBytes, pool.eboAllocBytes);
+                    GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT | GL43.GL_ELEMENT_ARRAY_BARRIER_BIT | GL43.GL_BUFFER_UPDATE_BARRIER_BIT);
+                    GL15.glBindBuffer(GL31.GL_COPY_READ_BUFFER, pool.eboSsbo);
+                    GL15.glBindBuffer(GL31.GL_COPY_WRITE_BUFFER, newEbo);
+                    GL31.glCopyBufferSubData(GL31.GL_COPY_READ_BUFFER, GL31.GL_COPY_WRITE_BUFFER, 0L, 0L, copyBytes);
+                    GL15.glBindBuffer(GL31.GL_COPY_READ_BUFFER, 0);
+                    GL15.glBindBuffer(GL31.GL_COPY_WRITE_BUFFER, 0);
+                }
+                if (pool.eboSsbo != -1) {
+                    GL15.glDeleteBuffers(pool.eboSsbo);
+                }
                 GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
                 synchronized (NucleusGpuBaker.class) {
                     cacheBytes += target - pool.eboAllocBytes;
                 }
+                pool.eboSsbo = newEbo;
                 pool.eboAllocBytes = target;
-                resized = true;
-                for (int i = 0; i < BAKED.size(); i++) {
-                    invalidateBakedOutput(BAKED.get(i).cache(modeOfPool(pool)));
-                }
-            }
-            if (resized) {
                 pool.reallocs++;
-                // Surfaced in F3 via the pool realloc counters (invalidation itself
-                // now happens per store, right after each realloc).
+                vaoNeedsRebuild = true;
             }
             if (outNeeded == 0 && eboNeeded == 0
                     && (pool.outputAllocBytes > 0 || pool.eboAllocBytes > 0)) {
-                // Last range gone: release the stores (and the VAO that references them).
                 if (pool.vao != -1) {
                     GL30.glDeleteVertexArrays(pool.vao);
                     pool.vao = -1;
@@ -3355,8 +3387,10 @@ public final class NucleusGpuBaker {
                     }
                     pool.eboAllocBytes = 0;
                 }
-            } else if (pool.vao == -1 && pool.outputSsbo != -1 && pool.eboSsbo != -1) {
-                // Buffer OBJECTS survive orphaning reallocs, so the VAO is created once.
+            } else if ((pool.vao == -1 || vaoNeedsRebuild) && pool.outputSsbo != -1 && pool.eboSsbo != -1) {
+                if (pool.vao != -1) {
+                    GL30.glDeleteVertexArrays(pool.vao);
+                }
                 pool.vao = createOutputVaoWithEbo(pool.outputSsbo, pool.eboSsbo, pool.slim);
                 GlDebugMarkers.labelVao(pool.vao, "HBM_Pool_" + poolName(pool) + "_VAO");
             }
@@ -3399,9 +3433,6 @@ public final class NucleusGpuBaker {
         if (pool.outputSsbo == -1 && pool.eboSsbo == -1) {
             return; // nothing allocated (or last-range release already ran)
         }
-        if (now - pool.lastRelayoutFrame < SHRINK_IDLE_FRAMES) {
-            return;
-        }
         // Live need = exact relayoutPool trial math over the CURRENT ranges.
         long outNeeded = 0L, eboNeeded = 0L;
         long stride = outStrideBytes(mode);
@@ -3410,6 +3441,13 @@ public final class NucleusGpuBaker {
             ModeCache mc = bm.cache(mode);
             outNeeded += (long) bm.vertCount * mc.outInstances * stride;
             eboNeeded += (long) bm.idxCount * mc.eboInstances * 4L;
+        }
+        if (outNeeded == 0L && eboNeeded == 0L) {
+            ensurePoolStorage(pool, 0L, 0L, 0L, 0L);
+            return;
+        }
+        if (now - pool.lastRelayoutFrame < SHRINK_IDLE_FRAMES) {
+            return;
         }
         long outTarget = poolStoreTarget(outNeeded);
         long eboTarget = poolStoreTarget(eboNeeded);
@@ -3488,37 +3526,35 @@ public final class NucleusGpuBaker {
             return false;
         }
         int n = pending.size();
-        if (pool.cmdSlots < n || pool.vao == -1) {
+        if (ensurePoolCmdBuffer(pool, n) == -1 || pool.vao == -1) {
             return false;
         }
         long instances = 0L;
-        boolean allCurrent = true;
-        // F3 visibility stats: the GPU-count path never reads ctl headers back,
-        // so lastVisibleCount would stay stale/zero. When the debug screen is
-        // open, pay for one batched readback so the counters are real; every
-        // other frame the stats are the known-zero estimate (documented below).
-        boolean statsReadback = com.hbm_m.platform.RenderHooks.isDebugScreenVisible();
-        if (statsReadback) {
-            resolvePendingCounts(pending);
-        }
+        boolean anyRepaired = false;
         for (int i = 0; i < n; i++) {
             PendingDraw pd = pending.get(i);
             ModeCache mc = pd.cache;
-            if (!mc.outputValid || !mc.cullValid
-                    || mc.cmdGenStamp != pool.cmdGen || mc.cmdSlotWritten != i
-                    || i >= pool.cmdSlotOwners.length || pool.cmdSlotOwners[i] != mc) {
-                // The GPU-written command must not reach the draw: the entry was
-                // wiped by a pool realloc, or its slot holds an orphaned/foreign
-                // command (store grew mid-walk / the pending order shifted /
-                // another cache overwrote the slot in an earlier frame).
-                mc.frustumStamp = Long.MIN_VALUE; // force a cheap re-cull next bake
-                allCurrent = false;
-                continue;
+            if (!mc.outputValid || !mc.cullValid) {
+                return false;
             }
-            instances += (int) mc.lastVisibleCount; // F3 stats only on this path
+            if (mc.cmdGenStamp != pool.cmdGen || mc.cmdSlotWritten != i
+                    || i >= pool.cmdSlotOwners.length || pool.cmdSlotOwners[i] != mc) {
+                anyRepaired = true;
+                GL15.glBindBuffer(GL31.GL_COPY_READ_BUFFER, mc.ctlSsbo);
+                GL15.glBindBuffer(GL31.GL_COPY_WRITE_BUFFER, pool.cmdSsbo);
+                GL31.glCopyBufferSubData(GL31.GL_COPY_READ_BUFFER, GL31.GL_COPY_WRITE_BUFFER,
+                        DRAW_CMD_OFFSET, (long) i * INDIRECT_CMD_BYTES, INDIRECT_CMD_BYTES);
+                mc.cmdGenStamp = pool.cmdGen;
+                mc.cmdSlotWritten = i;
+                pool.cmdSlotOwners[i] = mc;
+            }
+            instances += mc.countsDirty ? pd.instanceCount : (int) mc.lastVisibleCount;
+            mc.countsDirty = false;
         }
-        if (!allCurrent) {
-            return false;
+        if (anyRepaired) {
+            GL42.glMemoryBarrier(GL42.GL_COMMAND_BARRIER_BIT);
+            GL15.glBindBuffer(GL31.GL_COPY_READ_BUFFER, 0);
+            GL15.glBindBuffer(GL31.GL_COPY_WRITE_BUFFER, 0);
         }
         if (pool.paramSsbo == -1) {
             pool.paramSsbo = GL15.glGenBuffers();
@@ -3581,6 +3617,9 @@ public final class NucleusGpuBaker {
      *
      * @return the number of indirect draw commands ISSUED (the GPU-count path
      *         reports pending.size(); the CPU path the post-compaction count).
+     *         -1 means valid entries were evaluated and all were legitimately
+     *         culled to 0 visible instances (a successful no-op flush), while 0
+     *         means no valid entries could be evaluated.
      *         The shadow caller uses this for honest Tier-1 success reporting:
      *         0 means nothing was rasterized and the frame must fall back to
      *         Tier 2/3. Main-pass callers ignore the value.
@@ -3612,6 +3651,7 @@ public final class NucleusGpuBaker {
         buf.clear();
         int commands = 0;
         int instances = 0;
+        int validEvaluated = 0;
         for (int i = 0; i < pending.size(); i++) {
             PendingDraw pd = pending.get(i);
             ModeCache mc = pd.cache;
@@ -3632,6 +3672,7 @@ public final class NucleusGpuBaker {
                 indexCount = pd.baked.idxCount * pd.instanceCount;
                 instances += pd.instanceCount;
             }
+            validEvaluated++;
             if (indexCount <= 0) {
                 continue; // nothing visible: compacted out CPU-side (no no-op command)
             }
@@ -3641,7 +3682,8 @@ public final class NucleusGpuBaker {
             commands++;
         }
         if (commands == 0) {
-            return 0;
+            maybeShrinkPool(pool, mode);
+            return validEvaluated > 0 ? -1 : 0;
         }
         buf.flip();
         if (pool.cmdCpuSsbo == -1) {
@@ -3734,15 +3776,6 @@ public final class NucleusGpuBaker {
             synchronized (NucleusGpuBaker.class) {
                 if (cacheBytes + delta > cacheBudgetBytes()) {
                     evictStaleCaches();
-                    if (cacheBytes + delta > cacheBudgetBytes()) {
-                        for (int i = 0; i < pending.size(); i++) {
-                            PendingDraw pd = pending.get(i);
-                            if (pd.cache.countsDirty && pd.cache.cullValid && pd.cache.ctlSsbo != -1) {
-                                pd.cache.cullValid = false;
-                            }
-                        }
-                        return;
-                    }
                 }
                 cacheBytes += delta;
             }
@@ -3837,16 +3870,18 @@ public final class NucleusGpuBaker {
      * when nothing baked or without a pack shader.
      */
     public static void presentMainBatch(Matrix4f projection) {
-        if (PENDING_MAIN.isEmpty()) {
+        if (MAIN_BAKE_QUEUE.isEmpty() && PENDING_MAIN.isEmpty()) {
             return;
         }
         if (!isEnabled() || !RenderSystem.isOnRenderThread()) {
+            MAIN_BAKE_QUEUE.clear();
             PENDING_MAIN.clear();
             return;
         }
         ShaderInstance packShader = com.hbm_m.client.render.shader.IrisExtendedShaderAccess
                 .getBlockShader(false);
         if (packShader == null) {
+            MAIN_BAKE_QUEUE.clear();
             PENDING_MAIN.clear();
             return;
         }
@@ -3855,8 +3890,72 @@ public final class NucleusGpuBaker {
         int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
         // *BINDING query pnames - see the note in bakeAndDrawShadow.
         int prevDrawIndirect = GL11.glGetInteger(GL40.GL_DRAW_INDIRECT_BUFFER_BINDING);
+        int prevDispatchIndirect = GL11.glGetInteger(GL43.GL_DISPATCH_INDIRECT_BUFFER_BINDING);
+        int previousProgram = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
+        int previousBlockEntityId = com.hbm_m.client.render.shader.IrisExtendedShaderAccess
+                .setCurrentRenderedBlockEntity(0);
         try (com.hbm_m.client.render.shader.IrisPhaseGuard guard =
                      com.hbm_m.client.render.shader.IrisPhaseGuard.pushBlockEntities()) {
+            if (!MAIN_BAKE_QUEUE.isEmpty()) {
+                // Capacity pre-pass over MAIN_BAKE_QUEUE
+                boolean needMainRelayout = false;
+                for (int i = 0; i < MAIN_BAKE_QUEUE.size(); i++) {
+                    MainBakeQueueEntry entry = MAIN_BAKE_QUEUE.get(i);
+                    ModeCache mc = entry.baked.main;
+                    if (!cacheAllocated(mc)) {
+                        if (preallocateCacheBuffers(entry.baked, mc, entry.count, MODE_MAIN)) {
+                            needMainRelayout = true;
+                        }
+                    } else {
+                        if (entry.count > mc.outInstances) {
+                            mc.outInstances = roundUpInstanceCapacity(entry.count);
+                            needMainRelayout = true;
+                        }
+                        if (entry.count > mc.eboInstances) {
+                            mc.eboInstances = roundUpInstanceCapacity(entry.count);
+                            needMainRelayout = true;
+                        }
+                    }
+                }
+                if (needMainRelayout) {
+                    relayoutPool(MODE_MAIN);
+                }
+
+                MainBakeQueueEntry first = MAIN_BAKE_QUEUE.get(0);
+                Matrix4f effProj = first.proj != null ? first.proj : projection;
+                MAIN_MV.set(first.viewRot).translate(-first.relCamX, -first.relCamY, -first.relCamZ);
+                float[] planes = new float[24];
+                Matrix4f worldToClip = new Matrix4f(effProj).mul(MAIN_MV);
+                extractFrustumPlanes(worldToClip, planes);
+                long frustumStamp = stampPlanes(planes);
+
+                ensureBoneBuffer();
+
+                for (int i = 0; i < MAIN_BAKE_QUEUE.size(); i++) {
+                    MainBakeQueueEntry item = MAIN_BAKE_QUEUE.get(i);
+                    boolean success;
+                    if (GlDebugMarkers.ENABLED) {
+                        GlDebugMarkers.pushGroup("HBM_BakeMain_" + item.baked.mesh.getDebugName());
+                    }
+                    try {
+                        success = bakeEntry(item.baked, item.records, item.count, MODE_MAIN,
+                                planes, frustumStamp, worldToClip, item.mutationEpoch);
+                    } finally {
+                        if (GlDebugMarkers.ENABLED) {
+                            GlDebugMarkers.popGroup();
+                        }
+                    }
+                    if (success) {
+                        item.baked.mesh.noteBakeSuccess();
+                        PENDING_MAIN.add(new PendingDraw(item.baked, item.baked.main, item.count));
+                    }
+                }
+            }
+
+            if (PENDING_MAIN.isEmpty()) {
+                return;
+            }
+
             if (!com.hbm_m.client.render.shader.IrisShaderApply.tryApply(packShader)) {
                 // One re-resolve + retry before giving up: a transient apply failure
                 // (destroyed GlResource during an Iris pipeline rebuild) used to
@@ -3889,8 +3988,6 @@ public final class NucleusGpuBaker {
                 RenderSystem.activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
                 RenderSystem.bindTexture(Minecraft.getInstance().getTextureManager()
                         .getTexture(TextureAtlas.LOCATION_BLOCKS).getId());
-                int previousBlockEntityId = com.hbm_m.client.render.shader.IrisExtendedShaderAccess
-                        .setCurrentRenderedBlockEntity(0);
                 if (GlDebugMarkers.ENABLED) {
                     GlDebugMarkers.pushGroup("HBM_PresentMainBatch");
                 }
@@ -3900,8 +3997,6 @@ public final class NucleusGpuBaker {
                     if (GlDebugMarkers.ENABLED) {
                         GlDebugMarkers.popGroup();
                     }
-                    com.hbm_m.client.render.shader.IrisExtendedShaderAccess
-                            .restoreCurrentRenderedBlockEntity(previousBlockEntityId);
                     // Restore the pack shader's matrices from RenderSystem so the
                     // iris_ModelViewMat uniform no longer holds our -relCam matrix.
                     // setMatrices uploads via raw glUniformMatrix4fv, bypassing the
@@ -3920,9 +4015,14 @@ public final class NucleusGpuBaker {
             available = false;
             releaseResourcesInternal();
         } finally {
+            MAIN_BAKE_QUEUE.clear();
             PENDING_MAIN.clear();
+            com.hbm_m.client.render.shader.IrisExtendedShaderAccess
+                    .restoreCurrentRenderedBlockEntity(previousBlockEntityId);
             com.hbm_m.client.render.shader.ShaderBindResync.markForeignProgramBind();
             GL40.glBindBuffer(GL40.GL_DRAW_INDIRECT_BUFFER, prevDrawIndirect);
+            GL43.glBindBuffer(GL43.GL_DISPATCH_INDIRECT_BUFFER, prevDispatchIndirect);
+            com.mojang.blaze3d.platform.GlStateManager._glUseProgram(previousProgram);
             // Force the next vanilla immediate draw to rebind its VAO honestly
             // (mirrors MdiBatchCoordinator's exit-to-foreign-GL pattern).
             com.mojang.blaze3d.vertex.BufferUploader.invalidate();
@@ -3931,10 +4031,61 @@ public final class NucleusGpuBaker {
         }
     }
 
+    public static void tickFrameCleanup() {
+        if (!RenderSystem.isOnRenderThread()) {
+            return;
+        }
+        long now = frameStamp();
+        boolean shadowChanged = false;
+        boolean mainChanged = false;
+        synchronized (NucleusGpuBaker.class) {
+            for (int i = BAKED.size() - 1; i >= 0; i--) {
+                BakedMesh bm = BAKED.get(i);
+                if (!bm.mesh.isBuilt()) {
+                    shadowChanged |= cacheAllocated(bm.shadow);
+                    mainChanged |= cacheAllocated(bm.main);
+                    releaseBakedMesh(bm);
+                    BAKED.remove(i);
+                    continue;
+                }
+                if (cacheAllocated(bm.shadow) && now - bm.shadow.lastUseFrame > LRU_FRAME_LIMIT) {
+                    freeModeCache(bm.shadow);
+                    shadowChanged = true;
+                } else if (cacheAllocated(bm.shadow) && bm.shadow.recordCount > 0
+                        && bm.shadow.outInstances > 256 && bm.shadow.recordCount * 4 < bm.shadow.outInstances) {
+                    int target = roundUpInstanceCapacity(bm.shadow.recordCount);
+                    bm.shadow.outInstances = target;
+                    bm.shadow.eboInstances = target;
+                    shadowChanged = true;
+                }
+                if (cacheAllocated(bm.main) && now - bm.main.lastUseFrame > LRU_FRAME_LIMIT) {
+                    freeModeCache(bm.main);
+                    mainChanged = true;
+                } else if (cacheAllocated(bm.main) && bm.main.recordCount > 0
+                        && bm.main.outInstances > 256 && bm.main.recordCount * 4 < bm.main.outInstances) {
+                    int target = roundUpInstanceCapacity(bm.main.recordCount);
+                    bm.main.outInstances = target;
+                    bm.main.eboInstances = target;
+                    mainChanged = true;
+                }
+            }
+        }
+        if (shadowChanged) {
+            relayoutPool(MODE_SHADOW);
+        }
+        if (mainChanged) {
+            relayoutPool(MODE_MAIN);
+        }
+        maybeShrinkPool(POOL_SHADOW, MODE_SHADOW);
+        maybeShrinkPool(POOL_MAIN, MODE_MAIN);
+    }
+
     private static BakedMesh getOrCreate(IrisCompanionMesh mesh) {
-        for (int i = 0; i < BAKED.size(); i++) {
-            if (BAKED.get(i).mesh == mesh) {
-                return BAKED.get(i);
+        synchronized (NucleusGpuBaker.class) {
+            for (int i = 0; i < BAKED.size(); i++) {
+                if (BAKED.get(i).mesh == mesh) {
+                    return BAKED.get(i);
+                }
             }
         }
         BakedMesh baked = null;
@@ -3961,7 +4112,9 @@ public final class NucleusGpuBaker {
                 MemoryUtil.memFree(baseBuf);
             }
             buildAlignedInput(baked);
-            BAKED.add(baked);
+            synchronized (NucleusGpuBaker.class) {
+                BAKED.add(baked);
+            }
             return baked;
         } catch (Exception t) {
             com.hbm_m.main.MainRegistry.LOGGER.warn("[HBM-M] NucleusGpuBaker: baked mesh init failed", t);
@@ -4182,10 +4335,18 @@ public final class NucleusGpuBaker {
             hasBoneMatrices = false;
             return;
         }
+        int clampedCount = Math.min(count, BONE_PALETTE_SIZE);
+        int floatsNeeded = clampedCount * 16;
+        if (matrices.remaining() < floatsNeeded) {
+            hasBoneMatrices = false;
+            return;
+        }
         boneEpoch++;
         ensureBoneBuffer();
+        FloatBuffer slice = matrices.slice();
+        slice.limit(floatsNeeded);
         GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, boneSsbo);
-        GL15.glBufferSubData(GL43.GL_SHADER_STORAGE_BUFFER, 0L, matrices);
+        GL15.glBufferSubData(GL43.GL_SHADER_STORAGE_BUFFER, 0L, slice);
         GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
         hasBoneMatrices = true;
     }
@@ -4231,9 +4392,6 @@ public final class NucleusGpuBaker {
             synchronized (NucleusGpuBaker.class) {
                 if (cacheBytes + delta > cacheBudgetBytes()) {
                     evictStaleCaches();
-                    if (cacheBytes + delta > cacheBudgetBytes()) {
-                        return false;
-                    }
                 }
                 cacheBytes += delta;
             }
@@ -4267,11 +4425,11 @@ public final class NucleusGpuBaker {
     }
 
     private static void releaseResourcesInternal() {
-        for (BakedMesh bm : BAKED) {
-            releaseBakedMesh(bm);
-        }
-        BAKED.clear();
         synchronized (NucleusGpuBaker.class) {
+            for (BakedMesh bm : BAKED) {
+                releaseBakedMesh(bm);
+            }
+            BAKED.clear();
             cacheBytes = 0;
         }
         if (programId != -1) {
@@ -4308,6 +4466,7 @@ public final class NucleusGpuBaker {
         ctlBatchReadback = org.lwjgl.system.MemoryUtil.memAlloc(4096);
         org.lwjgl.system.MemoryUtil.memFree(mdicCountBuf);
         mdicCountBuf = org.lwjgl.system.MemoryUtil.memAlloc(4);
+        MAIN_BAKE_QUEUE.clear();
         PENDING_MAIN.clear();
         PENDING_SHADOW.clear();
         // Session-wide diagnostic sets (identity hash codes of renderers/mode
@@ -4497,14 +4656,14 @@ public final class NucleusGpuBaker {
                 // dirty-index list (one workgroup row per DIRTY instance; the count
                 // word is re-checked as an OOB guard); identity mode treats y as the
                 // raw instance index and covers every instance (full re-bakes).
+                uint rawY = gl_GlobalInvocationID.y + gl_GlobalInvocationID.z * gl_NumWorkGroups.y;
                 uint inst;
                 if (uDirtyMode == 1) {
-                    uint dy = gl_GlobalInvocationID.y;
-                    if (dy >= dirtyData[0u]) return;
-                    inst = dirtyData[1u + dy];
+                    if (rawY >= dirtyData[0u]) return;
+                    inst = dirtyData[1u + rawY];
                     if (inst >= uint(uInstCount)) return;
                 } else {
-                    inst = gl_GlobalInvocationID.y;
+                    inst = rawY;
                     if (inst >= uint(uInstCount)) return;
                 }
 
@@ -4549,7 +4708,7 @@ public final class NucleusGpuBaker {
                 // would draw it as garbage. Write degenerate zero positions -
                 // zero-area triangles rasterize into nothing in both the shadow
                 // and the main pass.
-                if (instData[iBase + INST_FADE_WORD] < 0.0) {
+                if (uTransformMode == 0 && instData[iBase + INST_FADE_WORD] < 0.0) {
                     outData[o + 0u] = 0.0;
                     outData[o + 1u] = 0.0;
                     outData[o + 2u] = 0.0;
@@ -4977,20 +5136,18 @@ public final class NucleusGpuBaker {
                     uint slot;
                     uint inst;
                     if (uIdentity != 0) {
-                        // Identity fill: every slot is drawn, dispatched flat 1D
-                        // (the 2D x=index-groups / y=slot layout below cannot
-                        // address slot counts past the Y work-group limit).
                         n = uint(uInstCount);
                         k = gid % uint(uIdxCount);
                         slot = gid / uint(uIdxCount);
+                        if (k >= uint(uIdxCount) || slot >= n) return;
                         inst = slot;
                     } else {
                         n = ctl[0u];
                         k = gid;
-                        slot = gl_GlobalInvocationID.y;
+                        slot = gl_GlobalInvocationID.y + gl_GlobalInvocationID.z * gl_NumWorkGroups.y;
+                        if (k >= uint(uIdxCount) || slot >= n) return;
                         inst = ctl[16u + slot];
                     }
-                    if (k >= uint(uIdxCount) || slot >= n) return;
                     uint outIdx = uint(uEboBase) + slot * uint(uIdxCount) + k;
                     ebo[outIdx] = uint(uVertBase) + inst * uint(uVertCount) + baseIdx[k];
                 } else {
@@ -4999,7 +5156,7 @@ public final class NucleusGpuBaker {
                     // glDrawElementsIndirect command (words 4..8)
                     ctl[4u] = uint(uIdxCount) * n; // indexCount
                     ctl[5u] = 1u;                  // instanceCount
-                    ctl[6u] = 0u;                  // firstIndex
+                    ctl[6u] = uint(uEboBase);      // firstIndex
                     ctl[7u] = 0u;                  // baseVertex
                     ctl[8u] = 0u;                  // baseInstance
                     if (uCmdSlot >= 0) {
@@ -5021,8 +5178,8 @@ public final class NucleusGpuBaker {
                     // EBO-build dispatch triplet (words 9..11) - the dispatcher
                     // reads a full (x,y,z) triple: X = index groups, Y = visible instance count, Z = 1.
                     ctl[9u]  = (uint(uIdxCount) + 63u) / 64u;
-                    ctl[10u] = n;
-                    ctl[11u] = 1u;
+                    ctl[10u] = min(n, 65535u);
+                    ctl[11u] = (n + 65534u) / 65535u;
                 }
             }
             """;

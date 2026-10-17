@@ -27,6 +27,17 @@ This architectural overhaul transitions Nucleus from legacy immediate-mode Block
    - 8-corner trilinear lattice sampling (`LightSampleCache.sample8`) rewritten to probe exterior air blocks adjacent to machine corners rather than collapsing inside opaque solid blocks.
    - Multi-candidate exterior probing with vertical floor relaxation and smoothed face lighting fallbacks (`sampleSmoothLightUV`).
    - Retained GPU VBO records baked and updated with full 8-corner light data via `SparseUpdateQueue.sampleMachineLight`.
+6. **Iris Shader Pipeline & Translucent Particle Direct Pass (M6)**:
+   - Nested re-entrant `NtDirectPass.run(Runnable)` ensuring intermediate batch flushes from `PlainBufferSource` during particle rendering execute under an active unmasked direct pass.
+   - Deep reflective unlocking in `ShaderBindResync` of Iris/Oculus `DepthColorStorage` (`isDepthColorLocked`, `unlockDepthColor`, `depthColorLocked`) preventing color/depth write masking by Oculus.
+   - Direct `glBufferSubData` span uploading in `GpuSpanUploader` with single-bind window batching, bypassing staging ring sync stalls.
+   - Anchor-space shadow prebake activation on 1.20.1 via `ensureAnchorSpaceShadowFromBePose()` and O(1) shadow consumption path in `IrisShadowBatchCollector`.
+7. **Large-Scale Fleet Stability & Resource Lifecycle (M6 Stability)**:
+   - 2D/3D workgroup expansion (`rawY`) and tiled dispatch triples (`min(n, 65535u)`) in compute shaders, preventing GPU driver timeouts and freezes during mass machine spawns (>65535 instances).
+   - Dynamic VRAM pool shrinking (`maybeShrinkPool`, `shrinkOversizedBuffer`, `tickFrameCleanup`) and strict user budget enforcement (`cacheBudgetBytes`), preventing pool bloat and out-of-memory crashes.
+   - Thread-safe `BAKED` mesh registry and off-heap memory leak prevention in `IrisShadowBatchCollector` (pruning stale `PREBAKES` >24 epochs).
+   - Snapshot iteration in `LevelChunkSilentRemovalMixin` preventing client-side `ConcurrentModificationException` during chunk unloads and multiblock crater teardowns.
+   - Removal of fragile `SodiumWorldRendererMixin121`, delegating BE render cancellation universally to `MixinBlockEntityRenderDispatcher`.
 
 ---
 
@@ -47,6 +58,13 @@ This architectural overhaul transitions Nucleus from legacy immediate-mode Block
 | F11 | Iris/Oculus Interop & Black Model Prevention | AST reflection layout verification with companion mesh fallback for non-packed shaderpacks | M4 | COMPLETED |
 | F12 | Dual-Target Compilation Parity | Clean compilation on `:1.20.1-forge:compileJava` and `:1.21.1-neoforge:compileJava` | M5 | COMPLETED |
 | F13 | Exterior Block Light & 8-Corner Sampler Remediation | Multi-candidate exterior probing, solid fallback elimination, section light update overhaul | M5 | COMPLETED |
+| F14 | Direct `glBufferSubData` Span Uploading | Replace `PersistentUploadStaging` with single-bind window direct uploads in `GpuSpanUploader` | M6 | COMPLETED |
+| F15 | Anchor-Space Shadow Activation & O(1) Bypass | Enable anchor-space prebakes on 1.20.1 and fast-track shadow consumption in `IrisShadowBatchCollector` | M6 | COMPLETED |
+| F16 | Compute Shader >65535 Instance Workgroup Tiling | Implement 2D/3D workgroup addressing (`rawY`) and tiled Z dispatches in compute shaders | M6 | COMPLETED |
+| F17 | VRAM Leak Prevention & Pool Shrinking | Dynamic VBO pool shrinking, idle buffer reclaim, and stale prebake cleanup | M6 | COMPLETED |
+| F18 | Translucent Particle Direct Pass Under Shaders | Re-entrant `NtDirectPass.run()` nesting and Iris `DepthColorStorage` unmasking | M6 | COMPLETED |
+| F19 | Chunk Teardown CME Elimination | Snapshot array iteration in `LevelChunkSilentRemovalMixin` and safe non-mutating BE queries | M6 | COMPLETED |
+| F20 | Sodium Mixin Deprecation & Universal Dispatch | Eliminate `SodiumWorldRendererMixin121` in favor of portable `MixinBlockEntityRenderDispatcher` | M6 | COMPLETED |
 
 ---
 
@@ -59,6 +77,7 @@ This architectural overhaul transitions Nucleus from legacy immediate-mode Block
 | M3 | GPU-Side Distance Fading & Shader Kinematics Parity | F6, F7, F8, F9 | M1 | COMPLETED |
 | M4 | Universal 2-Tier Hardware Engine & Iris Interoperability | F10, F11 | M2, M3 | COMPLETED |
 | M5 | Dual-Target Parity & Block Light Sampler Verification | F12, F13 | M1, M2, M3, M4 | COMPLETED |
+| M6 | Iris Optimization, Translucent Particle Pass & Fleet Stability | F14, F15, F16, F17, F18, F19, F20 | M4, M5 | COMPLETED |
 
 ---
 

@@ -461,6 +461,16 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
                 VertexFormatElement el = elements.get(i);
                 elementOffsets.put(name, runningOffset);
                 elementByName.put(name, el);
+                var usage = RenderHooks.getUsage(el);
+                if (usage == VertexFormatElement.Usage.POSITION) {
+                    elementOffsets.put("position", runningOffset);
+                } else if (usage == VertexFormatElement.Usage.COLOR) {
+                    elementOffsets.put("color", runningOffset);
+                } else if (usage == VertexFormatElement.Usage.NORMAL) {
+                    elementOffsets.put("normal", runningOffset);
+                } else if (usage == VertexFormatElement.Usage.UV) {
+                    elementOffsets.put("uv" + RenderHooks.getIndex(el), runningOffset);
+                }
                 runningOffset += RenderHooks.getByteSize(el);
             }
             //?} else {
@@ -475,8 +485,24 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
                 String name = "unknown_" + i;
                 var usage = RenderHooks.getUsage(el);
                 int glType = RenderHooks.getGlType(el);
-                if (usage == VertexFormatElement.Usage.UV && RenderHooks.getIndex(el) == 3) {
-                    name = "iris_Entity";
+                int off = RenderHooks.getElementOffset(actualFormat, el);
+                if (usage == VertexFormatElement.Usage.POSITION) {
+                    name = "position";
+                    elementOffsets.put("position", off);
+                } else if (usage == VertexFormatElement.Usage.COLOR) {
+                    name = "color";
+                    elementOffsets.put("color", off);
+                } else if (usage == VertexFormatElement.Usage.NORMAL) {
+                    name = "normal";
+                    elementOffsets.put("normal", off);
+                } else if (usage == VertexFormatElement.Usage.UV) {
+                    int uvIdx = RenderHooks.getIndex(el);
+                    if (uvIdx == 3) {
+                        name = "iris_Entity";
+                    } else {
+                        name = "uv" + uvIdx;
+                    }
+                    elementOffsets.put("uv" + uvIdx, off);
                 } else if (usage == VertexFormatElement.Usage.GENERIC
                         && glType == org.lwjgl.opengl.GL11.GL_FLOAT) {
                     name = "mc_midTexCoord";
@@ -488,7 +514,7 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
                         && glType == org.lwjgl.opengl.GL11.GL_SHORT) {
                     name = "mc_Entity";
                 }
-                elementOffsets.put(name, RenderHooks.getElementOffset(actualFormat, el));
+                elementOffsets.put(name, off);
                 elementByName.put(name, el);
             }
             *///?}
@@ -1929,6 +1955,14 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
     /** Byte offsets of BLOCK-format components for the compute shader. */
     int getMeshOffset(String usageName, int uvIndex) {
         if (actualFormat == null) return -1;
+        Integer direct = switch (usageName) {
+            case "position" -> elementOffsets.get("position");
+            case "color" -> elementOffsets.get("color");
+            case "normal" -> elementOffsets.get("normal");
+            case "uv" -> elementOffsets.get("uv" + uvIndex);
+            default -> null;
+        };
+        if (direct != null && direct >= 0) return direct;
         for (VertexFormatElement el : RenderHooks.getElements(actualFormat)) {
             var usage = RenderHooks.getUsage(el);
             boolean match = switch (usageName) {

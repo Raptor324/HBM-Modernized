@@ -27,13 +27,9 @@ import org.lwjgl.system.MemoryUtil;
  * orphaning (glBufferData) is FORBIDDEN on these paths; it destroys content
  * the shadow considers up to date.
  * <p>
- * Span delivery channel - {@link PersistentUploadStaging} (persistent-mapped
- * ring + glCopyBufferSubData); if unavailable - glBufferSubData.
+ * Span delivery channel: direct glBufferSubData with single-bind window batching.
  */
 public final class GpuSpanUploader {
-
-    /** A/B JVM flag -Dhbm.stagingDirect=true forces the direct path (config is the primary source). */
-    private static final boolean STAGING_DIRECT_FLAG = Boolean.getBoolean("hbm.stagingDirect");
 
     private GpuSpanUploader() {}
 
@@ -93,14 +89,7 @@ public final class GpuSpanUploader {
             }
             return;
         }
-        boolean stagingDirect = com.hbm_m.config.ModClothConfig.get().nucleusStagingDirect
-                || STAGING_DIRECT_FLAG;
-        PersistentUploadStaging staging = stagingDirect ? null : PersistentUploadStaging.getOrCreate();
-        if (staging != null) {
-            // Bind ring + destination ONCE for the whole window's span loop -
-            // a per-span rebind of the same two buffers was 3.16 ms/frame in spark.
-            staging.beginWindowCopy(destVbo);
-        }
+        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, destVbo);
         try {
             int valid = Math.min(floatCount, Math.max(0, shadowValidFloats));
             // memAddress0 (not memAddress): these offsets are absolute float
@@ -126,73 +115,59 @@ public final class GpuSpanUploader {
                     }
                     runEnd = i + 1;
                 } else if (runStart >= 0 && (i - runEnd) >= COALESCE_GAP_FLOATS) {
-                    uploadDiffedSpan(src, srcFloatOffset + runStart, shadow, shadowFloatOffset + runStart,
-                            runEnd - runStart, destFloatOffset + runStart, destVbo);
+                    uploadDiffedSpanBound(src, srcFloatOffset + runStart, shadow, shadowFloatOffset + runStart,
+                            runEnd - runStart, destFloatOffset + runStart);
                     runStart = -1;
                 }
             }
             if (runStart >= 0) {
-                uploadDiffedSpan(src, srcFloatOffset + runStart, shadow, shadowFloatOffset + runStart,
-                        runEnd - runStart, destFloatOffset + runStart, destVbo);
+                uploadDiffedSpanBound(src, srcFloatOffset + runStart, shadow, shadowFloatOffset + runStart,
+                        runEnd - runStart, destFloatOffset + runStart);
             }
             // Tail beyond the shadow's known-valid region: unconditional full span.
             if (valid < floatCount) {
-                if (uploadSpan(src, srcFloatOffset + valid, floatCount - valid,
-                        destFloatOffset + valid, destVbo)) {
-                    copyToShadow(shadow, shadowFloatOffset + valid, src, srcFloatOffset + valid,
-                            floatCount - valid);
-                }
+                int tailCount = floatCount - valid;
+                NucleusDebug.recordUpload(1, (long) tailCount * 4L);
+                uploadSpanBound(src, srcFloatOffset + valid, tailCount, (long) (destFloatOffset + valid) * 4L);
+                copyToShadow(shadow, shadowFloatOffset + valid, src, srcFloatOffset + valid, tailCount);
             }
         } finally {
-            if (staging != null) {
-                staging.endWindowCopy();
-            }
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
         }
     }
 
-    /** One diffed span: GPU write + shadow mirror (mirror skipped only when the GPU write failed). */
-    private static void uploadDiffedSpan(FloatBuffer src, int srcFloatOffset,
-                                         FloatBuffer shadow, int shadowFloatOffset,
-                                         int floatCount, int destFloatOffset, int destVbo) {
-        if (uploadSpan(src, srcFloatOffset, floatCount, destFloatOffset, destVbo)) {
-            copyToShadow(shadow, shadowFloatOffset, src, srcFloatOffset, floatCount);
-        }
+    /** One diffed span when destVbo is already bound: GPU write + shadow mirror. */
+    private static void uploadDiffedSpanBound(FloatBuffer src, int srcFloatOffset,
+                                              FloatBuffer shadow, int shadowFloatOffset,
+                                              int floatCount, int destFloatOffset) {
+        NucleusDebug.recordUpload(1, (long) floatCount * 4L);
+        long destByteOffset = (long) destFloatOffset * 4L;
+        uploadSpanBound(src, srcFloatOffset, floatCount, destByteOffset);
+        copyToShadow(shadow, shadowFloatOffset, src, srcFloatOffset, floatCount);
     }
 
     /** @return true if the GPU write succeeded (or was a no-op). */
     private static boolean uploadSpan(FloatBuffer src, int srcFloatOffset, int floatCount,
-                                   int destFloatOffset, int destVbo) {
+                                      int destFloatOffset, int destVbo) {
         if (floatCount <= 0) {
             return true;
         }
         NucleusDebug.recordUpload(1, (long) floatCount * 4L);
         long destByteOffset = (long) destFloatOffset * 4L;
-        // -Dhbm.stagingDirect=true - A/B for UMA iGPUs: glCopyBufferSubData on
-        // shared memory = an extra memcpy + sync; direct glBufferSubData is
-        // sometimes faster. Default is the ring (safer for synchronization).
-        boolean stagingDirect = com.hbm_m.config.ModClothConfig.get().nucleusStagingDirect
-                || STAGING_DIRECT_FLAG;
-        PersistentUploadStaging staging = stagingDirect ? null : PersistentUploadStaging.getOrCreate();
-        if (staging != null
-                && staging.copyRegion(src, srcFloatOffset, floatCount, destVbo, destByteOffset)) {
-            return true;
-        }
-        // Fallback: direct upload from a client-memory buffer (may implicitly
-        // synchronize the driver, but is correct). NO synchronous glGetError
-        // polling here: an error drain + verify per span hard-freezes old Tier 2
-        // drivers (glGetError forces a pipeline flush on some of them); the
-        // persistent-mapped ring is the Tier-2-safe path, this fallback only has
-        // to be sized correctly.
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, destVbo);
         try {
-            FloatBuffer view = src.duplicate();
-            view.position(srcFloatOffset);
-            view.limit(srcFloatOffset + floatCount);
-            GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, destByteOffset, view);
+            uploadSpanBound(src, srcFloatOffset, floatCount, destByteOffset);
             return true;
         } finally {
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
         }
+    }
+
+    private static void uploadSpanBound(FloatBuffer src, int srcFloatOffset, int floatCount, long destByteOffset) {
+        FloatBuffer view = src.duplicate();
+        view.position(srcFloatOffset);
+        view.limit(srcFloatOffset + floatCount);
+        GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, destByteOffset, view);
     }
 
     /**

@@ -242,6 +242,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
     /** Scratch for the fast-path assert (phase 1 -> phase 2); single-threaded rendering. */
     private InstancedStaticPartRenderer[] fastAssertScratch = new InstancedStaticPartRenderer[32];
     private int fastAssertScratchCount = 0;
+    private int[] shadowPreCountsScratch = new int[32];
 
     // -- Frozen roster walk (partial fast path without hooks) -------------
     // A partial-asserted machine still pays the FULL part loop every frame:
@@ -357,7 +358,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
      */
     private boolean tryFastParametricRosterUpdate(T blockEntity, MachineRenderState roster, long rosterKey,
                                                   long gameTime, float partialTick) {
-        if (!parametricAnimOn()) {
+        if (!parametricAnimOn() || ShaderCompatibilityDetector.isExternalShaderActive()) {
             return false;
         }
         byte[] cats = roster.rosterCategory;
@@ -806,7 +807,9 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
         }
         if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
             SHADOW_BER_INVOCATIONS++;
-        } else if (applyFrustum && !com.hbm_m.client.render.culling.GpuCullCoverage.isActive()
+        } else if (applyFrustum && !(com.hbm_m.client.render.culling.GpuCullCoverage.isActive()
+                || (ShaderCompatibilityDetector.isExternalShaderActive()
+                    && com.hbm_m.client.render.NucleusGpuBaker.isEnabled()))
                 && !isMachineInViewFrustum(blockEntity, frameBounds(blockEntity))) {
             // GPU cull active: skip the CPU frustum re-test - the machine stays
             // in the MDI batch and the GPU frustum/Hi-Z compaction culls it
@@ -894,9 +897,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
         // disabled the fast path for EVERY machine of the spec - the
         // 5000-idle-assembler profile, spark 2026-10-07: the spec's constant
         // -animator Frame part alone cost the fleet the whole roster assert.)
-        if (ShaderCompatibilityDetector.isExternalShaderActive()
-                || ShaderCompatibilityDetector.canUseIrisExtendedShader()
-                || ShaderCompatibilityDetector.isRenderingShadowPass()
+        if (ShaderCompatibilityDetector.isRenderingShadowPass()
                 || ClientRenderFlags.forceVanillaImmediate()) {
             return false;
         }
@@ -928,7 +929,9 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
         // cubeInFrustum on the cached bounds; out-of-frustum machines are
         // dropped from the batch and re-collected the frame they re-enter
         // (newcomer path).
-        if (!com.hbm_m.client.render.culling.GpuCullCoverage.isActive()
+        if (!(com.hbm_m.client.render.culling.GpuCullCoverage.isActive()
+                || (ShaderCompatibilityDetector.isExternalShaderActive()
+                    && com.hbm_m.client.render.NucleusGpuBaker.isEnabled()))
                 && !isMachineInViewFrustum((T) beRaw, frameBounds(beRaw))) {
             return false;
         }
@@ -1094,6 +1097,33 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
         for (int i = 0; i < fastAssertScratchCount; i++) {
             fastAssertScratch[i].assertCleanInstance(pos);
         }
+
+        if (cachedState == null || cachedState.rosterCategory == null) {
+            if (statesWorldGen != com.hbm_m.client.render.NucleusRenderVersion.worldGen()) {
+                states.clear();
+                statesWorldGen = com.hbm_m.client.render.NucleusRenderVersion.worldGen();
+            }
+            MachineRenderState st = stateFor(posKey);
+            int pSize = specParts.size();
+            st.rosterCategory = new byte[pSize];
+            st.rosterRenderers = new MachinePartRenderer[pSize];
+            st.rosterSlots = new int[pSize];
+            java.util.Arrays.fill(st.rosterSlots, -1);
+            for (int pIdx = 0; pIdx < pSize; pIdx++) {
+                MachineSpec.PartDef<T> part = specParts.get(pIdx);
+                if (part.animated() && part.parametric() == null) continue;
+                String dynKey = part.dynamic() ? spec.dynamicCacheKeyValue(part, (T) beRaw) : null;
+                MachinePartRenderer r = spec.findExistingRenderer(pIdx, part, dynKey);
+                if (r != null && r.instanced() != null) {
+                    st.rosterCategory[pIdx] = part.parametric() != null
+                            ? MachineRenderState.ASSERT_EPOCH
+                            : MachineRenderState.ASSERT;
+                    st.rosterRenderers[pIdx] = r;
+                    st.rosterSlots[pIdx] = r.instanced().getSlot(posKey);
+                }
+            }
+            st.computeRosterFlags();
+        }
         // THE TRACKER STAMP IS NOT UPDATED HERE: onRenderCollected from every
         // successful assert would keep the stamp fresh every frame, and the
         // TTL rebuild (the only owner of light/fade updates without an event
@@ -1118,14 +1148,9 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
             if (beRaw instanceof com.hbm_m.block.entity.doors.DoorBlockEntity) {
                 com.hbm_m.client.render.implementations.MachineDoorRenderer.syncShareState();
             }
-            if (!IrisShadowBatchCollector.prebakeCalibrated()
+            if ((!IrisShadowBatchCollector.prebakeCalibrated() && !IrisShadowBatchCollector.isAnchorSpaceShadowActive())
                     || ClientRenderFlags.forceVanillaImmediate()
                     || !ClientRenderFlags.useInstancedBatching()) {
-                return false;
-            }
-            if (!spec.hooks().isEmpty()) {
-                // Hooks draw immediate content into the shadow map (fluids/items/
-                // diamonds) - a skipped BER would delete their shadows.
                 return false;
             }
             // A just-broken machine must not cast its prebaked shadow: the snapshot
@@ -1136,6 +1161,24 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
             if (beRaw.isRemoved()) {
                 return false;
             }
+            if (IrisShadowBatchCollector.isAnchorSpaceShadowActive()) {
+                if (!spec.hasDynamicParts() && beRaw instanceof com.hbm_m.client.render.NucleusTrackedBlockEntity tracked && tracked.hbm_m$isNucleusRegistered()) {
+                    long pk = beRaw.getBlockPos().asLong();
+                    MachineRenderState st = (statesWorldGen == com.hbm_m.client.render.NucleusRenderVersion.worldGen())
+                            ? states.get(pk) : null;
+                    if (st != null && st.rosterRenderers != null && st.rosterRenderers.length > 0) {
+                        for (MachinePartRenderer r : st.rosterRenderers) {
+                            if (r != null) {
+                                InstancedStaticPartRenderer inst = r.instanced();
+                                if (inst != null && IrisShadowBatchCollector.hasFreshPrebake(inst, pk)) {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             T be = (T) beRaw;
             BlockPos pos = beRaw.getBlockPos();
             long posKey = pos.asLong();
@@ -1143,22 +1186,38 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
             // parts beyond the animation zone draw in neither path - no record needed.
             boolean animatedVisible =
                     RenderDistanceHelper.computeAnimatedFade(beRaw, frameDistSq(beRaw)) >= 0;
-            BakedModel model = spec.modelResolver().apply(be);
-            BakedModel[] partModels = spec.getPartModels(model);
+            MachineRenderState state = (statesWorldGen == com.hbm_m.client.render.NucleusRenderVersion.worldGen())
+                    ? states.get(posKey) : null;
+            MachinePartRenderer[] rosterRenderers = (state != null && state.rosterRenderers != null)
+                    ? state.rosterRenderers : null;
+
+            BakedModel model = null;
+            BakedModel[] partModels = null;
+            boolean modelsResolved = false;
+
             java.util.List<MachineSpec.PartDef<T>> parts = spec.parts();
             // fastAssertScratch is free here: tryFastAssertRender is gated off in the
             // shadow pass, and the render thread owns both call sites.
             fastAssertScratchCount = 0;
             for (int i = 0; i < parts.size(); i++) {
                 MachineSpec.PartDef<T> part = parts.get(i);
-                // Mirror renderAll's skip: a part without a resolved model (and not
-                // dynamic) draws nothing in either pass.
-                BakedModel partModel = partModels != null ? partModels[i] : spec.partModel(part, model);
-                if (partModel == null && !part.dynamic()) continue;
-                String dynKey = part.dynamic() ? spec.dynamicCacheKeyValue(part, be) : null;
-                MachinePartRenderer r = spec.findExistingRenderer(i, part, dynKey);
+                MachinePartRenderer r = (rosterRenderers != null && i < rosterRenderers.length && !part.dynamic())
+                        ? rosterRenderers[i] : null;
                 if (r == null) {
-                    return false;
+                    if (!modelsResolved) {
+                        model = spec.modelResolver().apply(be);
+                        partModels = spec.getPartModels(model);
+                        modelsResolved = true;
+                    }
+                    // Mirror renderAll's skip: a part without a resolved model (and not
+                    // dynamic) draws nothing in either pass.
+                    BakedModel partModel = partModels != null ? partModels[i] : spec.partModel(part, model);
+                    if (partModel == null && !part.dynamic()) continue;
+                    String dynKey = part.dynamic() ? spec.dynamicCacheKeyValue(part, be) : null;
+                    r = spec.findExistingRenderer(i, part, dynKey);
+                    if (r == null) {
+                        return false;
+                    }
                 }
                 if (!r.hasGeometry()) continue;
                 InstancedStaticPartRenderer inst = r.instanced();
@@ -1176,6 +1235,9 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
                 }
                 fastAssertScratch[fastAssertScratchCount++] = inst;
             }
+            if (IrisShadowBatchCollector.isAnchorSpaceShadowActive()) {
+                return true;
+            }
             // Every drawn part is provably covered - convert. consumePrebaked re-checks
             // its own preconditions before the first append; after the loop above they
             // hold for every renderer (single render thread, no state change between).
@@ -1183,14 +1245,16 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
             // back only ITS renderer, so a later failure would leave earlier renderers'
             // records doubled by the fallback re-record - capture the pre-consume entry
             // counts and truncate them back on any failure.
-            int[] preCounts = new int[fastAssertScratchCount];
-            for (int i = 0; i < preCounts.length; i++) {
-                preCounts[i] = IrisShadowBatchCollector.entryCountFor(fastAssertScratch[i]);
+            if (shadowPreCountsScratch.length < fastAssertScratchCount) {
+                shadowPreCountsScratch = new int[Math.max(fastAssertScratchCount, shadowPreCountsScratch.length * 2)];
+            }
+            for (int i = 0; i < fastAssertScratchCount; i++) {
+                shadowPreCountsScratch[i] = IrisShadowBatchCollector.entryCountFor(fastAssertScratch[i]);
             }
             for (int i = 0; i < fastAssertScratchCount; i++) {
                 if (!IrisShadowBatchCollector.consumePrebaked(fastAssertScratch[i], posKey, pos)) {
                     for (int j = 0; j < i; j++) {
-                        IrisShadowBatchCollector.truncateEntryTo(fastAssertScratch[j], preCounts[j]);
+                        IrisShadowBatchCollector.truncateEntryTo(fastAssertScratch[j], shadowPreCountsScratch[j]);
                     }
                     return false;
                 }
@@ -1830,13 +1894,13 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
                     // The part's pose is needed by hooks (MachineRenderApi.partTransform)
                     // even when the rebuild is skipped - the base pose (the static
                     // part's animator is constant); save without enqueue.
-                    if (!spec.hooks().isEmpty()) {
+                    if (ctx.hooksDrawContent) {
                         ctx.saveTransform(part.name(), poseStack.last().pose());
                     }
                 } else if (draw) {
                     // Matrices are only needed by hooks (MachineRenderApi.partTransform);
                     // without hooks nothing is allocated.
-                    if (!spec.hooks().isEmpty()) {
+                    if (ctx.hooksDrawContent) {
                         ctx.saveTransform(part.name(), poseStack.last().pose());
                     }
                     // Per-part fade: fade is written into per-instance data at
@@ -1931,7 +1995,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
 
         // -- Hooks: fluids/items/diamonds (immediate); not drawn beyond the
         // animation distance (icons/diamonds are animation cosmetics) ------
-        if (!animatedVisible) return;
+        if (!animatedVisible || !ctx.hooksDrawContent) return;
         for (MachineRenderHook<T> hook : spec.hooks()) {
             try {
                 hook.render(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay, ctx);

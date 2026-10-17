@@ -211,90 +211,118 @@ public final class ShaderBindResync {
 
     // -- Iris DepthColorStorage watchdog -------------------------------------
     private static volatile boolean irisChecked;
-    private static java.lang.reflect.Field irisDepthColorField;
+    private static java.lang.reflect.Method irisIsLockedMethod;
+    private static java.lang.reflect.Method irisUnlockMethod;
+    private static java.lang.reflect.Field irisDepthColorLockedField;
 
-    /**
-     * Reads the static flag of Iris' {@code DepthColorStorage} (null if the
-     * flag is unavailable). The onTail mixin sets it on EVERY apply of
-     * an unknown mod ShaderInstance; if the flag is still set at the end of
-     * the frame, the Oculus vanilla pipeline routes the PRESENT through its composite
-     * (the color buffer itself is fully correct!) - that is the "black screen".
-     * <p>
-     * Package note: on 1.21.1 the class lives at
-     * {@code net.irisshaders.iris.gl.blending.DepthColorStorage} and loads
-     * reflectively. On 1.20.1 the class lives inside the mixin package
-     * {@code net.irisshaders.iris.mixin.*}, which the mixin transformer REFUSES
-     * to load from outside ({@code IllegalClassLoadError}, mixins.oculus.json) -
-     * so on 1.20.1 the read side is dropped entirely and the caller treats the
-     * flag as unknown ({@code forceIrisDepthColorEnabled*} falls back to direct
-     * RenderSystem mask resets).
-     */
-    @org.jetbrains.annotations.Nullable
-    public static Boolean irisDepthColorDisabled() {
+    private static synchronized void ensureIrisDepthColorReflected() {
+        if (irisChecked) {
+            return;
+        }
+        irisChecked = true;
         try {
-            if (!irisChecked) {
-                irisChecked = true;
-                Class<?> cl = Class.forName("net.irisshaders.iris.gl.blending.DepthColorStorage");
+            Class<?> cl = Class.forName("net.irisshaders.iris.gl.blending.DepthColorStorage");
+            try {
+                irisIsLockedMethod = cl.getDeclaredMethod("isDepthColorLocked");
+                irisIsLockedMethod.setAccessible(true);
+            } catch (Throwable ignored) {
+            }
+            try {
+                irisUnlockMethod = cl.getDeclaredMethod("unlockDepthColor");
+                irisUnlockMethod.setAccessible(true);
+            } catch (Throwable ignored) {
+            }
+            try {
+                irisDepthColorLockedField = cl.getDeclaredField("depthColorLocked");
+                irisDepthColorLockedField.setAccessible(true);
+            } catch (Throwable ignored) {
                 for (java.lang.reflect.Field f : cl.getDeclaredFields()) {
-                    if (f.getType() == boolean.class && java.lang.reflect.Modifier.isStatic(f.getModifiers())) {
+                    if (f.getType() == boolean.class && java.lang.reflect.Modifier.isStatic(f.getModifiers())
+                            && "depthColorLocked".equals(f.getName())) {
                         f.setAccessible(true);
-                        irisDepthColorField = f;
+                        irisDepthColorLockedField = f;
                         break;
                     }
                 }
             }
-            return irisDepthColorField == null ? null
-                    : (Boolean) irisDepthColorField.get(null);
         } catch (VirtualMachineError t) {
-            // OOM/StackOverflow are never compat failures - let them propagate
             throw t;
         } catch (Throwable t) {
-            // ANY other failure is an expected compat degradation (class absent
-            // on 1.20.1 / Iris versions without the gl.blending class). One-time
-            // log, then degrade to "no info" - the reset side still unconditionally
-            // restores the GL masks via RenderSystem.
+            logOnceProbeIssue("irisDepthColorDisabled", t, false);
+        }
+    }
+
+    /**
+     * Reads whether Iris / Oculus has locked depth and color writes via {@code DepthColorStorage}.
+     * The onTail mixin sets this lock on EVERY apply of an unknown mod ShaderInstance;
+     * while locked, GlStateManager._colorMask and GlStateManager._depthMask calls are cancelled.
+     * Returns true if locked, false if unlocked, null if Iris/Oculus is absent or unavailable.
+     */
+    @org.jetbrains.annotations.Nullable
+    public static Boolean irisDepthColorDisabled() {
+        try {
+            ensureIrisDepthColorReflected();
+            if (irisIsLockedMethod != null) {
+                return (Boolean) irisIsLockedMethod.invoke(null);
+            }
+            if (irisDepthColorLockedField != null) {
+                return (Boolean) irisDepthColorLockedField.get(null);
+            }
+            return null;
+        } catch (VirtualMachineError t) {
+            throw t;
+        } catch (Throwable t) {
             logOnceProbeIssue("irisDepthColorDisabled", t, false);
             return null;
         }
     }
 
     /**
-     * Forcibly resets Iris masking (disableDepthColor): sets the flag back to
-     * false and restores colorMask + depth test via the managed API. Called at
-     * the end of our late passes so the end of the frame goes through the
+     * Forcibly resets Iris masking (disableDepthColor): unlocks DepthColorStorage,
+     * clears depthColorLocked, and restores colorMask + depth test via the managed API.
+     * Called at the end of our late passes so the end of the frame goes through the
      * vanilla present again.
      */
     public static void forceIrisDepthColorEnabled() {
-        if (forceIrisDepthColorEnabledCore()) {
+        if (forceIrisDepthColorEnabledCore(true)) {
             MainRegistry_LOGGER.info("HBM iris DepthColorStorage reset (was masking)");
         }
     }
 
-    /** Per-draw variant used by the NtDirectPass window (VertexBufferMixin) - no logging. */
+    /**
+     * Per-draw variant used by the NtDirectPass window (VertexBufferMixin) - no logging
+     * and preserves the RenderType's configured depth write state instead of forcing depthMask(true).
+     */
     public static void forceIrisDepthColorEnabledQuiet() {
-        forceIrisDepthColorEnabledCore();
+        forceIrisDepthColorEnabledCore(false);
     }
 
-    private static boolean forceIrisDepthColorEnabledCore() {
-        Boolean disabled = irisDepthColorDisabled();
-        if (disabled != null && !disabled) {
-            return false; // flag says not masking - nothing to reset
-        }
+    private static boolean forceIrisDepthColorEnabledCore(boolean resetFullMasks) {
+        ensureIrisDepthColorReflected();
+        boolean unlocked = false;
         try {
-            if (disabled != null) {
-                irisDepthColorField.setBoolean(null, false);
+            Boolean disabled = irisDepthColorDisabled();
+            if (disabled == null || disabled) {
+                if (irisUnlockMethod != null) {
+                    irisUnlockMethod.invoke(null);
+                    unlocked = true;
+                }
+                if (irisDepthColorLockedField != null && irisDepthColorLockedField.getBoolean(null)) {
+                    irisDepthColorLockedField.setBoolean(null, false);
+                    unlocked = true;
+                }
             }
-            // Direct RenderSystem reset - correct both when the flag was readable
-            // (1.21.1) and when it was not (1.20.1 mixin-package ban): the masks
-            // were disabled by Iris' MixinShaderInstance.onTail regardless of
-            // whether we can read the flag back.
-            com.mojang.blaze3d.systems.RenderSystem.colorMask(true, true, true, true);
-            com.mojang.blaze3d.systems.RenderSystem.depthMask(true);
-            com.mojang.blaze3d.platform.GlStateManager._enableDepthTest();
-            return true;
-        } catch (Exception ignored) {
-            return false;
+        } catch (Throwable ignored) {
         }
+        if (resetFullMasks) {
+            try {
+                com.mojang.blaze3d.systems.RenderSystem.colorMask(true, true, true, true);
+                com.mojang.blaze3d.systems.RenderSystem.depthMask(true);
+                com.mojang.blaze3d.platform.GlStateManager._enableDepthTest();
+            } catch (Exception ignored) {
+            }
+        }
+        return unlocked;
     }
 
     /**

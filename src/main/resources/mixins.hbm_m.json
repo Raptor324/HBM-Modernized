@@ -51,7 +51,6 @@
     "client.SodiumRenderBoundsMixin",
     "client.MixinBlockEntity",
     "client.SodiumWorldRendererMixin",
-    "client.SodiumWorldRendererMixin121",
     "client.MixinClientLevelChunkLifecycle"
   ],
   "injectors": {

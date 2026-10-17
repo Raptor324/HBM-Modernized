@@ -137,12 +137,7 @@ public class EngineHandler {
      * из материала пака. Без пака окно - no-op, путь прежний.
      */
     private static void flushNtBatches() {
-        com.hbm_m.client.render.shader.NtDirectPass.begin();
-        try {
-            ParticleEngineNT.buffer().endBatch();
-        } finally {
-            com.hbm_m.client.render.shader.NtDirectPass.end();
-        }
+        com.hbm_m.client.render.shader.NtDirectPass.run(null);
     }
 
     private static void renderAfterWeather(RenderLevelStageEvent event) {        // РАДИКАЛЬНАЯ СТРАХОВКА: если рисовать нечего (DH не рендерит, NT-частиц
@@ -288,9 +283,10 @@ public class EngineHandler {
 
                 setDhShaderFarMode(1.0F,
                         com.hbm_m.client.compat.dh.DhClientState.dhProjection());
-                ParticleEngineNT.INSTANCE.renderFiltered(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack(), splitSq, true);
+                com.hbm_m.client.render.shader.NtDirectPass.run(() -> {
+                    ParticleEngineNT.INSTANCE.renderFiltered(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack(), splitSq, true);
+                });
                 buffer.endBatch();
-                flushNtBatches();
             } finally {
                 // Сброс Sampler1 сразу после флаша: RenderSystem.shaderTextures —
                 // глобальное состояние, следующее чужое дро не должно получить
@@ -308,15 +304,17 @@ public class EngineHandler {
             com.hbm_m.client.compat.dh.DhClientCompat.beginCapturedVanillaPass(partialTick);
             setDhShaderFarMode(0.0F, null);
             MissileTrackWorldRender.renderFiltered(partialTick, splitSq, false);
-            ParticleEngineNT.INSTANCE.renderFiltered(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack(), splitSq, false);
+            com.hbm_m.client.render.shader.NtDirectPass.run(() -> {
+                ParticleEngineNT.INSTANCE.renderFiltered(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack(), splitSq, false);
+            });
             buffer.endBatch();
-            flushNtBatches();
             com.hbm_m.client.compat.dh.DhClientCompat.endVanillaExtendedPass();
 
             // 3. Вспышка — оверлей поверх всего.
-            ParticleEngineNT.INSTANCE.renderFlashOnly(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack());
+            com.hbm_m.client.render.shader.NtDirectPass.run(() -> {
+                ParticleEngineNT.INSTANCE.renderFlashOnly(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack());
+            });
             buffer.endBatch();
-            flushNtBatches();
         } else {
             // DH не рендерит: полный проход, тоже на захваченной матрице.
             // ЕДИНСТВЕННЫЙ источник отрисовки мешей ракет (дубль в
@@ -325,9 +323,10 @@ public class EngineHandler {
             com.hbm_m.client.compat.dh.DhClientCompat.beginCapturedVanillaPass(partialTick);
             setDhShaderFarMode(0.0F, null);
             MissileTrackWorldRender.renderFiltered(partialTick, Double.NaN, false);
-            ParticleEngineNT.INSTANCE.render(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack());
+            com.hbm_m.client.render.shader.NtDirectPass.run(() -> {
+                ParticleEngineNT.INSTANCE.render(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack());
+            });
             buffer.endBatch();
-            flushNtBatches();
             // ФИКС «чёрного экрана» при совместном рендере меш+частицы:
             // диаг fsp показала, что после флаша NT-батчей физические бинды
             // TU1/TU2 уезжают в ноль ([0/0/0]), а кеш GlStateManager продолжает
@@ -337,9 +336,10 @@ public class EngineHandler {
             Minecraft.getInstance().gameRenderer.lightTexture().turnOnLightLayer();
             Minecraft.getInstance().gameRenderer.overlayTexture().setupOverlayColor();
             com.mojang.blaze3d.systems.RenderSystem.activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
-            ParticleEngineNT.INSTANCE.renderFlashOnly(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack());
+            com.hbm_m.client.render.shader.NtDirectPass.run(() -> {
+                ParticleEngineNT.INSTANCE.renderFlashOnly(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack());
+            });
             buffer.endBatch();
-            flushNtBatches();
             com.hbm_m.client.compat.dh.DhClientCompat.endVanillaExtendedPass();
         }
 
@@ -391,13 +391,16 @@ public class EngineHandler {
         if (sh == null) return;
         boolean farMode = mode > 0.5F;
         try {
-            sh.safeGetUniform("DhDepthTest").set(mode);
+            var uDepth = sh.safeGetUniform("DhDepthTest");
+            if (uDepth != null) uDepth.set(mode);
             if (!farMode) return;
             var mc = Minecraft.getInstance();
             var win = mc.getWindow();
-            sh.safeGetUniform("DhViewport").set((float) win.getWidth(), (float) win.getHeight());
+            var uViewport = sh.safeGetUniform("DhViewport");
+            if (uViewport != null) uViewport.set((float) win.getWidth(), (float) win.getHeight());
             if (dhProj != null) {
-                sh.safeGetUniform("DhProjMat").set(new org.joml.Matrix4f(dhProj));
+                var uProj = sh.safeGetUniform("DhProjMat");
+                if (uProj != null) uProj.set(new org.joml.Matrix4f(dhProj));
             }
             int texId = com.hbm_m.client.compat.dh.DhOcclusionGpu.getDhActiveDepthTextureId();
             if (texId > 0) {

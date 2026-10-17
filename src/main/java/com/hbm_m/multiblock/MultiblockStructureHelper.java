@@ -1580,7 +1580,7 @@ public class MultiblockStructureHelper {
         if (placer != null) {
             placerName = placer.getGameProfile().getName();
         }
-        MainRegistry.LOGGER.info("Player {} placed multiblock {} at {} with {} parts: {}", 
+        MainRegistry.LOGGER.debug("Player {} placed multiblock {} at {} with {} parts: {}", 
             placerName, controller, controllerPos, allPlacedPositions.size(), formatPositions(allPlacedPositions));
 
         // Настраиваем стороны подключения на самом контроллере, если он поддерживает sided IO.
