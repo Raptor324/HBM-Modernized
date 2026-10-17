@@ -211,7 +211,7 @@ public class MachineChemicalPlantMenu extends AbstractContainerMenu {
                 if (!moveItemStackTo(stack, 1, 2, false)) return ItemStack.EMPTY;
             } else if (stack.getItem() instanceof ItemMachineUpgrade) {
                 if (!moveItemStackTo(stack, 2, 4, false)) return ItemStack.EMPTY;
-            } else if (FluidItemAccess.hasFluidHandler(stack)) {
+            } else if (FluidItemAccess.isFluidContainer(stack)) {
                 if (!moveItemStackTo(stack, 10, 13, false) && !moveItemStackTo(stack, 16, 19, false)) {
                     return ItemStack.EMPTY;
                 }

@@ -38,7 +38,14 @@ public class CranePartitionerBlockEntity extends BaseHbmBlockEntity {
 
     public static final int SLOT_COUNT = 45;
 
-    public final com.hbm_m.platform.ModItemStackHandler inventory = new com.hbm_m.platform.ModItemStackHandler(SLOT_COUNT * 2) {
+    /**
+     * E8 (Fork, nur mit Space-Addon): {@code INPUT_COUNT = 96}, {@code OUTPUT_COUNT = 8} statt 45 + 45 (Space
+     * {@code TileEntityCranePartitioner}). Beim Anlegen festgelegt.
+     */
+    public final int inputCount = com.hbm_m.api.space.SpaceApi.forkActive() ? 96 : SLOT_COUNT;
+    public final int outputCount = com.hbm_m.api.space.SpaceApi.forkActive() ? 8 : SLOT_COUNT;
+
+    public final com.hbm_m.platform.ModItemStackHandler inventory = new com.hbm_m.platform.ModItemStackHandler(inputCount + outputCount) {
         @Override protected void onContentsChanged(int slot) { setChanged(); }
     };
 
@@ -50,11 +57,11 @@ public class CranePartitionerBlockEntity extends BaseHbmBlockEntity {
             return isItemValid(slot, stack) ? inventory.insertItem(slot, stack, simulate) : stack;
         }
         @Override public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
-            return slot >= SLOT_COUNT ? inventory.extractItem(slot, amount, simulate) : ItemStack.EMPTY; // declog
+            return slot >= inputCount ? inventory.extractItem(slot, amount, simulate) : ItemStack.EMPTY; // declog
         }
         @Override public int getSlotLimit(int slot) { return 64; }
         @Override public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-            return slot <= SLOT_COUNT - 1 && getAmount(level, stack) >= 1;
+            return slot <= inputCount - 1 && getAmount(level, stack) >= 1;
         }
     });
     //?} elif neoforge {
@@ -65,11 +72,11 @@ public class CranePartitionerBlockEntity extends BaseHbmBlockEntity {
             return isItemValid(slot, stack) ? inventory.insertItem(slot, stack, simulate) : stack;
         }
         @Override public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
-            return slot >= SLOT_COUNT ? inventory.extractItem(slot, amount, simulate) : ItemStack.EMPTY; // declog
+            return slot >= inputCount ? inventory.extractItem(slot, amount, simulate) : ItemStack.EMPTY; // declog
         }
         @Override public int getSlotLimit(int slot) { return 64; }
         @Override public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-            return slot <= SLOT_COUNT - 1 && getAmount(level, stack) >= 1;
+            return slot <= inputCount - 1 && getAmount(level, stack) >= 1;
         }
     });
     *///?}
@@ -109,7 +116,7 @@ public class CranePartitionerBlockEntity extends BaseHbmBlockEntity {
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, CranePartitionerBlockEntity te) {
         List<ItemStack> stacks = new ArrayList<>();
-        for (int i = 0; i < SLOT_COUNT; i++) if (!te.inventory.getStackInSlot(i).isEmpty()) stacks.add(te.inventory.getStackInSlot(i));
+        for (int i = 0; i < te.inputCount; i++) if (!te.inventory.getStackInSlot(i).isEmpty()) stacks.add(te.inventory.getStackInSlot(i));
         stacks.sort((a, b) -> (int) Math.signum(a.getCount() - b.getCount()));
 
         boolean changed = false;
@@ -124,7 +131,7 @@ public class CranePartitionerBlockEntity extends BaseHbmBlockEntity {
                 changed = true;
             }
         }
-        for (int i = 0; i < SLOT_COUNT; i++) if (te.inventory.getStackInSlot(i).getCount() <= 0) te.inventory.setStackInSlot(i, ItemStack.EMPTY);
+        for (int i = 0; i < te.inputCount; i++) if (te.inventory.getStackInSlot(i).getCount() <= 0) te.inventory.setStackInSlot(i, ItemStack.EMPTY);
         if (changed) te.setChanged();
     }
 

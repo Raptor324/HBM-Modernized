@@ -70,6 +70,10 @@ public class MachineTowerLargeBlock extends DummyableMachineBlock implements com
         if (!(world.getBlockEntity(pos) instanceof MachineCoolingTowerBlockEntity tower)) return;
 
         List<Component> text = new ArrayList<>();
+        // NTM Space: Warnung ohne Atmosphaere (Original printHook, vacuumOptimised = false)
+        if (com.hbm_m.api.space.SpaceApi.condenserNeedsAtmosphere(world, false)) {
+            text.add(com.hbm_m.api.space.SpaceApi.noVacuumWarning());
+        }
         for (int i = 0; i < tower.getTanks().length; i++) {
             text.add(Component.literal(i < 1 ? "-> " : "<- ").withStyle(i < 1 ? ChatFormatting.GREEN : ChatFormatting.RED)
                     .append(FluidType.forFluid(tower.getTanks()[i].getTankType()).getLocalizedName().copy().withStyle(ChatFormatting.WHITE) /* 1.7 §r */)

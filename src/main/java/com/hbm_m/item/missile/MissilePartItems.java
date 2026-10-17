@@ -197,7 +197,7 @@ public final class MissilePartItems {
         RENDER.put("mp_stability_15_flat", new RenderInfo(PartType.FINS, 0, 3, "models/missile_parts/mp_s_15_flat.obj", "textures/models/missile_parts/stability/mp_s_15_flat.png"));
         RENDER.put("mp_stability_15_thin", new RenderInfo(PartType.FINS, 0, 3, "models/missile_parts/mp_s_15_thin.obj", "textures/models/missile_parts/stability/mp_s_15_thin.png"));
         RENDER.put("mp_stability_15_soyuz", new RenderInfo(PartType.FINS, 0, 3, "models/missile_parts/mp_s_15_soyuz.obj", "textures/models/missile_parts/stability/mp_s_15_soyuz.png"));
-        RENDER.put("mp_s_20", new RenderInfo(PartType.FINS, 0, 3, "models/missile_parts/mp_s_20.obj", "textures/models/TheGadget3_.png"));
+        RENDER.put("mp_s_20", new RenderInfo(PartType.FINS, 0, 3, "models/missile_parts/mp_s_20.obj", "textures/models/thegadget3_.png"));
         RENDER.put("mp_fuselage_10_kerosene", new RenderInfo(PartType.FUSELAGE, 4, 3, "models/missile_parts/mp_f_10_kerosene.obj", "textures/models/missile_parts/fuselages/mp_f_10_kerosene.png"));
         RENDER.put("mp_fuselage_10_kerosene_camo", new RenderInfo(PartType.FUSELAGE, 4, 3, "models/missile_parts/mp_f_10_kerosene.obj", "textures/models/missile_parts/fuselages/mp_f_10_kerosene_camo.png"));
         RENDER.put("mp_fuselage_10_kerosene_desert", new RenderInfo(PartType.FUSELAGE, 4, 3, "models/missile_parts/mp_f_10_kerosene.obj", "textures/models/missile_parts/fuselages/mp_f_10_kerosene_desert.png"));

@@ -28,7 +28,15 @@ import net.minecraft.world.phys.AABB;
  * sind; verbraucht {@code convert * powerConsumption}. Nach jeder Umwandlung laufen die Luefter eine Sekunde nach und
  * blasen Wolken seitlich aus. Sechs Anschluesse auf Hoehe 1 (Fluid und Strom).
  */
-public class MachineCondenserPoweredBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
+public class MachineCondenserPoweredBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2,
+        com.hbm_m.api.tile.IRepairable, com.hbm_m.world.gen.nbt.INBTTileEntityTransformable, com.hbm_m.api.block.IPersistentNBT {
+
+    /**
+     * E9 (Fork, nur mit Space-Addon): beschaedigt (aus NBT-Strukturen oder nach einer Explosion). Steht still, bis
+     * mit dem Schweissbrenner repariert. Ohne Addon wird das Feld nie gesetzt.
+     */
+    public boolean damaged;
+    public net.minecraft.world.level.Explosion lastExplosion;
 
     /* KONFIGURIERBAR (Original IConfigurableMachine "condenserPowered") */
     public static long maxPower = 10_000_000;
@@ -65,6 +73,9 @@ public class MachineCondenserPoweredBlockEntity extends BaseMachineBlockEntity i
 
     private void serverTick(ServerLevel world) {
 
+        // E9: Space TileEntityCondenserPowered - beschaedigt steht alles still
+        if (damaged) return;
+
         age++;
         if (age >= 2) {
             age = 0;
@@ -82,7 +93,12 @@ public class MachineCondenserPoweredBlockEntity extends BaseMachineBlockEntity i
             if (convert > 0)
                 this.waterTimer = 20;
 
-            tanks[1].setFill(tanks[1].getFill() + convert);
+            // NTM Space: vacuumOptimised = true -> nur der Tom-Feuersturm laesst verdampfen (ohne Space-Addon nie)
+            if (com.hbm_m.api.space.SpaceApi.condenserEvaporates(world, worldPosition, true)) {
+                tanks[1].setFill(tanks[1].getFill() - convert);
+            } else {
+                tanks[1].setFill(tanks[1].getFill() + convert);
+            }
             postConvert(convert);
         }
 
@@ -166,6 +182,7 @@ public class MachineCondenserPoweredBlockEntity extends BaseMachineBlockEntity i
         tanks[0].writeToNBT(tag, "water");
         tanks[1].writeToNBT(tag, "steam");
         tag.putByte("waterTimer", (byte) waterTimer);
+        if (damaged) tag.putBoolean("damaged", true);
     }
 
     @Override
@@ -174,6 +191,52 @@ public class MachineCondenserPoweredBlockEntity extends BaseMachineBlockEntity i
         tanks[0].readFromNBT(tag, "water");
         tanks[1].readFromNBT(tag, "steam");
         waterTimer = tag.getByte("waterTimer");
+        damaged = tag.getBoolean("damaged");
+    }
+
+    // ==================== E9: Beschaedigung / Reparatur (Space-Fork) ====================
+
+    @Override
+    public boolean isDamaged() { return damaged; }
+
+    private final java.util.List<RepairStack> repair = new java.util.ArrayList<>();
+
+    @Override
+    public java.util.List<RepairStack> getRepairMaterials() {
+        if (!repair.isEmpty()) return repair;
+        repair.add(new RepairStack(net.minecraft.world.item.crafting.Ingredient.of(com.hbm_m.item.material.ModMaterialItems.item(com.hbm_m.item.material.ModMaterials.STEEL, com.hbm_m.item.material.MaterialShape.PLATE_WELDED)), 4));
+        repair.add(new RepairStack(net.minecraft.world.item.crafting.Ingredient.of(com.hbm_m.item.ModItems.PIPE_STEEL.get()), 12));
+        repair.add(new RepairStack(net.minecraft.world.item.crafting.Ingredient.of(com.hbm_m.item.material.ModMaterialItems.item(com.hbm_m.item.material.ModMaterials.TCALLOY, com.hbm_m.item.material.MaterialShape.PLATE_WELDED), com.hbm_m.item.material.ModMaterialItems.item(com.hbm_m.item.material.ModMaterials.CDALLOY, com.hbm_m.item.material.MaterialShape.PLATE_WELDED)), 2));
+        return repair;
+    }
+
+    @Override
+    public void repair() {
+        damaged = false;
+        setChanged();
+        sendUpdateToClient();
+    }
+
+    @Override
+    public void tryExtinguish(Level world, BlockPos pos, EnumExtinguishType type) { }
+
+    /** Space: aus NBT-Strukturen immer beschaedigt - nur mit Addon. */
+    @Override
+    public void transformTE(net.minecraft.world.level.LevelAccessor world, int coordBaseMode) {
+        if (com.hbm_m.api.space.SpaceApi.forkActive()) damaged = true;
+    }
+
+    /** Space {@code writeNBT}: nur der Schaden wandert in den Drop. */
+    @Override
+    public void writeNBT(CompoundTag nbt) {
+        if (damaged) nbt.putBoolean("damaged", true);
+    }
+
+    /** Space {@code onBlockExploded}: erster Treffer beschaedigt. */
+    public void markDamaged() {
+        damaged = true;
+        setChanged();
+        sendUpdateToClient();
     }
 
     // ==================== Sonstiges ====================

@@ -14,8 +14,8 @@ import net.minecraft.resources.ResourceLocation;
 /** 1:1 {@code RenderEMPBlast}: Ring.obj, horizontal auf {@code scale} gestreckt, unbeleuchtet, ohne Culling. */
 public class EMPBlastRenderer extends EntityRenderer<EntityEMPBlast> {
 
-    public static final SimpleObjModel RING = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/Ring.obj"));
-    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/EMPBlast.png");
+    public static final SimpleObjModel RING = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/ring.obj"));
+    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/empblast.png");
 
     public EMPBlastRenderer(EntityRendererProvider.Context ctx) {
         super(ctx);

@@ -22,7 +22,7 @@ import net.minecraft.util.Mth;
  */
 public class SiegeLaserRenderer extends EntityRenderer<EntitySiegeLaser> {
 
-    private static final ResourceLocation UNIVERSAL = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/TheGadget3_.png");
+    private static final ResourceLocation UNIVERSAL = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/thegadget3_.png");
 
     public SiegeLaserRenderer(EntityRendererProvider.Context ctx) {
         super(ctx);

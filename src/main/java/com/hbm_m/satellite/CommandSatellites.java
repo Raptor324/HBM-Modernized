@@ -34,11 +34,14 @@ public final class CommandSatellites {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("ntmsatellites")
                 .requires(src -> src.hasPermission(4))
-                .then(Commands.literal("orbit").executes(c -> orbit(c.getSource())))
+                .then(Commands.literal("orbit").executes(c -> orbit(c.getSource(), null))
+                        // NTM Space: optionale Frequenz ("Launch the held satellite with optional frequency override.")
+                        .then(Commands.argument("frequency", IntegerArgumentType.integer())
+                                .executes(c -> orbit(c.getSource(), IntegerArgumentType.getInteger(c, "frequency")))))
                 .then(Commands.literal("descend")
                         .then(Commands.argument("frequency", IntegerArgumentType.integer())
                                 .suggests((c, b) -> SharedSuggestionProvider.suggest(
-                                        SatelliteManager.get(c.getSource().getLevel()).all().keySet().stream().map(String::valueOf), b))
+                                        satData(c.getSource()).all().keySet().stream().map(String::valueOf), b))
                                 .executes(c -> descend(c.getSource(), IntegerArgumentType.getInteger(c, "frequency")))))
                 .then(Commands.literal("list").executes(c -> list(c.getSource()))));
     }
@@ -51,13 +54,19 @@ public final class CommandSatellites {
         return player;
     }
 
-    private static int orbit(CommandSourceStack src) {
+    /** Space: Satellitendaten an der Position des Ausfuehrenden ({@code getData(world, posX, posZ)}). */
+    private static SatelliteManager satData(CommandSourceStack src) {
+        return SatelliteManager.get(src.getLevel(), (int) Math.floor(src.getPosition().x), (int) Math.floor(src.getPosition().z));
+    }
+
+    private static int orbit(CommandSourceStack src, Integer freqOverride) {
         ServerPlayer player = player(src);
         if (player == null) return 0;
 
         ItemStack held = player.getMainHandItem();
         if (held.getItem() instanceof ISatChip && held.getItem() != ModItems.SAT_CHIP.get()) {
-            SatelliteManager.get((ServerLevel) player.level()).orbit((ServerLevel) player.level(), held, ISatChip.getFreqS(held), player.getX(), player.getY(), player.getZ());
+            int freq = freqOverride != null ? freqOverride : ISatChip.getFreqS(held);
+            SatelliteManager.orbitSatellite((ServerLevel) player.level(), held, freq, player.getX(), player.getY(), player.getZ());
             held.shrink(1);
             src.sendSystemMessage(Component.translatable("commands.satellite.satellite_orbited").withStyle(ChatFormatting.GREEN));
         } else {
@@ -68,7 +77,7 @@ public final class CommandSatellites {
 
     private static int descend(CommandSourceStack src, int freq) {
         if (player(src) == null) return 0;
-        if (SatelliteManager.get(src.getLevel()).remove(freq) != null) {
+        if (satData(src).remove(freq) != null) {
             src.sendSystemMessage(Component.translatable("commands.satellite.satellite_descended").withStyle(ChatFormatting.GREEN));
         } else {
             src.sendSystemMessage(Component.translatable("commands.satellite.no_satellite").withStyle(ChatFormatting.RED));
@@ -78,7 +87,7 @@ public final class CommandSatellites {
 
     private static int list(CommandSourceStack src) {
         if (player(src) == null) return 0;
-        var sats = SatelliteManager.get(src.getLevel()).all();
+        var sats = satData(src).all();
 
         if (sats.isEmpty()) {
             src.sendSystemMessage(Component.translatable("commands.satellite.no_active_satellites").withStyle(ChatFormatting.RED));

@@ -89,7 +89,9 @@ public class GUIMachineSilex extends GuiInfoScreen<MachineSilexMenu> {
         long time = silex.getLevel() != null ? silex.getLevel().getGameTime() : 0;
 
         if (silex.mode != EnumWavelengths.NULL) {
-            float freq = 0.1F * (float) Math.pow(2, silex.mode.ordinal());
+            // E11/W-R9A-8 (Fork, nur mit Space-Addon): 0.05F * 2^ordinal (Wellenanzeige mit XRAY halbiert)
+            float freq = com.hbm_m.api.space.SpaceApi.forkActive() ? 0.05F * (float) Math.pow(2, silex.mode.ordinal())
+                    : 0.1F * (float) Math.pow(2, silex.mode.tier);
             int color = (silex.mode != EnumWavelengths.VISIBLE) ? silex.mode.guiColor : Color.HSBtoRGB(time / 50.0F, 0.5F, 1F) & 16777215;
             drawWave(g, 81, 46, 16, 84, 0.5F, freq, color, 3F, time);
         }

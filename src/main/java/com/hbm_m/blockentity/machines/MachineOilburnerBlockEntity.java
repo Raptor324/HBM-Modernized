@@ -88,17 +88,22 @@ public class MachineOilburnerBlockEntity extends MachinePollutingBlockEntity
                 int burnRate = setting * burnMultiplier;
                 int toBurn = Math.min(burnRate, tank.getFluidAmountMb());
 
-                tank.drainMb(toBurn);
+                // NTM Space: if(toBurn > 0 && breatheAir(toBurn)) { ... } - ohne Space-Addon bleibt der bisherige Ablauf
+                // (auch bei leerem Tank kein Abkuehlen) exakt erhalten
+                boolean burns = toBurn > 0 ? breatheAir(toBurn) : !com.hbm_m.api.space.SpaceApi.isInstalled();
+                if (burns) {
+                    tank.drainMb(toBurn);
 
-                int heat = (int) (type.getHeatEnergy() / 1000);
+                    int heat = (int) (type.getHeatEnergy() / 1000);
 
-                this.heatEnergy += heat * toBurn;
+                    this.heatEnergy += heat * toBurn;
 
-                if (level.getGameTime() % 5 == 0 && toBurn > 0) {
-                    super.pollute(tank.getTankType(), FluidReleaseType.BURN, toBurn * 5);
+                    if (level.getGameTime() % 5 == 0 && toBurn > 0) {
+                        super.pollute(tank.getTankType(), FluidReleaseType.BURN, toBurn * 5);
+                    }
+
+                    shouldCool = false;
                 }
-
-                shouldCool = false;
             }
         }
 

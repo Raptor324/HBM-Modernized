@@ -96,6 +96,7 @@ public class ModRecipeProvider extends RecipeProvider {
         com.hbm_m.datagen.recipes.custom.ArmorRecipeGenerator.generate(pWriter);
         com.hbm_m.datagen.recipes.custom.CustomMachineRecipeGenerator.generate(pWriter);
         com.hbm_m.datagen.recipes.custom.LegacyBedrockOreRecipeGenerator.generate(pWriter);
+        com.hbm_m.datagen.recipes.custom.BedrockFragmentRecipeGenerator.generate(pWriter);
         com.hbm_m.datagen.recipes.custom.ToolRecipeGenerator.generate(pWriter);
         // Mischer: Rezepte wie im Original statisch in com.hbm_m.recipe.MixerRecipes
         ArcWelderRecipeGenerator.generate(pWriter);

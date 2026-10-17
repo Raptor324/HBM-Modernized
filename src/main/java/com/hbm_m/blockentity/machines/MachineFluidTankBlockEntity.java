@@ -65,7 +65,8 @@ import net.minecraftforge.items.IItemHandler;
 
 @SuppressWarnings("UnstableApiUsage")
 public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements com.hbm_m.api.block.IPersistentNBT, MenuProvider, IMultiblockSidedIO, IFluidStandardTransceiverMK2, com.hbm_m.api.tile.IRepairable,
-        com.hbm_m.api.redstoneoverradio.IRORValueProvider, com.hbm_m.api.redstoneoverradio.IRORInteractive
+        com.hbm_m.api.redstoneoverradio.IRORValueProvider, com.hbm_m.api.redstoneoverradio.IRORInteractive,
+        com.hbm_m.api.tile.IOverpressurable
 {
 
     public static final int SLOT_ID_IN = 0;
@@ -339,7 +340,12 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
                 if (ftype.isAntimatter() && !entity.canStoreAntimatter()) {
                     if (entity.handleIncompatibleFluid(ftype)) return;
                     entity.fluidTank.fill(0);
-                    level.explode(null, pos.getX() + 0.5, pos.getY() + 1.5, pos.getZ() + 0.5, 5F, Level.ExplosionInteraction.BLOCK);
+                    if (entity.isBarrel() && com.hbm_m.api.space.SpaceApi.forkActive()) {
+                        // E3 (Fork, nur mit Addon): Antimaterie im falschen Fass = Antimaterie-Explosion (TileEntityBarrel)
+                        new com.hbm_m.explosion.vanillant.ExplosionVNT(level, pos.getX(), pos.getY(), pos.getZ(), 5F).makeAmat().explode();
+                    } else {
+                        level.explode(null, pos.getX() + 0.5, pos.getY() + 1.5, pos.getZ() + 0.5, 5F, Level.ExplosionInteraction.BLOCK);
+                    }
                 } else if (ftype.isCorrosive()) {
                     FT_Corrosive corrosive = ftype.getTrait(FT_Corrosive.class);
                     boolean highly = corrosive != null && corrosive.isHighlyCorrosive();
@@ -559,6 +565,27 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
         level.setBlock(worldPosition, state.setValue(com.hbm_m.block.machines.MachineFluidTankBlock.EXPLODED, this.hasExploded), 3);
     }
 
+
+    /** true fuer die Faesser ({@code barrel_*}), false fuer die grossen Tanks. */
+    public boolean isBarrel() {
+        return this instanceof BarrelIronBlockEntity || this instanceof BarrelSteelBlockEntity || this instanceof BarrelPlasticBlockEntity
+                || this instanceof BarrelCorrodedBlockEntity || this instanceof BarrelTcalloyBlockEntity || this instanceof BarrelAntimatterBlockEntity;
+    }
+
+    /**
+     * E3 (Fork, nur mit Addon): Faesser sind {@code IOverpressurable} (Space {@code TileEntityBarrel}). Ohne Addon
+     * (Master) nehmen weder Faesser noch grosse Tanks teil - RBMK-Ueberdruck entfernt und sprengt sie wie bisher.
+     */
+    @Override
+    public boolean handlesOverpressure() {
+        return isBarrel() && com.hbm_m.api.space.SpaceApi.forkActive();
+    }
+
+    /** Space {@code TileEntityBarrel.explode}: {@code hasExploded} wird dort nie gesetzt -> nur {@code markChanged}. */
+    @Override
+    public void explode(Level world, BlockPos pos) {
+        this.setChanged();
+    }
 
     /** Original {@code repair}: nur die Beschaedigung, ein Brand brennt weiter. */
     @Override
@@ -950,21 +977,21 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
 
         @Override
         public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
-            if (entity.hasExploded || entity.mode == 0 || entity.mode == 3) return 0;
+            if (entity.hasExploded || entity.mode == 2 || entity.mode == 3) return 0; // Original-Modus: 0 annehmen, 1 Puffer
             return internal.fill(resource, action);
         }
 
         @NotNull
         @Override
         public net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
-            if (entity.hasExploded || entity.mode == 2 || entity.mode == 3) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            if (entity.hasExploded || entity.mode == 0 || entity.mode == 3) return net.minecraftforge.fluids.FluidStack.EMPTY;
             return internal.drain(resource, action);
         }
 
         @NotNull
         @Override
         public net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
-            if (entity.hasExploded || entity.mode == 2 || entity.mode == 3) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            if (entity.hasExploded || entity.mode == 0 || entity.mode == 3) return net.minecraftforge.fluids.FluidStack.EMPTY;
             return internal.drain(maxDrain, action);
         }
     }
@@ -994,21 +1021,21 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
 
         @Override
         public int fill(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
-            if (entity.hasExploded || entity.mode == 0 || entity.mode == 3) return 0;
+            if (entity.hasExploded || entity.mode == 2 || entity.mode == 3) return 0; // Original-Modus: 0 annehmen, 1 Puffer
             return internal.fill(resource, action);
         }
 
         @NotNull
         @Override
         public net.neoforged.neoforge.fluids.FluidStack drain(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
-            if (entity.hasExploded || entity.mode == 2 || entity.mode == 3) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            if (entity.hasExploded || entity.mode == 0 || entity.mode == 3) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
             return internal.drain(resource, action);
         }
 
         @NotNull
         @Override
         public net.neoforged.neoforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
-            if (entity.hasExploded || entity.mode == 2 || entity.mode == 3) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            if (entity.hasExploded || entity.mode == 0 || entity.mode == 3) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
             return internal.drain(maxDrain, action);
         }
     }

@@ -79,7 +79,7 @@ public class BatteryREDDRenderer implements com.hbm_m.client.render.HbmBerBounds
     }
 
     /** Die gelben Schlieren: je Radseite acht Speichen, drei auslaufende Segmente ueber {@code span} Grad. */
-    private static void renderStreaks(PoseStack ps, VertexConsumer vc, float speed) {
+    static void renderStreaks(PoseStack ps, VertexConsumer vc, float speed) {
         double len = 4.25D;
         double width = 0.125D;
         double span = speed * 0.75;
@@ -124,7 +124,7 @@ public class BatteryREDDRenderer implements com.hbm_m.client.render.HbmBerBounds
         }
     }
 
-    private static void renderSparkle(BatteryREDDBlockEntity redd, PoseStack ps, MultiBufferSource buffers) {
+    static void renderSparkle(BatteryREDDBlockEntity redd, PoseStack ps, MultiBufferSource buffers) {
         long time = System.currentTimeMillis();
         float alpha = 0.45F + (float) (Math.sin(time / 1000D) * 0.15F);
         float alphaMult = redd.getSpeed() / 15F;
@@ -150,7 +150,7 @@ public class BatteryREDDRenderer implements com.hbm_m.client.render.HbmBerBounds
         return Math.sin(Math.PI / 2D * Math.cos(x));
     }
 
-    private static void renderZaps(BatteryREDDBlockEntity redd, PoseStack ps, MultiBufferSource buffers) {
+    static void renderZaps(BatteryREDDBlockEntity redd, PoseStack ps, MultiBufferSource buffers) {
         Random rand = new Random(redd.getLevel().getGameTime() / 5);
         rand.nextBoolean();
 

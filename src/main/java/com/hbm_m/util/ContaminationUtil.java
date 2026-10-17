@@ -154,7 +154,10 @@ public final class ContaminationUtil {
         }
 
         Class<?> entityClass = e.getClass();
+        // E15 (Fork, nur mit Space-Addon): Ozelot und Quackos sind im Space-Fork nicht mehr immun
+        boolean fork = com.hbm_m.api.space.SpaceApi.forkActive();
         for (Class<?> clazz : IMMUNE_ENTITIES) {
+            if (fork && (clazz == Ocelot.class || clazz == com.hbm_m.entity.mob.EntityQuackos.class)) continue;
             if (clazz.isAssignableFrom(entityClass)) {
                 return true;
             }
@@ -243,6 +246,10 @@ public final class ContaminationUtil {
         player.sendSystemMessage(geigerRadLine("geiger.chunkRad", rads, "RAD/s", getRadTierColor(rads)));
         player.sendSystemMessage(geigerRadLine("geiger.envRad", env, "RAD/s", getRadTierColor(env)));
         player.sendSystemMessage(geigerRadLine("geiger.playerRad", eRad, "RAD", getPlayerRadTierColor(eRad)));
+        if (com.hbm_m.api.space.SpaceApi.isInstalled()) { // NTM Space (W-R9A-2): Neutronenaktivierung, Farbe wie Umgebung (1:1)
+            double neut = ((int) (HbmLivingProps.getNeutronActivation(player) * 10)) / 10D;
+            player.sendSystemMessage(geigerRadLine("geiger.playerAct", neut, "RAD/s", getRadTierColor(env)));
+        }
         player.sendSystemMessage(Component.translatable("geiger.playerRes")
                 .withStyle(ChatFormatting.YELLOW)
                 .append(radValueComponent(String.valueOf(res), "% (" + resKoeff + ")", resKoeff > 0 ? ChatFormatting.GREEN : ChatFormatting.WHITE)));

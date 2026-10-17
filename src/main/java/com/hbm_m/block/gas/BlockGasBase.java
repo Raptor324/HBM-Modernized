@@ -56,7 +56,9 @@ public abstract class BlockGasBase extends Block {
         super.animateTick(state, world, pos, rand);
 
         Player p = com.hbm_m.client.ClientAccess.player();
-        if (p != null && p.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.HEAD).is(com.hbm_m.item.ModItems.ASHGLASSES.get())) {
+        // E11 (Fork, nur mit Space-Addon): Aschepartikel nur in 1/9 der Faelle (rand.nextInt(9) == 1)
+        if (p != null && p.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.HEAD).is(com.hbm_m.item.ModItems.ASHGLASSES.get())
+                && (!com.hbm_m.api.space.SpaceApi.forkActive() || rand.nextInt(9) == 1)) {
             net.minecraft.nbt.CompoundTag data = new net.minecraft.nbt.CompoundTag();
             data.putString("type", "vanillaExt");
             data.putString("mode", "cloud");

@@ -118,14 +118,17 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
         this.oilTank = new FluidTank(64_000) { // Original 64.000 mB
             @Override
             public boolean isFluidValid(net.minecraft.world.level.material.Fluid fluid) {
-                return fluid.isSame(ModFluids.CRUDE_OIL.getSource());
+                // Space-Addon: Lagerstaette setzt den Tanktyp (Original setTankType), ohne Addon nur Rohoel
+                return fluid.isSame(ModFluids.CRUDE_OIL.getSource())
+                        || (com.hbm_m.api.space.SpaceApi.isInstalled() && fluid.isSame(getTankType()));
             }
         };
 
         this.gasTank = new FluidTank(64_000) { // Original 64.000 mB
             @Override
             public boolean isFluidValid(net.minecraft.world.level.material.Fluid fluid) {
-                return fluid.isSame(ModFluids.GAS.getSource());
+                return fluid.isSame(ModFluids.GAS.getSource())
+                        || (com.hbm_m.api.space.SpaceApi.isInstalled() && fluid.isSame(getTankType()));
             }
         };
 
@@ -179,10 +182,8 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
     }
 
     private boolean isFluidContainer(ItemStack stack) {
-        // capability обвязка сейчас не компилируется в этой точке.
-        // Чтобы не блокировать сборку, принимаем любой fluid item.
-        // Логику можно будет ужесточить после синка capability-слоя.
-        return true;
+        // Registry-Behaelter (Kanister, Gasflaschen ...) und Capability-Behaelter
+        return com.hbm_m.api.fluids.FluidItemAccess.isFluidContainer(stack);
     }
 
     private boolean isUpgradeItem(ItemStack stack) {
@@ -307,34 +308,14 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
      * Обработка жидкостных контейнеров (канистр и баллонов).
      */
     protected void processFluidContainers() {
-        // Обработка канистры для нефти
-        processContainerPair(SLOT_CANISTER_IN, SLOT_CANISTER_OUT, oilTank);
-
-        // Обработка баллона для газа
-        processContainerPair(SLOT_GAS_IN, SLOT_GAS_OUT, gasTank);
-    }
-
-    /**
-     * Перелив из танка машины в контейнер в слоте инвентаря.
-     * Кросс-платформенная реализация через FluidHooks.
-     */
-    protected void processContainerPair(int inputSlot, int outputSlot, FluidTank sourceTank) {
-        ItemStack inputStack = inventory.getStackInSlot(inputSlot);
-        if (inputStack.isEmpty() || sourceTank.isEmpty()) return;
-
-        int drainable = sourceTank.getFluidAmountMb();
-        var result = com.hbm_m.platform.FluidHooks.insertFluidIntoItem(inputStack, sourceTank.getStoredFluid(), drainable, false);
-        if (result.amountInserted() > 0) {
-            sourceTank.drainMb(result.amountInserted());
-            ItemStack outStack = inventory.getStackInSlot(outputSlot);
-            if (outStack.isEmpty()) {
-                inventory.setStackInSlot(outputSlot, result.remainder());
-                inputStack.shrink(1);
-            } else if (com.hbm_m.platform.FluidHooks.areItemsStackable(outStack, result.remainder())
-                    && outStack.getCount() + result.remainder().getCount() <= outStack.getMaxStackSize()) {
-                outStack.grow(result.remainder().getCount());
-                inputStack.shrink(1);
-            }
+        // Original TileEntityOilDrillBase: tanks[0].unloadTank(1, 2, slots); tanks[1].unloadTank(3, 4, slots) - ueber die
+        // Loader-Kette, damit auch Kanister/Gasflaschen/Tanks der FluidContainerRegistry (ohne Capability) gefuellt werden.
+        ItemStack[] slots = new ItemStack[inventory.getSlots()];
+        for (int i = 0; i < slots.length; i++) slots[i] = inventory.getStackInSlot(i);
+        boolean changed = oilTank.unloadTank(SLOT_CANISTER_IN, SLOT_CANISTER_OUT, slots);
+        changed |= gasTank.unloadTank(SLOT_GAS_IN, SLOT_GAS_OUT, slots);
+        if (changed) {
+            for (int i : new int[] { SLOT_CANISTER_IN, SLOT_CANISTER_OUT, SLOT_GAS_IN, SLOT_GAS_OUT }) inventory.setStackInSlot(i, slots[i]);
             setChanged();
         }
     }
@@ -374,6 +355,25 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
 
         // Добыча
         Block depositBlock = level.getBlockState(orePos).getBlock();
+
+        // NTM Space: Addon-Lagerstaette (BlockOreFluid) -> TileEntityOilDrillBase.onSuck(block, ...) (W-R8B-2)
+        com.hbm_m.api.space.SpaceResources.FluidDepositBlock dep = com.hbm_m.api.space.SpaceResources.fluidDepositBlock(depositBlock);
+        if (dep != null) {
+            oilTank.setTankType(com.hbm_m.blockentity.OilDrillBaseBlockEntity.depositFluid(dep.getPrimaryFluid()));
+            gasTank.setTankType(com.hbm_m.blockentity.OilDrillBaseBlockEntity.depositFluid(dep.getSecondaryFluid()));
+            oilTank.setFill(Math.min(oilTank.getFill() + dep.getPrimaryFluidAmount(), oilTank.getMaxFill()));
+            if (gasTank.getTankType() != ModFluids.NONE.getSource())
+                gasTank.setFill(Math.min(gasTank.getFill() + dep.getSecondaryFluidAmount(), gasTank.getMaxFill()));
+            dep.drain(level, orePos, 1D);
+            indicator = 0;
+            return;
+        }
+        if (com.hbm_m.api.space.SpaceApi.isInstalled()) {
+            // Tanks koennen von einer Addon-Lagerstaette umgestellt sein; HBM-Lagerstaetten liefern Rohoel/Erdgas
+            oilTank.setTankType(ModFluids.CRUDE_OIL.getSource());
+            gasTank.setTankType(ModFluids.GAS.getSource());
+        }
+
         boolean isBedrockDeposit = isBedrockOilDeposit(depositBlock);
         int oil, gas;
 
@@ -453,7 +453,8 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
     }
 
     protected boolean isAnyOilDeposit(Block block) {
-        return block == ModBlocks.ORE_OIL.get()
+        return com.hbm_m.api.space.SpaceResources.fluidDepositBlock(block) != null
+                || block == ModBlocks.ORE_OIL.get()
                 || block == ModBlocks.ORE_BEDROCK_OIL.get()
                 || block == ModBlocks.BEDROCK_OIL.get();
     }

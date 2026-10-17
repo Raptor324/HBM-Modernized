@@ -276,7 +276,7 @@ public class PneumoTubeBlockEntity extends BaseMachineBlockEntity
     @Override
     public boolean canConnect(Fluid type, Direction dir) {
         return dir != insertionDir && dir != ejectionDir
-                && type == ModFluids.AIR.getSource() && isCompressor();
+                && type == (com.hbm_m.api.space.SpaceApi.forkActive() ? compair.getTankType() : ModFluids.AIR.getSource()) && isCompressor();
     }
 
     @Override

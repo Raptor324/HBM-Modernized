@@ -24,7 +24,7 @@ public class GunB92ItemRenderer extends BlockEntityWithoutLevelRenderer {
 
     private static GunB92ItemRenderer instance;
     public static final ResourceLocation ICON_MODEL = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "item/gun_b92_icon");
-    private static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/ModelB92SM.png");
+    private static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/modelb92sm.png");
 
     private ModelB92 model;
 

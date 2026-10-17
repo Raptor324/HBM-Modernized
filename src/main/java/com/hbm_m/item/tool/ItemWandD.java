@@ -50,6 +50,10 @@ public class ItemWandD extends Item implements ITooltipProvider {
         if (world.isClientSide)
             return InteractionResultHolder.pass(stack);
 
+        // Space-API: NTM Space ersetzt ItemWandD vollstaendig (Teleporter/Atmosphaere/Sonne); ohne Addon wirkungslos
+        if (com.hbm_m.api.space.SpaceApi.wandD().active())
+            return com.hbm_m.api.space.SpaceApi.wandD().use(world, player, hand, stack);
+
         // Library.rayTrace(player, 500, 1, false, true, false)
         HitResult pos = player.pick(500, 1F, false);
 
@@ -66,6 +70,10 @@ public class ItemWandD extends Item implements ITooltipProvider {
 
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
+        if (com.hbm_m.api.space.SpaceApi.wandD().active()) {
+            com.hbm_m.api.space.SpaceApi.wandD().appendTooltip(stack, level, list);
+            return;
+        }
         list.add(Component.literal("Used for debugging purposes."));
     }
 }

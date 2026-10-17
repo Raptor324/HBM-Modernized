@@ -58,11 +58,14 @@ public class JetpackBooster extends JetpackFueledBase {
 
         if (getFuel(stack) > 0 && props.isJetpackActive()) {
 
+            // NTM Space: Schub skaliert mit der Schwerkraft (CelestialBody.getGravity) - Erde: Faktor 1
+            float gravity = com.hbm_m.api.space.SpaceApi.gravity(player);
+
             Vec3 m = player.getDeltaMovement();
             double mx = m.x, my = m.y, mz = m.z;
 
             if (my < 0.6D)
-                my += 0.1D;
+                my += 0.1D * Math.min(gravity / com.hbm_m.api.space.SpaceEnvironment.STANDARD_GRAVITY, 1);
 
             Vec3 look = player.getLookAngle();
 

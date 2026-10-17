@@ -319,4 +319,10 @@ public class RBMKCraneConsoleBlockEntity extends RBMKColumnBlockEntity {
         if (tag.contains("loadedEnrichment")) loadedEnrichment = tag.getDouble("loadedEnrichment");
         loadedItem = tag.contains("loadedItem") ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("loadedItem"), registries) : ItemStack.EMPTY;
     }
+
+    /** 1:1 TileEntityCraneConsole.getRenderBoundingBox (Render-Migration: Raptors Pfad cullt nach dieser Box, der alte BER zeichnete immer). */
+    @Override
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return com.hbm_m.platform.RenderBounds.INFINITE;
+    }
 }

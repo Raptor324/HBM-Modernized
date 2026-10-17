@@ -319,13 +319,16 @@ public class ArmorAccessoryLayer<T extends LivingEntity, M extends HumanoidModel
         if (body.zRot != 0.0F || body.yRot != 0.0F || body.xRot != 0.0F)
             pose.mulPose(new Quaternionf().rotationZYX(body.zRot, body.yRot, body.xRot));
 
-        if (type != 1 && entity.onGround()) {
+        // E11 (Fork, nur mit Space-Addon): Fluegel entspannen auch beim Reiten (relaxWings = onGround || ridingEntity)
+        boolean relaxWings = entity.onGround() || (com.hbm_m.api.space.SpaceApi.forkActive() && entity.isPassenger());
+
+        if (type != 1 && relaxWings) {
             rot = 20;
             rot2 = 160;
         }
 
         if (type == 1) {
-            if (entity.onGround()) {
+            if (relaxWings) {
                 rot = 30;
                 rot2 = -30;
             } else if (entity.getDeltaMovement().y < -0.1) {

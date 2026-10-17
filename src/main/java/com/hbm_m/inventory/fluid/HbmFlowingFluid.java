@@ -33,8 +33,19 @@ public final class HbmFlowingFluid {
         return from.getBlock() instanceof HbmFluidBlock b ? b.canDisplace(level, to, toState) : null;
     }
 
+    /** E14 (Fork, nur mit Space-Addon): Schrabidische Saeure mit Standard-quantaPerBlock (8) = dropOff 1 statt 2. */
+    static int forkDropOff(Fluid self, int dropOff) {
+        if (com.hbm_m.api.space.SpaceApi.forkActive() && self.isSame(WorldFluids.SCHRABIDIC.getSource())) return 1;
+        return dropOff;
+    }
+
     public static class Source extends ArchitecturyFlowingFluid.Source {
         public Source(ArchitecturyFluidAttributes attributes) { super(attributes); }
+
+        @Override
+        protected int getDropOff(net.minecraft.world.level.LevelReader level) {
+            return forkDropOff(this, super.getDropOff(level));
+        }
 
         @Override
         public void tick(Level level, BlockPos pos, FluidState state) {
@@ -66,6 +77,11 @@ public final class HbmFlowingFluid {
 
     public static class Flowing extends ArchitecturyFlowingFluid.Flowing {
         public Flowing(ArchitecturyFluidAttributes attributes) { super(attributes); }
+
+        @Override
+        protected int getDropOff(net.minecraft.world.level.LevelReader level) {
+            return forkDropOff(this, super.getDropOff(level));
+        }
 
         @Override
         public void tick(Level level, BlockPos pos, FluidState state) {

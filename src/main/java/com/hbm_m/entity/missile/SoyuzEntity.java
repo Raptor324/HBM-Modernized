@@ -153,7 +153,7 @@ public class SoyuzEntity extends Entity {
 
                 if (load.getItem() instanceof com.hbm_m.item.ISatChip) {
                     int freq = com.hbm_m.item.ISatChip.getFreqS(load);
-                    com.hbm_m.satellite.SatelliteManager.get(server).orbit(server, load, freq, getX(), getY(), getZ());
+                    com.hbm_m.satellite.SatelliteManager.orbitSatellite(server, load, freq, getX(), getY(), getZ()); // Space-API W-R6C-2
                 }
             }
         } else if (mode == 1 && level() instanceof ServerLevel server) {

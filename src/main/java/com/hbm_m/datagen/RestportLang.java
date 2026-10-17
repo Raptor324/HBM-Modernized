@@ -2985,11 +2985,13 @@ public final class RestportLang {
         e("wavelengths.name.ir", "Infrared", "Инфракрасный");
         e("wavelengths.name.uv", "Ultraviolet", "Ультрафиолет");
         e("wavelengths.name.visible", "Visible Light", "Видимый свет");
+        e("wavelengths.name.xray", "X-Ray", "Рентген");
         e("wavelengths.waveRange.drx", "1916169 planck lengths", "1916169 планковских длин");
         e("wavelengths.waveRange.gamma", "<100pm", "<100пм");
         e("wavelengths.waveRange.ir", "780nm-1mm", "780нм-1мм");
         e("wavelengths.waveRange.uv", "100nm-400nm", "100нм-400нм");
         e("wavelengths.waveRange.visible", "400nm-780nm", "400нм-780нм");
+        e("wavelengths.waveRange.xray", "10nm-10pm", "10нм-10пм");
         e("weapon.ability.beheader", "Decapitator", "Обезглавливатель");
         e("weapon.ability.bobble", "Luck of the Collector", "Удача коллекционера");
         e("weapon.ability.chainsaw", "Painsaw", "Бензоболь");

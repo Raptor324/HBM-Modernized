@@ -57,13 +57,15 @@ public class DeuteriumExtractorBlockEntity extends BaseHbmBlockEntity implements
 
         this.updateConnections(world, pos);
 
-        if (hasPower() && hasEnoughWater() && tanks[1].getMaxFill() > tanks[1].getFill()) {
+        // E8 (Fork, nur mit Space-Addon): zusaetzlich power > 200, Verbrauch getMaxPower()/100 statt /20
+        boolean fork = com.hbm_m.api.space.SpaceApi.forkActive();
+        if (hasPower() && (!fork || this.power > 200) && hasEnoughWater() && tanks[1].getMaxFill() > tanks[1].getFill()) {
             int convert = Math.min(tanks[1].getMaxFill(), tanks[0].getFill()) / 50;
             convert = Math.min(convert, tanks[1].getMaxFill() - tanks[1].getFill());
 
             tanks[0].setFill(tanks[0].getFill() - convert * 50); //dividing first, then multiplying, will remove any rounding issues
             tanks[1].setFill(tanks[1].getFill() + convert);
-            power -= this.getMaxEnergyStored() / 20;
+            power -= this.getMaxEnergyStored() / powerDivisor();
         }
 
         for (Direction dir : Direction.values()) {
@@ -83,7 +85,12 @@ public class DeuteriumExtractorBlockEntity extends BaseHbmBlockEntity implements
     }
 
     public boolean hasPower() {
-        return power >= this.getMaxEnergyStored() / 20;
+        return power >= this.getMaxEnergyStored() / powerDivisor();
+    }
+
+    /** Master 20, Space-Fork 100 (E8). */
+    public static long powerDivisor() {
+        return com.hbm_m.api.space.SpaceApi.forkActive() ? 100 : 20;
     }
 
     public boolean hasEnoughWater() {

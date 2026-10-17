@@ -51,6 +51,8 @@ public class SilexRecipe extends PlatformRecipe {
     private final int fluidConsumed;
     private final int laser;
     private final List<WeightedOutput> outputs;
+    /** W-R9B5-3: Space-Rezeptstufe XRAY (JSON {@code "wavelength": "xray"}), s. {@link #isXray()}. */
+    private boolean xray;
 
     public SilexRecipe(ResourceLocation id, Ingredient input, int pelletState, List<ResourceLocation> fluids,
                        int fluidProduced, int fluidConsumed, int laser, List<WeightedOutput> outputs) {
@@ -72,6 +74,12 @@ public class SilexRecipe extends PlatformRecipe {
     /** Noetige Wellenlaenge als {@code EnumWavelengths.ordinal()}. */
     public int getLaser() { return laser; }
     public List<WeightedOutput> getOutputs() { return outputs; }
+    /**
+     * NTM Space {@code SILEXRecipe(..., 4)} = XRAY: bearbeitbar von XRAY/GAMMA/DRX, Tempo nach der Space-Stufe
+     * (XRAY 1, GAMMA 2, DRX 4). HBM-Rezepte: immer false.
+     */
+    public boolean isXray() { return xray; }
+    public SilexRecipe setXray(boolean xray) { this.xray = xray; return this; }
 
     /** Kompatibilitaet (JEI): bei Item-Eingang verbrauchtes Peroxid je Item. */
     public int getPeroxideMb() { return fluidProduced; }
@@ -165,7 +173,8 @@ public class SilexRecipe extends PlatformRecipe {
                 int weight = GsonHelper.getAsInt(entry, "weight", 1);
                 outputs.add(new WeightedOutput(stack, Math.max(1, weight)));
             }
-            return new SilexRecipe(recipeId, input, pelletState, fluids, produced, consumed, laser, outputs);
+            boolean xray = "xray".equals(GsonHelper.getAsString(json, "wavelength", ""));
+            return new SilexRecipe(recipeId, input, pelletState, fluids, produced, consumed, xray ? 4 : laser, outputs).setXray(xray);
         }
 
         @Override
@@ -185,7 +194,8 @@ public class SilexRecipe extends PlatformRecipe {
                 int weight = buf.readVarInt();
                 outputs.add(new WeightedOutput(stack, weight));
             }
-            return new SilexRecipe(recipeId, input, pelletState, fluids, produced, consumed, laser, outputs);
+            boolean xray = buf.readBoolean();
+            return new SilexRecipe(recipeId, input, pelletState, fluids, produced, consumed, laser, outputs).setXray(xray);
         }
 
         @Override
@@ -202,6 +212,7 @@ public class SilexRecipe extends PlatformRecipe {
                 RecipeHooks.writeItem(buf, out.stack());
                 buf.writeVarInt(out.weight());
             }
+            buf.writeBoolean(recipe.xray);
         }
     }
 }

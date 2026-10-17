@@ -124,7 +124,8 @@ public class MachineElectrolyserBlockEntity extends BaseMachineBlockEntity imple
 
         if (level.getGameTime() % 20 == 0) {
             for (BlockPos[] con : this.getConPos()) {
-                Direction d = con[1] == null ? getDir() : getDir().getOpposite();
+                Direction d = con.length > 2 ? Direction.getNearest(con[2].getX(), con[2].getY(), con[2].getZ())
+                        : con[1] == null ? getDir() : getDir().getOpposite();
                 BlockPos p = con[0];
                 this.trySubscribe(tanks[0].getTankType(), level, p, d);
                 this.trySubscribe(tanks[3].getTankType(), level, p, d);
@@ -215,7 +216,7 @@ public class MachineElectrolyserBlockEntity extends BaseMachineBlockEntity imple
         BlockPos back = p.relative(dir, -6);
         BlockPos front = p.relative(dir, 6);
 
-        return new BlockPos[][] {
+        BlockPos[][] master = new BlockPos[][] {
                 { back, back },
                 { back.relative(rot), back },
                 { back.relative(rot, -1), back },
@@ -223,13 +224,24 @@ public class MachineElectrolyserBlockEntity extends BaseMachineBlockEntity imple
                 { front.relative(rot), null },
                 { front.relative(rot, -1), null }
         };
+        if (!com.hbm_m.api.space.SpaceApi.forkActive()) return master;
+
+        // E8 (Fork, nur mit Space-Addon): vier weitere DirPos; drittes Feld = Richtung als Einheitsvektor
+        BlockPos rotV = BlockPos.ZERO.relative(rot);
+        BlockPos rotOppV = BlockPos.ZERO.relative(rot.getOpposite());
+        BlockPos[][] fork = java.util.Arrays.copyOf(master, master.length + 4);
+        fork[master.length] = new BlockPos[] { p.relative(rot, -4), null, rotOppV };
+        fork[master.length + 1] = new BlockPos[] { p.relative(rot, 2), null, rotV };
+        fork[master.length + 2] = new BlockPos[] { p.relative(dir, -5).relative(rot, 2), null, rotV };
+        fork[master.length + 3] = new BlockPos[] { p.relative(dir, 5).relative(rot, 2), null, rotV };
+        return fork;
     }
 
     public boolean canProcessFluid() {
 
         if (this.energy < usageFluid) return false;
 
-        ElectrolysisRecipe recipe = ElectrolyserFluidRecipes.getRecipe(tanks[0].getTankType());
+        ElectrolysisRecipe recipe = ElectrolyserFluidRecipes.getRecipe(level, tanks[0].getTankType());
 
         if (recipe == null) return false;
         tanks[1].setTankType(recipe.output1.type());
@@ -255,7 +267,7 @@ public class MachineElectrolyserBlockEntity extends BaseMachineBlockEntity imple
 
     public void processFluids() {
 
-        ElectrolysisRecipe recipe = ElectrolyserFluidRecipes.getRecipe(tanks[0].getTankType());
+        ElectrolysisRecipe recipe = ElectrolyserFluidRecipes.getRecipe(level, tanks[0].getTankType());
         tanks[0].setFill(tanks[0].getFill() - recipe.amount);
         tanks[1].setTankType(recipe.output1.type());
         tanks[2].setTankType(recipe.output2.type());
@@ -363,7 +375,7 @@ public class MachineElectrolyserBlockEntity extends BaseMachineBlockEntity imple
     }
 
     public int getDurationFluid() {
-        ElectrolysisRecipe result = ElectrolyserFluidRecipes.getRecipe(tanks[0].getTankType());
+        ElectrolysisRecipe result = ElectrolyserFluidRecipes.getRecipe(level, tanks[0].getTankType());
         int base = result != null ? result.duration : 100;
         int speed = upgradeManager.getLevel(UpgradeType.SPEED) - Math.min(upgradeManager.getLevel(UpgradeType.POWER), 1);
         return (int) Math.ceil((base * Math.max(1F - 0.25F * speed, 0.2)));

@@ -44,6 +44,31 @@ public class SiegeTier {
         return ModMaterialItems.stack(ModMaterials.STEEL, MaterialShape.INGOT, 1);
     }
 
+    private static Supplier<ItemStack> steel(int n) {
+        return () -> ModMaterialItems.stack(ModMaterials.STEEL, MaterialShape.INGOT, n);
+    }
+
+    private static Supplier<ItemStack> item(Supplier<? extends net.minecraft.world.level.ItemLike> item, int n) {
+        return () -> new ItemStack(item.get(), n);
+    }
+
+    /**
+     * E5 (Fork, nur mit Addon): Beute je Stufe 1:1 NTM Space {@code SiegeTier.registerTiers}
+     * ({@code circuit CAPACITOR} = {@code hbm_m:capacitor}, {@code ADVANCED} = {@code hbm_m:advanced_circuit}).
+     */
+    private static void registerForkDrops() {
+        DEFAULT_BUFF.forkDrop(steel(1));
+        CLAY.forkDrop(steel(1));
+        STONE.forkDrop(steel(4));
+        IRON.forkDrop(steel(6));
+        SILVER.forkDrop(steel(8));
+        GOLD.forkDrop(steel(8)).forkDrop(item(com.hbm_m.item.ModItems.CAPACITOR, 2));
+        DESH.forkDrop(steel(16)).forkDrop(item(com.hbm_m.item.ModItems.CAPACITOR, 3));
+        SCHRAB.forkDrop(steel(32)).forkDrop(() -> ModMaterialItems.stack(ModMaterials.COBALT, MaterialShape.INGOT, 2))
+                .forkDrop(item(com.hbm_m.item.ModItems.ADVANCED_CIRCUIT, 3));
+        DNT.forkDrop(() -> ModMaterialItems.stack(ModMaterials.STARMETAL, MaterialShape.INGOT, 1));
+    }
+
     public static void registerTiers() {
         if (nextID > 0) return;
         DEFAULT_BUFF =	new SiegeTier(20, "buff")		.addDrop(SiegeTier::steel)	.setDR(0.2F)										.setDMG(2F)									.setLaser(0F, 0F, false);
@@ -55,6 +80,7 @@ public class SiegeTier {
         DESH =			new SiegeTier(150, "desh")		.addDrop(SiegeTier::steel)	.setDR(0.7F)	.setDT(7F)	.setNF()	.setFP()	.setDMG(25F)	.setSP(0.5F)	.setFF()	.setLaser(0.05F, 1.5F, true);
         SCHRAB =		new SiegeTier(250, "schrab")	.addDrop(SiegeTier::steel)	.setDR(0.7F)	.setDT(10F)	.setNF()	.setFP()	.setDMG(50F)	.setSP(1F)		.setFF()	.setLaser(0.1F, 2F, true);
         DNT =			new SiegeTier(500, "dnt")		.addDrop(SiegeTier::steel)	.setDR(0.9F)	.setDT(20F)	.setNF()	.setFP()	.setDMG(100F)	.setSP(1F)		.setFF()	.setLaser(0.2F, 2F, true);
+        registerForkDrops();
     }
 
     public int id;
@@ -68,6 +94,13 @@ public class SiegeTier {
     public boolean noFall = false;
     public boolean noFriendlyFire = false;
     public List<Supplier<ItemStack>> dropItem = new ArrayList<>();
+    /** E5: Beute des Space-Forks (nur mit Addon, s. {@link #drops()}). */
+    public List<Supplier<ItemStack>> forkDropItem = new ArrayList<>();
+
+    /** Beute dieser Stufe: Master {@link #dropItem}, mit Space-Addon {@link #forkDropItem}. */
+    public List<Supplier<ItemStack>> drops() {
+        return com.hbm_m.api.space.SpaceApi.forkActive() ? forkDropItem : dropItem;
+    }
 
     public float laserBreak = 0F;
     public float laserExplosive = 0F;
@@ -123,6 +156,11 @@ public class SiegeTier {
         this.laserBreak = breaking;
         this.laserExplosive = explosive;
         this.laserIncendiary = incendiary;
+        return this;
+    }
+
+    private SiegeTier forkDrop(Supplier<ItemStack> drop) {
+        this.forkDropItem.add(drop);
         return this;
     }
 

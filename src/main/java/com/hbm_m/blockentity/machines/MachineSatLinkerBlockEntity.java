@@ -59,11 +59,12 @@ public class MachineSatLinkerBlockEntity extends BaseHbmBlockEntity implements M
         ItemStack target = be.inventory.getStackInSlot(SLOT_COPY_TARGET);
         if (source.getItem() instanceof ISatChip && target.getItem() instanceof ISatChip) {
             ISatChip.setFreqS(target, ISatChip.getFreqS(source));
+            com.hbm_m.api.space.SpaceApi.satellites().onLinkerCopy(source, target); // W-R6C-3 (Space: copyItemData)
         }
 
         ItemStack toRandomize = be.inventory.getStackInSlot(SLOT_RANDOMIZE);
         if (toRandomize.getItem() instanceof ISatChip) {
-            SatelliteManager manager = SatelliteManager.get(server);
+            SatelliteManager manager = SatelliteManager.get(server, pos.getX(), pos.getZ());
             int freq = server.getRandom().nextInt(100_000);
             if (!manager.isFreqTaken(freq)) {
                 ISatChip.setFreqS(toRandomize, freq);

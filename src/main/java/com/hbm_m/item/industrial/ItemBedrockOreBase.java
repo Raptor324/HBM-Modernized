@@ -60,6 +60,8 @@ public class ItemBedrockOreBase extends Item implements ITooltipProvider {
     @Override
     public void appendHbmTooltip(@NotNull ItemStack stack, @Nullable Level level,
                                  @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
+        // NTM Space (W-R8B-1): Koerper + Sorten des Koerpers vom Addon
+        if (com.hbm_m.api.space.SpaceApi.bedrockOres().appendBaseOreTooltip(stack, tooltip)) return;
         for (BedrockOreDensity.Type type : BedrockOreDensity.Type.values()) {
             tooltip.add(typeLine(type, 0));
         }

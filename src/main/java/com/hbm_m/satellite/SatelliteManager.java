@@ -40,6 +40,24 @@ public class SatelliteManager extends SavedData {
         *///?}
     }
 
+    /**
+     * W-R6C-2: Satellitendaten an Position x/z (Original NTM Space {@code SatelliteSavedData.getData(world, x, z)}); ohne
+     * Addon identisch mit {@link #get(ServerLevel)}.
+     */
+    public static SatelliteManager get(ServerLevel level, int x, int z) {
+        return get(com.hbm_m.api.space.SpaceApi.satellites().satelliteLevel(level, x, z));
+    }
+
+    /**
+     * W-R6C-2: Satellit aussetzen (Original {@code XSatelliteRegistry.orbit}): zuerst der Addon-Haken, sonst HBM-Standard
+     * in der Satellitenwelt an x/z.
+     */
+    public static void orbitSatellite(ServerLevel level, ItemStack stack, int freq, double x, double y, double z) {
+        if (com.hbm_m.api.space.SpaceApi.satellites().orbit(level, stack, freq, x, y, z)) return;
+        ServerLevel target = com.hbm_m.api.space.SpaceApi.satellites().satelliteLevel(level, (int) Math.floor(x), (int) Math.floor(z));
+        get(target).orbit(target, stack, freq, x, y, z);
+    }
+
     private static SatelliteManager load(CompoundTag nbt) {
         SatelliteManager manager = new SatelliteManager();
         int count = nbt.getInt("satCount");

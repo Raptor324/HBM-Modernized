@@ -145,7 +145,7 @@ public class MachineWoodBurnerBlockEntity extends BaseMachineBlockEntity impleme
                     }
                 }
 
-            } else if (be.energy < CAPACITY && be.enabled) {
+            } else if (be.energy < CAPACITY && be.enabled && be.breatheAir(1)) { // NTM Space: breatheAir - ohne Addon true
                 be.burnTime--;
                 be.powerGen += 100;
                 if (level.getGameTime() % 20 == 0) {
@@ -155,7 +155,7 @@ public class MachineWoodBurnerBlockEntity extends BaseMachineBlockEntity impleme
 
         } else {
 
-            if (be.energy < CAPACITY && be.tank.getFill() > 0 && be.enabled) {
+            if (be.energy < CAPACITY && be.tank.getFill() > 0 && be.enabled && be.breatheAir(1)) { // NTM Space: breatheAir
                 com.hbm_m.inventory.fluid.trait.FT_Flammable trait =
                         com.hbm_m.inventory.fluid.FluidType.getTrait(be.tank.getTankType(), com.hbm_m.inventory.fluid.trait.FT_Flammable.class);
 

@@ -98,7 +98,12 @@ public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity imp
         if (convert <= 0) return;
 
         inputSteamTank.drainMb(convert);
-        outputWaterTank.fillMb(Fluids.WATER, convert);
+        // NTM Space: im Tom-Feuersturm und im Vakuum verdampfen Dampf und Wasser (ohne Space-Addon nie)
+        if (com.hbm_m.api.space.SpaceApi.condenserEvaporates(level, worldPosition, false)) {
+            outputWaterTank.setFill(outputWaterTank.getFill() - convert);
+        } else {
+            outputWaterTank.fillMb(Fluids.WATER, convert);
+        }
         waterTimer = 20;
         setChanged();
         sendUpdateToClient();

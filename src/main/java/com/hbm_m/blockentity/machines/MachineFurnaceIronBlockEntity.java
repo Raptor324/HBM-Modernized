@@ -168,7 +168,8 @@ public class MachineFurnaceIronBlockEntity extends com.hbm_m.blockentity.BaseHbm
             }
         }
 
-        if (canSmelt(world)) {
+        // NTM Space: && breatheAir(t % 5 == 0 ? 1 : 0) - ohne Space-Addon immer true
+        if (canSmelt(world) && breatheAir(world.getGameTime() % 5 == 0 ? 1 : 0)) {
             wasOn = true;
             this.progress++;
             this.burnTime--;
@@ -372,4 +373,10 @@ public class MachineFurnaceIronBlockEntity extends com.hbm_m.blockentity.BaseHbm
         sidedItems.invalidate();
     }
     *///?}
+
+    /** 1:1 TileEntityFurnaceIron.getRenderBoundingBox (Render-Migration: Raptors Pfad cullt nach dieser Box, der alte BER zeichnete immer). */
+    @Override
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return new net.minecraft.world.phys.AABB(worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1, worldPosition.getX() + 2, worldPosition.getY() + 3, worldPosition.getZ() + 2);
+    }
 }

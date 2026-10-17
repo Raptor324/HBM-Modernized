@@ -118,7 +118,13 @@ public class AnnihilatorPoolManager extends SavedData {
     /** Original {@code ItemStackUtil.getOreDictNames}: die Item-Tags plus die Sammelnamen ANY_*. */
     public static List<String> dictNames(ItemStack stack) {
         List<String> names = new ArrayList<>();
+        //? if forge {
         stack.getTags().forEach(t -> names.add(t.location().toString()));
+        //?} else {
+        /*// NeoForge 1.21.1: Konventions-Tags heissen c:..., die Schluessel (AnnihilatorRecipes, gespeicherte Pools) bleiben
+        // bei forge:... -> c:<pfad> als forge:<pfad> fuehren (gleiche Zaehler auf beiden Loadern)
+        stack.getTags().forEach(t -> names.add("c".equals(t.location().getNamespace()) ? "forge:" + t.location().getPath() : t.location().toString()));
+        *///?}
         String id = BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath();
         if (id.equals("polymer_ingot") || id.equals("bakelite_ingot")) names.add(ANY_PLASTIC);
         if (id.equals("pc_ingot") || id.equals("pvc_ingot")) names.add(ANY_HARDPLASTIC);

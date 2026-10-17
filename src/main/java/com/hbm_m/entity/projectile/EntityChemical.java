@@ -478,7 +478,10 @@ public class EntityChemical extends EntityThrowableNT {
 
                 if (fluid == ModFluids.SEEDSLURRY.getSource()) {
 
-                    for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) for (int k = -1; k <= 1; k++) {
+                    // NTM Space: nur der getroffene Block; Gras nur mit passender Atmosphaere (+ Wachstum/Gasumsatz).
+                    // Ohne Space-Addon bleibt der 3x3x3-Bereich des Originals 5771.
+                    int r = com.hbm_m.api.space.SpaceApi.isInstalled() ? 0 : 1;
+                    for (int i = -r; i <= r; i++) for (int j = -r; j <= r; j++) for (int k = -r; k <= r; k++) {
                         BlockPos p = new BlockPos(x + i, y + j, z + k);
                         BlockState state = level().getBlockState(p);
                         Block block = state.getBlock();
@@ -486,7 +489,13 @@ public class EntityChemical extends EntityThrowableNT {
 
                             BlockPos above = p.above();
                             if (level().getMaxLocalRawBrightness(above) >= 9 && level().getBlockState(above).getLightBlock(level(), above) <= 2) {
-                                level().setBlockAndUpdate(p, Blocks.GRASS_BLOCK.defaultBlockState());
+                                if (!com.hbm_m.api.space.SpaceApi.isInstalled()) {
+                                    level().setBlockAndUpdate(p, Blocks.GRASS_BLOCK.defaultBlockState());
+                                } else if (com.hbm_m.api.space.SpaceApi.env().supportsPlantGrowth(level(), p)) {
+                                    level().setBlockAndUpdate(p, Blocks.GRASS_BLOCK.defaultBlockState());
+                                    com.hbm_m.api.space.SpaceApi.env().onPlantGrowth(level(), p);
+                                    level().levelEvent(1505, above, 0);
+                                }
                             }
                         }
                         if (block == Blocks.COBBLESTONE) level().setBlockAndUpdate(p, Blocks.MOSSY_COBBLESTONE.defaultBlockState());
@@ -500,6 +509,9 @@ public class EntityChemical extends EntityThrowableNT {
                                 .setValue(StairBlock.SHAPE, state.getValue(StairBlock.SHAPE)).setValue(StairBlock.WATERLOGGED, state.getValue(StairBlock.WATERLOGGED)));
                     }
                 }
+
+                // NTM Space: FT_Terraformer (Zielblock -> Erde + Wachstum), Addon-seitig
+                com.hbm_m.api.space.SpaceApi.env().onChemicalImpact(level(), pos, fluid);
 
                 this.discard();
             }

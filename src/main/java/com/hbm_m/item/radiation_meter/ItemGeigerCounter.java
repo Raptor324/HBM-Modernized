@@ -39,7 +39,8 @@ public class ItemGeigerCounter extends Item {
         float x = HbmLivingProps.getRadBuf((LivingEntity) entity);
 
         if (world.getGameTime() % 5 == 0) {
-            if (x > 1E-5F) {
+            // E11 (Fork, nur mit Space-Addon): Knacken zufaellig gedrosselt (rand.nextFloat() > x -> still)
+            if (x > 1E-5F && !(com.hbm_m.api.space.SpaceApi.forkActive() && world.random.nextFloat() > x)) {
                 List<Integer> list = new ArrayList<>();
 
                 if (x < 1) {

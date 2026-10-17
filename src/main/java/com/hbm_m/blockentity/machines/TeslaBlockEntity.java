@@ -210,4 +210,10 @@ public class TeslaBlockEntity extends BaseMachineBlockEntity {
         // Original: kein GUI (getName() liefert dort einen leeren String).
         return null;
     }
+
+    /** 1:1 TileEntityTesla.getRenderBoundingBox (Render-Migration: Raptors Pfad cullt nach dieser Box, der alte BER zeichnete immer). */
+    @Override
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return com.hbm_m.platform.RenderBounds.INFINITE;
+    }
 }

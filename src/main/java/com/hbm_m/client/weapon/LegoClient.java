@@ -474,7 +474,9 @@ public class LegoClient {
 		GunGL.fullbright(true);
 
 		GunGL.pushMatrix();
-		renderFlareSprite(bullet, interp, 1F, 1F, 1F, (1 - age) * 7.5 + 1.5, 0.5F * (float) age, 0.75F * (float) age);
+		// E11 (Fork, nur mit Space-Addon): groesseres Leuchtgeschoss-Flare ((4 - age) statt (1 - age))
+		double flareBase = com.hbm_m.api.space.SpaceApi.forkActive() ? 4 : 1;
+		renderFlareSprite(bullet, interp, 1F, 1F, 1F, (flareBase - age) * 7.5 + 1.5, 0.5F * (float) age, 0.75F * (float) age);
 		GunGL.popMatrix();
 
 		GunGL.pushMatrix();

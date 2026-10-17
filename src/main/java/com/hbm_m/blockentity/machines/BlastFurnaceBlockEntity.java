@@ -378,6 +378,9 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
             return false;
         }
         int value = getFuelValue(stack);
+        // NTM Space getItemPower(stack, canBreathe): ohne Sauerstoff liefert nur der Lavaeimer Brennwert (breatheAir(0)
+        // prueft nur) - ohne Space-Addon immer atembar
+        if (value > 0 && stack.getItem() != Items.LAVA_BUCKET && !breatheAir(0)) value = 0;
         // Original: nur nachlegen, wenn der ganze Brennwert noch hineinpasst
         if (value <= 0 || fuel > MAX_FUEL - value) {
             return false;
@@ -476,7 +479,8 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
         if (item == ModItems.COAL_BRIQUETTE.get() || item == ModItems.LIGNITE_BRIQUETTE.get() || item == ModItems.SAWDUST_BRIQUETTE.get()) return 200;
         if (item == ModItems.COAL_COKE.get() || item == ModItems.LIGNITE_COKE.get() || item == ModItems.COKE_PETROLEUM.get()) return 400;
         if (item == ModItems.SOLID_FUEL.get()) return 400;
-        return 0;
+        // E4 (Fork, nur mit Addon): powder_coke 400
+        return com.hbm_m.api.space.SpaceApi.fork().blastFurnaceFuel(stack);
     }
 
     // -- Rauch (Original TileEntityMachinePolluting) --

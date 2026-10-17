@@ -128,6 +128,9 @@ public abstract class EntityPlaneBase extends Entity {
 
                 if (!level().getBlockState(blockPosition()).isAir() || getY() < level().getMinBuildHeight()) {
                     this.discard();
+                    // E11 (Fork, nur mit Space-Addon): grosser Explosionseffekt beim Absturz
+                    if (com.hbm_m.api.space.SpaceApi.forkActive() && level() instanceof net.minecraft.server.level.ServerLevel crashLevel)
+                        com.hbm_m.particle.helper.ExplosionCreator.composeEffectLarge(crashLevel, getX(), getY(), getZ());
                     new ExplosionVNT(level(), getX(), getY(), getZ(), 15F).makeStandard().explode();
                     level().playSound(null, getX(), getY(), getZ(), HbmSoundsNT.get("hbm:entity.planeCrash"), SoundSource.NEUTRAL, 25.0F, 1.0F);
                     return;

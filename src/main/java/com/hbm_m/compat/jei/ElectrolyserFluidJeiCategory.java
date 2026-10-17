@@ -36,7 +36,7 @@ public class ElectrolyserFluidJeiCategory extends JeiUniversalRecipeCategory<Ele
 
     public static List<Entry> recipes() {
         List<Entry> list = new ArrayList<>();
-        for (Map.Entry<Fluid, ElectrolysisRecipe> e : ElectrolyserFluidRecipes.all().entrySet()) list.add(new Entry(e.getKey(), e.getValue()));
+        for (Map.Entry<Fluid, ElectrolysisRecipe> e : ElectrolyserFluidRecipes.all(NeiUniversalJeiRecipes.clientRecipes()).entrySet()) list.add(new Entry(e.getKey(), e.getValue()));
         return list;
     }
 

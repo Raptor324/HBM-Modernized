@@ -79,6 +79,33 @@ public final class HazardSystem {
         register(block.asItem(), data);
     }
 
+    /**
+     * Space-API (W-R4b-2): haengt einen Eintrag an die Gegenstandsregel an, statt sie zu ersetzen (Original: mehrere
+     * {@code HazardRegistry}-Zeilen bzw. Ore-Dictionary-Rahmen fuer denselben Gegenstand). Fehlt eine Regel, wird eine
+     * neue angelegt. Die vorhandene {@link HazardData} wird nicht veraendert (kann mit anderen Items geteilt sein),
+     * sondern durch eine Kopie mit dem Zusatzeintrag ersetzt. Ohne Aufrufer (kein Addon) wirkungslos.
+     */
+    public static void addEntry(Item item, HazardEntry entry) {
+        ITEM_RULES.compute(item, (k, old) -> withEntry(old, entry));
+        HAZARD_CACHE.clear();
+    }
+
+    /** Wie {@link #addEntry(Item, HazardEntry)} fuer eine Tag-Regel (Original: {@code .neutron()} am DictFrame). */
+    public static void addEntry(TagKey<Item> tag, HazardEntry entry) {
+        TAG_RULES.compute(tag, (k, old) -> withEntry(old, entry));
+        HAZARD_CACHE.clear();
+    }
+
+    private static HazardData withEntry(@org.jetbrains.annotations.Nullable HazardData old, HazardEntry entry) {
+        HazardData copy = new HazardData();
+        if (old != null) {
+            copy.entries.addAll(old.entries);
+            copy.doesOverride = old.doesOverride;
+        }
+        copy.entries.add(entry);
+        return copy;
+    }
+
     // ПУБЛИЧНЫЕ МЕТОДЫ ПОЛУЧЕНИЯ ДАННЫХ 
 
     /**

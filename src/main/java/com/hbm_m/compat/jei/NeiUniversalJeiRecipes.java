@@ -335,11 +335,11 @@ public final class NeiUniversalJeiRecipes {
 
     public static List<Entry> watz() {
         List<Entry> list = new ArrayList<>();
-        for (WatzPelletType fuel : WatzPelletType.values()) {
-            var fresh = ModItems.WATZ_PELLET.get(fuel);
-            var depleted = ModItems.WATZ_PELLET_DEPLETED.get(fuel);
+        for (WatzPelletType fuel : WatzPelletType.all()) { // W-R4b-5: auch Addon-Typen
+            var fresh = fuel.freshItem();
+            var depleted = fuel.depletedItem();
             if (fresh == null || depleted == null) continue;
-            list.add(new Entry(List.of(Slot.of(new ItemStack(fresh.get()))), List.of(Slot.of(new ItemStack(depleted.get())))));
+            list.add(new Entry(List.of(Slot.of(new ItemStack(fresh))), List.of(Slot.of(new ItemStack(depleted)))));
         }
         return list;
     }
@@ -406,11 +406,18 @@ public final class NeiUniversalJeiRecipes {
         return list;
     }
 
+    /** RecipeManager der Client-Welt (Datapack-Rezepte wie {@code hbm_m:mixer}); null vor dem Weltbeitritt. */
+    @org.jetbrains.annotations.Nullable
+    public static net.minecraft.world.item.crafting.RecipeManager clientRecipes() {
+        net.minecraft.client.multiplayer.ClientLevel lvl = net.minecraft.client.Minecraft.getInstance().level;
+        return lvl != null ? lvl.getRecipeManager() : null;
+    }
+
     // ---- MixerHandler / MixerRecipes.getRecipes ----
 
     public static List<Entry> mixer() {
         List<Entry> list = new ArrayList<>();
-        for (Map.Entry<Fluid, MixerRecipes.MixerRecipe[]> e : MixerRecipes.getRecipes().entrySet()) {
+        for (Map.Entry<Fluid, MixerRecipes.MixerRecipe[]> e : MixerRecipes.getRecipes(clientRecipes()).entrySet()) {
             for (MixerRecipes.MixerRecipe recipe : e.getValue()) {
                 List<Slot> ins = new ArrayList<>();
                 if (recipe.input1 != null) ins.add(Slot.fluid(recipe.input1.type(), recipe.input1.fill()));

@@ -34,6 +34,41 @@ public class ItemOreDensityScanner extends Item {
 
         double totalLevel = 0D;
 
+        // NTM Space (W-R8B-1): Sorten des Koerpers, Bohrfluessigkeit des Koerpers
+        if (world instanceof net.minecraft.server.level.ServerLevel sl) {
+            java.util.List<com.hbm_m.api.space.BedrockOreHooks.ScanLine> lines = com.hbm_m.api.space.SpaceApi.bedrockOres()
+                    .scan(sl, (int) Math.floor(player.getX()), (int) Math.floor(player.getZ()));
+            if (lines != null) {
+                for (com.hbm_m.api.space.BedrockOreHooks.ScanLine line : lines) {
+                    double level = line.level();
+                    MutableComponent msg = line.name().copy()
+                            .append(": " + ((int) (level * 100) / 100D) + " (")
+                            .append(Component.translatable(translateDensity(level)).withStyle(getColor(level)))
+                            .append(Component.literal(")").withStyle(ChatFormatting.RESET));
+                    InfoToastPacket.sendTo(player, msg, 80, 777 + line.index(), 0xFFFFFF);
+                    totalLevel += level;
+                }
+                if (!lines.isEmpty()) totalLevel /= lines.size();
+
+                int tier = BedrockOreDensity.getTier(totalLevel);
+                int fill = BedrockOreDensity.getBoreFluidAmountMb(totalLevel);
+                Fluid boreFluid = BedrockOreDensity.getBoreFluid(totalLevel);
+                com.hbm_m.api.space.BedrockOreHooks.BoreFluid acid = com.hbm_m.api.space.SpaceApi.bedrockOres().bedrockAcid(world);
+                if (acid != null) {
+                    boreFluid = acid.fluid();
+                    fill = acid.amountMb();
+                }
+
+                MutableComponent builder = Component.literal("Tier " + tier).withStyle(ChatFormatting.YELLOW);
+                if (fill > 0) {
+                    builder.append(Component.literal(" - " + fill + "mB ").withStyle(ChatFormatting.YELLOW))
+                            .append(fluidName(boreFluid).copy().withStyle(ChatFormatting.YELLOW));
+                }
+                InfoToastPacket.sendTo(player, builder, 80, 777 + com.hbm_m.api.space.SpaceApi.bedrockOres().scanSummaryIndex(), 0xFFFF55);
+                return;
+            }
+        }
+
         for (BedrockOreDensity.Type type : BedrockOreDensity.Type.values()) {
             double level = BedrockOreDensity.getDensity((int) Math.floor(player.getX()), (int) Math.floor(player.getZ()), type);
             MutableComponent msg = Component.translatable("item.hbm_m.bedrock_ore.type." + SUFFIX[type.ordinal()] + ".name")

@@ -103,10 +103,16 @@ public class MachineDrainBlockEntity extends BaseMachineBlockEntity implements I
 
             // 1:1: die Haelfte je Tick, mindestens ein Millibucket.
             int toSpill = Math.max(tank.getFluidAmountMb() / 2, 1);
+            net.minecraft.world.level.material.Fluid spilled = tank.getStoredFluid();
             tank.drainMb(toSpill);
 
             com.hbm_m.inventory.fluid.trait.FT_Polluting.pollute(level, pos, tank.getStoredFluid(),
                     com.hbm_m.inventory.fluid.trait.FluidTrait.FluidReleaseType.SPILL, toSpill);
+            // NTM Space FT_Gaseous.release (W-R9A-1): Gase gehen in die Koerper-Atmosphaere (ohne Addon no-op)
+            if (FluidType.getTrait(spilled, com.hbm_m.inventory.fluid.trait.FluidTraitSimple.FT_Gaseous.class) != null
+                    || FluidType.getTrait(spilled, com.hbm_m.inventory.fluid.trait.FluidTraitSimple.FT_Gaseous_ART.class) != null) {
+                com.hbm_m.api.space.SpaceApi.emitGas(level, pos, net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(spilled), toSpill);
+            }
 
             spillPuddle(level, pos, toSpill);
         }

@@ -76,7 +76,9 @@ public class MachineCapacitorBlockEntity extends BaseMachineBlockEntity implemen
         Direction last = null;
         // Ohne Deckel: eine sehr lange Kette ist zulaessig, eine endlose nicht.
         for (int step = 0; step < 64; step++) {
-            BlockState state = level.getBlockState(pos);
+            // Nie Chunks nachladen: laeuft auch aus setRemoved beim Entladen/Server-Stopp.
+            BlockState state = com.hbm_m.util.ChunkSafe.getBlockState(level, pos);
+            if (state == null) break;
             if (state.getBlock() != com.hbm_m.block.ModBlocks.CAPACITOR_BUS.get()) break;
             if (!state.hasProperty(MachineCapacitorBlock.FACING)) break;
 

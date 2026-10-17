@@ -464,10 +464,19 @@ public class PileCoreBlockEntity extends LoadedMachineBlockEntity {
 
     // ── Speichern ───────────────────────────────────────────────────────────
 
+    /** Von onChunkUnloaded gesetzt: Entladen ist kein Abbau, nichts auswerfen (sonst Dupe). */
+    private boolean unloaded = false;
+
+    @Override
+    public void onChunkUnloaded() {
+        super.onChunkUnloaded();
+        this.unloaded = true;
+    }
+
     @Override
     public void setRemoved() {
         // Original: {@code invalidate} wirft alle Brennstaebe aus.
-        if (level != null && !level.isClientSide()) {
+        if (!unloaded && level != null && !level.isClientSide()) {
             for (PileChannel chan : fuelChannels) chan.ejectAll(level);
         }
         super.setRemoved();

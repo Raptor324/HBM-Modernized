@@ -1588,7 +1588,7 @@ public class ModItems {
     public static final java.util.Map<WatzPelletType, RegistrySupplier<Item>> WATZ_PELLET_DEPLETED = registerWatzPellets(true);
 
     private static java.util.Map<WatzPelletType, RegistrySupplier<Item>> registerWatzPellets(boolean depleted) {
-        java.util.Map<WatzPelletType, RegistrySupplier<Item>> map = new java.util.EnumMap<>(WatzPelletType.class);
+        java.util.Map<WatzPelletType, RegistrySupplier<Item>> map = new java.util.LinkedHashMap<>();
         for (WatzPelletType t : WatzPelletType.values()) {
             map.put(t, ITEMS.register((depleted ? "watz_pellet_depleted_" : "watz_pellet_") + t.id(),
                     () -> new WatzPelletItem(new Item.Properties(), t, depleted)));
@@ -3477,9 +3477,17 @@ public class ModItems {
     public static final RegistrySupplier<Item> PELLET_RTG_AMERICIUM = ITEMS.register("pellet_rtg_americium",
             () -> new ItemRTGPellet(20, ItemRTGPellet.lifespan15(4.7F, ItemRTGPellet.HalfLifeType.LONG),
                     () -> PELLET_RTG_DEPLETED_NEPTUNIUM.get(), new Item.Properties()));
-    /** Im Original nicht vorhanden - dieser Port hat die Textur, aber keine Werte dafuer. */
+    /**
+     * Space-API (W-R4b-5): Werte 1:1 NTM Space ({@code ItemRTGPellet(20).setDecays(AMERICIUM, lifespan(13.8, LONG) * 1.5)},
+     * Stapel 1). Zerfallsprodukt ist das verbrauchte Americium-Pellet des Addons ({@code space_m:pellet_rtg_depleted_americium},
+     * per Registry-Lookup, keine Abhaengigkeit); ohne Addon Blei. Ohne Addon nicht herstellbar (kein Berkelium).
+     */
     public static final RegistrySupplier<Item> PELLET_RTG_BERKELIUM = ITEMS.register("pellet_rtg_berkelium",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemRTGPellet(20, ItemRTGPellet.lifespan15(13.8F, ItemRTGPellet.HalfLifeType.LONG),
+                    () -> net.minecraft.core.registries.BuiltInRegistries.ITEM
+                            .getOptional(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("space_m", "pellet_rtg_depleted_americium"))
+                            .filter(i -> i != net.minecraft.world.item.Items.AIR)
+                            .orElseGet(() -> PELLET_RTG_DEPLETED_LEAD.get()), new Item.Properties()));
     public static final RegistrySupplier<Item> PELLET_RTG_COBALT = ITEMS.register("pellet_rtg_cobalt",
             () -> new ItemRTGPellet(15, ItemRTGPellet.lifespan15(5.3F, ItemRTGPellet.HalfLifeType.MEDIUM),
                     () -> PELLET_RTG_DEPLETED_NICKEL.get(), new Item.Properties()));

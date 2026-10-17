@@ -68,6 +68,15 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
 
     public enum TiltType { UNAVOIDABLE, CONFIG }
 
+    /**
+     * NTM Space {@code TileEntityMachineBase.breatheAir(amount)}: true = genug Sauerstoff fuer Verbrennung am Ort,
+     * verbraucht {@code amount} mB Luft aus einem abgedichteten Raum ({@code 0} = nur pruefen). Ohne Space-Addon
+     * immer true ({@link com.hbm_m.api.space.SpaceEnvironment#consumeOxygen}).
+     */
+    public boolean breatheAir(int amount) {
+        return com.hbm_m.api.space.SpaceApi.breatheAir(level, worldPosition, amount);
+    }
+
     public boolean tilted = false;
     public int tiltBlocksChecked = 0;
     public int tiltBlocksValid = 0;
@@ -80,9 +89,12 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
     public void checkTilt(TiltType cfg, boolean extraHeavy) {
         if (level == null || level.isClientSide) return;
         boolean doesTilt = false;
-        if (cfg == TiltType.UNAVOIDABLE) doesTilt = true;
+        // E1 (Fork, nur mit Addon): GeneralConfig.enableUnavoidableGravity - Master: immer
+        if (cfg == TiltType.UNAVOIDABLE && com.hbm_m.api.space.SpaceApi.fork().unavoidableGravity()) doesTilt = true;
         if (cfg == TiltType.CONFIG && com.hbm_m.config.ModClothConfig.get().enableMachineGravity) doesTilt = true;
         if (cfg == TiltType.CONFIG && com.hbm_m.config.GeneralConfig.enable528 && com.hbm_m.config.ModClothConfig.get().enable528MachineGravity) doesTilt = true;
+        // NTM Space: im Orbit kippt nichts (CelestialBody.inOrbit) - ohne Space-Addon immer false
+        if (com.hbm_m.api.space.SpaceApi.inOrbit(level)) doesTilt = false;
 
         if (!doesTilt) { setTilted(false); return; }
         if (this.getFloorCount() <= 0) { setTilted(false); return; }

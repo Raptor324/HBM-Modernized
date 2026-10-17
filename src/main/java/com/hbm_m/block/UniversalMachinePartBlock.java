@@ -220,6 +220,10 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
 
     @Override
     public VoxelShape getCollisionShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
+        // E7 (Fork, nur mit Space-Addon): Spieler im gerade gesetzten Multiblock gehen hindurch, bis sie ihn verlassen
+        if (com.hbm_m.multiblock.ForkMultiblockPlacement.ignoresCollision(pLevel, pContext)) {
+            return Shapes.empty();
+        }
         if (pLevel instanceof Level lvl && com.hbm_m.compat.ContraptionDoorState.isContraptionWorld(lvl)) {
             return Shapes.empty(); // На контрапшене всю коллизию берет на себя контроллер
         }

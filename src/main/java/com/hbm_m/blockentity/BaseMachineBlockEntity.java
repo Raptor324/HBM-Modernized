@@ -622,6 +622,8 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
     /**
      * Дополнительные позиции портов подписки для мультиблоков.
      * У каждой такой позиции проверяются все 6 граней на предмет проводов.
+     * Wird auch aus setRemoved (Entladen/Server-Stopp) gerufen: Weltzugriffe hier nur ueber
+     * {@link com.hbm_m.util.ChunkSafe}, nie Chunks nachladen.
      */
     protected net.minecraft.core.BlockPos[] getExtraEnergyPorts() {
         return new net.minecraft.core.BlockPos[0];

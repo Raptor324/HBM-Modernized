@@ -41,7 +41,8 @@ public class BlockDirtHbm extends Block {
     @Override
     public void neighborChanged(BlockState state, Level world, BlockPos pos, Block block, BlockPos fromPos, boolean isMoving) {
         super.neighborChanged(state, world, pos, block, fromPos, isMoving);
-        if (world.isClientSide) return;
+        // E14 (Fork, nur mit Space-Addon): Space BlockDirt - Nachbar-Update auskommentiert
+        if (world.isClientSide || com.hbm_m.api.space.SpaceApi.forkActive()) return;
         for (int i = -1; i < 2; i++) {
             for (int j = -1; j < 2; j++) {
                 for (int k = -1; k < 2; k++) {
@@ -62,6 +63,10 @@ public class BlockDirtHbm extends Block {
         int light = Math.max(world.getBrightness(LightLayer.BLOCK, pos.above()), (int) (world.getMaxLocalRawBrightness(pos.above()) * (1 - dust)));
         if (light >= 9 && fire == 0) {
             world.setBlock(pos, Blocks.GRASS_BLOCK.defaultBlockState(), 3);
+            // E14 (Fork, nur mit Space-Addon): Erde darunter wird Einschlagerde
+            if (com.hbm_m.api.space.SpaceApi.forkActive() && world.getBlockState(pos.below()).is(Blocks.DIRT)) {
+                world.setBlock(pos.below(), com.hbm_m.block.ModBlocks.IMPACT_DIRT.get().defaultBlockState(), 3);
+            }
         }
     }
 }

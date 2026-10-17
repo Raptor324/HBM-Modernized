@@ -74,7 +74,7 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
         this.addSlot(new Slot(handlerContainer, MachineFluidTankBlockEntity.SLOT_LOAD_IN, 35, 17) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
-                return FluidItemAccess.hasFluidHandler(stack);
+                return FluidItemAccess.isFluidContainer(stack);
             }
         });
 
@@ -90,7 +90,7 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
         this.addSlot(new Slot(handlerContainer, MachineFluidTankBlockEntity.SLOT_UNLOAD_IN, 125, 17) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
-                return FluidItemAccess.hasFluidHandler(stack);
+                return FluidItemAccess.isFluidContainer(stack);
             }
         });
 
@@ -173,10 +173,10 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
                 // Move from player inventory to machine slots
                 if (stackInSlot.getItem() instanceof IItemFluidIdentifier) {
                     // Put into the input fluid identifier slot
-                    if (!moveItemStackTo(stackInSlot, MACHINE_SLOTS + 0, MACHINE_SLOTS + 1, false)) {
+                    if (!moveItemStackTo(stackInSlot, MachineFluidTankBlockEntity.SLOT_ID_IN, MachineFluidTankBlockEntity.SLOT_ID_IN + 1, false) /* Identifier-Slot 0 (frueher MACHINE_SLOTS = Spielerinventar) */) {
                         return ItemStack.EMPTY;
                     }
-                } else if (FluidItemAccess.hasFluidHandler(stackInSlot)) {
+                } else if (FluidItemAccess.isFluidContainer(stackInSlot)) {
                     // Try to put into LOAD_IN slot first
                     if (!moveItemStackTo(stackInSlot, MachineFluidTankBlockEntity.SLOT_LOAD_IN, MachineFluidTankBlockEntity.SLOT_LOAD_IN + 1, false)) {
                         // If that fails, try UNLOAD_IN slot

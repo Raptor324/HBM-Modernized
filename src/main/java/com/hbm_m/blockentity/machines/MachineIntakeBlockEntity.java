@@ -38,12 +38,24 @@ public class MachineIntakeBlockEntity extends BaseMachineBlockEntity implements 
         super(ModBlockEntities.INTAKE_BE.get(), pos, state, 0, MAX_POWER, MAX_POWER);
     }
 
+    /**
+     * NTM Space {@code canCompress}: 1 mB Umgebungsgas -> 100 mB Druckluft ({@code max(1, fehlend / 100)}), voller
+     * Tank prueft nur den Druck. Ohne Space-Addon immer true.
+     */
+    private boolean canCompress() {
+        int consumption = this.compair.getMaxFill() - this.compair.getFill();
+        consumption = consumption <= 0 ? 0 : Math.max(1, consumption / 100);
+        return com.hbm_m.api.space.SpaceApi.drawAtmosphere(level, worldPosition, consumption);
+    }
+
     public static void tick(Level level, BlockPos pos, BlockState state, MachineIntakeBlockEntity be) {
         if (!level.isClientSide) {
             be.ensureNetworkInitialized();
 
             if (be.getEnergyStored() >= MAX_POWER / 20) {
-                be.compair.setFill(be.compair.getMaxFill());
+                if (be.canCompress()) {
+                    be.compair.setFill(be.compair.getMaxFill());
+                }
                 be.setEnergyStored(be.getEnergyStored() - MAX_POWER / 20);
             }
 

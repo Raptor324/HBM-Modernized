@@ -2714,7 +2714,7 @@ public class ModBlocks {
             () -> new com.hbm_m.block.bomb.TNTBlocks.Dynamite(BlockProps.copy(Blocks.TNT).instabreak().sound(SoundType.GRASS)));
     public static final RegistrySupplier<Block> FACTORY_ADVANCED_HULL = registerBlock("factory_advanced_hull", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> FACTORY_TITANIUM_HULL = registerBlock("factory_titanium_hull", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> FENCE_METAL = registerBlock("fence_metal", () -> new net.minecraft.world.level.block.FenceBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(15.0F, 0.15F).sound(SoundType.STONE)));
+    public static final RegistrySupplier<Block> FENCE_METAL = registerBlock("fence_metal", () -> new com.hbm_m.block.decorations.MetalFenceBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(15.0F, 0.15F).sound(SoundType.STONE)));
     public static final RegistrySupplier<Block> FENCE_METAL_POST = registerBlock("fence_metal_post", () -> new DecorShapeBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F),
             Shapes.box(0.375, 0, 0.375, 0.625, 1.0, 0.625), false, false));
     /** R7d: 1:1 MachineFieldDisturber. */

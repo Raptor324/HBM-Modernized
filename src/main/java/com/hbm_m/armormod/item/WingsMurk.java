@@ -90,6 +90,18 @@ public class WingsMurk extends JetpackBase {
                     my += 0.2D;
                 else if (my < 0)
                     my = 0;
+
+            } else if (props.enableBackpack && com.hbm_m.api.space.SpaceApi.isInstalled()) {
+                // NTM Space: Schleichen mit Rucksack gleitet in niedriger Schwerkraft (nur mit Space-Addon; auf der
+                // Erde endet das Original hier wegen gravity > 1.5F ohne Seitwaertsschub)
+                float gravity = com.hbm_m.api.space.SpaceApi.gravity(player);
+                if (gravity > 1.5F) return;
+                if (gravity != 0 && gravity < 0.2F) gravity = 0.2F;
+
+                my /= 0.98F;
+                my += (gravity / 20F);
+                my -= (com.hbm_m.api.space.SpaceEnvironment.STANDARD_GRAVITY / 20F);
+                my *= 0.98F;
             }
 
             if (props.enableBackpack) {

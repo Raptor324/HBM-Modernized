@@ -20,6 +20,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
@@ -30,7 +32,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * 1:1 {@code MachineCondenserPowered}: {@code getDimensions {2,0,1,1,3,3}}, {@code getOffset 1}, sechs
  * Anschlusszellen auf Hoehe 1, Anzeige beim Hinsehen. Gezeichnet vom {@code CondenserPoweredRenderer}.
  */
-public class MachineCondenserPoweredBlock extends DummyableMachineBlock implements com.hbm_m.interfaces.ILookOverlay {
+public class MachineCondenserPoweredBlock extends DummyableMachineBlock implements com.hbm_m.interfaces.ILookOverlay, com.hbm_m.api.block.IToolable {
 
     public MachineCondenserPoweredBlock(Properties properties) {
         super(properties);
@@ -71,6 +73,11 @@ public class MachineCondenserPoweredBlock extends DummyableMachineBlock implemen
     @Override
     public void printHook(net.minecraft.client.gui.GuiGraphics g, Level world, BlockPos pos) {
         if (!(world.getBlockEntity(pos) instanceof MachineCondenserPoweredBlockEntity tower)) return;
+        // E9: beschaedigt nur die Reparaturliste (Space MachineCondenserPowered.printHook)
+        if (tower.damaged) {
+            com.hbm_m.api.tile.IRepairable.addGenericOverlay(g, world, pos, Component.translatable(getDescriptionId()));
+            return;
+        }
 
         List<Component> text = new ArrayList<>();
         text.add(Component.literal(com.hbm_m.util.BobMathUtil.getShortNumber(tower.getEnergyStored()) + "HE / "
@@ -84,6 +91,45 @@ public class MachineCondenserPoweredBlock extends DummyableMachineBlock implemen
         }
 
         com.hbm_m.interfaces.ILookOverlay.printGeneric(g, Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
+    }
+
+
+    // ==================== E9 (Fork, nur mit Space-Addon): Schaden + Reparatur ====================
+
+    /** Space {@code onScrew}: Schweissbrenner repariert ueber {@code IRepairable.tryRepairMultiblock}. */
+    @Override
+    public boolean onScrew(Level world, Player player, BlockPos pos, net.minecraft.core.Direction side, float fX, float fY, float fZ, InteractionHand hand, com.hbm_m.api.block.IToolable.ToolType tool) {
+        if (tool != com.hbm_m.api.block.IToolable.ToolType.TORCH) return false;
+        return com.hbm_m.api.tile.IRepairable.tryRepairMultiblock(world, pos, player);
+    }
+
+    /** Explosionen auf Teilzellen erreichen den Kern (Space {@code findCore}) - nur mit Addon. */
+    @Override
+    public boolean forwardPartExplosions() {
+        return com.hbm_m.api.space.SpaceApi.forkActive();
+    }
+
+    /** Space {@code onBlockExploded}: erster Treffer beschaedigt, der zweite zerstoert den Kern. */
+    @Override
+    public void onBlockExploded(BlockState state, Level level, BlockPos pos, net.minecraft.world.level.Explosion explosion) {
+        if (!com.hbm_m.api.space.SpaceApi.forkActive() || !(level.getBlockEntity(pos) instanceof MachineCondenserPoweredBlockEntity core)) {
+            super.onBlockExploded(state, level, pos, explosion);
+            return;
+        }
+        if (core.lastExplosion == explosion) return;
+        core.lastExplosion = explosion;
+
+        if (!core.damaged) {
+            core.markDamaged();
+        } else {
+            level.removeBlock(pos, false);
+        }
+    }
+
+    /** Space {@code canDropFromExplosion = false} - nur mit Addon. */
+    @Override
+    public boolean dropFromExplosion(net.minecraft.world.level.Explosion explosion) {
+        return !com.hbm_m.api.space.SpaceApi.forkActive() && super.dropFromExplosion(explosion);
     }
 
     @Override

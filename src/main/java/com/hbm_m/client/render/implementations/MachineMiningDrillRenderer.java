@@ -102,7 +102,7 @@ public class MachineMiningDrillRenderer implements com.hbm_m.client.render.HbmBe
         ps.popPose();
     }
 
-    private static void quad(VertexConsumer vc, org.joml.Matrix4f m, org.joml.Matrix3f n, int light, float nx, float ny, float nz,
+    static void quad(VertexConsumer vc, org.joml.Matrix4f m, org.joml.Matrix3f n, int light, float nx, float ny, float nz,
                              float x0, float y0, float z0, float u0, float v0,
                              float x1, float y1, float z1, float u1, float v1,
                              float x2, float y2, float z2, float u2, float v2,

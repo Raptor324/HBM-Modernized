@@ -274,7 +274,8 @@ public class MachineRotaryFurnaceBlockEntity extends MachinePollutingBlockEntity
             if (this.output.amount + recipe.output.amount > maxOutput) return false;
         }
 
-        return true;
+        // NTM Space: canBreathe = breatheAir(1) - ohne Space-Addon immer true
+        return breatheAir(1);
     }
 
     public void consumeItems(RotaryFurnaceRecipe recipe) {

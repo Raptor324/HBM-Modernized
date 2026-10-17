@@ -194,6 +194,17 @@ public final class FluidContainerRegistry {
         return 0;
     }
 
+    /** true, wenn der Gegenstand ein voller oder leerer Behaelter irgendeiner Fluessigkeit ist (GUI-Slot-Filter). */
+    public static boolean isContainer(ItemStack stack) {
+        init();
+        if (stack.isEmpty()) return false;
+        for (FluidContainer container : allContainers) {
+            if (isItemEqual(container.fullContainer(), stack)) return true;
+            if (container.emptyContainer() != null && isItemEqual(container.emptyContainer(), stack)) return true;
+        }
+        return false;
+    }
+
     public static Fluid getFluidType(ItemStack stack) {
         init();
         if (stack.isEmpty()) return ModFluids.NONE.getSource();

@@ -27,7 +27,7 @@ public class ICFControllerRenderer implements com.hbm_m.client.render.HbmBerBoun
             case 2 -> ObjBerHelper.rotY(ps, 0);
         }
         BeamPronter.prontBeam(ps, buf, new Vec3(controller.getLaserLength(), 0, 0), BeamPronter.EnumWaveType.SPIRAL,
-                BeamPronter.EnumBeamType.SOLID, 0x202020, 0x100000, 0, 1, 0F, 10, 0.125F);
+                BeamPronter.EnumBeamType.SOLID, 0x202020, 0x100000, 0, 1, 0F, 10, 0.125F, com.hbm_m.client.render.util.BeamPronter.forkAlpha());
         ps.popPose();
     }
 

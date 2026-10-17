@@ -41,7 +41,8 @@ public class MachinePumpSteamBlockEntity extends PumpBlockEntity {
     protected void operate() {
         steam.drainMb(100);
         lps.fillMb(lps.getTankType(), 1);
-        water.fillMb(water.getTankType(), Math.min(STEAM_SPEED, water.getCapacityMb() - water.getFill()));
+        int pumpSpeed = PumpGroundCheck.pumpSpeed(water.getTankType(), STEAM_SPEED); // NTM Space nonWaterDebuff
+        water.fillMb(water.getTankType(), Math.min(pumpSpeed, water.getCapacityMb() - water.getFill()));
     }
 
     public FluidTank getSteamTank() { return steam; }

@@ -201,6 +201,7 @@ public class RBMKRodItem extends Item implements ITooltipProvider {
             case LINEAR       -> flux / 100.0 * reactivity;
             case QUADRATIC    -> flux * flux / 10000.0 * reactivity;
             case EXPERIMENTAL -> flux * (Math.sin(flux) + 1) * reactivity;
+            case SLOW_LINEAR  -> Math.sqrt(2 * flux + 30) / 10 * reactivity / 2.5;
         };
     }
 
@@ -211,6 +212,7 @@ public class RBMKRodItem extends Item implements ITooltipProvider {
             case BOOSTED_SLOPE -> e + Math.sin((e - 1) * (e - 1) * Math.PI);
             case RAISING_SLOPE -> e + Math.sin(e * Math.PI) / 2.0;
             case GENTLE_SLOPE  -> e + Math.sin(e * Math.PI) / 3.0;
+            case CF_SLOPE      -> e + Math.sin(e * Math.PI) * 1.4;
         };
     }
 
@@ -244,6 +246,7 @@ public class RBMKRodItem extends Item implements ITooltipProvider {
             case LINEAR       -> "%1$s / 100 * %2$s";
             case QUADRATIC    -> "%1$s² / 10000 * %2$s";
             case EXPERIMENTAL -> "%1$s * (sin(%1$s) + 1) * %2$s";
+            case SLOW_LINEAR  -> "sqrt(2 * %1$s + 30) / 10 * %2$s / 2.5";
         };
 
         double enrichment = getEnrichment(stack);
@@ -381,6 +384,8 @@ public class RBMKRodItem extends Item implements ITooltipProvider {
         SQUARE_ROOT ("MEDIUM / SQUARE ROOT"),
         LINEAR      ("DANGEROUS / LINEAR"),
         QUADRATIC   ("DANGEROUS / QUADRATIC"),
+        /** NTM Space (Curium-Staebe lecm/mecm/hecm): {@code sqrt(2x + 30) / 10 * r / 2.5}. */
+        SLOW_LINEAR ("MEDIUM / SLOW LINEAR"),
         EXPERIMENTAL("EXPERIMENTAL / SINE SLOPE");
 
         public final String title;
@@ -388,6 +393,8 @@ public class RBMKRodItem extends Item implements ITooltipProvider {
     }
 
     public enum EnumDepleteFunc {
-        LINEAR, RAISING_SLOPE, BOOSTED_SLOPE, GENTLE_SLOPE, STATIC
+        LINEAR, RAISING_SLOPE, BOOSTED_SLOPE, GENTLE_SLOPE, STATIC,
+        /** NTM Space: Californium-Aufbau in Curium-Staeben, {@code x + sin(x * pi) * 1.4} (max ~193 % bei ~60 %). */
+        CF_SLOPE
     }
 }

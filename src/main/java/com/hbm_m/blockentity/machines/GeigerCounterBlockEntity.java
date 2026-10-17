@@ -41,7 +41,8 @@ public class GeigerCounterBlockEntity extends com.hbm_m.blockentity.BaseHbmBlock
         }
 
         if (timer % 5 == 0) {
-            if (ticker > 0) {
+            // E11 (Fork, nur mit Space-Addon): Knacken zufaellig gedrosselt
+            if (ticker > 0 && !(com.hbm_m.api.space.SpaceApi.forkActive() && level.random.nextFloat() > ticker)) {
                 List<Integer> list = new ArrayList<>();
 
                 if (ticker < 1) {

@@ -36,6 +36,12 @@ public class MultiblockBlockItem extends BlockItem {
             return null;
         }
 
+        // E7 (Fork, nur mit Space-Addon): Wand-/Deckenplatzierung, Klickseite bestimmt die Lage (Tueren ausgenommen)
+        if (!(this instanceof DoorBlockItem)) {
+            BlockPlaceContext fork = ForkMultiblockPlacement.shift(vanillaContext, this.getBlock());
+            if (fork != null) return fork;
+        }
+
         BlockPlaceContext adjusted = shiftContextToCore(vanillaContext);
         return adjusted != null ? adjusted : vanillaContext;
     }
@@ -65,7 +71,9 @@ public class MultiblockBlockItem extends BlockItem {
             return false;
         }
 
-        return super.placeBlock(context, state);
+        boolean placed = super.placeBlock(context, state);
+        if (placed && !level.isClientSide) ForkMultiblockPlacement.onPlaced(level, player);
+        return placed;
     }
 
     @Nullable

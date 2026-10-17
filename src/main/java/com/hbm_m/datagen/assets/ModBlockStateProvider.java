@@ -2585,8 +2585,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 )
         );
         // Порт BlockNTMGlassPane: ванильная панель (Post/Side/NoSide)
-        paneBlock((net.minecraft.world.level.block.IronBarsBlock) ModBlocks.REINFORCED_GLASS_PANE.get(),
-                modLoc("block/reinforced_glass_pane"), modLoc("block/reinforced_glass_pane_edge"));
+        // render_type cutout: ohne ihn rendert die Scheibe an den transparenten Texeln schwarz (Spieltest "Glas ist dunkel")
+        paneBlockWithRenderType((net.minecraft.world.level.block.IronBarsBlock) ModBlocks.REINFORCED_GLASS_PANE.get(),
+                modLoc("block/reinforced_glass_pane"), modLoc("block/reinforced_glass_pane_edge"), "cutout");
         // vI: Pfosten-Modell war im Inventar unsichtbar; Scheiben zeigen wie Vanilla/Original das flache Scheibenbild
         itemModels().withExistingParent("reinforced_glass_pane", mcLoc("item/generated")).texture("layer0", modLoc("block/reinforced_glass_pane"));
         simpleBlockWithItem(ModBlocks.REINFORCED_LAMP_OFF.get(),

@@ -42,7 +42,7 @@ public class TrinketRenderer implements com.hbm_m.client.render.HbmBerBounds<Tri
     public static final ResourceLocation SOCKET = rl("textures/models/trinkets/socket.png");
     public static final ResourceLocation GLOW = rl("textures/models/trinkets/glow.png");
     public static final ResourceLocation LAMP = rl("textures/models/trinkets/fluorescent_lamp.png");
-    public static final ResourceLocation UNIVERSAL = rl("textures/models/TheGadget3_.png");
+    public static final ResourceLocation UNIVERSAL = rl("textures/models/thegadget3_.png");
     public static final ResourceLocation MELLOW_GLOW = rl("textures/models/trinkets/mellowrpg8_glow.png");
     public static final ResourceLocation ABEL_GLOW = rl("textures/models/trinkets/abel_glow.png");
 

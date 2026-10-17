@@ -150,12 +150,12 @@ public abstract class OilDrillBaseBlockEntity extends BaseMachineBlockEntity imp
                 outer:
                 for (int y = pos.getY() - 1; y >= entity.getDrillDepth(); y--) {
                     BlockPos colPos = new BlockPos(pos.getX(), y, pos.getZ());
-                    if (level.getBlockState(colPos).getBlock() == ModBlocks.ORE_OIL.get()) {
+                    if (entity.isColumnDeposit(level.getBlockState(colPos).getBlock())) {
                         oilInColumn = true;
                         break;
                     }
                     for (Direction hDir : Direction.Plane.HORIZONTAL) {
-                        if (level.getBlockState(colPos.relative(hDir)).getBlock() == ModBlocks.ORE_OIL.get()) {
+                        if (entity.isColumnDeposit(level.getBlockState(colPos.relative(hDir)).getBlock())) {
                             oilInColumn = true;
                             break outer;
                         }
@@ -277,7 +277,17 @@ public abstract class OilDrillBaseBlockEntity extends BaseMachineBlockEntity imp
     }
 
     public boolean canSuckBlock(Block b) {
-        return b == ModBlocks.ORE_OIL.get() || b == ModBlocks.ORE_OIL_EMPTY.get();
+        if (b == ModBlocks.ORE_OIL.get() || b == ModBlocks.ORE_OIL_EMPTY.get()) return true;
+        // NTM Space isValid: (b instanceof BlockOreFluid && b != ore_bedrock_oil) || getFullBlock(b) != null
+        com.hbm_m.api.space.SpaceResources.FluidDepositBlock dep = com.hbm_m.api.space.SpaceResources.fluidDepositBlock(b);
+        return (dep != null && !dep.requiresFracking()) || com.hbm_m.api.space.SpaceResources.isEmptyFluidDeposit(b);
+    }
+
+    /** Vorpruefung der Bohrsaeule: HBM {@code ore_oil} oder volle Addon-Lagerstaette ohne Fracking (W-R8B-2). */
+    protected boolean isColumnDeposit(Block b) {
+        if (b == ModBlocks.ORE_OIL.get()) return true;
+        com.hbm_m.api.space.SpaceResources.FluidDepositBlock dep = com.hbm_m.api.space.SpaceResources.fluidDepositBlock(b);
+        return dep != null && !dep.requiresFracking();
     }
 
     public boolean suckRec(BlockPos pos, int layer) {
@@ -294,8 +304,15 @@ public abstract class OilDrillBaseBlockEntity extends BaseMachineBlockEntity imp
             return true;
         }
 
+        // NTM Space: jede BlockOreFluid-Lagerstaette (Addon) wird gefoerdert
+        com.hbm_m.api.space.SpaceResources.FluidDepositBlock dep = com.hbm_m.api.space.SpaceResources.fluidDepositBlock(b);
+        if (dep != null) {
+            onSuckDeposit(dep, pos);
+            return true;
+        }
+
         // spread through already-emptied holes to reach adjacent filled oil
-        if (b == ModBlocks.ORE_OIL_EMPTY.get()) {
+        if (b == ModBlocks.ORE_OIL_EMPTY.get() || com.hbm_m.api.space.SpaceResources.isEmptyFluidDeposit(b)) {
             List<Direction> dirs = Arrays.asList(Direction.values());
             Collections.shuffle(dirs);
 
@@ -308,8 +325,52 @@ public abstract class OilDrillBaseBlockEntity extends BaseMachineBlockEntity imp
 
     public void doSuck(BlockPos pos) {
         if (level.getBlockState(pos).getBlock() == ModBlocks.ORE_OIL.get()) {
+            // Mit Space-Addon koennen die Tanks von einer Addon-Lagerstaette umgestellt sein (Original setTankType je
+            // Foerderung); ohne Addon aendert sich der Tanktyp nie -> no-op.
+            if (com.hbm_m.api.space.SpaceApi.isInstalled()) {
+                tanks[0].setTankType(com.hbm_m.inventory.fluid.ModFluids.CRUDE_OIL.getSource());
+                tanks[1].setTankType(com.hbm_m.inventory.fluid.ModFluids.GAS.getSource());
+            }
             onSuck(pos);
         }
+    }
+
+    /**
+     * 1:1 NTM Space {@code TileEntityOilDrillBase.onSuck(BlockOreFluid, x, y, z)} fuer Addon-Lagerstaetten (W-R8B-2):
+     * Tanktypen aus der Lagerstaette, Mengen ueber {@link #depositPrimaryAmount}/{@link #depositSecondaryAmount},
+     * Erschoepfung ueber {@link #depositDrainMultiplier}.
+     */
+    protected void onSuckDeposit(com.hbm_m.api.space.SpaceResources.FluidDepositBlock dep, BlockPos pos) {
+        tanks[0].setTankType(depositFluid(dep.getPrimaryFluid()));
+        tanks[1].setTankType(depositFluid(dep.getSecondaryFluid()));
+
+        tanks[0].setFill(Math.min(tanks[0].getFill() + depositPrimaryAmount(dep), tanks[0].getMaxFill()));
+        if (tanks[1].getTankType() != com.hbm_m.inventory.fluid.ModFluids.NONE.getSource())
+            tanks[1].setFill(Math.min(tanks[1].getFill() + depositSecondaryAmount(dep), tanks[1].getMaxFill()));
+
+        dep.drain(level, pos, depositDrainMultiplier());
+    }
+
+    /** Original {@code getPrimaryFluidAmount(block, meta)} (Pumpjack: x1.5). */
+    protected int depositPrimaryAmount(com.hbm_m.api.space.SpaceResources.FluidDepositBlock dep) {
+        return dep.getPrimaryFluidAmount();
+    }
+
+    /** Original {@code getSecondaryFluidAmount(block, meta)} (Pumpjack: x0.5). */
+    protected int depositSecondaryAmount(com.hbm_m.api.space.SpaceResources.FluidDepositBlock dep) {
+        return dep.getSecondaryFluidAmount();
+    }
+
+    /** Original {@code attemptDrain}: Erschoepfungs-Multiplikator (Pumpjack: 0.5). */
+    protected double depositDrainMultiplier() {
+        return 1D;
+    }
+
+    /** Fluid-ID der Lagerstaette -> Fluid; null/unbekannt = {@code NONE}. */
+    public static net.minecraft.world.level.material.Fluid depositFluid(@org.jetbrains.annotations.Nullable net.minecraft.resources.ResourceLocation id) {
+        if (id == null) return com.hbm_m.inventory.fluid.ModFluids.NONE.getSource();
+        net.minecraft.world.level.material.Fluid f = net.minecraft.core.registries.BuiltInRegistries.FLUID.get(id);
+        return f == null || f == net.minecraft.world.level.material.Fluids.EMPTY ? com.hbm_m.inventory.fluid.ModFluids.NONE.getSource() : f;
     }
 
     public abstract void onSuck(BlockPos pos);

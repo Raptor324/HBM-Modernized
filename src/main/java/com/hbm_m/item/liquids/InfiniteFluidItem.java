@@ -116,6 +116,60 @@ public class InfiniteFluidItem extends Item implements ITooltipProvider {
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.literal("§bInfinite Fluid"));
         tooltip.add(Component.literal("§7Output Rate: §e" + transferRate + " mB/t"));
+        appendTableTooltip(stack, tooltip);
+    }
+
+    // ── NTM Space: Wassertabelle (ItemInfiniteFluid.requiresTable / CBT_Water) ──────────────────────
+
+    /**
+     * NTM Space {@code requiresTable}: im Original nur {@code inf_water}/{@code inf_water_mk2} (feste Fluessigkeit Wasser,
+     * nicht die universelle Bochka) - sie arbeiten nur, wenn der Himmelskoerper eine Wasser-Wassertabelle hat.
+     */
+    public boolean requiresTable() {
+        return !instantNetwork && fixedFluid != null && com.hbm_m.api.fluids.VanillaFluidEquivalence.isWater(fixedFluid);
+    }
+
+    /** NTM Space {@code onUpdate}: merkt sich im Item-NBT, ob die aktuelle Umgebung eine passende Tabelle hat. Ohne Space-Addon wirkungslos. */
+    @Override
+    public void inventoryTick(ItemStack stack, Level level, net.minecraft.world.entity.Entity entity, int slot, boolean selected) {
+        super.inventoryTick(stack, level, entity, slot, selected);
+        if (!requiresTable() || !com.hbm_m.api.space.SpaceApi.isInstalled()) return;
+
+        // waterTableFluid: im Orbit und ohne Tabelle null
+        Fluid table = com.hbm_m.api.space.SpaceApi.waterTableFluid(level, com.hbm_m.inventory.fluid.ModFluids.WATER.getSource());
+        boolean canOperate = table != null && com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(table, fixedFluid);
+        String fluid = table != null ? String.valueOf(BuiltInRegistries.FLUID.getKey(table)) : "";
+
+        if (com.hbm_m.platform.StackNbt.has(stack)) {
+            net.minecraft.nbt.CompoundTag cur = com.hbm_m.platform.StackNbt.read(stack);
+            if (cur.contains("noAtmo") && cur.getBoolean("noAtmo") == !canOperate && fluid.equals(cur.getString("fluid"))) return;
+        }
+        net.minecraft.nbt.CompoundTag tag = com.hbm_m.platform.StackNbt.orCreate(stack);
+        tag.putBoolean("noAtmo", !canOperate);
+        tag.putString("fluid", fluid);
+    }
+
+    /** NTM Space {@code canOperate(stack)}: kein NBT oder {@code noAtmo == false}. */
+    public boolean canOperate(ItemStack stack) {
+        return !com.hbm_m.platform.StackNbt.has(stack) || !com.hbm_m.platform.StackNbt.read(stack).getBoolean("noAtmo");
+    }
+
+    private void appendTableTooltip(ItemStack stack, List<Component> tooltip) {
+        if (canOperate(stack)) return;
+        String fluidId = com.hbm_m.platform.StackNbt.read(stack).getString("fluid");
+        Fluid current = fluidId.isEmpty() ? Fluids.EMPTY : BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(fluidId));
+        boolean none = current == null || current == Fluids.EMPTY;
+        if (none) {
+            tooltip.add(Component.literal("Current environment has insufficient vapor pressure"));
+        } else {
+            tooltip.add(Component.literal("Current environment has an incompatible fluid table"));
+        }
+        tooltip.add(Component.literal("Requires: ").append(com.hbm_m.inventory.fluid.FluidType.forFluid(fixedFluid).getLocalizedName()).append(" table"));
+        if (none) {
+            tooltip.add(Component.literal("Releasing 0.2atm of vapor into the atmosphere will add a table on dry celestial bodies"));
+        } else {
+            tooltip.add(Component.literal("Current environment: ").append(com.hbm_m.inventory.fluid.FluidType.forFluid(current).getLocalizedName()).append(" table"));
+        }
     }
 
     // ================================================================== //

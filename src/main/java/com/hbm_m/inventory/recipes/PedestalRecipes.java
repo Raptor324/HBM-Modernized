@@ -51,10 +51,13 @@ public class PedestalRecipes {
 
     public static void registerDefaults() {
 
-        register(new PedestalRecipe(gun("gun_light_revolver_dani"),
+        PedestalRecipe dani = new PedestalRecipe(gun("gun_light_revolver_dani"),
                 null,                           mat(ModMaterials.LEAD, MaterialShape.PLATE),        null,
                 mat(ModMaterials.GOLD, MaterialShape.PLATE), gunIn("gun_light_revolver"),            mat(ModMaterials.GOLD, MaterialShape.PLATE),
-                null,                           mat(ModMaterials.LEAD, MaterialShape.PLATE),        null));
+                null,                           mat(ModMaterials.LEAD, MaterialShape.PLATE),        null);
+        // E8 (Fork, nur mit Space-Addon): Dani-Revolver nur bei Neumond
+        if (com.hbm_m.api.space.SpaceApi.forkActive()) dani.extra(PedestalExtraCondition.NEW_MOON);
+        register(dani);
 
         register(new PedestalRecipe(gun("gun_maresleg_broken"),
                 id("barbed_wire"),                                  mat(ModMaterials.WEAPONSTEEL, MaterialShape.PLATE), id("barbed_wire"),

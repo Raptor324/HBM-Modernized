@@ -39,7 +39,7 @@ public class TeslaRenderer implements com.hbm_m.client.render.HbmBerBounds<Tesla
             double length = Math.sqrt(Math.pow(target.x - sx, 2) + Math.pow(target.y - sy, 2) + Math.pow(target.z - sz, 2));
             BeamPronter.prontBeam(ps, buf, new Vec3(-target.x + sx, target.y - sy, -target.z + sz),
                     BeamPronter.EnumWaveType.RANDOM, BeamPronter.EnumBeamType.SOLID, 0x404040, 0x404040,
-                    (int) time % 1000 + 1, (int) (length * 5), 0.125F, 2, 0.03125F);
+                    (int) time % 1000 + 1, (int) (length * 5), 0.125F, 2, 0.03125F, com.hbm_m.client.render.util.BeamPronter.forkAlpha());
         }
         ps.popPose();
     }

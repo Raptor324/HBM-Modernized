@@ -48,19 +48,20 @@ public class Lpw2Renderer implements com.hbm_m.client.render.HbmBerBounds<Machin
         }
 
         long time = te.getLevel() == null ? 0 : te.getLevel().getGameTime() % 1000000;
+        double t = te.animationTime(time, interp); // W-R6B-1: Space lastTime/time, sonst Weltzeit
 
-        double swayTimer = ((time + interp) / 3D) % (Math.PI * 4);
+        double swayTimer = (t / 3D) % (Math.PI * 4);
         double sway = (Math.sin(swayTimer) + Math.sin(swayTimer * 2) + Math.sin(swayTimer * 4) + 2.23255D) * 0.5;
 
-        double bellTimer = ((time + interp) / 5D) % (Math.PI * 4);
+        double bellTimer = (t / 5D) % (Math.PI * 4);
         double h = (Math.sin(bellTimer + Math.PI) + Math.sin(bellTimer * 1.5D)) / 1.90596D;
         double v = (Math.sin(bellTimer) + Math.sin(bellTimer * 1.5D)) / 1.90596D;
 
-        double pistonTimer = ((time + interp) / 5D) % (Math.PI * 2);
+        double pistonTimer = (t / 5D) % (Math.PI * 2);
         double piston = sps(pistonTimer);
-        double rotorTimer = ((time + interp) / 5D) % (Math.PI * 16);
+        double rotorTimer = (t / 5D) % (Math.PI * 16);
         double rotor = (sps(rotorTimer) + rotorTimer / 2D - 1) / 25.1327412287D;
-        double turbine = ((time + interp) % 100) / 100D;
+        double turbine = (t % 100) / 100D;
 
         VertexConsumer vc = buf.getBuffer(RenderType.entityCutout(TEX));
         part("Frame", ps, vc, light);
@@ -81,7 +82,7 @@ public class Lpw2Renderer implements com.hbm_m.client.render.HbmBerBounds<Machin
         part("WireRight", ps, vc, light);
         ps.popPose();
 
-        double coverTimer = ((time + interp) / 5D) % (Math.PI * 4);
+        double coverTimer = (t / 5D) % (Math.PI * 4);
         double cover = (Math.sin(coverTimer) + Math.sin(coverTimer * 2) + Math.sin(coverTimer * 4)) * 0.5;
 
         ps.pushPose();
@@ -117,7 +118,7 @@ public class Lpw2Renderer implements com.hbm_m.client.render.HbmBerBounds<Machin
         part("SuspensionBackCenter", ps, vc, light);
         ps.popPose();
 
-        double serverTimer = ((time + interp) / 2D) % (Math.PI * 4);
+        double serverTimer = (t / 2D) % (Math.PI * 4);
         double sx = (Math.sin(serverTimer + Math.PI) + Math.sin(serverTimer * 1.5D)) / 1.90596D;
         double sy = (Math.sin(serverTimer) + Math.sin(serverTimer * 1.5D)) / 1.90596D;
 

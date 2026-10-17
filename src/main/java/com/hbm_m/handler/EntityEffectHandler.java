@@ -65,6 +65,9 @@ public final class EntityEffectHandler {
         // Биомы кратера эмиттят радиацию напрямую в игрока, минуя chunk ambient.
         handleCraterBiomeRadiation(entity);
 
+        // NTM Space: getAtmosphereCached + handleOxy + handleCorrosion (Addon; ohne Space-Addon nichts)
+        com.hbm_m.api.space.SpaceApi.livingTick(entity);
+
         // Чанковая доза для всех сущностей, включая игроков (1.7.10: handleRadiationFX → contaminate → radEnv).
         handleRadiationFromChunk(entity);
 
@@ -426,6 +429,10 @@ public final class EntityEffectHandler {
                 }
             }
         }
+
+        // NTM Space: Sonnenstrahlung auf Himmelskoerpern/im Orbit (handleRadiationFX); ohne Space-Addon 0
+        float spaceRad = com.hbm_m.api.space.SpaceApi.ambientRadiation(level, entity.blockPosition());
+        if (spaceRad > rad) rad = spaceRad;
 
         // Диагностика цепочки чанк→сущность (гейтится enableDebugLogging, раз в 5 сек на сущность)
         if (ModClothConfig.get().enableDebugLogging && rad > 0F && entity.tickCount % 100 == 0) {

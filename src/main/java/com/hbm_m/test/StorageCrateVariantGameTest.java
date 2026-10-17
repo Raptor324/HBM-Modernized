@@ -186,16 +186,17 @@ public final class StorageCrateVariantGameTest {
         check(ironResult.is(ModItems.CRATE_IRON.get()),
                 "Recipe of iron plates and ingots must produce an iron crate");
 
-        // Upgrade: AAA / ABA / AAA — desh plates around a steel crate.
+        // Upgrade 1:1 Original (CraftingManager, ContainerUpgradeCraftingHandler):
+        // " D " / "DSD" / " D " — vier Desh-Platten im Plus um die Stahlkiste.
+        // (Frueher stand hier das alte Port-Muster mit acht Platten, das es im Original nicht gibt.)
         NonNullList<ItemStack> upgradeGrid = NonNullList.withSize(9, ItemStack.EMPTY);
-        for (int i = 0; i < 9; i++) {
-            upgradeGrid.set(i, (i == 4)
-                    ? new ItemStack(ModBlocks.CRATE_STEEL.get())
-                    : ModMaterialItems.stack(ModMaterials.DESH, MaterialShape.PLATE, 1));
+        for (int i : new int[] {1, 3, 5, 7}) {
+            upgradeGrid.set(i, ModMaterialItems.stack(ModMaterials.DESH, MaterialShape.PLATE, 1));
         }
+        upgradeGrid.set(4, new ItemStack(ModBlocks.CRATE_STEEL.get()));
         ItemStack upgraded = craft(helper, upgradeGrid);
         check(upgraded.is(ModItems.CRATE_DESH.get()) && upgraded.getCount() == 1,
-                "Eight desh plates around a steel crate must produce a desh crate");
+                "Four desh plates around a steel crate must produce a desh crate");
         helper.succeed();
     }
 }

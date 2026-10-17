@@ -57,11 +57,18 @@ public class JetpackRegular extends JetpackFueledBase {
         }
 
         if (getFuel(stack) > 0 && props.isJetpackActive()) {
+            // NTM Space: Schwerelosigkeit = Schub in Blickrichtung, sonst mit der Schwerkraft skaliert - Erde: unveraendert
+            float gravity = com.hbm_m.api.space.SpaceApi.gravity(player);
+
             player.fallDistance = 0;
 
             Vec3 m = player.getDeltaMovement();
-            if (m.y < 0.4D)
-                player.setDeltaMovement(m.x, m.y + 0.1D, m.z);
+            if (gravity == 0) {
+                Vec3 look = player.getLookAngle();
+                player.setDeltaMovement(m.x + look.x * 0.05, m.y + look.y * 0.05, m.z + look.z * 0.05);
+            } else if (m.y < 0.4D) {
+                player.setDeltaMovement(m.x, m.y + 0.1D * Math.max(gravity / com.hbm_m.api.space.SpaceEnvironment.STANDARD_GRAVITY, 1), m.z);
+            }
 
             sound(world, player, 1.5F);
             this.useUpFuel(player, stack, 5);

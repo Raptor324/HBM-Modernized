@@ -39,6 +39,12 @@ public final class RotaryFurnaceRecipes {
         registerDefaults();
     }
 
+    /** W-R9B5-6 (Space-Addon): Rezept anhaengen (nach den HBM-Standards). */
+    public static synchronized void addExternal(RotaryFurnaceRecipe recipe) {
+        ensureLoaded();
+        recipes.add(recipe);
+    }
+
     public static List<RotaryFurnaceRecipe> all() {
         ensureLoaded();
         return recipes;
@@ -55,7 +61,9 @@ public final class RotaryFurnaceRecipes {
 
         recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_DESH, INGOT.q(1)), 100, 200, fluid(ModFluids.LIGHTOIL.getSource(), 100), item(ModItems.POWDER_DESH_READY.get(), 1)));
 
-        recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_GUNMETAL, INGOT.q(4)), 200, 100, shape(MAT_COPPER, INGOT, 3), shape(MAT_ALUMINIUM, INGOT, 1)));
+        // E8 (Fork, nur mit Space-Addon): Zink statt Aluminium
+        NTMMaterial zinc = com.hbm_m.api.space.SpaceApi.forkActive() ? com.hbm_m.api.space.SpaceApi.fork().gunmetalZinc() : null;
+        recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_GUNMETAL, INGOT.q(4)), 200, 100, shape(MAT_COPPER, INGOT, 3), shape(zinc != null ? zinc : MAT_ALUMINIUM, INGOT, 1)));
         recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_WEAPONSTEEL, INGOT.q(1)), 200, 400, fluid(ModFluids.GAS_COKER.getSource(), 100), shape(MAT_STEEL, INGOT, 1), item(ModItems.POWDER_FLUX.get(), 2)));
         recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_SATURN, INGOT.q(2)), 200, 400, fluid(ModFluids.REFORMGAS.getSource(), 250), shape(MAT_DURA, DUST, 4), shape(MAT_COPPER, DUST, 1)));
         recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_SATURN, INGOT.q(4)), 200, 300, fluid(ModFluids.REFORMGAS.getSource(), 250), shape(MAT_DURA, DUST, 4), shape(MAT_COPPER, DUST, 1), shape(MAT_BORAX, DUST, 1)));

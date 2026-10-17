@@ -31,6 +31,52 @@ public final class ElectrolyserFluidRecipes {
         registerDefaults();
     }
 
+    /** W-R9B5-2 (Space-Addon): Elektrolyse-Rezept fuer ein Eingangsfluid anmelden (nach den HBM-Standards). */
+    public static synchronized void addExternal(Fluid input, ElectrolysisRecipe recipe) {
+        ensureLoaded();
+        recipes.put(input, recipe);
+        baseVersion++;
+    }
+
+    // ---------------------------------------------------------------- W-R9B5-2: Datapack-Rezepte (hbm_m:electrolysis_fluid)
+
+    private static int baseVersion;
+
+    private record Merged(int baseVersion, int fingerprint, Map<Fluid, ElectrolysisRecipe> map) { }
+
+    private static final java.util.WeakHashMap<net.minecraft.world.item.crafting.RecipeManager, Merged> MERGED = new java.util.WeakHashMap<>();
+
+    /**
+     * Code-Tabelle plus {@link com.hbm_m.recipe.ElectrolysisFluidDataRecipe}s des RecipeManagers (gleiches Eingangsfluid =
+     * ersetzt, Reihenfolge Rezept-ID). Ohne solche JSONs (HBM liefert keine) identisch mit {@link #all()}.
+     */
+    public static synchronized Map<Fluid, ElectrolysisRecipe> all(@Nullable net.minecraft.world.item.crafting.RecipeManager manager) {
+        Map<Fluid, ElectrolysisRecipe> base = all();
+        if (manager == null) return base;
+        Map<net.minecraft.resources.ResourceLocation, com.hbm_m.recipe.ElectrolysisFluidDataRecipe> data =
+                com.hbm_m.platform.recipe.RecipeHooks.getAllRecipesById(manager, com.hbm_m.recipe.ElectrolysisFluidDataRecipe.Type.INSTANCE);
+        if (data.isEmpty()) return base;
+        int fp = 1;
+        for (Object r : data.values()) fp = 31 * fp + System.identityHashCode(r);
+        Merged m = MERGED.get(manager);
+        if (m != null && m.baseVersion == baseVersion && m.fingerprint == fp) return m.map;
+        Map<Fluid, ElectrolysisRecipe> merged = new LinkedHashMap<>(base);
+        data.entrySet().stream().sorted(Map.Entry.comparingByKey(java.util.Comparator.comparing(Object::toString))).forEach(e -> {
+            Fluid in = e.getValue().inputFluid();
+            ElectrolysisRecipe rec = e.getValue().toRecipe();
+            if (in != null && rec != null) merged.put(in, rec);
+        });
+        MERGED.put(manager, new Merged(baseVersion, fp, merged));
+        return merged;
+    }
+
+    /** Rezept fuer ein Eingangsfluid inkl. Datapack ({@code level} null = nur Code-Tabelle). */
+    @Nullable
+    public static ElectrolysisRecipe getRecipe(@Nullable net.minecraft.world.level.Level level, @Nullable Fluid type) {
+        if (type == null) return null;
+        return all(level != null ? level.getRecipeManager() : null).get(type);
+    }
+
     public static Map<Fluid, ElectrolysisRecipe> all() {
         ensureLoaded();
         return recipes;

@@ -28,6 +28,12 @@ public class TNTPrimedBaseRenderer extends EntityRenderer<EntityTNTPrimedBase> {
     public void render(EntityTNTPrimedBase tnt, float yaw, float partialTicks, PoseStack ps, MultiBufferSource buffers, int light) {
         ps.pushPose();
         ps.translate(0.0F, 0.5F, 0.0F);
+        // E11 (Fork, nur mit Space-Addon): Original RenderTNTPrimedBase dreht um rotationYaw (Y) und rotationPitch (Z)
+        if (com.hbm_m.api.space.SpaceApi.forkActive()) {
+            ps.mulPose(Axis.YP.rotationDegrees(-90.0F + tnt.getYRot()));
+            ps.mulPose(Axis.ZP.rotationDegrees(tnt.getXRot()));
+            ps.mulPose(Axis.YP.rotationDegrees(90.0F));
+        }
         int fuse = tnt.fuse;
         if ((float) fuse - partialTicks + 1.0F < 10.0F) {
             float f = 1.0F - ((float) fuse - partialTicks + 1.0F) / 10.0F;

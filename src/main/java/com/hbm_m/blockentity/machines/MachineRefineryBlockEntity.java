@@ -495,7 +495,7 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
         return switch (slot) {
             case SLOT_BATTERY -> isEnergyProviderItem(stack);
             case SLOT_CANISTER_IN, SLOT_HEAVY_IN, SLOT_NAPHTHA_IN, SLOT_LIGHT_IN, SLOT_PETROLEUM_IN ->
-                    FluidItemAccess.hasFluidHandler(stack);
+                    FluidItemAccess.isFluidContainer(stack);
             case SLOT_FLUID_ID -> stack.getItem() instanceof FluidIdentifierItem;
             default -> false;
         };

@@ -86,7 +86,7 @@ public class ForceFieldRenderer implements com.hbm_m.client.render.HbmBerBounds<
      * 1:1-Port von {@code generateSphere} und {@code generateSphere2}: erst die Laengengrade, dann
      * die Breitengrade - zusammen ergibt das das Gitternetz.
      */
-    private static void drawSphere(PoseStack ps, MultiBufferSource buffer, int l, int s, float rad, int hex) {
+    static void drawSphere(PoseStack ps, MultiBufferSource buffer, int l, int s, float rad, int hex) {
         if (l <= 0 || s <= 0) return;
 
         VertexConsumer vc = buffer.getBuffer(RenderType.lines());

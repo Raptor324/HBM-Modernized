@@ -138,7 +138,8 @@ public class MachineFlareStackBlockEntity extends BaseMachineBlockEntity impleme
             maxVent += maxVent * burn;
             maxBurn += maxBurn * burn;
 
-            if (!doesBurn || !type.hasTrait(FT_Flammable.class)) {
+            // NTM Space: || !breatheAir(min(maxBurn, fill)) - ohne Space-Addon immer atembar
+            if (!doesBurn || !type.hasTrait(FT_Flammable.class) || !breatheAir(Math.min(maxBurn, tank.getFill()))) {
 
                 if (isGas(type)) {
                     int eject = Math.min(maxVent, tank.getFill());
@@ -151,6 +152,11 @@ public class MachineFlareStackBlockEntity extends BaseMachineBlockEntity impleme
 
                     if (world.getGameTime() % 5 == 0 && eject > 0) {
                         FT_Polluting.pollute(world, pos, tank.getTankType(), FluidReleaseType.SPILL, eject * 5);
+                    }
+
+                    // NTM Space CelestialBody.emitGas - ohne Space-Addon wirkungslos
+                    if (com.hbm_m.api.space.SpaceApi.isInstalled()) {
+                        com.hbm_m.api.space.SpaceApi.emitGas(world, pos, net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(tank.getTankType()), eject);
                     }
                 }
             } else {

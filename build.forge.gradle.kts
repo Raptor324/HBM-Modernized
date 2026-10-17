@@ -154,6 +154,7 @@ dependencies {
 	// "modRuntimeOnly"("curse.maven:xaeros-world-map-317780:7598469")
     // "modRuntimeOnly"("curse.maven:xaeros-minimap-263420:7598586")
 	"modRuntimeOnly"("curse.maven:jade-324717:6855440")
+	"modRuntimeOnly"("maven.modrinth:worldedit:Wrlqaul6") // WorldEdit 7.2.15 Forge 1.20.1 (Dev-Laufzeit)
 }
 
 sourceSets {

@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Supplier;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -23,6 +24,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.ItemLike;
 
 /**
  * 1:1 {@code com.hbm.inventory.material.Mats}: alle Giesserei-Materialien des Originals mit ihren IDs (Ordnungszahl
@@ -193,6 +195,25 @@ public class Mats {
     private static Map<NTMMaterial, Map<MaterialShapes, Item>> shapeItems;
     private static Map<String, NTMMaterial> matByTagName;
 
+    /** Space-API W-R4b-1: von Addons angemeldete Formen-Items (fremde Namensraeume). */
+    private record ExtraShape(NTMMaterial material, MaterialShapes shape, Supplier<? extends ItemLike> item) { }
+    private static final List<ExtraShape> EXTRA_SHAPES = new ArrayList<>();
+
+    /**
+     * Space-API (W-R4b-1): meldet ein Formen-Item eines beliebigen Namensraums an (Original: Ore-Dictionary-Eintrag
+     * {@code <praefix><Material>}). Danach erkennen {@link #getShape} (Schmelzwert, Lichtbogenofen, Amboss ...) das Item
+     * direkt und {@link #getItemForShape} (Giessformen, Drehrohrofen, Bedrock-Fragmente) kann es ausgeben; HBM-eigene
+     * Items bleiben bei Giessformen bevorzugt. Das Item wird erst beim Aufbau der Tabellen aufgeloest (Supplier).
+     * Ein so angemeldetes Item gehoert <b>nicht</b> zusaetzlich in {@link #materialEntries} (sonst doppelter Wert).
+     */
+    public static synchronized void registerShapeItem(NTMMaterial material, MaterialShapes shape, Supplier<? extends ItemLike> item) {
+        EXTRA_SHAPES.add(new ExtraShape(material, shape, item));
+        if (itemShapes != null) {
+            itemShapes = null;
+            buildItemTables();
+        }
+    }
+
     private static synchronized void buildItemTables() {
         if (itemShapes != null) return;
 
@@ -231,17 +252,34 @@ public class Mats {
 
         for (NTMMaterial mat : orderedList) {
             for (String name : mat.names) tagNames.put(snake(name), mat);
-            for (String alias : mat.portIds) {
+            for (String portId : mat.portIds) {
+                // W-R4b-1: "namensraum:alias" sucht die Muster in fremden Namensraeumen (Standard hbm_m)
+                int colon = portId.indexOf(':');
+                String ns = colon < 0 ? RefStrings.MODID : portId.substring(0, colon);
+                String alias = colon < 0 ? portId : portId.substring(colon + 1);
                 tagNames.putIfAbsent(alias, mat);
                 for (MaterialShapes shape : allShapes) {
                     for (String pattern : shape.portPatterns) {
-                        Item item = BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, String.format(pattern, alias)));
+                        Item item = BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath(ns, String.format(pattern, alias)));
                         if (item == null || item == Items.AIR) continue;
                         rev.putIfAbsent(item, new MatShape(mat, shape));
                         fwd.computeIfAbsent(mat, k -> new IdentityHashMap<>()).putIfAbsent(shape, item);
                     }
                 }
             }
+        }
+
+        // W-R4b-1: Addon-Formen nach den HBM-Items (Giessformen bevorzugen HBM)
+        for (ExtraShape extra : EXTRA_SHAPES) {
+            Item item;
+            try {
+                item = extra.item().get().asItem();
+            } catch (RuntimeException e) {
+                continue; // noch nicht registriert
+            }
+            if (item == null || item == Items.AIR) continue;
+            rev.putIfAbsent(item, new MatShape(extra.material(), extra.shape()));
+            fwd.computeIfAbsent(extra.material(), k -> new IdentityHashMap<>()).putIfAbsent(extra.shape(), item);
         }
 
         shapeItems = fwd;
@@ -264,17 +302,29 @@ public class Mats {
         return camel.replaceAll("([a-z0-9])([A-Z])", "$1_$2").toLowerCase(Locale.ROOT);
     }
 
-    /** Form und Material eines Items, oder {@code null}. Port-Items und Vanilla zuerst, dann Forge-Tags fremder Mods. */
+    /** Form und Material eines Items, oder {@code null}. Port-Items und Vanilla zuerst, dann Forge-/c:-Tags fremder Mods. */
     @Nullable
     public static MatShape getShape(ItemStack stack) {
         if (stack.isEmpty()) return null;
-        buildItemTables();
-        MatShape direct = itemShapes.get(stack.getItem());
+        MatShape direct = getDirectShape(stack);
         if (direct != null) return direct;
+        return getTagShape(stack);
+    }
 
+    /** Nur die festen Tabellen (Port-, Vanilla- und angemeldete Addon-Items). */
+    @Nullable
+    private static MatShape getDirectShape(ItemStack stack) {
+        buildItemTables();
+        return itemShapes.get(stack.getItem());
+    }
+
+    /** Rueckfall ueber {@code forge:}- bzw. (NeoForge) {@code c:}-Tags {@code <ordner>/<material>}. */
+    @Nullable
+    private static MatShape getTagShape(ItemStack stack) {
+        buildItemTables();
         for (TagKey<Item> tag : (Iterable<TagKey<Item>>) stack.getTags()::iterator) {
             ResourceLocation loc = tag.location();
-            if (!loc.getNamespace().equals("forge")) continue;
+            if (!loc.getNamespace().equals("forge") && !loc.getNamespace().equals("c")) continue;
             String path = loc.getPath();
             int slash = path.indexOf('/');
             if (slash < 0) continue;
@@ -321,8 +371,21 @@ public class Mats {
             found = true;
         }
 
+        List<MaterialStack> entries = materialEntries.get(stack.getItem());
+
         if (!found) {
-            MatShape shape = getShape(stack);
+            MatShape shape = getDirectShape(stack);
+            if (shape == null) {
+                shape = getTagShape(stack);
+                // W-R4b-1: ein nur ueber Tags erkanntes Item, das schon feste Eintraege desselben Materials hat,
+                // nicht doppelt zaehlen
+                if (shape != null && entries != null) {
+                    NTMMaterial m = shape.material();
+                    for (MaterialStack x : entries) {
+                        if (x != null && x.material == m) { shape = null; break; }
+                    }
+                }
+            }
             if (shape != null) {
                 NTMMaterial material = shape.material();
                 if (material.smeltsInto.smeltable == SmeltingBehavior.SMELTABLE || material.smeltsInto.smeltable == SmeltingBehavior.ADDITIVE) {
@@ -331,7 +394,6 @@ public class Mats {
             }
         }
 
-        List<MaterialStack> entries = materialEntries.get(stack.getItem());
         if (entries != null) {
             entries.forEach(x -> { if (x != null) list.add(x); });
         }

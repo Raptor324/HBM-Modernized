@@ -69,9 +69,9 @@ public class MiningLaserRenderer implements com.hbm_m.client.render.HbmBerBounds
             ps.translate(nVec.x, nVec.y - 1, nVec.z);
             int range = (int) Math.ceil(length * 0.5);
             int time = (int) laser.getLevel().getGameTime() * -25 % 360;
-            BeamPronter.prontBeam(ps, buf, vec, EnumWaveType.SPIRAL, EnumBeamType.SOLID, 0xa00000, 0xa00000, time, range * 2, 0.075F, 3, 0.025F);
+            BeamPronter.prontBeam(ps, buf, vec, EnumWaveType.SPIRAL, EnumBeamType.SOLID, 0xa00000, 0xa00000, time, range * 2, 0.075F, 3, 0.025F, com.hbm_m.client.render.util.BeamPronter.forkAlpha());
             BeamPronter.prontBeam(ps, buf, vec, EnumWaveType.SPIRAL, EnumBeamType.SOLID, 0xa00000, 0xa00000, time + 120, range * 2, 0.075F, 3, 0.025F);
-            BeamPronter.prontBeam(ps, buf, vec, EnumWaveType.SPIRAL, EnumBeamType.SOLID, 0xa00000, 0xa00000, time + 240, range * 2, 0.075F, 3, 0.025F);
+            BeamPronter.prontBeam(ps, buf, vec, EnumWaveType.SPIRAL, EnumBeamType.SOLID, 0xa00000, 0xa00000, time + 240, range * 2, 0.075F, 3, 0.025F, com.hbm_m.client.render.util.BeamPronter.forkAlpha());
         }
 
         ps.popPose();

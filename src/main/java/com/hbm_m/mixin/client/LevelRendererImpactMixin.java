@@ -24,6 +24,7 @@ public abstract class LevelRendererImpactMixin {
         // Original: der Impact-Himmel wird nur mit 1.31_enableSkyboxes eingesetzt
         if (!com.hbm_m.config.GeneralConfig.enableSkyboxes) return rain;
         if (level.dimension() != Level.OVERWORLD) return rain;
+        if (com.hbm_m.api.space.SpaceApi.overridesSky(level)) return rain; // Space-Addon zeichnet den Himmel selbst
         float atmosphericDust = ImpactWorldHandler.getDustForClient(level);
         float fire = ImpactWorldHandler.getFireForClient(level);
         if (atmosphericDust <= 0 && fire <= 0) return rain;
@@ -39,6 +40,7 @@ public abstract class LevelRendererImpactMixin {
     private float[] hbm_m$impactSunrise(net.minecraft.client.renderer.DimensionSpecialEffects effects, float timeOfDay, float partialTick) {
         ClientLevel level = net.minecraft.client.Minecraft.getInstance().level;
         if (com.hbm_m.config.GeneralConfig.enableSkyboxes && level != null && level.dimension() == Level.OVERWORLD
+                && !com.hbm_m.api.space.SpaceApi.overridesSky(level)
                 && (ImpactWorldHandler.getDustForClient(level) > 0 || ImpactWorldHandler.getFireForClient(level) > 0)) {
             return null;
         }

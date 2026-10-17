@@ -100,6 +100,18 @@ public final class HbmFluidRegistry {
 
     private HbmFluidRegistry() {}
 
+    /**
+     * Fremde (Addon-)Fluessigkeit in die GUI-Reihenfolge einsortieren (Original {@code Fluids.metaOrder}), direkt hinter
+     * {@code anchor}; {@code anchor == null} oder nicht gefunden = ans Ende. Doppelte Eintraege werden ignoriert.
+     * Fuer Addons ueber {@link com.hbm_m.api.space.HbmFluidApi}.
+     */
+    public static synchronized void insertAfter(@org.jetbrains.annotations.Nullable ModFluids.FluidEntry anchor, ModFluids.FluidEntry entry) {
+        if (entry == null || ORDERED_FLUIDS.contains(entry)) return;
+        int idx = anchor == null ? -1 : ORDERED_FLUIDS.indexOf(anchor);
+        if (idx < 0) ORDERED_FLUIDS.add(entry);
+        else ORDERED_FLUIDS.add(idx + 1, entry);
+    }
+
     /** Returns fluids in display order for GUI. Excludes NONE. */
     public static List<ModFluids.FluidEntry> getOrderedFluids() {
         return ORDERED_FLUIDS;

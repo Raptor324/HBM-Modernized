@@ -41,6 +41,8 @@ import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureType;
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceSerializationContext;
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePiecesBuilder;
+import net.minecraft.world.level.levelgen.structure.placement.RandomSpreadStructurePlacement;
+import net.minecraft.world.level.levelgen.structure.placement.RandomSpreadType;
 import net.minecraft.world.level.levelgen.structure.placement.StructurePlacement;
 import net.minecraft.world.level.levelgen.structure.placement.StructurePlacementType;
 
@@ -62,29 +64,70 @@ public final class NBTStructureGen {
 
     private NBTStructureGen() { }
 
+    /**
+     * Original {@code world.provider.dimensionId} der Oberwelt. Space-Addons geben in ihren Struktur-/Platzierungs-JSONs
+     * ein optionales Feld {@code "dimension": <legacy-id>} an (SPACE_API_wishes W-B1, z.B. Mun 413015); ohne Feld = 0.
+     */
     private static final int DIMENSION = 0;
 
     // ============================================================================================================
     // Platzierung
     // ============================================================================================================
 
-    /** Original {@code GenStructure.getSpawnAtCoords} Gitterteil als Vanilla-Platzierung. */
-    public static class GridPlacement extends StructurePlacement {
+    /**
+     * Original {@code GenStructure.getSpawnAtCoords} Gitterteil als Vanilla-Platzierung.
+     * <p>Erbt von {@link RandomSpreadStructurePlacement}, weil Vanilla-{@code /locate}
+     * ({@code ChunkGenerator.findNearestMapStructure}) nur Ring- und Zufallsstreuungs-Platzierungen durchsucht; die
+     * Gitterlogik selbst ({@link #isPlacementChunk}, {@link #getPotentialStructureChunk}, Zellgroesse aus
+     * {@code StructureConfig}) bleibt die des Originals, die Weltgenerierung ist unveraendert.
+     */
+    public static class GridPlacement extends RandomSpreadStructurePlacement {
 
         //? if < 1.21.1 {
         public static final Codec<GridPlacement> CODEC = RecordCodecBuilder.create(instance ->
         //?} else {
         /*public static final com.mojang.serialization.MapCodec<GridPlacement> CODEC = RecordCodecBuilder.mapCodec(instance ->
         *///?}
-                placementCodec(instance).apply(instance, GridPlacement::new));
+                placementCodec(instance)
+                        .and(Codec.INT.optionalFieldOf("dimension", DIMENSION).forGetter(GridPlacement::dimension))
+                        .apply(instance, GridPlacement::new));
+
+        private final int dimension;
 
         public GridPlacement(Vec3i locateOffset, FrequencyReductionMethod method, float frequency, int salt, Optional<ExclusionZone> exclusionZone) {
-            super(locateOffset, method, frequency, salt, exclusionZone);
+            this(locateOffset, method, frequency, salt, exclusionZone, DIMENSION);
+        }
+
+        public GridPlacement(Vec3i locateOffset, FrequencyReductionMethod method, float frequency, int salt, Optional<ExclusionZone> exclusionZone, int dimension) {
+            super(locateOffset, method, frequency, salt, exclusionZone, 2, 1, RandomSpreadType.LINEAR);
+            this.dimension = dimension;
+        }
+
+        /** Zellgroesse in Chunks (Original {@code structureMaxChunks}); /locate tastet in diesem Abstand ab. */
+        @Override
+        public int spacing() {
+            return Math.max(1, StructureConfig.structureMaxChunks);
+        }
+
+        @Override
+        public int separation() {
+            return Math.max(0, Math.min(StructureConfig.structureMinChunks, spacing() - 1));
+        }
+
+        /** Strukturchunk der Gitterzelle, in der {@code (chunkX, chunkZ)} liegt (wie {@link #isGridChunk}). */
+        @Override
+        public ChunkPos getPotentialStructureChunk(long seed, int chunkX, int chunkZ) {
+            return gridChunk(seed, chunkX, chunkZ, new Random(), dimension);
+        }
+
+        /** Legacy-Dimensions-ID fuer den Gitter-Seed (Original {@code - world.provider.dimensionId}). */
+        public int dimension() {
+            return dimension;
         }
 
         @Override
         protected boolean isPlacementChunk(ChunkGeneratorStructureState state, int chunkX, int chunkZ) {
-            return isGridChunk(state.getLevelSeed(), chunkX, chunkZ, new Random());
+            return isGridChunk(state.getLevelSeed(), chunkX, chunkZ, new Random(), dimension);
         }
 
         @Override
@@ -94,9 +137,14 @@ public final class NBTStructureGen {
     }
 
     /** Seedet {@code rand} wie das Original und prueft, ob dies der Strukturchunk seiner Gitterzelle ist. */
-    static boolean isGridChunk(long seed, int chunkX, int chunkZ, Random rand) {
+    static boolean isGridChunk(long seed, int chunkX, int chunkZ, Random rand, int dimension) {
         if (StructureConfig.enableStructures == 0) return false;
+        ChunkPos grid = gridChunk(seed, chunkX, chunkZ, rand, dimension);
+        return chunkX == grid.x && chunkZ == grid.z;
+    }
 
+    /** Original-Gitter: Strukturchunk der Zelle von {@code (chunkX, chunkZ)}. */
+    static ChunkPos gridChunk(long seed, int chunkX, int chunkZ, Random rand, int dimension) {
         int max = StructureConfig.structureMaxChunks;
         int min = StructureConfig.structureMinChunks;
 
@@ -108,13 +156,13 @@ public final class NBTStructureGen {
 
         x /= max;
         z /= max;
-        rand.setSeed((long) x * 341873128712L + (long) z * 132897987541L + seed + (long) 996996996 - DIMENSION);
+        rand.setSeed((long) x * 341873128712L + (long) z * 132897987541L + seed + (long) 996996996 - dimension);
         x *= max;
         z *= max;
         x += rand.nextInt(max - min);
         z += rand.nextInt(max - min);
 
-        return chunkX == x && chunkZ == z;
+        return new ChunkPos(x, z);
     }
 
     // ============================================================================================================
@@ -124,15 +172,33 @@ public final class NBTStructureGen {
     public static class GenStructure extends Structure {
 
         //? if < 1.21.1 {
-        public static final Codec<GenStructure> CODEC = simpleCodec(GenStructure::new);
+        public static final Codec<GenStructure> CODEC = RecordCodecBuilder.create(instance ->
         //?} else {
-        /*public static final com.mojang.serialization.MapCodec<GenStructure> CODEC = simpleCodec(GenStructure::new);
+        /*public static final com.mojang.serialization.MapCodec<GenStructure> CODEC = RecordCodecBuilder.mapCodec(instance ->
         *///?}
+                instance.group(settingsCodec(instance),
+                        Codec.INT.optionalFieldOf("dimension", DIMENSION).forGetter(GenStructure::dimension))
+                        .apply(instance, GenStructure::new));
 
-        private static final Map<LegacyBiome, WeightedSpawnList> validBiomeCache = new HashMap<>();
+        /** Cache je (Dimension, Biom) - Original {@code validBiomeCache} gilt je {@code MapGenStructure}/Dimension. */
+        private record CacheKey(int dimension, LegacyBiome biome) { }
+
+        private static final Map<CacheKey, WeightedSpawnList> validBiomeCache = new HashMap<>();
+
+        private final int dimension;
 
         public GenStructure(StructureSettings settings) {
+            this(settings, DIMENSION);
+        }
+
+        public GenStructure(StructureSettings settings, int dimension) {
             super(settings);
+            this.dimension = dimension;
+        }
+
+        /** Legacy-Dimensions-ID, deren {@code NBTStructure.spawnMap/customSpawnMap} gilt. */
+        public int dimension() {
+            return dimension;
         }
 
         @Override
@@ -148,7 +214,7 @@ public final class NBTStructureGen {
             Random rand = new Random();
 
             // Sonderplaetze (Original customSpawnMap) - Zufall wie MapGenStructure je Chunk
-            List<SpawnCondition> custom = NBTStructure.customSpawnMap.get(DIMENSION);
+            List<SpawnCondition> custom = NBTStructure.customSpawnMap.get(dimension);
             if (custom != null) {
                 Random crand = new Random(ctx.seed());
                 long l = crand.nextLong();
@@ -163,7 +229,7 @@ public final class NBTStructureGen {
                 }
             }
 
-            if (!isGridChunk(ctx.seed(), chunk.x, chunk.z, rand)) return Optional.empty();
+            if (!isGridChunk(ctx.seed(), chunk.x, chunk.z, rand, dimension)) return Optional.empty();
 
             int cx = chunk.getMinBlockX() + 8;
             int cz = chunk.getMinBlockZ() + 8;
@@ -171,7 +237,7 @@ public final class NBTStructureGen {
             Holder<Biome> biomeHolder = ctx.biomeSource().getNoiseBiome(QuartPos.fromBlock(cx), QuartPos.fromBlock(cy), QuartPos.fromBlock(cz), ctx.randomState().sampler());
             LegacyBiome biome = LegacyBiome.of(biomeHolder);
 
-            SpawnCondition spawn = findSpawn(biome, rand);
+            SpawnCondition spawn = findSpawn(dimension, biome, rand);
 
             if (spawn != null && (spawn.pools != null || spawn.start != null || spawn.structure != null)) {
                 return buildStub(ctx, spawn, rand);
@@ -180,10 +246,11 @@ public final class NBTStructureGen {
             return Optional.empty();
         }
 
-        private static synchronized SpawnCondition findSpawn(LegacyBiome biome, Random rand) {
-            WeightedSpawnList filteredList = validBiomeCache.get(biome);
+        private static synchronized SpawnCondition findSpawn(int dimension, LegacyBiome biome, Random rand) {
+            CacheKey key = new CacheKey(dimension, biome);
+            WeightedSpawnList filteredList = validBiomeCache.get(key);
             if (filteredList == null) {
-                List<SpawnCondition> spawnList = NBTStructure.spawnMap.get(DIMENSION);
+                List<SpawnCondition> spawnList = NBTStructure.spawnMap.get(dimension);
 
                 filteredList = new WeightedSpawnList();
                 if (spawnList != null) {
@@ -195,7 +262,7 @@ public final class NBTStructureGen {
                     }
                 }
 
-                validBiomeCache.put(biome, filteredList);
+                validBiomeCache.put(key, filteredList);
             }
 
             if (filteredList.totalWeight == 0) return null;

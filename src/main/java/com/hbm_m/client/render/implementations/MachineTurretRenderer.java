@@ -176,7 +176,7 @@ public class MachineTurretRenderer implements com.hbm_m.client.render.HbmBerBoun
             poseStack.translate(0.0, 1.5D, 0.0);
             com.hbm_m.client.render.util.BeamPronter.prontBeam(poseStack, bufferSource, new net.minecraft.world.phys.Vec3(be.lastDist, 0, 0),
                     com.hbm_m.client.render.util.BeamPronter.EnumWaveType.RANDOM, com.hbm_m.client.render.util.BeamPronter.EnumBeamType.LINE,
-                    0xffa200, 0xffd000, (int) be.getLevel().getGameTime() / 5 % 360, (int) be.lastDist + 1, 0.1F, 0, 0);
+                    0xffa200, 0xffd000, (int) be.getLevel().getGameTime() / 5 % 360, (int) be.lastDist + 1, 0.1F, 0, 0, com.hbm_m.client.render.util.BeamPronter.forkAlpha());
             poseStack.popPose();
         }
 
@@ -189,7 +189,7 @@ public class MachineTurretRenderer implements com.hbm_m.client.render.HbmBerBoun
             for (int i = 0; i < 8; i++) {
                 com.hbm_m.client.render.util.BeamPronter.prontBeam(poseStack, bufferSource, new net.minecraft.world.phys.Vec3(length, 0, 0),
                         com.hbm_m.client.render.util.BeamPronter.EnumWaveType.SPIRAL, com.hbm_m.client.render.util.BeamPronter.EnumBeamType.SOLID,
-                        0x2020ff, 0x2020ff, (int) ((be.getLevel().getGameTime() + partialTick) * -50 + i * 45) % 360, (int) (be.lastDist + 1), 0.375F, 2, 0.05F);
+                        0x2020ff, 0x2020ff, (int) ((be.getLevel().getGameTime() + partialTick) * -50 + i * 45) % 360, (int) (be.lastDist + 1), 0.375F, 2, 0.05F, com.hbm_m.client.render.util.BeamPronter.forkAlpha());
             }
             poseStack.popPose();
         }

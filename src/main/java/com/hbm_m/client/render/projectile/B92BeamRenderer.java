@@ -19,7 +19,7 @@ import org.joml.Matrix4f;
  */
 public class B92BeamRenderer extends EntityRenderer<EntityB92Beam> {
 
-    private static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/PlasmaBeam.png");
+    private static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/plasmabeam.png");
 
     public B92BeamRenderer(EntityRendererProvider.Context ctx) {
         super(ctx);

@@ -76,6 +76,9 @@ public class RBMKColumnFillerBlock extends Block implements com.hbm_m.interfaces
         // 1:1 with the original's getCollisionBoundingBoxFromPool: the lid slab pokes up an extra
         // 0.25 blocks above the column's topmost segment. Only the topmost filler (nothing of this
         // column continues above it) gets the taller box - the ones below stay a plain full block.
+        // Weltgenerierung/Licht fragen die Form vom Arbeitsthread mit dem ServerLevel ab: dort keine Nachbarabfrage
+        // (Level.getBlockState wartete auf den Server-Thread -> Verklemmung beim Erzeugen von RBMK-Strukturen).
+        if (level instanceof net.minecraft.server.level.ServerLevel sl && !sl.getServer().isSameThread()) return SHAPE;
         if (!(level.getBlockState(pos.above()).getBlock() instanceof RBMKColumnFillerBlock)) {
             BlockPos basePos = findBase(level, pos);
             if (basePos != null && level.getBlockEntity(basePos) instanceof RBMKColumnBlockEntity col && col.hasLid()) {

@@ -243,7 +243,7 @@ public final class WeaponResources {
     public static final ResourceLocation turret_sentry_tex = tex("textures/models/turrets/sentry.png");
     public static final SimpleObjModel turret_tauon = model("models/turrets/turret_tauon.obj");
     public static final ResourceLocation turret_tauon_tex = tex("textures/models/turrets/tauon.png");
-    public static final ResourceLocation universal = tex("textures/models/TheGadget3_.png");
+    public static final ResourceLocation universal = tex("textures/models/thegadget3_.png");
     public static final SimpleObjModel uzi = model("models/weapons/uzi.obj");
     public static final ResourceLocation uzi_saturnite_tex = tex("textures/models/weapons/uzi_saturnite.png");
     public static final ResourceLocation uzi_tex = tex("textures/models/weapons/uzi.png");

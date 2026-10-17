@@ -61,7 +61,15 @@ import net.neoforged.api.distmarker.OnlyIn;
 @SuppressWarnings("UnstableApiUsage")
 public class MachineChungusBlockEntity extends BaseMachineBlockEntity
         implements IEnergyModeHolder, IFluidStandardReceiverMK2, IFluidStandardSenderMK2,
-        com.hbm_m.api.redstoneoverradio.IRORValueProvider {
+        com.hbm_m.api.redstoneoverradio.IRORValueProvider, com.hbm_m.api.tile.IRepairable,
+        com.hbm_m.world.gen.nbt.INBTTileEntityTransformable, com.hbm_m.api.block.IPersistentNBT {
+
+    /**
+     * E9 (Fork, nur mit Space-Addon): beschaedigt (aus NBT-Strukturen oder nach einer Explosion). Steht still, bis
+     * mit dem Schweissbrenner repariert. Ohne Addon wird das Feld nie gesetzt.
+     */
+    public boolean damaged;
+    public net.minecraft.world.level.Explosion lastExplosion;
 
     // Original TileEntityTurbineBase: kein Speicher - powerBuffer ist die Leistung dieses Ticks (getMaxPower == powerBuffer)
     private static final long ENERGY_CAPACITY = 0L;
@@ -132,6 +140,15 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
         boolean wasTurning = be.turnTimer > 0;
 
         be.powerBuffer = 0;
+        if (be.damaged) {
+            // E9: Space TileEntityChungus - beschaedigt nur synchronisieren
+            be.capacity = 0;
+            be.energy = 0;
+            be.operational = false;
+            be.turnTimer = 0;
+            if (wasTurning) { be.setChanged(); be.sendUpdateToClient(); }
+            return;
+        }
         be.processTurbine();
         be.onServerTick();
 
@@ -461,6 +478,7 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
         tag.putBoolean("operational", operational);
         tag.putLong("power", powerBuffer);
         tag.putInt("turnTimer", turnTimer);
+        if (damaged) tag.putBoolean("damaged", true);
     }
 
     @Override
@@ -471,6 +489,54 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
         operational = tag.getBoolean("operational");
         powerBuffer = tag.getLong("power");
         turnTimer = tag.getInt("turnTimer");
+        damaged = tag.getBoolean("damaged");
+    }
+
+    // ==================== E9: Beschaedigung / Reparatur (Space-Fork) ====================
+
+    @Override
+    public boolean isDamaged() { return damaged; }
+
+    private final java.util.List<RepairStack> repair = new java.util.ArrayList<>();
+
+    @Override
+    public java.util.List<RepairStack> getRepairMaterials() {
+        if (!repair.isEmpty()) return repair;
+        repair.add(new RepairStack(net.minecraft.world.item.crafting.Ingredient.of(com.hbm_m.item.material.ModMaterialItems.item(com.hbm_m.item.material.ModMaterials.STEEL, com.hbm_m.item.material.MaterialShape.PLATE_WELDED)), 6));
+        repair.add(new RepairStack(net.minecraft.world.item.crafting.Ingredient.of(com.hbm_m.item.ModItems.PIPE_STEEL.get()), 8));
+        repair.add(new RepairStack(net.minecraft.world.item.crafting.Ingredient.of(com.hbm_m.item.material.ModMaterialItems.item(com.hbm_m.item.material.ModMaterials.TCALLOY, com.hbm_m.item.material.MaterialShape.INGOT), com.hbm_m.item.material.ModMaterialItems.item(com.hbm_m.item.material.ModMaterials.CDALLOY, com.hbm_m.item.material.MaterialShape.INGOT)), 8));
+        repair.add(new RepairStack(net.minecraft.world.item.crafting.Ingredient.of(com.hbm_m.item.material.ModMaterialItems.item(com.hbm_m.item.material.ModMaterials.GOLD, com.hbm_m.item.material.MaterialShape.WIRE_DENSE)), 24));
+        repair.add(new RepairStack(net.minecraft.world.item.crafting.Ingredient.of(com.hbm_m.item.ModItems.FLYWHEEL_BERYLLIUM.get()), 1));
+        return repair;
+    }
+
+    @Override
+    public void repair() {
+        damaged = false;
+        setChanged();
+        sendUpdateToClient();
+    }
+
+    @Override
+    public void tryExtinguish(Level world, BlockPos pos, EnumExtinguishType type) { }
+
+    /** Space: aus NBT-Strukturen immer beschaedigt - nur mit Addon. */
+    @Override
+    public void transformTE(net.minecraft.world.level.LevelAccessor world, int coordBaseMode) {
+        if (com.hbm_m.api.space.SpaceApi.forkActive()) damaged = true;
+    }
+
+    /** Space {@code writeNBT}: nur der Schaden wandert in den Drop. */
+    @Override
+    public void writeNBT(CompoundTag nbt) {
+        if (damaged) nbt.putBoolean("damaged", true);
+    }
+
+    /** Space {@code onBlockExploded}: erster Treffer beschaedigt. */
+    public void markDamaged() {
+        damaged = true;
+        setChanged();
+        sendUpdateToClient();
     }
 
     // --- Capabilities ---

@@ -117,6 +117,7 @@ public class MachineDieselGeneratorBlockEntity extends com.hbm_m.blockentity.Mac
         if (level.hasNeighborSignal(pos)) return;
         if (!hasAcceptableFuel()) return;
         if (tank.getFill() <= 0) return;
+        if (!breatheAir(1)) return; // NTM Space - ohne Space-Addon immer true
 
         this.wasOn = true;
         tank.setFill(tank.getFill() - 1);

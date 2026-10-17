@@ -68,33 +68,33 @@ public class ExposureChamberRenderer implements com.hbm_m.client.render.HbmBerBo
             if (rand.nextInt(chance) == 0) {
                 ps.pushPose();
                 ps.translate(0, 3.675, -7.5);
-                BeamPronter.prontBeam(ps, buf, new Vec3(0, 0, 5), EnumWaveType.RANDOM, EnumBeamType.LINE, color, 0xffffff, start, 15, 0.125F, 1, 0);
+                BeamPronter.prontBeam(ps, buf, new Vec3(0, 0, 5), EnumWaveType.RANDOM, EnumBeamType.LINE, color, 0xffffff, start, 15, 0.125F, 1, 0, com.hbm_m.client.render.util.BeamPronter.forkAlpha());
                 ps.popPose();
             }
             if (rand.nextInt(chance) == 0) {
                 ps.pushPose();
                 ps.translate(1.1875, 2.5, -7.5);
-                BeamPronter.prontBeam(ps, buf, new Vec3(0, 0, 5), EnumWaveType.RANDOM, EnumBeamType.LINE, color, 0xffffff, start, 15, 0.125F, 1, 0);
+                BeamPronter.prontBeam(ps, buf, new Vec3(0, 0, 5), EnumWaveType.RANDOM, EnumBeamType.LINE, color, 0xffffff, start, 15, 0.125F, 1, 0, com.hbm_m.client.render.util.BeamPronter.forkAlpha());
                 ps.popPose();
             }
             if (rand.nextInt(chance) == 0) {
                 ps.pushPose();
                 ps.translate(-1.1875, 2.5, -7.5);
-                BeamPronter.prontBeam(ps, buf, new Vec3(0, 0, 5), EnumWaveType.RANDOM, EnumBeamType.LINE, color, 0xffffff, start, 15, 0.125F, 1, 0);
+                BeamPronter.prontBeam(ps, buf, new Vec3(0, 0, 5), EnumWaveType.RANDOM, EnumBeamType.LINE, color, 0xffffff, start, 15, 0.125F, 1, 0, com.hbm_m.client.render.util.BeamPronter.forkAlpha());
                 ps.popPose();
             }
 
             ps.pushPose();
             ps.translate(0, 1.75, 0);
-            BeamPronter.prontBeam(ps, buf, new Vec3(0, 1.5, 0), EnumWaveType.RANDOM, EnumBeamType.LINE, 0x80d0ff, 0xffffff, start, 10, 0.125F, 1, 0);
+            BeamPronter.prontBeam(ps, buf, new Vec3(0, 1.5, 0), EnumWaveType.RANDOM, EnumBeamType.LINE, 0x80d0ff, 0xffffff, start, 10, 0.125F, 1, 0, com.hbm_m.client.render.util.BeamPronter.forkAlpha());
             // Original: (System.currentTimeMillis() + 5 % 1000) / 50 - Operatorrangfolge beibehalten
-            BeamPronter.prontBeam(ps, buf, new Vec3(0, 1.5, 0), EnumWaveType.RANDOM, EnumBeamType.LINE, 0x8080ff, 0xffffff, (int) (System.currentTimeMillis() + 5 % 1000) / 50, 10, 0.125F, 1, 0);
+            BeamPronter.prontBeam(ps, buf, new Vec3(0, 1.5, 0), EnumWaveType.RANDOM, EnumBeamType.LINE, 0x8080ff, 0xffffff, (int) (System.currentTimeMillis() + 5 % 1000) / 50, 10, 0.125F, 1, 0, com.hbm_m.client.render.util.BeamPronter.forkAlpha());
             ps.popPose();
 
             ps.pushPose();
             ps.translate(0, 2.5, 0);
-            BeamPronter.prontBeam(ps, buf, new Vec3(0, 0, -1), EnumWaveType.SPIRAL, EnumBeamType.LINE, 0xffff80, 0xffffff, (int) (System.currentTimeMillis() % 360), 15, 0.125F, 1, 0);
-            BeamPronter.prontBeam(ps, buf, new Vec3(0, 0, -1), EnumWaveType.SPIRAL, EnumBeamType.LINE, 0xff8080, 0xffffff, (int) (System.currentTimeMillis() % 360) + 180, 15, 0.125F, 1, 0);
+            BeamPronter.prontBeam(ps, buf, new Vec3(0, 0, -1), EnumWaveType.SPIRAL, EnumBeamType.LINE, 0xffff80, 0xffffff, (int) (System.currentTimeMillis() % 360), 15, 0.125F, 1, 0, com.hbm_m.client.render.util.BeamPronter.forkAlpha());
+            BeamPronter.prontBeam(ps, buf, new Vec3(0, 0, -1), EnumWaveType.SPIRAL, EnumBeamType.LINE, 0xff8080, 0xffffff, (int) (System.currentTimeMillis() % 360) + 180, 15, 0.125F, 1, 0, com.hbm_m.client.render.util.BeamPronter.forkAlpha());
             ps.popPose();
         }
 

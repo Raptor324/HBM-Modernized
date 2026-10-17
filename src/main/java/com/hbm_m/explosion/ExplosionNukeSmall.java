@@ -48,6 +48,7 @@ public final class ExplosionNukeSmall {
         }
         if (params.killRadius > 0) ExplosionNukeGeneric.dealDamage(world, posX, posY, posZ, params.killRadius);
         if (!params.miniNuke) EntityNukeExplosionMK5.start(world, (int) params.blastRadius(), posX, posY, posZ);
+        if (params.miniNuke) com.hbm_m.api.space.SpaceApi.fireNuclearDetonation(world, posX, posY, posZ, params.blastRadius(), com.hbm_m.api.space.NuclearDetonation.Kind.MINI_NUKE); // NTM Space CelestialNukeShockHandler.trigger
 
         if (params.miniNuke) {
             float radMod = params.radiationLevel / 3F;

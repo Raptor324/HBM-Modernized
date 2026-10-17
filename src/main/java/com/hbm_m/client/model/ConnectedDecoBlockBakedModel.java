@@ -423,7 +423,9 @@ public class ConnectedDecoBlockBakedModel extends BakedModelWrapper<BakedModel> 
 
     @Override
     public ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand, ModelData data) {
-        return ChunkRenderTypeSet.of(RenderType.solid());
+        // Render-Typ des Ausgangsmodells (render_type im Modell-JSON) uebernehmen: fest "solid" liess die
+        // CT-Glaeser (glass_lead, glass_boron, reinforced_glass ...) an transparenten Texeln schwarz rendern.
+        return originalModel.getRenderTypes(state, rand, data);
     }
 
     private static final class CTBits {

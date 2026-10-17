@@ -50,7 +50,7 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 
 
 @SuppressWarnings("UnstableApiUsage")
-public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implements IMultiblockPart, IEnergyConnector, IFluidConnectorMK2 {
+public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implements IMultiblockPart, IEnergyConnector, IFluidConnectorMK2, com.hbm_m.interfaces.IHeatSource {
 
     // Виртуальные узлы жидкостной сети на позиции коннектора, по одному на тип жидкости контроллера.
     // Используется для "коннектор-к-коннектору" без труб: переносы делает FluidNet,
@@ -477,6 +477,36 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
             if (n != null && !n.isExpired()) UniNodespace.destroyNode(serverLevel, n);
         }
         fluidNodes.clear();
+    }
+
+    // ── Waermeweiterleitung (Original TileEntityProxyCombo.heatSource) ─────────────────────────────
+    // Nur wenn der Kern IHeatSource ist und providesHeatThroughPart(offset) bejaht (HBM-Kerne: nie) -> sonst 0.
+    // Verbraucher behandeln "Quelle mit 0" wie "keine Quelle" (Abkuehlen), daher ohne Addon verhaltensneutral.
+    @Nullable
+    private com.hbm_m.interfaces.IHeatSource heatCore() {
+        if (level == null || controllerPos == null) return null;
+        BlockEntity ctrl = level.getBlockEntity(controllerPos);
+        if (ctrl instanceof com.hbm_m.interfaces.IHeatSource src && ctrl != this
+                && src.providesHeatThroughPart(localOffsetFromController)) return src;
+        return null;
+    }
+
+    @Override
+    public int getHeatStored() {
+        com.hbm_m.interfaces.IHeatSource src = heatCore();
+        return src != null ? src.getHeatStored() : 0;
+    }
+
+    @Override
+    public int getMaxHeatStored() {
+        com.hbm_m.interfaces.IHeatSource src = heatCore();
+        return src != null ? src.getMaxHeatStored() : 0;
+    }
+
+    @Override
+    public void useUpHeat(int amount) {
+        com.hbm_m.interfaces.IHeatSource src = heatCore();
+        if (src != null) src.useUpHeat(amount);
     }
 
     @Override

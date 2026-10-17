@@ -76,7 +76,10 @@ public class MachineDeuteriumTowerBlockEntity extends BaseMachineBlockEntity imp
         FluidTank heavyWater = be.tanks[TANK_HEAVY_WATER];
 
         boolean dirty = false;
-        if (be.getEnergyStored() >= ENERGY_PER_TICK
+        // E8 (Fork, nur mit Space-Addon): Original erbt von TileEntityDeuteriumExtractor -> getMaxPower()/100 und power > 200
+        boolean fork = com.hbm_m.api.space.SpaceApi.forkActive();
+        long perTick = fork ? ENERGY_PER_TICK * 20 / DeuteriumExtractorBlockEntity.powerDivisor() : ENERGY_PER_TICK;
+        if (be.getEnergyStored() >= perTick && (!fork || be.getEnergyStored() > 200)
                 && water.getFluidAmountMb() >= 100
                 && heavyWater.getFluidAmountMb() < heavyWater.getCapacityMb()) {
 
@@ -86,7 +89,7 @@ public class MachineDeuteriumTowerBlockEntity extends BaseMachineBlockEntity imp
             if (convert > 0) {
                 water.drainMb(convert * CONVERT_RATIO);
                 heavyWater.fillMb(ModFluids.HEAVYWATER.getSource(), convert);
-                be.setEnergyStored(be.getEnergyStored() - ENERGY_PER_TICK);
+                be.setEnergyStored(be.getEnergyStored() - perTick);
                 dirty = true;
             }
         }

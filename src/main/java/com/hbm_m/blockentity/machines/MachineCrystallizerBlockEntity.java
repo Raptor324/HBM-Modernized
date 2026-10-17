@@ -328,80 +328,15 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         ItemStack fillStack = inventory.getStackInSlot(SLOT_FLUID_INPUT);
         if (fillStack.isEmpty()) return;
 
-        // Кросс-платформенная реализация через FluidHooks + tank.fillMb.
-        // Заменяет прежние раздельные ветки Forge/Fabric/NeoForge.
-        Fluid currentType = tank.getTankType();
-        if (currentType == Fluids.EMPTY || currentType == ModFluids.NONE.getSource()) {
-            return;
-        }
-
-        // Сначала пробуем извлечь жидкость из контейнера (simulate), чтобы узнать тип/объём.
-        int tankSpace = tank.getSpaceMb();
-        if (tankSpace <= 0) return;
-
-        FluidHooks.FluidExtraction sim = FluidHooks.extractFluidFromItem(fillStack, tankSpace, true);
-        if (sim.amount() <= 0) {
-            // Контейнер пуст — отправляем его в выходной слот (воспроизводим forge-поведение).
-            FluidHooks.FluidExtraction probe = FluidHooks.extractFluidFromItem(fillStack, 1, true);
-            if (probe.amount() == 0) {
-                ItemStack singleEmpty = fillStack.copy();
-                singleEmpty.setCount(1);
-                tryMoveContainerToOutput(singleEmpty, fillStack);
-            }
-            return;
-        }
-
-        // Согласовываем тип жидкости с баком — заливаем только совместимую.
-        int toFill = sim.amount();
-        int accepted = tank.fillMb(sim.fluid(), toFill, true);
-        if (accepted <= 0) return;
-
-        // Реально извлекаем (execute) и заливаем в бак.
-        FluidHooks.FluidExtraction real = FluidHooks.extractFluidFromItem(fillStack, accepted, false);
-        if (real.amount() <= 0) return;
-        tank.fillMb(real.fluid(), real.amount(), false);
-
-        ItemStack updatedContainer = real.remainder();
-        if (updatedContainer.isEmpty() || FluidHooks.extractFluidFromItem(updatedContainer, 1, true).amount() == 0) {
-            // Контейнер опустел после перелива — отправляем в выходной слот.
-            tryMoveContainerToOutput(updatedContainer, fillStack);
-        } else {
-            inventory.setStackInSlot(SLOT_FLUID_INPUT, updatedContainer);
-        }
-        setChanged();
-    }
-
-    private void tryMoveContainerToOutput(ItemStack emptyContainer, ItemStack originalFillStack) {
-        if (emptyContainer.isEmpty()) {
-            ItemStack remaining = originalFillStack.copy();
-            remaining.shrink(1);
-            inventory.setStackInSlot(SLOT_FLUID_INPUT, remaining);
-            return;
-        }
-
-        ItemStack outSlot = inventory.getStackInSlot(SLOT_FLUID_OUTPUT);
-
-        if (outSlot.isEmpty()) {
-            ItemStack remaining = originalFillStack.copy();
-            remaining.shrink(1);
-            inventory.setStackInSlot(SLOT_FLUID_INPUT, remaining);
-            inventory.setStackInSlot(SLOT_FLUID_OUTPUT, emptyContainer);
-            return;
-        }
-
-        if (PlatformHooks.isSameItemSameTags(outSlot, emptyContainer)) {
-            int max = outSlot.getMaxStackSize();
-            int totalAfter = outSlot.getCount() + emptyContainer.getCount();
-            if (totalAfter <= max) {
-                ItemStack newOut = outSlot.copy();
-                newOut.setCount(totalAfter);
-                inventory.setStackInSlot(SLOT_FLUID_OUTPUT, newOut);
-
-                ItemStack remaining = originalFillStack.copy();
-                remaining.shrink(1);
-                inventory.setStackInSlot(SLOT_FLUID_INPUT, remaining);
-            }
-            return;
+        // Original TileEntityMachineCrystallizer: tank.loadTank(3, 4, slots) - ueber die Loader-Kette, also auch die
+        // HBM-Behaelter der FluidContainerRegistry (Kanister, Tanks, Faesser ...), die keine Plattform-Capability tragen;
+        // Capability-Behaelter (Eimer, Fremdmods) laufen dort ueber FluidLoaderStandard.
+        ItemStack[] slots = new ItemStack[inventory.getSlots()];
+        for (int i = 0; i < slots.length; i++) slots[i] = inventory.getStackInSlot(i);
+        if (tank.loadTank(SLOT_FLUID_INPUT, SLOT_FLUID_OUTPUT, slots)) {
+            inventory.setStackInSlot(SLOT_FLUID_INPUT, slots[SLOT_FLUID_INPUT]);
+            inventory.setStackInSlot(SLOT_FLUID_OUTPUT, slots[SLOT_FLUID_OUTPUT]);
+            setChanged();
         }
     }
 
@@ -547,7 +482,7 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
             return false;
         }
         if (slot == SLOT_FLUID_INPUT) {
-            return PlatformHooks.isFluidContainer(stack);
+            return com.hbm_m.api.fluids.FluidItemAccess.isFluidContainer(stack);
         }
         if (slot == SLOT_FLUID_ID) {
             return stack.getItem() instanceof IItemFluidIdentifier;

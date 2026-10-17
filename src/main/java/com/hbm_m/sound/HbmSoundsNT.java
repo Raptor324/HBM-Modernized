@@ -120,6 +120,11 @@ public final class HbmSoundsNT {
     public static SoundEvent get(String originalKey) {
         String key = originalKey.toLowerCase(Locale.ROOT);
         if (key.startsWith("hbm:")) key = key.substring(4);
+        // fremder Namensraum (z.B. Kassetten-Klaenge des Space-Addons): direkt aus der Registry
+        if (key.indexOf(':') >= 0) {
+            ResourceLocation foreign = ResourceLocation.tryParse(key);
+            return foreign == null ? null : BuiltInRegistries.SOUND_EVENT.get(foreign);
+        }
         RegistrySupplier<SoundEvent> sup = EVENTS.get(key);
         if (sup != null && sup.isPresent()) return sup.get();
         return BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, key));

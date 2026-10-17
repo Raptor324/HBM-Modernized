@@ -314,7 +314,7 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
 
             /* verbrauchen */
             if (WatzPelletItem.isFresh(stack) && WatzPelletItem.getEnrichment(stack) <= 0) {
-                inventory.setStackInSlot(i, new ItemStack(ModItems.WATZ_PELLET_DEPLETED.get(WatzPelletItem.typeOf(stack)).get()));
+                inventory.setStackInSlot(i, new ItemStack(WatzPelletItem.typeOf(stack).depletedItem())); // W-R4b-5: auch Addon-Typen
             }
         }
 

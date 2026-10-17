@@ -74,7 +74,7 @@ public class BarrelSteelMenu extends AbstractContainerMenu {
         this.addSlot(new Slot(handlerContainer, MachineFluidTankBlockEntity.SLOT_LOAD_IN, 35, 17) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
-                return FluidItemAccess.hasFluidHandler(stack);
+                return FluidItemAccess.isFluidContainer(stack);
             }
         });
 
@@ -88,7 +88,7 @@ public class BarrelSteelMenu extends AbstractContainerMenu {
         this.addSlot(new Slot(handlerContainer, MachineFluidTankBlockEntity.SLOT_UNLOAD_IN, 125, 17) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
-                return FluidItemAccess.hasFluidHandler(stack);
+                return FluidItemAccess.isFluidContainer(stack);
             }
         });
 
@@ -164,10 +164,10 @@ public class BarrelSteelMenu extends AbstractContainerMenu {
                 }
             } else {
                 if (stackInSlot.getItem() instanceof IItemFluidIdentifier) {
-                    if (!moveItemStackTo(stackInSlot, MACHINE_SLOTS + 0, MACHINE_SLOTS + 1, false)) {
+                    if (!moveItemStackTo(stackInSlot, MachineFluidTankBlockEntity.SLOT_ID_IN, MachineFluidTankBlockEntity.SLOT_ID_IN + 1, false) /* Identifier-Slot 0 (frueher MACHINE_SLOTS = Spielerinventar) */) {
                         return ItemStack.EMPTY;
                     }
-                } else if (FluidItemAccess.hasFluidHandler(stackInSlot)) {
+                } else if (FluidItemAccess.isFluidContainer(stackInSlot)) {
                     if (!moveItemStackTo(stackInSlot, MachineFluidTankBlockEntity.SLOT_LOAD_IN, MachineFluidTankBlockEntity.SLOT_LOAD_IN + 1, false)) {
                         if (!moveItemStackTo(stackInSlot, MachineFluidTankBlockEntity.SLOT_UNLOAD_IN, MachineFluidTankBlockEntity.SLOT_UNLOAD_IN + 1, false)) {
                             return ItemStack.EMPTY;

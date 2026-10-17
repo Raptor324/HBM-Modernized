@@ -49,7 +49,10 @@ public class MachineSirenBlockEntity extends BaseMachineBlockEntity {
         NOSTROMO_SIREN("Nostromo Self Destruct", "hbm:alarm.nostromoSiren", SoundType.LOOP, 0x5dd800, 100),
         EAS_ALARM("EAS Alarm Screech", "hbm:alarm.easAlarm", SoundType.LOOP, 0xb3a8c1, 50),
         APC_PASS("APC Pass", "hbm:alarm.apcPass", SoundType.PASS, 3422163, 50),
-        RAZORTRAIN("Razortrain Horn", "hbm:alarm.razortrainHorn", SoundType.SOUND, 7819501, 250);
+        RAZORTRAIN("Razortrain Horn", "hbm:alarm.razortrainHorn", SoundType.SOUND, 7819501, 250),
+        // E11 (NTM-Space-Fork): Titel ohne HBM-Kassette - die Kassetten und Klaenge liefert das Space-Addon
+        DISEMBODIED("Ducc", "space_m:alarm.ducc", SoundType.LOOP, 0xb3a8c1, 50),
+        SUICIDE("Xbox Live", "space_m:alarm.mama", SoundType.LOOP, 0xb3a8c1, 70);
 
         public final String title;
         public final String sound;

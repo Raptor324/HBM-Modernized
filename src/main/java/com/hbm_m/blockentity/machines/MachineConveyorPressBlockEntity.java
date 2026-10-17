@@ -298,4 +298,10 @@ public class MachineConveyorPressBlockEntity extends BaseMachineBlockEntity {
         sidedItems.invalidate();
     }
     *///?}
+
+    /** 1:1 TileEntityConveyorPress.getRenderBoundingBox (Render-Migration: Raptors Pfad cullt nach dieser Box, der alte BER zeichnete immer). */
+    @Override
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return new net.minecraft.world.phys.AABB(worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1, worldPosition.getX() + 2, worldPosition.getY() + 3, worldPosition.getZ() + 2);
+    }
 }

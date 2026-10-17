@@ -63,6 +63,10 @@ public class EntitySiegeCraft extends EntityUFOBase {
 
     private int attackCooldown;
     private int beamCountdown;
+    // NTM Space EntitySiegeCraft (W-R8B-3, nur mit Space-Addon): Rueckzug nach 4 min; wie im Original nicht gespeichert.
+    private int lifetime = 0;
+    private boolean isRetreating = false;
+    private static final int MAX_LIFETIME = 60 * 4 * 20;
 
     public EntitySiegeCraft(EntityType<? extends EntitySiegeCraft> type, Level world) {
         super(type, world);
@@ -214,6 +218,23 @@ public class EntitySiegeCraft extends EntityUFOBase {
         if (!level().isClientSide) {
             ServerLevel server = (ServerLevel) level();
 
+            if (com.hbm_m.api.space.SpaceApi.isInstalled()) {
+                lifetime++;
+                if (lifetime > MAX_LIFETIME) {
+                    isRetreating = true;
+                }
+
+                if (isRetreating) {
+                    this.target = null;
+                    this.setWaypoint((int) getX(), 255, (int) getZ());
+                    approachPosition(20);
+                    if (this.getY() > 250 || lifetime > MAX_LIFETIME + 300) {
+                        this.discard();
+                        return;
+                    }
+                }
+            }
+
             if (this.attackCooldown > 0) {
                 this.attackCooldown--;
             }
@@ -330,7 +351,14 @@ public class EntitySiegeCraft extends EntityUFOBase {
         }
 
         if (this.courseChangeCooldown > 0) {
-            approachPosition(this.target == null ? 0.25D : 0.5D + this.getAttributeValue(Attributes.MOVEMENT_SPEED) * 1);
+            if (com.hbm_m.api.space.SpaceApi.isInstalled()) {
+                // NTM Space: schneller, beim Rueckzug doppelt
+                double speed = this.target == null ? 0.5D : 1.0D + (this.getAttributeValue(Attributes.MOVEMENT_SPEED) * 3.0D);
+                if (isRetreating) speed *= 2.0D;
+                approachPosition(speed);
+            } else {
+                approachPosition(this.target == null ? 0.25D : 0.5D + this.getAttributeValue(Attributes.MOVEMENT_SPEED) * 1);
+            }
         }
     }
 
@@ -379,7 +407,7 @@ public class EntitySiegeCraft extends EntityUFOBase {
     *///?}
 
         if (byPlayer) {
-            for (Supplier<ItemStack> drop : this.getTier().dropItem) {
+            for (Supplier<ItemStack> drop : this.getTier().drops()) {
                 this.spawnAtLocation(drop.get().copy(), 0F);
             }
         }

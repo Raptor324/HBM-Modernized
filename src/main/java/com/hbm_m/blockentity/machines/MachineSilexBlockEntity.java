@@ -207,7 +207,9 @@ public class MachineSilexBlockEntity extends BaseMachineBlockEntity implements I
         if (recipe == null)
             return false;
 
-        if (recipe.getLaser() > this.mode.ordinal())
+        // W-R9B5-3: Space-XRAY-Rezepte - XRAY/GAMMA/DRX, Tempo nach Space-Stufe (XRAY 4, GAMMA 5, DRX 6)
+        int spaceTier = switch (this.mode) { case XRAY -> 4; case GAMMA -> 5; case DRX -> 6; default -> -1; };
+        if (recipe.isXray() ? spaceTier < 4 : recipe.getLaser() > this.mode.maxRecipeTier)
             return false;
 
         if (currentFill < recipe.getFluidConsumed())
@@ -216,7 +218,8 @@ public class MachineSilexBlockEntity extends BaseMachineBlockEntity implements I
         if (!inventory.getStackInSlot(4).isEmpty())
             return false;
 
-        int progressSpeed = (int) Math.pow(2, this.mode.ordinal() - recipe.getLaser() + 1) / 2;
+        int progressSpeed = recipe.isXray() ? (int) Math.pow(2, spaceTier - 4 + 1) / 2
+                : (int) Math.pow(2, this.mode.tier - recipe.getLaser() + 1) / 2;
 
         progress += progressSpeed;
 

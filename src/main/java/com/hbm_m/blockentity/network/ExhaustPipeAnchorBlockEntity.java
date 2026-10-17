@@ -118,11 +118,15 @@ public class ExhaustPipeAnchorBlockEntity extends BaseHbmBlockEntity implements 
         for (Fluid smoke : smokes()) UniNodespace.destroyNode(sl, p, FluidNetProvider.forFluid(smoke));
     }
 
+    /** Von onChunkUnloaded gesetzt: das folgende setRemoved ist ein Entladen, kein Abbau. */
+    private boolean unloaded = false;
+
     /** {@code disconnectAll}: Gegenanker vergessen diesen Anker, die Knoten werden neu gebaut. */
     public void disconnectAll() {
         if (!(level instanceof ServerLevel sl)) return;
         for (BlockPos p : connected) {
-            BlockEntity te = level.getBlockEntity(p);
+            // Nie Chunks nachladen (setRemoved laeuft auch beim Entladen/Server-Stopp).
+            BlockEntity te = com.hbm_m.util.ChunkSafe.getBlockEntity(level, p);
             if (te == this) continue;
             if (te instanceof ExhaustPipeAnchorBlockEntity other) {
                 destroyNodes(sl, p);
@@ -138,13 +142,21 @@ public class ExhaustPipeAnchorBlockEntity extends BaseHbmBlockEntity implements 
 
     @Override
     public void setRemoved() {
-        disconnectAll();
+        // Entladen ist kein Abbau (Original: invalidate nur beim Abbau) - Verbindungen bleiben stehen.
+        if (!unloaded) {
+            disconnectAll();
+        } else if (level instanceof ServerLevel sl) {
+            // nur die eigenen Knoten, Nachbarn bleiben unberuehrt
+            destroyNodes(sl, worldPosition);
+            java.util.Arrays.fill(nodes, null);
+        }
         super.setRemoved();
     }
 
     //? if forge || neoforge {
     @Override
     public void onChunkUnloaded() {
+        unloaded = true;
         for (FluidNode n : nodes) if (n != null) n.expired = true;
         super.onChunkUnloaded();
     }

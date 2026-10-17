@@ -553,8 +553,27 @@ public final class MachineCraftingGameTest {
         List<AssemblerRecipe> recipes = RecipeHooks.getAllRecipes(level, AssemblerRecipe.Type.INSTANCE);
         // A silent succeed with no recipes would mask a completely broken craft.
         check(!recipes.isEmpty(), "No recipes found to execute test — see assemblerRecipes_loaded for diagnostics");
-        // Take the first recipe with minimal requirements.
-        AssemblerRecipe recipe = recipes.get(0);
+        // Erstes Rezept ohne Fluessigkeiten und ohne Blaupausen-Pool nehmen: seit dem 1:1-Port
+        // (Fluessigkeitstanks + Blaupausenpflicht wie im Original ModuleMachineAssembler) kann
+        // recipes.get(0) ein Rezept sein, das ohne Tank/Blaupause zu Recht nie startet.
+        AssemblerRecipe recipe = null;
+        for (AssemblerRecipe r : recipes) {
+            if (!r.getFluidInputs().isEmpty() || !r.getFluidOutputs().isEmpty()) continue;
+            if (r.getBlueprintPool() != null && !r.getBlueprintPool().isEmpty()) continue;
+            int n = 0;
+            boolean usable = true;
+            for (net.minecraft.world.item.crafting.Ingredient ing : r.getIngredients()) {
+                if (ing.isEmpty()) continue;
+                ItemStack[] items = ing.getItems();
+                if (items.length == 0 || items[0].isEmpty()) { usable = false; break; }
+                n++;
+            }
+            if (!usable || n == 0 || n > 12) continue;
+            if (r.getResultItem(level.registryAccess()).isEmpty()) continue;
+            recipe = r;
+            break;
+        }
+        check(recipe != null, "No item-only assembler recipe without blueprint pool found");
         int duration = recipe.getDuration();
         long power = recipe.getPowerConsumption();
         long totalEnergy = power * duration;

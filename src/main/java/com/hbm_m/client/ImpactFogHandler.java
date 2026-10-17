@@ -36,6 +36,7 @@ public class ImpactFogHandler {
         Level level = Minecraft.getInstance().level;
         if (!com.hbm_m.config.GeneralConfig.enableImpactWorldProvider) return; // Original: nur mit WorldProviderNTM
         if (level == null || level.dimension() != Level.OVERWORLD) return;
+        if (com.hbm_m.api.space.SpaceApi.overridesSky(level)) return; // Space-Addon zeichnet Himmel/Nebel selbst
 
         float dust = ImpactWorldHandler.getDustForClient(level);
         float fire = ImpactWorldHandler.getFireForClient(level);

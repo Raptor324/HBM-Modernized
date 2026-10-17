@@ -116,7 +116,8 @@ public class MachineCombustionEngineBlockEntity extends com.hbm_m.blockentity.Ma
 
             double eff = efficiency(piston, tank.getTankType());
 
-            if (eff > 0) {
+            // NTM Space: Verbrennung nur mit Sauerstoff (breatheAir) - ohne Space-Addon immer true
+            if (eff > 0 && breatheAir(world.getGameTime() % 5 == 0 ? setting : 0)) {
                 int speed = setting * 2;
 
                 int toBurn = Math.min(fill, speed);

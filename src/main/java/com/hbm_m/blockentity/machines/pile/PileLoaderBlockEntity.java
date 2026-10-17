@@ -223,10 +223,19 @@ public class PileLoaderBlockEntity extends LoadedMachineBlockEntity
         return null;
     }
 
+    /** Von onChunkUnloaded gesetzt: Entladen ist kein Abbau, nichts auswerfen (sonst Dupe). */
+    private boolean unloaded = false;
+
+    @Override
+    public void onChunkUnloaded() {
+        super.onChunkUnloaded();
+        this.unloaded = true;
+    }
+
     /** Original: beim Abbau faellt der eingelegte Stab heraus. */
     @Override
     public void setRemoved() {
-        if (level != null && !level.isClientSide() && !stack.isEmpty()) {
+        if (!unloaded && level != null && !level.isClientSide() && !stack.isEmpty()) {
             net.minecraft.world.Containers.dropItemStack(level,
                     worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5, stack);
             stack = ItemStack.EMPTY;

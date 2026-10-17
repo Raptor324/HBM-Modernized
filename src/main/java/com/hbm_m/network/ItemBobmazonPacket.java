@@ -46,6 +46,12 @@ public class ItemBobmazonPacket implements C2SPacket {
         context.queue(() -> {
             if (!(context.getPlayer() instanceof ServerPlayer p)) return;
             Level world = p.level();
+            // NTM Space (W-R9A-4): Lieferung nur in die Oberwelt (Original dimensionId != 0, also auch Nether/End);
+            // nur mit Space-Addon, ohne Addon unveraendert
+            if (com.hbm_m.api.space.SpaceApi.forkActive() && world.dimension() != Level.OVERWORLD) {
+                p.sendSystemMessage(net.minecraft.network.chat.Component.literal("[BOBMAZON] Out Of Range!"));
+                return;
+            }
 
             ItemStack held = p.getMainHandItem();
             if (BobmazonOfferFactory.getOffers(held) == null) BobmazonOfferFactory.init();

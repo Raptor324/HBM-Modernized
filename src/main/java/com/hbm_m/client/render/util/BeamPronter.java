@@ -30,12 +30,34 @@ public final class BeamPronter {
 
     public static void prontBeamwithDepth(PoseStack ps, MultiBufferSource buffers, Vec3 skeleton, EnumWaveType wave, EnumBeamType beam,
                                           int outerColor, int innerColor, int start, int segments, float size, int layers, float thickness) {
-        pront(ps, buffers, skeleton, wave, beam, outerColor, innerColor, start, segments, size, layers, thickness, true);
+        pront(ps, buffers, skeleton, wave, beam, outerColor, innerColor, start, segments, size, layers, thickness, true, 255);
     }
 
     public static void prontBeam(PoseStack ps, MultiBufferSource buffers, Vec3 skeleton, EnumWaveType wave, EnumBeamType beam,
                                  int outerColor, int innerColor, int start, int segments, float size, int layers, float thickness) {
-        pront(ps, buffers, skeleton, wave, beam, outerColor, innerColor, start, segments, size, layers, thickness, false);
+        pront(ps, buffers, skeleton, wave, beam, outerColor, innerColor, start, segments, size, layers, thickness, false, 255);
+    }
+
+    /** Mit Deckkraft (E11, Space {@code prontBeamwithDepth(..., alpha)}). */
+    public static void prontBeamwithDepth(PoseStack ps, MultiBufferSource buffers, Vec3 skeleton, EnumWaveType wave, EnumBeamType beam,
+                                          int outerColor, int innerColor, int start, int segments, float size, int layers, float thickness, float alpha) {
+        pront(ps, buffers, skeleton, wave, beam, outerColor, innerColor, start, segments, size, layers, thickness, true,
+                Mth.clamp((int) (alpha * 255F), 0, 255));
+    }
+
+    /**
+     * E11 (Fork, nur mit Space-Addon): die Maschinenstrahlen (DFC, Emitter, Belichtungskammer, FEL, ICF, Bergbaulaser,
+     * Orbus, Tesla, Maxwell, Tauon) sind im Space-Fork halbtransparent (0.5F). Ohne Addon 1.0 = deckend wie bisher.
+     */
+    public static float forkAlpha() {
+        return com.hbm_m.api.space.SpaceApi.forkActive() ? 0.5F : 1.0F;
+    }
+
+    /** W-R9b1-2: NTM-Space-Signatur mit Deckkraft (0..1, z.B. {@code RenderAntimatter} 0.5F). */
+    public static void prontBeam(PoseStack ps, MultiBufferSource buffers, Vec3 skeleton, EnumWaveType wave, EnumBeamType beam,
+                                 int outerColor, int innerColor, int start, int segments, float size, int layers, float thickness, float alpha) {
+        pront(ps, buffers, skeleton, wave, beam, outerColor, innerColor, start, segments, size, layers, thickness, false,
+                Mth.clamp((int) (alpha * 255F), 0, 255));
     }
 
     /** 1.7 {@code Vec3.rotateAroundY}. */
@@ -45,7 +67,7 @@ public final class BeamPronter {
     }
 
     private static void pront(PoseStack ps, MultiBufferSource buffers, Vec3 skeleton, EnumWaveType wave, EnumBeamType beam,
-                              int outerColor, int innerColor, int start, int segments, float size, int layers, float thickness, boolean depth) {
+                              int outerColor, int innerColor, int start, int segments, float size, int layers, float thickness, boolean depth, int a) {
         ps.pushPose();
 
         float sYaw = (float) (Math.atan2(skeleton.x, skeleton.z) * 180F / Math.PI);
@@ -82,7 +104,7 @@ public final class BeamPronter {
             double pZ = spinner[2];
 
             if (beam == EnumBeamType.LINE && i > 0) {
-                line(vc, m, pX, pY, pZ, lastX, lastY, lastZ, outerColor);
+                line(vc, m, pX, pY, pZ, lastX, lastY, lastZ, outerColor, a);
             }
 
             if (beam == EnumBeamType.SOLID && i > 0) {
@@ -96,10 +118,10 @@ public final class BeamPronter {
                     int r = (int) (r1 + (r2 - r1) * inter), g = (int) (g1 + (g2 - g1) * inter), b = (int) (b1 + (b2 - b1) * inter);
 
                     double rj = radius * j;
-                    quad(vc, m, r, g, b, lastX + rj, lastY, lastZ + rj, lastX + rj, lastY, lastZ - rj, pX + rj, pY, pZ - rj, pX + rj, pY, pZ + rj);
-                    quad(vc, m, r, g, b, lastX - rj, lastY, lastZ + rj, lastX - rj, lastY, lastZ - rj, pX - rj, pY, pZ - rj, pX - rj, pY, pZ + rj);
-                    quad(vc, m, r, g, b, lastX + rj, lastY, lastZ + rj, lastX - rj, lastY, lastZ + rj, pX - rj, pY, pZ + rj, pX + rj, pY, pZ + rj);
-                    quad(vc, m, r, g, b, lastX + rj, lastY, lastZ - rj, lastX - rj, lastY, lastZ - rj, pX - rj, pY, pZ - rj, pX + rj, pY, pZ - rj);
+                    quad(vc, m, r, g, b, a, lastX + rj, lastY, lastZ + rj, lastX + rj, lastY, lastZ - rj, pX + rj, pY, pZ - rj, pX + rj, pY, pZ + rj);
+                    quad(vc, m, r, g, b, a, lastX - rj, lastY, lastZ + rj, lastX - rj, lastY, lastZ - rj, pX - rj, pY, pZ - rj, pX - rj, pY, pZ + rj);
+                    quad(vc, m, r, g, b, a, lastX + rj, lastY, lastZ + rj, lastX - rj, lastY, lastZ + rj, pX - rj, pY, pZ + rj, pX + rj, pY, pZ + rj);
+                    quad(vc, m, r, g, b, a, lastX + rj, lastY, lastZ - rj, lastX - rj, lastY, lastZ - rj, pX - rj, pY, pZ - rj, pX + rj, pY, pZ - rj);
                 }
             }
 
@@ -109,36 +131,36 @@ public final class BeamPronter {
         }
 
         if (beam == EnumBeamType.LINE) {
-            line(vc, m, 0, 0, 0, 0, length, 0, innerColor);
+            line(vc, m, 0, 0, 0, 0, length, 0, innerColor, a);
         }
 
         ps.popPose();
     }
 
-    private static void quad(VertexConsumer vc, Matrix4f m, int r, int g, int b,
+    private static void quad(VertexConsumer vc, Matrix4f m, int r, int g, int b, int a,
                              double x1, double y1, double z1, double x2, double y2, double z2,
                              double x3, double y3, double z3, double x4, double y4, double z4) {
         //? if < 1.21.1 {
-        vc.vertex(m, (float) x1, (float) y1, (float) z1).color(r, g, b, 255).endVertex();
-        vc.vertex(m, (float) x2, (float) y2, (float) z2).color(r, g, b, 255).endVertex();
-        vc.vertex(m, (float) x3, (float) y3, (float) z3).color(r, g, b, 255).endVertex();
-        vc.vertex(m, (float) x4, (float) y4, (float) z4).color(r, g, b, 255).endVertex();
+        vc.vertex(m, (float) x1, (float) y1, (float) z1).color(r, g, b, a).endVertex();
+        vc.vertex(m, (float) x2, (float) y2, (float) z2).color(r, g, b, a).endVertex();
+        vc.vertex(m, (float) x3, (float) y3, (float) z3).color(r, g, b, a).endVertex();
+        vc.vertex(m, (float) x4, (float) y4, (float) z4).color(r, g, b, a).endVertex();
         //?} else {
-        /*vc.addVertex(m, (float) x1, (float) y1, (float) z1).setColor(r, g, b, 255);
-        vc.addVertex(m, (float) x2, (float) y2, (float) z2).setColor(r, g, b, 255);
-        vc.addVertex(m, (float) x3, (float) y3, (float) z3).setColor(r, g, b, 255);
-        vc.addVertex(m, (float) x4, (float) y4, (float) z4).setColor(r, g, b, 255);
+        /*vc.addVertex(m, (float) x1, (float) y1, (float) z1).setColor(r, g, b, a);
+        vc.addVertex(m, (float) x2, (float) y2, (float) z2).setColor(r, g, b, a);
+        vc.addVertex(m, (float) x3, (float) y3, (float) z3).setColor(r, g, b, a);
+        vc.addVertex(m, (float) x4, (float) y4, (float) z4).setColor(r, g, b, a);
         *///?}
     }
 
-    private static void line(VertexConsumer vc, Matrix4f m, double x1, double y1, double z1, double x2, double y2, double z2, int color) {
+    private static void line(VertexConsumer vc, Matrix4f m, double x1, double y1, double z1, double x2, double y2, double z2, int color, int a) {
         int r = (color >> 16) & 0xFF, g = (color >> 8) & 0xFF, b = color & 0xFF;
         //? if < 1.21.1 {
-        vc.vertex(m, (float) x1, (float) y1, (float) z1).color(r, g, b, 255).endVertex();
-        vc.vertex(m, (float) x2, (float) y2, (float) z2).color(r, g, b, 255).endVertex();
+        vc.vertex(m, (float) x1, (float) y1, (float) z1).color(r, g, b, a).endVertex();
+        vc.vertex(m, (float) x2, (float) y2, (float) z2).color(r, g, b, a).endVertex();
         //?} else {
-        /*vc.addVertex(m, (float) x1, (float) y1, (float) z1).setColor(r, g, b, 255);
-        vc.addVertex(m, (float) x2, (float) y2, (float) z2).setColor(r, g, b, 255);
+        /*vc.addVertex(m, (float) x1, (float) y1, (float) z1).setColor(r, g, b, a);
+        vc.addVertex(m, (float) x2, (float) y2, (float) z2).setColor(r, g, b, a);
         *///?}
     }
 }

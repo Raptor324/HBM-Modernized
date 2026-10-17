@@ -101,7 +101,7 @@ public class FusionTorusRenderer implements com.hbm_m.client.render.HbmBerBounds
         pose.popPose();
     }
 
-    private void renderPlasma(FusionTorusBlockEntity be, PoseStack pose, MultiBufferSource buffer,
+    void renderPlasma(FusionTorusBlockEntity be, PoseStack pose, MultiBufferSource buffer,
                               Map<String, List<float[]>> obj) {
 
         if (be.plasmaEnergy <= 0 || be.getLevel() == null) return;

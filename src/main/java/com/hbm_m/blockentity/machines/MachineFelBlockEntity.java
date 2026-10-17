@@ -84,7 +84,7 @@ public class MachineFelBlockEntity extends BaseMachineBlockEntity implements com
         int range = 24;
         boolean silexSpacing = false;
 
-        int req = (int) (powerReq * ((mode.ordinal() == 0) ? 0 : Math.pow(3, mode.ordinal())));
+        int req = (int) (powerReq * ((mode.tier == 0) ? 0 : Math.pow(3, mode.tier)));
 
         if (this.isOn && this.mode != EnumWavelengths.NULL && energy < req) {
             this.energy = 0;
@@ -191,7 +191,7 @@ public class MachineFelBlockEntity extends BaseMachineBlockEntity implements com
     }
 
     private void clientTick() {
-        if (energy > powerReq * Math.pow(2, mode.ordinal()) && isOn && mode != EnumWavelengths.NULL && distance - 3 > 0) {
+        if (energy > powerReq * Math.pow(2, mode.tier) && isOn && mode != EnumWavelengths.NULL && distance - 3 > 0) {
             audioDuration += 2;
         } else {
             audioDuration -= 3;
@@ -240,7 +240,7 @@ public class MachineFelBlockEntity extends BaseMachineBlockEntity implements com
 
     /** Fuer GUI und Renderer: laeuft der Strahl gerade? */
     public boolean isBeaming() {
-        return energy > powerReq * Math.pow(2, mode.ordinal()) && isOn && mode != EnumWavelengths.NULL;
+        return energy > powerReq * Math.pow(2, mode.tier) && isOn && mode != EnumWavelengths.NULL;
     }
 
     @Override

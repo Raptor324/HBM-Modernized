@@ -35,12 +35,17 @@ public class EntityTNTPrimedBase extends Entity {
     public boolean detonateOnCollision;
     public int fuse;
     @Nullable private LivingEntity tntPlacedBy;
+    // E11 (Fork, nur mit Space-Addon): gezuendetes TNT dreht sich im Flug ("SSSSSSSPEEEEEN")
+    private final float momentumPitch;
+    private final float momentumYaw;
 
     public EntityTNTPrimedBase(EntityType<? extends EntityTNTPrimedBase> type, Level world) {
         super(type, world);
         this.blocksBuilding = true;
         this.fuse = 80;
         this.detonateOnCollision = false;
+        this.momentumPitch = (float) (world.random.nextGaussian() * 5F);
+        this.momentumYaw = (float) (world.random.nextGaussian() * 10F);
     }
 
     public EntityTNTPrimedBase(Level world, double x, double y, double z, @Nullable LivingEntity placer, Block bomb) {
@@ -86,6 +91,11 @@ public class EntityTNTPrimedBase extends Entity {
         this.setDeltaMovement(m);
         this.move(MoverType.SELF, m);
         this.setDeltaMovement(this.getDeltaMovement().scale(0.98D));
+
+        if (com.hbm_m.api.space.SpaceApi.forkActive()) {
+            this.setXRot(this.getXRot() + momentumPitch);
+            this.setYRot(this.getYRot() + momentumYaw);
+        }
 
         if (this.onGround()) {
             Vec3 v = this.getDeltaMovement();

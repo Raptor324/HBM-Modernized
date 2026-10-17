@@ -25,6 +25,19 @@ import net.minecraft.world.phys.Vec3;
 
 /** 1:1 {@code com.hbm.handler.ability.IToolAreaAbility}. */
 public interface IToolAreaAbility extends IBaseAbility {
+    /** W-R9A-6: weitere "Stein"-Bloecke fuer die Aderabbau-Sperre (leer ohne Addon; Space: Planetengestein). */
+    /** E15: OreDict {@code stone}/{@code cobblestone} des Originals als Gegenstands-Tags (Forge {@code forge:}, NeoForge {@code c:}). */
+    //? if forge {
+    net.minecraft.tags.TagKey<net.minecraft.world.item.Item> FORK_STONE = net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.resources.ResourceLocation.tryParse("forge:stone"));
+    net.minecraft.tags.TagKey<net.minecraft.world.item.Item> FORK_COBBLESTONE = net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.resources.ResourceLocation.tryParse("forge:cobblestone"));
+    //?} else {
+    /*net.minecraft.tags.TagKey<net.minecraft.world.item.Item> FORK_STONE = net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.resources.ResourceLocation.tryParse("c:stones"));
+    net.minecraft.tags.TagKey<net.minecraft.world.item.Item> FORK_COBBLESTONE = net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.ITEM, net.minecraft.resources.ResourceLocation.tryParse("c:cobblestones"));
+    *///?}
+
+    net.minecraft.tags.TagKey<net.minecraft.world.level.block.Block> AREA_ABILITY_STONE = net.minecraft.tags.TagKey.create(
+            net.minecraft.core.registries.Registries.BLOCK, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("hbm_m", "area_ability_stone"));
+
     // Should call tool.breakExtraBlock on a bunch of blocks.
     // The initial block is implicitly broken, so don't call breakExtraBlock on it.
     // Returning true skips the reference block from being broken
@@ -60,7 +73,11 @@ public interface IToolAreaAbility extends IBaseAbility {
         public boolean onDig(int level, Level world, BlockPos p, Player player, ItemToolAbility tool) {
             Block b = world.getBlockState(p).getBlock();
 
-            if (b == Blocks.STONE && !ModClothConfig.get().toolRecursiveStone) {
+            // NTM Space (W-R9A-6): Planetengestein zaehlt als Stein - Block-Tag hbm_m:area_ability_stone (ohne Addon leer)
+            // E15 (Fork, nur mit Space-Addon): alles mit Stein-/Bruchstein-OreDict ist "Stein" (Space IToolAreaAbility)
+            if ((b == Blocks.STONE || world.getBlockState(p).is(AREA_ABILITY_STONE)
+                    || (com.hbm_m.api.space.SpaceApi.forkActive() && (b.asItem().getDefaultInstance().is(FORK_STONE) || b.asItem().getDefaultInstance().is(FORK_COBBLESTONE))))
+                    && !ModClothConfig.get().toolRecursiveStone) {
                 return false;
             }
 

@@ -42,12 +42,12 @@ import java.util.Map;
 public class MachineRbmkConsoleRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineRbmkConsoleBlockEntity> {
 
     private static final int GRID = MachineRbmkConsoleBlockEntity.GRID;
-    private static final String MODEL_PATH = "models/block/rbmk_console.obj";
+    static final String MODEL_PATH = "models/block/rbmk_console.obj";
     /** The console body's texture. NOT {@code block/machine/rbmk_console} - that file is a flat
      *  grey 256x256 placeholder, which is exactly why the console rendered as a featureless grey
      *  mass. The original binds {@code ResourceManager.rbmk_console_tex}, which resolves to
      *  {@code textures/models/machines/rbmk_control.png}; its 1:1 port lives here. */
-    private static final String BODY_TEXTURE = "block/machine/rbmk_control";
+    static final String BODY_TEXTURE = "block/machine/rbmk_control";
 
     // Screen grid layout, 1:1 with RenderRBMKConsole's kx/ky/kz: the mini-map sits on the panel
     // face at model X = -0.3725 (normal +X, i.e. facing the operator), cells are 0.125 wide,
@@ -117,6 +117,14 @@ public class MachineRbmkConsoleRenderer implements com.hbm_m.client.render.HbmBe
 
         renderBody(ps, buf, packedLight, packedOverlay);
 
+        renderScreens(be, ps, buf, packedLight, packedOverlay);
+
+        ps.popPose();
+    }
+
+    /** Mini-Karte und Textanzeigen (aus render() herausgezogen, auch vom Raptor-Pfad als Hook genutzt). */
+    void renderScreens(MachineRbmkConsoleBlockEntity be, PoseStack ps, MultiBufferSource buf,
+                       int packedLight, int packedOverlay) {
         VertexConsumer vc = buf.getBuffer(RenderType.solid());
         Matrix4f m = ps.last().pose();
         TextureAtlasSprite sprite = whiteSprite();
@@ -195,8 +203,6 @@ public class MachineRbmkConsoleRenderer implements com.hbm_m.client.render.HbmBe
         }
 
         renderScreenText(be, ps, buf, packedLight, packedOverlay);
-
-        ps.popPose();
     }
 
     // ─── Screen markers ──────────────────────────────────────────────────────

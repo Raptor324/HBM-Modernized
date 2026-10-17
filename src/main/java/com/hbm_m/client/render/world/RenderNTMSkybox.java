@@ -62,6 +62,7 @@ public final class RenderNTMSkybox {
         ClientLevel world = mc.level;
         if (world == null || mc.player == null) return;
         if (world.dimension() != Level.OVERWORLD) return;
+        if (com.hbm_m.api.space.SpaceApi.overridesSky(world)) return; // Space-Addon zeichnet den Himmel selbst
 
         updateLodeStar(mc, world);
 

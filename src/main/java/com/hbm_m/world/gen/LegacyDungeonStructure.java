@@ -95,14 +95,27 @@ public class LegacyDungeonStructure extends Structure {
     /*public static final com.mojang.serialization.MapCodec<LegacyDungeonStructure> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
     *///?}
             settingsCodec(instance),
-            Codec.STRING.fieldOf("dungeon").forGetter(s -> s.kind.id)
+            Codec.STRING.fieldOf("dungeon").forGetter(s -> s.kind.id),
+            Codec.BOOL.optionalFieldOf("any_biome", false).forGetter(s -> s.anyBiome)
     ).apply(instance, LegacyDungeonStructure::new));
 
     public final Kind kind;
 
+    /**
+     * Optionales Feld {@code "any_biome"} (Standard false = Biombedingung wie {@code HbmWorldGen}). true ueberspringt
+     * {@link Kind#canSpawn} - fuer Aufrufer ohne Biomabfrage wie {@code WorldGeneratorIke.generateIke} (NTM Space:
+     * Pyramide auf Ike, Wunsch W-R3a-1). Die erlaubten Biome bestimmt dann allein {@code "biomes"} der Struktur.
+     */
+    public final boolean anyBiome;
+
     public LegacyDungeonStructure(StructureSettings settings, String dungeon) {
+        this(settings, dungeon, false);
+    }
+
+    public LegacyDungeonStructure(StructureSettings settings, String dungeon, boolean anyBiome) {
         super(settings);
         this.kind = Kind.of(dungeon);
+        this.anyBiome = anyBiome;
     }
 
     @Override
@@ -128,7 +141,7 @@ public class LegacyDungeonStructure extends Structure {
         // Biom wie HbmWorldGen.biomeAt(i, j)
         int h = ctx.chunkGenerator().getBaseHeight(i, j, Heightmap.Types.WORLD_SURFACE_WG, ctx.heightAccessor(), ctx.randomState());
         LegacyBiome biome = LegacyBiome.of(ctx.biomeSource().getNoiseBiome(QuartPos.fromBlock(i), QuartPos.fromBlock(h), QuartPos.fromBlock(j), ctx.randomState().sampler()));
-        if (!kind.canSpawn(biome)) return Optional.empty();
+        if (!anyBiome && !kind.canSpawn(biome)) return Optional.empty();
 
         int x = i + rand.nextInt(16);
         int z = j + rand.nextInt(16);

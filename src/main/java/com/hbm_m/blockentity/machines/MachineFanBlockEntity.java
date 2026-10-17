@@ -24,6 +24,11 @@ public class MachineFanBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEnt
     public float prevSpin;
     public boolean falloff = true;
     public boolean suck = false;
+    /**
+     * NTM Space: Ventilator wirkt nur mit Atmosphaere (> 0.01 atm am Ort). Server berechnet, Client bekommt den Wert
+     * ueber das Block-Update. Startwert true, damit ohne Space-Addon (immer 1 atm) nichts abweicht.
+     */
+    private boolean hasAtmosphere = true;
 
     public MachineFanBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.FAN_BE.get(), pos, state);
@@ -38,55 +43,65 @@ public class MachineFanBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEnt
         this.prevSpin = this.spin;
 
         if (world.hasNeighborSignal(pos)) {
-            Direction dir = state.getValue(MachineFanBlock.FACING);
-
-            int range = 10;
-            int effRange = 0;
-            double push = 0.1;
-
-            for (int i = 1; i <= range; i++) {
-                BlockPos p = pos.relative(dir, i);
-                BlockState bs = world.getBlockState(p);
-                Block block = bs.getBlock();
-                boolean blowable = block instanceof IBlowable;
-
-                if (bs.isRedstoneConductor(world, p) || blowable) {
-                    if (!world.isClientSide && blowable)
-                        ((IBlowable) block).applyFan(world, p, dir, i);
-
-                    break;
+            if (!world.isClientSide) {
+                boolean atmo = com.hbm_m.api.space.SpaceApi.pressure(world, pos) > 0.01D;
+                if (atmo != hasAtmosphere) {
+                    hasAtmosphere = atmo;
+                    setChanged();
                 }
-
-                effRange = i;
             }
 
-            int x = dir.getStepX() * effRange;
-            int y = dir.getStepY() * effRange;
-            int z = dir.getStepZ() * effRange;
+            if (hasAtmosphere) {
+                Direction dir = state.getValue(MachineFanBlock.FACING);
 
-            List<Entity> affected = world.getEntitiesOfClass(Entity.class, new AABB(
-                    pos.getX() + 0.5 + Math.min(x, 0), pos.getY() + 0.5 + Math.min(y, 0), pos.getZ() + 0.5 + Math.min(z, 0),
-                    pos.getX() + 0.5 + Math.max(x, 0), pos.getY() + 0.5 + Math.max(y, 0), pos.getZ() + 0.5 + Math.max(z, 0)).inflate(0.5, 0.5, 0.5));
+                int range = 10;
+                int effRange = 0;
+                double push = 0.1;
 
-            for (Entity e : affected) {
+                for (int i = 1; i <= range; i++) {
+                    BlockPos p = pos.relative(dir, i);
+                    BlockState bs = world.getBlockState(p);
+                    Block block = bs.getBlock();
+                    boolean blowable = block instanceof IBlowable;
 
-                double coeff = push;
+                    if (bs.isRedstoneConductor(world, p) || blowable) {
+                        if (!world.isClientSide && blowable)
+                            ((IBlowable) block).applyFan(world, p, dir, i);
 
-                if (falloff) {
-                    double dist = Math.sqrt(e.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5));
-                    coeff *= 1.5 * (1 - dist / range / 2);
+                        break;
+                    }
+
+                    effRange = i;
                 }
-                if (suck) coeff *= -1;
 
-                Vec3 m = e.getDeltaMovement();
-                e.setDeltaMovement(m.x + dir.getStepX() * coeff, m.y + dir.getStepY() * coeff, m.z + dir.getStepZ() * coeff);
-                e.hurtMarked = true;
-            }
+                int x = dir.getStepX() * effRange;
+                int y = dir.getStepY() * effRange;
+                int z = dir.getStepZ() * effRange;
 
-            if (world.isClientSide && world.random.nextInt(30) == 0) {
-                double speed = suck ? -0.2 : 0.2;
-                world.addParticle(ParticleTypes.CLOUD, pos.getX() + 0.5 + dir.getStepX() * 0.5, pos.getY() + 0.5 + dir.getStepY() * 0.5, pos.getZ() + 0.5 + dir.getStepZ() * 0.5,
-                        dir.getStepX() * speed, dir.getStepY() * speed, dir.getStepZ() * speed);
+                List<Entity> affected = world.getEntitiesOfClass(Entity.class, new AABB(
+                        pos.getX() + 0.5 + Math.min(x, 0), pos.getY() + 0.5 + Math.min(y, 0), pos.getZ() + 0.5 + Math.min(z, 0),
+                        pos.getX() + 0.5 + Math.max(x, 0), pos.getY() + 0.5 + Math.max(y, 0), pos.getZ() + 0.5 + Math.max(z, 0)).inflate(0.5, 0.5, 0.5));
+
+                for (Entity e : affected) {
+
+                    double coeff = push;
+
+                    if (falloff) {
+                        double dist = Math.sqrt(e.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5));
+                        coeff *= 1.5 * (1 - dist / range / 2);
+                    }
+                    if (suck) coeff *= -1;
+
+                    Vec3 m = e.getDeltaMovement();
+                    e.setDeltaMovement(m.x + dir.getStepX() * coeff, m.y + dir.getStepY() * coeff, m.z + dir.getStepZ() * coeff);
+                    e.hurtMarked = true;
+                }
+
+                if (world.isClientSide && world.random.nextInt(30) == 0) {
+                    double speed = suck ? -0.2 : 0.2;
+                    world.addParticle(ParticleTypes.CLOUD, pos.getX() + 0.5 + dir.getStepX() * 0.5, pos.getY() + 0.5 + dir.getStepY() * 0.5, pos.getZ() + 0.5 + dir.getStepZ() * 0.5,
+                            dir.getStepX() * speed, dir.getStepY() * speed, dir.getStepZ() * speed);
+                }
             }
 
             this.spin += 30;
@@ -108,6 +123,7 @@ public class MachineFanBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEnt
     protected void writeNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(nbt, registries);
         nbt.putBoolean("falloff", falloff);
+        nbt.putBoolean("hasAtmosphere", hasAtmosphere);
         nbt.putBoolean("suck", suck);
     }
 
@@ -115,6 +131,7 @@ public class MachineFanBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEnt
     protected void readNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(nbt, registries);
         this.falloff = nbt.getBoolean("falloff");
+        this.hasAtmosphere = !nbt.contains("hasAtmosphere") || nbt.getBoolean("hasAtmosphere");
         this.suck = nbt.getBoolean("suck");
     }
 }

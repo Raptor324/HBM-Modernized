@@ -74,7 +74,12 @@ public class MachineCoolingTowerBlockEntity extends BaseMachineBlockEntity imple
 
         in.setFill(in.getFill() - convert);
         if (convert > 0) be.waterTimer = 20;
-        out.setFill(out.getFill() + convert);
+        // NTM Space: im Tom-Feuersturm und im Vakuum verdampfen Dampf und Wasser (ohne Space-Addon nie)
+        if (com.hbm_m.api.space.SpaceApi.condenserEvaporates(level, pos, false)) {
+            out.setFill(out.getFill() - convert);
+        } else {
+            out.setFill(out.getFill() + convert);
+        }
 
         // subscribeToAllAround des TileEntityTowerLarge
         for (Direction dir : DIRS) {

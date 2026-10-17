@@ -380,7 +380,7 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
         for (com.hbm_m.api.fluids.IFluidReceiverMK2 receiver : receivers) {
             if (!(receiver instanceof BlockEntity be)) continue;
             BlockPos pos = be.getBlockPos();
-            if (receiver instanceof com.hbm_m.api.tile.IOverpressurable overpressurable) {
+            if (receiver instanceof com.hbm_m.api.tile.IOverpressurable overpressurable && overpressurable.handlesOverpressure()) {
                 overpressurable.explode(level, pos);
             } else {
                 level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);

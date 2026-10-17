@@ -22,6 +22,9 @@ public class ChungusRenderer implements com.hbm_m.client.render.HbmBerBounds<Mac
     public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/machines/chungus.obj"));
     public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/machines/chungus.png");
 
+    public static final SimpleObjModel MODEL_DESTROYED = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/machines/chungus_destroyed.obj"));
+    public static final ResourceLocation TEX_DESTROYED = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/machines/chungus_destroyed.png");
+
     public ChungusRenderer(BlockEntityRendererProvider.Context ctx) { }
 
     /** Original {@code FluidType.ordinal()} = ID: Dampf 2, Heissdampf 3, Superheiss 4, Ultraheiss 5. */
@@ -50,6 +53,13 @@ public class ChungusRenderer implements com.hbm_m.client.render.HbmBerBounds<Mac
         }
 
         ps.translate(0, 0, -3);
+
+        // E9 (Fork, nur mit Space-Addon): zerstoertes Modell (Modell/Textur liefert das Addon unter hbm_m)
+        if (turbine.damaged) {
+            MODEL_DESTROYED.renderAll(ps, buf.getBuffer(RenderType.entityCutout(TEX_DESTROYED)), light);
+            ps.popPose();
+            return;
+        }
 
         VertexConsumer vc = buf.getBuffer(RenderType.entityCutout(TEX));
         MODEL.renderPart("Body", ps, vc, light);

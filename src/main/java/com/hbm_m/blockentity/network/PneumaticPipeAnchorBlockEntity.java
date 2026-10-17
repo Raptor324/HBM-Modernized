@@ -99,11 +99,15 @@ public class PneumaticPipeAnchorBlockEntity extends BaseHbmBlockEntity implement
         setChanged();
     }
 
+    /** Von onChunkUnloaded gesetzt: das folgende setRemoved ist ein Entladen, kein Abbau. */
+    private boolean unloaded = false;
+
     /** {@code disconnectAll}: Gegenanker vergessen diesen Anker, die Knoten werden neu gebaut. */
     public void disconnectAll() {
         if (!(level instanceof ServerLevel sl)) return;
         for (BlockPos p : connected) {
-            BlockEntity te = level.getBlockEntity(p);
+            // Nie Chunks nachladen (setRemoved laeuft auch beim Entladen/Server-Stopp).
+            BlockEntity te = com.hbm_m.util.ChunkSafe.getBlockEntity(level, p);
             if (te == this) continue;
             if (te instanceof PneumaticPipeAnchorBlockEntity other) {
                 UniNodespace.destroyNode(sl, p, PneumaticNetProvider.THE_PROVIDER);
@@ -119,13 +123,21 @@ public class PneumaticPipeAnchorBlockEntity extends BaseHbmBlockEntity implement
 
     @Override
     public void setRemoved() {
-        disconnectAll();
+        // Entladen ist kein Abbau (Original: invalidate nur beim Abbau) - Verbindungen bleiben stehen.
+        if (!unloaded) {
+            disconnectAll();
+        } else if (level instanceof ServerLevel sl) {
+            // nur die eigenen Knoten, Nachbarn bleiben unberuehrt
+            UniNodespace.destroyNode(sl, worldPosition, PneumaticNetProvider.THE_PROVIDER);
+            node = null;
+        }
         super.setRemoved();
     }
 
     //? if forge || neoforge {
     @Override
     public void onChunkUnloaded() {
+        unloaded = true;
         if (node != null) node.expired = true;
         super.onChunkUnloaded();
     }

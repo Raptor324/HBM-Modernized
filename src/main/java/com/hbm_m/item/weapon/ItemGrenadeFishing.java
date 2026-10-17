@@ -53,6 +53,9 @@ public class ItemGrenadeFishing extends ItemGenericGrenade {
      * Schatzchance unter null, also immer ein Fisch (Beutetabelle gameplay/fishing/fish).
      */
     public static ItemStack getRandomLoot(ServerLevel world, Vec3 pos) {
+        // NTM Space (W-R9A-5): Fische des Himmelskoerpers (ohne Addon null -> Vanilla)
+        ItemStack celestial = com.hbm_m.api.space.SpaceApi.env().fishingOverride(world, world.random);
+        if (celestial != null) return celestial;
         //? if < 1.21.1 {
         LootTable table = world.getServer().getLootData().getLootTable(BuiltInLootTables.FISHING_FISH);
         //?} else {

@@ -90,7 +90,7 @@ public class LambdaRocketEntity extends Entity {
         if (payload.isEmpty() || !(level() instanceof ServerLevel server)) return;
         if (payload.getItem() instanceof ISatChip) {
             int freq = ISatChip.getFreqS(payload);
-            com.hbm_m.satellite.SatelliteManager.get(server).orbit(server, payload, freq, getX(), getY(), getZ());
+            com.hbm_m.satellite.SatelliteManager.orbitSatellite(server, payload, freq, getX(), getY(), getZ()); // Space-API W-R6C-2
         }
     }
 

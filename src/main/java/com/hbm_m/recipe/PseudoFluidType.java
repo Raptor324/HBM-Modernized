@@ -89,6 +89,16 @@ public final class PseudoFluidType {
     public List<ItemStack> getOutput() { return output; }
     public Component getDisplayName() { return Component.translatable("pseudofluid.hbm_m." + id); }
 
+    /**
+     * W-R9B5-5 (Space-Addon): weiterer Pseudofluid-Typ (Original {@code new PseudoFluidType(...)}, z.B. MINSOL/MINSOLSEP);
+     * Anzeige ueber Lang {@code pseudofluid.hbm_m.<id>}, Zuordnung Fluid -> Typ ueber {@link #FLUID_CONVERSIONS}.
+     */
+    public static synchronized PseudoFluidType register(String id, int fluidConsumed, int fluidProduced,
+                                                        @org.jetbrains.annotations.Nullable PseudoFluidType outputType, boolean highSpeed, ItemStack... output) {
+        if (TYPES.containsKey(id)) throw new IllegalArgumentException("PseudoFluidType " + id + " already registered");
+        return new PseudoFluidType(id, fluidConsumed, fluidProduced, outputType, highSpeed, output);
+    }
+
     public static PseudoFluidType byId(String id) {
         return TYPES.get(id);
     }

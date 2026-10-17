@@ -346,7 +346,8 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
         boolean wasProgressing = progressing;
         speed = 0D;
         BlastFurnaceRecipe recipe = findRecipe();
-        if (!this.tilted && recipe != null && canProcess(recipe)) {
+        // NTM Space: && breatheAir(1) - ohne Space-Addon immer true
+        if (!this.tilted && recipe != null && canProcess(recipe) && breatheAir(1)) {
             speed = Mth.clamp(0.5D + airTank.getFluidAmountMb() * 8D / AIR_CAPACITY_MB, 0.5D, 5D);
             progressing = true;
             progress += speed / recipe.getDuration();

@@ -146,5 +146,9 @@ public class CargoElevatorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlock
         isExtending = tag.getBoolean("isExtending");
     }
 
-
+    /** 1:1 TileEntityCargoElevator.getRenderBoundingBox (Render-Migration: Raptors Pfad cullt nach dieser Box, der alte BER zeichnete immer). */
+    @Override
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return new net.minecraft.world.phys.AABB(worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1, worldPosition.getX() + 2, worldPosition.getY() + 1 + height, worldPosition.getZ() + 2);
+    }
 }

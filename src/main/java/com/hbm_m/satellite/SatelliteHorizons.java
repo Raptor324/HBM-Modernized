@@ -66,7 +66,7 @@ public class SatelliteHorizons extends Satellite {
     public void theHorizons(ServerLevel world, int x, int z) {
         if (used) return;
         used = true;
-        SatelliteManager.get(world).setDirty();
+        SatelliteManager.get(world, x, z).setDirty();
 
         TomEntity tom = ModEntities.TOM_METEOR.get().create(world);
         if (tom == null) return;

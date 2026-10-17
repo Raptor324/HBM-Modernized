@@ -164,6 +164,9 @@ public class MachineTurbofanBlockEntity extends com.hbm_m.blockentity.MachinePol
                 burnValue = combustible.getCombustionEnergy() / 1_000;
             }
 
+            // NTM Space - ohne Space-Addon immer true
+            if (amountToBurn > 0 && !breatheAir(amountToBurn)) amountToBurn = 0;
+
             if (amountToBurn > 0) {
                 this.wasOn = true;
                 this.tank.setFill(this.tank.getFill() - amountToBurn);

@@ -95,6 +95,25 @@ public final class HbmLivingProps {
         livingTag(entity).putFloat(NBT_RAD_BUF, rad);
     }
 
+    // ── Space-API (W-R4b-2): Neutronenaktivierung des Koerpers, Original NTM Space HbmLivingProps.activation ──
+    // Nur Speicher (NBT "hfr_activation" wie im Original). HBM selbst erhoeht/zerfaellt den Wert nicht: Quelle
+    // (HazardTypeNeutron), Zerfall (EntityEffectHandler: neut * 0.998816, Strahlung neut / 20) und der Schalter
+    // disableNeutron liegen beim Addon (SpaceEnvironment.onLivingTick / onDecontaminate). Ohne Addon immer 0.
+    private static final String NBT_ACTIVATION = "hfr_activation";
+
+    public static float getNeutronActivation(LivingEntity entity) {
+        CompoundTag root = entity.getPersistentData();
+        return root.contains(KEY) ? root.getCompound(KEY).getFloat(NBT_ACTIVATION) : 0F;
+    }
+
+    public static void setNeutronActivation(LivingEntity entity, float rad) {
+        livingTag(entity).putFloat(NBT_ACTIVATION, Math.max(0F, rad));
+    }
+
+    public static void incrementNeutronActivation(LivingEntity entity, float rad) {
+        setNeutronActivation(entity, getNeutronActivation(entity) + rad);
+    }
+
     public static int getAsbestos(LivingEntity entity) {
         if (RadiationConfig.disableAsbestos) {
             return 0;

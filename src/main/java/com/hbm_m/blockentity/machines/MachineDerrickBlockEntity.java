@@ -82,6 +82,13 @@ public class MachineDerrickBlockEntity extends OilDrillBaseBlockEntity {
         }
     }
 
+    /** NTM Space TileEntityMachineOilWell.onSuck(BlockOreFluid ...): Platschen, dann Basis-Foerderung (W-R8B-2). */
+    @Override
+    protected void onSuckDeposit(com.hbm_m.api.space.SpaceResources.FluidDepositBlock dep, BlockPos pos) {
+        level.playSound(null, worldPosition, SoundEvents.GENERIC_SPLASH, SoundSource.BLOCKS, 2.0F, 0.5F);
+        super.onSuckDeposit(dep, pos);
+    }
+
     @Override
     public void onSuck(BlockPos pos) {
         // Original: "game.neutral.swim.splash", 2.0 / 0.5

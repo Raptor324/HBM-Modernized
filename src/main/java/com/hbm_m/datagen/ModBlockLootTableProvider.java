@@ -219,7 +219,9 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 ModBlocks.BARREL_TCALLOY, ModBlocks.BARREL_ANTIMATTER, ModBlocks.HYDROTREATER, ModBlocks.CATALYTIC_REFORMER,
                 ModBlocks.VACUUM_DISTILL, ModBlocks.REFINERY, ModBlocks.PUMPJACK, ModBlocks.DERRICK, ModBlocks.HYDRAULIC_FRACKINING_TOWER, ModBlocks.FENSU2,
                 ModBlocks.CAPACITOR_BUS, ModBlocks.CAPACITOR_COPPER, ModBlocks.CAPACITOR_GOLD, ModBlocks.CAPACITOR_NIOBIUM,
-                ModBlocks.CAPACITOR_SCHRABIDATE, ModBlocks.CAPACITOR_TANTALIUM)) {
+                ModBlocks.CAPACITOR_SCHRABIDATE, ModBlocks.CAPACITOR_TANTALIUM,
+                // E9: Space MachineChungus/MachineCondenserPowered - IPersistentNBT (nur "damaged", ohne Addon nie gesetzt)
+                ModBlocks.MACHINE_CHUNGUS, ModBlocks.CONDENSER_POWERED)) {
             dropPersistent(b);
         }
 

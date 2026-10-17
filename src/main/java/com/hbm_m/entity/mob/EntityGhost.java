@@ -30,6 +30,8 @@ public class EntityGhost extends PathfinderMob {
         this.goalSelector.addGoal(0, new FloatGoal(this));
         this.goalSelector.addGoal(1, new RandomStrollGoal(this, 1.0D));
         this.goalSelector.addGoal(2, new RandomLookAroundGoal(this));
+        // E11 (Fork, nur mit Space-Addon): der Geist schaut Spieler an (EntityAIWatchClosest 15)
+        if (com.hbm_m.api.space.SpaceApi.forkActive()) this.goalSelector.addGoal(3, new net.minecraft.world.entity.ai.goal.LookAtPlayerGoal(this, net.minecraft.world.entity.player.Player.class, 15.0F));
     }
 
     public static AttributeSupplier.Builder createAttributes() {

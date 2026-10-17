@@ -76,9 +76,9 @@ public final class DFCRenderers {
             int range = te.getBeamLength();
             if (range > 0) {
                 long t = time(te);
-                BeamPronter.prontBeamwithDepth(ps, buf, new Vec3(0, 0, range), BeamPronter.EnumWaveType.SPIRAL, BeamPronter.EnumBeamType.SOLID, 0x404000, 0x404000, 0, 1, 0F, 2, 0.0625F);
-                BeamPronter.prontBeamwithDepth(ps, buf, new Vec3(0, 0, range), BeamPronter.EnumWaveType.RANDOM, BeamPronter.EnumBeamType.SOLID, 0x401500, 0x401500, (int) t % 1000, range * 2, 0.125F, 4, 0.0625F);
-                BeamPronter.prontBeamwithDepth(ps, buf, new Vec3(0, 0, range), BeamPronter.EnumWaveType.RANDOM, BeamPronter.EnumBeamType.SOLID, 0x401500, 0x401500, (int) t % 1000 + 1, range * 2, 0.125F, 4, 0.0625F);
+                BeamPronter.prontBeamwithDepth(ps, buf, new Vec3(0, 0, range), BeamPronter.EnumWaveType.SPIRAL, BeamPronter.EnumBeamType.SOLID, 0x404000, 0x404000, 0, 1, 0F, 2, 0.0625F, com.hbm_m.client.render.util.BeamPronter.forkAlpha());
+                BeamPronter.prontBeamwithDepth(ps, buf, new Vec3(0, 0, range), BeamPronter.EnumWaveType.RANDOM, BeamPronter.EnumBeamType.SOLID, 0x401500, 0x401500, (int) t % 1000, range * 2, 0.125F, 4, 0.0625F, com.hbm_m.client.render.util.BeamPronter.forkAlpha());
+                BeamPronter.prontBeamwithDepth(ps, buf, new Vec3(0, 0, range), BeamPronter.EnumWaveType.RANDOM, BeamPronter.EnumBeamType.SOLID, 0x401500, 0x401500, (int) t % 1000 + 1, range * 2, 0.125F, 4, 0.0625F, com.hbm_m.client.render.util.BeamPronter.forkAlpha());
             }
             ps.popPose();
         }
@@ -114,10 +114,10 @@ public final class DFCRenderers {
                 FluidTank t0 = injector.getTank(0), t1 = injector.getTank(1);
                 if (t0 != null && t0.getFill() > 0)
                     BeamPronter.prontBeam(ps, buf, new Vec3(0, 0, range), BeamPronter.EnumWaveType.RANDOM, BeamPronter.EnumBeamType.LINE,
-                            FluidType.forFluid(t0.getTankType()).getColor(), 0x808080, (int) t % 1000, range, 0.0625F, 0, 0);
+                            FluidType.forFluid(t0.getTankType()).getColor(), 0x808080, (int) t % 1000, range, 0.0625F, 0, 0, com.hbm_m.client.render.util.BeamPronter.forkAlpha());
                 if (t1 != null && t1.getFill() > 0)
                     BeamPronter.prontBeam(ps, buf, new Vec3(0, 0, range), BeamPronter.EnumWaveType.RANDOM, BeamPronter.EnumBeamType.LINE,
-                            FluidType.forFluid(t1.getTankType()).getColor(), 0x808080, (int) t % 1000 + 1, range, 0.0625F, 0, 0);
+                            FluidType.forFluid(t1.getTankType()).getColor(), 0x808080, (int) t % 1000 + 1, range, 0.0625F, 0, 0, com.hbm_m.client.render.util.BeamPronter.forkAlpha());
             }
             ps.popPose();
         }
@@ -138,9 +138,9 @@ public final class DFCRenderers {
             int range = stabilizer.getBeam();
             if (range > 0) {
                 long t = time(stabilizer);
-                BeamPronter.prontBeam(ps, buf, new Vec3(0, 0, range), BeamPronter.EnumWaveType.SPIRAL, BeamPronter.EnumBeamType.LINE, 0xffa200, 0xffd000, (int) t * -25 % 360, range * 3, 0.125F, 0, 0);
-                BeamPronter.prontBeam(ps, buf, new Vec3(0, 0, range), BeamPronter.EnumWaveType.SPIRAL, BeamPronter.EnumBeamType.LINE, 0xffa200, 0xffd000, (int) t * -15 % 360 + 180, range * 3, 0.125F, 0, 0);
-                BeamPronter.prontBeam(ps, buf, new Vec3(0, 0, range), BeamPronter.EnumWaveType.SPIRAL, BeamPronter.EnumBeamType.LINE, 0xffa200, 0xffd000, (int) t * -5 % 360 + 180, range * 3, 0.125F, 0, 0);
+                BeamPronter.prontBeam(ps, buf, new Vec3(0, 0, range), BeamPronter.EnumWaveType.SPIRAL, BeamPronter.EnumBeamType.LINE, 0xffa200, 0xffd000, (int) t * -25 % 360, range * 3, 0.125F, 0, 0, com.hbm_m.client.render.util.BeamPronter.forkAlpha());
+                BeamPronter.prontBeam(ps, buf, new Vec3(0, 0, range), BeamPronter.EnumWaveType.SPIRAL, BeamPronter.EnumBeamType.LINE, 0xffa200, 0xffd000, (int) t * -15 % 360 + 180, range * 3, 0.125F, 0, 0, com.hbm_m.client.render.util.BeamPronter.forkAlpha());
+                BeamPronter.prontBeam(ps, buf, new Vec3(0, 0, range), BeamPronter.EnumWaveType.SPIRAL, BeamPronter.EnumBeamType.LINE, 0xffa200, 0xffd000, (int) t * -5 % 360 + 180, range * 3, 0.125F, 0, 0, com.hbm_m.client.render.util.BeamPronter.forkAlpha());
             }
             ps.popPose();
         }

@@ -127,9 +127,11 @@ public class MachineFurnaceBrickBlockEntity extends com.hbm_m.blockentity.BaseHb
         if (level.isClientSide()) return;
 
         boolean wasLit = be.isLit();
+        // NTM Space: canOperate = breatheAir(wasBurning && t % 5 == 0 ? 1 : 0) - ohne Space-Addon immer true
+        boolean canOperate = be.breatheAir(wasLit && level.getGameTime() % 5 == 0 ? 1 : 0);
         boolean dirty = false;
 
-        if (be.litTime <= 0 && be.canSmelt(level)) {
+        if (canOperate && be.litTime <= 0 && be.canSmelt(level)) {
             if (be.tryConsumeFuel()) {
                 dirty = true;
             }
@@ -137,7 +139,7 @@ public class MachineFurnaceBrickBlockEntity extends com.hbm_m.blockentity.BaseHb
 
         if (be.litTime > 0) {
             be.litTime--;
-            if (be.canSmelt(level)) {
+            if (canOperate && be.canSmelt(level)) {
                 be.progress += be.getBurnSpeed(be.inventory.getStackInSlot(SLOT_INPUT));
                 if (be.progress >= PROCESSING_THRESHOLD) {
                     be.craftItem(level);
@@ -175,6 +177,9 @@ public class MachineFurnaceBrickBlockEntity extends com.hbm_m.blockentity.BaseHb
         if (item == Blocks.COBBLESTONE.asItem()) return 2;
         if (item == Blocks.SAND.asItem()) return 2;
         if (input.is(ItemTags.LOGS)) return 2;
+        // NTM Space: Planetengestein/-sand (Addon) ueber SpaceResources.registerBrickFurnaceSpeed
+        int space = com.hbm_m.api.space.SpaceResources.brickFurnaceSpeed(item);
+        if (space > 0) return space;
         return 1;
     }
 

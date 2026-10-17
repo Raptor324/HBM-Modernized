@@ -22,7 +22,8 @@ public abstract class ClientLevelImpactMixin {
     @Unique
     private boolean hbm_m$overworld() {
         // Original: WorldProviderNTM wird nur mit 1.32_enableImpactWorldProvider fuer Dimension 0 registriert
-        return com.hbm_m.config.GeneralConfig.enableImpactWorldProvider && ((Level) (Object) this).dimension() == Level.OVERWORLD;
+        return com.hbm_m.config.GeneralConfig.enableImpactWorldProvider && ((Level) (Object) this).dimension() == Level.OVERWORLD
+                && !com.hbm_m.api.space.SpaceApi.overridesSky((Level) (Object) this); // Space-Addon zeichnet den Himmel selbst
     }
 
     /** Original {@code getSunBrightness}: {@code (sunBr * 0.8F + 0.2F) * (1 - dust)}. */

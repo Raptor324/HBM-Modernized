@@ -225,4 +225,10 @@ public class MachineMicrowaveBlockEntity extends BaseMachineBlockEntity {
         sidedItems.invalidate();
     }
     *///?}
+
+    /** 1:1 TileEntityMicrowave.getRenderBoundingBox (Render-Migration: Raptors Pfad cullt nach dieser Box, der alte BER zeichnete immer). */
+    @Override
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return com.hbm_m.platform.RenderBounds.INFINITE;
+    }
 }

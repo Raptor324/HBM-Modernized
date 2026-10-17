@@ -443,4 +443,9 @@ public class MachineRbmkConsoleBlockEntity extends com.hbm_m.blockentity.BaseHbm
         readNbtData(tag, null);
     }
 
+    /** 1:1 TileEntityRBMKConsole.getRenderBoundingBox (Render-Migration: Raptors Pfad cullt nach dieser Box, der alte BER zeichnete immer). */
+    @Override
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return new net.minecraft.world.phys.AABB(worldPosition.getX() - 2, worldPosition.getY(), worldPosition.getZ() - 2, worldPosition.getX() + 3, worldPosition.getY() + 4, worldPosition.getZ() + 3);
+    }
 }

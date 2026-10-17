@@ -43,47 +43,20 @@ public class OilDetectorItem extends Item implements ITooltipProvider {
         int y = (int) player.getY();
         int z = (int) player.getZ();
 
-        for (int i = y + 15; i > 5; i--)
-            if (isOil(world, x, i, z))
-                direct = true;
-        for (int i = y + 15; i > 5; i--)
-            if (isOil(world, x + 5, i, z))
-                oil = true;
-        for (int i = y + 15; i > 5; i--)
-            if (isOil(world, x - 5, i, z))
-                oil = true;
-        for (int i = y + 15; i > 5; i--)
-            if (isOil(world, x, i, z + 5))
-                oil = true;
-        for (int i = y + 15; i > 5; i--)
-            if (isOil(world, x, i, z - 5))
-                oil = true;
+        // NTM Space: die Meldung haengt den Lagerstaettentyp an ("", "_gas", "_brine"); HBM-ore_oil = "".
+        String directType = column(world, x, y, z, 5);
+        if (directType != null) direct = true;
 
-        for (int i = y + 15; i > 10; i--)
-            if (isOil(world, x + 10, i, z))
+        String nearType = null;
+        int[][] near = { {5, 0, 5}, {-5, 0, 5}, {0, 5, 5}, {0, -5, 5}, {10, 0, 10}, {-10, 0, 10}, {0, 10, 10}, {0, -10, 10},
+                {5, 5, 5}, {-5, 5, 5}, {5, -5, 5}, {-5, -5, 5} };
+        for (int[] n : near) {
+            String t = column(world, x + n[0], y, z + n[1], n[2]);
+            if (t != null) {
                 oil = true;
-        for (int i = y + 15; i > 10; i--)
-            if (isOil(world, x - 10, i, z))
-                oil = true;
-        for (int i = y + 15; i > 10; i--)
-            if (isOil(world, x, i, z + 10))
-                oil = true;
-        for (int i = y + 15; i > 10; i--)
-            if (isOil(world, x, i, z - 10))
-                oil = true;
-
-        for (int i = y + 15; i > 5; i--)
-            if (isOil(world, x + 5, i, z + 5))
-                oil = true;
-        for (int i = y + 15; i > 5; i--)
-            if (isOil(world, x - 5, i, z + 5))
-                oil = true;
-        for (int i = y + 15; i > 5; i--)
-            if (isOil(world, x + 5, i, z - 5))
-                oil = true;
-        for (int i = y + 15; i > 5; i--)
-            if (isOil(world, x - 5, i, z - 5))
-                oil = true;
+                if (nearType == null) nearType = t;
+            }
+        }
 
         if (direct)
             oil = true;
@@ -91,9 +64,9 @@ public class OilDetectorItem extends Item implements ITooltipProvider {
         if (!world.isClientSide && player instanceof net.minecraft.server.level.ServerPlayer sp) {
 
             if (direct) {
-                inform(sp, this.getDescriptionId() + ".bullseye", ChatFormatting.DARK_GREEN, 0x00AA00);
+                inform(sp, this.getDescriptionId() + ".bullseye" + directType, ChatFormatting.DARK_GREEN, 0x00AA00);
             } else if (oil) {
-                inform(sp, this.getDescriptionId() + ".detected", ChatFormatting.GOLD, 0xFFAA00);
+                inform(sp, this.getDescriptionId() + ".detected" + nearType, ChatFormatting.GOLD, 0xFFAA00);
             } else {
                 inform(sp, this.getDescriptionId() + ".noOil", ChatFormatting.RED, 0xFF5555);
             }
@@ -111,7 +84,22 @@ public class OilDetectorItem extends Item implements ITooltipProvider {
         com.hbm_m.network.InfoToastPacket.sendTo(sp, Component.translatable(key).withStyle(color), 60, com.hbm_m.client.overlay.OverlayInfoToast.ID_DETONATOR, rgb);
     }
 
-    private static boolean isOil(Level world, int x, int y, int z) {
-        return world.getBlockState(new BlockPos(x, y, z)).is(ModBlocks.ORE_OIL.get());
+    /** Saeule von y+15 bis ueber {@code bottom} abwaerts: erster Lagerstaettentyp-Suffix, sonst null. */
+    @Nullable
+    private static String column(Level world, int x, int y, int z, int bottom) {
+        for (int i = y + 15; i > bottom; i--) {
+            String t = reserveType(world, x, i, z);
+            if (t != null) return t;
+        }
+        return null;
+    }
+
+    /** HBM {@code ore_oil} -> "" ; Addon-Lagerstaette (W-R8B-2, Original {@code instanceof BlockOreFluid}) -> Suffix. */
+    @Nullable
+    private static String reserveType(Level world, int x, int y, int z) {
+        Block b = world.getBlockState(new BlockPos(x, y, z)).getBlock();
+        if (b == ModBlocks.ORE_OIL.get()) return "";
+        com.hbm_m.api.space.SpaceResources.FluidDepositBlock dep = com.hbm_m.api.space.SpaceResources.fluidDepositBlock(b);
+        return dep != null ? dep.getUnlocalizedReserveType() : null;
     }
 }

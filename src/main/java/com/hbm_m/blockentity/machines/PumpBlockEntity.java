@@ -61,6 +61,7 @@ public abstract class PumpBlockEntity extends com.hbm_m.blockentity.BaseHbmBlock
             groundCheckDelay--;
         } else {
             onGround = PumpGroundCheck.check(level, pos);
+            PumpGroundCheck.applyWaterTable(level, water); // NTM Space: Wassertabelle des Koerpers
         }
 
         isOn = false;

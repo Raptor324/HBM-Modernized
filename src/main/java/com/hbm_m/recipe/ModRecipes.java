@@ -213,6 +213,19 @@ public class ModRecipes {
     public static final RegistrySupplier<RecipeType<CokerRecipe>> COKER_TYPE =
             RECIPE_TYPES.register("coker", () -> CokerRecipe.Type.INSTANCE);
 
+    // W-R9B5-1/2: Mischer- und Elektrolyse(Fluid)-Rezepte aus dem Datapack (HBM selbst: Code-Tabellen, keine JSONs)
+    public static final RegistrySupplier<RecipeSerializer<MixerDataRecipe>> MIXER_SERIALIZER =
+            SERIALIZERS.register(MixerDataRecipe.Type.ID, () -> MixerDataRecipe.Serializer.INSTANCE);
+
+    public static final RegistrySupplier<RecipeType<MixerDataRecipe>> MIXER_TYPE =
+            RECIPE_TYPES.register(MixerDataRecipe.Type.ID, () -> MixerDataRecipe.Type.INSTANCE);
+
+    public static final RegistrySupplier<RecipeSerializer<ElectrolysisFluidDataRecipe>> ELECTROLYSIS_FLUID_SERIALIZER =
+            SERIALIZERS.register(ElectrolysisFluidDataRecipe.Type.ID, () -> ElectrolysisFluidDataRecipe.Serializer.INSTANCE);
+
+    public static final RegistrySupplier<RecipeType<ElectrolysisFluidDataRecipe>> ELECTROLYSIS_FLUID_TYPE =
+            RECIPE_TYPES.register(ElectrolysisFluidDataRecipe.Type.ID, () -> ElectrolysisFluidDataRecipe.Type.INSTANCE);
+
     // Compressor — компрессор. ID = "compressor" (см. CompressorRecipe.Type.ID).
     // Замена статике CompressorRecipes — теперь data-driven (JSON).
     public static final RegistrySupplier<RecipeSerializer<CompressorRecipe>> COMPRESSOR_SERIALIZER =

@@ -15,6 +15,9 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.UniversalMachinePartBlock;
+import com.hbm_m.interfaces.IMultiblockController;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.block.generic.BlockWand;
 import com.hbm_m.blockentity.generic.WandTandemBlockEntity;
 import com.hbm_m.config.ModClothConfig;
@@ -27,6 +30,7 @@ import com.hbm_m.world.gen.nbt.selector.BiomeBlockSelector;
 
 import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.IntTag;
@@ -40,6 +44,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -370,6 +375,8 @@ public class NBTStructure {
                 blockArray[pos[0]][pos[1]][pos[2]] = blockState;
             }
 
+            expandMultiblocks();
+
             // VERBINDUNGEN + PRIORITAETEN
             if (connections.size() > 0) {
                 fromConnections = new ArrayList<>();
@@ -403,6 +410,112 @@ public class NBTStructure {
         }
     }
 
+    // ======================== Mehrblock-Maschinen (Wunsch W-R3b-1) ========================
+
+    /** Statistik der letzten Mehrblock-Umsetzung dieser Struktur (fuer Tests/Debug). */
+    private int mbControllers, mbParts, mbAdded, mbDropped, mbBlocked;
+
+    /** {Steuerbloecke, gesetzte Teile, davon neu (Original ohne Dummy), verworfene Dummies, blockierte Teile}. */
+    public int[] getMultiblockStats() {
+        ensureLoaded();
+        return new int[] { mbControllers, mbParts, mbAdded, mbDropped, mbBlocked };
+    }
+
+    private static boolean isPart(StructBlockState s) {
+        return s != null && s.definition.getBlock() instanceof UniversalMachinePartBlock;
+    }
+
+    /**
+     * Original-.nbt speichern Mehrblock-Maschinen als Kern + Dummy-Bloecke (1.7.10 {@code BlockDummyable}). Der
+     * Konverter setzt den Kern als HBM-Steuerblock (mit {@code facing}) und jeden Dummy als
+     * {@code universal_machine_part}. Hier werden die Teile nach der HBM-Schablone des Steuerblocks
+     * ({@link MultiblockStructureHelper}) gesetzt: jedes Teil bekommt {@code facing} und den drehungsunabhaengigen
+     * {@code LocalOffset}; Steuerblock-Position, Rolle und Seiten setzt das Teil beim ersten Tick selbst
+     * ({@code relinkOrphanedPartDeterministic}). Nur Steuerbloecke, an denen die Struktur schon Teile hat, werden
+     * erweitert (alte Strukturen ohne {@code universal_machine_part} bleiben unveraendert). Uebrige Teile ohne
+     * Steuerblock werden Luft.
+     */
+    private void expandMultiblocks() {
+        mbControllers = mbParts = mbAdded = mbDropped = mbBlocked = 0;
+        boolean any = false;
+        for (int x = 0; x < sizeX && !any; x++)
+            for (int y = 0; y < sizeY && !any; y++)
+                for (int z = 0; z < sizeZ && !any; z++)
+                    if (isPart(blockArray[x][y][z])) any = true;
+        if (!any) return;
+
+        boolean[][][] claimed = new boolean[sizeX][sizeY][sizeZ];
+        for (int x = 0; x < sizeX; x++) {
+            for (int y = 0; y < sizeY; y++) {
+                for (int z = 0; z < sizeZ; z++) {
+                    StructBlockState s = blockArray[x][y][z];
+                    if (s == null || !(s.definition.getBlock() instanceof IMultiblockController controller)) continue;
+                    if (!s.definition.hasProperty(HorizontalDirectionalBlock.FACING)) continue;
+                    MultiblockStructureHelper helper = controller.getStructureHelper();
+                    if (helper == null) continue;
+                    Direction facing = s.definition.getValue(HorizontalDirectionalBlock.FACING);
+                    BlockPos ctrl = new BlockPos(x, y, z);
+
+                    List<BlockPos[]> cells = new ArrayList<>(); // {Strukturposition, LocalOffset}
+                    boolean hasPart = false;
+                    for (BlockPos grid : helper.getStructureMap().keySet()) {
+                        BlockPos p = helper.getRotatedPos(ctrl, grid, facing);
+                        if (p.equals(ctrl)) continue;
+                        cells.add(new BlockPos[] { p, grid.subtract(helper.getControllerOffset()) });
+                        if (inside(p) && isPart(blockArray[p.getX()][p.getY()][p.getZ()])) hasPart = true;
+                    }
+                    if (!hasPart) continue;
+                    mbControllers++;
+
+                    BlockState phantom = helper.createPhantomState(facing);
+                    for (BlockPos[] cell : cells) {
+                        BlockPos p = cell[0];
+                        if (!inside(p)) { mbBlocked++; continue; }
+                        StructBlockState old = blockArray[p.getX()][p.getY()][p.getZ()];
+                        if (old != null && !old.definition.isAir() && !isPart(old)) { mbBlocked++; continue; }
+                        if (!isPart(old)) mbAdded++;
+                        StructBlockState part = new StructBlockState(phantom);
+                        part.nbt = new CompoundTag();
+                        part.nbt.putLong("LocalOffset", cell[1].asLong());
+                        blockArray[p.getX()][p.getY()][p.getZ()] = part;
+                        claimed[p.getX()][p.getY()][p.getZ()] = true;
+                        mbParts++;
+                    }
+                }
+            }
+        }
+
+        for (int x = 0; x < sizeX; x++)
+            for (int y = 0; y < sizeY; y++)
+                for (int z = 0; z < sizeZ; z++)
+                    if (!claimed[x][y][z] && isPart(blockArray[x][y][z])) {
+                        blockArray[x][y][z] = new StructBlockState(Blocks.AIR.defaultBlockState());
+                        mbDropped++;
+                    }
+
+        if (mbDropped > 0 || mbBlocked > 0) {
+            MainRegistry.LOGGER.debug("[NBTStructure] {}: {} Mehrblock-Maschinen, {} Teile ({} neu), {} Dummies ohne Steuerblock, {} blockiert",
+                    name, mbControllers, mbParts, mbAdded, mbDropped, mbBlocked);
+        }
+    }
+
+    private boolean inside(BlockPos p) {
+        return p.getX() >= 0 && p.getY() >= 0 && p.getZ() >= 0 && p.getX() < sizeX && p.getY() < sizeY && p.getZ() < sizeZ;
+    }
+
+    /**
+     * {@code BlockState.rotate} fuer Strukturdrehungen. Mehrblock-Steuerbloecke und ihre Teile ueberschreiben
+     * {@code rotate} meist nicht - ihr {@code facing} wird hier mitgedreht (sonst passt die Schablone nicht mehr).
+     */
+    private static BlockState rotateState(BlockState state, Rotation rotation) {
+        BlockState rotated = state.rotate(rotation);
+        if (rotated == state && rotation != Rotation.NONE && state.hasProperty(HorizontalDirectionalBlock.FACING)
+                && (state.getBlock() instanceof IMultiblockController || state.getBlock() instanceof UniversalMachinePartBlock)) {
+            rotated = state.setValue(HorizontalDirectionalBlock.FACING, rotation.rotate(state.getValue(HorizontalDirectionalBlock.FACING)));
+        }
+        return rotated;
+    }
+
     List<List<JigsawConnection>> getFromConnections() {
         ensureLoaded();
         return fromConnections;
@@ -419,6 +532,12 @@ public class NBTStructure {
         BlockEntity te = world.getBlockEntity(pos);
         if (te == null) return null;
 
+        // Struktur-.nbt speichern Gegenstaende im 1.20-Format ({id, Count, tag}); ab 1.21 liest der Item-Codec
+        // {id, count, components} - ohne Umsetzung wuerden Kisten-/Truheninhalte zu Einzelstuecken ohne Daten.
+        //? if >= 1.21.1 {
+        /*legacyItemsToComponents(nbt);
+        *///?}
+
         PlatformHooks.loadBlockEntityTag(te, nbt, world.registryAccess());
 
         if (te instanceof INBTTileEntityTransformable transformable) {
@@ -431,6 +550,29 @@ public class NBTStructure {
 
         te.setChanged();
         return te;
+    }
+
+    /**
+     * Setzt Gegenstands-Compounds im 1.20-Format ({@code id} + {@code Count} [+ {@code tag}]) rekursiv auf das
+     * 1.21-Format um ({@code count} als int, {@code tag} -> {@code components."minecraft:custom_data"}). Andere
+     * Schluessel bleiben unveraendert; Compounds ohne {@code Count} (z.B. der Tile-Entity-Wurzeleintrag) ebenso.
+     */
+    static void legacyItemsToComponents(Tag tag) {
+        if (tag instanceof CompoundTag c) {
+            if (c.contains("id", Tag.TAG_STRING) && c.contains("Count", Tag.TAG_ANY_NUMERIC) && !c.contains("count")) {
+                c.putInt("count", c.getInt("Count"));
+                c.remove("Count");
+                if (c.contains("tag", Tag.TAG_COMPOUND)) {
+                    CompoundTag components = c.contains("components", Tag.TAG_COMPOUND) ? c.getCompound("components") : new CompoundTag();
+                    components.put("minecraft:custom_data", c.getCompound("tag"));
+                    c.put("components", components);
+                    c.remove("tag");
+                }
+            }
+            for (String key : c.getAllKeys()) legacyItemsToComponents(c.get(key));
+        } else if (tag instanceof ListTag list) {
+            for (Tag t : list) legacyItemsToComponents(t);
+        }
     }
 
     public void build(LevelAccessor world, int x, int y, int z) {
@@ -472,7 +614,7 @@ public class NBTStructure {
                     if (ry < world.getMinBuildHeight() + 1) continue;
 
                     BlockPos pos = new BlockPos(rx, ry, rz);
-                    BlockState block = coordBaseMode == 0 ? state.definition : state.definition.rotate(rotation);
+                    BlockState block = coordBaseMode == 0 ? state.definition : rotateState(state.definition, rotation);
 
                     world.setBlock(pos, block, 2);
 
@@ -614,7 +756,7 @@ public class NBTStructure {
             }
         }
 
-        return coordBaseMode == 0 ? definition : definition.rotate(rotation);
+        return coordBaseMode == 0 ? definition : rotateState(definition, rotation);
     }
 
     public List<JigsawConnection> getConnectionPool(ForgeDirection dir, String target) {

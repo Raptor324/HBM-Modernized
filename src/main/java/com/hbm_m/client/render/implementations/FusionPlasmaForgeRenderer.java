@@ -108,7 +108,7 @@ public class FusionPlasmaForgeRenderer implements com.hbm_m.client.render.HbmBer
     }
 
     /** 1:1-Port von {@code renderPlasma}: dunkel wenn kalt, sonst drei leuchtende Schichten. */
-    private void renderPlasma(FusionPlasmaForgeBlockEntity be, VertexConsumer vc, PoseStack pose,
+    void renderPlasma(FusionPlasmaForgeBlockEntity be, VertexConsumer vc, PoseStack pose,
                               MultiBufferSource buffer, Map<String, List<float[]>> obj,
                               TextureAtlasSprite sprite, int light, int overlay) {
 
@@ -148,7 +148,7 @@ public class FusionPlasmaForgeRenderer implements com.hbm_m.client.render.HbmBer
     }
 
     /** 1:1-Port von {@code renderItem}: das Rezeptergebnis schwebt ueber dem Amboss. */
-    private void renderRecipeItem(FusionPlasmaForgeBlockEntity be, PoseStack pose,
+    void renderRecipeItem(FusionPlasmaForgeBlockEntity be, PoseStack pose,
                                   MultiBufferSource buffer, float partialTick, int light) {
 
         Minecraft mc = Minecraft.getInstance();
@@ -180,7 +180,7 @@ public class FusionPlasmaForgeRenderer implements com.hbm_m.client.render.HbmBer
     }
 
     /** 1:1-Port von {@code renderBeam}: vier Wandflaechen, die nach oben hin ausblenden. */
-    private void renderBeam(FusionPlasmaForgeBlockEntity be, PoseStack pose,
+    void renderBeam(FusionPlasmaForgeBlockEntity be, PoseStack pose,
                             MultiBufferSource buffer, float partialTick) {
 
         Minecraft mc = Minecraft.getInstance();
@@ -303,7 +303,7 @@ public class FusionPlasmaForgeRenderer implements com.hbm_m.client.render.HbmBer
     }
 
     /** 1:1-Port von {@code renderJet}: vier additive Quads, die nach unten hin ausblenden. */
-    private void renderJetFlame(FusionPlasmaForgeBlockEntity be, PoseStack pose, MultiBufferSource buffer) {
+    void renderJetFlame(FusionPlasmaForgeBlockEntity be, PoseStack pose, MultiBufferSource buffer) {
 
         VertexConsumer vc = buffer.getBuffer(RenderType.lightning());
         var matrix = pose.last().pose();

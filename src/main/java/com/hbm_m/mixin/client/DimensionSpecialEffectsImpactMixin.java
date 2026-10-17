@@ -22,6 +22,7 @@ public abstract class DimensionSpecialEffectsImpactMixin {
         Level level = Minecraft.getInstance().level;
         if (!com.hbm_m.config.GeneralConfig.enableImpactWorldProvider) return; // Original: nur mit WorldProviderNTM
         if (level == null || level.dimension() != Level.OVERWORLD) return;
+        if (com.hbm_m.api.space.SpaceApi.overridesSky(level)) return; // Space-Addon zeichnet den Himmel selbst
         float dust = ImpactWorldHandler.getDustForClient(level);
         if (dust <= 0) return;
         float[] out = new float[] { col[0] * (1 - dust), col[1] * (1 - dust), col[2] * (1 - dust), col[3] * (1 - dust) };

@@ -95,6 +95,8 @@ public final class ModFluidTraitsBootstrap {
         ModFluidCalculatedFuel.apply();
         registerHeatCoolChains();
         ModFluidHazardBootstrap.registerAll();
+        // Space-API W-R4A-2: Addon-Fluidwerte definiert NACH der HBM-Vorbelegung (ohne Addon: keine Aktionen)
+        com.hbm_m.api.space.HbmFluidApi.fireFluidDefaultsApplied();
     }
 
     private static void registerStructural() {

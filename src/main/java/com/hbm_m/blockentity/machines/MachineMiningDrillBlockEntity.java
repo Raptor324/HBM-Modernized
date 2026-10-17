@@ -332,7 +332,8 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity implem
         List<ItemStack> stacks = new ArrayList<>();
         stacks.add(stack);
 
-        if (stack.getItem() == ModItems.BEDROCK_ORE_BASE.get()) {
+        if (stack.getItem() == ModItems.BEDROCK_ORE_BASE.get()
+                && !com.hbm_m.api.space.SpaceApi.bedrockOres().setOreAmount(world, stack, pos.getX(), pos.getZ(), 1D + this.getInstalledDrill().fortune * 0.1D)) {
             double mult = 1D + this.getInstalledDrill().fortune * 0.1D;
             CompoundTag nbt = new CompoundTag();
             for (BedrockOreDensity.Type type : BedrockOreDensity.Type.values()) {

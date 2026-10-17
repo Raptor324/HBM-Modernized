@@ -58,7 +58,9 @@ public class MachineSolarBoilerBlockEntity extends BaseMachineBlockEntity implem
             this.trySubscribe(water.getTankType(), worldObj, top, Direction.UP);
             this.trySubscribe(water.getTankType(), worldObj, bottom, Direction.DOWN);
 
-            int process = heat / 50;
+            // NTM Space: (int)(heat * WorldProviderCelestial.getSunPower(..)) / 50 - ohne Space-Addon Sonnenleistung 1.0
+            float sunPower = com.hbm_m.api.space.SpaceApi.solarIntensity(level, worldPosition);
+            int process = (sunPower == 1.0F ? heat : (int) (heat * sunPower)) / 50;
             this.display = process;
             process = Math.min(process, water.getFill());
             process = Math.min(process, (steam.getMaxFill() - steam.getFill()) / 100);

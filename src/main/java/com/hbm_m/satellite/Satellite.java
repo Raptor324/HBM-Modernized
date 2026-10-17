@@ -125,6 +125,12 @@ public abstract class Satellite {
         this.isDirty = true;
     }
 
+    /**
+     * Space-API (W-R6C-1): freie Zusatzdaten eines Addons (NTM Space: Inklination, Hoehe, Phase, Blinken, Besitzer, Farbe
+     * aus {@code SatelliteBase}). Wird mit dem Satelliten gespeichert ({@code "addon"}, nur wenn nicht leer).
+     */
+    public CompoundTag addonData = new CompoundTag();
+
     public void writeToNBT(CompoundTag nbt) {
         nbt.putInt("targetX", targetX);
         nbt.putInt("targetZ", targetZ);
@@ -143,12 +149,14 @@ public abstract class Satellite {
             items.add(itemTag);
         }
         nbt.put("requestableSlots", items);
+        if (!addonData.isEmpty()) nbt.put("addon", addonData);
     }
 
     public void readFromNBT(CompoundTag nbt) {
         this.targetX = nbt.getInt("targetX");
         this.targetZ = nbt.getInt("targetZ");
         this.tx = nbt.getString("tx");
+        this.addonData = nbt.getCompound("addon");
 
         this.driveInput = nbt.contains("driveInput") ? nbt.getString("driveInput") : null;
         this.driveOutput = nbt.contains("driveOutput") ? nbt.getString("driveOutput") : null;

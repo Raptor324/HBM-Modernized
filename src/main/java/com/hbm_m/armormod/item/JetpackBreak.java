@@ -50,15 +50,18 @@ public class JetpackBreak extends JetpackFueledBase {
     public void jetpackTick(Level world, Player player, ItemStack stack) {
 
         HbmPlayerProps props = HbmPlayerProps.getData(player);
+        // NTM Space: Schwerkraft des Koerpers (CelestialBody.getGravity) - Erde: STANDARD_GRAVITY, alles unveraendert
+        float gravity = com.hbm_m.api.space.SpaceApi.gravity(player);
 
         if (!world.isClientSide) {
 
-            if (getFuel(stack) > 0 && (props.isJetpackActive() || (!player.onGround() && !player.isShiftKeyDown() && props.enableBackpack))) {
+            if (getFuel(stack) > 0 && (props.isJetpackActive() || (!player.onGround() && !player.isShiftKeyDown() && props.enableBackpack && gravity > 0))) {
                 particles(world, player, false);
             }
         }
 
         if (getFuel(stack) > 0) {
+            boolean fork = com.hbm_m.api.space.SpaceApi.forkActive();
 
             boolean playerTriesToHover = player.isShiftKeyDown() && props.isJetpackActive();
             boolean playerShouldHover = playerTriesToHover || !player.isShiftKeyDown();
@@ -68,19 +71,30 @@ public class JetpackBreak extends JetpackFueledBase {
             if (props.isJetpackActive() && !playerTriesToHover) {
                 player.fallDistance = 0;
 
-                if (my < 0.4D)
-                    my += 0.1D;
+                if (gravity == 0) {
+                    Vec3 look = player.getLookAngle();
+
+                    mx += look.x * 0.05;
+                    my += look.y * 0.05;
+                    mz += look.z * 0.05;
+                } else if (my < 0.4D) {
+                    my += 0.1D * Math.max(gravity / com.hbm_m.api.space.SpaceEnvironment.STANDARD_GRAVITY, 1);
+                }
 
                 sound(world, player, 1.5F);
                 this.useUpFuel(player, stack, 5);
+                // E2 (Fork, nur mit Addon): Flugzeit nur beim Schub/Schweben zuruecksetzen
+                if (fork) ArmorUtil.resetFlightTime(player);
 
-            } else if (playerShouldHover && !player.onGround() && props.enableBackpack) {
+            } else if (playerShouldHover && !player.onGround() && props.enableBackpack && gravity > 0) {
                 player.fallDistance = 0;
 
-                if (my < -1)
-                    my += 0.2D;
-                else if (my < -0.1)
-                    my += 0.1D;
+                float thrustMultiplier = Math.max(gravity / com.hbm_m.api.space.SpaceEnvironment.STANDARD_GRAVITY, 1);
+
+                if (my < -1 * thrustMultiplier)
+                    my += 0.2D * thrustMultiplier;
+                else if (my < -0.1 * thrustMultiplier)
+                    my += 0.1D * thrustMultiplier;
                 else if (my < 0)
                     my = 0;
 
@@ -89,10 +103,11 @@ public class JetpackBreak extends JetpackFueledBase {
 
                 sound(world, player, 1.5F);
                 this.useUpFuel(player, stack, 10);
+                if (fork) ArmorUtil.resetFlightTime(player);
             }
 
             player.setDeltaMovement(mx, my, mz);
-            ArmorUtil.resetFlightTime(player);
+            if (!fork) ArmorUtil.resetFlightTime(player);
         }
     }
 

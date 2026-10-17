@@ -49,7 +49,8 @@ public interface IRepairable {
 
         ItemStack held = player.getMainHandItem();
 
-        if (held.isEmpty() || !(held.getItem() instanceof ItemBlowtorch)) return null;
+        // E9 (Fork, nur mit Space-Addon): Liste auch ohne Schweissbrenner in der Hand
+        if (!com.hbm_m.api.space.SpaceApi.forkActive() && (held.isEmpty() || !(held.getItem() instanceof ItemBlowtorch))) return null;
 
         BlockEntity be = world.getBlockEntity(core);
         if (!(be instanceof IRepairable repairable)) return null;
@@ -120,6 +121,12 @@ public interface IRepairable {
 
         List<Component> text = new ArrayList<>();
         text.add(Component.literal("Repair with:").withStyle(ChatFormatting.GOLD));
+
+        // E9 (Fork, nur mit Space-Addon): Hinweis auf das Werkzeug
+        ItemStack held = me.getMainHandItem();
+        if (com.hbm_m.api.space.SpaceApi.forkActive() && (held.isEmpty() || !(held.getItem() instanceof ItemBlowtorch))) {
+            text.add(Component.literal("Tool: Blowtorch"));
+        }
 
         for (RepairStack stack : materials) {
             ItemStack display = stack.display(world.getGameTime());

@@ -47,7 +47,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * dem Controller) mit dem Energie-Port an der Spitze, plus 2 seitliche und 1 vorderer
  * Fluid-Port (UNIVERSAL_CONNECTOR).
  */
-public class MachineChungusBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachineChungusBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.api.block.IToolable, com.hbm_m.interfaces.ILookOverlay {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
@@ -142,6 +142,8 @@ public class MachineChungusBlock extends BaseEntityBlock implements IMultiblockC
     private InteractionResult handleUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide()) {
             if (level.getBlockEntity(pos) instanceof MachineChungusBlockEntity chungus) {
+                // E9: beschaedigt laesst sich der Hebel nicht bewegen (Space MachineChungus)
+                if (chungus.damaged) return InteractionResult.sidedSuccess(level.isClientSide());
                 // 1:1: der Hebel schaltet die Dampfstufe - im Betrieb weigert er sich.
                 if (chungus.pullLever()) {
                     level.playSound(null, pos, net.minecraft.sounds.SoundEvents.LEVER_CLICK,
@@ -181,6 +183,53 @@ public class MachineChungusBlock extends BaseEntityBlock implements IMultiblockC
             return Shapes.block();
         }
         return Shapes.empty();
+    }
+
+
+    // ==================== E9 (Fork, nur mit Space-Addon): Schaden + Reparatur ====================
+
+    /** Space {@code onScrew}: Schweissbrenner repariert ueber {@code IRepairable.tryRepairMultiblock}. */
+    @Override
+    public boolean onScrew(Level world, Player player, BlockPos pos, net.minecraft.core.Direction side, float fX, float fY, float fZ, InteractionHand hand, com.hbm_m.api.block.IToolable.ToolType tool) {
+        if (tool != com.hbm_m.api.block.IToolable.ToolType.TORCH) return false;
+        return com.hbm_m.api.tile.IRepairable.tryRepairMultiblock(world, pos, player);
+    }
+
+    /** Explosionen auf Teilzellen erreichen den Kern (Space {@code findCore}) - nur mit Addon. */
+    @Override
+    public boolean forwardPartExplosions() {
+        return com.hbm_m.api.space.SpaceApi.forkActive();
+    }
+
+    /** Space {@code onBlockExploded}: erster Treffer beschaedigt, der zweite zerstoert den Kern. */
+    @Override
+    public void onBlockExploded(BlockState state, Level level, BlockPos pos, net.minecraft.world.level.Explosion explosion) {
+        if (!com.hbm_m.api.space.SpaceApi.forkActive() || !(level.getBlockEntity(pos) instanceof MachineChungusBlockEntity core)) {
+            super.onBlockExploded(state, level, pos, explosion);
+            return;
+        }
+        if (core.lastExplosion == explosion) return;
+        core.lastExplosion = explosion;
+
+        if (!core.damaged) {
+            core.markDamaged();
+        } else {
+            level.removeBlock(pos, false);
+        }
+    }
+
+    /** Space {@code canDropFromExplosion = false} - nur mit Addon. */
+    @Override
+    public boolean dropFromExplosion(net.minecraft.world.level.Explosion explosion) {
+        return !com.hbm_m.api.space.SpaceApi.forkActive() && super.dropFromExplosion(explosion);
+    }
+
+    /** Space {@code printHook}: beschaedigt die Reparaturliste (HBM hat sonst kein Overlay fuer die Turbine). */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics g, Level world, BlockPos pos) {
+        if (world.getBlockEntity(pos) instanceof MachineChungusBlockEntity chungus && chungus.damaged) {
+            com.hbm_m.api.tile.IRepairable.addGenericOverlay(g, world, pos, Component.translatable(getDescriptionId()));
+        }
     }
 
     // --- IMultiblockController ---

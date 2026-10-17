@@ -51,22 +51,22 @@ public class EmitterRenderer implements com.hbm_m.client.render.HbmBerBounds<Emi
         if (range > 0) {
             Vec3 skel = new Vec3(0, 0, range);
             int segments = (int) Math.max(Math.sqrt(girth * 50), 2);
-            BeamPronter.prontBeam(ps, buffers, skel, EnumWaveType.SPIRAL, EnumBeamType.SOLID, colorOuter, colorInner, 0, 1, 0F, segments, girth);
+            BeamPronter.prontBeam(ps, buffers, skel, EnumWaveType.SPIRAL, EnumBeamType.SOLID, colorOuter, colorInner, 0, 1, 0F, segments, girth, com.hbm_m.client.render.util.BeamPronter.forkAlpha());
 
             if (emitter.effect == 1) {
-                BeamPronter.prontBeam(ps, buffers, skel, EnumWaveType.RANDOM, EnumBeamType.SOLID, colorOuter, colorInner, (int) time / 2, (int) Math.max(range / girth / 2, 1), girth * 2, 4, girth * 0.1F);
-                BeamPronter.prontBeam(ps, buffers, skel, EnumWaveType.RANDOM, EnumBeamType.SOLID, colorOuter, colorInner, (int) time / 2 + 15, (int) Math.max(range / girth / 4, 1), girth * 2, 4, girth * 0.1F);
+                BeamPronter.prontBeam(ps, buffers, skel, EnumWaveType.RANDOM, EnumBeamType.SOLID, colorOuter, colorInner, (int) time / 2, (int) Math.max(range / girth / 2, 1), girth * 2, 4, girth * 0.1F, com.hbm_m.client.render.util.BeamPronter.forkAlpha());
+                BeamPronter.prontBeam(ps, buffers, skel, EnumWaveType.RANDOM, EnumBeamType.SOLID, colorOuter, colorInner, (int) time / 2 + 15, (int) Math.max(range / girth / 4, 1), girth * 2, 4, girth * 0.1F, com.hbm_m.client.render.util.BeamPronter.forkAlpha());
             }
             if (emitter.effect == 2) {
                 int s = (int) (time + f) * -10 % 360;
-                BeamPronter.prontBeam(ps, buffers, skel, EnumWaveType.SPIRAL, EnumBeamType.SOLID, colorOuter, colorInner, s, (int) Math.max(range / girth / 2, 1), girth * 2, 4, girth * 0.1F);
-                BeamPronter.prontBeam(ps, buffers, skel, EnumWaveType.SPIRAL, EnumBeamType.SOLID, colorOuter, colorInner, s + 180, (int) Math.max(range / girth / 2, 1), girth * 2, 4, girth * 0.1F);
+                BeamPronter.prontBeam(ps, buffers, skel, EnumWaveType.SPIRAL, EnumBeamType.SOLID, colorOuter, colorInner, s, (int) Math.max(range / girth / 2, 1), girth * 2, 4, girth * 0.1F, com.hbm_m.client.render.util.BeamPronter.forkAlpha());
+                BeamPronter.prontBeam(ps, buffers, skel, EnumWaveType.SPIRAL, EnumBeamType.SOLID, colorOuter, colorInner, s + 180, (int) Math.max(range / girth / 2, 1), girth * 2, 4, girth * 0.1F, com.hbm_m.client.render.util.BeamPronter.forkAlpha());
             }
             if (emitter.effect == 3) {
                 int s = (int) (time + f) * -10 % 360;
-                BeamPronter.prontBeam(ps, buffers, skel, EnumWaveType.SPIRAL, EnumBeamType.SOLID, colorOuter, colorInner, s, (int) Math.max(range / girth / 2, 1), girth * 2, 4, girth * 0.1F);
-                BeamPronter.prontBeam(ps, buffers, skel, EnumWaveType.SPIRAL, EnumBeamType.SOLID, colorOuter, colorInner, s + 120, (int) Math.max(range / girth / 2, 1), girth * 2, 4, girth * 0.1F);
-                BeamPronter.prontBeam(ps, buffers, skel, EnumWaveType.SPIRAL, EnumBeamType.SOLID, colorOuter, colorInner, s + 240, (int) Math.max(range / girth / 2, 1), girth * 2, 4, girth * 0.1F);
+                BeamPronter.prontBeam(ps, buffers, skel, EnumWaveType.SPIRAL, EnumBeamType.SOLID, colorOuter, colorInner, s, (int) Math.max(range / girth / 2, 1), girth * 2, 4, girth * 0.1F, com.hbm_m.client.render.util.BeamPronter.forkAlpha());
+                BeamPronter.prontBeam(ps, buffers, skel, EnumWaveType.SPIRAL, EnumBeamType.SOLID, colorOuter, colorInner, s + 120, (int) Math.max(range / girth / 2, 1), girth * 2, 4, girth * 0.1F, com.hbm_m.client.render.util.BeamPronter.forkAlpha());
+                BeamPronter.prontBeam(ps, buffers, skel, EnumWaveType.SPIRAL, EnumBeamType.SOLID, colorOuter, colorInner, s + 240, (int) Math.max(range / girth / 2, 1), girth * 2, 4, girth * 0.1F, com.hbm_m.client.render.util.BeamPronter.forkAlpha());
             }
         }
 

@@ -91,9 +91,9 @@ public class CranePartitionerBlock extends BaseEntityBlock implements IConveyorB
         ItemStack stack = entity.getItem();
         ItemStack remainder;
         if (CranePartitionerBlockEntity.getAmount(level, stack) > 0) {
-            remainder = partitioner.tryAdd(0, CranePartitionerBlockEntity.SLOT_COUNT - 1, stack);
+            remainder = partitioner.tryAdd(0, partitioner.inputCount - 1, stack);
         } else {
-            remainder = partitioner.tryAdd(CranePartitionerBlockEntity.SLOT_COUNT, CranePartitionerBlockEntity.SLOT_COUNT * 2 - 1, stack);
+            remainder = partitioner.tryAdd(partitioner.inputCount, partitioner.inputCount + partitioner.outputCount - 1, stack);
         }
         if (!remainder.isEmpty()) level.addFreshEntity(new ItemEntity(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, remainder.copy()));
         entity.discard();

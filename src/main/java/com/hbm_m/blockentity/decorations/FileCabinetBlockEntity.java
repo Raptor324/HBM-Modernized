@@ -61,6 +61,24 @@ public class FileCabinetBlockEntity extends BaseHbmBlockEntity implements MenuPr
         if (!world.isClientSide) {
             if (te.playersUsing > 0) {
                 if (te.timer < 10) te.timer++;
+
+                // E11 (Fork, nur mit Space-Addon): eine Soyuz-Rakete im geoeffneten Aktenschrank sprengt ihn
+                if (com.hbm_m.api.space.SpaceApi.forkActive()) {
+                    for (int i = 0; i < te.items.getSlots(); i++) {
+                        if (te.items.getStackInSlot(i).is(com.hbm_m.item.ModItems.MISSILE_SOYUZ.get())) {
+                            double ex = pos.getX() + 0.5, ey = pos.getY() + 0.5, ez = pos.getZ() + 0.5;
+                            com.hbm_m.explosion.vanillant.ExplosionVNT xnt = new com.hbm_m.explosion.vanillant.ExplosionVNT(world, ex, ey, ez, 15);
+                            xnt.setBlockAllocator(new com.hbm_m.explosion.vanillant.standard.BlockAllocatorStandard(48));
+                            xnt.setBlockProcessor(new com.hbm_m.explosion.vanillant.standard.BlockProcessorStandard().setNoDrop()
+                                    .withBlockEffect(new com.hbm_m.explosion.vanillant.standard.BlockMutatorDebris(com.hbm_m.block.ModBlocks.BLOCK_SLAG.get())));
+                            xnt.setEntityProcessor(new com.hbm_m.explosion.vanillant.standard.EntityProcessorCross(7.5D).withRangeMod(3));
+                            xnt.setPlayerProcessor(new com.hbm_m.explosion.vanillant.standard.PlayerProcessorStandard());
+                            xnt.explode();
+
+                            com.hbm_m.particle.helper.ExplosionCreator.composeEffect((ServerLevel) world, ex, ey, ez, 15, 5F, 1F, 45F, 10, 16, 50, 1F, 3F, -2F, 200);
+                        }
+                    }
+                }
             } else {
                 te.timer = 0;
             }

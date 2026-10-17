@@ -70,6 +70,7 @@ public class MachinePumpElectricBlockEntity extends BaseMachineBlockEntity imple
             groundCheckDelay--;
         } else {
             onGround = PumpGroundCheck.check(level, pos);
+            PumpGroundCheck.applyWaterTable(level, water); // NTM Space: Wassertabelle des Koerpers
         }
 
         isOn = false;
@@ -98,7 +99,8 @@ public class MachinePumpElectricBlockEntity extends BaseMachineBlockEntity imple
 
     private void operate() {
         setEnergyStored(getEnergyStored() - 1_000);
-        water.fillMb(water.getTankType(), Math.min(PumpBlockEntity.ELECTRIC_SPEED, water.getCapacityMb() - water.getFill()));
+        int pumpSpeed = PumpGroundCheck.pumpSpeed(water.getTankType(), PumpBlockEntity.ELECTRIC_SPEED); // NTM Space nonWaterDebuff
+        water.fillMb(water.getTankType(), Math.min(pumpSpeed, water.getCapacityMb() - water.getFill()));
     }
 
     public FluidTank getWaterTank() { return water; }

@@ -398,4 +398,10 @@ public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity implemen
         return com.hbm_m.blockentity.SidedItemAccess.fixed(() -> inventory, slots, (slot, stack) -> slot < 3, (slot, stack) -> slot == SLOT_OUT);
     }
     *///?}
+
+    /** 1:1 TileEntityMachineArcWelder.getRenderBoundingBox (Render-Migration: Raptors Pfad cullt nach dieser Box, der alte BER zeichnete immer). */
+    @Override
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return new net.minecraft.world.phys.AABB(worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1, worldPosition.getX() + 2, worldPosition.getY() + 3, worldPosition.getZ() + 2);
+    }
 }

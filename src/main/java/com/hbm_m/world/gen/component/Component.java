@@ -1121,9 +1121,10 @@ public abstract class Component extends StructurePiece {
         }
     }
 
-    static class ConcreteBricks extends LegacySelector {
+    /** Oeffentlich (Space-Addon, Wunsch W-D3): Thatmo-{@code trenches} nutzt sie als {@code blockTable}. */
+    public static class ConcreteBricks extends LegacySelector {
 
-        ConcreteBricks() { }
+        public ConcreteBricks() { }
 
         @Override
         public void selectBlocks(RandomSource rand, int posX, int posY, int posZ, boolean notInterior) {

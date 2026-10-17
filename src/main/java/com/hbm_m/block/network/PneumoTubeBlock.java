@@ -219,6 +219,30 @@ public class PneumoTubeBlock extends BaseEntityBlock {
         if (!(level.getBlockEntity(pos) instanceof PneumoTubeBlockEntity tube)) return InteractionResult.PASS;
         if (!tube.isCompressor() && !tube.isEndpoint()) return InteractionResult.PASS;
 
+        // E8 (Fork, nur mit Space-Addon): Verdichter mit Fluid-Kennung -> Gasart waehlen (Space PneumoTube.onBlockActivated)
+        if (tube.isCompressor() && com.hbm_m.api.space.SpaceApi.forkActive()
+                && held.getItem() instanceof com.hbm_m.interfaces.IItemFluidIdentifier ident) {
+            if (!level.isClientSide()) {
+                net.minecraft.world.level.material.Fluid fluid = ident.getType(level, pos, held);
+                com.hbm_m.inventory.fluid.FluidType type = fluid == null ? null : com.hbm_m.inventory.fluid.FluidType.forFluid(fluid);
+                boolean canUse = type != null
+                        && !type.hasTrait(com.hbm_m.inventory.fluid.trait.FluidTraitSimple.FT_Amat.class)
+                        && !type.hasTrait(com.hbm_m.inventory.fluid.trait.FT_Corrosive.class)
+                        && (type.hasTrait(com.hbm_m.inventory.fluid.trait.FluidTraitSimple.FT_Gaseous.class)
+                            || type.hasTrait(com.hbm_m.inventory.fluid.trait.FluidTraitSimple.FT_Gaseous_ART.class));
+
+                if (canUse) {
+                    tube.getTank().setTankType(fluid);
+                    tube.setChanged();
+                    player.sendSystemMessage(net.minecraft.network.chat.Component.literal("Changed type to ").withStyle(net.minecraft.ChatFormatting.YELLOW)
+                            .append(type.getLocalizedName()).append("!"));
+                } else {
+                    player.sendSystemMessage(net.minecraft.network.chat.Component.literal("Invalid gas!").withStyle(net.minecraft.ChatFormatting.RED));
+                }
+            }
+            return InteractionResult.sidedSuccess(level.isClientSide());
+        }
+
         if (!level.isClientSide()) {
             MenuRegistry.openExtendedMenu((ServerPlayer) player, tube, buf -> buf.writeBlockPos(pos));
         }

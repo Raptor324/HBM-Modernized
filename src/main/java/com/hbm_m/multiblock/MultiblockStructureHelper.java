@@ -1384,11 +1384,27 @@ public class MultiblockStructureHelper {
         return true;
     }
 
+    /** Wie {@link #checkPlacementFromFacadeQuiet}, aber direkt am Kern (E7, Fork-Wandplatzierung). */
+    public boolean checkPlacementQuiet(Level level, BlockPos controllerPos, Direction facing) {
+        if (!level.getBlockState(controllerPos).canBeReplaced()) return false;
+        for (BlockPos relativePos : structureMap.keySet()) {
+            BlockPos worldPos = getRotatedPos(controllerPos, relativePos, facing);
+            if (worldPos.equals(controllerPos)) continue;
+            if (!isBlockReplaceable(level.getBlockState(worldPos))) return false;
+        }
+        return true;
+    }
+
     /**
      * @return A Set of all local offsets for the multiblock parts, relative to the controller.
      */
     public Set<BlockPos> getPartOffsets() {
         return this.partOffsets; // Возвращаем уже созданный Set
+    }
+
+    /** Phantom-Teilzustand wie in {@link #placeStructure} (fuer NBT-Strukturen, Wunsch W-R3b-1). */
+    public BlockState createPhantomState(Direction facing) {
+        return phantomBlockState.get().setValue(HorizontalDirectionalBlock.FACING, facing);
     }
 
     public synchronized void placeStructure(Level level, BlockPos controllerPos, Direction facing, IMultiblockController controller) {

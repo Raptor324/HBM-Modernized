@@ -94,6 +94,8 @@ public class MachineOreSlopperBlockEntity extends BaseMachineBlockEntity impleme
             new FluidTank(ModFluids.SLOP.getSource(), 16_000)
     };
     public double[] ores = new double[BedrockOreDensity.Type.values().length];
+    /** NTM Space (W-R8B-1): Mengen der Addon-Sorten (Reihenfolge = Ausgabereihenfolge), ohne Addon immer leer. */
+    public final java.util.LinkedHashMap<net.minecraft.resources.ResourceLocation, Double> addonOres = new java.util.LinkedHashMap<>();
 
     public final UpgradeManager upgradeManager = new UpgradeManager();
 
@@ -169,8 +171,16 @@ public class MachineOreSlopperBlockEntity extends BaseMachineBlockEntity impleme
                 progress -= 1F;
 
                 ItemStack input = inventory.getStackInSlot(SLOT_INPUT);
-                for (BedrockOreDensity.Type type : BedrockOreDensity.Type.values()) {
-                    ores[type.ordinal()] += (getOreAmount(input, type) * (1D + efficiency * 0.1));
+                java.util.Map<net.minecraft.resources.ResourceLocation, Double> spaceAmounts = com.hbm_m.api.space.SpaceApi.bedrockOres().oreAmounts(input);
+                if (spaceAmounts != null) {
+                    // Original NTM Space: Sorten des Abbau-Koerpers
+                    for (java.util.Map.Entry<net.minecraft.resources.ResourceLocation, Double> e : spaceAmounts.entrySet()) {
+                        addonOres.merge(e.getKey(), e.getValue() * (1D + efficiency * 0.1), Double::sum);
+                    }
+                } else {
+                    for (BedrockOreDensity.Type type : BedrockOreDensity.Type.values()) {
+                        ores[type.ordinal()] += (getOreAmount(input, type) * (1D + efficiency * 0.1));
+                    }
                 }
 
                 ItemStack in = input.copy();
@@ -231,7 +241,38 @@ public class MachineOreSlopperBlockEntity extends BaseMachineBlockEntity impleme
             }
         }
 
+        if (!addonOres.isEmpty()) emitAddonOres();
+
         sendUpdateToClient();
+    }
+
+    /** Ausgabe der Addon-Sorten (gleiche Stapellogik wie oben, Original {@code make(BASE, type)}). */
+    private void emitAddonOres() {
+        for (java.util.Map.Entry<net.minecraft.resources.ResourceLocation, Double> e : addonOres.entrySet()) {
+            ItemStack proto = com.hbm_m.api.space.SpaceApi.bedrockOres().slopperOutput(e.getKey());
+            if (proto.isEmpty()) continue;
+            outer:
+            while (e.getValue() >= 1) {
+                for (int i = OUTPUT_START; i <= OUTPUT_END; i++) {
+                    ItemStack s = inventory.getStackInSlot(i);
+                    if (!s.isEmpty() && com.hbm_m.platform.StackNbt.sameItemSameTags(s, proto) && s.getCount() < s.getMaxStackSize()) {
+                        ItemStack grown = s.copy();
+                        grown.grow(1);
+                        inventory.setStackInSlot(i, grown);
+                        e.setValue(e.getValue() - 1D);
+                        continue outer;
+                    }
+                }
+                for (int i = OUTPUT_START; i <= OUTPUT_END; i++) {
+                    if (inventory.getStackInSlot(i).isEmpty()) {
+                        inventory.setStackInSlot(i, proto.copyWithCount(1));
+                        e.setValue(e.getValue() - 1D);
+                        continue outer;
+                    }
+                }
+                break outer;
+            }
+        }
     }
 
     private void clientTick(Level level, BlockPos pos) {
@@ -466,6 +507,16 @@ public class MachineOreSlopperBlockEntity extends BaseMachineBlockEntity impleme
         for (BedrockOreDensity.Type type : BedrockOreDensity.Type.values()) {
             tag.putDouble("ores_" + type.name().toLowerCase(Locale.ROOT), ores[type.ordinal()]);
         }
+        if (!addonOres.isEmpty()) {
+            net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
+            addonOres.forEach((id, amount) -> {
+                CompoundTag e = new CompoundTag();
+                e.putString("id", id.toString());
+                e.putDouble("amount", amount);
+                list.add(e);
+            });
+            tag.put("addonOres", list);
+        }
     }
 
     @Override
@@ -478,6 +529,15 @@ public class MachineOreSlopperBlockEntity extends BaseMachineBlockEntity impleme
         tanks[1].readFromNBT(tag, "slop");
         for (BedrockOreDensity.Type type : BedrockOreDensity.Type.values()) {
             ores[type.ordinal()] = tag.getDouble("ores_" + type.name().toLowerCase(Locale.ROOT));
+        }
+        addonOres.clear();
+        if (tag.contains("addonOres")) {
+            net.minecraft.nbt.ListTag list = tag.getList("addonOres", net.minecraft.nbt.Tag.TAG_COMPOUND);
+            for (int i = 0; i < list.size(); i++) {
+                CompoundTag e = list.getCompound(i);
+                net.minecraft.resources.ResourceLocation id = net.minecraft.resources.ResourceLocation.tryParse(e.getString("id"));
+                if (id != null) addonOres.put(id, e.getDouble("amount"));
+            }
         }
     }
 

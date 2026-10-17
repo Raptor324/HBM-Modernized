@@ -172,7 +172,7 @@ public class MachineMixerBlockEntity extends BaseMachineBlockEntity
 
     public boolean canProcess() {
 
-        MixerRecipe[] recipes = MixerRecipes.getOutput(tanks[2].getTankType());
+        MixerRecipe[] recipes = MixerRecipes.getOutput(level, tanks[2].getTankType());
         if (recipes == null || recipes.length <= 0) {
             this.recipeIndex = 0;
             return false;
@@ -209,7 +209,7 @@ public class MachineMixerBlockEntity extends BaseMachineBlockEntity
 
     protected void process() {
 
-        MixerRecipe[] recipes = MixerRecipes.getOutput(tanks[2].getTankType());
+        MixerRecipe[] recipes = MixerRecipes.getOutput(level, tanks[2].getTankType());
         MixerRecipe recipe = recipes[this.recipeIndex % recipes.length];
 
         if (recipe.input1 != null) tanks[0].drainMb(recipe.input1.fill());
@@ -238,7 +238,7 @@ public class MachineMixerBlockEntity extends BaseMachineBlockEntity
     @Override
     protected boolean isItemValidForSlot(int i, ItemStack itemStack) {
         if (i == SLOT_BATTERY || i == SLOT_FLUID_ID || i == SLOT_UPGRADE_1 || i == SLOT_UPGRADE_2) return true; // GUI-Plaetze
-        MixerRecipe[] recipes = MixerRecipes.getOutput(tanks[2].getTankType());
+        MixerRecipe[] recipes = MixerRecipes.getOutput(level, tanks[2].getTankType());
         if (recipes == null || recipes.length <= 0) return false;
 
         MixerRecipe recipe = recipes[this.recipeIndex % recipes.length];

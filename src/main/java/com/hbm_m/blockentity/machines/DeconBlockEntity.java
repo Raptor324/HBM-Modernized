@@ -36,6 +36,7 @@ public class DeconBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity {
                 HbmLivingProps.incrementRadiation(entity, -0.5F);
                 entity.removeEffect(EffectHooks.of(ModEffects.RADIATION));
                 HbmLivingProps.setCont(entity, new java.util.ArrayList<>());
+                com.hbm_m.api.space.SpaceApi.decontaminate(entity); // Space: deconNeutron (ohne Addon no-op)
             }
         } else {
             RandomSource random = level.getRandom();

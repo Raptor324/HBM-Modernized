@@ -27,6 +27,9 @@ public class ItemSatChip extends Item implements ISatChip, ITooltipProvider {
 
         list.add(Component.translatable("satchip.frequency").append(": " + getFreq(itemstack)));
 
+        // W-R6C-4: Addon (NTM Space ItemSatellite) kann die Typbeschreibung durch eigene Zeilen ersetzen
+        if (!com.hbm_m.api.space.SpaceApi.satellites().showHbmChipDescription(itemstack)) return;
+
         if (this == ModItems.SAT_FOEQ.get())
             list.add(Component.translatable("satchip.foeq"));
 

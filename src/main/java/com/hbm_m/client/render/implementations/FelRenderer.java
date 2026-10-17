@@ -54,9 +54,9 @@ public class FelRenderer implements com.hbm_m.client.render.HbmBerBounds<Machine
         }
         int length = fel.distance - 3;
         ps.translate(0, 1.5, -1.5);
-        if (fel.getEnergyStored() > MachineFelBlockEntity.powerReq * Math.pow(2, fel.mode.ordinal()) && fel.isOn && fel.mode != EnumWavelengths.NULL && length > 0) {
-            BeamPronter.prontBeamwithDepth(ps, buf, new Vec3(0, 0, -length - 1), EnumWaveType.SPIRAL, EnumBeamType.SOLID, color, color, 0, 1, 0F, 2, 0.0625F);
-            BeamPronter.prontBeamwithDepth(ps, buf, new Vec3(0, 0, -length - 1), EnumWaveType.RANDOM, EnumBeamType.SOLID, color, color, (int) (time % 1000 / 2), (length / 2) + 1, 0.0625F, 2, 0.0625F);
+        if (fel.getEnergyStored() > MachineFelBlockEntity.powerReq * Math.pow(2, fel.mode.tier) && fel.isOn && fel.mode != EnumWavelengths.NULL && length > 0) {
+            BeamPronter.prontBeamwithDepth(ps, buf, new Vec3(0, 0, -length - 1), EnumWaveType.SPIRAL, EnumBeamType.SOLID, color, color, 0, 1, 0F, 2, 0.0625F, com.hbm_m.client.render.util.BeamPronter.forkAlpha());
+            BeamPronter.prontBeamwithDepth(ps, buf, new Vec3(0, 0, -length - 1), EnumWaveType.RANDOM, EnumBeamType.SOLID, color, color, (int) (time % 1000 / 2), (length / 2) + 1, 0.0625F, 2, 0.0625F, com.hbm_m.client.render.util.BeamPronter.forkAlpha());
         }
 
         ps.popPose();

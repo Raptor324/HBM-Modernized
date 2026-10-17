@@ -224,4 +224,10 @@ public class MachineCatalyticReformerBlockEntity extends BaseMachineBlockEntity 
         if (empty) return;
         for (int i = 0; i < tanks.length; i++) tanks[i].writeToNBT(nbt, "tank" + i);
     }
+
+    /** 1:1 TileEntityMachineCatalyticReformer.getRenderBoundingBox (Render-Migration: Raptors Pfad cullt nach dieser Box, der alte BER zeichnete immer). */
+    @Override
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return new net.minecraft.world.phys.AABB(worldPosition.getX() - 2, worldPosition.getY(), worldPosition.getZ() - 2, worldPosition.getX() + 3, worldPosition.getY() + 7, worldPosition.getZ() + 3);
+    }
 }

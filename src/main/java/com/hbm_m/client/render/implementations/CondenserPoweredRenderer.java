@@ -17,6 +17,9 @@ public class CondenserPoweredRenderer implements com.hbm_m.client.render.HbmBerB
 
     public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/condenser.png");
 
+    public static final com.hbm_m.client.render.SimpleObjModel DAMAGED = new com.hbm_m.client.render.SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/machines/condenser_damaged.obj"));
+    public static final ResourceLocation DAMAGED_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/machines/condenser_damaged.png");
+
     public CondenserPoweredRenderer(BlockEntityRendererProvider.Context ctx) { }
 
     @Override
@@ -30,6 +33,14 @@ public class CondenserPoweredRenderer implements com.hbm_m.client.render.HbmBerB
             case WEST -> ps.mulPose(Axis.YP.rotationDegrees(180));
             case SOUTH -> ps.mulPose(Axis.YP.rotationDegrees(270));
             default -> { }
+        }
+
+        // E9 (Fork, nur mit Space-Addon): beschaedigtes Modell (Modell/Textur liefert das Addon unter hbm_m)
+        if (condenser.damaged) {
+            ps.mulPose(Axis.YP.rotationDegrees(180));
+            DAMAGED.renderAll(ps, buf.getBuffer(RenderType.entityCutoutNoCull(DAMAGED_TEX)), light);
+            ps.popPose();
+            return;
         }
 
         VertexConsumer vc = buf.getBuffer(RenderType.entityCutoutNoCull(TEX));

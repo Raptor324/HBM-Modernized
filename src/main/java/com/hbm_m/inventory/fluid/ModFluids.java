@@ -52,15 +52,27 @@ public class ModFluids {
     // ===================================================================================== //
 
     private static FluidEntry registerFluid(String name, int density, int viscosity, int tintColor) {
+        FluidEntry entry = createFluid(FLUIDS, MainRegistry.MOD_ID, name, density, viscosity, tintColor);
+        FLUID_ENTRIES.put(name, entry);
+        TINT_COLORS.put(name, tintColor);
+        return entry;
+    }
+
+    /**
+     * Legt Quell- und Fliessform einer HBM-artigen Fluessigkeit in einem beliebigen DeferredRegister an (Namensraum
+     * {@code namespace}); identisch zur HBM-eigenen Registrierung. Fuer Addons ueber
+     * {@link com.hbm_m.api.space.HbmFluidApi}. Traegt nichts in die HBM-Tabellen ein (siehe {@link #registerExternal}).
+     */
+    public static FluidEntry createFluid(DeferredRegister<Fluid> register, String namespace, String name, int density, int viscosity, int tintColor) {
         // Holder для cross-reference между source и flowing
         final RegistrySupplier<?>[] sourceRef   = new RegistrySupplier[1];
         final RegistrySupplier<?>[] flowingRef  = new RegistrySupplier[1];
         //? if fabric && < 1.21.1 {
-        /*ResourceLocation stillTex   = new ResourceLocation(MainRegistry.MOD_ID, "gui/fluids/" + name);
-        ResourceLocation flowingTex = new ResourceLocation(MainRegistry.MOD_ID, "gui/fluids/" + name);
+        /*ResourceLocation stillTex   = new ResourceLocation(namespace, "gui/fluids/" + name);
+        ResourceLocation flowingTex = new ResourceLocation(namespace, "gui/fluids/" + name);
          *///?} else {
-        ResourceLocation stillTex   = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "gui/fluids/" + name);
-        ResourceLocation flowingTex = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "gui/fluids/" + name);
+        ResourceLocation stillTex   = ResourceLocation.fromNamespaceAndPath(namespace, "gui/fluids/" + name);
+        ResourceLocation flowingTex = ResourceLocation.fromNamespaceAndPath(namespace, "gui/fluids/" + name);
         //?}
         // Атрибуты жидкости — единые для обеих платформ через Architectury API
         // source/flowing передаём через supplier, чтобы избежать circular init
@@ -78,21 +90,21 @@ public class ModFluids {
                 .emptySound(SoundEvents.BUCKET_EMPTY);
 
         // Регистрируем source
-        RegistrySupplier<Fluid> source = FLUIDS.register(
+        RegistrySupplier<Fluid> source = register.register(
                 //? if fabric && < 1.21.1 {
-                /*new ResourceLocation(MainRegistry.MOD_ID, name),
+                /*new ResourceLocation(namespace, name),
                 *///?} else {
-                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, name),
+                ResourceLocation.fromNamespaceAndPath(namespace, name),
                 //?}
                 () -> new ArchitecturyFlowingFluid.Source(attributes)
         );
 
         // Регистрируем flowing
-        RegistrySupplier<Fluid> flowing = FLUIDS.register(
+        RegistrySupplier<Fluid> flowing = register.register(
                 //? if fabric && < 1.21.1 {
-                /*new ResourceLocation(MainRegistry.MOD_ID, name + "_flowing"),
+                /*new ResourceLocation(namespace, name + "_flowing"),
                  *///?} else {
-                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, name + "_flowing"),
+                ResourceLocation.fromNamespaceAndPath(namespace, name + "_flowing"),
                 //?}
                 () -> new ArchitecturyFlowingFluid.Flowing(attributes)
         );
@@ -100,10 +112,20 @@ public class ModFluids {
         sourceRef[0]  = source;
         flowingRef[0] = flowing;
 
-        FluidEntry entry = new FluidEntry(source, flowing);
+        return new FluidEntry(source, flowing);
+    }
+
+    /**
+     * Traegt eine fremde (Addon-)Fluessigkeit in die HBM-Tabellen ein: {@link #getEntry(String)}, {@link #getAllEntries()}
+     * und {@link #getTintColor(String)} (= {@code FluidType.getColor()}, Rohr-/Textfarbe). Der Name ist der Registry-Pfad
+     * ohne Namensraum (wie bei {@code FluidType.getName()}) und darf keine HBM-Fluessigkeit verdecken.
+     */
+    public static synchronized void registerExternal(String name, FluidEntry entry, int tintColor) {
+        if (FLUID_ENTRIES.containsKey(name)) {
+            throw new IllegalArgumentException("HBM fluid name already registered: " + name);
+        }
         FLUID_ENTRIES.put(name, entry);
         TINT_COLORS.put(name, tintColor);
-        return entry;
     }
 
     private static FluidEntry registerFluid(String name, int color) {

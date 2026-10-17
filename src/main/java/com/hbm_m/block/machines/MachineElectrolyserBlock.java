@@ -34,7 +34,7 @@ public class MachineElectrolyserBlock extends DummyableMachineBlock {
 
     @Override
     protected MultiblockStructureHelper defineStructure() {
-        return DummyableStructureBuilder.create()
+        DummyableStructureBuilder b = DummyableStructureBuilder.create()
                 .box(0, 0, 5, 5, 1, 3)
                 .box(2, -1, 5, 5, 1, 1)
                 .box(3, -3, 5, 5, 0, 0)
@@ -53,8 +53,11 @@ public class MachineElectrolyserBlock extends DummyableMachineBlock {
                 .extra(-5, 0, -1)
                 .extra(5, 0, 0)
                 .extra(5, 0, 1)
-                .extra(5, 0, -1)
-                .placementOffset(5)
+                .extra(5, 0, -1);
+        // E8 (Fork, nur mit Space-Addon): zwei weitere Anschlusszellen (makeExtra x - rot*3 und x + rot);
+        // die Fork-Regeln setzt das Addon im Mod-Konstruktor, also vor der Blockregistrierung
+        if (com.hbm_m.api.space.SpaceApi.forkActive()) b.extra(0, 0, -3).extra(0, 0, 1);
+        return b.placementOffset(5)
                 .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
     }
 

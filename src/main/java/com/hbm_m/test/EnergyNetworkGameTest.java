@@ -423,13 +423,23 @@ public final class EnergyNetworkGameTest {
         helper.setBlock(bat, ModBlocks.MACHINE_BATTERY.get());
         placeWire(helper, new BlockPos(2, 1, 1));
 
+        // Original TileEntityBatteryBase: redLow = mode_input, redHigh = mode_output
+        // (Port-Zaehlung 1 = INPUT, 2 = OUTPUT). Der Puffermodus ist NICHT Standard,
+        // er wird hier fuer den Junction-Lebenszyklus explizit gesetzt.
+        MachineBatteryBlockEntity fresh =
+                (MachineBatteryBlockEntity) helper.getLevel().getBlockEntity(helper.absolutePos(bat));
+        check(fresh != null, "Battery BE exists");
+        check(fresh.modeOnNoSignal == 1 && fresh.modeOnSignal == 2,
+                "Battery defaults to INPUT without / OUTPUT with redstone like the original");
+        fresh.modeOnNoSignal = 0;
+
         helper.startSequence()
             .thenWaitUntil(() -> {
                 MachineBatteryBlockEntity be =
                         (MachineBatteryBlockEntity) helper.getLevel()
                                 .getBlockEntity(helper.absolutePos(bat));
                 check(be != null, "Battery BE exists");
-                check(be.getCurrentMode() == 0, "Battery starts in BOTH(buffer) mode by default");
+                check(be.getCurrentMode() == 0, "Battery is in BOTH(buffer) mode after switching");
                 Nodespace.PowerNode jn = nodeAt(helper, bat);
                 check(jn != null && jn.hasValidNet(),
                         "Buffer-mode battery maintains its own junction node with a valid net");
@@ -628,19 +638,12 @@ public final class EnergyNetworkGameTest {
         BlockPos asmCore = new BlockPos(2, 1, 2);
         helper.setBlock(asmCore, ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get());
 
-        // Кольцо проводов вокруг всей структуры сборщика на уровне ядра и выше
-        for (int y = 1; y <= 2; y++) {
-            placeWire(helper, new BlockPos(1, y, 1));
-            placeWire(helper, new BlockPos(1, y, 2));
-            placeWire(helper, new BlockPos(1, y, 3));
-            placeWire(helper, new BlockPos(2, y, 1));
-            placeWire(helper, new BlockPos(2, y, 3));
-            placeWire(helper, new BlockPos(3, y, 1));
-            placeWire(helper, new BlockPos(3, y, 2));
-            placeWire(helper, new BlockPos(3, y, 3));
-        }
-        // связываем внешнее кольцо с линией от батареи
-        placeWire(helper, new BlockPos(1, 1, 0));
+        // Der 3x3x3-Sockel belegt x/z 1..3 um den Kern (2,1,2). Die frueheren Ringdraehte auf
+        // x/z 1..3 ueberschrieben eigene Strukturteile -> UniversalMachinePartBlock.onRemove riss
+        // den Kern ab ("Assembler core BE exists" scheiterte). Der Draht (0,1,2) liegt jetzt wie im
+        // Original-getConPos (Kern -2 auf X) direkt am Westkonnektor (1,1,2) an.
+        check(helper.getLevel().getBlockEntity(helper.absolutePos(asmCore)) instanceof IEnergyReceiver,
+                "Assembler core BE exists right after placement");
 
         helper.succeedWhen(() -> {
             BlockEntity be = helper.getLevel().getBlockEntity(helper.absolutePos(asmCore));

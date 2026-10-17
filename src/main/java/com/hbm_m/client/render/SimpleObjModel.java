@@ -34,12 +34,28 @@ public class SimpleObjModel {
         this.location = location;
     }
 
+    /** Naechster erlaubter Ladeversuch nach einem Fehlschlag (ms); verhindert Dateizugriffe in jedem Frame. */
+    private long retryAt = 0L;
+    private boolean warned = false;
+
     private void ensureLoaded() {
         if (loaded) return;
-        loaded = true;
+        long now = System.currentTimeMillis();
+        if (now < retryAt) return;
 
+        // Fehlschlag nicht dauerhaft merken: fehlte die Datei beim ersten Zeichnen kurz (Ressourcen-Neuladen,
+        // build/resources im Dev-Client gerade neu kopiert), blieb das Modell bis zum Neustart unsichtbar
+        // (Spieltest: Mini-UFO nur als Hitbox sichtbar). Jetzt: erneuter Versuch nach einer Sekunde.
         var res = Minecraft.getInstance().getResourceManager().getResource(location).orElse(null);
-        if (res == null) return;
+        if (res == null) {
+            retryAt = now + 1000L;
+            if (!warned) {
+                warned = true;
+                org.slf4j.LoggerFactory.getLogger("hbm_m").warn("SimpleObjModel: {} nicht gefunden, neuer Versuch folgt", location);
+            }
+            return;
+        }
+        parts.clear();
 
         List<float[]> pos = new ArrayList<>(), uv = new ArrayList<>(), nrm = new ArrayList<>();
         String curPart = "default";
@@ -82,7 +98,14 @@ public class SimpleObjModel {
                     }
                 }
             }
-        } catch (Exception ignored) { }
+            loaded = true;
+        } catch (Exception e) {
+            loaded = true; // Datei vorhanden, aber fehlerhaft: Teilstand behalten wie bisher, nicht jede Sekunde neu parsen
+            if (!warned) {
+                warned = true;
+                org.slf4j.LoggerFactory.getLogger("hbm_m").warn("SimpleObjModel: {} nicht lesbar: {}", location, e.toString());
+            }
+        }
     }
 
     public void renderAll(PoseStack pose, VertexConsumer vc, int light) {

@@ -71,7 +71,12 @@ public class MachineTowerSmallBlockEntity extends BaseMachineBlockEntity impleme
 
         in.setFill(in.getFill() - convert);
         if (convert > 0) be.waterTimer = 20;
-        out.setFill(out.getFill() + convert);
+        // NTM Space: im Tom-Feuersturm und im Vakuum verdampfen Dampf und Wasser (ohne Space-Addon nie)
+        if (com.hbm_m.api.space.SpaceApi.condenserEvaporates(level, pos, false)) {
+            out.setFill(out.getFill() - convert);
+        } else {
+            out.setFill(out.getFill() + convert);
+        }
 
         // subscribeToAllAround / sendFluidToAll des TileEntityTowerSmall
         for (Direction dir : CON_DIRS) be.trySubscribe(in.getTankType(), level, pos.relative(dir, 3), dir);

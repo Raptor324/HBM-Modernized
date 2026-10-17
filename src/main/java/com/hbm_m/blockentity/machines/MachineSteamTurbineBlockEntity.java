@@ -68,7 +68,20 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
         be.ensureNetworkInitialized();
         boolean wasActive = be.active;
 
+        // Original TileEntityMachineTurbine: tanks[0].setType(0, 1, slots); tanks[0].loadTank(2, 3, slots);
+        // chargeItemsFromTE(slots, 4, ...); ... tanks[1].unloadTank(5, 6, slots) - fehlte im Port ganz.
+        ItemStack[] slots = new ItemStack[be.inventory.getSlots()];
+        for (int i = 0; i < slots.length; i++) slots[i] = be.inventory.getStackInSlot(i);
+        boolean items = be.tanks[0].setType(SLOT_FLUID_ID_IN, SLOT_FLUID_ID_OUT, slots);
+        items |= be.tanks[0].loadTank(SLOT_INPUT_IO_IN, SLOT_INPUT_IO_OUT, slots);
+        if (items) be.applySlots(slots);
+        be.chargeItemInSlot(SLOT_BATTERY);
+
         be.active = be.processSteam();
+
+        for (int i = 0; i < slots.length; i++) slots[i] = be.inventory.getStackInSlot(i);
+        if (be.tanks[1].unloadTank(SLOT_OUTPUT_IO_IN, SLOT_OUTPUT_IO_OUT, slots)) { be.applySlots(slots); items = true; }
+        if (items) be.setChanged();
         if (be.active) {
             be.progress = (be.progress + 1) % MAX_PROGRESS;
         } else {
@@ -97,6 +110,10 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
      * Verarbeitung, seit diese ueber {@link FT_Coolable} laeuft - sonst nimmt die Turbine Dampf an,
      * den sie anschliessend nicht verwerten kann.
      */
+    private void applySlots(ItemStack[] slots) {
+        for (int i = 0; i < slots.length; i++) inventory.setStackInSlot(i, slots[i]);
+    }
+
     private boolean acceptsAsSteam(Fluid fluid) {
         FT_Coolable trait = FluidType.getTrait(fluid, FT_Coolable.class);
         return trait != null
@@ -201,7 +218,7 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
         return switch (slot) {
             case SLOT_FLUID_ID_IN -> stack.getItem() instanceof IItemFluidIdentifier || stack.getItem() instanceof FluidIdentifierItem;
             case SLOT_FLUID_ID_OUT, SLOT_INPUT_IO_OUT, SLOT_OUTPUT_IO_OUT -> false;
-            case SLOT_INPUT_IO_IN, SLOT_OUTPUT_IO_IN -> PlatformHooks.isFluidContainer(stack);
+            case SLOT_INPUT_IO_IN, SLOT_OUTPUT_IO_IN -> com.hbm_m.api.fluids.FluidItemAccess.isFluidContainer(stack); // auch Registry-Behaelter ohne Capability
             case SLOT_BATTERY -> stack.getItem() instanceof ItemCreativeBattery || isEnergyProviderItem(stack) || isEnergyReceiverItem(stack);
             default -> false;
         };

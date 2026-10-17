@@ -184,6 +184,13 @@ public class MachineTurbineGasBlockEntity extends BaseMachineBlockEntity impleme
     }
 
     private void startup(Level world) {
+
+        // NTM Space: ohne Sauerstoff kein Anlauf - ohne Space-Addon immer true
+        if (!breatheAir(0)) {
+            state = 0;
+            return;
+        }
+
         counter++;
 
         if (counter <= 20) rpm = 5 * counter;
@@ -268,6 +275,12 @@ public class MachineTurbineGasBlockEntity extends BaseMachineBlockEntity impleme
         double consumption = idleConsumption + consMax * throttle / 100;
 
         fuelToConsume += consumption;
+
+        // NTM Space - ohne Space-Addon immer true
+        if (!breatheAir((int) Math.floor(fuelToConsume))) {
+            state = 0;
+            return;
+        }
 
         tanks[0].setFill(tanks[0].getFill() - (int) Math.floor(fuelToConsume));
         fuelToConsume -= (int) Math.floor(fuelToConsume);

@@ -144,4 +144,10 @@ public class PABeamlineBlockEntity extends BaseMachineBlockEntity implements IPa
     public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
         return null; // Original: kein GUI.
     }
+
+    /** 1:1 TileEntityPABeamline.getRenderBoundingBox (Render-Migration: Raptors Pfad cullt nach dieser Box, der alte BER zeichnete immer). */
+    @Override
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return new net.minecraft.world.phys.AABB(worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1, worldPosition.getX() + 2, worldPosition.getY() + 1, worldPosition.getZ() + 2);
+    }
 }

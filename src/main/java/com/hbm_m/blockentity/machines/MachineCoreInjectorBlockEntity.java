@@ -197,4 +197,10 @@ public class MachineCoreInjectorBlockEntity extends BaseMachineBlockEntity {
         // Original: Eingaenge 0/2 (Fluidkennung), 1/3 nur entnehmbar (SlotCraftingOutput)
         return slot == 0 || slot == 2;
     }
+
+    /** 1:1 TileEntityCoreInjector.getRenderBoundingBox (Render-Migration: Raptors Pfad cullt nach dieser Box, der alte BER zeichnete immer). */
+    @Override
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return com.hbm_m.platform.RenderBounds.INFINITE;
+    }
 }

@@ -56,14 +56,14 @@ public final class MixerRecipes {
         public int processTime;
         public int output;
 
-        protected MixerRecipe(int output, int processTime) {
+        public MixerRecipe(int output, int processTime) {
             this.output = output;
             this.processTime = processTime;
         }
 
-        protected MixerRecipe setStack1(FluidIn stack) { input1 = stack; return this; }
-        protected MixerRecipe setStack2(FluidIn stack) { input2 = stack; return this; }
-        protected MixerRecipe setSolid(SolidIn stack) { solidInput = stack; return this; }
+        public MixerRecipe setStack1(FluidIn stack) { input1 = stack; return this; }
+        public MixerRecipe setStack2(FluidIn stack) { input2 = stack; return this; }
+        public MixerRecipe setSolid(SolidIn stack) { solidInput = stack; return this; }
     }
 
     private static FluidIn fs(com.hbm_m.inventory.fluid.ModFluids.FluidEntry e, int amount) {
@@ -175,6 +175,77 @@ public final class MixerRecipes {
 
     public static void register(Fluid type, MixerRecipe... rec) {
         recipes.put(type, rec);
+        baseVersion++;
+    }
+
+    /**
+     * W-R9B5-1 (Space-Addon): Rezepte fuer ein Ausgabefluid anhaengen (bestehende HBM-Rezepte bleiben, Reihenfolge =
+     * Aufrufreihenfolge). Sicher vor und nach dem ersten {@link #getRecipes()}.
+     */
+    public static synchronized void addExternal(Fluid type, MixerRecipe... rec) {
+        Map<Fluid, MixerRecipe[]> map = getRecipes();
+        MixerRecipe[] old = map.get(type);
+        if (old == null) {
+            map.put(type, rec);
+        } else {
+            MixerRecipe[] merged = java.util.Arrays.copyOf(old, old.length + rec.length);
+            System.arraycopy(rec, 0, merged, old.length, rec.length);
+            map.put(type, merged);
+        }
+        baseVersion++;
+    }
+
+    // ---------------------------------------------------------------- W-R9B5-1: Datapack-Rezepte (hbm_m:mixer)
+
+    private static int baseVersion;
+
+    private record Merged(int baseVersion, int fingerprint, Map<Fluid, MixerRecipe[]> map) { }
+
+    private static final java.util.WeakHashMap<net.minecraft.world.item.crafting.RecipeManager, Merged> MERGED = new java.util.WeakHashMap<>();
+
+    /**
+     * Code-Rezepte plus {@link MixerDataRecipe}s aus dem Datapack des RecipeManagers (Server oder synchronisierter Client).
+     * Ohne {@code hbm_m:mixer}-JSONs (HBM liefert keine) identisch mit {@link #getRecipes()}.
+     */
+    public static synchronized Map<Fluid, MixerRecipe[]> getRecipes(@Nullable net.minecraft.world.item.crafting.RecipeManager manager) {
+        Map<Fluid, MixerRecipe[]> base = getRecipes();
+        if (manager == null) return base;
+        Map<net.minecraft.resources.ResourceLocation, MixerDataRecipe> data =
+                com.hbm_m.platform.recipe.RecipeHooks.getAllRecipesById(manager, MixerDataRecipe.Type.INSTANCE);
+        if (data.isEmpty()) return base;
+        int fp = 1;
+        for (MixerDataRecipe r : data.values()) fp = 31 * fp + System.identityHashCode(r);
+        Merged m = MERGED.get(manager);
+        if (m != null && m.baseVersion == baseVersion && m.fingerprint == fp) return m.map;
+
+        java.util.List<Map.Entry<net.minecraft.resources.ResourceLocation, MixerDataRecipe>> sorted = new java.util.ArrayList<>(data.entrySet());
+        sorted.sort(java.util.Comparator.<Map.Entry<net.minecraft.resources.ResourceLocation, MixerDataRecipe>>comparingInt(e -> e.getValue().getOrder())
+                .thenComparing(e -> e.getKey().toString()));
+        Map<Fluid, java.util.List<MixerRecipe>> extra = new LinkedHashMap<>();
+        java.util.Set<Fluid> replaced = new java.util.HashSet<>();
+        for (Map.Entry<net.minecraft.resources.ResourceLocation, MixerDataRecipe> e : sorted) {
+            Fluid out = e.getValue().outputFluid();
+            MixerRecipe rec = e.getValue().toMixerRecipe();
+            if (out == null || rec == null) continue;
+            extra.computeIfAbsent(out, k -> new java.util.ArrayList<>()).add(rec);
+            if (e.getValue().isReplace()) replaced.add(out);
+        }
+        Map<Fluid, MixerRecipe[]> merged = new LinkedHashMap<>(base);
+        for (Map.Entry<Fluid, java.util.List<MixerRecipe>> e : extra.entrySet()) {
+            MixerRecipe[] old = replaced.contains(e.getKey()) ? null : merged.get(e.getKey());
+            java.util.List<MixerRecipe> all = new java.util.ArrayList<>();
+            if (old != null) all.addAll(java.util.Arrays.asList(old));
+            all.addAll(e.getValue());
+            merged.put(e.getKey(), all.toArray(new MixerRecipe[0]));
+        }
+        MERGED.put(manager, new Merged(baseVersion, fp, merged));
+        return merged;
+    }
+
+    /** Rezepte fuer ein Ausgabefluid inkl. Datapack ({@code level} null = nur Code-Rezepte). */
+    @Nullable
+    public static MixerRecipe[] getOutput(@Nullable net.minecraft.world.level.Level level, Fluid type) {
+        return getRecipes(level != null ? level.getRecipeManager() : null).get(type);
     }
 
     @Nullable

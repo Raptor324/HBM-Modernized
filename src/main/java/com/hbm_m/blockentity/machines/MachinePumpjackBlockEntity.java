@@ -84,6 +84,23 @@ public class MachinePumpjackBlockEntity extends OilDrillBaseBlockEntity {
         }
     }
 
+    // NTM Space TileEntityMachinePumpjack (nur Addon-Lagerstaetten, W-R8B-2): oilMultiplier 1.5, gasMultiplier 0.5,
+    // drainChanceMultiplier 0.5.
+    @Override
+    protected int depositPrimaryAmount(com.hbm_m.api.space.SpaceResources.FluidDepositBlock dep) {
+        return (int) (super.depositPrimaryAmount(dep) * 1.5D);
+    }
+
+    @Override
+    protected int depositSecondaryAmount(com.hbm_m.api.space.SpaceResources.FluidDepositBlock dep) {
+        return (int) (super.depositSecondaryAmount(dep) * 0.5D);
+    }
+
+    @Override
+    protected double depositDrainMultiplier() {
+        return 0.5D;
+    }
+
     @Override
     public Direction[] getConPos() {
         return new Direction[]{Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST};
@@ -124,5 +141,11 @@ public class MachinePumpjackBlockEntity extends OilDrillBaseBlockEntity {
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
         return MachinePumpjackMenu.create(id, inventory, this);
+    }
+
+    /** 1:1 TileEntityMachinePumpjack.getRenderBoundingBox (Render-Migration: Raptors Pfad cullt nach dieser Box, der alte BER zeichnete immer). */
+    @Override
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return new net.minecraft.world.phys.AABB(worldPosition.getX() - 7, worldPosition.getY(), worldPosition.getZ() - 7, worldPosition.getX() + 8, worldPosition.getY() + 6, worldPosition.getZ() + 8);
     }
 }

@@ -25,6 +25,20 @@ public final class FluidContainerDefs {
     private static void canister(String fluid, int color) { CANISTERS.put(fluid, new CDCanister(color)); }
     private static void gastank(String fluid, int bottle, int label) { GASTANKS.put(fluid, new CDGastank(bottle, label)); }
 
+    /**
+     * Space-API (W-R4A-1): Addon-Fluessigkeit als Kanister anmelden (Original {@code addContainers(new CD_Canister(color))}).
+     * Schluessel ist der Fluidname ohne Namensraum ({@code FluidType.getName()}). Muss vor dem ersten Zugriff auf
+     * {@code FluidContainerRegistry} (lazy) bzw. spaetestens im Common-Setup erfolgen; ersetzt einen vorhandenen Eintrag.
+     */
+    public static synchronized void registerCanister(String fluidName, int color) {
+        canister(fluidName, color);
+    }
+
+    /** Space-API (W-R4A-1): wie {@link #registerCanister}, fuer Gasflaschen (Original {@code CD_Gastank(bottle, label)}). */
+    public static synchronized void registerGastank(String fluidName, int bottleColor, int labelColor) {
+        gastank(fluidName, bottleColor, labelColor);
+    }
+
     static {
         gastank("deuterium", 0x0000FF, 0xFFFFFF);
         gastank("tritium", 0x000099, 0xE9FFAA);

@@ -53,7 +53,7 @@ public class GUIMachineMixer extends GuiInfoScreen<MachineMixerMenu> {
                 Component.translatable("desc.gui.upgrade.overdrive"));
 
         if (mixer != null) {
-            MixerRecipe[] recipes = MixerRecipes.getOutput(mixer.tanks[2].getTankType());
+            MixerRecipe[] recipes = MixerRecipes.getOutput(mixer.getLevel(), mixer.tanks[2].getTankType());
 
             if (recipes != null && recipes.length > 1) {
                 List<Component> label = new ArrayList<>();

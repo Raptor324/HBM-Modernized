@@ -333,4 +333,10 @@ public class MachineCoreEmitterBlockEntity extends BaseMachineBlockEntity
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         return false;
     }
+
+    /** 1:1 TileEntityCoreEmitter.getRenderBoundingBox (Render-Migration: Raptors Pfad cullt nach dieser Box, der alte BER zeichnete immer). */
+    @Override
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return com.hbm_m.platform.RenderBounds.INFINITE;
+    }
 }

@@ -116,8 +116,11 @@ public abstract class MachineFireboxBaseBlockEntity extends MachinePollutingBloc
 
         boolean prevOn = wasOn;
         wasOn = false;
+        // NTM Space: Verbrennung braucht Sauerstoff (breatheAir) - ohne Space-Addon immer true
+        boolean canOperate = false;
 
         if (burnTime <= 0) {
+            canOperate = breatheAir(0);
 
             for (int i = 0; i < 2; i++) {
                 ItemStack slot = inventory.getStackInSlot(i);
@@ -151,13 +154,24 @@ public abstract class MachineFireboxBaseBlockEntity extends MachinePollutingBloc
         } else {
 
             if (this.heatEnergy < getMaxHeat()) {
-                burnTime--;
-                if (level.getGameTime() % 20 == 0) this.pollute(PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND * 3);
-            }
-            this.wasOn = true;
+                // firebox consumes 1mB every 5 ticks, heating oven every tick
+                // (Divisor gegen Konfigurationswerte > 500 bzw. 0 abgesichert, sonst ArithmeticException)
+                canOperate = breatheAir(level.getGameTime() % Math.max(1, 500 / Math.max(1, getBaseHeat())) == 0 ? 1 : 0);
 
-            if (level.random.nextInt(15) == 0 && !this.muffled) {
-                level.playSound(null, pos, SoundEvents.FIRE_AMBIENT, SoundSource.BLOCKS, 1.0F, 0.5F + level.random.nextFloat() * 0.5F);
+                if (canOperate) {
+                    burnTime--;
+                    if (level.getGameTime() % 20 == 0) this.pollute(PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND * 3);
+                }
+            } else {
+                canOperate = breatheAir(0);
+            }
+
+            if (canOperate) {
+                this.wasOn = true;
+
+                if (level.random.nextInt(15) == 0 && !this.muffled) {
+                    level.playSound(null, pos, SoundEvents.FIRE_AMBIENT, SoundSource.BLOCKS, 1.0F, 0.5F + level.random.nextFloat() * 0.5F);
+                }
             }
         }
 
@@ -165,7 +179,7 @@ public abstract class MachineFireboxBaseBlockEntity extends MachinePollutingBloc
             this.heatEnergy = Math.min(this.heatEnergy + this.burnHeat, getMaxHeat());
         } else {
             this.heatEnergy = Math.max(this.heatEnergy - Math.max(this.heatEnergy / 1000, 1), 0);
-            this.burnHeat = 0;
+            if (canOperate) this.burnHeat = 0;
         }
 
         setChanged();

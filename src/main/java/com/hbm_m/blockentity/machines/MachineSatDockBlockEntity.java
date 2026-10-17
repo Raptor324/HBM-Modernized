@@ -50,8 +50,8 @@ public class MachineSatDockBlockEntity extends BaseMachineBlockEntity {
     }
 
     private void updateEntity(ServerLevel world) {
-        SatelliteManager data = SatelliteManager.get(world);
         int x = worldPosition.getX(), y = worldPosition.getY(), z = worldPosition.getZ();
+        SatelliteManager data = SatelliteManager.get(world, x, z);
 
         // Original (neueres TileEntityMachineSatDock): mit Satelliten-Chip einmal je Sekunde fertige Fracht anfordern
         long time = world.getGameTime() + worldPosition.asLong();

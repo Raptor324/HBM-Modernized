@@ -86,7 +86,7 @@ public final class BobmazonOfferFactory {
 
         special.add(new Offer(new ItemStack(Items.IRON_INGOT, 64), Requirement.STEEL, 1));
         special.add(new Offer(ingot(ModMaterials.STEEL, 64), Requirement.STEEL, 1));
-        special.add(new Offer(ingot(ModMaterials.COPPER, 64), Requirement.STEEL, 1));
+        special.add(new Offer(new ItemStack(Items.COPPER_INGOT, 64), Requirement.STEEL, 1)); // Kupferbarren ist im Port Vanilla-Kupfer
         special.add(new Offer(ingot(ModMaterials.RED_COPPER, 64), Requirement.STEEL, 1));
         special.add(new Offer(ingot(ModMaterials.TITANIUM, 64), Requirement.STEEL, 1));
         special.add(new Offer(ingot(ModMaterials.TUNGSTEN, 64), Requirement.STEEL, 1));
@@ -125,6 +125,9 @@ public final class BobmazonOfferFactory {
         ItemStack crucible = new ItemStack(com.hbm_m.item.ModItems.CRUCIBLE_SWORD.get());
         crucible.setDamageValue(3);
         special.add(new Offer(crucible, Requirement.STEEL, 10));
+        // E8 (Fork, nur mit Space-Addon): geladene Pellets fuer 16
+        if (com.hbm_m.api.space.SpaceApi.forkActive())
+            special.add(new Offer(new ItemStack(com.hbm_m.item.ModItems.PELLET_CHARGED.get(), 1), Requirement.STEEL, 16));
         special.add(new Offer(st("chopper", 1), Requirement.STEEL, 10));
         special.add(new Offer(st("spawn_worm", 1), Requirement.STEEL, 10));
         special.add(new Offer(st("spawn_ufo", 1), Requirement.STEEL, 10));
@@ -230,7 +233,9 @@ public final class BobmazonOfferFactory {
     }
 
     private static ItemStack ingot(ModMaterials mat, int count) {
-        return new ItemStack(ModMaterialItems.item(mat, MaterialShape.INGOT), count);
+        Item item = ModMaterialItems.item(mat, MaterialShape.INGOT);
+        if (item == null) throw new IllegalStateException("Bobmazon: kein Barren fuer Material " + mat);
+        return new ItemStack(item, count);
     }
 
     /** Gegenstand nach Registriername (Multiblock-Gegenstaende haben keine eigene Konstante je Block). */

@@ -944,6 +944,10 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.RBMK_CONSOLE_BE.get(),
                 com.hbm_m.client.render.implementations.MachineRbmkConsoleRenderer::new);
         // Steam inlet/outlet are floor blocks (not columns) — rendered via MODEL + JSON
+
+        // Render-Migration: umgestellte BERs auf Raptors Renderpfad (ueberschreibt die Anmeldungen oben;
+        // -Dhbm_m.legacyMachineRender=true behaelt die alten immediate-BERs)
+        com.hbm_m.client.render.raptorpath.HbmRaptorRenders.registerAll();
     }
 
     private static void clearClientCachesDeferred() {

@@ -205,7 +205,7 @@ public class AssemblyFactoryRenderer implements com.hbm_m.client.render.HbmBerBo
         ps.translate(0, -y, -z);
     }
 
-    private static void v(VertexConsumer vc, Matrix4f m, double x, double y, double z, double u, double v, float alpha) {
+    static void v(VertexConsumer vc, Matrix4f m, double x, double y, double z, double u, double v, float alpha) {
         RenderHooks.vertexFull(vc, m, (float) x, (float) y, (float) z, 255, 255, 255, (int) (alpha * 255F),
                 (float) u, (float) v, OverlayTexture.NO_OVERLAY, LightTexture.FULL_BRIGHT, 0F, 1F, 0F);
     }
@@ -215,7 +215,7 @@ public class AssemblyFactoryRenderer implements com.hbm_m.client.render.HbmBerBo
      * Gegenstaende 1.25 * 0.5128 gross. {@code ItemDisplayContext.FIXED} zeichnet selbst schon halb so gross und
      * mittig, das wird hier ausgeglichen.
      */
-    private static void renderIcon(MachineAssemblyFactoryBlockEntity be, ItemStack stack, PoseStack ps, MultiBufferSource buf, int light) {
+    static void renderIcon(MachineAssemblyFactoryBlockEntity be, ItemStack stack, PoseStack ps, MultiBufferSource buf, int light) {
         var mc = Minecraft.getInstance();
         boolean block3d = false;
         boolean blockItem = stack.getItem() instanceof BlockItem;

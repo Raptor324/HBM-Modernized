@@ -481,7 +481,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
             (slot >= SLOT_FLUID_OUTPUT_START && slot <= SLOT_FLUID_OUTPUT_END) ||
             (slot >= SLOT_FLUID_INPUT_EMPTY_START && slot <= SLOT_FLUID_INPUT_EMPTY_END) ||
             (slot >= SLOT_FLUID_OUTPUT_EMPTY_START && slot <= SLOT_FLUID_OUTPUT_EMPTY_END)) {
-            return com.hbm_m.platform.PlatformHooks.isFluidContainer(stack);
+            return com.hbm_m.api.fluids.FluidItemAccess.isFluidContainer(stack); // auch Registry-Behaelter ohne Capability
         }
         return true;
     }
