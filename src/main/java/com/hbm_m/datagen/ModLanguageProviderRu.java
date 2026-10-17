@@ -256,7 +256,8 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("itemGroup.hbm_m.ntm_weapons_tab", "Оружие и турели NTM");
         add("itemGroup.hbm_m.ntm_consumables_tab", "Расходники и снаряжение NTM");
         add("itemGroup.hbm_m.ntm_dev_tab", "Dev Items");
-        
+        add("itemGroup.hbm_m.ntm_nightly_tab", "Портировано за ночь");
+
         // СНАРЯГА
         add("item.hbm_m.alloy_sword", "Меч из продвинутого сплава");
         add("item.hbm_m.alloy_pickaxe", "Кирка из продвинутого сплава");
@@ -360,6 +361,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         // GUI titles that had no entry at all: the screens showed the raw key.
         add("container.frackingTower", "Фрекинговая вышка");
         add("container.hbm_m.ashpit", "Зольник");
+        add("container.hbm_m.barrel", "Бочка");
         add("container.hbm_m.coker", "Коксователь");
         add("container.hbm_m.condenser_powered", "Электрический конденсатор");
         add("container.hbm_m.conveyor_press", "Конвейерный пресс");
@@ -875,8 +877,8 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.PUTER.get(), "(PC) Personal Computer"); //NEEDS TRANSLATION
         add(ModBlocks.BARREL_CORRODED.get(), "Проржавевшая бочка");
         add(ModBlocks.BARREL_LOX.get(), "Бочка с жидким кислородом");
-        add(ModBlocks.BARREL_ANTIMATTER.get(), "Магнитный контейнер антиматерии");
-        add(ModBlocks.BARREL_PLASTIC.get(), "Безопасная бочка™");
+        add(ModBlocks.BARREL_ANTIMATTER.get(), "Магнитный контейнер");
+        add(ModBlocks.BARREL_PLASTIC.get(), "Безопасный бочонок™");
         add(ModBlocks.BARREL_PINK.get(), "Бочка с керосином");
         add(ModBlocks.BARREL_YELLOW.get(), "Бочка с ядерными отходами");
         add(ModBlocks.BARREL_VITRIFIED.get(), "Бочка с остеклованными ядерными отходами");
@@ -945,6 +947,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.SILO_HATCH.get(), "Малый люк");
         add(ModBlocks.SILO_HATCH_LARGE.get(), "Люк ракетной шахты");
         add(ModBlocks.CARGO_DOOR.get(), "Грузовая дверь");
+        add(ModBlocks.BLAST_DOOR.get(), "Раздвижные двери");
 
         add(ModBlocks.DUD_SALTED.get(), "Неразорвавшаяся солёная бомба");
         add(ModBlocks.DUD_NUKE.get(), "Неразорвавшаяся ядерная бомба");
@@ -1334,7 +1337,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("gui.hbm_m.fluid_tank.empty", "Пусто");
         add("gui.hbm_m.fluid_tank.empty_locked", "Пусто (тип цистерны: %s)");
         add("gui.hbm_m.fluid_tank.empty_filter", "Пусто (фильтр: %s)");
-        add("gui.hbm_m.fluid_tank.filter_set", "Тип установлен: %s!");
+        add("gui.hbm_m.fluid_tank.filter_set", "Изменён тип на %s!");
         add("gui.hbm_m.fluid_tank.mode.0", "Режим: Только ввод");
         add("gui.hbm_m.fluid_tank.mode.1", "Режим: Буфер");
         add("gui.hbm_m.fluid_tank.mode.2", "Режим: Только вывод");
@@ -2533,7 +2536,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("block.hbm_m.basalt", "Базальт");
         add("block.hbm_m.basalt_smooth", "Гладкий базальт");
         add("block.hbm_m.basalt_tiles", "Базальтовая плитка");
-        add("block.hbm_m.blast_door", "Раздвижные двери");
         add("block.hbm_m.block_aluminium", "Алюминиевый блок");
         add("block.hbm_m.block_asbestos", "Асбест");
         add("block.hbm_m.block_bakelite", "Блок бакелита");
@@ -2584,6 +2586,22 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("block.hbm_m.cable_diode", "Диод из красной меди");
         add("block.hbm_m.cable_switch", "Рубильник");
         add("block.hbm_m.capacitor_copper", "Старый конденсатор");
+        // Сиблинги (bus/gold/niobium/schrabidate/tantalium) отсутствовали в ru_RU.lang оригинала,
+        // но 1.7.10 падал в fallback на en_US — копируем EN-строки, чтобы воссоздать видимый
+        // результат оригинала, иначе 1.20.1 рендерит сырые ключи.
+        add("block.hbm_m.capacitor_bus", "Capacitor Bus (LEGACY)");
+        add("block.hbm_m.capacitor_gold", "Golden Capacitor (LEGACY)");
+        add("block.hbm_m.capacitor_niobium", "Niobium Capacitor (LEGACY)");
+        add("block.hbm_m.capacitor_schrabidate", "Schrabidate Capacitor (LEGACY)");
+        add("block.hbm_m.capacitor_tantalium", "Tantalum Capacitor (LEGACY)");
+        add("container.hbm_m.machine_capacitor", "Capacitor");
+        // Порт tile.capacitor.desc / tile.capacitor_bus.desc (ru_RU.lang 5047-5049) + статов.
+        add("tooltip.hbm_m.capacitor.desc", "Вход: Сверху\nВыход: Снизу через шину");
+        add("tooltip.hbm_m.capacitor_bus.desc", "Выходной блок для конденсаторов\nМожет быть подключен по прямой линии");
+        add("tooltip.hbm_m.capacitor.capacity", "Вмещает до %s HE");
+        add("tooltip.hbm_m.capacitor.charge_speed", "Скорость заряда: %s HE");
+        add("tooltip.hbm_m.capacitor.discharge_speed", "Скорость разряда: %s HE");
+        add("tooltip.hbm_m.capacitor.stored", "%s / %s HE");
         add("block.hbm_m.cargo_elevator", "Грузовой лифт");
         add("block.hbm_m.charge_c4", "Подрывной заряд");
         add("block.hbm_m.charge_dynamite", "Бомба с таймером");
@@ -2754,6 +2772,27 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("block.hbm_m.ore_uranium_scorched", "Обожжённая урановая руда");
         add("block.hbm_m.pile_block", "Чикагская поленница");
         add("block.hbm_m.pile_brick", "Графитовые блоки Чикагской поленницы");
+        // CP-1 pile channel blocks (NEXT не содержит русских названий — перевод best-effort)
+        add("block.hbm_m.block_graphite_rod", "Управляющий стержень поленницы");
+        add("block.hbm_m.block_graphite_detector", "Нейтронный детектор поленницы");
+        add("block.hbm_m.block_graphite_drilled", "Просверленный графит");
+        add("desc.shared.cp1FuelAssembly", "ТОПЛИВНАЯ СБОРКА CP1 %s %s %s");
+        add("desc.shared.flux", "ФЛЮКС: %s");
+        // Подсказки стержней CP-1 (NEXT ItemPileRod; desc.item.pileRod = NEXT ru_ru.json:2820
+        // дословно — NEXT содержит только этот ключ, два .desc-ключа best-effort)
+        add("desc.item.pileRod", "§eПКМ по просверлённому графиту для вставки\n§eПКМ отвёрткой чтобы извлечь\n");
+        add("item.hbm_m.pile_rod_boron.desc", "§9[Поглотитель нейтронов]\n§eНажмите, чтобы переключить");
+        add("item.hbm_m.pile_rod_detector.desc",
+                "§9[Детектор/Поглотитель нейтронов]\n§eИспользуйте дефузер, чтобы увеличить/уменьшить лимит нейтронов\n§eИспользуйте отвёртку без Shift, чтобы проверить флюкс");
+        // CP-1 fuel readout (NEXT не содержит русских переводов — best-effort)
+        add("desc.block.graphiteFuel.depletion", "ВЫРАБОТКА: %s");
+        add("desc.block.graphiteFuel.heat", "ТЕПЛО: %s");
+        add("desc.block.graphiteFuel.pu239Rich", "ОБОГАЩЕНО PU-239");
+        add("block.hbm_m.block_graphite_fuel", "Урановый топливный блок CP-1");
+        add("block.hbm_m.block_graphite_plutonium", "Топливный блок CP-1 (плутоний)");
+        // Нейтронный источник CP-1 (NEXT не содержит русских переводов — best-effort,
+        // в стиле остальных блоков канала CP-1)
+        add("block.hbm_m.block_graphite_source", "Нейтронный источник CP-1");
         add("block.hbm_m.pink_log", "Розовое дерево");
         add("block.hbm_m.pink_planks", "Розовые доски");
         add("block.hbm_m.pipe_anchor", "Труба с анкером");
@@ -2983,10 +3022,8 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("hud.hbm_m.thermal.off", "Тепловизор: OFF");
         add("hud.hbm_m.thermal.warning", "Внимание: шейдерная версия тепловизора экспериментальная и может быть нестабильной. В случае проблем переключитесь на более простую версию в конфиге (Alt + 0, вкладка Рендеринг). Чтобы включить тепловизор, нажмите еще раз. Это сообщение больше не будет показано для данного мира.");
         add("hud.hbm_m.dash.perform", "Рывок выполнен");
-        add("text.autoconfig.hbm_m.option.thermalRenderMode", "Режим рендера тепловизора");
-        add("text.autoconfig.hbm_m.option.thermalRenderMode.@Tooltip", "Выберите способ рендера тепловизора.");
-        add("text.autoconfig.hbm_m.option.thermalRenderMode.FULL_SHADER", "Полный шейдер");
-        add("text.autoconfig.hbm_m.option.thermalRenderMode.ORIGINAL_FALLBACK", "Спектральный фолбэк");
+        add("text.autoconfig.hbm_m.option.graphicEffects.thermalRenderMode", "Режим рендера тепловизора");
+        add("text.autoconfig.hbm_m.option.graphicEffects.thermalRenderMode.@Tooltip", "Выберите способ рендера тепловизора.");
 
         // ARMOR BATTERIES
         add("item.hbm_m.armor_battery", "Батарея брони");
@@ -3061,7 +3098,9 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("gui.hbm_m.rbmk_lever", "РБМК Рычаг");
         add("gui.hbm_m.rbmk_keypad", "РБМК Клавиатура");
         add("gui.hbm_m.rbmk_terminal", "РБМК Терминал");
+        add("sounds.hbm_m.subtitle.broadcast", "Повреждённая трансляция");
         add("sounds.hbm_m.subtitle.upgrade_plug", "Вставка топливного стержня");
+        add("sounds.hbm_m.techbleep", "Технологический сигнал");
         add("msg.hbm_m.rbmk_console.no_console_found", "Поблизости нет пульта РБМК");
         add("msg.hbm_m.rbmk_tool.stored", "Позиция сохранена: %s, %s, %s");
         add("msg.hbm_m.rbmk_tool.no_position", "Сначала нажмите на колонну ПКМ");
@@ -3424,6 +3463,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("door.skin.hbm_m.vault_door.skin_99", "Vault 99");
         add("door.skin.hbm_m.vault_door.skin_81", "Vault 81");
         add("door.skin.hbm_m.vault_door.skin_111", "Vault 111");
+        add("door.skin.hbm_m.blast_door.default", "Стандартная");
 
         // item.undefined.name=Undefined (в ru_RU.lang оригинала перевода нет)
         add(ModItems.UNDEFINED.get(), "Undefined");
@@ -3589,6 +3629,8 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("death.attack.radiation", "Игрок %s умер от лучевой болезни");
         add("death.attack.asbestos", "%1$s теперь имеет право на финансовую компенсацию.");
         add("death.attack.blacklung", "%1$s умер от болезни чёрных лёгких.");
+        // Строка байт-в-байт из оригинального ru_RU.lang (:897) и NEXT ru_ru.json (:2264).
+        add("death.attack.broadcast", "%1$s растворил свой мозг.");
         add("death.attack.hardlanding_smash", "%1$s был раздавлен в лепешку %2$s");
         add("death.attack.taint", "%1$s умер от невероятного количества опухолей.");
 
@@ -3616,6 +3658,8 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.enableRadiation", "Включить радиацию");
         add("text.autoconfig.hbm_m.option.enableChunkRads", "Включить радиацию в чанках");
         add("text.autoconfig.hbm_m.option.enableMOTD", "Сообщение при входе в мир (MOTD)");
+        add("text.autoconfig.hbm_m.option.enable528", "Включить режим 528");
+        add("text.autoconfig.hbm_m.option.enable528.@Tooltip", "Главный переключатель режима 528; для большинства последующих тумблеров требуется TRUE.");
 
         add("text.autoconfig.hbm_m.category.world_effects", "Эффекты мира");
         add("text.autoconfig.hbm_m.option.enableRadFogEffect", "Радиоактивный туман в чанках");
@@ -3687,6 +3731,32 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.nucleusShadowInstancing.@Tooltip", "Геометрия станков в теневом проходе уходит пачкой инстансных дроуков вместо отрисовки per-BE. Отключать при мерцании/пропадании теней станков под шейдерпаком.");
         add("text.autoconfig.hbm_m.option.nucleusDoorSkinSharing", "Nucleus: шеринг скинов дверей");
         add("text.autoconfig.hbm_m.option.nucleusDoorSkinSharing.@Tooltip", "Один VBO на геометрию двери, скин — per-instance UV-ремап. Отключать при неправильных текстурах дверей (откат в per-skin VBO).");
+        add("config.hbm_m.field.doorPartCulling", "Скрытие частей дверей");
+        add("config.hbm_m.field.doorPartCulling.tooltip", "Скрывать части дверей при входе в карман корпуса — и покадрово (сегменты blast door), и рамкой-плоскостью на границе кармана. Выключите, чтобы вся геометрия дверей отрисовывалась целиком.");
+        add("text.autoconfig.hbm_m.option.doorPartCulling", "Скрытие частей дверей");
+        add("text.autoconfig.hbm_m.option.doorPartCulling.@Tooltip", "Скрывать части дверей при входе в карман корпуса — и покадрово (сегменты blast door), и рамкой-плоскостью на границе кармана. Выключите, чтобы вся геометрия дверей отрисовывалась целиком.");
+        add("config.hbm_m.field.doorClipDebug", "Дебаг-дамп клипа дверей");
+        add("config.hbm_m.field.doorClipDebug.tooltip", "Одноразовый дамп в лог ([HBM-M][DoorClipDebug]): какой гейт выключил клип и какие спрайты/UV реально доходят до клип-тира. Для диагностики артефактов скрытия створок.");
+        add("text.autoconfig.hbm_m.option.doorClipDebug", "Дебаг-дамп клипа дверей");
+        add("text.autoconfig.hbm_m.option.doorClipDebug.@Tooltip", "Одноразовый дамп клип-пайплайна дверей в лог. Для диагностики артефактов скрытия створок.");
+        add("config.hbm_m.group.graphicEffects", "Графические эффекты");
+        add("text.autoconfig.hbm_m.option.graphicEffects", "Графические эффекты");
+        add("config.hbm_m.field.graphicEffects.screenSpaceLightFill", "Свет ядерного взрыва");
+        add("config.hbm_m.field.graphicEffects.screenSpaceLightFill.tooltip", "Позиционный свет ядерных взрывов поверх картинки шейдерпака (экранный пасс, инъекция в Iris/Oculus finalizeLevelRendering). Тумблер для A/B-тестов и аварийного отключения; ванильный рендер без пака не затрагивается.");
+        add("text.autoconfig.hbm_m.option.graphicEffects.screenSpaceLightFill", "Свет ядерного взрыва");
+        add("text.autoconfig.hbm_m.option.graphicEffects.screenSpaceLightFill.@Tooltip", "Позиционный свет ядерных взрывов поверх картинки шейдерпака (экранный пасс, инъекция в Iris/Oculus). Тумблер для A/B-тестов и аварийного отключения.");
+        add("config.hbm_m.field.graphicEffects.nukeLightIntensity", "Интенсивность света взрыва");
+        add("config.hbm_m.field.graphicEffects.nukeLightIntensity.tooltip", "Яркость позиционного света, добавляемая ПОСЛЕ тонемапа пака. Ориентиры: 1.5 едва заметно ночью, 4.0 по умолчанию, 50 - белая сатурация всего радиуса на всё время жизни гриба.");
+        add("text.autoconfig.hbm_m.option.graphicEffects.nukeLightIntensity", "Интенсивность света взрыва");
+        add("text.autoconfig.hbm_m.option.graphicEffects.nukeLightIntensity.@Tooltip", "Яркость позиционного света взрыва (0..50), добавляемая после тонемапа пака.");
+        add("config.hbm_m.field.graphicEffects.nukeLightRadiusScale", "Масштаб ореола света");
+        add("config.hbm_m.field.graphicEffects.nukeLightRadiusScale.tooltip", "Множитель размера ореола, независимый от яркости. Базовый радиус растёт с масштабом гриба (384..3840 блоков); это значение умножает его. Меньше 1 - компактный ореол, больше 1 - зарево до горизонта.");
+        add("text.autoconfig.hbm_m.option.graphicEffects.nukeLightRadiusScale", "Масштаб ореола света");
+        add("text.autoconfig.hbm_m.option.graphicEffects.nukeLightRadiusScale.@Tooltip", "Множитель размера ореола (0.1..8), независимый от настройки яркости.");
+        add("config.hbm_m.field.graphicEffects.nukeCinematics", "Кинематика света");
+        add("config.hbm_m.field.graphicEffects.nukeCinematics.tooltip", "Кинематографический слой света взрыва: альбедо-освещение поверхностей (текстуры сохраняют рельеф), спектр вспышки (белое ядро → янтарь → багровое тление), Mie-ореол, godrays за рельефом, преломляющая ударная волна с хроматической аберрацией. 0 - классический аддитивный свет.");
+        add("text.autoconfig.hbm_m.option.graphicEffects.nukeCinematics", "Кинематика света");
+        add("text.autoconfig.hbm_m.option.graphicEffects.nukeCinematics.@Tooltip", "Сила кинематографических эффектов (0..2). 0 отключает слой, 1 - стандарт.");
         add("text.autoconfig.hbm_m.option.nucleusDispatcherBypass", "Nucleus: байпас диспетчера");
         add("text.autoconfig.hbm_m.option.nucleusDispatcherBypass.@Tooltip", "Сбор станков фабрики плоским обходом вместо ванильного/Sodium-диспетчера BlockEntity. Отключать при исчезновении или задвоении станков.");
         add("text.autoconfig.hbm_m.option.nucleusGpuBake", "Nucleus: GPU-bake (Iris Tier 1)");
@@ -3707,10 +3777,9 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.glDebugOutput.@Tooltip", "Лог HIGH/MEDIUM сообщений OpenGL-драйвера через KHR_debug. Вступает в силу после перезапуска.");
         add("text.autoconfig.hbm_m.option.debugAnimCacheLog", "Лог статистики кэша анимаций");
         add("text.autoconfig.hbm_m.option.debugAnimCacheLog.@Tooltip", "Периодическая (раз в 5 с) статистика попаданий кэша дельт анимаций Nucleus.");
-
-        // ── Аудит 0928: лейблы для полей, у которых их не было ──────
+        
         add("text.autoconfig.hbm_m.option.enableDhRenderBridge", "DH-мост рендера");
-        add("text.autoconfig.hbm_m.option.enableDhRenderBridge.@Tooltip", "Рендер дальних ракет/гриба внутри фреймбуфера Distant Horizons. Отключите для A/B-теста артефактов (просвечивание пещер, порядок листвы): если артефакты остаются без моста — их источник сам DH.");
+        add("text.autoconfig.hbm_m.option.enableDhRenderBridge.@Tooltip", "Рендер далеких ракет/частиц внутри фреймбуфера Distant Horizons. Отключите для при наличии артефактов (просвечивание пещер, порядок листвы).");
         add("text.autoconfig.hbm_m.option.enableExtendedLogging", "Расширенный лог действий");
         add("text.autoconfig.hbm_m.option.enableExtendedLogging.@Tooltip", "Логирует использование детонатора, ядерные взрывы, пуски ракет, гранаты и т.д.");
         add("text.autoconfig.hbm_m.option.nucleusRenderDirtySkip", "Nucleus: fast-path dirty-skip");

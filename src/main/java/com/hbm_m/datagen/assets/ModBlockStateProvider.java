@@ -234,12 +234,15 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockWithItem(ModBlocks.BLOCK_FIBERGLASS.get(), models().cubeBottomTop("block_fiberglass",
                 modLoc("block/ported/block_fiberglass_side"), modLoc("block/ported/block_fiberglass_bottom"), modLoc("block/ported/block_fiberglass_top")));
         simpleBlockWithItem(ModBlocks.BLOCK_FLUORITE.get(), models().cubeAll("block_fluorite", modLoc("block/ported/block_fluorite")));
-        simpleBlockWithItem(ModBlocks.BLOCK_GRAPHITE_DETECTOR.get(), models().cubeAll("block_graphite_detector", modLoc("block/ported/block_graphite_detector")));
-        simpleBlockWithItem(ModBlocks.BLOCK_GRAPHITE_DRILLED.get(), models().cubeAll("block_graphite_drilled", modLoc("block/ported/block_graphite_drilled")));
-        simpleBlockWithItem(ModBlocks.BLOCK_GRAPHITE_FUEL.get(), models().cubeAll("block_graphite_fuel", modLoc("block/ported/block_graphite_fuel")));
-        simpleBlockWithItem(ModBlocks.BLOCK_GRAPHITE_LITHIUM.get(), models().cubeAll("block_graphite_lithium", modLoc("block/ported/block_graphite_lithium")));
-        simpleBlockWithItem(ModBlocks.BLOCK_GRAPHITE_PLUTONIUM.get(), models().cubeAll("block_graphite_plutonium", modLoc("block/ported/block_graphite_plutonium")));
-        simpleBlockWithItem(ModBlocks.BLOCK_GRAPHITE_SOURCE.get(), models().cubeAll("block_graphite_source", modLoc("block/ported/block_graphite_source")));
+        // CP-1 pile channel blocks: NEXT cube_column-Modelle mit gemeinsamer Seitentextur block_graphite.
+        pilePillarBlock(ModBlocks.BLOCK_GRAPHITE_DETECTOR.get(), "block_graphite_detector", "block_graphite_detector", "block_graphite_detector_out", true);
+        pilePillarBlock(ModBlocks.BLOCK_GRAPHITE_DRILLED.get(), "block_graphite_drilled", "block_graphite_drilled", null, false);
+        pilePillarBlock(ModBlocks.BLOCK_GRAPHITE_ROD.get(), "block_graphite_rod", "block_graphite_rod_in", "block_graphite_rod_out", true);
+        pilePillarBlock(ModBlocks.BLOCK_GRAPHITE_FUEL.get(), "block_graphite_fuel", "block_graphite_fuel", null, false);
+        pilePillarBlock(ModBlocks.BLOCK_GRAPHITE_LITHIUM.get(), "block_graphite_lithium", "block_graphite_lithium", null, false);
+        // Source/Plutonium: keine WITHDRAWN-Variante in NEXT (nur axis x|y|z, shrouded true|false).
+        pilePillarBlock(ModBlocks.BLOCK_GRAPHITE_PLUTONIUM.get(), "block_graphite_plutonium", "block_graphite_plutonium", null, false);
+        pilePillarBlock(ModBlocks.BLOCK_GRAPHITE_SOURCE.get(), "block_graphite_source", "block_graphite_source", null, false);
         simpleBlockWithItem(ModBlocks.BLOCK_GRAPHITE_TRITIUM.get(), models().cubeAll("block_graphite_tritium", modLoc("block/ported/block_graphite_tritium")));
         simpleBlockWithItem(ModBlocks.BLOCK_INSULATOR.get(), models().cubeBottomTop("block_insulator",
                 modLoc("block/ported/block_insulator_side"), modLoc("block/ported/block_insulator_bottom"), modLoc("block/ported/block_insulator_top")));
@@ -561,6 +564,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customDoorBlock(ModBlocks.SECURE_ACCESS_DOOR);
         customDoorBlock(ModBlocks.VAULT_DOOR);
         customDoorBlock(ModBlocks.CARGO_DOOR);
+        customDoorBlock(ModBlocks.BLAST_DOOR);
 
         // Machines
         customMachineBlock(ModBlocks.CRYSTALLIZER);
@@ -1734,12 +1738,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/battery_schrabidium_top")
                 )
         );
-        simpleBlockWithItem(ModBlocks.BLAST_DOOR.get(),
-                models().cubeAll(
-                        ModBlocks.BLAST_DOOR.getId().getPath(),
-                        modLoc("block/blast_door")
-                )
-        );
         simpleBlockWithItem(ModBlocks.BLOCK_ALUMINIUM.get(),
                 models().cubeAll(
                         ModBlocks.BLOCK_ALUMINIUM.getId().getPath(),
@@ -1841,8 +1839,18 @@ public class ModBlockStateProvider extends BlockStateProvider {
         brickRedBuilder.partialState().with(RedBrickBlock.RED_FACE, RedFace.WEST).setModels(ConfiguredModel.builder().modelFile(brickRedWest).build());
         brickRedBuilder.partialState().with(RedBrickBlock.RED_FACE, RedFace.EAST).setModels(ConfiguredModel.builder().modelFile(brickRedEast).build());
         simpleBlockItem(ModBlocks.BRICK_RED.get(), brickRedNone);
-        simpleBlock(ModBlocks.BROADCASTER_PC.get(),
-                models().getExistingFile(modLoc("block/machines/broadcaster_pc")));
+        // broadcaster_pc: 4 facing variants, y-rotations verbatim from NEXT
+        // assets/hbm/blockstates/broadcaster_pc.json (model front = south).
+        ModelFile broadcasterPcModel = models().getExistingFile(modLoc("block/machines/broadcaster_pc"));
+        VariantBlockStateBuilder broadcasterPcBuilder = getVariantBuilder(ModBlocks.BROADCASTER_PC.get());
+        broadcasterPcBuilder.partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, net.minecraft.core.Direction.SOUTH)
+                .setModels(ConfiguredModel.builder().modelFile(broadcasterPcModel).rotationY(0).build());
+        broadcasterPcBuilder.partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, net.minecraft.core.Direction.WEST)
+                .setModels(ConfiguredModel.builder().modelFile(broadcasterPcModel).rotationY(90).build());
+        broadcasterPcBuilder.partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, net.minecraft.core.Direction.NORTH)
+                .setModels(ConfiguredModel.builder().modelFile(broadcasterPcModel).rotationY(180).build());
+        broadcasterPcBuilder.partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, net.minecraft.core.Direction.EAST)
+                .setModels(ConfiguredModel.builder().modelFile(broadcasterPcModel).rotationY(270).build());
         simpleBlockItem(ModBlocks.BROADCASTER_PC.get(),
                 models().getExistingFile(modLoc("block/machines/broadcaster_pc")));
         simpleBlockWithItem(ModBlocks.CABLE_DETECTOR.get(),
@@ -1863,52 +1871,22 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/cable_switch_off")
                 )
         );
-        simpleBlockWithItem(ModBlocks.CAPACITOR_BUS.get(),
-                models().cubeAll(
-                        ModBlocks.CAPACITOR_BUS.getId().getPath(),
-                        modLoc("block/capacitor_bus_side")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.CAPACITOR_COPPER.get(),
-                models().cubeBottomTop(
-                        ModBlocks.CAPACITOR_COPPER.getId().getPath(),
-                        modLoc("block/capacitor_copper_side"),
-                        modLoc("block/capacitor_copper_bottom"),
-                        modLoc("block/capacitor_copper_top")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.CAPACITOR_GOLD.get(),
-                models().cubeBottomTop(
-                        ModBlocks.CAPACITOR_GOLD.getId().getPath(),
-                        modLoc("block/capacitor_gold_side"),
-                        modLoc("block/capacitor_gold_bottom"),
-                        modLoc("block/capacitor_gold_top")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.CAPACITOR_NIOBIUM.get(),
-                models().cubeBottomTop(
-                        ModBlocks.CAPACITOR_NIOBIUM.getId().getPath(),
-                        modLoc("block/capacitor_niobium_side"),
-                        modLoc("block/capacitor_niobium_bottom"),
-                        modLoc("block/capacitor_niobium_top")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.CAPACITOR_SCHRABIDATE.get(),
-                models().cubeBottomTop(
-                        ModBlocks.CAPACITOR_SCHRABIDATE.getId().getPath(),
-                        modLoc("block/capacitor_schrabidate_side"),
-                        modLoc("block/capacitor_schrabidate_bottom"),
-                        modLoc("block/capacitor_schrabidate_top")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.CAPACITOR_TANTALIUM.get(),
-                models().cubeBottomTop(
-                        ModBlocks.CAPACITOR_TANTALIUM.getId().getPath(),
-                        modLoc("block/capacitor_tantalium_side"),
-                        modLoc("block/capacitor_tantalium_bottom"),
-                        modLoc("block/capacitor_tantalium_top")
-                )
-        );
+        // Capacitor/Bus: FACING sichtbar machen. Die Eingangsface (FACING = geklickte Face beim
+        // Platzieren) bekommt die inner_top-Textur ("Steckdose"), der Bus seine capacitor_bus_out-
+        // Face (Original: getIcon(side, meta)). Modell ist mit dem Eingang auf NORTH genaeht; die
+        // sechs Rotationen folgen der Observer-Konvention (wie beim DFC-Stabilisator oben).
+        capacitorBlockWithFacing(ModBlocks.CAPACITOR_BUS,
+                "capacitor_bus_out", "capacitor_bus_side", "capacitor_bus_side", "capacitor_bus_side");
+        capacitorBlockWithFacing(ModBlocks.CAPACITOR_COPPER,
+                "capacitor_copper_inner_top", "capacitor_copper_side", "capacitor_copper_top", "capacitor_copper_bottom");
+        capacitorBlockWithFacing(ModBlocks.CAPACITOR_GOLD,
+                "capacitor_gold_inner_top", "capacitor_gold_side", "capacitor_gold_top", "capacitor_gold_bottom");
+        capacitorBlockWithFacing(ModBlocks.CAPACITOR_NIOBIUM,
+                "capacitor_niobium_inner_top", "capacitor_niobium_side", "capacitor_niobium_top", "capacitor_niobium_bottom");
+        capacitorBlockWithFacing(ModBlocks.CAPACITOR_SCHRABIDATE,
+                "capacitor_schrabidate_inner_top", "capacitor_schrabidate_side", "capacitor_schrabidate_top", "capacitor_schrabidate_bottom");
+        capacitorBlockWithFacing(ModBlocks.CAPACITOR_TANTALIUM,
+                "capacitor_tantalium_inner_top", "capacitor_tantalium_side", "capacitor_tantalium_top", "capacitor_tantalium_bottom");
         simpleBlockWithItem(ModBlocks.CHARGE_C4.get(),
                 models().cubeAll(
                         ModBlocks.CHARGE_C4.getId().getPath(),
@@ -3775,6 +3753,39 @@ public class ModBlockStateProvider extends BlockStateProvider {
     }
 
     /**
+     * CP-1 pile channel blocks (1:1 aus NEXT): cube_column-Modelle mit gemeinsamer
+     * Seitentextur {@code block/block_graphite}; Modellname/-wahl nach SHROUDED (Suffix
+     * {@code _aluminum}) dann WITHDRAWN (Suffix {@code _out}); Varianten-Rotationen wie in
+     * NEXTs Blockstate-JSONs: axis=x → x:90,y:90, axis=y → keine, axis=z → x:90.
+     *
+     * @param baseName  Modell-Basisname (entspricht der Block-Registry-ID)
+     * @param plainEnd  End-Textur der Normal-Variante (NEXT: rod zeigt auf block_graphite_rod_in)
+     * @param outEnd    End-Textur der withdrawn-Variante (null, wenn hasWithdrawn == false)
+     * @param hasWithdrawn ob der Block ein withdrawn-Property besitzt (rod/detector: ja, drilled: nein)
+     */
+    private void pilePillarBlock(Block block, String baseName, String plainEnd, String outEnd, boolean hasWithdrawn) {
+        ModelFile plain = models().cubeColumn(baseName, modLoc("block/block_graphite"), modLoc("block/" + plainEnd));
+        ModelFile aluminum = models().cubeColumn(baseName + "_aluminum", modLoc("block/block_graphite"), modLoc("block/" + plainEnd + "_aluminum"));
+        ModelFile out = hasWithdrawn ? models().cubeColumn(baseName + "_out", modLoc("block/block_graphite"), modLoc("block/" + outEnd)) : null;
+        ModelFile outAluminum = hasWithdrawn ? models().cubeColumn(baseName + "_out_aluminum", modLoc("block/block_graphite"), modLoc("block/" + outEnd + "_aluminum")) : null;
+        getVariantBuilder(block).forAllStates(state -> {
+            boolean shrouded = state.getValue(com.hbm_m.block.machines.pile.BlockGraphiteDrilledBase.SHROUDED);
+            boolean withdrawn = hasWithdrawn && state.getValue(com.hbm_m.block.machines.pile.BlockGraphiteDrilledBase.WITHDRAWN);
+            ModelFile model = plain;
+            if (shrouded && withdrawn) model = outAluminum;
+            else if (withdrawn) model = out;
+            else if (shrouded) model = aluminum;
+            ConfiguredModel.Builder<?> mb = ConfiguredModel.builder().modelFile(model);
+            Direction.Axis axis = state.getValue(com.hbm_m.block.machines.pile.BlockGraphiteDrilledBase.AXIS);
+            if (axis == Direction.Axis.X) mb = mb.rotationX(90).rotationY(90);
+            else if (axis == Direction.Axis.Z) mb = mb.rotationX(90);
+            // Forge: build() liefert bereits ConfiguredModel[] (forAllStates erwartet Function<.., ConfiguredModel[]>)
+            return mb.build();
+        });
+        simpleBlockItem(block, plain);
+    }
+
+    /**
      * Метод для блоков, у которых текстура имеет префикс "block_".
      * Например, для блока с именем "uranium_block" он будет искать текстуру "block_uranium".
      */
@@ -4812,6 +4823,31 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 .texture("texture", modLoc(texture))
                 .texture("particle", modLoc(texture));
         horizontalBlock(block, model);
+        simpleBlockItem(block, model);
+    }
+
+    /**
+     * Конденсаторы и шина (6-way FACING = BlockStateProperties.FACING): модель сшита с
+     * "входной" текстурой на северной грани, шесть поворотов — по конвенции observer'а
+     * (down: x=90, up: x=270, горизонтальные: y-повороты) — как у DFC-стабилизатора выше.
+     * Для конденсаторов входная грань — inner_top ("розетка"), для шины — capacitor_bus_out
+     * (оригинальный getIcon(side, meta)).
+     */
+    private void capacitorBlockWithFacing(RegistrySupplier<Block> blockObject, String inputTexture,
+                                          String side, String top, String bottom) {
+        Block block = blockObject.get();
+        String name = blockObject.getId().getPath();
+        ModelFile model = models().cube(name,
+                modLoc("block/" + bottom), modLoc("block/" + top),
+                modLoc("block/" + inputTexture),
+                modLoc("block/" + side), modLoc("block/" + side), modLoc("block/" + side))
+                .texture("particle", modLoc("block/" + side));
+        getVariantBuilder(block).forAllStates(state -> {
+            Direction facing = state.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING);
+            int x = facing == Direction.UP ? 270 : facing == Direction.DOWN ? 90 : 0;
+            int y = facing.getAxis().isHorizontal() ? ((int) facing.toYRot() + 180) % 360 : 0;
+            return ConfiguredModel.builder().modelFile(model).rotationX(x).rotationY(y).build();
+        });
         simpleBlockItem(block, model);
     }
 

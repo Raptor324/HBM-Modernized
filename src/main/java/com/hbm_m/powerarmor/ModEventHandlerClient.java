@@ -359,7 +359,7 @@ public class ModEventHandlerClient {
         }
 
         // Во всех режимах, кроме ORIGINAL_FALLBACK, вспомогательные эффекты не нужны.
-        if (ModClothConfig.get().thermalRenderMode != ModClothConfig.ThermalRenderMode.ORIGINAL_FALLBACK) {
+        if (ModClothConfig.get().graphicEffects.thermalRenderMode != ModClothConfig.ThermalRenderMode.ORIGINAL_FALLBACK) {
             clearSpectralHighlights(mc);
             clearSpectralNightVision(mc);
             return;
@@ -775,7 +775,7 @@ public class ModEventHandlerClient {
         if (!thermalActive) {
             return;
         }
-        if (ModClothConfig.get().thermalRenderMode != ModClothConfig.ThermalRenderMode.ORIGINAL_FALLBACK) {
+        if (ModClothConfig.get().graphicEffects.thermalRenderMode != ModClothConfig.ThermalRenderMode.ORIGINAL_FALLBACK) {
             return;
         }
 

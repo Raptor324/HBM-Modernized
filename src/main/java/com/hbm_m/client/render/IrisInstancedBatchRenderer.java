@@ -412,7 +412,7 @@ final class IrisInstancedBatchRenderer {
                             bakeMesh, packShader,
                             parent.vanillaHelper.stripViewRotationForInstanced(projectionMatrix),
                             viewRot, FrameViewState.relCamX(), FrameViewState.relCamY(),
-                            FrameViewState.relCamZ());
+                            FrameViewState.relCamZ(), parent.getRecordMutationEpoch());
                 }
                 if (baked) {
                     return;
@@ -713,25 +713,43 @@ final class IrisInstancedBatchRenderer {
                 boolean rotChanged = qx != lastQx || qy != lastQy || qz != lastQz || qw != lastQw;
                 boolean posChanged = px != lastPx || py != lastPy || pz != lastPz;
 
-                tmpInstanceMat.translationRotate(px - camX, py - camY, pz - camZ, irisQuatTmp.set(qx, qy, qz, qw));
-                irisViewPoseMat.set(irisCamRotMat).mul(tmpInstanceMat);
+                float dx = px - camX;
+                float dy = py - camY;
+                float dz = pz - camZ;
 
-                if (locModelView >= 0) {
+                if (rotChanged) {
+                    tmpInstanceMat.translationRotate(dx, dy, dz, irisQuatTmp.set(qx, qy, qz, qw));
+                    irisViewPoseMat.set(irisCamRotMat).mul(tmpInstanceMat);
                     irisViewPoseMat.get(mvFloats);
+                    if (locModelViewInverse >= 0) {
+                        mvInverseTmp.set(irisViewPoseMat).invertAffine();
+                        mvInverseTmp.get(mvInverseFloats);
+                    }
+                    if (locNormalMat >= 0) {
+                        normalTmp.set(irisViewPoseMat);
+                        normalTmp.get(normalMatFloats);
+                        GL20.glUniformMatrix3fv(locNormalMat, false, normalMatFloats);
+                    }
+                } else if (posChanged) {
+                    float tx = irisCamRotMat.m00() * dx + irisCamRotMat.m10() * dy + irisCamRotMat.m20() * dz;
+                    float ty = irisCamRotMat.m01() * dx + irisCamRotMat.m11() * dy + irisCamRotMat.m21() * dz;
+                    float tz = irisCamRotMat.m02() * dx + irisCamRotMat.m12() * dy + irisCamRotMat.m22() * dz;
+                    mvFloats[12] = tx;
+                    mvFloats[13] = ty;
+                    mvFloats[14] = tz;
+                    if (locModelViewInverse >= 0) {
+                        mvInverseFloats[12] = -(mvInverseFloats[0] * tx + mvInverseFloats[4] * ty + mvInverseFloats[8] * tz);
+                        mvInverseFloats[13] = -(mvInverseFloats[1] * tx + mvInverseFloats[5] * ty + mvInverseFloats[9] * tz);
+                        mvInverseFloats[14] = -(mvInverseFloats[2] * tx + mvInverseFloats[6] * ty + mvInverseFloats[10] * tz);
+                    }
+                }
+
+                if (locModelView >= 0 && (rotChanged || posChanged)) {
                     GL20.glUniformMatrix4fv(locModelView, false, mvFloats);
                 }
 
-                boolean haveInverseFresh = false;
                 if (locModelViewInverse >= 0 && (rotChanged || posChanged)) {
-                    mvInverseTmp.set(irisViewPoseMat).invertAffine();
-                    mvInverseTmp.get(mvInverseFloats);
                     GL20.glUniformMatrix4fv(locModelViewInverse, false, mvInverseFloats);
-                    haveInverseFresh = true;
-                }
-                if (locNormalMat >= 0 && rotChanged) {
-                    normalTmp.set(irisViewPoseMat);
-                    normalTmp.get(normalMatFloats);
-                    GL20.glUniformMatrix3fv(locNormalMat, false, normalMatFloats);
                 }
 
                 if (perVertexLight) {
@@ -741,7 +759,6 @@ final class IrisInstancedBatchRenderer {
                     int blockUInt = Math.max(0, Math.min(240, Math.round(parent.instanceLightUV[uvBase])));
                     int skyVInt   = Math.max(0, Math.min(240, Math.round(parent.instanceLightUV[uvBase + 1])));
                     if (blockUInt != lastBlockU || skyVInt != lastSkyV) {
-                        companion.bindVaoIfNeeded();
                         GL30.glVertexAttribI2i(uv2Loc, blockUInt, skyVInt);
                         lastBlockU = blockUInt;
                         lastSkyV = skyVInt;
@@ -752,9 +769,6 @@ final class IrisInstancedBatchRenderer {
                     parent.vanillaHelper.uFadeAlpha.set(parent.instanceBuffer.get(base + parent.instanceFadeFloatOffset));
                 }
 
-                if (companion != null) {
-                    companion.bindVaoIfNeeded();
-                }
                 GL11.glDrawElements(GL11.GL_TRIANGLES, targetIndexCount, GL11.GL_UNSIGNED_INT, 0);
 
                 lastQx = qx; lastQy = qy; lastQz = qz; lastQw = qw;

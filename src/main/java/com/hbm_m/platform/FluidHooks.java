@@ -1,5 +1,7 @@
 package com.hbm_m.platform;
 
+import org.jetbrains.annotations.Nullable;
+
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
@@ -226,5 +228,24 @@ public final class FluidHooks {
         }
         //?}
         return capabilityObj;
+    }
+
+    /**
+     * Loader fluid-handler lookup on a block face (analog of NEXT {@code Services.CAPS
+     * .findFluidHandler(world, pos, side)} in {@code Library.canConnectFluid}).
+     *
+     * @return the block's fluid handler for that face, or {@code null}
+     */
+    @Nullable
+    public static Object getBlockFluidHandler(net.minecraft.world.level.Level level,
+                                              net.minecraft.core.BlockPos pos,
+                                              @Nullable net.minecraft.core.Direction side) {
+        //? if forge {
+        net.minecraft.world.level.block.entity.BlockEntity be = level.getBlockEntity(pos);
+        if (be == null || be.isRemoved()) return null;
+        return be.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, side).orElse(null);
+        //?} elif neoforge {
+        /*return level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.BLOCK, pos, side);
+        *///?}
     }
 }

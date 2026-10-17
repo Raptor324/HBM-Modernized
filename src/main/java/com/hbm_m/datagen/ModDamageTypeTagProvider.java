@@ -59,7 +59,18 @@ public class ModDamageTypeTagProvider extends DamageTypeTagsProvider {
                 ModDamageTypes.CMB,
                 ModDamageTypes.SUB_ATOMIC,
                 ModDamageTypes.EUTHANIZED,
-                ModDamageTypes.LASER
+                ModDamageTypes.LASER,
+                // NEXT data/minecraft/tags/damage_type/bypasses_armor.json:19 — broadcast
+                // is setDamageIsAbsolute().setDamageBypassesArmor() in the 1.7.10 original.
+                ModDamageTypes.BROADCAST
+        );
+
+        // Тег: урон, который обходит эффекты (сопротивление/абсорбция и т.п.).
+        // NEXT data/minecraft/tags/damage_type/bypasses_effects.json:14. Констант
+        // DamageTypeTags.BYPASSES_EFFECTS существует уже в 1.20.1 (в отличие от
+        // no_knockback ниже), сгенерированный JSON валиден на обеих целях.
+        tag(DamageTypeTags.BYPASSES_EFFECTS).add(
+                ModDamageTypes.BROADCAST
         );
 
         // Тег: Урон, считающийся взрывом

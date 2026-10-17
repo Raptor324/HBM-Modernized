@@ -16,6 +16,7 @@ import com.hbm_m.client.render.util.DiamondPronter;
 import com.hbm_m.client.render.machine.MachineRenderers;
 import com.hbm_m.inventory.fluid.FluidType;
 import com.hbm_m.inventory.fluid.ModFluids;
+import com.hbm_m.platform.FluidHooks;
 import com.hbm_m.platform.RenderHooks;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -26,6 +27,7 @@ import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.util.RandomSource;
@@ -47,6 +49,11 @@ import com.hbm_m.client.render.machine.MachineRenderApi;
  * was additionally centered with T(0,-0.5,0); diamonds T(0.4,0.30,-0.24) * scale(1,0.25,0.25),
  * 4x rotY(90). The spec declares an identity blockTransform, so the hook works in the raw
  * block frame 0..1.
+ * <p>
+ * Deliberate deviation from NEXT (round-3 audit): NEXT's RenderBarrel draws only the NFPA
+ * diamonds — it has no dynamic connector nozzles. The nozzles are kept here as 1.7.10-faithful
+ * polish ({@code RenderFluidBarrel} drew them); gate {@link #renderConnectors} off for strict
+ * NEXT visuals.
  */
 public final class BarrelTankRenderer {
 
@@ -77,6 +84,10 @@ public final class BarrelTankRenderer {
     private static void renderExtras(MachineFluidTankBlockEntity be, float partialTick,
                                      PoseStack poseStack, MultiBufferSource buffer,
                                      int packedLight, int packedOverlay, MachineRenderApi api) {
+        // SKILL.md 8.3 #7: в shadow-пассе (шейдеры) немедленный контент не рисуем.
+        if (com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isRenderingShadowPass()) {
+            return;
+        }
         Fluid fluid = be.getFluidTank().getTankType();
         if (fluid == null || fluid == Fluids.EMPTY || fluid == ModFluids.NONE.getSource()) {
             return;
@@ -85,9 +96,15 @@ public final class BarrelTankRenderer {
         Level level = be.getLevel();
         if (level == null) return;
 
+        // Паритет NEXT RenderBarrel.extractRenderState (hasFluid = NTMFluidProperties.get(type)
+        // != null) + submit(): ромбы рисуются только для жидкостей с NTM-данными. forFluid
+        // computeIfAbsent-ом создаёт нулевой тип для ЛЮБОЙ жидкости (вода и т.п.) — по голому
+        // наличию жидкости ромб рисовать нельзя, смотрим на фактические данные ромба.
         RenderSystem.disableCull();
         try {
-            renderDiamonds(be, poseStack, buffer, type, packedOverlay);
+            if (type.hasHazardDiamond()) {
+                renderDiamonds(be, poseStack, buffer, type, packedOverlay);
+            }
             renderConnectors(be, level, poseStack, buffer, fluid, packedLight, packedOverlay);
         } finally {
             RenderSystem.enableCull();
@@ -153,20 +170,30 @@ public final class BarrelTankRenderer {
         };
     }
 
-    /** Parity with Library.canConnectFluid: the neighbor connector accepts this fluid facing toward us. */
+    /**
+     * Parity with Library.canConnectFluid: the neighbor connector accepts this fluid facing toward us;
+     * non-MK2 neighbors fall back to the platform fluid handler on that face (plain fluid-capable blocks).
+     */
     private static boolean neighborAccepts(MachineFluidTankBlockEntity be, Level level,
                                            Direction dir, Fluid fluid) {
-        BlockEntity neighbor = level.getBlockEntity(be.getBlockPos().relative(dir));
-        if (!(neighbor instanceof IFluidConnectorMK2 con)) return false;
-        return con.canConnect(fluid, dir.getOpposite());
+        BlockPos neighborPos = be.getBlockPos().relative(dir);
+        BlockEntity neighbor = level.getBlockEntity(neighborPos);
+        if (neighbor instanceof IFluidConnectorMK2 con) {
+            return con.canConnect(fluid, dir.getOpposite());
+        }
+        // Library.canConnectFluid tail: любой сосед с fluid-handler'ом на этой грани даёт ниппель.
+        return FluidHooks.getBlockFluidHandler(level, neighborPos, dir.getOpposite()) != null;
     }
 
     private static BakedModel getConnectorPart(MachineFluidTankBlockEntity be) {
         BakedModel raw = Minecraft.getInstance().getBlockRenderer().getBlockModel(be.getBlockState());
-        if (raw instanceof com.hbm_m.client.model.ConfiguredMultipartBakedModel model) {
-            return model.getPart("Connector");
+        // SKILL.md 8.3 #9: сначала снимаем FRAPI/CTM-обёртки, иначе instanceof молча провалится
+        // и ниппели исчезнут с текстур-паком типа Continuity.
+        if (!(com.hbm_m.client.render.AbstractPartBasedRenderer.unwrapFabricForwardingModels(raw)
+                instanceof com.hbm_m.client.model.ConfiguredMultipartBakedModel model)) {
+            return null;
         }
-        return null;
+        return model.getPart("Connector");
     }
 
     private static List<net.minecraft.client.renderer.block.model.BakedQuad> collectQuads(BakedModel part) {

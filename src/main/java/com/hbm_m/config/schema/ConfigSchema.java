@@ -1,5 +1,6 @@
 package com.hbm_m.config.schema;
 
+import com.hbm_m.config.GeneralConfig;
 import com.hbm_m.config.ModClothConfig;
 
 import java.util.ArrayList;
@@ -48,6 +49,9 @@ public final class ConfigSchema {
         reg(ConfigField.bool("enableChunkRads", ConfigSide.SERVER, ApplyMode.LIVE, "general"));
         reg(ConfigField.bool("enableMOTD", ConfigSide.CLIENT, ApplyMode.LIVE, "general"));
         reg(ConfigField.bool("enableExtendedLogging", ConfigSide.SERVER, ApplyMode.LIVE, "general").withComment("Logs uses of the detonator, nuclear explosions, missile launches, grenades, etc."));
+        // NEXT ContentConfig mode_528.enabled (ConfigSchema.ENABLE_528) → BalanceConfig.enable528;
+        // зеркалируется в GeneralConfig.enable528 (см. applyAll → GeneralConfig.syncFrom).
+        reg(ConfigField.bool("enable528", ConfigSide.SERVER, ApplyMode.LIVE, "general").withComment("The central toggle for 528 mode, required TRUE for most subsequent toggles to work."));
         reg(ConfigField.integer("energyRatioHe", ConfigSide.SERVER, ApplyMode.LIVE, "general", 1, 1_000_000).withComment("HE units per one FE (HE:FE ratio numerator)"));
         reg(ConfigField.integer("energyRatioFe", ConfigSide.SERVER, ApplyMode.LIVE, "general", 1, 1_000_000).withComment("FE units per one HE (HE:FE ratio denominator)"));
 
@@ -161,6 +165,7 @@ public final class ConfigSchema {
         reg(ConfigField.bool("mdiCleanFrameReuse", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         reg(ConfigField.bool("nucleusRenderDirtySkip", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         reg(ConfigField.bool("mdiDebugLogDispatch", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        reg(ConfigField.bool("doorClipDebug", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         reg(ConfigField.bool("mdiVerboseSubdraws", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         // Размер буферов инстансинга фиксируется при создании рендерера → reload ресурсов
         reg(ConfigField.integer("maxInstancedInstancesPerPart", ConfigSide.CLIENT, ApplyMode.REQUIRES_RESOURCE_RELOAD, "rendering", 256, 16384));
@@ -171,6 +176,8 @@ public final class ConfigSchema {
         reg(ConfigField.bool("nucleusDitherFade", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         reg(ConfigField.bool("nucleusShadowInstancing", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         reg(ConfigField.bool("nucleusDoorSkinSharing", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        // Скрытие частей дверей при открывании (be-aware doesRender: BlastDoorDecl/MachineDoorRenderer.applyDoorPartTransform).
+        reg(ConfigField.bool("doorPartCulling", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         reg(ConfigField.bool("nucleusDispatcherBypass", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         reg(ConfigField.bool("nucleusGpuBake", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         reg(ConfigField.bool("nucleusBakeHiZ", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
@@ -181,7 +188,17 @@ public final class ConfigSchema {
         // 0 отключает bake-кэш; эффективный бюджет клэмпится в 16..1024 МБ (NucleusGpuBaker)
         reg(ConfigField.integer("nucleusBakeCacheMB", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", 0, 1024));
         reg(ConfigField.integer("vatsRenderDistanceChunks", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", 1, 32));
-        reg(ConfigField.enumField("thermalRenderMode", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        // ── Графические эффекты: сворачиваемая группа (аккордеон по parentObject)
+        // внутри вкладки «rendering». parentObject = публичное поле ModClothConfig
+        // graphicEffects (ConfigField.resolveTarget резолвит его рефлексией),
+        // fieldName = хвост ключа после точки. Ключи в JSON - плоские
+        // «graphicEffects.<поле>» (миграция старых верхнеуровневых - HbmConfigStore).
+        reg(ConfigField.builder("graphicEffects.thermalRenderMode", ConfigField.FieldType.ENUM).client().live()
+                .category("rendering").parent("graphicEffects").build());
+        reg(ConfigField.boolNested("graphicEffects.screenSpaceLightFill", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", "graphicEffects"));
+        reg(ConfigField.floatNested("graphicEffects.nukeLightIntensity", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", "graphicEffects", 0F, 50F));
+        reg(ConfigField.floatNested("graphicEffects.nukeLightRadiusScale", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", "graphicEffects", 0.1F, 8F));
+        reg(ConfigField.floatNested("graphicEffects.nukeCinematics", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", "graphicEffects", 0F, 2F));
 
         // ── CLIENT: оверлеи ─────────────────────────────────────────
         reg(ConfigField.boolNested("radiationPixelEffect.enableRadiationPixelEffect", ConfigSide.CLIENT, ApplyMode.LIVE, "overlay", "radiationPixelEffect"));
@@ -343,6 +360,9 @@ public final class ConfigSchema {
             }
         }
         validate(cfg);
+        // Статические фасады поверх POJO (NEXT: NeoForgeHbmConfig.set/reload →
+        // NuclearTech.deriveConfigFacades → BalanceConfig.loadFrom).
+        GeneralConfig.syncFrom(cfg);
     }
 
     /** Применяет одно значение по ключу (проверяет side). Возвращает true при успехе. */

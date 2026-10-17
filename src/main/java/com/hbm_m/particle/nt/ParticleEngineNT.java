@@ -88,6 +88,34 @@ public class ParticleEngineNT {
         this.newParticles.removeIf(p -> p != null && p.spawnTick > this.purgeCutoff);
     }
 
+    /**
+     * Сбор до {@code maxK} живых NukeTorex для света взрыва (RawScreenSpaceLight):
+     * в {@code out} кладутся четвёрки (x, y, z, heat), в параллельный
+     * {@code outScale} - масштаб гриба (NukeTorex.getScale, clamp 0.5..5 из
+     * NukeTorexCreator): радиус света считается на источник как R_UNIT * масштаб
+     * (round-5, находки R-1/R-2/R-3 - раньше усилитель вообще не доходил до света).
+     * Возвращает число заполненных; порядок outScale совпадает с порядком четвёрок.
+     */
+    public int collectNukeSources(float[] out, float[] outScale, int maxK) {
+        int n = 0;
+        for (List<ParticleNT> list : this.particlesByType.values()) {
+            for (ParticleNT p : list) {
+                if (n >= maxK) {
+                    return n;
+                }
+                if (p instanceof NukeTorex t && !p.dead) {
+                    out[n * 4] = (float) p.x;
+                    out[n * 4 + 1] = (float) p.y;
+                    out[n * 4 + 2] = (float) p.z;
+                    out[n * 4 + 3] = (float) t.heat;
+                    outScale[n] = (float) t.getScale();
+                    n++;
+                }
+            }
+        }
+        return n;
+    }
+
     public void add(ParticleNT effect) {
         // This engine draws in world space and knows nothing of Sable ships: a particle born at a
         // ship machine's block position sits in the plot grid, millions of blocks away. The vanilla

@@ -169,7 +169,12 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
     @Override
     public void onRemove(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock()) && !level.isClientSide()) {
-            // Инвентарь дропается автоматически в BaseHbmBlockEntity#setRemoved.
+            // Паритет NEXT BlockEntityMachineBase.preRemoveSideEffects → spillInventory: слоты
+            // выбрасываются в мир при фактическом разрушении. НЕ через setRemoved — ваниль зовёт
+            // его и при выгрузке чанка/сохранении, что дюпало бы предметы (BaseHbmBlockEntity).
+            if (level.getBlockEntity(pos) instanceof MachineFluidTankBlockEntity tank) {
+                tank.dropInventory();
+            }
             Direction facing = state.getValue(FACING);
             structureHelper.destroyStructure(level, pos, facing);
         }

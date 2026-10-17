@@ -183,7 +183,10 @@ public class NukeTorex extends ParticleNT implements FarCapableParticle, Replace
         convectionHeight = coreHeight + rollerSize;
 
         int maxHeat = (int) (50 * cs);
-        heat = maxHeat - Math.pow((maxHeat * this.age) / maxAge, 1);
+        // ВАЖНО: вещественное деление - прежнее (maxHeat * age) / maxAge делило
+        // int'ы НАЦЕЛО (floor(age/18) при scale 1.5), heat ступал раз в ~1-3
+        // секунды и дёргал всё, что от него зависит (свет, ореол, шейдер).
+        heat = maxHeat - (maxHeat * (double) this.age) / (double) maxAge;
 
         cloudlets.removeIf(c -> c.isDead);
 

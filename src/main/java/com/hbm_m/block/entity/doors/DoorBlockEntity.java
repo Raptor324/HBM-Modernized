@@ -126,7 +126,17 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     }
 
     public DoorBlockEntity(BlockPos pos, BlockState state, String doorDeclId) {
-        super(ModBlockEntities.DOOR_ENTITY.get(), pos, state);
+        this(ModBlockEntities.DOOR_ENTITY.get(), pos, state, doorDeclId);
+    }
+
+    /**
+     * Конструктор с явным BlockEntity-типом: у blast door свой тип
+     * ({@code hbm_m:blast_door}) — иначе при загрузке мира NBT восстанавливает
+     * базовый DOOR_ENTITY и blast-логика (rising-edge редстоун, tryToggle,
+     * BFS-каскад) теряется: в сессии дверь работает, после перезахода «умирает».
+     */
+    protected DoorBlockEntity(net.minecraft.world.level.block.entity.BlockEntityType<?> type, BlockPos pos, BlockState state, String doorDeclId) {
+        super(type, pos, state);
         this.doorDeclId = doorDeclId;
         DoorDecl decl = DoorDeclRegistry.getById(doorDeclId);
         this.modelSelection = decl != null ? decl.getDefaultModelSelection() : DoorModelSelection.DEFAULT;
@@ -491,7 +501,7 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         return false;
     }
 
-    private void setState(byte newState) {
+    protected void setState(byte newState) {
         this.state = newState;
         this.animStartTime = System.currentTimeMillis();
         if (newState == 3) {

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.machines.pile.BlockGraphiteDrilledBase;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
@@ -14,6 +15,7 @@ import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.advancements.critereon.EnchantmentPredicate;
 import net.minecraft.advancements.critereon.ItemPredicate;
 import net.minecraft.advancements.critereon.MinMaxBounds;
+import net.minecraft.advancements.critereon.StatePropertiesPredicate;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.loot.BlockLootSubProvider;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
@@ -29,6 +31,8 @@ import net.minecraft.world.level.storage.loot.entries.LootItem;
 import net.minecraft.world.level.storage.loot.functions.ApplyBonusCount;
 import net.minecraft.world.level.storage.loot.functions.CopyNbtFunction;
 import net.minecraft.world.level.storage.loot.functions.SetItemCountFunction;
+import net.minecraft.world.level.storage.loot.predicates.ExplosionCondition;
+import net.minecraft.world.level.storage.loot.predicates.LootItemBlockStatePropertyCondition;
 import net.minecraft.world.level.storage.loot.predicates.LootItemRandomChanceCondition;
 import net.minecraft.world.level.storage.loot.predicates.MatchTool;
 import net.minecraft.world.level.storage.loot.providers.nbt.ContextNbtProvider;
@@ -71,6 +75,14 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         dropMachineBatteryWithNbt(ModBlocks.MACHINE_BATTERY_LITHIUM.get());
         dropMachineBatteryWithNbt(ModBlocks.MACHINE_BATTERY_SCHRABIDIUM.get());
         dropMachineBatteryWithNbt(ModBlocks.MACHINE_BATTERY_DINEUTRONIUM.get());
+
+        // 1.1.1) Конденсаторы сохраняют заряд при дропе (оригинал: IPersistentNBT getDrops /
+        // restoreData). Ключи "energy"/"capacity" пишет BaseMachineBlockEntity.writeNbtData.
+        dropCapacitorWithNbt(ModBlocks.CAPACITOR_COPPER.get());
+        dropCapacitorWithNbt(ModBlocks.CAPACITOR_GOLD.get());
+        dropCapacitorWithNbt(ModBlocks.CAPACITOR_NIOBIUM.get());
+        dropCapacitorWithNbt(ModBlocks.CAPACITOR_SCHRABIDATE.get());
+        dropCapacitorWithNbt(ModBlocks.CAPACITOR_TANTALIUM.get());
 
         // 1.2) Breaking a stacked RBMK panel slab returns both singles it was made of.
         dropDoubleSlab(ModBlocks.DECO_RBMK_PANEL_SLAB4.get(), ModBlocks.DECO_RBMK_PANEL_SLAB2.get());
@@ -477,6 +489,51 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 ModMaterialItems.item(ModMaterials.NITER, MaterialShape.CRYSTAL),
                 2.0f, 4.0f
         );
+
+        // CP-1 pile channel blocks (NEXT data/hbm/loot_table/blocks/block_graphite_*.json):
+        // 8x Graphitbarren + Schale nur wenn shrouded + eingesetzter Stab (detector/rod).
+        dropPileChannel(ModBlocks.BLOCK_GRAPHITE_DRILLED.get(), null);
+        dropPileChannel(ModBlocks.BLOCK_GRAPHITE_ROD.get(), ModItems.PILE_ROD_BORON.get());
+        dropPileChannel(ModBlocks.BLOCK_GRAPHITE_DETECTOR.get(), ModItems.PILE_ROD_DETECTOR.get());
+        // Fuel: null inserted-rod pool reproduces NEXT's fuel loot exactly (2 pools only).
+        dropPileChannel(ModBlocks.BLOCK_GRAPHITE_FUEL.get(), null);
+        // Lithium: 3rd pool drops the inserted lithium rod (NEXT block_graphite_lithium.json).
+        dropPileChannel(ModBlocks.BLOCK_GRAPHITE_LITHIUM.get(), ModItems.PILE_ROD_LITHIUM.get());
+        // Source/Plutonium: NEXT loot both 3 pools (8x graphite ingot; shell_aluminum when
+        // shrouded; the inserted rod) - dropPileChannel reproduces exactly.
+        dropPileChannel(ModBlocks.BLOCK_GRAPHITE_SOURCE.get(), ModItems.PILE_ROD_SOURCE.get());
+        dropPileChannel(ModBlocks.BLOCK_GRAPHITE_PLUTONIUM.get(), ModItems.PILE_ROD_PLUTONIUM.get());
+    }
+
+    /**
+     * CP-1 pile channel loot, 1:1 mit NEXT block_graphite_*.json:
+     * Pool 1: 8x Graphitbarren (survives_explosion), Pool 2: 1x Aluminiumschale wenn
+     * shrouded=true, Pool 3 (nur rod/detector): der eingesetzte Stab.
+     */
+    private void dropPileChannel(Block block, Item inserted) {
+        LootTable.Builder table = LootTable.lootTable()
+                .withPool(LootPool.lootPool()
+                        .setRolls(ConstantValue.exactly(1.0f))
+                        .setBonusRolls(ConstantValue.exactly(0.0f))
+                        .when(ExplosionCondition.survivesExplosion())
+                        .add(LootItem.lootTableItem(ModMaterialItems.item(ModMaterials.GRAPHITE, MaterialShape.INGOT))
+                                .apply(SetItemCountFunction.setCount(ConstantValue.exactly(8.0f)))))
+                .withPool(LootPool.lootPool()
+                        .setRolls(ConstantValue.exactly(1.0f))
+                        .setBonusRolls(ConstantValue.exactly(0.0f))
+                        .when(ExplosionCondition.survivesExplosion())
+                        .when(LootItemBlockStatePropertyCondition.hasBlockStateProperties(block)
+                                .setProperties(StatePropertiesPredicate.Builder.properties()
+                                        .hasProperty(BlockGraphiteDrilledBase.SHROUDED, true)))
+                        .add(LootItem.lootTableItem(ModItems.SHELL_ALUMINUM.get())));
+        if (inserted != null) {
+            table.withPool(LootPool.lootPool()
+                    .setRolls(ConstantValue.exactly(1.0f))
+                    .setBonusRolls(ConstantValue.exactly(0.0f))
+                    .when(ExplosionCondition.survivesExplosion())
+                    .add(LootItem.lootTableItem(inserted)));
+        }
+        this.add(block, table);
     }
 
     private void dropEmptyTable(Block block) {
@@ -520,6 +577,31 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                                                                 .copy("modeOnSignal", "BlockEntityTag.modeOnSignal", CopyNbtFunction.MergeStrategy.REPLACE)
                                                                 .copy("priority", "BlockEntityTag.priority", CopyNbtFunction.MergeStrategy.REPLACE)
                                                                 .copy("Inventory", "BlockEntityTag.Inventory", CopyNbtFunction.MergeStrategy.REPLACE)
+                                                )
+                                ))
+                );
+        this.add(block, tableBuilder);
+    }
+
+    /**
+     * Конденсаторы (оригинал: IPersistentNBT): заряд и ёмкость переносятся в
+     * {@code BlockEntityTag} дропнутого предмета; восстановление — в
+     * {@code MachineCapacitorBlock#setPlacedBy}. Копируем РОВНО те ключи, которые пишет
+     * {@code BaseMachineBlockEntity.writeNbtData} ("energy"/"capacity", строчные).
+     */
+    private void dropCapacitorWithNbt(Block block) {
+        LootTable.Builder tableBuilder = LootTable.lootTable()
+                .withPool(
+                        LootPool.lootPool()
+                                .setRolls(ConstantValue.exactly(1.0f))
+                                .setBonusRolls(ConstantValue.exactly(0.0f))
+                                .add(this.applyExplosionDecay(
+                                        block,
+                                        LootItem.lootTableItem(block.asItem())
+                                                .apply(
+                                                        CopyNbtFunction.copyData(ContextNbtProvider.BLOCK_ENTITY)
+                                                                .copy("energy", "BlockEntityTag.energy", CopyNbtFunction.MergeStrategy.REPLACE)
+                                                                .copy("capacity", "BlockEntityTag.capacity", CopyNbtFunction.MergeStrategy.REPLACE)
                                                 )
                                 ))
                 );

@@ -42,5 +42,6 @@ public class DoorDeclRegistry {
         register("silo_hatch_large", DoorDecl.SILO_HATCH_LARGE);
         register("vault_door", DoorDecl.VAULT_DOOR);
         register("cargo_door", DoorDecl.CARGO_DOOR);
+        register("blast_door", BlastDoorDecl.INSTANCE);
     }
 }

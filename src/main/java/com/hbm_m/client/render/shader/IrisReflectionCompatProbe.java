@@ -157,19 +157,23 @@ final class IrisReflectionCompatProbe {
                     return "no static non-final int field on ShaderInstance";
                 });
 
-        addMember(out, "Iris DepthColorStorage static boolean (located by type)",
+        addMember(out, "Iris DepthColorStorage lock (depthColorLocked / isDepthColorLocked)",
                 "the depth-color mask flag cannot be read or reset "
                         + "(ShaderBindResync.irisDepthColorDisabled returns null) - the reset falls back to direct RenderSystem mask restores",
                 false, () -> {
-                    // Same candidate as ShaderBindResync.irisDepthColorDisabled:
-                    // gl.blending on 1.21.1+; the 1.20.1 mixin-package class is
-                    // banned by the transformer (IllegalClassLoadError).
-                    for (Field f : Class.forName("net.irisshaders.iris.gl.blending.DepthColorStorage").getDeclaredFields()) {
-                        if (f.getType() == boolean.class && Modifier.isStatic(f.getModifiers())) {
+                    Class<?> cl = Class.forName("net.irisshaders.iris.gl.blending.DepthColorStorage");
+                    try {
+                        cl.getDeclaredMethod("isDepthColorLocked");
+                        return null;
+                    } catch (Throwable ignored) {
+                    }
+                    for (Field f : cl.getDeclaredFields()) {
+                        if (f.getType() == boolean.class && Modifier.isStatic(f.getModifiers())
+                                && "depthColorLocked".equals(f.getName())) {
                             return null;
                         }
                     }
-                    return "no static boolean field on DepthColorStorage";
+                    return "no isDepthColorLocked method or depthColorLocked boolean field on DepthColorStorage";
                 });
 
         addMember(out, "BlendMode.lastApplied (static BlendMode field, located by type)",

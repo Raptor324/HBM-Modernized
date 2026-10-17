@@ -338,21 +338,13 @@ public final class IrisRenderBatch implements AutoCloseable {
      */
     private void bindCompanionVao(IrisCompanionMesh companion, int targetVao) {
         if (shader == null || !companion.isBuilt()) return;
-        GlStateManager._glBindVertexArray(targetVao);
-        companion.prepareForShader(shader.getId());
         if (lastBoundVao != targetVao) {
-            // VAO changed: its UV2 generic-attrib still holds whatever value was
-            // last written on THAT VAO (possibly stale from a previous BE/frame,
-            // or 0 on a freshly primed VAO). The constant-UV2 fast path below
-            // would otherwise trust the lastBlockU/lastSkyV carried over from the
-            // previous VAO and skip the glVertexAttribI2i re-issue when two BEs
-            // share the same packedLight — rendering the 2nd+ machine with a
-            // wrong/zero lightmap. restoreConstantLightmap() is a no-op in
-            // constant mode, so the cache must be invalidated here.
+            GlStateManager._glBindVertexArray(targetVao);
+            companion.prepareForShader(shader.getId());
+            lastBoundVao = targetVao;
             lastBlockU = Integer.MIN_VALUE;
             lastSkyV = Integer.MIN_VALUE;
         }
-        lastBoundVao = targetVao;
     }
 
     /**
@@ -452,24 +444,13 @@ public final class IrisRenderBatch implements AutoCloseable {
             GL20.glUniformMatrix4fv(matrixLocs.modelView(), false, mvSrc);
         }
 
-        // ExtendedShader.apply() derived inverse/normal from the IDENTITY matrix
-        // we passed in setupOuter; per-instance we re-derive from the real ModelView.
-        boolean haveInverse = false;
         if (matrixLocs.modelViewInverse() >= 0) {
-            mvInverseTmp.set(mvSrc).invert();
+            mvInverseTmp.set(modelView).invertAffine();
             mvInverseTmp.get(mvInverseFloats);
             GL20.glUniformMatrix4fv(matrixLocs.modelViewInverse(), false, mvInverseFloats);
-            haveInverse = true;
         }
         if (matrixLocs.normalMat() >= 0) {
-            if (haveInverse) {
-                normalTmp.set(mvInverseTmp).transpose();
-            } else {
-                normalTmp.set(mvSrc[0], mvSrc[1], mvSrc[2],
-                              mvSrc[4], mvSrc[5], mvSrc[6],
-                              mvSrc[8], mvSrc[9], mvSrc[10])
-                         .invert().transpose();
-            }
+            normalTmp.set(modelView);
             normalTmp.get(normalMatFloats);
             GL20.glUniformMatrix3fv(matrixLocs.normalMat(), false, normalMatFloats);
         }
@@ -485,14 +466,12 @@ public final class IrisRenderBatch implements AutoCloseable {
             // Plant. LightSampleCache already collapses cross-part lookups, so
             // the cache hit rate here is essentially 100% within one BE.
             if (blockU != lastBlockU || skyV != lastSkyV) {
-                companion.bindVaoIfNeeded();
                 GL30.glVertexAttribI2i(uv2Loc, blockU, skyV);
                 lastBlockU = blockU;
                 lastSkyV = skyV;
             }
         }
 
-        companion.bindVaoIfNeeded();
         GL11.glDrawElements(GL11.GL_TRIANGLES, targetIndexCount, GL11.GL_UNSIGNED_INT, 0);
         // Per-draw VAO/lightmap state is NOT released in a persistent batch:
         // releasing here forced the next drawCompanionWithPerVertexLight to fully
@@ -588,22 +567,13 @@ public final class IrisRenderBatch implements AutoCloseable {
             GL20.glUniformMatrix4fv(matrixLocs.modelView(), false, mvSrc);
         }
 
-        boolean haveInverse = false;
         if (matrixLocs.modelViewInverse() >= 0) {
-            mvInverseTmp.set(mvSrc).invert();
+            mvInverseTmp.set(modelView).invertAffine();
             mvInverseTmp.get(mvInverseFloats);
             GL20.glUniformMatrix4fv(matrixLocs.modelViewInverse(), false, mvInverseFloats);
-            haveInverse = true;
         }
         if (matrixLocs.normalMat() >= 0) {
-            if (haveInverse) {
-                normalTmp.set(mvInverseTmp).transpose();
-            } else {
-                normalTmp.set(mvSrc[0], mvSrc[1], mvSrc[2],
-                              mvSrc[4], mvSrc[5], mvSrc[6],
-                              mvSrc[8], mvSrc[9], mvSrc[10])
-                         .invert().transpose();
-            }
+            normalTmp.set(modelView);
             normalTmp.get(normalMatFloats);
             GL20.glUniformMatrix3fv(matrixLocs.normalMat(), false, normalMatFloats);
         }

@@ -241,6 +241,10 @@ public final class NucleusDispatcherBypass {
     /** Marks the chunk bucket enclosing this machine dirty for bounds re-evaluation. */
     public static void markMachineBoundsDirty(BlockEntity be) {
         if (be == null) return;
+        if (!com.mojang.blaze3d.systems.RenderSystem.isOnRenderThread()) {
+            Minecraft.getInstance().execute(() -> markMachineBoundsDirty(be));
+            return;
+        }
         ChunkBucket bucket = BE_TO_BUCKET.get(be);
         if (bucket != null) {
             bucket.markBoundsDirty();
@@ -502,7 +506,19 @@ public final class NucleusDispatcherBypass {
      */
     private static boolean evictControllerPresence(net.minecraft.world.level.Level level, BlockPos corePos) {
         // 1. If controller BE is still in chunk, evict normally:
-        BlockEntity coreBe = level.getBlockEntity(corePos);
+        // Use non-mutating map query on chunk instead of level.getBlockEntity(corePos),
+        // because vanilla getBlockEntity(pos, IMMEDIATE) calls this.blockEntities.remove(pos)
+        // when a block entity is marked isRemoved() - which mutates chunk.blockEntities
+        // if this happens during LevelChunk.clearAllBlockEntities() iterating blockEntities.values()!
+        BlockEntity coreBe = null;
+        if (level.getChunkSource() instanceof net.minecraft.client.multiplayer.ClientChunkCache ccc) {
+            net.minecraft.world.level.chunk.LevelChunk chunk = ccc.getChunk(corePos.getX() >> 4, corePos.getZ() >> 4, false);
+            if (chunk != null) {
+                coreBe = chunk.getBlockEntities().get(corePos);
+            }
+        } else {
+            coreBe = level.getBlockEntity(corePos);
+        }
         if (coreBe != null) {
             com.hbm_m.multiblock.TeardownTrace.log("onMachineControllerRemoved: live controller BE at {}, evicting normally",
                     corePos.toShortString());
@@ -579,6 +595,9 @@ public final class NucleusDispatcherBypass {
     }
 
     private static boolean mainCollected = false;
+    private static boolean inShadowBypassLoop = false;
+    private static final PoseStack NEWCOMER_POSE_SCRATCH = new PoseStack();
+    private static final Matrix4f NEWCOMER_BASE_SCRATCH = new Matrix4f();
 
     /** Scratch: normal matrix part of the basis for the shared PoseStack. */
     private static final Matrix3f NORMAL_SCRATCH = new Matrix3f();
@@ -693,6 +712,10 @@ public final class NucleusDispatcherBypass {
             if (be.isRemoved() || isDemolished(be.getBlockPos().asLong())) {
                 return true;
             }
+            if (inShadowBypassLoop) {
+                return false;
+            }
+            IrisShadowBatchCollector.ensureAnchorSpaceShadowFromBePose(poseStack.last().pose(), be.getBlockPos());
             MachineBer<?> ber = BER_FAST_CACHE.get(be.getType());
             return ber != null && ber.tryConsumePrebakedShadow(be);
         }
@@ -725,7 +748,9 @@ public final class NucleusDispatcherBypass {
             return true; // already drawn by the collect loop
         }
         // Newcomer of the frame: render singly so it does not flicker until the next frame.
-        collectOne(be, partialTick, new PoseStack(), buffers, bypassBase(poseStack));
+        NEWCOMER_POSE_SCRATCH.last().pose().identity();
+        NEWCOMER_POSE_SCRATCH.last().normal().identity();
+        collectOne(be, partialTick, NEWCOMER_POSE_SCRATCH, buffers, bypassBase(poseStack));
         return true;
     }
 
@@ -784,6 +809,10 @@ public final class NucleusDispatcherBypass {
         double maxDistCap = maxDistBlock + 8.0;
         double maxDistCapSq = maxDistCap * maxDistCap;
 
+        boolean gpuCullCoversMain = com.hbm_m.client.render.culling.GpuCullCoverage.isActive()
+                || (com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive()
+                    && NucleusGpuBaker.isEnabled());
+
         // Level 1: Iterate chunk buckets (~50-100 buckets)
         for (ChunkBucket bucket : CHUNK_BUCKETS.values()) {
             if (bucket.isEmpty()) continue;
@@ -791,7 +820,7 @@ public final class NucleusDispatcherBypass {
             // LEVEL 1: Chunk-level distance and frustum culling on expanded bounds
             AABB bucketBounds = bucket.getBounds(gameTime);
             if (bucketBounds.distanceToSqr(cam) > maxDistSq) continue;
-            if (frustum != null && !frustum.isVisible(bucketBounds)) {
+            if (!gpuCullCoversMain && frustum != null && !frustum.isVisible(bucketBounds)) {
                 continue; // All machines in this chunk culled in ~25 ns!
             }
 
@@ -838,7 +867,7 @@ public final class NucleusDispatcherBypass {
                 // old code re-fetched it 5 lines later inside collectOne (2 ms/frame
                 // of duplicate cache hits at 5000 machines in spark).
                 AABB beBox = RenderBoundsCache.get(be);
-                if (frustum != null && beBox != null && !frustum.isVisible(beBox)) {
+                if (!gpuCullCoversMain && frustum != null && beBox != null && !frustum.isVisible(beBox)) {
                     continue; // Machine outside frustum; skipped!
                 }
 
@@ -853,9 +882,9 @@ public final class NucleusDispatcherBypass {
      * already carries T(be-cam) — so the basis is the pose without translation.
      */
     private static Matrix4f bypassBase(PoseStack dispatcherPose) {
-        Matrix4f base = new Matrix4f(dispatcherPose.last().pose());
-        base.m30(0f).m31(0f).m32(0f);
-        return base;
+        NEWCOMER_BASE_SCRATCH.set(dispatcherPose.last().pose());
+        NEWCOMER_BASE_SCRATCH.m30(0f).m31(0f).m32(0f);
+        return NEWCOMER_BASE_SCRATCH;
     }
 
     private static boolean isManaged(BlockEntity be) {
@@ -1006,9 +1035,19 @@ public final class NucleusDispatcherBypass {
         }
         BlockEntityRenderDispatcher dispatcher = mc.getBlockEntityRenderDispatcher();
         long gameTime = mc.level.getGameTime();
+        Vec3 cam = new Vec3(camX, camY, camZ);
+        IrisShadowBatchCollector.beginShadowPass(
+                modelView.last().pose(), com.mojang.blaze3d.systems.RenderSystem.getProjectionMatrix(), camX, camY, camZ);
+        IrisShadowBatchCollector.activateAnchorSpacePrebakes();
+        double maxDistBlock = RenderDistanceHelper.getStaticDistanceBlocks() + 24.0;
+        double maxDistSq = maxDistBlock * maxDistBlock;
+
         int count = 0;
         for (ChunkBucket bucket : CHUNK_BUCKETS.values()) {
             if (bucket.isEmpty()) {
+                continue;
+            }
+            if (bucket.distSq(cam, gameTime) > maxDistSq) {
                 continue;
             }
             ArrayList<BlockEntity> list = bucket.machines;
@@ -1020,11 +1059,24 @@ public final class NucleusDispatcherBypass {
                 if (lightsOnly && be.getBlockState().getLightEmission() == 0) {
                     continue;
                 }
+                // Fast-path SHADOW-EPOCH prebake consumption BEFORE touching PoseStack or BlockEntityRenderDispatcher mixins:
+                if (!com.hbm_m.compat.ContraptionRenderCompat.isContraptionRender(be)) {
+                    MachineBer<?> ber = BER_FAST_CACHE.get(be.getType());
+                    if (ber != null && ber.tryConsumePrebakedShadow(be)) {
+                        count++;
+                        continue;
+                    }
+                }
                 BlockPos pos = be.getBlockPos();
                 modelView.pushPose();
-                modelView.translate(pos.getX() - camX, pos.getY() - camY, pos.getZ() - camZ);
-                dispatcher.render(be, tickDelta, modelView, buffers);
-                modelView.popPose();
+                inShadowBypassLoop = true;
+                try {
+                    modelView.translate(pos.getX() - camX, pos.getY() - camY, pos.getZ() - camZ);
+                    dispatcher.render(be, tickDelta, modelView, buffers);
+                } finally {
+                    inShadowBypassLoop = false;
+                    modelView.popPose();
+                }
                 count++;
             }
         }

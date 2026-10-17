@@ -153,6 +153,9 @@ public class ModSounds {
     public static final RegistrySupplier<SoundEvent> TRANSITION_SEAL_OPEN = registerSoundEvents("block.transition_seal_open");
     public static final RegistrySupplier<SoundEvent> WGH_START = registerSoundEvents("block.wgh_start");
     public static final RegistrySupplier<SoundEvent> WGH_STOP = registerSoundEvents("block.wgh_stop");
+    // NEXT ModSounds.java:458-459 — машинные «клунки» реактора, общие с радио-боксами/вентилями
+    public static final RegistrySupplier<SoundEvent> REACTOR_START = registerSoundEvents("reactor_start");
+    public static final RegistrySupplier<SoundEvent> REACTOR_STOP = registerSoundEvents("reactor_stop");
     public static final RegistrySupplier<SoundEvent> VAULT_SCRAPE = registerSoundEvents("block.vault_scrape");
     public static final RegistrySupplier<SoundEvent> VAULT_THUD = registerSoundEvents("block.vault_thud");
 
@@ -166,11 +169,11 @@ public class ModSounds {
 
     public static final RegistrySupplier<SoundEvent> SWITCH_ON = registerSoundEvents("block.switch.on");
 
-    // Broadcaster ambient loop - Minecraft picks one of the 3 variants at random each play.
+    // Broadcaster ambient loop - the track (one of 3) is picked deterministically per
+    // block position (original: new Random(xCoord+yCoord+zCoord)), see BroadcastSoundInstance.
     public static final RegistrySupplier<SoundEvent> BROADCAST1 = registerSoundEvents("block.broadcast1");
     public static final RegistrySupplier<SoundEvent> BROADCAST2 = registerSoundEvents("block.broadcast2");
     public static final RegistrySupplier<SoundEvent> BROADCAST3 = registerSoundEvents("block.broadcast3");
-    public static final RegistrySupplier<SoundEvent> BROADCAST_RANDOM = registerSoundEvents("block.broadcast_random");
 
     // РЕГИСТРАЦИЯ АБСТРАКТНОГО СОБЫТИЯ 
     // Это тот самый звук, который мы будем вызывать в коде.

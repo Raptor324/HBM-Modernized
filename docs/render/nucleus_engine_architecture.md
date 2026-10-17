@@ -78,6 +78,14 @@ This change is bundled deliberately as one cohesive architectural commit across 
   Rendering falls back smoothly across tiers per part: MDI -> Instanced -> Per-BE VBO -> Vanilla Immediate. NOTE: Compute bake and GPU parametric animation deliberately do not compose; bake-enabled configurations run CPU animators to guarantee correct kinematics.
 - **Pack Shader State & First-Person Hand Preservation**:
   `NucleusGpuBaker.presentMainBatch` restores `RenderSystem` projection/model-view matrices on the active pack program before calling `packShader.clear()` and `BufferUploader.invalidate()`, preventing `-relCam` anchor offsets from leaking into subsequent first-person hand and weapon renders (e.g., Superb Warfare).
+- **Mass-Spawn Compute Workgroup Tiling (>65,535 Instances)**:
+  `buildInstancesMain`, `buildInstancesShadow`, and `buildEbo` implement 2D/3D workgroup expansion (`rawY = gl_GlobalInvocationID.y + gl_GlobalInvocationID.z * gl_NumWorkGroups.y`) and tiled dispatch triples (`min(n, 65535u)` and `(n + 65534u) / 65535u`). This bypasses the OpenGL 65,535 Y-workgroup dispatch ceiling, preventing GPU timeouts, freezes, and device loss during massive fleet benchmarks.
+- **Dynamic VRAM Pool Shrinking & Cleanup (`maybeShrinkPool`)**:
+  Pool buffers scale geometrically during spawn bursts and are dynamically downsized (`maybeShrinkPool` and `shrinkOversizedBuffer`) during quiescent periods via `tickFrameCleanup` hooked to `InstancedRenderFrame.endFrame()`. Strict user budget enforcement (`cacheBudgetBytes`) eliminates artificial floors.
+- **Pipeline Stall Elimination in Hi-Z Culling**:
+  `GL11.glGetInteger(GL_TEXTURE_BINDING_2D)` on texture unit 10 in `NucleusGpuBaker.runCull()` is gated behind `bakeHiZPlanned(mode)`, eliminating synchronous GPU pipeline stalls when Hi-Z culling is inactive.
+- **Thread Safety & Bone Palette Clamping**:
+  Synchronized access to `BAKED` companion mesh registries and clamped bone matrix uploads (`BONE_PALETTE_SIZE = 64`) with buffer limit validation protect against off-thread concurrency hazards and buffer overflows.
 
 ---
 
@@ -102,8 +110,8 @@ This change is bundled deliberately as one cohesive architectural commit across 
 
 - **Compute Scatter Uploader**:
   `upload_scatter.comp` batches many small staging-ring copies into a single compute dispatch. Reorganized workgroups into 4 ops per 64-lane workgroup (16 lanes per op), eliminating lane idling on 32-word records and 4/5-word light and transform slices.
-- **Diff-Based Staging Uploads (`GpuSpanUploader`)**:
-  `GpuSpanUploader.diffUpload` scans changed words between CPU source and shadow mirror buffers using raw off-heap integer comparisons (`MemoryUtil.memGetInt`). It coalesces adjacent modifications within an instance record (gaps <= 8 floats, e.g. scattered light words) while strictly preventing coalescing across different instance records, eliminating DMA overhead. Pairs with `PersistentUploadStaging.beginWindowCopy` to bind ring and destination VBOs once per window instead of per-span (saving 3.16 ms/frame).
+- **Direct glBufferSubData Span Uploads (`GpuSpanUploader`)**:
+  `GpuSpanUploader.diffUpload` scans changed words between CPU source and shadow mirror buffers using raw off-heap integer comparisons (`MemoryUtil.memGetInt`). It coalesces adjacent modifications within an instance record (gaps <= 8 floats, e.g. scattered light words) while strictly preventing coalescing across different instance records. Span delivery uses direct `glBufferSubData` with single-bind window batching (`glBindBuffer(GL_ARRAY_BUFFER, destVbo)` once per window), completely eliminating fencing waits, staging ring sync stalls, and redundant per-span buffer re-binding.
 - **Instanced Core Vertex Shaders**:
   `block_lit_instanced.vsh`, `block_lit_instanced_iris.vsh`, and `block_lit_instanced_packed.vsh` incorporate snorm16 packed quaternions, u8 corner lightmaps (decoded via `x 240.0`), safe bounding box epsilon guards, and fail-closed gradient axis evaluation.
 - **Fragment Shaders & Emissive Glow**:
@@ -121,8 +129,16 @@ This change is bundled deliberately as one cohesive architectural commit across 
 
 - **1.21.1 Shadow Dispatch Restoration**:
   `IrisShadowBeFunction121` restores missing block entity shadow dispatch on Iris 1.21.1 + Sodium. Because upstream Iris abandoned the setter for `BlockEntityRenderFunction` on 1.21.1, this class reflectively installs a dynamic `Proxy` wrapper on the first shadow pass, re-enabling shadow casting for all Nucleus machines.
-- **NT Direct Particle Pass**:
-  `NtDirectPass` overcomes shaderpack translucent pipeline overrides (such as Photon disabling blending on translucent gbuffers) for nuclear explosions, gas flames, cooling tower steam, and ash particles. Pre-binds the pack FBO, unmasks depth and color writes, and executes custom blend modes.
+- **NT Direct Particle Pass & Re-entrant Nesting**:
+  `NtDirectPass` overcomes shaderpack translucent pipeline overrides (such as Photon disabling blending on translucent gbuffers) for nuclear mushroom clouds (`NukeTorex`, `NukeExplosionRings`), gas flames, cooling tower steam, and ash particles. Implements re-entrant `NtDirectPass.run(Runnable)` nesting with an internal counter, guaranteeing that intermediate batch flushes issued by vanilla `PlainBufferSource.endCurrentBatch()` when switching particle render types still execute with unmasked buffers and pack FBO attachments.
+- **Reflective DepthColorStorage Unlocking (`ShaderBindResync`)**:
+  `ShaderBindResync` and `IrisReflectionCompatProbe` reflectively interface with Iris/Oculus `DepthColorStorage` (`isDepthColorLocked`, `unlockDepthColor`, and `depthColorLocked` field access). When Oculus's `MixinShaderInstance.onTail` locks depth/color writes (`glColorMask(false, false, false, false)`), `forceIrisDepthColorEnabledQuiet()` unlocks the state without clobbering the `RenderType`'s configured depth mask, restoring full particle and mushroom cloud visibility.
+- **Streamlined Particle Shaders (`nuke_cloud` & `nuke_add`)**:
+  Stripped out obsolete Distant Horizons depth sampling logic, uniforms, and samplers (`Sampler1`, `DhProjMat`, `Fog*`, `DhDepthTest`, `DhViewport`) from `nuke_cloud.fsh`, `nuke_cloud.vsh`, and associated json descriptors, preventing texture binding collisions and pipeline stalls.
+- **Anchor-Space Shadow Activation & O(1) Bypass**:
+  Activated anchor-space shadow prebakes on 1.20.1 via `ensureAnchorSpaceShadowFromBePose()`. `IrisShadowBatchCollector.tryConsumePrebakedShadow()` leverages `NucleusTrackedBlockEntity` O(1) registration and `RenderDirtyTracker` checks for non-dynamic machines, eliminating 3 per-machine map lookups. Idle collector entries are shrunk (`shrinkOversizedBuffer`) and stale `PREBAKES` (>24 epochs) are cleanly freed via `MemoryUtil.memFree`.
+- **Fast Rigid-Body Matrix Math & Instanced Shadow Fallback**:
+  `IrisInstancedBatchRenderer` and `IrisRenderBatch` use `invertAffine()` and dot-product translation updates when rotation is static, avoiding full matrix inversions. `IrisShadowBatchCollector` adds a high-performance instanced shadow bake fallback (`bake-fallback-instanced`) before falling back to companion batches.
 - **Core Shader `nt_color_tex_lightmap`**:
   A namespaced clone of vanilla `position_color_tex_lightmap` allowing NT particles to bind a recognized mod shader instance that survives Iris masking.
 - **Shader Compiler Diagnostics**:
@@ -132,7 +148,7 @@ This change is bundled deliberately as one cohesive architectural commit across 
 - **MRT G-Buffer Encoder**:
   `IrisInstancedEncoders` and `IrisInstancedBatchRenderer` classify shaderpacks and route conventional packs through a 4-target MRT G-buffer encoder.
 - **SHADOW-EPOCH Basis Calibration Fix**:
-  Corrected column-major rotation multiplication (`PREBAKE_R_CAND.transform`) in `IrisShadowBatchCollector.solveShadowBasis` and enforced per-flush reset of `slotPosQuatVerified` flags in `InstancedStaticPartRenderer.flush`, eliminating shadow displacement when multi-part animated machines calibrate the shadow basis.
+  Corrected column-major rotation multiplication (`PREBAKE_R_CAND.transform`) in `IrisShadowBatchCollector.solveShadowBasis` and enforced per-flush reset of `slotPosQuatVerified` flags in `InstancedStaticPartRenderer.flush`, eliminating shadow displacement when multi-part animated machines calibrate the shadow basis. Static poses retain verified status to allow shadow basis calibration.
 
 ---
 
@@ -177,13 +193,13 @@ All 11 new client mixin registrations in `mixins.hbm_m.json` and modified mixins
 8. `client.SodiumRenderBoundsMixin`:
    `@Pseudo` mixin targeting `me.jellysquid.mods.sodium.client.render.SodiumWorldRenderer`, redirecting `IForgeBlockEntity.getRenderBoundingBox()` in `renderBlockEntities` to `RenderBoundsCache.get(be)`, eliminating structure map traversals.
 9. `client.SodiumWorldRendererMixin`:
-   1.20.1 Forge / Embeddium early cancellation in `SodiumWorldRenderer.renderBlockEntity`. Enforces pass-aware culling: cancels removed/demolished machines in BOTH passes (preventing ghost shadow flashes), permits shadow pass dispatches, and cancels main-pass dispatches for registered machines already drawn by `NucleusDispatcherBypass.collectMain`.
-10. `client.SodiumWorldRendererMixin121`:
-    1.21.1 NeoForge / Sodium (`net.caffeinemc.mods.sodium`) counterpart of `SodiumWorldRendererMixin`, using trailing-argument prefix capture to maintain binary compatibility without compile-time Sodium dependencies.
-11. `client.MixinClientLevelChunkLifecycle`:
+   1.20.1 Forge / Embeddium early cancellation in `SodiumWorldRenderer.renderBlockEntity`. Enforces pass-aware culling for Embeddium 0.3.x. On 1.21.1 and for all other loaders/renderers, `MixinBlockEntityRenderDispatcher` handles universal, portable cancellation at the vanilla `BlockEntityRenderDispatcher.render()` level without fragile internal Sodium method hooks.
+10. `client.MixinClientLevelChunkLifecycle`:
     Injects into `ClientLevel.onChunkLoaded` and `unload`, dispatching asynchronous chunk population (`onChunkLoadedAsync`) and eviction (`onChunkUnloadedAsync`) to `RetainedInstanceGraph`.
-12. `client.MixinIrisShadowRenderer`:
+11. `client.MixinIrisShadowRenderer`:
     Maintains `ShaderCompatibilityDetector.setRenderingShadowPass(true/false)` state across shadow passes and triggers `IrisShadowBeFunction121.onShadowPassStart()` on 1.21.1.
+12. `LevelChunkSilentRemovalMixin`:
+    Redirects `Collection.forEach` inside `LevelChunk.clearAllBlockEntities()` to iterate over `collection.toArray()`, preventing client-side `ConcurrentModificationException` during chunk unloads and mass crater block entity teardowns (where multiblock `setRemoved()` triggers controller removals from chunk maps).
 
 ---
 
@@ -324,3 +340,5 @@ All 11 new client mixin registrations in `mixins.hbm_m.json` and modified mixins
   Tier 1 GPU compute bake deliberately does not compose with GPU parametric animation; configurations with compute bake enabled run CPU animators.
 - **Transitional MRT G-Buffer Path**:
   The 4-target MRT G-buffer encoder in `IrisInstancedEncoders` remains transitional.
+- **Mass-Spawn & VRAM Pool Scaling (RESOLVED)**:
+  Previous driver timeouts/GPU crashes at >65,535 instances have been resolved via 2D/3D compute workgroup addressing (`rawY`) and tiled dispatch triples (`min(n, 65535u)`). VRAM leaks and pool over-allocations are resolved through dynamic periodic shrinking (`maybeShrinkPool`, `shrinkOversizedBuffer`, and `tickFrameCleanup`).

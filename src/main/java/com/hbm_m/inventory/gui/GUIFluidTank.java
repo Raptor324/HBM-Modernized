@@ -9,8 +9,10 @@ import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
@@ -33,7 +35,17 @@ import net.neoforged.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public class GUIFluidTank extends AbstractContainerScreen<FluidTankMenu> {
 
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/storage/gui_tank.png");
+    private static final ResourceLocation TEXTURE_TANK = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/storage/gui_tank.png");
+    /** Паритет NEXT ScreenBarrel: бочки (BarrelTankBlock) рисуются своим фоном, орбус/большой бак — gui_tank. */
+    private static final ResourceLocation TEXTURE_BARREL = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/storage/gui_barrel.png");
+
+    private ResourceLocation texture() {
+        if (menu.blockEntity != null
+                && menu.blockEntity.getBlockState().getBlock() instanceof com.hbm_m.block.machines.BarrelTankBlock) {
+            return TEXTURE_BARREL;
+        }
+        return TEXTURE_TANK;
+    }
 
     private final int tankX = 71;
     private final int tankY = 17;
@@ -43,6 +55,8 @@ public class GUIFluidTank extends AbstractContainerScreen<FluidTankMenu> {
     private static final int MODE_BUTTON_X = 151;
     private static final int MODE_BUTTON_Y = 34;
     private static final int MODE_BUTTON_SIZE = 18;
+    /** Паритет NEXT ScreenBarrel.BTN_HIT_Y = 35: клик-тест на 1px ниже отрисованной кнопки (кнопка/тултип — на 34). */
+    private static final int MODE_BUTTON_HIT_Y = 35;
 
     /**
      * Ряд иконки режима в текстуре = нумерация режимов 1.7.10 (0=input, 1=buffer,
@@ -74,11 +88,11 @@ public class GUIFluidTank extends AbstractContainerScreen<FluidTankMenu> {
     protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 
-        guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
+        guiGraphics.blit(texture(), this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
         int mode = menu.getMode();
         int spriteRow = modeButtonSpriteRow(mode);
-        guiGraphics.blit(TEXTURE, this.leftPos + MODE_BUTTON_X, this.topPos + MODE_BUTTON_Y,
+        guiGraphics.blit(texture(), this.leftPos + MODE_BUTTON_X, this.topPos + MODE_BUTTON_Y,
                 176, spriteRow * MODE_BUTTON_SIZE, MODE_BUTTON_SIZE, MODE_BUTTON_SIZE);
 
         if (menu.blockEntity != null) { // тайл может отсутствовать в реплее Flashback
@@ -110,14 +124,24 @@ public class GUIFluidTank extends AbstractContainerScreen<FluidTankMenu> {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (isHovering(MODE_BUTTON_X, MODE_BUTTON_Y, MODE_BUTTON_SIZE, MODE_BUTTON_SIZE, (int) mouseX, (int) mouseY)) {
+        // Паритет NEXT ScreenBarrel/ScreenMachineFluidTank.mouseClicked: режим циклится только ЛКМ.
+        if (button == 0
+                && isHovering(MODE_BUTTON_X, MODE_BUTTON_HIT_Y, MODE_BUTTON_SIZE, MODE_BUTTON_SIZE, (int) mouseX, (int) mouseY)) {
         if (menu.blockEntity != null) {
             ModPacketHandler.sendToServer(ModPacketHandler.FLUID_TANK_MODE,
                     new FluidTankModePacket(menu.blockEntity.getBlockPos()));
+            playClick();
             return true;
         }
         }
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    /** Паритет NEXT ScreenBarrel.playClick: UI-клик после отправки пакета режима. */
+    private void playClick() {
+        if (minecraft != null) {
+            minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+        }
     }
 
     private boolean isHovering(int x, int y, int w, int h, int mouseX, int mouseY) {

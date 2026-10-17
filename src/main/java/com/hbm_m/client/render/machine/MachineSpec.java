@@ -47,7 +47,8 @@ public final class MachineSpec<T extends BlockEntity> {
             @Nullable float[] tintFalloff, // null = no falloff; else {axis(0/1/2), fullCoord, zeroCoord} in model coordinates
             @Nullable ParametricRig parametric, // null = CPU animator; else GPU rig: single joint or joint chain (attrib 15)
             @Nullable ParametricParams<T> parametricParams, // per-frame joint parameters
-            @Nullable java.util.function.Predicate<T> visibilityPredicate // null = always visible; else conditional part
+            @Nullable java.util.function.Predicate<T> visibilityPredicate, // null = always visible; else conditional part
+            @Nullable java.util.function.BiFunction<T, Float, float[][]> clipPlanesResolver // null = no per-part CPU clip
     ) {
         public PartDef(
                 String name,
@@ -65,7 +66,27 @@ public final class MachineSpec<T extends BlockEntity> {
                 @Nullable ParametricParams<T> parametricParams
         ) {
             this(name, modelPartName, animator, dynamicQuads, dynamicCacheKey, animated, staticCacheKey,
-                    lightOverride, uvRectResolver, tintOverride, tintFalloff, parametric, parametricParams, null);
+                    lightOverride, uvRectResolver, tintOverride, tintFalloff, parametric, parametricParams, null, null);
+        }
+
+        public PartDef(
+                String name,
+                String modelPartName,
+                @Nullable PartAnimator<T> animator,
+                @Nullable QuadResolver<T> dynamicQuads,
+                @Nullable Function<T, String> dynamicCacheKey,
+                boolean animated,
+                String staticCacheKey,
+                @Nullable Function<T, Integer> lightOverride,
+                @Nullable Function<T, float[]> uvRectResolver,
+                @Nullable Function<T, float[]> tintOverride,
+                @Nullable float[] tintFalloff,
+                @Nullable ParametricRig parametric,
+                @Nullable ParametricParams<T> parametricParams,
+                @Nullable java.util.function.BiFunction<T, Float, float[][]> clipPlanesResolver
+        ) {
+            this(name, modelPartName, animator, dynamicQuads, dynamicCacheKey, animated, staticCacheKey,
+                    lightOverride, uvRectResolver, tintOverride, tintFalloff, parametric, parametricParams, null, clipPlanesResolver);
         }
 
         public boolean isConditional() {
@@ -1278,7 +1299,7 @@ public final class MachineSpec<T extends BlockEntity> {
         this.hasDynamicParts = anyDynamic;
         boolean anyNonAssertable = false;
         for (PartDef<T> p : parts) {
-            if ((p.animator() != null && p.dynamic()) || p.tintOverride() != null) {
+            if ((p.animator() != null && p.dynamic()) || p.tintOverride() != null || p.clipPlanesResolver() != null) {
                 anyNonAssertable = true;
                 break;
             }
@@ -1447,6 +1468,22 @@ public final class MachineSpec<T extends BlockEntity> {
             return part.tintOverride().apply(be);
         } catch (Throwable t) {
             com.hbm_m.main.MainRegistry.LOGGER.error("[MachineRenderers:{}] part '{}' tint failed", id, part.name(), t);
+            return null;
+        }
+    }
+
+    /**
+     * Per-part clip-плоскости для этого BE ({@code float[][]} из {A,B,C,D} в конвенции
+     * «+D», локальные координаты геометрии) или null (обычный тир). Вызывается каждый
+     * кадр для партов с резолвером — резолвер должен быть дешёвым и переиспользовать
+     * скратч-массивы.
+     */
+    @Nullable float[][] resolveClipPlanes(PartDef<T> part, T be, float partialTick) {
+        if (part.clipPlanesResolver() == null) return null;
+        try {
+            return part.clipPlanesResolver().apply(be, partialTick);
+        } catch (Throwable t) {
+            com.hbm_m.main.MainRegistry.LOGGER.error("[MachineRenderers:{}] part '{}' clipPlanes failed", id, part.name(), t);
             return null;
         }
     }

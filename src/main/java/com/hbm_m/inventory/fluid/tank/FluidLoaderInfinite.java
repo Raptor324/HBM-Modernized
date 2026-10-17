@@ -15,6 +15,10 @@ public class FluidLoaderInfinite implements FluidTank.LoadingHandler {
         if (stack == null || stack.isEmpty()) return false;
         if (!(stack.getItem() instanceof InfiniteFluidItem inf)) return false;
         if (tank.getFill() <= 0) return false;
+        // Паритет NEXT ItemFluidContainerInfinite.allowPressure (== FLUID_BARREL_INFINITE ||
+        // pressure == 0): из бака под давлением качает только instant-network (универсальный
+        // бесконечный бак); остальные inf-предметы — только при pressure == 0.
+        if (!inf.isInstantNetwork() && tank.getPressure() != 0) return false;
 
         Fluid requestedType = tank.getTankType();
         Fluid itemType = inf.getFluidType(stack);

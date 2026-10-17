@@ -62,7 +62,7 @@ public class HbmThermalHandler implements ResourceManagerReloadListener {
 
     public static boolean isThermalShaderModeActive() {
         return PowerArmorClientState.isThermalActive()
-            && ModClothConfig.get().thermalRenderMode == ModClothConfig.ThermalRenderMode.FULL_SHADER;
+            && ModClothConfig.get().graphicEffects.thermalRenderMode == ModClothConfig.ThermalRenderMode.FULL_SHADER;
     }
 
     /** Вызывать после рендера сущностей (аналоги AFTER_ENTITIES). */

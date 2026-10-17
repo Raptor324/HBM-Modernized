@@ -27,6 +27,7 @@ public class BroadcasterPcBlockEntity extends com.hbm_m.blockentity.BaseHbmBlock
     private static final double CONFUSION_RADIUS = 25.0D;
     private static final double DAMAGE_RADIUS = 15.0D;
     private static final int CONFUSION_DURATION = 300;
+    private static final int CONFUSION_REFRESH_BELOW = 100;
     private static final float MAX_DAMAGE = 10.0F;
 
     public BroadcasterPcBlockEntity(BlockPos pos, BlockState state) {
@@ -35,7 +36,7 @@ public class BroadcasterPcBlockEntity extends com.hbm_m.blockentity.BaseHbmBlock
 
     public static void tick(Level level, BlockPos pos, BlockState state, BroadcasterPcBlockEntity be) {
         if (level.isClientSide) {
-            ClientSoundBootstrap.updateSound(be, true, () -> new BroadcastSoundInstance(pos));
+            ClientSoundBootstrap.updateSound(be, true, () -> new BroadcastSoundInstance(pos), CONFUSION_RADIUS);
             return;
         }
 
@@ -49,7 +50,8 @@ public class BroadcasterPcBlockEntity extends com.hbm_m.blockentity.BaseHbmBlock
             double dist = entity.position().distanceTo(new net.minecraft.world.phys.Vec3(cx, cy, cz));
             if (dist > CONFUSION_RADIUS) continue;
 
-            if (!entity.hasEffect(MobEffects.CONFUSION) || entity.getEffect(MobEffects.CONFUSION).getDuration() < 60) {
+            if (!entity.hasEffect(MobEffects.CONFUSION)
+                    || entity.getEffect(MobEffects.CONFUSION).getDuration() < CONFUSION_REFRESH_BELOW) {
                 entity.addEffect(new MobEffectInstance(MobEffects.CONFUSION, CONFUSION_DURATION, 0));
             }
 

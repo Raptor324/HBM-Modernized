@@ -67,6 +67,7 @@ public final class PartEnqueueRequest {
         fadeMode = InstancedStaticPartRenderer.FADE_MODE_STATIC;
         staticPose = false;
         lightBbox = null;
+        clipPlanes = null;
     }
 
     // -- Draw call arguments (the former addInstance parameter list) ------
@@ -85,6 +86,8 @@ public final class PartEnqueueRequest {
     public @Nullable float[] tint;
     /** {axis, fullCoord, zeroCoord, unused} tint falloff config, or null/axis&lt;0 (off). */
     public @Nullable float[] grad;
+    /** Clipping planes {A,B,C,D} (A*x + B*y + C*z + D >= 0 inside), or null (no clipping). */
+    public @Nullable float[][] clipPlanes;
 
     // -- Former pending* statics -------------------------------------------
 

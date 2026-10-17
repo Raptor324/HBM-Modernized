@@ -137,6 +137,7 @@ public final class InstancedRenderFrame {
             // per frame through the pack's own gbuffers program. No-op when nothing
             // baked.
             com.hbm_m.client.render.NucleusGpuBaker.presentMainBatch(projection);
+            com.hbm_m.client.render.NucleusGpuBaker.tickFrameCleanup();
             if (coord != null) {
                 coord.endFrame();
             }

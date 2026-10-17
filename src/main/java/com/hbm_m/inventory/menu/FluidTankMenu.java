@@ -56,10 +56,12 @@ public class FluidTankMenu extends AbstractContainerMenu {
 
         var container = new ModItemStackHandlerContainer(this.blockEntity.getItemHandler(), this.blockEntity::setChanged);
 
+        // NEXT MenuBarrel: слоты plain, mayPlace идёт через container.canPlaceItem —
+        // гейчим все входы тем же canPlaceItem BlockEntity, что и автоматизацию.
         this.addSlot(new Slot(container, MachineFluidTankBlockEntity.SLOT_ID_IN, 8, 17) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
-                return stack.getItem() instanceof IItemFluidIdentifier;
+                return blockEntity.canPlaceItem(MachineFluidTankBlockEntity.SLOT_ID_IN, stack);
             }
         });
 
@@ -73,7 +75,7 @@ public class FluidTankMenu extends AbstractContainerMenu {
         this.addSlot(new Slot(container, MachineFluidTankBlockEntity.SLOT_LOAD_IN, 35, 17) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
-                return PlatformHooks.isFluidContainer(stack);
+                return blockEntity.canPlaceItem(MachineFluidTankBlockEntity.SLOT_LOAD_IN, stack);
             }
         });
 
@@ -87,7 +89,7 @@ public class FluidTankMenu extends AbstractContainerMenu {
         this.addSlot(new Slot(container, MachineFluidTankBlockEntity.SLOT_UNLOAD_IN, 125, 17) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
-                return PlatformHooks.isFluidContainer(stack);
+                return blockEntity.canPlaceItem(MachineFluidTankBlockEntity.SLOT_UNLOAD_IN, stack);
             }
         });
 

@@ -121,15 +121,6 @@
       "hbm_m:broadcast3"
     ]
   },
-  "block.broadcast_random": {
-    "category": "block",
-    "subtitle": "sounds.hbm_m.subtitle.broadcast",
-    "sounds": [
-      "hbm_m:broadcast1",
-      "hbm_m:broadcast2",
-      "hbm_m:broadcast3"
-    ]
-  },
   "block.chemical_plant": {
     "subtitle": "sounds.hbm_m.subtitle.chemical_plant",
     "sounds": [
@@ -887,6 +878,7 @@
     ]
   },
   "tool.upgrade_plug": {
+    "category": "player",
     "subtitle": "sounds.hbm_m.subtitle.upgrade_plug",
     "sounds": [
       "hbm_m:tool/upgrade_plug"
@@ -976,6 +968,24 @@
       "hbm_m:block/dam2",
       "hbm_m:block/dam3",
       "hbm_m:block/dam4"
+    ]
+  },
+  "reactor_start": {
+    "category": "block",
+    "sounds": [
+      {
+        "name": "hbm_m:block/reactorstart",
+        "stream": false
+      }
+    ]
+  },
+  "reactor_stop": {
+    "category": "block",
+    "sounds": [
+      {
+        "name": "hbm_m:block/reactorstop",
+        "stream": false
+      }
     ]
   }
 }

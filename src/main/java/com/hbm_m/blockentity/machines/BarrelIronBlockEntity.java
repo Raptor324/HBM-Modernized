@@ -63,6 +63,11 @@ public class BarrelIronBlockEntity extends MachineFluidTankBlockEntity {
         }
 
         CompoundTag savedTag = PlatformHooks.saveBlockEntityWithoutMetadata(this, level.registryAccess());
+        // Инвентарь НЕ переносим: setBlock ниже синхронно дергает BarrelTankBlock.onRemove →
+        // dropInventory (паритет NEXT preRemoveSideEffects), слоты выбрасываются в мир и
+        // очищаются. Восстановление снимка с "Inventory" вернуло бы предметы в проржавевшую
+        // бочку ПОВЕРХ выброшенных — дюп. Переносится только жидкость/режим (writeNBT-часть).
+        savedTag.remove("Inventory");
         level.setBlock(worldPosition, newState, 3);
 
         BlockEntity newBe = level.getBlockEntity(worldPosition);
@@ -75,7 +80,9 @@ public class BarrelIronBlockEntity extends MachineFluidTankBlockEntity {
 
     @Override
     public Component getDisplayName() {
-        return Component.translatable(ModBlocks.BARREL_IRON.get().getDescriptionId());
+        // Паритет NEXT BlockEntityBarrel.getDefaultName: у всех бочек общий заголовок GUI
+        // "Barrel" (container.hbm.barrel); имя материала остаётся у блока/предмета.
+        return Component.translatable("container.hbm_m.barrel");
     }
 
     @Nullable

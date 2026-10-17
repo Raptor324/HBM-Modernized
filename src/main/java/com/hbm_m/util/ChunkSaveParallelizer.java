@@ -109,11 +109,30 @@ public final class ChunkSaveParallelizer {
             // потокобезопасны, см. аудит в ChunkMapSaveMixin).
             Runnable finish = () -> {
                 if (fFailure != null) {
-                    IN_FLIGHT.decrementAndGet();
-                    MainRegistry.LOGGER.error("[HBM] parallel chunk serialize failed at {},{} — falling back to vanilla resave",
+                    MainRegistry.LOGGER.error("[HBM] parallel chunk serialize failed at {},{}",
                             chunk.getPos().x, chunk.getPos().z, fFailure);
-                    chunk.setUnsaved(true);
-                    onFailure.run();
+                    if (BlastChunkUtil.serverShuttingDown(level)) {
+                        // Шатдаун: finish выполняется inline на воркере, синхронно
+                        // пересериализовать нельзя (та же гонка) — возвращаем
+                        // грязность, ванилла пересейвит при остановке.
+                        IN_FLIGHT.decrementAndGet();
+                        chunk.setUnsaved(true);
+                        onFailure.run();
+                        return;
+                    }
+                    // Мы на серверном потоке: пересериализуем синхронно. Все
+                    // мутации чанка (промоушен тикета, тики, setBlockState) тоже
+                    // происходят на серверном потоке — гонки с воркером нет.
+                    try {
+                        CompoundTag retry = ChunkSaveParallelizer.serialize(level, chunk);
+                        onTagReady.accept(retry, IN_FLIGHT::decrementAndGet);
+                    } catch (Throwable retryFailure) {
+                        IN_FLIGHT.decrementAndGet();
+                        MainRegistry.LOGGER.error("[HBM] sync reserialize also failed at {},{} — falling back to vanilla resave",
+                                chunk.getPos().x, chunk.getPos().z, retryFailure);
+                        chunk.setUnsaved(true);
+                        onFailure.run();
+                    }
                 } else {
                     onTagReady.accept(fTag, IN_FLIGHT::decrementAndGet);
                 }

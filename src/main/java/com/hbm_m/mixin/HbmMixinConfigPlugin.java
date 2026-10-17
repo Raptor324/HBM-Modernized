@@ -18,6 +18,14 @@ public final class HbmMixinConfigPlugin implements IMixinConfigPlugin {
     private static final String CLIENT_PACKAGE = "com.hbm_m.mixin.client.";
     /** Compat-миксины, применяемые только при наличии целевого мода в рантайме. */
     private static final String SABLE_COMPAT_PACKAGE = "com.hbm_m.mixin.compat.sable.";
+    /**
+     * Iris-миксины: применяются только когда Iris/Oculus реально загружен.
+     * Iris/Oculus - опциональная зависимость (ноль Iris-классов на compile
+     * classpath): без такой загрузки цель @Pseudo-миксина отсутствует, а мы не
+     * хотим даже попыток применения. Имена классов перечисляем явно.
+     */
+    private static final String IRIS_PIPELINE_MIXIN =
+            "com.hbm_m.mixin.client.MixinIrisRenderingPipelinePreComposite";
 
     private static boolean dedicatedServer() {
         //? if forge {
@@ -44,6 +52,21 @@ public final class HbmMixinConfigPlugin implements IMixinConfigPlugin {
         *///?}
     }
 
+    private static boolean irisOrOculusLoaded() {
+        // Как в sableLoaded(): shouldApplyMixin вызывается до построения ModList,
+        // LoadingModList доступен сразу после discovery. Iris на NeoForge/Fabric
+        // и Oculus на Forge - разные modid, проверяем оба.
+        //? if forge {
+        var loading = net.minecraftforge.fml.loading.FMLLoader.getLoadingModList();
+        return loading != null && (loading.getModFileById("iris") != null || loading.getModFileById("oculus") != null);
+        //?} elif neoforge {
+        /*var loading = net.neoforged.fml.loading.FMLLoader.getLoadingModList();
+        return loading != null && (loading.getModFileById("iris") != null || loading.getModFileById("oculus") != null);
+        *///?} else {
+        /*return false;
+        *///?}
+    }
+
     @Override
     public void onLoad(String mixinPackage) {}
 
@@ -60,6 +83,11 @@ public final class HbmMixinConfigPlugin implements IMixinConfigPlugin {
         // Мод опционален: без него миксин, добавляющий интерфейсы мода в наш класс, сломал бы загрузку BE.
         if (mixinClassName.startsWith(SABLE_COMPAT_PACKAGE)) {
             return sableLoaded();
+        }
+        // Iris/Oculus опциональны: миксин в их пайплайн применяется только при
+        // реальном наличии мода (без него @Pseudo-цель всё равно отсутствует).
+        if (IRIS_PIPELINE_MIXIN.equals(mixinClassName)) {
+            return irisOrOculusLoaded();
         }
         return true;
     }

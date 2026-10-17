@@ -285,6 +285,8 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         // 5. Break clean MDI sync to ensure coordinator updates snapshot (without wiping all slots' stability flags)
         this.mdiRecordWriteHappened = true;
         this.mdiBufferSynced = false;
+        this.recordMutationEpoch++;
+        this.slotLayoutEpoch++;
     }
 
     /**
@@ -314,6 +316,8 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         }
         this.mdiRecordWriteHappened = true;
         this.mdiBufferSynced = false;
+        this.recordMutationEpoch++;
+        this.slotLayoutEpoch++;
         this.vboShadowValid = false;
         this.vboShadowValidFloats = 0;
         this.instanceCount = Math.max(instanceCount, slotAllocator.getHighWaterMark());
@@ -342,6 +346,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         }
         this.mdiRecordWriteHappened = true;
         this.mdiBufferSynced = false;
+        this.recordMutationEpoch++;
         this.vboShadowValid = false;
         this.vboShadowValidFloats = 0;
     }
@@ -369,6 +374,20 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
      * basis (see IrisShadowBatchCollector#notePrebakeCalibration).
      */
     boolean[] slotPosQuatVerified = new boolean[currentAllocatedInstances];
+
+    /** Incremented whenever any float in instanceBuffer is written or modified. */
+    private long recordMutationEpoch = 1L;
+    /** Incremented whenever slot allocation, freeing, or partitioning changes slot-to-posKey layout. */
+    private long slotLayoutEpoch = 1L;
+
+    public long getRecordMutationEpoch() {
+        return recordMutationEpoch;
+    }
+
+    public long getSlotLayoutEpoch() {
+        return slotLayoutEpoch;
+    }
+
     float batchSkyDarken = -1f;
     private boolean overflowLogged = false;
     /** During this phase at least one actual write to instanceBuffer happened (skip-write failed at least once). */
@@ -546,6 +565,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         this.vboShadowValidFloats = 0;
         this.mdiBufferSynced = false;
         this.mdiRecordWriteHappened = true;
+        this.recordMutationEpoch++;
     }
     /** VRAM estimate of this renderer (vertices+indices+instance VBO); 0 = not accounted. */
     private long vramBytes = 0;
@@ -1176,6 +1196,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         MemoryUtil.memPutFloat(animA + 4, tmpAnimParams[1]);
         MemoryUtil.memPutFloat(animA + 8, tmpAnimParams[2]);
         MemoryUtil.memPutFloat(animA + 12, tmpAnimParams[3]);
+        this.recordMutationEpoch++;
     }
 
 
@@ -1205,6 +1226,8 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         // posQuat validation while holding ANOTHER machine's pose).
         java.util.Arrays.fill(slotPosQuatStable, false);
         java.util.Arrays.fill(slotPosQuatVerified, false);
+        this.recordMutationEpoch++;
+        this.slotLayoutEpoch++;
     }
 
     // Lazy data stores of instanceVboId / fadingInstanceVboId, in floats. Both are
@@ -1581,7 +1604,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         }
         if (slot < slotPosQuatStable.length) {
             slotPosQuatStable[slot] = true;
-            slotPosQuatVerified[slot] = false; // roster-trust, not a compare
+            slotPosQuatVerified[slot] = true;
         }
         instanceCount = Math.max(instanceCount, slotAllocator.getHighWaterMark());
         ((Buffer) instanceBuffer).position(instanceDataSize * instanceCount);
@@ -1632,7 +1655,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
             instanceCullIndices[slot] = -1;
         }
         slotPosQuatStable[slot] = true;
-        slotPosQuatVerified[slot] = false; // roster-trust, not a compare
+        slotPosQuatVerified[slot] = true;
         if (slot + 1 > instanceCount) {
             instanceCount = Math.max(instanceCount, slotAllocator.getHighWaterMark());
             ((Buffer) instanceBuffer).position(instanceDataSize * instanceCount);
@@ -1655,6 +1678,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         if (Float.floatToRawIntBits(MemoryUtil.memGetFloat(fadeAddr)) != Float.floatToRawIntBits(fadeMode)) {
             MemoryUtil.memPutFloat(fadeAddr, fadeMode);
             mdiRecordWriteHappened = true;
+            this.recordMutationEpoch++;
         }
         long animAddr = baseAddr + (long) ANIM_FLOAT_OFFSET * 4L;
         if (Float.floatToRawIntBits(MemoryUtil.memGetFloat(animAddr)) != Float.floatToRawIntBits(a0)
@@ -1666,6 +1690,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
             MemoryUtil.memPutFloat(animAddr + 8L, a2);
             MemoryUtil.memPutFloat(animAddr + 12L, a3);
             mdiRecordWriteHappened = true;
+            this.recordMutationEpoch++;
         }
     }
 
@@ -1833,17 +1858,17 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         fillInstanceCornerLight(blockEntity, packedLight, blockPos, mat, sharedCornerUV8, slot);
 
         instanceCullIndices[slot] = -1;
+        if (instanceOcclusionKeys[slot] != posKey) {
+            this.slotLayoutEpoch++;
+            this.recordMutationEpoch++;
+        }
         instanceOcclusionKeys[slot] = posKey;
         int baseFloat = slot * instanceDataSize;
 
         if (staticPose && slotPosQuatStable[slot] && recordMatchesBuffer(baseFloat, true, lightBbox)) {
-            // Trusted static pose: the BER declared the part frame-invariant
-            // (request.staticPose) and the slot's posQuat was stable at its last
-            // compare - skip the convertToWorldRecord matrix multiply and the
-            // posQuat prefix of the skip-write compare, and skip the write.
-            // Trust is NOT a compare: verified stays false so the slot can never
-            // calibrate the SHADOW-EPOCH shadow basis (IrisShadowBatchCollector).
-            slotPosQuatVerified[slot] = false;
+            // Static pose is frame-invariant by definition and its record matched the buffer:
+            // keep it verified so SHADOW-EPOCH calibration can use static machine bases!
+            slotPosQuatVerified[slot] = true;
         } else {
             convertToWorldRecord(mat);
             boolean posQuatMatch = posQuatMatchesBuffer(baseFloat);
@@ -1975,11 +2000,13 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
             // Self-heal the VAO instance attribs (the phase-2 fading draw may have
             // re-pointed them at the fading VBO and thrown before restoring).
             pointInstanceAttribsTo(instanceVboId);
-            records.flip();
-            uploadToInstanceVboSpanned(records, 0, 0, count * instanceDataSize);
+            FloatBuffer uploadBuf = records.duplicate();
+            uploadBuf.position(0);
+            uploadBuf.limit(count * instanceDataSize);
+            uploadToInstanceVboSpanned(uploadBuf, 0, 0, count * instanceDataSize);
             vanillaHelper.enableVertexAttribsForDraw();
 
-            SHADOW_WORLD_MV.translation(-camX, -camY, -camZ);
+            IrisShadowBatchCollector.buildShadowModelView(SHADOW_WORLD_MV, camX, camY, camZ);
             vanillaHelper.useIrisProgram(shader, proj, SHADOW_WORLD_MV);
             SingleMeshVboRenderer.primeIrisInstancedSamplerMap(shader, Minecraft.getInstance());
             // Pack shadow distortion - must match the pack's sampler
@@ -1997,10 +2024,8 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
                     GL11.GL_UNSIGNED_INT, 0, count);
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Iris shadow instanced draw failed", e);
-            records.clear();
             return false;
         }
-        records.clear();
         return true;
     }
 

@@ -60,6 +60,7 @@ hs_err_pid*
 replay_pid*
 temp/
 logs/
+tools/nightly/
 /ExampleProject/
 /OLD/
 agent
@@ -116,6 +117,9 @@ notes/
 __pycache__/
 *.pyc
 
+# nightly porting pipeline state, machine-local
+docs/porting/machine_porting_matrix.json
+
 # ================= Workflow reports (local working journal) =================
 # Рабочие отчёты воркфлоу-аудитов не коммитятся; справочные доки в docs/render
 # (crankshaft study, engine architecture, cpu audit 09-25) удержаны negation'ом.
@@ -135,3 +139,4 @@ build_out_*.txt
 tools/*.class
 docs/*_2026-*.md
 docs/render_gl_*.md
+

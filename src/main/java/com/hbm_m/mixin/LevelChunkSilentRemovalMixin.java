@@ -9,6 +9,9 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 
+import java.util.Collection;
+import java.util.function.Consumer;
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -80,5 +83,41 @@ public abstract class LevelChunkSilentRemovalMixin {
             }
         }
         receiver.onRemove(level, pos, otherState, isMoving);
+    }
+
+    /**
+     * Prevents {@link java.util.ConcurrentModificationException} when clearing
+     * block entities during chunk unload / bulk chunk resend (e.g. nuke crater
+     * light updates).
+     *
+     * <p>In vanilla {@code LevelChunk#clearAllBlockEntities()}:
+     * <pre>
+     * this.blockEntities.values().forEach(BlockEntity::onChunkUnloaded);
+     * this.blockEntities.values().forEach(BlockEntity::setRemoved);
+     * this.blockEntities.clear();
+     * </pre>
+     * As block entities execute {@code setRemoved()}, multiblock part BEs trigger
+     * controller teardown hooks (or other mods execute block queries). Any lookup
+     * calling {@code chunk.getBlockEntity(pos, IMMEDIATE)} detects that a removed
+     * BE is marked as removed and invokes {@code this.blockEntities.remove(pos)},
+     * mutating the map mid-iteration of {@code values().forEach(...)}.
+     *
+     * <p>Redirecting the {@code Collection.forEach} invocation to iterate over a
+     * snapshot array ({@code collection.toArray()}) makes iteration completely
+     * immune to concurrent map mutations during the clear loop.
+     */
+    @Redirect(
+        method = "clearAllBlockEntities",
+        at = @At(
+            value = "INVOKE",
+            target = "Ljava/util/Collection;forEach(Ljava/util/function/Consumer;)V"
+        )
+    )
+    private <T> void hbm_m$safeForEachInClear(Collection<T> collection, Consumer<? super T> action) {
+        for (Object item : collection.toArray()) {
+            @SuppressWarnings("unchecked")
+            T casted = (T) item;
+            action.accept(casted);
+        }
     }
 }

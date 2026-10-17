@@ -27,7 +27,7 @@ public class LightTextureMixin {
         if (!PowerArmorClientState.isThermalActive()) {
             return false;
         }
-        return ModClothConfig.get().thermalRenderMode == ModClothConfig.ThermalRenderMode.FULL_SHADER;
+        return ModClothConfig.get().graphicEffects.thermalRenderMode == ModClothConfig.ThermalRenderMode.FULL_SHADER;
     }
 
     @Inject(method = "getDarknessGamma(F)F", at = @At("RETURN"), cancellable = true)

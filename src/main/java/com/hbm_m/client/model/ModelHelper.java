@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.jetbrains.annotations.Nullable;
+
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -263,6 +265,300 @@ public class ModelHelper {
                 sprite.getU0(), sprite.getV0(), sprite.getU1() - sprite.getU0(), sprite.getV1() - sprite.getV0(),
                 0f, 0f, 1f, 1f,
                 sprite);
+    }
+
+    /**
+     * Допуск «волосков» при tile-split ({@link #normalizeWithTileSplit}): доли тайла
+     * уже этого размера (в единицах тайла) считаются вырожденными и отбрасываются
+     * (счётчик {@code tileSplitSlivers}). Целые тайлы не теряются никогда.
+     */
+    public static final float UV_EPS_MIN = 1e-4f;
+
+    /**
+     * null-безопасная проверка «identity-rect» {0,0,1,1}: ремап таким rect'ом
+     * математически тождественен отсутствию ремапа. ЕДИНЫЙ guard для
+     * {@code expandQuadUvsUnit}-путей (MachinePartRenderer.renderQuadsFallback) и
+     * клип-тира (DoorPartClipper) — дедупликация бывших двух копий инварианта
+     * «non-identity uvRect».
+     */
+    public static boolean isIdentityRect(@Nullable float[] uvRect) {
+        return uvRect == null || uvRect.length < 4
+                || (uvRect[0] == 0f && uvRect[1] == 0f && uvRect[2] == 1f && uvRect[3] == 1f);
+    }
+
+    /**
+     * Выбор terrain RenderType для immediate-путей партов (клип-тир и fallback):
+     * fade-альфа &lt; 0.99 — translucent (alpha blending), иначе cutout (alpha test
+     * прозрачных текселей стекла/окон; solid не годится — без alpha test прозрачные
+     * тексели выходят чёрными). ЕДИНАЯ точка выбора для бывших двух копий инварианта
+     * (MachinePartRenderer.renderClippedQuads/renderQuadsFallback).
+     */
+    public static net.minecraft.client.renderer.RenderType clipRenderType(float alpha) {
+        return alpha < 0.99f
+                ? net.minecraft.client.renderer.RenderType.translucent()
+                : net.minecraft.client.renderer.RenderType.cutout();
+    }
+
+    // ==================== Tile-split + нормализация (defense-in-depth) ====================
+
+    /** Счётчик отброшенных «волосков» (доли тайла &lt; {@link #UV_EPS_MIN}). */
+    private static long tileSplitSlivers;
+    /** One-shot guard warn-лога первого отброшенного «волоска» и срабатывания >64-гейта. */
+    private static boolean tileSplitWarned;
+
+    /** Число отброшенных tile-split'ом вырожденных кусков (диагностика потери геометрии). */
+    public static long tileSplitSliverCount() {
+        return tileSplitSlivers;
+    }
+
+    /**
+     * Композиция «tile-split → frac → sprite-нормализация» (defense-in-depth против
+     * легаси-тайловых квадов, рев.2 дизайна UV дверей).
+     * <ol>
+     *   <li><b>tile-split</b> — Sutherland-Hodgman квада по целочисленным UV-плоскостям
+     *       тайлов (каждый квад режется на подквады, целиком лежащие в одной ячейке
+     *       [tu..tu+1]×[tv..tv+1]);</li>
+     *   <li><b>frac</b> — UV подквада (u−tu, v−tv) ∈ [0..1];</li>
+     *   <li><b>sprite-нормализация</b> подквада СВОИМ спрайтом: (u−u0)/du, (v−v0)/dv —
+     *       именно в этом порядке; frac без (в) уводит текстуру (для атласного входа
+     *       frac ≠ sprite-нормализация).</li>
+     * </ol>
+     * Для АТЛАСНОГО входа (квад лежит внутри атласного rect'а спрайта, как на текущих
+     * call-site'ах MachineDoorRenderer.resolveDoorPartQuads/bakeDaeNodeQuads —
+     * DaeQuadBaker лерпит raw UV в rect спрайта, OBJ-печка идёт через texture.getU)
+     * split-фаза — no-op: квад не пересекает целочисленные плоскости, и одноячеечный
+     * квад идёт по прямому пути, ТОЖДЕСТВЕННОМУ {@link #normalizeQuadUvsPerQuad}
+     * (включая бит-в-бит формулу (u−u0)/du). «Легаси uv 5.77 → пять подквадов» через
+     * эти call-site'ы недостижим — функция страховка на случай будущих тайловых
+     * источников квадов.
+     * <p>
+     * Отброс «волосков»: после клипа куски с UV-протяжённостью &lt; {@link #UV_EPS_MIN}
+     * по обеим осям отбрасываются (u=1+1e-7 после floorI даёт вырожденный кусок —
+     * допустимы исчезающие волоски, недопустимы потерянные целые тайлы). Guard
+     * патологического UV (&gt;64 тайлов) — passthrough всего квада + однократный warn.
+     */
+    public static List<BakedQuad> normalizeWithTileSplit(List<BakedQuad> quads) {
+        if (quads == null || quads.isEmpty()) {
+            return quads;
+        }
+        List<BakedQuad> result = null;
+        for (int i = 0; i < quads.size(); i++) {
+            BakedQuad quad = quads.get(i);
+            List<BakedQuad> pieces = splitQuadTiles(quad);
+            if (pieces == null) {
+                // Одноячеечный квад ОБЯЗАН пройти sprite-нормализацию ((u−u0)/du),
+                // как в normalizeQuadUvsPerQuad: вход call-site'ов — атласные UV,
+                // а контракт share-кеша — нормализованные [0..1]. Passthrough без
+                // формулы оставлял в кеше атласные UV → ремап uvRect «протекал» атласом.
+                BakedQuad normalized = normalizeQuadUvsPerQuad(java.util.List.of(quad)).get(0);
+                if (result != null) {
+                    result.add(normalized);
+                }
+                continue;
+            }
+            if (result == null) {
+                result = new ArrayList<>(quads.size());
+                for (int j = 0; j < i; j++) {
+                    result.add(quads.get(j));
+                }
+            }
+            result.addAll(pieces);
+        }
+        return result != null ? result : quads;
+    }
+
+    /** Ёмкость скратч-полигона разбивки (квад × 4 полуплоскости тайла — максимум 8 вершин). */
+    private static final int SPLIT_CAP = 8;
+    /** Максимальный поддерживаемый stride вершин в разбивке (BLOCK=8, vanilla=9). */
+    private static final int SPLIT_MAX_STRIDE = 9;
+    /** Максимальное число тайлов одного квада (патологический UV — passthrough). */
+    private static final int SPLIT_MAX_TILES = 64;
+
+    // Скратчи разбивки (рендер однопоточный).
+    private static final int[][] SPLIT_A = new int[SPLIT_CAP][SPLIT_MAX_STRIDE];
+    private static final int[][] SPLIT_B = new int[SPLIT_CAP][SPLIT_MAX_STRIDE];
+    private static final float[] SPLIT_DIST = new float[SPLIT_CAP];
+    /** Переиспользуемый выход разбивки одного квада. */
+    private static final ArrayList<BakedQuad> SPLIT_TMP = new ArrayList<>();
+
+    /**
+     * Разбивает один квад по целочисленным UV-тайлам и нормализует подквады своим
+     * спрайтом. null — квад не нуждается в разбивке (одноячеечный/нецелевой формат —
+     * вызывающий берёт его как есть; одноячеечный путь тождественен
+     * {@link #normalizeQuadUvsPerQuad}).
+     */
+    @Nullable
+    private static List<BakedQuad> splitQuadTiles(BakedQuad quad) {
+        TextureAtlasSprite s = quad.getSprite();
+        int[] data = quad.getVertices();
+        int stride = data.length / 4;
+        if (s == null || stride < MIN_STRIDE || stride > SPLIT_MAX_STRIDE
+                || data.length != 4 * stride || s.getU1() - s.getU0() <= 0f
+                || s.getV1() - s.getV0() <= 0f) {
+            return null;
+        }
+        float minU = Float.MAX_VALUE, maxU = -Float.MAX_VALUE;
+        float minV = Float.MAX_VALUE, maxV = -Float.MAX_VALUE;
+        for (int i = 0; i < 4; i++) {
+            float u = Float.intBitsToFloat(data[i * stride + 4]);
+            float vv = Float.intBitsToFloat(data[i * stride + 5]);
+            minU = Math.min(minU, u); maxU = Math.max(maxU, u);
+            minV = Math.min(minV, vv); maxV = Math.max(maxV, vv);
+        }
+        // floorI(u - UV_EPS): корректен на u=1.0; вырожденный кусок от u=1+1e-7
+        // отсекается послойно отбросом «волосков» < UV_EPS_MIN.
+        int tu0 = floorI(minU - UV_EPS_MIN), tu1 = floorI(maxU - UV_EPS_MIN);
+        int tv0 = floorI(minV - UV_EPS_MIN), tv1 = floorI(maxV - UV_EPS_MIN);
+        if (tu0 == tu1 && tv0 == tv1) {
+            return null; // одна ячейка — split-фаза no-op, прямой путь
+        }
+        if ((long) (tu1 - tu0 + 1) * (tv1 - tv0 + 1) > SPLIT_MAX_TILES) {
+            if (!tileSplitWarned) {
+                tileSplitWarned = true;
+                com.hbm_m.main.MainRegistry.LOGGER.warn(
+                        "[HBM-M] normalizeWithTileSplit: quad with >{} uv tiles (u[{}, {}] v[{}, {}]) -- passthrough",
+                        SPLIT_MAX_TILES, minU, maxU, minV, maxV);
+            }
+            return null; // НЕ режем: passthrough, потери нет
+        }
+
+        SPLIT_TMP.clear();
+        final float su0 = s.getU0(), sv0 = s.getV0();
+        final float du = s.getU1() - s.getU0(), dv = s.getV1() - s.getV0();
+        for (int tu = tu0; tu <= tu1; tu++) {
+            for (int tv = tv0; tv <= tv1; tv++) {
+                int count = 4;
+                for (int i = 0; i < 4; i++) {
+                    System.arraycopy(data, i * stride, SPLIT_A[i], 0, stride);
+                }
+                count = clipUvPlane(SPLIT_A, count, stride, 1.0f, 0f, -(float) tu, SPLIT_B);      // u >= tu
+                if (count == 0) continue;
+                count = clipUvPlane(SPLIT_B, count, stride, -1.0f, 0f, (float) tu + 1f, SPLIT_A); // u <= tu+1
+                if (count == 0) continue;
+                count = clipUvPlane(SPLIT_A, count, stride, 0f, 1.0f, -(float) tv, SPLIT_B);      // v >= tv
+                if (count == 0) continue;
+                count = clipUvPlane(SPLIT_B, count, stride, 0f, -1.0f, (float) tv + 1f, SPLIT_A); // v <= tv+1
+                if (count == 0) continue;
+                emitTile(SPLIT_A, count, stride, quad, s, (float) tu, (float) tv, su0, sv0, du, dv, SPLIT_TMP);
+            }
+        }
+        return SPLIT_TMP.isEmpty() ? null : SPLIT_TMP;
+    }
+
+    private static int floorI(float x) {
+        return (int) Math.floor(x);
+    }
+
+    /**
+     * Режет полигон полуплоскостью в UV-пространстве: внутри = a*u + b*v + c >= 0.
+     * Вершины полного формата ({@code stride} int); t ребра считается по (u,v).
+     */
+    private static int clipUvPlane(int[][] src, int count, int stride, float a, float b, float c, int[][] dst) {
+        int out = 0;
+        for (int i = 0; i < count; i++) {
+            int[] vt = src[i];
+            SPLIT_DIST[i] = a * Float.intBitsToFloat(vt[4]) + b * Float.intBitsToFloat(vt[5]) + c;
+        }
+        for (int i = 0; i < count; i++) {
+            int j = (i + 1) % count;
+            boolean inI = SPLIT_DIST[i] >= 0f;
+            boolean inJ = SPLIT_DIST[j] >= 0f;
+            if (inI) {
+                System.arraycopy(src[i], 0, dst[out], 0, stride);
+                out++;
+            }
+            if (inI != inJ) {
+                float dI = SPLIT_DIST[i], dJ = SPLIT_DIST[j];
+                float t = Math.abs(dI - dJ) < 1e-9f ? 0.5f : dI / (dI - dJ);
+                // Линейная интерполяция вершины: позиция/uv (0..2, 4..5) — raw float,
+                // цвет (3) — покомпонентно, light/normal (6..) — от внутренней вершины i.
+                int[] va = src[i], vb = src[j], vo = dst[out];
+                for (int k = 0; k < stride; k++) {
+                    vo[k] = va[k];
+                }
+                for (int k = 0; k < 3; k++) {
+                    vo[k] = Float.floatToRawIntBits(lerpF(
+                            Float.intBitsToFloat(va[k]), Float.intBitsToFloat(vb[k]), t));
+                }
+                vo[3] = lerpPackedColor(va[3], vb[3], t);
+                vo[4] = Float.floatToRawIntBits(lerpF(
+                        Float.intBitsToFloat(va[4]), Float.intBitsToFloat(vb[4]), t));
+                vo[5] = Float.floatToRawIntBits(lerpF(
+                        Float.intBitsToFloat(va[5]), Float.intBitsToFloat(vb[5]), t));
+                out++;
+            }
+        }
+        return out;
+    }
+
+    private static float lerpF(float p, float q, float t) {
+        return p + (q - p) * t;
+    }
+
+    /** Покомпонентная интерполяция пакованного цвета (r в младшем байте). */
+    private static int lerpPackedColor(int p, int q, float t) {
+        int r = Math.round(lerpF(p & 0xFF, q & 0xFF, t));
+        int g = Math.round(lerpF((p >> 8) & 0xFF, (q >> 8) & 0xFF, t));
+        int b = Math.round(lerpF((p >> 16) & 0xFF, (q >> 16) & 0xFF, t));
+        int a = Math.round(lerpF((p >> 24) & 0xFF, (q >> 24) & 0xFF, t));
+        return (a << 24) | (b << 16) | (g << 8) | r;
+    }
+
+    /**
+     * Собирает подквады фан-триангуляцией: frac (u−tu, v−tv), затем sprite-нормализация
+     * своим спрайтом ((u−u0)/du) — порядок критичен (см. javadoc
+     * {@link #normalizeWithTileSplit}). «Волоски» (&lt; {@link #UV_EPS_MIN} по обеим
+     * осям) отбрасываются со счётчиком.
+     */
+    private static void emitTile(int[][] poly, int n, int stride, BakedQuad src, TextureAtlasSprite s,
+                                 float tu, float tv, float su0, float sv0, float du, float dv,
+                                 List<BakedQuad> out) {
+        if (n < 3) return;
+        // Отброс вырожденных кусков: UV-протяжённость после клипа.
+        float minU = Float.MAX_VALUE, maxU = -Float.MAX_VALUE;
+        float minV = Float.MAX_VALUE, maxV = -Float.MAX_VALUE;
+        for (int i = 0; i < n; i++) {
+            float u = Float.intBitsToFloat(poly[i][4]);
+            float vv = Float.intBitsToFloat(poly[i][5]);
+            minU = Math.min(minU, u); maxU = Math.max(maxU, u);
+            minV = Math.min(minV, vv); maxV = Math.max(maxV, vv);
+        }
+        if (maxU - minU < UV_EPS_MIN && maxV - minV < UV_EPS_MIN) {
+            tileSplitSlivers++;
+            if (!tileSplitWarned) {
+                tileSplitWarned = true;
+                com.hbm_m.main.MainRegistry.LOGGER.info(
+                        "[HBM-M] normalizeWithTileSplit: dropped first degenerate uv sliver ({} total so far)",
+                        tileSplitSlivers);
+            }
+            return;
+        }
+        // frac -> sprite-нормализация, in-place по скратч-полигону.
+        for (int i = 0; i < n; i++) {
+            int[] vt = poly[i];
+            float u = Float.intBitsToFloat(vt[4]);
+            float vv = Float.intBitsToFloat(vt[5]);
+            vt[4] = Float.floatToRawIntBits((u - tu - su0) / du);
+            vt[5] = Float.floatToRawIntBits((vv - tv - sv0) / dv);
+        }
+        // Фан: n==3 квад(0,1,2,2); n==4 как есть; n>=5 квад(0..3) + треугольники (0,k,k+1,k+1).
+        if (n <= 4) {
+            out.add(packTile(poly, new int[] { 0, 1, 2, n - 1 }, stride, src));
+            return;
+        }
+        out.add(packTile(poly, new int[] { 0, 1, 2, 3 }, stride, src));
+        for (int k = 3; k + 1 < n; k++) {
+            out.add(packTile(poly, new int[] { 0, k, k + 1, k + 1 }, stride, src));
+        }
+    }
+
+    /** Пакует подквад из вершин-индексов {@code idx} скратч-полигона. */
+    private static BakedQuad packTile(int[][] poly, int[] idx, int stride, BakedQuad src) {
+        int[] packed = new int[4 * stride];
+        for (int i = 0; i < 4; i++) {
+            System.arraycopy(poly[idx[i]], 0, packed, i * stride, stride);
+        }
+        return new BakedQuad(packed, src.getTintIndex(), src.getDirection(), src.getSprite(), src.isShade());
     }
 
     /**

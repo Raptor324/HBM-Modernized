@@ -53,7 +53,7 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
     @Override
     public InteractionResult useOn(UseOnContext context) {
         Player player = context.getPlayer();
-        if (player == null || !player.isShiftKeyDown()) {
+        if (player == null) {
             return InteractionResult.PASS;
         }
         Level level = context.getLevel();
@@ -61,6 +61,9 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
         ItemStack stack = context.getItemInHand();
 
         if (level.getBlockState(pos).getBlock() instanceof FluidDuctBlock) {
+            if (!player.isShiftKeyDown()) {
+                return InteractionResult.PASS;
+            }
             Fluid fluid = getType(level, pos, stack);
             if (fluid == null) {
                 return InteractionResult.PASS;
@@ -74,6 +77,18 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
 
         MachineFluidTankBlockEntity tankBE = findTankEntity(level, pos);
         if (tankBE != null) {
+            // Паритет NEXT BlockFluidBarrel.Functional.useItemOn: у БОЧЕК тип применяется
+            // ОБЫЧНЫМ ПКМ; sneak+ПКМ по бочке ничего не делает (меню не открывает и тип не меняет).
+            // Generic-мультиблочный бак сохраняет прежнее поведение (меню по обычному ПКМ).
+            boolean barrel = level.getBlockState(tankBE.getBlockPos()).getBlock()
+                    instanceof com.hbm_m.block.machines.BarrelTankBlock;
+            if (barrel) {
+                if (player.isShiftKeyDown()) {
+                    return InteractionResult.SUCCESS;
+                }
+            } else if (!player.isShiftKeyDown()) {
+                return InteractionResult.PASS;
+            }
             if (level.isClientSide) {
                 return InteractionResult.SUCCESS;
             }
@@ -89,11 +104,11 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
                         + BuiltInRegistries.FLUID.getKey(tankType).getPath();
             }
             Component fluidName = Component.translatable(nameKey).withStyle(ChatFormatting.YELLOW);
+            // Паритет NEXT BlockFluidBarrel.Functional.useItemOn: системное сообщение в чат,
+            // без звука.
             Component line = Component.translatable("gui.hbm_m.fluid_tank.filter_set", fluidName)
                     .withStyle(ChatFormatting.YELLOW);
-            player.displayClientMessage(line, true);
-            level.playSound(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                    SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 0.3F, 1.25F);
+            player.displayClientMessage(line, false);
             return InteractionResult.sidedSuccess(level.isClientSide());
         }
 

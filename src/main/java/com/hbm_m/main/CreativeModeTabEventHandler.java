@@ -1699,6 +1699,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.PNEUMATIC_STORAGE_MONO.get()));
         add.accept(new ItemStack(ModBlocks.PNEUMATIC_STORAGE_IMPORTER.get()));
         add.accept(new ItemStack(ModBlocks.PNEUMATIC_STORAGE_EXPORTER.get()));
+        add.accept(new ItemStack(ModBlocks.BARREL_IRON.get()));
         add.accept(new ItemStack(ModBlocks.BARREL_PLASTIC.get()));
         add.accept(new ItemStack(ModBlocks.BARREL_STEEL.get()));
         add.accept(new ItemStack(ModBlocks.BARREL_TCALLOY.get()));
@@ -1722,6 +1723,16 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.PILE_ROD_MK2_PU239.get()));
         add.accept(new ItemStack(ModItems.PILE_ROD_RGP.get()));
         add.accept(new ItemStack(ModItems.PILE_ROD_WASTE.get()));
+        // CP-1 pile channel blocks + rods (NEXT: keine Tab-Zuordnung; hier neben dem uebrigen Pile-Inhalt)
+        add.accept(new ItemStack(ModBlocks.BLOCK_GRAPHITE_DRILLED.get()));
+        add.accept(new ItemStack(ModBlocks.BLOCK_GRAPHITE_ROD.get()));
+        add.accept(new ItemStack(ModBlocks.BLOCK_GRAPHITE_DETECTOR.get()));
+        add.accept(new ItemStack(ModBlocks.BLOCK_GRAPHITE_FUEL.get()));
+        add.accept(new ItemStack(ModBlocks.BLOCK_GRAPHITE_LITHIUM.get()));
+        add.accept(new ItemStack(ModBlocks.BLOCK_GRAPHITE_PLUTONIUM.get()));
+        add.accept(new ItemStack(ModBlocks.BLOCK_GRAPHITE_SOURCE.get()));
+        add.accept(new ItemStack(ModItems.PILE_ROD_BORON.get()));
+        add.accept(new ItemStack(ModItems.PILE_ROD_DETECTOR.get()));
         add.accept(new ItemStack(ModBlocks.PWR_FUEL.get()));
         add.accept(new ItemStack(ModBlocks.PWR_CONTROL.get()));
         add.accept(new ItemStack(ModBlocks.PWR_CHANNEL.get()));
@@ -1761,7 +1772,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.SEAL_CONTROLLER.get()));
         add.accept(new ItemStack(ModBlocks.CARGO_ELEVATOR.get()));
         add.accept(new ItemStack(ModItems.VAULT_DOOR.get()));
-        add.accept(new ItemStack(ModBlocks.BLAST_DOOR.get()));
+        add.accept(new ItemStack(ModItems.BLAST_DOOR.get()));
         add.accept(new ItemStack(ModItems.SLIDE_DOOR.get()));
         add.accept(new ItemStack(ModItems.FIRE_DOOR.get()));
         add.accept(new ItemStack(ModItems.TRANSITION_SEAL.get()));
@@ -2797,7 +2808,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.BATTERY_LITHIUM_BLOCK.get()));
         add.accept(new ItemStack(ModBlocks.BATTERY_POTATO_BLOCK.get()));
         add.accept(new ItemStack(ModBlocks.BATTERY_SCHRABIDIUM_BLOCK.get()));
-        add.accept(new ItemStack(ModBlocks.BLAST_DOOR.get()));
+        add.accept(new ItemStack(ModItems.BLAST_DOOR.get()));
         add.accept(new ItemStack(ModBlocks.BLOCK_ALUMINIUM.get()));
         add.accept(new ItemStack(ModBlocks.BOXCAR.get()));
         add.accept(new ItemStack(ModBlocks.BRICK_ASBESTOS.get()));

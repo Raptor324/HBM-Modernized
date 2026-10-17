@@ -51,6 +51,14 @@ import java.util.function.BooleanSupplier;
  * 5. ChunkDataEvent.Save постится на СЕРВЕРНОМ потоке (слушатели модов ожидают
  *    его там); запись — ванильный асинхронный write(pos, tag). При шатдауне
  *    влетевшая задача добивается inline на воркере, чтобы тег не потерялся.
+ * 6. Гвард по ticketLevel (> 31) — дешёвый фильтр, а НЕ гарантией: очередь
+ *    in-flight держит тег секунды, и игрок-обсервер может промотировать чанк
+ *    до FULL уже после проверки (TOCTOU). Поэтому перед ивентом и записью
+ *    (всё ещё на серверном потоке) тег перепроверяется: если чанк промотирован
+ *    или снова грязен — тег выбрасывается, ванилла пересейвит синхронно.
+ *    Падение сериализации на воркере (напр. ThreadingDetector при гонке) тоже
+ *    добивается синхронной пересериализацией на серверном потоке — см.
+ *    ChunkSaveParallelizer.submit.
  */
 @Mixin(net.minecraft.server.level.ChunkMap.class)
 public abstract class ChunkMapSaveMixin {
@@ -138,12 +146,24 @@ public abstract class ChunkMapSaveMixin {
         this.chunkTypeCache.put(pos.toLong(), (byte) 1);
 
         final LevelChunk levelChunk = (LevelChunk) chunk;
+        final ChunkHolder holderAtSubmit = holder;
         boolean submitted = ChunkSaveParallelizer.submit(
                 this.level,
                 chunk,
                 // серверный поток: ивент (моды правят тег) + ванильная async-запись;
                 // release — слот in-flight освобождается только по доездке до диска
                 (tag, release) -> {
+                    // Сериализовали-потом-проверили: гвард на :129 — снапшот на
+                    // момент submit, а очередь in-flight держит тег секунды.
+                    // Если за это время чанк промотирован игроком (ticketLevel
+                    // <= 31: тикает, мутируется, рассылается) или снова помечен
+                    // грязным — тег устарел/частичен. Выбрасываем его: диск не
+                    // пишем, ванилла пересейвит синхронно на серверном потоке.
+                    if (holderAtSubmit.getTicketLevel() <= 31 || levelChunk.isUnsaved()) {
+                        release.run();
+                        levelChunk.setUnsaved(true);
+                        return;
+                    }
                     CompoundTag data = hbm$postSaveEvent(levelChunk, tag);
                     hbm$writeChunk(pos, data, release);
                 },

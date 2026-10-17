@@ -41,6 +41,7 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
     private final Map<String, Function<T, Integer>> lightOverrides = new HashMap<>();
     private final Map<String, Function<T, float[]>> tintOverrides = new HashMap<>();
     private final Map<String, float[]> tintFalloffs = new HashMap<>();
+    private final Map<String, java.util.function.BiFunction<T, Float, float[][]>> clipPlanesResolvers = new HashMap<>();
     private int viewDistance = -1;
     @Nullable
     private java.util.List<String> itemParts;
@@ -136,13 +137,13 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
 
     /** Static part (drawn in the block pose, no animation). */
     public MachineSpecBuilder<T> part(String name) {
-        parts.add(new MachineSpec.PartDef<>(name, name, null, null, null, false, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name), null, null));
+        parts.add(new MachineSpec.PartDef<>(name, name, null, null, null, false, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name), null, null, clipPlanesResolvers.get(name)));
         return this;
     }
 
     /** Animated part: {@link PartAnimator} sets the transform relative to the block. */
     public MachineSpecBuilder<T> part(String name, PartAnimator<T> animator) {
-        parts.add(new MachineSpec.PartDef<>(name, name, animator, null, null, true, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name), null, null));
+        parts.add(new MachineSpec.PartDef<>(name, name, animator, null, null, true, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name), null, null, clipPlanesResolvers.get(name)));
         return this;
     }
 
@@ -151,7 +152,7 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
      * one OBJ part (e.g. 4 gears from the "Cog" part).
      */
     public MachineSpecBuilder<T> part(String modelPartName, String name, PartAnimator<T> animator) {
-        parts.add(new MachineSpec.PartDef<>(name, modelPartName, animator, null, null, true, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name), null, null));
+        parts.add(new MachineSpec.PartDef<>(name, modelPartName, animator, null, null, true, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name), null, null, clipPlanesResolvers.get(name)));
         return this;
     }
 
@@ -202,7 +203,7 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
      * the static cutoff, like regular statics.
      */
     public MachineSpecBuilder<T> staticPart(String name, PartAnimator<T> transform) {
-        parts.add(new MachineSpec.PartDef<>(name, name, transform, null, null, false, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name), null, null));
+        parts.add(new MachineSpec.PartDef<>(name, name, transform, null, null, false, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name), null, null, clipPlanesResolvers.get(name)));
         return this;
     }
 
@@ -213,7 +214,7 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
      */
     public MachineSpecBuilder<T> conditionalPart(String name, java.util.function.Predicate<T> visibility) {
         parts.add(new MachineSpec.PartDef<>(name, name, null, null, null, false, id + "/" + name,
-                lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name), null, null, visibility));
+                lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name), null, null, visibility, clipPlanesResolvers.get(name)));
         return this;
     }
 
@@ -222,7 +223,7 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
      */
     public MachineSpecBuilder<T> conditionalPart(String name, PartAnimator<T> transform, java.util.function.Predicate<T> visibility) {
         parts.add(new MachineSpec.PartDef<>(name, name, transform, null, null, false, id + "/" + name,
-                lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name), null, null, visibility));
+                lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name), null, null, visibility, clipPlanesResolvers.get(name)));
         return this;
     }
 
@@ -231,7 +232,7 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
      */
     public MachineSpecBuilder<T> conditionalPart(String name, String modelPartName, PartAnimator<T> transform, java.util.function.Predicate<T> visibility) {
         parts.add(new MachineSpec.PartDef<>(name, modelPartName, transform, null, null, false, id + "/" + name,
-                lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name), null, null, visibility));
+                lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name), null, null, visibility, clipPlanesResolvers.get(name)));
         return this;
     }
 
@@ -240,14 +241,14 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
      * The VBO is cached keyed on {@code cacheKeyFn}; the returned quad list may be empty.
      */
     public MachineSpecBuilder<T> dynamicPart(String name, QuadResolver<T> quads, Function<T, String> cacheKeyFn) {
-        parts.add(new MachineSpec.PartDef<>(name, name, null, quads, cacheKeyFn, false, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name), null, null));
+        parts.add(new MachineSpec.PartDef<>(name, name, null, quads, cacheKeyFn, false, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name), null, null, clipPlanesResolvers.get(name)));
         return this;
     }
 
     /** Dynamic part with per-BE geometry AND animation (e.g. the dish of the large/small radar). */
     public MachineSpecBuilder<T> dynamicPart(String name, PartAnimator<T> animator,
                                              QuadResolver<T> quads, Function<T, String> cacheKeyFn) {
-        parts.add(new MachineSpec.PartDef<>(name, name, animator, quads, cacheKeyFn, true, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name), null, null));
+        parts.add(new MachineSpec.PartDef<>(name, name, animator, quads, cacheKeyFn, true, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name), null, null, clipPlanesResolvers.get(name)));
         return this;
     }
 
@@ -258,7 +259,7 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
      */
     public MachineSpecBuilder<T> dynamicPart(String name, QuadResolver<T> quads, Function<T, String> cacheKeyFn,
                                              PartAnimator<T> transform) {
-        parts.add(new MachineSpec.PartDef<>(name, name, transform, quads, cacheKeyFn, false, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name), null, null));
+        parts.add(new MachineSpec.PartDef<>(name, name, transform, quads, cacheKeyFn, false, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name), null, null, clipPlanesResolvers.get(name)));
         return this;
     }
 
@@ -270,7 +271,22 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
      */
     public MachineSpecBuilder<T> dynamicPart(String name, QuadResolver<T> quads, Function<T, String> cacheKeyFn,
                                              PartAnimator<T> transform, Function<T, float[]> uvRectFn) {
-        parts.add(new MachineSpec.PartDef<>(name, name, transform, quads, cacheKeyFn, false, id + "/" + name, lightOverrides.get(name), uvRectFn, tintOverrides.get(name), tintFalloffs.get(name), null, null));
+        parts.add(new MachineSpec.PartDef<>(name, name, transform, quads, cacheKeyFn, false, id + "/" + name, lightOverrides.get(name), uvRectFn, tintOverrides.get(name), tintFalloffs.get(name), null, null, clipPlanesResolvers.get(name)));
+        return this;
+    }
+
+    /**
+     * Per-part CPU-клип плоскостями (обрезка «карманом» двери): резолвер
+     * {@code (be, partialTick) -> float[][]} из {A,B,C,D} в конвенции DoorDecl
+     * «+D» ({@code A*x+B*y+C*z+D >= 0} — внутри), в ЛОКАЛЬНЫХ координатах геометрии
+     * парта, или null (обычный тир). Часть с непустыми плоскостями деградирует в
+     * клипуемый immediate-тир (Sutherland-Hodgman по кэшированным квадам,
+     * DoorPartClipper) — меши не пересобираются. Call BEFORE declaring
+     * part()/dynamicPart() with that name.
+     */
+    public MachineSpecBuilder<T> clipPlanes(String partName,
+                                            java.util.function.BiFunction<T, Float, float[][]> fn) {
+        clipPlanesResolvers.put(partName, fn);
         return this;
     }
 
@@ -620,7 +636,9 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
                 tintOverrides.get(name), tintFalloffs.get(name),
                 new MachineSpec.ParametricAnim(kind, axisX, axisY, axisZ, pivotX, pivotY, pivotZ,
                         offX, offY, offZ, baseYawDegrees, null),
-                paramsFn));
+                paramsFn,
+                null,
+                clipPlanesResolvers.get(name)));
         return this;
     }
 
@@ -754,7 +772,9 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
                 id + "/" + name, lightOverrides.get(name), null,
                 tintOverrides.get(name), tintFalloffs.get(name),
                 chain,
-                params));
+                params,
+                null,
+                clipPlanesResolvers.get(name)));
         return this;
     }
 
@@ -824,7 +844,9 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
                 id + "/" + name, lightOverrides.get(name), null,
                 tintOverrides.get(name), tintFalloffs.get(name),
                 chain,
-                params));
+                params,
+                null,
+                clipPlanesResolvers.get(name)));
         return this;
     }
 
@@ -942,7 +964,9 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
                 id + "/" + name, lightOverrides.get(name), null,
                 tintOverrides.get(name), tintFalloffs.get(name),
                 chain,
-                params));
+                params,
+                null,
+                clipPlanesResolvers.get(name)));
         return this;
     }
 

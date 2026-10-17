@@ -375,11 +375,14 @@ tasks.named<ProcessResources>("processResources") {
 		// На 1.21.1 состояние батареи переносится кодом
 		// (MachineBatteryBlock#playerWillDestroy → MachineBatteryBlockEntity#saveToItemStack),
 		// поэтому таблицы просто исключаем из сборки.
+		// Конденсаторы несут заряд тем же механизмом (MachineCapacitorBlock#playerWillDestroy) -
+		// их таблицы тоже исключаем. У TE-less capacitor_bus таблица остаётся (обычный dropSelf).
 		listOf("loot_table", "loot_tables").forEach { dirName ->
 			File(File(dataDir, "hbm_m"), dirName).walkTopDown()
 				// machine_fensu is a MachineBatteryBlock too - its name just does not start with
 				// machine_battery, so it kept its loot table and dropped a second copy of itself.
-				.filter { it.isFile && (it.name.startsWith("machine_battery") || it.name == "machine_fensu.json") }
+				.filter { it.isFile && (it.name.startsWith("machine_battery") || it.name == "machine_fensu.json"
+						|| (it.name.startsWith("capacitor_") && it.name != "capacitor_bus.json")) }
 				.forEach { it.delete() }
 		}
 

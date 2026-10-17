@@ -77,7 +77,10 @@ public final class DhOcclusionGpu {
      * override и reduceOverdrawWithFastMovement, которые ручная репликация
      * не покрывала (при высоком игроке R растёт до десятков блоков, и маска
      * по таблице оставалась маленькой → копировался шум dither-зоны).
-     * Маска = верх dither-зоны = 1.5·uClipDistance.
+     * Маска = верх dither-зоны = 1.5·uClipDistance; под Iris-оверрайдом
+     * ({@link DhRenderBridge#isIrisLodOverrideActive()}) uClip БЕЗ +16 (аудит
+     * DH-7: +16 только у нативного GlDhTerrainShaderProgram) - иначе маска
+     * 24 блока перекрывает валидную лод-глубину.
      *
      * @return дистанция в блоках; 0 = маска не определена (не применять).
      */
@@ -90,7 +93,8 @@ public final class DhOcclusionGpu {
             }
             float r = (Float) nearClipBlocksMethod.invoke(null);
             if (r > 0.0F && Float.isFinite(r)) {
-                float mask = 1.5F * (r + 16.0F);
+                float clip = DhRenderBridge.isIrisLodOverrideActive() ? r : r + 16.0F;
+                float mask = 1.5F * clip;
                 return mask > Float.MAX_VALUE ? Float.MAX_VALUE : mask;
             }
         } catch (Throwable ignored) {}
@@ -125,7 +129,8 @@ public final class DhOcclusionGpu {
             float aspect = (float) win.getWidth() / (float) win.getHeight();
             double tanHalfFov = Math.tan(Math.toRadians(35.0));
             double r = distBlocks / Math.sqrt(1.0 + tanHalfFov * tanHalfFov * (aspect * aspect + 1.0));
-            return 1.5 * (r + 16.0) > Float.MAX_VALUE ? Float.MAX_VALUE : (float) (1.5 * (r + 16.0));
+            double clip = r + (DhRenderBridge.isIrisLodOverrideActive() ? 0.0 : 16.0);
+            return 1.5 * clip > Float.MAX_VALUE ? Float.MAX_VALUE : (float) (1.5 * clip);
         } catch (Throwable ignored) {}
         return 0.0F;
     }

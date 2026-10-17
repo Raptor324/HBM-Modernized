@@ -51,7 +51,8 @@ import net.minecraft.world.item.Item;
  * Parametrized by a BlockEntity factory + type supplier so each capacity variant (iron/steel)
  * can share this single Block class.
  */
-public class BarrelTankBlock extends BaseEntityBlock implements com.hbm_m.interfaces.IMultiblockController {
+public class BarrelTankBlock extends BaseEntityBlock
+        implements com.hbm_m.interfaces.IMultiblockController, com.hbm_m.block.IPersistentInfoProvider {
 
     public static final DirectionProperty FACING = DirectionProperty.create("facing", Direction.Plane.HORIZONTAL);
 
@@ -80,8 +81,10 @@ public class BarrelTankBlock extends BaseEntityBlock implements com.hbm_m.interf
      * Parity notes (1.7.10 {@code BlockFluidBarrel.addInformation}): {@code canStoreHighlyCorrosive}
      * is nullable — {@code null} hides the line entirely (the original plastic barrel only lists
      * 3 permission lines); {@code leaky} adds the red "Leaky" line of the corroded barrel.
+     * {@code canStoreCorrosive} follows the same pattern: NEXT's tcalloy/antimatter/corroded
+     * desc-line lists have no plain-corrosive entry at all, so {@code null} omits the line.
      */
-    public record TooltipInfo(int capacityMb, boolean canStoreHot, boolean canStoreCorrosive,
+    public record TooltipInfo(int capacityMb, boolean canStoreHot, @Nullable Boolean canStoreCorrosive,
                               @Nullable Boolean canStoreHighlyCorrosive, boolean canStoreAntimatter,
                               boolean leaky) {}
 
@@ -141,8 +144,16 @@ public class BarrelTankBlock extends BaseEntityBlock implements com.hbm_m.interf
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (structureHelper != null && !state.is(newState.getBlock()) && !level.isClientSide()) {
-            structureHelper.destroyStructure(level, pos, state.getValue(FACING));
+        if (!state.is(newState.getBlock()) && !level.isClientSide()) {
+            // Паритет NEXT BlockEntityMachineBase.preRemoveSideEffects → spillInventory:
+            // при разрушении бочки содержимое слотов выбрасывается в мир. НЕ через setRemoved —
+            // BaseHbmBlockEntity.dropInventory: ваниль зовёт setRemoved и при выгрузке чанка (дюп).
+            if (level.getBlockEntity(pos) instanceof MachineFluidTankBlockEntity tank) {
+                tank.dropInventory();
+            }
+            if (structureHelper != null) {
+                structureHelper.destroyStructure(level, pos, state.getValue(FACING));
+            }
         }
         super.onRemove(state, level, pos, newState, isMoving);
     }
@@ -158,10 +169,13 @@ public class BarrelTankBlock extends BaseEntityBlock implements com.hbm_m.interf
     *///?}
         if (tooltipInfo == null) return;
 
-        tooltip.add(Component.translatable("tooltip.hbm_m.barrel.capacity", tooltipInfo.capacityMb())
+        // Паритет NEXT BarrelBlockItem: ёмкость с группировкой разрядов (String.format("%,d")).
+        tooltip.add(Component.translatable("tooltip.hbm_m.barrel.capacity", String.format("%,d", tooltipInfo.capacityMb()))
                 .withStyle(ChatFormatting.AQUA));
         tooltip.add(storageLine(tooltipInfo.canStoreHot(), "tooltip.hbm_m.barrel.hot"));
-        tooltip.add(storageLine(tooltipInfo.canStoreCorrosive(), "tooltip.hbm_m.barrel.corrosive"));
+        if (tooltipInfo.canStoreCorrosive() != null) {
+            tooltip.add(storageLine(tooltipInfo.canStoreCorrosive(), "tooltip.hbm_m.barrel.corrosive"));
+        }
         if (tooltipInfo.canStoreHighlyCorrosive() != null) {
             tooltip.add(storageLine(tooltipInfo.canStoreHighlyCorrosive(), "tooltip.hbm_m.barrel.highly_corrosive"));
         }
@@ -206,6 +220,21 @@ public class BarrelTankBlock extends BaseEntityBlock implements com.hbm_m.interf
         return RenderShape.MODEL;
     }
 
+    // ═══════════════ Компаратор (порт BlockFluidBarrel.Functional.hasAnalogOutputSignal) ═══════════════
+
+    @Override
+    public boolean hasAnalogOutputSignal(BlockState state) {
+        return true;
+    }
+
+    @Override
+    public int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
+        if (level.getBlockEntity(pos) instanceof MachineFluidTankBlockEntity tank) {
+            return tank.getComparatorPower();
+        }
+        return 0;
+    }
+
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
@@ -219,6 +248,15 @@ public class BarrelTankBlock extends BaseEntityBlock implements com.hbm_m.interf
     *///?}
 
     private InteractionResult hbmOnUse(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
+        // NEXT BlockFluidBarrel.Functional: identifier применяется обычным ПКМ (useItemOn),
+        // поэтому на 1.20.1 (блок-первым) отдаём PASS, чтобы сработал item.useOn;
+        // sneak+ПКМ меню не открывает вовсе (useWithoutItem: isSecondaryUseActive → SUCCESS).
+        if (player.isShiftKeyDown()) {
+            return InteractionResult.SUCCESS;
+        }
+        if (player.getItemInHand(hand).getItem() instanceof com.hbm_m.item.liquids.FluidIdentifierItem) {
+            return InteractionResult.PASS;
+        }
         if (level.isClientSide) {
             return InteractionResult.sidedSuccess(true);
         }
@@ -256,6 +294,24 @@ public class BarrelTankBlock extends BaseEntityBlock implements com.hbm_m.interf
             return List.of(stack);
         }
         return super.getDrops(state, builder);
+    }
+
+    /**
+     * Порт {@code BlockFluidBarrel.appendPersistentInfo} (NEXT {@code IPersistentInfoProvider}):
+     * дропнутая бочка показывает "x/y mB <жидкость>" из persistent-тега (ёмкость из tank_max,
+     * который writeNBT кладёт именно для этой строки). Проводка — из
+     * {@link com.hbm_m.item.PersistentInfoBlockItem} через instanceof-гейт на блок.
+     */
+    @Override
+    public void addInformation(ItemStack stack, CompoundTag persistentTag, @Nullable Level level, List<Component> list, TooltipFlag flag) {
+        com.hbm_m.inventory.fluid.tank.FluidTank tank = new com.hbm_m.inventory.fluid.tank.FluidTank(
+                com.hbm_m.inventory.fluid.ModFluids.NONE.getSource(),
+                persistentTag.contains("tank_max") ? persistentTag.getInt("tank_max") : 0);
+        tank.readFromNBT(persistentTag, "tank");
+        com.hbm_m.inventory.fluid.FluidType type = com.hbm_m.inventory.fluid.FluidType.forFluid(tank.getTankType());
+        list.add(Component.literal(tank.getFill() + "/" + tank.getMaxFill() + "mB ")
+                .append(type.getLocalizedName())
+                .withStyle(ChatFormatting.YELLOW));
     }
 
     /**

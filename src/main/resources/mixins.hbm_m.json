@@ -37,6 +37,7 @@
     "client.MixinItemRendererTemplatePreview",
     "client.MixinAbstractClientPlayerSkin",
     "client.MixinIrisShadowRenderer",
+    "client.MixinIrisRenderingPipelinePreComposite",
     "client.MixinBlockEntityRenderDispatcher",
     "client.VertexBufferMixin",
     "client.ShaderInstanceAccessor",
@@ -50,11 +51,9 @@
     "client.SodiumRenderBoundsMixin",
     "client.MixinBlockEntity",
     "client.SodiumWorldRendererMixin",
-    "client.SodiumWorldRendererMixin121",
     "client.MixinClientLevelChunkLifecycle"
   ],
   "injectors": {
     "defaultRequire": 1
   }
 }
-

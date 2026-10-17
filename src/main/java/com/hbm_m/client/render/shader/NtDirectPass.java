@@ -42,6 +42,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public final class NtDirectPass {
 
+    private static int depth = 0;
     private static boolean active;
     /** The pack ExtendedShader applied by {@link #begin()} (null = no pack). */
     private static net.minecraft.client.renderer.ShaderInstance activePackShader;
@@ -66,6 +67,9 @@ public final class NtDirectPass {
      * target, which Iris overwrites in its final blit (content would vanish).
      */
     public static void begin() {
+        if (depth++ > 0) {
+            return;
+        }
         if (ShaderCompatibilityDetector.isExternalShaderActive()) {
             // Oculus/Iris switch or zero the GL program through their own paths
             // without updating ShaderInstance.lastProgramId; the cached bind then
@@ -104,6 +108,10 @@ public final class NtDirectPass {
     }
 
     public static void end() {
+        if (--depth > 0) {
+            return;
+        }
+        depth = 0;
         // Close the window: unbind the pack shader the same way an Iris-managed
         // pass would end - clear() resets the vanilla statics and lets the
         // ExtendedShader unbind its framebuffer, so no state of the window leaks
@@ -120,6 +128,22 @@ public final class NtDirectPass {
         activePackShader = null;
         packFbo = -1;
         active = false;
+    }
+
+    /**
+     * Executes a render action under the NtDirectPass window and flushes all pending batches.
+     * Guaranteed to wrap both intermediate type-switch flushes and the final batch flush.
+     */
+    public static void run(Runnable renderAction) {
+        begin();
+        try {
+            if (renderAction != null) {
+                renderAction.run();
+            }
+            com.hbm_m.particle.nt.ParticleEngineNT.buffer().endBatch();
+        } finally {
+            end();
+        }
     }
 
     /** Read by {@code VertexBufferMixin} after every ShaderInstance.apply() - must be cheap. */
