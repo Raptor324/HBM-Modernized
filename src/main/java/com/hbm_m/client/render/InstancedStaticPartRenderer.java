@@ -198,7 +198,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     private static final java.util.Set<InstancedStaticPartRenderer> ACTIVE_RENDERERS =
             java.util.Collections.newSetFromMap(new java.util.WeakHashMap<>());
 
-    private final InstanceSlotAllocator slotAllocator = new InstanceSlotAllocator(currentAllocatedInstances);
+    private final InstanceSlotAllocator slotAllocator = new InstanceSlotAllocator(currentAllocatedInstances, maxInstances);
 
     public InstanceSlotAllocator getSlotAllocator() {
         return slotAllocator;
@@ -236,9 +236,10 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
 
         // 6. Update instanceCount to current allocator high-water mark
         int hwm = slotAllocator.getHighWaterMark();
-        this.instanceCount = hwm;
+        this.instanceCount = Math.min(maxInstances, hwm);
         if (instanceBuffer != null) {
-            ((Buffer) instanceBuffer).position(instanceDataSize * instanceCount);
+            int targetPos = Math.min(instanceDataSize * instanceCount, instanceBuffer.capacity());
+            ((Buffer) instanceBuffer).position(targetPos);
         }
 
         // 7. If all instances of this renderer were freed, immediately evict from MDI coordinator
@@ -320,8 +321,11 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         this.slotLayoutEpoch++;
         this.vboShadowValid = false;
         this.vboShadowValidFloats = 0;
-        this.instanceCount = Math.max(instanceCount, slotAllocator.getHighWaterMark());
-        ((Buffer) instanceBuffer).position(instanceDataSize * instanceCount);
+        this.instanceCount = Math.min(maxInstances, Math.max(instanceCount, slotAllocator.getHighWaterMark()));
+        if (instanceBuffer != null) {
+            int targetPos = Math.min(instanceDataSize * instanceCount, instanceBuffer.capacity());
+            ((Buffer) instanceBuffer).position(targetPos);
+        }
     }
 
     /**
@@ -1606,8 +1610,9 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
             slotPosQuatStable[slot] = true;
             slotPosQuatVerified[slot] = true;
         }
-        instanceCount = Math.max(instanceCount, slotAllocator.getHighWaterMark());
-        ((Buffer) instanceBuffer).position(instanceDataSize * instanceCount);
+        instanceCount = Math.min(maxInstances, Math.max(instanceCount, slotAllocator.getHighWaterMark()));
+        int targetPos = Math.min(instanceDataSize * instanceCount, instanceBuffer.capacity());
+        ((Buffer) instanceBuffer).position(targetPos);
         return true;
     }
 
@@ -1657,8 +1662,9 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         slotPosQuatStable[slot] = true;
         slotPosQuatVerified[slot] = true;
         if (slot + 1 > instanceCount) {
-            instanceCount = Math.max(instanceCount, slotAllocator.getHighWaterMark());
-            ((Buffer) instanceBuffer).position(instanceDataSize * instanceCount);
+            instanceCount = Math.min(maxInstances, Math.max(instanceCount, slotAllocator.getHighWaterMark()));
+            int targetPos = Math.min(instanceDataSize * instanceCount, instanceBuffer.capacity());
+            ((Buffer) instanceBuffer).position(targetPos);
         }
         return true;
     }
@@ -1831,7 +1837,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
 
         long posKey = OcclusionCullingHelper.occlusionKeyForBlock(blockPos);
         int slot = slotAllocator.allocateSlot(posKey);
-        if (slot >= maxInstances) {
+        if (slot < 0 || slot >= maxInstances) {
             OVERFLOW_ADD_COUNT.incrementAndGet();
             if (!overflowLogged) {
                 overflowLogged = true;
@@ -1879,8 +1885,9 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
                 mdiRecordWriteHappened = true;
             }
         }
-        instanceCount = Math.max(instanceCount, slotAllocator.getHighWaterMark());
-        ((Buffer) instanceBuffer).position(instanceDataSize * instanceCount);
+        instanceCount = Math.min(maxInstances, Math.max(instanceCount, slotAllocator.getHighWaterMark()));
+        int targetPos = Math.min(instanceDataSize * instanceCount, instanceBuffer.capacity());
+        ((Buffer) instanceBuffer).position(targetPos);
     }
 
     /**
@@ -2117,8 +2124,11 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
             return;
         }
         if (instanceCount == 0 && slotAllocator.getHighWaterMark() > 0) {
-            instanceCount = slotAllocator.getHighWaterMark();
-            ((Buffer) instanceBuffer).position(instanceDataSize * instanceCount);
+            instanceCount = Math.min(maxInstances, slotAllocator.getHighWaterMark());
+            if (instanceBuffer != null) {
+                int targetPos = Math.min(instanceDataSize * instanceCount, instanceBuffer.capacity());
+                ((Buffer) instanceBuffer).position(targetPos);
+            }
         }
         if (instanceCount == 0) {
             com.hbm_m.client.render.retained.RetainedInstanceGraph rig =

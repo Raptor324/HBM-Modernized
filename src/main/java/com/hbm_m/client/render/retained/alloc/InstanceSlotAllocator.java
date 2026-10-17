@@ -23,6 +23,7 @@ public final class InstanceSlotAllocator {
     public static final int MAX_ALLOWED_CAPACITY = 1048576;                  // slots
 
     private int currentCapacity;
+    private final int maxCapacity;
     private BitSet allocatedBitmap;
     private int highWaterMark = 0;
 
@@ -30,11 +31,16 @@ public final class InstanceSlotAllocator {
     private long[] slotToPosKey;
 
     public InstanceSlotAllocator() {
-        this(INITIAL_CAPACITY);
+        this(INITIAL_CAPACITY, MAX_ALLOWED_CAPACITY);
     }
 
     public InstanceSlotAllocator(int initialCapacity) {
+        this(initialCapacity, MAX_ALLOWED_CAPACITY);
+    }
+
+    public InstanceSlotAllocator(int initialCapacity, int maxCapacity) {
         this.currentCapacity = initialCapacity;
+        this.maxCapacity = maxCapacity;
         this.allocatedBitmap = new BitSet(initialCapacity);
         this.posKeyToSlot.defaultReturnValue(-1);
         this.slotToPosKey = new long[initialCapacity];
@@ -50,8 +56,17 @@ public final class InstanceSlotAllocator {
     public synchronized int allocateSlot() {
         int slot = allocatedBitmap.nextClearBit(0);
         if (slot >= currentCapacity) {
+            if (currentCapacity >= maxCapacity) {
+                return -1;
+            }
             growCapacity();
             slot = allocatedBitmap.nextClearBit(0);
+            if (slot >= maxCapacity) {
+                return -1;
+            }
+        }
+        if (slot >= maxCapacity) {
+            return -1;
         }
         allocatedBitmap.set(slot);
         if (slot >= highWaterMark) {
@@ -70,6 +85,9 @@ public final class InstanceSlotAllocator {
             return existing;
         }
         int slot = allocateSlot();
+        if (slot < 0) {
+            return -1;
+        }
         posKeyToSlot.put(posKey, slot);
         if (slotToPosKey != null) {
             if (slot >= slotToPosKey.length) {
@@ -150,9 +168,9 @@ public final class InstanceSlotAllocator {
 
     private void growCapacity() {
         int oldCapacity = currentCapacity;
-        int newCapacity = Math.min(oldCapacity * 2, MAX_ALLOWED_CAPACITY);
+        int newCapacity = Math.min(oldCapacity * 2, maxCapacity);
         if (newCapacity <= oldCapacity) {
-            throw new IllegalStateException("Instance slot hard ceiling reached: " + MAX_ALLOWED_CAPACITY + " slots");
+            throw new IllegalStateException("Instance slot hard ceiling reached: " + maxCapacity + " slots");
         }
 
         BitSet newBitmap = new BitSet(newCapacity);
