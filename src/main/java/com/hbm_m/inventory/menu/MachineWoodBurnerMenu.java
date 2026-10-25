@@ -15,6 +15,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * Порт {@code ContainerMachineWoodBurner} (1.7.10 Original): Fuel (26,18),
@@ -28,13 +29,15 @@ import net.minecraft.world.level.block.entity.BlockEntity;
  */
 public class MachineWoodBurnerMenu extends AbstractContainerMenu {
 
-    public static final int SLOT_FUEL = MachineWoodBurnerBlockEntity.SLOT_FUEL;
-    public static final int SLOT_ASH = MachineWoodBurnerBlockEntity.SLOT_ASH;
-    public static final int SLOT_FLUID_ID = MachineWoodBurnerBlockEntity.SLOT_FLUID_ID;
-    public static final int SLOT_FLUID_IN = MachineWoodBurnerBlockEntity.SLOT_FLUID_IN;
-    public static final int SLOT_FLUID_OUT = MachineWoodBurnerBlockEntity.SLOT_FLUID_OUT;
-    public static final int SLOT_BATTERY = MachineWoodBurnerBlockEntity.SLOT_BATTERY;
-    public static final int MACHINE_SLOT_COUNT = MachineWoodBurnerBlockEntity.INVENTORY_SIZE;
+    // Slot indices mirror MachineWoodBurnerBlockEntity's (private) layout:
+    // 0 fuel, 1 ash, 2 charge, 3 fluid ID, 4/5 fluid container in/out.
+    public static final int SLOT_FUEL = 0;
+    public static final int SLOT_ASH = 1;
+    public static final int SLOT_FLUID_ID = 3;
+    public static final int SLOT_FLUID_IN = 4;
+    public static final int SLOT_FLUID_OUT = 5;
+    public static final int SLOT_BATTERY = 2;
+    public static final int MACHINE_SLOT_COUNT = 6;
 
     public final MachineWoodBurnerBlockEntity blockEntity;
 
@@ -86,7 +89,7 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineWoodBurnerBlockEntity woodBurnerBlockEntity) {
             return woodBurnerBlockEntity;
         }
-        throw new IllegalStateException("No MachineWoodBurnerBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":wood_burner_menu");
+        throw new MenuBlockEntityMissingException("No MachineWoodBurnerBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":wood_burner_menu");
     }
 
     public MachineWoodBurnerBlockEntity getBlockEntity() {
@@ -95,11 +98,7 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     /**

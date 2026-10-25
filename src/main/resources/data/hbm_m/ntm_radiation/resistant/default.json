@@ -1,0 +1,28 @@
+{
+  "blocks": [
+    "hbm_m:reinforced_light",
+    "hbm_m:reinforced_lamp",
+    "hbm_m:reinforced_lamp_off",
+    "hbm_m:reinforced_lamp_on",
+    "hbm_m:glass_boron",
+    "hbm_m:glass_lead",
+    "hbm_m:reinforced_glass",
+    "hbm_m:reinforced_glass_pane",
+    "hbm_m:reinforced_laminate",
+    "hbm_m:reinforced_laminate_pane",
+    "hbm_m:crate_tungsten",
+    "hbm_m:block_lead",
+    "hbm_m:block_boron",
+    "hbm_m:block_australium",
+    "hbm_m:brick_concrete",
+    "hbm_m:brick_concrete_mossy",
+    "hbm_m:brick_compound",
+    "hbm_m:reinforced_brick",
+    "hbm_m:ducrete_smooth",
+    "hbm_m:ducrete",
+    "hbm_m:brick_ducrete",
+    "hbm_m:reinforced_ducrete",
+    "hbm_m:concrete_pillar",
+    "hbm_m:cmb_brick_reinforced"
+  ]
+}

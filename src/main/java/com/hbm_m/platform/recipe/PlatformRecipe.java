@@ -19,7 +19,7 @@ public abstract class PlatformRecipe implements net.minecraft.world.item.craftin
         /*RecipeInput*///?}
         > {
 
-    protected final ResourceLocation id;
+    protected ResourceLocation id;
 
     public PlatformRecipe(ResourceLocation id) {
         this.id = id;
@@ -28,11 +28,22 @@ public abstract class PlatformRecipe implements net.minecraft.world.item.craftin
     /**
      * Кросс-версионный доступ к id рецепта: в 1.21.1 ванильный {@code Recipe#getId()}
      * удалён (id живёт в RecipeHolder), поэтому общий код зовёт этот метод.
+     *
+     * <p>На 1.21.1 сериализатор декодирует рецепт с dummy-id ({@code minecraft:dummy});
+     * реальный id инжектируется сюда при разворачивании {@code RecipeHolder}
+     * ({@code RecipeHooks}/{@code ModRecipeIndex}) — только для {@code PlatformRecipe}.
      */
     public ResourceLocation getRecipeId() {
         return id;
     }
 
+    /** Инъекция реального id из RecipeHolder (1.21.1). Публичный для ModRecipeIndex (др. пакет). */
+    public void setRecipeId(ResourceLocation id) {
+        // field is final on 1.20.1 semantics; on 1.21.1 the dummy id must be replaceable
+        //? if >= 1.21.1 {
+        /*this.id = id;
+        *///?}
+    }
     public abstract boolean matchesRecipe(RecipeInputWrapper input, Level level);
     public abstract ItemStack assembleSafe();
     public abstract ItemStack getResultItemSafe();

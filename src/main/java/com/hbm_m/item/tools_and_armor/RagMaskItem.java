@@ -19,7 +19,7 @@ public class RagMaskItem extends ArmorItem {
     private final String armorTexture;
 
     public RagMaskItem(boolean piss, Properties properties) {
-        super(ModArmorMaterialsAccess.holder(ModArmorMaterials.GAS_MASK), Type.HELMET, properties);
+        super(ModArmorMaterialsAccess.holder(ModArmorMaterials.RAGS), Type.HELMET, properties); // 1:1 aMatRags (150, {1,1,1,1}, 0)
         this.armorTexture = RefStrings.MODID + ":textures/armor/" + (piss ? "rag_piss.png" : "rag_damp.png");
     }
 

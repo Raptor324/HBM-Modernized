@@ -28,6 +28,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import org.jetbrains.annotations.Nullable;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * BEWLR for the fluid tank item - port of 1.7.10 {@code RenderFluidTank.getRenderer()}
@@ -68,7 +69,7 @@ public class FluidTankItemRenderer extends BlockEntityWithoutLevelRenderer {
     @Override
     public void renderByItem(ItemStack stack, ItemDisplayContext displayContext, PoseStack poseStack,
                               MultiBufferSource buffer, int packedLight, int packedOverlay) {
-        var tag = PlatformHooks.getItemTag(stack);
+        var tag = StackNbt.read(stack);
         var persistent = tag != null ? tag.getCompound(IPersistentNBT.NBT_PERSISTENT_KEY) : null;
 
         FluidTank tank = new FluidTank(ModFluids.NONE.getSource(), 0);

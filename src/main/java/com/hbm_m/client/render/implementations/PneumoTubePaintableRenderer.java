@@ -106,8 +106,8 @@ public class PneumoTubePaintableRenderer implements com.hbm_m.client.render.HbmB
 
     private static void vert(VertexConsumer vc, PoseStack.Pose pose, TextureAtlasSprite sprite,
                              float x, float y, float z, float u, float v, float alpha) {
-        float uu = sprite.getU(u);
-        float vv = sprite.getV(v);
+        float uu = com.hbm_m.platform.RenderHooks.spriteU(sprite, u);
+        float vv = com.hbm_m.platform.RenderHooks.spriteV(sprite, v);
 
         com.hbm_m.platform.RenderHooks.vertexTexColor(vc, pose, x, y, z, uu, vv, 1F, 1F, 1F, alpha);
     }

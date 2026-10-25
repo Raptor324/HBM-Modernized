@@ -18,6 +18,10 @@ public enum MissileFormFactorModels {
     STEALTH("models/missiles/missile_stealth.obj", Set.of("Cylinder"), 1.0F, 1.0F),
     STRONG("models/missiles/missile_strong.obj", Set.of("Circle"), 1.0F, 1.5F),
     HUGE("models/missiles/missile_huge.obj", Set.of("Circle"), 1.0F, 1.0F),
+    /** 9M723 - aus dem TEL-Modell herausgeschnitten und darum maszstabsgetreu. */
+    ISKANDER("models/missiles/missile_9m723.obj", Set.of("Missile"), 1.0F, 1.0F),
+    /** RT-2PM2 Topol-M - als Rotationskoerper erzeugt, 22,5 x 1,9 Bloecke. */
+    TOPOL("models/missiles/missile_topol.obj", Set.of("Missile"), 1.0F, 1.0F),
     ATLAS("models/missiles/missile_atlas.obj", Set.of("Circle.002_Circle.003"), 1.0F, 1.0F),
     ABM("models/missiles/missile_abm.obj", Set.of("Circle"), 1.0F, 1.0F),
     SHUTTLE("models/missiles/missile_shuttle.obj",
@@ -67,6 +71,8 @@ public enum MissileFormFactorModels {
             case STEALTH -> STEALTH;
             case STRONG -> STRONG;
             case HUGE -> HUGE;
+            case ISKANDER -> ISKANDER;
+            case TOPOL -> TOPOL;
             case ATLAS -> ATLAS;
             case ABM -> ABM;
             case OTHER -> SHUTTLE;
@@ -97,6 +103,12 @@ public enum MissileFormFactorModels {
         }
         if (com.hbm_m.entity.missile.MissileTier3.class.isAssignableFrom(entityClass)) {
             return HUGE;
+        }
+        if (com.hbm_m.entity.missile.Missile9M723Entity.class.isAssignableFrom(entityClass)) {
+            return ISKANDER;
+        }
+        if (com.hbm_m.entity.missile.MissileTopolEntity.class.isAssignableFrom(entityClass)) {
+            return TOPOL;
         }
         if (com.hbm_m.entity.missile.MissileTier4.class.isAssignableFrom(entityClass)) {
             return ATLAS;

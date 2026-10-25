@@ -39,11 +39,16 @@ public class FluidIdentifierControlPacket implements C2SPacket {
             ItemStack held = player.getMainHandItem();
             if (held.isEmpty() || !(held.getItem() instanceof IItemControlReceiver receiver)) return;
 
-            receiver.receiveControl(held, msg.data);
+            receiver.receiveControl(player, held, msg.data);
         });
     }
 
     // ── Send helper ───────────────────────────────────────────────────────────
+
+    /** Original {@code NBTItemControlPacket}: schickt beliebige Steuerdaten an das gehaltene {@link IItemControlReceiver}. */
+    public static void sendControl(CompoundTag data) {
+        ModPacketHandler.sendToServer(ModPacketHandler.FLUID_IDENTIFIER_CTRL, new FluidIdentifierControlPacket(data));
+    }
 
     public static void send(String primary, String secondary) {
         CompoundTag tag = new CompoundTag();

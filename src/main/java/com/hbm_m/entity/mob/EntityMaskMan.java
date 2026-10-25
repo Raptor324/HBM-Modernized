@@ -160,7 +160,7 @@ public class EntityMaskMan extends Monster implements IRadiationImmune {
             halfHealthBlown = true;
             if (!this.level().isClientSide) {
                 this.level().explode(this, this.getX(), this.getY() + 4, this.getZ(),
-                        2.5F, Level.ExplosionInteraction.MOB);
+                        2.5F, Level.ExplosionInteraction.TNT); // createExplosion(..., true): zerstoert immer Bloecke
             }
         }
         this.lastHealth = this.getHealth();
@@ -267,10 +267,10 @@ public class EntityMaskMan extends Monster implements IRadiationImmune {
     *///?}
         if (this.level().isClientSide) return;
 
-        // The original hands over its own gas mask with a combo filter already installed; the
-        // port has no filter-install helper, so the two drop separately.
-        this.spawnAtLocation(new ItemStack(ModItems.GAS_MASK_M65.get()));
-        this.spawnAtLocation(new ItemStack(ModItems.GAS_MASK_FILTER_COMBO.get()));
+        // Original: Gasmaske mit bereits eingesetztem Kombifilter (ArmorUtil.installGasMaskFilter)
+        ItemStack mask = new ItemStack(ModItems.GAS_MASK_M65.get());
+        com.hbm_m.item.gasmask.IGasMask.installFilter(mask, ModItems.GAS_MASK_FILTER_COMBO.get());
+        this.spawnAtLocation(mask);
         this.spawnAtLocation(new ItemStack(ModItems.COIN_MASKMAN.get()));
         this.spawnAtLocation(new ItemStack(ModItems.BOTTLED_CLOUD.get()));
         this.spawnAtLocation(new ItemStack(Items.SKELETON_SKULL));

@@ -31,12 +31,10 @@ public class MachineFoundryMoldBlock extends MachineFoundryBasinBlock {
 
     public MachineFoundryMoldBlock(Properties props) { super(props); }
 
+    @Override protected double maxY() { return 0.5D; }
+
     @Override public VoxelShape getShape(BlockState s, BlockGetter l, BlockPos p, CollisionContext c) { return SHAPE; }
     @Override public VoxelShape getCollisionShape(BlockState s, BlockGetter l, BlockPos p, CollisionContext c) { return SHAPE; }
-
-    /** Ориг. FoundryMold.maxY = 0.5 (низкий бортик). */
-    @Override protected float getRimMaxY() { return 0.5F; }
-
     @Nullable @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineFoundryMoldBlockEntity(pos, state);

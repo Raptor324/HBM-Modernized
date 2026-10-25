@@ -83,6 +83,6 @@ public class CrucibleSmeltingJeiCategory implements IRecipeCategory<CrucibleSmel
                 .addItemStack(new ItemStack(ModBlocks.CRUCIBLE.get()));
 
         // Предметных выходов нет — плавка даёт расплавленный материал (in-memory, не data-driven).
-        // Оригинальный layout预留ал 3×2 outputs-сетку, но для JSON-recipe без item-выхода слотов не добавляем.
+        // Оригинальный layout резервировал 3×2 outputs-сетку, но для JSON-recipe без item-выхода слотов не добавляем.
     }
 }

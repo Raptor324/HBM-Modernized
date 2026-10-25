@@ -8,8 +8,6 @@ import com.hbm_m.handler.HazardClass;
 import com.hbm_m.handler.pollution.PollutionHandler;
 import com.hbm_m.inventory.fluid.trait.PollutionType;
 
-import net.minecraft.world.effect.MobEffectInstance;
-
 import dev.architectury.event.events.common.BlockEvent;
 
 import net.minecraft.core.BlockPos;
@@ -69,7 +67,7 @@ public final class LungGasHandler {
         if (metal < 5) return;
 
         int amplifier = metal < 10 ? 0 : (metal < 25 ? 1 : 2);
-        com.hbm_m.platform.PlatformHooks.addEffect(player, ModEffects.LEAD, 100, amplifier);
+        com.hbm_m.platform.EffectHooks.addEffect(player, ModEffects.LEAD, 100, amplifier);
     }
 
     private static boolean isCoalBlock(BlockState state) {

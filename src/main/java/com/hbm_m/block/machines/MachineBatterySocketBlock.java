@@ -11,7 +11,6 @@ import com.hbm_m.blockentity.machines.BatterySocketBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
-import com.hbm_m.util.EnergyFormatter;
 
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
@@ -41,14 +40,16 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 //? if forge {
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 //?}
 //? if forge {
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 
 //?}
 /**
  * 2×2×2 multiblock cube.
  */
-public class MachineBatterySocketBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.interfaces.ILookOverlay {
+public class MachineBatterySocketBlock extends BaseEntityBlock implements IMultiblockController {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
@@ -140,7 +141,8 @@ public class MachineBatterySocketBlock extends BaseEntityBlock implements IMulti
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return structureHelper.generateShapeFromParts(state.getValue(FACING));
+        // w16b: nur die Kernzelle (Raycast pro Zelle wie Original); Umriss der ganzen Maschine: MultiblockOutlineForge
+        return structureHelper.getControllerCellShape(state.getValue(FACING));
     }
 
     @Override
@@ -174,11 +176,13 @@ public class MachineBatterySocketBlock extends BaseEntityBlock implements IMulti
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
         return openMenu(state, level, pos, player, hand, hit);
     }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
         return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
     *///?}
@@ -210,36 +214,6 @@ public class MachineBatterySocketBlock extends BaseEntityBlock implements IMulti
         return new BatterySocketBlockEntity(pos, state);
     }
 
-    /**
-     * Порт MachineBatterySocket.printHook: заряд вставленной батареи.
-     * Логика передачи энергии в порту ещё не доделана, но HUD показывает
-     * фактическое содержимое слота (ориг. socket.syncStack/syncPower/syncMaxPower).
-     */
-    @Override
-    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
-        BlockEntity be = level.getBlockEntity(pos);
-        if (!(be instanceof BatterySocketBlockEntity socket)) return;
-
-        net.minecraft.world.item.ItemStack stack = socket.getBatteryStack();
-        if (stack.isEmpty()) return;
-
-        long power = socket.getEnergyStored();
-        long max = socket.getMaxEnergyStored();
-
-        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
-        text.add(net.minecraft.network.chat.Component.literal(
-                EnergyFormatter.format(power) + " / " + EnergyFormatter.format(max) + " HE"));
-
-        double percent = (double) power / (double) max;
-        int charge = (int) Math.floor(percent * 10_000D);
-        int color = ((int) (0xFF - 0xFF * percent)) << 16 | ((int) (0xFF * percent) << 8);
-        text.add(net.minecraft.network.chat.Component.literal((charge / 100D) + "%")
-                .withStyle(style -> style.withColor(net.minecraft.network.chat.TextColor.fromRgb(color))));
-
-        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
-                stack.getHoverName(), 0xffff00, 0x404000, text);
-    }
-
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
@@ -254,4 +228,15 @@ public class MachineBatterySocketBlock extends BaseEntityBlock implements IMulti
         return CODEC;
     }
     *///?}
+
+    /** Original {@code addInformation}: {@code addStandardInfo} (Umschalttaste zeigt {@code .desc}). */
+    @Override
+    //? if < 1.21.1 {
+    public void appendHoverText(net.minecraft.world.item.ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.BlockGetter level,
+                                java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(net.minecraft.world.item.ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    *///?}
+        com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
+    }
 }

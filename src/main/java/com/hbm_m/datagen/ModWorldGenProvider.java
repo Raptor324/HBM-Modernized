@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.config.WorldConfig;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.worldgen.ModWorldGen;
 
@@ -104,9 +105,11 @@ public final class ModWorldGenProvider {
         ore(ctx, "asbestos_ore", stone, deepslate, ModBlocks.ASBESTOS_ORE.get(), ModBlocks.ASBESTOS_ORE_DEEPSLATE.get(), 7);
         ore(ctx, "cinnabar_ore", stone, deepslate, ModBlocks.CINNABAR_ORE.get(), ModBlocks.CINNABAR_ORE_DEEPSLATE.get(), 4);
         ore(ctx, "cobalt_ore", stone, deepslate, ModBlocks.COBALT_ORE.get(), ModBlocks.COBALT_ORE_DEEPSLATE.get(), 5);
+        ore(ctx, "lithium_ore", stone, deepslate, ModBlocks.LITHIUM_ORE.get(), ModBlocks.LITHIUM_ORE_DEEPSLATE.get(), 6);
         ore(ctx, "coltan_ore", stone, deepslate, ModBlocks.COLTAN_ORE.get(), ModBlocks.COLTAN_ORE_DEEPSLATE.get(), 4);
         ore(ctx, "alexandrite_ore", stone, null, ModBlocks.ALEXANDRITE_ORE.get(), null, 3);
         ore(ctx, "australium_ore", stone, deepslate, ModBlocks.AUSTRALIUM_ORE.get(), null, 6);
+        ore(ctx, "sequestrum_ore", stone, deepslate, ModBlocks.SEQUESTRUM_ORE.get(), null, 7);
 
         // Потайные скважины красной комнаты (1/4 чанка, y 6..19 в 1.7.10 -> 6..30)
         simpleBlock(ctx, "stone_keyhole", ModBlocks.STONE_KEYHOLE.get());
@@ -166,7 +169,15 @@ public final class ModWorldGenProvider {
         ctx.register(cf("ore_bedrock_oil"), new ConfiguredFeature<>(ModWorldGen.BEDROCK_OIL_ORE.get(), new NoneFeatureConfiguration()));
         ctx.register(cf("nether_bedrock_ore"), new ConfiguredFeature<>(ModWorldGen.NETHER_BEDROCK_ORE.get(), new NoneFeatureConfiguration()));
         ctx.register(cf("oil_deposit"), new ConfiguredFeature<>(ModWorldGen.OIL_DEPOSIT.get(), new NoneFeatureConfiguration()));
+        ctx.register(cf("coltan_deposit"), new ConfiguredFeature<>(ModWorldGen.COLTAN_DEPOSIT.get(), new NoneFeatureConfiguration()));
+        ctx.register(cf("glyphid_hive"), new ConfiguredFeature<>(ModWorldGen.GLYPHID_HIVE.get(), new NoneFeatureConfiguration()));
+        ctx.register(cf("lantern_behemoth"), new ConfiguredFeature<>(ModWorldGen.LANTERN_BEHEMOTH.get(), new NoneFeatureConfiguration()));
+        ctx.register(cf("no_mans_land_spots"), new ConfiguredFeature<>(ModWorldGen.NO_MANS_LAND_SPOTS.get(), new NoneFeatureConfiguration()));
+        ctx.register(cf("soyuz_capsule"), new ConfiguredFeature<>(ModWorldGen.SOYUZ_CAPSULE.get(), new NoneFeatureConfiguration()));
         ctx.register(cf("sand_oil_deposit"), new ConfiguredFeature<>(ModWorldGen.SAND_OIL_DEPOSIT.get(), new NoneFeatureConfiguration()));
+        // FFA: 1:1-Weltgenerierung des Originals (HbmWorldGen + Ereignis-Generatoren)
+        ctx.register(cf("hbm_strata"), new ConfiguredFeature<>(ModWorldGen.HBM_STRATA.get(), new NoneFeatureConfiguration()));
+        ctx.register(cf("hbm_worldgen"), new ConfiguredFeature<>(ModWorldGen.HBM_WORLDGEN.get(), new NoneFeatureConfiguration()));
 
         simpleBlock(ctx, "mine_ap", ModBlocks.MINE_AP.get());
         simpleBlock(ctx, "dud_conventional", ModBlocks.DUD_CONVENTIONAL.get());
@@ -184,25 +195,28 @@ public final class ModWorldGenProvider {
 
         // Порядок модификаторов: (rarity) → count → in_square → height → biome
         Map<String, PlacementParams> p = new LinkedHashMap<>();
-        // Существующий баланс 1.20.1 (высоты уже адаптированы под 1.18+)
-        p.put("uranium_ore", PlacementParams.of(6, -64, -20));
-        p.put("thorium_ore", PlacementParams.of(6, -64, -20));
-        p.put("titanium_ore", PlacementParams.of(12, -64, 30));
-        p.put("sulfur_ore", PlacementParams.of(10, 0, 60));
-        p.put("aluminum_ore", PlacementParams.of(13, -60, 128));
-        p.put("fluorite_ore", PlacementParams.of(10, 0, 60));
-        p.put("niter_ore", PlacementParams.of(6, -64, -8));
-        p.put("tungsten_ore", PlacementParams.of(8, 1, 30));
-        p.put("lead_ore", PlacementParams.of(20, -64, 10));
-        p.put("beryllium_ore", PlacementParams.of(12, -64, 30));
-        p.put("rareground_ore", PlacementParams.of(8, -64, 10));
-        p.put("lignite_ore", PlacementParams.of(12, 0, 128));
-        p.put("asbestos_ore", PlacementParams.of(10, 0, 128));
-        p.put("cinnabar_ore", PlacementParams.of(8, -64, 10));
-        p.put("cobalt_ore", PlacementParams.of(6, -64, -20));
+        // Число жил на чанк берётся из WorldConfig (как в оригинале), высоты —
+        // осознанная адаптация порта под 1.18+
+        p.put("uranium_ore", PlacementParams.of(WorldConfig.uraniumSpawn, -64, -20));
+        p.put("thorium_ore", PlacementParams.of(WorldConfig.thoriumSpawn, -64, -20));
+        p.put("titanium_ore", PlacementParams.of(WorldConfig.titaniumSpawn, -64, 30));
+        p.put("sulfur_ore", PlacementParams.of(WorldConfig.sulfurSpawn, 0, 60));
+        p.put("aluminum_ore", PlacementParams.of(WorldConfig.aluminiumSpawn, -60, 128));
+        p.put("fluorite_ore", PlacementParams.of(WorldConfig.fluoriteSpawn, 0, 60));
+        p.put("niter_ore", PlacementParams.of(WorldConfig.niterSpawn, -64, -8));
+        p.put("tungsten_ore", PlacementParams.of(WorldConfig.tungstenSpawn, 1, 30));
+        p.put("lead_ore", PlacementParams.of(WorldConfig.leadSpawn, -64, 10));
+        p.put("beryllium_ore", PlacementParams.of(WorldConfig.berylliumSpawn, -64, 30));
+        p.put("rareground_ore", PlacementParams.of(WorldConfig.rareSpawn, -64, 10));
+        p.put("lignite_ore", PlacementParams.of(WorldConfig.ligniteSpawn, 0, 128));
+        p.put("asbestos_ore", PlacementParams.of(WorldConfig.asbestosSpawn, 0, 128));
+        p.put("cinnabar_ore", PlacementParams.of(WorldConfig.cinnebarSpawn, -64, 10));
+        p.put("cobalt_ore", PlacementParams.of(WorldConfig.cobaltSpawn, -64, -20));
+        p.put("lithium_ore", PlacementParams.of(4, -64, -40));
         p.put("coltan_ore", PlacementParams.of(2, -56, 0));
         p.put("alexandrite_ore", PlacementParams.of(1, -48, -24));
         p.put("australium_ore", PlacementParams.rare(1, -64, -48, 12));
+        p.put("sequestrum_ore", PlacementParams.of(10, 0, 128));
         p.put("gas_flammable", PlacementParams.of(12, -60, 0));
         // Гнейсовый пласт: полоса у бывшей поверхности 1.7.10 (y≈30 → -48..0)
         p.put("stone_gneiss", PlacementParams.of(1, -48, 0));
@@ -254,6 +268,13 @@ public final class ModWorldGenProvider {
                 HeightRangePlacement.uniform(VerticalAnchor.absolute(-64), VerticalAnchor.absolute(-63)),
                 BiomeFilter.biome()));
         // Нефтяные месторождения (MapGenBubble oilSpawn=100: 1/100 чанков, y 15..40 → -48..-8)
+        placed(ctx, features, "coltan_deposit", List.of(BiomeFilter.biome()));
+        placed(ctx, features, "glyphid_hive", List.of(BiomeFilter.biome()));
+        placed(ctx, features, "lantern_behemoth", List.of(BiomeFilter.biome()));
+        placed(ctx, features, "no_mans_land_spots", List.of(BiomeFilter.biome()));
+        placed(ctx, features, "soyuz_capsule", List.of(BiomeFilter.biome()));
+        placed(ctx, features, "hbm_strata", List.of(BiomeFilter.biome()));
+        placed(ctx, features, "hbm_worldgen", List.of(BiomeFilter.biome()));
         placed(ctx, features, "oil_deposit", List.of(
                 RarityFilter.onAverageOnceEvery(100), InSquarePlacement.spread(),
                 HeightRangePlacement.uniform(VerticalAnchor.absolute(-48), VerticalAnchor.absolute(-8)),
@@ -309,7 +330,8 @@ public final class ModWorldGenProvider {
                 "uranium_ore", "thorium_ore", "titanium_ore", "sulfur_ore", "aluminum_ore",
                 "fluorite_ore", "niter_ore", "tungsten_ore", "lead_ore",
                 "beryllium_ore", "rareground_ore", "lignite_ore", "asbestos_ore", "cinnabar_ore",
-                "cobalt_ore", "coltan_ore", "alexandrite_ore", "australium_ore",
+                "cobalt_ore", "lithium_ore", "coltan_ore", "alexandrite_ore", "australium_ore",
+                "sequestrum_ore",
                 "gas_flammable",
                 "stone_gneiss", "gneiss_iron_ore", "gneiss_gold_ore", "gneiss_uranium_ore",
                 "gneiss_copper_ore", "gneiss_asbestos_ore", "gneiss_lithium_ore", "gneiss_rare_ore", "gneiss_gas_ore",
@@ -318,13 +340,29 @@ public final class ModWorldGenProvider {
                 // Глубинные залежи (DepthDeposit оригинала)
                 "depth_cinnabar", "depth_zirconium", "depth_borax",
                 "cluster_depth_iron", "cluster_depth_titanium", "cluster_depth_tungsten",
-                "ore_bedrock_mineral", "ore_bedrock_oil", "oil_deposit", "stone_keyhole");
+                "ore_bedrock_mineral", "ore_bedrock_oil", "oil_deposit", "stone_keyhole",
+                // FFA: 1:1 HbmWorldGen
+                "coltan_deposit", "hbm_strata", "hbm_worldgen");
         addModifier(ctx, biomes, placed, "add_overworld_ores", BiomeTags.IS_OVERWORLD, overworldOres,
                 GenerationStep.Decoration.UNDERGROUND_ORES);
 
         // Overworld: поверхностные структуры
         addModifier(ctx, biomes, placed, "add_surface_features", BiomeTags.IS_OVERWORLD,
-                List.of("mine_ap", "dud_conventional", "dud_nuke", "dud_salted"),
+                List.of("mine_ap", "dud_conventional", "dud_nuke", "dud_salted",
+                        "glyphid_hive", "lantern_behemoth"),
+                GenerationStep.Decoration.SURFACE_STRUCTURES);
+
+        // FFA: 1:1-Weltgenerierung des Originals (hbm_strata/hbm_worldgen в остальных измерениях)
+        addModifier(ctx, biomes, placed, "add_hbm_strata", BiomeTags.IS_OVERWORLD,
+                List.of("hbm_strata"), GenerationStep.Decoration.UNDERGROUND_ORES);
+        addModifier(ctx, biomes, placed, "add_hbm_worldgen_nether", BiomeTags.IS_NETHER,
+                List.of("hbm_worldgen"), GenerationStep.Decoration.TOP_LAYER_MODIFICATION);
+        addModifier(ctx, biomes, placed, "add_hbm_worldgen_end", BiomeTags.IS_END,
+                List.of("hbm_worldgen"), GenerationStep.Decoration.TOP_LAYER_MODIFICATION);
+
+        // FFA: капсула «Союз» на пляжах (Original: biome == BiomeGenBase.beach)
+        addModifierForBiomes(ctx, biomes, placed, "add_soyuz_capsule",
+                List.of(net.minecraft.world.level.biome.Biomes.BEACH), List.of("soyuz_capsule"),
                 GenerationStep.Decoration.SURFACE_STRUCTURES);
 
         // Overworld: растительность
@@ -367,6 +405,11 @@ public final class ModWorldGenProvider {
                                 com.hbm_m.entity.ModEntities.ENTITY_MOB_VOLATILE_CREEPER.get(), 10, 1, 1),
                         new net.minecraft.world.level.biome.MobSpawnSettings.SpawnerData(
                                 com.hbm_m.entity.ModEntities.ENTITY_MOB_GOLD_CREEPER.get(), 1, 1, 1))));
+        // FFA: пластиковые пакеты в океанах, голуби на равнинах (Original EntityMappings.addSpawn)
+        ctx.register(bm("spawn_plastic_bag"), new ForgeBiomeModifiers.AddSpawnsBiomeModifier(biomes.getOrThrow(BiomeTags.IS_OCEAN), List.of(
+                new net.minecraft.world.level.biome.MobSpawnSettings.SpawnerData(com.hbm_m.entity.ModEntities.PLASTIC_BAG.get(), 1, 1, 3))));
+        ctx.register(bm("spawn_pigeon"), new ForgeBiomeModifiers.AddSpawnsBiomeModifier(biomes.getOrThrow(net.minecraftforge.common.Tags.Biomes.IS_PLAINS), List.of(
+                new net.minecraft.world.level.biome.MobSpawnSettings.SpawnerData(com.hbm_m.entity.ModEntities.PIGEON.get(), 1, 5, 10))));
     }
 
     private static void addModifier(BootstapContext<BiomeModifier> ctx,

@@ -56,7 +56,7 @@ import org.jetbrains.annotations.Nullable;
  * mit leicht streuender Tonhoehe.</p>
  */
 public class PneumoTubeBlockEntity extends BaseMachineBlockEntity
-        implements IFluidStandardReceiverMK2 {
+        implements IFluidStandardReceiverMK2, com.hbm_m.blockentity.IMuffleable {
 
     /** Original: fuenfzehn Filterplaetze. */
     public static final int FILTER_SLOTS = 15;
@@ -166,7 +166,7 @@ public class PneumoTubeBlockEntity extends BaseMachineBlockEntity
     public void nextReceiveOrder() { receiveOrder = (byte) ((receiveOrder + 1) % 2); setChanged(); }
     public void nextFilterMode(int index) {
         if (index >= 0 && index < FILTER_SLOTS) {
-            matcher.nextMode(index);
+            matcher.nextMode(index, getInventory().getStackInSlot(index));
             setChanged();
         }
     }
@@ -276,7 +276,7 @@ public class PneumoTubeBlockEntity extends BaseMachineBlockEntity
     @Override
     public boolean canConnect(Fluid type, Direction dir) {
         return dir != insertionDir && dir != ejectionDir
-                && type == ModFluids.AIR.getSource() && isCompressor();
+                && type == (com.hbm_m.api.space.SpaceApi.forkActive() ? compair.getTankType() : ModFluids.AIR.getSource()) && isCompressor();
     }
 
     @Override

@@ -1,0 +1,8 @@
+{
+  "priority": 10,
+  "blocks": [
+    "hbm_m:*concrete*", "hbm_m:*brick*", "hbm_m:asphalt*", "hbm_m:cmb_brick*",
+    "minecraft:*_concrete", "minecraft:*bricks*", "minecraft:obsidian"
+  ],
+  "hvl": { "gamma": 1.0, "neutron": 1.0, "beta": 0.05 }
+}

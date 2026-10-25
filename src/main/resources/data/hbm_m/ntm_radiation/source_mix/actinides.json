@@ -1,0 +1,23 @@
+{
+  "priority": 5,
+  "blocks": [
+    "hbm_m:*uranium*",
+    "hbm_m:*plutonium*",
+    "hbm_m:*thorium*",
+    "hbm_m:block_u2*",
+    "hbm_m:block_pu2*",
+    "hbm_m:*neptunium*",
+    "hbm_m:*polonium*",
+    "hbm_m:*radium*",
+    "hbm_m:*ra226*"
+  ],
+  "mix": {
+    "gamma": 0.5,
+    "neutron": 0.1,
+    "beta": 0.4,
+    "alpha": 0.0
+  },
+  "contamination": {
+    "long": 1.0
+  }
+}

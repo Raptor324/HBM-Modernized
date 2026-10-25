@@ -3,8 +3,8 @@ package com.hbm_m.api.fluids;
 //? if neoforge {
 /*import com.hbm_m.inventory.fluid.tank.FluidTank;
 import net.minecraft.world.level.material.Fluid;
-import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
 import org.jetbrains.annotations.NotNull;
 
 /// Универсальный outward NeoForge `IFluidHandler` для BlockEntity, реализующих

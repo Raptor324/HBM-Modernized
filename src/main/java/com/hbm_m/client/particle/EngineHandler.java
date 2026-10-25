@@ -21,12 +21,12 @@ import net.minecraftforge.fml.common.Mod;
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 //?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 
-@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
 @EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT)
 *///?}
 public class EngineHandler {
@@ -186,11 +186,7 @@ public class EngineHandler {
         // отсюда «затемнение меша при переходе entity<->track» и мигание.
         // Единый туман сцены = бесшовный переход между путями рендера.
 
-        //? if < 1.21.1 {
-        float partialTick = event.getPartialTick();
-        //?} else {
-        /*float partialTick = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true);
-        *///?}
+        float partialTick = com.hbm_m.platform.RenderHooks.getPartialTickRaw();
 
         // Порог деления = граница ванильной прорисовки: ближе рисуем с нативным
         // depth-тестом, дальше — тем же ванильным путём, но с удлинённой

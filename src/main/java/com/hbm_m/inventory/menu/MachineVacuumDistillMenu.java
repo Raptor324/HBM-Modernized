@@ -12,6 +12,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /** Slot-Koordinaten 1:1 aus {@code ContainerMachineVacuumDistill} (1.7.10 Original) uebernommen,
  *  wo relevant - die Fluid-Ein/Ausgabe-Slots des Originals entfallen, weil das MK2-Rohrnetz die
@@ -20,7 +21,7 @@ public class MachineVacuumDistillMenu extends AbstractContainerMenu {
 
     private final MachineVacuumDistillBlockEntity blockEntity;
     private static final int SLOT_BATTERY = MachineVacuumDistillBlockEntity.SLOT_BATTERY;
-    private static final int MACHINE_SLOT_COUNT = 1;
+    private static final int MACHINE_SLOT_COUNT = MachineVacuumDistillBlockEntity.SLOT_COUNT;
     private static final int PLAYER_INV_START = MACHINE_SLOT_COUNT;
     private static final int PLAYER_INV_END = MACHINE_SLOT_COUNT + 36;
 
@@ -34,6 +35,17 @@ public class MachineVacuumDistillMenu extends AbstractContainerMenu {
 
         var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
         this.addSlot(new Slot(container, SLOT_BATTERY, 26, 90));
+        // Original: Kanister-Ein/Ausgabe stillgelegt (SlotDeprecated, braucht Druck)
+        this.addSlot(new Slot(container, 1, 44, 90) { @Override public boolean mayPlace(ItemStack s) { return false; } });
+        this.addSlot(new Slot(container, 2, 44, 108) { @Override public boolean mayPlace(ItemStack s) { return false; } });
+        // Ausgaenge: oben leerer Behaelter, unten nur Entnahme
+        int[] xs = { 80, 98, 116, 134 };
+        for (int i = 0; i < 4; i++) {
+            this.addSlot(new Slot(container, 3 + i * 2, xs[i], 90));
+            this.addSlot(new Slot(container, 4 + i * 2, xs[i], 108) { @Override public boolean mayPlace(ItemStack s) { return false; } });
+        }
+        // Fluidkennung
+        this.addSlot(new Slot(container, 11, 26, 108));
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {

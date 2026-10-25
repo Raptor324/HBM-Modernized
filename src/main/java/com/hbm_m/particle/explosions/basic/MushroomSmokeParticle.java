@@ -4,14 +4,8 @@ import com.hbm_m.particle.explosions.AbstractExplosionParticle;
 
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.SpriteSet;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 /**
  *  Дым грибовидного облака (серый дым)
  * Основной элемент визуала взрыва

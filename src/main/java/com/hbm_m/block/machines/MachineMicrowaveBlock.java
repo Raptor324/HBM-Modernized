@@ -75,12 +75,12 @@ public class MachineMicrowaveBlock extends BaseEntityBlock {
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
+        return RenderShape.ENTITYBLOCK_ANIMATED; // Drehteller zeichnet MicrowaveRenderer (RenderMicrowave)
     }
 
     @Override
     public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
-        return Shapes.block();
+        return Shapes.empty(); // Original isOpaqueCube false; der Block selbst ist unsichtbar (BER)
     }
 
     @Nullable
@@ -103,6 +103,7 @@ public class MachineMicrowaveBlock extends BaseEntityBlock {
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
 
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider p) {
             MenuRegistry.openExtendedMenu((ServerPlayer) player, p, buf -> buf.writeBlockPos(pos));
@@ -112,6 +113,7 @@ public class MachineMicrowaveBlock extends BaseEntityBlock {
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
 
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider p) {
             MenuRegistry.openExtendedMenu((ServerPlayer) player, p, buf -> buf.writeBlockPos(pos));

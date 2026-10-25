@@ -60,24 +60,22 @@ public class GrenadeIfProjectileEntity extends ThrowableItemProjectile {
     }
 
     //? if < 1.21.1 {
-
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
 
-var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
+        var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     //?} else {
     /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
 
-var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
+        var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
     *///?}
 
         defs.define(GRENADE_IF_TYPE_ID, GrenadeIfType.GRENADE_IF.name());
         defs.define(TIMER_ACTIVATED, false);
         defs.define(DETONATION_TIME, 0);
-    
     }
     @Override
     protected Item getDefaultItem() {

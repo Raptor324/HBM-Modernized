@@ -76,7 +76,6 @@ public class ICFStructBlock extends BaseEntityBlock {
         return createTickerHelper(type, ModBlockEntities.ICF_STRUCT_BE.get(),
                 (lvl, pos, st, be) -> ICFStructBlockEntity.tick(lvl, pos, st, (ICFStructBlockEntity) be));
     }
-
     //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<ICFStructBlock> CODEC = simpleCodec(ICFStructBlock::new);
 

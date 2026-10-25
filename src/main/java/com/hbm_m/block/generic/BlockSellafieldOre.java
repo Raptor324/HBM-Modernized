@@ -33,6 +33,11 @@ public class BlockSellafieldOre extends BlockSellafieldSlaked {
         this.maxXp = maxXp;
     }
 
+    @Override
+    public List<ItemStack> getDrops(BlockState state, LootParams.Builder params) {
+        return Collections.singletonList(new ItemStack(dropItem.get()));
+    }
+
     //? if < 1.21.1 {
     @Override
     public int getExpDrop(BlockState state, LevelReader level, RandomSource random, BlockPos pos, int fortune, int silkTouch) {
@@ -78,9 +83,10 @@ public class BlockSellafieldOre extends BlockSellafieldSlaked {
         };
     }
 
-    /** Silk-touch check: 1.20.1 takes the raw enchantment, 1.21.1 a Holder. */
+    /** Silk-touch check via the typed hook overload (no per-call ResourceLocation parse). */
     private static int getSilkTouchLevel(net.minecraft.world.item.ItemStack tool, net.minecraft.world.level.LevelAccessor level) {
-        return com.hbm_m.platform.ItemHooks.getEnchantmentLevel(tool, level, "minecraft:silk_touch");
+        return com.hbm_m.platform.ItemHooks.getEnchantmentLevel(tool, level,
+                net.minecraft.world.item.enchantment.Enchantments.SILK_TOUCH);
     }
 }
 

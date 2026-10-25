@@ -8,7 +8,6 @@ import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.packet.PacketSyncEnergy;
-import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -21,6 +20,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 //? if forge {
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 //?}
@@ -63,7 +63,7 @@ public class MachineLargePylonMenu extends AbstractContainerMenu implements ILon
         // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
         // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
         this.machineInventory = new ModItemStackHandlerContainer(
-                this.blockEntity != null ? this.blockEntity.getInventory() : new DummyItemStackHandler(MACHINE_SLOTS),
+                this.blockEntity != null ? this.blockEntity.getInventory() : new ModItemStackHandler.Dummy(MACHINE_SLOTS),
                 this.blockEntity != null ? this.blockEntity::setChanged : null);
 
         this.addSlot(new Slot(machineInventory, SLOT_INPUT, 62, 45));

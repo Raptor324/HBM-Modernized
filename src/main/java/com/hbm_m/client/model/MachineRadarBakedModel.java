@@ -15,21 +15,10 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
-//? if forge {
 import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.model.data.ModelData;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.client.ChunkRenderTypeSet;
-import net.neoforged.neoforge.client.model.data.ModelData;
-*///?}
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 /**
  * Малый радар: {@code Base} + {@code Dish}; большой — {@code Radar} + {@code Dish}.
  * При {@link ShaderCompatibilityDetector#useVboGeometry()} chunk mesh пуст — геометрия в BER/VBO.
@@ -139,7 +128,7 @@ public class MachineRadarBakedModel extends AbstractMultipartBakedModel implemen
     // ITEM (state == null) — приоритетные части. WORLD — staticPart или List.of() если useVboGeometry.
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
-                                    RandomSource rand, net.neoforged.neoforge.client.model.data.ModelData modelData,
+                                    RandomSource rand, net.minecraftforge.client.model.data.ModelData modelData,
                                     @Nullable net.minecraft.client.renderer.RenderType renderType) {
         if (state == null) {
             return buildItemQuadsFromRenderParts(side, rand);

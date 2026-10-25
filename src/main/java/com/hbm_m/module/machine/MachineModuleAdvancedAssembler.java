@@ -14,6 +14,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import com.hbm_m.platform.ModItemStackHandler;
 import com.hbm_m.recipe.index.ModRecipeIndex;
+import com.hbm_m.platform.StackNbt;
 
 public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerRecipe> {
 
@@ -29,6 +30,34 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
     }
 
     // ========== BUILDER METHODS ==========
+
+    /** Original ModuleMachineAssembler: ein Eingangs- und ein Ausgangstank fuer inputFluid/outputFluid. */
+    @Nullable private com.hbm_m.inventory.fluid.tank.FluidTank inputTank;
+    @Nullable private com.hbm_m.inventory.fluid.tank.FluidTank outputTank;
+
+    public MachineModuleAdvancedAssembler setFluidTanks(com.hbm_m.inventory.fluid.tank.FluidTank in,
+                                                         com.hbm_m.inventory.fluid.tank.FluidTank out) {
+        this.inputTank = in;
+        this.outputTank = out;
+        return this;
+    }
+
+    /** setupTanks + Mengenpruefung des Originals (nur fuer Rezepte mit Fluessigkeiten). */
+    private boolean fluidsAllow(AssemblerRecipe recipe) {
+        if (!recipe.getFluidInputs().isEmpty()) {
+            if (inputTank == null) return false;
+            var fs = recipe.getFluidInputs().get(0);
+            if (inputTank.getTankType() != fs.getFluid()) inputTank.conform(fs.getFluid());
+            if (inputTank.getFill() < fs.getAmount()) return false;
+        }
+        if (!recipe.getFluidOutputs().isEmpty()) {
+            if (outputTank == null) return false;
+            var fs = recipe.getFluidOutputs().get(0);
+            if (outputTank.getTankType() != fs.getFluid()) outputTank.conform(fs.getFluid());
+            if (outputTank.getFill() + fs.getAmount() > outputTank.getMaxFill()) return false;
+        }
+        return true;
+    }
 
     public MachineModuleAdvancedAssembler setInputSlots(int startSlot, int count) {
         this.inputSlots = new int[count];
@@ -114,6 +143,7 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
         if (recipe == null) return false;
 
         if (!matchesRecipe(recipe)) return false;
+        if (!fluidsAllow(recipe)) return false;
 
         ItemStack outputSlot = itemHandler.getStackInSlot(outputSlots[0]);
         ItemStack result = recipe.getResultItem(level.registryAccess());
@@ -121,7 +151,7 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
         if (outputSlot.isEmpty()) return true;
 
         //? if < 1.21.1 {
-        if (!PlatformHooks.isSameItemSameTags(outputSlot, result)) return false;
+        if (!StackNbt.sameItemSameTags(outputSlot, result)) return false;
         //?} else {
         /*if (!ItemStack.isSameItemSameComponents(outputSlot, result)) return false;
         *///?}
@@ -158,6 +188,16 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
             ItemStack merged = current.copy();
             merged.grow(result.getCount());
             itemHandler.setStackInSlot(out, merged);
+        }
+
+        // FFA: consume input fluid / produce output fluid for fluid recipes.
+        if (!recipe.getFluidInputs().isEmpty() && inputTank != null) {
+            inputTank.setFill(inputTank.getFill() - (int) recipe.getFluidInputs().get(0).getAmount());
+        }
+        if (!recipe.getFluidOutputs().isEmpty() && outputTank != null) {
+            var fs = recipe.getFluidOutputs().get(0);
+            outputTank.conform(fs.getFluid());
+            outputTank.setFill(outputTank.getFill() + (int) fs.getAmount());
         }
     }
 

@@ -31,12 +31,32 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import com.hbm_m.platform.ModItemStackHandler;
+
+//? if neoforge {
+/*import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.client.model.data.ModelProperty;
+*///?}
+//? if forge {
+import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.client.model.data.ModelProperty;
+import com.hbm_m.capability.ModCapabilities;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+//?}
 
 /**
  * Battery socket: one portable battery slot, modes like machine battery, energy from item capabilities.
  */
 @SuppressWarnings("UnstableApiUsage")
-public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder, com.hbm_m.api.energy.PowerBuffer {
+public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder, com.hbm_m.api.energy.PowerBuffer,
+        com.hbm_m.api.redstoneoverradio.IRORValueProvider, com.hbm_m.api.redstoneoverradio.IRORInteractive {
+
+    // Phase C: Modelldaten auch auf NeoForge (gleiche API), sonst zeigt der Sockel dort immer alle Teile
+    public static final ModelProperty<Boolean> HAS_INSERT = new ModelProperty<>();
+    /** Original RenderBatterySocket: ein battery_pack zeigt je nach Art den Teil "Battery" oder "Capacitor" mit eigener Textur. */
+    public static final ModelProperty<com.hbm_m.item.fekal_electric.ItemBatteryPack.EnumBatteryPack> PACK = new ModelProperty<>();
+    /** 1:1 RenderBatterySocket: {@code battery_sc} zeigt das Batterieteil mit {@code battery_sc_tex}. */
+    public static final ModelProperty<Boolean> SC = new ModelProperty<>();
 
     private static final int SLOT_BATTERY = 0;
 
@@ -119,6 +139,13 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
                 ModBatteryItem.setEnergy(battery, creative.getCapacity());
             }
         }
+        // 1:1 TileEntityBatterySocket: eingelegte Radionuklidbatterie schwankt in der Leistung und entlaedt sich alle 1-3 Minuten
+        if (be.hasSCLoaded()) {
+            if (be.damageTarget == 0) be.pickNewSCTarget();
+            be.damageTimer++;
+            if (be.damageTimer >= be.damageTarget) be.discharge();
+            be.fluctuate();
+        }
 
         long gameTime = level.getGameTime();
         if (gameTime % 10 == 0) {
@@ -140,6 +167,96 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
         }
     }
 
+    public int damageTimer;
+    public int damageTarget;
+    public double scPowerMult = 1D;
+
+    protected boolean hasSCLoaded() {
+        ItemStack stack = inventory.getStackInSlot(SLOT_BATTERY);
+        return stack.getItem() instanceof com.hbm_m.item.fekal_electric.ItemBatterySC sc
+                && sc.type != com.hbm_m.item.fekal_electric.ItemBatterySC.EnumBatterySC.EMPTY;
+    }
+
+    protected void pickNewSCTarget() {
+        this.damageTimer = 0;
+        this.damageTarget = 1200 + level.random.nextInt(2400); // 1-3 minutes;
+        this.setChanged();
+    }
+
+    protected void fluctuate() {
+        double steppy = 1D / 100D;
+        this.scPowerMult += (steppy * (level.random.nextDouble() * 2 - 1));
+        this.scPowerMult = net.minecraft.util.Mth.clamp(scPowerMult, 0.1D, 1D);
+    }
+
+    /** 1:1 {@code discharge}: SEDNA-Strahl (EntityBulletBeamBase), Renderer RENDER_LIGHTNING_SUB in GunFactoryClient. */
+    public static com.hbm_m.item.weapon.sedna.BulletConfig discharge;
+    public static java.util.function.BiConsumer<com.hbm_m.entity.projectile.EntityBulletBeamBase, com.hbm_m.util.MovingObjectPosition> BEAM_DISCHARGE_HIT = (beam, mop) -> {
+
+        if (mop.typeOfHit == com.hbm_m.util.MovingObjectPosition.MovingObjectType.BLOCK) {
+            beam.level().destroyBlock(mop.getBlockPos(), false); // func_147480_a(x, y, z, false)
+            explodeDischarge(beam.level(), mop.hitVec.xCoord, mop.hitVec.yCoord, mop.hitVec.zCoord);
+        }
+
+        if (mop.typeOfHit == com.hbm_m.util.MovingObjectPosition.MovingObjectType.ENTITY) {
+            explodeDischarge(beam.level(), mop.hitVec.xCoord, mop.hitVec.yCoord, mop.hitVec.zCoord);
+        }
+    };
+
+    private static boolean configsDone = false;
+
+    /** Original: static-Block; im Port aus GunFactory.init, damit die Config-ID auf beiden Seiten gleich ist. */
+    public static void initConfigs() {
+        if (configsDone) return;
+        configsDone = true;
+        discharge = new com.hbm_m.item.weapon.sedna.BulletConfig().setupDamageClass(com.hbm_m.powerarmor.resist.DamageResistanceHandler.DamageClass.ELECTRIC).setBeam().setSpread(0.0F).setLife(3).setThresholdNegation(20F).setArmorPiercing(0.5F).setRenderRotations(false).setDoesPenetrate(true)
+                .setOnBeamImpact(BEAM_DISCHARGE_HIT);
+    }
+
+    /** 1:1 {@code discharge()}: auf jedes Lebewesen im Umkreis von 15 Bloecken geht ein Strahl {@link #discharge} mit 50 Schaden. */
+    protected void discharge() {
+        pickNewSCTarget();
+
+        Direction dir = getBlockState().getValue(MachineBatterySocketBlock.FACING);
+        Direction rot = dir.getClockWise();
+
+        double x = worldPosition.getX() + 0.5 - dir.getStepX() * 0.5 + rot.getStepX() * 0.5;
+        double y = worldPosition.getY() + 1;
+        double z = worldPosition.getZ() + 0.5 - dir.getStepZ() * 0.5 + rot.getStepX() * 0.5;
+
+        double range = 15;
+        java.util.List<net.minecraft.world.entity.LivingEntity> potentialTargets = level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class,
+                new AABB(x, y, z, x, y, z).inflate(range, range, range));
+        java.util.Collections.shuffle(potentialTargets);
+
+        for (net.minecraft.world.entity.LivingEntity target : potentialTargets) {
+
+            com.hbm_m.util.Vec3NT initialDelta = new com.hbm_m.util.Vec3NT(target.getX() - x, target.getY() + target.getBbHeight() / 2 - y, target.getZ() - z);
+            if (initialDelta.lengthVector() > range) continue;
+            com.hbm_m.entity.projectile.EntityBulletBeamBase sub = new com.hbm_m.entity.projectile.EntityBulletBeamBase(level, discharge, 50F);
+            initialDelta.normalizeSelf();
+            double dominantAxis = com.hbm_m.util.BobMathUtil.max(Math.abs(initialDelta.xCoord), Math.abs(initialDelta.yCoord), Math.abs(initialDelta.zCoord));
+            initialDelta.multiply(1.125D / dominantAxis); // move 1.125 blocks outwards
+            sub.setPos(worldPosition.getX() + initialDelta.xCoord, worldPosition.getY() + initialDelta.yCoord, worldPosition.getZ() + initialDelta.zCoord);
+            com.hbm_m.util.Vec3NT actualDelta = new com.hbm_m.util.Vec3NT(target.getX() - sub.getX(), target.getY() + target.getBbHeight() / 2 - sub.getY(), target.getZ() - sub.getZ());
+
+            sub.setRotationsFromVector(actualDelta);
+            sub.performHitscanExternal(actualDelta.lengthVector());
+            level.addFreshEntity(sub);
+        }
+
+        explodeDischarge(level, x + level.random.nextGaussian() * 0.5, y + level.random.nextGaussian() * 0.5, z + level.random.nextGaussian() * 0.5);
+    }
+
+    public static void explodeDischarge(Level world, double x, double y, double z) {
+        com.hbm_m.explosion.vanillant.ExplosionVNT vnt = new com.hbm_m.explosion.vanillant.ExplosionVNT(world, x, y, z, 5F);
+        vnt.setEntityProcessor(new com.hbm_m.explosion.vanillant.standard.EntityProcessorCrossSmooth(1, 20).setDamageClass(com.hbm_m.powerarmor.resist.DamageResistanceHandler.DamageClass.ELECTRIC));
+        vnt.setPlayerProcessor(new com.hbm_m.explosion.vanillant.standard.PlayerProcessorStandard());
+        vnt.setSFX(new com.hbm_m.explosion.vanillant.standard.ExplosionEffectStandard());
+        vnt.explode();
+        world.playSound(null, x, y, z, com.hbm_m.sound.HbmSoundsNT.get("hbm:entity.ufoBlast"), net.minecraft.sounds.SoundSource.BLOCKS, 5.0F, 0.9F + world.random.nextFloat() * 0.2F);
+    }
+
     /** Backwards-compatible accessor for renderers/menus. */
     public com.hbm_m.platform.ModItemStackHandler getItemHandler() {
         return this.inventory;
@@ -153,6 +270,16 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
     @Override
     protected boolean isCriticalSlot(int slot) {
         return slot == SLOT_BATTERY;
+    }
+
+    @Override
+    public ModelData getModelData() {
+        ItemStack inserted = inventory.getStackInSlot(0);
+        return ModelData.builder()
+                .with(HAS_INSERT, !inserted.isEmpty())
+                .with(PACK, inserted.getItem() instanceof com.hbm_m.item.fekal_electric.ItemBatteryPack bp ? bp.pack : null)
+                .with(SC, inserted.getItem() instanceof com.hbm_m.item.fekal_electric.ItemBatterySC)
+                .build();
     }
 
 
@@ -200,11 +327,15 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
 
     private long getEnergyStoredFromStack() {
         Optional<IEnergyReceiver> r = stackReceiver();
-        if (r.isPresent()) return r.get().getEnergyStored();
-        Optional<IEnergyProvider> p = stackProvider();
-        if (p.isPresent()) return p.get().getEnergyStored();
-        if (useForgeFallback()) return ItemEnergyAccess.feStoredAsHe(inventory.getStackInSlot(SLOT_BATTERY));
-        return 0L;
+        long result = 0L;
+        if (r.isPresent()) result = r.get().getEnergyStored();
+        else {
+            Optional<IEnergyProvider> p = stackProvider();
+            if (p.isPresent()) result = p.get().getEnergyStored();
+            else if (useForgeFallback()) result = ItemEnergyAccess.feStoredAsHe(inventory.getStackInSlot(SLOT_BATTERY));
+        }
+        if (level != null && hasSCLoaded()) result = (long) (result * this.scPowerMult);
+        return result;
     }
 
     private long getMaxEnergyStoredFromStack() {
@@ -357,12 +488,16 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
         tag.putInt("priorityV2", priority.ordinal());
         tag.putLong("energyDelta", energyDelta);
         tag.putLong("lastEnergySample", lastEnergySample);
+        tag.putInt("damageTimer", damageTimer);
+        tag.putInt("damageTarget", damageTarget);
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
         modeOnNoSignal = tag.getInt("modeOnNoSignal");
+        damageTimer = tag.getInt("damageTimer");
+        damageTarget = tag.getInt("damageTarget");
         modeOnSignal = tag.getInt("modeOnSignal");
         // priorityV2 — ординал нового 5-уровневого enum'а; старый "priority" (3 уровня) сдвигаем на +1
         if (tag.contains("priorityV2")) {
@@ -402,5 +537,128 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory inv, Player player) {
         return new BatterySocketMenu(containerId, inv, this, data);
+    }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: Slot {0}; Akkus hinein, nur volle heraus (Original vergleicht den Slot mit mode_input = 0). */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.isFullBattery(stack); }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: Slot {0}; Akkus hinein, nur volle heraus (Original vergleicht den Slot mit mode_input = 0). ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.isFullBattery(stack); }
+            });
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
+
+    // ── Redstone-over-Radio (1:1 TileEntityBatterySocket) ──
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+                PREFIX_VALUE + "fill",
+                PREFIX_VALUE + "maxfill",
+                PREFIX_VALUE + "fillpercent",
+                PREFIX_VALUE + "delta",
+                PREFIX_FUNCTION + "setmode" + NAME_SEPARATOR + "mode (0-3)",
+                PREFIX_FUNCTION + "setmode" + NAME_SEPARATOR + "mode" + PARAM_SEPARATOR + "fallback (0-3)",
+                PREFIX_FUNCTION + "setredmode" + NAME_SEPARATOR + "mode (0-3)",
+                PREFIX_FUNCTION + "setredmode" + NAME_SEPARATOR + "mode" + PARAM_SEPARATOR + "fallback (0-3)",
+                PREFIX_FUNCTION + "setpriority" + NAME_SEPARATOR + "priority (0-2)",
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "fill").equals(name))        return "" + this.getEnergyStored();
+        if ((PREFIX_VALUE + "maxfill").equals(name))     return "" + this.getMaxEnergyStored();
+        if ((PREFIX_VALUE + "fillpercent").equals(name)) return "" + this.getEnergyStored() * 100 / (Math.max(this.getMaxEnergyStored(), 1));
+        if ((PREFIX_VALUE + "delta").equals(name))       return "" + energyDelta;
+        return null;
+    }
+
+    /**
+     * Original-Zaehlung der Modi (0 = Eingang, 1 = Puffer, 2 = Ausgang, 3 = aus) - der Port zaehlt
+     * 0 = Puffer, 1 = Eingang; die Funkbefehle bleiben bei der Original-Zaehlung.
+     */
+    private static int swapModeROR(int mode) {
+        return mode == 0 ? 1 : mode == 1 ? 0 : mode;
+    }
+
+    @Override
+    public String runRORFunction(String name, String[] params) {
+        // redLow = Modus ohne Redstone, redHigh = Modus mit Redstone
+        if ((PREFIX_FUNCTION + "setmode").equals(name) && params.length > 0) {
+            int mode = com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[0], 0, 3);
+            if (mode != swapModeROR(this.modeOnNoSignal)) {
+                this.modeOnNoSignal = swapModeROR(mode);
+                this.markChangedROR();
+                return null;
+            } else if (params.length > 1) {
+                int altmode = com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[1], 0, 3);
+                this.modeOnNoSignal = swapModeROR(altmode);
+                this.markChangedROR();
+                return null;
+            }
+            return null;
+        }
+        if ((PREFIX_FUNCTION + "setredmode").equals(name) && params.length > 0) {
+            int mode = com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[0], 0, 3);
+            if (mode != swapModeROR(this.modeOnSignal)) {
+                this.modeOnSignal = swapModeROR(mode);
+                this.markChangedROR();
+                return null;
+            } else if (params.length > 1) {
+                int altmode = com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[1], 0, 3);
+                this.modeOnSignal = swapModeROR(altmode);
+                this.markChangedROR();
+                return null;
+            }
+            return null;
+        }
+        if ((PREFIX_FUNCTION + "setpriority").equals(name) && params.length > 0) {
+            // Original: parseInt(0..2) + 1 -> LOW, NORMAL, HIGH
+            int priority = com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[0], 0, 2) + 1;
+            this.priority = IEnergyReceiver.Priority.values()[priority];
+            this.markChangedROR();
+            return null;
+        }
+        return null;
+    }
+
+    /** Original {@code markChanged()}. */
+    private void markChangedROR() {
+        setChanged();
+        if (level != null && !level.isClientSide) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
     }
 }

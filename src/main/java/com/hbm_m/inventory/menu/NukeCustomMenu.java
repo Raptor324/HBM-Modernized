@@ -3,7 +3,6 @@ package com.hbm_m.inventory.menu;
 import com.hbm_m.blockentity.bomb.NukeCustomBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.inventory.menu.ModMenuTypes;
-import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
@@ -12,6 +11,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * Меню кастомной бомбы: сетка 9x3 произвольных предметов.
@@ -41,7 +41,7 @@ public class NukeCustomMenu extends AbstractContainerMenu {
         // тайл может отсутствовать на клиенте (реплей Flashback) — подставляем пустую заглушку
         var container = this.be != null
                 ? this.be
-                : new ModItemStackHandlerContainer(new DummyItemStackHandler(NukeCustomBlockEntity.SLOTS), () -> {});
+                : new ModItemStackHandlerContainer(new ModItemStackHandler.Dummy(NukeCustomBlockEntity.SLOTS), () -> {});
 
         for (int slot = 0; slot < NukeCustomBlockEntity.SLOTS; slot++) {
             addSlot(new Slot(container, slot, 8 + (slot % 9) * 18, 18 + (slot / 9) * 18));
@@ -63,8 +63,32 @@ public class NukeCustomMenu extends AbstractContainerMenu {
         return be != null && be.stillValid(player);
     }
 
+    /** Original {@code transferStackInSlot}: Bombe <-> Inventar (jeweils von hinten). */
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
-        return ItemStack.EMPTY;
+        ItemStack var3 = ItemStack.EMPTY;
+        Slot var4 = this.slots.get(index);
+
+        if (var4 != null && var4.hasItem()) {
+            ItemStack var5 = var4.getItem();
+            var3 = var5.copy();
+
+            if (index <= 26) {
+                if (!this.moveItemStackTo(var5, 27, this.slots.size(), true)) {
+                    return ItemStack.EMPTY;
+                }
+            } else {
+                if (!this.moveItemStackTo(var5, 0, 27, true))
+                    return ItemStack.EMPTY;
+            }
+
+            if (var5.isEmpty()) {
+                var4.set(ItemStack.EMPTY);
+            } else {
+                var4.setChanged();
+            }
+        }
+
+        return var3;
     }
 }

@@ -1,143 +1,63 @@
-# Project: Nucleus Retained GPU-Driven Rendering Engine Overhaul
+# Project: 1:1 Forensic Parity Audit & Kinematic Corrections of Modern Machine Renderers
 
 ## Architecture
-
-Nucleus is the high-performance modern rendering engine in HBM-Modernized, built to render complex multiblock machinery with hundreds of thousands of vertices via Multi-Draw Indirect (MDI), instanced rendering, and GPU compute baking.
-
-This architectural overhaul transitions Nucleus from legacy immediate-mode BlockEntityRenderer traversal with fragile order-dependent slot assertions to a true **Retained GPU-Driven Engine**:
-1. **Persistent Slot Allocation & Robust Instance Handles (M1)**:
-   - Migration from volatile linear index matching (`instanceOcclusionKeys[instanceCount] == posKey`) to persistent 64-bit coordinate handles managed by `InstanceSlotAllocator`.
-   - Slots remain stable and do not invalidate or shift when the camera rotates, frustum culls adjacent blocks, or alters chunk traversal order.
-   - Elimination of hybrid multipart dynamic fallbacks: `Advanced Assembler` `Frame` converted to a first-class instanced mesh with visibility gating (`hasDynamicParts = false`).
-2. **True Retained Scene Graph Integration (M2)**:
-   - `RetainedInstanceGraph` populated on chunk load/unload and machine placement/break events.
-   - Bypassing per-frame CPU BlockEntity iteration (`collectMain` flat/bucket loops) for static machines in steady state (`isMachineStaticAndRetained`).
-   - `SparseUpdateQueue` for fine-grained dirty state and light invalidation updates without full buffer diffing (`diffUpload`) or native memory float comparisons (`recordMatchesBuffer`).
-   - Section light updates routed through `sectionToMachines` mapping, triggering per-machine `DirtyMask.LIGHT` refreshes instead of coarse chunk-center overwrites.
-3. **GPU-Side Distance Fading and Kinematics Offloading (M3)**:
-   - Elimination of CPU `computeWindowMinFade` per-frame scanning loop; evaluate distance fading (`gpuFadeAlpha`) in vertex/fragment shaders.
-   - Universal screen-door dithering (`nucleusDitherFade`) implemented via interleaved gradient noise in fragment shader; **disabled by default** (`nucleusDitherFade = false`) for smooth visual alpha fading.
-   - Autonomous continuous rotation (Turbofan rotors) and reciprocating motion (Industrial Press head strokes) evaluated via shader kinematics from camera uniform time (`u_Time` / `uAnimTicks`), cutting `PoseStack.pushPose()` and `Matrix3f` constructor churn.
-   - Shader kinematics parity in `block_lit_instanced_iris.vsh` under active shaderpacks.
-4. **Universal 2-Tier Hardware Compatibility & Iris Interop (M4)**:
-   - **Tier 1 (Modern Desktop GL 4.3+)**: SSBO instance storage, GPU compute occlusion/frustum culling (`nucleus_cull.comp` + Hi-Z depth pyramid), and Multi-Draw Indirect (`glMultiDrawElementsIndirect`).
-   - **Tier 2 (Universal Baseline GL 3.2 Core Profile)**: Strictly zero compute shaders, zero SSBOs, and zero MDI; CPU frustum culling via `CpuFrustumCuller`, and instanced array drawing (`glDrawElementsInstanced`). Universal compatibility on macOS (Apple Silicon/Intel) and legacy Intel HD Graphics.
-   - Iris/Oculus shaderpack interoperability preserving deferred PBR attachments and companion mesh fallback without black models.
-5. **Robust Exterior 3D Light Sampling (M5 Remediation)**:
-   - 8-corner trilinear lattice sampling (`LightSampleCache.sample8`) rewritten to probe exterior air blocks adjacent to machine corners rather than collapsing inside opaque solid blocks.
-   - Multi-candidate exterior probing with vertical floor relaxation and smoothed face lighting fallbacks (`sampleSmoothLightUV`).
-   - Retained GPU VBO records baked and updated with full 8-corner light data via `SparseUpdateQueue.sampleMachineLight`.
-6. **Iris Shader Pipeline & Translucent Particle Direct Pass (M6)**:
-   - Nested re-entrant `NtDirectPass.run(Runnable)` ensuring intermediate batch flushes from `PlainBufferSource` during particle rendering execute under an active unmasked direct pass.
-   - Deep reflective unlocking in `ShaderBindResync` of Iris/Oculus `DepthColorStorage` (`isDepthColorLocked`, `unlockDepthColor`, `depthColorLocked`) preventing color/depth write masking by Oculus.
-   - Direct `glBufferSubData` span uploading in `GpuSpanUploader` with single-bind window batching, bypassing staging ring sync stalls.
-   - Anchor-space shadow prebake activation on 1.20.1 via `ensureAnchorSpaceShadowFromBePose()` and O(1) shadow consumption path in `IrisShadowBatchCollector`.
-7. **Large-Scale Fleet Stability & Resource Lifecycle (M6 Stability)**:
-   - 2D/3D workgroup expansion (`rawY`) and tiled dispatch triples (`min(n, 65535u)`) in compute shaders, preventing GPU driver timeouts and freezes during mass machine spawns (>65535 instances).
-   - Dynamic VRAM pool shrinking (`maybeShrinkPool`, `shrinkOversizedBuffer`, `tickFrameCleanup`) and strict user budget enforcement (`cacheBudgetBytes`), preventing pool bloat and out-of-memory crashes.
-   - Thread-safe `BAKED` mesh registry and off-heap memory leak prevention in `IrisShadowBatchCollector` (pruning stale `PREBAKES` >24 epochs).
-   - Snapshot iteration in `LevelChunkSilentRemovalMixin` preventing client-side `ConcurrentModificationException` during chunk unloads and multiblock crater teardowns.
-   - Removal of fragile `SodiumWorldRendererMixin121`, delegating BE render cancellation universally to `MixinBlockEntityRenderDispatcher`.
-
----
+- **Rendering Framework**: Modernized Nucleus Rendering Engine (`com.hbm_m.client.render.machine.MachineRenderers`)
+- **Kinematic Primitives**: Declarative GPU transforms (`JointNode`, `Track`, `rotatingPart`, `translatingPart`, `spinningPart`, `vibratingPart`) and procedural callbacks (`MachineRenderHook`, `PartAnimator`)
+- **Reference Standard**: Canonical 1.7.10 reference repository at `C:\Projects\Hbm-s-Nuclear-Tech-GIT\src\main\java\com\hbm\render\tileentity\`
 
 ## Feature Inventory
-
-| # | Feature | Description | Milestone | Status |
-|---|---------|-------------|-----------|--------|
-| F1 | `InstanceSlotAllocator` Integration in Part Renderer | Connect `InstanceSlotAllocator` to `InstancedStaticPartRenderer` using persistent 64-bit coordinate keys | M1 | COMPLETED |
-| F2 | Persistent Slot Handle Assertion Logic | Replace fragile `instanceOcclusionKeys[instanceCount] == posKey` linear assertion with persistent slot handle lookup | M1 | COMPLETED |
-| F3 | Universal Instanced Conditional Parts | Convert conditional parts (Frame across Advanced Assembler, Chemical Plant, Fluid Tanks, etc.) from dynamic uninstanced quads to 100% instanced meshes with slot or visibility gating | M1 | COMPLETED |
-| F4 | Chunk Lifecycle Hooks in Retained Graph | Hook chunk load/unload events (`onChunkLoaded`, `onChunkUnloaded`) to `RetainedInstanceGraph` | M2 | COMPLETED |
-| F5 | Steady-State Static Traversal Short-Circuit | Bypass static chunk buckets and machines in `NucleusDispatcherBypass.collectMain()` | M2 | COMPLETED |
-| F6 | CPU `computeWindowMinFade` Elimination | Delete per-frame `computeWindowMinFade` linear instance scanning loop from `MdiBatchCoordinator` | M3 | COMPLETED |
-| F7 | Universal Screen-Door Dithering | Jimenez interleaved gradient noise dithering in fragment shaders; disabled by default (`nucleusDitherFade = false`) | M3 | COMPLETED |
-| F8 | Autonomous Continuous Rotor Shader Kinematics | Evaluate Turbofan continuous rotations via `u_Time` and Rodrigues formula in vertex shader | M3 | COMPLETED |
-| F9 | Iris Shader Kinematics Parity | Port ANIM TRACK v2 spline and joint chain uniforms to `block_lit_instanced_iris.vsh` | M3 | COMPLETED |
-| F10 | Tier 2 GL 3.2 Baseline Enforcement | Guarantee zero compute/SSBO/MDI execution on macOS and legacy Intel iGPUs via `HardwareTierManager` | M4 | COMPLETED |
-| F11 | Iris/Oculus Interop & Black Model Prevention | AST reflection layout verification with companion mesh fallback for non-packed shaderpacks | M4 | COMPLETED |
-| F12 | Dual-Target Compilation Parity | Clean compilation on `:1.20.1-forge:compileJava` and `:1.21.1-neoforge:compileJava` | M5 | COMPLETED |
-| F13 | Exterior Block Light & 8-Corner Sampler Remediation | Multi-candidate exterior probing, solid fallback elimination, section light update overhaul | M5 | COMPLETED |
-| F14 | Direct `glBufferSubData` Span Uploading | Replace `PersistentUploadStaging` with single-bind window direct uploads in `GpuSpanUploader` | M6 | COMPLETED |
-| F15 | Anchor-Space Shadow Activation & O(1) Bypass | Enable anchor-space prebakes on 1.20.1 and fast-track shadow consumption in `IrisShadowBatchCollector` | M6 | COMPLETED |
-| F16 | Compute Shader >65535 Instance Workgroup Tiling | Implement 2D/3D workgroup addressing (`rawY`) and tiled Z dispatches in compute shaders | M6 | COMPLETED |
-| F17 | VRAM Leak Prevention & Pool Shrinking | Dynamic VBO pool shrinking, idle buffer reclaim, and stale prebake cleanup | M6 | COMPLETED |
-| F18 | Translucent Particle Direct Pass Under Shaders | Re-entrant `NtDirectPass.run()` nesting and Iris `DepthColorStorage` unmasking | M6 | COMPLETED |
-| F19 | Chunk Teardown CME Elimination | Snapshot array iteration in `LevelChunkSilentRemovalMixin` and safe non-mutating BE queries | M6 | COMPLETED |
-| F20 | Sodium Mixin Deprecation & Universal Dispatch | Eliminate `SodiumWorldRendererMixin121` in favor of portable `MixinBlockEntityRenderDispatcher` | M6 | COMPLETED |
-
----
+| # | Feature / Machine Group | Description | Milestone | Source |
+|---|-------------------------|-------------|-----------|--------|
+| 1 | Double Pivot Fixes | Fix double-pivot displacement in `MachineSeparationRenderer` (Compressor, Compact Compressor, Microwave) | M1 | Survey 3 |
+| 2 | Ghost Mesh De-duplication | Eliminate duplicate static/animated registrations in `MachineSawmillRenderer` (Blade) & `MachinePressGroupRenderer` (Piston, Bullets) | M1 | Survey 3 |
+| 3 | OBJ Geometry Alignment | Correct non-existent OBJ part names in `MachinePileRenderers` (Base, Loader, Pipe) and `MachineDFCRenderers` (Cube_Cube.001) | M1 | Survey 3 |
+| 4 | API Signature Corrections | Fix invalid 4-lambda calls in `MachineFusionComplexRenderer` (Magnet) & `MachineResearchFacilityRenderer` (Magnets) with `.rotateY` | M1 | Survey 3 |
+| 5 | Accelerator & Dee Cleanup | Remove non-existent "Dees" in `MachineAcceleratorRenderer`, fix plug socket texture retention | M1 | Survey 3 |
+| 6 | Turbine & Flywheel Parity | Invert Z rotation axis on Industrial Turbine Flywheel, set pivot to (0, 1.5, 0), add Gauge part, add Large Turbine (0, 0, -1) offset | M1 | Survey 3 |
+| 7 | Structural Placement Heights | Fix missing `y - 4` translation in `SoyuzLauncherRenderer` | M1 | Survey 3 |
+| 8 | Operational State Guards | Add `be.isOn` activity guard to Diesel Generator vibration in `MachineEngineRenderer` | M1 | Survey 3 |
+| 9 | Continuous Simulation Angles | Replace synthetic snap-to-rest rigs with continuous simulation angle suppliers in Chem Plant, Chem Factory, Crystallizer, Excavator, Radar | M1 | Survey 3 |
+| 10 | Aerospace LPW-2 Kinematics | Implement 8 articulated vectoring flaps and 4 dynamic suspension struts in `MachineLaserResearchRenderer` | M1 | Survey 3 |
+| 11 | RBMK Console 2-Axis Rig | Implement 2-axis joystick kinematics and dynamic heat/enrichment meter needles in `MachineRbmkControlRenderer` | M1 | Survey 3 |
+| 12 | Animation Parity Matrix | Compile comprehensive audit matrix `docs/reports/ANIMATION_PARITY_AUDIT.md` covering all animated machines | M2 | Survey 1, 3 |
+| 13 | 236 Inventory Parity Report | Finalize and validate `docs/reports/RENDERER_PARITY_SUMMARY.md` covering all 236 original 1.7.10 renderers | M3 | Survey 2 |
+| 14 | Multi-Agent Quality Gate | Execute dual Reviewers, dual Challengers, and Forensic Integrity Auditor | M4 | Governance |
 
 ## Milestones
-
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
-| M1 | Persistent Slot Allocation & Universal Conditional Parts Instancing | F1, F2, F3 | none | COMPLETED |
-| M2 | True Retained Scene Graph & Event-Driven Dirty Tracking | F4, F5 | M1 | COMPLETED |
-| M3 | GPU-Side Distance Fading & Shader Kinematics Parity | F6, F7, F8, F9 | M1 | COMPLETED |
-| M4 | Universal 2-Tier Hardware Engine & Iris Interoperability | F10, F11 | M2, M3 | COMPLETED |
-| M5 | Dual-Target Parity & Block Light Sampler Verification | F12, F13 | M1, M2, M3, M4 | COMPLETED |
-| M6 | Iris Optimization, Translucent Particle Pass & Fleet Stability | F14, F15, F16, F17, F18, F19, F20 | M4, M5 | COMPLETED |
-
----
-
-## Root-Cause Investigation: Block Light Bug & Light Sampler Audit
-
-### The Defect
-Models and machines previously reacted to sky light, but completely ignored block light from torches, lanterns, and glowstone. At night or underground, machines appeared pitch-black even when surrounded by torches.
-
-### Root Causes Uncovered
-1. **Flawed `SAMPLE_INSET` in `LightSampleCache.sample8`**:
-   - `sample8` applied `SAMPLE_INSET = 1/64` pulling each corner inward toward the bounding box center.
-   - For a 1-block machine (`minX = 0, maxX = 1`), `minXs = 0.015625` and `maxXs = 0.984375`. Both floored to `0`!
-   - All 8 corners collapsed to `(bpx, bpy, bpz)` inside the machine's own solid block.
-   - For multiblocks, all corners landed inside the occupied casing blocks.
-2. **Opaque Block Fallback Loop**:
-   - When `state.isSolidRender(level, samplePos)` was true, `sample8` fell back to `packedLightFallback`.
-   - `packedLightFallback` was queried at `be.getBlockPos()`—the same opaque machine block.
-   - In Minecraft's `BlockLightEngine`, solid blocks have `blockLight == 0`. Hence, block light was always 0.
-3. **Premature Early-Exit in `shouldSkipSpatialSampling`**:
-   - When `packedLightFallback` had `blockLight == 0`, it evaluated `Math.round(PRECHECK_UV[0]) <= 0` and filled all 8 corners with `packedLightFallback` (zero block light), throwing away valid exterior lighting.
-4. **Section Center Light Overwrite in `RetainedInstanceGraph.processDirtyLightSections`**:
-   - When a block light update occurred, `processDirtyLightSections` sampled light at `(secX*16 + 8, secY*16 + 8, secZ*16 + 8)` (the section geometric center) and forcibly overwrote all machines in the chunk section with this single point's light.
-5. **Uniform Flat Light Baking in `SparseUpdateQueue`**:
-   - Initial bakes and updates used `getOrSamplePacked(be, 0)` and duplicated `bu, sv` uniformly across all corners, inheriting the solid block's 0 block light.
-
-### Remediation Applied
-- **Exterior Corner Probing (`LightSampleCache.sample8`)**: Probes outward by `0.1` blocks past each corner into exterior air. If a corner touches a solid floor or wall, it performs candidate relaxation (checking floor-level air `wy = bpy`, then relaxing X/Z axes) and falls back to smoothed exterior face light (`sampleSmoothLightUV`).
-- **Exterior Face Fallback in `getOrSamplePacked`**: If `be.getBlockPos()` is solid and returns `blockLight == 0`, `getOrSamplePacked` immediately samples the 6 exterior open faces around the machine.
-- **Section-to-Machines Mapping (`RetainedInstanceGraph`)**: Replaced `sectionToSlots` with `sectionToMachines`. When a chunk section experiences a light update, every machine in that section is individually refreshed via `sparseQueue.enqueueUpdate(handle, be, DirtyMask.LIGHT)`.
-- **Full 8-Corner Light Baking (`SparseUpdateQueue.sampleMachineLight`)**: Retained instance records now compute and bake all 8 trilinear light corners during initial chunk load and on dirty light updates.
-
----
+| M1 | Kinematic Parity Corrections | Apply drop-in code fixes to 11 Nucleus renderer classes in `com.hbm_m.client.render.implementations` | Survey Complete | PLANNED |
+| M2 | Animation Parity Matrix Report | Generate comprehensive audit matrix `docs/reports/ANIMATION_PARITY_AUDIT.md` | M1 | PLANNED |
+| M3 | Renderer Parity Summary Validation | Verify complete 236-row inventory in `docs/reports/RENDERER_PARITY_SUMMARY.md` | Survey Complete | DONE |
+| M4 | Multi-Agent Audit & Verification | Reviewers (2), Challengers (2), Forensic Auditor (1) verification | M1, M2, M3 | PLANNED |
 
 ## Code Layout
+- Target Implementation Files:
+  - `src/main/java/com/hbm_m/client/render/implementations/MachineSeparationRenderer.java`
+  - `src/main/java/com/hbm_m/client/render/implementations/MachineSawmillRenderer.java`
+  - `src/main/java/com/hbm_m/client/render/implementations/MachinePressGroupRenderer.java`
+  - `src/main/java/com/hbm_m/client/render/implementations/MachinePileRenderers.java`
+  - `src/main/java/com/hbm_m/client/render/implementations/MachineDFCRenderers.java`
+  - `src/main/java/com/hbm_m/client/render/implementations/MachineAcceleratorRenderer.java`
+  - `src/main/java/com/hbm_m/client/render/implementations/MachineFusionComplexRenderer.java`
+  - `src/main/java/com/hbm_m/client/render/implementations/MachineResearchFacilityRenderer.java`
+  - `src/main/java/com/hbm_m/client/render/implementations/MachineTurbineRenderer.java`
+  - `src/main/java/com/hbm_m/client/render/implementations/SoyuzLauncherRenderer.java`
+  - `src/main/java/com/hbm_m/client/render/implementations/MachineEngineRenderer.java`
+  - `src/main/java/com/hbm_m/client/render/implementations/MachineChemicalPlantRenderer.java`
+  - `src/main/java/com/hbm_m/client/render/implementations/MachineChemicalFactoryRenderer.java`
+  - `src/main/java/com/hbm_m/client/render/implementations/MachineCrystallizerRenderer.java`
+  - `src/main/java/com/hbm_m/client/render/implementations/MachineMiningDrillRenderer.java`
+  - `src/main/java/com/hbm_m/client/render/implementations/MachineLaserResearchRenderer.java`
+  - `src/main/java/com/hbm_m/client/render/implementations/MachineRbmkControlRenderer.java`
+- Documentation Artifacts:
+  - `docs/reports/ANIMATION_PARITY_AUDIT.md`
+  - `docs/reports/RENDERER_PARITY_SUMMARY.md`
 
-```
-src/main/java/com/hbm_m/client/render/
-├── InstancedStaticPartRenderer.java       # Persistent slot allocator integration & instance records
-├── MdiBatchCoordinator.java               # Batch submission, dither fade integration
-├── HardwareTierManager.java               # Tier 1 (GL 4.3) vs Tier 2 (GL 3.2 Core) probing & enforcement
-├── NucleusDispatcherBypass.java           # Static chunk/BE bypass in collectMain
-├── LightSampleCache.java                  # 8-corner trilinear & 6-face exterior smoothed light sampling
-├── retained/
-│   ├── RetainedInstanceGraph.java         # Persistent retained scene graph, chunk lifecycle & section light updates
-│   ├── ChunkInstancePartition.java       # Chunk-partitioned instance mapping
-│   ├── DirtyMask.java                     # Bitmask for fine-grained instance record slices
-│   ├── alloc/
-│   │   └── InstanceSlotAllocator.java     # Slab slot allocator & free-list
-│   └── upload/
-│       └── SparseUpdateQueue.java         # Event-driven dirty span coalescing & 8-corner light baking
-├── machine/
-│   ├── MachineBer.java                    # BlockEntityRenderer fast assert & roster handling
-│   ├── MachineSpec.java                   # Machine specification & part definitions
-│   └── MachineSpecBuilder.java            # Declarative kinematics DSL
-├── implementations/
-│   ├── MachineAdvancedAssemblerRenderer.java # First-class instanced Frame definition
-│   ├── MachineTurbofanRenderer.java          # Shader-evaluated continuous rotor
-│   └── MachinePressRenderer.java             # Shader-evaluated reciprocating stroke
-└── culling/
-    ├── CpuFrustumCuller.java              # Tier 2 CPU Gribb-Hartmann frustum culling
-    ├── NucleusGpuCuller.java              # Tier 1 compute frustum/occlusion culling
-    └── HiZDepthPyramid.java               # Forward-Z Hi-Z depth downsampler
-```
+## Interface Contracts
+### Nucleus Declarative Transforms
+- `.rotatingPart(name, axis, pivot, angleSupplier)`: Rotates named OBJ group about `pivot` around `axis` by `angleSupplier.applyAsDouble(be, partialTick)`.
+- `.rotateY(name, pivotX, pivotZ, angleSupplier)`: Rotates named OBJ group about Y axis at `(pivotX, 0, pivotZ)`.
+- `.translatingPart(name, directionVector, offsetSupplier)`: Translates named OBJ group along `directionVector` by `offsetSupplier.applyAsDouble(be, partialTick)`.
+- `.blockTransform((be, anim) -> ...)`: Applies base model translation/rotation prior to part hierarchy.
+- `.part(name)`: Adds static OBJ group. Must match exact group header `o <name>` in the OBJ file.

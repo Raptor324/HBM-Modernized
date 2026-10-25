@@ -24,7 +24,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 public class RBMKRodBlockEntity extends RBMKColumnBlockEntity
-        implements IRBMKFluxReceiver, IRBMKLoadable, MenuProvider {
+        implements IRBMKFluxReceiver, IRBMKLoadable, MenuProvider, com.hbm_m.api.redstoneoverradio.IRORValueProvider {
 
     public double fluxFastRatio    = 0;
     public double fluxQuantity     = 0;
@@ -286,11 +286,17 @@ public class RBMKRodBlockEntity extends RBMKColumnBlockEntity
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
-        tag.putDouble("fluxQuantity", lastFluxQuantity);
-        tag.putDouble("fluxMod", lastFluxRatio);
+        if (!diag) {
+            tag.putDouble("fluxQuantity", lastFluxQuantity);
+            tag.putDouble("fluxMod", lastFluxRatio);
+        } else {
+            tag.putDouble("fluxSlow", this.fluxQuantity * (1 - fluxFastRatio));
+            tag.putDouble("fluxFast", this.fluxQuantity * fluxFastRatio);
+        }
         tag.putBoolean("hasRod", hasRod);
+        if (diag) return;
         tag.putBoolean("explodeOnBroken", explodeOnBroken);
-        if (!fuelSlot.isEmpty()) tag.put("fuelSlot", com.hbm_m.platform.PlatformHooks.safeItemSave(fuelSlot, registries));
+        if (!fuelSlot.isEmpty()) tag.put("fuelSlot", com.hbm_m.platform.StackNbt.saveNew(fuelSlot, registries));
     }
 
     @Override
@@ -307,7 +313,36 @@ public class RBMKRodBlockEntity extends RBMKColumnBlockEntity
         hasRod          = tag.getBoolean("hasRod");
         explodeOnBroken = !tag.contains("explodeOnBroken") || tag.getBoolean("explodeOnBroken");
         if (tag.contains("fuelSlot"))
-            fuelSlot = com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("fuelSlot"), registries);
+            fuelSlot = com.hbm_m.platform.StackNbt.parse(tag.getCompound("fuelSlot"), registries);
+    }
+
+    // ── Redstone-over-Radio (1:1 TileEntityRBMKRod) ──
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+                PREFIX_VALUE + "columnheat",
+                PREFIX_VALUE + "rodheat",
+                PREFIX_VALUE + "depletion",
+                PREFIX_VALUE + "xenon",
+                PREFIX_VALUE + "fastflux",
+                PREFIX_VALUE + "slowflux",
+                PREFIX_VALUE + "flux"
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "columnheat").equals(name)) return "" + (int) this.heat;
+        if (!fuelSlot.isEmpty() && fuelSlot.getItem() instanceof com.hbm_m.item.rbmk.RBMKRodItem) {
+            if ((PREFIX_VALUE + "rodheat").equals(name))   return "" + (int) com.hbm_m.item.rbmk.RBMKRodItem.getHullHeat(fuelSlot);
+            if ((PREFIX_VALUE + "depletion").equals(name)) return "" + (int) (100 - com.hbm_m.item.rbmk.RBMKRodItem.getEnrichment(fuelSlot) * 100);
+            if ((PREFIX_VALUE + "xenon").equals(name))     return "" + (int) (com.hbm_m.item.rbmk.RBMKRodItem.getPoison(fuelSlot));
+        }
+        if ((PREFIX_VALUE + "fastflux").equals(name)) return "" + (int) (lastFluxQuantity * lastFluxRatio);
+        if ((PREFIX_VALUE + "slowflux").equals(name)) return "" + (int) (lastFluxQuantity * (1 - lastFluxRatio));
+        if ((PREFIX_VALUE + "flux").equals(name))     return "" + ((int) (lastFluxQuantity * lastFluxRatio) + (int) (lastFluxQuantity * (1 - lastFluxRatio)));
+        return null;
     }
 }
 

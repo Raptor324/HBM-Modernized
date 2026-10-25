@@ -1,0 +1,137 @@
+{
+ "parent": "minecraft:block/block",
+ "textures": {
+  "t": "hbm_m:block/deco/wood_barrier",
+  "particle": "hbm_m:block/deco/wood_barrier"
+ },
+ "elements": [
+  {
+   "from": [
+    0,
+    0,
+    0
+   ],
+   "to": [
+    2.0,
+    2.0,
+    16
+   ],
+   "faces": {
+    "down": {
+     "texture": "#t"
+    },
+    "up": {
+     "texture": "#t"
+    },
+    "north": {
+     "texture": "#t"
+    },
+    "south": {
+     "texture": "#t"
+    },
+    "west": {
+     "texture": "#t"
+    },
+    "east": {
+     "texture": "#t"
+    }
+   }
+  },
+  {
+   "from": [
+    14.0,
+    0,
+    0
+   ],
+   "to": [
+    16,
+    2.0,
+    16
+   ],
+   "faces": {
+    "down": {
+     "texture": "#t"
+    },
+    "up": {
+     "texture": "#t"
+    },
+    "north": {
+     "texture": "#t"
+    },
+    "south": {
+     "texture": "#t"
+    },
+    "west": {
+     "texture": "#t"
+    },
+    "east": {
+     "texture": "#t"
+    }
+   }
+  },
+  {
+   "from": [
+    1.0,
+    2.0,
+    1.0
+   ],
+   "to": [
+    16,
+    3.0,
+    7.0
+   ],
+   "faces": {
+    "down": {
+     "texture": "#t"
+    },
+    "up": {
+     "texture": "#t"
+    },
+    "north": {
+     "texture": "#t"
+    },
+    "south": {
+     "texture": "#t"
+    },
+    "west": {
+     "texture": "#t"
+    },
+    "east": {
+     "texture": "#t"
+    }
+   }
+  },
+  {
+   "from": [
+    1.0,
+    2.0,
+    9.0
+   ],
+   "to": [
+    16,
+    3.0,
+    15.0
+   ],
+   "faces": {
+    "down": {
+     "texture": "#t"
+    },
+    "up": {
+     "texture": "#t"
+    },
+    "north": {
+     "texture": "#t"
+    },
+    "south": {
+     "texture": "#t"
+    },
+    "west": {
+     "texture": "#t"
+    },
+    "east": {
+     "texture": "#t"
+    }
+   }
+  }
+ ]
+}

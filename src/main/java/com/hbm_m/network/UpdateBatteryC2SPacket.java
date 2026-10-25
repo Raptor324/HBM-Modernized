@@ -44,6 +44,8 @@ public class UpdateBatteryC2SPacket implements C2SPacket {
                 battery.handleButtonPress(msg.buttonId);
             } else if (be instanceof BatterySocketBlockEntity socket) {
                 socket.handleButtonPress(msg.buttonId);
+            } else if (be instanceof com.hbm_m.blockentity.machines.BatteryREDDBlockEntity redd) {
+                if (player.distanceToSqr(msg.pos.getX() + 0.5, msg.pos.getY() + 0.5, msg.pos.getZ() + 0.5) <= 128) redd.handleButtonPress(msg.buttonId);
             }
         });
     }

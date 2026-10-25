@@ -20,8 +20,8 @@ import java.util.function.Consumer;
 public final class MoltenAlloyRecipeGenerator {
 
     public static void generate(Consumer<FinishedRecipe> writer) {
-        int n = MaterialShapes.NUGGET;   // 8
-        int i = MaterialShapes.INGOT;    // 72
+        int n = MaterialShapes.NUGGET.q(1);   // 8
+        int i = MaterialShapes.INGOT.q(1);    // 72
 
         // Полный набор CrucibleRecipes.registerDefaults (1.7.10, без GT6-вариантов)
 

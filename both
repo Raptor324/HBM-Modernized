@@ -1,0 +1,34 @@
+Running Stonecutter 0.8
+> Task :build-logic:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :build-logic:compileKotlin UP-TO-DATE
+> Task :build-logic:compileJava NO-SOURCE
+> Task :build-logic:pluginDescriptors UP-TO-DATE
+> Task :build-logic:processResources UP-TO-DATE
+> Task :build-logic:classes UP-TO-DATE
+> Task :build-logic:jar UP-TO-DATE
+> Task :1.21.1-neoforge:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :1.20.1-forge:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :1.20.1-forge:stonecutterPrepare UP-TO-DATE
+> Task :1.21.1-neoforge:stonecutterPrepare UP-TO-DATE
+> Task :1.20.1-forge:stonecutterGenerate UP-TO-DATE
+> Task :1.21.1-neoforge:stonecutterGenerate UP-TO-DATE
+> Task :1.20.1-forge:createMinecraftArtifacts UP-TO-DATE
+> Task :1.21.1-neoforge:createMinecraftArtifacts UP-TO-DATE
+> Task :1.21.1-neoforge:kspKotlin UP-TO-DATE
+> Task :1.21.1-neoforge:compileKotlin NO-SOURCE
+> Task :1.20.1-forge:kspKotlin UP-TO-DATE
+> Task :1.21.1-neoforge:compileJava UP-TO-DATE
+> Task :1.20.1-forge:compileKotlin NO-SOURCE
+> Task :1.20.1-forge:compileJava UP-TO-DATE
+> Task :1.20.1-forge:processResources UP-TO-DATE
+> Task :1.20.1-forge:classes UP-TO-DATE
+> Task :1.20.1-forge:jarJar UP-TO-DATE
+> Task :1.21.1-neoforge:processResources UP-TO-DATE
+> Task :1.21.1-neoforge:classes UP-TO-DATE
+> Task :1.21.1-neoforge:jarJar UP-TO-DATE
+> Task :1.20.1-forge:jar
+> Task :1.21.1-neoforge:jar
+> Task :1.20.1-forge:reobfJar
+
+BUILD SUCCESSFUL in 39s
+21 actionable tasks: 3 executed, 18 up-to-date

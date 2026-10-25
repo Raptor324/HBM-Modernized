@@ -11,6 +11,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * Порт com.hbm.tileentity.IControlReceiverFilter (1.7.10): копирка слотов-фильтров.
@@ -40,7 +41,7 @@ public interface IControlReceiverFilter extends ICopiable {
             if (!stack.isEmpty()) {
                 CompoundTag slotNBT = new CompoundTag();
                 slotNBT.putByte("slot", (byte) count);
-                PlatformHooks.saveItemStack(stack, slotNBT, PlatformHooks.bestEffortProvider());
+                StackNbt.save(stack, slotNBT, PlatformHooks.bestEffortProvider());
                 tags.add(slotNBT);
             }
             count++;
@@ -60,7 +61,7 @@ public interface IControlReceiverFilter extends ICopiable {
             for (int i = 0; i < listSize; i++) {
                 CompoundTag slotNBT = items.getCompound(i);
                 int slot = slotNBT.getByte("slot");
-                ItemStack loaded = PlatformHooks.itemStackOf(slotNBT, PlatformHooks.bestEffortProvider());
+                ItemStack loaded = StackNbt.parse(slotNBT, PlatformHooks.bestEffortProvider());
                 if (!loaded.isEmpty() && slot + start < end) {
                     loaded.setCount(1);
                     inv.setStackInSlot(slot + start, loaded);

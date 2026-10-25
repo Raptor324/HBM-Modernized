@@ -31,6 +31,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import com.hbm_m.platform.StackNbt;
 
 /** Port of {@code MachineCapacitor} (1.7.10 Original). Directional HE buffer, no GUI. */
 public class MachineCapacitorBlock extends BaseEntityBlock implements com.hbm_m.interfaces.ILookOverlay {
@@ -121,7 +122,7 @@ public class MachineCapacitorBlock extends BaseEntityBlock implements com.hbm_m.
         if (!pLevel.isClientSide) {
             BlockEntity be = pLevel.getBlockEntity(pPos);
             if (be instanceof MachineCapacitorBlockEntity capacitor) {
-                CompoundTag itemNbt = PlatformHooks.getItemTag(pStack);
+                CompoundTag itemNbt = StackNbt.read(pStack);
                 if (itemNbt != null && itemNbt.contains("BlockEntityTag")) {
                     //? if < 1.21.1 {
                     capacitor.load(itemNbt.getCompound("BlockEntityTag"));
@@ -172,7 +173,7 @@ public class MachineCapacitorBlock extends BaseEntityBlock implements com.hbm_m.
                 .withStyle(ChatFormatting.GOLD));
 
         long stored = 0;
-        CompoundTag nbt = PlatformHooks.getItemTag(pStack);
+        CompoundTag nbt = StackNbt.read(pStack);
         if (nbt != null && nbt.contains("BlockEntityTag")) {
             CompoundTag beTag = nbt.getCompound("BlockEntityTag");
             stored = beTag.getLong("energy");

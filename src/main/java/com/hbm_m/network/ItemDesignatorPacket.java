@@ -13,6 +13,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import com.hbm_m.platform.StackNbt;
 
 public class ItemDesignatorPacket implements C2SPacket {
 
@@ -68,7 +69,7 @@ public class ItemDesignatorPacket implements C2SPacket {
     }
 
     private static void applyOperator(ItemStack stack, ItemDesignatorPacket msg, ServerPlayer player) {
-        PlatformHooks.editItemTag(stack, tag -> {
+        StackNbt.edit(stack, tag -> {
             int x = tag.getInt("xCoord");
             int z = tag.getInt("zCoord");
 

@@ -27,6 +27,8 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import org.jetbrains.annotations.Nullable;
+import com.hbm_m.platform.BlockHooks;
+import com.hbm_m.platform.LevelHooks;
 
 /**
  * Port of NEXT {@code com.hbm.blocks.machine.pile.BlockGraphiteDrilledBase}: abstract base of
@@ -234,7 +236,7 @@ public abstract class BlockGraphiteDrilledBase extends Block {
                 BlockEntity existing = level.getBlockEntity(probe);
                 CompoundTag data =
                         existing != null
-                                ? PlatformHooks.saveBlockEntityWithoutMetadata(existing, registries)
+                                ? BlockHooks.saveWithoutMetadata(existing, registries)
                                 : null;
 
                 level.setBlock(probe, carried.setValue(SHROUDED, state.getValue(SHROUDED)), 3);
@@ -242,7 +244,7 @@ public abstract class BlockGraphiteDrilledBase extends Block {
                 if (carriedData != null) {
                     BlockEntity moved = level.getBlockEntity(probe);
                     if (moved != null) {
-                        PlatformHooks.loadBlockEntityTag(moved, carriedData, registries);
+                        BlockHooks.loadCustomOnly(moved, carriedData, registries);
                         moved.setChanged();
                     }
                 }
@@ -262,7 +264,7 @@ public abstract class BlockGraphiteDrilledBase extends Block {
                         probe.relative(dir.getOpposite()),
                         dir,
                         eject == null ? ItemStack.EMPTY : new ItemStack(eject));
-                PlatformHooks.playSound(
+                LevelHooks.playSound(
                         level,
                         probe,
                         ModSounds.UPGRADE_PLUG.get(),

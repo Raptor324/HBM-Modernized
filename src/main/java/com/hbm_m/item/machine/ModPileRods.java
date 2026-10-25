@@ -8,8 +8,8 @@ import net.minecraft.world.item.Item;
 /**
  * Nachschlagewerk fuer die Brennstaebe des Uranmeilers.
  *
- * <p>Im Original sind das sieben Metadaten <b>eines</b> Gegenstands, und {@code turnsInto} zeigt
- * schlicht auf die naechste Metadatenzahl. Dieser Port registriert sieben eigene Gegenstaende, also
+ * <p>Im Original sind das neun Metadaten <b>eines</b> Gegenstands, und {@code turnsInto} zeigt
+ * schlicht auf die naechste Metadatenzahl. Dieser Port registriert neun eigene Gegenstaende, also
  * braucht es diese Zuordnung, um aus dem Enum wieder den Gegenstand zu bekommen.</p>
  */
 public final class ModPileRods {
@@ -25,6 +25,8 @@ public final class ModPileRods {
             case PU239   -> ModItems.PILE_ROD_MK2_PU239.get();
             case RGP     -> ModItems.PILE_ROD_RGP.get();
             case WASTE   -> ModItems.PILE_ROD_WASTE.get();
+            case THORIUM -> ModItems.PILE_ROD_THORIUM.get();
+            case THORIUM_FUEL -> ModItems.PILE_ROD_THORIUM_FUEL.get();
         };
     }
 }

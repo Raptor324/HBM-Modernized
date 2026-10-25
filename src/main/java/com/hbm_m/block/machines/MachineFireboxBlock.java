@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
-import com.hbm_m.blockentity.machines.FireboxBaseBlockEntity;
+import com.hbm_m.blockentity.machines.MachineFireboxBaseBlockEntity;
 import com.hbm_m.blockentity.machines.MachineFireboxBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
@@ -39,9 +39,9 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
- * Firebox — порт {@code HeaterFirebox} (1.7.10, BlockDummyable {@code {0,0,1,1,1,1}}):
- * мультиблок 3×3×1, контроллер в центре, остальные клетки — фантомы
- * {@code UNIVERSAL_MACHINE_PART}. Клик открывает GUI (дверца открывается сама).
+ * 1:1 {@code HeaterFirebox}: {@code getDimensions() = {0,0,1,1,1,1}}, Offset 1 - eine 3x3x1-Grundflaeche mit dem Kern
+ * in der Mitte; die acht Randzellen sind Proxies mit Inventar ({@code TileEntityProxyCombo().inventory().fluid()}).
+ * Gerendert wird ueber {@code RenderFirebox} (Klappe, Glut).
  */
 public class MachineFireboxBlock extends BaseEntityBlock implements IMultiblockController {
 
@@ -56,10 +56,14 @@ public class MachineFireboxBlock extends BaseEntityBlock implements IMultiblockC
     }
 
     private static MultiblockStructureHelper defineStructure() {
-        String[] layer = { "OOO", "OCO", "OOO" };
+        String[] layer = {
+            "OOO",
+            "OCO",
+            "OOO"
+        };
 
         Map<Character, PartRole> roleMap = Map.of(
-                'O', PartRole.DEFAULT,
+                'O', PartRole.ITEM_INPUT,
                 'C', PartRole.CONTROLLER
         );
 
@@ -97,12 +101,13 @@ public class MachineFireboxBlock extends BaseEntityBlock implements IMultiblockC
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return structureHelper.generateShapeFromParts(state.getValue(FACING));
+        // w16b: nur die Kernzelle (Raycast pro Zelle wie Original); Umriss der ganzen Maschine: MultiblockOutlineForge
+        return structureHelper.getControllerCellShape(state.getValue(FACING));
     }
 
     @Override
@@ -127,12 +132,7 @@ public class MachineFireboxBlock extends BaseEntityBlock implements IMultiblockC
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        if (level.isClientSide()) {
-            return createTickerHelper(type, ModBlockEntities.FIREBOX_BE.get(),
-                (lvl, pos, st, be) -> FireboxBaseBlockEntity.clientTick(lvl, pos, st, (MachineFireboxBlockEntity) be));
-        }
-        return createTickerHelper(type, ModBlockEntities.FIREBOX_BE.get(),
-            (lvl, pos, st, be) -> FireboxBaseBlockEntity.serverTick(lvl, pos, st, (MachineFireboxBlockEntity) be));
+        return createTickerHelper(type, ModBlockEntities.FIREBOX_BE.get(), MachineFireboxBaseBlockEntity::tick);
     }
 
     @Override
@@ -145,32 +145,31 @@ public class MachineFireboxBlock extends BaseEntityBlock implements IMultiblockC
 
     //? if < 1.21.1 {
     @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos,
-                                 Player player, InteractionHand hand, BlockHitResult hit) {
-        return openMenu(state, level, pos, player);
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
+        return openMenu(level, pos, player);
     }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        return openMenu(state, level, pos, player);
+        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
+        return openMenu(level, pos, player);
     }
     *///?}
 
-    private InteractionResult openMenu(BlockState state, Level level, BlockPos pos, Player player) {
-        if (level.isClientSide()) {
-            return InteractionResult.SUCCESS;
+    private InteractionResult openMenu(Level level, BlockPos pos, Player player) {
+        if (level.isClientSide()) return InteractionResult.SUCCESS;
+        if (level.getBlockEntity(pos) instanceof MachineFireboxBlockEntity firebox) {
+            MenuRegistry.openExtendedMenu((ServerPlayer) player, firebox, buf -> buf.writeBlockPos(pos));
+            return InteractionResult.CONSUME;
         }
-        if (level.getBlockEntity(pos) instanceof MachineFireboxBlockEntity firebox && player instanceof ServerPlayer serverPlayer) {
-            MenuRegistry.openExtendedMenu(serverPlayer, firebox, buf -> buf.writeBlockPos(pos));
-        }
-        return InteractionResult.CONSUME;
+        return InteractionResult.PASS;
     }
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock())) {
-            BlockEntity blockEntity = level.getBlockEntity(pos);
-            if (blockEntity instanceof FireboxBaseBlockEntity firebox) {
+            if (level.getBlockEntity(pos) instanceof MachineFireboxBlockEntity firebox) {
                 firebox.dropInventoryContents();
             }
             if (!level.isClientSide()) {
@@ -188,4 +187,15 @@ public class MachineFireboxBlock extends BaseEntityBlock implements IMultiblockC
         return CODEC;
     }
     *///?}
+
+    /** Original {@code addInformation}: {@code addStandardInfo} (Umschalttaste zeigt {@code .desc}). */
+    @Override
+    //? if < 1.21.1 {
+    public void appendHoverText(net.minecraft.world.item.ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.BlockGetter level,
+                                java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(net.minecraft.world.item.ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    *///?}
+        com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
+    }
 }

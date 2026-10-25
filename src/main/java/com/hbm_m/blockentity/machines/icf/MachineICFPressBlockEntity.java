@@ -1,5 +1,6 @@
 package com.hbm_m.blockentity.machines.icf;
 
+
 import com.hbm_m.api.fluids.IFluidStandardReceiverMK2;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
@@ -127,7 +128,7 @@ public class MachineICFPressBlockEntity extends BaseMachineBlockEntity implement
             if (outSlot.isEmpty()) {
                 getInventory().setStackInSlot(SLOT_MUON_EMPTY, container.copy());
                 canStore = true;
-            } else if (com.hbm_m.platform.PlatformHooks.isSameItemSameTags(outSlot, container)
+            } else if (com.hbm_m.platform.StackNbt.sameItemSameTags(outSlot, container)
                     && outSlot.getCount() < outSlot.getMaxStackSize()) {
                 outSlot.grow(1);
                 canStore = true;
@@ -239,5 +240,59 @@ public class MachineICFPressBlockEntity extends BaseMachineBlockEntity implement
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
         return new MachineICFPressMenu(id, inv, this);
+    }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: oben/unten {0-4}, Seiten {0-3, 5}; gefuellte Kapseln und leere Myonen heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return side.getAxis() == net.minecraft.core.Direction.Axis.Y ? new int[] { 0, 1, 2, 3, 4 } : new int[] { 0, 1, 2, 3, 5 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 1 || slot == 3; }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: oben/unten {0-4}, Seiten {0-3, 5}; gefuellte Kapseln und leere Myonen heraus. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return side.getAxis() == net.minecraft.core.Direction.Axis.Y ? new int[] { 0, 1, 2, 3, 4 } : new int[] { 0, 1, 2, 3, 5 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 1 || slot == 3; }
+            });
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
+
+    @Override
+    public @Nullable Object getItemHandler(@Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        //? if forge {
+        return getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER, side).resolve().orElse(null);
+        //?} elif neoforge {
+        /*return getHbmCapability(com.hbm_m.platform.HbmCap.ITEM_HANDLER, side).orElse(null);
+        *///?} else {
+        /*return this.inventory;
+        *///?}
     }
 }

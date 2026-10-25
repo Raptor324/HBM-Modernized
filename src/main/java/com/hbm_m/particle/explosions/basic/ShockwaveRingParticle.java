@@ -8,14 +8,8 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.SpriteSet;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 /**
  * Порт {@code com.hbm.particle.ParticleMukeWave} (1.7.10) — расширяющееся кольцо ударной волны.
  *

@@ -9,9 +9,8 @@ import net.minecraft.world.level.Level;
  * einem Core-Emitter-Laserstrahl getroffen werden koennen (siehe {@code TileEntityCoreEmitter}
  * im Original, welches per Raytrace entlang seiner FACING-Richtung nach Zielen dieses Typs sucht).
  * <p>
- * Vereinfachung gegenueber dem Original: kein generisches Fusionsreaktor-Docking
- * ({@code TileEntityCore.burn(...)}) - in diesem Port existiert keine Fusionsreaktor-Infrastruktur,
- * daher ist der Core Emitter/Receiver ein eigenstaendiges Energie-Relais-Paar.
+ * Der DFC-Kern ist wie im Original kein {@code ILaserable}: der Emitter ruft dort {@code burn(...)} auf und der
+ * Strahl laeuft weiter (siehe {@code MachineCoreEmitterBlockEntity#fireBeam}).
  */
 public interface ILaserable {
 

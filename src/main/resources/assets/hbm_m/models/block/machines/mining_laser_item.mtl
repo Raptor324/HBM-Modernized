@@ -1,0 +1,15 @@
+newmtl laser
+Kd 1.0 1.0 1.0
+d 1.0
+map_Kd #laser
+
+newmtl pivot
+Kd 1.0 1.0 1.0
+d 1.0
+map_Kd #pivot
+
+newmtl base
+Kd 1.0 1.0 1.0
+d 1.0
+map_Kd #base
+

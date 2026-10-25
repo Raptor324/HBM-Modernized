@@ -77,6 +77,13 @@ var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
                 if (this.expl.update()) {
                     clearChunkTicket();
                     this.discard();
+                    // Original EntityTomBlast: Einschlag eingetreten, Feuersturm beginnt
+                    if (level() instanceof net.minecraft.server.level.ServerLevel sl) {
+                        com.hbm_m.saveddata.TomSaveData data = com.hbm_m.saveddata.TomSaveData.forWorld(sl);
+                        data.impact = true;
+                        data.fire = 1F;
+                        data.markDirty();
+                    }
                     break;
                 }
             }

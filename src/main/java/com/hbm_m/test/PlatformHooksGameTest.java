@@ -2,7 +2,6 @@ package com.hbm_m.test;
 
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.platform.PlatformHooks;
-import com.hbm_m.platform.PlayerPersistentData;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
@@ -17,13 +16,14 @@ import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.resources.ResourceLocation;
-//? if forge {
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
- *///?}
+import com.hbm_m.platform.StackNbt;
+import com.hbm_m.platform.ItemHooks;
+import com.hbm_m.platform.BlockHooks;
+import com.hbm_m.platform.MobHooks;
+import com.hbm_m.platform.FluidHooks;
+import com.hbm_m.platform.AttributeHooks;
 
 /**
  * Full functional GameTest suite for {@link PlatformHooks}.
@@ -80,26 +80,26 @@ public final class PlatformHooksGameTest {
     public static void getItemTag_freshStack_returnsNull(GameTestHelper helper) {
         ItemStack stack = new ItemStack(Items.IRON_INGOT);
         // A fresh item without custom NBT → null on both versions.
-        check(PlatformHooks.getItemTag(stack) == null, "fresh stack must have null tag");
-        check(!PlatformHooks.hasItemTag(stack), "fresh stack must report no tag");
+        check(StackNbt.read(stack) == null, "fresh stack must have null tag");
+        check(!StackNbt.has(stack), "fresh stack must report no tag");
         helper.succeed();
     }
 
     @GameTest(template = "empty3x3x3", batch = "platformhooks", timeoutTicks = 100)
     public static void getItemTag_afterPut_returnsNonNull(GameTestHelper helper) {
         ItemStack stack = new ItemStack(Items.IRON_INGOT);
-        PlatformHooks.putLong(stack, "energy", 100L);
+        StackNbt.putLong(stack, "energy", 100L);
         // After putLong the tag must exist.
-        check(PlatformHooks.getItemTag(stack) != null, "tag must exist after putLong");
-        check(PlatformHooks.hasItemTag(stack), "hasItemTag must be true after putLong");
+        check(StackNbt.read(stack) != null, "tag must exist after putLong");
+        check(StackNbt.has(stack), "hasItemTag must be true after putLong");
         helper.succeed();
     }
 
     @GameTest(template = "empty3x3x3", batch = "platformhooks", timeoutTicks = 100)
     public static void getItemTag_emptyStack_returnsNull(GameTestHelper helper) {
         ItemStack stack = ItemStack.EMPTY;
-        check(PlatformHooks.getItemTag(stack) == null, "EMPTY stack must have null tag");
-        check(!PlatformHooks.hasItemTag(stack), "EMPTY stack must report no tag");
+        check(StackNbt.read(stack) == null, "EMPTY stack must have null tag");
+        check(!StackNbt.has(stack), "EMPTY stack must report no tag");
         helper.succeed();
     }
 
@@ -112,8 +112,8 @@ public final class PlatformHooksGameTest {
     @GameTest(template = "empty3x3x3", batch = "platformhooks", timeoutTicks = 100)
     public static void editItemTag_persistsLong(GameTestHelper helper) {
         ItemStack stack = new ItemStack(Items.IRON_INGOT);
-        PlatformHooks.editItemTag(stack, t -> t.putLong("energy", 123456789L));
-        check(PlatformHooks.getLong(stack, "energy") == 123456789L,
+        StackNbt.edit(stack, t -> t.putLong("energy", 123456789L));
+        check(StackNbt.getLong(stack, "energy") == 123456789L,
                 "editItemTag putLong must persist");
         helper.succeed();
     }
@@ -121,13 +121,13 @@ public final class PlatformHooksGameTest {
     @GameTest(template = "empty3x3x3", batch = "platformhooks", timeoutTicks = 100)
     public static void editItemTag_persistsNestedCompound(GameTestHelper helper) {
         ItemStack stack = new ItemStack(Items.IRON_INGOT);
-        PlatformHooks.editItemTag(stack, t -> {
+        StackNbt.edit(stack, t -> {
             CompoundTag sub = new CompoundTag();
             sub.putInt("tier", 3);
             sub.putString("name", "reactor");
             t.put("data", sub);
         });
-        CompoundTag sub = PlatformHooks.getCompound(stack, "data");
+        CompoundTag sub = StackNbt.getCompound(stack, "data");
         check(sub.getInt("tier") == 3, "nested tier must persist");
         checkEq("reactor", sub.getString("name"), "nested name must persist");
         helper.succeed();
@@ -136,23 +136,23 @@ public final class PlatformHooksGameTest {
     @GameTest(template = "empty3x3x3", batch = "platformhooks", timeoutTicks = 100)
     public static void editItemTag_multipleEdits_accumulate(GameTestHelper helper) {
         ItemStack stack = new ItemStack(Items.IRON_INGOT);
-        PlatformHooks.editItemTag(stack, t -> t.putInt("a", 1));
-        PlatformHooks.editItemTag(stack, t -> t.putInt("b", 2));
-        PlatformHooks.editItemTag(stack, t -> t.putInt("c", 3));
+        StackNbt.edit(stack, t -> t.putInt("a", 1));
+        StackNbt.edit(stack, t -> t.putInt("b", 2));
+        StackNbt.edit(stack, t -> t.putInt("c", 3));
         // Sequential editItemTag calls must not wipe previously written keys.
-        check(PlatformHooks.getInt(stack, "a") == 1, "key a must survive later edits");
-        check(PlatformHooks.getInt(stack, "b") == 2, "key b must survive later edits");
-        check(PlatformHooks.getInt(stack, "c") == 3, "key c must survive later edits");
+        check(StackNbt.getInt(stack, "a") == 1, "key a must survive later edits");
+        check(StackNbt.getInt(stack, "b") == 2, "key b must survive later edits");
+        check(StackNbt.getInt(stack, "c") == 3, "key c must survive later edits");
         helper.succeed();
     }
 
     @GameTest(template = "empty3x3x3", batch = "platformhooks", timeoutTicks = 100)
     public static void editItemTag_canMutateExisting(GameTestHelper helper) {
         ItemStack stack = new ItemStack(Items.IRON_INGOT);
-        PlatformHooks.putLong(stack, "energy", 100L);
+        StackNbt.putLong(stack, "energy", 100L);
         // Increment an existing value.
-        PlatformHooks.editItemTag(stack, t -> t.putLong("energy", t.getLong("energy") + 50L));
-        check(PlatformHooks.getLong(stack, "energy") == 150L,
+        StackNbt.edit(stack, t -> t.putLong("energy", t.getLong("energy") + 50L));
+        check(StackNbt.getLong(stack, "energy") == 150L,
                 "editItemTag must read-modify-write existing value");
         helper.succeed();
     }
@@ -164,34 +164,34 @@ public final class PlatformHooksGameTest {
     @GameTest(template = "empty3x3x3", batch = "platformhooks", timeoutTicks = 100)
     public static void setItemTag_overwritesExisting(GameTestHelper helper) {
         ItemStack stack = new ItemStack(Items.IRON_INGOT);
-        PlatformHooks.putLong(stack, "old", 1L);
+        StackNbt.putLong(stack, "old", 1L);
         CompoundTag fresh = new CompoundTag();
         fresh.putString("new", "value");
-        PlatformHooks.setItemTag(stack, fresh);
+        StackNbt.set(stack, fresh);
         // The old key must disappear (full overwrite).
-        check(!PlatformHooks.contains(stack, "old"), "setItemTag must clear old keys");
-        checkEq("value", PlatformHooks.getString(stack, "new"), "setItemTag must set new keys");
+        check(!StackNbt.contains(stack, "old"), "setItemTag must clear old keys");
+        checkEq("value", StackNbt.getString(stack, "new"), "setItemTag must set new keys");
         helper.succeed();
     }
 
     @GameTest(template = "empty3x3x3", batch = "platformhooks", timeoutTicks = 100)
     public static void setItemTag_null_clearsTag(GameTestHelper helper) {
         ItemStack stack = new ItemStack(Items.IRON_INGOT);
-        PlatformHooks.putLong(stack, "energy", 100L);
-        check(PlatformHooks.hasItemTag(stack), "precondition: tag present");
-        PlatformHooks.setItemTag(stack, null);
-        check(!PlatformHooks.hasItemTag(stack), "setItemTag(null) must clear tag");
-        check(PlatformHooks.getItemTag(stack) == null, "getItemTag must be null after clear");
+        StackNbt.putLong(stack, "energy", 100L);
+        check(StackNbt.has(stack), "precondition: tag present");
+        StackNbt.set(stack, null);
+        check(!StackNbt.has(stack), "setItemTag(null) must clear tag");
+        check(StackNbt.read(stack) == null, "getItemTag must be null after clear");
         helper.succeed();
     }
 
     @GameTest(template = "empty3x3x3", batch = "platformhooks", timeoutTicks = 100)
     public static void setItemTag_emptyCompound_clearsTag(GameTestHelper helper) {
         ItemStack stack = new ItemStack(Items.IRON_INGOT);
-        PlatformHooks.putLong(stack, "energy", 100L);
-        PlatformHooks.setItemTag(stack, new CompoundTag());
+        StackNbt.putLong(stack, "energy", 100L);
+        StackNbt.set(stack, new CompoundTag());
         // An empty CompoundTag is equivalent to null (see the setItemTag implementation).
-        check(!PlatformHooks.hasItemTag(stack), "setItemTag(empty) must clear tag");
+        check(!StackNbt.has(stack), "setItemTag(empty) must clear tag");
         helper.succeed();
     }
 
@@ -202,28 +202,28 @@ public final class PlatformHooksGameTest {
     @GameTest(template = "empty3x3x3", batch = "platformhooks", timeoutTicks = 100)
     public static void typedGetters_noTag_returnDefaults(GameTestHelper helper) {
         ItemStack stack = new ItemStack(Items.IRON_INGOT);
-        check(PlatformHooks.getInt(stack, "x") == 0, "getInt default 0");
-        check(PlatformHooks.getLong(stack, "x") == 0L, "getLong default 0");
-        check(!PlatformHooks.getBoolean(stack, "x"), "getBoolean default false");
-        checkEq("", PlatformHooks.getString(stack, "x"), "getString default empty");
-        check(PlatformHooks.getCompound(stack, "x").isEmpty(), "getCompound default empty");
-        check(!PlatformHooks.contains(stack, "x"), "contains default false");
+        check(StackNbt.getInt(stack, "x") == 0, "getInt default 0");
+        check(StackNbt.getLong(stack, "x") == 0L, "getLong default 0");
+        check(!StackNbt.getBoolean(stack, "x"), "getBoolean default false");
+        checkEq("", StackNbt.getString(stack, "x"), "getString default empty");
+        check(StackNbt.getCompound(stack, "x").isEmpty(), "getCompound default empty");
+        check(!StackNbt.contains(stack, "x"), "contains default false");
         helper.succeed();
     }
 
     @GameTest(template = "empty3x3x3", batch = "platformhooks", timeoutTicks = 100)
     public static void typedGetters_afterPut_returnValues(GameTestHelper helper) {
         ItemStack stack = new ItemStack(Items.IRON_INGOT);
-        PlatformHooks.putInt(stack, "i", 42);
-        PlatformHooks.putLong(stack, "l", 9999999999L);
-        PlatformHooks.putBoolean(stack, "b", true);
-        PlatformHooks.putString(stack, "s", "hello");
-        check(PlatformHooks.getInt(stack, "i") == 42, "getInt round-trip");
-        check(PlatformHooks.getLong(stack, "l") == 9999999999L, "getLong round-trip");
-        check(PlatformHooks.getBoolean(stack, "b"), "getBoolean round-trip");
-        checkEq("hello", PlatformHooks.getString(stack, "s"), "getString round-trip");
-        check(PlatformHooks.contains(stack, "i"), "contains i");
-        check(PlatformHooks.contains(stack, "l"), "contains l");
+        StackNbt.putInt(stack, "i", 42);
+        StackNbt.putLong(stack, "l", 9999999999L);
+        StackNbt.putBoolean(stack, "b", true);
+        StackNbt.putString(stack, "s", "hello");
+        check(StackNbt.getInt(stack, "i") == 42, "getInt round-trip");
+        check(StackNbt.getLong(stack, "l") == 9999999999L, "getLong round-trip");
+        check(StackNbt.getBoolean(stack, "b"), "getBoolean round-trip");
+        checkEq("hello", StackNbt.getString(stack, "s"), "getString round-trip");
+        check(StackNbt.contains(stack, "i"), "contains i");
+        check(StackNbt.contains(stack, "l"), "contains l");
         helper.succeed();
     }
 
@@ -232,8 +232,8 @@ public final class PlatformHooksGameTest {
         ItemStack stack = new ItemStack(Items.IRON_INGOT);
         CompoundTag sub = new CompoundTag();
         sub.putInt("k", 7);
-        PlatformHooks.put(stack, "sub", sub);
-        check(PlatformHooks.getCompound(stack, "sub").getInt("k") == 7, "put/getCompound round-trip");
+        StackNbt.put(stack, "sub", sub);
+        check(StackNbt.getCompound(stack, "sub").getInt("k") == 7, "put/getCompound round-trip");
         helper.succeed();
     }
 
@@ -244,11 +244,11 @@ public final class PlatformHooksGameTest {
     @GameTest(template = "empty3x3x3", batch = "platformhooks", timeoutTicks = 100)
     public static void remove_persistsRemoval(GameTestHelper helper) {
         ItemStack stack = new ItemStack(Items.IRON_INGOT);
-        PlatformHooks.putLong(stack, "energy", 100L);
-        PlatformHooks.putLong(stack, "heat", 50L);
-        PlatformHooks.remove(stack, "energy");
-        check(!PlatformHooks.contains(stack, "energy"), "removed key must be gone");
-        check(PlatformHooks.contains(stack, "heat"), "unrelated key must remain");
+        StackNbt.putLong(stack, "energy", 100L);
+        StackNbt.putLong(stack, "heat", 50L);
+        StackNbt.removeKey(stack, "energy");
+        check(!StackNbt.contains(stack, "energy"), "removed key must be gone");
+        check(StackNbt.contains(stack, "heat"), "unrelated key must remain");
         helper.succeed();
     }
 
@@ -256,8 +256,8 @@ public final class PlatformHooksGameTest {
     public static void remove_missingKey_noError(GameTestHelper helper) {
         ItemStack stack = new ItemStack(Items.IRON_INGOT);
         // Removing a non-existent key must not crash (no tag at all).
-        PlatformHooks.remove(stack, "nonexistent");
-        check(!PlatformHooks.contains(stack, "nonexistent"), "missing key stays absent");
+        StackNbt.removeKey(stack, "nonexistent");
+        check(!StackNbt.contains(stack, "nonexistent"), "missing key stays absent");
         helper.succeed();
     }
 
@@ -269,7 +269,7 @@ public final class PlatformHooksGameTest {
     public static void isSameItemSameTags_identical_true(GameTestHelper helper) {
         ItemStack a = new ItemStack(Items.IRON_INGOT);
         ItemStack b = new ItemStack(Items.IRON_INGOT);
-        check(PlatformHooks.isSameItemSameTags(a, b), "identical plain stacks must match");
+        check(StackNbt.sameItemSameTags(a, b), "identical plain stacks must match");
         helper.succeed();
     }
 
@@ -277,7 +277,7 @@ public final class PlatformHooksGameTest {
     public static void isSameItemSameTags_differentItem_false(GameTestHelper helper) {
         ItemStack a = new ItemStack(Items.IRON_INGOT);
         ItemStack b = new ItemStack(Items.GOLD_INGOT);
-        check(!PlatformHooks.isSameItemSameTags(a, b), "different items must not match");
+        check(!StackNbt.sameItemSameTags(a, b), "different items must not match");
         helper.succeed();
     }
 
@@ -285,9 +285,9 @@ public final class PlatformHooksGameTest {
     public static void isSameItemSameTags_sameNBT_true(GameTestHelper helper) {
         ItemStack a = new ItemStack(Items.IRON_INGOT);
         ItemStack b = new ItemStack(Items.IRON_INGOT);
-        PlatformHooks.putLong(a, "energy", 100L);
-        PlatformHooks.putLong(b, "energy", 100L);
-        check(PlatformHooks.isSameItemSameTags(a, b), "same item + same NBT must match");
+        StackNbt.putLong(a, "energy", 100L);
+        StackNbt.putLong(b, "energy", 100L);
+        check(StackNbt.sameItemSameTags(a, b), "same item + same NBT must match");
         helper.succeed();
     }
 
@@ -295,9 +295,9 @@ public final class PlatformHooksGameTest {
     public static void isSameItemSameTags_differentNBT_false(GameTestHelper helper) {
         ItemStack a = new ItemStack(Items.IRON_INGOT);
         ItemStack b = new ItemStack(Items.IRON_INGOT);
-        PlatformHooks.putLong(a, "energy", 100L);
-        PlatformHooks.putLong(b, "energy", 200L);
-        check(!PlatformHooks.isSameItemSameTags(a, b), "same item + different NBT must not match");
+        StackNbt.putLong(a, "energy", 100L);
+        StackNbt.putLong(b, "energy", 200L);
+        check(!StackNbt.sameItemSameTags(a, b), "same item + different NBT must not match");
         helper.succeed();
     }
 
@@ -311,8 +311,8 @@ public final class PlatformHooksGameTest {
     public static void saveLoadItemStack_plainRoundTrip(GameTestHelper helper) {
         var provider = helper.getLevel().registryAccess();
         ItemStack original = new ItemStack(Items.IRON_INGOT, 16);
-        CompoundTag saved = PlatformHooks.safeItemSave(original, provider);
-        ItemStack loaded = PlatformHooks.itemStackOf(saved, provider);
+        CompoundTag saved = StackNbt.saveNew(original, provider);
+        ItemStack loaded = StackNbt.parse(saved, provider);
         check(loaded.getItem() == Items.IRON_INGOT, "item must survive round-trip");
         check(loaded.getCount() == 16, "count must survive round-trip");
         helper.succeed();
@@ -322,14 +322,14 @@ public final class PlatformHooksGameTest {
     public static void saveLoadItemStack_withNbtRoundTrip(GameTestHelper helper) {
         var provider = helper.getLevel().registryAccess();
         ItemStack original = new ItemStack(Items.IRON_INGOT);
-        PlatformHooks.putLong(original, "energy", 555L);
-        PlatformHooks.putString(original, "label", "reactor_core");
-        CompoundTag saved = PlatformHooks.safeItemSave(original, provider);
-        ItemStack loaded = PlatformHooks.itemStackOf(saved, provider);
-        check(PlatformHooks.getLong(loaded, "energy") == 555L, "NBT long must survive round-trip");
-        checkEq("reactor_core", PlatformHooks.getString(loaded, "label"),
+        StackNbt.putLong(original, "energy", 555L);
+        StackNbt.putString(original, "label", "reactor_core");
+        CompoundTag saved = StackNbt.saveNew(original, provider);
+        ItemStack loaded = StackNbt.parse(saved, provider);
+        check(StackNbt.getLong(loaded, "energy") == 555L, "NBT long must survive round-trip");
+        checkEq("reactor_core", StackNbt.getString(loaded, "label"),
                 "NBT string must survive round-trip");
-        check(PlatformHooks.isSameItemSameTags(original, loaded),
+        check(StackNbt.sameItemSameTags(original, loaded),
                 "original and loaded must be considered equal");
         helper.succeed();
     }
@@ -339,7 +339,7 @@ public final class PlatformHooksGameTest {
         var provider = helper.getLevel().registryAccess();
         ItemStack stack = new ItemStack(Items.GOLD_INGOT, 4);
         CompoundTag target = new CompoundTag();
-        CompoundTag returned = PlatformHooks.saveItemStack(stack, target, provider);
+        CompoundTag returned = StackNbt.save(stack, target, provider);
         // Contract on both versions: the PROVIDED tag is filled in place and returned. On 1.21.1
         // ItemStack.save(provider, prefix) alone returns a new compound and leaves the prefix empty;
         // four call sites relied on the in-place fill and stored empty tags because of it.
@@ -371,7 +371,7 @@ public final class PlatformHooksGameTest {
 
     @GameTest(template = "empty3x3x3", batch = "platformhooks", timeoutTicks = 100)
     public static void attributeModifier_uuidOverload_preservesValue(GameTestHelper helper) {
-        AttributeModifier mod = PlatformHooks.attributeModifier(
+        AttributeModifier mod = AttributeHooks.modifier(
                 java.util.UUID.fromString("d3e4e5f0-1234-5678-9abc-def012345678"),
                 "test_mod", 2.5, additionOperation());
         check(amountOf(mod) == 2.5, "amount must be preserved");
@@ -380,7 +380,7 @@ public final class PlatformHooksGameTest {
 
     @GameTest(template = "empty3x3x3", batch = "platformhooks", timeoutTicks = 100)
     public static void attributeModifier_nameOverload_preservesValue(GameTestHelper helper) {
-        AttributeModifier mod = PlatformHooks.attributeModifier(
+        AttributeModifier mod = AttributeHooks.modifier(
                 "Armor Bonus", 1.0, additionOperation());
         check(amountOf(mod) == 1.0, "amount must be preserved");
         helper.succeed();
@@ -389,9 +389,9 @@ public final class PlatformHooksGameTest {
     @GameTest(template = "empty3x3x3", batch = "platformhooks", timeoutTicks = 100)
     public static void attributeModifier_uuidAndName_overloadsDistinct(GameTestHelper helper) {
         // Two distinct overloads must not conflict; both return valid modifiers.
-        AttributeModifier byUuid = PlatformHooks.attributeModifier(
+        AttributeModifier byUuid = AttributeHooks.modifier(
                 java.util.UUID.randomUUID(), "u", 1.0, additionOperation());
-        AttributeModifier byName = PlatformHooks.attributeModifier(
+        AttributeModifier byName = AttributeHooks.modifier(
                 "n", 1.0, additionOperation());
         check(!byUuid.equals(byName), "modifiers from different overloads should differ");
         helper.succeed();
@@ -425,7 +425,7 @@ public final class PlatformHooksGameTest {
 
     @GameTest(template = "empty3x3x3", batch = "platformhooks", timeoutTicks = 100)
     public static void foodBuilder_nutritionAndSaturation(GameTestHelper helper) {
-        FoodProperties.Builder builder = PlatformHooks.foodBuilder(8, 0.8f);
+        FoodProperties.Builder builder = ItemHooks.foodBuilder(8, 0.8f);
         FoodProperties food = builder.build();
         check(nutritionOf(food) == 8, "nutrition must match");
         // saturation: values DIFFER between versions due to the formula change.
@@ -444,9 +444,9 @@ public final class PlatformHooksGameTest {
 
     @GameTest(template = "empty3x3x3", batch = "platformhooks", timeoutTicks = 100)
     public static void foodBuilder_addEffect_noCrash(GameTestHelper helper) {
-        FoodProperties.Builder builder = PlatformHooks.foodBuilder(4, 0.3f);
-        PlatformHooks.addFoodEffect(builder, MobEffects.MOVEMENT_SLOWDOWN, 200, 0.5f);
-        PlatformHooks.addFoodEffect(builder, MobEffects.MOVEMENT_SLOWDOWN, 100, 1, 0.3f);
+        FoodProperties.Builder builder = ItemHooks.foodBuilder(4, 0.3f);
+        ItemHooks.addFoodEffect(builder, MobEffects.MOVEMENT_SLOWDOWN, 200, 0.5f);
+        ItemHooks.addFoodEffect(builder, MobEffects.MOVEMENT_SLOWDOWN, 100, 1, 0.3f);
         FoodProperties food = builder.build();
         check(nutritionOf(food) == 4, "nutrition preserved after adding effect");
         helper.succeed();
@@ -454,8 +454,8 @@ public final class PlatformHooksGameTest {
 
     @GameTest(template = "empty3x3x3", batch = "platformhooks", timeoutTicks = 100)
     public static void foodBuilder_setMeat_noCrash(GameTestHelper helper) {
-        FoodProperties.Builder builder = PlatformHooks.foodBuilder(6, 0.6f);
-        PlatformHooks.setMeat(builder);
+        FoodProperties.Builder builder = ItemHooks.foodBuilder(6, 0.6f);
+        ItemHooks.setMeat(builder);
         FoodProperties food = builder.build();
         check(nutritionOf(food) == 6, "nutrition preserved after setMeat");
         helper.succeed();
@@ -496,12 +496,12 @@ public final class PlatformHooksGameTest {
     @GameTest(template = "empty5x5x5", batch = "platformhooks", timeoutTicks = 100)
     public static void playerPersistentData_writeReadRoundTrip(GameTestHelper helper) {
         var player = makePlayer(helper);
-        CompoundTag tag = PlayerPersistentData.get(player);
+        CompoundTag tag = MobHooks.getPersistentData(player);
         check(tag != null, "persistent data tag must not be null");
         tag.putLong("hbm_test_energy", 777L);
         tag.putString("hbm_test_name", "reactor");
         // A second get must return THE SAME persistent tag, not a fresh empty one.
-        CompoundTag reread = PlayerPersistentData.get(player);
+        CompoundTag reread = MobHooks.getPersistentData(player);
         check(reread == tag || reread.getLong("hbm_test_energy") == 777L,
                 "PlayerPersistentData.get must return the persistent tag instance, "
                 + "not a new empty tag (neoforge branch missing regression)");
@@ -518,7 +518,7 @@ public final class PlatformHooksGameTest {
     @GameTest(template = "empty5x5x5", batch = "platformhooks", timeoutTicks = 100)
     public static void setSecondsOnFire_setsFireTicks(GameTestHelper helper) {
         var player = makePlayer(helper);
-        PlatformHooks.setSecondsOnFire(player, 5);
+        MobHooks.setSecondsOnFire(player, 5);
         // 5 seconds = 100 ticks (20 t/s). Verify the ignition was applied.
         check(player.getRemainingFireTicks() > 0, "entity must be on fire");
         helper.succeed();
@@ -530,21 +530,21 @@ public final class PlatformHooksGameTest {
 
     @GameTest(template = "empty3x3x3", batch = "platformhooks", timeoutTicks = 100)
     public static void isFluidContainer_waterBucket_true(GameTestHelper helper) {
-        check(PlatformHooks.isFluidContainer(new ItemStack(Items.WATER_BUCKET)),
+        check(FluidHooks.isFluidContainer(new ItemStack(Items.WATER_BUCKET)),
                 "water bucket must be a fluid container");
         helper.succeed();
     }
 
     @GameTest(template = "empty3x3x3", batch = "platformhooks", timeoutTicks = 100)
     public static void isFluidContainer_ironIngot_false(GameTestHelper helper) {
-        check(!PlatformHooks.isFluidContainer(new ItemStack(Items.IRON_INGOT)),
+        check(!FluidHooks.isFluidContainer(new ItemStack(Items.IRON_INGOT)),
                 "iron ingot must not be a fluid container");
         helper.succeed();
     }
 
     @GameTest(template = "empty3x3x3", batch = "platformhooks", timeoutTicks = 100)
     public static void isFluidContainer_emptyStack_false(GameTestHelper helper) {
-        check(!PlatformHooks.isFluidContainer(ItemStack.EMPTY),
+        check(!FluidHooks.isFluidContainer(ItemStack.EMPTY),
                 "EMPTY stack must not be a fluid container");
         helper.succeed();
     }
@@ -582,7 +582,7 @@ public final class PlatformHooksGameTest {
     @GameTest(template = "empty5x5x5", batch = "platformhooks", timeoutTicks = 100)
     public static void explosionKnockback_noProtection_returnsInput(GameTestHelper helper) {
         var player = makePlayer(helper);
-        double result = PlatformHooks.getExplosionKnockbackAfterDampener(player, 1.0);
+        double result = MobHooks.getExplosionKnockbackAfterDampener(player, 1.0);
         // Without enchantment protection and without a resistance attribute the result ≈ input value.
         check(result >= 0.0 && result <= 1.0 + 1e-6,
                 "knockback without protection must stay within [0, input]");
@@ -596,7 +596,7 @@ public final class PlatformHooksGameTest {
     @GameTest(template = "empty5x5x5", batch = "platformhooks", timeoutTicks = 100)
     public static void getMyRidingOffset_entity_returnsZero(GameTestHelper helper) {
         var player = makePlayer(helper);
-        double offset = PlatformHooks.getMyRidingOffset(player);
+        double offset = MobHooks.getMyRidingOffset(player);
         // 1.20.1: Player.getMyRidingOffset() returns the vanilla value (≠ 0.0 for Player).
         // 1.21.1: stub 0.0D (the method was removed in vanilla, PlatformHooks returns a constant).
         check(!Double.isNaN(offset) && !Double.isInfinite(offset),
@@ -616,7 +616,7 @@ public final class PlatformHooksGameTest {
         BlockPos rel = new BlockPos(1, 1, 1);
         helper.setBlock(rel, net.minecraft.world.level.block.Blocks.STONE);
         var state = helper.getLevel().getBlockState(helper.absolutePos(rel));
-        check(!PlatformHooks.isGrassBlock(state), "stone must not be grass");
+        check(!BlockHooks.isShortGrass(state), "stone must not be grass");
         helper.succeed();
     }
 
@@ -630,7 +630,7 @@ public final class PlatformHooksGameTest {
         /*helper.setBlock(rel, net.minecraft.world.level.block.Blocks.SHORT_GRASS);
         *///?}
         var state = helper.getLevel().getBlockState(helper.absolutePos(rel));
-        check(PlatformHooks.isGrassBlock(state), "grass block must be recognized");
+        check(BlockHooks.isShortGrass(state), "grass block must be recognized");
         helper.succeed();
     }
 
@@ -648,7 +648,7 @@ public final class PlatformHooksGameTest {
         check(be != null, "chest BlockEntity must exist");
         var provider = helper.getLevel().registryAccess();
         // Loading an empty tag must not crash on either version.
-        PlatformHooks.loadBlockEntityTag(be, new CompoundTag(), provider);
+        BlockHooks.loadCustomOnly(be, new CompoundTag(), provider);
         helper.succeed();
     }
 
@@ -660,7 +660,7 @@ public final class PlatformHooksGameTest {
 
     @GameTest(template = "empty3x3x3", batch = "platformhooks", timeoutTicks = 100)
     public static void tooltipLevel_null_returnsNull(GameTestHelper helper) {
-        check(PlatformHooks.tooltipLevel(null) == null, "tooltipLevel(null) → null");
+        check(ItemHooks.tooltipLevel(null) == null, "tooltipLevel(null) → null");
         helper.succeed();
     }
 
@@ -671,7 +671,7 @@ public final class PlatformHooksGameTest {
         // this scenario is active only below 1.21.1.
         //? if < 1.21.1 {
         net.minecraft.world.level.Level level = helper.getLevel();
-        check(PlatformHooks.tooltipLevel(level) == level, "tooltipLevel(level) must return same Level");
+        check(ItemHooks.tooltipLevel(level) == level, "tooltipLevel(level) must return same Level");
         //?}
         helper.succeed();
     }
@@ -690,7 +690,7 @@ public final class PlatformHooksGameTest {
         // ClientboundBlockEntityDataPacket.create is available on both versions.
         var packet = net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(be);
         check(packet != null, "update packet must be created");
-        CompoundTag tag = PlatformHooks.getItemTag(packet);
+        CompoundTag tag = packet.getTag();
         // On 1.20.1-forge a freshly created chest BE may return null from getUpdateTag()
         // (observed in @GameTest runtime). Key contract: the method does not crash.
         //? if < 1.21.1 {
@@ -718,7 +718,7 @@ public final class PlatformHooksGameTest {
         //? if < 1.21.1 {
         var mock = helper.makeMockPlayer();
         if (mock instanceof ServerPlayer sp) {
-            PlatformHooks.awardAdvancementIfEligible(
+            MobHooks.awardAdvancementIfEligible(
                     sp, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "nonexistent_advancement"), false);
         }
         //?}

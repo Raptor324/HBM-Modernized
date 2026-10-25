@@ -29,6 +29,8 @@ public class BedrockOreFeature extends Feature<NoneFeatureConfiguration> {
 
     @Override
     public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
+        // Original: nur innerhalb von if(WorldConfig.overworldOre)
+        if (!com.hbm_m.config.WorldConfig.overworldOre) return false;
         BlockPos origin = context.origin();
         LevelAccessor level = context.level();
 
@@ -51,7 +53,7 @@ public class BedrockOreFeature extends Feature<NoneFeatureConfiguration> {
 
                 BlockPos pos = new BlockPos(ix, baseY, iz);
                 BlockState existing = level.getBlockState(pos);
-                if (!existing.is(net.minecraft.world.level.block.Blocks.BEDROCK) && !existing.canBeReplaced()) continue;
+                if (!existing.is(net.minecraft.world.level.block.Blocks.BEDROCK)) continue; // Original: isReplaceableOreGen(bedrock)
 
                 level.setBlock(pos, oreState, 3);
                 BlockEntity be = level.getBlockEntity(pos);
@@ -72,7 +74,10 @@ public class BedrockOreFeature extends Feature<NoneFeatureConfiguration> {
                     for (int iy = baseY + 1; iy <= baseY + 6; iy++) {
                         BlockPos pos = new BlockPos(ix, iy, iz);
                         BlockState existing = level.getBlockState(pos);
-                        if (existing.is(net.minecraft.world.level.block.Blocks.BEDROCK) || existing.canBeReplaced()) {
+                        if ((iy < baseY + 3 || existing.is(net.minecraft.world.level.block.Blocks.BEDROCK))
+                                && (existing.is(net.minecraft.world.level.block.Blocks.BEDROCK)
+                                || existing.is(net.minecraft.tags.BlockTags.STONE_ORE_REPLACEABLES)
+                                || existing.is(net.minecraft.tags.BlockTags.DEEPSLATE_ORE_REPLACEABLES))) {
                             level.setBlock(pos, depthRock.defaultBlockState(), 3);
                         }
                     }

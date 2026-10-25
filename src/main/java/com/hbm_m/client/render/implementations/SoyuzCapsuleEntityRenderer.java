@@ -4,10 +4,11 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.client.model.SoyuzRocketBakedModel;
 import com.hbm_m.client.render.MeshRenderCache;
+import com.hbm_m.client.render.SimpleObjModel;
 import com.hbm_m.client.render.SingleMeshVboRenderer;
 import com.hbm_m.entity.missile.SoyuzCapsuleEntity;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.platform.LoaderHooks;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.client.Minecraft;
@@ -26,9 +27,14 @@ import net.minecraft.resources.ResourceLocation;
 //? if < 1.21.1 {
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
 //?} else {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
 *///?}
 public class SoyuzCapsuleEntityRenderer extends EntityRenderer<SoyuzCapsuleEntity> {
+
+    /** FFA-Port: Lander-Mesh + Texturen, gemeinsam vom Cargo-Entity-Renderer und dem gelandeten BER ({@link SoyuzCapsuleRenderer}) genutzt. */
+    public static final SimpleObjModel SOYUZ_LANDER = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/soyuz_lander.obj"));
+    public static final ResourceLocation LANDER_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/soyuz_capsule/soyuz_lander.png");
+    public static final ResourceLocation LANDER_RUST_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/soyuz_capsule/soyuz_lander_rust.png");
 
     private static final ResourceLocation ROCKET_MODEL_ID =
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/deco_soyuz_rocket");
@@ -65,7 +71,7 @@ public class SoyuzCapsuleEntityRenderer extends EntityRenderer<SoyuzCapsuleEntit
     @Nullable
     private static BakedModel getRocketPart() {
         var modelManager = Minecraft.getInstance().getModelManager();
-        BakedModel model = PlatformHooks.getModel(modelManager, ROCKET_MODEL_ID);
+        BakedModel model = LoaderHooks.getModel(modelManager, ROCKET_MODEL_ID);
         if (model == null || model == modelManager.getMissingModel()) return null;
         if (!(model instanceof SoyuzRocketBakedModel rocketModel)) return null;
         return rocketModel.getPart(SoyuzRocketBakedModel.ROCKET);

@@ -10,14 +10,8 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 /**
  * Клиентский цикл звука турбовентилятора (оригинал: TURBOFAN_LOOP, AudioWrapper):
  * volume = momentum/50, pitch = momentum/200 + 0.5 + afterburner*0.16.

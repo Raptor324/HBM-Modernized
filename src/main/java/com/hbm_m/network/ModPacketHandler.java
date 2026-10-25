@@ -1,7 +1,6 @@
 package com.hbm_m.network;
 
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.network.packets.PowerArmorDashPacket;
 import com.hbm_m.network.sounds.GeigerSoundPacket;
 import dev.architectury.networking.NetworkManager;
 import dev.architectury.networking.NetworkManager.PacketContext;
@@ -40,6 +39,9 @@ public class ModPacketHandler {
     // S2C
     public static final ResourceLocation GEIGER_SOUND          = id("geiger_sound");
     public static final ResourceLocation RADIATION_DATA        = id("radiation_data");
+    public static final ResourceLocation EXT_PROP              = id("ext_prop");
+    public static final ResourceLocation EXPLOSION_KNOCKBACK   = id("explosion_knockback");
+    public static final ResourceLocation KEYBIND               = id("keybind");
     public static final ResourceLocation INFO_TOAST           = id("info_toast");
     public static final ResourceLocation CHUNK_RAD_DEBUG_BATCH = id("chunk_rad_debug_batch");
     public static final ResourceLocation HIGHLIGHT_BLOCKS      = id("highlight_blocks");
@@ -50,6 +52,15 @@ public class ModPacketHandler {
     public static final ResourceLocation VANILLA_EXPLOSION     = id("vanilla_explosion");
     public static final ResourceLocation DOOR_CONTRAPTION_STATE = id("door_contrap_state");
     public static final ResourceLocation CONFIG_SYNC           = id("config_sync");
+    public static final ResourceLocation HBM_ANIMATION         = id("hbm_animation");
+    /** Original PermaSyncHandler, Abschnitt TOM IMPACT DATA. */
+    public static final ResourceLocation IMPACT_SYNC           = id("impact_sync");
+    /** Original PermaSyncHandler "POLLUTION". */
+    public static final ResourceLocation POLLUTION_SYNC        = id("pollution_sync");
+    /** Original PermaSyncHandler, Abschnitt SHITTY MEMES (Spieler mit Death-Effekt). */
+    public static final ResourceLocation PERMA_SYNC_MEME       = id("perma_sync_meme");
+    /** Original ParticleBurstPacket (Blockzerfallspartikel, EMP / Truemmer). */
+    public static final ResourceLocation PARTICLE_BURST        = id("particle_burst");
 
     // C2S
     public static final ResourceLocation GIVE_TEMPLATE         = id("give_template");
@@ -72,6 +83,8 @@ public class ModPacketHandler {
     public static final ResourceLocation COMBUSTION_ENGINE_CONTROL = id("combustion_engine_control");
     public static final ResourceLocation DIESEL_GENERATOR_TOGGLE = id("diesel_generator_toggle");
     public static final ResourceLocation MINING_LASER_TOGGLE = id("mining_laser_toggle");
+    /** Original AuxButtonPacket 999: Taste O wirft eine Ente. */
+    public static final ResourceLocation DUCK = id("duck");
     public static final ResourceLocation AMMO_PRESS_SELECT = id("ammo_press_select");
     public static final ResourceLocation PNEUMO_ACCESS_STATE   = id("pneumo_access_state");
     public static final ResourceLocation BUILD_MISSILE         = id("build_missile");
@@ -112,6 +125,8 @@ public class ModPacketHandler {
     public static final ResourceLocation FUNNEL_MODE            = id("funnel_mode");
     public static final ResourceLocation CRANE_CONTROL          = id("crane_control");
     public static final ResourceLocation RADIO_TORCH_CONTROL    = id("radio_torch_control");
+    public static final ResourceLocation NBT_CONTROL            = id("nbt_control");
+    public static final ResourceLocation ITEM_BOBMAZON          = id("item_bobmazon");
 
 
     // ══════════════════════════ Регистрация ═══════════════════════════════════
@@ -124,6 +139,16 @@ public class ModPacketHandler {
     public static void registerClientReceivers() {
         if (CLIENT_RECEIVERS_REGISTERED) return;
         CLIENT_RECEIVERS_REGISTERED = true;
+        //? if >= 1.21.1 {
+        /*// Dedizierter Server: nur die Pakettypen anmelden (wie registerS2C dort). Die Methodenreferenzen unten
+        // wuerden die Paketklassen verlinken, deren Client-Lambdas (Minecraft/LocalPlayer) den Serverstart sprengen.
+        if (dev.architectury.platform.Platform.getEnvironment() != Env.CLIENT) {
+            for (ResourceLocation id : new ResourceLocation[] { GEIGER_SOUND, INFO_TOAST, HBM_ANIMATION, RADIATION_DATA, EXT_PROP, EXPLOSION_KNOCKBACK, CHUNK_RAD_DEBUG_BATCH, HIGHLIGHT_BLOCKS, SYNC_ENERGY, AUX_PARTICLE, PWR_PRINTER_SCAN, VANILLA_EXPLOSION, DOOR_CONTRAPTION_STATE, ORPHANED_PHANTOMS, SPAWN_PARTICLE, MISSILE_TRACK, MISSILE_TRACK_STOP, CONFIG_SYNC, IMPACT_SYNC, POLLUTION_SYNC, PERMA_SYNC_MEME, PARTICLE_BURST }) {
+                NetworkManager.registerS2CPayloadType(id);
+            }
+            return;
+        }
+        *///?}
 
         registerS2C(GEIGER_SOUND,
                 GeigerSoundPacket::decode,
@@ -133,9 +158,22 @@ public class ModPacketHandler {
                 InfoToastPacket::decode,
                 InfoToastPacket::handle);
 
+        registerS2C(HBM_ANIMATION,
+                HbmAnimationPacket::decode,
+                HbmAnimationPacket::handle);
+
+
         registerS2C(RADIATION_DATA,
                 RadiationDataPacket::decode,
                 RadiationDataPacket::handle);
+
+        registerS2C(EXT_PROP,
+                ExtPropPacket::decode,
+                ExtPropPacket::handle);
+
+        registerS2C(EXPLOSION_KNOCKBACK,
+                ExplosionKnockbackPacket::decode,
+                ExplosionKnockbackPacket::handle);
 
         registerS2C(CHUNK_RAD_DEBUG_BATCH,
                 ChunkRadiationDebugBatchPacket::decode,
@@ -166,8 +204,9 @@ public class ModPacketHandler {
                 DoorContraptionStatePacket::handle);
 
         registerS2C(POWER_ARMOR_DASH,
-                PowerArmorDashPacket::decode,
-                PowerArmorDashPacket::handle);
+                com.hbm_m.network.packets.PowerArmorDashPacket::decode,
+                com.hbm_m.network.packets.PowerArmorDashPacket::handle);
+
 
         registerS2C(ORPHANED_PHANTOMS,
                 HighlightBlocksPacket.OrphanedPhantomsPacket::fromBytes,
@@ -189,6 +228,22 @@ public class ModPacketHandler {
                 ConfigSyncS2CPacket::decode,
                 ConfigSyncS2CPacket::handle);
 
+        registerS2C(IMPACT_SYNC,
+                ImpactSyncPacket::decode,
+                ImpactSyncPacket::handle);
+
+        registerS2C(POLLUTION_SYNC,
+                PollutionSyncPacket::decode,
+                PollutionSyncPacket::handle);
+
+        registerS2C(PERMA_SYNC_MEME,
+                PermaSyncMemePacket::decode,
+                PermaSyncMemePacket::handle);
+
+        registerS2C(PARTICLE_BURST,
+                ParticleBurstPacket::decode,
+                ParticleBurstPacket::handle);
+
     }
 
     public static void register() {
@@ -200,6 +255,10 @@ public class ModPacketHandler {
         registerC2S(GIVE_TEMPLATE,
                 GiveTemplateC2SPacket::decode,
                 GiveTemplateC2SPacket::handle);
+
+        registerC2S(KEYBIND,
+                KeybindPacket::decode,
+                KeybindPacket::handle);
 
         registerC2S(UPDATE_BATTERY,
                 UpdateBatteryC2SPacket::decode,
@@ -235,6 +294,11 @@ public class ModPacketHandler {
         registerC2S(TOGGLE_WOOD_BURNER,
                 ToggleWoodBurnerPacket::decode,
                 ToggleWoodBurnerPacket::handle);
+
+        registerC2S(DUCK,
+                DuckC2SPacket::decode,
+                DuckC2SPacket::handle);
+
 
         registerC2S(SET_CRUCIBLE_RECIPE,
                 com.hbm_m.network.SetCrucibleRecipeC2SPacket::decode,
@@ -318,10 +382,6 @@ public class ModPacketHandler {
                 AnvilCraftC2SPacket::decode,
                 AnvilCraftC2SPacket::handle);
 
-        registerC2S(ANVIL_SELECT_RECIPE,
-                AnvilSelectRecipeC2SPacket::decode,
-                AnvilSelectRecipeC2SPacket::handle);
-
         registerC2S(DOOR_MODEL,
                 ServerboundDoorModelPacket::decode,
                 ServerboundDoorModelPacket::handle);
@@ -350,6 +410,7 @@ public class ModPacketHandler {
                 PWRControlPacket::decode,
                 PWRControlPacket::handle);
 
+
         registerC2S(RBMK_CONSOLE_CONTROL,
                 RBMKConsoleControlPacket::decode,
                 RBMKConsoleControlPacket::handle);
@@ -365,6 +426,7 @@ public class ModPacketHandler {
         registerC2S(MACHINE_CONTROL,
                 MachineControlC2SPacket::decode,
                 MachineControlC2SPacket::handle);
+
 
         registerC2S(RBMK_CONTROL_CONTROL,
                 RBMKControlPacket::decode,
@@ -417,6 +479,14 @@ public class ModPacketHandler {
         registerC2S(RADIO_TORCH_CONTROL,
                 RadioTorchControlPacket::decode,
                 RadioTorchControlPacket::handle);
+
+        registerC2S(NBT_CONTROL,
+                NBTControlPacket::decode,
+                NBTControlPacket::handle);
+
+        registerC2S(ITEM_BOBMAZON,
+                ItemBobmazonPacket::decode,
+                ItemBobmazonPacket::handle);
     }
 
     // ══════════════════════ Вспомогательные методы ════════════════════════════
@@ -592,7 +662,7 @@ public class ModPacketHandler {
     }
 
 	//? if >= 1.21.1 {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
     private static net.minecraft.core.RegistryAccess getClientRegistryAccess() {
         if (net.minecraft.client.Minecraft.getInstance().level != null) {
             return net.minecraft.client.Minecraft.getInstance().level.registryAccess();

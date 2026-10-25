@@ -5,7 +5,6 @@ import com.hbm_m.blockentity.machines.MachineCentrifugeBlockEntity;
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.packet.PacketSyncEnergy;
-import com.hbm_m.platform.DummyItemStackHandler;
 import com.hbm_m.platform.ModItemStackHandler;
 
 import net.minecraft.network.FriendlyByteBuf;
@@ -36,15 +35,16 @@ public class MachineCentrifugeMenu extends AbstractContainerMenu implements ILon
     private static final int INPUT_SLOT = 1;
     private static final int OUTPUT_SLOT_START = 2;
     private static final int OUTPUT_SLOTS = 4;
-    private static final int MACHINE_SLOTS = OUTPUT_SLOT_START + OUTPUT_SLOTS;
+    private static final int UPGRADE_SLOT_START = 6;
+    private static final int MACHINE_SLOTS = 8;
 
-    // Slot positions (relative to GUI left/top)
-    private static final int SLOT_BATTERY_X = 9;
-    private static final int SLOT_BATTERY_Y = 50;
-    private static final int SLOT_INPUT_X = 36;
-    private static final int SLOT_INPUT_Y = 50;
-    private static final int SLOT_OUTPUT_X0 = 63;
-    private static final int SLOT_OUTPUT_Y = 50;
+    // Slot positions (Original ContainerCentrifuge)
+    private static final int SLOT_BATTERY_X = 8;
+    private static final int SLOT_BATTERY_Y = 57;
+    private static final int SLOT_INPUT_X = 44;
+    private static final int SLOT_INPUT_Y = 57;
+    private static final int SLOT_OUTPUT_X0 = 70;
+    private static final int SLOT_OUTPUT_Y = 57;
     private static final int SLOT_OUTPUT_X_STEP = 20;
 
     public MachineCentrifugeMenu(int containerId, Inventory playerInventory, FriendlyByteBuf extraData) {
@@ -72,14 +72,15 @@ public class MachineCentrifugeMenu extends AbstractContainerMenu implements ILon
         // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
         ModItemStackHandler itemHandler = this.blockEntity != null
                 ? this.blockEntity.getInventory()
-                : new DummyItemStackHandler(MACHINE_SLOTS);
+                : new ModItemStackHandler.Dummy(MACHINE_SLOTS);
         this.machineInventory = new HandlerContainer(itemHandler);
+
+        // Reihenfolge wie Original ContainerCentrifuge: Menue-Slot 0 = Eingang, 1 = Batterie (BE-Slots bleiben 1/0)
+        // input
+        this.addSlot(new Slot(machineInventory, INPUT_SLOT, SLOT_INPUT_X, SLOT_INPUT_Y));
 
         // battery
         this.addSlot(new Slot(machineInventory, BATTERY_SLOT, SLOT_BATTERY_X, SLOT_BATTERY_Y));
-
-        // input
-        this.addSlot(new Slot(machineInventory, INPUT_SLOT, SLOT_INPUT_X, SLOT_INPUT_Y));
 
         // outputs (4 slots)
         int outputY = SLOT_OUTPUT_Y;
@@ -92,9 +93,19 @@ public class MachineCentrifugeMenu extends AbstractContainerMenu implements ILon
             });
         }
 
-        // Player inventory (standard)
-        int playerInvX = 8;
-        int playerInvY = 104;
+        // Upgrades (Original: SlotUpgrade bei 156/31 und 156/49)
+        for (int i = 0; i < 2; i++) {
+            this.addSlot(new Slot(machineInventory, UPGRADE_SLOT_START + i, 156, 31 + i * 18) {
+                @Override
+                public boolean mayPlace(ItemStack stack) {
+                    return stack.getItem() instanceof com.hbm_m.item.industrial.ItemMachineUpgrade;
+                }
+            });
+        }
+
+        // Player inventory (Original: x=11, y=107)
+        int playerInvX = 11;
+        int playerInvY = 107;
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
                 this.addSlot(new Slot(playerInventory, col + row * 9 + 9,
@@ -102,7 +113,7 @@ public class MachineCentrifugeMenu extends AbstractContainerMenu implements ILon
             }
         }
 
-        int hotbarY = 162;
+        int hotbarY = 165;
         for (int col = 0; col < 9; col++) {
             this.addSlot(new Slot(playerInventory, col,
                     playerInvX + col * 18, hotbarY));
@@ -201,24 +212,27 @@ public class MachineCentrifugeMenu extends AbstractContainerMenu implements ILon
         ItemStack slotStack = slot.getItem();
         ItemStack copy = slotStack.copy();
 
-        int containerSlots = MACHINE_SLOTS;
-        int playerInventoryStart = containerSlots;
-        int playerInventoryEnd = this.slots.size();
-
-        if (index < containerSlots) {
-            if (!this.moveItemStackTo(slotStack, playerInventoryStart, playerInventoryEnd, true)) {
+        // 1:1 ContainerCentrifuge.transferStackInSlot (Menue-Slots: 0 Eingang, 1 Batterie, 2-5 Ausgaenge, 6-7 Upgrades)
+        if (index <= 7) {
+            if (!this.moveItemStackTo(slotStack, 8, this.slots.size(), true)) {
                 return ItemStack.EMPTY;
             }
+
+            slot.onQuickCraft(slotStack, copy);
         } else {
-            // Делегируем проверку допустимости слота машине (внутри учтёт loader-specific логику).
-            if (machineInventory.canPlaceItem(BATTERY_SLOT, slotStack)) {
-                if (!this.moveItemStackTo(slotStack, BATTERY_SLOT, BATTERY_SLOT + 1, false)) {
+            // Original: IBatteryItem || battery_creative; Port-Akkus laufen ueber die Energie-Capability (canPlaceItem)
+            if (copy.getItem() instanceof com.hbm_m.api.item.IBatteryItem
+                    || copy.getItem() == com.hbm_m.item.ModItems.CREATIVE_BATTERY.get()
+                    || machineInventory.canPlaceItem(BATTERY_SLOT, copy)) {
+                if (!this.moveItemStackTo(slotStack, 1, 2, false)) {
                     return ItemStack.EMPTY;
                 }
-            } else {
-                if (!this.moveItemStackTo(slotStack, INPUT_SLOT, INPUT_SLOT + 1, false)) {
+            } else if (copy.getItem() instanceof com.hbm_m.item.industrial.ItemMachineUpgrade) {
+                if (!this.moveItemStackTo(slotStack, 6, 8, false)) {
                     return ItemStack.EMPTY;
                 }
+            } else if (!this.moveItemStackTo(slotStack, 0, 1, false)) {
+                return ItemStack.EMPTY;
             }
         }
 
@@ -228,7 +242,6 @@ public class MachineCentrifugeMenu extends AbstractContainerMenu implements ILon
             slot.setChanged();
         }
 
-        slot.onTake(player, slotStack);
         return copy;
     }
 

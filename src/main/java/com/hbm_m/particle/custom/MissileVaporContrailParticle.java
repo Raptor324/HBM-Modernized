@@ -1,13 +1,7 @@
 package com.hbm_m.particle.custom;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 import com.hbm_m.client.missile.track.MissileTrackWorldRender;
 import com.hbm_m.particle.LongRangeParticleRenderType;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -34,6 +28,7 @@ import java.util.Random;
  * Stays in the air much longer than {@link MissileContrailParticle}, spreads and fades slowly.
  */
 @OnlyIn(Dist.CLIENT)
+
 public class MissileVaporContrailParticle extends TextureSheetParticle {
 
     public static float currentSpawnScale = 1.0F;

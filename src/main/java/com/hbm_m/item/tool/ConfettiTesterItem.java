@@ -23,6 +23,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * Тестовый предмет для проверки эффектов {@link ConfettiUtil}.
@@ -49,14 +50,14 @@ public class ConfettiTesterItem extends Item implements ITooltipProvider {
     }
 
     private static int getEffectIndex(ItemStack stack) {
-        CompoundTag tag = PlatformHooks.getItemTag(stack);
+        CompoundTag tag = StackNbt.read(stack);
         if (tag == null || !tag.contains(NBT_EFFECT)) return 0;
         int index = tag.getInt(NBT_EFFECT);
         return Math.floorMod(index, EFFECTS.length);
     }
 
     private static void setEffectIndex(ItemStack stack, int index) {
-        PlatformHooks.editItemTag(stack, t -> t.putInt(NBT_EFFECT, Math.floorMod(index, EFFECTS.length)));
+        StackNbt.edit(stack, t -> t.putInt(NBT_EFFECT, Math.floorMod(index, EFFECTS.length)));
     }
 
     @Override

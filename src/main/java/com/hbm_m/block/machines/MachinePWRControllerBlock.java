@@ -208,7 +208,9 @@ public class MachinePWRControllerBlock extends BaseEntityBlock {
             return;
         }
 
-        Kind kind = partBlock.getKind();
+        // FFA's PWRPartBlock carries the block-side PWRPart.Kind; the BE system uses
+        // PWRPartBlockEntity.Kind - identical constant sets, translate by name.
+        Kind kind = PWRPartBlockEntity.Kind.valueOf(partBlock.getKind().name());
 
         if (kind == Kind.CASING || kind == Kind.REFLECTOR || kind == Kind.PORT) {
             assembly.put(pos, kind);

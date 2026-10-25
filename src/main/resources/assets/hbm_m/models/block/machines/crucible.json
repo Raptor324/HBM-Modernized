@@ -4,13 +4,14 @@
   "flip_v": true,
   "render_type": "minecraft:cutout",
   "textures": {
-    "default": "hbm_m:block/machine/crucible_heat"
+    "default": "hbm_m:block/machine/crucible_heat",
+    "particle": "hbm_m:block/machine/crucible_heat"
   },
   "transform": {
     "translation": [
-      0.0,
-      0.0,
-      0.0
+      0.5,
+      0,
+      0.5
     ],
     "rotation": [
       0,

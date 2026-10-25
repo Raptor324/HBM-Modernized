@@ -1,13 +1,7 @@
 package com.hbm_m.client.render;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.util.Mth;
 import org.joml.Matrix4f;

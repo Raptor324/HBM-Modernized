@@ -52,3 +52,4 @@ public class HydrotreaterJeiCategory extends JeiFluidRecipeCategory<Hydrotreater
                 FluidStack.create(recipe.getSourGas(), recipe.getSourGasMb()));
     }
 }
+

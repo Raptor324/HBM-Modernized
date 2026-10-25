@@ -190,15 +190,20 @@ public abstract class RedPylonCoreBlock extends BaseEntityBlock {
                 .append(Component.translatable(getTypeKey()).withStyle(ChatFormatting.YELLOW)).withStyle(ChatFormatting.GOLD));
         tooltip.add(Component.translatable("tooltip.hbm_m.connection_range")
                 .append(Component.literal(getRange() + "m").withStyle(ChatFormatting.YELLOW)).withStyle(ChatFormatting.GOLD));
+
+        // Original PylonLarge.addInformation: dritte Zeile
+        if (this instanceof RedPylonLargeBlock) tooltip.add(Component.literal("This pylon requires a substation!").withStyle(ChatFormatting.GOLD));
     }
 
     //? if < 1.21.1 {
     @Override
     public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
+        addTooltip(tooltip);
+    }
     //?} else {
     /*@Override
     public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-    *///?}
         addTooltip(tooltip);
     }
+    *///?}
 }

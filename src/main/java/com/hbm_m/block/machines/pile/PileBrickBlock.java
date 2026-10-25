@@ -35,7 +35,8 @@ import net.minecraft.world.phys.BlockHitResult;
  * <p>Der Kern darf nicht auf einer Aussenflaeche sitzen: er braucht auf allen vier Seiten - oben,
  * unten, links, rechts - mindestens einen Ziegel, sonst laesst sich kein Kanal an ihm vorbeifuehren.</p>
  */
-public class PileBrickBlock extends Block {
+// audit10: Original BlockPileBrick extends BlockFlammable(rock, 30, 5) - brennbar wie das Original.
+public class PileBrickBlock extends com.hbm_m.block.bomb.BlockFlammable {
 
     /** Original: {@code MIN_V_SIZE}/{@code MIN_H_SIZE} = 5, {@code MAX_*_SIZE} = 15. */
     public static final int MIN_V_SIZE = 5;
@@ -44,7 +45,7 @@ public class PileBrickBlock extends Block {
     public static final int MAX_H_SIZE = 15;
 
     public PileBrickBlock(Properties properties) {
-        super(properties);
+        super(properties, 30, 5);
     }
 
     /** 1:1-Port von {@code onScrew}. */
@@ -165,7 +166,10 @@ public class PileBrickBlock extends Block {
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        return assemble(level, pos, player, hand, hit);
+        InteractionResult r = assemble(level, pos, player, hand, hit);
+        // Original onScrew liefert nach der Seitenpruefung immer true -> Abnutzung des Bohrers
+        if (r != InteractionResult.PASS) com.hbm_m.item.tool.ItemTooling.onScrewed(player, hand);
+        return r;
     }
     //?} else {
     /*@Override

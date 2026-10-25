@@ -43,6 +43,23 @@ public class MachineDieselGeneratorBlock extends BaseEntityBlock {
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
     }
 
+    /** 1:1 MachineDiesel.addInformation: Wirkungsgrad je Kraftstoffklasse (TileEntityMachineDiesel.fuelEfficiency, Enum-Reihenfolge). */
+    @Override
+    //? if < 1.21.1 {
+    public void appendHoverText(net.minecraft.world.item.ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.BlockGetter level, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(net.minecraft.world.item.ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    *///?}
+        list.add(net.minecraft.network.chat.Component.literal("Fuel efficiency:").withStyle(net.minecraft.ChatFormatting.YELLOW));
+        String[][] grades = { { "medium", "50" }, { "high", "75" }, { "aviation", "10" } };
+        for (String[] g : grades) {
+            list.add(net.minecraft.network.chat.Component.literal("-").withStyle(net.minecraft.ChatFormatting.YELLOW)
+                    .append(net.minecraft.network.chat.Component.translatable("hbmfluid.trait.fuel." + g[0]).withStyle(net.minecraft.ChatFormatting.YELLOW))
+                    .append(net.minecraft.network.chat.Component.literal(": ").withStyle(net.minecraft.ChatFormatting.YELLOW))
+                    .append(net.minecraft.network.chat.Component.literal(g[1] + "%").withStyle(net.minecraft.ChatFormatting.RED)));
+        }
+    }
+
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(FACING);
@@ -61,12 +78,12 @@ public class MachineDieselGeneratorBlock extends BaseEntityBlock {
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
+        return RenderShape.ENTITYBLOCK_ANIMATED; // Motor-Ruetteln zeichnet DieselGenRenderer (RenderDieselGen)
     }
 
     @Override
     public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
-        return Shapes.block();
+        return Shapes.empty(); // Original isOpaqueCube false; der Block selbst ist unsichtbar (BER)
     }
 
     @Nullable
@@ -89,6 +106,7 @@ public class MachineDieselGeneratorBlock extends BaseEntityBlock {
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
 
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider p) {
             MenuRegistry.openExtendedMenu((ServerPlayer) player, p, buf -> buf.writeBlockPos(pos));
@@ -98,6 +116,7 @@ public class MachineDieselGeneratorBlock extends BaseEntityBlock {
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
 
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider p) {
             MenuRegistry.openExtendedMenu((ServerPlayer) player, p, buf -> buf.writeBlockPos(pos));

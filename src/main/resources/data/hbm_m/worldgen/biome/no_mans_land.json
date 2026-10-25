@@ -1,0 +1,89 @@
+{
+  "temperature": 0.5,
+  "downfall": 0.5,
+  "has_precipitation": true,
+  "effects": {
+    "fog_color": 12638463,
+    "water_color": 7303954,
+    "water_fog_color": 329011,
+    "sky_color": 9737364,
+    "foliage_color": 7764071,
+    "grass_color": 6909785,
+    "mood_sound": {
+      "sound": "minecraft:ambient.cave",
+      "tick_delay": 6000,
+      "block_search_extent": 8,
+      "offset": 2.0
+    }
+  },
+  "spawners": {
+    "monster": [
+      {
+        "type": "hbm_m:entity_ntm_undead_soldier",
+        "weight": 1,
+        "minCount": 4,
+        "maxCount": 6
+      }
+    ],
+    "creature": [],
+    "ambient": [],
+    "axolotls": [],
+    "underground_water_creature": [],
+    "water_creature": [],
+    "water_ambient": [],
+    "misc": []
+  },
+  "spawn_costs": {},
+  "carvers": {
+    "air": [
+      "minecraft:cave",
+      "minecraft:cave_extra_underground",
+      "minecraft:canyon"
+    ],
+    "liquid": []
+  },
+  "features": [
+    [],
+    [
+      "minecraft:lake_lava_underground",
+      "minecraft:lake_lava_surface"
+    ],
+    [],
+    [
+      "minecraft:monster_room",
+      "minecraft:monster_room_deep"
+    ],
+    [],
+    [],
+    [
+      "minecraft:ore_dirt",
+      "minecraft:ore_gravel",
+      "minecraft:ore_coal_upper",
+      "minecraft:ore_coal_lower",
+      "minecraft:ore_iron_upper",
+      "minecraft:ore_iron_middle",
+      "minecraft:ore_iron_small",
+      "minecraft:ore_gold",
+      "minecraft:ore_gold_lower",
+      "minecraft:ore_redstone",
+      "minecraft:ore_redstone_lower",
+      "minecraft:ore_diamond",
+      "minecraft:ore_diamond_large",
+      "minecraft:ore_diamond_buried",
+      "minecraft:ore_lapis",
+      "minecraft:ore_lapis_buried",
+      "minecraft:disk_sand",
+      "minecraft:disk_gravel"
+    ],
+    [],
+    [
+      "minecraft:spring_water"
+    ],
+    [
+      "hbm_m:no_mans_land_spots"
+    ],
+    [
+      "minecraft:freeze_top_layer"
+    ]
+  ]
+}

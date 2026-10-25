@@ -19,6 +19,7 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * Basic designator: right-click on a block (except launch pad) to set target X/Z.
@@ -32,10 +33,10 @@ public class ItemDesignator extends Item implements IDesignatorItem, ITooltipPro
 
     @Override
     public void appendHbmTooltip(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
-        if (PlatformHooks.contains(stack, "xCoord")) {
+        if (StackNbt.contains(stack, "xCoord")) {
             tooltip.add(Component.translatable("tooltip.hbm_m.designator.target"));
-            tooltip.add(Component.literal("X: " + PlatformHooks.getInt(stack, "xCoord")).withStyle(ChatFormatting.GRAY));
-            tooltip.add(Component.literal("Z: " + PlatformHooks.getInt(stack, "zCoord")).withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.literal("X: " + StackNbt.getInt(stack, "xCoord")).withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.literal("Z: " + StackNbt.getInt(stack, "zCoord")).withStyle(ChatFormatting.GRAY));
         } else {
             tooltip.add(Component.translatable("tooltip.hbm_m.designator.no_target"));
         }
@@ -53,11 +54,11 @@ public class ItemDesignator extends Item implements IDesignatorItem, ITooltipPro
         }
 
         ItemStack stack = context.getItemInHand();
-        PlatformHooks.putInt(stack, "xCoord", pos.getX());
-        PlatformHooks.putInt(stack, "zCoord", pos.getZ());
+        StackNbt.putInt(stack, "xCoord", pos.getX());
+        StackNbt.putInt(stack, "zCoord", pos.getZ());
 
         if (level.isClientSide()) {
-            context.getPlayer().displayClientMessage(Component.translatable("message.hbm_m.designator.position_set"), true);
+            context.getPlayer().displayClientMessage(Component.translatable("message.hbm_m.designator.position_set"), false);
         }
         level.playSound(context.getPlayer(), context.getPlayer().blockPosition(),
                 ModSounds.TOOL_TECH_BLEEP.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
@@ -67,12 +68,12 @@ public class ItemDesignator extends Item implements IDesignatorItem, ITooltipPro
 
     @Override
     public boolean isReady(Level level, ItemStack stack, int x, int y, int z) {
-        return PlatformHooks.contains(stack, "xCoord") && PlatformHooks.contains(stack, "zCoord");
+        return StackNbt.contains(stack, "xCoord") && StackNbt.contains(stack, "zCoord");
     }
 
     @Override
     public Vec3 getCoords(Level level, ItemStack stack, int x, int y, int z) {
-        if (!PlatformHooks.contains(stack, "xCoord")) return Vec3.ZERO;
-        return new Vec3(PlatformHooks.getInt(stack, "xCoord"), 0, PlatformHooks.getInt(stack, "zCoord"));
+        if (!StackNbt.contains(stack, "xCoord")) return Vec3.ZERO;
+        return new Vec3(StackNbt.getInt(stack, "xCoord"), 0, StackNbt.getInt(stack, "zCoord"));
     }
 }

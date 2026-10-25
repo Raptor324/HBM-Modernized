@@ -1,11 +1,11 @@
 //? if neoforge {
 /*package com.hbm_m.client;
 
-import net.neoforged.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
-import net.neoforged.api.distmarker.OnlyIn;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /^*
  * NeoForge-only event hook for {@link ChunkRadiationDebugRenderer}.

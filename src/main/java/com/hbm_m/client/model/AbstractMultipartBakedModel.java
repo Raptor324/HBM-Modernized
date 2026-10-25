@@ -12,11 +12,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
-//? if forge {
 import net.minecraftforge.client.model.data.ModelData;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.client.model.data.ModelData;
-*///?}
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -339,7 +335,7 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
      * Forge {@code IForgeBakedModel#applyTransform} must stay a no-op for them.
      */
 
-    //? if forge {
+    // NeoForge: gleiche Signatur in IBakedModelExtension
     @Override
     public BakedModel applyTransform(ItemDisplayContext transformType, PoseStack poseStack,
                                      boolean applyLeftHandTransform) {
@@ -349,7 +345,6 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
         getTransforms().getTransform(transformType).apply(applyLeftHandTransform, poseStack);
         return this;
     }
-    //?}
 
     public void clearCaches() {
         cachedParticleIcon = null;

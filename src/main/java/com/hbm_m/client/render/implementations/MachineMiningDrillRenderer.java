@@ -23,6 +23,7 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import com.hbm_m.platform.LoaderHooks;
 
 /**
  * Big mining drill on the {@link MachineRenderers} factory (1:1 port of 1.7.10 RenderExcavator):
@@ -38,36 +39,15 @@ public final class MachineMiningDrillRenderer {
     private static final ResourceLocation CRUSHER1_MODEL_ID = id("mining_drill_crusher1");
     private static final ResourceLocation CRUSHER2_MODEL_ID = id("mining_drill_crusher2");
 
-    /** Legacy spin: {@code crusherRotation += 15F} per operational tick -> 360/15 = 24 ticks per revolution. */
-    private static final double CRUSHER_TICKS_PER_REV = 24.0;
-
-    /** Crusher spin gate (synced state, pure - the tracked segment classifier). */
-    private static boolean crusherOn(MachineMiningDrillBlockEntity be) {
-        return be.isActive() && be.enableCrusher;
-    }
-
     public static void register() {
         MachineRenderers.machine("miningdrill", ModBlockEntities.MINING_DRILL_BE.get(),
                 MachineMiningDrillBlockEntity.class)
-            // Crushers: TRACKED SPIN rigs - one full revolution per spin segment.
-            // Legacy: +15 deg/tick about the declared axis while operational ->
-            // 24 ticks per revolution; the positive track angle about the same
-            // (normalized) axis reproduces the old direction (counter-rotating
-            // via the opposite axis signs). Segment classifier: crusher on ->
-            // t0 = 1, duration 24; off -> duration 0 = FROZEN at u0 = 0. Words
-            // are a pure function of the epoch (the segment start), so the
-            // epoch-keyed AnimParams word cache in MachineBer hits while the
-            // crushers spin and the CPU skips rig evaluation entirely.
-            .spinningPart("Crusher1", "Crusher1", -1f, 0f, 0f, 0.5f, 2.0f, 3.3125f, 0f, 0f, 0f,
+            .rotatingPart("Crusher1", -1f, 0f, 0f, 0.5f, 2.0f, 3.3125f, 0f, 0f, 0f,
                     be -> partQuads("drill/crusher1", CRUSHER1_MODEL_ID), be -> "c1",
-                    be -> crusherOn(be) ? 1L : 0L,
-                    be -> crusherOn(be) ? CRUSHER_TICKS_PER_REV : 0.0,
-                    be -> 0.0)
-            .spinningPart("Crusher2", "Crusher2", 1f, 0f, 0f, 0.5f, 2.0f, 2.6875f, 0f, 0f, 0f,
+                    (be, pt) -> (double) Mth.lerp(pt, be.prevCrusherRotation, be.crusherRotation))
+            .rotatingPart("Crusher2", 1f, 0f, 0f, 0.5f, 2.0f, 2.6875f, 0f, 0f, 0f,
                     be -> partQuads("drill/crusher2", CRUSHER2_MODEL_ID), be -> "c2",
-                    be -> crusherOn(be) ? 1L : 0L,
-                    be -> crusherOn(be) ? CRUSHER_TICKS_PER_REV : 0.0,
-                    be -> 0.0)
+                    (be, pt) -> (double) Mth.lerp(pt, be.prevCrusherRotation, be.crusherRotation))
             .dynamicPart("Drillbit", MachineMiningDrillRenderer::animateDrillbit,
                     be -> partQuads("drill/bit", DRILLBIT_MODEL_ID), be -> "bit")
             .blockTransform(MachineMiningDrillRenderer::applyBlockTransform)
@@ -91,7 +71,7 @@ public final class MachineMiningDrillRenderer {
     @Nullable
     private static BakedModel getModel(ResourceLocation rid) {
         var modelManager = Minecraft.getInstance().getModelManager();
-        BakedModel model = PlatformHooks.getModel(modelManager, rid);
+        BakedModel model = LoaderHooks.getModel(modelManager, rid);
         return (model == null || model == modelManager.getMissingModel()) ? null : model;
     }
 

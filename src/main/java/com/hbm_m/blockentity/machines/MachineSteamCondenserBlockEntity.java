@@ -35,8 +35,9 @@ import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
 
     private static final int INVENTORY_SIZE = 0;
-    private static final int INPUT_CAPACITY = 8_000;
-    private static final int OUTPUT_CAPACITY = 8_000;
+    /** Original (konfigurierbar): {@code inputTankSize = outputTankSize = 100}. */
+    private static final int INPUT_CAPACITY = 100;
+    private static final int OUTPUT_CAPACITY = 100;
     private final FluidTank inputSteamTank;
     private final FluidTank outputWaterTank;
 
@@ -52,9 +53,7 @@ public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity imp
 
     @Override
     protected void setupFluidCapability() {
-        //? if forge {
         setFluidHandler(new UnifiedFluidHandler(this));
-        //?}
     }
 
     @Override
@@ -103,10 +102,16 @@ public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity imp
         if (convert <= 0) return;
 
         inputSteamTank.drainMb(convert);
-        outputWaterTank.fillMb(Fluids.WATER, convert);
+        // NTM Space: im Tom-Feuersturm und im Vakuum verdampfen Dampf und Wasser (ohne Space-Addon nie)
+        if (com.hbm_m.api.space.SpaceApi.condenserEvaporates(level, worldPosition, false)) {
+            outputWaterTank.setFill(outputWaterTank.getFill() - convert);
+        } else {
+            outputWaterTank.fillMb(Fluids.WATER, convert);
+        }
         waterTimer = 20;
-        setChanged();
-        sendUpdateToClient();
+        long lo = (long) throughput | (((long) waterTimer) << 16);
+        long hi = (long) inputSteamTank.getFill() | (((long) outputWaterTank.getFill()) << 32);
+        syncIfStateChanged(lo, hi);
     }
 
     @Override
@@ -271,5 +276,100 @@ public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity imp
             return result;
         }
     }
-    //?}
+    //?} elif neoforge {
+    /*private static class UnifiedFluidHandler implements net.minecraftforge.fluids.capability.IFluidHandler {
+        private final MachineSteamCondenserBlockEntity be;
+
+        UnifiedFluidHandler(MachineSteamCondenserBlockEntity be) {
+            this.be = be;
+        }
+
+        @Override
+        public int getTanks() {
+            return 2;
+        }
+
+        @Override
+        public @NotNull net.minecraftforge.fluids.FluidStack getFluidInTank(int tank) {
+            if (tank == 0) {
+                if (be.inputSteamTank.getFill() <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
+                return new net.minecraftforge.fluids.FluidStack(be.inputSteamTank.getTankType(), be.inputSteamTank.getFill());
+            }
+            if (tank == 1) {
+                if (be.outputWaterTank.getFill() <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
+                return new net.minecraftforge.fluids.FluidStack(Fluids.WATER, be.outputWaterTank.getFill());
+            }
+            return net.minecraftforge.fluids.FluidStack.EMPTY;
+        }
+
+        @Override
+        public int getTankCapacity(int tank) {
+            if (tank == 0) return be.inputSteamTank.getMaxFill();
+            if (tank == 1) return be.outputWaterTank.getMaxFill();
+            return 0;
+        }
+
+        @Override
+        public boolean isFluidValid(int tank, @NotNull net.minecraftforge.fluids.FluidStack stack) {
+            return tank == 0 && VanillaFluidEquivalence.sameSubstance(stack.getFluid(), ModFluids.SPENTSTEAM.getSource());
+        }
+
+        @Override
+        public int fill(net.minecraftforge.fluids.FluidStack resource, net.minecraftforge.fluids.capability.IFluidHandler.FluidAction action) {
+            if (resource.isEmpty() || !VanillaFluidEquivalence.sameSubstance(resource.getFluid(), ModFluids.SPENTSTEAM.getSource())) {
+                return 0;
+            }
+
+            int space = be.inputSteamTank.getMaxFill() - be.inputSteamTank.getFill();
+            int toFill = Math.min(space, resource.getAmount());
+            if (toFill <= 0) return 0;
+
+            if (action.execute()) {
+                be.inputSteamTank.fillMb(resource.getFluid(), toFill);
+                be.setChanged();
+                be.sendUpdateToClient();
+            }
+
+            return toFill;
+        }
+
+        @Override
+        public @NotNull net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, net.minecraftforge.fluids.capability.IFluidHandler.FluidAction action) {
+            if (resource.isEmpty() || be.outputWaterTank.getFill() <= 0) {
+                return net.minecraftforge.fluids.FluidStack.EMPTY;
+            }
+            if (!VanillaFluidEquivalence.sameSubstance(resource.getFluid(), Fluids.WATER)) {
+                return net.minecraftforge.fluids.FluidStack.EMPTY;
+            }
+
+            int toDrain = Math.min(resource.getAmount(), be.outputWaterTank.getFill());
+            net.minecraftforge.fluids.FluidStack result = new net.minecraftforge.fluids.FluidStack(Fluids.WATER, toDrain);
+
+            if (action.execute()) {
+                be.outputWaterTank.drainMb(toDrain);
+                be.setChanged();
+                be.sendUpdateToClient();
+            }
+
+            return result;
+        }
+
+        @Override
+        public @NotNull net.minecraftforge.fluids.FluidStack drain(int maxDrain, net.minecraftforge.fluids.capability.IFluidHandler.FluidAction action) {
+            if (be.outputWaterTank.getFill() <= 0 || maxDrain <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
+
+            int toDrain = Math.min(maxDrain, be.outputWaterTank.getFill());
+            net.minecraftforge.fluids.FluidStack result = new net.minecraftforge.fluids.FluidStack(Fluids.WATER, toDrain);
+
+            if (action.execute()) {
+                be.outputWaterTank.drainMb(toDrain);
+                be.setChanged();
+                be.sendUpdateToClient();
+            }
+
+            return result;
+        }
+    }
+    *///?}
+
 }

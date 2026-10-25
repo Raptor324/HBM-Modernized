@@ -1,19 +1,17 @@
 package com.hbm_m.blockentity.machines;
 
-import com.hbm_m.api.fluids.IFluidConnectorMK2;
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
-import com.hbm_m.handler.pollution.PollutionHandler;
-import com.hbm_m.inventory.fluid.trait.PollutionType;
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.handler.pollution.PollutionHandler;
 import com.hbm_m.interfaces.IHeatSource;
+import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
+import com.hbm_m.inventory.fluid.trait.PollutionType;
 import com.hbm_m.inventory.menu.MachineCokerMenu;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
-import com.hbm_m.platform.PlatformHooks;
 import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.recipe.CokerRecipe;
-import com.hbm_m.recipe.index.CachedRecipeResolver;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -26,19 +24,13 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.phys.AABB;
 
 /**
- * Coker - Port von {@code TileEntityMachineCoker} (1.7.10 Original). Keine Strom-Beteiligung (das
- * Original implementiert kein {@code IEnergyReceiverMK2}) - laeuft rein ueber Waerme von einer
- * {@link IHeatSource} darunter (identisches Pull-/Decay-Schema wie {@code
- * MachineBoilerBlockEntity}, nur mit {@code DIFFUSION=0.25}). Rezepte sind data-driven
- * ({@link CokerRecipe}, Fluid Tank 0 -> Item + optionales Byproduct-Fluid in Tank 1),
- * {@code burn = heat/100} Fortschritt pro Tick - 1:1 aus dem Original.
- * <p>
- * SCOPE-Entscheidung: Pollution (SOOT beim Laufen) entfaellt (fehlende Infrastruktur, wie bei
- * allen anderen Maschinen dieser Session dokumentiert).
+ * 1:1 {@code TileEntityMachineCoker}: Verkokungsturm ohne Strom, beheizt von einer {@link IHeatSource} direkt unter
+ * dem Kern (Diffusion 0,25, max. 100000 TU). Fortschritt {@code heat / 100} pro Tick bis 20000; das Rezept haengt am
+ * Fluidtyp von Tank 0 ({@link CokerRecipe}), das Nebenprodukt fliesst in Tank 1. Acht Anschluesse um den Sockel,
+ * Russ in die Umwelt, Rauchfahne oben am Turm (22 hoch).
  */
 public class MachineCokerBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
 
@@ -46,198 +38,186 @@ public class MachineCokerBlockEntity extends BaseMachineBlockEntity implements I
     public static final int SLOT_OUTPUT   = 1;
     public static final int INVENTORY_SIZE = 2;
 
-    private static final int TANK0_CAPACITY = 16_000;
-    private static final int TANK1_CAPACITY = 8_000;
-    private static final int PROCESS_TIME   = 20_000;
-    private static final int MAX_HEAT       = 100_000;
-    private static final double DIFFUSION   = 0.25D;
+    public static int processTime = 20_000;
+    public static int maxHeat = 100_000;
+    public static double diffusion = 0.25D;
 
-    private final FluidTank tank0 = new FluidTank(TANK0_CAPACITY);
-    private final FluidTank tank1 = new FluidTank(TANK1_CAPACITY);
+    private final FluidTank tank0 = new FluidTank(ModFluids.HEAVYOIL.getSource(), 16_000);
+    private final FluidTank tank1 = new FluidTank(ModFluids.OIL_COKER.getSource(), 8_000);
 
-    private int heat;
-    private int progress;
-    private boolean wasOn;
-
-    /** Кэш скана рецептов: ключ — тип жидкости бака 0 (подпись), пересканирование только на /reload или смену типа. */
-    private final CachedRecipeResolver<CokerRecipe> recipeResolver = new CachedRecipeResolver<>();
-
-    private static final long RECIPE_SEED = 0xC0CA01L;
+    public boolean wasOn;
+    public int progress;
+    public int heat;
 
     public MachineCokerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.COKER_BE.get(), pos, state, INVENTORY_SIZE, 0L, 0L, 0L);
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineCokerBlockEntity be) {
-        if (!level.isClientSide) {
-            be.serverTick(level, pos);
-        }
-    }
-
-    /**
-     * 1:1-Port des Rauchzweigs: solange gekokt wird, steigt alle zwei Ticks eine dunkle Schwade
-     * aus dem Kopf des Turms - zweiundzwanzig Bloecke ueber dem Sockel, wo der Kamin sitzt.
-     */
-    private void spawnPlume(Level level, BlockPos pos) {
-        if (!wasOn || level.getGameTime() % 2 != 0) return;
-        if (!(level instanceof net.minecraft.server.level.ServerLevel serverLevel)) return;
-
-        net.minecraft.nbt.CompoundTag fx = new net.minecraft.nbt.CompoundTag();
-        fx.putString("type", "tower");
-        fx.putFloat("lift", 10F);
-        fx.putFloat("base", 0.75F);
-        fx.putFloat("max", 3F);
-        fx.putInt("life", 200 + level.getRandom().nextInt(50));
-        fx.putInt("color", 0x404040);
-
-        com.hbm_m.particle.helper.IParticleCreator.sendPacket(serverLevel,
-                pos.getX() + 0.5, pos.getY() + 22, pos.getZ() + 0.5, 250, fx);
+        if (!level.isClientSide) be.serverTick(level, pos);
+        else be.clientTick(level, pos);
     }
 
     private void serverTick(Level level, BlockPos pos) {
-        pullOrDecayHeat(level, pos);
+
+        this.tryPullHeat();
 
         ItemStack[] slots = inventorySlotArray();
         if (tank0.setType(SLOT_FLUID_ID, slots)) applySlotsArray(slots);
 
-        if (level.getGameTime() % 20 == 0) {
-            for (Direction dir : Direction.values()) {
-                BlockPos neighborPos = pos.relative(dir);
-                BlockEntity neighborBe = level.getBlockEntity(neighborPos);
-                if (!(neighborBe instanceof IFluidConnectorMK2)) continue;
-                trySubscribe(tank0, level, neighborPos, dir);
+        if (probeDue(20)) {
+            for (DirPos con : getConPos()) {
+                this.trySubscribe(tank0.getTankType(), level, con.pos, con.dir);
             }
         }
 
-        wasOn = false;
+        this.wasOn = false;
 
         if (canProcess()) {
             int burn = heat / 100;
+
             if (burn > 0) {
-                wasOn = true;
-                progress += burn;
+                this.wasOn = true;
+                this.progress += burn;
+                this.heat -= burn;
 
-                // Original: SOOT_PER_SECOND * 5 alle fuenf Ticks, solange die Maschine lief.
-                if (level.getGameTime() % 5 == 0) {
-                    PollutionHandler.incrementPollution(level, worldPosition, PollutionType.SOOT,
-                            PollutionHandler.SOOT_PER_SECOND * 5);
-                }
-                heat -= burn;
-
-                if (progress >= PROCESS_TIME) {
-                    progress -= PROCESS_TIME;
+                if (progress >= processTime) {
+                    this.setChanged();
+                    progress -= processTime;
 
                     CokerRecipe recipe = findCokerRecipe();
-                    if (recipe != null) {
-                        ItemStack out = recipe.getOutput();
-                        if (out != null && !out.isEmpty()) {
-                            ItemStack current = inventory.getStackInSlot(SLOT_OUTPUT);
-                            if (current.isEmpty()) {
-                                inventory.setStackInSlot(SLOT_OUTPUT, out.copy());
-                            } else {
-                                current.grow(out.getCount());
-                            }
+                    ItemStack output = recipe.getOutput();
+
+                    if (output != null && !output.isEmpty()) {
+                        ItemStack current = inventory.getStackInSlot(SLOT_OUTPUT);
+                        if (current.isEmpty()) {
+                            inventory.setStackInSlot(SLOT_OUTPUT, output.copy());
+                        } else {
+                            current.grow(output.getCount());
+                            inventory.setStackInSlot(SLOT_OUTPUT, current);
                         }
-                        if (recipe.getByproductFluid() != null) {
-                            tank1.fillMb(recipe.getByproductFluid(), recipe.getByproductMb());
-                        }
-                        tank0.drainMb(recipe.getInputMb());
                     }
+
+                    if (recipe.getByproductFluid() != null) {
+                        tank1.setFill(tank1.getFill() + recipe.getByproductMb());
+                    }
+
+                    tank0.setFill(tank0.getFill() - recipe.getInputMb());
                 }
             }
+
+            if (wasOn && level.getGameTime() % 5 == 0)
+                PollutionHandler.incrementPollution(level, worldPosition, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND * 5);
         }
 
-        // Раздача побочного продукта. tryProvide — каждый тик: его вторая ветка — прямой пуш
-        // в соседний приёмник, гейт делит пропускную способность выдачи, а не только стоимость
-        // скана (6 getBlockEntity). Формально гейт убран целиком (Pump-паттерн): tryProvide
-        // здесь единственная работа блока. Fill-проверка не даёт зондировать соседей,
-        // пока бак пуст.
-        if (tank1.getFill() > 0) {
-            for (Direction dir : Direction.values()) {
-                BlockPos neighborPos = pos.relative(dir);
-                BlockEntity neighborBe = level.getBlockEntity(neighborPos);
-                if (!(neighborBe instanceof IFluidConnectorMK2)) continue;
-                tryProvide(tank1, level, neighborPos, dir);
+        for (DirPos con : getConPos()) {
+            if (this.tank1.getFill() > 0) this.tryProvide(tank1, level, con.pos, con.dir);
+        }
+
+        syncIfStateChanged(
+                (long) progress << 32 | (long) heat,
+                (long) tank0.getFill() << 32 | (long) tank1.getFill()
+        );
+    }
+
+    private void clientTick(Level level, BlockPos pos) {
+
+        if (this.wasOn) {
+
+            if (level.getGameTime() % 2 == 0) {
+                CompoundTag fx = new CompoundTag();
+                fx.putString("type", "tower");
+                fx.putFloat("lift", 10F);
+                fx.putFloat("base", 0.75F);
+                fx.putFloat("max", 3F);
+                fx.putInt("life", 200 + level.random.nextInt(50));
+                fx.putInt("color", 0x404040);
+                fx.putDouble("posX", pos.getX() + 0.5);
+                fx.putDouble("posY", pos.getY() + 22);
+                fx.putDouble("posZ", pos.getZ() + 0.5);
+                com.hbm_m.particle.helper.ParticleEffectClient.effectNT(fx);
             }
         }
-
-        spawnPlume(level, pos);
-
-        // Anti-sync-spam: полный BE-пакет только при изменении отрисовываемого состояния
-        // (прогрев/прогресс/баки/инвентарь). Подпись покрывает всё, что пишет writeNbtData.
-        long lo = progress;
-        lo = lo * 31L + heat;
-        lo = lo * 31L + (wasOn ? 1L : 0L);
-        long hi = tankFingerprint(tank0);
-        hi = hi * 31L + tankFingerprint(tank1);
-        hi = hi * 31L + PlatformHooks.stackFingerprint(inventory.getStackInSlot(SLOT_FLUID_ID));
-        hi = hi * 31L + PlatformHooks.stackFingerprint(inventory.getStackInSlot(SLOT_OUTPUT));
-        syncIfStateChanged(lo, hi);
     }
 
-    /** Дешёвый фингерпринт содержимого HBM-бака (тип жидкости + количество mB). */
-    private static long tankFingerprint(FluidTank tank) {
-        Fluid type = tank.getTankType();
-        return (type == null ? 0L : type.hashCode()) * 31L + tank.getFluidAmountMb();
+    /** Anschluss samt Richtung (Original {@code DirPos}). */
+    private record DirPos(BlockPos pos, Direction dir) { }
+
+    private DirPos[] getConPos() {
+        BlockPos p = worldPosition;
+        return new DirPos[] {
+                new DirPos(p.offset(2, 0, 1), Direction.EAST),
+                new DirPos(p.offset(2, 0, -1), Direction.EAST),
+                new DirPos(p.offset(-2, 0, 1), Direction.WEST),
+                new DirPos(p.offset(-2, 0, -1), Direction.WEST),
+                new DirPos(p.offset(1, 0, 2), Direction.SOUTH),
+                new DirPos(p.offset(-1, 0, 2), Direction.SOUTH),
+                new DirPos(p.offset(1, 0, -2), Direction.NORTH),
+                new DirPos(p.offset(-1, 0, -2), Direction.NORTH)
+        };
     }
 
-    private void pullOrDecayHeat(Level level, BlockPos pos) {
-        BlockEntity below = level.getBlockEntity(pos.below());
-        if (below instanceof IHeatSource source) {
-            int diff = source.getHeatStored() - heat;
-            if (diff > 0) {
-                int pulled = Math.min((int) Math.ceil(diff * DIFFUSION), MAX_HEAT - heat);
-                if (pulled > 0) {
-                    source.useUpHeat(pulled);
-                    heat += pulled;
-                    return;
-                }
-            }
-        }
-        heat = Math.max(heat - Math.max(heat / 1000, 1), 0);
-    }
-
-    private boolean canProcess() {
+    public boolean canProcess() {
         CokerRecipe recipe = findCokerRecipe();
+
         if (recipe == null) return false;
 
-        if (recipe.getByproductFluid() != null) {
-            tank1.setTankType(recipe.getByproductFluid());
-        }
+        int fillReq = recipe.getInputMb();
+        ItemStack output = recipe.getOutput();
 
-        if (tank0.getFluidAmountMb() < recipe.getInputMb()) return false;
-        if (recipe.getByproductFluid() != null && recipe.getByproductMb() + tank1.getFluidAmountMb() > tank1.getCapacityMb()) return false;
+        if (recipe.getByproductFluid() != null) tank1.setTankType(recipe.getByproductFluid());
 
-        ItemStack out = recipe.getOutput();
-        if (out != null && !out.isEmpty()) {
+        if (tank0.getFill() < fillReq) return false;
+        if (recipe.getByproductFluid() != null && recipe.getByproductMb() + tank1.getFill() > tank1.getMaxFill()) return false;
+
+        if (output != null && !output.isEmpty()) {
             ItemStack current = inventory.getStackInSlot(SLOT_OUTPUT);
             if (!current.isEmpty()) {
-                if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, out)) return false;
-                if (current.getCount() + out.getCount() > out.getMaxStackSize()) return false;
+                if (!com.hbm_m.platform.StackNbt.sameItemSameTags(current, output)) return false;
+                if (output.getCount() + current.getCount() > output.getMaxStackSize()) return false;
             }
         }
 
         return true;
     }
 
+    protected void tryPullHeat() {
 
-    /** Data-driven поиск CokerRecipe по типу жидкости бака 0 (заменяет статический CokerRecipes.get).
-     *  Скан кэшируется ({@link CachedRecipeResolver}) по фингерпринту типа жидкости бака 0. */
+        if (this.heat >= maxHeat) return;
+
+        BlockEntity con = level.getBlockEntity(worldPosition.below());
+
+        if (con instanceof IHeatSource source) {
+            int diff = source.getHeatStored() - this.heat;
+
+            if (diff == 0) {
+                return;
+            }
+
+            if (diff > 0) {
+                diff = (int) Math.ceil(diff * diffusion);
+                source.useUpHeat(diff);
+                this.heat += diff;
+                if (this.heat > maxHeat)
+                    this.heat = maxHeat;
+                return;
+            }
+        }
+
+        this.heat = Math.max(this.heat - Math.max(this.heat / 1000, 1), 0);
+    }
+
+    /** Original {@code CokerRecipes.getOutput(type)} - hier ueber die datengetriebenen {@link CokerRecipe}. */
     @org.jetbrains.annotations.Nullable
     private CokerRecipe findCokerRecipe() {
         if (level == null) return null;
-        final Fluid tankType = tank0.getTankType();
-        long sig = CachedRecipeResolver.sign(RECIPE_SEED, tankType == null ? 0L : tankType.hashCode());
-        return recipeResolver.resolve(level, CokerRecipe.Type.INSTANCE, sig, (lvl, all) -> {
-            for (CokerRecipe recipe : all) {
-                if (recipe.matchesFluidType(tankType)) return recipe;
-            }
-            return null;
-        });
+        for (CokerRecipe recipe : RecipeHooks.getAllRecipes(level, CokerRecipe.Type.INSTANCE)) {
+            if (recipe.matchesFluidType(tank0.getTankType())) return recipe;
+        }
+        return null;
     }
 
-
-    // ── Inventory helpers ────────────────────────────────────────────────────
+    // ── Inventar-Hilfen ──────────────────────────────────────────────────────
 
     private ItemStack[] inventorySlotArray() {
         ItemStack[] arr = new ItemStack[INVENTORY_SIZE];
@@ -252,13 +232,11 @@ public class MachineCokerBlockEntity extends BaseMachineBlockEntity implements I
         setChanged();
     }
 
-    // ── IFluidStandardTransceiverMK2 ─────────────────────────────────────────
+    // ── Fluid ────────────────────────────────────────────────────────────────
 
-    @Override public FluidTank[] getAllTanks()      { return new FluidTank[]{ tank0, tank1 }; }
-    @Override public FluidTank[] getReceivingTanks() { return new FluidTank[]{ tank0 }; }
-    @Override public FluidTank[] getSendingTanks() {
-        return tank1.getFill() > 0 ? new FluidTank[]{ tank1 } : FluidTank.EMPTY_ARRAY;
-    }
+    @Override public FluidTank[] getAllTanks() { return new FluidTank[] { tank0, tank1 }; }
+    @Override public FluidTank[] getSendingTanks() { return new FluidTank[] { tank1 }; }
+    @Override public FluidTank[] getReceivingTanks() { return new FluidTank[] { tank0 }; }
 
     @Override
     public boolean isLoaded() {
@@ -266,23 +244,18 @@ public class MachineCokerBlockEntity extends BaseMachineBlockEntity implements I
     }
 
     @Override
-    public boolean canConnect(Fluid fluid, Direction fromDir) {
-        if (fromDir == null || fluid == null || fluid == Fluids.EMPTY) return false;
-        if (level == null) return false;
-        for (CokerRecipe recipe : RecipeHooks.getAllRecipes(level, CokerRecipe.Type.INSTANCE)) {
-            if (recipe.matchesFluidType(fluid)) return true;
-        }
-        return false;
+    public boolean canConnect(net.minecraft.world.level.material.Fluid fluid, Direction fromDir) {
+        return fromDir != null;
     }
 
-    // ── Accessors ────────────────────────────────────────────────────────────
+    // ── Zugriff ──────────────────────────────────────────────────────────────
 
     public FluidTank getTank0() { return tank0; }
     public FluidTank getTank1() { return tank1; }
     public int getHeat()        { return heat; }
-    public int getMaxHeat()     { return MAX_HEAT; }
+    public int getMaxHeat()     { return maxHeat; }
     public int getProgress()    { return progress; }
-    public int getMaxProgress() { return PROCESS_TIME; }
+    public int getMaxProgress() { return processTime; }
     public boolean isActive()   { return wasOn; }
 
     // ── NBT ─────────────────────────────────────────────────────────────────
@@ -290,38 +263,38 @@ public class MachineCokerBlockEntity extends BaseMachineBlockEntity implements I
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
+        tank0.writeToNBT(tag, "t0");
+        tank1.writeToNBT(tag, "t1");
+        tag.putInt("prog", progress);
         tag.putInt("heat", heat);
-        tag.putInt("progress", progress);
         tag.putBoolean("wasOn", wasOn);
-        tank0.writeToNBT(tag, "tank0");
-        tank1.writeToNBT(tag, "tank1");
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
+        if (tag.contains("t0")) tank0.readFromNBT(tag, "t0");
+        else if (tag.contains("tank0")) tank0.readFromNBT(tag, "tank0");
+        if (tag.contains("t1")) tank1.readFromNBT(tag, "t1");
+        else if (tag.contains("tank1")) tank1.readFromNBT(tag, "tank1");
+        progress = tag.contains("prog") ? tag.getInt("prog") : tag.getInt("progress");
         heat = tag.getInt("heat");
-        progress = tag.getInt("progress");
         wasOn = tag.getBoolean("wasOn");
-        tank0.readFromNBT(tag, "tank0");
-        tank1.readFromNBT(tag, "tank1");
     }
 
     // ── Slot validation ──────────────────────────────────────────────────────
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return switch (slot) {
-            case SLOT_FLUID_ID -> stack.getItem() instanceof FluidIdentifierItem;
-            default -> false;
-        };
+        if (slot == SLOT_FLUID_ID) return stack.getItem() instanceof FluidIdentifierItem;
+        return false;
     }
 
-    // ── Menu ────────────────────────────────────────────────────────────────
+    // ── Menue ────────────────────────────────────────────────────────────────
 
     @Override
     protected Component getDefaultName() {
-        return Component.translatable("container.hbm_m.coker");
+        return Component.translatable("container.machineCoker");
     }
 
     @Override
@@ -333,4 +306,69 @@ public class MachineCokerBlockEntity extends BaseMachineBlockEntity implements I
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
         return MachineCokerMenu.create(id, inventory, this);
     }
+    private AABB bb = null;
+
+    //? if forge {
+    @Override
+    //?}
+    public AABB getRenderBoundingBox() {
+        if (bb == null) bb = new AABB(worldPosition.getX() - 2, worldPosition.getY(), worldPosition.getZ() - 2,
+                worldPosition.getX() + 3, worldPosition.getY() + 23, worldPosition.getZ() + 3);
+        return bb;
+    }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: Slot {1}; nichts hinein, das Ergebnis heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 1 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return false; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return true; }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return sidedItems.get(side);
+    }
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?} elif neoforge {
+    /*
+    // Original {@code ISidedInventory}: Slot {1}; nichts hinein, das Ergebnis heraus.
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 1 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return false; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return true; }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return sidedItems.get(side).resolve().orElse(null);
+    }
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
 }

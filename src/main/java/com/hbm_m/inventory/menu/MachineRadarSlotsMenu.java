@@ -1,7 +1,6 @@
 package com.hbm_m.inventory.menu;
 
 import com.hbm_m.blockentity.machines.MachineRadarBlockEntity;
-import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.Container;
@@ -10,6 +9,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * Меню слотов радара (порт ContainerMachineRadarNT из 1.7.10, текстура gui_radar_link.png).
@@ -39,7 +39,7 @@ public class MachineRadarSlotsMenu extends AbstractContainerMenu {
         // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
         Container machineContainer = new MachineRadarMenu.HandlerContainer(blockEntity != null
                 ? blockEntity.getInventory()
-                : new DummyItemStackHandler(MACHINE_SLOTS));
+                : new ModItemStackHandler.Dummy(MACHINE_SLOTS));
 
         // 8 линк-слотов (0..7).
         for (int i = 0; i < 8; i++) {

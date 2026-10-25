@@ -1,0 +1,10 @@
+{
+  "type": "hbm_m:combination_oven",
+  "ingredient": {
+    "item": "hbm_m:oil_tar_crude"
+  },
+  "result": {
+    "item": "hbm_m:coke_petroleum",
+    "count": 1
+  }
+}

@@ -35,32 +35,28 @@ public class MachineKeyforgeBlockEntity extends BaseMachineBlockEntity {
         ItemStack source = be.inventory.getStackInSlot(SLOT_SOURCE);
         ItemStack dupe = be.inventory.getStackInSlot(SLOT_DUPE);
         if (ItemKeyPin.isTransferable(source) && ItemKeyPin.isTransferable(dupe)) {
-            int code = ItemKeyPin.getCode(source);
-            if (code >= 0 && ItemKeyPin.getCode(dupe) != code) {
-                ItemKeyPin.setCode(dupe, code);
+            int pins = ItemKeyPin.getPins(source);
+            if (ItemKeyPin.getPins(dupe) != pins) {
+                ItemKeyPin.setPins(dupe, pins);
+                be.setChanged();
             }
         }
 
         ItemStack cut = be.inventory.getStackInSlot(SLOT_CUT);
         if (ItemKeyPin.isTransferable(cut)) {
-            ItemKeyPin.setCode(cut, level.random.nextInt(900) + 100);
+            ItemKeyPin.setPins(cut, level.random.nextInt(900) + 100);
+            be.setChanged();
         }
 
-        // Anti-sync-spam гейт: подпись = фингерпринты всех трёх слотов (то, что пишет writeNbtData).
-        // Случайный код cutter'а меняет подпись почти каждый тик — by-design per-tick поведение
-        // (fidelity-решение отложено, см. план миграции); гейт гарантирует, что спокойная машина
-        // (нет ключей) не спамит setChanged/sendBlockUpdated.
-        long fp = com.hbm_m.platform.PlatformHooks.stackFingerprint(source) * 31L
-                + com.hbm_m.platform.PlatformHooks.stackFingerprint(dupe);
-        fp = fp * 31L + com.hbm_m.platform.PlatformHooks.stackFingerprint(cut);
+        long fp = com.hbm_m.platform.StackNbt.fingerprint(source) * 31L
+                + com.hbm_m.platform.StackNbt.fingerprint(dupe);
+        fp = fp * 31L + com.hbm_m.platform.StackNbt.fingerprint(cut);
         be.syncIfStateChanged(fp, 0L);
     }
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        // Паритет 1.7.10 (TileEntityMachineKeyForge.isItemValidForSlot = false):
-        // автоматизация (воронки) не вставляет предметы — только вручную через GUI.
-        return false;
+        return ItemKeyPin.isTransferable(stack);
     }
 
     @Override
@@ -76,5 +72,53 @@ public class MachineKeyforgeBlockEntity extends BaseMachineBlockEntity {
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
         return com.hbm_m.inventory.menu.MachineKeyforgeMenu.create(id, inventory, this);
+    }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: unten {1}, oben {0}, Seiten {2}; nichts hinein, alles heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return side == net.minecraft.core.Direction.DOWN ? new int[] { 1 } : side == net.minecraft.core.Direction.UP ? new int[] { 0 } : new int[] { 2 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return false; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return true; }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: unten {1}, oben {0}, Seiten {2}; nichts hinein, alles heraus. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return side == net.minecraft.core.Direction.DOWN ? new int[] { 1 } : side == net.minecraft.core.Direction.UP ? new int[] { 0 } : new int[] { 2 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return false; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return true; }
+            });
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return sidedItems.get(side);
     }
 }

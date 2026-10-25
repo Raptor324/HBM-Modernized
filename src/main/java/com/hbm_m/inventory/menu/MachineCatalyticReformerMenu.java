@@ -12,6 +12,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /** Slot-Koordinaten 1:1 aus {@code ContainerMachineCatalyticReformer} (1.7.10 Original) uebernommen,
  *  wo relevant - die Fluid-Ein/Ausgabe-Slots des Originals entfallen, weil das MK2-Rohrnetz die
@@ -22,6 +23,9 @@ public class MachineCatalyticReformerMenu extends AbstractContainerMenu {
     private static final int SLOT_BATTERY = MachineCatalyticReformerBlockEntity.SLOT_BATTERY;
     private static final int SLOT_CATALYST = MachineCatalyticReformerBlockEntity.SLOT_CATALYST;
     private static final int MACHINE_SLOT_COUNT = 2;
+    // Menue-Indizes der Maschinenslots (0=Batterie, 1=Katalysator) - NICHT die BE-Slot-Konstanten
+    // (BE 0/10), da das Menue nur zwei der elf BE-Slots exponiert.
+    private static final int MACHINE_SLOT_START = 0;
     private static final int PLAYER_INV_START = MACHINE_SLOT_COUNT;
     private static final int PLAYER_INV_END = MACHINE_SLOT_COUNT + 36;
 
@@ -83,7 +87,8 @@ public class MachineCatalyticReformerMenu extends AbstractContainerMenu {
                     return ItemStack.EMPTY;
                 }
             } else {
-                if (!this.moveItemStackTo(slotStack, SLOT_BATTERY, SLOT_CATALYST + 1, false)) {
+                // Spielerinventar -> Maschinenslots (Menue-Indizes 0..1), nicht die BE-Slot-Konstanten.
+                if (!this.moveItemStackTo(slotStack, MACHINE_SLOT_START, PLAYER_INV_START, false)) {
                     return ItemStack.EMPTY;
                 }
             }

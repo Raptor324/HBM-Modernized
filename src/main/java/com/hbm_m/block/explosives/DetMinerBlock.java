@@ -1,147 +1,99 @@
 package com.hbm_m.block.explosives;
 
+import java.util.List;
+
+import javax.annotation.Nullable;
+
+import com.hbm_m.api.block.IFuckingExplode;
+import com.hbm_m.api.bomb.IBomb;
+import com.hbm_m.entity.item.EntityTNTPrimedBase;
+import com.hbm_m.explosion.ExplosionLarge;
+import com.hbm_m.explosion.ExplosionNT;
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.TickTask;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.gameevent.GameEvent;
-import net.minecraft.world.level.storage.loot.LootParams;
-import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
-import net.minecraft.world.phys.Vec3;
 
-import org.jetbrains.annotations.Nullable;
-
-import com.hbm_m.interfaces.IDetonatable;
-
-import java.util.ArrayList;
-import java.util.List;
-
-public class DetMinerBlock extends Block implements IDetonatable {
-
-    private static final int MINING_RADIUS = 3;
-    private static final int DETONATION_RADIUS = 6;
+/**
+ * 1:1 {@code DetMiner}: Bergbauladung. Redstone oder Zuender ({@link IBomb}) loesen eine schadlose ExplosionNT
+ * der Staerke 4 aus, die alle Bloecke fallen laesst; von einer Explosion getroffen wird sie zu einem sofort
+ * zuendenden Sprengkoerper. Faellt selbst nie als Gegenstand heraus (Loot-Tabelle leer).
+ */
+public class DetMinerBlock extends Block implements IBomb, IFuckingExplode {
 
     public DetMinerBlock(Properties properties) {
         super(properties);
     }
+
     //? if < 1.21.1 {
     @Override
     public void appendHoverText(ItemStack stack,
                                 @Nullable net.minecraft.world.level.BlockGetter level,
                                 List<Component> tooltip,
                                 TooltipFlag flag) {
+        tooltip.add(Component.translatable("tooltip.hbm_m.detminer.line1")
+                .withStyle(ChatFormatting.YELLOW));
+        tooltip.add(Component.translatable("tooltip.hbm_m.detminer.line4")
+                .withStyle(ChatFormatting.GRAY));
+    }
     //?} else {
     /*@Override
     public void appendHoverText(ItemStack stack,
                                 net.minecraft.world.item.Item.TooltipContext level,
                                 List<Component> tooltip,
                                 TooltipFlag flag) {
-    *///?}
         tooltip.add(Component.translatable("tooltip.hbm_m.detminer.line1")
                 .withStyle(ChatFormatting.YELLOW));
         tooltip.add(Component.translatable("tooltip.hbm_m.detminer.line4")
                 .withStyle(ChatFormatting.GRAY));
     }
-    @Override
-    public void neighborChanged(BlockState state, Level level, BlockPos pos,
-                                Block block, BlockPos fromPos, boolean isMoving) {
-        if (!level.isClientSide && level.hasNeighborSignal(pos)) {
-            onDetonate(level, pos, state, null);
-        }
-        super.neighborChanged(state, level, pos, block, fromPos, isMoving);
-    }
+    *///?}
 
     @Override
-    public boolean onDetonate(Level level, BlockPos pos, BlockState state, Player player) {
-        if (level.isClientSide) return false;
+    public BombReturnCode explode(Level world, BlockPos pos) {
 
-        ServerLevel serverLevel = (ServerLevel) level;
+        if (!world.isClientSide) {
 
-        // 1. Убираем сам майнер — до разрушения радиуса.
-        // Each setBlockAndUpdate in the radius notifies this position, and while the miner still
-        // stood there and still saw redstone, neighborChanged re-entered onDetonate and dropped the
-        // remaining blocks a second time. Upstream removes the block before it explodes.
-        serverLevel.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
-        serverLevel.gameEvent(null, GameEvent.BLOCK_DESTROY, pos);
+            world.destroyBlock(pos, false);
+            ExplosionNT explosion = new ExplosionNT(world, null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 4);
+            explosion.addAttrib(ExplosionNT.ExAttrib.ALLDROP);
+            explosion.addAttrib(ExplosionNT.ExAttrib.NOHURT);
+            explosion.explode();
 
-        // 2. Разрушаем блоки в радиусе MINING_RADIUS
-        destroyBlocksInRadius(serverLevel, pos);
+            ExplosionLarge.spawnParticles(world, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 30);
+        }
 
-        // 3. Активируем соседние Detonatable блоки по цепочке
-        triggerNearbyDetonations(serverLevel, pos, player);
-
-        // 4. Звук взрыва
-        com.hbm_m.platform.PlatformHooks.playSound(serverLevel, pos, SoundEvents.GENERIC_EXPLODE,
-                SoundSource.BLOCKS, 1.0F, 1.0F);
-
-        return true;
+        return BombReturnCode.DETONATED;
     }
 
-    private void destroyBlocksInRadius(ServerLevel serverLevel, BlockPos pos) {
-        List<BlockPos> blocksToDestroy = new ArrayList<>();
-        List<ItemStack> collectedDrops = new ArrayList<>();
-
-        for (int x = -MINING_RADIUS; x <= MINING_RADIUS; x++) {
-            for (int y = -MINING_RADIUS; y <= MINING_RADIUS; y++) {
-                for (int z = -MINING_RADIUS; z <= MINING_RADIUS; z++) {
-                    double dist = Math.sqrt(x * x + y * y + z * z);
-                    if (dist <= MINING_RADIUS) {
-                        BlockPos checkPos = pos.offset(x, y, z);
-                        BlockState blockState = serverLevel.getBlockState(checkPos);
-                        float hardness = blockState.getDestroySpeed(serverLevel, checkPos);
-
-                        if (!blockState.isAir() && !blockState.is(Blocks.BEDROCK) && !blockState.is(this) && hardness < 30.0F) {
-                            blocksToDestroy.add(checkPos);
-                            LootParams.Builder lootParamsBuilder = new LootParams.Builder(serverLevel)
-                                    .withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(checkPos))
-                                    .withParameter(LootContextParams.TOOL, ItemStack.EMPTY);
-                            collectedDrops.addAll(blockState.getDrops(lootParamsBuilder));
-                        }
-                    }
-                }
-            }
-        }
-
-        for (BlockPos blockPos : blocksToDestroy) {
-            serverLevel.setBlockAndUpdate(blockPos, Blocks.AIR.defaultBlockState());
-            serverLevel.gameEvent(null, GameEvent.BLOCK_DESTROY, blockPos);
-        }
-
-        for (ItemStack drop : collectedDrops) {
-            if (!drop.isEmpty()) {
-                serverLevel.addFreshEntity(new ItemEntity(serverLevel,
-                        pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, drop));
-            }
+    @Override
+    public void wasExploded(Level world, BlockPos pos, Explosion explosion) {
+        if (!world.isClientSide) {
+            LivingEntity placer = explosion != null ? explosion.getIndirectSourceEntity() : null;
+            EntityTNTPrimedBase tntPrimed = new EntityTNTPrimedBase(world, pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, placer, this);
+            tntPrimed.fuse = 0;
+            tntPrimed.detonateOnCollision = false;
+            world.addFreshEntity(tntPrimed);
         }
     }
 
-    private void triggerNearbyDetonations(ServerLevel serverLevel, BlockPos pos, Player player) {
-        for (int x = -DETONATION_RADIUS; x <= DETONATION_RADIUS; x++) {
-            for (int y = -DETONATION_RADIUS; y <= DETONATION_RADIUS; y++) {
-                for (int z = -DETONATION_RADIUS; z <= DETONATION_RADIUS; z++) {
-                    double dist = Math.sqrt(x * x + y * y + z * z);
-                    if (dist <= DETONATION_RADIUS && dist > 0) {
-                        BlockPos checkPos = pos.offset(x, y, z);
-                        BlockState checkState = serverLevel.getBlockState(checkPos);
-                        Block block = checkState.getBlock();
-                        if (block instanceof IDetonatable) {
-                            com.hbm_m.api.bomb.BombDetonation.triggerDetonatableLater(
-                                    serverLevel, checkPos, block, player, (int) (dist * 2));
-                        }
-                    }
-                }
-            }
+    @Override
+    public void neighborChanged(BlockState state, Level world, BlockPos pos, Block block, BlockPos fromPos, boolean isMoving) {
+        if (world.hasNeighborSignal(pos)) {
+            this.explode(world, pos);
         }
+    }
+
+    @Override
+    public void explodeEntity(Level world, double x, double y, double z, @Nullable EntityTNTPrimedBase entity) {
+        explode(world, BlockPos.containing(Mth.floor(x), Mth.floor(y), Mth.floor(z)));
     }
 }

@@ -7,25 +7,19 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.level.Level;
 
-//? if forge {
+import net.minecraftforge.api.distmarker.Dist;//? if forge {
 import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.api.distmarker.Dist;
+
 //?} elif neoforge {
 /*import net.neoforged.neoforge.client.event.ViewportEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.api.distmarker.Dist;
+
 *///?}
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 /**
  * Туман в crater биомах.
  */

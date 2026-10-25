@@ -47,6 +47,7 @@ public class ICFPhantomBlockEntity extends LoadedMachineBlockEntity implements c
 
     @Nullable public ICFLaserPart getPart() { return part; }
 
+
     @Override
     public void relocate(java.util.function.UnaryOperator<BlockPos> transform) {
         if (corePos != null) corePos = transform.apply(corePos).immutable();

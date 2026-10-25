@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import com.hbm_m.platform.StackNbt;
 
 public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
 
@@ -283,7 +284,8 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
         for (RBMKColumnBlockEntity col : columns) {
             if (!(col instanceof RBMKRodBlockEntity)) continue;
             BlockPos p = col.getBlockPos();
-            if (!level.getBlockState(p).is(com.hbm_m.block.ModBlocks.RBMK_CORIUM.get())) continue;
+            BlockState coreState = level.getBlockState(p);
+            if (!coreState.is(com.hbm_m.block.ModBlocks.RBMK_CORIUM.get()) && !coreState.is(com.hbm_m.block.ModBlocks.CORIUM_BLOCK.get())) continue;
 
             for (int dx = -1; dx <= 1; dx++) {
                 for (int dy = -1; dy <= 1; dy++) {
@@ -385,7 +387,7 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
         for (com.hbm_m.api.fluids.IFluidReceiverMK2 receiver : receivers) {
             if (!(receiver instanceof BlockEntity be)) continue;
             BlockPos pos = be.getBlockPos();
-            if (receiver instanceof com.hbm_m.api.tile.IOverpressurable overpressurable) {
+            if (receiver instanceof com.hbm_m.api.tile.IOverpressurable overpressurable && overpressurable.handlesOverpressure()) {
                 overpressurable.explode(level, pos);
             } else {
                 level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
@@ -472,9 +474,28 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
         };
     }
 
-    public boolean hasLid()         { return lidState != 0; }
+    /**
+     * 1:1 with {@code TileEntityRBMKBase.hasLid()}: a column whose lid cannot be removed is
+     * <em>permanently sealed</em>, not permanently open. The original short-circuits on
+     * {@code if(!isLidRemovable()) return true;} before ever looking at the lid metadata, which is
+     * what makes control rods and panel devices count as capped.
+     * <p>
+     * This is not cosmetic. {@code RBMKNeutronHandler} leaks the stream's remaining flux into
+     * {@code ChunkRadiationManager} for every node whose {@code hasLid} is false, so a control rod
+     * reporting "no lid" irradiated its surroundings on every single neutron pass - a reactor with
+     * lids on all of its fuel channels still cooked everything around it through its control rods.
+     */
+    public boolean hasLid()         { return !isLidRemovable() || lidState != 0; }
     public int    getLidState()     { return lidState; }
     public boolean isLidRemovable() { return true; }
+
+    /**
+     * 1:1 with {@code RBMKBase.hasOwnLid()}: these column types bring their own cap geometry and
+     * have no {@code _cover_*}/{@code _glass_*} textures at all, so the renderer must not draw the
+     * generic lid plate on them. Purely visual - {@link #hasLid()} is the logical state and stays
+     * true for them.
+     */
+    public boolean hasOwnLid()      { return false; }
 
     public void setLidState(int state) {
         lidState = state;
@@ -496,17 +517,17 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
 
     /** Returns NBT data for the RBMK console panel display. Override in subclasses with relevant data. */
     public CompoundTag getNBTForConsole() { return new CompoundTag(); }
-
-    //? if forge {
     /** Expands the render bounding box to cover the full column height so the BESR isn't culled early. */
+    // Phase D: auf NeoForge ueber RenderBoundsProvider (HbmBerBounds), daher Methode auf beiden Loadern
+    //? if forge {
     @Override
     @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?}
     public AABB getRenderBoundingBox() {
         BlockPos p = getBlockPos();
         return new AABB(p.getX(), p.getY(), p.getZ(),
                         p.getX() + 1, p.getY() + com.hbm_m.handler.rbmk.RBMKDials.COLUMN_HEIGHT + 1, p.getZ() + 1);
     }
-    //?}
 
     /**
      * Returns the texture-name prefix used by the BESR to look up
@@ -537,7 +558,7 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
      * Делегирует в {@link PlatformHooks#safeItemSave} (наследники RBMK используют в своём NBT).
      */
     protected static CompoundTag safeItemSave(ItemStack stack) {
-        return PlatformHooks.safeItemSave(stack, PlatformHooks.bestEffortProvider());
+        return StackNbt.saveNew(stack, PlatformHooks.bestEffortProvider());
     }
 
     @Override
@@ -546,7 +567,24 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
         tag.putDouble("heat", heat);
         tag.putInt("reasimWater", reasimWater);
         tag.putInt("reasimSteam", reasimSteam);
-        tag.putInt("lidState", lidState);
+        if (!diag) tag.putInt("lidState", lidState);
+    }
+
+    /** Original {@code diag}: waehrend {@link #getDiagData} schreiben die Unterklassen ihre Diagnosewerte statt der Speicherdaten. */
+    protected static boolean diag = false;
+
+    /**
+     * Порт оригинального TileEntityRBMKBase.getDiagData — источник данных для DODD-оверлея
+     * («Dump of Ordered Data Diagnostic», см. {@link com.hbm_m.block.machines.rbmk.RBMKColumnBlock#printHook}).
+     * Пишет только данные колонки: x/y/z/id ванилла сюда не добавляет (их пишет
+     * saveWithFullMetadata, а не writeNbtData), а виртуальный вызов writeNbtData доходит
+     * до переопределений конкретного типа колонки. bestEffortProvider() на 1.20.1 возвращает
+     * null (как в load), на 1.21.1 — клиентский Provider, нужный для записи ItemStack'ов.
+     */
+    public void getDiagData(CompoundTag nbt) {
+        diag = true;
+        this.writeNbtData(nbt, PlatformHooks.bestEffortProvider());
+        diag = false;
     }
 
     @Override
@@ -557,18 +595,5 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
         reasimSteam = tag.getInt("reasimSteam");
         lidState    = tag.contains("lidState") ? tag.getInt("lidState") : 1;
     }
-
-    /**
-     * Порт оригинального TileEntityRBMKBase.getDiagData — источник данных для DODD-оверлея
-     * («Dump of Ordered Data Diagnostic», см. {@link com.hbm_m.block.machines.rbmk.RBMKColumnBlock#printHook}).
-     * Пишет только данные колонки: x/y/z/id ванилла сюда не добавляет (их пишет
-     * saveWithFullMetadata, а не writeNbtData), а виртуальный вызов writeNbtData доходит
-     * до переопределений конкретного типа колонки. bestEffortProvider() на 1.20.1 возвращает
-     * null (как в load), на 1.21.1 — клиентский Provider, нужный для записи ItemStack'ов.
-     */
-    public void getDiagData(CompoundTag tag) {
-        writeNbtData(tag, PlatformHooks.bestEffortProvider());
-    }
-
 }
 

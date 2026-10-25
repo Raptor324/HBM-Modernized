@@ -1,4 +1,4 @@
-﻿{
+{
   "loader": "forge:obj",
   "model": "hbm_m:models/block/pipe_neo.obj",
   "flip_v": true,

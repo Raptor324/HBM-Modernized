@@ -42,8 +42,10 @@ public class ChunkRadiationManager {
     private static ChunkRadiationHandler proxyInstance;
 
     public static ChunkRadiationHandler getProxy() {
-        if (proxyInstance == null) {
-            proxyInstance = new ChunkRadiationHandlerSimple();
+        // Auswahl RAPTOR / ADVANCED (NTM Next) je Serverstart, siehe RadiationSystemSelector.
+        if (proxyInstance == null
+                || com.hbm_m.radiation.ntmnext.RadiationSystemSelector.needsNewProxy(proxyInstance)) {
+            proxyInstance = com.hbm_m.radiation.ntmnext.RadiationSystemSelector.createProxy();
         }
         return proxyInstance;
     }
@@ -121,6 +123,8 @@ public class ChunkRadiationManager {
             //?} else {
             /*if (getProxy() instanceof ChunkRadiationHandlerSimple handler) {
                 handler.receiveChunkUnload(chunk);
+            } else if (getProxy() instanceof com.hbm_m.radiation.ntmnext.ChunkRadiationHandlerNTMNext ntmNext) {
+                ntmNext.receiveChunkUnload(chunk);
             }
             *///?}
         }

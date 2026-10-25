@@ -18,13 +18,8 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import dev.architectury.fluid.FluidStack;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
 
 /**
  * Единый GUI для всех жидкостных бочек и Orbus — как в 1.7.10, где все варианты

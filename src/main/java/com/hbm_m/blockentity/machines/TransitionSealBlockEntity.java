@@ -145,6 +145,20 @@ public class TransitionSealBlockEntity extends BaseHbmBlockEntity {
         return cachedPowered;
     }
 
+    /**
+     * audit10: Original {@code TileEntityDoorGeneric.tryToggle(player)} - nur ganz offen oder ganz zu schaltbar;
+     * ein geschlossenes Tor unter Redstone-Strom bleibt "verriegelt".
+     */
+    public boolean tryToggle() {
+        if (moving) return false;
+        if (!isOpen() && isPowered()) return false;
+        opening = !isOpen();
+        moving = true;
+        setChanged();
+        if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        return true;
+    }
+
     public void updateEntity() {
         if(level == null) return;
 
@@ -198,6 +212,8 @@ public class TransitionSealBlockEntity extends BaseHbmBlockEntity {
         super.writeNbtData(tag, registries);
         tag.putFloat("animTicks", animTicks);
         tag.putBoolean("prevPowered", prevPowered);
+        tag.putBoolean("opening", opening);
+        tag.putBoolean("moving", moving);
     }
 
     @Override
@@ -205,5 +221,7 @@ public class TransitionSealBlockEntity extends BaseHbmBlockEntity {
         super.readNbtData(tag, registries);
         animTicks = tag.getFloat("animTicks");
         prevPowered = tag.getBoolean("prevPowered");
+        opening = tag.getBoolean("opening");
+        moving = tag.getBoolean("moving");
     }
 }

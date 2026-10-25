@@ -26,16 +26,53 @@ public final class PressRecipeGenerator {
 
     public static void generate(Consumer<FinishedRecipe> writer) {
         generateFlat(writer);
+        generatePrinting(writer);
         generatePlates(writer);
         generateWires(writer);
         generateCircuits(writer);
+    }
+
+    /** 1:1 PressRecipes PRINTING1-8: Papier + Druckstempel = Seite. */
+    private static void generatePrinting(Consumer<FinishedRecipe> writer) {
+        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PAGE_OF_PAGE1.get()))
+                .stamp(ModItems.STAMP_BOOK_PRINTING1.get())
+                .material(Items.PAPER)
+                .save(writer, "page_of_page1");
+        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PAGE_OF_PAGE2.get()))
+                .stamp(ModItems.STAMP_BOOK_PRINTING2.get())
+                .material(Items.PAPER)
+                .save(writer, "page_of_page2");
+        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PAGE_OF_PAGE3.get()))
+                .stamp(ModItems.STAMP_BOOK_PRINTING3.get())
+                .material(Items.PAPER)
+                .save(writer, "page_of_page3");
+        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PAGE_OF_PAGE4.get()))
+                .stamp(ModItems.STAMP_BOOK_PRINTING4.get())
+                .material(Items.PAPER)
+                .save(writer, "page_of_page4");
+        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PAGE_OF_PAGE5.get()))
+                .stamp(ModItems.STAMP_BOOK_PRINTING5.get())
+                .material(Items.PAPER)
+                .save(writer, "page_of_page5");
+        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PAGE_OF_PAGE6.get()))
+                .stamp(ModItems.STAMP_BOOK_PRINTING6.get())
+                .material(Items.PAPER)
+                .save(writer, "page_of_page6");
+        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PAGE_OF_PAGE7.get()))
+                .stamp(ModItems.STAMP_BOOK_PRINTING7.get())
+                .material(Items.PAPER)
+                .save(writer, "page_of_page7");
+        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PAGE_OF_PAGE8.get()))
+                .stamp(ModItems.STAMP_BOOK_PRINTING8.get())
+                .material(Items.PAPER)
+                .save(writer, "page_of_page8");
     }
 
     private static void generateFlat(Consumer<FinishedRecipe> writer) {
         // Ported from 1.7.10 PressRecipes.java (StampType.FLAT).
         // Only recipes whose input AND output items both exist in this port were ported;
         // remaining skips: meteorite sword chain (no "reforged" stage here), C9/C50 casings
-        // (no casing variants), printing plates 1-8 (no page items).
+        // (no casing variants).
 
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.BIOMASS_COMPRESSED.get()))
                 .stamp(ModTags.Items.STAMPS_FLAT)
@@ -198,6 +235,12 @@ public final class PressRecipeGenerator {
                 .stamp(ModTags.Items.STAMPS_WIRE)
                 .material(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
                 .save(writer, "wire_carbon");
+
+        // Original PressRecipes Drahtschleife: Pb hat WIRE-Autogen + Barren
+        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.LEAD, MaterialShape.WIRE, 8))
+                .stamp(ModTags.Items.STAMPS_WIRE)
+                .material(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
+                .save(writer, "wire_lead");
 
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.WIRE_FINE.get(), 8))
                 .stamp(ModTags.Items.STAMPS_WIRE)

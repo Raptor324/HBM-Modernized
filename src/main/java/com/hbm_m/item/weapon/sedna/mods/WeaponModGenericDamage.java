@@ -1,0 +1,23 @@
+package com.hbm_m.item.weapon.sedna.mods;
+
+import com.hbm_m.item.weapon.sedna.Receiver;
+
+import net.minecraft.world.item.ItemStack;
+
+public class WeaponModGenericDamage extends WeaponModBase {
+
+	public WeaponModGenericDamage(int id) {
+		super(id, "GENERIC_DAMAGE");
+		this.setPriority(PRIORITY_MULTIPLICATIVE);
+	}
+
+	@Override
+	public <T> T eval(T base, ItemStack gun, String key, Object parent) {
+
+		if(parent instanceof Receiver && key == Receiver.F_BASEDAMAGE && base instanceof Float) {
+			return cast((Float) base * 1.15F, base);
+		}
+
+		return base;
+	}
+}

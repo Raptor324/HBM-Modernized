@@ -76,7 +76,15 @@ public class MachineCoreInjectorBlockEntity extends BaseMachineBlockEntity imple
         }
         return super.getCapability(cap, side);
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER) {
+            return com.hbm_m.platform.LazyCap.of(() -> new CoreInjectorFluidHandler(this)).cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+    *///?}
 
     /** Original: {@code range = 15}. */
     public static final int RANGE = 15;
@@ -93,7 +101,10 @@ public class MachineCoreInjectorBlockEntity extends BaseMachineBlockEntity imple
             return;
         }
         be.ensureNetworkInitialized();
+        be.applyIdentifiers();
         be.injectIntoCore(level, pos, state);
+        // Original networkPackNT: Strahllaenge und Tanks gehen jeden Tick an den Client (RenderCoreComponent)
+        be.sendUpdateToClient();
     }
 
     /**
@@ -112,11 +123,16 @@ public class MachineCoreInjectorBlockEntity extends BaseMachineBlockEntity imple
             return;
         }
 
-        net.minecraft.core.Direction dir = state.hasProperty(
-                net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING)
-                ? state.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING)
-                : net.minecraft.core.Direction.NORTH;
-
+        // Original: ForgeDirection.getOrientation(getBlockMetadata()) - die Blickrichtung des Blocks.
+        // Der Port-Block fuehrt dafuer die volle Sechsrichtungs-FACING (DFCOrientation).
+        net.minecraft.core.Direction dir;
+        if (state.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING)) {
+            dir = state.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING);
+        } else if (state.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING)) {
+            dir = state.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING);
+        } else {
+            dir = net.minecraft.core.Direction.NORTH;
+        }
         for (int i = 1; i <= RANGE; i++) {
             BlockPos at = pos.relative(dir, i);
             net.minecraft.world.level.block.entity.BlockEntity te = level.getBlockEntity(at);
@@ -152,6 +168,18 @@ public class MachineCoreInjectorBlockEntity extends BaseMachineBlockEntity imple
         }
     }
 
+    /** Original: {@code tanks[0].setType(0, 1, slots); tanks[1].setType(2, 3, slots);} - Fluidkennung ein (0/2), aus (1/3). */
+    private void applyIdentifiers() {
+        ItemStack[] slots = new ItemStack[4];
+        for (int i = 0; i < 4; i++) slots[i] = inventory.getStackInSlot(i);
+        boolean changed = tanks[TANK_DEUTERIUM].setType(0, 1, slots);
+        changed |= tanks[TANK_TRITIUM].setType(2, 3, slots);
+        if (changed) {
+            for (int i = 0; i < 4; i++) inventory.setStackInSlot(i, slots[i] == null ? ItemStack.EMPTY : slots[i]);
+            setChanged();
+        }
+    }
+
     @Nullable
     public FluidTank getTank(int index) {
         if (index < 0 || index >= tanks.length) return null;
@@ -163,6 +191,7 @@ public class MachineCoreInjectorBlockEntity extends BaseMachineBlockEntity imple
         super.writeNbtData(tag, registries);
         tanks[TANK_DEUTERIUM].writeToNBT(tag, "deuterium");
         tanks[TANK_TRITIUM].writeToNBT(tag, "tritium");
+        tag.putInt("beam", beam);
     }
 
     @Override
@@ -170,6 +199,7 @@ public class MachineCoreInjectorBlockEntity extends BaseMachineBlockEntity imple
         super.readNbtData(tag, registries);
         tanks[TANK_DEUTERIUM].readFromNBT(tag, "deuterium");
         tanks[TANK_TRITIUM].readFromNBT(tag, "tritium");
+        beam = tag.getInt("beam");
     }
 
     @Override
@@ -190,6 +220,13 @@ public class MachineCoreInjectorBlockEntity extends BaseMachineBlockEntity imple
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return false;
+        // Original: Eingaenge 0/2 (Fluidkennung), 1/3 nur entnehmbar (SlotCraftingOutput)
+        return slot == 0 || slot == 2;
+    }
+
+    /** 1:1 TileEntityCoreInjector.getRenderBoundingBox (Render-Migration: Raptors Pfad cullt nach dieser Box, der alte BER zeichnete immer). */
+    @Override
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return com.hbm_m.platform.RenderBounds.INFINITE;
     }
 }

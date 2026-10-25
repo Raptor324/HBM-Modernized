@@ -24,7 +24,7 @@ import java.util.function.Consumer;
  * <b>запечены литералами 1:1</b> (трейты в датагене недоступны); каждое mB получено повторением
  * точной формулы поверх {@code ModFluidCalculatedFuel.apply()}. Жидкости без burn-трейтов
  * пропускались и в рантайме — в этом порте таких нет, все 24 auto + 1 SFauto рецепты на месте.
- * CALCIUM_SOLUTION-рецепт отсутствует и в оригинале порта (нет порошка кальция) — документированная лакуна.</p>
+ * CALCIUM_SOLUTION-рецепт (оригинал l.64: Calciumpulver + Abdampf) также включён.</p>
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.</p>
  */
@@ -78,6 +78,13 @@ public final class CokerRecipeGenerator {
                 new ItemStack(Items.IRON_INGOT, 1),
                 fluid(ModFluids.MERCURY, 50)
         ).save(writer, "coker/redmud");
+
+        // Оригинал CokerRecipes l.64: раствор кальция -> порошок кальция + отработанный пар.
+        CokerRecipeBuilder.cokerRecipe(
+                fluid(ModFluids.CALCIUM_SOLUTION, 125),
+                new ItemStack(ModMaterialItems.item(ModMaterials.CALCIUM, MaterialShape.POWDER)),
+                fluid(ModFluids.SPENTSTEAM, 100)
+        ).save(writer, "coker/calcium_solution");
 
         // Битум -> кокс + кокеровое масло.
         CokerRecipeBuilder.cokerRecipe(

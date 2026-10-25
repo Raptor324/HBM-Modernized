@@ -66,13 +66,13 @@ public class ModCapabilities {
             // 1. Предметы (ItemHandler)
             event.registerBlockEntity(
                 Capabilities.ItemHandler.BLOCK, type,
-                (be, side) -> (be instanceof BaseHbmBlockEntity hbm) ? (net.neoforged.neoforge.items.IItemHandler) hbm.getItemHandler(side) : null
+                (be, side) -> (be instanceof BaseHbmBlockEntity hbm) ? (net.minecraftforge.items.IItemHandler) hbm.getItemHandler(side) : null
             );
 
             // 2. Жидкости (FluidHandler)
             event.registerBlockEntity(
                 Capabilities.FluidHandler.BLOCK, type,
-                (be, side) -> (be instanceof BaseHbmBlockEntity hbm) ? (net.neoforged.neoforge.fluids.capability.IFluidHandler) hbm.getFluidHandler(side) : null
+                (be, side) -> (be instanceof BaseHbmBlockEntity hbm) ? (net.minecraftforge.fluids.capability.IFluidHandler) hbm.getFluidHandler(side) : null
             );
 
             // 3. Энергия (EnergyStorage)
@@ -81,7 +81,7 @@ public class ModCapabilities {
                 (be, side) -> {
                     if (be instanceof com.hbm_m.api.energy.WireBlockEntity wire) return wire.getFeStorage();
                     if (be instanceof BaseHbmBlockEntity hbm && !hbm.joinsEnergyNetwork()) return null; // машины без энергии (пресс)
-                    return (be instanceof BaseHbmBlockEntity hbm) ? (net.neoforged.neoforge.energy.IEnergyStorage) hbm.getEnergyStorage(side) : null;
+                    return (be instanceof BaseHbmBlockEntity hbm) ? (net.minecraftforge.energy.IEnergyStorage) hbm.getEnergyStorage(side) : null;
                 }
             );
 
@@ -111,6 +111,18 @@ public class ModCapabilities {
                                 stack, infinite.getTransferRate(), infinite.getFixedFluid()), item);
                 continue;
             }
+            // Loetlampe (Forge: FillOnlyCapability, nur Befuellen)
+            if (item instanceof com.hbm_m.item.tool.ItemBlowtorch blowtorch) {
+                event.registerItem(Capabilities.FluidHandler.ITEM,
+                        (stack, ctx) -> new com.hbm_m.item.tool.ItemBlowtorch.FillOnlyCapability(stack, blowtorch), item);
+                continue;
+            }
+            // Pipette (Forge: PipetteCapability)
+            if (item instanceof com.hbm_m.item.tool.ItemPipette) {
+                event.registerItem(Capabilities.FluidHandler.ITEM,
+                        (stack, ctx) -> new com.hbm_m.item.tool.ItemPipette.PipetteCapability(stack), item);
+                continue;
+            }
 
             // Powered FSB armour: on Forge this came from ModArmorFSBPowered.initCapabilities, which
             // is inside a //? if forge block and therefore absent here - charge slots refused the
@@ -126,6 +138,28 @@ public class ModCapabilities {
                         new com.hbm_m.api.energy.LongEnergyWrapper(
                                 new com.hbm_m.api.energy.EnergyCapabilityProvider.ItemEnergyStorage(
                                         stack, armor.getMaxCharge(stack), armor.chargeRate, armor.getMaxCharge(stack))), item);
+                continue;
+            }
+
+            if (item instanceof com.hbm_m.item.tool.ItemSwordAbilityPower sword) {
+                event.registerItem(HBM_ITEM_ENERGY_RECEIVER, (stack, ctx) ->
+                        new com.hbm_m.api.energy.EnergyCapabilityProvider.ItemEnergyStorage(
+                                stack, sword.maxPower, sword.chargeRate, 0), item);
+                event.registerItem(Capabilities.EnergyStorage.ITEM, (stack, ctx) ->
+                        new com.hbm_m.api.energy.LongEnergyWrapper(
+                                new com.hbm_m.api.energy.EnergyCapabilityProvider.ItemEnergyStorage(
+                                        stack, sword.maxPower, sword.chargeRate, 0)), item);
+                continue;
+            }
+
+            if (item instanceof com.hbm_m.item.tool.ItemToolAbilityPower tool) {
+                event.registerItem(HBM_ITEM_ENERGY_RECEIVER, (stack, ctx) ->
+                        new com.hbm_m.api.energy.EnergyCapabilityProvider.ItemEnergyStorage(
+                                stack, tool.maxPower, tool.chargeRate, 0), item);
+                event.registerItem(Capabilities.EnergyStorage.ITEM, (stack, ctx) ->
+                        new com.hbm_m.api.energy.LongEnergyWrapper(
+                                new com.hbm_m.api.energy.EnergyCapabilityProvider.ItemEnergyStorage(
+                                        stack, tool.maxPower, tool.chargeRate, 0)), item);
                 continue;
             }
 

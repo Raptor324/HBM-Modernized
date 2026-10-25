@@ -11,13 +11,8 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.level.block.entity.BlockEntity;
-//? if forge {
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
- *///?}
 
 /**
  * Серверный контракт демонтажа мультиблока: разрушение ЛЮБОЙ части обязано

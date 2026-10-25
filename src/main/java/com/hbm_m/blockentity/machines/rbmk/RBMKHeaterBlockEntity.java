@@ -37,7 +37,7 @@ import net.minecraft.world.level.material.Fluid;
  * went in.</p>
  */
 public class RBMKHeaterBlockEntity extends RBMKColumnBlockEntity
-        implements MenuProvider, com.hbm_m.api.fluids.IFluidStandardTransceiverMK2 {
+        implements MenuProvider, com.hbm_m.api.fluids.IFluidStandardTransceiverMK2, com.hbm_m.api.redstoneoverradio.IRORValueProvider {
 
     /** CE: {@code new FluidTankNTM(Fluids.COOLANT, 16_000)} / {@code COOLANT_HOT}. */
     public final FluidTank inputTank  = new FluidTank(ModFluids.COOLANT.getSource(), 16_000);
@@ -217,9 +217,21 @@ public class RBMKHeaterBlockEntity extends RBMKColumnBlockEntity
         d.putInt("maxWater", inputTank.getMaxFill());
         d.putInt("steam",    outputTank.getFill());
         d.putInt("maxSteam", outputTank.getMaxFill());
+        // The original's HEATEX tooltip names both fluids (Fluids.fromID(data.getShort("type"))).
+        // This port's tanks are typed objects rather than numeric fluid IDs, so the console gets
+        // the ready-made translation keys instead.
+        d.putString("type",    fluidKey(inputTank.getConfiguredFluid()));
+        d.putString("hottype", fluidKey(outputTank.getConfiguredFluid()));
         return d;
     }
 
+    /** Lang key for a fluid, matching this mod's {@code fluid.<namespace>.<path>} convention. */
+    private static String fluidKey(net.minecraft.world.level.material.Fluid fluid) {
+        if (fluid == null) return "";
+        net.minecraft.resources.ResourceLocation id =
+                net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(fluid);
+        return id == null ? "" : "fluid." + id.getNamespace() + "." + id.getPath();
+    }
     @Override public Component getDisplayName() { return Component.translatable("block.hbm_m.rbmk_heater"); }
     @Override public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) { return new RBMKHeaterMenu(id, inv, this); }
 
@@ -246,5 +258,22 @@ public class RBMKHeaterBlockEntity extends RBMKColumnBlockEntity
         //?} else {
         /*if (tag.contains("inventory")) inventory.deserializeNBT(registries, tag.getCompound("inventory"));
         *///?}
+    }
+
+    // ── Redstone-over-Radio (1:1 TileEntityRBMKHeater) ──
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+                PREFIX_VALUE + "in",
+                PREFIX_VALUE + "out"
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "in").equals(name))  return "" + this.inputTank.getFill();
+        if ((PREFIX_VALUE + "out").equals(name)) return "" + this.outputTank.getFill();
+        return null;
     }
 }

@@ -15,24 +15,27 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /** Port of {@code RadioTorchReader} (1.7.10 Original). */
-public class RadioTorchReaderBlock extends RadioTorchBaseBlock implements com.hbm_m.interfaces.ILookOverlay {
+public class RadioTorchReaderBlock extends RadioTorchBaseBlock {
 
     public RadioTorchReaderBlock(Properties properties) { super(properties); }
 
-    /** Port of {@code RadioTorchReader.printHook}: one aqua "channel: value-name" line per configured slot. */
+    /** Original {@code canBlockStay}: haelt nur an einem Funk-Wertgeber ({@code IRORValueProvider}). */
     @Override
-    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
-        BlockEntity be = level.getBlockEntity(pos);
-        if (!(be instanceof RadioTorchReaderBlockEntity radio)) return;
+    protected boolean canBlockStay(net.minecraft.world.level.LevelReader level, BlockPos pos, net.minecraft.core.Direction facing) {
+        return com.hbm_m.api.redstoneoverradio.IRORInfo.resolve(level, pos.relative(facing)) instanceof com.hbm_m.api.redstoneoverradio.IRORValueProvider;
+    }
+
+    /** Original {@code printHook}: alle belegten Kanaele mit ihrem Wertnamen. */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics g, Level level, BlockPos pos) {
+        if (!(level.getBlockEntity(pos) instanceof RadioTorchReaderBlockEntity radio)) return;
         java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
         for (int i = 0; i < 8; i++) {
             if (radio.channels[i] == null || radio.channels[i].isEmpty()) continue;
             if (radio.names[i] == null || radio.names[i].isEmpty()) continue;
-            text.add(net.minecraft.network.chat.Component.literal(radio.channels[i] + ": " + radio.names[i])
-                    .withStyle(net.minecraft.ChatFormatting.AQUA));
+            text.add(net.minecraft.network.chat.Component.literal(radio.channels[i] + ": " + radio.names[i]).withStyle(net.minecraft.ChatFormatting.AQUA));
         }
-        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
-                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(g, getName(), 0xffff00, 0x404000, text);
     }
 
     @Nullable @Override
@@ -49,6 +52,7 @@ public class RadioTorchReaderBlock extends RadioTorchBaseBlock implements com.hb
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen false
         if (level.isClientSide()) {
             dev.architectury.utils.EnvExecutor.runInEnv(dev.architectury.utils.Env.CLIENT, () -> () ->
                     com.hbm_m.client.gui.radio.RadioTorchScreenOpener.openReader(pos));
@@ -58,6 +62,7 @@ public class RadioTorchReaderBlock extends RadioTorchBaseBlock implements com.hb
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen false
         if (level.isClientSide()) {
             dev.architectury.utils.EnvExecutor.runInEnv(dev.architectury.utils.Env.CLIENT, () -> () ->
                     com.hbm_m.client.gui.radio.RadioTorchScreenOpener.openReader(pos));

@@ -72,7 +72,7 @@ var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
         // before entityData is assigned; the icon is set explicitly in create() anyway.
         if (this.entityData == null) return ModItems.TURRET_AMMO.get();
         String id = this.entityData.get(ICON_ITEM_ID);
-        if (id.isEmpty()) return ModItems.TURRET_AMMO.get();
+        if (id.isEmpty()) return Items.SNOWBALL;
         Item item = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(
                 net.minecraft.resources.ResourceLocation.tryParse(id));
         return item == null ? Items.SNOWBALL : item;

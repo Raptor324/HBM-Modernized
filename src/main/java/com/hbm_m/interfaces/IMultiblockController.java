@@ -29,6 +29,11 @@ public interface IMultiblockController {
         return -1;
     }
 
+    /** Original {@code BlockDummyable.getHeightOffset()}: senkrechter Versatz des Kerns gegenueber dem Klickpunkt. */
+    default int getHeightOffset() {
+        return 0;
+    }
+
     /**
      * Returns the specific role of a multiblock part based on its local offset from the controller.
      * This is where you define which parts are energy connectors, item inputs/outputs, etc.
@@ -61,6 +66,15 @@ public interface IMultiblockController {
      */
     default boolean shouldDestroyOnPartRemoved() {
         return true;
+    }
+
+    /**
+     * audit10: Original {@code BlockDummyable} - {@code onBlockExploded} auf einer Dummy-Zelle laeuft ueber
+     * {@code findCore} in die Kernlogik. Liefert true, leitet {@code UniversalMachinePartBlock} Explosionen
+     * an {@code onBlockExploded} des Kerns weiter (Tank, Raffinerie, Bohrturm).
+     */
+    default boolean forwardPartExplosions() {
+        return false;
     }
 
     /**

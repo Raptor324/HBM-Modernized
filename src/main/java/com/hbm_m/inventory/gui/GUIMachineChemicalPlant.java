@@ -24,14 +24,8 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 /**
  * GUI для Chemical Plant - порт с 1.7.10.
  * UV-координаты и layout соответствуют оригинальному GUIMachineChemicalPlant.
@@ -68,7 +62,9 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
             int maxProgress = menu.getMaxProgress();
             if (maxProgress > 0) {
                 int j = (int) Math.ceil(70.0 * progress / maxProgress);
-                guiGraphics.blit(TEXTURE, this.leftPos + 62, this.topPos + 126, 176, 61, j, 16);
+                // Original: v = 61 + (restrictedMode ? 16 : 0) - blaue Leiste, wenn das Rezept per Funk (RoR) gesetzt wurde
+                boolean restrictedMode = this.menu.getBlockEntity() != null && this.menu.getBlockEntity().isRestrictedMode();
+                guiGraphics.blit(TEXTURE, this.leftPos + 62, this.topPos + 126, 176, 61 + (restrictedMode ? 16 : 0), j, 16);
             }
         }
 
@@ -192,11 +188,13 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
                 .orElse(null);
     }
 
-    private List<Component> buildRecipeTooltip(ChemicalPlantRecipe recipe) {
+    /** Auch von der Chemiefabrik genutzt (Original {@code recipe.print()}). */
+    static List<Component> buildRecipeTooltip(ChemicalPlantRecipe recipe) {
         List<Component> lines = new ArrayList<>();
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
 
-        ItemStack icon = recipe.getResultItem(this.minecraft != null && this.minecraft.level != null
-                ? this.minecraft.level.registryAccess()
+        ItemStack icon = recipe.getResultItem(mc.level != null
+                ? mc.level.registryAccess()
                 : null);
         if (!icon.isEmpty()) {
             lines.add(icon.getHoverName().copy().withStyle(ChatFormatting.YELLOW));
@@ -207,7 +205,7 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
             //?} else {
             /*lines.add(Component.literal(
                     RecipeHooks.recipeId(
-                            this.minecraft.level.getRecipeManager(),
+                            mc.level.getRecipeManager(),
                             ChemicalPlantRecipe.Type.INSTANCE,
                             recipe).toString()).withStyle(ChatFormatting.YELLOW));
             *///?}

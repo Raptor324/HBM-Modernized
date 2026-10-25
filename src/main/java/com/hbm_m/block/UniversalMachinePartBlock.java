@@ -6,6 +6,8 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.decorations.DoorBlock;
 import com.hbm_m.block.entity.doors.DoorBlockEntity;
+import com.hbm_m.block.entity.doors.DoorDecl;
+import com.hbm_m.block.entity.doors.DoorDeclRegistry;
 import com.hbm_m.block.machines.TransitionSealBlock;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.LaunchPadBaseBlockEntity;
@@ -52,7 +54,21 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 public class UniversalMachinePartBlock extends BaseEntityBlock
-        implements IDetonatable, com.hbm_m.interfaces.ILookOverlay {
+        implements IDetonatable, com.hbm_m.interfaces.ILookOverlay, com.hbm_m.api.block.IToolable,
+        com.hbm_m.api.bomb.IBomb {
+
+    /** Original {@code BlockDummyable}: Werkzeuge auf eine Dummy-Zelle wirken auf den Kern. */
+    @Override
+    public boolean onScrew(Level world, net.minecraft.world.entity.player.Player player, BlockPos pos, net.minecraft.core.Direction side, float fX, float fY, float fZ, net.minecraft.world.InteractionHand hand, ToolType tool) {
+        BlockEntity be = world.getBlockEntity(pos);
+        if (!(be instanceof IMultiblockPart part)) return false;
+        BlockPos controllerPos = part.getControllerPos();
+        if (controllerPos == null) return false;
+        if (world.getBlockState(controllerPos).getBlock() instanceof com.hbm_m.api.block.IToolable toolable) {
+            return toolable.onScrew(world, player, controllerPos, side, fX, fY, fZ, hand, tool);
+        }
+        return false;
+    }
 
     /**
      * Fadenkreuz-Anzeige: Der Spieler schaut fast immer auf eine Dummy-Zelle, nicht auf das Kern-
@@ -83,6 +99,7 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
         if (controllerBlock instanceof IDetonatable detonatable) {
             return detonatable.onDetonate(level, controllerPos, controllerState, player);
         }
+        // audit10: Original BlockDummyable - Zuender auf eine Dummy-Zelle zielen auf den Kern (IBomb.explode)
         if (controllerBlock instanceof com.hbm_m.api.bomb.IBomb bomb) {
             return bomb.explode(level, controllerPos).wasSuccessful();
         }
@@ -163,34 +180,53 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
         if (controllerPos == null) return Shapes.block();
 
         BlockState controllerState = pLevel.getBlockState(controllerPos);
-        Block controllerBlock = controllerState.getBlock();
-
-        if (!(controllerBlock instanceof IMultiblockController controller)) {
+        VoxelShape masterShape = resolveMasterShape(pLevel, controllerPos, controllerState, pContext);
+        if (masterShape == null) {
             return Shapes.block();
         }
 
-        VoxelShape masterShape;
+        // w16b: nur der Anteil dieser Zelle (siehe MultiblockStructureHelper.cellShape) - sonst verwirft der
+        // Server Klicks, deren Treffpunkt in einer anderen Zelle liegt. Den Umriss der ganzen Maschine
+        // zeichnet MultiblockOutlineForge.
+        return MultiblockStructureHelper.cellShape(masterShape, pPos.subtract(controllerPos));
+    }
 
+    /**
+     * w16b: Form der ganzen Maschine relativ zum Kern, wie sie die Dummy-Zellen verwenden
+     * ({@code getCustomMasterVoxelShape} -> Tuer -> Teilekarte). {@code null}, wenn am Kern kein Controller steht.
+     */
+    @Nullable
+    public static VoxelShape resolveMasterShape(BlockGetter level, BlockPos controllerPos, BlockState controllerState, CollisionContext ctx) {
+        Block controllerBlock = controllerState.getBlock();
+        if (!(controllerBlock instanceof IMultiblockController controller)) {
+            return null;
+        }
         VoxelShape customShape = controller.getCustomMasterVoxelShape(controllerState);
         if (customShape != null && !customShape.isEmpty()) {
-            masterShape = customShape;
-        } else if (controllerBlock instanceof DoorBlock doorBlock) {
-            // Единая рамка выделения: все части двери возвращают ОДНУ рамку всей двери
-            // (динамическую, перестраиваемую по тикам — DoorBlock.getShape →
-            // getUnifiedSelectionShape). Коллизия при этом поклеточная — см. getCollisionShape.
-            masterShape = doorBlock.getShape(controllerState, pLevel, controllerPos, pContext);
-        } else {
-            MultiblockStructureHelper helper = controller.getStructureHelper();
-            if (helper == null) return Shapes.block();
-            masterShape = helper.generateShapeFromParts(resolveFacing(controllerState));
+            return customShape;
         }
-
-        BlockPos vecToController = controllerPos.subtract(pPos);
-        return masterShape.move(vecToController.getX(), vecToController.getY(), vecToController.getZ());
+        if (controllerBlock instanceof DoorBlock doorBlock) {
+            DoorDecl decl = DoorDeclRegistry.getById(doorBlock.getDoorDeclId());
+            if (decl != null && decl.isDynamicShape()) {
+                return doorBlock.getShape(controllerState, level, controllerPos, ctx);
+            }
+            Direction doorFacing = controllerState.hasProperty(DoorBlock.FACING) ? controllerState.getValue(DoorBlock.FACING) : Direction.NORTH;
+            MultiblockStructureHelper helper = controller.getStructureHelper();
+            return helper != null ? helper.generateShapeFromParts(doorFacing) : Shapes.block();
+        }
+        MultiblockStructureHelper helper = controller.getStructureHelper();
+        if (helper == null) {
+            return null;
+        }
+        return helper.generateShapeFromParts(resolveFacing(controllerState));
     }
 
     @Override
     public VoxelShape getCollisionShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
+        // E7 (Fork, nur mit Space-Addon): Spieler im gerade gesetzten Multiblock gehen hindurch, bis sie ihn verlassen
+        if (com.hbm_m.multiblock.ForkMultiblockPlacement.ignoresCollision(pLevel, pContext)) {
+            return Shapes.empty();
+        }
         if (pLevel instanceof Level lvl && com.hbm_m.compat.ContraptionDoorState.isContraptionWorld(lvl)) {
             return Shapes.empty(); // На контрапшене всю коллизию берет на себя контроллер
         }
@@ -301,18 +337,24 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
         }
     }
 
-    //? if < 1.21.1 {
+    @Override
     public boolean isLadder(BlockState pState, LevelReader pLevel, BlockPos pPos, LivingEntity pEntity) {
-        if (pLevel instanceof Level level && level.getBlockEntity(pPos) instanceof IMultiblockPart part) {
-            PartRole role = part.getPartRole();
-            
-            if (role == PartRole.LADDER) {
+        if (pLevel.getBlockEntity(pPos) instanceof IMultiblockPart part) {
+            if (part.getPartRole() == PartRole.LADDER) {
+                java.util.Set<Direction> climbSides = part.getAllowedClimbSides();
+                if (climbSides == null || climbSides.isEmpty()) return true;
+                for (Direction d : climbSides) {
+                    if (pEntity.getBoundingBox().intersects(new net.minecraft.world.phys.AABB(pPos).inflate(0.1D))) {
+                        return true;
+                    }
+                }
                 return true;
             }
         }
         return false;
     }
 
+    //? if < 1.21.1 {
     @Override
     public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
         if (level instanceof Level lvl && com.hbm_m.compat.ContraptionDoorState.isContraptionWorld(lvl)) {
@@ -326,16 +368,18 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
                 if (ctrlBlock instanceof DoorBlock || ctrlBlock instanceof TransitionSealBlock) {
                     return Shapes.empty();
                 }
+                // w16b (Wunsch N-Z): Teilform aus bounding-Liste -> Zelle verdeckt keine Nachbarflaechen
+                if (ctrlBlock instanceof IMultiblockController mc) {
+                    VoxelShape master = mc.getCustomMasterVoxelShape(level.getBlockState(ctrlPos));
+                    if (master != null && !master.isEmpty()) return Shapes.empty();
+                }
             }
         }
         
         return isFullBlockInGrid(level, pos) ? Shapes.block() : Shapes.empty();
     }
     //?} else {
-    /*// Same logic as the 1.20.1 branch above: returning Shapes.empty() unconditionally made
-    // isFullBlockInGrid dead code here and stopped solid multiblock parts from occluding the faces
-    // of their neighbours. The divergence was undocumented, unlike every other split in this file.
-    @Override
+    /*@Override
     protected VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
         if (level instanceof Level lvl && com.hbm_m.compat.ContraptionDoorState.isContraptionWorld(lvl)) {
             return Shapes.empty();
@@ -347,6 +391,10 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
                 Block ctrlBlock = level.getBlockState(ctrlPos).getBlock();
                 if (ctrlBlock instanceof DoorBlock || ctrlBlock instanceof TransitionSealBlock) {
                     return Shapes.empty();
+                }
+                if (ctrlBlock instanceof IMultiblockController mc) {
+                    VoxelShape master = mc.getCustomMasterVoxelShape(level.getBlockState(ctrlPos));
+                    if (master != null && !master.isEmpty()) return Shapes.empty();
                 }
             }
         }
@@ -418,10 +466,7 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
                 BlockEntity ctrlBe = pLevel.getBlockEntity(controllerPos);
                 // Отвёртка зарезервирована под GUI скинов, но на запертой двери клик уходит
                 // в tryToggle → canAccess → tryPick (взлом), как в 1.7.10.
-                // У blast door GUI скинов нет (NEXT parity) — отвёртка тогглит дверь:
-                // не перехватываем клик, отдаём его в use ядра.
-                if (ctrlBe instanceof DoorBlockEntity door && !(door instanceof com.hbm_m.block.entity.doors.BlastDoorBlockEntity)
-                        && !door.isLocked() && hasScrewdriver(pPlayer)) {
+                if (ctrlBe instanceof DoorBlockEntity door && !door.isLocked() && hasScrewdriver(pPlayer)) {
                     return InteractionResult.sidedSuccess(pLevel.isClientSide());
                 }
                 //? if < 1.21.1 {
@@ -497,7 +542,7 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
                     if (pLevel.isClientSide()) {
                         com.hbm_m.multiblock.TeardownTrace.trace("part onRemove: CLIENT channel B fire, part={} -> controller={}",
                                 pPos.toShortString(), controllerPos.toShortString());
-                        com.hbm_m.platform.RenderHooks.onMultiblockPartRemoved(pLevel, pPos, controllerPos);
+                        com.hbm_m.platform.CommonRenderHooks.onMultiblockPartRemoved(pLevel, pPos, controllerPos);
                     } else {
                         BlockState controllerState = pLevel.getBlockState(controllerPos);
                         if (controllerState.getBlock() instanceof IMultiblockController controller) {
@@ -541,6 +586,18 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
      * separate block, so a blast that happened to hit one instead of the core bypassed all of
      * that and the cascade dropped the machine as a normal item.
      */
+    /** Бомба на части = бомба на контроллере (паритет старых Dummy-блоков, напр. blast door). */
+    @Override
+    public com.hbm_m.api.bomb.IBomb.BombReturnCode explode(Level level, BlockPos pos) {
+        if (level.getBlockEntity(pos) instanceof IMultiblockPart part) {
+            BlockPos controllerPos = part.getControllerPos();
+            if (controllerPos != null && level.getBlockState(controllerPos).getBlock() instanceof com.hbm_m.api.bomb.IBomb bomb) {
+                return bomb.explode(level, controllerPos);
+            }
+        }
+        return com.hbm_m.api.bomb.IBomb.BombReturnCode.ERROR_INCOMPATIBLE;
+    }
+
     @Override
     public void onBlockExploded(BlockState state, Level level, BlockPos pos,
                                 net.minecraft.world.level.Explosion explosion) {

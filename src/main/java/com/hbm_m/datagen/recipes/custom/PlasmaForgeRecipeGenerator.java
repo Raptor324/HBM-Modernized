@@ -10,6 +10,7 @@ import com.hbm_m.item.material.ModMaterialItems;
 import com.hbm_m.item.material.ModMaterials;
 
 import net.minecraft.data.recipes.FinishedRecipe;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.material.Fluid;
@@ -24,8 +25,7 @@ import net.minecraft.world.level.material.Fluid;
  *
  * <p>Dazu kommen die ICF-Rezepte, siehe {@link #icf(Consumer)}.</p>
  *
- * <p><b>Noch nicht portierbar:</b> {@code plsm.hde} (kein HDE-Bauteil) sowie Schrabidiumhammer und
- * Fensu-San (Yharonit, UFO-Muenze, Elektronium, Batteriepakete fehlen).</p>
+ * <p>CONTROLLER_QUANTUM = {@code quantum_computer}, CONTROLLER_ADVANCED = {@code controller_advanced}.
  */
 public final class PlasmaForgeRecipeGenerator {
 
@@ -40,6 +40,209 @@ public final class PlasmaForgeRecipeGenerator {
         fusionVessel(writer);
         icf(writer);
         darkFusionCore(writer);
+        specials(writer);
+        expensiveParts(writer);
+        OreDictIngredients.checkMissing("PlasmaForgeRecipeGenerator");
+    }
+
+    // ════════ Konfig-Fassungen: Original inputItemsEx (Expensive) und setPools528 ════════
+
+    /** Original {@code PlasmaForgeRecipes.POOL_PREFIX_528 + "chlorophyte"}. */
+    private static final String POOL_528 = "528.chlorophyte";
+
+    private static Ingredient it(String... ids) {
+        Item[] items = new Item[ids.length];
+        for (int i = 0; i < ids.length; i++) items[i] = OreDictIngredients.item(ids[i]);
+        return Ingredient.of(items);
+    }
+
+    /**
+     * Ein Rezept mit seinen Konfig-Fassungen ({@link ConfigRecipes}): {@code make.apply(true)} baut die
+     * {@code inputItemsEx}-Fassung, {@code pool528} haengt im 528-Modus den Pool {@value #POOL_528} an.
+     */
+    private static void cfg(Consumer<FinishedRecipe> writer, String id,
+                            java.util.function.Function<Boolean, PlasmaForgeRecipeBuilder> make, boolean ex, boolean pool528) {
+        ConfigRecipes.Variants v = ConfigRecipes.variants(writer).base(w -> make.apply(false).save(w, id));
+        if (ex && pool528) v.variant(w -> make.apply(true).blueprintPool(POOL_528).save(w, id), "528", "expensive");
+        if (pool528) v.variant(w -> make.apply(false).blueprintPool(POOL_528).save(w, id), "528");
+        if (ex) v.variant(w -> make.apply(true).save(w, id), "expensive");
+        v.save();
+    }
+
+    // ════════ plsm.hde / plsm.schrabhammer / ass.fensusan / plsm.gerald ════════
+
+    private static Item mi(ModMaterials m, MaterialShape s) { return ModMaterialItems.item(m, s); }
+
+    /** Original {@code ANY_BISMOIDBRONZE.plateCast()}: Bismut- oder Arsenbronze-Gussplatte. */
+    private static Ingredient bismoidCast() {
+        return Ingredient.of(mi(ModMaterials.BBRONZE, MaterialShape.PLATE_CAST), mi(ModMaterials.ABRONZE, MaterialShape.PLATE_CAST));
+    }
+
+    /** Original {@code ANY_RESISTANTALLOY.plateWelded()}: Technetium- oder Kadmiumstahl-Schweissplatte. */
+    private static Ingredient resistWelded() {
+        return Ingredient.of(mi(ModMaterials.TCALLOY, MaterialShape.PLATE_WELDED), mi(ModMaterials.CDALLOY, MaterialShape.PLATE_WELDED));
+    }
+
+    /** Original {@code ANY_HARDPLASTIC.ingot()}: PC- oder PVC-Barren. */
+    private static Ingredient hardPlastic() {
+        return Ingredient.of(mi(ModMaterials.POLYMER_COMPOSITE, MaterialShape.INGOT), mi(ModMaterials.PVC, MaterialShape.INGOT));
+    }
+
+    private static void specials(Consumer<FinishedRecipe> writer) {
+
+        // plsm.hde: Schwerlastelement
+        PlasmaForgeRecipeBuilder.plasmaForgeRecipe(new ItemStack(com.hbm_m.item.PartTabMetaItems.get("part_generic_hde").get()), 600, 25_000_000L)
+                .inputEnergy(10_000_000L)
+                .addIngredient(bismoidCast(), 2)
+                .addIngredient(mi(ModMaterials.CMB, MaterialShape.PLATE_WELDED), 1)
+                .addIngredient(mi(ModMaterials.CFT, MaterialShape.INGOT), 1)
+                .addFluidInput(ModFluids.STELLAR_FLUX.getSource(), 4_000)
+                .save(writer, "plasma_forge/hde");
+
+        // plsm.schrabhammer: 35 Schrabidiumbloecke, 2x64 Yharonit, UFO-Muenze, 8x64 Meteoritenfragmente
+        PlasmaForgeRecipeBuilder hammer = PlasmaForgeRecipeBuilder.plasmaForgeRecipe(new ItemStack(ModItems.SCHRABIDIUM_HAMMER.get()), 6_000, 10_000_000L)
+                .inputEnergy(25_000_000L)
+                .addIngredient(ModBlocks.getIngotBlock(ModMaterials.SCHRABIDIUM).get().asItem(), 35)
+                .addIngredient(mi(ModMaterials.YHARONITE, MaterialShape.BILLET), 64)
+                .addIngredient(mi(ModMaterials.YHARONITE, MaterialShape.BILLET), 64)
+                .addIngredient(ModItems.COIN_UFO.get(), 1);
+        for (int i = 0; i < 8; i++) hammer.addIngredient(ModItems.FRAGMENT_METEORITE.get(), 64);
+        hammer.save(writer, "plasma_forge/schrabidium_hammer");
+
+        // ass.fensusan: FEnSU (inputItemsEx im Expensive-Modus)
+        cfg(writer, "plasma_forge/machine_battery_redd", ex -> {
+            PlasmaForgeRecipeBuilder b = PlasmaForgeRecipeBuilder.plasmaForgeRecipe(new ItemStack(ModItems.MACHINE_BATTERY_REDD.get()), 6_000, 50_000_000L)
+                    .inputEnergy(50_000_000L);
+            if (ex) {
+                b.addIngredient(mi(ModMaterials.ELECTRONIUM, MaterialShape.INGOT), 64)
+                        .addIngredient(ModItems.BATTERY_PACK_BATTERY_QUANTUM.get(), 1)
+                        .addIngredient(it("hbm_m:item_expensive_bronze_tubes"), 64)
+                        .addIngredient(it("hbm_m:item_expensive_ferro_plating"), 64)
+                        .addIngredient(mi(ModMaterials.OSMIRIDIUM, MaterialShape.PLATE_WELDED), 64)
+                        .addIngredient(mi(ModMaterials.OSMIRIDIUM, MaterialShape.PLATE_WELDED), 64)
+                        .addIngredient(mi(ModMaterials.OSMIRIDIUM, MaterialShape.PLATE_WELDED), 64)
+                        .addIngredient(bismoidCast(), 64)
+                        .addIngredient(mi(ModMaterials.CMB, MaterialShape.PLATE_CAST), 64)
+                        .addIngredient(mi(ModMaterials.U238M2, MaterialShape.INGOT), 1)
+                        .addIngredient(mi(ModMaterials.CFT, MaterialShape.INGOT), 64)
+                        .addIngredient(mi(ModMaterials.CFT, MaterialShape.INGOT), 64);
+                return b;
+            }
+            return b.addIngredient(mi(ModMaterials.ELECTRONIUM, MaterialShape.INGOT), 64)
+                    .addIngredient(ModItems.BATTERY_PACK_BATTERY_QUANTUM.get(), 1)
+                    .addIngredient(mi(ModMaterials.OSMIRIDIUM, MaterialShape.PLATE_WELDED), 64)
+                    .addIngredient(mi(ModMaterials.OSMIRIDIUM, MaterialShape.PLATE_WELDED), 64)
+                    .addIngredient(bismoidCast(), 64)
+                    .addIngredient(mi(ModMaterials.CMB, MaterialShape.PLATE_CAST), 32)
+                    .addIngredient(mi(ModMaterials.MAGNETIZED_TUNGSTEN, MaterialShape.WIRE_DENSE), 32)
+                    .addIngredient(mi(ModMaterials.DINEUTRONIUM, MaterialShape.PLATE), 64)
+                    .addIngredient(ModItems.POWDER_MAGIC.get(), 64)
+                    .addIngredient(mi(ModMaterials.U238M2, MaterialShape.INGOT), 1)
+                    .addIngredient(mi(ModMaterials.CFT, MaterialShape.INGOT), 64)
+                    .addIngredient(mi(ModMaterials.CFT, MaterialShape.INGOT), 64);
+        }, true, false);
+
+        // plsm.gerald (aktuelles Original): Kristall-Schaltkreise aus der 0G-Fabrik und ausgewertete Orbitdaten;
+        // Expensive-Modus mit CMB-Strukturelementen. CONTROLLER_QUANTUM = quantum_computer
+        cfg(writer, "plasma_forge/sat_gerald", ex -> {
+            PlasmaForgeRecipeBuilder gerald = PlasmaForgeRecipeBuilder.plasmaForgeRecipe(new ItemStack(ModItems.SAT_GERALD.get()), 12_000, 50_000_000L)
+                    .inputEnergy(25_000_000L);
+            Item hde = com.hbm_m.item.PartTabMetaItems.get("part_generic_hde").get();
+            if (ex) {
+                gerald.addIngredient(mi(ModMaterials.SCHRABIDATE, MaterialShape.PLATE_CAST), 64)
+                        .addIngredient(mi(ModMaterials.BSCCO, MaterialShape.WIRE_DENSE), 64)
+                        .addIngredient(ModBlocks.DET_NUKE.get().asItem(), 64);
+                for (int i = 0; i < 2; i++) gerald.addIngredient(it("hbm_m:item_expensive_cmb_tubes"), 64);
+                for (int i = 0; i < 3; i++) gerald.addIngredient(hde, 64);
+                gerald.addIngredient(it("hbm_m:quantum_computer"), 64)
+                        .addIngredient(ModItems.CIRCUIT_CRYSTAL.get(), 64)
+                        .addIngredient(it("hbm_m:item_expensive_computer"), 64)
+                        .addIngredient(it("hbm_m:drive_disk_orbitdata_processed"), 64);
+            } else {
+                gerald.addIngredient(mi(ModMaterials.SCHRABIDATE, MaterialShape.PLATE_CAST), 64)
+                        .addIngredient(mi(ModMaterials.SCHRABIDATE, MaterialShape.PLATE_CAST), 64)
+                        .addIngredient(mi(ModMaterials.BSCCO, MaterialShape.WIRE_DENSE), 64)
+                        .addIngredient(mi(ModMaterials.BSCCO, MaterialShape.WIRE_DENSE), 64)
+                        .addIngredient(ModBlocks.DET_NUKE.get().asItem(), 64);
+                for (int i = 0; i < 4; i++) gerald.addIngredient(hde, 64);
+                gerald.addIngredient(it("hbm_m:quantum_computer"), 64)
+                        .addIngredient(ModItems.CIRCUIT_CRYSTAL.get(), 12)
+                        .addIngredient(it("hbm_m:drive_disk_orbitdata_processed"), 16);
+            }
+            return gerald;
+        }, true, false);
+    }
+
+    // ════════ Expensive-Baugruppen (Original "Expensive mode"-Block, gilt immer) ════════
+
+    private static void expensiveParts(Consumer<FinishedRecipe> writer) {
+        Ingredient plastic = OreDictIngredients.ore("oredict/ingot/any_plastic");
+        Ingredient rubber = OreDictIngredients.ore("oredict/ingot/rubber");
+
+        ex(writer, "steel_plating", 40, 100_000L, 1_000_000L, null, 0)
+                .addIngredient(mi(ModMaterials.STEEL, MaterialShape.PLATE_CAST), 4)
+                .addIngredient(mi(ModMaterials.TITANIUM, MaterialShape.PLATE), 4)
+                .addIngredient(OreDictIngredients.ore("oredict/bolt/steel"), 16)
+                .save(writer, "plasma_forge/exsteelplating");
+        ex(writer, "heavy_frame", 120, 100_000L, 1_000_000L, null, 0)
+                .addIngredient(it("hbm_m:item_expensive_steel_plating"), 3)
+                .addIngredient(plastic, 8)
+                .addIngredient(mi(ModMaterials.COPPER, MaterialShape.PLATE_WELDED), 4)
+                .addIngredient(OreDictIngredients.ore("oredict/ingot/desh"), 1)
+                .addIngredient(OreDictIngredients.ore("oredict/bolt/dura_steel"), 32)
+                .save(writer, "plasma_forge/exheavyframe");
+        ex(writer, "circuit", 80, 100_000L, 1_000_000L, ModFluids.SULFURIC_ACID.getSource(), 1_000)
+                .addIngredient(it("hbm_m:integrated_circuit"), 12)
+                .addIngredient(it("hbm_m:capacitor"), 8)
+                .addIngredient(rubber, 4)
+                .save(writer, "plasma_forge/excircuit");
+        ex(writer, "lead_plating", 80, 100_000L, 1_000_000L, ModFluids.LUBRICANT.getSource(), 1_000)
+                .addIngredient(it("hbm_m:item_expensive_steel_plating"), 2)
+                .addIngredient(mi(ModMaterials.LEAD, MaterialShape.PLATE_CAST), 8)
+                .addIngredient(OreDictIngredients.ore("oredict/ingot/boron"), 2)
+                .addIngredient(OreDictIngredients.ore("oredict/bolt/tungsten"), 32)
+                .save(writer, "plasma_forge/exleadplating");
+        ex(writer, "ferro_plating", 240, 100_000L, 1_000_000L, ModFluids.UNSATURATEDS.getSource(), 1_000)
+                .addIngredient(it("hbm_m:item_expensive_lead_plating"), 3)
+                .addIngredient(mi(ModMaterials.FERROURANIUM, MaterialShape.PLATE_CAST), 4)
+                .addIngredient(OreDictIngredients.ore("oredict/ingot/any_resistant_alloy"), 4)
+                .save(writer, "plasma_forge/exferroplating");
+        ex(writer, "computer", 240, 100_000L, 1_000_000L, ModFluids.PERFLUOROMETHYL.getSource(), 2_000)
+                .addIngredient(it("hbm_m:item_expensive_circuit"), 3)
+                .addIngredient(it("hbm_m:controller"), 4)
+                .addIngredient(it("hbm_m:capacitor_board"), 4)
+                .addIngredient(ModBlocks.GLASS_QUARTZ.get().asItem(), 8)
+                .save(writer, "plasma_forge/excomputer");
+        // Original gibt zusaetzlich 4.000 mB Perfluormethan aus; die Plasmaschmiede hat keinen Ausgangstank
+        ex(writer, "bronze_tubes", 600, 1_000_000L, 10_000_000L, ModFluids.PERFLUOROMETHYL_COLD.getSource(), 4_000)
+                .addIngredient(it("hbm_m:item_expensive_heavy_frame"), 3)
+                .addIngredient(it("hbm_m:item_expensive_ferro_plating"), 1)
+                .addIngredient(bismoidCast(), 4)
+                .addIngredient(mi(ModMaterials.ZIRCONIUM, MaterialShape.PLATE_WELDED), 1)
+                .save(writer, "plasma_forge/bronzetubes");
+        ex(writer, "plastic", 120, 100_000L, 1_000_000L, ModFluids.SOLVENT.getSource(), 1_000)
+                .addIngredient(hardPlastic(), 4)
+                .addIngredient(plastic, 16)
+                .addIngredient(rubber, 8)
+                .save(writer, "plasma_forge/explastic");
+        ex(writer, "gold_dust", 120, 100_000L, 1_000_000L, null, 0)
+                .addIngredient(OreDictIngredients.ore("oredict/dust/gold"), 64)
+                .addIngredient(OreDictIngredients.ore("oredict/dust/gold"), 64)
+                .save(writer, "plasma_forge/exgold");
+        ex(writer, "cmb_tubes", 6_000, 10_000_000L, 12_500_000L, ModFluids.REFORMGAS.getSource(), 4_000)
+                .addIngredient(it("hbm_m:item_expensive_bronze_tubes"), 3)
+                .addIngredient(mi(ModMaterials.CMB, MaterialShape.PLATE_CAST), 4)
+                .addIngredient(ModItems.POWDER_CHLOROPHYTE.get(), 12)
+                .save(writer, "plasma_forge/cmbtubes");
+    }
+
+    private static PlasmaForgeRecipeBuilder ex(Consumer<FinishedRecipe> writer, String type, int duration, long power, long ignition,
+                                               Fluid fluid, int amount) {
+        PlasmaForgeRecipeBuilder b = PlasmaForgeRecipeBuilder.plasmaForgeRecipe(
+                        new ItemStack(OreDictIngredients.item("hbm_m:item_expensive_" + type)), duration, power)
+                .inputEnergy(ignition);
+        if (fluid != null) b.addFluidInput(fluid, amount);
+        return b;
     }
 
     // ════════════════ Dunkler Fusionskern ════════════════
@@ -117,127 +320,106 @@ public final class PlasmaForgeRecipeGenerator {
      * 800 Ticks, 10.000.000 Energie und einer Million Einspeisung - nur der Reaktorkern braucht
      * 3.000 Ticks.
      *
-     * <p><b>Ersatzstoffe.</b> Vier Zutaten des Originals hat dieser Port nicht; sie sind hier
-     * durchgaengig ersetzt, damit die Rezepte ueberhaupt herstellbar sind:</p>
-     * <ul>
-     *   <li>Chlorophyt-Barren ({@code ingot_cft}) → Alliance-Stahlbarren</li>
-     *   <li>Bismoidbronze-Gussblech → Bismutbronze-Barren (nur der Barren ist portiert)</li>
-     *   <li>Dineutronium-Dichtdraht → Dineutronium-Platte</li>
-     *   <li>Alliance-Stahl-Gussblech bzw. -Schweissblech → Alliance-Stahlplatte</li>
-     * </ul>
+     * <p>Zutaten 1:1: {@code ANY_BISMOIDBRONZE.plateCast()} = Bismut-/Arsenbronze-Gussplatte,
+     * {@code ANY_RESISTANTALLOY.plateWelded()} = Technetium-/Kadmiumstahl-Schweissplatte,
+     * {@code ANY_HARDPLASTIC.ingot()} = PC/PVC-Barren, {@code ingot_cft} = CFT-Barren.</p>
      */
     private static void icf(Consumer<FinishedRecipe> writer) {
 
         // plsm.icfcell
-        PlasmaForgeRecipeBuilder.plasmaForgeRecipe(
-                        new ItemStack(ModBlocks.ICF_LASER_CELL.get()), 800, 10_000_000L)
-                .inputEnergy(1_000_000L)
-                .addIngredient(ModMaterialItems.item(ModMaterials.COMBINE_STEEL, MaterialShape.INGOT), 2)
-                .addIngredient(ModMaterialItems.item(ModMaterials.BISMUTH_BRONZE, MaterialShape.INGOT), 4)
-                .addIngredient(ModBlocks.GLASS_QUARTZ.get().asItem(), 16)
-                .save(writer, "plasma_forge/icf_laser_cell");
+        cfg(writer, "plasma_forge/icf_laser_cell", ex -> {
+            PlasmaForgeRecipeBuilder b = PlasmaForgeRecipeBuilder.plasmaForgeRecipe(new ItemStack(ModBlocks.ICF_LASER_CELL.get()), 800, 10_000_000L).inputEnergy(1_000_000L);
+            if (ex) b.addIngredient(it("hbm_m:item_expensive_bronze_tubes"), 2).addIngredient(mi(ModMaterials.CFT, MaterialShape.INGOT), 8).addIngredient(ModBlocks.GLASS_QUARTZ.get().asItem(), 16);
+            else b.addIngredient(mi(ModMaterials.CFT, MaterialShape.INGOT), 2).addIngredient(bismoidCast(), 4).addIngredient(ModBlocks.GLASS_QUARTZ.get().asItem(), 16);
+            return b;
+        }, true, true);
 
         // plsm.icfemitter - das einzige ICF-Rezept mit Fluessigkeit
-        PlasmaForgeRecipeBuilder.plasmaForgeRecipe(
-                        new ItemStack(ModBlocks.ICF_LASER_EMITTER.get()), 800, 10_000_000L)
-                .inputEnergy(1_000_000L)
-                .addIngredient(ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.PLATE_WELDED), 4)
-                .addIngredient(ModMaterialItems.item(ModMaterials.MAGNETIZED_TUNGSTEN, MaterialShape.WIRE_DENSE), 16)
-                .addFluidInput(ModFluids.XENON.getSource(), 16_000)
-                .save(writer, "plasma_forge/icf_laser_emitter");
+        cfg(writer, "plasma_forge/icf_laser_emitter", ex -> {
+            PlasmaForgeRecipeBuilder b = PlasmaForgeRecipeBuilder.plasmaForgeRecipe(new ItemStack(ModBlocks.ICF_LASER_EMITTER.get()), 800, 10_000_000L).inputEnergy(1_000_000L);
+            if (ex) b.addIngredient(mi(ModMaterials.TUNGSTEN, MaterialShape.PLATE_WELDED), 8).addIngredient(mi(ModMaterials.MAGNETIZED_TUNGSTEN, MaterialShape.WIRE_DENSE), 16);
+            else b.addIngredient(ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.PLATE_WELDED), 4).addIngredient(ModMaterialItems.item(ModMaterials.MAGNETIZED_TUNGSTEN, MaterialShape.WIRE_DENSE), 16);
+            b.addFluidInput(ModFluids.XENON.getSource(), 16_000);
+            return b;
+        }, true, true);
 
         // plsm.icfcapacitor
-        PlasmaForgeRecipeBuilder.plasmaForgeRecipe(
-                        new ItemStack(ModBlocks.ICF_LASER_CAPACITOR.get()), 800, 10_000_000L)
-                .inputEnergy(1_000_000L)
-                .addIngredient(ModMaterialItems.item(ModMaterials.TCALLOY, MaterialShape.PLATE_WELDED), 1)
-                .addIngredient(ModMaterialItems.item(ModMaterials.NEODYMIUM, MaterialShape.WIRE_DENSE), 16)
-                .addIngredient(ModMaterialItems.item(ModMaterials.SCHRABIDATE, MaterialShape.WIRE_DENSE), 2)
-                .save(writer, "plasma_forge/icf_laser_capacitor");
+        cfg(writer, "plasma_forge/icf_laser_capacitor", ex -> {
+            PlasmaForgeRecipeBuilder b = PlasmaForgeRecipeBuilder.plasmaForgeRecipe(new ItemStack(ModBlocks.ICF_LASER_CAPACITOR.get()), 800, 10_000_000L).inputEnergy(1_000_000L);
+            if (ex) b.addIngredient(it("hbm_m:item_expensive_ferro_plating"), 3).addIngredient(mi(ModMaterials.NEODYMIUM, MaterialShape.WIRE_DENSE), 16).addIngredient(mi(ModMaterials.SCHRABIDATE, MaterialShape.WIRE_DENSE), 2);
+            else b.addIngredient(resistWelded(), 1).addIngredient(ModMaterialItems.item(ModMaterials.NEODYMIUM, MaterialShape.WIRE_DENSE), 16).addIngredient(ModMaterialItems.item(ModMaterials.SCHRABIDATE, MaterialShape.WIRE_DENSE), 2);
+            return b;
+        }, true, true);
 
         // plsm.icfturbo
-        PlasmaForgeRecipeBuilder.plasmaForgeRecipe(
-                        new ItemStack(ModBlocks.ICF_LASER_TURBOCHARGER.get()), 800, 10_000_000L)
-                .inputEnergy(1_000_000L)
-                .addIngredient(ModMaterialItems.item(ModMaterials.TCALLOY, MaterialShape.PLATE_WELDED), 2)
-                .addIngredient(ModMaterialItems.item(ModMaterials.DINEUTRONIUM, MaterialShape.PLATE), 4)
-                .addIngredient(ModMaterialItems.item(ModMaterials.SCHRABIDATE, MaterialShape.WIRE_DENSE), 4)
-                .save(writer, "plasma_forge/icf_laser_turbocharger");
+        cfg(writer, "plasma_forge/icf_laser_turbocharger", ex -> {
+            PlasmaForgeRecipeBuilder b = PlasmaForgeRecipeBuilder.plasmaForgeRecipe(new ItemStack(ModBlocks.ICF_LASER_TURBOCHARGER.get()), 800, 10_000_000L).inputEnergy(1_000_000L);
+            if (ex) b.addIngredient(resistWelded(), 8).addIngredient(mi(ModMaterials.DNT, MaterialShape.WIRE_DENSE), 8).addIngredient(mi(ModMaterials.SCHRABIDATE, MaterialShape.WIRE_DENSE), 4);
+            else b.addIngredient(resistWelded(), 2).addIngredient(mi(ModMaterials.DNT, MaterialShape.WIRE_DENSE), 4).addIngredient(ModMaterialItems.item(ModMaterials.SCHRABIDATE, MaterialShape.WIRE_DENSE), 4);
+            return b;
+        }, true, true);
 
         // plsm.icfcasing
-        PlasmaForgeRecipeBuilder.plasmaForgeRecipe(
-                        new ItemStack(ModBlocks.ICF_LASER_CASING.get()), 800, 10_000_000L)
-                .inputEnergy(1_000_000L)
-                .addIngredient(ModMaterialItems.item(ModMaterials.BISMUTH_BRONZE, MaterialShape.INGOT), 4)
-                .addIngredient(ModMaterialItems.item(ModMaterials.SATURNITE, MaterialShape.PLATE_CAST), 4)
-                .addIngredient(ModMaterialItems.item(ModMaterials.POLYMER_COMPOSITE, MaterialShape.INGOT), 16)
-                .save(writer, "plasma_forge/icf_laser_casing");
+        cfg(writer, "plasma_forge/icf_laser_casing", ex -> {
+            PlasmaForgeRecipeBuilder b = PlasmaForgeRecipeBuilder.plasmaForgeRecipe(new ItemStack(ModBlocks.ICF_LASER_CASING.get()), 800, 10_000_000L).inputEnergy(1_000_000L);
+            if (ex) b.addIngredient(it("hbm_m:item_expensive_bronze_tubes"), 4).addIngredient(mi(ModMaterials.SATURNITE, MaterialShape.PLATE_CAST), 4).addIngredient(hardPlastic(), 16);
+            else b.addIngredient(bismoidCast(), 4).addIngredient(mi(ModMaterials.SATURNITE, MaterialShape.PLATE_CAST), 4).addIngredient(hardPlastic(), 16);
+            return b;
+        }, true, true);
 
         // plsm.icfport
-        PlasmaForgeRecipeBuilder.plasmaForgeRecipe(
-                        new ItemStack(ModBlocks.ICF_LASER_PORT.get()), 800, 10_000_000L)
-                .inputEnergy(1_000_000L)
-                .addIngredient(ModMaterialItems.item(ModMaterials.BISMUTH_BRONZE, MaterialShape.INGOT), 4)
-                .addIngredient(ModMaterialItems.item(ModMaterials.POLYMER_COMPOSITE, MaterialShape.INGOT), 16)
-                .addIngredient(ModMaterialItems.item(ModMaterials.NEODYMIUM, MaterialShape.WIRE_DENSE), 16)
-                .save(writer, "plasma_forge/icf_laser_port");
+        cfg(writer, "plasma_forge/icf_laser_port", ex -> {
+            PlasmaForgeRecipeBuilder b = PlasmaForgeRecipeBuilder.plasmaForgeRecipe(new ItemStack(ModBlocks.ICF_LASER_PORT.get()), 800, 10_000_000L).inputEnergy(1_000_000L);
+            if (ex) b.addIngredient(it("hbm_m:item_expensive_bronze_tubes"), 4).addIngredient(hardPlastic(), 16).addIngredient(mi(ModMaterials.NEODYMIUM, MaterialShape.WIRE_DENSE), 16);
+            else b.addIngredient(bismoidCast(), 4).addIngredient(hardPlastic(), 16).addIngredient(ModMaterialItems.item(ModMaterials.NEODYMIUM, MaterialShape.WIRE_DENSE), 16);
+            return b;
+        }, true, true);
 
         // plsm.icfcontroller
-        PlasmaForgeRecipeBuilder.plasmaForgeRecipe(
-                        new ItemStack(ModBlocks.ICF_CONTROLLER.get()), 800, 10_000_000L)
-                .inputEnergy(1_000_000L)
-                .addIngredient(ModMaterialItems.item(ModMaterials.COMBINE_STEEL, MaterialShape.INGOT), 16)
-                .addIngredient(ModMaterialItems.item(ModMaterials.BISMUTH_BRONZE, MaterialShape.INGOT), 4)
-                .addIngredient(ModMaterialItems.item(ModMaterials.POLYMER_COMPOSITE, MaterialShape.INGOT), 16)
-                .addIngredient(ModItems.BISMOID_CIRCUIT.get(), 16)
-                .save(writer, "plasma_forge/icf_controller");
+        cfg(writer, "plasma_forge/icf_controller", ex -> {
+            PlasmaForgeRecipeBuilder b = PlasmaForgeRecipeBuilder.plasmaForgeRecipe(new ItemStack(ModBlocks.ICF_CONTROLLER.get()), 800, 10_000_000L).inputEnergy(1_000_000L);
+            if (ex) b.addIngredient(it("hbm_m:item_expensive_bronze_tubes"), 4).addIngredient(mi(ModMaterials.CFT, MaterialShape.INGOT), 16).addIngredient(hardPlastic(), 16).addIngredient(ModItems.BISMOID_CIRCUIT.get(), 32).addIngredient(it("hbm_m:item_expensive_computer"), 4);
+            else b.addIngredient(mi(ModMaterials.CFT, MaterialShape.INGOT), 16).addIngredient(bismoidCast(), 4).addIngredient(hardPlastic(), 16).addIngredient(ModItems.BISMOID_CIRCUIT.get(), 16);
+            return b;
+        }, true, true);
 
         // plsm.icfscaffold - im Port heisst der Block ICF_COMPONENT_STRUCTURE
-        PlasmaForgeRecipeBuilder.plasmaForgeRecipe(
-                        new ItemStack(ModBlocks.ICF_COMPONENT.get()), 800, 10_000_000L)
-                .inputEnergy(1_000_000L)
-                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_WELDED), 4)
-                .addIngredient(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE_WELDED), 2)
-                .save(writer, "plasma_forge/icf_component");
+        cfg(writer, "plasma_forge/icf_component", ex -> {
+            PlasmaForgeRecipeBuilder b = PlasmaForgeRecipeBuilder.plasmaForgeRecipe(new ItemStack(ModBlocks.ICF_COMPONENT.get()), 800, 10_000_000L).inputEnergy(1_000_000L);
+            if (ex) b.addIngredient(it("hbm_m:item_expensive_steel_plating"), 8);
+            else b.addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_WELDED), 4).addIngredient(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE_WELDED), 2);
+            return b;
+        }, true, true);
 
         // plsm.icfvessel
-        PlasmaForgeRecipeBuilder.plasmaForgeRecipe(
-                        new ItemStack(ModBlocks.ICF_COMPONENT_VESSEL.get()), 800, 10_000_000L)
-                .inputEnergy(1_000_000L)
-                .addIngredient(ModMaterialItems.item(ModMaterials.COMBINE_STEEL, MaterialShape.INGOT), 1)
-                .addIngredient(ModMaterialItems.item(ModMaterials.COMBINE_STEEL, MaterialShape.PLATE), 1)
-                .addIngredient(ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.PLATE_WELDED), 2)
-                .save(writer, "plasma_forge/icf_component_vessel");
+        cfg(writer, "plasma_forge/icf_component_vessel", ex -> {
+            PlasmaForgeRecipeBuilder b = PlasmaForgeRecipeBuilder.plasmaForgeRecipe(new ItemStack(ModBlocks.ICF_COMPONENT_VESSEL.get()), 800, 10_000_000L).inputEnergy(1_000_000L);
+            b.addIngredient(mi(ModMaterials.CFT, MaterialShape.INGOT), 1).addIngredient(mi(ModMaterials.CMB, MaterialShape.PLATE_CAST), 1).addIngredient(ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.PLATE_WELDED), 2);
+            return b;
+        }, false, true);
 
         // plsm.icfstructural
-        PlasmaForgeRecipeBuilder.plasmaForgeRecipe(
-                        new ItemStack(ModBlocks.ICF_COMPONENT_STRUCTURE.get()), 800, 10_000_000L)
-                .inputEnergy(1_000_000L)
-                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_WELDED), 2)
-                .addIngredient(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE_WELDED), 2)
-                .addIngredient(ModMaterialItems.item(ModMaterials.BISMUTH_BRONZE, MaterialShape.INGOT), 1)
-                .save(writer, "plasma_forge/icf_component_structure");
+        cfg(writer, "plasma_forge/icf_component_structure", ex -> {
+            PlasmaForgeRecipeBuilder b = PlasmaForgeRecipeBuilder.plasmaForgeRecipe(new ItemStack(ModBlocks.ICF_COMPONENT_STRUCTURE.get()), 800, 10_000_000L).inputEnergy(1_000_000L);
+            if (ex) b.addIngredient(it("hbm_m:item_expensive_bronze_tubes"), 1).addIngredient(mi(ModMaterials.STEEL, MaterialShape.PLATE_WELDED), 8);
+            else b.addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_WELDED), 2).addIngredient(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE_WELDED), 2).addIngredient(bismoidCast(), 1);
+            return b;
+        }, true, true);
 
         // plsm.icfcore - das teuerste Stueck, 3.000 Ticks
-        PlasmaForgeRecipeBuilder.plasmaForgeRecipe(
-                        new ItemStack(ModBlocks.STRUCT_ICF_CORE.get()), 3_000, 10_000_000L)
-                .inputEnergy(1_000_000L)
-                .addIngredient(ModMaterialItems.item(ModMaterials.COMBINE_STEEL, MaterialShape.PLATE), 16)
-                .addIngredient(ModMaterialItems.item(ModMaterials.TCALLOY, MaterialShape.PLATE_WELDED), 16)
-                .addIngredient(ModMaterialItems.item(ModMaterials.BISMUTH_BRONZE, MaterialShape.INGOT), 16)
-                .addIngredient(ModMaterialItems.item(ModMaterials.SCHRABIDATE, MaterialShape.WIRE_DENSE), 32)
-                .addIngredient(ModItems.BISMOID_CIRCUIT.get(), 32)
-                .addIngredient(ModItems.QUANTUM_CIRCUIT.get(), 16)
-                .save(writer, "plasma_forge/struct_icf_core");
+        cfg(writer, "plasma_forge/struct_icf_core", ex -> {
+            PlasmaForgeRecipeBuilder b = PlasmaForgeRecipeBuilder.plasmaForgeRecipe(new ItemStack(ModBlocks.STRUCT_ICF_CORE.get()), 3_000, 10_000_000L).inputEnergy(1_000_000L);
+            if (ex) b.addIngredient(it("hbm_m:item_expensive_bronze_tubes"), 16).addIngredient(mi(ModMaterials.CMB, MaterialShape.PLATE_WELDED), 16).addIngredient(mi(ModMaterials.SCHRABIDATE, MaterialShape.WIRE_DENSE), 32).addIngredient(ModItems.QUANTUM_CIRCUIT.get(), 32).addIngredient(it("hbm_m:item_expensive_computer"), 16);
+            else b.addIngredient(mi(ModMaterials.CMB, MaterialShape.PLATE_WELDED), 16).addIngredient(resistWelded(), 16).addIngredient(bismoidCast(), 16).addIngredient(ModMaterialItems.item(ModMaterials.SCHRABIDATE, MaterialShape.WIRE_DENSE), 32).addIngredient(ModItems.BISMOID_CIRCUIT.get(), 32).addIngredient(ModItems.QUANTUM_CIRCUIT.get(), 16);
+            return b;
+        }, true, true);
 
         // plsm.icfpress
-        PlasmaForgeRecipeBuilder.plasmaForgeRecipe(
-                        new ItemStack(ModBlocks.MACHINE_ICF_PRESS.get()), 800, 10_000_000L)
-                .inputEnergy(1_000_000L)
-                .addIngredient(ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.PLATE_CAST), 8)
-                .addIngredient(ModItems.MOTOR.get(), 4)
-                .addIngredient(ModItems.BISMOID_CIRCUIT.get(), 1)
-                .save(writer, "plasma_forge/machine_icf_press");
+        cfg(writer, "plasma_forge/machine_icf_press", ex -> {
+            PlasmaForgeRecipeBuilder b = PlasmaForgeRecipeBuilder.plasmaForgeRecipe(new ItemStack(ModBlocks.MACHINE_ICF_PRESS.get()), 800, 10_000_000L).inputEnergy(1_000_000L);
+            b.addIngredient(ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.PLATE_CAST), 8).addIngredient(ModItems.MOTOR.get(), 4).addIngredient(ModItems.BISMOID_CIRCUIT.get(), 1);
+            return b;
+        }, false, true);
     }
 
 
@@ -303,22 +485,25 @@ public final class PlasmaForgeRecipeGenerator {
 
         // plsm.fusionvessel: 6x64 Rohbauteile, 3x64 Rohre, 2x64 Blankets und 4 Quantenschaltkreise.
         // Das Original nutzt 12 Slots a 64 Stueck; hier steht je Slot ein Eintrag mit count 64.
-        PlasmaForgeRecipeBuilder builder = PlasmaForgeRecipeBuilder
-                .plasmaForgeRecipe(new ItemStack(ModBlocks.TORUS.get()), 1_200, 2_000_000L)
-                .inputEnergy(3_000_000L);
+        // Original setPools528("528.chlorophyte")
+        cfg(writer, "plasma_forge/fusion_vessel", ex -> {
+            PlasmaForgeRecipeBuilder builder = PlasmaForgeRecipeBuilder
+                    .plasmaForgeRecipe(new ItemStack(ModBlocks.TORUS.get()), 1_200, 2_000_000L)
+                    .inputEnergy(3_000_000L);
 
-        for (int i = 0; i < 6; i++) {
-            builder.addIngredient(Ingredient.of(ModBlocks.FUSION_COMPONENT.get()), 64);
-        }
-        for (int i = 0; i < 3; i++) {
-            builder.addIngredient(Ingredient.of(ModBlocks.FUSION_COMPONENT_MOTOR.get()), 64);
-        }
-        for (int i = 0; i < 2; i++) {
-            builder.addIngredient(Ingredient.of(ModBlocks.FUSION_COMPONENT_BLANKET.get()), 64);
-        }
-        builder.addIngredient(ModItems.QUANTUM_CIRCUIT.get(), 4);
+            for (int i = 0; i < 6; i++) {
+                builder.addIngredient(Ingredient.of(ModBlocks.FUSION_COMPONENT.get()), 64);
+            }
+            for (int i = 0; i < 3; i++) {
+                builder.addIngredient(Ingredient.of(ModBlocks.FUSION_COMPONENT_MOTOR.get()), 64);
+            }
+            for (int i = 0; i < 2; i++) {
+                builder.addIngredient(Ingredient.of(ModBlocks.FUSION_COMPONENT_BLANKET.get()), 64);
+            }
+            builder.addIngredient(ModItems.QUANTUM_CIRCUIT.get(), 4);
 
-        builder.save(writer, "plasma_forge/fusion_vessel");
+            return builder;
+        }, false, true);
     }
 }
 //?}

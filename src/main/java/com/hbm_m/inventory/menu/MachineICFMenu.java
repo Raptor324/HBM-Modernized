@@ -12,6 +12,7 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * 1:1-Port von {@code ContainerICF} (1.7.10). Oben die fuenf Vorratsplaetze bei (80, 18), darunter

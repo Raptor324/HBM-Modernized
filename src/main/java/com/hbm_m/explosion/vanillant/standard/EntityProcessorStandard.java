@@ -18,6 +18,7 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.HashMap;
 import java.util.List;
+import com.hbm_m.platform.MobHooks;
 
 @Deprecated
 public class EntityProcessorStandard implements IEntityProcessor {
@@ -45,7 +46,7 @@ public class EntityProcessorStandard implements IEntityProcessor {
         double maxZ = z + (double) size + 1.0D;
 
         List<Entity> entities = level.getEntities(allowSelfDamage ? null : explosion.exploder, new AABB(minX, minY, minZ, maxX, maxY, maxZ));
-        com.hbm_m.platform.PlatformHooks.fireExplosionDetonate(level, explosion.compat, entities, size);
+        com.hbm_m.platform.LevelHooks.fireExplosionDetonate(level, explosion.compat, entities, size);
         Vec3 vec3 = new Vec3(x, y, z);
 
         for (Entity entity : entities) {
@@ -75,7 +76,7 @@ public class EntityProcessorStandard implements IEntityProcessor {
                     // time, and quadratically, since the formula squares it.
                     double knockback = (1.0D - distanceScaled) * density;
                     double enchKnockback = entity instanceof LivingEntity livingEntity
-                            ? PlatformHooks.getExplosionKnockbackAfterDampener(livingEntity, knockback)
+                            ? MobHooks.getExplosionKnockbackAfterDampener(livingEntity, knockback)
                             : knockback;
 
                     entity.hurt(setExplosionSource(level, explosion.compat), calculateDamage(distanceScaled, density, knockback, size));

@@ -56,6 +56,37 @@ public class PileCoreBlockEntity extends LoadedMachineBlockEntity {
     /** Wird waehrend der Explosion gesetzt, damit die zerberstenden Bloecke nicht nachziehen. */
     public static boolean meltingDown = false;
 
+    // ── FFA: SEDNA-BulletConfig fuer die Original-Graphitbrocken ─────────────────────
+    // (FFA loeste die Explosion ueber EntityBulletBaseMK4 auf; der Port der Maschinen-Seite
+    // nutzt PileDebrisEntity, die Config bleibt fuer GunFactory/GunFactoryClient bestehen.)
+
+    /** 1:1 {@code pile_debris}: brennender Graphitbrocken (SEDNA-BulletConfig, Renderer RENDER_GRAPHITE in GunFactoryClient). */
+    public static com.hbm_m.item.weapon.sedna.BulletConfig pile_debris;
+
+    public static java.util.function.BiConsumer<com.hbm_m.entity.projectile.EntityBulletBaseMK4, com.hbm_m.util.MovingObjectPosition> LAMBDA_STANDARD_EXPLODE = (bullet, mop) -> {
+        // Original: worldObj.newExplosion(bullet, x, y, z, 5F, true, false) - Feuer ja, Bloecke bleiben.
+        bullet.level().explode(bullet, bullet.getX(), bullet.getY(), bullet.getZ(), 5F, true, Level.ExplosionInteraction.NONE);
+        bullet.setDead();
+    };
+
+    public static java.util.function.Consumer<net.minecraft.world.entity.Entity> LAMBDA_FIRE = (bullet) -> {
+        if (bullet.level().isClientSide) {
+            net.minecraft.world.entity.player.Player me = null;
+            for (net.minecraft.world.entity.player.Player p : bullet.level().players()) if (p.isLocalPlayer()) { me = p; break; }
+            if (me != null && me.distanceTo(bullet) < 100)
+                com.hbm_m.particle.helper.FlameCreator.composeEffectClient(bullet.getX(), bullet.getY() - 0.125, bullet.getZ(), com.hbm_m.particle.helper.FlameCreator.META_FIRE);
+        }
+    };
+
+    private static boolean configsDone = false;
+
+    /** Original: static-Block; im Port aus GunFactory.init, damit die Config-ID auf beiden Seiten gleich ist. */
+    public static void initConfigs() {
+        if (configsDone) return;
+        configsDone = true;
+        pile_debris = new com.hbm_m.item.weapon.sedna.BulletConfig().setLife(200).setVel(1F).setGrav(0.1D).setOnUpdate(LAMBDA_FIRE).setOnImpact(LAMBDA_STANDARD_EXPLODE);
+    }
+
     private PileOrientation orientation = PileOrientation.NEITHER;
 
     private int height;
@@ -436,10 +467,19 @@ public class PileCoreBlockEntity extends LoadedMachineBlockEntity {
 
     // ── Speichern ───────────────────────────────────────────────────────────
 
+    /** Von onChunkUnloaded gesetzt: Entladen ist kein Abbau, nichts auswerfen (sonst Dupe). */
+    private boolean unloaded = false;
+
+    @Override
+    public void onChunkUnloaded() {
+        super.onChunkUnloaded();
+        this.unloaded = true;
+    }
+
     @Override
     public void setRemoved() {
         // Original: {@code invalidate} wirft alle Brennstaebe aus.
-        if (level != null && !level.isClientSide()) {
+        if (!unloaded && level != null && !level.isClientSide()) {
             for (PileChannel chan : fuelChannels) chan.ejectAll(level);
         }
         super.setRemoved();

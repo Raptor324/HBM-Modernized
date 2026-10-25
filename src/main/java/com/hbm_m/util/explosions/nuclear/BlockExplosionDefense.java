@@ -198,6 +198,12 @@ public class BlockExplosionDefense {
             return;
         }
 
+        // Bloecke des Originals mit ItemBlockBlastInfo zeigen dort schon "Blast Resistance" (1:1) -
+        // keine zweite, abweichende Zeile.
+        if (com.hbm_m.item.block.ItemBlockBlastInfo.has(blockItem.getBlock())) {
+            return;
+        }
+
         // Определяем коэффициент защиты по типу блока и добавляем локализованную строку
         float defenseValue = getDefenseValueForBlock(blockItem.getBlock());
         if (defenseValue >= 10_000.0F) {

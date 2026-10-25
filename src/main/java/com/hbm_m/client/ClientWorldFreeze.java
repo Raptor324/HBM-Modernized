@@ -5,14 +5,8 @@ import net.minecraft.client.multiplayer.ClientLevel;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 /**
  * Единый детект «время мира не идёт» для клиентских систем, тикающих вне мира:
  * NT-частицы ({@code EngineHandler}) и serverbound-треки ракет

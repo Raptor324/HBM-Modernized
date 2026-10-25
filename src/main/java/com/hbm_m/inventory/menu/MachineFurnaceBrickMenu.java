@@ -14,6 +14,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /** Slot-Koordinaten (176x166 Textur) aus {@code ContainerFurnaceBrick} (1.7.10 Original)
  *  uebernommen: Input (62,35), Brennstoff (35,17), Output (116,35), Asche (35,53). */

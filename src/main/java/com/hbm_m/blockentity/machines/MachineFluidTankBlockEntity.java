@@ -58,6 +58,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.AABB;
+import com.hbm_m.platform.MobHooks;
 //? if forge {
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
@@ -70,7 +71,8 @@ import net.minecraftforge.items.IItemHandler;
 public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity
         implements MenuProvider, IMultiblockSidedIO, IFluidStandardTransceiverMK2, IPersistentNBT,
                 com.hbm_m.api.redstoneoverradio.IRORValueProvider,
-                com.hbm_m.api.redstoneoverradio.IRORInteractive {
+                com.hbm_m.api.redstoneoverradio.IRORInteractive,
+                com.hbm_m.api.tile.IOverpressurable {
 
     public static final int SLOT_ID_IN = 0;
     public static final int SLOT_ID_OUT = 1;
@@ -314,6 +316,8 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity
     public static void tick(Level level, BlockPos pos, BlockState state, MachineFluidTankBlockEntity entity) {
         if (level.isClientSide) return;
 
+        entity.updateTilt();
+
         // 1.7.10-стиль: подписываемся на трубы у разрешённых сторон.
         // FluidDuctBlockEntity#tick сам по себе нас не подключит, потому что мы IFluidConnectorMK2
         // (это сделано умышленно — нативный MK2-путь даёт давление/приоритет/per-(fluid,pressure)).
@@ -528,6 +532,27 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity
         return ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block/tank/tank_" + fluidName);
     }
 
+    /** true fuer die Faesser (barrel_*), false fuer die grossen Tanks. */
+    public boolean isBarrel() {
+        return this instanceof BarrelIronBlockEntity || this instanceof BarrelSteelBlockEntity || this instanceof BarrelPlasticBlockEntity
+                || this instanceof BarrelCorrodedBlockEntity || this instanceof BarrelTcalloyBlockEntity || this instanceof BarrelAntimatterBlockEntity;
+    }
+
+    /**
+     * E3 (Fork, nur mit Addon): Faesser sind {@code IOverpressurable} (Space {@code TileEntityBarrel}). Ohne Addon
+     * (Master) nehmen weder Faesser noch grosse Tanks teil - RBMK-Ueberdruck entfernt und sprengt sie wie bisher.
+     */
+    @Override
+    public boolean handlesOverpressure() {
+        return isBarrel() && com.hbm_m.api.space.SpaceApi.forkActive();
+    }
+
+    /** Space {@code TileEntityBarrel.explode}: {@code hasExploded} wird dort nie gesetzt -> nur {@code setChanged}. */
+    @Override
+    public void explode(net.minecraft.world.level.Level world, net.minecraft.core.BlockPos pos) {
+        this.setChanged();
+    }
+
     public void explode() {
         if (this.hasExploded) return;
         this.hasExploded = true;
@@ -661,7 +686,7 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity
                 AABB fireBox = new AABB(worldPosition).inflate(2.5, 5.0, 2.5);
                 List<LivingEntity> affected = level.getEntitiesOfClass(LivingEntity.class, fireBox);
                 for (LivingEntity e : affected) {
-                    PlatformHooks.setSecondsOnFire(e, 5);
+                    MobHooks.setSecondsOnFire(e, 5);
                 }
             }
             if (level instanceof ServerLevel serverLevel) {
@@ -690,6 +715,9 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity
                 .setEntityProcessor(new com.hbm_m.explosion.vanillant.standard.EntityProcessorStandard().withRangeMod(2F))
                 .explode();
     }
+
+    /** Hook fuer {@code checkTilt} vor dem eigentlichen Tick (Original: BigAssTank vor super.updateEntity). */
+    protected void updateTilt() { }
 
     public byte getComparatorPower() {
         if (fluidTank.getFill() == 0) return 0;
@@ -842,7 +870,7 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity
     @Override
     protected void readNbtData(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        com.hbm_m.platform.ItemStackSerialization.deserialize(itemHandler, tag.getCompound("Inventory"), registries);
+        itemHandler.deserialize(tag.getCompound("Inventory"), registries);
         fluidTank.readFromNBT(tag, "tank");
         // Старые миры могли не иметь этого поля — по умолчанию нужен режим, который умеет и fill и drain.
         mode = tag.contains("mode") ? tag.getShort("mode") : 0;
@@ -870,7 +898,7 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity
     @Override
     protected void writeNbtData(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
-        tag.put("Inventory", com.hbm_m.platform.ItemStackSerialization.serialize(itemHandler, registries));
+        tag.put("Inventory", itemHandler.serialize( registries));
         fluidTank.writeToNBT(tag, "tank");
         tag.putShort("mode", mode);
         tag.putBoolean("exploded", hasExploded);

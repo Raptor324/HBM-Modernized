@@ -17,6 +17,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.platform.BlockHooks;
 
 /**
  * Small single-block iron fluid barrel — same logic as {@link MachineFluidTankBlockEntity},
@@ -62,7 +63,7 @@ public class BarrelIronBlockEntity extends MachineFluidTankBlockEntity {
             newState = newState.setValue(BarrelTankBlock.FACING, oldState.getValue(BarrelTankBlock.FACING));
         }
 
-        CompoundTag savedTag = PlatformHooks.saveBlockEntityWithoutMetadata(this, level.registryAccess());
+        CompoundTag savedTag = BlockHooks.saveWithoutMetadata(this, level.registryAccess());
         // Инвентарь НЕ переносим: setBlock ниже синхронно дергает BarrelTankBlock.onRemove →
         // dropInventory (паритет NEXT preRemoveSideEffects), слоты выбрасываются в мир и
         // очищаются. Восстановление снимка с "Inventory" вернуло бы предметы в проржавевшую
@@ -72,7 +73,7 @@ public class BarrelIronBlockEntity extends MachineFluidTankBlockEntity {
 
         BlockEntity newBe = level.getBlockEntity(worldPosition);
         if (newBe instanceof BarrelCorrodedBlockEntity corroded) {
-            PlatformHooks.loadBlockEntityTag(corroded, savedTag, level.registryAccess());
+            BlockHooks.loadCustomOnly(corroded, savedTag, level.registryAccess());
             corroded.hasExploded = true;
             corroded.setChanged();
         }

@@ -31,24 +31,23 @@ import net.minecraft.world.level.material.Fluid;
  * {@link CatalyticReformerRecipe} (Port von {@code ReformingRecipes}). Erfordert wie im
  * Original einen katalytischen Konverter ({@link ModItems#CATALYTIC_CONVERTER}) im Katalysatorslot.
  */
-public class MachineCatalyticReformerBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
+public class MachineCatalyticReformerBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.block.IPersistentNBT, IFluidStandardTransceiverMK2 {
 
+    /** Original-Inventar (11): 0 Batterie, 1/2 Kanister Eingang ein/aus, 3/4 Reformat, 5/6 Gas,
+     *  7/8 Wasserstoff, 9 Fluidkennung, 10 Katalysator. */
     public static final int SLOT_BATTERY = 0;
-    public static final int SLOT_CATALYST = 1;
-    private static final int SLOT_COUNT = 2;
+    public static final int SLOT_FLUID_ID = 9;
+    public static final int SLOT_CATALYST = 10;
+    public static final int SLOT_COUNT = 11;
 
-    private static final long MAX_POWER = 500_000L;
+    /** Original: {@code maxPower = 1_000_000}; Tanks Naphtha 64000, Reformat/Petroleum/Wasserstoff je 24000. */
+    private static final long MAX_POWER = 1_000_000L;
     private static final long POWER_PER_CYCLE = 20_000L;
-    private static final int INPUT_CAPACITY_MB = 4000;
-    private static final int OUTPUT_CAPACITY_MB = 2000;
+    private static final int INPUT_CAPACITY_MB = 64_000;
+    private static final int OUTPUT_CAPACITY_MB = 24_000;
     private static final int INPUT_PER_CYCLE_MB = 100;
 
     private final FluidTank[] tanks = new FluidTank[4];
-
-    /** Cached recipe-scan: keyed on the input tank fluid identity (P2: tank VALIDITY is the signature;
-     *  output tank headroom stays per-tick inside {@link #reform()}). */
-    private final com.hbm_m.recipe.index.CachedRecipeResolver<CatalyticReformerRecipe> recipeResolver =
-            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
 
     public MachineCatalyticReformerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.CATALYTIC_REFORMER_BE.get(), pos, state, SLOT_COUNT, MAX_POWER, MAX_POWER, 0L);
@@ -68,35 +67,34 @@ public class MachineCatalyticReformerBlockEntity extends BaseMachineBlockEntity 
         if (level.isClientSide) return;
 
         be.chargeFromBatterySlot(SLOT_BATTERY);
+
+        // Original: tanks[0].setType(9), tanks[0].loadTank(1, 2)
+        ItemStack[] slots = new ItemStack[SLOT_COUNT];
+        for (int i = 0; i < SLOT_COUNT; i++) slots[i] = be.inventory.getStackInSlot(i);
+        boolean changed = be.tanks[0].setType(SLOT_FLUID_ID, slots);
+        changed |= be.tanks[0].loadTank(1, 2, slots);
+
         be.reform();
 
-        // Neighbor handling: subscribe is throttled (registration only, idempotent); tryProvide
-        // stays per tick — its direct-push branch must not lose throughput to the gate. The
-        // per-tank fill check skips the probe while the output tank is empty.
-        boolean subscribeDue = be.probeDue(5);
+        // Original: tanks[1..3].unloadTank(3, 4), (5, 6), (7, 8)
+        changed |= be.tanks[1].unloadTank(3, 4, slots);
+        changed |= be.tanks[2].unloadTank(5, 6, slots);
+        changed |= be.tanks[3].unloadTank(7, 8, slots);
+        if (changed) for (int i = 0; i < SLOT_COUNT; i++) be.inventory.setStackInSlot(i, slots[i] == null ? ItemStack.EMPTY : slots[i]);
+
         for (Direction dir : Direction.values()) {
             BlockPos neighborPos = pos.relative(dir);
-            if (subscribeDue) be.trySubscribe(be.tanks[0], level, neighborPos, dir);
-            if (be.tanks[1].getFill() > 0) be.tryProvide(be.tanks[1], level, neighborPos, dir);
-            if (be.tanks[2].getFill() > 0) be.tryProvide(be.tanks[2], level, neighborPos, dir);
-            if (be.tanks[3].getFill() > 0) be.tryProvide(be.tanks[3], level, neighborPos, dir);
+            be.trySubscribe(be.tanks[0].getTankType(), level, neighborPos, dir);
+            be.tryProvide(be.tanks[1], level, neighborPos, dir);
+            be.tryProvide(be.tanks[2], level, neighborPos, dir);
+            be.tryProvide(be.tanks[3], level, neighborPos, dir);
         }
+
+        be.setChanged();
+        be.sendUpdateToClient();
 
         // Anti-sync-spam: setChanged/sendBlockUpdated only when energy or tank contents moved.
         be.syncIfStateChanged(be.energy, be.tankSyncSignature());
-    }
-
-    /** Cached поиск CatalyticReformerRecipe по входной жидкости (подпись = идентичность жидкости). */
-    @Nullable
-    private CatalyticReformerRecipe findRecipe(Level level, Fluid input) {
-        if (level == null || input == null) return null;
-        long signature = com.hbm_m.recipe.index.CachedRecipeResolver.sign(3L, input.hashCode());
-        return recipeResolver.resolve(level, CatalyticReformerRecipe.Type.INSTANCE, signature, (lvl, all) -> {
-            for (CatalyticReformerRecipe recipe : all) {
-                if (recipe.matches(input)) return recipe;
-            }
-            return null;
-        });
     }
 
     private long tankSyncSignature() {
@@ -113,7 +111,7 @@ public class MachineCatalyticReformerBlockEntity extends BaseMachineBlockEntity 
 
     /** Direktport von {@code reform()}. */
     private void reform() {
-        CatalyticReformerRecipe recipe = findRecipe(level, tanks[0].getTankType());
+        CatalyticReformerRecipe recipe = CatalyticReformerRecipe.getRecipe(level, tanks[0].getTankType());
         if (recipe == null) {
             tanks[1].conform(com.hbm_m.inventory.fluid.ModFluids.NONE.getSource());
             tanks[2].conform(com.hbm_m.inventory.fluid.ModFluids.NONE.getSource());
@@ -173,7 +171,7 @@ public class MachineCatalyticReformerBlockEntity extends BaseMachineBlockEntity 
 
     @Override
     public boolean canConnect(Fluid fluid, Direction fromDir) {
-        return fromDir != null && (findRecipe(level, fluid) != null
+        return fromDir != null && (CatalyticReformerRecipe.hasRecipe(level, fluid)
                 || tanks[1].getTankType() == fluid || tanks[2].getTankType() == fluid || tanks[3].getTankType() == fluid);
     }
 
@@ -189,7 +187,10 @@ public class MachineCatalyticReformerBlockEntity extends BaseMachineBlockEntity 
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        int oldSize = tag.getCompound("inventory").getInt("Size");
         super.readNbtData(tag, registries);
+        migrateOldInventory(oldSize);
+        setEnergyCapacity(MAX_POWER); // alte Welten: frueherer Speicherwert
         for (int i = 0; i < tanks.length; i++) {
             tanks[i].readFromNBT(tag, "tank" + i);
         }
@@ -209,7 +210,19 @@ public class MachineCatalyticReformerBlockEntity extends BaseMachineBlockEntity 
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == SLOT_BATTERY) return isEnergyProviderItem(stack);
         if (slot == SLOT_CATALYST) return stack.is(ModItems.CATALYTIC_CONVERTER.get());
-        return false;
+        if (slot == SLOT_FLUID_ID) return stack.getItem() instanceof com.hbm_m.interfaces.IItemFluidIdentifier;
+        // Original: Eingaenge 1/3/5/7, Ausgaenge 2/4/6/8 nur entnehmbar
+        return slot == 1 || slot == 3 || slot == 5 || slot == 7;
+    }
+
+    /** Alte Welten (2 Slots: Batterie, Katalysator auf 1) -> Katalysator auf Original-Slot 10. */
+    private void migrateOldInventory(int oldSize) {
+        if (oldSize != 2) return;
+        ItemStack old = inventory.getStackInSlot(1);
+        if (!old.isEmpty() && inventory.getStackInSlot(SLOT_CATALYST).isEmpty()) {
+            inventory.setStackInSlot(SLOT_CATALYST, old);
+            inventory.setStackInSlot(1, ItemStack.EMPTY);
+        }
     }
 
     @Nullable
@@ -217,4 +230,25 @@ public class MachineCatalyticReformerBlockEntity extends BaseMachineBlockEntity 
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
         return MachineCatalyticReformerMenu.create(id, inventory, this);
     }
+
+    /** Original {@code writeNBT}: die vier Tanks, sofern einer etwas enthaelt. */
+    @Override
+    public void writeNBT(CompoundTag nbt) {
+        boolean empty = true;
+        for (var tank : tanks) if (tank.getFill() > 0) empty = false;
+        if (empty) return;
+        for (int i = 0; i < tanks.length; i++) tanks[i].writeToNBT(nbt, "tank" + i);
+    }
+
+    /** 1:1 TileEntityMachineCatalyticReformer.getRenderBoundingBox (Render-Migration: Raptors Pfad cullt nach dieser Box, der alte BER zeichnete immer). */
+    @Override
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return new net.minecraft.world.phys.AABB(worldPosition.getX() - 2, worldPosition.getY(), worldPosition.getZ() - 2, worldPosition.getX() + 3, worldPosition.getY() + 7, worldPosition.getZ() + 3);
+    }
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        return this.inventory;
+    }
 }
+

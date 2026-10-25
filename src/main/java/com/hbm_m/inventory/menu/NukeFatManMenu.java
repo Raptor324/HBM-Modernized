@@ -3,7 +3,6 @@ package com.hbm_m.inventory.menu;
 import com.hbm_m.blockentity.bomb.NukeFatManBlockEntity;
 
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
-import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
@@ -12,6 +11,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 public class NukeFatManMenu extends AbstractContainerMenu {
 
@@ -38,7 +38,7 @@ public class NukeFatManMenu extends AbstractContainerMenu {
         // тайл может отсутствовать на клиенте (реплей Flashback) — подставляем пустую заглушку
         var container = this.be != null
                 ? this.be
-                : new ModItemStackHandlerContainer(new DummyItemStackHandler(6), () -> {});
+                : new ModItemStackHandlerContainer(new ModItemStackHandler.Dummy(6), () -> {});
 
         addSlot(new Slot(container, 0, 8, 17) {
             @Override

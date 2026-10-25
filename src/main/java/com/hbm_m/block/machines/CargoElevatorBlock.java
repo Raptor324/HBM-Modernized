@@ -2,7 +2,6 @@ package com.hbm_m.block.machines;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.CargoElevatorBlockEntity;
 
@@ -31,7 +30,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * Self-stacking 3x3-footprint elevator shaft. Right-clicking with another elevator block in hand
  * adds a floor (a new 3x3 layer above the current top); right-clicking otherwise toggles the
  * platform between fully extended and fully retracted. Only the bottom-center block of the shaft
- * is the {@link CargoElevatorBlockEntity} core — every other cell is a dummy part pointing back at
+ * is the {@link CargoElevatorBlockEntity} core вЂ” every other cell is a dummy part pointing back at
  * it (see {@link com.hbm_m.multiblock.DummyCoreBlockEntity}). Visuals are drawn entirely by
  * {@code CargoElevatorRenderer} from the core; collision is computed per-cell in {@link #getShape}.
  */
@@ -178,151 +177,91 @@ public class CargoElevatorBlock extends BaseEntityBlock {
     *///?}
 
 
-    /** Guards the cascade against re-entering itself through the removals it performs. */
-    private static final ThreadLocal<Boolean> DESTROYING = ThreadLocal.withInitial(() -> false);
+    // в”Ђв”Ђв”Ђ audit10: 1:1 BlockDummyable-Verhalten (Dimensionen {0,0,1,1,1,1}, Offset 1) в”Ђв”Ђв”Ђ
 
-    /**
-     * Upstream places the whole 3x3 bottom layer in one go - BlockDummyable's getDimensions is
-     * {0,0,1,1,1,1} - and refuses the placement when the ring does not fit, handing the item back
-     * (BlockDummyable.onBlockPlacedBy). Without the ring the bottom floor has no corner posts.
-     */
+    /** Original {@code onBlockPlacedBy}: der Kern liegt einen Block in Blickrichtung, das 3x3 darum muss frei sein. */
     @Override
-    public void setPlacedBy(Level level, BlockPos pos, BlockState state,
-                            @Nullable net.minecraft.world.entity.LivingEntity placer, ItemStack stack) {
-        super.setPlacedBy(level, pos, state, placer, stack);
-        if (level.isClientSide) return;
-
+    public BlockState getStateForPlacement(net.minecraft.world.item.context.BlockPlaceContext ctx) {
+        BlockPos core = ctx.getClickedPos().relative(ctx.getHorizontalDirection());
         for (int dx = -1; dx <= 1; dx++) {
             for (int dz = -1; dz <= 1; dz++) {
-                if (dx == 0 && dz == 0) continue;
-                if (!level.getBlockState(pos.offset(dx, 0, dz)).canBeReplaced()) {
-                    level.removeBlock(pos, false);
-                    if (placer instanceof Player player && !player.getAbilities().instabuild) {
-                        player.getInventory().add(new ItemStack(this));
-                    }
-                    return;
-                }
+                BlockPos p = core.offset(dx, 0, dz);
+                if (!p.equals(ctx.getClickedPos()) && !ctx.getLevel().getBlockState(p).canBeReplaced(ctx)) return null;
             }
         }
+        return defaultBlockState();
+    }
+
+    @Override
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable net.minecraft.world.entity.LivingEntity placer, ItemStack stack) {
+        super.setPlacedBy(level, pos, state, placer, stack);
+        if (level.isClientSide || placer == null) return;
+        BlockPos core = pos.relative(placer.getDirection());
+
         for (int dx = -1; dx <= 1; dx++) {
             for (int dz = -1; dz <= 1; dz++) {
-                if (dx == 0 && dz == 0) continue;
-                BlockPos p = pos.offset(dx, 0, dz);
-                level.setBlock(p, this.defaultBlockState(), 3);
-                if (level.getBlockEntity(p) instanceof CargoElevatorBlockEntity part) {
-                    part.setCorePos(pos);
-                }
+                BlockPos p = core.offset(dx, 0, dz);
+                if (!p.equals(pos)) level.setBlock(p, defaultBlockState(), 3);
+                if (level.getBlockEntity(p) instanceof CargoElevatorBlockEntity part) part.setCorePos(core);
             }
         }
     }
 
+    /** Laeuft gerade der Abriss des ganzen Schachts (Original: Waisen-Dummies verschwinden ohne Drop). */
+    private static final ThreadLocal<Boolean> CASCADE = ThreadLocal.withInitial(() -> false);
+
+    /** Original {@code getDrops}: der Spieler bekommt height + 1 Aufzugsbloecke (64er-Stapel). */
     //? if < 1.21.1 {
     @Override
     public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
-        destroyShaft(level, pos, !player.getAbilities().instabuild);
+        dropShaft(level, pos, player);
         super.playerWillDestroy(level, pos, state, player);
     }
     //?} else {
     /*@Override
     public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
-        destroyShaft(level, pos, !player.getAbilities().instabuild);
+        dropShaft(level, pos, player);
         return super.playerWillDestroy(level, pos, state, player);
     }
     *///?}
 
-    @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        // Explosions and every other non-player removal take the shaft with them, the way breaking
-        // one BlockDummyable cell chains to the core upstream. A player break has already run the
-        // cascade from playerWillDestroy, where the creative flag is known.
-        if (!state.is(newState.getBlock())) {
-            destroyShaft(level, pos, true);
+    private void dropShaft(Level level, BlockPos pos, Player player) {
+        if (level.isClientSide || player.getAbilities().instabuild) return;
+        if (!(level.getBlockEntity(pos) instanceof CargoElevatorBlockEntity elevator)) return;
+        CargoElevatorBlockEntity core = elevator.resolveCore(CargoElevatorBlockEntity.class);
+        if (core == null) return;
+        int toDrop = core.height + 1;
+        while (toDrop > 0) {
+            int perStack = Math.min(toDrop, 64);
+            toDrop -= perStack;
+            popResource(level, pos, new ItemStack(this, perStack));
         }
-        super.onRemove(state, level, pos, newState, isMoving);
     }
 
-    /**
-     * Removes every cell of the shaft this position belongs to.
-     *
-     * <p>The block at {@code from} is left to the caller - vanilla drops it through the loot table.
-     * Upstream hands out one elevator item per floor (BlockCargoElevator.getDrops returns
-     * {@code height + 1} of them), and one item is what each floor cost to place, so the rest of
-     * them are dropped here.
-     */
-    public static void destroyShaft(Level level, BlockPos from, boolean drop) {
-        if (level.isClientSide || DESTROYING.get()) return;
-        // A move window means an assembly engine is carrying the shaft, not breaking it.
-        if (com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) return;
-        if (!(level.getBlockEntity(from) instanceof CargoElevatorBlockEntity cell)) return;
-
-        CargoElevatorBlockEntity core = cell.resolveCore(CargoElevatorBlockEntity.class);
-        if (core == null) {
-            BlockPos found = findCoreByGeometry(level, from);
-            if (found != null && level.getBlockEntity(found) instanceof CargoElevatorBlockEntity be) {
-                core = be;
-            }
-        }
-        if (core == null) return;
-
-        BlockPos corePos = core.getBlockPos();
-        int floors = core.height + 1;
-
-        DESTROYING.set(true);
-        try {
-            for (int dy = 0; dy < floors; dy++) {
-                for (int dx = -1; dx <= 1; dx++) {
-                    for (int dz = -1; dz <= 1; dz++) {
-                        BlockPos p = corePos.offset(dx, dy, dz);
-                        if (p.equals(from)) continue;
-                        if (level.getBlockState(p).getBlock() instanceof CargoElevatorBlock) {
-                            level.removeBlock(p, false);
+    /** Original {@code BlockDummyable.breakBlock}/Waisenpruefung: faellt eine Zelle weg, verschwindet der ganze Schacht. */
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+        if (!level.isClientSide && !state.is(newState.getBlock()) && !CASCADE.get()
+                && level.getBlockEntity(pos) instanceof CargoElevatorBlockEntity elevator) {
+            BlockPos core = elevator.getCorePos();
+            CargoElevatorBlockEntity coreBe = elevator.resolveCore(CargoElevatorBlockEntity.class);
+            int height = coreBe != null ? coreBe.height : 0;
+            CASCADE.set(true);
+            try {
+                for (int dy = 0; dy <= height; dy++) {
+                    for (int dx = -1; dx <= 1; dx++) {
+                        for (int dz = -1; dz <= 1; dz++) {
+                            BlockPos p = core.offset(dx, dy, dz);
+                            if (!p.equals(pos) && level.getBlockState(p).is(this)) level.setBlock(p, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
                         }
                     }
                 }
-            }
-        } finally {
-            DESTROYING.set(false);
-        }
-
-        if (drop) {
-            int toDrop = floors - 1;
-            while (toDrop > 0) {
-                int perStack = Math.min(toDrop, 64);
-                toDrop -= perStack;
-                popResource(level, from, new ItemStack(ModBlocks.CARGO_ELEVATOR.get(), perStack));
+            } finally {
+                CASCADE.set(false);
             }
         }
+        super.onRemove(state, level, pos, newState, isMoving);
     }
-
-    /**
-     * Re-derives the core from the shaft's own geometry: walk down the contiguous column of
-     * elevator blocks, then look for the core in the 3x3 around the bottom of it.
-     *
-     * <p>Needed because an assembly engine (Sable, Create) moves the cells without touching the
-     * core pointer they store, so after a move every pointer names a pre-move position.
-     */
-    @Nullable
-    public static BlockPos findCoreByGeometry(net.minecraft.world.level.BlockGetter level, BlockPos pos) {
-        BlockPos.MutableBlockPos cursor = pos.mutable();
-        for (int i = 0; i < MAX_SHAFT_SCAN; i++) {
-            BlockPos below = cursor.below();
-            if (!(level.getBlockState(below).getBlock() instanceof CargoElevatorBlock)) break;
-            cursor.move(net.minecraft.core.Direction.DOWN);
-        }
-        int bottomY = cursor.getY();
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dz = -1; dz <= 1; dz++) {
-                BlockPos p = new BlockPos(pos.getX() + dx, bottomY, pos.getZ() + dz);
-                if (level.getBlockEntity(p) instanceof CargoElevatorBlockEntity be && be.isCore()) {
-                    return p;
-                }
-            }
-        }
-        return null;
-    }
-
-    /** Upper bound for the downward scan; a shaft that tall is already beyond the build limit. */
-    private static final int MAX_SHAFT_SCAN = 384;
 
     private boolean tryAddFloor(Level level, CargoElevatorBlockEntity core) {
         BlockPos corePos = core.getBlockPos();
@@ -349,6 +288,32 @@ public class CargoElevatorBlock extends BaseEntityBlock {
 
         core.addFloor();
         return true;
+    }
+
+    private static final int MAX_SHAFT_SCAN = 384;
+
+    /**
+     * Re-derives the core from the shaft's own geometry: walk down the contiguous column of
+     * elevator blocks, then look for the core in the 3x3 around the bottom of it.
+     */
+    @Nullable
+    public static BlockPos findCoreByGeometry(net.minecraft.world.level.BlockGetter level, BlockPos pos) {
+        BlockPos.MutableBlockPos cursor = pos.mutable();
+        for (int i = 0; i < MAX_SHAFT_SCAN; i++) {
+            BlockPos below = cursor.below();
+            if (!(level.getBlockState(below).getBlock() instanceof CargoElevatorBlock)) break;
+            cursor.move(net.minecraft.core.Direction.DOWN);
+        }
+        int bottomY = cursor.getY();
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                BlockPos p = new BlockPos(pos.getX() + dx, bottomY, pos.getZ() + dz);
+                if (level.getBlockEntity(p) instanceof CargoElevatorBlockEntity be && be.isCore()) {
+                    return p;
+                }
+            }
+        }
+        return null;
     }
 
     //? if >1.20.1 {

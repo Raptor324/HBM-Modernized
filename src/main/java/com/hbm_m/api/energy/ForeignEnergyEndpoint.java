@@ -197,7 +197,7 @@ final class ForeignEnergyEndpoint implements IEnergyReceiver, IEnergyProvider, N
                 fe::getMaxEnergyStored, fe::canReceive, fe::canExtract);
         //?}
         //? if neoforge {
-        /*net.neoforged.neoforge.energy.IEnergyStorage fe = be.getLevel() == null ? null
+        /*net.minecraftforge.energy.IEnergyStorage fe = be.getLevel() == null ? null
                 : net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.BLOCK.getCapability(
                         be.getLevel(), be.getBlockPos(), be.getBlockState(), be, side);
         found = fe == null ? null : shim(fe::receiveEnergy, fe::extractEnergy, fe::getEnergyStored,

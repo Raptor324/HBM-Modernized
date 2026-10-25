@@ -15,7 +15,7 @@
         { "type": "item", "name": "hbm_m:gas_mask_m65", "weight": 5 },
         { "type": "item", "name": "hbm_m:hazmat_kit", "weight": 1 },
         { "type": "item", "name": "hbm_m:gas_mask_filter", "weight": 5 },
-        { "type": "item", "name": "hbm_m:barrel_yellow", "weight": 2 }
+        { "type": "item", "name": "hbm_m:yellow_barrel", "weight": 2 }
       ]
     }
   ]

@@ -12,6 +12,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.LevelHooks;
 
 /**
  * Порт {@code ItemLock} (1.7.10) — навесной замок. Вырезается на кейфордже (наследует
@@ -53,7 +54,7 @@ public class ItemLock extends ItemKeyPin {
                 lockable.setPins(pins);
                 lockable.lock();
                 lockable.setLockMod(lockMod);
-                PlatformHooks.playSound(level, pos, ModSounds.LOCK_HANG.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
+                LevelHooks.playSound(level, pos, ModSounds.LOCK_HANG.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
                 stack.shrink(1);
             }
             return InteractionResult.sidedSuccess(level.isClientSide());

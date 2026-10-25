@@ -5,7 +5,6 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.blockentity.network.PylonDummyBlockEntity;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
@@ -16,6 +15,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import com.hbm_m.platform.BlockHooks;
 
 /**
  * Невидимая часть корпуса пилона (аналог dummy-блоков BlockDummyable из 1.7.10):
@@ -46,38 +46,90 @@ public class PylonDummyBlock extends Block implements EntityBlock {
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         super.onRemove(state, level, pos, newState, isMoving);
-        // Inside an assembly move window the dummy is being carried, not broken: taking the core
-        // down here would delete the pylon the engine is about to put back.
-        if (!level.isClientSide && newState.getBlock() != this && !com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {
-            breakCore(level, pos, false);
+        if (!level.isClientSide && newState.getBlock() != this
+                && !com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {
+            breakCore(level, pos);
         }
     }
 
-    // Upstream BlockDummyable.onBlockHarvested drops the machine whenever a non-creative player
-    // breaks any dummy block; breakCore's hardcoded drop=false lost the pylon entirely.
     //? if < 1.21.1 {
+    /** audit13: Original {@code BlockDummyable.onBlockHarvested} - Abbau einer Mastzelle droppt den Mast einmal (nicht im Kreativmodus). */
     @Override
-    public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+    public void playerWillDestroy(Level level, BlockPos pos, BlockState state, net.minecraft.world.entity.player.Player player) {
         if (!level.isClientSide && !com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {
-            breakCore(level, pos, !player.getAbilities().instabuild);
+            BlockPos core = findCore(level, pos);
+            if (core != null) level.destroyBlock(core, !player.getAbilities().instabuild);
         }
         super.playerWillDestroy(level, pos, state, player);
     }
+
+    /** audit13: Original {@code PylonRedWire.onBlockActivated -> findCore}: Faerben ueber jede Zelle. */
+    @Override
+    public net.minecraft.world.InteractionResult use(BlockState state, Level level, BlockPos pos, net.minecraft.world.entity.player.Player player,
+                                                     net.minecraft.world.InteractionHand hand, net.minecraft.world.phys.BlockHitResult hit) {
+        BlockPos core = findCore(level, pos);
+        if (core == null) return net.minecraft.world.InteractionResult.PASS;
+        return level.getBlockState(core).use(level, player, hand, hit.withPosition(core));
+    }
+
+    /** audit13: Pick-Block auf einer Mastzelle gibt den Mast. */
+    @Override
+    public net.minecraft.world.item.ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
+        if (level instanceof Level lvl) {
+            BlockPos core = findCore(lvl, pos);
+            if (core != null) {
+                BlockState coreState = level.getBlockState(core);
+                return coreState.getBlock().getCloneItemStack(level, core, coreState);
+            }
+        }
+        return net.minecraft.world.item.ItemStack.EMPTY;
+    }
     //?} else {
-    /*@Override
-    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+    /*// audit13: Original BlockDummyable.onBlockHarvested - Abbau einer Mastzelle droppt den Mast einmal (nicht im Kreativmodus).
+    @Override
+    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, net.minecraft.world.entity.player.Player player) {
         if (!level.isClientSide && !com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {
-            breakCore(level, pos, !player.getAbilities().instabuild);
+            BlockPos core = findCore(level, pos);
+            if (core != null) level.destroyBlock(core, !player.getAbilities().instabuild);
         }
         return super.playerWillDestroy(level, pos, state, player);
+    }
+
+    // audit13: Original PylonRedWire.onBlockActivated -> findCore: Faerben ueber jede Zelle (1.21.1: useItemOn/useWithoutItem des Kerns).
+    @Override
+    protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack stack, BlockState state, Level level, BlockPos pos,
+                                                                 net.minecraft.world.entity.player.Player player, net.minecraft.world.InteractionHand hand,
+                                                                 net.minecraft.world.phys.BlockHitResult hit) {
+        BlockPos core = findCore(level, pos);
+        if (core == null) return net.minecraft.world.ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        BlockState coreState = level.getBlockState(core);
+        net.minecraft.world.phys.BlockHitResult coreHit = hit.withPosition(core);
+        net.minecraft.world.ItemInteractionResult r = coreState.useItemOn(stack, level, player, hand, coreHit);
+        if (r == net.minecraft.world.ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION && hand == net.minecraft.world.InteractionHand.MAIN_HAND) {
+            return com.hbm_m.platform.BlockHooks.useItemResult(coreState.useWithoutItem(level, player, coreHit));
+        }
+        return r;
+    }
+
+    // audit13: Pick-Block auf einer Mastzelle gibt den Mast.
+    @Override
+    public net.minecraft.world.item.ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader level, BlockPos pos, BlockState state) {
+        if (level instanceof Level lvl) {
+            BlockPos core = findCore(lvl, pos);
+            if (core != null) {
+                BlockState coreState = level.getBlockState(core);
+                return coreState.getBlock().getCloneItemStack(level, core, coreState);
+            }
+        }
+        return net.minecraft.world.item.ItemStack.EMPTY;
     }
     *///?}
 
     /** При разрушении части — рушим ядро (оно в свою очередь убирает остальные части). */
-    private static void breakCore(Level level, BlockPos pos, boolean drop) {
+    private static void breakCore(Level level, BlockPos pos) {
         BlockPos core = findCore(level, pos);
         if (core != null) {
-            level.destroyBlock(core, drop);
+            level.destroyBlock(core, false);
         }
     }
 

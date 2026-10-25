@@ -44,6 +44,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.platform.StackNbt;
 //? if forge {
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
@@ -53,7 +54,10 @@ import net.minecraftforge.items.IItemHandler;
 
 
 @SuppressWarnings("UnstableApiUsage")
-public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuProvider {
+public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuProvider, com.hbm_m.api.fluids.IFluidStandardSenderMK2 {
+
+    /** Original {@code TileEntityMachinePolluting(4, 50)}: drei Rauchtanks a 50 mB, Abgabe an alle Nachbarn. */
+    private final com.hbm_m.blockentity.SmokeTankSet smokeTanks = new com.hbm_m.blockentity.SmokeTankSet(50);
 
     private static final int FUEL_SLOT = 0;
     private static final int INPUT_SLOT_TOP = 1;
@@ -76,9 +80,7 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
             if (slot == OUTPUT_SLOT) {
                 return false;
             }
-            if (slot == FUEL_SLOT) {
-                return isFuel(stack);
-            }
+            // Original isItemValidForSlot: alles ausser dem Ausgang
             return true;
         }
     };
@@ -91,7 +93,10 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
     //? if forge {
     private final Map<Direction, LazyOptional<IItemHandler>> sidedItemHandlers = new EnumMap<>(Direction.class);
     private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
-    //?}
+    //?} elif neoforge {
+    /*private final Map<Direction, com.hbm_m.platform.LazyCap<net.minecraftforge.items.IItemHandler>> sidedItemHandlers = new EnumMap<>(Direction.class);
+    private com.hbm_m.platform.LazyCap<net.minecraftforge.items.IItemHandler> lazyItemHandler = com.hbm_m.platform.LazyCap.empty();
+    *///?}
 
 
     private final ContainerData data;
@@ -173,7 +178,34 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
         lazyItemHandler.invalidate();
         sidedItemHandlers.values().forEach(LazyOptional::invalidate);
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public void onLoad() {
+        super.onLoad();
+        lazyItemHandler = com.hbm_m.platform.LazyCap.of(() -> itemHandler);
+        sidedItemHandlers.clear();
+        for (Direction direction : Direction.values()) {
+            final Direction dir = direction;
+            sidedItemHandlers.put(dir, com.hbm_m.platform.LazyCap.of(() -> new DirectionalItemHandler(dir)));
+        }
+    }
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER) {
+            if (side == null) return lazyItemHandler.cast();
+            return sidedItemHandlers.getOrDefault(side, lazyItemHandler).cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        lazyItemHandler.invalidate();
+        sidedItemHandlers.values().forEach(com.hbm_m.platform.LazyCap::invalidate);
+    }
+    *///?}
 
 
     public void drops() {
@@ -199,24 +231,26 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
     // (устраняет вложенный stonecutter-баг в load())
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(itemHandler, registries));
+        tag.put("inventory", itemHandler.serialize( registries));
         tag.putInt("blast_furnace.progress", progress);
         tag.putInt("blast_furnace.fuel", fuel);
         tag.putInt("blast_furnace.side_upper", sideUpper);
         tag.putInt("blast_furnace.side_lower", sideLower);
         tag.putInt("blast_furnace.side_fuel", sideFuel);
+        smokeTanks.writeToNBT(tag);
         super.writeNbtData(tag, registries);
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        com.hbm_m.platform.ItemStackSerialization.deserialize(itemHandler, tag.getCompound("inventory"), registries);
+        itemHandler.deserialize(tag.getCompound("inventory"), registries);
         progress = tag.getInt("blast_furnace.progress");
         fuel = tag.getInt("blast_furnace.fuel");
         sideUpper = tag.getInt("blast_furnace.side_upper");
         sideLower = tag.getInt("blast_furnace.side_lower");
         sideFuel = tag.getInt("blast_furnace.side_fuel");
+        smokeTanks.readFromNBT(tag);
     }
 
     public void tick(Level level, BlockPos pos, BlockState state) {
@@ -225,25 +259,39 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
         }
 
         boolean dirty = false;
-        boolean wasBurning = isBurning();
+        boolean extension = hasExtension();
 
-        if (fuel < MAX_FUEL && tryConsumeFuelItem()) {
+        // Original: Rauch an alle sechs Nachbarn, mit Aufsatz zusaetzlich nach oben ueber dem Aufsatz
+        for (Direction dir : Direction.values()) {
+            for (com.hbm_m.inventory.fluid.tank.FluidTank tank : smokeTanks.tanks()) {
+                if (tank.getFill() > 0) tryProvide(tank, level, pos.relative(dir), dir);
+            }
+        }
+        if (extension) {
+            for (com.hbm_m.inventory.fluid.tank.FluidTank tank : smokeTanks.tanks()) {
+                if (tank.getFill() > 0) tryProvide(tank, level, pos.above(2), Direction.UP);
+            }
+        }
+
+        if (tryConsumeFuelItem()) {
             dirty = true;
         }
 
         boolean canProcess = hasRecipe() && fuel > 0;
         if (canProcess) {
-            fuel = Math.max(0, fuel - 1);
-            progress += getProgressPerTick();
-
-            // Original (TileEntityFurnaceSteel): SOOT_PER_SECOND * 2 im Sekundentakt.
-            if (level.getGameTime() % 20 == 0) {
-                PollutionHandler.incrementPollution(level, worldPosition, PollutionType.SOOT,
-                        PollutionHandler.SOOT_PER_SECOND * 2);
-            }
+            fuel -= 1;
+            progress += extension ? 3 : 1;
             if (progress >= PROCESS_TIME) {
-                craftItem();
                 progress -= PROCESS_TIME;
+                craftItem();
+            }
+
+            if (fuel < 0) fuel = 0;
+
+            // Original: SOOT_PER_SECOND * (Aufsatz ? 3 : 1), zuerst in den Rauchtank
+            if (level.getGameTime() % 20 == 0) {
+                smokeTanks.pollute(level, worldPosition, PollutionType.SOOT,
+                        PollutionHandler.SOOT_PER_SECOND * (extension ? 3 : 1));
             }
             dirty = true;
         } else if (progress != 0) {
@@ -251,18 +299,16 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
             dirty = true;
         }
 
-        if (wasBurning != isBurning()) {
-            level.setBlock(pos, state.setValue(BlastFurnaceBlock.LIT, isBurning()), 3);
+        // Original: MachineDiFurnace.updateBlockState(progress > 0), ausser beim nahtlosen Weiterlaufen
+        boolean trigger = !(hasRecipe() && fuel > 0 && this.progress == 0);
+        if (trigger && state.getValue(BlastFurnaceBlock.LIT) != (this.progress > 0)) {
+            level.setBlock(pos, state.setValue(BlastFurnaceBlock.LIT, this.progress > 0), 3);
             dirty = true;
         }
 
         if (dirty) {
             setChanged();
         }
-    }
-
-    private int getProgressPerTick() {
-        return hasExtension() ? 3 : 1;
     }
 
     private boolean hasExtension() {
@@ -279,15 +325,14 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
             return false;
         }
         int value = getFuelValue(stack);
-        if (value <= 0) {
+        // NTM Space getItemPower(stack, canBreathe): ohne Sauerstoff liefert nur der Lavaeimer Brennwert (breatheAir(0)
+        // prueft nur) - ohne Space-Addon immer atembar
+        if (value > 0 && stack.getItem() != Items.LAVA_BUCKET && !breatheAir(0)) value = 0;
+        // Original: nur nachlegen, wenn der ganze Brennwert noch hineinpasst
+        if (value <= 0 || fuel > MAX_FUEL - value) {
             return false;
         }
-
-        int newFuelLevel = Math.min(MAX_FUEL, fuel + value);
-        if (newFuelLevel == fuel) {
-            return false;
-        }
-        fuel = newFuelLevel;
+        fuel += value;
 
         Item remaining = stack.getItem().getCraftingRemainingItem();
         ItemStack remainder = remaining != null ? new ItemStack(remaining) : ItemStack.EMPTY;
@@ -318,7 +363,7 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
 
     private static boolean canItemStacksStack(ItemStack a, ItemStack b) {
         if (a.isEmpty() || !a.is(b.getItem())) return false;
-        return PlatformHooks.isSameItemSameTags(a, b);
+        return StackNbt.sameItemSameTags(a, b);
     }
 
     /** Кэшированный скан рецептов: подпись — оба входных слота, сканер — только матч по списку. */
@@ -330,8 +375,8 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
             return null;
         }
         long signature = CachedRecipeResolver.sign(1,
-                PlatformHooks.stackFingerprint(itemHandler.getStackInSlot(INPUT_SLOT_TOP)),
-                PlatformHooks.stackFingerprint(itemHandler.getStackInSlot(INPUT_SLOT_BOTTOM)));
+                StackNbt.fingerprint(itemHandler.getStackInSlot(INPUT_SLOT_TOP)),
+                StackNbt.fingerprint(itemHandler.getStackInSlot(INPUT_SLOT_BOTTOM)));
         return recipeResolver.resolve(level, BlastFurnaceRecipe.Type.INSTANCE, signature, (lvl, all) -> {
             SimpleContainer inventory = new SimpleContainer(itemHandler.getSlots());
             for (int i = 0; i < itemHandler.getSlots(); i++) {
@@ -339,7 +384,7 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
             }
             RecipeInputWrapper wrapper = new RecipeInputWrapper(inventory);
             for (BlastFurnaceRecipe recipe : all) {
-                if (recipe.matchesRecipe(wrapper, lvl)) {
+                if (!recipe.isNT() && recipe.matchesRecipe(wrapper, lvl)) {
                     return recipe;
                 }
             }
@@ -374,38 +419,35 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
         return getFuelValue(stack) > 0;
     }
 
+    /** Original {@code TileEntityDiFurnace.getItemPower} (Meta-Items des Originals = je Variante eine ID). */
     private static int getFuelValue(ItemStack stack) {
         Item item = stack.getItem();
-        if (item == Items.LAVA_BUCKET) {
-            return 12_800;
-        }
-        if (item == Items.COAL || item == Items.CHARCOAL) {
-            return 200;
-        }
-        if (item == Items.COAL_BLOCK) {
-            return 2_000;
-        }
-        if (item == Items.BLAZE_ROD) {
-            return 1_000;
-        }
-        if (item == Items.DRIED_KELP) {
-            return 15;
-        }
-        if (item == Items.DRIED_KELP_BLOCK) {
-            return 150;
-        }
-        if (item == Items.BLAZE_POWDER) {
-            return 300;
-        }
-        if (item == ModItems.LIGNITE.get()) {
-            return 150;
-        }
-        // Coal powder (original: powder_coal 200)
-        if (item == ModMaterialItems.item(ModMaterials.COAL, MaterialShape.POWDER)) {
-            return 200;
-        }
-        return 0;
+        if (item == Items.COAL || item == Items.CHARCOAL) return 200; // Items.coal inkl. Holzkohle (Meta 1)
+        if (item == Items.COAL_BLOCK) return 2000;
+        if (item == ModBlocks.BLOCK_COKE_COAL.get().asItem() || item == ModBlocks.BLOCK_COKE_LIGNITE.get().asItem()
+                || item == ModBlocks.BLOCK_COKE_PETROLEUM.get().asItem()) return 4000;
+        if (item == Items.LAVA_BUCKET) return 12800;
+        if (item == Items.BLAZE_ROD) return 1000;
+        if (item == Items.BLAZE_POWDER) return 300;
+        if (item == Items.DRIED_KELP) return 15;
+        if (item == Items.DRIED_KELP_BLOCK) return 150;
+        if (item == ModItems.LIGNITE.get()) return 150;
+        String id = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item).toString();
+        if (id.equals("hbm_m:lignite_powder")) return 150;
+        if (item == ModMaterialItems.item(ModMaterials.COAL, MaterialShape.POWDER)) return 200;
+        if (item == ModItems.COAL_BRIQUETTE.get() || item == ModItems.LIGNITE_BRIQUETTE.get() || item == ModItems.SAWDUST_BRIQUETTE.get()) return 200;
+        if (item == ModItems.COAL_COKE.get() || item == ModItems.LIGNITE_COKE.get() || item == ModItems.COKE_PETROLEUM.get()) return 400;
+        if (item == ModItems.SOLID_FUEL.get()) return 400;
+        // E4 (Fork, nur mit Addon): powder_coke 400
+        return com.hbm_m.api.space.SpaceApi.fork().blastFurnaceFuel(stack);
     }
+
+    // -- Rauch (Original TileEntityMachinePolluting) --
+
+    @Override public com.hbm_m.inventory.fluid.tank.FluidTank[] getSendingTanks() { return smokeTanks.tanks(); }
+    /** Original {@code getAllTanks}: leer - die Rauchtanks werden nur abgegeben. */
+    @Override public com.hbm_m.inventory.fluid.tank.FluidTank[] getAllTanks() { return new com.hbm_m.inventory.fluid.tank.FluidTank[0]; }
+    @Override public boolean isLoaded() { return level != null && !isRemoved() && level.isLoaded(worldPosition); }
 
     public void cycleSide(int slot) {
         switch (slot) {
@@ -491,16 +533,8 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
             return itemHandler.isItemValid(slot, stack) && canInsertFromDirection(slot, direction);
         }
     }
-    //?}
-
-    //? if neoforge {
-    /*/^*
-     * NeoForge had no sided handler at all: {@link #getItemHandler} handed out the raw one, so the
-     * insert/extract restrictions that Forge and Fabric both enforce simply did not exist here -
-     * a hopper could pull unsmelted input or push into the output slot. Mirrors the Forge
-     * DirectionalItemHandler above.
-     ^/
-    private final class DirectionalItemHandler implements net.neoforged.neoforge.items.IItemHandler {
+    //?} elif neoforge {
+    /*private final class DirectionalItemHandler implements net.minecraftforge.items.IItemHandler {
         private final net.minecraft.core.Direction direction;
 
         private DirectionalItemHandler(net.minecraft.core.Direction direction) { this.direction = direction; }

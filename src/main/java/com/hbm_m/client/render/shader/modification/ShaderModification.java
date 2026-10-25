@@ -7,14 +7,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.hbm_m.main.MainRegistry;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 /**
  * Lightweight GLSL source modifier inspired by Veil's ShaderModification system,
  * but reimplemented from scratch (no glslprocessor dependency).

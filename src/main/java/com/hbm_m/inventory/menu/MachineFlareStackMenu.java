@@ -14,6 +14,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * Порт {@code ContainerMachineGasFlare} (1.7.10): Battery (143,71), Fluid in (17,17),
@@ -22,7 +23,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
  */
 public class MachineFlareStackMenu extends AbstractContainerMenu {
 
-    public static final int MACHINE_SLOT_COUNT = MachineFlareStackBlockEntity.INVENTORY_SIZE;
+    /** 6 slots (battery, fluid in/out, fluid ID, 2 upgrades) — размер, передаваемый в конструктор BaseMachineBlockEntity. */
+    public static final int MACHINE_SLOT_COUNT = 6;
 
     private static final int SLOT_BATTERY = MachineFlareStackBlockEntity.SLOT_BATTERY;
     private static final int SLOT_FLUID_IN = MachineFlareStackBlockEntity.SLOT_FLUID_IN;
@@ -44,7 +46,7 @@ public class MachineFlareStackMenu extends AbstractContainerMenu {
         // null-BE возможен только в реплее Flashback — рендерим заглушку без машины.
         var handler = blockEntity != null
                 ? blockEntity.getInventory()
-                : new com.hbm_m.platform.DummyItemStackHandler(MACHINE_SLOT_COUNT);
+                : new com.hbm_m.platform.ModItemStackHandler.Dummy(MACHINE_SLOT_COUNT);
         var container = new com.hbm_m.inventory.ModItemStackHandlerContainer(handler,
                 blockEntity != null ? blockEntity::setChanged : () -> {});
 
@@ -121,7 +123,7 @@ public class MachineFlareStackMenu extends AbstractContainerMenu {
                     if (!this.moveItemStackTo(slotStack, SLOT_FLUID_ID, SLOT_FLUID_ID + 1, false)) {
                         return ItemStack.EMPTY;
                     }
-                } else if (blockEntity != null && blockEntity.acceptsBattery(slotStack)) {
+                } else if (com.hbm_m.api.energy.ItemEnergyAccess.isEnergySource(slotStack)) {
                     if (!this.moveItemStackTo(slotStack, SLOT_BATTERY, SLOT_BATTERY + 1, false)) {
                         return ItemStack.EMPTY;
                     }

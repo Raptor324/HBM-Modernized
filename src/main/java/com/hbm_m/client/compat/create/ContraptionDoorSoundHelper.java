@@ -15,14 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.WeakHashMap;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 /**
  * Клиентский звук двери на контрапшене. Полностью управляется из packet-applier
  * (один вызов {@link #onStart} на toggle), НЕ зависит от behaviour-tick (который

@@ -1,6 +1,5 @@
 package com.hbm_m.platform.recipe;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.minecraft.network.FriendlyByteBuf;
@@ -12,7 +11,6 @@ import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -21,7 +19,10 @@ import java.util.Optional;
 /*import net.minecraft.world.item.crafting.RecipeHolder;
 *///?}
 
-public class RecipeHooks {
+public final class RecipeHooks {
+
+    private RecipeHooks() {}
+
     public static ItemStack readItem(FriendlyByteBuf buf) {
         //? if < 1.21.1 {
         return buf.readItem();
@@ -83,9 +84,16 @@ public class RecipeHooks {
     }
 
     //? if >= 1.21.1 {
-    
 
-    /*// =====================================================================================
+    /*private static <R extends Recipe<?>> R unwrap(net.minecraft.world.item.crafting.RecipeHolder<R> holder) {
+        R recipe = holder.value();
+        if (recipe instanceof PlatformRecipe pr) {
+            pr.setRecipeId(holder.id());
+        }
+        return recipe;
+    }
+
+    // =====================================================================================
     //  Legacy JSON normalization (1.21.1 only).
     //
     //  Datagen генерирует рецепты в формате 1.20.1: {"item": "...", "count": N}.
@@ -99,6 +107,50 @@ public class RecipeHooks {
         if (copy.has("item") && !copy.has("id")) {
             copy.add("id", copy.get("item"));
             copy.remove("item");
+        }
+        // Phase C (P3): 1.20.1-"nbt" (SNBT-String oder Objekt) -> Komponenten. Damage -> minecraft:damage,
+        // BlockStateTag bleibt in custom_data (eigene Leser) und zusaetzlich minecraft:block_state, Rest custom_data.
+        if (copy.has("nbt") && !copy.has("components")) {
+            try {
+                JsonElement nbtJson = copy.remove("nbt");
+                // BlockStateTag читаем из ИСХОДНОГО JsonObject: после конвертации JsonOps->NbtOps
+                // числовые/булевы значения превращаются в ByteTag и getAsString() даёт суффиксы
+                // типа "1b", которые BlockItemStateProperties не парсит.
+                JsonObject bstFromJson = null;
+                if (nbtJson.isJsonObject()) {
+                    JsonObject nbtObj = nbtJson.getAsJsonObject();
+                    if (nbtObj.has("BlockStateTag") && nbtObj.get("BlockStateTag").isJsonObject()) {
+                        bstFromJson = nbtObj.getAsJsonObject("BlockStateTag");
+                    }
+                }
+                net.minecraft.nbt.CompoundTag nbt = nbtJson.isJsonPrimitive()
+                        ? net.minecraft.nbt.TagParser.parseTag(nbtJson.getAsString())
+                        : (net.minecraft.nbt.CompoundTag) com.mojang.serialization.JsonOps.INSTANCE.convertTo(net.minecraft.nbt.NbtOps.INSTANCE, nbtJson);
+                JsonObject comps = new JsonObject();
+                if (nbt.contains("Damage", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC)) {
+                    comps.addProperty("minecraft:damage", nbt.getInt("Damage"));
+                    nbt.remove("Damage");
+                }
+                if (bstFromJson != null) {
+                    JsonObject props = new JsonObject();
+                    for (java.util.Map.Entry<String, JsonElement> e : bstFromJson.entrySet()) {
+                        if (e.getValue().isJsonPrimitive()) {
+                            props.addProperty(e.getKey(), e.getValue().getAsString());
+                        }
+                    }
+                    comps.add("minecraft:block_state", props);
+                } else if (nbt.contains("BlockStateTag", net.minecraft.nbt.Tag.TAG_COMPOUND)) {
+                    // Fallback (SNBT-строка): из NBT, скаляры — без NBT-суффиксов типов
+                    net.minecraft.nbt.CompoundTag bst = nbt.getCompound("BlockStateTag");
+                    JsonObject props = new JsonObject();
+                    for (String k : bst.getAllKeys()) props.addProperty(k, com.hbm_m.platform.StackNbt.scalarToString(bst.get(k)));
+                    comps.add("minecraft:block_state", props);
+                }
+                if (!nbt.isEmpty()) comps.addProperty("minecraft:custom_data", nbt.toString());
+                if (comps.size() > 0) copy.add("components", comps);
+            } catch (com.mojang.brigadier.exceptions.CommandSyntaxException | RuntimeException e) {
+                throw new com.google.gson.JsonSyntaxException("Invalid nbt in item stack: " + e.getMessage(), e);
+            }
         }
         return copy;
     }
@@ -116,20 +168,10 @@ public class RecipeHooks {
     // =====================================================================================
 
     public static dev.architectury.fluid.FluidStack readFluidStack(FriendlyByteBuf buf) {
-        boolean present = buf.readBoolean();
-        if (!present) {
-            return dev.architectury.fluid.FluidStack.empty();
-        }
-        ResourceLocation id = buf.readResourceLocation();
-        long amount = buf.readVarLong();
-        net.minecraft.world.level.material.Fluid fluid = net.minecraft.core.registries.BuiltInRegistries.FLUID.get(id);
-        if (fluid == null || fluid == net.minecraft.world.level.material.Fluids.EMPTY) {
-            return dev.architectury.fluid.FluidStack.empty();
-        }
-        if (amount <= 0) {
-            return dev.architectury.fluid.FluidStack.empty();
-        }
-        return dev.architectury.fluid.FluidStack.create(fluid, amount);
+        // Резолв/валидация жидкости — в fluidStackOf (единая точка)
+        return buf.readBoolean()
+                ? fluidStackOf(buf.readResourceLocation(), buf.readVarLong())
+                : dev.architectury.fluid.FluidStack.empty();
     }
 
     public static void writeFluidStack(FriendlyByteBuf buf, dev.architectury.fluid.FluidStack stack) {
@@ -174,8 +216,8 @@ public class RecipeHooks {
         //? if < 1.21.1 {
         return (List<R>) manager.getAllRecipesFor((RecipeType) type);
         //?} else {
-        /*return ((List<RecipeHolder<R>>) (Object) manager.getAllRecipesFor((RecipeType) type)).stream()
-                .map(RecipeHolder::value)
+        /*return ((List<net.minecraft.world.item.crafting.RecipeHolder<R>>) (Object) manager.getAllRecipesFor((RecipeType) type)).stream()
+                .map(RecipeHooks::unwrap)
                 .toList();
         *///?}
     }
@@ -220,7 +262,7 @@ public class RecipeHooks {
         //?} else {
         /*return ((Optional<net.minecraft.world.item.crafting.RecipeHolder<R>>) (Object)
                 level.getRecipeManager().getRecipeFor((RecipeType) type, new net.minecraft.world.item.crafting.SingleRecipeInput(input), level))
-                .map(net.minecraft.world.item.crafting.RecipeHolder::value);
+                .map(RecipeHooks::unwrap);
         *///?}
     }
 
@@ -232,7 +274,7 @@ public class RecipeHooks {
         //? if < 1.21.1 {
         return (Optional<Recipe<?>>) (Object) manager.byKey(id);
         //?} else {
-        /*return ((Optional<RecipeHolder<?>>) (Object) manager.byKey(id)).map(RecipeHolder::value);
+        /*return ((Optional<net.minecraft.world.item.crafting.RecipeHolder<?>>) (Object) manager.byKey(id)).map(RecipeHooks::unwrap);
         *///?}
     }
 
@@ -250,7 +292,7 @@ public class RecipeHooks {
         //?} else {
         /*return ((Optional<net.minecraft.world.item.crafting.RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe>>) (Object)
                 level.getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, grid.toCraftingInput(), level))
-                .map(net.minecraft.world.item.crafting.RecipeHolder::value);
+                .map(RecipeHooks::unwrap);
         *///?}
     }
 
@@ -272,7 +314,7 @@ public class RecipeHooks {
         //?} else {
         /*var input = grid.toCraftingInput();
         for (var holder : level.getRecipeManager().getAllRecipesFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING)) {
-            if (holder.value().matches(input, level)) out.add(holder.value());
+            if (holder.value().matches(input, level)) out.add(unwrap(holder));
         }
         *///?}
 

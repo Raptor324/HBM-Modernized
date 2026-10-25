@@ -139,11 +139,13 @@ public class MachineBlastFurnaceBlock extends BaseEntityBlock implements IMultib
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
         return openMenu(state, level, pos, player);
     }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
         return openMenu(state, level, pos, player);
     }
      *///?}
@@ -162,13 +164,14 @@ public class MachineBlastFurnaceBlock extends BaseEntityBlock implements IMultib
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        // w16b: nur die Kernzelle (Raycast pro Zelle wie Original); Umriss der ganzen Maschine: MultiblockOutlineForge
         // Рамка выделения - вся структура 3x7x3 (генерирует StructureHelper)
-        return getStructureHelper().generateShapeFromParts(state.getValue(FACING));
+        return getStructureHelper().getControllerCellShape(state.getValue(FACING));
     }
 
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return getStructureHelper().generateShapeFromParts(state.getValue(FACING));
+        return getStructureHelper().getSpecificCollisionShape(getStructureHelper().getControllerOffset(), state.getValue(FACING));
     }
 
     @Nullable

@@ -12,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * Верхняя прослойка над {@link BlockEntity} с минимальным набором stonecutter-ветвлений
@@ -44,12 +45,11 @@ import com.hbm_m.platform.PlatformHooks;
  * прослойкой при получении пакета) — он должен делегировать в {@link #readNbtData}.
  */
 public abstract class BaseHbmBlockEntity extends BlockEntity
-        implements com.hbm_m.api.render.RenderBoundsProvider, com.hbm_m.api.render.RenderDirtyTracker {
+        implements com.hbm_m.api.render.RenderBoundsProvider, com.hbm_m.api.render.RenderDirtyTracker, com.hbm_m.platform.HbmCapabilityProvider {
 
     public BaseHbmBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
     }
-
 
     // ═════════════════════════════════════════════════════════════════════════════════════
     //  Render dirty tracking (GPU-driven сбор машин: см. com.hbm_m.api.render.RenderDirtyTracker)
@@ -172,19 +172,6 @@ public abstract class BaseHbmBlockEntity extends BlockEntity
         return (level.getGameTime() + (worldPosition.hashCode() & 15)) % intervalTicks == 0;
     }
 
-    /**
-     * Render bounding box по умолчанию — 1 блок (чуть расширенный).
-     * На 1.21.1 NeoForge BER-пасс зовёт его через {@link com.hbm_m.api.render.RenderBoundsProvider}
-     * (ванильного BlockEntity#getRenderBoundingBox там нет); на 1.20.1 Forge это @Override.
-     * Мультиблоки переопределяют на AABB всей структуры.
-     */
-    //? if forge {
-    @Override
-    //?}
-    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
-        return new net.minecraft.world.phys.AABB(worldPosition).inflate(0.5D);
-    }
-
     // ═════════════════════════════════════════════════════════════════════════════════════
     //  Централизованный дроп инвентаря при разрушении блока. Платформенно-независимо:
     //  один источник правды — {@link #getItemHandler(net.minecraft.core.Direction)},
@@ -215,6 +202,157 @@ public abstract class BaseHbmBlockEntity extends BlockEntity
                 }
             }
         }
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════════════════
+    //  1:1 TileEntityLoadedBase.checkTilt - Maschinen ohne tragfaehiges Fundament kippen.
+    // ═════════════════════════════════════════════════════════════════════════════════════
+
+    public enum TiltType { UNAVOIDABLE, CONFIG }
+
+    /**
+     * NTM Space {@code TileEntityMachineBase.breatheAir(amount)}: true = genug Sauerstoff fuer Verbrennung am Ort,
+     * verbraucht {@code amount} mB Luft aus einem abgedichteten Raum ({@code 0} = nur pruefen). Ohne Space-Addon
+     * immer true ({@link com.hbm_m.api.space.SpaceEnvironment#consumeOxygen}).
+     */
+    public boolean breatheAir(int amount) {
+        return com.hbm_m.api.space.SpaceApi.breatheAir(level, worldPosition, amount);
+    }
+
+    public boolean tilted = false;
+    public int tiltBlocksChecked = 0;
+    public int tiltBlocksValid = 0;
+
+    /**
+     * Prueft pro Sekunde einen Bodenblock; nach einem vollen Durchgang ist die Maschine gekippt, wenn weniger als 95 %
+     * tragen. Schwere Maschinen brauchen volle, undurchsichtige Bloecke ohne Sand/Wolle/Erde und mindestens die
+     * Explosionsfestigkeit von Stein, normale nur eine feste Oberseite ohne Sand, tote/oelige Erde und rissigen Stein.
+     */
+    public void checkTilt(TiltType cfg, boolean extraHeavy) {
+        if (level == null || level.isClientSide) return;
+        boolean doesTilt = false;
+        // E1 (Fork, nur mit Addon): GeneralConfig.enableUnavoidableGravity - Master: immer
+        if (cfg == TiltType.UNAVOIDABLE && com.hbm_m.api.space.SpaceApi.fork().unavoidableGravity()) doesTilt = true;
+        if (cfg == TiltType.CONFIG && com.hbm_m.config.ModClothConfig.get().enableMachineGravity) doesTilt = true;
+        if (cfg == TiltType.CONFIG && com.hbm_m.config.GeneralConfig.enable528 && com.hbm_m.config.ModClothConfig.get().enable528MachineGravity) doesTilt = true;
+        // NTM Space: im Orbit kippt nichts (CelestialBody.inOrbit) - ohne Space-Addon immer false
+        if (com.hbm_m.api.space.SpaceApi.inOrbit(level)) doesTilt = false;
+
+        if (!doesTilt) { setTilted(false); return; }
+        if (this.getFloorCount() <= 0) { setTilted(false); return; }
+        // Original: BlockPos.getIdentity
+        int identity = (worldPosition.getY() + worldPosition.getZ() * 27644437) * 27644437 + worldPosition.getX();
+        if ((level.getGameTime() + identity) % 20 != 0) return;
+
+        if (this.tiltBlocksChecked >= this.getFloorCount()) {
+
+            if (this.tiltBlocksValid >= this.tiltBlocksChecked * 0.95) {
+                setTilted(false);
+            } else {
+                if (!this.tilted) level.playSound(null, worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5,
+                        com.hbm_m.sound.HbmSoundsNT.get("hbm:block.metalImpact"), net.minecraft.sounds.SoundSource.BLOCKS, 3F, 1F);
+                setTilted(true);
+            }
+
+            this.setChanged();
+            this.tiltBlocksChecked = 0;
+            this.tiltBlocksValid = 0;
+        }
+
+        BlockPos pos = getFloorPosFromIndex(this.tiltBlocksChecked);
+        if (pos == null) return;
+
+        BlockState ground = level.getBlockState(pos);
+        this.tiltBlocksChecked++;
+
+        if (extraHeavy) {
+            if (!ground.isFaceSturdy(level, pos, net.minecraft.core.Direction.UP)) return;
+            if (!ground.isRedstoneConductor(level, pos)) return;
+            if (isSandMaterial(ground) || ground.is(net.minecraft.tags.BlockTags.WOOL) || isGroundMaterial(ground)) return;
+            if (ground.getBlock().getExplosionResistance() < net.minecraft.world.level.block.Blocks.STONE.getExplosionResistance()) return;
+            this.tiltBlocksValid++;
+        } else {
+            if (!ground.isFaceSturdy(level, pos, net.minecraft.core.Direction.UP)) return;
+            if (isSandMaterial(ground)) return;
+            if (ground.is(com.hbm_m.block.ModBlocks.DIRT_DEAD.get()) || ground.is(com.hbm_m.block.ModBlocks.DIRT_OILY.get())
+                    || ground.is(com.hbm_m.block.ModBlocks.STONE_CRACKED.get())) return;
+            this.tiltBlocksValid++;
+        }
+    }
+
+    /** Original {@code Material.sand}: Sand, Kies, Seelensand. */
+    private static boolean isSandMaterial(BlockState s) {
+        return s.is(net.minecraft.tags.BlockTags.SAND) || s.is(net.minecraft.world.level.block.Blocks.GRAVEL)
+                || s.is(net.minecraft.world.level.block.Blocks.SOUL_SAND) || s.is(net.minecraft.world.level.block.Blocks.SUSPICIOUS_GRAVEL);
+    }
+
+    /** Original {@code Material.ground}: Erde samt Varianten, Ackerboden (Gras und Myzel waren Material.grass). */
+    private static boolean isGroundMaterial(BlockState s) {
+        return s.is(net.minecraft.world.level.block.Blocks.DIRT) || s.is(net.minecraft.world.level.block.Blocks.COARSE_DIRT)
+                || s.is(net.minecraft.world.level.block.Blocks.PODZOL) || s.is(net.minecraft.world.level.block.Blocks.ROOTED_DIRT)
+                || s.is(net.minecraft.world.level.block.Blocks.FARMLAND) || s.is(net.minecraft.world.level.block.Blocks.DIRT_PATH)
+                || s.is(net.minecraft.world.level.block.Blocks.MUD);
+    }
+
+    private void setTilted(boolean t) {
+        if (this.tilted != t) {
+            this.tilted = t;
+            this.setChanged();
+            if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
+    }
+
+    public int getFloorCount() { return 0; }
+    public @Nullable BlockPos getFloorPosFromIndex(int index) { return null; }
+
+    public BlockPos standardFloor3x3(int index) {
+        return new BlockPos(worldPosition.getX() - 1 + (index / 2) * 2, worldPosition.getY() - 1, worldPosition.getZ() - 1 + (index % 2) * 2);
+    }
+    public BlockPos standardFloor5x5(int index) {
+        return new BlockPos(worldPosition.getX() - 2 + (index / 3) * 2, worldPosition.getY() - 1, worldPosition.getZ() - 2 + (index % 3) * 2);
+    }
+    public BlockPos standardFloor7x7(int index) {
+        return new BlockPos(worldPosition.getX() - 3 + (index / 4) * 2, worldPosition.getY() - 1, worldPosition.getZ() - 3 + (index % 4) * 2);
+    }
+
+    /** Liest "tilted" aus einem Client-Update; bei Aenderung wird das (gekippte) Blockmodell neu gebaut. */
+    private void readTiltClient(@NotNull CompoundTag tag) {
+        boolean t = tag.getBoolean("tilted");
+        if (t != this.tilted) {
+            this.tilted = t;
+            if (level != null && level.isClientSide) {
+                this.requestModelDataUpdate();
+                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 8);
+            }
+        }
+    }
+    /**
+     * Render bounding box по умолчанию — 1 блок (чуть расширенный).
+     * На 1.21.1 NeoForge BER-пасс зовёт его через {@link com.hbm_m.api.render.RenderBoundsProvider}
+     * (ванильного BlockEntity#getRenderBoundingBox там нет); на 1.20.1 Forge это @Override.
+     * Мультиблоки переопределяют на AABB всей структуры.
+     */
+    //? if forge {
+    @Override
+    //?}
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return new net.minecraft.world.phys.AABB(worldPosition).inflate(0.5D);
+    }
+
+    /**
+     * Отправляет обновление состояния блока клиентам.
+     */
+    protected void sendUpdateToClient() {
+        if (level != null && !level.isClientSide && !isRemoved()) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
+    }
+
+    /**
+     * Отправляет обновление клиенту с указанием дистанции/радиуса.
+     */
+    protected void sendUpdateToClient(int range) {
+        sendUpdateToClient();
     }
 
     // ═════════════════════════════════════════════════════════════════════════════════════
@@ -274,24 +412,28 @@ public abstract class BaseHbmBlockEntity extends BlockEntity
     @Override
     protected void saveAdditional(@NotNull CompoundTag tag) {
         super.saveAdditional(tag);
+        tag.putBoolean("tilted", tilted);
         writeNbtData(tag, null);
     }
 
     @Override
     public void load(@NotNull CompoundTag tag) {
         super.load(tag);
+        this.tilted = tag.getBoolean("tilted");
         readNbtData(tag, null);
     }
     //?} else {
     /*@Override
     protected void saveAdditional(@NotNull CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
+        tag.putBoolean("tilted", tilted);
         writeNbtData(tag, registries);
     }
 
     @Override
     protected void loadAdditional(@NotNull CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
+        this.tilted = tag.getBoolean("tilted");
         readNbtData(tag, registries);
     }
     *///?}
@@ -304,20 +446,15 @@ public abstract class BaseHbmBlockEntity extends BlockEntity
     @Override
     public @NotNull CompoundTag getUpdateTag() {
         CompoundTag tag = super.getUpdateTag();
+        tag.putBoolean("tilted", tilted);
         writeNbtData(tag, null);
         return tag;
     }
-    //?} elif neoforge {
-    /*@Override
-    public @NotNull CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
-        CompoundTag tag = super.getUpdateTag(registries);
-        writeNbtData(tag, registries);
-        return tag;
-    }
-    *///?} else {
+    //?} else {
     /*@Override
     public @NotNull CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
+        tag.putBoolean("tilted", tilted);
         writeNbtData(tag, registries);
         return tag;
     }
@@ -333,14 +470,18 @@ public abstract class BaseHbmBlockEntity extends BlockEntity
     @Override
     public void handleUpdateTag(@NotNull CompoundTag tag) {
         nucleusRenderDirty = true;
+        readTiltClient(tag);
         applyClientUpdate(tag);
     }
 
     @Override
     public void onDataPacket(@NotNull Connection net, @NotNull ClientboundBlockEntityDataPacket pkt) {
         nucleusRenderDirty = true;
-        CompoundTag tag = PlatformHooks.getItemTag(pkt);
-        if (tag != null) applyClientUpdate(tag);
+        CompoundTag tag = pkt.getTag();
+        if (tag != null) {
+            readTiltClient(tag);
+            applyClientUpdate(tag);
+        }
     }
     //?} else {
     /*// NeoForge 1.21.1: дефолт IBlockEntityExtension.onDataPacket ПРОПУСКАЕТ ПУСТОЙ тег
@@ -350,13 +491,24 @@ public abstract class BaseHbmBlockEntity extends BlockEntity
     @Override
     public void handleUpdateTag(@NotNull CompoundTag tag, HolderLookup.Provider registries) {
         nucleusRenderDirty = true;
+        readTiltClient(tag);
         applyClientUpdate(tag, registries);
     }
 
     @Override
     public void onDataPacket(@NotNull Connection net, @NotNull ClientboundBlockEntityDataPacket pkt, HolderLookup.Provider registries) {
         nucleusRenderDirty = true;
-        applyClientUpdate(pkt.getTag(), registries);
+        CompoundTag tag = pkt.getTag();
+        CompoundTag safeTag = tag != null ? tag : new CompoundTag();
+        readTiltClient(safeTag);
+        applyClientUpdate(safeTag, registries);
+    }
+
+    // Forge ruft invalidateCaps() aus setRemoved(); auf NeoForge die gespiegelten Forge-Zweige (invalidateHbmCaps).
+    @Override
+    public void setRemoved() {
+        super.setRemoved();
+        invalidateHbmCaps();
     }
     *///?}
 

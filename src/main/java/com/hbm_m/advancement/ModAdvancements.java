@@ -10,6 +10,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 
 import java.util.List;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * Central grant point for the mod's advancements, standing in for 1.7.10's
@@ -99,7 +100,7 @@ public final class ModAdvancements {
         if (!(player instanceof ServerPlayer serverPlayer)) return;
 
         // Advancement wurde in 1.21 durch AdvancementHolder ersetzt; PlatformHooks kapselt beide.
-        com.hbm_m.platform.PlatformHooks.awardAdvancementIfEligible(
+        com.hbm_m.platform.MobHooks.awardAdvancementIfEligible(
                 serverPlayer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, id), true);
     }
 

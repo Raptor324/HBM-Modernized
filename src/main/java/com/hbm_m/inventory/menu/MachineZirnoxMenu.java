@@ -6,9 +6,7 @@ import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.liquids.FluidBarrelItem;
 import com.hbm_m.item.tags_and_tiers.ModTags;
-import com.hbm_m.platform.DummyItemStackHandler;
 
 import dev.architectury.fluid.FluidStack;
 import net.minecraft.core.BlockPos;
@@ -21,6 +19,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.material.Fluid;
+import com.hbm_m.platform.ModItemStackHandler;
 
 public class MachineZirnoxMenu extends AbstractContainerMenu {
 
@@ -40,7 +39,7 @@ public class MachineZirnoxMenu extends AbstractContainerMenu {
         // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
         // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
         this.machineContainer = new ModItemStackHandlerContainer(
-                blockEntity != null ? blockEntity.getInventory() : new DummyItemStackHandler(MACHINE_SLOT_COUNT),
+                blockEntity != null ? blockEntity.getInventory() : new ModItemStackHandler.Dummy(MACHINE_SLOT_COUNT),
                 blockEntity != null ? blockEntity::setChanged : null);
 
         // Rods
@@ -132,6 +131,7 @@ public class MachineZirnoxMenu extends AbstractContainerMenu {
                 if (!this.moveItemStackTo(stack, PLAYER_SLOT_START, this.slots.size(), true)) {
                     return ItemStack.EMPTY;
                 }
+            // Original-Menueindizes: 24/25 = CO2 rein/raus, 26/27 = Wasser rein/raus
             } else if (holdsFluid(stack, ModFluids.CARBONDIOXIDE.getSource())) {
                 if (!this.moveItemStackTo(stack, MENU_CO2_IN, MENU_CO2_IN + 1, false)) {
                     return ItemStack.EMPTY;
@@ -140,8 +140,9 @@ public class MachineZirnoxMenu extends AbstractContainerMenu {
                 if (!this.moveItemStackTo(stack, MENU_WATER_IN, MENU_WATER_IN + 1, false)) {
                     return ItemStack.EMPTY;
                 }
-            } else if (stack.is(ModTags.Items.ZIRNOX_RODS)) {
-                if (!this.moveItemStackTo(stack, 0, MachineZirnoxBlockEntity.ROD_SLOT_COUNT, false)) {
+            } else if (stack.getItem() instanceof com.hbm_m.item.industrial.ZirnoxRodItem) {
+                // Original mergeItemStack(stack, 0, 24, true): von hinten auffuellen
+                if (!this.moveItemStackTo(stack, 0, MachineZirnoxBlockEntity.ROD_SLOT_COUNT, true)) {
                     return ItemStack.EMPTY;
                 }
             } else {
@@ -165,12 +166,8 @@ public class MachineZirnoxMenu extends AbstractContainerMenu {
             return VanillaFluidEquivalence.sameSubstance(targetFluid, net.minecraft.world.level.material.Fluids.WATER);
         }
 
-        if (!stack.is(ModItems.FLUID_BARREL.get())) {
-            return false;
-        }
-
-        FluidStack fluid = FluidBarrelItem.getFluid(stack);
-        return !fluid.isEmpty() && VanillaFluidEquivalence.sameSubstance(fluid.getFluid(), targetFluid);
+        // Original: alles, was die FluidContainerRegistry als Behaelter dieser Fluessigkeit kennt
+        return com.hbm_m.inventory.FluidContainerRegistry.getFluidContent(stack, targetFluid) > 0;
     }
 
     private static final class TakeOnlySlot extends Slot {

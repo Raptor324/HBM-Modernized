@@ -1,12 +1,17 @@
 package com.hbm_m.handler;
 
-import com.hbm_m.armormod.item.ItemModGasmask;
+import java.util.Map;
+
 import com.hbm_m.item.ModItems;
+import com.hbm_m.util.ArmorUtil;
+
+import net.minecraft.world.item.Item;
 
 /**
  * Регистрация защиты предметов по классам опасностей.
- * Порт {@link com.hbm.util.ArmorUtil.register()} (1.7.10).
- */
+ * Порт {@link com.hbm.util.ArmorUtil.register()} (1.7.10): плюс всё, что
+ * FSB-брони регистрируют через {@code setHazardClass}.
+*/
 public final class ArmorRegistryInit {
 
     private ArmorRegistryInit() {
@@ -53,6 +58,10 @@ public final class ArmorRegistryInit {
 
         ArmorRegistry.register(ModItems.SCHRABIDIUM_HELMET.get(), FULL_PACKAGE);
         ArmorRegistry.register(ModItems.EUPHEMIUM_HELMET.get(), FULL_PACKAGE);
+
+        for (Map.Entry<Item, HazardClass[]> pair : ArmorUtil.external) {
+            ArmorRegistry.register(pair.getKey(), pair.getValue());
+        }
     }
 
     /** The original's ArmorUtil.FULL_PACKAGE: everything a head slot can shield against. */

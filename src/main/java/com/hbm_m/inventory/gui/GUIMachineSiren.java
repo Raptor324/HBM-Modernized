@@ -11,16 +11,9 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
 
-/** Port of {@code GUIMachineSiren} (1.7.10 Original). */
-@OnlyIn(Dist.CLIENT)
 public class GUIMachineSiren extends AbstractContainerScreen<MachineSirenMenu> {
 
     private static final ResourceLocation TEXTURE =
@@ -45,5 +38,13 @@ public class GUIMachineSiren extends AbstractContainerScreen<MachineSirenMenu> {
         com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
+    }
+
+    @Override
+    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        // Original drawGuiContainerForegroundLayer
+        String name = this.title.getString();
+        guiGraphics.drawString(this.font, name, 88 - this.font.width(name) / 2, 6, 4210752, false);
+        guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, 72, 4210752, false);
     }
 }

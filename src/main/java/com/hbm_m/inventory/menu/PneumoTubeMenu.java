@@ -12,6 +12,7 @@ import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * 1:1-Port von {@code ContainerPneumoTube} (1.7.10). Die fuenfzehn Filterplaetze liegen als 5×3

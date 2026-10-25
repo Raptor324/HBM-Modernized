@@ -1,13 +1,7 @@
 package com.hbm_m.client.render;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 import net.minecraft.client.Minecraft;
 
 /**
@@ -17,6 +11,7 @@ import net.minecraft.client.Minecraft;
  */
 
 @OnlyIn(Dist.CLIENT)
+
 public final class RenderFrameLight {
 
     private static int frameSerial;
@@ -36,12 +31,7 @@ public final class RenderFrameLight {
         }
         Minecraft mc = Minecraft.getInstance();
         if (mc.gameRenderer != null) {
-            //? if < 1.21.1 {
-            mc.gameRenderer.lightTexture().updateLightTexture(mc.getFrameTime());
-            //?} else {
-            /*// 1.21.1: getPartialTick() was removed - partial tick time via DeltaTracker.Timer.
-            mc.gameRenderer.lightTexture().updateLightTexture(mc.getTimer().getGameTimeDeltaPartialTick(true));
-            *///?}
+            mc.gameRenderer.lightTexture().updateLightTexture(com.hbm_m.platform.RenderHooks.getPartialTickRaw());
         }
         lastUpdatedFrame = frameSerial;
     }

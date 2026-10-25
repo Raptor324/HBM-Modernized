@@ -69,6 +69,13 @@ public class AchievementHandler {
         block(ModBlocks.STRUCT_TORUS_CORE,     ModAdvancements.FUSION);
         block(ModBlocks.MACHINE_BLAST_FURNACE,  ModAdvancements.BLAST_FURNACE);
         item(ModItems.MACHINE_ASSEMBLER,       ModAdvancements.ASSEMBLY);
+        // Original: machine_assembly_machine = MachineAssemblyMachine, im Port advanced_assembly_machine
+        item(ModItems.ADVANCED_ASSEMBLY_MACHINE, ModAdvancements.ASSEMBLY);
+        item(com.hbm_m.item.missile.MissilePartItems.get("mp_warhead_10_nuclear"), ModAdvancements.RED_BALLOONS);
+        item(com.hbm_m.item.missile.MissilePartItems.get("mp_warhead_10_nuclear_large"), ModAdvancements.RED_BALLOONS);
+        item(com.hbm_m.item.missile.MissilePartItems.get("mp_warhead_15_nuclear"), ModAdvancements.RED_BALLOONS);
+        item(com.hbm_m.item.missile.MissilePartItems.get("mp_warhead_15_nuclear_shark"), ModAdvancements.RED_BALLOONS);
+        item(com.hbm_m.item.missile.MissilePartItems.get("mp_warhead_15_boxcar"), ModAdvancements.RED_BALLOONS);
         item(ModMaterialItems.get(ModMaterials.PU_MIX, MaterialShape.BILLET),  ModAdvancements.CHICAGO_PILE);
         item(ModItems.PARTICLE_DIGAMMA,        ModAdvancements.OMEGA12);
     }
@@ -134,9 +141,21 @@ public class AchievementHandler {
                                             net.minecraft.world.level.block.state.BlockState state,
                                             net.minecraft.server.level.ServerPlayer player,
                                             dev.architectury.utils.value.IntValue exp) {
-        if (state.is(ModBlocks.STONE_GNEISS.get())) {
+        // Original: nur beim ersten Mal (Erfolg noch nicht freigeschaltet) gibt es 500 XP dazu.
+        if (state.is(ModBlocks.STONE_GNEISS.get()) && !hasAdvancement(player, ModAdvancements.STRATUM)) {
             ModAdvancements.grant(player, ModAdvancements.STRATUM);
+            exp.accept(500);
         }
         return EventResult.pass();
+    }
+
+    private static boolean hasAdvancement(net.minecraft.server.level.ServerPlayer player, String id) {
+        net.minecraft.resources.ResourceLocation rl = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, id);
+        //? if < 1.21.1 {
+        var adv = player.server.getAdvancements().getAdvancement(rl);
+        //?} else {
+        /*var adv = player.server.getAdvancements().get(rl);
+        *///?}
+        return adv != null && player.getAdvancements().getOrStartProgress(adv).isDone();
     }
 }

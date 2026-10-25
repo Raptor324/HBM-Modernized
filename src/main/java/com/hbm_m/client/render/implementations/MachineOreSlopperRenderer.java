@@ -17,6 +17,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import com.hbm_m.platform.LoaderHooks;
 
 /**
  * Ore slopper on the {@link MachineRenderers} factory: Fan rotates around X,
@@ -59,7 +60,7 @@ public final class MachineOreSlopperRenderer {
     private static List<net.minecraft.client.renderer.block.model.BakedQuad> partQuads(
             String cacheKey, ResourceLocation modelId) {
         var modelManager = Minecraft.getInstance().getModelManager();
-        BakedModel model = PlatformHooks.getModel(modelManager, modelId);
+        BakedModel model = LoaderHooks.getModel(modelManager, modelId);
         if (model == null || model == modelManager.getMissingModel()) return List.of();
         return MeshRenderCache.getOrCompilePartGeometry(cacheKey, model).solidQuads();
     }

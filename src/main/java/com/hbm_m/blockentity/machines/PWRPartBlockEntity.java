@@ -11,6 +11,7 @@ import net.minecraft.nbt.NbtUtils;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.platform.BlockHooks;
 
 /**
  * Shared block entity for every PWR structure block that isn't the controller (fuel/control/
@@ -72,12 +73,12 @@ public class PWRPartBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         if (corePos != null) {
-            com.hbm_m.platform.PlatformHooks.writeBlockPos(tag, "CorePos", corePos);
+            com.hbm_m.platform.BlockHooks.writeBlockPos(tag, "CorePos", corePos);
         }
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        corePos = tag.contains("CorePos") ? com.hbm_m.platform.PlatformHooks.readBlockPos(tag, "CorePos") : null;
+        corePos = tag.contains("CorePos") ? com.hbm_m.platform.BlockHooks.readBlockPos(tag, "CorePos") : null;
     }
 }

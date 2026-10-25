@@ -1,0 +1,9 @@
+{
+  "priority": 15,
+  "blocks": [
+    "hbm_m:block_tungsten", "hbm_m:block_magnetized_tungsten", "hbm_m:deco_tungsten", "hbm_m:crate_tungsten",
+    "hbm_m:block_ferrouranium", "hbm_m:anvil_ferrouranium", "hbm_m:block_u238",
+    "minecraft:gold_block", "minecraft:netherite_block"
+  ],
+  "hvl": { "gamma": 0.3, "neutron": 4.0, "beta": 0.05 }
+}

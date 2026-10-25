@@ -18,7 +18,6 @@ import com.hbm_m.powerarmor.layer.PowerArmorEmptyModel;
 import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.radiation.PlayerHandler;
 import com.hbm_m.sound.ModSounds;
-import com.hbm_m.platform.PlayerPersistentData;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
@@ -37,6 +36,7 @@ import net.minecraft.world.entity.player.Player;
 import com.hbm_m.item.tools_and_armor.ModArmorMaterials;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import com.hbm_m.platform.MobHooks;
 //? if forge {
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import net.minecraftforge.event.entity.living.LivingEquipmentChangeEvent;
@@ -133,6 +133,7 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
 
     //? if forge {
     @Override
+@SuppressWarnings("removal")
     public void initializeClient(Consumer<IClientItemExtensions> consumer) {
         consumer.accept(new IClientItemExtensions() {
             private PowerArmorEmptyModel model;
@@ -350,7 +351,7 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
         if (hasExternalGeigerDeviceCached(player)) return;
         
         // Таймер на игроке (НЕ на классе предмета!)
-        CompoundTag data = PlayerPersistentData.get(player);
+        CompoundTag data = MobHooks.getPersistentData(player);
         int counter = data.getInt("hbm_power_armor_geiger_tick");
         counter++;
         
@@ -366,7 +367,7 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
     }
 
     private boolean hasExternalGeigerDeviceCached(Player player) {
-        CompoundTag data = PlayerPersistentData.get(player);
+        CompoundTag data = MobHooks.getPersistentData(player);
         long currentTick = player.level().getGameTime();
         long lastCheckTick = data.getLong(TAG_GEIGER_CHECK_TICK);
         

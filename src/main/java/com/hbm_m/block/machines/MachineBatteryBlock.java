@@ -39,6 +39,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
+import com.hbm_m.platform.StackNbt;
 
 
 /**
@@ -121,7 +122,11 @@ public class MachineBatteryBlock extends BaseEntityBlock implements com.hbm_m.in
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        // Вызываем super.onRemove, который сам вызовет loot table
+        // Original breakBlock: Inventar droppt einzeln; Ladung/Modi/Prioritaet gehen ueber IPersistentNBT (Loot) ins Item
+        if (!state.is(newState.getBlock()) && !level.isClientSide()
+                && level.getBlockEntity(pos) instanceof MachineBatteryBlockEntity battery) {
+            battery.dropInventoryContents();
+        }
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
@@ -146,6 +151,7 @@ public class MachineBatteryBlock extends BaseEntityBlock implements com.hbm_m.in
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos,
                                  Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
         if (!level.isClientSide) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MachineBatteryBlockEntity battery) {
@@ -159,6 +165,7 @@ public class MachineBatteryBlock extends BaseEntityBlock implements com.hbm_m.in
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
                                                 Player player, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
         if (!level.isClientSide) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MachineBatteryBlockEntity battery) {
@@ -179,7 +186,7 @@ public class MachineBatteryBlock extends BaseEntityBlock implements com.hbm_m.in
             if (be instanceof MachineBatteryBlockEntity batteryBE) {
 
                 // Проверяем, есть ли у предмета NBT
-                CompoundTag itemNbt = PlatformHooks.getItemTag(pStack);
+                CompoundTag itemNbt = StackNbt.read(pStack);
 
                 // Ищем наш специальный тег "BlockEntityTag", который создал лут-тейбл
                 if (itemNbt != null && itemNbt.contains("BlockEntityTag")) {
@@ -209,7 +216,7 @@ public class MachineBatteryBlock extends BaseEntityBlock implements com.hbm_m.in
 
         // 1. Получаем сохраненную энергию из NBT
         long energy = 0;
-        CompoundTag nbt = PlatformHooks.getItemTag(pStack);
+        CompoundTag nbt = StackNbt.read(pStack);
 
         // Мы читаем тот же "BlockEntityTag", который записали в loot table.
         // The block entity writes "energy" (lower case, long); "Energy" only ever existed in the
@@ -237,4 +244,20 @@ public class MachineBatteryBlock extends BaseEntityBlock implements com.hbm_m.in
         return CODEC;
     }
     *///?}
+
+    /** Original {@code getComparatorInputOverride}: Ladestand {@code frac * 15 + 1}, leer 0. */
+    @Override
+    public boolean hasAnalogOutputSignal(net.minecraft.world.level.block.state.BlockState state) {
+        return true;
+    }
+
+    @Override
+    public int getAnalogOutputSignal(net.minecraft.world.level.block.state.BlockState state, net.minecraft.world.level.Level level, net.minecraft.core.BlockPos pos) {
+        net.minecraft.world.level.block.entity.BlockEntity te = level.getBlockEntity(pos);
+        if (!(te instanceof com.hbm_m.blockentity.machines.MachineBatteryBlockEntity battery)) return 0;
+        long power = battery.getEnergyStored();
+        if (power == 0) return 0;
+        double frac = (double) power / (double) battery.getMaxEnergyStored() * 15D;
+        return net.minecraft.util.Mth.clamp((int) frac + 1, 0, 15);
+    }
 }

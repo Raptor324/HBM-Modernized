@@ -43,6 +43,11 @@ public final class EntityEffectHandler {
 
     public static void onUpdate(LivingEntity entity) {
         if (entity.level().isClientSide()) {
+            // Original: die Kraterbiome zeigen dem eigenen Spieler "townaura"-Staub.
+            if (entity instanceof Player player) EntityEffectHandlerExtra.clientTick(player);
+            EntityEffectHandlerExtra.handleDashing(entity);
+            EntityEffectHandlerExtra.handlePlinking(entity);
+            if (entity instanceof Player player) EntityEffectHandlerExtra.handleFauxLadder(player);
             return;
         }
 
@@ -51,22 +56,35 @@ public final class EntityEffectHandler {
             HbmLivingProps.setRadEnv(entity, 0F);
         }
 
-        if (!(entity instanceof Player)) {
-            handleRadiationEffect(entity);
-        }
+        // Schild-Regeneration, Zeitbombe, 528-Netherbrand und Sync (Original: Anfang von onUpdate).
+        EntityEffectHandlerExtra.serverHead(entity);
 
         // Накачка от crater biome (1.7.10 EntityEffectHandler строки 114-124).
         // Биомы кратера эмиттят радиацию напрямую в игрока, минуя chunk ambient.
         handleCraterBiomeRadiation(entity);
 
+        // NTM Space: getAtmosphereCached + handleOxy + handleCorrosion (Addon; ohne Space-Addon nichts)
+        com.hbm_m.api.space.SpaceApi.livingTick(entity);
+
         // Чанковая доза для всех сущностей, включая игроков (1.7.10: handleRadiationFX → contaminate → radEnv).
         handleRadiationFromChunk(entity);
 
+        EntityEffectHandlerExtra.handleContamination(entity);
+        EntityEffectHandlerExtra.handleContagion(entity);
+
+        if (!(entity instanceof Player)) {
+            handleRadiationEffect(entity);
+        }
+
         handleRadiationFX(entity);
 
+        EntityEffectHandlerExtra.handleDigamma(entity);
+
         handleLungDisease(entity);
+        EntityEffectHandlerExtra.handleOil(entity);
 
         handlePollution(entity);
+        EntityEffectHandlerExtra.handleTemperature(entity);
     }
 
     /**
@@ -104,7 +122,7 @@ public final class EntityEffectHandler {
 
             // Original: die beiden oberen Stufen setzen beide Staerke 2 - so uebernommen.
             if (metal > 25) {
-                com.hbm_m.platform.PlatformHooks.addEffect(entity, ModEffects.LEAD, 100, metal < 50 ? 0 : 2);
+                com.hbm_m.platform.EffectHooks.addEffect(entity, ModEffects.LEAD, 100, metal < 50 ? 0 : 2);
             }
         }
     }
@@ -264,7 +282,16 @@ public final class EntityEffectHandler {
             return;
         }
 
-        // EntityDuck → EntityQuackos: пропущено до портирования утки и Quackos (1.7.10 parity)
+        // Original: eine Ente ab 200 RAD wird zu Quackos
+        if (entity.getClass() == com.hbm_m.entity.mob.EntityDuck.class && eRad >= 200F) {
+            com.hbm_m.entity.mob.EntityQuackos quacc = ModEntities.QUACKOS.get().create(level);
+            if (quacc != null) {
+                quacc.moveTo(entity.getX(), entity.getY(), entity.getZ(), entity.getYRot(), entity.getXRot());
+                level.addFreshEntity(quacc);
+                entity.discard();
+            }
+            return;
+        }
 
         if (entity instanceof Cow && !(entity instanceof MushroomCow) && eRad >= 50F) {
             MushroomCow cow = net.minecraft.world.entity.EntityType.MOOSHROOM.create(level);
@@ -392,6 +419,10 @@ public final class EntityEffectHandler {
             }
         }
 
+        // NTM Space: Sonnenstrahlung auf Himmelskoerpern/im Orbit (handleRadiationFX); ohne Space-Addon 0
+        float spaceRad = com.hbm_m.api.space.SpaceApi.ambientRadiation(level, entity.blockPosition());
+        if (spaceRad > rad) rad = spaceRad;
+
         // Диагностика цепочки чанк→сущность (гейтится enableDebugLogging, раз в 5 сек на сущность)
         if (ModClothConfig.get().enableDebugLogging && rad > 0F && entity.tickCount % 100 == 0) {
             com.hbm_m.main.MainRegistry.LOGGER.debug(
@@ -458,6 +489,11 @@ public final class EntityEffectHandler {
         nbt.putInt("count", count);
         nbt.putInt("entity", entity.getId());
         IParticleCreator.sendPacket(level, entity.getX(), entity.getY(), entity.getZ(), 25, nbt);
+    }
+
+    /** Fuer den Vomit-Klang der Ansteckung (MKU) aus {@link EntityEffectHandlerExtra}. */
+    static void vomitSound(Level level, LivingEntity entity) {
+        playVomitSound(level, entity);
     }
 
     private static void playVomitSound(Level level, LivingEntity entity) {

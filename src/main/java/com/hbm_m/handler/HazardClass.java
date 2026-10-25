@@ -12,6 +12,8 @@ public enum HazardClass {
     PARTICLE_FINE("hazard.particleFine"),
     GAS_MONOXIDE("hazard.gasMonoxide"),
     GAS_LUNG("hazard.gasLung"),
+    // Инертный газ / асфиксиант (FFA)
+    GAS_INERT("hazard.gasInert"),
     GAS_BLISTERING("hazard.gasBlistering"),
     BACTERIA("hazard.bacteria"),
     SAND("hazard.sand"),

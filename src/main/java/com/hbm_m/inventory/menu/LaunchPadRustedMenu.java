@@ -14,7 +14,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import com.hbm_m.platform.DummyItemStackHandler;
 import com.hbm_m.platform.ModItemStackHandler;
 
 /**
@@ -49,7 +48,7 @@ public class LaunchPadRustedMenu extends AbstractContainerMenu {
         // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
         Container machineContainer = new HandlerContainer(blockEntity != null
                 ? blockEntity.getInventory()
-                : new DummyItemStackHandler(MACHINE_SLOTS));
+                : new ModItemStackHandler.Dummy(MACHINE_SLOTS));
 
         // Слот ракеты: порт принимает missile_doomsday_rusted предметом (в 1.7.10 силос
         // из SiloComponent спавнился уже заряженным, отдельной загрузки не было)

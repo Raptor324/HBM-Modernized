@@ -38,6 +38,7 @@ public class RangeDetonatorItem extends Item implements ITooltipProvider {
 
     //? if forge {
     @Override
+@SuppressWarnings("removal")
     public void initializeClient(java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> consumer) {
         consumer.accept(new net.minecraftforge.client.extensions.common.IClientItemExtensions() {
             @Override
@@ -48,6 +49,7 @@ public class RangeDetonatorItem extends Item implements ITooltipProvider {
     }
     //?} elif neoforge {
     /*@Override
+@SuppressWarnings("removal")
     public void initializeClient(java.util.function.Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
         consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
             @Override

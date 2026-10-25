@@ -45,7 +45,8 @@ public class RadioRecBlock extends BaseEntityBlock {
 
     @Override
     public BlockState getStateForPlacement(net.minecraft.world.item.context.BlockPlaceContext context) {
-        return defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+        // Original onBlockPlacedBy: Meta 3/4/2/5 fuer Blick S/W/N/O = Blickrichtung (RenderDecoBlock dreht danach)
+        return defaultBlockState().setValue(FACING, context.getHorizontalDirection());
     }
 
     @Override
@@ -80,6 +81,7 @@ public class RadioRecBlock extends BaseEntityBlock {
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen false
 
         if (level.isClientSide()) {
             dev.architectury.utils.EnvExecutor.runInEnv(dev.architectury.utils.Env.CLIENT, () -> () ->
@@ -91,6 +93,7 @@ public class RadioRecBlock extends BaseEntityBlock {
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen false
 
         if (level.isClientSide()) {
             dev.architectury.utils.EnvExecutor.runInEnv(dev.architectury.utils.Env.CLIENT, () -> () ->

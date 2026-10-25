@@ -203,7 +203,11 @@ public final class ModRecipeIndex {
         //?} else {
         /*for (Object holder : manager.getAllRecipesFor((RecipeType) type)) {
             net.minecraft.world.item.crafting.RecipeHolder<T> h = (net.minecraft.world.item.crafting.RecipeHolder<T>) holder;
-            byIdSource.put(h.id(), h.value());
+            T val = h.value();
+            if (val instanceof com.hbm_m.platform.recipe.PlatformRecipe pr) {
+                pr.setRecipeId(h.id());
+            }
+            byIdSource.put(h.id(), val);
         }
         *///?}
 
@@ -309,7 +313,7 @@ public final class ModRecipeIndex {
     public static String blueprintPoolOf(Recipe<?> recipe) {
         if (recipe instanceof ChemicalPlantRecipe c) return c.getBlueprintPool();
         if (recipe instanceof AssemblerRecipe a) return a.getBlueprintPool();
-        if (recipe instanceof AnvilRecipe an) return an.getBlueprintPool();
+        // AnvilRecipe ist die FFA-Variante ohne Blueprint-Pool.
         return null;
     }
 

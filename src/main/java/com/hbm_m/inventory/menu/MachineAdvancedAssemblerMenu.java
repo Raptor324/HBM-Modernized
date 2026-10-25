@@ -9,7 +9,6 @@ import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.api.energy.ItemEnergyAccess;
 import com.hbm_m.util.LongDataPacker; // <-- Убедись, что этот импорт есть
-import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
@@ -21,6 +20,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 @SuppressWarnings("UnstableApiUsage")
 public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implements ILongEnergyMenu {
@@ -51,7 +51,7 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implemen
         // Добавляем слоты машины (без Forge-only SlotItemHandler).
         // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
         // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
-        var handler = this.blockEntity != null ? this.blockEntity.getInventory() : new DummyItemStackHandler(17);
+        var handler = this.blockEntity != null ? this.blockEntity.getInventory() : new ModItemStackHandler.Dummy(17);
         var container = new ModItemStackHandlerContainer(handler, this.blockEntity != null ? this.blockEntity::setChanged : null);
 
         this.addSlot(new Slot(container, 0, 152, 81) { // Energy
@@ -60,8 +60,14 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implemen
             }
         });
         this.addSlot(new Slot(container, 1, 35, 126)); // Blueprint
-        this.addSlot(new Slot(container, 2, 152, 108)); // Upgrade
-        this.addSlot(new Slot(container, 3, 152, 126)); // Upgrade
+        // Slots 2-3 are OUTPUT_SLOT_START..END in the BE (MachineAdvancedAssemblerBlockEntity):
+        // extract-only, same as slot 16.
+        this.addSlot(new Slot(container, 2, 152, 108) { // Output
+            @Override public boolean mayPlace(ItemStack stack) { return false; }
+        });
+        this.addSlot(new Slot(container, 3, 152, 126) { // Output
+            @Override public boolean mayPlace(ItemStack stack) { return false; }
+        });
         for (int i = 0; i < 4; ++i) for (int j = 0; j < 3; ++j) { // Input
             this.addSlot(new Slot(container, 4 + (i * 3) + j, 8 + j * 18, 18 + i * 18));
         }
@@ -178,11 +184,38 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implemen
         return MenuReach.stillValid(pPlayer, blockEntity, ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get());
     }
 
-    // Логика Shift-клика (без изменений)
+    /** 1:1 {@code ContainerMachineAssemblyMachine.transferStackInSlot}. */
     @NotNull
     @Override
     public ItemStack quickMoveStack(@NotNull Player playerIn, int pIndex) {
-        return ItemStack.EMPTY;
+        ItemStack slotOriginal = ItemStack.EMPTY;
+        Slot slot = this.slots.get(pIndex);
+        if (slot == null || !slot.hasItem()) return slotOriginal;
+
+        ItemStack slotStack = slot.getItem();
+        slotOriginal = slotStack.copy();
+        final int teSlots = 17;
+
+        if (pIndex <= teSlots - 1) {
+            if (!this.moveItemStackTo(slotStack, teSlots, this.slots.size(), true)) return ItemStack.EMPTY;
+        } else {
+            if (ItemEnergyAccess.getHbmProvider(slotOriginal).isPresent() || ItemEnergyAccess.getHbmReceiver(slotOriginal).isPresent()
+                    || slotOriginal.getItem() instanceof com.hbm_m.item.fekal_electric.ItemCreativeBattery) {
+                if (!this.moveItemStackTo(slotStack, 0, 1, false)) return ItemStack.EMPTY;
+            } else if (slotOriginal.getItem() instanceof com.hbm_m.item.industrial.ItemBlueprints) {
+                if (!this.moveItemStackTo(slotStack, 1, 2, false)) return ItemStack.EMPTY;
+            } else {
+                if (!this.moveItemStackTo(slotStack, 4, 16, false)) return ItemStack.EMPTY;
+            }
+        }
+
+        if (slotStack.isEmpty()) {
+            slot.set(ItemStack.EMPTY);
+        } else {
+            slot.setChanged();
+        }
+        slot.onTake(playerIn, slotStack);
+        return slotOriginal;
     }
 
     private void addPlayerInventory(Inventory playerInventory) {

@@ -3,7 +3,6 @@ package com.hbm_m.inventory.menu;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.machines.MissileAssemblyBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
-import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
@@ -12,6 +11,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 public class MissileAssemblyMenu extends AbstractContainerMenu {
 
@@ -41,7 +41,7 @@ public class MissileAssemblyMenu extends AbstractContainerMenu {
         // тайл может отсутствовать на клиенте (реплей Flashback) — подставляем пустую заглушку
         var container = this.blockEntity != null
                 ? new ModItemStackHandlerContainer(this.blockEntity.getInventory(), this.blockEntity::setChanged)
-                : new ModItemStackHandlerContainer(new DummyItemStackHandler(MissileAssemblyBlockEntity.SLOT_OUTPUT + 1), () -> {});
+                : new ModItemStackHandlerContainer(new ModItemStackHandler.Dummy(MissileAssemblyBlockEntity.SLOT_OUTPUT + 1), () -> {});
 
         this.addSlot(new Slot(container, MissileAssemblyBlockEntity.SLOT_CHIP, 8, 36));
         this.addSlot(new Slot(container, MissileAssemblyBlockEntity.SLOT_WARHEAD, 26, 36));

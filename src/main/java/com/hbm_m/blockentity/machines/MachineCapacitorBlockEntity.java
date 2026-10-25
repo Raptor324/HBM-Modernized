@@ -1,36 +1,25 @@
 package com.hbm_m.blockentity.machines;
 
-import com.hbm_m.api.redstoneoverradio.IRORInfo;
-import com.hbm_m.api.redstoneoverradio.IRORValueProvider;
-import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.machines.MachineCapacitorBlock;
-import com.hbm_m.block.machines.MachineCapacitorBusBlock;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.interfaces.IEnergyReceiver;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Port of {@code MachineCapacitor.TileEntityCapacitor} (1.7.10 Original) - a directional HE energy
- * buffer with no GUI/inventory. Charges 3x faster than it discharges: the original's CODE is
- * {@code getReceiverSpeed() = maxPower/100} and {@code getProviderSpeed() = maxPower/300}
- * (MachineCapacitor.java:262-268); the old tooltip claimed /200 and /600, but original code and
- * NTM NEXT agree on /100 + /300, which is ported here. Sits at LOW network priority, i.e. a
- * "last resort" sink/source. Only connects on the face it was placed against.
+ * buffer with no GUI/inventory. Charges 3x faster than it discharges (matching the original's fixed
+ * {@code maxPower/200} receive vs {@code maxPower/600} provide ratio) and sits at LOW network
+ * priority, i.e. a "last resort" sink/source. Only connects on the face it was placed against.
  * <p>
  * <p><b>Die Sammelschiene.</b> Wie im Original laesst sich der Ausgang verlaengern: hinter dem
  * Kondensator duerfen beliebig viele {@code capacitor_bus}-Bloecke in gerader Linie stehen, und
@@ -38,17 +27,9 @@ import org.jetbrains.annotations.Nullable;
  * die Reihe, gilt die ganze Kette als ungueltig und der Kondensator gibt nichts ab. So laesst sich
  * eine Batteriebank hinter einer Wand verstecken und trotzdem sauber anzapfen.</p>
  *
- * <p><b>Paritaet:</b> ohne Schienenkette gibt der Kondensator NICHTS ab (die fruehere
- * Port-Abweichung "gibt und nimmt an allen 6 Seiten" ist zurueckgebaut) und nimmt nur an seiner
- * Anschlussseite ({@code FACING}) an. Redstone-over-Radio ({@code VAL:fill}/{@code VAL:fillpercent})
- * ist wie im Original portiert; OpenComputers bleibt unportiert (hier existiert keine
- * OC/CC-Compat-Infrastruktur).</p>
- *
- * <p><b>Bekannte Abweichung:</b> die Schienenschleife bricht nach 64 Schienen bzw. an der Grenze
- * ungeladener Chunks ab (Schutz vor synchronem Chunk-Load im Stop-Server-Pfad); das Original
- * lief endlos weit.</p>
+ * <p>Redstone-over-Radio wie im Original ({@code fill}, {@code fillpercent}); OpenComputers gibt es hier nicht.</p>
  */
-public class MachineCapacitorBlockEntity extends BaseMachineBlockEntity implements IRORValueProvider {
+public class MachineCapacitorBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.block.IPersistentNBT, com.hbm_m.api.redstoneoverradio.IRORValueProvider {
 
     // Port der Zaehler aus TileEntityCapacitor: Leistung pro Tick + Werte des letzten Ticks.
     public long powerReceived;
@@ -56,29 +37,21 @@ public class MachineCapacitorBlockEntity extends BaseMachineBlockEntity implemen
     public long lastPowerReceived;
     public long lastPowerSent;
 
-    /** Port of {@code TileEntityCapacitor.getFunctionInfo}: VAL:fill / VAL:fillpercent. */
-    private static final String[] ROR = new String[] {
-            IRORInfo.PREFIX_VALUE + "fill",
-            IRORInfo.PREFIX_VALUE + "fillpercent",
-    };
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] { PREFIX_VALUE + "fill", PREFIX_VALUE + "fillpercent" };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "fill").equals(name)) return "" + getEnergyStored();
+        if ((PREFIX_VALUE + "fillpercent").equals(name)) return "" + getEnergyStored() * 100 / getMaxEnergyStored();
+        return null;
+    }
 
     public MachineCapacitorBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MACHINE_CAPACITOR_BE.get(), pos, state, 0,
                 capacityFor(state), Math.max(1, capacityFor(state) / 100), Math.max(1, capacityFor(state) / 300));
-    }
-
-    private static long capacityFor(BlockState state) {
-        return state.getBlock() instanceof MachineCapacitorBlock b ? b.getCapacity() : 1_000_000L;
-    }
-
-    @Override
-    public IEnergyReceiver.Priority getPriority() {
-        return IEnergyReceiver.Priority.LOW;
-    }
-
-    @Override
-    public boolean canConnectEnergy(Direction side) {
-        return getBlockState().getValue(MachineCapacitorBlock.FACING) == side;
     }
 
     @Override
@@ -137,30 +110,18 @@ public class MachineCapacitorBlockEntity extends BaseMachineBlockEntity implemen
         be.powerSent = 0;
     }
 
-    /**
-     * 1:1-Port des Netzwerkabschnitts von {@code TileEntityCapacitor.updateEntity}: subscribed
-     * wird NUR an der FACING-Seite (Original: ein einziges {@code trySubscribe} an der
-     * Metadaten-Seite), abgegeben wird NUR am Ende einer geraden Schienenkette (Original:
-     * {@code pos != null && last != null}). Ohne Kette gibt der Kondensator nichts ab.
-     * Wird vom zentralen Abonnement-Treiber ({@code EnergySubscriptions.tickAll}) jeden Tick
-     * aufgerufen; trySubscribe/tryProvide aktualisieren nur Timestamps bestehender
-     * Netzeinträge und sind daher pro Tick unkritisch.
-     */
+    private static long capacityFor(BlockState state) {
+        return state.getBlock() instanceof MachineCapacitorBlock b ? b.getCapacity() : 1_000_000L;
+    }
+
     @Override
-    public void ensureNetworkInitialized() {
-        if (!(level instanceof ServerLevel serverLevel) || isRemoved()) return;
+    public IEnergyReceiver.Priority getPriority() {
+        return IEnergyReceiver.Priority.LOW;
+    }
 
-        BusChain chain = walkBusChain();
-        if (chain != null) {
-            tryUnsubscribe(serverLevel, chain.end().getX(), chain.end().getY(), chain.end().getZ());
-            tryProvide(serverLevel, chain.end().getX(), chain.end().getY(), chain.end().getZ(), chain.dir());
-        }
-
-        Direction facing = getBlockState().getValue(MachineCapacitorBlock.FACING);
-        BlockPos input = worldPosition.relative(facing);
-        if (serverLevel.hasChunkAt(input)) {
-            trySubscribe(serverLevel, input.getX(), input.getY(), input.getZ(), facing);
-        }
+    @Override
+    public boolean canConnectEnergy(Direction side) {
+        return getBlockState().getValue(MachineCapacitorBlock.FACING) == side;
     }
 
     /**
@@ -168,78 +129,35 @@ public class MachineCapacitorBlockEntity extends BaseMachineBlockEntity implemen
      * Rueckseite aus wird der Kette gefolgt, solange dort Schienen mit gleicher Ausrichtung
      * stehen. Das Ende ist die Stelle, an der abgegeben wird.
      */
-    @Nullable
-    private BusChain walkBusChain() {
-        if (level == null) return null;
+    @Override
+    protected BlockPos[] getExtraEnergyPorts() {
+        if (level == null) return new BlockPos[0];
 
         Direction facing = getBlockState().getValue(MachineCapacitorBlock.FACING);
         BlockPos pos = worldPosition.relative(facing.getOpposite());
 
         Direction last = null;
-        // Original lief endlos weit. Cap bei 64 Schienen (bekannte Abweichung, siehe Klassen-
-        // javadoc): eine sehr lange Kette ist zulaessig, eine endlose nicht.
+        // Ohne Deckel: eine sehr lange Kette ist zulaessig, eine endlose nicht.
         for (int step = 0; step < 64; step++) {
-            // Просмотр цепочки идёт по СОСЕДНИМ позициям: если чанк соседа уже
-            // выгружен (типично — при выгрузке мира/остановке сервера), запрос
-            // getBlockState синхронно загрузит чанк с диска, и он снова попадёт
-            // в очередь выгрузки — лавина повторных загрузок висит stopServer
-            // на минуты. Цепочка просто обрывается на границе загруженности.
-            if (!level.hasChunkAt(pos)) break;
-            BlockState state = level.getBlockState(pos);
-            if (state.getBlock() != ModBlocks.CAPACITOR_BUS.get()) break;
-            if (!state.hasProperty(MachineCapacitorBusBlock.FACING)) break;
+            // Nie Chunks nachladen: laeuft auch aus setRemoved beim Entladen/Server-Stopp.
+            BlockState state = com.hbm_m.util.ChunkSafe.getBlockState(level, pos);
+            if (state == null) break;
+            if (state.getBlock() != com.hbm_m.block.ModBlocks.CAPACITOR_BUS.get()) break;
+            if (!state.hasProperty(MachineCapacitorBlock.FACING)) break;
 
-            Direction current = state.getValue(MachineCapacitorBusBlock.FACING);
+            Direction current = state.getValue(MachineCapacitorBlock.FACING);
             if (last == null) last = current;
 
             // Original: knickt die Reihe, faellt die ganze Kette weg.
-            if (last != current) return null;
+            if (last != current) return new BlockPos[0];
 
             pos = pos.relative(current);
         }
 
-        // Keine Schiene gefunden - der Kondensator gibt NICHTS ab (wie im Original).
-        if (last == null) return null;
+        // Keine Schiene gefunden - der Kondensator gibt an seiner eigenen Seite ab.
+        if (last == null) return new BlockPos[0];
 
-        return new BusChain(pos, last);
-    }
-
-    /**
-     * Zusätzliche Ports nur für die Aufräum-Pfade ({@code unsubscribeAll} in setRemoved):
-     * das Kettenende. Die Abwicklung selbst macht {@link #ensureNetworkInitialized}.
-     */
-    @Override
-    protected BlockPos[] getExtraEnergyPorts() {
-        BusChain chain = walkBusChain();
-        return chain == null ? new BlockPos[0] : new BlockPos[] { chain.end() };
-    }
-
-    @Override
-    protected void writeNbtData(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
-        super.writeNbtData(tag, registries);
-        // Original serialize(): power/maxPower/powerReceived/powerSent gehen zum Client;
-        // hier läuft derselbe Kanal auch ins Datadir (Zaehler sind nach einem Tick wieder 0).
-        tag.putLong("powerReceived", powerReceived);
-        tag.putLong("powerSent", powerSent);
-    }
-
-    @Override
-    protected void readNbtData(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
-        super.readNbtData(tag, registries);
-        powerReceived = tag.getLong("powerReceived");
-        powerSent = tag.getLong("powerSent");
-    }
-
-    @Override
-    public String[] getFunctionInfo() {
-        return ROR;
-    }
-
-    @Override
-    public String provideRORValue(String name) {
-        if ((IRORInfo.PREFIX_VALUE + "fill").equals(name)) return "" + getEnergyStored();
-        if ((IRORInfo.PREFIX_VALUE + "fillpercent").equals(name)) return "" + (getEnergyStored() * 100 / getMaxEnergyStored());
-        return null;
+        return new BlockPos[] { pos };
     }
 
     @Override
@@ -262,29 +180,38 @@ public class MachineCapacitorBlockEntity extends BaseMachineBlockEntity implemen
         return null;
     }
 
-    /**
-     * 1.21.1: copy_nbt в лут-таблицах удалён (1.20.5+), поэтому перенос заряда в дропнутый
-     * предмет делается кодом — по паттерну батареи
-     * ({@code MachineBatteryBlock#playerWillDestroy} → {@code saveToItemStack}).
-     * Формат совпадает с чтением в {@code MachineCapacitorBlock#setPlacedBy}:
-     * CUSTOM_DATA → {"BlockEntityTag": {...}}.
-     */
+    @Override
+    protected void writeNbtData(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
+        // Original serialize(): power/maxPower/powerReceived/powerSent gehen zum Client;
+        // hier läuft derselbe Kanal auch ins Datadir (Zaehler sind nach einem Tick wieder 0).
+        tag.putLong("powerReceived", powerReceived);
+        tag.putLong("powerSent", powerSent);
+    }
+
+    @Override
+    protected void readNbtData(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
+        powerReceived = tag.getLong("powerReceived");
+        powerSent = tag.getLong("powerSent");
+    }
+
+    /** Original {@code TileEntityCapacitor.writeNBT}: Ladung und Kapazitaet. */
+    @Override
+    public void writeNBT(net.minecraft.nbt.CompoundTag nbt) {
+        nbt.putLong("energy", getEnergyStored());
+        nbt.putLong("capacity", getMaxEnergyStored());
+    }
     //? if >= 1.21.1 {
     /*public void saveToItemStack(net.minecraft.world.item.ItemStack stack) {
-        net.minecraft.core.HolderLookup.Provider registries = this.level.registryAccess();
-        CompoundTag beTag = this.saveWithoutMetadata(registries);
+        net.minecraft.nbt.CompoundTag beTag = new net.minecraft.nbt.CompoundTag();
+        this.writeNBT(beTag);
         if (!beTag.isEmpty()) {
-            CompoundTag root = new CompoundTag();
+            net.minecraft.nbt.CompoundTag root = new net.minecraft.nbt.CompoundTag();
             root.put("BlockEntityTag", beTag);
             stack.set(net.minecraft.core.component.DataComponents.CUSTOM_DATA,
                     net.minecraft.world.item.component.CustomData.of(root));
         }
     }
     *///?}
-
-    /**
-     * Kleiner Wert-Halter fürs Ergebnis der Schienenschleife (Entsprechung der lokalen
-     * {@code pos}/{@code last} im Original-Loop) - Endposition plus Kettenrichtung.
-     */
-    private record BusChain(BlockPos end, Direction dir) {}
 }

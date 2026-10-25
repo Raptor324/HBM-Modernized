@@ -53,3 +53,4 @@ public class SolidificationJeiCategory extends JeiFluidRecipeCategory<Solidifica
         return List.of(recipe.getOutput());
     }
 }
+

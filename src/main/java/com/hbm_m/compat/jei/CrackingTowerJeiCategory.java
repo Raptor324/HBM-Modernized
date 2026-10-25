@@ -6,7 +6,6 @@ import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.CrackingTowerRecipe;
 
 import dev.architectury.fluid.FluidStack;
-
 //? if forge {
 import mezz.jei.api.forge.ForgeTypes;
 import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
@@ -102,16 +101,15 @@ public class CrackingTowerJeiCategory extends JeiGenericRecipeCategory<CrackingT
     }
 
     private void addFluidSlot(IRecipeLayoutBuilder builder, RecipeIngredientRole role, int x, int y, FluidStack fluid) {
-        var slotBuilder = addItemSlot(builder, role, x, y)
-                .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16);
-
-        //? if forge {
-        slotBuilder.setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
+        addItemSlot(builder, role, x, y)
+                .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
+                //? if forge {
+                .setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                 .addIngredient(ForgeTypes.FLUID_STACK, FluidStackHooksForge.toForge(fluid));
-        //?} elif neoforge {
-        /*slotBuilder.setCustomRenderer(NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
-                .addIngredient(NeoForgeTypes.FLUID_STACK, new net.neoforged.neoforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
-        *///?}
+                //?} elif neoforge {
+                /*.setCustomRenderer(NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
+                .addIngredient(NeoForgeTypes.FLUID_STACK, new net.minecraftforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
+                *///?}
     }
 
     @Override

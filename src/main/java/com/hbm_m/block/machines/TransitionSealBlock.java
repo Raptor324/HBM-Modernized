@@ -40,7 +40,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * made passable so there is always a 2.5 block wall between the opening and the
  * footprint at every point.
  */
-public class TransitionSealBlock extends BaseEntityBlock implements IMultiblockController {
+public class TransitionSealBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.api.bomb.IBomb {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
@@ -93,6 +93,36 @@ public class TransitionSealBlock extends BaseEntityBlock implements IMultiblockC
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return createTickerHelper(type, ModBlockEntities.TRANSITION_SEAL_BE.get(), TransitionSealBlockEntity::tick);
+    }
+
+    /** audit10: 1:1 {@code BlockDoorGeneric.explode} - das Uebergangssiegel ist nicht fernsteuerbar (remoteControllable false). */
+    @Override
+    public BombReturnCode explode(Level world, BlockPos pos) {
+        return BombReturnCode.ERROR_INCOMPATIBLE;
+    }
+
+    /** audit10: 1:1 {@code BlockDoorGeneric.onBlockActivated} - nicht schleichend schaltet ein Klick das Tor (tryToggle). */
+    //? if < 1.21.1 {
+    @Override
+    public net.minecraft.world.InteractionResult use(BlockState state, Level level, BlockPos pos, net.minecraft.world.entity.player.Player player,
+                                                     net.minecraft.world.InteractionHand hand, net.minecraft.world.phys.BlockHitResult hit) {
+        return hbmOnUse(level, pos, player);
+    }
+    //?} else {
+    /*@Override
+    protected net.minecraft.world.InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, net.minecraft.world.entity.player.Player player, net.minecraft.world.phys.BlockHitResult hit) {
+        return hbmOnUse(level, pos, player);
+    }
+    *///?}
+
+    private net.minecraft.world.InteractionResult hbmOnUse(Level level, BlockPos pos, net.minecraft.world.entity.player.Player player) {
+        if (!level.isClientSide && !player.isShiftKeyDown()) {
+            if (level.getBlockEntity(pos) instanceof TransitionSealBlockEntity seal) {
+                return seal.tryToggle() ? net.minecraft.world.InteractionResult.SUCCESS : net.minecraft.world.InteractionResult.PASS;
+            }
+            return net.minecraft.world.InteractionResult.PASS;
+        }
+        return player.isShiftKeyDown() ? net.minecraft.world.InteractionResult.PASS : net.minecraft.world.InteractionResult.SUCCESS;
     }
 
     @Override

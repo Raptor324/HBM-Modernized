@@ -84,16 +84,16 @@ public final class ItemEnergyAccess {
     //?}
     //? if neoforge {
     /*public static boolean canForgeExtract(ItemStack stack) {
-        net.neoforged.neoforge.energy.IEnergyStorage cap = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+        net.minecraftforge.energy.IEnergyStorage cap = stack.getCapability(Capabilities.EnergyStorage.ITEM);
         return cap != null && cap.canExtract();
     }
 
     public static boolean canForgeReceive(ItemStack stack) {
-        net.neoforged.neoforge.energy.IEnergyStorage cap = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+        net.minecraftforge.energy.IEnergyStorage cap = stack.getCapability(Capabilities.EnergyStorage.ITEM);
         return cap != null && cap.canReceive();
     }
 
-    public static java.util.Optional<net.neoforged.neoforge.energy.IEnergyStorage> getForgeEnergy(ItemStack stack) {
+    public static java.util.Optional<net.minecraftforge.energy.IEnergyStorage> getForgeEnergy(ItemStack stack) {
         if (stack.isEmpty()) return java.util.Optional.empty();
         return java.util.Optional.ofNullable(stack.getCapability(Capabilities.EnergyStorage.ITEM));
     }
@@ -146,7 +146,7 @@ public final class ItemEnergyAccess {
         //?}
         //? if neoforge {
         /*int movedFe = getForgeEnergy(stack)
-                .filter(net.neoforged.neoforge.energy.IEnergyStorage::canExtract)
+                .filter(net.minecraftforge.energy.IEnergyStorage::canExtract)
                 .map(fe -> fe.extractEnergy(request, simulate))
                 .orElse(0);
         *///?}
@@ -167,7 +167,7 @@ public final class ItemEnergyAccess {
         //?}
         //? if neoforge {
         /*int movedFe = getForgeEnergy(stack)
-                .filter(net.neoforged.neoforge.energy.IEnergyStorage::canReceive)
+                .filter(net.minecraftforge.energy.IEnergyStorage::canReceive)
                 .map(fe -> fe.receiveEnergy(request, simulate))
                 .orElse(0);
         *///?}

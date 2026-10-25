@@ -88,6 +88,16 @@ public abstract class PileDeviceBlock extends BaseEntityBlock implements com.hbm
         }
     }
 
+    /** Original {@code addInformation}: {@code addStandardInfo} (Umschalttaste zeigt {@code .desc}). */
+    @Override
+    //? if < 1.21.1 {
+    public void appendHoverText(net.minecraft.world.item.ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.BlockGetter level, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(net.minecraft.world.item.ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    *///?}
+        com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
+    }
+
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(FACING);
@@ -95,7 +105,8 @@ public abstract class PileDeviceBlock extends BaseEntityBlock implements com.hbm
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
+        // Bewegte Teile (Stab, Hebel/Schieber, Luefterrad) zeichnet PileDeviceRenderers (RenderPile*).
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     /**
@@ -145,7 +156,7 @@ public abstract class PileDeviceBlock extends BaseEntityBlock implements com.hbm
         BlockEntity tile = level.getBlockEntity(target);
         if (tile instanceof PileBaseBlockEntity pile) {
             PileCoreBlockEntity core = pile.getCore(level);
-            if (core != null) core.drillChannel(level, target, drillDir, player);
+            if (core != null && core.drillChannel(level, target, drillDir, player)) com.hbm_m.item.tool.ItemTooling.onScrewed(player, hand);
         }
         return InteractionResult.CONSUME;
     }

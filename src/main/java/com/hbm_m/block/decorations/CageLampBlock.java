@@ -27,9 +27,7 @@ public class CageLampBlock extends Block {
     /** Полуразмеры {x, y, z} в базовой ориентации (как getBounds() оригинала). */
     private final float hx, hy, hz;
 
-    /** Всего 6 возможных форм (по FACING) — кэшируем вместо Shapes.box на каждый вызов. */
     private final VoxelShape[] shapeCache = new VoxelShape[Direction.values().length];
-
     public CageLampBlock(Properties props, float hx, float hy, float hz) {
         super(props);
         this.hx = hx;
@@ -59,13 +57,10 @@ public class CageLampBlock extends Block {
         float dx = hx, dy = hy, dz = hz;
         switch (dir) {
             case EAST, WEST -> { dx = hz; dz = hx; }
-            case UP, DOWN -> { dx = hy; dy = hz; dz = hx; }
-            default -> { }
+            case UP, DOWN -> { dy = hz; dz = hy; }
+            default -> {}
         }
-        double cx = 0.5 - dir.getStepX() * (0.5 - dx);
-        double cy = 0.5 - dir.getStepY() * (0.5 - dy);
-        double cz = 0.5 - dir.getStepZ() * (0.5 - dz);
-        VoxelShape shape = Shapes.box(cx - dx, cy - dy, cz - dz, cx + dx, cy + dy, cz + dz);
+        VoxelShape shape = Shapes.box(0.5F - dx, 0.5F - dy, 0.5F - dz, 0.5F + dx, 0.5F + dy, 0.5F + dz);
         shapeCache[dir.ordinal()] = shape;
         return shape;
     }

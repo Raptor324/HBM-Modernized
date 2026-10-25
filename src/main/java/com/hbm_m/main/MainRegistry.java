@@ -9,7 +9,6 @@ import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.effect.ModEffects;
 import com.hbm_m.entity.ModEntities;
-import com.hbm_m.event.BombDefuser;
 import com.hbm_m.event.CrateBreaker;
 import com.hbm_m.event.HazardEventHandler;
 import com.hbm_m.event.PlayerHazardHandler;
@@ -77,6 +76,7 @@ public final class MainRegistry {
         DoorDeclRegistry.init();
         ModBiomes.init();
         ModBlocks.init();
+        com.hbm_m.loot.ModLootFunctions.init();
         ModEntities.init();
         // Атрибуты и спавн-плейсменты мобов (Architectury, единый путь для Forge/NeoForge)
         com.hbm_m.entity.ModEntityEvents.init();
@@ -86,7 +86,9 @@ public final class MainRegistry {
                 () -> com.hbm_m.client.ClientSetup::registerCommonClientContent);
         ModExplosionParticles.init();
         ModSounds.init();
+        ModPaintings.init();
         ModItems.init();
+        com.hbm_m.advancement.ModStats.init();
         //? if neoforge {
         /*com.hbm_m.item.tools_and_armor.ModArmorMaterialsAccess.init();
         *///?}
@@ -98,14 +100,17 @@ public final class MainRegistry {
         ModRecipes.init();
         MobGearHandler.init();
         CrateBreaker.init();
+        com.hbm_m.worldgen.ChestGenHooksPort.init();
         HazardEventHandler.init();
+        com.hbm_m.event.TrainEventHandler.init();
         PlayerHazardHandler.init();
         ScrewdriverInteractionHandler.init();
-        BombDefuser.init();
         PlayerHandler.register();
         ChunkRadiationManager.init();
+        com.hbm_m.radiation.ntmnext.RadiationSystemSelector.init();
         com.hbm_m.handler.pollution.PollutionEvents.init();
         com.hbm_m.satellite.RayScanEvents.init();
+        com.hbm_m.satellite.SatelliteManager.initTicking();
         ModEventHandler.register();
         // Опциональный Curios: слушатели вешаются только при наличии мода,
         // иначе классы Curios API вообще не загружаются (NoClassDefFoundError).
@@ -122,7 +127,6 @@ public final class MainRegistry {
             // The move window lives for exactly one tick: pop() from the mixins can be skipped
             // when another mod cancels the engine method at HEAD.
             com.hbm_m.multiblock.ContraptionAssemblyGuard.endServerTick();
-
             // 1. Защита от фейковых/недогруженных серверов (Flashback)
             if (server == null) {
                 return; 
@@ -143,6 +147,8 @@ public final class MainRegistry {
             boolean rbmkCacheClear = NeutronNodeWorld.advanceTick();
             for (ServerLevel rbmkLevel : server.getAllLevels()) {
                 NeutronNodeWorld.tick(rbmkLevel, rbmkCacheClear);
+                // Legacy CP-1 queued neutron streams (as on FFA): drain after all BE ticks.
+                com.hbm_m.handler.neutron.PileNeutronHandler.tick(rbmkLevel);
             }
             // CP-1 pile neutron streams drain after all BE ticks: neutrons received this tick
             // are consumed next tick (NEXT's 1-tick latency is load-bearing for critical masses).
@@ -231,16 +237,29 @@ public final class MainRegistry {
         com.hbm_m.handler.HazmatRegistry.registerHazmats();
         com.hbm_m.handler.ArmorRegistryInit.init();
         HazardRegistry.registerItems();
+        HazardRegistry.registerTrafos();
         com.hbm_m.event.LungGasHandler.init();
         com.hbm_m.advancement.AchievementHandler.init();
         com.hbm_m.armormod.event.ArmorModTickHandler.init();
         com.hbm_m.armormod.event.ArmorModificationServerEvents.init();
         com.hbm_m.handler.BossSpawnHandler.init();
         com.hbm_m.config.FalloutConfigJSON.initialize();
-        DamageResistanceHandler.initArmorStats();
+        com.hbm_m.inventory.recipes.CustomMachineRecipes.initialize();
+        com.hbm_m.config.CustomMachineConfigJSON.initialize();
+        com.hbm_m.item.weapon.sedna.factory.GunFactory.init();
+        com.hbm_m.item.weapon.sedna.mods.XWeaponModManager.init();
+        com.hbm_m.item.weapon.grenade.GrenadeItems.registerDispenser();
+        DamageResistanceHandler.init();
         com.hbm_m.blockentity.machines.LaunchPadBaseBlockEntity.registerLaunchables();
         com.hbm_m.satellite.Satellite.register();
+        com.hbm_m.satellite.CommandSatellites.init();
+        com.hbm_m.commands.CommandCustomize.init();
+        com.hbm_m.commands.HbmCommandsNT.init();
 
+        // Диагностика загрузки рецептов на 1.21.1 — запускается ПОСЛЕ RegisterEvent.
+        //? if >= 1.21.1 {
+        /*com.hbm_m.recipe.ModRecipes.debugRecipeSerializerRegistry();
+        *///?}
 
         // CentrifugeRecipes.registerRecipes();
         // Рецепты Cyclotron, CrucibleSmelting, MoltenAlloy, ArcWelder и Soldering теперь data-driven (JSON)
@@ -249,9 +268,11 @@ public final class MainRegistry {
         // На Fabric DeferredRegister жидкостей ещё не заполнил BuiltInRegistries на момент SETUP
         // (см. FabricEntrypoint#registerFluidDependentSetupWhenReady).
         
+
         // Рецепты Crystallizer теперь data-driven (JSON), CrystallizerRecipes.registerDefaults удалён.
         ModFluidTraitsBootstrap.registerAll();
 
         LOGGER.info("Common setup finished");
     }
+
 }

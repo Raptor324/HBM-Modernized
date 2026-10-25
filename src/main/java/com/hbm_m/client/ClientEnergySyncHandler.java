@@ -1,13 +1,7 @@
 package com.hbm_m.client;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.platform.PlatformHooks;
 import com.hbm_m.powerarmor.ModArmorFSBPowered;
@@ -17,14 +11,15 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import com.hbm_m.platform.StackNbt;
 
 @OnlyIn(Dist.CLIENT)
 public class ClientEnergySyncHandler {
 
-    private static final int ARMOR_SLOT_HEAD = ModArmorFSBPowered.ARMOR_SLOT_HEAD;
-    private static final int ARMOR_SLOT_CHEST = ModArmorFSBPowered.ARMOR_SLOT_CHEST;
-    private static final int ARMOR_SLOT_LEGS = ModArmorFSBPowered.ARMOR_SLOT_LEGS;
-    private static final int ARMOR_SLOT_FEET = ModArmorFSBPowered.ARMOR_SLOT_FEET;
+    private static final int ARMOR_SLOT_HEAD = 0;
+    private static final int ARMOR_SLOT_CHEST = 1;
+    private static final int ARMOR_SLOT_LEGS = 2;
+    private static final int ARMOR_SLOT_FEET = 3;
 
     // Добавили аргумент long delta
     public static void handle(int containerId, long energy, long maxEnergy, long delta) {
@@ -68,7 +63,7 @@ public class ClientEnergySyncHandler {
         if (armorStack.getItem() instanceof ModArmorFSBPowered) {
             // Обновляем отображаемый заряд на клиенте
             // (реальный заряд хранится на сервере, клиент только отображает)
-            PlatformHooks.putLong(armorStack, "charge", energy);
+            StackNbt.putLong(armorStack, "charge", energy);
         }
     }
 }

@@ -48,7 +48,6 @@ public class PileControlBlock extends PileDeviceBlock {
         // Original: der Bohrer greift beim Steuerantrieb senkrecht nach unten durch.
         return passDrillThrough(state, level, pos, player, hand, true);
     }
-
     //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<PileControlBlock> CODEC = simpleCodec(PileControlBlock::new);
 

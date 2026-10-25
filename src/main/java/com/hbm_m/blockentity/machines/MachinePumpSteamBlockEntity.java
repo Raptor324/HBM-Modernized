@@ -24,7 +24,7 @@ public class MachinePumpSteamBlockEntity extends PumpBlockEntity {
     protected void serverTick(ServerLevel level, BlockPos pos) {
         for (Direction dir : Direction.Plane.HORIZONTAL) {
             BlockPos conPos = pos.relative(dir, 2);
-            trySubscribe(steam, level, conPos, dir);
+            trySubscribe(steam.getTankType(), level, conPos, dir);
             if (lps.getFill() > 0) {
                 tryProvide(lps, level, conPos, dir);
             }
@@ -41,7 +41,8 @@ public class MachinePumpSteamBlockEntity extends PumpBlockEntity {
     protected void operate() {
         steam.drainMb(100);
         lps.fillMb(lps.getTankType(), 1);
-        water.fillMb(water.getTankType(), Math.min(STEAM_SPEED, water.getCapacityMb() - water.getFill()));
+        int pumpSpeed = PumpGroundCheck.pumpSpeed(water.getTankType(), STEAM_SPEED); // NTM Space nonWaterDebuff
+        water.fillMb(water.getTankType(), Math.min(pumpSpeed, water.getCapacityMb() - water.getFill()));
     }
 
     public FluidTank getSteamTank() { return steam; }

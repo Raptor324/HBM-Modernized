@@ -14,14 +14,13 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Угольная пыль во взвешенном состоянии: +10 black lung за тик контакта.
- * Защищённый фильтр изнашивается. Газ медленно оседает вниз.
- * Порт {@link com.hbm.blocks.gas.BlockGasCoal} (1.7.10).
+ * 1:1-Port von {@code BlockGasCoal} (1.7.10): aufgewirbelter Kohlenstaub, +10 Schwarze Lunge je
+ * Tick Kontakt. Loest sich mit 1/20 je Tick auf.
  */
 public class BlockGasCoal extends BlockGasBase {
 
     public BlockGasCoal() {
-        super();
+        super(0.2F, 0.2F, 0.2F);
     }
 
     @Override
@@ -34,35 +33,26 @@ public class BlockGasCoal extends BlockGasBase {
     }
 
     @Override
-    public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-        if (random.nextInt(20) == 0) {
-            level.removeBlock(pos, false);
-            return;
-        }
-        super.tick(state, level, pos, random);
-    }
-
-    @Override
-    protected void spawnAmbientParticles(BlockState state, Level level, BlockPos pos, RandomSource random) {
-        level.addParticle(
-                ParticleTypes.SMOKE,
-                pos.getX() + random.nextDouble(),
-                pos.getY() + random.nextDouble(),
-                pos.getZ() + random.nextDouble(),
-                0.0D, 0.0D, 0.0D
-        );
-    }
-
-    @Override
     public Direction getFirstDirection(Level level, BlockPos pos, RandomSource random) {
-        if (random.nextInt(5) == 0) {
-            return Direction.DOWN;
-        }
-        return Direction.getRandom(random);
+        if (random.nextInt(5) == 0) return Direction.DOWN;
+        return randomAny(random);
     }
 
     @Override
     public Direction getSecondDirection(Level level, BlockPos pos, RandomSource random) {
         return randomHorizontal(random);
+    }
+
+    @Override
+    protected int getDecayChance() {
+        return 20;
+    }
+
+    @Override
+    public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
+        super.animateTick(state, level, pos, random);
+        level.addParticle(ParticleTypes.SMOKE,
+                pos.getX() + random.nextFloat(), pos.getY() + random.nextFloat(), pos.getZ() + random.nextFloat(),
+                0.0D, 0.0D, 0.0D);
     }
 }

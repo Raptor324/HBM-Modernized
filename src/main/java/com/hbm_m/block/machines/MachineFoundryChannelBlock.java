@@ -1,10 +1,13 @@
 package com.hbm_m.block.machines;
 
 import com.google.common.collect.ImmutableMap;
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.MachineFoundryBaseBlockEntity;
 import com.hbm_m.blockentity.machines.MachineFoundryChannelBlockEntity;
-import com.hbm_m.inventory.material.MaterialStack;
-import com.hbm_m.util.CrucibleUtil;
+import com.hbm_m.inventory.material.Mats.MaterialStack;
+import com.hbm_m.item.material.ItemScraps;
+import com.hbm_m.platform.BlockHooks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -87,30 +90,25 @@ public class MachineFoundryChannelBlock extends BaseEntityBlock {
 
     private BlockState connectionState(LevelAccessor level, BlockPos pos) {
         return defaultBlockState()
-                .setValue(NORTH, canConnect(level, pos, Direction.NORTH))
-                .setValue(EAST,  canConnect(level, pos, Direction.EAST))
-                .setValue(SOUTH, canConnect(level, pos, Direction.SOUTH))
-                .setValue(WEST,  canConnect(level, pos, Direction.WEST));
+                .setValue(NORTH, canConnectTo(level, pos.relative(Direction.NORTH), Direction.NORTH))
+                .setValue(EAST,  canConnectTo(level, pos.relative(Direction.EAST), Direction.EAST))
+                .setValue(SOUTH, canConnectTo(level, pos.relative(Direction.SOUTH), Direction.SOUTH))
+                .setValue(WEST,  canConnectTo(level, pos.relative(Direction.WEST), Direction.WEST));
     }
 
-    /**
-     * 1:1 порт FoundryChannel.canConnectTo: канал соединяется только с foundry_channel,
-     * foundry_mold и foundry_outlet/foundry_slagtap. В оригинале условие для
-     * outlet/slagtap — {@code meta == dir.ordinal()}, где dir — направление от канала
-     * к соседу; в порту FACING аутлета играет роль этого meta, поэтому FACING == dir.
-     * Бассейн (basin) и тигель в наборе НЕ числятся (оригинальное поведение).
-     */
-    private boolean canConnect(LevelAccessor level, BlockPos pos, Direction dir) {
-        if (dir.getAxis().isVertical()) return false;
-        BlockPos nb = pos.relative(dir);
-        BlockState nbState = level.getBlockState(nb);
-        Block b = nbState.getBlock();
-        if (b instanceof MachineFoundryOutletBlock) { // включает foundry_slagtap
-            return nbState.hasProperty(MachineFoundryOutletBlock.FACING)
-                    && nbState.getValue(MachineFoundryOutletBlock.FACING) == dir;
+    /** Original {@code canConnectTo}: Rinnen, flache Formen und Ausguesse/Abstiche, die von dieser Rinne weg zeigen. */
+    private boolean canConnect(LevelAccessor level, BlockPos nb) {
+        return canConnectTo(level, nb, null);
+    }
+
+    public static boolean canConnectTo(LevelAccessor level, BlockPos nb, @Nullable Direction dirFromChannel) {
+        BlockState st = level.getBlockState(nb);
+        Block b = st.getBlock();
+        if (b instanceof MachineFoundryOutletBlock) {
+            if (dirFromChannel == null) return true;
+            return st.getValue(MachineFoundryOutletBlock.FACING) == dirFromChannel;
         }
-        return b instanceof MachineFoundryChannelBlock
-                || b instanceof MachineFoundryMoldBlock;
+        return b instanceof MachineFoundryChannelBlock || b == ModBlocks.FOUNDRY_MOLD.get();
     }
 
     private VoxelShape buildShape(BlockState s) {
@@ -155,7 +153,7 @@ public class MachineFoundryChannelBlock extends BaseEntityBlock {
         if (!(be instanceof MachineFoundryChannelBlockEntity channel)) return InteractionResult.PASS;
 
         if (channel.amount > 0 && channel.type != null) {
-            ItemStack scrap = CrucibleUtil.createScrap(new MaterialStack(channel.type, channel.amount));
+            ItemStack scrap = ItemScraps.create(new MaterialStack(channel.type, channel.amount));
             if (!scrap.isEmpty()) {
                 if (!player.addItem(scrap)) {
                     level.addFreshEntity(new ItemEntity(level,
@@ -173,9 +171,11 @@ public class MachineFoundryChannelBlock extends BaseEntityBlock {
     /** Оригинал FoundryChannel.breakBlock: шлак остатка расплава. */
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moving) {
-        if (!state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof MachineFoundryChannelBlockEntity channel
+        // FFA-Delta: nicht auf dem Client abwerfen (Ghost-Items verhindern)
+        if (!state.is(newState.getBlock()) && !level.isClientSide
+                && level.getBlockEntity(pos) instanceof MachineFoundryChannelBlockEntity channel
                 && channel.amount > 0 && channel.type != null) {
-            ItemStack scrap = CrucibleUtil.createScrap(new MaterialStack(channel.type, channel.amount));
+            ItemStack scrap = ItemScraps.create(new MaterialStack(channel.type, channel.amount));
             if (!scrap.isEmpty()) {
                 level.addFreshEntity(new ItemEntity(level,
                         pos.getX() + 0.5, pos.getY() + 0.5F, pos.getZ() + 0.5, scrap));
@@ -187,7 +187,7 @@ public class MachineFoundryChannelBlock extends BaseEntityBlock {
     @Nullable @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return createTickerHelper(type, ModBlockEntities.FOUNDRY_CHANNEL_BE.get(),
-                MachineFoundryChannelBlockEntity::tick);
+                (lvl, pos, st, be) -> MachineFoundryBaseBlockEntity.tick(lvl, pos, st, be));
     }
 
     //? if >1.20.1 {

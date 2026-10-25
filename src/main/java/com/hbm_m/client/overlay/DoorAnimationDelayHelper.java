@@ -9,14 +9,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.hbm_m.block.entity.doors.DoorBlockEntity;
 import com.hbm_m.client.render.DoorChunkInvalidationHelper;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 /**
  * Client-only helper for door animation delay (overlap period between BER and baked model).
  * Kept separate from DoorBlockEntity so the server never loads client-only code.

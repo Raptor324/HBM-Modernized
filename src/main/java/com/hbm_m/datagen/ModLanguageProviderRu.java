@@ -24,6 +24,22 @@ import net.minecraftforge.common.data.LanguageProvider;
 
 public class ModLanguageProviderRu extends LanguageProvider {
 
+    private boolean restportActive = false;
+
+    /** Ключи, уже занятые add(...) — автоген-циклы материалов не перебивают явные переводы. */
+    private final java.util.Set<String> claimedLangKeys = new java.util.HashSet<>();
+    /** Отложенные автоген-имена: добавляются в конце addTranslations, только если ключ ещё свободен. */
+    private final java.util.LinkedHashMap<String, String> deferredLangKeys = new java.util.LinkedHashMap<>();
+
+    @Override
+    public void add(String key, String value) {
+        claimedLangKeys.add(key);
+        deferredLangKeys.remove(key);
+        if (!restportActive && RestportLang.has(key)) return;
+        super.add(key, value);
+    }
+
+
     public ModLanguageProviderRu(PackOutput output) {
         super(output, RefStrings.MODID, "ru_ru");
     }
@@ -121,6 +137,11 @@ public class ModLanguageProviderRu extends LanguageProvider {
 
         @Override
     protected void addTranslations() {
+        // Originaltexte aus dem Restport zuerst; spaetere Port-Eintraege mit gleichem Schluessel
+        // werden in add(...) uebersprungen (Original hat Vorrang vor erfundenen Texten).
+        restportActive = true;
+        RestportLang.addAll(this::add, true);
+        restportActive = false;
         addConfigTranslations();
 
         // Автоматическая локализация слитков
@@ -133,7 +154,8 @@ public class ModLanguageProviderRu extends LanguageProvider {
             if (ingotItem != null && ingotItem.isPresent()) {
                 String translation = ingotOverrides.containsKey(mat) ? ingotOverrides.get(mat) : mat.getTranslation("ru_ru");
                 if (translation != null) {
-                    add(ingotItem.get(), translation);
+                    // откладываем: явные add(...) ниже файла имеют приоритет над автогеном
+                    deferredLangKeys.put("item.hbm_m." + ingotItem.getId().getPath(), translation);
                 }
             }
         }
@@ -193,11 +215,11 @@ public class ModLanguageProviderRu extends LanguageProvider {
         for (ModMaterials mat : ModMaterials.values()) {
             RegistrySupplier<Item> powder = ModMaterialItems.get(mat, MaterialShape.POWDER);
             if (powder != null && powder.isPresent() && !translatedPowders.contains(powder.getId())) {
-                add(powder.get(), buildPowderName(mat, false));
+                deferredLangKeys.put("item.hbm_m." + powder.getId().getPath(), buildPowderName(mat, false));
             }
             RegistrySupplier<Item> tiny = ModMaterialItems.get(mat, MaterialShape.POWDER_TINY);
             if (tiny != null && tiny.isPresent() && !translatedTinies.contains(tiny.getId())) {
-                add(tiny.get(), buildPowderName(mat, true));
+                deferredLangKeys.put("item.hbm_m." + tiny.getId().getPath(), buildPowderName(mat, true));
             }
         }
 
@@ -318,6 +340,15 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("item.hbm_m.missile_inferno", "Ракета Inferno");
         add("item.hbm_m.missile_rain", "Ракета Rain");
         add("item.hbm_m.missile_drill", "Ракета Drill");
+        add("item.hbm_m.missile_9m723", "Ракета 9М723 «Искандер»");
+        add("item.hbm_m.missile_9m723_buster", "Ракета 9М723 «Искандер» (бетонобойная)");
+        add("block.hbm_m.mobile_launch_pad", "Мобильная пусковая установка");
+        add("item.hbm_m.mobile_launch_pad", "Мобильная пусковая установка");
+        add("container.mobileLaunchPad", "Мобильная пусковая установка");
+        add("block.hbm_m.topol_launch_pad", "ПУ «Тополь-М»");
+        add("item.hbm_m.topol_launch_pad", "ПУ «Тополь-М»");
+        add("container.topolLaunchPad", "ПУ «Тополь-М»");
+        add("item.hbm_m.missile_topol", "Ракета РТ-2ПМ2 «Тополь-М»");
         add("item.hbm_m.missile_shuttle", "Шаттл-ракета");
         add("item.hbm_m.missile_nuclear", "Ядерная ракета Atlas");
         // Warheads (имена 1:1 из item.warhead_* оригинального ru_RU.lang)
@@ -400,6 +431,9 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("jei.hbm_m.gas_centrifuge.info_high_speed", "Требуется %s центрифуг(и) (ускоренная)");
         add("tooltip.hbm_m.satchip.freq", "Частота: %s");
         add("message.hbm_m.satchip.freq_set", "Частота установлена: %s");
+        add("jei.hbm_m.crucible_alloying", "Сплавы в тигле");
+        add("jei.hbm_m.crucible_casting", "Литьё");
+        // gas_centrifuge.info / info_high_speed уже добавлены выше — дубль удалён
         add("gui.launchPad.notReady", "Не готова");
         add("gui.launchPad.loading", "Загрузка...");
         add("gui.launchPad.ready", "Готова");
@@ -926,6 +960,26 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("item.hbm_m.ufo_spawn_egg", "Яйцо призыва НЛО");
         add("item.hbm_m.upgrade_5g", "Улучшение 5G");
         add("item.hbm_m.upgrade_screm", "Кричащее улучшение");
+        add("rbmk.screen.temp", "Темп: %s");
+        add("rbmk.screen.core", "Ядро: %s");
+        add("rbmk.screen.depletion", "Истощ: %s");
+        add("rbmk.screen.xenon", "Ксенон: %s");
+        add("rbmk.screen.rod", "Управ: %s");
+        add("rbmk.heat", "Температура компонента: %s");
+        add("rbmk.rod.depletion", "Обеднение: %s");
+        add("rbmk.rod.xenon", "Ксеноновое отравление: %s");
+        add("rbmk.rod.coreTemp", "Температура стержня: %s");
+        add("rbmk.rod.skinTemp", "Температура оболочки стержня: %s / %s");
+        add("rbmk.boiler.water", "Вода: %s / %s");
+        add("rbmk.boiler.steam", "Пар: %s / %s");
+        add("rbmk.boiler.type", "Сжатие: %s");
+        add("rbmk.control.level", "%s");
+        add("rbmk.control.red", "§cКрасная группа");
+        add("rbmk.control.yellow", "§eЖёлтая группа");
+        add("rbmk.control.green", "§aЗелёная группа");
+        add("rbmk.control.blue", "§1Синяя группа");
+        add("rbmk.control.purple", "§5Фиолетовая группа");
+        add("rbmk.moderated", "Замедленно");
         add("msg.hbm_m.rbmk_console.linked_invalid", "Колонна РБМК не найдена в %s, %s, %s - нажмите ПКМ на колонну снова");
         add("sounds.hbm_m.subtitle.d_flash", "Вспышка дигаммы");
         add("sounds.hbm_m.subtitle.rbmk_az5_cover", "Крышка АЗ-5 откидывается");
@@ -1051,12 +1105,14 @@ public class ModLanguageProviderRu extends LanguageProvider {
 
 
 // ru_ru case
+        // (фрагмент ниже ранее дублировал battery-блоки/asphalt/barricade — дубль удалён)
         add(ModBlocks.MACHINE_BATTERY_DINEUTRONIUM.get(), "Динейтрониевое энергохранилище");
         add(ModBlocks.MACHINE_BATTERY_SCHRABIDIUM.get(), "Шрабидиевое энергохранилище");
         add(ModBlocks.MACHINE_BATTERY_LITHIUM.get(), "Литиевое энергохранилище");
+        add(ModBlocks.SEQUESTRUM_ORE.get(), "Селитровая руда");
+        add(ModItems.SEQUESTRUM.get(), "Селитра");
         // русский:
         add(ModBlocks.ASPHALT.get(), "Асфальт");
-        add(ModBlocks.BARRICADE.get(), "Мешки с песком");
         add(ModBlocks.CONCRETE_PILLAR.get(), "Колонна из бетона");
         add(ModBlocks.BASALT_BRICK.get(), "Базальтовые кирпичи");
         add(ModBlocks.BASALT_POLISHED.get(), "Отполированный базальт");
@@ -1300,11 +1356,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModItems.COIL_GOLD_TORUS.get(), "Кольцевая золотая катушка");
         add(ModItems.COIL_COPPER.get(), "Медная катушка");
         add(ModItems.COIL_GOLD.get(), "Медная катушка");
-        add(ModItems.DUST.get(), "Кучка пыли");
-        add(ModItems.DUST_TINY.get(), "Маленькая кучка пыли");
-        // 4375 fallout, item.fallout.name оригинала (прошлый add лежал в никогда
-        // не вызывавшемся addIngotPowderTranslations — ключа в lang не было).
-        add(ModItems.FALLOUT.get(), "Куча радиоактивных осадков");
+        // dust / dust_tiny / fallout уже добавлены в начале файла (строки 52-54) — дубли удалены
         add(ModMaterialItems.item(ModMaterials.SCRAP, MaterialShape.SCRAP), "Мусор");
         // Литейные отходы (порт ItemScraps, 4765; имена из таблицы ModMaterialItems)
         for (com.hbm_m.item.material.ModMaterialItems.ScrapEntry scrap : com.hbm_m.item.material.ModMaterialItems.scrapEntries()) {
@@ -1740,6 +1792,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("item.hbm_m.launch_key", "Ключ запуска");
         add("item.hbm_m.lignite_powder", "Порошок бурого угля");
         add("item.hbm_m.malachite_chunk", "Кусок малахита");
+        add("item.hbm_m.ilmenite_chunk", "Кусок ильменита");
         add("item.hbm_m.missile_assembly", "Сборка малой ракеты");
         add("item.hbm_m.molysite", "Молизит");
         add("item.hbm_m.neutron_reflector", "Отражатель нейтронов");
@@ -1756,7 +1809,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("item.hbm_m.pellet_gas", "Ядовитый газовый баллон");
         add("item.hbm_m.photo_panel", "Фотоэлектрическая панель");
         add("item.hbm_m.pipes_steel", "Стальные трубы");
-        add("item.hbm_m.plate_aluminium", "Алюминиевая пластина");
+        // plate_aluminium уже добавлен через ModMaterialItems.item(ALUMINUM, PLATE) — дубль удалён
         add("item.hbm_m.powder_chlorocalcite", "Хлоркальцит");
         add("item.hbm_m.powder_sodium", "Натрий");
         add("item.hbm_m.rag_damp", "Влажная тряпка");
@@ -1874,6 +1927,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("gui.hbm_m.anvil.filter.construction", "Строительство");
         add("gui.hbm_m.anvil.filter.recycling", "Разборка");
         add("gui.hbm_m.anvil.filter.smithing", "Ковка");
+        add("gui.hbm_m.anvil.tier", "Требуемый уровень: %s");
         add("tier.hbm_m.anvil.iron", "Железо");
         add("tier.hbm_m.anvil.steel", "Сталь");
         add("tier.hbm_m.anvil.oil", "Нефтяной");
@@ -1891,6 +1945,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.RESOURCE_LIMESTONE.get(), "Известняк");
         add(ModBlocks.RESOURCE_MALACHITE.get(), "Малахит");
         add(ModBlocks.RESOURCE_SULFUR.get(), "Серный кластер");
+        add("block.hbm_m.anvil_block", "Индустриальная наковальня");
         add("block.hbm_m.anvil_iron", "Железная наковальня");
         add("block.hbm_m.anvil_lead", "Свинцовая наковальня");
         add("block.hbm_m.anvil_steel", "Стальная наковальня");
@@ -1949,7 +2004,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("gui.hbm_m.fluid_duct.overlay.fluid_empty", "Жидкость не задана");
         add(ModBlocks.INDUSTRIAL_BOILER.get(), "Промышленный котел");
         add(ModBlocks.SOLAR_BOILER.get(), "Солнечный котел");
-        add(ModBlocks.SOLAR_MIRRORS.get(), "Солнечные зеркала (WIP)");
         add(ModBlocks.WATZ_POWERPLANT.get(), "Электростанция Ватц");
         add(ModBlocks.HYDROTREATER.get(), "Гидроочиститель (WIP)");
         add(ModBlocks.CATALYTIC_REFORMER.get(), "Каталитический риформер (WIP)");
@@ -1999,6 +2053,10 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.LPW2.get(), "LPW2");
         add(ModItems.COKE_PETROLEUM.get(), "Нефтяной кокс");
         add(ModItems.ASH_WOOD.get(), "Древесная зола");
+        for (var scrap : ModItems.SCRAP_PLASTIC_VARIANTS.values()) add(scrap.get(), "Куски пластмассы");
+        add(ModItems.INGOT_U238M2_1.get(), "ELEMENTS");
+        add(ModItems.INGOT_U238M2_2.get(), "ARSENIC");
+        add(ModItems.INGOT_U238M2_3.get(), "VAULT");
         add(ModItems.ASH_COAL.get(), "Угольная зола");
         add(ModItems.ASH_MISC.get(), "Пепел");
         add(ModItems.ASH_FLY.get(), "Летучая зола");
@@ -2088,6 +2146,14 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.REACTOR_SMALL.get(), "Малый реактор (WIP)");
         add(ModBlocks.RFC.get(), "Генератор RFC (WIP)");
         add(ModBlocks.ROTARY_FURNACE.get(), "Вращающаяся печь");
+        add(ModItems.ARC_ELECTRODE.get(), "Графитовый электрод");
+        add(ModItems.ARC_ELECTRODE_LANTHANIUM.get(), "Лантановый электрод");
+        add(ModItems.ARC_ELECTRODE_DESH.get(), "Электрод из деш");
+        add(ModItems.ARC_ELECTRODE_SATURNITE.get(), "Сатурнитовый электрод");
+        add(ModItems.ARC_ELECTRODE_BURNT_GRAPHITE.get(), "Расплавленный графитовый электрод");
+        add(ModItems.ARC_ELECTRODE_BURNT_LANTHANIUM.get(), "Расплавленный лантановый электрод");
+        add(ModItems.ARC_ELECTRODE_BURNT_DESH.get(), "Расплавленный электрод из деш");
+        add(ModItems.ARC_ELECTRODE_BURNT_SATURNITE.get(), "Расплавленный сатурнитовый электрод");
         add("container.hbm_m.rotary_furnace", "Вращающаяся печь");
         add(ModBlocks.SAWMILL.get(), "Лесопилка");
         add(ModBlocks.SOLIDIFIER.get(), "Затвердитель");
@@ -2115,6 +2181,33 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.TORUS.get(), "Тор (WIP)");
         add(ModBlocks.TURBINEGAS.get(), "Газовая турбина");
         add(ModBlocks.WATZ_PUMP.get(), "Насос WATZ (WIP)");
+        add(ModBlocks.MACHINE_SUPERCOMPUTER.get(), "Суперкомпьютер");
+        add("container.hbm_m.machine_supercomputer", "Суперкомпьютер");
+        add(ModBlocks.LAUNCHPAD_LAMBDA.get(), "Пусковая площадка Лямбды");
+        add("container.hbm_m.launchpad_lambda", "Пусковая площадка Лямбды");
+        add(ModItems.MISSILE_LAMBDA.get(), "Лямбда-98");
+        add("desc.gui.lambda.auto", "§4Автоматический режим$Запускает обратный отсчёт$автоматически, если возможно.");
+        add("desc.gui.lambda.manual", "§4Ручной режим$Запуск ракеты нужно$начать кнопкой.");
+        add("desc.gui.soyuz.idle", "Простой");
+        add("desc.gui.soyuz.loading", "Загрузка");
+        add("desc.gui.soyuz.ready", "Готов");
+        add(ModBlocks.MACHINE_TAPE_DRIVE.get(), "Стойка дата-накопителей");
+        add("container.hbm_m.machine_tape_drive", "Стойка дата-накопителей");
+        add(ModItems.SATELLITE_SCIENCE.get(), "Космическая лаборатория");
+        add(ModItems.SATELLITE_SCIENCE_ASSEMBLER.get(), "Космическая лаборатория - Сборщик 0G");
+        add(ModItems.SATELLITE_SCIENCE_SENSOR.get(), "Космическая лаборатория - Сенсорный ретранслятор");
+        add(ModItems.ORBITAL_ASSEMBLY_CRYSTAL_CIRCUIT.get(), "Орбитальная сборка: Кристаллическая печатная плата");
+        add(ModItems.CIRCUIT_CRYSTAL.get(), "Кристаллическая печатная плата");
+        add("satellite.assemblers", "Установлено сборщиков: %s");
+        add("satellite.cooldown", "Перезарядка: %s");
+        add("satellite.data", "ДОСТУПНЫ ДАННЫЕ");
+        add("satellite.pending", "Замеры ожидаются: %s");
+        add("satellite.progress", "Процесс сборки: %s");
+        add("satellite.queue", "Очередь рецептов: %s");
+        add("satellite.ready", "ГОТОВ");
+        add("satellite.sensors", "Установлено ретрансляторов: %s");
+        add(ModBlocks.MACHINE_ROCKMILL.get(), "Жерновая мельница");
+        add("container.hbm_m.machine_rockmill", "Жерновая мельница");
         add(ModBlocks.CHUNGUS.get(), "Чангус (WIP)");
 
         add("block.hbm_m.machine_battery", "Энергохранилище");
@@ -2377,6 +2470,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("fluid.hbm_m.sodium", "Жидкий натрий");
         add("fluid.hbm_m.sodium_hot", "Горячий жидкий натрий");
         add("fluid.hbm_m.calcium_solution", "Раствор кальция");
+        add("fluid.hbm_m.titanium_tetrachloride", "Тетрахлорид титана");
         add("fluid.hbm_m.calcium_chloride", "Раствор хлорида кальция");
         add("fluid.hbm_m.potassium_chloride", "Раствор хлорида калия");
         add("fluid.hbm_m.chlorocalcite_solution", "Раствор хлоркальцита");
@@ -2452,6 +2546,8 @@ public class ModLanguageProviderRu extends LanguageProvider {
         // Руды паритета генерации с 1.7.10
         add("block.hbm_m.niter_ore", "Селитровая руда");
         add("block.hbm_m.niter_ore_deepslate", "Глубинная селитровая руда");
+        add("block.hbm_m.lithium_ore", "Литиевая руда");
+        add("block.hbm_m.lithium_ore_deepslate", "Глубинная литиевая руда");
         add("block.hbm_m.alexandrite_ore", "Александритовая руда");
         add("block.hbm_m.coltan_ore", "Колтановая руда");
         add("block.hbm_m.coltan_ore_deepslate", "Глубинная колтановая руда");
@@ -2736,6 +2832,8 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("block.hbm_m.logic_block", "Блок действия подземелья");
         add("block.hbm_m.machine_boiler", "Бойлер");
         add("block.hbm_m.machine_controller", "Блок удалённого доступа к реактору");
+        add("block.hbm_m.machine_converter_he_rf", "Конвертер энергии HE в RF");
+        add("block.hbm_m.machine_converter_rf_he", "Конвертер энергии RF в HE");
         add("block.hbm_m.machine_crystallizer", "Рудный окислитель");
         add("block.hbm_m.machine_detector", "Детектор мощности");
         add("block.hbm_m.machine_drain", "Сливная труба");
@@ -3346,7 +3444,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("tooltip.hbm_m.barrel.antimatter.yes", "Может хранить антиматерию");
         add("tooltip.hbm_m.barrel.antimatter.no", "Не может хранить антиматерию");
         add("tooltip.hbm_m.barrel.leaky", "Даёт течь");
-        add("container.hbm_m.solar_mirrors", "Солнечные зеркала");
         add("msg.hbm_m.solar_mirror.sky_access", "Зеркало освещено солнцем");
         add("msg.hbm_m.solar_mirror.no_sky_access", "Зеркало затенено");
         add("container.hbm_m.watz_powerplant", "Электростанция Ватц");
@@ -3486,6 +3583,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("gui.recipe.consumption", "Потребление");
         add("gui.recipe.input", "Вход");
         add("gui.recipe.output", "Выход");
+        add("gui.recipe.atPressure", "при давлении в");
         add("gui.hbm_m.fluid.empty", "Пусто");
 
         add("tooltip.hbm_m.battery.stored", "Хранится энергии:");
@@ -3710,14 +3808,9 @@ public class ModLanguageProviderRu extends LanguageProvider {
 
         add("text.autoconfig.hbm_m.option.modelUpdateDistance", "Дистанция для рендеринга динамических частей .obj моделей");
         add("text.autoconfig.hbm_m.option.modelStaticRenderDistance", "Дистанция для рендеринга статических частей .obj моделей");
-        add("text.autoconfig.hbm_m.option.occlusionCullingMode", "Отсечение невидимых моделей");
-        add("text.autoconfig.hbm_m.option.occlusionCullingMode.GPU", "GPU");
-        add("text.autoconfig.hbm_m.option.occlusionCullingMode.CPU", "CPU");
-        add("text.autoconfig.hbm_m.option.occlusionCullingMode.OFF", "ВЫКЛ");
-        add("config.hbm_m.field.occlusionCullingMode", "Отсечение невидимых мультиблоков");
-        add("config.hbm_m.field.occlusionCullingMode.tooltip", "Режим отсечения невидимых машин за препятствиями.\nGPU: Иерархическая пирамида глубин (Hi-Z) через compute-шейдеры OpenGL 4.3.\nCPU: Трассировка лучей по блокам чанка на процессоре.\nOFF: Отсечение выключено.\nСовет: включайте CPU, когда много моделей скрыто за блоками — сэкономит отрисовку слабого GPU; в открытых биомах даёт мало и нагружает процессор.");
+        // occlusionCullingMode.* уже добавлены в начале (GPU-окклюзия мультиблоков) — старый дубль удалён;
+        // оставлен только gpu_unsupported для config.hbm_m.field.* (уникальный ключ)
         add("config.hbm_m.field.occlusionCullingMode.gpu_unsupported", "GPU-отсечение не поддерживается вашим видеоадаптером: %s");
-        add("config.hbm_m.rendering.occlusionCullingMode.gpu_unsupported", "GPU-отсечение не поддерживается вашим видеоадаптером: %s");
         add("text.autoconfig.hbm_m.option.forceVanillaImmediatePath", "Ванильный immediate-путь (резерв)");
         add("text.autoconfig.hbm_m.option.mdiCleanFrameReuse", "MDI: переиспользование чистого кадра");
         add("text.autoconfig.hbm_m.option.mdiCleanFrameReuse.@Tooltip", "Переиспользовать MDI-снапшот инстансов, если данные не менялись с прошлого кадра (ноль аплоадов для статичной сцены). Отключать только для отладки.");
@@ -3865,7 +3958,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.modelUpdateDistance.@Tooltip", "Дистанция для рендеринга динамических частей .obj моделей (в чанках)");
         add("text.autoconfig.hbm_m.option.modelStaticRenderDistance.@Tooltip", "Дистанция для рендеринга статических частей .obj моделей (в чанках)");
         add("text.autoconfig.hbm_m.option.enableMissileNetworkTrack.@Tooltip", "Включите это, если хотите чтобы сервер отсылал всем клиентам пакеты с местоположением баллистических ракет, чтобы их было видно ЗА ванильной дальностью прорисовки.");
-        add("text.autoconfig.hbm_m.option.occlusionCullingMode.@Tooltip", "Режим отсечения невидимых машин за препятствиями.\nGPU: Иерархическая пирамида глубин (Hi-Z) через compute-шейдеры OpenGL 4.3.\nCPU: Трассировка лучей по блокам чанка на процессоре.\nOFF: Отсечение выключено.\nСовет: включайте CPU, когда много моделей скрыто за блоками — сэкономит отрисовку слабого GPU; в открытых биомах даёт мало и нагружает процессор.");
+        // text.autoconfig.hbm_m.option.occlusionCullingMode.@Tooltip уже добавлен в начале — дубль удалён
         add("text.autoconfig.hbm_m.option.forceVanillaImmediatePath.@Tooltip", "Рисовать все OBJ-станки ванильным immediate-путём (putBulkData) вместо автоматического VBO/инстансинг-пайплайна. Аварийный резерв, если станки рендерятся белыми/невидимыми или сломанными.");
 
         add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks.@Tooltip", "Дальность отрисовки полосок здоровья мобов (чанки). Больше значение - дальше видно, но выше нагрузка.");
@@ -4101,6 +4194,14 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("tile.rbmk.dodd.t1_p", "Давление перфторометан");
         add("tile.rbmk.dodd.lidState", "Состояние крышки");
         add("tile.rbmk.dodd.explodeOnBroken", "Взрывается при разрушении");
+
+        // Автоген-имена материалов: добавляем последними, только если ключ не занят явным add(...)
+        for (Map.Entry<String, String> e : new java.util.LinkedHashMap<>(deferredLangKeys).entrySet()) {
+            if (!claimedLangKeys.contains(e.getKey())) {
+                add(e.getKey(), e.getValue());
+            }
+        }
+        deferredLangKeys.clear();
     }
 }
 //?}

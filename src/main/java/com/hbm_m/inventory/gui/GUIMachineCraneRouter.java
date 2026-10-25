@@ -1,6 +1,6 @@
 package com.hbm_m.inventory.gui;
 
-import com.hbm_m.network.CraneControlPacket;
+import com.hbm_m.network.NBTControlPacket;
 import com.hbm_m.blockentity.network.MachineCraneRouterBlockEntity;
 import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.filter.ModulePatternMatcher;
@@ -10,18 +10,13 @@ import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 @OnlyIn(Dist.CLIENT)
 public class GUIMachineCraneRouter extends GuiInfoScreen<MachineCraneRouterMenu> {
 
@@ -109,19 +104,21 @@ public class GUIMachineCraneRouter extends GuiInfoScreen<MachineCraneRouterMenu>
             for (int row = 0; row < 3; row++) {
                 int side = col * 3 + row;
                 if (isHovering(7 + col * 222, 16 + row * 26, 18, 18, (int) mouseX, (int) mouseY)) {
-                    CraneControlPacket.sendToServer(pos, CraneControlPacket.ROUTER_TARGET_MODE, side);
+                    // Original: the mode button went through receiveControl("toggle"),
+                    // which cycles modes[side] between OFF/WHITELIST/BLACKLIST/WILDCARD.
+                    // NBTControlPacket dispatches on the IControlReceiver (api.tile) the
+                    // router actually implements; hasPermission is checked server-side.
+                    CompoundTag data = new CompoundTag();
+                    data.putInt("toggle", side);
+                    NBTControlPacket.sendToServer(pos, data);
                     return true;
                 }
             }
         }
 
-        for (int i = 0; i < MachineCraneRouterBlockEntity.INVENTORY_SIZE; i++) {
-            Slot slot = this.menu.slots.get(i);
-            if (isHoveringSlot(slot, (int) mouseX, (int) mouseY) && button == 1 && slot.hasItem()) {
-                CraneControlPacket.sendToServer(pos, CraneControlPacket.FILTER_MODE, i);
-                return true;
-            }
-        }
+        // Right-click on an occupied filter slot is handled by the menu
+        // (PatternSlot.handle -> MachineCraneRouterBlockEntity.nextMode), so the
+        // click must fall through to the vanilla slot-click path here.
 
         return super.mouseClicked(mouseX, mouseY, button);
     }

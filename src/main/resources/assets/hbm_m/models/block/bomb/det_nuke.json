@@ -1,0 +1,7 @@
+{
+ "parent": "minecraft:block/cube_column",
+ "textures": {
+  "end": "hbm_m:block/bomb/det_nuke_top",
+  "side": "hbm_m:block/bomb/det_nuke"
+ }
+}

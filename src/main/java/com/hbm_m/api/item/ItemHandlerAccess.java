@@ -45,14 +45,13 @@ public final class ItemHandlerAccess {
     //?}
     //? if neoforge {
     /*@Nullable
-    public static net.neoforged.neoforge.items.IItemHandler getItemHandler(Level level, BlockPos pos, @Nullable Direction side) {
+    public static net.minecraftforge.items.IItemHandler getItemHandler(Level level, BlockPos pos, @Nullable Direction side) {
         // На NeoForge запрос идёт через Level, не через BlockEntity.getCapability.
         BlockEntity be = level.getBlockEntity(pos);
         if (be == null || be.isRemoved()) return null;
         return level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK, pos, side);
     }
     *///?}
-
     /**
      * Вставить стек в item-handler блока, вернув непоместившийся остаток.
      *

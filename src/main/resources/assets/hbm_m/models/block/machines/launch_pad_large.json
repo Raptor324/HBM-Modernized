@@ -1,0 +1,23 @@
+{
+  "loader": "forge:composite",
+  "textures": {
+    "particle": "hbm_m:block/launchpad/pad"
+  },
+  "children": {
+    "pad_model": {
+      "loader": "forge:obj",
+      "model": "hbm_m:models/block/machines/launch_pad_large.obj",
+      "flip_v": true
+    }
+  },
+  "transform": {"origin": "corner", "translation": [0.5, 0, 0.5], "rotation": [0, 90, 0], "scale": 1.0},
+  "display": {
+    "thirdperson_righthand": {"rotation": [75, 45, 0], "translation": [0, 2.5, 0], "scale": [0.06, 0.06, 0.06]},
+    "thirdperson_lefthand": {"rotation": [75, 45, 0], "translation": [0, 2.5, 0], "scale": [0.06, 0.06, 0.06]},
+    "firstperson_righthand": {"rotation": [0, 45, 0], "translation": [0, 0, 0], "scale": [0.06, 0.06, 0.06]},
+    "firstperson_lefthand": {"rotation": [0, 45, 0], "translation": [0, 0, 0], "scale": [0.06, 0.06, 0.06]},
+    "gui": {"rotation": [30.0, -135.0, 0.0], "translation": [0.0, -4.896, -1.672], "scale": [0.0508, 0.0508, 0.0508]},
+    "ground": {"rotation": [0, 0, 0], "translation": [0, 3, 0], "scale": [0.06, 0.06, 0.06]},
+    "fixed": {"rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [0.1, 0.1, 0.1]}
+  }
+}

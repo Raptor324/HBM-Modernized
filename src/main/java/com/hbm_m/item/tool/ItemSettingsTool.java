@@ -1,19 +1,23 @@
 package com.hbm_m.item.tool;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 
+import javax.annotation.Nullable;
+
+import com.hbm_m.extprop.HbmPlayerProps;
+import com.hbm_m.handler.EnumKeybind;
 import com.hbm_m.interfaces.ICopiable;
 import com.hbm_m.item.ITooltipProvider;
-import com.hbm_m.network.CopyToolKeyState;
 import com.hbm_m.network.InfoToastPacket;
-import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -22,56 +26,84 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import org.jetbrains.annotations.Nullable;
-import net.minecraft.server.level.ServerPlayer;
 
 /**
- * Порт com.hbm.items.tool.ItemSettingsTool (1.7.10) - "Устройство настройки".
- *
- * <p>Shift+ПКМ по машине - скопировать настройки ({@link ICopiable#getSettings}),
- * ПКМ - вставить ({@link ICopiable#pasteSettings}, индекс параметра выбирается
- * зажатой ALT). Пока предмет в руке, список вставляемых параметров рисуется на
- * экране через {@code OverlayInfoToast} (оригинальный RenderInfoSystem): выбранный
- * параметр голубым, остальные жёлтым.
- *
- * <p>Взаимодействие идёт через {@code onItemUseFirst} - как в оригинале, хук
- * срабатывает ДО активации блока, поэтому GUI машины не открывается. Хук есть
- * на обоих таргетах (IForgeItem / IItemExtension), код общий.
+ * 1:1 {@code com.hbm.items.tool.ItemSettingsTool}: Schleich-Rechtsklick kopiert die Einstellungen einer
+ * {@link ICopiable}-Maschine, Rechtsklick fuegt sie ein; die Alt-Taste (TOOL_ALT) waehlt den Eintrag.
  */
 public class ItemSettingsTool extends Item implements ITooltipProvider {
-
-    /** TTL строк информера: оригинал - 4000 мс = 80 тиков. */
-    private static final int INFO_TTL_TICKS = 80;
-    /** Идентификаторы строк информера: оригинал использовал 897 + j. */
-    private static final int INFO_BASE_ID = 897;
-    /** Дебаунс листания индекса (оригинальный inputDelay > 4). */
-    private static final int CYCLE_COOLDOWN_TICKS = 5;
-
-    private static final int COLOR_SELECTED = 0x55FFFF; // AQUA
-    private static final int COLOR_IDLE     = 0xFFFF55; // YELLOW
 
     public ItemSettingsTool(Properties properties) {
         super(properties);
     }
 
     @Override
-    public InteractionResult onItemUseFirst(ItemStack stack, UseOnContext context) {
-        Player player = context.getPlayer();
-        Level level = context.getLevel();
-        BlockPos pos = context.getClickedPos();
+    public void inventoryTick(ItemStack stack, Level world, Entity entity, int i, boolean bool) {
+        if (!(entity instanceof ServerPlayer player)) return;
+
+        if (player.getMainHandItem() == stack && StackNbt.has(stack)) {
+            int delay = StackNbt.read(stack).getInt("inputDelay");
+            delay++;
+            ListTag displayInfo = StackNbt.tag(stack).getList("displayInfo", 10);
+
+            if (HbmPlayerProps.get(player).getKeyPressed(EnumKeybind.TOOL_ALT) && delay > 4) {
+                int index = StackNbt.read(stack).getInt("copyIndex") + 1;
+                if (index > displayInfo.size() - 1) index = 0;
+                StackNbt.tag(stack).putInt("copyIndex", index);
+                delay = 0;
+            }
+
+            StackNbt.tag(stack).putInt("inputDelay", delay);
+            if (world.getGameTime() % 5 != 0) return;
+
+            for (int j = 0; j < displayInfo.size(); j++) {
+                CompoundTag nbt = displayInfo.getCompound(j);
+                ChatFormatting format = StackNbt.read(stack).getInt("copyIndex") == j ? ChatFormatting.AQUA : ChatFormatting.YELLOW;
+                InfoToastPacket.sendTo(player, Component.translatable(nbt.getString("info")).withStyle(format), 80, 897 + j, 0xFFFFFF);
+            }
+        }
+    }
+
+    @Override
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
+        list.add(Component.literal("Can copy the settings (filters, fluid ID, etc) of machines"));
+        list.add(Component.literal("Shift right-click to copy, right click to paste"));
+        list.add(Component.literal("Ctrl click on pipes to paste settings to multiple pipes"));
+        if (StackNbt.read(stack) != null) {
+            CompoundTag nbt = StackNbt.read(stack);
+            if (nbt.contains("tileName")) {
+                list.add(Component.translatable(nbt.getString("tileName")).withStyle(ChatFormatting.BLUE));
+            } else {
+                list.add(Component.literal(" None ").withStyle(ChatFormatting.RED));
+            }
+        }
+    }
+
+    @Override
+    public InteractionResult onItemUseFirst(ItemStack stack, UseOnContext ctx) {
+        Level world = ctx.getLevel();
+        Player player = ctx.getPlayer();
+        BlockPos pos = ctx.getClickedPos();
         if (player == null) return InteractionResult.PASS;
 
-        BlockEntity be = level.getBlockEntity(pos);
-        if (!(be instanceof ICopiable copiable)) return InteractionResult.PASS;
+        ICopiable copiable = getCopyInfoSource(world, pos);
+        if (copiable == null) return InteractionResult.PASS;
+        Block block = world.getBlockState(pos).getBlock();
+
+        Component prefix = Component.literal("[").withStyle(ChatFormatting.DARK_AQUA)
+                .append(Component.translatable(this.getDescriptionId()).withStyle(ChatFormatting.DARK_AQUA))
+                .append(Component.literal("] ").withStyle(ChatFormatting.DARK_AQUA));
 
         if (player.isShiftKeyDown()) {
-            CompoundTag settings = copiable.getSettings(level, pos);
+            CompoundTag settings = copiable.getSettings(world, pos);
+            StackNbt.set(stack, settings);
             if (settings != null) {
-                settings.putString("tileName", copiable.getSettingsSourceID());
+                settings.putString("tileName", copiable.getSettingsSourceID(block));
                 settings.putInt("copyIndex", 0);
                 settings.putInt("inputDelay", 0);
-                String[] info = copiable.infoForDisplay(level, pos);
+                String[] info = copiable.infoForDisplay(world, pos);
                 if (info != null) {
                     ListTag displayInfo = new ListTag();
                     for (String str : info) {
@@ -81,84 +113,27 @@ public class ItemSettingsTool extends Item implements ITooltipProvider {
                     }
                     settings.put("displayInfo", displayInfo);
                 }
-                PlatformHooks.setItemTag(stack, settings);
-
-                if (level.isClientSide) {
-                    player.displayClientMessage(chatMessage(copiable, "chat.hbm_m.settings_tool.copied", ChatFormatting.AQUA), false);
+                // 1.21.1: set() kopiert das Tag -> nach dem Befuellen erneut setzen (1.20.1: dasselbe Objekt, wirkungslos)
+                StackNbt.set(stack, settings);
+                if (world.isClientSide) {
+                    player.sendSystemMessage(prefix.copy().append(Component.literal("Copied settings of ").append(copiable.getSettingsSourceDisplay(block)).withStyle(ChatFormatting.AQUA)));
                 }
             } else {
-                if (level.isClientSide) {
-                    player.displayClientMessage(chatMessage(copiable, "chat.hbm_m.settings_tool.copy_failed", ChatFormatting.RED), false);
-                }
+                player.sendSystemMessage(prefix.copy().append(Component.literal("Copy failed, machine has no settings tool support: ").append(copiable.getSettingsSourceDisplay(block)).withStyle(ChatFormatting.RED)));
             }
-            return InteractionResult.sidedSuccess(level.isClientSide());
-
-        } else if (PlatformHooks.hasItemTag(stack)) {
-            CompoundTag nbt = PlatformHooks.getItemTag(stack);
-            int index = nbt.getInt("copyIndex");
-            copiable.pasteSettings(nbt, index, level, player, pos);
-            return InteractionResult.sidedSuccess(level.isClientSide());
+        } else if (StackNbt.has(stack)) {
+            int index = StackNbt.read(stack).getInt("copyIndex");
+            copiable.pasteSettings(StackNbt.tag(stack), index, world, player, pos);
         }
 
-        // Оригинал: на ICopiable-машине без тега сервер всё равно поглощал клик
-        // (return !world.isRemote), GUI не открывался - поведение сохранено.
-        return InteractionResult.sidedSuccess(level.isClientSide());
+        return world.isClientSide ? InteractionResult.PASS : InteractionResult.SUCCESS;
     }
 
-    private static Component chatMessage(ICopiable copiable, String key, ChatFormatting color) {
-        return Component.empty()
-                .append(Component.literal("[").withStyle(ChatFormatting.DARK_AQUA))
-                .append(Component.translatable("item.hbm_m.settings_tool").withStyle(ChatFormatting.DARK_AQUA))
-                .append(Component.literal("] ").withStyle(ChatFormatting.DARK_AQUA))
-                .append(Component.translatable(key, copiable.getSettingsSourceDisplay()).withStyle(color));
-    }
-
-    @Override
-    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slot, boolean selected) {
-        if (level.isClientSide || !selected || !(entity instanceof ServerPlayer player)) return;
-
-        CompoundTag tag = PlatformHooks.getItemTag(stack);
-        if (tag == null) return;
-        ListTag displayInfo = tag.getList("displayInfo", Tag.TAG_COMPOUND);
-
-        CopyToolKeyState.Keys keys = CopyToolKeyState.get(player.getUUID());
-        if (keys.alt && !displayInfo.isEmpty()) {
-            int cooldown = CopyToolKeyState.getCooldown(player.getUUID());
-            if (cooldown > 0) {
-                CopyToolKeyState.setCooldown(player.getUUID(), cooldown - 1);
-            } else {
-                int index = tag.getInt("copyIndex") + 1;
-                if (index > displayInfo.size() - 1) index = 0;
-                final int idx = index;
-                PlatformHooks.editItemTag(stack, t -> t.putInt("copyIndex", idx));
-                CopyToolKeyState.setCooldown(player.getUUID(), CYCLE_COOLDOWN_TICKS);
-            }
-        }
-
-        if (displayInfo.isEmpty()) return;
-        if (level.getGameTime() % 5 != 0) return;
-
-        int selectedIndex = tag.getInt("copyIndex");
-        for (int j = 0; j < displayInfo.size(); j++) {
-            String key = displayInfo.getCompound(j).getString("info");
-            if (key.isEmpty()) continue;
-            int rgb = selectedIndex == j ? COLOR_SELECTED : COLOR_IDLE;
-            InfoToastPacket.sendTo(player, key, INFO_TTL_TICKS, INFO_BASE_ID + j, rgb);
-        }
-    }
-
-    @Override
-    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.translatable("tooltip.hbm_m.settings_tool.1"));
-        tooltip.add(Component.translatable("tooltip.hbm_m.settings_tool.2"));
-        tooltip.add(Component.translatable("tooltip.hbm_m.settings_tool.3"));
-        if (PlatformHooks.hasItemTag(stack)) {
-            CompoundTag nbt = PlatformHooks.getItemTag(stack);
-            if (nbt != null && nbt.contains("tileName")) {
-                tooltip.add(Component.translatable(nbt.getString("tileName")).withStyle(ChatFormatting.BLUE));
-            } else {
-                tooltip.add(Component.translatable("tooltip.hbm_m.settings_tool.none").withStyle(ChatFormatting.RED));
-            }
-        }
+    @Nullable
+    private ICopiable getCopyInfoSource(Level world, BlockPos pos) {
+        BlockEntity te = world.getBlockEntity(pos);
+        if (te instanceof ICopiable c) return c;
+        if (world.getBlockState(pos).getBlock() instanceof ICopiable c) return c;
+        return null;
     }
 }

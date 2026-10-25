@@ -49,6 +49,21 @@ public class MachineIndustrialGeneratorBlock extends BaseEntityBlock implements 
 
     public MachineIndustrialGeneratorBlock(BlockBehaviour.Properties properties) {
         super(properties);
+        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, net.minecraft.core.Direction.NORTH));
+    }
+
+    /** Audit 7: Original MachineIGenerator ist BlockDummyable (Ausrichtung = Metadate, RenderIGenerator dreht danach). */
+    public static final net.minecraft.world.level.block.state.properties.DirectionProperty FACING =
+            net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING;
+
+    @Override
+    protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(FACING);
+    }
+
+    @Nullable @Override
+    public BlockState getStateForPlacement(net.minecraft.world.item.context.BlockPlaceContext context) {
+        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
     }
 
     @Override
@@ -86,6 +101,7 @@ public class MachineIndustrialGeneratorBlock extends BaseEntityBlock implements 
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
 
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider p) {
             MenuRegistry.openExtendedMenu((ServerPlayer) player, p, buf -> buf.writeBlockPos(pos));
@@ -95,6 +111,7 @@ public class MachineIndustrialGeneratorBlock extends BaseEntityBlock implements 
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
 
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider p) {
             MenuRegistry.openExtendedMenu((ServerPlayer) player, p, buf -> buf.writeBlockPos(pos));

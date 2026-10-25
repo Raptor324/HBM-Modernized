@@ -33,6 +33,10 @@ public class PWRFuelItem extends Item implements com.hbm_m.item.ITooltipProvider
 
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.literal("Heat per flux: " + type.heatEmission + " TU").withStyle(ChatFormatting.GOLD));
+        String color = ChatFormatting.GOLD + "";
+        String reset = ChatFormatting.RESET + "";
+        tooltip.add(Component.literal(color + "Heat per flux: " + reset + type.heatEmission + " TU"));
+        tooltip.add(Component.literal(color + "Reaction function: " + reset + type.function.getLabelForFuel()));
+        tooltip.add(Component.literal(color + "Fuel type: " + reset + type.function.getDangerFromFuel()));
     }
 }

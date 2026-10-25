@@ -1,282 +1,78 @@
 package com.hbm_m.blockentity.machines;
 
-import com.hbm_m.api.block.ICrucibleAcceptor;
-import com.hbm_m.blockentity.ModBlockEntities;
-import com.hbm_m.inventory.material.MaterialStack;
-import com.hbm_m.inventory.material.MaterialType;
-import com.hbm_m.item.material.ItemCastMold;
-import com.hbm_m.platform.PlatformHooks;
-import com.hbm_m.recipe.MoldCastingRecipe;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
-import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Port of the 1.7.10 TileEntityFoundryBasin / TileEntityFoundryCastingBase.
- * - capacity depends on the installed mold (no mold = nothing can be poured in)
- * - can ONLY be filled by pouring from above (crucible or outlet), never by
- *   sideways flow from channels
- * - casts once the basin is completely full, after a cool-off period
- */
-public class MachineFoundryBasinBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements ICrucibleAcceptor, com.hbm_m.interfaces.ICopiable {
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.inventory.material.Mats.MaterialStack;
+import com.hbm_m.inventory.material.NTMMaterial;
 
-    /** Original: cooloff starts at 100 and resets to 200 after each cast. */
-    public static final int COOLOFF_TIME = 200;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 
-    @Nullable public MaterialType type = null;
-    public int amount = 0;
-
-    private ItemStack moldSlot   = ItemStack.EMPTY;
-    private ItemStack outputSlot = ItemStack.EMPTY;
-    private int cooloff = 100;
-
-    private float fillLevel = 0f;
-    private int   fillColor = 0xFFC18336;
+/** 1:1 {@code TileEntityFoundryBasin}: tiefes Giessbecken fuer die grossen Formen (Groesse 1), nur von oben befuellbar. */
+public class MachineFoundryBasinBlockEntity extends MachineFoundryCastingBaseBlockEntity implements IRenderFoundry, com.hbm_m.interfaces.ICopiable {
 
     public MachineFoundryBasinBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.FOUNDRY_BASIN_BE.get(), pos, state);
+        super(ModBlockEntities.FOUNDRY_BASIN_BE.get(), pos, state, 2);
     }
 
-    /** Used by {@link MachineFoundryMoldBlockEntity}, which reuses this class's logic wholesale under a different registered type. */
     protected MachineFoundryBasinBlockEntity(net.minecraft.world.level.block.entity.BlockEntityType<?> type, BlockPos pos, BlockState state) {
-        super(type, pos, state);
-    }
-
-    /* ── mold handling ──────────────────────────────────────────────────── */
-
-    public ItemStack getMoldSlot()   { return moldSlot; }
-    public ItemStack getOutputSlot() { return outputSlot; }
-
-    /** 1 = большая форма (basin), 0 = малая (mold block) — порт TileEntityFoundryCastingBase.getMoldSize. */
-    public int getMoldSize() { return 1; }
-
-    public boolean insertMold(ItemStack stack) {
-        if (!moldSlot.isEmpty()) return false;
-        if (!(stack.getItem() instanceof ItemCastMold mold)) return false;
-        // оригинал: mold.size == cast.getMoldSize()
-        if (mold.getMoldType().getSize() != getMoldSize()) return false;
-        moldSlot = stack.copy();
-        moldSlot.setCount(1);
-        // оригинал: world.playSoundEffect(..., "hbm:item.upgradePlug", 1.0F, 1.0F)
-        if (level != null && !level.isClientSide) {
-            com.hbm_m.platform.PlatformHooks.playSound(level, worldPosition,
-                    com.hbm_m.sound.ModSounds.UPGRADE_PLUG.get(),
-                    net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F);
-        }
-        setChanged();
-        syncToClient();
-        return true;
-    }
-
-    public ItemStack takeMold() {
-        // original: mold can only be removed while the basin is empty
-        if (amount > 0) return ItemStack.EMPTY;
-        ItemStack s = moldSlot.copy();
-        moldSlot = ItemStack.EMPTY;
-        setChanged();
-        syncToClient();
-        return s;
-    }
-
-    public ItemStack takeOutput() {
-        ItemStack s = outputSlot.copy();
-        outputSlot = ItemStack.EMPTY;
-        setChanged();
-        syncToClient();
-        return s;
-    }
-
-    /** Оригинал: слот 0 проверяется на размер формы — при несоответствии считается, что формы нет. */
-    public @Nullable ItemCastMold getInstalledMold() {
-        if (moldSlot.isEmpty()) return null;
-        if (moldSlot.getItem() instanceof ItemCastMold mold) {
-            if (mold.getMoldType().getSize() == getMoldSize()) return mold;
-        }
-        return null;
-    }
-
-    /** Original: capacity is dictated by the installed mold, 0 without mold. */
-    public int getCapacity() {
-        ItemCastMold mold = getInstalledMold();
-        if (mold == null) return 0;
-        return mold.getMoldType().getCost();
-    }
-
-    /** Кэширующий резолвер литья: скан списка рецептов только при смене пары (mold, material).
-     *  Headroom выхода (outputSlot.isEmpty) проверяется вызывающим кодом КАЖДЫЙ тик —
-     *  в сканер по контракту CachedRecipeResolver он не входит. */
-    private final com.hbm_m.recipe.index.CachedRecipeResolver<MoldCastingRecipe> castingResolver =
-            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
-
-    private @Nullable ItemStack getResultFor(MaterialType type, ItemCastMold.MoldType mold) {
-        if (level == null || type == null || mold == null) return null;
-        // MoldCasting теперь data-driven (JSON) — ищем MoldCastingRecipe по паре (mold, material)
-        // через кэширующий резолвер (кросс-версионный мост). Статический MoldCastingRecipes удалён.
-        long sig = com.hbm_m.recipe.index.CachedRecipeResolver.sign(4, type.id, mold.ordinal());
-        MoldCastingRecipe r = castingResolver.resolve(level, MoldCastingRecipe.Type.INSTANCE, sig,
-                (lvl, all) -> {
-                    for (MoldCastingRecipe rec : all) {
-                        if (rec.matches(mold, type)) return rec;
-                    }
-                    return null;
-                });
-        if (r == null) return null;
-        ItemStack out = r.getOutput();
-        return out.isEmpty() ? null : out;
-    }
-
-    /* ── tick ───────────────────────────────────────────────────────────── */
-
-    public static void tick(Level level, BlockPos pos, BlockState state, MachineFoundryBasinBlockEntity be) {
-        if (level.isClientSide) return;
-        boolean dirty = false;
-
-        int capacity = be.getCapacity();
-        if (be.amount > capacity) be.amount = capacity;
-        if (be.amount == 0) be.type = null;
-
-        ItemCastMold mold = be.getInstalledMold();
-
-        if (mold != null && be.type != null && capacity > 0
-                && be.amount == capacity && be.outputSlot.isEmpty()) {
-
-            ItemStack result = be.getResultFor(be.type, mold.getMoldType());
-            if (result != null) {
-                be.cooloff--;
-                if (be.cooloff <= 0) {
-                    be.amount = 0;
-                    be.type = null;
-                    be.outputSlot = result.copy();
-                    be.cooloff = COOLOFF_TIME;
-                    dirty = true;
-                }
-            } else {
-                be.cooloff = COOLOFF_TIME;
-            }
-        } else {
-            be.cooloff = COOLOFF_TIME;
-        }
-
-        float newFill  = capacity > 0 ? Math.min(1f, (float) be.amount / capacity) : 0f;
-        int   newColor = be.type != null ? (0xFF000000 | be.type.color) : 0xFFC18336;
-        if (be.fillLevel != newFill || be.fillColor != newColor) {
-            be.fillLevel = newFill;
-            be.fillColor = newColor;
-            dirty = true;
-        }
-        if (dirty) {
-            be.setChanged();
-            level.sendBlockUpdated(pos, state, state, 3);
-        }
-    }
-
-    /* ── ICrucibleAcceptor ──────────────────────────────────────────────── */
-
-    protected boolean standardCheck(MaterialStack stack) {
-        if (this.type != null && this.type != stack.type && this.amount > 0) return false;
-        if (this.amount >= getCapacity()) return false;
-        if (!this.outputSlot.isEmpty()) return false;
-        ItemCastMold mold = getInstalledMold();
-        if (mold == null) return false;
-        return getResultFor(stack.type, mold.getMoldType()) != null;
-    }
-
-    protected @Nullable MaterialStack standardAdd(MaterialStack stack) {
-        this.type = stack.type;
-
-        if (stack.amount + this.amount <= getCapacity()) {
-            this.amount += stack.amount;
-            setChanged();
-            return null;
-        }
-
-        int required = getCapacity() - this.amount;
-        this.amount = getCapacity();
-        stack.amount -= required;
-        setChanged();
-        return stack;
-    }
-
-    /* Basin can't accept sideways flowing (original behavior). */
-    @Override public boolean canAcceptPartialFlow(Level level, BlockPos pos, Direction side, MaterialStack stack) { return false; }
-    @Override public @Nullable MaterialStack flow(Level level, BlockPos pos, Direction side, MaterialStack stack) { return stack; }
-
-    @Override
-    public boolean canAcceptPartialPour(Level level, BlockPos pos, Direction side, MaterialStack stack) {
-        if (side != Direction.UP) return false;
-        return standardCheck(stack);
+        super(type, pos, state, 2);
     }
 
     @Override
-    public @Nullable MaterialStack pour(Level level, BlockPos pos, Direction side, MaterialStack stack) {
-        return standardAdd(stack);
+    public int getMoldSize() {
+        return 1;
     }
 
-    /* ── renderer data ──────────────────────────────────────────────────── */
+    /* Basin can't accept sideways flowing */
+    @Override public boolean canAcceptPartialFlow(Level world, BlockPos pos, Direction side, MaterialStack stack) { return false; }
+    @Override @Nullable public MaterialStack flow(Level world, BlockPos pos, Direction side, MaterialStack stack) { return stack; }
 
-    public float getFillLevel() { return fillLevel; }
-    public int   getFillColor() { return fillColor; }
+    /* Pour-Seite: das Basen-Default (MachineFoundryBaseBlockEntity#canAcceptPartialPour/#pour)
+       gate't bereits auf Direction.UP - hier keine zusaetzlichen Overrides noetig. */
 
-    /** Диапазон высоты поверхности расплава (оригинал IRenderFoundry: 0.125 + amount*range/capacity). */
+    @Override
+    public boolean shouldRender() {
+        return this.type != null && this.amount > 0;
+    }
+
+    @Override
+    public double getMoltenLevel() {
+        return 0.125 + this.amount * 0.75D / this.getCapacity();
+    }
+
+    @Override
+    public NTMMaterial getMat() {
+        return this.type;
+    }
+
+    @Override public double minX() { return 0.125D; }
+    @Override public double maxX() { return 0.875D; }
+    @Override public double minZ() { return 0.125D; }
+    @Override public double maxZ() { return 0.875D; }
+    @Override public double moldHeight() { return 0.13D; }
+    @Override public double outHeight() { return 0.875D; }
+
+    // Methods for MachineFoundryRenderer
+    public ItemStack getMoldSlot() { return slots[0]; }
+    public ItemStack getOutputSlot() { return slots[1]; }
+    public float getFillLevel() { return this.getCapacity() > 0 ? (float) this.amount / this.getCapacity() : 0f; }
+    public int getFillColor() { return this.type != null ? (0xFF000000 | this.type.moltenColor) : 0xFFC18336; }
     public float getSurfaceRange() { return 0.75f; }
-    /** Высота, на которой лежит отлитый предмет (оригинал outHeight). */
-    public float getOutputHeight() { return 0.875f; }
-    /** Высота установленной формы (оригинал moldHeight). */
-    public float getMoldHeight() { return 0.13f; }
-
-    private void syncToClient() {
-        if (level != null && !level.isClientSide) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-        }
-    }
-
-    /* ── NBT / sync ─────────────────────────────────────────────────────── */
-
+    public float getMoldHeight() { return (float) moldHeight(); }
+    public float getOutputHeight() { return (float) outHeight(); }
 
     @Override
-    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.writeNbtData(tag, registries);
-        if (type != null) tag.putString("mat_type", type.name);
-        tag.putInt("mat_amount", amount);
-        if (!moldSlot.isEmpty())   tag.put("mold",   com.hbm_m.platform.PlatformHooks.saveItemStack(moldSlot, new CompoundTag(), registries));
-        if (!outputSlot.isEmpty()) tag.put("output", com.hbm_m.platform.PlatformHooks.saveItemStack(outputSlot, new CompoundTag(), registries));
-        tag.putInt("cooloff", cooloff);
-        tag.putFloat("fillLevel", fillLevel);
-        tag.putInt("fillColor", fillColor);
-    }
-
-    @Override
-    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.readNbtData(tag, registries);
-        if (tag.contains("mat_type")) type = MaterialType.byName(tag.getString("mat_type"));
-        else type = null;
-        amount = tag.getInt("mat_amount");
-        moldSlot   = tag.contains("mold")   ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("mold"), registries)   : ItemStack.EMPTY;
-        outputSlot = tag.contains("output") ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("output"), registries) : ItemStack.EMPTY;
-        cooloff = tag.contains("cooloff") ? tag.getInt("cooloff") : 100;
-        fillLevel = tag.getFloat("fillLevel");
-        fillColor = tag.getInt("fillColor");
-    }
-
-    /* ── Устройство настройки (ItemSettingsTool) ────────────────────────── */
-
-    // Оригинал TileEntityFoundryBase: копирует текущий металл как matFilter,
-    // вставка пустая (литьё выбирает материал само).
-    @Override
-    public CompoundTag getSettings(Level level, BlockPos pos) {
-        CompoundTag nbt = new CompoundTag();
+    public net.minecraft.nbt.CompoundTag getSettings(Level level, BlockPos pos) {
+        net.minecraft.nbt.CompoundTag nbt = new net.minecraft.nbt.CompoundTag();
         if (type != null) nbt.putIntArray("matFilter", new int[]{ type.id });
         return nbt;
     }
 
     @Override
-    public void pasteSettings(CompoundTag nbt, int index, Level level, net.minecraft.world.entity.player.Player player, BlockPos pos) { }
+    public void pasteSettings(net.minecraft.nbt.CompoundTag nbt, int index, Level level, net.minecraft.world.entity.player.Player player, BlockPos pos) { }
 }

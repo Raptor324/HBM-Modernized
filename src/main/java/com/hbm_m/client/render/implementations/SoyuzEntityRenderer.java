@@ -16,6 +16,7 @@ import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.resources.ResourceLocation;
+import com.hbm_m.platform.LoaderHooks;
 
 /**
  * Renders the ascending {@link SoyuzEntity} by reusing the already-built
@@ -23,11 +24,7 @@ import net.minecraft.resources.ResourceLocation;
  * {@code deco_soyuz_rocket} block / the launcher's mounted-rocket preview).
  */
 
-//? if < 1.21.1 {
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} else {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
 public class SoyuzEntityRenderer extends EntityRenderer<SoyuzEntity> {
 
     private static final ResourceLocation ROCKET_MODEL_ID =
@@ -63,7 +60,7 @@ public class SoyuzEntityRenderer extends EntityRenderer<SoyuzEntity> {
     @Nullable
     private static BakedModel getRocketPart() {
         var modelManager = Minecraft.getInstance().getModelManager();
-        BakedModel model = PlatformHooks.getModel(modelManager, ROCKET_MODEL_ID);
+        BakedModel model = LoaderHooks.getModel(modelManager, ROCKET_MODEL_ID);
         if (model == null || model == modelManager.getMissingModel()) return null;
         if (!(model instanceof SoyuzRocketBakedModel rocketModel)) return null;
         return rocketModel.getPart(SoyuzRocketBakedModel.ROCKET);

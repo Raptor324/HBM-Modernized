@@ -10,14 +10,8 @@ import org.joml.Vector4f;
 
 import java.util.ArrayList;
 import java.util.List;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 /**
  * Bakes DAE scene meshes into block-atlas {@link BakedQuad}s. Each triangle becomes a
  * degenerate quad (the 4th vertex repeats the 3rd) and the V coordinate is flipped like

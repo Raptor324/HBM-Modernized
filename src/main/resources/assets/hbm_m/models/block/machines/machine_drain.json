@@ -1,0 +1,151 @@
+{
+  "loader": "forge:composite",
+  "textures": {
+    "particle": "hbm_m:block/machine/drain_model"
+  },
+  "children": {
+    "model": {
+      "loader": "forge:obj",
+      "model": "hbm_m:models/block/machines/drain.obj",
+      "flip_v": true,
+      "textures": {
+        "default": "hbm_m:block/machine/drain_model"
+      }
+    }
+  },
+  "transform": {
+    "origin": "corner",
+    "translation": [
+      0.5,
+      0,
+      0.5
+    ],
+    "rotation": [
+      0,
+      90,
+      0
+    ],
+    "scale": 1.0
+  },
+  "display": {
+    "thirdperson_righthand": {
+      "rotation": [
+        75,
+        45,
+        0
+      ],
+      "translation": [
+        0,
+        2.5,
+        0
+      ],
+      "scale": [
+        0.22499999999999998,
+        0.22499999999999998,
+        0.22499999999999998
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        75,
+        45,
+        0
+      ],
+      "translation": [
+        0,
+        2.5,
+        0
+      ],
+      "scale": [
+        0.22499999999999998,
+        0.22499999999999998,
+        0.22499999999999998
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        45,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.24,
+        0.24,
+        0.24
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        225,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.24,
+        0.24,
+        0.24
+      ]
+    },
+    "ground": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        3,
+        0
+      ],
+      "scale": [
+        0.15,
+        0.15,
+        0.15
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.3,
+        0.3,
+        0.3
+      ]
+    },
+    "gui": {
+      "rotation": [
+        30.0,
+        -45.0,
+        0.0
+      ],
+      "translation": [
+        3.359,
+        0.978,
+        -2.159
+      ],
+      "scale": [
+        0.3125,
+        0.3125,
+        0.3125
+      ]
+    }
+  }
+}

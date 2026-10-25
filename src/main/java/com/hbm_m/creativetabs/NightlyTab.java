@@ -27,7 +27,7 @@ public class NightlyTab {
 
     static {
         add(ModBlocks.BARREL_STEEL);
-        add(ModItems.BLAST_DOOR);
+        add(ModBlocks.BLAST_DOOR);
         add(ModBlocks.BLOCK_GRAPHITE_DETECTOR);
         add(ModBlocks.BLOCK_GRAPHITE_FUEL);
         add(ModBlocks.BLOCK_GRAPHITE_LITHIUM);

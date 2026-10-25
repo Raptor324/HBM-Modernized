@@ -1,0 +1,95 @@
+{
+ "parent": "hbm_m:block/brick_jungle_glyph_0",
+ "overrides": [
+  {
+   "predicate": {
+    "hbm_m:glyph": 1
+   },
+   "model": "hbm_m:block/brick_jungle_glyph_1"
+  },
+  {
+   "predicate": {
+    "hbm_m:glyph": 2
+   },
+   "model": "hbm_m:block/brick_jungle_glyph_2"
+  },
+  {
+   "predicate": {
+    "hbm_m:glyph": 3
+   },
+   "model": "hbm_m:block/brick_jungle_glyph_3"
+  },
+  {
+   "predicate": {
+    "hbm_m:glyph": 4
+   },
+   "model": "hbm_m:block/brick_jungle_glyph_4"
+  },
+  {
+   "predicate": {
+    "hbm_m:glyph": 5
+   },
+   "model": "hbm_m:block/brick_jungle_glyph_5"
+  },
+  {
+   "predicate": {
+    "hbm_m:glyph": 6
+   },
+   "model": "hbm_m:block/brick_jungle_glyph_6"
+  },
+  {
+   "predicate": {
+    "hbm_m:glyph": 7
+   },
+   "model": "hbm_m:block/brick_jungle_glyph_7"
+  },
+  {
+   "predicate": {
+    "hbm_m:glyph": 8
+   },
+   "model": "hbm_m:block/brick_jungle_glyph_8"
+  },
+  {
+   "predicate": {
+    "hbm_m:glyph": 9
+   },
+   "model": "hbm_m:block/brick_jungle_glyph_9"
+  },
+  {
+   "predicate": {
+    "hbm_m:glyph": 10
+   },
+   "model": "hbm_m:block/brick_jungle_glyph_10"
+  },
+  {
+   "predicate": {
+    "hbm_m:glyph": 11
+   },
+   "model": "hbm_m:block/brick_jungle_glyph_11"
+  },
+  {
+   "predicate": {
+    "hbm_m:glyph": 12
+   },
+   "model": "hbm_m:block/brick_jungle_glyph_12"
+  },
+  {
+   "predicate": {
+    "hbm_m:glyph": 13
+   },
+   "model": "hbm_m:block/brick_jungle_glyph_13"
+  },
+  {
+   "predicate": {
+    "hbm_m:glyph": 14
+   },
+   "model": "hbm_m:block/brick_jungle_glyph_14"
+  },
+  {
+   "predicate": {
+    "hbm_m:glyph": 15
+   },
+   "model": "hbm_m:block/brick_jungle_glyph_15"
+  }
+ ]
+}

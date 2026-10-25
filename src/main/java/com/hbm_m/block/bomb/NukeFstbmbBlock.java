@@ -52,9 +52,7 @@ public class NukeFstbmbBlock extends NukeBaseBlock implements IBomb {
     @Override
     public BombReturnCode explode(Level level, BlockPos pos) {
         if (level.isClientSide) return BombReturnCode.UNDEFINED;
-        if (level.getBlockEntity(pos) instanceof NukeFstbmbBlockEntity nuke && nuke.isReady()) {
-            // Clear first: setBlock triggers onRemove, which drops the container - a detonated bomb
-            // handed its payload back.
+        if (level.getBlockEntity(pos) instanceof NukeFstbmbBlockEntity nuke && (nuke.isLoaded() || nuke.isReady())) {
             nuke.clearContent();
             level.setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
             explode(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);

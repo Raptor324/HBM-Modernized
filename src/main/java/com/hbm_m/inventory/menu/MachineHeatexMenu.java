@@ -39,7 +39,7 @@ public class MachineHeatexMenu extends AbstractContainerMenu {
         // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем заглушку
         ModItemStackHandler handler = this.blockEntity != null
                 ? this.blockEntity.getInventory()
-                : new com.hbm_m.platform.DummyItemStackHandler(MACHINE_SLOTS);
+                : new com.hbm_m.platform.ModItemStackHandler.Dummy(MACHINE_SLOTS);
         HandlerContainer machineInventory = new HandlerContainer(handler);
 
         // Оригинал: new Slot(tedf, 0, 80, 72)
@@ -71,6 +71,83 @@ public class MachineHeatexMenu extends AbstractContainerMenu {
 
     public MachineHeatexBlockEntity getBlockEntity() {
         return blockEntity;
+    }
+
+    /** Vanilla-адаптер для {@link ModItemStackHandler}, чтобы использовать обычные {@link Slot}. */
+    private static final class HandlerContainer implements net.minecraft.world.Container {
+        private final ModItemStackHandler handler;
+
+        private HandlerContainer(ModItemStackHandler handler) {
+            this.handler = handler;
+        }
+
+        @Override
+        public int getContainerSize() {
+            return handler.getSlots();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            for (int i = 0; i < handler.getSlots(); i++) {
+                if (!handler.getStackInSlot(i).isEmpty()) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public ItemStack getItem(int slot) {
+            return handler.getStackInSlot(slot);
+        }
+
+        @Override
+        public ItemStack removeItem(int slot, int amount) {
+            ItemStack existing = handler.getStackInSlot(slot);
+            if (existing.isEmpty() || amount <= 0) {
+                return ItemStack.EMPTY;
+            }
+
+            ItemStack split = existing.split(amount);
+            handler.setStackInSlot(slot, existing);
+            setChanged();
+            return split;
+        }
+
+        @Override
+        public ItemStack removeItemNoUpdate(int slot) {
+            ItemStack existing = handler.getStackInSlot(slot);
+            handler.setStackInSlot(slot, ItemStack.EMPTY);
+            return existing;
+        }
+
+        @Override
+        public void setItem(int slot, ItemStack stack) {
+            handler.setStackInSlot(slot, stack);
+            setChanged();
+        }
+
+        @Override
+        public void setChanged() {
+            // Изменения уже отслеживаются в handler, но Slot ожидает этот вызов.
+        }
+
+        @Override
+        public boolean stillValid(Player player) {
+            return true;
+        }
+
+        @Override
+        public void clearContent() {
+            for (int i = 0; i < handler.getSlots(); i++) {
+                handler.setStackInSlot(i, ItemStack.EMPTY);
+            }
+        }
+
+        @Override
+        public boolean canPlaceItem(int slot, ItemStack stack) {
+            return handler.isItemValid(slot, stack);
+        }
     }
 
     @Override
@@ -113,70 +190,5 @@ public class MachineHeatexMenu extends AbstractContainerMenu {
             slot.onTake(player, slotStack);
         }
         return result;
-    }
-
-    /**
-     * Ванильный Container-адаптер поверх {@link ModItemStackHandler}.
-     * Нужен, чтобы меню не зависело от Forge `IItemHandler`/`SlotItemHandler`.
-     */
-    private static final class HandlerContainer implements net.minecraft.world.Container {
-        private final ModItemStackHandler handler;
-
-        private HandlerContainer(ModItemStackHandler handler) {
-            this.handler = handler;
-        }
-
-        @Override
-        public int getContainerSize() {
-            return handler.getSlots();
-        }
-
-        @Override
-        public boolean isEmpty() {
-            for (int i = 0; i < handler.getSlots(); i++) {
-                if (!handler.getStackInSlot(i).isEmpty()) return false;
-            }
-            return true;
-        }
-
-        @Override
-        public @NotNull ItemStack getItem(int slot) {
-            return handler.getStackInSlot(slot);
-        }
-
-        @Override
-        public @NotNull ItemStack removeItem(int slot, int amount) {
-            return handler.extractItem(slot, amount, false);
-        }
-
-        @Override
-        public @NotNull ItemStack removeItemNoUpdate(int slot) {
-            ItemStack cur = handler.getStackInSlot(slot);
-            if (cur.isEmpty()) return ItemStack.EMPTY;
-            handler.setStackInSlot(slot, ItemStack.EMPTY);
-            return cur;
-        }
-
-        @Override
-        public void setItem(int slot, @NotNull ItemStack stack) {
-            handler.setStackInSlot(slot, stack);
-        }
-
-        @Override
-        public void setChanged() {
-            // изменения трекаются в ModItemStackHandler.onContentsChanged()
-        }
-
-        @Override
-        public boolean stillValid(@NotNull Player player) {
-            return true;
-        }
-
-        @Override
-        public void clearContent() {
-            for (int i = 0; i < handler.getSlots(); i++) {
-                handler.setStackInSlot(i, ItemStack.EMPTY);
-            }
-        }
     }
 }

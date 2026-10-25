@@ -17,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.inventory.ClickType;
+import com.hbm_m.platform.ModItemStackHandler;
 
 public class BlastFurnaceMenu extends AbstractContainerMenu {
     public final BlastFurnaceBlockEntity blockEntity;

@@ -276,7 +276,7 @@ public class HbmThermalHandler implements ResourceManagerReloadListener {
     }
     //?} elif neoforge {
     /*@SuppressWarnings("removal")
-    @net.neoforged.fml.common.EventBusSubscriber(modid = com.hbm_m.lib.RefStrings.MODID, value = net.neoforged.api.distmarker.Dist.CLIENT, bus = net.neoforged.fml.common.EventBusSubscriber.Bus.GAME)
+    @net.neoforged.fml.common.EventBusSubscriber(modid = com.hbm_m.lib.RefStrings.MODID, value = net.minecraftforge.api.distmarker.Dist.CLIENT)
     public static final class NeoForgeHooks {
         @net.neoforged.bus.api.SubscribeEvent
         public static void onRenderLevel(net.neoforged.neoforge.client.event.RenderLevelStageEvent event) {

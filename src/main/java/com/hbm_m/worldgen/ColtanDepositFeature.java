@@ -1,6 +1,8 @@
 package com.hbm_m.worldgen;
 
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.config.ModClothConfig;
+import com.hbm_m.config.WorldConfig;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BlockTags;
@@ -24,6 +26,7 @@ import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConf
  * Далее на каждый чанк — 2 попытки, каждая проверяет 5 «сужающихся колец»
  * (range = 750 / r); если точка чанка попадает в квадрат колец, ставится
  * жила WorldGenMinable размером 4 (оригинал: y 15..39 → современный −49..−25).
+ * Опционально ({@code enable528ColtanSpawn}) — дополнительный случайный спавн жил.
  */
 public class ColtanDepositFeature extends Feature<NoneFeatureConfiguration> {
 
@@ -39,34 +42,60 @@ public class ColtanDepositFeature extends Feature<NoneFeatureConfiguration> {
         super(NoneFeatureConfiguration.CODEC);
     }
 
+    /** Lage der Lagerstaette (colX, colZ) wie im Original und im Kompass. */
+    public static int[] depositCenter(long seed) {
+        RandomSource rand = RandomSource.create(seed + SEED_SALT);
+        int colX = (int) (rand.nextGaussian() * SIGMA);
+        int colZ = (int) (rand.nextGaussian() * SIGMA);
+        return new int[] { colX, colZ };
+    }
+
     private static void computeCenters(long seed) {
         if (cachedSeed == seed) return;
-        RandomSource rand = RandomSource.create(seed + SEED_SALT);
-        centerX = (int) (rand.nextGaussian() * SIGMA);
-        centerZ = (int) (rand.nextGaussian() * SIGMA);
+        int[] col = depositCenter(seed);
+        centerX = col[0];
+        centerZ = col[1];
         cachedSeed = seed;
     }
 
     @Override
     public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
         WorldGenLevel level = context.level();
+        // Original: innerhalb von if(WorldConfig.overworldOre)
+        if (!WorldConfig.overworldOre) return false;
+
         BlockPos origin = context.origin();
         RandomSource rand = context.random();
 
         computeCenters(level.getSeed());
 
+        ModClothConfig cfg = ModClothConfig.get();
         boolean placed = false;
-        for (int attempt = 0; attempt < 2; attempt++) {
-            for (int ring = 1; ring <= 5; ring++) {
+
+        // Опциональный случайный спавн (enable528ColtanSpawn)
+        if (cfg.enable528ColtanSpawn) {
+            for (int v = 0; v < cfg.coltanRate; v++) {
                 int x = origin.getX() + rand.nextInt(16);
                 int y = rand.nextInt(25) - 49;
                 int z = origin.getZ() + rand.nextInt(16);
+                generateVein(level, rand, x, y, z, 4);
+                placed = true;
+            }
+        }
 
-                int range = BASE_RANGE / ring;
-                if (x <= centerX + range && x >= centerX - range
-                        && z <= centerZ + range && z >= centerZ - range) {
-                    generateVein(level, rand, x, y, z, 4);
-                    placed = true;
+        if (cfg.enable528ColtanDeposit) {
+            for (int attempt = 0; attempt < 2; attempt++) {
+                for (int ring = 1; ring <= 5; ring++) {
+                    int x = origin.getX() + rand.nextInt(16);
+                    int y = rand.nextInt(25) - 49;
+                    int z = origin.getZ() + rand.nextInt(16);
+
+                    int range = BASE_RANGE / ring;
+                    if (x <= centerX + range && x >= centerX - range
+                            && z <= centerZ + range && z >= centerZ - range) {
+                        generateVein(level, rand, x, y, z, 4);
+                        placed = true;
+                    }
                 }
             }
         }

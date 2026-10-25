@@ -5,7 +5,6 @@ import com.hbm_m.blockentity.machines.MachineCrystallizerBlockEntity;
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.packet.PacketSyncEnergy;
-import com.hbm_m.platform.DummyItemStackHandler;
 import com.hbm_m.platform.ModItemStackHandler;
 
 import net.minecraft.network.FriendlyByteBuf;
@@ -70,7 +69,7 @@ public class MachineCrystallizerMenu extends AbstractContainerMenu implements IL
         // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
         ModItemStackHandler handler = this.blockEntity != null
                 ? this.blockEntity.getInventory()
-                : new DummyItemStackHandler(MACHINE_SLOTS);
+                : new ModItemStackHandler.Dummy(MACHINE_SLOTS);
         this.machineInventory = new HandlerContainer(handler);
 
         // Original slot layout from ContainerCrystallizer

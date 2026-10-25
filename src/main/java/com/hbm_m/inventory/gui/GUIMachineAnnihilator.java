@@ -18,20 +18,15 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 /**
  * Eigenes Layout (das Original {@code GUIMachineAnnihilator} zeigt zusaetzlich Payout-Slots/Claim-
  * Button fuer das nicht uebernommene Meilenstein-System - siehe Klassenkommentar in
  * {@link MachineAnnihilatorBlockEntity}). Verwendet die portierte Original-Panel-Textur
- * (nur der statische 176x208-Rahmen, keine geratenen Icon-Koordinaten daraus), Tankanzeige und
- * Monitor-Tooltip als eigene Overlays, sowie ein editierbares Pool-Namensfeld analog zum Original.
+ * (nur der statische 176x208-Rahmen, keine geratenen Icon-Koordinaten daraus), einen Monitor-Tooltip
+ * als eigenes Overlay sowie ein editierbares Pool-Namensfeld an der Original-Position. Das Original
+ * zeigt keinen Tank an (auch die Textur hat keinen Tank-Rahmen), also auch hier keiner.
  */
 @OnlyIn(Dist.CLIENT)
 public class GUIMachineAnnihilator extends GuiInfoScreen<MachineAnnihilatorMenu> {
@@ -39,18 +34,15 @@ public class GUIMachineAnnihilator extends GuiInfoScreen<MachineAnnihilatorMenu>
     private static final ResourceLocation TEXTURE =
                         ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_annihilator.png");
 
-    private static final int TANK_X = 152;
-    private static final int TANK_Y = 18;
-    private static final int TANK_WIDTH = 16;
-    private static final int TANK_HEIGHT = 52;
+    /** Tooltip-Rect = exakt die Position des Monitor-Slots aus dem Menu (SLOT_MONITOR bei 152,18). */
+    private static final int MONITOR_SLOT_X = 152;
+    private static final int MONITOR_SLOT_Y = 18;
 
-    private static final int MONITOR_SLOT_X = 134;
-    private static final int MONITOR_SLOT_Y = 36;
-
-    private static final int POOL_FIELD_X = 26;
-    private static final int POOL_FIELD_Y = 60;
-    private static final int POOL_FIELD_WIDTH = 100;
-    private static final int POOL_FIELD_HEIGHT = 12;
+    /** Original: {@code new GuiTextField(font, guiLeft + 31, guiTop + 85, 80, 8)} - sitzt auf dem gruenen Balken der Textur. */
+    private static final int POOL_FIELD_X = 31;
+    private static final int POOL_FIELD_Y = 85;
+    private static final int POOL_FIELD_WIDTH = 80;
+    private static final int POOL_FIELD_HEIGHT = 8;
 
     private EditBox poolField;
 
@@ -69,9 +61,9 @@ public class GUIMachineAnnihilator extends GuiInfoScreen<MachineAnnihilatorMenu>
         MachineAnnihilatorBlockEntity be = menu.getBlockEntity();
         if (be == null) return; // тайл может отсутствовать в реплее Flashback
         poolField = new EditBox(font, leftPos + POOL_FIELD_X, topPos + POOL_FIELD_Y, POOL_FIELD_WIDTH, POOL_FIELD_HEIGHT, Component.empty());
-        poolField.setMaxLength(64);
+        poolField.setMaxLength(20); // Original: setMaxStringLength(20)
         poolField.setBordered(true);
-        poolField.setTextColor(0xFFFFFF);
+        poolField.setTextColor(0x00FF00); // Original: setTextColor(0x00ff00)
         poolField.setValue(be.getPoolName());
         poolField.setResponder(s -> {
             if (!s.isBlank()) {
@@ -91,13 +83,6 @@ public class GUIMachineAnnihilator extends GuiInfoScreen<MachineAnnihilatorMenu>
         int y = (height - imageHeight) / 2;
 
         guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
-
-        renderTank(guiGraphics, x, y);
-    }
-
-    private void renderTank(GuiGraphics guiGraphics, int x, int y) {
-        MachineAnnihilatorBlockEntity be = menu.getBlockEntity();
-        be.getTank().renderTank(guiGraphics, x + TANK_X, y + TANK_Y, TANK_WIDTH, TANK_HEIGHT);
     }
 
     @Override
@@ -117,18 +102,11 @@ public class GUIMachineAnnihilator extends GuiInfoScreen<MachineAnnihilatorMenu>
     private void renderCustomTooltips(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         MachineAnnihilatorBlockEntity be = menu.getBlockEntity();
         if (be == null) return; // тайл может отсутствовать в реплее Flashback
-        int x = (width - imageWidth) / 2;
-        int y = (height - imageHeight) / 2;
-
-        if (isPointInRect(TANK_X, TANK_Y, TANK_WIDTH, TANK_HEIGHT, mouseX, mouseY)) {
-            be.getTank().renderTankInfo(guiGraphics, this.font, mouseX, mouseY, x + TANK_X, y + TANK_Y, TANK_WIDTH, TANK_HEIGHT);
-        }
 
         if (isPointInRect(MONITOR_SLOT_X, MONITOR_SLOT_Y, 16, 16, mouseX, mouseY)) {
             ItemStack monitorStack = be.getInventory().getStackInSlot(MachineAnnihilatorBlockEntity.SLOT_MONITOR);
             if (!monitorStack.isEmpty()) {
-                String display = be.getMonitorDisplay();
-                BigInteger count = display.isBlank() ? BigInteger.ZERO : new BigInteger(display);
+                BigInteger count = be.monitorBigInt;
                 List<Component> tooltip = new ArrayList<>();
                 tooltip.add(monitorStack.getHoverName());
                 tooltip.add(Component.translatable("gui.hbm_m.annihilator.pool", be.getPoolName()));

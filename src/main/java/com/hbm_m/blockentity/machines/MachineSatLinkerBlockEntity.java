@@ -59,11 +59,12 @@ public class MachineSatLinkerBlockEntity extends BaseHbmBlockEntity implements M
         ItemStack target = be.inventory.getStackInSlot(SLOT_COPY_TARGET);
         if (source.getItem() instanceof ISatChip && target.getItem() instanceof ISatChip) {
             ISatChip.setFreqS(target, ISatChip.getFreqS(source));
+            com.hbm_m.api.space.SpaceApi.satellites().onLinkerCopy(source, target); // W-R6C-3 (Space: copyItemData)
         }
 
         ItemStack toRandomize = be.inventory.getStackInSlot(SLOT_RANDOMIZE);
         if (toRandomize.getItem() instanceof ISatChip) {
-            SatelliteManager manager = SatelliteManager.get(server);
+            SatelliteManager manager = SatelliteManager.get(server, pos.getX(), pos.getZ());
             int freq = server.getRandom().nextInt(100_000);
             if (!manager.isFreqTaken(freq)) {
                 ISatChip.setFreqS(toRandomize, freq);
@@ -76,14 +77,14 @@ public class MachineSatLinkerBlockEntity extends BaseHbmBlockEntity implements M
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
-        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(inventory, registries));
+        tag.put("inventory", inventory.serialize( registries));
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
         if (tag.contains("inventory")) {
-            com.hbm_m.platform.ItemStackSerialization.deserialize(inventory, tag.getCompound("inventory"), registries);
+            inventory.deserialize(tag.getCompound("inventory"), registries);
         }
     }
 
@@ -98,14 +99,46 @@ public class MachineSatLinkerBlockEntity extends BaseHbmBlockEntity implements M
         return new MachineSatLinkerMenu(containerId, playerInventory, this);
     }
 
-    /**
-     * Exposes the inventory as an item capability, like MachineCrucibleBlockEntity does. Without
-     * this the block published no handler at all, so hoppers could not reach it and, more to the
-     * point, MachineDrops.dropInventory had nothing to go through and the contents were still
-     * destroyed when the block was broken.
-     */
+    //? if forge {
+    /** Original {@code ISidedInventory}: unten {1}, oben {0}, Seiten {2}; nichts hinein, alles heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return side == net.minecraft.core.Direction.DOWN ? new int[] { 1 } : side == net.minecraft.core.Direction.UP ? new int[] { 0 } : new int[] { 2 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return false; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return true; }
+            });
+
     @Override
-    public @Nullable Object getItemHandler(@Nullable net.minecraft.core.Direction side) {
-        return this.inventory;
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
     }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: unten {1}, oben {0}, Seiten {2}; nichts hinein, alles heraus. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return side == net.minecraft.core.Direction.DOWN ? new int[] { 1 } : side == net.minecraft.core.Direction.UP ? new int[] { 0 } : new int[] { 2 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return false; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return true; }
+            });
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
+
 }

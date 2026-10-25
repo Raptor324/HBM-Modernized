@@ -2,6 +2,7 @@ package com.hbm_m.inventory.menu;
 
 import com.hbm_m.blockentity.machines.MachineDifurnaceRtgBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
+import com.hbm_m.item.machine.ItemRTGPellet;
 import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.core.BlockPos;
@@ -9,11 +10,16 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
-/** Port of {@code ContainerMachineDiFurnaceRTG} (1.7.10 Original). */
+/**
+ * 1:1 {@code ContainerMachineDiFurnaceRTG}: Eingaenge (80,18)/(80,54), Ausgang (134,36), Pellets 2x3 ab (22,18),
+ * Spielerinventar ab y 84. Rechtsklick mit leerer Hand auf einen leeren Eingang dreht dessen Eingabeseite weiter.
+ */
 public class MachineDifurnaceRtgMenu extends AbstractContainerMenu {
 
     private static final int MACHINE_SLOT_COUNT = MachineDifurnaceRtgBlockEntity.INVENTORY_SIZE;
@@ -30,6 +36,7 @@ public class MachineDifurnaceRtgMenu extends AbstractContainerMenu {
         this.blockEntity = blockEntity;
 
         var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
+
         this.addSlot(new Slot(container, MachineDifurnaceRtgBlockEntity.SLOT_INPUT_TOP, 80, 18));
         this.addSlot(new Slot(container, MachineDifurnaceRtgBlockEntity.SLOT_INPUT_BOTTOM, 80, 54));
         this.addSlot(new Slot(container, MachineDifurnaceRtgBlockEntity.SLOT_OUTPUT, 134, 36) {
@@ -68,10 +75,23 @@ public class MachineDifurnaceRtgMenu extends AbstractContainerMenu {
     }
 
     @Override
+    public void clicked(int index, int button, ClickType clickType, Player player) {
+        if (index >= 0 && index < 2 && button == 1 && clickType == ClickType.PICKUP) {
+            Slot slot = this.getSlot(index);
+            if (!slot.hasItem() && getCarried().isEmpty()) {
+                if (!player.level().isClientSide) blockEntity.cycleSide(index);
+                return;
+            }
+        }
+        super.clicked(index, button, clickType, player);
+    }
+
+    @Override
     public boolean stillValid(Player player) {
         return MenuReach.stillValid(player, blockEntity);
     }
 
+    /** Original {@code transferStackInSlot}: Pellets in die Pelletplaetze, alles andere in die Eingaenge. */
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
         ItemStack result = ItemStack.EMPTY;
@@ -81,21 +101,16 @@ public class MachineDifurnaceRtgMenu extends AbstractContainerMenu {
         ItemStack stack = slot.getItem();
         result = stack.copy();
 
-        if (index < MACHINE_SLOT_COUNT) {
-            if (!this.moveItemStackTo(stack, PLAYER_SLOT_START, this.slots.size(), true)) {
-                return ItemStack.EMPTY;
-            }
-        } else {
-            if (!this.moveItemStackTo(stack, 0, MACHINE_SLOT_COUNT, false)) {
-                return ItemStack.EMPTY;
-            }
+        if (index <= 8) {
+            if (!this.moveItemStackTo(stack, PLAYER_SLOT_START, this.slots.size(), true)) return ItemStack.EMPTY;
+        } else if (stack.getItem() instanceof ItemRTGPellet) {
+            if (!this.moveItemStackTo(stack, 3, 9, false)) return ItemStack.EMPTY;
+        } else if (!this.moveItemStackTo(stack, 0, 3, false)) {
+            return ItemStack.EMPTY;
         }
 
-        if (stack.isEmpty()) {
-            slot.set(ItemStack.EMPTY);
-        } else {
-            slot.setChanged();
-        }
+        if (stack.isEmpty()) slot.set(ItemStack.EMPTY);
+        else slot.setChanged();
         slot.onTake(player, stack);
         return result;
     }

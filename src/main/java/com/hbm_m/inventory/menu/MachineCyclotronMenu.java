@@ -4,7 +4,6 @@ import com.hbm_m.blockentity.machines.MachineCyclotronBlockEntity;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.platform.DummyItemStackHandler;
 import com.hbm_m.platform.ModItemStackHandler;
 
 import net.minecraft.core.BlockPos;
@@ -48,7 +47,7 @@ public class MachineCyclotronMenu extends AbstractContainerMenu {
                 : ContainerLevelAccess.NULL;
         this.machineInventory = new HandlerContainer(blockEntity != null
                 ? blockEntity.getInventory()
-                : new DummyItemStackHandler(SLOT_MACHINE_END_EXCLUSIVE));
+                : new ModItemStackHandler.Dummy(SLOT_MACHINE_END_EXCLUSIVE));
 
         // Input (rendered on the left, as in the 1.7.10 original)
         this.addSlot(new Slot(machineInventory, 0, 11, 18));

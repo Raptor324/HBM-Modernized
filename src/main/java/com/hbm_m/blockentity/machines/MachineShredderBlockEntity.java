@@ -4,6 +4,7 @@ import com.hbm_m.platform.PlatformHooks;
 
 
 import java.util.Map;
+import java.util.Optional;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -16,17 +17,13 @@ import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
 import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.recipe.ShredderRecipe;
+import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.platform.recipe.RecipeInputWrapper;
 import com.hbm_m.sound.ClientSoundBootstrap;
 
 import dev.architectury.registry.registries.RegistrySupplier;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
@@ -43,6 +40,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.platform.StackNbt;
 
 public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
 
@@ -64,12 +62,16 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
     private static final long ENERGY_PER_TICK = 5L; 
 
     private int progress = 0;
+    /** Original {@code soundCycle}: alle 50 Arbeitsticks ein Lorengeraeusch (Tonhoehe 0.75). */
+    private int soundCycle = 0;
     private boolean isActive = false;
     private boolean clientIsActive = false;
 
     /** Кэш скана рецептов измельчения: сигнатура = фингерпринт входного стака (включая damage). */
     private final com.hbm_m.recipe.index.CachedRecipeResolver<ShredderRecipe> recipeResolver =
             new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+    private int syncCounter = 0;
+    private static final int SYNC_INTERVAL = 20;
 
     private final ContainerData containerData = new ContainerData() {
         @Override
@@ -175,8 +177,9 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
         }
     }
 @OnlyIn(Dist.CLIENT)
+
     private void clientTick() {
-        ClientSoundBootstrap.updateSound(this, getIsActive(), () -> newShredderSoundInstance());
+        // Original: kein Dauerklang, das Geraeusch kommt serverseitig (siehe serverTick)
     }
 
     private Object newShredderSoundInstance() {
@@ -197,6 +200,8 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
     private void serverTick(Level level, BlockPos pos) {
         ensureNetworkInitialized();
 
+        boolean dirty = false;
+
         chargeFromBattery();
 
         if (level.getGameTime() % 10L == 0L) {
@@ -204,6 +209,9 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
         }
 
         boolean canProcess = canProcess();
+        boolean wasActive = isActive;
+
+        if (progress == 0) soundCycle = 0;
 
         boolean canWork = false;
         if (canProcess) {
@@ -211,6 +219,7 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
             if (currentEnergy >= ENERGY_PER_TICK) {
                 this.setEnergyStored(currentEnergy - ENERGY_PER_TICK);
                 canWork = true;
+                dirty = true;
             }
         }
 
@@ -229,30 +238,52 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
                                 if (oldDamage < maxDamage && newDamage >= maxDamage) {
                                     level.playSound(null, pos, SoundEvents.ITEM_BREAK, SoundSource.BLOCKS, 1.0F, 0.8F);
                                 }
+                                dirty = true;
                             }
                         }
                     }
                 }
                 progress = 0;
                 processItem();
+                dirty = true;
             } else {
-                // прогресс растёт — снапшот в syncIfStateChanged изменится
+                dirty = true;
             }
+            // Original: NTMSounds.VANILLA_MINECART, Lautstaerke 1, Tonhoehe 0.75, alle 50 Ticks
+            if (soundCycle == 0) {
+                level.playSound(null, pos, SoundEvents.MINECART_RIDING, SoundSource.BLOCKS, 1.0F, 0.75F);
+            }
+            soundCycle++;
+            if (soundCycle >= 50) soundCycle = 0;
         } else {
             if (progress > 0) {
                 progress = 0;
+                dirty = true;
             }
         }
 
         isActive = canWork;
+        if (wasActive != isActive) {
+            dirty = true;
+        }
+        
+        if (isActive || wasActive) {
+            dirty = true;
+        }
 
-        // Anti-sync-spam (P6): снапшот энергии + прогресс/активность + фингерпринты лезвий
-        // (stackFingerprint включает damage на обеих версиях — гейт parity-стабилен).
-        long lo = this.getEnergyStored();
-        long hi = progress * 31L + (isActive ? 1L : 0L);
-        hi = hi * 31L + PlatformHooks.stackFingerprint(inventory.getStackInSlot(BLADE_LEFT));
-        hi = hi * 31L + PlatformHooks.stackFingerprint(inventory.getStackInSlot(BLADE_RIGHT));
-        syncIfStateChanged(lo, hi);
+        syncCounter++;
+        if (syncCounter >= SYNC_INTERVAL) {
+            syncCounter = 0;
+            dirty = true;
+        }
+
+        if (dirty) {
+            long lo = this.getEnergyStored();
+            long hi = progress * 31L + (isActive ? 1L : 0L);
+            hi = hi * 31L + StackNbt.fingerprint(inventory.getStackInSlot(BLADE_LEFT));
+            hi = hi * 31L + StackNbt.fingerprint(inventory.getStackInSlot(BLADE_RIGHT));
+            syncIfStateChanged(lo, hi);
+        }
     }
 
     // ==================== ENERGY ====================
@@ -289,7 +320,14 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
 
         for (int i = INPUT_START; i <= INPUT_END; i++) {
             ItemStack stack = inventory.getStackInSlot(i);
-            if (!stack.isEmpty() && stack.getCount() > 0 && hasSpace(stack)) {
+            // E11 (Fork, nur mit Space-Addon): Wackelkopf "Gwen" im Schredder -> Schredder explodiert
+            if (!stack.isEmpty() && com.hbm_m.api.space.SpaceApi.forkActive() && com.hbm_m.api.space.SpaceApi.fork().shredderExplodes(stack)) {
+                if (level != null && !level.isClientSide) {
+                    level.destroyBlock(worldPosition, false);
+                    level.explode(null, worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5, 5F, true, net.minecraft.world.level.Level.ExplosionInteraction.BLOCK);
+                }
+                break;
+            } else if (!stack.isEmpty() && stack.getCount() > 0 && hasSpace(stack)) {
                 return true;
             }
         }
@@ -311,7 +349,7 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
                 for (int outSlot = OUTPUT_START; outSlot <= OUTPUT_END; outSlot++) {
                     ItemStack outputStack = inventory.getStackInSlot(outSlot);
                     if (!outputStack.isEmpty() && 
-                        PlatformHooks.isSameItemSameTags(outputStack, result) &&
+                        StackNbt.sameItemSameTags(outputStack, result) &&
                         outputStack.getCount() + result.getCount() <= outputStack.getMaxStackSize()) {
                         
                         outputStack.grow(result.getCount());
@@ -346,7 +384,7 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
             if (slotStack.isEmpty()) {
                 return true;
             }
-            if (PlatformHooks.isSameItemSameTags(slotStack, result) &&
+            if (StackNbt.sameItemSameTags(slotStack, result) &&
                 slotStack.getCount() + result.getCount() <= result.getMaxStackSize()) {
                 return true;
             }
@@ -365,7 +403,7 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
         // (hasSpace) остаётся ВНЕ резолвера и переоценивается каждый тик — закэшированный
         // рецепт никогда не блокирует измельчитель после освобождения выходов.
         ShredderRecipe recipe = recipeResolver.resolve(level, ShredderRecipe.Type.INSTANCE,
-                PlatformHooks.stackFingerprint(input), (lvl, all) -> {
+                StackNbt.fingerprint(input), (lvl, all) -> {
                     SimpleContainer container = new SimpleContainer(1);
                     container.setItem(0, input);
                     RecipeInputWrapper wrapper = new RecipeInputWrapper(container);
@@ -481,4 +519,62 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
     public ContainerData getContainerData() {
         return containerData;
     }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: alle Slots; Eingaenge gleichmaessig befuellt, Ausgaenge und stumpfe Klingen heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.range(0, 29); }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { if ((slot >= 9 && slot != 27 && slot != 28) || !isItemValidForSlot(slot, stack)) return false;
+                    if (inventory.getStackInSlot(slot).isEmpty()) return true;
+                    int size = inventory.getStackInSlot(slot).getCount();
+                    for (int k = 0; k < 9; k++) {
+                        net.minecraft.world.item.ItemStack s = inventory.getStackInSlot(k);
+                        if (s.isEmpty()) return false;
+                        if (net.minecraft.world.item.ItemStack.isSameItem(s, stack) && s.getCount() < size) return false;
+                    }
+                    return true; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { if (slot >= 9 && slot <= 26) return true; return (slot == 27 || slot == 28) && stack.getMaxDamage() > 0 && stack.getDamageValue() >= stack.getMaxDamage(); }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: alle Slots; Eingaenge gleichmaessig befuellt, Ausgaenge und stumpfe Klingen heraus. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.range(0, 29); }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { if ((slot >= 9 && slot != 27 && slot != 28) || !isItemValidForSlot(slot, stack)) return false;
+                    if (inventory.getStackInSlot(slot).isEmpty()) return true;
+                    int size = inventory.getStackInSlot(slot).getCount();
+                    for (int k = 0; k < 9; k++) {
+                        net.minecraft.world.item.ItemStack s = inventory.getStackInSlot(k);
+                        if (s.isEmpty()) return false;
+                        if (net.minecraft.world.item.ItemStack.isSameItem(s, stack) && s.getCount() < size) return false;
+                    }
+                    return true; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { if (slot >= 9 && slot <= 26) return true; return (slot == 27 || slot == 28) && stack.getMaxDamage() > 0 && stack.getDamageValue() >= stack.getMaxDamage(); }
+            });
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
 }

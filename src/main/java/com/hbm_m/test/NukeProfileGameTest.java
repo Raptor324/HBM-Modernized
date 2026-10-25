@@ -22,13 +22,8 @@ import net.minecraft.world.level.levelgen.Heightmap;
 
 import java.util.List;
 
-//? if forge {
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
-*///?}
 
 /**
  * Автоматизированный headless-профильный тест ядерного взрыва MK5 на РЕАЛЬНОМ

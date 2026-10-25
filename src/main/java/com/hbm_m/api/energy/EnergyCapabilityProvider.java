@@ -3,11 +3,11 @@ package com.hbm_m.api.energy;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.interfaces.IEnergyProvider;
 import com.hbm_m.interfaces.IEnergyReceiver;
-import com.hbm_m.powerarmor.ModArmorFSBPowered;
 import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
+import com.hbm_m.platform.StackNbt;
 //? if forge {
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
  * Совместим с Forge Energy через LongEnergyWrapper.
  */
 
+// neo-pendant: ModCapabilities.registerBatteryItemCaps (RegisterCapabilitiesEvent, Item-Capabilities)
 //? if forge {
 public class EnergyCapabilityProvider implements ICapabilityProvider {
     private final LazyOptional<ItemEnergyStorage> storage;
@@ -66,11 +67,11 @@ public class EnergyCapabilityProvider implements ICapabilityProvider {
         }
 
         private boolean isPoweredArmor() {
-            return stack.getItem() instanceof ModArmorFSBPowered;
+            return stack.getItem() instanceof com.hbm_m.api.item.IBatteryItem;
         }
 
-        private ModArmorFSBPowered poweredArmor() {
-            return (ModArmorFSBPowered) stack.getItem();
+        private com.hbm_m.api.item.IBatteryItem poweredArmor() {
+            return (com.hbm_m.api.item.IBatteryItem) stack.getItem();
         }
 
         @Override
@@ -78,7 +79,7 @@ public class EnergyCapabilityProvider implements ICapabilityProvider {
             if (isPoweredArmor()) {
                 return poweredArmor().getCharge(stack);
             }
-            return PlatformHooks.getLong(stack, "energy");
+            return StackNbt.getLong(stack, "energy");
         }
 
         @Override
@@ -88,7 +89,7 @@ public class EnergyCapabilityProvider implements ICapabilityProvider {
             if (isPoweredArmor()) {
                 poweredArmor().setCharge(stack, clamped);
             } else {
-                PlatformHooks.putLong(stack, "energy", clamped);
+                StackNbt.putLong(stack, "energy", clamped);
             }
         }
 

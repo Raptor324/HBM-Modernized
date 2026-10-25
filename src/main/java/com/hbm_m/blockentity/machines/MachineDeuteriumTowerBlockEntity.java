@@ -31,8 +31,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * <p><b>Anmerkung:</b> die Rohranbindung laeuft ueber die Fluid-Schnittstelle von 1.20 statt der
  * manuellen Nachbarabfrage des Originals - dasselbe Ergebnis, anderer Weg.
  */
-public class MachineDeuteriumTowerBlockEntity extends BaseMachineBlockEntity
-        implements com.hbm_m.api.fluids.IFluidStandardReceiverMK2 {
+public class MachineDeuteriumTowerBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.fluids.IFluidStandardTransceiverMK2 {
 
     public static final int TANK_WATER = 0;
     public static final int TANK_HEAVY_WATER = 1;
@@ -51,21 +50,35 @@ public class MachineDeuteriumTowerBlockEntity extends BaseMachineBlockEntity
         super(ModBlockEntities.DEUTERIUM_TOWER_BE.get(), pos, state, 0, 100_000L, 10_000L);
     }
 
+    //? if forge {
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
+            net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
+            return tanks[TANK_WATER].getForgeFluidCapability().cast();
+        }
+        return super.getCapability(cap, side);
+    }
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER) {
+            return com.hbm_m.platform.LazyCap.ofObj(tanks[TANK_WATER].getCapability()).cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+    *///?}
+
     public static void tick(Level level, BlockPos pos, BlockState state, MachineDeuteriumTowerBlockEntity be) {
         if (level.isClientSide()) return;
-
-        // A receiver only joins a duct network by subscribing to the pipes next to it.
-        if (level.getGameTime() % 20 == 0) {
-            for (net.minecraft.core.Direction dir : net.minecraft.core.Direction.values()) {
-                be.trySubscribe(be.tanks[TANK_WATER], level, pos.relative(dir), dir);
-            }
-        }
-
         FluidTank water = be.tanks[TANK_WATER];
         FluidTank heavyWater = be.tanks[TANK_HEAVY_WATER];
 
         boolean dirty = false;
-        if (be.getEnergyStored() >= ENERGY_PER_TICK
+        // E8 (Fork, nur mit Space-Addon): Original erbt von TileEntityDeuteriumExtractor -> getMaxPower()/100 und power > 200
+        boolean fork = com.hbm_m.api.space.SpaceApi.forkActive();
+        long perTick = fork ? ENERGY_PER_TICK * 20 / DeuteriumExtractorBlockEntity.powerDivisor() : ENERGY_PER_TICK;
+        if (be.getEnergyStored() >= perTick && (!fork || be.getEnergyStored() > 200)
                 && water.getFluidAmountMb() >= 100
                 && heavyWater.getFluidAmountMb() < heavyWater.getCapacityMb()) {
 
@@ -75,38 +88,69 @@ public class MachineDeuteriumTowerBlockEntity extends BaseMachineBlockEntity
             if (convert > 0) {
                 water.drainMb(convert * CONVERT_RATIO);
                 heavyWater.fillMb(ModFluids.HEAVYWATER.getSource(), convert);
-                be.setEnergyStored(be.getEnergyStored() - ENERGY_PER_TICK);
+                be.setEnergyStored(be.getEnergyStored() - perTick);
                 dirty = true;
             }
         }
 
+        // Original getConPos/subscribeToAllAround/sendFluidToAll: alle acht Nachbarfelder rund um den 2x2-Sockel
+        if (level instanceof net.minecraft.server.level.ServerLevel server) {
+            java.util.Set<BlockPos> base = be.basePositions(state);
+            boolean probeDue = be.probeDue(20);
+            for (BlockPos b : base) {
+                for (net.minecraft.core.Direction d : net.minecraft.core.Direction.Plane.HORIZONTAL) {
+                    BlockPos at = b.relative(d);
+                    if (base.contains(at)) continue;
+                    if (probeDue) be.trySubscribe(water.getTankType(), server, at, d);
+                    if (heavyWater.getFill() > 0) be.tryProvide(heavyWater, server, at, d);
+                }
+            }
+        }
+
+        be.syncIfStateChanged(be.getEnergyStored(), be.tankSyncSignature());
         if (dirty) {
             be.setChanged();
             be.sendUpdateToClient();
         }
     }
 
-    public FluidTank getTank(int index) {
-        return tanks[index];
+    /** Anti-Spam-Signatur: Typ + Fuellstand beider Tanks (Muster wie CatalyticReformer/VacuumDistill). */
+    private long tankSyncSignature() {
+        long h = tankFingerprint(tanks[TANK_WATER]);
+        return h * 31L + tankFingerprint(tanks[TANK_HEAVY_WATER]);
     }
 
-    // The tank used to be reachable only through a forge-gated getCapability override, so on
-    // NeoForge no pipe could ever fill it. The mod's own MK2 interface works on both.
-    @Override
-    public com.hbm_m.inventory.fluid.tank.FluidTank[] getAllTanks() {
-        return new com.hbm_m.inventory.fluid.tank.FluidTank[] { tanks[TANK_WATER], tanks[TANK_HEAVY_WATER] };
+    private static long tankFingerprint(FluidTank tank) {
+        return (tank.getTankType() == null ? 0L : tank.getTankType().hashCode() * 31L) + tank.getFill();
     }
 
-    @Override
-    public com.hbm_m.inventory.fluid.tank.FluidTank[] getReceivingTanks() {
-        return new com.hbm_m.inventory.fluid.tank.FluidTank[] { tanks[TANK_WATER] };
+    /** Weltpositionen der untersten Strukturebene (Sockel) samt Controller. */
+    private java.util.Set<BlockPos> basePositions(BlockState state) {
+        java.util.Set<BlockPos> set = new java.util.HashSet<>();
+        set.add(worldPosition);
+        if (state.getBlock() instanceof com.hbm_m.block.machines.MachineDeuteriumTowerBlock block) {
+            var helper = block.getStructureHelper();
+            var facing = state.getValue(com.hbm_m.block.machines.MachineDeuteriumTowerBlock.FACING);
+            for (BlockPos local : helper.getPartOffsets()) {
+                BlockPos world = helper.getRotatedPos(worldPosition, local, facing);
+                if (world.getY() == worldPosition.getY()) set.add(world);
+            }
+        }
+        return set;
     }
+
+    @Override public FluidTank[] getSendingTanks() { return new FluidTank[] { tanks[TANK_HEAVY_WATER] }; }
+    @Override public FluidTank[] getReceivingTanks() { return new FluidTank[] { tanks[TANK_WATER] }; }
+    @Override public FluidTank[] getAllTanks() { return tanks; }
 
     @Override
     public boolean isLoaded() {
         return level != null && !isRemoved() && level.isLoaded(worldPosition);
     }
 
+    public FluidTank getTank(int index) {
+        return tanks[index];
+    }
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
@@ -125,4 +169,8 @@ public class MachineDeuteriumTowerBlockEntity extends BaseMachineBlockEntity
     @Nullable @Override public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) { return null; }
     @Override protected Component getDefaultName() { return Component.translatable("container.hbm_m.deuterium_tower"); }
     @Override protected boolean isItemValidForSlot(int slot, ItemStack stack) { return false; }
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        return this.inventory;
+    }
 }

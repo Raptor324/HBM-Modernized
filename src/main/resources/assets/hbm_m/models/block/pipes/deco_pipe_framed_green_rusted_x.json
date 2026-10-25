@@ -1,0 +1,14 @@
+{
+  "parent": "minecraft:block/block",
+  "loader": "forge:obj",
+  "model": "hbm_m:models/block/pipes/pipe_framed_x.obj",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "top": "hbm_m:block/pipe/pipe_top_green_rusty",
+    "side": "hbm_m:block/pipe/pipe_side_green_rusty",
+    "particle": "hbm_m:block/pipe/pipe_side_green_rusty",
+    "frame": "hbm_m:block/pipe/pipe_frame",
+    "mesh": "hbm_m:block/pipe/pipe_mesh"
+  }
+}

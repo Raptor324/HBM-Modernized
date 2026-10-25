@@ -51,3 +51,4 @@ public class VacuumDistillJeiCategory extends JeiFluidRecipeCategory<VacuumDisti
                 FluidStack.create(recipe.getSour(), recipe.getSourMb()));
     }
 }
+

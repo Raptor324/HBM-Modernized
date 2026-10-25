@@ -1,174 +1,70 @@
 package com.hbm_m.block.machines;
 
-import java.util.Map;
-import java.util.function.Supplier;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.MachineFoundryBaseBlockEntity;
 import com.hbm_m.blockentity.machines.MachineStrandCasterBlockEntity;
-import com.hbm_m.inventory.material.MaterialStack;
-import com.hbm_m.interfaces.IMultiblockController;
-import com.hbm_m.item.material.ItemCastMold;
+import com.hbm_m.item.material.ItemMold;
+import com.hbm_m.multiblock.DummyableStructureBuilder;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
-import com.hbm_m.multiblock.PartRole;
-import com.hbm_m.sound.ModSounds;
-import com.hbm_m.util.CrucibleUtil;
 
 import dev.architectury.registry.menu.MenuRegistry;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.ShovelItem;
-import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.RenderShape;
-import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.Shapes;
-import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
- * Strand Caster — порт {@code MachineStrandCaster} (1.7.10, BlockDummyable
- * {@code getAllDimensions = {{0,0,6,0,1,0}, {2,0,1,0,1,0}}}, offset 0):
- * стол непрерывного литья 2×7×1 с башней-приёмником 2×2×3 над ядром
- * (ядро — северо-западный нижний угол башни; стол уходит назад по FACING).
- *
- * <p>Клик с изложницей вставляет её (порт onBlockActivated), лопата высыпает
- * расплав в шлак, отвёртка вынимает изложницу, иначе открывается GUI.
+ * 1:1 {@code MachineStrandCaster}: {@code getDimensions {0,0,6,0,1,0}} plus Giessturm {@code {2,0,1,0,1,0}},
+ * {@code getOffset 0}; vier Fluidanschluesse unten, vier Einguesse oben. Form einsetzen per Rechtsklick, Schaufel
+ * leert die Schmelze, sonst GUI. Gezeichnet vom {@code StrandCasterRenderer}.
  */
-public class MachineStrandCasterBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.interfaces.ILookOverlay {
+public class MachineStrandCasterBlock extends DummyableMachineBlock implements com.hbm_m.interfaces.ILookOverlay, com.hbm_m.api.block.IToolable {
 
-    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
-
-    private final MultiblockStructureHelper structureHelper;
-
-    public MachineStrandCasterBlock(BlockBehaviour.Properties properties) {
+    public MachineStrandCasterBlock(Properties properties) {
         super(properties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
-        this.structureHelper = defineStructure();
-    }
-
-    /**
-     * Стол 2×7×1 (7 рядов вперёд-назад × 2 колонки) + башня 2×2×3 в передних
-     * рядах; ядро — передний ряд, западная колонка (оригинал: башня растёт от
-     * ядра вперёд по FACING и влево). Смещение установки 0 — как в оригинале.
-     *
-     * <p>Порты жидкостей (порт {@code getPorts()} 1.7.10: rot−dir, −dir,
-     * rot−5·dir, −5·dir) — обе колонки рядов z=−2 и z=+2 сетки: 'F' — восточная
-     * колонка, наружная сторона = rot (локальный EAST); 'H' — западная колонка,
-     * наружная сторона = rot.getOpposite() (локальный WEST). Роль
-     * FLUID_CONNECTOR заставляет часть-фантом создать узел FluidNet и подписать
-     * контроллер в трубную сеть ({@code UniversalMachinePartBlockEntity}).
-     */
-    private static MultiblockStructureHelper defineStructure() {
-        String[] y0 = { "CO", "HF", "OO", "OO", "OO", "HF", "OO" };
-        String[] y1 = { "OO", "OO" };
-        String[] y2 = { "OO", "OO" };
-
-        Map<Character, PartRole> roleMap = Map.of(
-                'O', PartRole.DEFAULT,
-                'F', PartRole.FLUID_CONNECTOR,
-                'H', PartRole.FLUID_CONNECTOR,
-                'C', PartRole.CONTROLLER
-        );
-
-        Map<Character, Supplier<BlockState>> symbolMap = Map.of();
-
-        // Стороны портов в локальной сетке; порядок кортежа: north, south, west, east, up, down.
-        Map<Character, boolean[]> fluidSideMap = Map.of(
-                'F', new boolean[] { false, false, false, true, false, false },
-                'H', new boolean[] { false, false, true, false, false, false }
-        );
-
-        return MultiblockStructureHelper.createFromLayersWithRolesAndSides(
-                new String[][] { y0, y1, y2 },
-                symbolMap,
-                () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-                roleMap,
-                null,
-                null,
-                fluidSideMap
-        );
     }
 
     @Override
-    public MultiblockStructureHelper getStructureHelper() {
-        return this.structureHelper;
-    }
-
-    @Override
-    public PartRole getPartRole(BlockPos localOffset) {
-        return structureHelper.resolvePartRole(localOffset, this);
-    }
-
-    @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
-    }
-
-    @Override
-    public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
-    }
-
-    @Override
-    public BlockState rotate(BlockState state, Rotation rotation) {
-        return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
-    }
-
-    @Override
-    public BlockState mirror(BlockState state, Mirror mirror) {
-        return state.rotate(mirror.getRotation(state.getValue(FACING)));
+    protected MultiblockStructureHelper defineStructure() {
+        return DummyableStructureBuilder.create()
+                .box(0, 0, 6, 0, 1, 0)
+                .box(2, 0, 1, 0, 1, 0)
+                // Fluid ports
+                .extra(-1, 0, 1)
+                .extra(-1, 0, 0)
+                .extra(-5, 0, 0)
+                .extra(-5, 0, 1)
+                // Molten slop ports
+                .extra(-1, 2, 1)
+                .extra(-1, 2, 0)
+                .extra(0, 2, 1)
+                .extra(0, 2, 0)
+                .placementOffset(0)
+                .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
     }
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
-    }
-
-    @Override
-    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return structureHelper.generateShapeFromParts(state.getValue(FACING));
-    }
-
-    @Override
-    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return structureHelper.getSpecificPartShape(structureHelper.getControllerOffset(), state.getValue(FACING));
-    }
-
-    @Override
-    public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
-        if (!structureHelper.isFullBlock(structureHelper.getControllerOffset(), state.getValue(FACING))) {
-            return Shapes.empty();
-        }
-        return Shapes.block();
-    }
-
-    @Override
-    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
-        return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     @Nullable
@@ -177,141 +73,102 @@ public class MachineStrandCasterBlock extends BaseEntityBlock implements IMultib
         return new MachineStrandCasterBlockEntity(pos, state);
     }
 
-    /** Порт MachineStrandCaster.printHook: красная строка без изложницы, синяя — название установленной. */
-    @Override
-    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
-        BlockEntity be = level.getBlockEntity(pos);
-        if (!(be instanceof MachineStrandCasterBlockEntity caster)) return;
-
-        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
-        ItemCastMold mold = caster.getInstalledMold();
-        if (mold == null) {
-            text.add(net.minecraft.network.chat.Component.translatable("foundry.hbm_m.noCast")
-                    .withStyle(net.minecraft.ChatFormatting.RED));
-        } else {
-            text.add(net.minecraft.network.chat.Component.literal(mold.getMoldType().label)
-                    .withStyle(net.minecraft.ChatFormatting.BLUE));
-        }
-        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
-                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xFF4000, 0x401000, text);
-    }
-
-    @Override
-    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
-        super.onPlace(state, level, pos, oldState, isMoving);
-        if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            placeMultiblockStructure(level, pos, state);
-        }
-    }
-
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return createTickerHelper(type, ModBlockEntities.STRAND_CASTER_BE.get(), MachineStrandCasterBlockEntity::tick);
+        return createTickerHelper(type, ModBlockEntities.STRAND_CASTER_BE.get(),
+                (lvl, pos, st, be) -> MachineFoundryBaseBlockEntity.tick(lvl, pos, st, be));
     }
 
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        return hbmOnUse(state, level, pos, player, hand);
+        return activate(level, pos, player, player.getItemInHand(hand));
     }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        return hbmOnUse(state, level, pos, player, InteractionHand.MAIN_HAND);
+        return activate(level, pos, player, player.getMainHandItem());
     }
     *///?}
 
-    /**
-     * Порт onBlockActivated: изложница в руку → вставить в слот 0 (звук
-     * upgradePlug); лопата → высыпать расплав шлаком; отвёртка → вынуть
-     * изложницу; иначе GUI.
-     */
-    private InteractionResult hbmOnUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand) {
-        if (level.isClientSide()) {
+    private InteractionResult activate(Level world, BlockPos pos, Player player, ItemStack held) {
+
+        if (world.isClientSide) {
             return InteractionResult.SUCCESS;
         }
 
-        BlockEntity be = level.getBlockEntity(pos);
-        if (!(be instanceof MachineStrandCasterBlockEntity caster)) {
-            return InteractionResult.PASS;
-        }
+        if (world.getBlockEntity(pos) instanceof MachineStrandCasterBlockEntity cast) {
 
-        ItemStack held = player.getItemInHand(hand);
-
-        // вставка изложницы
-        if (held.getItem() instanceof ItemCastMold && caster.getStackInSlot(0).isEmpty()) {
-            caster.setStackInSlot(0, held.copyWithCount(1));
-            held.shrink(1);
-            level.playSound(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                    ModSounds.UPGRADE_PLUG.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
-            return InteractionResult.CONSUME;
-        }
-
-        // лопата — высыпать расплав
-        if (held.getItem() instanceof ShovelItem) {
-            if (caster.amount > 0 && caster.type != null) {
-                ItemStack scrap = CrucibleUtil.createScrap(new MaterialStack(caster.type, caster.amount));
-                if (!scrap.isEmpty()) {
-                    if (!player.getInventory().add(scrap)) {
-                        Containers.dropItemStack(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, scrap);
-                    }
-                }
-                caster.amount = 0;
-                caster.type = null;
-                caster.setChanged();
-                caster.syncToClient();
-            }
-            return InteractionResult.CONSUME;
-        }
-
-        // отвёртка — вынуть изложницу
-        if (held.getItem() == com.hbm_m.item.ModItems.SCREWDRIVER.get()) {
-            ItemStack mold = caster.getStackInSlot(0);
-            if (mold.isEmpty()) {
+            // insert mold
+            if (!held.isEmpty() && ItemMold.getMold(held) != null && cast.slots[0].isEmpty()) {
+                cast.slots[0] = held.copyWithCount(1);
+                held.shrink(1);
+                world.playSound(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, com.hbm_m.sound.HbmSoundsNT.get("hbm:item.upgradePlug"), SoundSource.BLOCKS, 1.0F, 1.0F);
+                cast.setChanged();
                 return InteractionResult.CONSUME;
             }
-            if (!player.getInventory().add(mold.copy())) {
-                Containers.dropItemStack(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, mold.copy());
+
+            if (FoundryBlockUtil.isShovel(held)) {
+                FoundryBlockUtil.shovelOut(world, pos, player, cast, 1.0);
+                return InteractionResult.CONSUME;
             }
-            caster.setStackInSlot(0, ItemStack.EMPTY);
-            return InteractionResult.CONSUME;
+
+            if (!player.isShiftKeyDown()) {
+                MenuRegistry.openExtendedMenu((ServerPlayer) player, cast, buf -> buf.writeBlockPos(pos));
+                return InteractionResult.CONSUME;
+            }
         }
 
-        if (player instanceof ServerPlayer serverPlayer) {
-            MenuRegistry.openExtendedMenu(serverPlayer, caster, buf -> buf.writeBlockPos(pos));
+        return InteractionResult.PASS;
+    }
+
+    /** audit10: 1:1 {@code MachineStrandCaster.onScrew} - der Schraubenzieher (schleichend) nimmt die Gussform heraus. */
+    @Override
+    public boolean onScrew(Level world, Player player, BlockPos pos, net.minecraft.core.Direction side, float fX, float fY, float fZ,
+                           InteractionHand hand, ToolType tool) {
+        if (tool != ToolType.SCREWDRIVER) return false;
+        if (!(world.getBlockEntity(pos) instanceof MachineStrandCasterBlockEntity cast)) return false;
+        if (cast.slots[0].isEmpty()) return false;
+        if (world.isClientSide) return true;
+
+        ItemStack mold = cast.slots[0].copy();
+        if (!player.getInventory().add(mold)) {
+            world.addFreshEntity(new ItemEntity(world, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5, mold));
+        } else {
+            player.inventoryMenu.broadcastChanges();
         }
-        return InteractionResult.CONSUME;
+
+        cast.slots[0] = ItemStack.EMPTY;
+        cast.setChanged();
+        return true;
     }
 
     @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moving) {
-        if (state.getBlock() != newState.getBlock()) {
-            BlockEntity be = level.getBlockEntity(pos);
-            if (be instanceof MachineStrandCasterBlockEntity caster) {
-                // Инвентарь дропается автоматически в BaseHbmBlockEntity#setRemoved.
-                // Порт breakBlock: расплав высыпается шлаком
-                if (!level.isClientSide() && caster.amount > 0 && caster.type != null) {
-                    ItemStack scrap = CrucibleUtil.createScrap(new MaterialStack(caster.type, caster.amount));
-                    if (!scrap.isEmpty()) {
-                        Containers.dropItemStack(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, scrap);
-                    }
-                    caster.amount = 0;
-                }
-            }
-            if (!level.isClientSide()) {
-                structureHelper.destroyStructure(level, pos, state.getValue(FACING));
+    public void onRemove(BlockState state, Level world, BlockPos pos, BlockState newState, boolean isMoving) {
+        if (!state.is(newState.getBlock()) && !world.isClientSide && world.getBlockEntity(pos) instanceof MachineStrandCasterBlockEntity cast) {
+            FoundryBlockUtil.dropContents(world, pos, cast, 1.0);
+            for (ItemStack stack : cast.slots) {
+                if (!stack.isEmpty()) world.addFreshEntity(new ItemEntity(world, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5, stack.copy()));
             }
         }
-        super.onRemove(state, level, pos, newState, moving);
+        super.onRemove(state, world, pos, newState, isMoving);
+    }
+
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics g, Level world, BlockPos pos) {
+        if (!(world.getBlockEntity(pos) instanceof MachineStrandCasterBlockEntity cast)) return;
+        List<Component> text = new ArrayList<>();
+        if (cast.slots[0].isEmpty()) {
+            text.add(Component.translatable("foundry.noCast").withStyle(ChatFormatting.RED));
+        } else if (cast.getInstalledMold() != null) {
+            text.add(cast.getInstalledMold().getTitle().copy().withStyle(ChatFormatting.BLUE));
+        }
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(g, Component.translatable(getDescriptionId()), 0xFF4000, 0x401000, text);
     }
 
     //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<MachineStrandCasterBlock> CODEC = simpleCodec(MachineStrandCasterBlock::new);
-
-    @Override
-    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
-        return CODEC;
-    }
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
 }

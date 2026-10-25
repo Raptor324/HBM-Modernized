@@ -1,0 +1,7 @@
+{
+ "parent": "minecraft:block/cross",
+ "textures": {
+  "cross": "hbm_m:block/plant_tall_cd3_lower"
+ },
+ "render_type": "minecraft:cutout"
+}

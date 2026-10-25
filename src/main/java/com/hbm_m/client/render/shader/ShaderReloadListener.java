@@ -13,11 +13,9 @@ import net.minecraft.util.profiling.ProfilerFiller;
  * Resource reload listener for detecting shader changes.
  * Fires on F3+T, shader pack swap, or world load.
  */
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
-//?}
 public class ShaderReloadListener extends SimplePreparableReloadListener<Void> {
     
     /**

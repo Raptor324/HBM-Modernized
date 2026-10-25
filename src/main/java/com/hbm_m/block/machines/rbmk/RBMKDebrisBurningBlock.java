@@ -12,6 +12,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1 port of {@code RBMKDebrisBurning}: the glowing rubble left where a reactor column burned
@@ -107,7 +108,7 @@ public class RBMKDebrisBurningBlock extends Block {
             if (damage <= 0.025F) continue;
 
             e.hurt(level.damageSources().inFire(), damage);
-            com.hbm_m.platform.PlatformHooks.setSecondsOnFire(e, 5);
+            com.hbm_m.platform.MobHooks.setSecondsOnFire(e, 5);
         }
     }
 

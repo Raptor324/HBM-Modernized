@@ -23,6 +23,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
+import com.hbm_m.platform.LoaderHooks;
 
 /**
  * Soyuz launch pad on the {@link MachineRenderers} factory: Table/TowerBase/
@@ -53,6 +54,7 @@ public final class SoyuzLauncherRenderer {
     public static void register() {
         MachineRenderers.machine("soyuzlauncher", ModBlockEntities.SOYUZ_LAUNCHER_BE.get(),
                 SoyuzLauncherBlockEntity.class)
+            .blockTransform((be, anim) -> anim.translate(0.5, -4.0, 0.5))
             .part(SoyuzLauncherBakedModel.TABLE)
             .part(SoyuzLauncherBakedModel.TOWER_BASE)
             .part(SoyuzLauncherBakedModel.SUPPORT_BASE)
@@ -140,7 +142,7 @@ public final class SoyuzLauncherRenderer {
     @Nullable
     private static BakedModel getRocketModel() {
         var modelManager = Minecraft.getInstance().getModelManager();
-        BakedModel model = PlatformHooks.getModel(modelManager, ROCKET_MODEL_ID);
+        BakedModel model = LoaderHooks.getModel(modelManager, ROCKET_MODEL_ID);
         return (model == null || model == modelManager.getMissingModel()) ? null : model;
     }
 }

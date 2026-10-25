@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import com.hbm_m.platform.StackNbt;
 
 public class RBMKRodItem extends Item implements ITooltipProvider {
 
@@ -201,6 +202,7 @@ public class RBMKRodItem extends Item implements ITooltipProvider {
             case LINEAR       -> flux / 100.0 * reactivity;
             case QUADRATIC    -> flux * flux / 10000.0 * reactivity;
             case EXPERIMENTAL -> flux * (Math.sin(flux) + 1) * reactivity;
+            case SLOW_LINEAR  -> Math.sqrt(2 * flux + 30) / 10 * reactivity / 2.5;
         };
     }
 
@@ -211,6 +213,7 @@ public class RBMKRodItem extends Item implements ITooltipProvider {
             case BOOSTED_SLOPE -> e + Math.sin((e - 1) * (e - 1) * Math.PI);
             case RAISING_SLOPE -> e + Math.sin(e * Math.PI) / 2.0;
             case GENTLE_SLOPE  -> e + Math.sin(e * Math.PI) / 3.0;
+            case CF_SLOPE      -> e + Math.sin(e * Math.PI) * 1.4;
         };
     }
 
@@ -244,6 +247,7 @@ public class RBMKRodItem extends Item implements ITooltipProvider {
             case LINEAR       -> "%1$s / 100 * %2$s";
             case QUADRATIC    -> "%1$s² / 10000 * %2$s";
             case EXPERIMENTAL -> "%1$s * (sin(%1$s) + 1) * %2$s";
+            case SLOW_LINEAR  -> "sqrt(2 * %1$s + 30) / 10 * %2$s / 2.5";
         };
 
         double enrichment = getEnrichment(stack);
@@ -264,12 +268,12 @@ public class RBMKRodItem extends Item implements ITooltipProvider {
 
     //? if < 1.21.1 {
     private static CompoundTag getOrCreateTag(ItemStack stack) {
-        if (!PlatformHooks.hasItemTag(stack)) {
+        if (!StackNbt.has(stack)) {
             CompoundTag tag = new CompoundTag();
             if (stack.getItem() instanceof RBMKRodItem rod) tag.putDouble("yield", rod.yield);
             tag.putDouble("core", 20.0);
             tag.putDouble("hull", 20.0);
-            PlatformHooks.setItemTag(stack, tag);
+            StackNbt.set(stack, tag);
         }
         return stack.getOrCreateTag();
     }
@@ -384,6 +388,8 @@ public class RBMKRodItem extends Item implements ITooltipProvider {
         SQUARE_ROOT ("MEDIUM / SQUARE ROOT"),
         LINEAR      ("DANGEROUS / LINEAR"),
         QUADRATIC   ("DANGEROUS / QUADRATIC"),
+        /** NTM Space (Curium-Staebe lecm/mecm/hecm): {@code sqrt(2x + 30) / 10 * r / 2.5}. */
+        SLOW_LINEAR ("MEDIUM / SLOW LINEAR"),
         EXPERIMENTAL("EXPERIMENTAL / SINE SLOPE");
 
         public final String title;
@@ -391,6 +397,8 @@ public class RBMKRodItem extends Item implements ITooltipProvider {
     }
 
     public enum EnumDepleteFunc {
-        LINEAR, RAISING_SLOPE, BOOSTED_SLOPE, GENTLE_SLOPE, STATIC
+        LINEAR, RAISING_SLOPE, BOOSTED_SLOPE, GENTLE_SLOPE, STATIC,
+        /** NTM Space: Californium-Aufbau in Curium-Staeben, {@code x + sin(x * pi) * 1.4} (max ~193 % bei ~60 %). */
+        CF_SLOPE
     }
 }

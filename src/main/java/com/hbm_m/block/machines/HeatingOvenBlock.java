@@ -69,7 +69,8 @@ public class HeatingOvenBlock extends BaseEntityBlock implements IMultiblockCont
         };
 
         Map<Character, PartRole> roleMap = Map.of(
-                'O', PartRole.DEFAULT,
+                // Original TileEntityProxyCombo().inventory().fluid()
+                'O', PartRole.ITEM_INPUT,
                 'C', PartRole.CONTROLLER
         );
 
@@ -107,12 +108,14 @@ public class HeatingOvenBlock extends BaseEntityBlock implements IMultiblockCont
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
+        // Original RenderHeatingOven (Klappe, Glut) - siehe HeatingOvenRenderer
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return structureHelper.generateShapeFromParts(state.getValue(FACING));
+        // w16b: nur die Kernzelle (Raycast pro Zelle wie Original); Umriss der ganzen Maschine: MultiblockOutlineForge
+        return structureHelper.getControllerCellShape(state.getValue(FACING));
     }
 
     @Override
@@ -137,12 +140,8 @@ public class HeatingOvenBlock extends BaseEntityBlock implements IMultiblockCont
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        if (level.isClientSide()) {
-            return createTickerHelper(type, ModBlockEntities.HEATING_OVEN_BE.get(),
-                HeatingOvenBlockEntity::clientTick);
-        }
         return createTickerHelper(type, ModBlockEntities.HEATING_OVEN_BE.get(),
-            HeatingOvenBlockEntity::serverTick);
+            com.hbm_m.blockentity.machines.MachineFireboxBaseBlockEntity::tick);
     }
 
     @Override
@@ -156,11 +155,13 @@ public class HeatingOvenBlock extends BaseEntityBlock implements IMultiblockCont
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
         return openMenu(state, level, pos, player, hand, hit);
     }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
         return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
     *///?}
@@ -172,7 +173,7 @@ public class HeatingOvenBlock extends BaseEntityBlock implements IMultiblockCont
 
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof HeatingOvenBlockEntity oven) {
-            // Дверца открывается сама, пока GUI открыт (playersUsing), как в оригинале
+            // Original standardOpenBehavior: die Klappe oeffnet sich mit dem Menue
             MenuRegistry.openExtendedMenu((ServerPlayer) player, oven, buf -> buf.writeBlockPos(pos));
             return InteractionResult.CONSUME;
         }
@@ -202,4 +203,15 @@ public class HeatingOvenBlock extends BaseEntityBlock implements IMultiblockCont
         return CODEC;
     }
     *///?}
+
+    /** Original {@code addInformation}: {@code addStandardInfo} (Umschalttaste zeigt {@code .desc}). */
+    @Override
+    //? if < 1.21.1 {
+    public void appendHoverText(net.minecraft.world.item.ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.BlockGetter level,
+                                java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(net.minecraft.world.item.ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    *///?}
+        com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
+    }
 }

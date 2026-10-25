@@ -11,14 +11,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
 import java.util.List;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 /**
  * 1:1-Port von {@code GUIICFPress} (1.7.10), 176x180. Die beiden Brennstofftanks stehen links und
  * rechts neben den Kapselplaetzen; zwischen ihnen zeigt eine kleine Leiste an, wieviele
@@ -33,14 +27,14 @@ public class GUIMachineICFPress extends AbstractContainerScreen<MachineICFPressM
     private static final int TANK_TOP = 18;
     private static final int TANK_HEIGHT = 52;
     private static final int TANK_A_X = 26;
-    private static final int TANK_B_X = 152;
+   private static final int TANK_B_X = 152;
 
     public GUIMachineICFPress(MachineICFPressMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 176;
         this.imageHeight = 180;
         this.inventoryLabelY = this.imageHeight - 94;
-    }
+   }
 
     @Override
     protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
@@ -57,7 +51,7 @@ public class GUIMachineICFPress extends AbstractContainerScreen<MachineICFPressM
         if (muon > 0) {
             guiGraphics.fill(leftPos + 8, topPos + 44, leftPos + 8 + muon / 2, topPos + 48, 0xFF3FD8E8);
         }
-    }
+   }
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
@@ -78,4 +72,5 @@ public class GUIMachineICFPress extends AbstractContainerScreen<MachineICFPressM
                     mouseX, mouseY);
         }
     }
+
 }

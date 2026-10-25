@@ -8,14 +8,8 @@ import net.minecraft.resources.ResourceLocation;
 
 import java.util.HashMap;
 import java.util.Set;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 /**
  * Model loader for AJR armor OBJ parts.
  * Names MUST match "o <name>" in {@code ajr.obj}.

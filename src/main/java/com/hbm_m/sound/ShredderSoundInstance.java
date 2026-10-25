@@ -12,13 +12,8 @@ import net.minecraft.sounds.SoundSource;
  * Использует кастомный звук из мода (как Advanced Assembler использует MOTOR).
  * Использует AbstractTickableSoundInstance для управления воспроизведением и остановкой звука.
  */
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
 @OnlyIn(Dist.CLIENT)
 public class ShredderSoundInstance extends AbstractTickableSoundInstance {
 

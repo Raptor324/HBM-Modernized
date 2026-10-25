@@ -1,3 +1,4 @@
+mtllib red_connector.mtl
 # Blender v2.79 (sub 0) OBJ File: 'connector.blend'
 # www.blender.org
 o Cube_Cube.001
@@ -156,6 +157,7 @@ vn 0.0000 0.0000 1.0000
 vn 0.0000 1.0000 0.0000
 vn 0.0000 -1.0000 0.0000
 s off
+usemtl surface
 f 2/1/1 3/2/1 1/3/1
 f 4/4/2 7/5/2 3/6/2
 f 8/7/3 5/8/3 7/9/3

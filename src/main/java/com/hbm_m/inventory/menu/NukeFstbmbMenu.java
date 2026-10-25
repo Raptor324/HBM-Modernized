@@ -3,7 +3,6 @@ package com.hbm_m.inventory.menu;
 import com.hbm_m.blockentity.bomb.NukeFstbmbBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.inventory.menu.ModMenuTypes;
-import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
@@ -12,6 +11,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * Меню бомбы бейлфайра: яйцо + батарея.
@@ -41,7 +41,7 @@ public class NukeFstbmbMenu extends AbstractContainerMenu {
         // тайл может отсутствовать на клиенте (реплей Flashback) — подставляем пустую заглушку
         var container = this.be != null
                 ? this.be
-                : new ModItemStackHandlerContainer(new DummyItemStackHandler(2), () -> {});
+                : new ModItemStackHandlerContainer(new ModItemStackHandler.Dummy(2), () -> {});
 
         addSlot(new Slot(container, 0, 17, 36) {
             @Override

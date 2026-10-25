@@ -8,7 +8,7 @@ import com.hbm_m.interfaces.IEnergyReceiver;
 import net.minecraftforge.energy.IEnergyStorage;
 //?}
 //? if neoforge {
-/*import net.neoforged.neoforge.energy.IEnergyStorage;
+/*import net.minecraftforge.energy.IEnergyStorage;
 *///?}
 
 /**

@@ -1,19 +1,15 @@
 package com.hbm_m.inventory.fluid.tank;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.item.liquids.InfiniteFluidItem;
 import com.hbm_m.platform.IPlatformFluidHandler;
 import com.hbm_m.platform.FluidHooks;
+import com.hbm_m.platform.StackNbt;
+
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
@@ -42,6 +38,7 @@ public class FluidTank implements Cloneable {
     public static final Set<Item> noDualUnload = new HashSet<>();
 
     static {
+        loadingHandlers.add(new FluidLoaderRegistry()); // Original FluidLoaderStandard (FluidContainerRegistry)
         loadingHandlers.add(new FluidLoaderStandard());
         loadingHandlers.add(new FluidLoaderFillableItem());
         loadingHandlers.add(new FluidLoaderInfinite());
@@ -140,7 +137,13 @@ public class FluidTank implements Cloneable {
     public net.minecraftforge.common.util.LazyOptional<net.minecraftforge.fluids.capability.IFluidHandler> getForgeFluidCapability() {
         return (net.minecraftforge.common.util.LazyOptional<net.minecraftforge.fluids.capability.IFluidHandler>) getCapability();
     }
-    //?}
+    //?} elif neoforge {
+    /*
+    // NeoForge-Gegenstueck fuer die gespiegelten getHbmCapability-Zweige (Capability-Bruecke, siehe HbmCapabilityProvider).
+    public com.hbm_m.platform.LazyCap<net.minecraftforge.fluids.capability.IFluidHandler> getForgeFluidCapability() {
+        return com.hbm_m.platform.LazyCap.ofObj(getCapability());
+    }
+    *///?}
 
     public void assignTypeAndZeroFluid(Fluid newType) {
         if (!isEmpty()) drainMb(getFluidAmountMb());
@@ -354,7 +357,7 @@ public class FluidTank implements Cloneable {
         if (resultStack.isEmpty()) return true;
         ItemStack stackInSlot = slots[slotOut];
         if (stackInSlot == null || stackInSlot.isEmpty()) return true;
-        return FluidHooks.areItemsStackable(stackInSlot, resultStack) && stackInSlot.getCount() + resultStack.getCount() <= stackInSlot.getMaxStackSize();
+        return StackNbt.sameItemSameTags(stackInSlot, resultStack) && stackInSlot.getCount() + resultStack.getCount() <= stackInSlot.getMaxStackSize();
     }
 
     static void placeItemInSlot(ItemStack[] slots, int slotOut, ItemStack resultStack) {
@@ -368,18 +371,21 @@ public class FluidTank implements Cloneable {
     }
 
     @OnlyIn(Dist.CLIENT)
+
     public void renderTank(net.minecraft.client.gui.GuiGraphics guiGraphics, int x, int y, int width, int height) {
         renderTank(guiGraphics, x, y, width, height, 0);
     }
 
     @OnlyIn(Dist.CLIENT)
+
     public void renderTank(net.minecraft.client.gui.GuiGraphics guiGraphics, int x, int y, int width, int height, int orientation) {
         Fluid drawType = getConfiguredFluid();
         int fluidAmt = getFluidAmountMb();
 
         if (fluidAmt <= 0 || drawType == null || drawType == Fluids.EMPTY || drawType == ModFluids.NONE.getSource()) return;
 
-        int fluidColor = com.hbm_m.api.fluids.HbmFluidRegistry.getTintColor(drawType) & 0xFFFFFF;
+        // 1:1 renderTank: type.getTint() (0xFFFFFF fuer eingebaute Typen), nicht die Rohrfarbe
+        int fluidColor = com.hbm_m.inventory.fluid.FluidType.forFluid(drawType).getTint() & 0xFFFFFF;
         float r = (fluidColor >> 16 & 255) / 255.0F;
         float g = (fluidColor >> 8 & 255) / 255.0F;
         float b = (fluidColor & 255) / 255.0F;
@@ -411,6 +417,7 @@ public class FluidTank implements Cloneable {
     }
 
     @OnlyIn(Dist.CLIENT)
+
     public void renderTankInfo(net.minecraft.client.gui.GuiGraphics guiGraphics, net.minecraft.client.gui.Font font, int mouseX, int mouseY, int x, int y, int width, int height) {
         if (!(mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height)) return;
 

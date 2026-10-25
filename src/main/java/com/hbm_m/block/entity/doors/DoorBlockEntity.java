@@ -4,8 +4,8 @@ package com.hbm_m.block.entity.doors;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 //?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 *///?}
 
 
@@ -13,6 +13,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import net.minecraft.core.HolderLookup;
 
+import com.hbm_m.api.tile.ILockableTile;
+import com.hbm_m.api.tile.LockState;
 import com.hbm_m.block.decorations.DoorBlock;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.client.model.variant.DoorModelRegistry;
@@ -33,7 +35,6 @@ import com.hbm_m.platform.PlatformHooks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.phys.shapes.VoxelShape;
-
 import java.util.Map;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
@@ -42,6 +43,7 @@ import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -50,7 +52,7 @@ import net.minecraft.world.phys.AABB;
 // Forge-only model-data / distmarker imports intentionally removed for Fabric compilation.
 
 
-public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IMultiblockPart, com.hbm_m.interfaces.ILockable, com.hbm_m.interfaces.IRelocatable
+public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IMultiblockPart, ILockableTile, com.hbm_m.interfaces.ILockable, com.hbm_m.interfaces.IRelocatable
 {
 
     // 0=закрыта, 1=открыта, 2=закрывается, 3=открывается
@@ -60,16 +62,14 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     /** Значение openTicks на предыдущем тике — для интерполяции по partialTick (порт 1.7.10 prevOpenTicks). */
     private int prevOpenTicks = 0;
     public long animStartTime = 0;
-    private boolean locked = false;
+    /** Original TileEntityDoorGeneric extends TileEntityLockableBase: Stiftschloss der Tuer. */
+    public final LockState lockState = new LockState();
     private boolean lastRedstoneState = false;
 
     // ==================== Замок (порт TileEntityLockableBase) ====================
-    /** Пин-код замка. 0 = не установлен; замок с кодом 0 повесить нельзя. */
-    private int lock = 0;
-    /** Базовый шанс взлома отмычкой (0.1 = 10%). */
-    private double lockMod = 0.1D;
-    /** Можно ли сделать поддельный ключ (key_kit). */
-    private boolean cheesable = true;
+    // Пин/cheesable/lockMod живут ТОЛЬКО в lockState выше (FFA-модель): оба замковых
+    // API (FFA ILockableTile и machines ILockable) делегируют в него — см. секцию
+    // «Schloss» ниже. Отдельные поля не нужны и в NBT не пишутся.
 
     /**
      * Текущий выбор модели и скина
@@ -120,6 +120,7 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     /** Called from DoorAnimationDelayHelper when delay expires. Client-only. */
 
     @OnlyIn(Dist.CLIENT)
+
     public void clearAnimationDelayClient() {
         this.cachedModelData = null;
         // requestModelDataUpdate() is Forge-only (model data system). On Fabric it's a no-op.
@@ -169,7 +170,7 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
                 // полный пересбор записей рендера с новым rect'ом.
                 this.markRenderDirty();
                 DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
-                com.hbm_m.platform.RenderHooks.onDoorSkinChanged(this);
+                com.hbm_m.platform.CommonRenderHooks.onDoorSkinChanged(this);
             }
 
             syncToClient();
@@ -366,13 +367,7 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     private void updateRedstoneState(boolean powered) {
         if (powered == this.lastRedstoneState) return;
         this.lastRedstoneState = powered;
-
-        // Порт TileEntityDoorGeneric.updateEntity: запертая дверь игнорирует редстоун
-        // (оригинал звал tryToggle(-1), который отказывал при isLocked)
-        if (isLocked()) {
-            setChanged();
-            return;
-        }
+        if (isLocked() && lockState.lock != -1) return;
 
         if (powered) {
             // Паритет 1.7.10: авто-открытие только из полностью закрытого состояния
@@ -543,70 +538,40 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     }
 
     public boolean isOpen() { return state == 1; }
-    public boolean isLocked() { return locked; }
-
     public void setLocked(boolean locked) {
-        this.locked = locked;
-        syncToClient();
+        if (locked) lock(); else unlock();
     }
 
-    // ==================== ILockable (порт TileEntityLockableBase) ====================
+    // ==================== Schloss (Original TileEntityLockableBase / TileEntityDoorGeneric) ====================
+    // Дверь несёт ОБА замковых API: FFA {@code api/tile.ILockableTile} — его требуют
+    // навесные замки ({@code ItemLock} PADLOCK*, {@code ItemCounterfeitKeys} key_kit,
+    // worldgen {@code LogicBlockActions}) — и machines {@code interfaces.ILockable} —
+    // его использует порт canAccess/tryPick (default-методы интерфейса) и каскад
+    // BlastDoorBlockEntity. Состояние одно — lockState; machines-имена делегируют в него.
 
-    @Override
-    public int getPins() {
-        return lock;
-    }
-
-    @Override
-    public void setPins(int pins) {
-        this.lock = pins;
-        setChanged();
-    }
+    @Override public com.hbm_m.api.tile.LockState getLockState() { return lockState; }
+    @Override public boolean isLocked() { return lockState.isLocked; }
 
     @Override
     public void lock() {
-        if (lock == 0) {
-            com.hbm_m.main.MainRegistry.LOGGER.error("Attempted to lock a door with no pins set at {}", worldPosition);
-        }
-        setLocked(true);
-    }
-
-    @Override
-    public void unlock() {
-        setLocked(false);
-    }
-
-    @Override
-    public double getLockMod() {
-        return lockMod;
-    }
-
-    @Override
-    public void setLockMod(double mod) {
-        this.lockMod = mod;
+        lockState.lock(this);
         setChanged();
+        syncToClient();
     }
 
-    @Override
-    public boolean isCheesable() {
-        return cheesable;
-    }
+    @Override public void unlock() { lockState.isLocked = false; setChanged(); syncToClient(); }
+    @Override public void setPins(int pins) { lockState.lock = pins; setChanged(); }
+    @Override public int getPins() { return lockState.lock; }
+    @Override public void setMod(double mod) { lockState.lockMod = mod; setChanged(); }
+    @Override public double getMod() { return lockState.lockMod; }
+    @Override public boolean isCheesable() { return lockState.cheesable; }
+    @Override public void setCheesable(boolean cheesable) { lockState.cheesable = cheesable; setChanged(); }
 
-    @Override
-    public void setCheesable(boolean cheesable) {
-        this.cheesable = cheesable;
-        setChanged();
-    }
-
-    @Override
-    public BlockPos getLockPos() {
-        return worldPosition;
-    }
-
-    @Override
-    public Level getLockLevel() {
-        return level;
-    }
+    /** ILockable (machines): базовый шанс взлома — те же данные, machines-имя. */
+    @Override public double getLockMod() { return lockState.lockMod; }
+    @Override public void setLockMod(double mod) { lockState.lockMod = mod; setChanged(); }
+    @Override public net.minecraft.core.BlockPos getLockPos() { return worldPosition; }
+    @Override public net.minecraft.world.level.Level getLockLevel() { return level; }
 
     /**
      * Sable отдаёт свой точный transform блока при переносе (сборка/разборка корабля).
@@ -928,6 +893,7 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
 
     // ==================== Client Sound Handling ====================
     @OnlyIn(Dist.CLIENT)
+
     private void handleNewState(byte oldState, byte newState) {
         if (oldState == newState) return;
         if (!isController()) return;
@@ -952,6 +918,7 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         }
     }
     @OnlyIn(Dist.CLIENT)
+
     private void handleSoundTransition(SoundEvent startSound, SoundEvent loopSound, SoundEvent loopSound2) {
         // 1. Разовый звук старта
         if (startSound != null) {
@@ -969,6 +936,7 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         }
     }
     @OnlyIn(Dist.CLIENT)
+
     private void handleSoundEnd(SoundEvent endSound) {
         // Останавливаем ОБА цикла
         ClientSoundBootstrap.stopSpecificSound(level, worldPosition, "loop1");
@@ -983,6 +951,7 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     private Object createLoopingSoundReflect(SoundEvent sound) {
         // Клиентская loop-фабрика через звуковой мост (без рефлексии); на сервере
         // мост не установлен и сапплаер не вызывается (updateDoorSoundRaw гейтится).
+        // Только common-код внутри — @OnlyIn не нужен (как в machines).
         return com.hbm_m.sound.ClientSoundBootstrap.createDoorLoop(this, sound);
     }
 
@@ -991,7 +960,7 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         super.setRemoved();
         if (level != null && level.isClientSide) {
             ClientSoundBootstrap.stopSound(level, worldPosition);
-            com.hbm_m.platform.RenderHooks.onDoorRemoved(this);
+            com.hbm_m.platform.CommonRenderHooks.onDoorRemoved(this);
         }
     }
 
@@ -1004,12 +973,7 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         tag.putInt("openTicks", openTicks);
         tag.putLong("animStartTime", animStartTime);
         tag.putString("doorDeclId", doorDeclId);
-        tag.putBoolean("locked", locked);
-        // Замок (ключи как в оригинальном TileEntityLockableBase: lock/cheesable/lockMod;
-        // isLocked уже хранится в "locked" — оставляем старый ключ для совместимости сейвов)
-        tag.putInt("lock", lock);
-        tag.putDouble("lockMod", lockMod);
-        tag.putBoolean("cheesable", cheesable);
+        lockState.write(tag);
         tag.putBoolean("redstoneState", lastRedstoneState);
         modelSelection.save(tag);
         if (controllerPos != null) {
@@ -1031,10 +995,12 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         this.state = tag.getByte("state");
         this.openTicks = tag.getInt("openTicks");
         this.animStartTime = tag.getLong("animStartTime");
-        this.locked = tag.getBoolean("locked");
-        this.lock = tag.getInt("lock");
-        this.lockMod = tag.contains("lockMod") ? tag.getDouble("lockMod") : 0.1D;
-        this.cheesable = !tag.contains("cheesable") || tag.getBoolean("cheesable");
+        if (tag.contains("lockMod")) {
+            lockState.read(tag);
+        } else {
+            lockState.isLocked = tag.getBoolean("locked");
+            lockState.lock = tag.getInt("lock");
+        }
         this.lastRedstoneState = tag.getBoolean("redstoneState");
 
         boolean hadModelSelectionInNbt = tag.contains("modelType");
@@ -1104,6 +1070,7 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
      */
 
     @OnlyIn(Dist.CLIENT)
+
     public void initModelSelection(boolean applyConfigDefault) {
         if (!applyConfigDefault) {
             return; // Значение из NBT - не перезаписывать
@@ -1123,26 +1090,6 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
 
     // getUpdateTag: удалён — BaseHbmBlockEntity уже делает super + writeNbtData.
     @Override
-    protected void applyClientUpdate(@NotNull CompoundTag tag) {
-        byte prevState = this.state;
-        DoorModelSelection prevSelection = this.modelSelection;
-        readNbtData(tag, null);
-        if (level != null && level.isClientSide) {
-            boolean skinChanged = !prevSelection.equals(this.modelSelection);
-            boolean visibleChange = isVisibleStateChange(prevState, this.state) || skinChanged;
-            if (skinChanged) {
-                this.cachedModelKey = null;
-                this.cachedModelData = null;
-                markRenderDirty();
-                com.hbm_m.platform.RenderHooks.onDoorSkinChanged(this);
-            }
-            if (visibleChange) {
-                DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
-            }
-        }
-    }
-
-    @Override
     protected void applyClientUpdate(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
         byte prevState = this.state;
         DoorModelSelection prevSelection = this.modelSelection;
@@ -1154,7 +1101,7 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
                 this.cachedModelKey = null;
                 this.cachedModelData = null;
                 markRenderDirty();
-                com.hbm_m.platform.RenderHooks.onDoorSkinChanged(this);
+                com.hbm_m.platform.CommonRenderHooks.onDoorSkinChanged(this);
             }
             if (visibleChange) {
                 DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);

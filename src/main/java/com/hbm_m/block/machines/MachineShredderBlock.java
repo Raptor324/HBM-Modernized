@@ -59,11 +59,13 @@ public class MachineShredderBlock extends BaseEntityBlock {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos,
                                  Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
         return openMenu(state, level, pos, player, hand, hit);
     }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
         return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
     *///?}

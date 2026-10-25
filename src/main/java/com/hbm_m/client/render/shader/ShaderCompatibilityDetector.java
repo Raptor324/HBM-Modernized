@@ -11,14 +11,8 @@ import com.hbm_m.main.MainRegistry;
 import dev.architectury.platform.Platform;
 import net.minecraft.client.Minecraft;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 /**
  * Cross-loader detector of the Iris/Oculus shader state.
  *

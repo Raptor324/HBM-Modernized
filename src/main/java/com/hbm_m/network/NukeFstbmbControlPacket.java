@@ -39,7 +39,8 @@ public class NukeFstbmbControlPacket implements C2SPacket {
             // contraption sub-levels.
             if (player.distanceToSqr(pkt.pos.getX() + 0.5, pkt.pos.getY() + 0.5, pkt.pos.getZ() + 0.5) > 400) return;
             if (ModPacketHandler.blockEntityAt(player, pkt.pos) instanceof NukeFstbmbBlockEntity bomb) {
-                bomb.startCountdown();
+                // FFA-Variante der Bombe: Start ueber Original handleButtonPacket (meta 0 = Startknopf).
+                bomb.handleButtonPacket(0, 0);
             }
         });
     }

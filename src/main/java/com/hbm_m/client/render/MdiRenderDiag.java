@@ -1,13 +1,7 @@
 package com.hbm_m.client.render;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.hbm_m.config.ModClothConfig;
@@ -18,6 +12,7 @@ import com.hbm_m.main.MainRegistry;
  */
 
 @OnlyIn(Dist.CLIENT)
+
 public final class MdiRenderDiag {
 
     private static final AtomicBoolean BANNER = new AtomicBoolean();

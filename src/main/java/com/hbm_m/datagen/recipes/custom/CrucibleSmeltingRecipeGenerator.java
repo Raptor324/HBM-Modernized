@@ -20,12 +20,12 @@ import java.util.function.Consumer;
 /**
  * Генератор JSON-рецептов тигель-плавки ({@code hbm_m:crucible_smelting}).
  *
- * <p>Порт {@code CrucibleSmeltingRecipes.registerDefaults()} (删除анного статического реестра):
+ * <p>Порт {@code CrucibleSmeltingRecipes.registerDefaults()} (из удалённого статического реестра):
  * тот же набор forge-тегов слитков/руд, те же материальные типы, те же объёмы в квантах (1:1 с MaterialShapes оригинала).
  * Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.</p>
  *
  * <p><b>Соответствие оригиналу:</b> каждый {@code ingotTag("ingots/x", MaterialType.X)}
- * переносится как {@code crucibleSmelting("forge:ingots/x", X, MaterialShapes.INGOT)}; рудные теги
+ * переносится как {@code crucibleSmelting("forge:ingots/x", X, MaterialShapes.INGOT.q(1))}; рудные теги
  * удваивают объём (как в оригинале: {@code INGOT * 2}); алмазные/сырьевые предметы
  * (уголь, уголль, редстоун, nugget'ы) дают {@code NUGGET}; блоки-руды дают
  * {@code INGOT * 2}. Объёмы — в квантах, 1:1 с MaterialShapes оригинала.</p>
@@ -79,96 +79,96 @@ public final class CrucibleSmeltingRecipeGenerator {
         // 2 слитка основного + побочные (титан/свинец/золото/натрий) + камень
         // QUART.q(1) = 162 кванта. Урановая руда — отдельным блоком ниже.
         // ═══════════════════════════════════════════════════════════════════
-        oreTagMulti(writer, "byproduct_vanilla_ore_iron",     "forge:ores/iron",      new MaterialStack(MaterialType.IRON,      MaterialShapes.INGOT * 2),
-                                                              new MaterialStack(MaterialType.TITANIUM,  MaterialShapes.NUGGET * 3),
-                                                              new MaterialStack(MaterialType.STONE,     MaterialShapes.QUART));
-        oreTagMulti(writer, "byproduct_vanilla_ore_gold",     "forge:ores/gold",      new MaterialStack(MaterialType.GOLD,      MaterialShapes.INGOT * 2),
-                                                              new MaterialStack(MaterialType.LEAD,      MaterialShapes.NUGGET),
-                                                              new MaterialStack(MaterialType.STONE,     MaterialShapes.QUART));
-        oreTagMulti(writer, "byproduct_vanilla_ore_copper",   "forge:ores/copper",    new MaterialStack(MaterialType.COPPER,    MaterialShapes.INGOT * 2),
-                                                              new MaterialStack(MaterialType.STONE,     MaterialShapes.QUART));
-        oreTagMulti(writer, "byproduct_vanilla_ore_titanium", "forge:ores/titanium",  new MaterialStack(MaterialType.TITANIUM,  MaterialShapes.INGOT * 2),
-                                                              new MaterialStack(MaterialType.IRON,      MaterialShapes.NUGGET * 3),
-                                                              new MaterialStack(MaterialType.STONE,     MaterialShapes.QUART));
-        oreTagMulti(writer, "byproduct_vanilla_ore_aluminum", "forge:ores/aluminum",  new MaterialStack(MaterialType.ALUMINIUM, MaterialShapes.INGOT * 2),
-                                                              new MaterialStack(MaterialType.SODIUM,    MaterialShapes.NUGGET * 3),
-                                                              new MaterialStack(MaterialType.STONE,     MaterialShapes.QUART));
-        oreTagMulti(writer, "byproduct_vanilla_ore_aluminium","forge:ores/aluminium", new MaterialStack(MaterialType.ALUMINIUM, MaterialShapes.INGOT * 2),
-                                                              new MaterialStack(MaterialType.SODIUM,    MaterialShapes.NUGGET * 3),
-                                                              new MaterialStack(MaterialType.STONE,     MaterialShapes.QUART));
-        oreTagMulti(writer, "byproduct_vanilla_ore_tungsten", "forge:ores/tungsten",  new MaterialStack(MaterialType.TUNGSTEN,  MaterialShapes.INGOT * 2),
-                                                              new MaterialStack(MaterialType.STONE,     MaterialShapes.QUART));
-        oreTagMulti(writer, "byproduct_vanilla_ore_lead",     "forge:ores/lead",      new MaterialStack(MaterialType.LEAD,      MaterialShapes.INGOT * 2),
-                                                              new MaterialStack(MaterialType.GOLD,      MaterialShapes.NUGGET),
-                                                              new MaterialStack(MaterialType.STONE,     MaterialShapes.QUART));
-        oreTagMulti(writer, "byproduct_vanilla_ore_beryllium","forge:ores/beryllium", new MaterialStack(MaterialType.BERYLLIUM, MaterialShapes.INGOT * 2),
-                                                              new MaterialStack(MaterialType.STONE,     MaterialShapes.QUART));
-        oreTagMulti(writer, "byproduct_vanilla_ore_cobalt",   "forge:ores/cobalt",    new MaterialStack(MaterialType.COBALT,    MaterialShapes.INGOT),
-                                                              new MaterialStack(MaterialType.STONE,     MaterialShapes.QUART));
-        oreTagMulti(writer, "byproduct_vanilla_ore_redstone", "forge:ores/redstone",  new MaterialStack(MaterialType.REDSTONE,  MaterialShapes.INGOT * 4),
-                                                              new MaterialStack(MaterialType.STONE,     MaterialShapes.QUART));
+        oreTagMulti(writer, "byproduct_vanilla_ore_iron",     "forge:ores/iron",      new MaterialStack(MaterialType.IRON,      MaterialShapes.INGOT.q(2)),
+                                                              new MaterialStack(MaterialType.TITANIUM,  MaterialShapes.NUGGET.q(3)),
+                                                              new MaterialStack(MaterialType.STONE,     MaterialShapes.QUART.q(1)));
+        oreTagMulti(writer, "byproduct_vanilla_ore_gold",     "forge:ores/gold",      new MaterialStack(MaterialType.GOLD,      MaterialShapes.INGOT.q(2)),
+                                                              new MaterialStack(MaterialType.LEAD,      MaterialShapes.NUGGET.q(1)),
+                                                              new MaterialStack(MaterialType.STONE,     MaterialShapes.QUART.q(1)));
+        oreTagMulti(writer, "byproduct_vanilla_ore_copper",   "forge:ores/copper",    new MaterialStack(MaterialType.COPPER,    MaterialShapes.INGOT.q(2)),
+                                                              new MaterialStack(MaterialType.STONE,     MaterialShapes.QUART.q(1)));
+        oreTagMulti(writer, "byproduct_vanilla_ore_titanium", "forge:ores/titanium",  new MaterialStack(MaterialType.TITANIUM,  MaterialShapes.INGOT.q(2)),
+                                                              new MaterialStack(MaterialType.IRON,      MaterialShapes.NUGGET.q(3)),
+                                                              new MaterialStack(MaterialType.STONE,     MaterialShapes.QUART.q(1)));
+        oreTagMulti(writer, "byproduct_vanilla_ore_aluminum", "forge:ores/aluminum",  new MaterialStack(MaterialType.ALUMINIUM, MaterialShapes.INGOT.q(2)),
+                                                              new MaterialStack(MaterialType.SODIUM,    MaterialShapes.NUGGET.q(3)),
+                                                              new MaterialStack(MaterialType.STONE,     MaterialShapes.QUART.q(1)));
+        oreTagMulti(writer, "byproduct_vanilla_ore_aluminium","forge:ores/aluminium", new MaterialStack(MaterialType.ALUMINIUM, MaterialShapes.INGOT.q(2)),
+                                                              new MaterialStack(MaterialType.SODIUM,    MaterialShapes.NUGGET.q(3)),
+                                                              new MaterialStack(MaterialType.STONE,     MaterialShapes.QUART.q(1)));
+        oreTagMulti(writer, "byproduct_vanilla_ore_tungsten", "forge:ores/tungsten",  new MaterialStack(MaterialType.TUNGSTEN,  MaterialShapes.INGOT.q(2)),
+                                                              new MaterialStack(MaterialType.STONE,     MaterialShapes.QUART.q(1)));
+        oreTagMulti(writer, "byproduct_vanilla_ore_lead",     "forge:ores/lead",      new MaterialStack(MaterialType.LEAD,      MaterialShapes.INGOT.q(2)),
+                                                              new MaterialStack(MaterialType.GOLD,      MaterialShapes.NUGGET.q(1)),
+                                                              new MaterialStack(MaterialType.STONE,     MaterialShapes.QUART.q(1)));
+        oreTagMulti(writer, "byproduct_vanilla_ore_beryllium","forge:ores/beryllium", new MaterialStack(MaterialType.BERYLLIUM, MaterialShapes.INGOT.q(2)),
+                                                              new MaterialStack(MaterialType.STONE,     MaterialShapes.QUART.q(1)));
+        oreTagMulti(writer, "byproduct_vanilla_ore_cobalt",   "forge:ores/cobalt",    new MaterialStack(MaterialType.COBALT,    MaterialShapes.INGOT.q(1)),
+                                                              new MaterialStack(MaterialType.STONE,     MaterialShapes.QUART.q(1)));
+        oreTagMulti(writer, "byproduct_vanilla_ore_redstone", "forge:ores/redstone",  new MaterialStack(MaterialType.REDSTONE,  MaterialShapes.INGOT.q(4)),
+                                                              new MaterialStack(MaterialType.STONE,     MaterialShapes.QUART.q(1)));
         // Угольная руда: CARBON GEM.q(3) = 216 квантов = 3000 mB + камень.
-        oreTagMulti(writer, "byproduct_vanilla_ore_coal",     "forge:ores/coal",      new MaterialStack(MaterialType.CARBON,    MaterialShapes.INGOT * 3),
-                                                              new MaterialStack(MaterialType.STONE,     MaterialShapes.QUART));
+        oreTagMulti(writer, "byproduct_vanilla_ore_coal",     "forge:ores/coal",      new MaterialStack(MaterialType.CARBON,    MaterialShapes.INGOT.q(3)),
+                                                              new MaterialStack(MaterialType.STONE,     MaterialShapes.QUART.q(1)));
 
         // ═══════════════════════════════════════════════════════════════════
         // ВАНИЛЬНЫЕ ФИКСИРОВАННЫЕ ЗАПИСИ (порт MatDistribution "vanilla crap").
         // ═══════════════════════════════════════════════════════════════════
-        nuggetItem(writer, "vanilla_stone",        Blocks.STONE.asItem(),      MaterialType.STONE,    MaterialShapes.INGOT * 9);
-        nuggetItem(writer, "vanilla_cobblestone",  Blocks.COBBLESTONE.asItem(),MaterialType.STONE,    MaterialShapes.INGOT * 9);
-        nuggetItem(writer, "vanilla_obsidian",     Blocks.OBSIDIAN.asItem(),   MaterialType.OBSIDIAN, MaterialShapes.INGOT * 9);
+        nuggetItem(writer, "vanilla_stone",        Blocks.STONE.asItem(),      MaterialType.STONE,    MaterialShapes.INGOT.q(9));
+        nuggetItem(writer, "vanilla_cobblestone",  Blocks.COBBLESTONE.asItem(),MaterialType.STONE,    MaterialShapes.INGOT.q(9));
+        nuggetItem(writer, "vanilla_obsidian",     Blocks.OBSIDIAN.asItem(),   MaterialType.OBSIDIAN, MaterialShapes.INGOT.q(9));
         // Рельсы: INGOT.q(6,16) = 27 квантов железа на рельс.
-        nuggetItem(writer, "vanilla_rail",         Items.RAIL,           MaterialType.IRON, MaterialShapes.INGOT * 6 / 16);
+        nuggetItem(writer, "vanilla_rail",         Items.RAIL,           MaterialType.IRON, MaterialShapes.INGOT.q(6, 16));
         // Электрический рельс: GOLD INGOT.q(6,6) + REDSTONE DUST.q(1,6).
         nuggetMulti(writer, "vanilla_powered_rail", Items.POWERED_RAIL,
-                new MaterialStack(MaterialType.GOLD,     MaterialShapes.INGOT),
-                new MaterialStack(MaterialType.REDSTONE, MaterialShapes.INGOT / 6));
+                new MaterialStack(MaterialType.GOLD,     MaterialShapes.INGOT.q(1)),
+                new MaterialStack(MaterialType.REDSTONE, MaterialShapes.INGOT.q(1, 6)));
         // Рельс с детектором: IRON INGOT.q(6,6) + REDSTONE DUST.q(1,6).
         nuggetMulti(writer, "vanilla_detector_rail", Items.DETECTOR_RAIL,
-                new MaterialStack(MaterialType.IRON,     MaterialShapes.INGOT),
-                new MaterialStack(MaterialType.REDSTONE, MaterialShapes.INGOT / 6));
+                new MaterialStack(MaterialType.IRON,     MaterialShapes.INGOT.q(1)),
+                new MaterialStack(MaterialType.REDSTONE, MaterialShapes.INGOT.q(1, 6)));
         // Вагонетка: IRON INGOT.q(5) = 5000 mB.
-        nuggetItem(writer, "vanilla_minecart",     Items.MINECART, MaterialType.IRON, MaterialShapes.INGOT * 5);
+        nuggetItem(writer, "vanilla_minecart",     Items.MINECART, MaterialType.IRON, MaterialShapes.INGOT.q(5));
         // Сырьевые руды (1.17+; 1:1 с печью — по слитку на предмет).
-        nuggetItem(writer, "vanilla_raw_iron",     Items.RAW_IRON,   MaterialType.IRON,   MaterialShapes.INGOT);
-        nuggetItem(writer, "vanilla_raw_copper",   Items.RAW_COPPER, MaterialType.COPPER, MaterialShapes.INGOT);
-        nuggetItem(writer, "vanilla_raw_gold",     Items.RAW_GOLD,   MaterialType.GOLD,   MaterialShapes.INGOT);
+        nuggetItem(writer, "vanilla_raw_iron",     Items.RAW_IRON,   MaterialType.IRON,   MaterialShapes.INGOT.q(1));
+        nuggetItem(writer, "vanilla_raw_copper",   Items.RAW_COPPER, MaterialType.COPPER, MaterialShapes.INGOT.q(1));
+        nuggetItem(writer, "vanilla_raw_gold",     Items.RAW_GOLD,   MaterialType.GOLD,   MaterialShapes.INGOT.q(1));
         // Блоки хранения (ориг. автоген blockIron/blockGold/blockCopper = 9 слитков) и железный самородок.
-        nuggetItem(writer, "vanilla_iron_block",   Blocks.IRON_BLOCK.asItem(),   MaterialType.IRON,   MaterialShapes.INGOT * 9);
-        nuggetItem(writer, "vanilla_gold_block",   Blocks.GOLD_BLOCK.asItem(),   MaterialType.GOLD,   MaterialShapes.INGOT * 9);
-        nuggetItem(writer, "vanilla_copper_block", Blocks.COPPER_BLOCK.asItem(), MaterialType.COPPER, MaterialShapes.INGOT * 9);
-        nuggetItem(writer, "vanilla_iron_nugget",  Items.IRON_NUGGET, MaterialType.IRON, MaterialShapes.NUGGET);
+        nuggetItem(writer, "vanilla_iron_block",   Blocks.IRON_BLOCK.asItem(),   MaterialType.IRON,   MaterialShapes.INGOT.q(9));
+        nuggetItem(writer, "vanilla_gold_block",   Blocks.GOLD_BLOCK.asItem(),   MaterialType.GOLD,   MaterialShapes.INGOT.q(9));
+        nuggetItem(writer, "vanilla_copper_block", Blocks.COPPER_BLOCK.asItem(), MaterialType.COPPER, MaterialShapes.INGOT.q(9));
+        nuggetItem(writer, "vanilla_iron_nugget",  Items.IRON_NUGGET, MaterialType.IRON, MaterialShapes.NUGGET.q(1));
 
         // ═══════════════════════════════════════════════════════════════════
         // МОДОВЫЕ ФИКСИРОВАННЫЕ ЗАПИСИ (порт MatDistribution "castables" и пр.).
         // ═══════════════════════════════════════════════════════════════════
         // Литейные изделия (ориг. INGOT.q(3)/q(4), BLOCK.q(3)).
-        nuggetModItemAmount(writer, "castable_blade_titanium",  "blade_titanium",  MaterialType.TITANIUM, MaterialShapes.INGOT * 3);
-        nuggetModItemAmount(writer, "castable_blade_tungsten",  "blade_tungsten",  MaterialType.TUNGSTEN, MaterialShapes.INGOT * 3);
-        nuggetModItemAmount(writer, "castable_blades_steel",    "blades_steel",    MaterialType.STEEL,    MaterialShapes.INGOT * 4);
-        nuggetModItemAmount(writer, "castable_blades_titanium", "blades_titanium", MaterialType.TITANIUM, MaterialShapes.INGOT * 4);
-        nuggetModItemAmount(writer, "castable_pipes_steel",     "pipes_steel",     MaterialType.STEEL,    MaterialShapes.INGOT * 27);
+        nuggetModItemAmount(writer, "castable_blade_titanium",  "blade_titanium",  MaterialType.TITANIUM, MaterialShapes.INGOT.q(3));
+        nuggetModItemAmount(writer, "castable_blade_tungsten",  "blade_tungsten",  MaterialType.TUNGSTEN, MaterialShapes.INGOT.q(3));
+        nuggetModItemAmount(writer, "castable_blades_steel",    "blades_steel",    MaterialType.STEEL,    MaterialShapes.INGOT.q(4));
+        nuggetModItemAmount(writer, "castable_blades_titanium", "blades_titanium", MaterialType.TITANIUM, MaterialShapes.INGOT.q(4));
+        nuggetModItemAmount(writer, "castable_pipes_steel",     "pipes_steel",     MaterialType.STEEL,    MaterialShapes.INGOT.q(27));
         // Штампы (плоские, ориг. INGOT.q(3) = 216 квантов).
-        nuggetModItemAmount(writer, "castable_stamp_stone_flat",    "stamp_stone_flat",    MaterialType.STONE,    MaterialShapes.INGOT * 3);
-        nuggetModItemAmount(writer, "castable_stamp_iron_flat",     "stamp_iron_flat",     MaterialType.IRON,     MaterialShapes.INGOT * 3);
-        nuggetModItemAmount(writer, "castable_stamp_steel_flat",    "stamp_steel_flat",    MaterialType.STEEL,    MaterialShapes.INGOT * 3);
-        nuggetModItemAmount(writer, "castable_stamp_titanium_flat", "stamp_titanium_flat", MaterialType.TITANIUM, MaterialShapes.INGOT * 3);
-        nuggetModItemAmount(writer, "castable_stamp_obsidian_flat", "stamp_obsidian_flat", MaterialType.OBSIDIAN, MaterialShapes.INGOT * 3);
+        nuggetModItemAmount(writer, "castable_stamp_stone_flat",    "stamp_stone_flat",    MaterialType.STONE,    MaterialShapes.INGOT.q(3));
+        nuggetModItemAmount(writer, "castable_stamp_iron_flat",     "stamp_iron_flat",     MaterialType.IRON,     MaterialShapes.INGOT.q(3));
+        nuggetModItemAmount(writer, "castable_stamp_steel_flat",    "stamp_steel_flat",    MaterialType.STEEL,    MaterialShapes.INGOT.q(3));
+        nuggetModItemAmount(writer, "castable_stamp_titanium_flat", "stamp_titanium_flat", MaterialType.TITANIUM, MaterialShapes.INGOT.q(3));
+        nuggetModItemAmount(writer, "castable_stamp_obsidian_flat", "stamp_obsidian_flat", MaterialType.OBSIDIAN, MaterialShapes.INGOT.q(3));
         // Гильзы (ориг. PLATE.q(1,4) = 18 кв / PLATE.q(1,2) = 36 кв).
-        nuggetModItemAmount(writer, "castable_casing_small",       "casing_small",       MaterialType.GUNMETAL,    MaterialShapes.INGOT / 4);
-        nuggetModItemAmount(writer, "castable_casing_large",       "casing_large",       MaterialType.GUNMETAL,    MaterialShapes.INGOT / 2);
-        nuggetModItemAmount(writer, "castable_casing_small_steel", "casing_small_steel", MaterialType.WEAPONSTEEL, MaterialShapes.INGOT / 4);
-        nuggetModItemAmount(writer, "castable_casing_large_steel", "casing_large_steel", MaterialType.WEAPONSTEEL, MaterialShapes.INGOT / 2);
+        nuggetModItemAmount(writer, "castable_casing_small",       "casing_small",       MaterialType.GUNMETAL,    MaterialShapes.INGOT.q(1, 4));
+        nuggetModItemAmount(writer, "castable_casing_large",       "casing_large",       MaterialType.GUNMETAL,    MaterialShapes.INGOT.q(1, 2));
+        nuggetModItemAmount(writer, "castable_casing_small_steel", "casing_small_steel", MaterialType.WEAPONSTEEL, MaterialShapes.INGOT.q(1, 4));
+        nuggetModItemAmount(writer, "castable_casing_large_steel", "casing_large_steel", MaterialType.WEAPONSTEEL, MaterialShapes.INGOT.q(1, 2));
         // Криолитовый кусок: ALUMINIUM INGOT.q(1) + SODIUM INGOT.q(1).
         nuggetModMulti(writer, "castable_cryolite_chunk", "cryolite_chunk",
-                new MaterialStack(MaterialType.ALUMINIUM, MaterialShapes.INGOT),
-                new MaterialStack(MaterialType.SODIUM,    MaterialShapes.INGOT));
+                new MaterialStack(MaterialType.ALUMINIUM, MaterialShapes.INGOT.q(1)),
+                new MaterialStack(MaterialType.SODIUM,    MaterialShapes.INGOT.q(1)));
         // Известняк: FLUX DUST.q(10) = 720 квантов (ориг. stone_resource limestone).
-        nuggetModItemAmount(writer, "castable_limestone", "stone_resource_limestone", MaterialType.FLUX, MaterialShapes.INGOT * 10);
+        nuggetModItemAmount(writer, "castable_limestone", "stone_resource_limestone", MaterialType.FLUX, MaterialShapes.INGOT.q(10));
         // Золы: CARBON NUGGET.q(1)/q(2)/q(1) (ориг. powder_ash WOOD/COAL/MISC).
-        nuggetModItemAmount(writer, "carbon_ash_wood", "ash_wood", MaterialType.CARBON, MaterialShapes.NUGGET);
-        nuggetModItemAmount(writer, "carbon_ash_coal", "ash_coal", MaterialType.CARBON, MaterialShapes.NUGGET * 2);
-        nuggetModItemAmount(writer, "carbon_ash_misc", "ash_misc", MaterialType.CARBON, MaterialShapes.NUGGET);
+        nuggetModItemAmount(writer, "carbon_ash_wood", "ash_wood", MaterialType.CARBON, MaterialShapes.NUGGET.q(1));
+        nuggetModItemAmount(writer, "carbon_ash_coal", "ash_coal", MaterialType.CARBON, MaterialShapes.NUGGET.q(2));
+        nuggetModItemAmount(writer, "carbon_ash_misc", "ash_misc", MaterialType.CARBON, MaterialShapes.NUGGET.q(1));
 
         // ═══════════════════════════════════════════════════════════════════
         // ФРАГМЕНТЫ БЕДРОКОВОЙ РУДЫ (форма FRAGMENT = 8 квантов = 1 самородок).
@@ -199,25 +199,25 @@ public final class CrucibleSmeltingRecipeGenerator {
         // Ориг. конверсии: уголь → CARBON 2:1 (gem 72 кв → 36 кв), древесный
         // уголь NUGGET.q(3) = 24 кв.
         // ═══════════════════════════════════════════════════════════════════
-        nuggetItem(writer, "carbon_coal",       Items.COAL,                        MaterialType.CARBON, MaterialShapes.INGOT / 2);
-        nuggetItem(writer, "carbon_charcoal",   Items.CHARCOAL,                    MaterialType.CARBON, MaterialShapes.NUGGET * 3);
+        nuggetItem(writer, "carbon_coal",       Items.COAL,                        MaterialType.CARBON, MaterialShapes.INGOT.q(1, 2));
+        nuggetItem(writer, "carbon_charcoal",   Items.CHARCOAL,                    MaterialType.CARBON, MaterialShapes.NUGGET.q(3));
         nuggetItem(writer, "redstone",          Items.REDSTONE,                    MaterialType.REDSTONE);
         nuggetModItem(writer, "nugget_arsenic",    "nugget_arsenic",    MaterialType.ARSENIC);
         nuggetModItem(writer, "nugget_technetium", "nugget_technetium", MaterialType.TECHNETIUM);
         // Флюс — мод-предмет, объём как у слитка (порошок = 1 слиток, как DUST.q(1) в оригинале)
-        nuggetModItemAmount(writer, "powder_flux", "flux_powder", MaterialType.FLUX, MaterialShapes.INGOT);
+        nuggetModItemAmount(writer, "powder_flux", "flux_powder", MaterialType.FLUX, MaterialShapes.INGOT.q(1));
 
         // ═══════════════════════════════════════════════════════════════════
         // Рудные материалы — ADDITIVE (оригинал): сплавляются во вторую ступень (hematite/malachite рецепты)
         // ═══════════════════════════════════════════════════════════════════
         // Шлак плавится обратно (оригинал: оредикт ingotSlag → автоген формы INGOT).
-        nuggetModItemAmount(writer, "ingot_slag", "ingot_slag", MaterialType.SLAG, MaterialShapes.INGOT);
+        nuggetModItemAmount(writer, "ingot_slag", "ingot_slag", MaterialType.SLAG, MaterialShapes.INGOT.q(1));
 
         // Ориг. registerOre: hematite → INGOT.q(1) = 72 кв, malachite → INGOT.q(6) = 432 кв.
-        nuggetModItemAmount(writer, "resource_hematite",        "resource_hematite",        MaterialType.HEMATITE,  MaterialShapes.INGOT);
-        nuggetModItemAmount(writer, "stone_resource_hematite",  "stone_resource_hematite",  MaterialType.HEMATITE,  MaterialShapes.INGOT);
-        nuggetModItemAmount(writer, "resource_malachite",       "resource_malachite",       MaterialType.MALACHITE, MaterialShapes.INGOT * 6);
-        nuggetModItemAmount(writer, "stone_resource_malachite", "stone_resource_malachite", MaterialType.MALACHITE, MaterialShapes.INGOT * 6);
+        nuggetModItemAmount(writer, "resource_hematite",        "resource_hematite",        MaterialType.HEMATITE,  MaterialShapes.INGOT.q(1));
+        nuggetModItemAmount(writer, "stone_resource_hematite",  "stone_resource_hematite",  MaterialType.HEMATITE,  MaterialShapes.INGOT.q(1));
+        nuggetModItemAmount(writer, "resource_malachite",       "resource_malachite",       MaterialType.MALACHITE, MaterialShapes.INGOT.q(6));
+        nuggetModItemAmount(writer, "stone_resource_malachite", "stone_resource_malachite", MaterialType.MALACHITE, MaterialShapes.INGOT.q(6));
 
         // ═══════════════════════════════════════════════════════════════════
         // Авто-генерация по формам (порт цикла getSmeltingRecipes: материал × форма
@@ -231,16 +231,16 @@ public final class CrucibleSmeltingRecipeGenerator {
         // Каменная и содовая (натриевая) побочки не портированы — материалов нет в реестре.
         // Урановая руда перенесена отдельным блоком ниже (MaterialType.URANIUM).
         // ═══════════════════════════════════════════════════════════════════
-        oreByproducts(writer, "byproduct_ore_gneiss_iron", "gneiss_iron_ore", new MaterialStack(MaterialType.IRON,     MaterialShapes.INGOT * 2),
-                                                    new MaterialStack(MaterialType.TITANIUM, MaterialShapes.NUGGET * 3));
-        oreByproducts(writer, "byproduct_ore_aluminium", "aluminum_ore",      new MaterialStack(MaterialType.ALUMINIUM, MaterialShapes.INGOT * 2));
-        oreByproducts(writer, "byproduct_ore_nether_tungsten", "nether_tungsten_ore", new MaterialStack(MaterialType.TUNGSTEN, MaterialShapes.INGOT * 2));
-        oreByproducts(writer, "byproduct_ore_gneiss_gold", "gneiss_gold_ore",    new MaterialStack(MaterialType.GOLD, MaterialShapes.INGOT * 2),
-                                                    new MaterialStack(MaterialType.LEAD, MaterialShapes.NUGGET));
-        oreByproducts(writer, "byproduct_ore_copper", "minecraft:copper_ore",         new MaterialStack(MaterialType.COPPER, MaterialShapes.INGOT * 2));
-        oreByproducts(writer, "byproduct_ore_gneiss_copper", "gneiss_copper_ore",  new MaterialStack(MaterialType.COPPER, MaterialShapes.INGOT * 2));
-        oreByproducts(writer, "byproduct_ore_nether_cobalt", "nether_cobalt_ore",  new MaterialStack(MaterialType.COBALT, MaterialShapes.INGOT));
-        oreByproducts(writer, "byproduct_ore_nether_coal", "nether_coal_ore",    new MaterialStack(MaterialType.CARBON, MaterialShapes.INGOT * 3));
+        oreByproducts(writer, "byproduct_ore_gneiss_iron", "gneiss_iron_ore", new MaterialStack(MaterialType.IRON,     MaterialShapes.INGOT.q(2)),
+                                                    new MaterialStack(MaterialType.TITANIUM, MaterialShapes.NUGGET.q(3)));
+        oreByproducts(writer, "byproduct_ore_aluminium", "aluminum_ore",      new MaterialStack(MaterialType.ALUMINIUM, MaterialShapes.INGOT.q(2)));
+        oreByproducts(writer, "byproduct_ore_nether_tungsten", "nether_tungsten_ore", new MaterialStack(MaterialType.TUNGSTEN, MaterialShapes.INGOT.q(2)));
+        oreByproducts(writer, "byproduct_ore_gneiss_gold", "gneiss_gold_ore",    new MaterialStack(MaterialType.GOLD, MaterialShapes.INGOT.q(2)),
+                                                    new MaterialStack(MaterialType.LEAD, MaterialShapes.NUGGET.q(1)));
+        oreByproducts(writer, "byproduct_ore_copper", "minecraft:copper_ore",         new MaterialStack(MaterialType.COPPER, MaterialShapes.INGOT.q(2)));
+        oreByproducts(writer, "byproduct_ore_gneiss_copper", "gneiss_copper_ore",  new MaterialStack(MaterialType.COPPER, MaterialShapes.INGOT.q(2)));
+        oreByproducts(writer, "byproduct_ore_nether_cobalt", "nether_cobalt_ore",  new MaterialStack(MaterialType.COBALT, MaterialShapes.INGOT.q(1)));
+        oreByproducts(writer, "byproduct_ore_nether_coal", "nether_coal_ore",    new MaterialStack(MaterialType.CARBON, MaterialShapes.INGOT.q(3)));
 
         // ═══════════════════════════════════════════════════════════════════
         // УРАНОВАЯ РУДА (порт MatDistribution:77 registerOre(U.ore(), ...)):
@@ -249,73 +249,73 @@ public final class CrucibleSmeltingRecipeGenerator {
         // урана исправлен 2026-09-20 — возвращён из 1.7.10).
         // ═══════════════════════════════════════════════════════════════════
         oreTagMulti(writer, "byproduct_ore_uranium", "forge:ores/uranium",
-                new MaterialStack(MaterialType.URANIUM, MaterialShapes.INGOT * 2),
-                new MaterialStack(MaterialType.LEAD,    MaterialShapes.NUGGET * 3),
-                new MaterialStack(MaterialType.STONE,   MaterialShapes.QUART));
+                new MaterialStack(MaterialType.URANIUM, MaterialShapes.INGOT.q(2)),
+                new MaterialStack(MaterialType.LEAD,    MaterialShapes.NUGGET.q(3)),
+                new MaterialStack(MaterialType.STONE,   MaterialShapes.QUART.q(1)));
         oreByproducts(writer, "byproduct_ore_uranium_deepslate", "uranium_ore_deepslate",
-                new MaterialStack(MaterialType.URANIUM, MaterialShapes.INGOT * 2),
-                new MaterialStack(MaterialType.LEAD,    MaterialShapes.NUGGET * 3),
-                new MaterialStack(MaterialType.STONE,   MaterialShapes.QUART));
+                new MaterialStack(MaterialType.URANIUM, MaterialShapes.INGOT.q(2)),
+                new MaterialStack(MaterialType.LEAD,    MaterialShapes.NUGGET.q(3)),
+                new MaterialStack(MaterialType.STONE,   MaterialShapes.QUART.q(1)));
         oreByproducts(writer, "byproduct_ore_uranium_nether", "nether_uranium_ore",
-                new MaterialStack(MaterialType.URANIUM, MaterialShapes.INGOT * 2),
-                new MaterialStack(MaterialType.LEAD,    MaterialShapes.NUGGET * 3),
-                new MaterialStack(MaterialType.STONE,   MaterialShapes.QUART));
+                new MaterialStack(MaterialType.URANIUM, MaterialShapes.INGOT.q(2)),
+                new MaterialStack(MaterialType.LEAD,    MaterialShapes.NUGGET.q(3)),
+                new MaterialStack(MaterialType.STONE,   MaterialShapes.QUART.q(1)));
         oreByproducts(writer, "byproduct_ore_uranium_gneiss", "gneiss_uranium_ore",
-                new MaterialStack(MaterialType.URANIUM, MaterialShapes.INGOT * 2),
-                new MaterialStack(MaterialType.LEAD,    MaterialShapes.NUGGET * 3),
-                new MaterialStack(MaterialType.STONE,   MaterialShapes.QUART));
+                new MaterialStack(MaterialType.URANIUM, MaterialShapes.INGOT.q(2)),
+                new MaterialStack(MaterialType.LEAD,    MaterialShapes.NUGGET.q(3)),
+                new MaterialStack(MaterialType.STONE,   MaterialShapes.QUART.q(1)));
         oreByproducts(writer, "byproduct_ore_uranium_gneiss2", "gneiss_uranium_ore",
-                new MaterialStack(MaterialType.URANIUM, MaterialShapes.INGOT * 2),
-                new MaterialStack(MaterialType.LEAD,    MaterialShapes.NUGGET * 3),
-                new MaterialStack(MaterialType.STONE,   MaterialShapes.QUART));
+                new MaterialStack(MaterialType.URANIUM, MaterialShapes.INGOT.q(2)),
+                new MaterialStack(MaterialType.LEAD,    MaterialShapes.NUGGET.q(3)),
+                new MaterialStack(MaterialType.STONE,   MaterialShapes.QUART.q(1)));
         oreByproducts(writer, "byproduct_ore_uranium_gneiss_scorched", "ore_gneiss_uranium_scorched",
-                new MaterialStack(MaterialType.URANIUM, MaterialShapes.INGOT * 2),
-                new MaterialStack(MaterialType.LEAD,    MaterialShapes.NUGGET * 3),
-                new MaterialStack(MaterialType.STONE,   MaterialShapes.QUART));
+                new MaterialStack(MaterialType.URANIUM, MaterialShapes.INGOT.q(2)),
+                new MaterialStack(MaterialType.LEAD,    MaterialShapes.NUGGET.q(3)),
+                new MaterialStack(MaterialType.STONE,   MaterialShapes.QUART.q(1)));
         oreByproducts(writer, "byproduct_ore_uranium_nether2", "nether_uranium_ore",
-                new MaterialStack(MaterialType.URANIUM, MaterialShapes.INGOT * 2),
-                new MaterialStack(MaterialType.LEAD,    MaterialShapes.NUGGET * 3),
-                new MaterialStack(MaterialType.STONE,   MaterialShapes.QUART));
+                new MaterialStack(MaterialType.URANIUM, MaterialShapes.INGOT.q(2)),
+                new MaterialStack(MaterialType.LEAD,    MaterialShapes.NUGGET.q(3)),
+                new MaterialStack(MaterialType.STONE,   MaterialShapes.QUART.q(1)));
         oreByproducts(writer, "byproduct_ore_uranium_nether2_scorched", "ore_nether_uranium_scorched",
-                new MaterialStack(MaterialType.URANIUM, MaterialShapes.INGOT * 2),
-                new MaterialStack(MaterialType.LEAD,    MaterialShapes.NUGGET * 3),
-                new MaterialStack(MaterialType.STONE,   MaterialShapes.QUART));
+                new MaterialStack(MaterialType.URANIUM, MaterialShapes.INGOT.q(2)),
+                new MaterialStack(MaterialType.LEAD,    MaterialShapes.NUGGET.q(3)),
+                new MaterialStack(MaterialType.STONE,   MaterialShapes.QUART.q(1)));
         oreByproducts(writer, "byproduct_ore_uranium_scorched", "ore_uranium_scorched",
-                new MaterialStack(MaterialType.URANIUM, MaterialShapes.INGOT * 2),
-                new MaterialStack(MaterialType.LEAD,    MaterialShapes.NUGGET * 3),
-                new MaterialStack(MaterialType.STONE,   MaterialShapes.QUART));
+                new MaterialStack(MaterialType.URANIUM, MaterialShapes.INGOT.q(2)),
+                new MaterialStack(MaterialType.LEAD,    MaterialShapes.NUGGET.q(3)),
+                new MaterialStack(MaterialType.STONE,   MaterialShapes.QUART.q(1)));
 
         // ═══════════════════════════════════════════════════════════════════
         // Raw-версии руд (порт: руда дропает raw, блок — только silk touch),
         // чтобы raw нёс весь функционал рудового блока оригинала в тигле.
         // ═══════════════════════════════════════════════════════════════════
         oreByproducts(writer, "byproduct_raw_uranium", "uranium_raw",
-                new MaterialStack(MaterialType.URANIUM, MaterialShapes.INGOT * 2),
-                new MaterialStack(MaterialType.LEAD,    MaterialShapes.NUGGET * 3),
-                new MaterialStack(MaterialType.STONE,   MaterialShapes.QUART));
+                new MaterialStack(MaterialType.URANIUM, MaterialShapes.INGOT.q(2)),
+                new MaterialStack(MaterialType.LEAD,    MaterialShapes.NUGGET.q(3)),
+                new MaterialStack(MaterialType.STONE,   MaterialShapes.QUART.q(1)));
         oreByproducts(writer, "byproduct_raw_aluminium", "aluminum_raw",
-                new MaterialStack(MaterialType.ALUMINIUM, MaterialShapes.INGOT * 2));
+                new MaterialStack(MaterialType.ALUMINIUM, MaterialShapes.INGOT.q(2)));
         oreByproducts(writer, "byproduct_raw_tungsten", "tungsten_raw",
-                new MaterialStack(MaterialType.TUNGSTEN, MaterialShapes.INGOT * 2));
+                new MaterialStack(MaterialType.TUNGSTEN, MaterialShapes.INGOT.q(2)));
         oreByproducts(writer, "byproduct_raw_cobalt", "cobalt_raw",
-                new MaterialStack(MaterialType.COBALT, MaterialShapes.INGOT));
+                new MaterialStack(MaterialType.COBALT, MaterialShapes.INGOT.q(1)));
     }
 
     /** Квантов на форму (значения MaterialShapes оригинала). */
     private static int shapeQuanta(com.hbm_m.item.material.MaterialShape shape) {
         return switch (shape) {
-            case NUGGET      -> MaterialShapes.NUGGET;                      // 8
-            case POWDER_TINY -> MaterialShapes.NUGGET;                      // dustTiny = 8
-            case BILLET      -> MaterialShapes.BILLET;                      // 48
-            case INGOT       -> MaterialShapes.INGOT;                       // 72
-            case CRYSTAL     -> MaterialShapes.INGOT;
-            case POWDER      -> MaterialShapes.INGOT;
-            case PLATE       -> MaterialShapes.INGOT;
-            case PLATE_CAST  -> MaterialShapes.CASTPLATE;                   // 216 (plateTriple)
-            case PLATE_WELDED-> MaterialShapes.WELDEDPLATE;                 // 432 (plateSextuple)
-            case BLOCK       -> MaterialShapes.BLOCK;                       // 648
-            case WIRE        -> MaterialShapes.WIRE;                        // 9
-            case WIRE_DENSE  -> MaterialShapes.INGOT;
+            case NUGGET      -> MaterialShapes.NUGGET.q(1);                      // 8
+            case POWDER_TINY -> MaterialShapes.NUGGET.q(1);                      // dustTiny = 8
+            case BILLET      -> MaterialShapes.BILLET.q(1);                      // 48
+            case INGOT       -> MaterialShapes.INGOT.q(1);                       // 72
+            case CRYSTAL     -> MaterialShapes.INGOT.q(1);
+            case POWDER      -> MaterialShapes.INGOT.q(1);
+            case PLATE       -> MaterialShapes.INGOT.q(1);
+            case PLATE_CAST  -> MaterialShapes.CASTPLATE.q(1);                   // 216 (plateTriple)
+            case PLATE_WELDED-> MaterialShapes.WELDEDPLATE.q(1);                 // 432 (plateSextuple)
+            case BLOCK       -> MaterialShapes.BLOCK.q(1);                       // 648
+            case WIRE        -> MaterialShapes.WIRE.q(1);                        // 9
+            case WIRE_DENSE  -> MaterialShapes.INGOT.q(1);
             default          -> 0;
         };
     }
@@ -382,20 +382,20 @@ public final class CrucibleSmeltingRecipeGenerator {
     /** Слиток по forge-тегу {@code forge:ingots/<name>} → {@code MaterialShapes.INGOT} материала. */
     private static void ingot(Consumer<FinishedRecipe> writer, String name, MaterialType mat) {
         CrucibleSmeltingRecipeBuilder.crucibleSmelting(
-                        "forge:ingots/" + name, mat, MaterialShapes.INGOT)
+                        "forge:ingots/" + name, mat, MaterialShapes.INGOT.q(1))
                 .save(writer, "crucible_smelting/ingot_" + name);
     }
 
-    /** Руда по forge-тегу {@code forge:ores/<name>} → {@code MaterialShapes.INGOT * 2} материала. */
+    /** Руда по forge-тегу {@code forge:ores/<name>} → {@code MaterialShapes.INGOT.q(2)} материала. */
     private static void ore(Consumer<FinishedRecipe> writer, String name, MaterialType mat) {
         CrucibleSmeltingRecipeBuilder.crucibleSmelting(
-                        "forge:ores/" + name, mat, MaterialShapes.INGOT * 2)
+                        "forge:ores/" + name, mat, MaterialShapes.INGOT.q(2))
                 .save(writer, "crucible_smelting/ore_" + name);
     }
 
     /** Ванильный предмет → {@code MaterialShapes.NUGGET} материала (сырьевые/алмазные входы). */
     private static void nuggetItem(Consumer<FinishedRecipe> writer, String id, Item item, MaterialType mat) {
-        nuggetItem(writer, id, item, mat, MaterialShapes.NUGGET);
+        nuggetItem(writer, id, item, mat, MaterialShapes.NUGGET.q(1));
     }
 
     /** Предмет → материал с явным объёмом (авто-генерация по формам). */
@@ -409,7 +409,7 @@ public final class CrucibleSmeltingRecipeGenerator {
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath("hbm_m", itemId);
         if (!BuiltInRegistries.ITEM.containsKey(id)) return;  // предмет может отсутствовать
         Item item = BuiltInRegistries.ITEM.get(id);
-        CrucibleSmeltingRecipeBuilder.crucibleSmelting(item, mat, MaterialShapes.NUGGET)
+        CrucibleSmeltingRecipeBuilder.crucibleSmelting(item, mat, MaterialShapes.NUGGET.q(1))
                 .save(writer, "crucible_smelting/" + path);
     }
 
@@ -422,12 +422,12 @@ public final class CrucibleSmeltingRecipeGenerator {
                 .save(writer, "crucible_smelting/" + path);
     }
 
-    /** Блок-руда мода по id строки ({@code hbm_m:<path>}) → {@code MaterialShapes.INGOT * 2} материала. */
+    /** Блок-руда мода по id строки ({@code hbm_m:<path>}) → {@code MaterialShapes.INGOT.q(2)} материала. */
     private static void blockOre(Consumer<FinishedRecipe> writer, String path, MaterialType mat) {
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath("hbm_m", path);
         if (!BuiltInRegistries.ITEM.containsKey(id)) return;  // блок может отсутствовать
         Item item = BuiltInRegistries.ITEM.get(id);
-        CrucibleSmeltingRecipeBuilder.crucibleSmelting(item, mat, MaterialShapes.INGOT * 2)
+        CrucibleSmeltingRecipeBuilder.crucibleSmelting(item, mat, MaterialShapes.INGOT.q(2))
                 .save(writer, "crucible_smelting/" + path);
     }
 

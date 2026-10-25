@@ -20,6 +20,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
+import com.hbm_m.platform.LevelHooks;
 
 /**
  * Port of NEXT {@code com.hbm.blocks.machine.pile.BlockGraphiteDrilled}: the empty pile channel.
@@ -153,7 +154,7 @@ public class BlockGraphiteDrilled extends BlockGraphiteDrilledBase {
         stack.shrink(1);
         level.setBlock(pos, result, 3);
 
-        PlatformHooks.playSound(
+        LevelHooks.playSound(
                 level,
                 pos.getX() + 0.5D,
                 pos.getY() + 1.5D,
@@ -180,7 +181,7 @@ public class BlockGraphiteDrilled extends BlockGraphiteDrilledBase {
 
         if (!level.isClientSide() && isChannelFace(state, side) && state.getValue(SHROUDED)) {
             level.setBlock(pos, state.setValue(SHROUDED, false), 3);
-            PlatformHooks.playSound(
+            LevelHooks.playSound(
                     level,
                     pos.getX() + 0.5D,
                     pos.getY() + 1.5D,

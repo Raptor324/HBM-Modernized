@@ -236,7 +236,11 @@ tasks.named<Jar>("jar") {
 	exclude("com/hbm_m/datagen/**", "com/hbm_m/test/**")
 }
 
-tasks.withType<JavaCompile>().configureEach { options.encoding = "UTF-8" }
+tasks.withType<JavaCompile>().configureEach {
+	options.encoding = "UTF-8"
+	// See build.neoforge.gradle.kts: the forked compiler worker needs a real heap.
+	options.forkOptions.memoryMaximumSize = "3g"
+}
 
 tasks.withType<Test>().configureEach {
 	failOnNoDiscoveredTests = false

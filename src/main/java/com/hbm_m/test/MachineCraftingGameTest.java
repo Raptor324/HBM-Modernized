@@ -1,7 +1,7 @@
 package com.hbm_m.test;
 
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.industrial.ItemBlueprintFolder;
+import com.hbm_m.item.industrial.ItemBlueprints;
 import com.hbm_m.interfaces.IEnergyReceiver;
 import com.hbm_m.module.machine.MachineModuleAdvancedAssembler;
 import com.hbm_m.module.machine.MachineModuleBase;
@@ -24,13 +24,8 @@ import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-//? if forge {
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
-*///?}
 
 import java.util.List;
 import java.util.Map;
@@ -45,7 +40,7 @@ import java.util.Map;
  *   <li>{@link ModRecipeIndex} — cached recipe index (byId, byPool, ordered).</li>
  *   <li>{@link AssemblerRecipe} — structure, {@code blueprintPool}, {@code requiresBlueprint}.</li>
  *   <li>{@link ChemicalPlantRecipe} — fluid inputs/outputs, {@code blueprintPool}.</li>
- *   <li>{@link ItemBlueprintFolder} — writing/reading pool from NBT, {@code isBlueprintPoolAllowed}.</li>
+ *   <li>{@link ItemBlueprints} — writing/reading pool from NBT, {@code isBlueprintPoolAllowed}.</li>
  *   <li>{@link MachineModuleBase} — energy gate ({@code hasEnoughEnergyToStartCraft}/{@code hasEnoughEnergyForTick}).</li>
  *   <li>{@link MachineModuleAdvancedAssembler} — {@code update}, progress, {@code processCraft}.</li>
  *   <li>{@link MachineModuleChemplant} — recipe selection by ID, blueprint-gating.</li>
@@ -382,13 +377,13 @@ public final class MachineCraftingGameTest {
     }
 
     // ════════════════════════════════════════════════════════════════════════
-    //  Group 5: Blueprint pool — ItemBlueprintFolder, isBlueprintPoolAllowed.
+    //  Group 5: Blueprint pool — ItemBlueprints, isBlueprintPoolAllowed.
     // ════════════════════════════════════════════════════════════════════════
 
     @GameTest(template = "empty3x3x3", batch = "machines", timeoutTicks = 100)
     public static void blueprintFolder_emptyByDefault(GameTestHelper helper) {
-        ItemStack folder = new ItemStack(ModItems.BLUEPRINT_FOLDER.get());
-        String pool = ItemBlueprintFolder.getBlueprintPool(folder);
+        ItemStack folder = new ItemStack(ModItems.BLUEPRINTS.get());
+        String pool = ItemBlueprints.getBlueprintPool(folder);
         check(pool != null && pool.isEmpty(),
                 "Fresh blueprint folder pool must be empty string, got: " + pool);
         helper.succeed();
@@ -396,9 +391,8 @@ public final class MachineCraftingGameTest {
 
     @GameTest(template = "empty3x3x3", batch = "machines", timeoutTicks = 100)
     public static void blueprintFolder_writeReadPool(GameTestHelper helper) {
-        ItemStack folder = new ItemStack(ModItems.BLUEPRINT_FOLDER.get());
-        ItemBlueprintFolder.writeBlueprintPool(folder, "machines");
-        String pool = ItemBlueprintFolder.getBlueprintPool(folder);
+        ItemStack folder = ItemBlueprints.make("machines");
+        String pool = ItemBlueprints.getBlueprintPool(folder);
         check("machines".equals(pool),
                 "Blueprint folder must read back written pool 'machines', got: " + pool);
         helper.succeed();
@@ -407,7 +401,7 @@ public final class MachineCraftingGameTest {
     @GameTest(template = "empty3x3x3", batch = "machines", timeoutTicks = 100)
     public static void blueprintFolder_emptyStackPool(GameTestHelper helper) {
         // An empty stack (ItemStack.EMPTY) must not crash getBlueprintPool.
-        String pool = ItemBlueprintFolder.getBlueprintPool(ItemStack.EMPTY);
+        String pool = ItemBlueprints.getBlueprintPool(ItemStack.EMPTY);
         check(pool != null && pool.isEmpty(),
                 "EMPTY stack pool must be empty string, got: " + pool);
         helper.succeed();
@@ -733,8 +727,7 @@ public final class MachineCraftingGameTest {
         check(mod.peekRecipe(level) != null, "peekRecipe must resolve before blueprint mismatch");
 
         // Folder with a different pool.
-        ItemStack wrongFolder = new ItemStack(ModItems.BLUEPRINT_FOLDER.get());
-        ItemBlueprintFolder.writeBlueprintPool(wrongFolder, pool + "_wrong");
+        ItemStack wrongFolder = ItemBlueprints.make(pool + "_wrong");
 
         mod.updateAndGetDirty(1.0, 1.0, true, wrongFolder);
         check(mod.peekRecipe(level) == null,
@@ -779,8 +772,7 @@ public final class MachineCraftingGameTest {
                 inTanks, outTanks, level);
         mod.setSelectedRecipe(id);
 
-        ItemStack correctFolder = new ItemStack(ModItems.BLUEPRINT_FOLDER.get());
-        ItemBlueprintFolder.writeBlueprintPool(correctFolder, pool);
+        ItemStack correctFolder = ItemBlueprints.make(pool);
 
         mod.updateAndGetDirty(1.0, 1.0, true, correctFolder);
         ChemicalPlantRecipe peeked = mod.peekRecipe(level);
@@ -834,9 +826,7 @@ public final class MachineCraftingGameTest {
     }
 
     private static ItemStack makePlatesFolder() {
-        ItemStack folder = new ItemStack(ModItems.BLUEPRINT_FOLDER.get());
-        ItemBlueprintFolder.writeBlueprintPool(folder, "plates");
-        return folder;
+        return ItemBlueprints.make("plates");
     }
 
     @GameTest(template = "empty3x3x3", batch = "machines", timeoutTicks = 400)

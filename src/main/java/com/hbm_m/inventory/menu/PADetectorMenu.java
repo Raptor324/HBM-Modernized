@@ -20,6 +20,8 @@ public class PADetectorMenu extends PAMenu {
         super(ModMenuTypes.PA_DETECTOR_MENU.get(), id, inv, blockEntity, null,
                 ModBlocks.PA_DETECTOR.get(),
                 SlotSpec.in(PADetectorBlockEntity.SLOT_BATTERY, 8, 72),
+                SlotSpec.in(PADetectorBlockEntity.SLOT_CONTAINER_A, 62, 18),
+                SlotSpec.in(PADetectorBlockEntity.SLOT_CONTAINER_B, 80, 18),
                 SlotSpec.out(PADetectorBlockEntity.SLOT_OUTPUT_A, 62, 45),
                 SlotSpec.out(PADetectorBlockEntity.SLOT_OUTPUT_B, 80, 45));
     }

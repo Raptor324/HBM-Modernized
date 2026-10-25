@@ -5,8 +5,6 @@ import net.minecraft.world.level.Level;
 
 import java.util.*;
 
-import com.hbm_m.blockentity.machines.rbmk.RBMKColumnBlockEntity;
-
 public class NeutronNodeWorld {
 
     /**
@@ -47,7 +45,6 @@ public class NeutronNodeWorld {
     public static void removeWorld(Level level) {
         streamWorlds.remove(level);
     }
-
 
     /** CE's {@code removeEmptyWorlds}: drop stream worlds that carry no streams at all. */
     public static void removeEmptyWorlds() {

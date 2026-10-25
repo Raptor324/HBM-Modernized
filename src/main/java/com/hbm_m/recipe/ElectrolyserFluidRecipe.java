@@ -42,11 +42,15 @@ import net.minecraft.world.level.material.Fluid;
  *   "input":    { "fluid": "hbm_m:water", "amount": 2000 },
  *   "output_a": { "fluid": "hbm_m:hydrogen", "amount": 200 },   // optional
  *   "output_b": { "fluid": "hbm_m:oxygen",   "amount": 200 },   // optional
- *   "byproducts": [ { "item": "...", "count": 1 } ]             // optional, до 3
+ *   "byproducts": [ { "item": "...", "count": 1 } ],            // optional
+ *   "duration": 10                                              // optional, стандарт 20
  * }
  * }</pre>
  */
 public class ElectrolyserFluidRecipe extends PlatformRecipe {
+
+    /** Стандартная длительность FFA-таблицы (конструктор без duration). */
+    private static final int DEFAULT_DURATION = 20;
 
     private final FluidStack input;
     @Nullable
@@ -54,15 +58,23 @@ public class ElectrolyserFluidRecipe extends PlatformRecipe {
     @Nullable
     private final FluidStack outputB;
     private final ItemStack[] byproducts;
+    private final int duration;
 
     public ElectrolyserFluidRecipe(ResourceLocation id, FluidStack input,
                                     @Nullable FluidStack outputA, @Nullable FluidStack outputB,
                                     ItemStack[] byproducts) {
+        this(id, input, outputA, outputB, byproducts, DEFAULT_DURATION);
+    }
+
+    public ElectrolyserFluidRecipe(ResourceLocation id, FluidStack input,
+                                    @Nullable FluidStack outputA, @Nullable FluidStack outputB,
+                                    ItemStack[] byproducts, int duration) {
         super(id);
         this.input = input;
         this.outputA = outputA != null && !outputA.isEmpty() && outputA.getAmount() > 0 ? outputA : null;
         this.outputB = outputB != null && !outputB.isEmpty() && outputB.getAmount() > 0 ? outputB : null;
         this.byproducts = byproducts != null ? byproducts : new ItemStack[0];
+        this.duration = Math.max(1, duration);
     }
 
     public FluidStack getInput() { return input; }
@@ -71,6 +83,8 @@ public class ElectrolyserFluidRecipe extends PlatformRecipe {
     @Nullable public FluidStack getOutputA() { return outputA; }
     @Nullable public FluidStack getOutputB() { return outputB; }
     public ItemStack[] getByproducts() { return byproducts; }
+    /** Длительность в тиках (стандарт 20, как у FFA-ElectrolysisRecipe). */
+    public int getDuration() { return duration; }
 
     /** Совпадение входного бака по типу жидкости и достаточному количеству (как оригинальный map-lookup). */
     public boolean matchesInput(FluidTank tank) {
@@ -132,7 +146,8 @@ public class ElectrolyserFluidRecipe extends PlatformRecipe {
                     byproducts[i] = RecipeHooks.itemStackFromJson(arr.get(i).getAsJsonObject());
                 }
             }
-            return new ElectrolyserFluidRecipe(recipeId, input, outputA, outputB, byproducts);
+            int duration = GsonHelper.getAsInt(json, "duration", DEFAULT_DURATION);
+            return new ElectrolyserFluidRecipe(recipeId, input, outputA, outputB, byproducts, duration);
         }
 
         @Override
@@ -145,7 +160,8 @@ public class ElectrolyserFluidRecipe extends PlatformRecipe {
             for (int i = 0; i < n; i++) {
                 byproducts[i] = RecipeHooks.readItem(buf);
             }
-            return new ElectrolyserFluidRecipe(recipeId, input, outputA, outputB, byproducts);
+            int duration = buf.readVarInt();
+            return new ElectrolyserFluidRecipe(recipeId, input, outputA, outputB, byproducts, duration);
         }
 
         @Override
@@ -159,6 +175,7 @@ public class ElectrolyserFluidRecipe extends PlatformRecipe {
             for (ItemStack byproduct : recipe.byproducts) {
                 RecipeHooks.writeItem(buf, byproduct);
             }
+            buf.writeVarInt(recipe.duration);
         }
 
         /** { "fluid": <id>, "amount": <mB> } — единый формат мода (см. ChemicalPlantRecipe). */

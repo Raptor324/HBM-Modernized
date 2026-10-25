@@ -15,6 +15,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.phys.BlockHitResult;
+import com.hbm_m.platform.LevelHooks;
 
 /**
  * Port of NEXT {@code com.hbm.blocks.machine.pile.BlockGraphiteRod}: the boron control rod
@@ -83,7 +84,7 @@ public class BlockGraphiteRod extends BlockGraphiteDrilledBase {
         level.setBlock(pos, state.setValue(WITHDRAWN, !withdrawn), 3);
 
         // Vanilla LEVER_CLICK: a SoundEvent on 1.20.1, a Holder on 1.21.1 - route through PlatformHooks.
-        PlatformHooks.playSound(
+        LevelHooks.playSound(
                 level,
                 pos.getX() + 0.5D,
                 pos.getY() + 0.5D,

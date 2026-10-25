@@ -23,6 +23,8 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 
+import net.minecraft.util.Mth;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -41,6 +43,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 
 import com.hbm_m.platform.ClientFluidHooks;
+import com.hbm_m.platform.LoaderHooks;
 
 /**
  * Crystallizer on the {@link MachineRenderers} factory: the body lives in the chunk mesh,
@@ -55,17 +58,8 @@ public final class MachineCrystallizerRenderer {
     public static void register() {
         MachineRenderers.machine("crystallizer", ModBlockEntities.CRYSTALLIZER.get(),
                 MachineCrystallizerBlockEntity.class)
-            .spinningPart("Spinner", "Spinner", 0f, 1f, 0f, 0.5f, 0f, 0.5f, 0f, 0f, 0f,
-                be -> spinnerQuads(), be -> "spinner",
-                // Segment starts the tick the angle changes (epoch words are written once per segment)
-                be -> (be.angle != be.prevAngle) ? 1L : 0L,
-                // Ticks per revolution from this segment's delta (angle wraps at 360)
-                be -> {
-                    float delta = be.angle - be.prevAngle;
-                    if (delta < 0f) delta += 360f;
-                    return delta > 1.0e-3f ? (360.0 / delta) : 0.0;
-                },
-                be -> 0.0)
+            .rotateY("Spinner", 0.5f, 0.5f, be -> spinnerQuads(), be -> "spinner",
+                    (be, pt) -> (double) Mth.lerp(pt, be.prevAngle, be.angle))
             .blockTransform(MachineCrystallizerRenderer::applyBlockTransform)
             .hook(new MachineRenderHook<MachineCrystallizerBlockEntity>() {
                 @Override
@@ -119,7 +113,7 @@ public final class MachineCrystallizerRenderer {
         List<BakedQuad> q = cachedSpinnerQuads;
         if (q == null) {
             var modelManager = Minecraft.getInstance().getModelManager();
-            BakedModel model = PlatformHooks.getModel(modelManager, SPINNER_MODEL_ID);
+            BakedModel model = LoaderHooks.getModel(modelManager, SPINNER_MODEL_ID);
             if (model == null || model == modelManager.getMissingModel()) return List.of();
             q = collectModelQuads(model, RenderType.cutout());
             if (q.isEmpty()) q = collectModelQuads(model, RenderType.solid());
@@ -228,7 +222,7 @@ public final class MachineCrystallizerRenderer {
         ResourceLocation fluidModelId =
                 ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/crystallizer_fluid");
         var modelManager = Minecraft.getInstance().getModelManager();
-        BakedModel model = PlatformHooks.getModel(modelManager, fluidModelId);
+        BakedModel model = LoaderHooks.getModel(modelManager, fluidModelId);
         if (model == null || model == modelManager.getMissingModel()) return List.of();
         List<BakedQuad> quads = collectModelQuads(model, RenderType.translucent());
         if (!quads.isEmpty()) return quads;

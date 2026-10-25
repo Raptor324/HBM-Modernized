@@ -1,13 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 import java.util.List;
 
 import org.jetbrains.annotations.NotNull;
@@ -28,7 +22,6 @@ import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineChemicalPlantMenu;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
-import com.hbm_m.item.industrial.ItemBlueprintFolder;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType;
 import com.hbm_m.module.machine.MachineModuleChemplant;
@@ -69,7 +62,8 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
  */
 @SuppressWarnings("UnstableApiUsage")
 public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
-        implements IFrameSupportable, IUpgradeInfoProvider, IFluidStandardTransceiverMK2 {
+        implements IFrameSupportable, IUpgradeInfoProvider, IFluidStandardTransceiverMK2,
+        com.hbm_m.api.redstoneoverradio.IRORValueProvider, com.hbm_m.api.redstoneoverradio.IRORInteractive {
 
     private static final String CHEMICAL_PLANT_SOUND_INSTANCE = "com.hbm_m.sound.ChemicalPlantSoundInstance";
 
@@ -260,8 +254,9 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
 
         if (entity.module.getDidProcess()) {
             ItemStack maybeSword = entity.inventory.getStackInSlot(SLOT_BATTERY);
-            if (!maybeSword.isEmpty() && maybeSword.is(com.hbm_m.item.ModItems.METEORITE_SWORD.get())) {
-                entity.inventory.setStackInSlot(SLOT_BATTERY, new ItemStack(com.hbm_m.item.ModItems.METEORITE_SWORD_SEARED.get()));
+            // Original: meteorite_sword_machined -> meteorite_sword_treated im Batterieplatz
+            if (!maybeSword.isEmpty() && maybeSword.is(com.hbm_m.item.ModItems.METEORITE_SWORD_MACHINED.get())) {
+                entity.inventory.setStackInSlot(SLOT_BATTERY, new ItemStack(com.hbm_m.item.ModItems.METEORITE_SWORD_TREATED.get()));
                 dirty = true;
             }
         }
@@ -469,10 +464,12 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
         if (slot == SLOT_BATTERY) {
             if (stack.isEmpty()) return false;
             if (stack.getItem() instanceof ItemCreativeBattery) return true;
+            // Original-GUI prueft den Platz nicht; die Schwertkette legt das Schwert hier ab
+            if (stack.is(com.hbm_m.item.ModItems.METEORITE_SWORD_MACHINED.get())) return true;
             return isEnergyProviderItem(stack);
         }
         if (slot == SLOT_SCHEMATIC) {
-            return stack.getItem() instanceof ItemBlueprintFolder;
+            return stack.getItem() instanceof com.hbm_m.item.industrial.ItemBlueprints;
         }
         if (slot >= SLOT_UPGRADE_START && slot <= SLOT_UPGRADE_END) {
             return stack.getItem() instanceof ItemMachineUpgrade;
@@ -484,7 +481,8 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
             (slot >= SLOT_FLUID_OUTPUT_START && slot <= SLOT_FLUID_OUTPUT_END) ||
             (slot >= SLOT_FLUID_INPUT_EMPTY_START && slot <= SLOT_FLUID_INPUT_EMPTY_END) ||
             (slot >= SLOT_FLUID_OUTPUT_EMPTY_START && slot <= SLOT_FLUID_OUTPUT_EMPTY_END)) {
-            return com.hbm_m.platform.PlatformHooks.isFluidContainer(stack);
+            return com.hbm_m.api.fluids.FluidItemAccess.isFluidContainer(stack); // auch Registry-Behaelter ohne Capability
+
         }
         return true;
     }
@@ -501,7 +499,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
     public List<ChemicalPlantRecipe> getAvailableRecipes() {
         if (level == null) return List.of();
         ItemStack folder = inventory.getStackInSlot(SLOT_SCHEMATIC);
-        String installedPool = ItemBlueprintFolder.getBlueprintPool(folder);
+        String installedPool = com.hbm_m.item.industrial.ItemBlueprints.getBlueprintPool(folder);
         List<ChemicalPlantRecipe> all = com.hbm_m.recipe.index.ModRecipeIndex.of(level.getRecipeManager())
                 .getAll(ChemicalPlantRecipe.Type.INSTANCE);
         return all.stream().filter(r -> {
@@ -525,7 +523,8 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
      * реально продвигается в этом тике (didProcess). Прогресс в одиночку не
      * запускает эффекты — иначе при паузе из-за нехватки энергии звук/анимация
      * продолжаются, что противоречит поведению оригинала.
-     * Sync of didProcess on BOTH transitions (true→false and false→true) is guaranteed in
+     * Синхронизация didProcess при переходе true→false гарантируется в
+
      * {@link com.hbm_m.module.machine.MachineModuleChemplant#updateAndGetDirty}.
      */
     public boolean isChemplantEffectsActive() {
@@ -539,6 +538,8 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
 
     public void setSelectedRecipe(@Nullable ResourceLocation recipeId) {
         module.setSelectedRecipe(recipeId);
+        // Original GUI-Auswahl: setRecipe(selection, false) hebt den RoR-Modus auf
+        module.restrictedMode = false;
         if (level != null && !level.isClientSide) {
             module.syncTankConfigurationToRecipe(level);
         }
@@ -619,6 +620,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
 
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast(); // Original ISidedInventory
         if (cap == ForgeCapabilities.FLUID_HANDLER) {
             // Только горизонтальные стороны (и null) получают объединённый обработчик;
             // вертикальные стороны ничего не отдают.
@@ -713,7 +715,112 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
         }
     }
 
-    //?}
+    //?} elif neoforge {
+    /*private static final com.hbm_m.platform.LazyCap<?> EMPTY_CAP = com.hbm_m.platform.LazyCap.empty();
+
+    @Override
+    protected void setupFluidCapability() {
+        setFluidHandler(new CombinedChemPlantFluidHandler(this));
+    }
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast(); // Original ISidedInventory
+        if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER) {
+            // Только горизонтальные стороны (и null) получают объединённый обработчик;
+            // вертикальные стороны ничего не отдают.
+            if (side != null && !side.getAxis().isHorizontal()) return (com.hbm_m.platform.LazyCap<T>) EMPTY_CAP;
+        }
+        return super.getHbmCapability(cap, side);
+    }
+
+    private static class CombinedChemPlantFluidHandler implements net.minecraftforge.fluids.capability.IFluidHandler {
+        private final MachineChemicalPlantBlockEntity be;
+        CombinedChemPlantFluidHandler(MachineChemicalPlantBlockEntity be) { this.be = be; }
+
+        @Override public int getTanks() { return 6; }
+
+        @Override
+        public net.minecraftforge.fluids.FluidStack getFluidInTank(int tank) {
+            FluidTank t = tank < 3 ? be.inputTanks[tank] : be.outputTanks[tank - 3];
+            if (t.isEmpty()) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            return new net.minecraftforge.fluids.FluidStack(t.getStoredFluid(), t.getFluidAmountMb());
+        }
+
+        @Override public int getTankCapacity(int tank) { return TANK_CAPACITY; }
+
+        @Override
+        public boolean isFluidValid(int tank, net.minecraftforge.fluids.FluidStack stack) {
+            if (tank >= 3) return false;
+            if (tank >= be.getActiveFluidInputSlotCount()) return false;
+            return true;
+        }
+
+        // Естественная фильтрация по рецепту:
+        //  - без выбора рецепта / без fluid во входах рецепта — ни один входной бак не примет;
+        //  - лишние баки (NONE после setupTanks) не участвуют (иначе они «пылесосят» вторую порцию той же жидкости).
+        @Override
+        public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty()) return 0;
+            int bound = be.getActiveFluidInputSlotCount();
+            for (int i = 0; i < bound; i++) {
+                FluidTank tank = be.inputTanks[i];
+                Fluid configured = tank.getConfiguredFluid();
+                if (configured == Fluids.EMPTY || configured == ModFluids.NONE.getSource()) continue;
+                if (!com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(configured, resource.getFluid())) continue;
+                int space = tank.getCapacityMb() - tank.getFluidAmountMb();
+                if (space <= 0) continue;
+                int toFill = Math.min(resource.getAmount(), space);
+                if (action.execute()) {
+                    tank.fillMb(resource.getFluid(), toFill);
+                    be.setChanged();
+                }
+                return toFill;
+            }
+            return 0;
+        }
+
+        @Override
+        public net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty()) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            for (int i = 0; i < 3; i++) {
+                FluidTank tank = be.outputTanks[i];
+                if (tank.isEmpty()) continue;
+                if (!com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(tank.getStoredFluid(), resource.getFluid())) continue;
+                int available = tank.getFluidAmountMb();
+                int toDrain = Math.min(resource.getAmount(), available);
+                if (toDrain <= 0) continue;
+                if (action.execute()) {
+                    tank.drainMb(toDrain);
+                    be.setChanged();
+                }
+                Fluid normalized = com.hbm_m.api.fluids.VanillaFluidEquivalence.forVanillaContainerFill(tank.getStoredFluid());
+                return new net.minecraftforge.fluids.FluidStack(normalized, toDrain);
+            }
+            return net.minecraftforge.fluids.FluidStack.EMPTY;
+        }
+
+        @Override
+        public net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+            if (maxDrain <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            for (int i = 0; i < 3; i++) {
+                FluidTank tank = be.outputTanks[i];
+                if (tank.isEmpty()) continue;
+                int available = tank.getFluidAmountMb();
+                int toDrain = Math.min(maxDrain, available);
+                if (toDrain <= 0) continue;
+                if (action.execute()) {
+                    tank.drainMb(toDrain);
+                    be.setChanged();
+                }
+                Fluid normalized = com.hbm_m.api.fluids.VanillaFluidEquivalence.forVanillaContainerFill(tank.getStoredFluid());
+                return new net.minecraftforge.fluids.FluidStack(normalized, toDrain);
+            }
+            return net.minecraftforge.fluids.FluidStack.EMPTY;
+        }
+    }
+
+    *///?}
 
     // Энергопорты мультиблока: позиции фантомов структуры, ранее регистрировавшиеся блоком.
     // Ядро (worldPosition) подписывается в BaseMachineBlockEntity.ensureNetworkInitialized().
@@ -732,4 +839,86 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
             }
         }
         return ports.toArray(new BlockPos[0]);
-    }}
+    }
+    //? if forge {
+    /** Original {@code ISidedInventory}: Slots {4-9}; Feststoffe nach Rezept hinein, Ausgaben 7-9 und verstopfte Eingaenge heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 4, 5, 6, 7, 8, 9 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return (slot >= 7 && slot <= 9) || getModule().isSlotClogged(slot); }
+            });
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: Slots {4-9}; Feststoffe nach Rezept hinein, Ausgaben 7-9 und verstopfte Eingaenge heraus. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 4, 5, 6, 7, 8, 9 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return (slot >= 7 && slot <= 9) || getModule().isSlotClogged(slot); }
+            });
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
+
+    // ── Redstone-over-Radio (1:1 TileEntityMachineChemicalPlant) ──
+
+    /** Original {@code chemplantModule.restrictedMode} - blaue Fortschrittsleiste im GUI. */
+    public boolean isRestrictedMode() {
+        return module != null && module.restrictedMode;
+    }
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+                PREFIX_VALUE + "progress",
+                PREFIX_VALUE + "recipe",
+                PREFIX_VALUE + "active",
+                PREFIX_FUNCTION + "setrecipe" + NAME_SEPARATOR + "name",
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "progress").equals(name)) return "" + (int) Math.round(module.getProgressPercent() * 100);
+        if ((PREFIX_VALUE + "recipe").equals(name))   return com.hbm_m.api.redstoneoverradio.RORRecipeNames.name(module.getSelectedRecipeId());
+        if ((PREFIX_VALUE + "active").equals(name))   return "" + (module.getDidProcess() ? 1 : 0);
+        return null;
+    }
+
+    @Override
+    public String runRORFunction(String name, String[] params) {
+        // Original: params.length == 1; fremde Rezept-IDs ("ns:pfad") zerfallen am Parametertrenner in zwei Teile
+        if ((PREFIX_FUNCTION + "setrecipe").equals(name) && (params.length == 1 || params.length == 2)) {
+            this.setSelectedRecipe(com.hbm_m.api.redstoneoverradio.RORRecipeNames.parse(params));
+            module.restrictedMode = true;
+            this.setChanged();
+            if (level != null && !level.isClientSide) sendUpdateToClient();
+            return null;
+        }
+        return null;
+    }
+
+    //? if forge {
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return sidedItems.get(side);
+    }
+    //?} elif neoforge {
+    /*@Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return sidedItems.get(side).resolve().orElse(null);
+    }
+    *///?}
+}

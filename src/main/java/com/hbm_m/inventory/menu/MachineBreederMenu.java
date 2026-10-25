@@ -17,6 +17,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * Two-slot menu (input/output) matching {@code gui_breeder.png}'s actual layout 1:1 - slot
@@ -163,7 +164,8 @@ public class MachineBreederMenu extends AbstractContainerMenu implements ILongEn
         int playerStart = MACHINE_SLOTS;
         int playerEnd = slots.size();
 
-        if (index < MACHINE_SLOTS) {
+        // Original ContainerMachineReactorBreeding: index <= 2 raus, nur Brutstaebe hinein
+        if (index <= 2) {
             if (!moveItemStackTo(stack, playerStart, playerEnd, true)) {
                 return ItemStack.EMPTY;
             }

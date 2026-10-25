@@ -2,14 +2,8 @@ package com.hbm_m.client.render.shader;
 
 import net.minecraft.client.renderer.ShaderInstance;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 /**
  * Activation window of the "NT direct" draw mode: while active, the NT particle
  * flushes (mushroom clouds, flash, gas flame, tower steam, ashes) render through

@@ -28,7 +28,36 @@ import net.minecraft.world.phys.BlockHitResult;
  * Die Umwandlungstabelle steht 1:1 in {@code BlockToolConversion.registerRecipes()}:
  * {@code ToolType.TORCH + fusion_component:0 + STEEL.plateCast() -> fusion_component:1}.</p>
  */
-public class FusionComponentBlock extends Block {
+public class FusionComponentBlock extends Block implements com.hbm_m.interfaces.ILookOverlay, com.hbm_m.api.block.IToolable {
+
+    /**
+     * 1:1-Port von {@code BlockToolConversion.printHook}: solange der Spieler den Brenner in der
+     * Hand haelt, steht am Fadenkreuz, was die Umwandlung kostet. Ohne diese Anzeige gibt es
+     * im Spiel keinen Hinweis darauf, dass die rohe Spule ueberhaupt verschweisst werden muss -
+     * und der Toruskern nimmt nur die verschweisste Variante an.
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        Player player = com.hbm_m.client.ClientAccess.player();
+        if (player == null) return;
+        if (!isTorch(player.getMainHandItem()) && !isTorch(player.getOffhandItem())) return;
+
+        ItemStack plate = ModMaterialItems.stack(ModMaterials.STEEL, MaterialShape.PLATE_CAST, 1);
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal("Requires:")
+                .withStyle(net.minecraft.ChatFormatting.GOLD));
+        text.add(net.minecraft.network.chat.Component.literal("- ")
+                .withStyle(net.minecraft.ChatFormatting.BLUE)
+                .append(new ItemStack(ModItems.BLOWTORCH.get()).getHoverName()));
+        text.add(net.minecraft.network.chat.Component.literal("- ")
+                .append(plate.getHoverName())
+                .append(net.minecraft.network.chat.Component.literal(" x1")));
+
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()),
+                0xffff00, 0x404000, text);
+    }
 
     public FusionComponentBlock(Properties properties) {
         super(properties);
@@ -38,31 +67,18 @@ public class FusionComponentBlock extends Block {
         return stack.is(ModItems.BLOWTORCH.get()) || stack.is(ModItems.ACETYLENE_TORCH.get());
     }
 
-    //? if < 1.21.1 {
+    /** 1:1 {@code BlockToolConversion.onScrew}: TORCH + STEEL.plateCast() -> verschweisste Spule. */
     @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
-                                 InteractionHand hand, BlockHitResult hit) {
-        return convert(level, pos, player, hand);
-    }
-    //?} else {
-    /*// 1.21.1: useItemOn returns ItemInteractionResult; useWithoutItem keeps the InteractionResult
-    // contract and is reached for any held item once useItemOn passes (same as DoorBlock).
-    @Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        return convert(level, pos, player, InteractionHand.MAIN_HAND);
-    }
-    *///?}
-
-    private InteractionResult convert(Level level, BlockPos pos, Player player, InteractionHand hand) {
-        if (!isTorch(player.getItemInHand(hand))) return InteractionResult.PASS;
-        if (level.isClientSide()) return InteractionResult.SUCCESS;
+    public boolean onScrew(Level level, Player player, BlockPos pos, net.minecraft.core.Direction side, float fX, float fY, float fZ,
+                           InteractionHand hand, com.hbm_m.api.block.IToolable.ToolType tool) {
+        if (level.isClientSide()) return false;
+        if (tool != com.hbm_m.api.block.IToolable.ToolType.TORCH) return false;
 
         // Original: InventoryUtil.doesPlayerHaveAStacks(player, list, true) - Material wird verbraucht.
-        if (!player.isCreative() && !consumePlate(player)) return InteractionResult.CONSUME;
+        if (!consumePlate(player)) return false;
 
         level.setBlock(pos, ModBlocks.FUSION_COMPONENT_BSCCO_WELDED.get().defaultBlockState(), 3);
-        level.playSound(null, pos, SoundEvents.ANVIL_USE, SoundSource.BLOCKS, 0.5F, 1.5F);
-        return InteractionResult.CONSUME;
+        return true;
     }
 
     private static boolean consumePlate(Player player) {

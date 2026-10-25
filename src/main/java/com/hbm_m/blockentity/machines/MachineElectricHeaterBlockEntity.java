@@ -17,107 +17,75 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Порт {@code TileEntityHeaterElectric} (1.7.10) — электрический нагреватель,
- * 4×3×1 мультиблок. Настройка 0..10 крутится отвёрткой: потребление
- * {@code setting^1.4 * 200} HE/тик, тепловыделение {@code setting * 100} TU/тик.
- * Буфер энергии = 20 тиков потребления. Как и все нагреватели, затягивает тепло
- * снизу с КПД 85% (стек с другими источниками тепла), собственный запас
- * распадается на 0.1% за тик.
+ * Port of {@code TileEntityHeaterElectric} (1.7.10 Original) - HE-powered heat generator, output
+ * scales with a screwdriver-adjustable 0..10 "setting".
  */
 public class MachineElectricHeaterBlockEntity extends BaseMachineBlockEntity implements IHeatSource, com.hbm_m.interfaces.ICopiable {
 
     public static final int MAX_SETTING = 10;
+    /** Nur fuer Anzeigen; das Original kennt keine Obergrenze. */
     private static final int MAX_HEAT = 100_000;
+    /** Original nimmt bis {@code getMaxPower()} beliebig schnell an. */
+    private static final long MAX_RECEIVE = 1_000_000_000L;
 
     private int setting = 0;
     private int heat = 0;
-    private boolean isOn = false;
-    private boolean wasOnSynced = false;
+    public boolean isOn = false;
 
     public MachineElectricHeaterBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.ELECTRIC_HEATER_BE.get(), pos, state, 0, 200_000L, 4_096L, 0L);
-    }
-
-    /** Разделение тикера: клиент — гул, сервер — логика. */
-    public static void clientTick(Level level, BlockPos pos, BlockState state, MachineElectricHeaterBlockEntity be) {
-        // Порт createAudioLoop: зацикленный ELECTRIC_HUM (0.25 громкость, LINEAR)
-        com.hbm_m.sound.ClientSoundBootstrap.updateSound(be, be.isOn, () -> newHumInstance(pos));
-    }
-
-    private static Object newHumInstance(BlockPos pos) {
-        try {
-            return Class.forName("com.hbm_m.sound.ElectricHeaterHumSoundInstance")
-                    .getConstructor(BlockPos.class).newInstance(pos);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
+        super(ModBlockEntities.ELECTRIC_HEATER_BE.get(), pos, state, 0, 0L, MAX_RECEIVE, 0L);
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineElectricHeaterBlockEntity be) {
         if (level.isClientSide) {
-            clientTick(level, pos, state, be);
+            // Original: ELECTRIC_HUM_LOOP, Lautstaerke 0.25, Reichweite 7.5
+            com.hbm_m.client.sound.MachineLoopSoundClient.tick(be, "hbm:block.electricHum", be.isOn, 0.25F, 1.0F, 7.5);
             return;
         }
 
         be.ensureNetworkInitialized();
 
-        // Оригинал: раз в секунду подписка на энергосеть в 3 блоках впереди (порт подключения);
-        // здесь сеть энергии подписывается сама через EnergySubscriptions (ensureNetworkInitialized).
-
-        // Распад запаса тепла
-        be.heat = (int) (be.heat * 0.999D);
-
-        // Затяжка тепла снизу с КПД 85% (порт tryPullHeat) — neighbor-scan раз в 20 тиков.
-        int pulledHeat = 0;
-        if (be.probeDue(20)) {
-            pulledHeat = be.tryPullHeatFromBelow();
-        }
-
-        // Генерация тепла из энергии
-        boolean generating = false;
-        if (be.setting > 0) {
-            long consumption = be.getConsumption();
-            if (be.getEnergyStored() >= consumption) {
-                be.setEnergyStored(be.getEnergyStored() - consumption);
-                be.heat = Math.min(MAX_HEAT, be.heat + be.getHeatGen());
-                generating = true;
-            }
-        }
-        be.isOn = generating;
-
-        // Буфер = 20 тиков потребления при текущей настройке (оригинал getMaxPower)
+        // Original: getMaxPower() = getConsumption() * 20
         be.setEnergyCapacity(be.getConsumption() * 20);
 
-        // Anti-sync-spam: setChanged/sync только при реальном изменении синхронизируемого
-        // состояния (isOn) или фактической подтяжке тепла; энергия сама зовёт setChanged
-        // из setEnergyStored при изменении.
-        if (be.isOn != be.wasOnSynced) {
-            be.wasOnSynced = be.isOn;
-            be.setChanged();
-            be.sendUpdateToClient();
-        } else if (pulledHeat > 0) {
-            be.setChanged();
+        be.heat = (int) (be.heat * 0.999D);
+
+        be.tryPullHeat();
+
+        boolean wasOn = be.isOn;
+        be.isOn = false;
+        if (be.setting > 0 && be.getEnergyStored() >= be.getConsumption()) {
+            be.setEnergyStored(be.getEnergyStored() - be.getConsumption());
+            be.heat = Math.min(MAX_HEAT, be.heat + be.getHeatGen());
+            be.isOn = true;
         }
+
+        be.setChanged();
+        if (wasOn != be.isOn) be.sendUpdateToClient();
     }
 
-    /** Порт tryPullHeat: всё тепло снизу снимается, +85% начисляется себе. Возвращает подтянутое количество (0 = ничего). */
-    private int tryPullHeatFromBelow() {
-        if (level == null) return 0;
-        BlockEntity below = level.getBlockEntity(worldPosition.below());
-        if (below instanceof IHeatSource source) {
-            int stored = source.getHeatStored();
-            int gained = (int) (stored * 0.85D);
-            this.heat = Math.min(MAX_HEAT, this.heat + gained);
-            source.useUpHeat(stored);
-            return gained;
+    /** Original {@code tryPullHeat}: 85 % der Waerme des Blocks darunter, die Quelle wird geleert. */
+    protected void tryPullHeat() {
+        if (level == null) return;
+        BlockEntity con = level.getBlockEntity(worldPosition.below());
+        if (con instanceof IHeatSource source) {
+            int toPull = source.getHeatStored();
+            if (toPull > 0) {
+                this.heat = Math.min(MAX_HEAT, this.heat + (int) (toPull * 0.85));
+                source.useUpHeat(toPull);
+            }
         }
-        return 0;
+    }
+    public long getConsumption() {
+        return (long) (Math.pow(setting, 1.4D) * 200D);
     }
 
-    /** Порт toggleSetting: 0..10 с заворотом. */
+    public int getHeatGen() {
+        return this.setting * 100;
+    }
+
     public void cycleSetting() {
-        setting++;
-        if (setting > MAX_SETTING) setting = 0;
+        setting = (setting + 1) % (MAX_SETTING + 1);
         setChanged();
         sendUpdateToClient();
     }
@@ -126,23 +94,12 @@ public class MachineElectricHeaterBlockEntity extends BaseMachineBlockEntity imp
         return setting;
     }
 
-    public boolean isOn() {
-        return isOn;
-    }
-
-    /** Порт getConsumption: pow(setting, 1.4) * 200 HE за тик. */
-    public long getConsumption() {
-        return (long) (Math.pow(setting, 1.4D) * 200D);
-    }
-
-    /** Порт getHeatGen: setting * 100 TU за тик. */
-    public int getHeatGen() {
-        return setting * 100;
-    }
-
-    /** Текущий запас тепла для тултипа printHook. */
     public int getHeat() {
         return heat;
+    }
+
+    public boolean isOn() {
+        return isOn;
     }
 
     @Override
@@ -169,7 +126,6 @@ public class MachineElectricHeaterBlockEntity extends BaseMachineBlockEntity imp
                 : Direction.NORTH;
         return new BlockPos[] { worldPosition.relative(facing, 3) };
     }
-
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         return false;
@@ -204,7 +160,6 @@ public class MachineElectricHeaterBlockEntity extends BaseMachineBlockEntity imp
         setting = tag.getInt("setting");
         heat = tag.getInt("heat");
         isOn = tag.getBoolean("isOn");
-        wasOnSynced = isOn;
     }
 
     /* ── Устройство настройки: мощность нагрева (оригинал) ──────────────── */

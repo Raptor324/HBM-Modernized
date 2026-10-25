@@ -18,11 +18,7 @@ public final class JeiFluidSlots {
         int capacity = Math.max(capacityMb, Math.max(1, amountMb));
         slot.setFluidRenderer(capacity, false, 16, 16)
                 .setCustomRenderer(JeiTypes.FLUID, new HbmFluidJeiRenderer(16, 16));
-        //? if forge {
         slot.addIngredient(JeiTypes.FLUID, new net.minecraftforge.fluids.FluidStack(fluid, amountMb));
-        //?} elif neoforge {
-        /*slot.addIngredient(JeiTypes.FLUID, new net.neoforged.neoforge.fluids.FluidStack(fluid, amountMb));
-        *///?}
     }
 
     public static void addFluid(IRecipeSlotBuilder slot, dev.architectury.fluid.FluidStack stack, int capacityMb) {

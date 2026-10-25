@@ -19,7 +19,11 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraftforge.common.Tags;
 
 /**
- * Groups all assembler recipes so they can be maintained separately from {@link ModRecipeProvider}.
+ * Port-Notbehelfe fuer die Montagemaschine. Die Originalrezepte stehen 1:1 in {@link AssemblyMachineRecipeGenerator};
+ * hier bleiben nur Rezepte fuer Dinge, die das Original NICHT in der Montagemaschine baut (Amboss-Konstruktion,
+ * Werkbank, Lichtbogenschweisser), deren Original-Rezeptweg im Port aber noch fehlt - sonst waeren sie im
+ * Survival nicht herstellbar - sowie Port-eigene Inhalte (9M723, Topol, mobile Startrampe). Sobald der
+ * Original-Weg portiert ist, gehoert das jeweilige Rezept hier entfernt.
  */
 public final class AssemblerRecipeGenerator {
 
@@ -529,6 +533,27 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.WIRE), 8)
                 .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 1)
                 .save(writer, "charger");
+
+
+        // ─── Port-eigene Grosstmaschinen aus FFA: Traegheitsfusion (ICF) und Laserwaffenstellung (LPW2) ───
+        // Im Original haengen sie an Bauteilen, die es im Port noch nicht gibt (Schwerrahmen,
+        // Hydraulikkolben, SC-Batterien). Naeherung auf vorhandenen Teilen - in Aufwand und Stufe
+        // vergleichbar. ICF und LPW2 entstammen den FFA-Rezepten und sind auf bestehende Teile gemappt.
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.ICF.get().asItem(), 1), 800, 600)
+                .addIngredient(ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.PLATE_CAST), 32)
+                .addIngredient(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE), 24)
+                .addIngredient(ModItems.QUANTUM_CIRCUIT.get(), 4)
+                .addIngredient(ModItems.COIL_TUNGSTEN.get(), 16)
+                .save(writer, "icf");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.LPW2.get().asItem(), 1), 600, 500)
+                .addIngredient(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE), 24)
+                .addIngredient(ModItems.COIL_TUNGSTEN.get(), 12)
+                .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 6)
+                .addIngredient(ModItems.CRT_DISPLAY.get(), 1)
+                .save(writer, "lpw2");
 
         registerParticleAccelerator(writer);
     }
@@ -2239,6 +2264,50 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 4)
                 .addIngredient(ModBlocks.MACHINE_TRANSFORMER.get().asItem(), 1)
                 .save(writer, "machine_forcefield");
+
+
+        // ─── Port-eigene Inhalte aus FFA: Iskander-9M723, Topol-M, mobile Startrampe ───
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_9M723.get(), 1), 160, 250)
+                .addIngredient(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE), 8)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 6)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 2)
+                .addIngredient(ModItems.BALL_TNT.get(), 4)
+                .save(writer, "missile_9m723");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_9M723_BUSTER.get(), 1), 160, 250)
+                .addIngredient(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE), 8)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 6)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 2)
+                .addIngredient(ModItems.DRILL_TITANIUM.get(), 1)
+                .save(writer, "missile_9m723_buster");
+
+        // Mobile Startrampe: Fahrgestell aus Stahl und Titan, dazu die Elektronik der Rampe.
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MOBILE_LAUNCH_PAD.get(), 1), 400, 400)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 24)
+                .addIngredient(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE), 16)
+                .addIngredient(ModItems.MOTOR.get(), 8)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 6)
+                .save(writer, "mobile_launch_pad");
+
+        // Topol-M-Werfer: das groesste Fahrzeug der Mod, entsprechend teuer.
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.TOPOL_LAUNCH_PAD.get(), 1), 600, 600)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 48)
+                .addIngredient(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE), 32)
+                .addIngredient(ModItems.MOTOR.get(), 16)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 12)
+                .save(writer, "topol_launch_pad");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_TOPOL.get(), 1), 400, 500)
+                .addIngredient(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE), 24)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 16)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 4)
+                .addIngredient(ModItems.MOTOR.get(), 4)
+                .save(writer, "missile_topol");
 
         registerPile(writer);
     }

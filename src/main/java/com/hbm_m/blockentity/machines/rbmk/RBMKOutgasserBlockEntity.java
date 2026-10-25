@@ -1,5 +1,6 @@
 package com.hbm_m.blockentity.machines.rbmk;
 
+
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.handler.rbmk.RBMKDials;
 import com.hbm_m.handler.rbmk.RBMKOutgasserRecipes;
@@ -135,7 +136,7 @@ public class RBMKOutgasserBlockEntity extends RBMKColumnBlockEntity
         if (outputSlot.isEmpty()) return true;
 
         ItemStack out = recipe.solidOutput();
-        return com.hbm_m.platform.PlatformHooks.isSameItemSameTags(outputSlot, out)
+        return com.hbm_m.platform.StackNbt.sameItemSameTags(outputSlot, out)
                 && outputSlot.getCount() + out.getCount() <= outputSlot.getMaxStackSize();
     }
 
@@ -222,6 +223,13 @@ public class RBMKOutgasserBlockEntity extends RBMKColumnBlockEntity
     }
     //?}
 
+    //? if neoforge {
+    /*@Override
+    public @org.jetbrains.annotations.Nullable Object getFluidHandler(@org.jetbrains.annotations.Nullable Direction side) {
+        return gasTank.getCapability();
+    }
+    *///?}
+
     // ─── IRBMKLoadable ───────────────────────────────────────────────────────
 
     @Override public boolean canLoad(ItemStack s)  { return !s.isEmpty() && inputSlot.isEmpty(); }
@@ -266,8 +274,8 @@ public class RBMKOutgasserBlockEntity extends RBMKColumnBlockEntity
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        inputSlot  = tag.contains("inputSlot")  ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("inputSlot"), registries)  : ItemStack.EMPTY;
-        outputSlot = tag.contains("outputSlot") ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("outputSlot"), registries) : ItemStack.EMPTY;
+        inputSlot  = tag.contains("inputSlot")  ? com.hbm_m.platform.StackNbt.parse(tag.getCompound("inputSlot"), registries)  : ItemStack.EMPTY;
+        outputSlot = tag.contains("outputSlot") ? com.hbm_m.platform.StackNbt.parse(tag.getCompound("outputSlot"), registries) : ItemStack.EMPTY;
         gasTank.readFromNBT(tag, "gas");
         progress = tag.getDouble("progress");
         lastUsedFlux = tag.getDouble("lastUsedFlux");

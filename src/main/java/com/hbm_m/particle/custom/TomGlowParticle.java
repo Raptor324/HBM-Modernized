@@ -1,13 +1,7 @@
 package com.hbm_m.particle.custom;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -33,6 +27,7 @@ import net.minecraft.world.phys.Vec3;
  * to match the legacy {@code tom_flame.png} glow instead of an engine's yellow-orange flare.
  */
 @OnlyIn(Dist.CLIENT)
+
 public class TomGlowParticle extends TextureSheetParticle {
 
     private final float flickerPhase;

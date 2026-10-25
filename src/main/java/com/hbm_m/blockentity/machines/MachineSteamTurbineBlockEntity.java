@@ -28,6 +28,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
+import com.hbm_m.platform.StackNbt;
 
 //? if forge {
 import net.minecraftforge.common.capabilities.Capability;
@@ -67,7 +68,20 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
         if (level.isClientSide()) return;
         be.ensureNetworkInitialized();
 
+        // Original TileEntityMachineTurbine: tanks[0].setType(0, 1, slots); tanks[0].loadTank(2, 3, slots);
+        // chargeItemsFromTE(slots, 4, ...); ... tanks[1].unloadTank(5, 6, slots) - fehlte im Port ganz.
+        ItemStack[] slots = new ItemStack[be.inventory.getSlots()];
+        for (int i = 0; i < slots.length; i++) slots[i] = be.inventory.getStackInSlot(i);
+        boolean items = be.tanks[0].setType(SLOT_FLUID_ID_IN, SLOT_FLUID_ID_OUT, slots);
+        items |= be.tanks[0].loadTank(SLOT_INPUT_IO_IN, SLOT_INPUT_IO_OUT, slots);
+        if (items) be.applySlots(slots);
+        be.chargeItemInSlot(SLOT_BATTERY);
+
         be.active = be.processSteam();
+
+        for (int i = 0; i < slots.length; i++) slots[i] = be.inventory.getStackInSlot(i);
+        if (be.tanks[1].unloadTank(SLOT_OUTPUT_IO_IN, SLOT_OUTPUT_IO_OUT, slots)) { be.applySlots(slots); items = true; }
+        if (items) be.setChanged();
         if (be.active) {
             be.progress = (be.progress + 1) % MAX_PROGRESS;
         } else {
@@ -85,13 +99,13 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
                 be.energy, be.progress, be.active ? 1L : 0L,
                 tankFingerprint(be.tanks[0]), tankFingerprint(be.tanks[1]));
         long hi = com.hbm_m.recipe.index.CachedRecipeResolver.sign(8,
-                PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_FLUID_ID_IN)),
-                PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_FLUID_ID_OUT)),
-                PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_INPUT_IO_IN)),
-                PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_INPUT_IO_OUT)),
-                PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_BATTERY)),
-                PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_OUTPUT_IO_IN)),
-                PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_OUTPUT_IO_OUT)));
+                StackNbt.fingerprint(be.inventory.getStackInSlot(SLOT_FLUID_ID_IN)),
+                StackNbt.fingerprint(be.inventory.getStackInSlot(SLOT_FLUID_ID_OUT)),
+                StackNbt.fingerprint(be.inventory.getStackInSlot(SLOT_INPUT_IO_IN)),
+                StackNbt.fingerprint(be.inventory.getStackInSlot(SLOT_INPUT_IO_OUT)),
+                StackNbt.fingerprint(be.inventory.getStackInSlot(SLOT_BATTERY)),
+                StackNbt.fingerprint(be.inventory.getStackInSlot(SLOT_OUTPUT_IO_IN)),
+                StackNbt.fingerprint(be.inventory.getStackInSlot(SLOT_OUTPUT_IO_OUT)));
         be.syncIfStateChanged(lo, hi);
     }
 
@@ -120,6 +134,10 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
                 && trait.getEfficiency(CoolingType.TURBINE) > 0;
     }
 
+    private void applySlots(ItemStack[] slots) {
+        for (int i = 0; i < slots.length; i++) inventory.setStackInSlot(i, slots[i]);
+    }
+
     private boolean processSteam() {
         FT_Coolable trait = FluidType.getTrait(tanks[0].getStoredFluid(), FT_Coolable.class);
 
@@ -145,7 +163,6 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
 
         tanks[0].drainMb(ops * trait.amountReq);
         tanks[1].fillMb(trait.coolsTo, ops * trait.amountProduced);
-
         long output = (long) (ops * trait.heatEnergy * eff);
         setEnergyStored(Math.min(getMaxEnergyStored(), getEnergyStored() + output));
         return true;
@@ -216,7 +233,7 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
         return switch (slot) {
             case SLOT_FLUID_ID_IN -> stack.getItem() instanceof IItemFluidIdentifier || stack.getItem() instanceof FluidIdentifierItem;
             case SLOT_FLUID_ID_OUT, SLOT_INPUT_IO_OUT, SLOT_OUTPUT_IO_OUT -> false;
-            case SLOT_INPUT_IO_IN, SLOT_OUTPUT_IO_IN -> PlatformHooks.isFluidContainer(stack);
+            case SLOT_INPUT_IO_IN, SLOT_OUTPUT_IO_IN -> com.hbm_m.api.fluids.FluidItemAccess.isFluidContainer(stack); // auch Registry-Behaelter ohne Capability
             case SLOT_BATTERY -> stack.getItem() instanceof ItemCreativeBattery || isEnergyProviderItem(stack) || isEnergyReceiverItem(stack);
             default -> false;
         };
@@ -322,5 +339,81 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
             return drained;
         }
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    protected void setupFluidCapability() {
+        setFluidHandler(new UnifiedFluidHandler(this));
+    }
+
+    private static class UnifiedFluidHandler implements net.minecraftforge.fluids.capability.IFluidHandler {
+        private final MachineSteamTurbineBlockEntity be;
+
+        UnifiedFluidHandler(MachineSteamTurbineBlockEntity be) {
+            this.be = be;
+        }
+
+        @Override
+        public int getTanks() { return 2; }
+
+        @Override
+        public @NotNull net.minecraftforge.fluids.FluidStack getFluidInTank(int tank) {
+            if (tank == 0) {
+                return new net.minecraftforge.fluids.FluidStack(be.tanks[0].getTankType(), be.tanks[0].getFill());
+            }
+            if (tank == 1) {
+                return new net.minecraftforge.fluids.FluidStack(be.tanks[1].getTankType(), be.tanks[1].getFill());
+            }
+            return net.minecraftforge.fluids.FluidStack.EMPTY;
+        }
+
+        @Override
+        public int getTankCapacity(int tank) {
+            if (tank == 0) return be.tanks[0].getMaxFill();
+            if (tank == 1) return be.tanks[1].getMaxFill();
+            return 0;
+        }
+
+        @Override
+        public boolean isFluidValid(int tank, @NotNull net.minecraftforge.fluids.FluidStack stack) {
+            return tank == 0 && be.acceptsAsSteam(stack.getFluid());
+        }
+
+        @Override
+        public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty() || !be.acceptsAsSteam(resource.getFluid())) return 0;
+            int space = be.tanks[0].getMaxFill() - be.tanks[0].getFill();
+            int toFill = Math.min(space, resource.getAmount());
+            if (toFill <= 0) return 0;
+            if (action.execute()) {
+                be.tanks[0].fillMb(resource.getFluid(), toFill);
+            }
+            return toFill;
+        }
+
+        @Override
+        public @NotNull net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty() || be.tanks[1].getFill() <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            if (!VanillaFluidEquivalence.sameSubstance(resource.getFluid(), be.tanks[1].getTankType())) {
+                return net.minecraftforge.fluids.FluidStack.EMPTY;
+            }
+            int toDrain = Math.min(resource.getAmount(), be.tanks[1].getFill());
+            net.minecraftforge.fluids.FluidStack drained = new net.minecraftforge.fluids.FluidStack(be.tanks[1].getTankType(), toDrain);
+            if (action.execute()) {
+                be.tanks[1].drainMb(toDrain);
+            }
+            return drained;
+        }
+
+        @Override
+        public @NotNull net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+            if (maxDrain <= 0 || be.tanks[1].getFill() <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            int toDrain = Math.min(maxDrain, be.tanks[1].getFill());
+            net.minecraftforge.fluids.FluidStack drained = new net.minecraftforge.fluids.FluidStack(be.tanks[1].getTankType(), toDrain);
+            if (action.execute()) {
+                be.tanks[1].drainMb(toDrain);
+            }
+            return drained;
+        }
+    }
+    *///?}
 }

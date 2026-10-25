@@ -1,5 +1,6 @@
 package com.hbm_m.client.render;
 
+import com.hbm_m.api.render.RenderBoundsProvider;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;

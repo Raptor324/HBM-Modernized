@@ -1,16 +1,28 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
+
+import java.util.Random;
 
 import com.hbm_m.client.GuiCompat;
 import com.hbm_m.blockentity.machines.LaunchPadRustedBlockEntity;
 import com.hbm_m.inventory.menu.LaunchPadRustedMenu;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.network.NBTControlPacket;
 
+import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.math.Axis;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 
@@ -34,6 +46,18 @@ public class GUILaunchPadRusted extends GuiInfoScreen<LaunchPadRustedMenu> {
         super(menu, playerInventory, title);
         this.imageWidth = 176;
         this.imageHeight = 236;
+    }
+
+    @Override
+    public boolean mouseClicked(double x, double y, int button) {
+        LaunchPadRustedBlockEntity be = menu.getBlockEntity();
+        if (be != null && leftPos + 26 <= x && leftPos + 26 + 16 > x && topPos + 36 < y && topPos + 36 + 16 >= y) {
+            Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            CompoundTag data = new CompoundTag();
+            data.putBoolean("release", true);
+            NBTControlPacket.sendToServer(be.getBlockPos(), data);
+        }
+        return super.mouseClicked(x, y, button);
     }
 
     @Override
@@ -96,6 +120,12 @@ public class GUILaunchPadRusted extends GuiInfoScreen<LaunchPadRustedMenu> {
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
+        drawCustomInfoStat(guiGraphics, mouseX, mouseY, 26, 36, 16, 16, mouseX, mouseY,
+                Component.literal("Release Missile").withStyle(ChatFormatting.YELLOW),
+                Component.literal("Missile is locked in lauch position,"),
+                Component.literal("releasing may cause damage to the missile."),
+                Component.literal("Damaged missile can not be put back"),
+                Component.literal("into launching position."));
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }
 }

@@ -1,13 +1,7 @@
 package com.hbm_m.client.render.machine;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -887,6 +881,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
                         .onMachineDirty(beRaw, com.hbm_m.client.render.retained.DirtyMask.LIGHT);
                 tracker.onRenderCollected(gameTick, com.hbm_m.client.render.NucleusRenderVersion.worldGen());
             }
+            com.hbm_m.client.render.NucleusDebug.recordMachineRendered();
             return true;
         }
         // Dynamic-animator parts (Frame quads, door panels: the pose follows
@@ -1025,6 +1020,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
         // before the anim-zone branch - the fast parametric update uses it too.)
         if (cachedState != null && cachedState.allAsserted(epochFullAssert)
                 && tryFrozenRosterAssert(cachedState, pos, posKey, epochFullAssert)) {
+            com.hbm_m.client.render.NucleusDebug.recordMachineRendered();
             return true;
         }
 
@@ -1130,6 +1126,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
         // model) would never fire. Light/fade are refreshed by a full collection
         // on TTL (isRenderStale), worldGen change, dirty flag, or fade quantum
         // change (checked above).
+        com.hbm_m.client.render.NucleusDebug.recordMachineRendered();
         return true;
     }
 

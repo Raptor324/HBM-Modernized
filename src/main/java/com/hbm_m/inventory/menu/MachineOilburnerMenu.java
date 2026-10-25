@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.menu;
 
 import com.hbm_m.blockentity.machines.MachineOilburnerBlockEntity;
+import com.hbm_m.interfaces.IItemFluidIdentifier;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.lib.RefStrings;
 
@@ -12,19 +13,10 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
-/**
- * Порт {@code ContainerOilburner} (1.7.10 Original): 3 слота машины —
- * In (26,17), Out = SlotTakeOnly (26,53), Fluid-ID (44,71); инвентарь игрока
- * (8,121) / хотбар (8,179); shift-клик стака игрока → слот 2, если это
- * fluid identifier, иначе слот 0.
- */
+/** 1:1 {@code ContainerOilburner}: Behaelter rein (26,17), leer raus (26,53, nur entnehmen), Fluid-ID (44,71). */
 public class MachineOilburnerMenu extends AbstractContainerMenu {
-
-    public static final int SLOT_IN = MachineOilburnerBlockEntity.SLOT_IN;
-    public static final int SLOT_OUT = MachineOilburnerBlockEntity.SLOT_OUT;
-    public static final int SLOT_FLUID_ID = MachineOilburnerBlockEntity.SLOT_FLUID_ID;
-    public static final int MACHINE_SLOT_COUNT = MachineOilburnerBlockEntity.INVENTORY_SIZE;
 
     private final MachineOilburnerBlockEntity blockEntity;
 
@@ -32,28 +24,30 @@ public class MachineOilburnerMenu extends AbstractContainerMenu {
         this(id, inventory, getBlockEntity(inventory, extraData));
     }
 
-    public MachineOilburnerMenu(int id, Inventory inventory, MachineOilburnerBlockEntity blockEntity) {
+    public MachineOilburnerMenu(int id, Inventory invPlayer, MachineOilburnerBlockEntity tedf) {
         super(ModMenuTypes.OILBURNER_MENU.get(), id);
-        this.blockEntity = blockEntity;
+        this.blockEntity = tedf;
 
-        var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
+        var container = new ModItemStackHandlerContainer(tedf.getInventory(), tedf::setChanged);
+        // In
+        this.addSlot(new Slot(container, 0, 26, 17));
+        // Out
+        this.addSlot(new Slot(container, 1, 26, 53) {
+            @Override public boolean mayPlace(ItemStack stack) { return false; }
+        });
+        // Fluid ID
+        this.addSlot(new Slot(container, 2, 44, 71));
 
-        //In
-        this.addSlot(new Slot(container, SLOT_IN, 26, 17));
-        //Out — SlotTakeOnly: класть нельзя, забирать можно
-        this.addSlot(new SlotTakeOnly(container, SLOT_OUT, 26, 53));
-        //Fluid ID
-        this.addSlot(new Slot(container, SLOT_FLUID_ID, 44, 71));
+        int offset = 37;
 
-        // Player inventory, ported 1:1 from ContainerOilburner (offset = 37).
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 121 + row * 18));
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 9; j++) {
+                this.addSlot(new Slot(invPlayer, j + i * 9 + 9, 8 + j * 18, 84 + i * 18 + offset));
             }
         }
 
-        for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(inventory, col, 8 + col * 18, 179));
+        for (int i = 0; i < 9; i++) {
+            this.addSlot(new Slot(invPlayer, i, 8 + i * 18, 142 + offset));
         }
     }
 
@@ -76,61 +70,42 @@ public class MachineOilburnerMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return MenuReach.stillValid(player, blockEntity);
+        // audit13: Original isUseableByPlayer (<= 128 zur Kernmitte) oder Huelle <= 64; Vanilla 64 schloss die GUI an grossen Maschinen
+        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
     }
 
-    /**
-     * Порт {@code ContainerOilburner.transferStackInSlot}: слоты машины → инвентарь
-     * игрока; стаки игрока → слот 2 (Fluid-ID), если предмет — fluid identifier,
-     * иначе слот 0 (In).
-     */
     @Override
-    public ItemStack quickMoveStack(Player player, int index) {
-        ItemStack result = ItemStack.EMPTY;
-        Slot slot = this.slots.get(index);
+    public ItemStack quickMoveStack(Player player, int par2) {
+        ItemStack var3 = ItemStack.EMPTY;
+        Slot var4 = this.slots.get(par2);
 
-        if (slot != null && slot.hasItem()) {
-            ItemStack slotStack = slot.getItem();
-            result = slotStack.copy();
+        if (var4 != null && var4.hasItem()) {
+            ItemStack var5 = var4.getItem();
+            var3 = var5.copy();
 
-            if (index < MACHINE_SLOT_COUNT) {
-                if (!this.moveItemStackTo(slotStack, MACHINE_SLOT_COUNT, this.slots.size(), true)) {
+            if (par2 <= 2) {
+                if (!this.moveItemStackTo(var5, 3, this.slots.size(), true)) {
                     return ItemStack.EMPTY;
                 }
             } else {
-                if (slotStack.getItem() instanceof com.hbm_m.interfaces.IItemFluidIdentifier) {
-                    if (!this.moveItemStackTo(slotStack, SLOT_FLUID_ID, SLOT_FLUID_ID + 1, false)) {
+                if (var3.getItem() instanceof IItemFluidIdentifier) {
+                    if (!this.moveItemStackTo(var5, 2, 3, false)) {
                         return ItemStack.EMPTY;
                     }
                 } else {
-                    if (!this.moveItemStackTo(slotStack, SLOT_IN, SLOT_IN + 1, false)) {
+                    if (!this.moveItemStackTo(var5, 0, 1, false)) {
                         return ItemStack.EMPTY;
                     }
                 }
             }
 
-            if (slotStack.isEmpty()) {
-                slot.set(ItemStack.EMPTY);
+            if (var5.isEmpty()) {
+                var4.set(ItemStack.EMPTY);
             } else {
-                slot.setChanged();
+                var4.setChanged();
             }
-            if (slotStack.getCount() == result.getCount()) {
-                return ItemStack.EMPTY;
-            }
-            slot.onTake(player, slotStack);
-        }
-        return result;
-    }
-
-    /** Порт {@code SlotTakeOnly}: mayPlace = false, извлечение разрешено. */
-    private static class SlotTakeOnly extends Slot {
-        public SlotTakeOnly(net.minecraft.world.Container container, int index, int x, int y) {
-            super(container, index, x, y);
         }
 
-        @Override
-        public boolean mayPlace(ItemStack stack) {
-            return false;
-        }
+        return var3;
     }
 }

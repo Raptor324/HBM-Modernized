@@ -34,11 +34,11 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Brick Furnace: Direktport der Kernlogik aus {@code TileEntityFurnaceBrick} (1.7.10 Original).
+ * Brick Furnace: 1:1-Port von {@code TileEntityFurnaceBrick} (1.7.10 Original).
  * <p>
- * Das Aschen-Byprodukt des Originals (Slot 3) ist mit portiert: die Brennzeit des verbrauchten
- * Brennstoffs zaehlt auf den Zaehler seiner Aschesorte, bei 2000 faellt ein Aschepulver in Slot 3.
- * Sortierung und Schwellwerte kommen aus {@link MachineAshpitBlockEntity}.
+ * Asche wie im Original: jede verbrannte Brennstoffeinheit zaehlt ihre Brenndauer auf den Holz-, Kohle- oder
+ * Sonstiges-Zaehler ({@code getAshFromFuel}); ab 2000 wandert ein Aschehaeufchen in Slot 3. Die Zaehler werden
+ * wie im Original nicht gespeichert.
  * <p>
  * 100% Vanilla-Schmelzrezepte, Vanilla-Brennstoff-Erkennung wie bei {@code MachineFurnaceIron}.
  * Einzigartig an dieser Maschine: eine vom Eingangs-Item abhaengige Geschwindigkeitsmultiplikator
@@ -53,8 +53,6 @@ public class MachineFurnaceBrickBlockEntity extends com.hbm_m.blockentity.BaseHb
     private static final int SLOT_COUNT = 4;
 
     private static final int PROCESSING_THRESHOLD = 200;
-
-    private final int[] ashLevel = new int[MachineAshpitBlockEntity.AshType.values().length];
 
     private final ModItemStackHandler inventory = new ModItemStackHandler(SLOT_COUNT) {
         @Override
@@ -78,6 +76,10 @@ public class MachineFurnaceBrickBlockEntity extends com.hbm_m.blockentity.BaseHb
     private int litTime = 0;
     private int litDuration = 0;
     private int progress = 0;
+
+    public int ashLevelWood;
+    public int ashLevelCoal;
+    public int ashLevelMisc;
 
     private static final int DATA_COUNT = 3;
     private static final int DATA_LIT_TIME = 0;
@@ -125,9 +127,11 @@ public class MachineFurnaceBrickBlockEntity extends com.hbm_m.blockentity.BaseHb
         if (level.isClientSide()) return;
 
         boolean wasLit = be.isLit();
+        // NTM Space: canOperate = breatheAir(wasBurning && t % 5 == 0 ? 1 : 0) - ohne Space-Addon immer true
+        boolean canOperate = be.breatheAir(wasLit && level.getGameTime() % 5 == 0 ? 1 : 0);
         boolean dirty = false;
 
-        if (be.litTime <= 0 && be.canSmelt(level)) {
+        if (canOperate && be.litTime <= 0 && be.canSmelt(level)) {
             if (be.tryConsumeFuel()) {
                 dirty = true;
             }
@@ -135,7 +139,7 @@ public class MachineFurnaceBrickBlockEntity extends com.hbm_m.blockentity.BaseHb
 
         if (be.litTime > 0) {
             be.litTime--;
-            if (be.canSmelt(level)) {
+            if (canOperate && be.canSmelt(level)) {
                 be.progress += be.getBurnSpeed(be.inventory.getStackInSlot(SLOT_INPUT));
                 if (be.progress >= PROCESSING_THRESHOLD) {
                     be.craftItem(level);
@@ -173,6 +177,9 @@ public class MachineFurnaceBrickBlockEntity extends com.hbm_m.blockentity.BaseHb
         if (item == Blocks.COBBLESTONE.asItem()) return 2;
         if (item == Blocks.SAND.asItem()) return 2;
         if (input.is(ItemTags.LOGS)) return 2;
+        // NTM Space: Planetengestein/-sand (Addon) ueber SpaceResources.registerBrickFurnaceSpeed
+        int space = com.hbm_m.api.space.SpaceResources.brickFurnaceSpeed(item);
+        if (space > 0) return space;
         return 1;
     }
 
@@ -184,43 +191,49 @@ public class MachineFurnaceBrickBlockEntity extends com.hbm_m.blockentity.BaseHb
 
         litDuration = burnTicks;
         litTime = burnTicks;
-        accumulateAsh(fuelStack, burnTicks);
 
         var remainderItem = fuelStack.getItem().getCraftingRemainingItem();
+        MachineAshpitBlockEntity.AshType type = MachineFireboxBlockEntity.ashFromFuel(fuelStack);
         fuelStack.shrink(1);
+
+        if (type == MachineAshpitBlockEntity.AshType.WOOD) ashLevelWood += burnTicks;
+        if (type == MachineAshpitBlockEntity.AshType.COAL) ashLevelCoal += burnTicks;
+        if (type == MachineAshpitBlockEntity.AshType.MISC) ashLevelMisc += burnTicks;
+        int threshold = 2000;
+        if (processAsh(ashLevelWood, com.hbm_m.item.ModItems.ASH_WOOD.get(), threshold)) ashLevelWood -= threshold;
+        if (processAsh(ashLevelCoal, com.hbm_m.item.ModItems.ASH_COAL.get(), threshold)) ashLevelCoal -= threshold;
+        if (processAsh(ashLevelMisc, com.hbm_m.item.ModItems.ASH_MISC.get(), threshold)) ashLevelMisc -= threshold;
+
         if (fuelStack.isEmpty() && remainderItem != null) {
             inventory.setStackInSlot(SLOT_FUEL, new ItemStack(remainderItem));
         }
         return true;
     }
 
-    /** GIT TileEntityFurnaceBrick: the burnt fuel's burn time feeds its ash counter, 2000 makes one powder. */
-    private void accumulateAsh(ItemStack fuelStack, int burnTicks) {
-        MachineAshpitBlockEntity.AshType type = MachineAshpitBlockEntity.ashFromFuel(fuelStack);
-        ashLevel[type.ordinal()] += burnTicks;
-        if (ashLevel[type.ordinal()] < type.threshold) return;
-
-        ItemStack current = inventory.getStackInSlot(SLOT_ASH);
-        ItemStack powder = new ItemStack(type.item.get(), 1);
-        if (current.isEmpty()) {
-            inventory.setStackInSlot(SLOT_ASH, powder);
-        } else if (current.getCount() < current.getMaxStackSize()
-                && com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, powder)) {
-            current.grow(1);
-        } else {
-            return;
+    /** Original {@code processAsh}: legt bei erreichter Schwelle ein Aschehaeufchen in Slot 3, falls es passt. */
+    protected boolean processAsh(int level, net.minecraft.world.item.Item ash, int threshold) {
+        if (level >= threshold) {
+            ItemStack slot = inventory.getStackInSlot(SLOT_ASH);
+            if (slot.isEmpty()) {
+                inventory.setStackInSlot(SLOT_ASH, new ItemStack(ash));
+                return true;
+            } else if (slot.getCount() < slot.getMaxStackSize() && slot.is(ash)) {
+                slot.grow(1);
+                inventory.setStackInSlot(SLOT_ASH, slot);
+                return true;
+            }
         }
-        ashLevel[type.ordinal()] -= type.threshold;
+        return false;
     }
 
     private boolean canSmelt(Level level) {
         ItemStack input = inventory.getStackInSlot(SLOT_INPUT);
         if (input.isEmpty()) return false;
 
-        SmeltingRecipe recipe = getRecipe(level, input);
-        if (recipe == null) return false;
+        var recipe = getRecipe(level, input);
+        if (recipe.isEmpty()) return false;
 
-        ItemStack result = recipe.getResultItem(level.registryAccess());
+        ItemStack result = recipe.get().getResultItem(level.registryAccess());
         if (result.isEmpty()) return false;
 
         return canAcceptResult(result);
@@ -229,16 +242,16 @@ public class MachineFurnaceBrickBlockEntity extends com.hbm_m.blockentity.BaseHb
     private boolean canAcceptResult(ItemStack result) {
         ItemStack current = inventory.getStackInSlot(SLOT_OUTPUT);
         if (current.isEmpty()) return true;
-        if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, result)) return false;
+        if (!com.hbm_m.platform.StackNbt.sameItemSameTags(current, result)) return false;
         return current.getCount() + result.getCount() <= current.getMaxStackSize();
     }
 
     private void craftItem(Level level) {
         ItemStack input = inventory.getStackInSlot(SLOT_INPUT);
-        SmeltingRecipe recipe = getRecipe(level, input);
-        if (recipe == null) return;
+        var recipe = getRecipe(level, input);
+        if (recipe.isEmpty()) return;
 
-        ItemStack result = recipe.getResultItem(level.registryAccess()).copy();
+        ItemStack result = recipe.get().getResultItem(level.registryAccess()).copy();
 
         input.shrink(1);
 
@@ -251,16 +264,14 @@ public class MachineFurnaceBrickBlockEntity extends com.hbm_m.blockentity.BaseHb
         }
     }
 
-    // Кэш скана SMELTING: ключ — фингерпринт входного стека; проверка выходного
-    // слота (canAcceptResult) остаётся per-tick вне резолвера.
     private final com.hbm_m.recipe.index.CachedRecipeResolver<SmeltingRecipe> recipeResolver =
             new com.hbm_m.recipe.index.CachedRecipeResolver<>();
 
-    private SmeltingRecipe getRecipe(Level level, ItemStack input) {
-        return recipeResolver.resolve(level, RecipeType.SMELTING,
-                com.hbm_m.platform.PlatformHooks.stackFingerprint(input),
-                (lvl, all) -> // 1.21.1: getRecipeFor требует RecipeInput (SingleRecipeInput).
-                        com.hbm_m.platform.recipe.RecipeHooks.getRecipeFor(lvl, RecipeType.SMELTING, input).orElse(null));
+    private java.util.Optional<SmeltingRecipe> getRecipe(Level level, ItemStack input) {
+        SmeltingRecipe cached = recipeResolver.resolve(level, RecipeType.SMELTING,
+                com.hbm_m.platform.StackNbt.fingerprint(input),
+                (lvl, all) -> com.hbm_m.platform.recipe.RecipeHooks.getRecipeFor(lvl, RecipeType.SMELTING, input).orElse(null));
+        return java.util.Optional.ofNullable(cached);
     }
 
     public static boolean isFuel(ItemStack stack) {
@@ -281,25 +292,25 @@ public class MachineFurnaceBrickBlockEntity extends com.hbm_m.blockentity.BaseHb
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
-        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(inventory, registries));
+        tag.put("inventory", inventory.serialize( registries));
         tag.putInt("litTime", litTime);
         tag.putInt("litDuration", litDuration);
         tag.putInt("progress", progress);
-        for (MachineAshpitBlockEntity.AshType type : MachineAshpitBlockEntity.AshType.values()) {
-            tag.putInt("ash_" + type.name(), ashLevel[type.ordinal()]);
-        }
+        tag.putInt("ashWood", ashLevelWood);
+        tag.putInt("ashCoal", ashLevelCoal);
+        tag.putInt("ashMisc", ashLevelMisc);
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        com.hbm_m.platform.ItemStackSerialization.deserialize(inventory, tag.getCompound("inventory"), registries);
+        inventory.deserialize(tag.getCompound("inventory"), registries);
         litTime = tag.getInt("litTime");
         litDuration = tag.getInt("litDuration");
         progress = tag.getInt("progress");
-        for (MachineAshpitBlockEntity.AshType type : MachineAshpitBlockEntity.AshType.values()) {
-            ashLevel[type.ordinal()] = tag.getInt("ash_" + type.name());
-        }
+        ashLevelWood = tag.getInt("ashWood");
+        ashLevelCoal = tag.getInt("ashCoal");
+        ashLevelMisc = tag.getInt("ashMisc");
     }
 
     // ==================== GUI ====================
@@ -313,5 +324,53 @@ public class MachineFurnaceBrickBlockEntity extends com.hbm_m.blockentity.BaseHb
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
         return new MachineFurnaceBrickMenu(id, inv, this, data);
+    }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: unten {2, 1, 3}, oben {0}, Seiten {1}; Schmelzgut oben, Brennstoff seitlich, unten Ergebnis und Asche heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return side == net.minecraft.core.Direction.DOWN ? new int[] { 2, 1, 3 } : side == net.minecraft.core.Direction.UP ? new int[] { 0 } : new int[] { 1 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot < 2 && inventory.isItemValid(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot >= 2; }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: unten {2, 1, 3}, oben {0}, Seiten {1}; Schmelzgut oben, Brennstoff seitlich, unten Ergebnis und Asche heraus. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return side == net.minecraft.core.Direction.DOWN ? new int[] { 2, 1, 3 } : side == net.minecraft.core.Direction.UP ? new int[] { 0 } : new int[] { 1 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot < 2 && inventory.isItemValid(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot >= 2; }
+            });
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return sidedItems.get(side);
     }
 }

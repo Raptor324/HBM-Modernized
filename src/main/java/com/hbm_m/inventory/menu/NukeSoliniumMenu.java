@@ -3,7 +3,6 @@ package com.hbm_m.inventory.menu;
 import com.hbm_m.blockentity.bomb.NukeSoliniumBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.inventory.menu.ModMenuTypes;
-import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
@@ -12,6 +11,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * Меню солиниевой бомбы: X-паттерн из 9 слотов.
@@ -47,7 +47,7 @@ public class NukeSoliniumMenu extends AbstractContainerMenu {
         // тайл может отсутствовать на клиенте (реплей Flashback) — подставляем пустую заглушку
         var container = this.be != null
                 ? this.be
-                : new ModItemStackHandlerContainer(new DummyItemStackHandler(NukeSoliniumBlockEntity.SLOTS), () -> {});
+                : new ModItemStackHandlerContainer(new ModItemStackHandler.Dummy(NukeSoliniumBlockEntity.SLOTS), () -> {});
 
         for (int slot = 0; slot < NukeSoliniumBlockEntity.SLOTS; slot++) {
             final int index = slot;

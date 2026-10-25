@@ -17,14 +17,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.level.material.Fluids;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 /**
  * Порт {@code GUIMachineGasFlare} (1.7.10): клапан ("valve") и поджиг ("dial") —
  * кликабельные области с оверлеями из текстуры, иконка пламени при горении,
@@ -36,111 +30,74 @@ public class GUIMachineFlareStack extends GuiInfoScreen<MachineFlareStackMenu> {
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/generators/gui_flare_stack.png");
 
-    private final MachineFlareStackBlockEntity flareStack;
+    private final MachineFlareStackBlockEntity flare;
 
     public GUIMachineFlareStack(MachineFlareStackMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
-        this.flareStack = menu.getBlockEntity();
+        this.flare = menu.getBlockEntity();
         this.imageWidth = 176;
         this.imageHeight = 203;
     }
 
     @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
+    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        GuiCompat.renderBackground(this, g, mouseX, mouseY, partialTick);
+        super.render(g, mouseX, mouseY, partialTick);
+
+        if (flare != null) {
+            drawCustomInfoStat(g, mouseX, mouseY, 79, 16, 35, 10, mouseX, mouseY, Component.translatable("flare.valve"));
+            drawCustomInfoStat(g, mouseX, mouseY, 79, 50, 35, 14, mouseX, mouseY, Component.translatable("flare.ignition"));
+
+            flare.tank.renderTankInfo(g, this.font, mouseX, mouseY, this.leftPos + 35, this.topPos + 69 - 52, 16, 52);
+            drawElectricityInfo(g, mouseX, mouseY, 143, 69 - 52, 16, 52, flare.getEnergyStored(), MachineFlareStackBlockEntity.maxPower);
+        }
+
+        this.renderTooltip(g, mouseX, mouseY);
+    }
+
+    @Override
+    public boolean mouseClicked(double x, double y, int button) {
+        if (flare != null) {
+            int lx = (int) x - this.leftPos;
+            int ly = (int) y - this.topPos;
+            if (89 <= lx && 89 + 16 > lx && 16 < ly && 16 + 10 >= ly) {
+                playClickSound();
+                CompoundTag data = new CompoundTag();
+                data.putBoolean("valve", true);
+                com.hbm_m.network.NBTControlPacket.sendToServer(flare.getBlockPos(), data);
+                return true;
+            } else if (89 <= lx && 89 + 16 > lx && 50 < ly && 50 + 14 >= ly) {
+                playClickSound();
+                CompoundTag data = new CompoundTag();
+                data.putBoolean("dial", true);
+                com.hbm_m.network.NBTControlPacket.sendToServer(flare.getBlockPos(), data);
+                return true;
+            }
+        }
+        return super.mouseClicked(x, y, button);
+    }
+
+    @Override
+    protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
+        g.drawString(this.font, this.playerInventoryTitle, 8, this.imageHeight - 96 + 2, 4210752, false);
+    }
+
+    @Override
+    protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
+        g.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
+        if (flare == null) return; // тайл может отсутствовать в реплее Flashback
 
-        if (flareStack != null) { // тайл может отсутствовать в реплее Flashback
-            int x = this.leftPos;
-            int y = this.topPos;
+        int j = (int) flare.getPowerScaled(52);
+        g.blit(TEXTURE, this.leftPos + 143, this.topPos + 69 - j, 176, 94 - j, 16, j);
 
-            // Оригинал: j = power * 52 / maxPower, бар на (143, 69-j) из (176, 94-j).
-            int power = (int) (flareStack.getEnergyStored() * 52L / Math.max(flareStack.getMaxEnergyStored(), 1L));
-            if (power > 52) power = 52;
-            if (power > 0) {
-                guiGraphics.blit(TEXTURE, x + 143, y + 69 - power, 176, 94 - power, 16, power);
-            }
+        if (flare.isOn) g.blit(TEXTURE, this.leftPos + 79, this.topPos + 15, 176, 0, 35, 10);
+        if (flare.doesBurn) g.blit(TEXTURE, this.leftPos + 79, this.topPos + 49, 176, 10, 35, 14);
 
-            // Оверлей клапана (176,0 / 35x10) и поджига (176,10 / 35x14).
-            if (flareStack.isOn()) {
-                guiGraphics.blit(TEXTURE, x + 79, y + 15, 176, 0, 35, 10);
-            }
-            if (flareStack.doesBurn()) {
-                guiGraphics.blit(TEXTURE, x + 79, y + 49, 176, 10, 35, 14);
-            }
+        if (flare.isOn && flare.doesBurn && flare.tank.getFill() > 0 && FluidType.forFluid(flare.tank.getTankType()).hasTrait(FT_Flammable.class))
+            g.blit(TEXTURE, this.leftPos + 88, this.topPos + 29, 176, 24, 18, 18);
 
-            // Иконка пламени при горении (176,24 / 18x18).
-            var tank = flareStack.getTank();
-            boolean flammable = tank.getTankType() != Fluids.EMPTY
-                    && FluidType.hasTrait(tank.getTankType(), FT_Flammable.class);
-            if (flareStack.isOn() && flareStack.doesBurn() && tank.getFill() > 0 && flammable) {
-                guiGraphics.blit(TEXTURE, x + 88, y + 29, 176, 24, 18, 18);
-            }
-
-            // Бак: окраска по цвету флюида (аналог renderTank (35,69) 16x52).
-            if (tank.getFill() > 0) {
-                int color = 0xFF000000 | FluidType.forFluid(tank.getTankType()).getColor();
-                int fluidH = tank.getFill() * 52 / tank.getMaxFill();
-                guiGraphics.fill(x + 35, y + 17 + (52 - fluidH), x + 51, y + 69, color);
-            }
-        }
-    }
-
-    @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        Component title = this.title;
-        guiGraphics.drawString(this.font, title, this.imageWidth / 2 - this.font.width(title) / 2, 6, 0x404040, false);
-        guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, this.imageHeight - 96 + 2, 0x404040, false);
-    }
-
-    @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
-        renderTooltip(guiGraphics, mouseX, mouseY);
-
-        if (flareStack != null) {
-            int x = this.leftPos;
-            int y = this.topPos;
-
-            // Оригинал: тултипы клапана (79,16 35x10), поджига (79,50 35x14),
-            // бака (35,17 16x52) и батареи (143,17 16x52).
-            drawCustomInfoStat(guiGraphics, mouseX, mouseY, x + 79, y + 16, 35, 10, mouseX, mouseY,
-                    Component.translatable("gui.hbm_m.flare.valve"));
-            drawCustomInfoStat(guiGraphics, mouseX, mouseY, x + 79, y + 50, 35, 14, mouseX, mouseY,
-                    Component.translatable("gui.hbm_m.flare.ignition"));
-            drawElectricityInfo(guiGraphics, mouseX, mouseY, x + 143, y + 17, 16, 52,
-                    flareStack.getEnergyStored(), flareStack.getMaxEnergyStored());
-        }
-    }
-
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (flareStack != null) {
-            // Оригинал: клапан (89,16,16x10), поджиг (89,50,16x14).
-            if (mouseX >= this.leftPos + 89 && mouseX < this.leftPos + 89 + 16
-                    && mouseY >= this.topPos + 16 && mouseY < this.topPos + 16 + 10) {
-                playButtonClick();
-                sendToggle(true, false);
-            } else if (mouseX >= this.leftPos + 89 && mouseX < this.leftPos + 89 + 16
-                    && mouseY >= this.topPos + 50 && mouseY < this.topPos + 50 + 14) {
-                playButtonClick();
-                sendToggle(false, true);
-            }
-        }
-        return super.mouseClicked(mouseX, mouseY, button);
-    }
-
-    private void playButtonClick() {
-        this.minecraft.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
-                SoundEvents.UI_BUTTON_CLICK, 1.0F));
-    }
-
-    private void sendToggle(boolean valve, boolean dial) {
-        CompoundTag data = new CompoundTag();
-        if (valve) data.putBoolean("valve", true);
-        if (dial) data.putBoolean("dial", true);
-        MachineControlC2SPacket.send(flareStack.getBlockPos(), data);
+        flare.tank.renderTank(g, this.leftPos + 35, this.topPos + 17, 16, 52);
     }
 }

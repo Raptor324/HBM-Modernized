@@ -13,6 +13,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * 24 pellet slots laid out in the same diamond/octagon shape as the original
@@ -41,13 +42,10 @@ public class MachineWatzPowerplantMenu extends AbstractContainerMenu {
         for (int j = 0; j < 6; j++) {
             for (int i = 0; i < 6; i++) {
                 if (i + j > 1 && i + j < 9 && 5 - i + j > 1 && i + 5 - j > 1) {
-                    // One pellet per slot: the block entity burns a slot as a single pellet (upstream
-                    // getInventoryStackLimit() == 1), and the container wrapper reports 99 by default.
                     this.addSlot(new Slot(machineContainer, index, 17 + i * 18, 8 + j * 18) {
-                        @Override
-                        public int getMaxStackSize() {
-                            return 1;
-                        }
+                        // Original: SlotNonRetarded -> isItemValidForSlot, Stapelgrenze 1
+                        @Override public boolean mayPlace(ItemStack stack) { return blockEntity.getInventory().isItemValid(getContainerSlot(), stack); }
+                        @Override public int getMaxStackSize() { return 1; }
                     });
                     index++;
                 }
@@ -100,7 +98,7 @@ public class MachineWatzPowerplantMenu extends AbstractContainerMenu {
                 if (!this.moveItemStackTo(stack, PLAYER_SLOT_START, this.slots.size(), true)) {
                     return ItemStack.EMPTY;
                 }
-            } else if (stack.getItem() instanceof WatzPelletItem) {
+            } else if (WatzPelletItem.isFresh(stack)) {
                 if (!this.moveItemStackTo(stack, 0, MACHINE_SLOT_COUNT, false)) {
                     return ItemStack.EMPTY;
                 }

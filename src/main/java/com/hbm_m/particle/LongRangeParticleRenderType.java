@@ -92,6 +92,8 @@ public class LongRangeParticleRenderType implements ParticleRenderType {
     public BufferBuilder begin(Tesselator tesselator, TextureManager textureManager) {
         savedFogStart = RenderSystem.getShaderFogStart();
         savedFogEnd = RenderSystem.getShaderFogEnd();
+        // 1.21.1 hat kein end() mehr - Ruecksetzen nach dem Partikel-Pass, siehe ParticleRenderStateNeoForge
+        ParticleRenderStateNeoForge.capture();
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();

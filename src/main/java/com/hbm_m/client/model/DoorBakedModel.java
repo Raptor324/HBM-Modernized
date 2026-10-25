@@ -31,13 +31,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
-//? if forge {
 import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.model.data.ModelData;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.client.ChunkRenderTypeSet;
-import net.neoforged.neoforge.client.model.data.ModelData;
-*///?}
 
 public class DoorBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
     

@@ -1,8 +1,11 @@
 package com.hbm_m.block.gas;
 
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.effect.ModEffects;
 import com.hbm_m.extprop.HbmLivingProps;
-import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.handler.ArmorRegistry;
+import com.hbm_m.handler.HazardClass;
+import com.hbm_m.platform.EffectHooks;
 import com.hbm_m.util.ContaminationUtil;
 import com.hbm_m.util.ContaminationUtil.ContaminationType;
 import com.hbm_m.util.ContaminationUtil.HazardType;
@@ -10,71 +13,70 @@ import com.hbm_m.util.ContaminationUtil.HazardType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.BushBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * «Могильный» радон (подземелья): тяжёлое заражение в обход брони.
- * Порт {@link com.hbm.blocks.gas.BlockGasRadonTomb} (1.7.10).
+ * 1:1-Port von {@code BlockGasRadonTomb} (1.7.10): das Gas aus dem Endlager. Es geht durch jeden
+ * Schutz hindurch, entfernt heilende Effekte und toetet die Vegetation darunter ab.
  */
 public class BlockGasRadonTomb extends BlockGasBase {
 
     public BlockGasRadonTomb() {
-        super();
+        super(0.1F, 0.3F, 0.1F);
     }
 
     @Override
     protected void affect(LivingEntity living) {
-        // 1.7.10: «get fucked» — снимает противоядия (radaway; radx в порте пока не существует)
-        PlatformHooks.removeEffect(living, ModEffects.RADAWAY);
+        ContaminationUtil.contaminate(living, HazardType.RADIATION, ContaminationType.CREATIVE, 0.5F);
+        living.addEffect(new MobEffectInstance(EffectHooks.of(ModEffects.RADIATION), 60 * 20, 2));
+        living.removeEffect(EffectHooks.of(ModEffects.RADAWAY));
+        living.removeEffect(EffectHooks.of(ModEffects.RADX));
 
-        // 1.7.10: ContaminationUtil.contaminate RADIATION RAD_BYPASS 0.5F — в обход брони
-        ContaminationUtil.contaminate(living, HazardType.RADIATION, ContaminationType.RAD_BYPASS, 0.5F);
-        HbmLivingProps.incrementAsbestos(living, 10);
+        if (ArmorRegistry.hasProtection(living, 3, HazardClass.PARTICLE_FINE)) {
+            damageWornFilter(living);
+        } else {
+            HbmLivingProps.incrementAsbestos(living, 5);
+        }
     }
 
     @Override
-    public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+    protected boolean onGasTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         if (random.nextInt(10) == 0) {
             BlockPos below = pos.below();
-            BlockState b = level.getBlockState(below);
+            BlockState ground = level.getBlockState(below);
 
-            if (b.is(Blocks.GRASS_BLOCK)) {
-                level.setBlockAndUpdate(below, random.nextInt(5) == 0 ? Blocks.DIRT.defaultBlockState() : Blocks.COARSE_DIRT.defaultBlockState());
-            } else if (isVegetation(b)) {
-                level.removeBlock(below, false);
+            if (ground.is(Blocks.GRASS_BLOCK)) {
+                if (random.nextInt(5) == 0) {
+                    level.setBlock(below, Blocks.COARSE_DIRT.defaultBlockState(), 3);
+                } else {
+                    level.setBlock(below, ModBlocks.WASTE_EARTH.get().defaultBlockState(), 3);
+                }
+            }
+
+            if ((ground.is(BlockTags.LEAVES) || ground.getBlock() instanceof BushBlock)
+                    && !ground.isCollisionShapeFullBlock(level, below)) {
+                level.setBlock(below, Blocks.AIR.defaultBlockState(), 3);
             }
         }
 
-        if (random.nextInt(600) == 0) {
+        if (random.nextInt(50) == 0) {
             level.removeBlock(pos, false);
-            return;
+            return true;
         }
 
-        super.tick(state, level, pos, random);
-    }
-
-    private static boolean isVegetation(BlockState state) {
-        return state.is(BlockTags.LEAVES)
-                || state.is(BlockTags.FLOWERS)
-                || state.is(BlockTags.SAPLINGS)
-                || state.is(Blocks.FERN)
-                || state.is(Blocks.TALL_GRASS)
-                || state.is(Blocks.LARGE_FERN)
-                || state.is(Blocks.DEAD_BUSH)
-                || state.is(Blocks.VINE)
-                || PlatformHooks.isGrassBlock(state);
+        return false;
     }
 
     @Override
     public Direction getFirstDirection(Level level, BlockPos pos, RandomSource random) {
-        if (random.nextInt(3) == 0) {
-            return Direction.UP;
-        }
+        if (random.nextInt(3) == 0) return Direction.UP;
         return Direction.DOWN;
     }
 

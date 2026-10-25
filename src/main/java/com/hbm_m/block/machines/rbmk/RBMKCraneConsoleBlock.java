@@ -21,6 +21,10 @@ public class RBMKCraneConsoleBlock extends RBMKColumnBlock {
 
     public RBMKCraneConsoleBlock(Properties props) { super(props); }
 
+    /** Original RBMKCraneConsole ist kein RBMKBase - kein DODD-Overlay. */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) { }
+
     // Crane console has no GUI (it's flown by keybind, not menu) - only the RBMK linking tool
     // and a shift-click rotation cycle are handled here, bypassing RBMKColumnBlock's default
     // "open MenuProvider" behavior entirely.

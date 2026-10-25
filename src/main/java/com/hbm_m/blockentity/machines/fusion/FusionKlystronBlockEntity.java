@@ -125,6 +125,7 @@ public class FusionKlystronBlockEntity extends BaseMachineBlockEntity implements
             this.prevFan -= 360F;
         }
 
+
         // Original: looped "felLoop" 2.5 above the block within 30 blocks, pitch = fanSpeed / 5.
         com.hbm_m.sound.ClientSoundBootstrap.updateMachineLoop(this, this.fanSpeed > 0F,
                 com.hbm_m.sound.ModSounds.FEL_LOOP.get(), 2.5D, 30D,

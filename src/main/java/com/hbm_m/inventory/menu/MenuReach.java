@@ -14,6 +14,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 import org.jetbrains.annotations.Nullable;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * Shared {@code stillValid} for block-entity menus. Vanilla measures reach to the block the
@@ -50,7 +51,7 @@ public final class MenuReach {
         // Same test as AbstractContainerMenu.stillValid (canInteractWithBlock with 4.0 slop), applied
         // to every block of the structure. Stays on the vanilla method: Sable overrides it for
         // blocks on ships, and a plain AABB-vs-eye distance would close every ship GUI next tick.
-        if (PlatformHooks.canInteractWithBlock(player, controllerPos, 4.0D)) {
+        if (MobHooks.canInteractWithBlock(player, controllerPos, 4.0D)) {
             return true;
         }
         if (state.getBlock() instanceof IMultiblockController controller) {
@@ -59,7 +60,7 @@ public final class MenuReach {
                 Direction facing = state.hasProperty(HorizontalDirectionalBlock.FACING)
                         ? state.getValue(HorizontalDirectionalBlock.FACING) : Direction.NORTH;
                 for (BlockPos part : helper.getAllPartPositions(controllerPos, facing)) {
-                    if (PlatformHooks.canInteractWithBlock(player, part, 4.0D)) {
+                    if (MobHooks.canInteractWithBlock(player, part, 4.0D)) {
                         return true;
                     }
                 }

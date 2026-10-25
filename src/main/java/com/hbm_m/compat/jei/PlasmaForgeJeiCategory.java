@@ -1,16 +1,9 @@
 package com.hbm_m.compat.jei;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.industrial.ItemBlueprintFolder;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.PlasmaForgeRecipe;
 import com.hbm_m.recipe.PlasmaForgeRecipe.CountedIngredient;
@@ -33,6 +26,7 @@ import net.minecraft.world.item.ItemStack;
  */
 
 @OnlyIn(Dist.CLIENT)
+
 public class PlasmaForgeJeiCategory extends JeiGenericRecipeCategory<PlasmaForgeRecipe> {
 
     public static final RecipeType<PlasmaForgeRecipe> RECIPE_TYPE =
@@ -123,7 +117,7 @@ public class PlasmaForgeJeiCategory extends JeiGenericRecipeCategory<PlasmaForge
                     .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
                     .setCustomRenderer(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                     .addIngredient(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK,
-                            new net.neoforged.neoforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
+                            new net.minecraftforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
             *///?}
             slotIndex++;
         }
@@ -144,8 +138,7 @@ public class PlasmaForgeJeiCategory extends JeiGenericRecipeCategory<PlasmaForge
     protected void addBlueprintSlot(IRecipeLayoutBuilder builder, PlasmaForgeRecipe recipe, int machineXOffset) {
         if (!recipe.requiresBlueprint()) return;
 
-        ItemStack folder = new ItemStack(ModItems.BLUEPRINT_FOLDER.get());
-        ItemBlueprintFolder.writeBlueprintPool(folder, recipe.getBlueprintPool());
+        ItemStack folder = com.hbm_m.item.industrial.ItemBlueprints.make(recipe.getBlueprintPool());
         addUnframedSlot(builder, RecipeIngredientRole.RENDER_ONLY, 75 + machineXOffset, 10)
                 .addItemStack(folder);
     }

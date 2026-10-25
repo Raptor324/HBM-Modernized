@@ -13,6 +13,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * 1:1-Port von {@code ContainerFusionBreeder} (1.7.10): Fluid-Identifier (26/72),

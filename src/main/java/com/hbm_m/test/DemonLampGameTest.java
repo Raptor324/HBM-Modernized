@@ -11,13 +11,8 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.level.block.Blocks;
-//? if forge {
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
- *///?}
 
 /**
  * Behavior tests for the Demon Core Lamp ({@code lamp_demon}).

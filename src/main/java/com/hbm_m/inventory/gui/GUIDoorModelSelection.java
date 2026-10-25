@@ -10,6 +10,7 @@ import com.hbm_m.client.model.variant.DoorModelSelection;
 import com.hbm_m.client.model.variant.DoorModelType;
 import com.hbm_m.client.model.variant.DoorSkin;
 import com.hbm_m.client.overlay.DoorModelFakeItemRenderer;
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.ServerboundDoorModelPacket;
@@ -252,7 +253,7 @@ public class GUIDoorModelSelection extends Screen {
             case "silo_hatch_large" -> ModItems.SILO_HATCH_LARGE.get();
             case "vault_door" -> ModItems.VAULT_DOOR.get();
             case "cargo_door" -> ModItems.CARGO_DOOR.get();
-            case "blast_door" -> ModItems.BLAST_DOOR.get();
+            case "blast_door" -> com.hbm_m.block.ModBlocks.BLAST_DOOR.get().asItem();
             default -> ModItems.LARGE_VEHICLE_DOOR.get();
         };
     }

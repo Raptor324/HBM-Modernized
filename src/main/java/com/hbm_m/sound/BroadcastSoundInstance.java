@@ -16,13 +16,8 @@ import net.minecraft.sounds.SoundSource;
  * genau EINE der 3 Spuren, deterministisch pro Blockposition (Stable ueber Chunk-Reload
  * und Re-Login), hörbar bis CONFUSION_RADIUS = 25 Blocke.
  */
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
 @OnlyIn(Dist.CLIENT)
 public class BroadcastSoundInstance extends AbstractTickableSoundInstance {
 

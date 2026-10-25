@@ -5,7 +5,6 @@ import com.hbm_m.blockentity.machines.TurretBaseBlockEntity;
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.network.ModPacketHandler;
-import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
@@ -14,6 +13,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /** Generisches Menu fuer alle Turret-Varianten - siehe {@link TurretBaseBlockEntity}. */
 @SuppressWarnings("UnstableApiUsage")
@@ -25,10 +25,15 @@ public class TurretMenu extends AbstractContainerMenu implements ILongEnergyMenu
     private long clientEnergy;
     private long clientMaxEnergy;
 
-    private static final int PLAYER_INV_START = 10;
-    private static final int PLAYER_INV_END = 46;
+    /** Menue-Slots wie Original ContainerTurretBase: 0 KI-Chip (98/27), 1-9 Munition, 10 Batterie.
+     *  BE-Inventar bleibt: 0-8 Munition, 9 Batterie, 10 Chip. */
+    private static final int CHIP_MENU_SLOT = 0;
+    private static final int PLAYER_INV_START = 11;
+    private static final int PLAYER_INV_END = 47;
+    private static final int AMMO_MENU_START = 1;
     private static final int AMMO_SLOT_COUNT = 9;
     private static final int BATTERY_SLOT = 9;
+    private static final int BATTERY_MENU_SLOT = 10;
 
     public TurretMenu(int id, Inventory inv, FriendlyByteBuf extraData) {
         this(id, inv, getBlockEntity(inv, extraData));
@@ -52,9 +57,17 @@ public class TurretMenu extends AbstractContainerMenu implements ILongEnergyMenu
         // тайл может отсутствовать на клиенте (реплей Flashback) — подставляем пустую заглушку
         var handler = this.blockEntity != null
                 ? this.blockEntity.getInventory()
-                : new DummyItemStackHandler(BATTERY_SLOT + 1);
+                : new ModItemStackHandler.Dummy(TurretBaseBlockEntity.CHIP_SLOT + 1);
         var container = new ModItemStackHandlerContainer(handler,
                 this.blockEntity != null ? this.blockEntity::setChanged : () -> {});
+
+        // Original ContainerTurretBase: zuerst KI-Chip (98/27), dann 3x3 Munition, dann Batterie
+        this.addSlot(new Slot(container, TurretBaseBlockEntity.CHIP_SLOT, 98, 27) {
+            @Override
+            public boolean mayPlace(ItemStack stack) {
+                return stack.is(com.hbm_m.item.ModItems.TURRET_CHIP.get());
+            }
+        });
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 3; col++) {
@@ -71,6 +84,22 @@ public class TurretMenu extends AbstractContainerMenu implements ILongEnergyMenu
 
         addPlayerInventory(inv);
         addPlayerHotbar(inv);
+
+        // Original openInventory(): "hbm:block.openC"
+        if (this.blockEntity != null && !inv.player.level().isClientSide) playTurretSound("hbm:block.openC");
+    }
+
+    @Override
+    public void removed(Player player) {
+        super.removed(player);
+        // Original closeInventory(): "hbm:block.closeC"
+        if (this.blockEntity != null && !player.level().isClientSide) playTurretSound("hbm:block.closeC");
+    }
+
+    private void playTurretSound(String sound) {
+        var pos = blockEntity.getBlockPos();
+        blockEntity.getLevel().playSound(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                com.hbm_m.sound.HbmSoundsNT.get(sound), net.minecraft.sounds.SoundSource.BLOCKS, 1.0F, 1.0F);
     }
 
     @Override
@@ -143,14 +172,19 @@ public class TurretMenu extends AbstractContainerMenu implements ILongEnergyMenu
                 }
                 slot.onQuickCraft(slotStack, itemstack);
             } else if (pIndex >= PLAYER_INV_START && pIndex < PLAYER_INV_END) {
+                // Original: turret_chip geht in den KI-Slot
+                if (slotStack.is(com.hbm_m.item.ModItems.TURRET_CHIP.get())) {
+                    if (!this.moveItemStackTo(slotStack, CHIP_MENU_SLOT, CHIP_MENU_SLOT + 1, false)) {
+                        return ItemStack.EMPTY;
+                    }
                 // тайл может отсутствовать на клиенте (реплей Flashback)
-                if (blockEntity != null && blockEntity.isAcceptedAmmoPublic(slotStack)) {
-                    if (!this.moveItemStackTo(slotStack, 0, AMMO_SLOT_COUNT, false)) {
+                } else if (blockEntity != null && blockEntity.isAcceptedAmmoPublic(slotStack)) {
+                    if (!this.moveItemStackTo(slotStack, AMMO_MENU_START, AMMO_MENU_START + AMMO_SLOT_COUNT, false)) {
                         return ItemStack.EMPTY;
                     }
                 } else {
                     boolean isEnergySource = ItemEnergyAccess.isEnergySource(slotStack);
-                    if (isEnergySource && !this.moveItemStackTo(slotStack, BATTERY_SLOT, BATTERY_SLOT + 1, false)) {
+                    if (isEnergySource && !this.moveItemStackTo(slotStack, BATTERY_MENU_SLOT, BATTERY_MENU_SLOT + 1, false)) {
                         return ItemStack.EMPTY;
                     } else if (!isEnergySource) {
                         return ItemStack.EMPTY;

@@ -46,7 +46,7 @@ import org.jetbrains.annotations.Nullable;
  * blinkt das Feld fuenf Ticks lang rot - {@link #getColor()} liefert dafuer die Farbe, die der
  * Renderer und die Teilchen des Blocks verwenden.</p>
  */
-public class ForceFieldBlockEntity extends BaseMachineBlockEntity {
+public class ForceFieldBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.blockentity.IMuffleable {
 
     public static final int SLOT_BATTERY = 0;
     public static final int SLOT_UPGRADE_RADIUS = 1;
@@ -160,9 +160,9 @@ public class ForceFieldBlockEntity extends BaseMachineBlockEntity {
         long lo = com.hbm_m.recipe.index.CachedRecipeResolver.sign(1L,
                 be.getEnergyStored(),
                 Float.floatToIntBits(be.radius),
-                com.hbm_m.platform.PlatformHooks.stackFingerprint(be.getInventory().getStackInSlot(SLOT_BATTERY)),
-                com.hbm_m.platform.PlatformHooks.stackFingerprint(be.getInventory().getStackInSlot(SLOT_UPGRADE_RADIUS)),
-                com.hbm_m.platform.PlatformHooks.stackFingerprint(be.getInventory().getStackInSlot(SLOT_UPGRADE_HEALTH)));
+                com.hbm_m.platform.StackNbt.fingerprint(be.getInventory().getStackInSlot(SLOT_BATTERY)),
+                com.hbm_m.platform.StackNbt.fingerprint(be.getInventory().getStackInSlot(SLOT_UPGRADE_RADIUS)),
+                com.hbm_m.platform.StackNbt.fingerprint(be.getInventory().getStackInSlot(SLOT_UPGRADE_HEALTH)));
         long hi = com.hbm_m.recipe.index.CachedRecipeResolver.sign(2L,
                 be.health, be.maxHealth, be.cooldown,
                 be.isOn ? 1L : 0L, be.muffled ? 1L : 0L, be.blink, be.color);

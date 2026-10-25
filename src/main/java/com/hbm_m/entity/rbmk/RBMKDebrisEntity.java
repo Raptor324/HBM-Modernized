@@ -95,6 +95,7 @@ public class RBMKDebrisEntity extends Entity {
         // reads it. Without this, debris lived forever even with the perma-scrap dial off.
         baseTick();
 
+
         if (!hasSizeSet) {
             hasSizeSet = true;
             refreshDimensions();

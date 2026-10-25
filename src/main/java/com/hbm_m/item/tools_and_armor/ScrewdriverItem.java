@@ -17,7 +17,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
@@ -26,22 +25,14 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Отвертка для настройки дверей и конвертера энергии.
- * ПКМ по двери (контроллеру или любой части) - открывает GUI, дверь не открывается.
+ * 1:1 {@code screwdriver}/{@code screwdriver_desh} = {@code ItemTooling(ToolType.SCREWDRIVER, 100 | 0)}: bleibt beim
+ * Craften erhalten (nutzt sich um 1 ab) und ruft {@code IToolable.onScrew}; zusaetzlich oeffnet er im Port das
+ * Tuer-Auswahlmenue.
  */
-public class ScrewdriverItem extends Item implements ITooltipProvider {
+public class ScrewdriverItem extends com.hbm_m.item.tool.ItemTooling implements ITooltipProvider {
 
-    public ScrewdriverItem(Properties properties) {
-        super(properties.stacksTo(1));
-    }
-
-    /**
-     * Отвёртка — «контейнерный» ингредиент, как ведро в торте: в shaped-рецептах
-     * (например, key_kit) возвращается в инвентарь после крафта.
-     */
-    @Override
-    public ItemStack getCraftingRemainingItem(ItemStack itemStack) {
-        return itemStack.copy();
+    public ScrewdriverItem(int durability, Properties properties) {
+        super(com.hbm_m.api.block.IToolable.ToolType.SCREWDRIVER, durability, properties);
     }
 
     @Override
@@ -65,7 +56,7 @@ public class ScrewdriverItem extends Item implements ITooltipProvider {
             BlockState pileState = level.getBlockState(pos);
             if (pileState.getBlock() instanceof BlockGraphiteDrilledBase pile)
                 return pile.onScrewForTool(pileState, level, pos, player, context.getClickedFace(), context.getHand());
-            return InteractionResult.PASS;
+            return super.useOn(context);
         }
 
         if (level.isClientSide) {
@@ -78,11 +69,6 @@ public class ScrewdriverItem extends Item implements ITooltipProvider {
 
     private static DoorBlockEntity resolveDoorController(Level level, BlockPos clickedPos) {
         BlockEntity be = level.getBlockEntity(clickedPos);
-        // Blast door: GUI скинов нет (NEXT BlastDoor.java:99-105) — отвёртка тогглит дверь
-        // как пустая рука; не перехватываем клик (паритет BlastDoorBlock/UniversalMachinePartBlock)
-        if (be instanceof com.hbm_m.block.entity.doors.BlastDoorBlockEntity) {
-            return null;
-        }
         if (be instanceof DoorBlockEntity doorBE && doorBE.isController()) {
             return doorBE;
         }
@@ -90,8 +76,7 @@ public class ScrewdriverItem extends Item implements ITooltipProvider {
             BlockPos controllerPos = part.getControllerPos();
             if (controllerPos != null) {
                 BlockEntity ctrlBe = level.getBlockEntity(controllerPos);
-                if (ctrlBe instanceof DoorBlockEntity doorBE && doorBE.isController()
-                        && !(doorBE instanceof com.hbm_m.block.entity.doors.BlastDoorBlockEntity)) {
+                if (ctrlBe instanceof DoorBlockEntity doorBE && doorBE.isController()) {
                     return doorBE;
                 }
             }

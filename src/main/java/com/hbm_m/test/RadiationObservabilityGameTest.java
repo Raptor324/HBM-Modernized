@@ -9,6 +9,7 @@ import com.hbm_m.block.machines.GeigerCounterBlock;
 import com.hbm_m.blockentity.machines.GeigerCounterBlockEntity;
 import com.hbm_m.extprop.HbmLivingProps;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.radiation.ChunkRadiationHandlerSimple;
 import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.util.ContaminationUtil;
 import com.hbm_m.util.ContaminationUtil.ContaminationType;
@@ -23,13 +24,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
-//? if forge {
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
- *///?}
 
 /**
  * Radiation observability via instruments: the Geiger counter (item and block) and the dosimeter.
@@ -198,24 +194,33 @@ public final class RadiationObservabilityGameTest {
         Level level = helper.getLevel();
         BlockPos abs = helper.absolutePos(new BlockPos(1, 1, 1));
 
-        ChunkRadiationManager.setRadiation(level, abs.getX(), abs.getY(), abs.getZ(), 12.39F);
+        // Exakter Rundlauf set->get nur mit Raptors Chunk-Handler; unter radiationSystem=ADVANCED
+        // liefert getRadiation das Solver-Feld, dort wird nur die Abschneide-Regel am Live-Wert geprueft
+        // (und nichts in die persistente Testwelt eingespeist).
+        boolean simple = ChunkRadiationManager.getProxy() instanceof ChunkRadiationHandlerSimple;
+        if (simple) ChunkRadiationManager.setRadiation(level, abs.getX(), abs.getY(), abs.getZ(), 12.39F);
         HbmLivingProps.setRadBuf(player, 3.71F);
         HbmLivingProps.setRadiation(player, 234.59F);
 
-        double chunkLine = truncateToTenth(
-                ChunkRadiationManager.getRadiation(level, abs.getX(), abs.getY(), abs.getZ()));
+        float liveChunk = ChunkRadiationManager.getRadiation(level, abs.getX(), abs.getY(), abs.getZ());
+        double chunkLine = truncateToTenth(liveChunk);
         double envLine = truncateToTenth(HbmLivingProps.getRadBuf(player));
         double doseLine = truncateToTenth(HbmLivingProps.getRadiation(player));
 
-        check(chunkLine == 12.3D,
-                "The Geiger chunk line truncates to one decimal place (12.39 -> 12.3, not 12.4)");
+        if (simple) {
+            check(chunkLine == 12.3D,
+                    "The Geiger chunk line truncates to one decimal place (12.39 -> 12.3, not 12.4)");
+        } else {
+            check(chunkLine <= liveChunk && liveChunk - chunkLine < 0.1D + 1e-6D,
+                    "The Geiger chunk line truncates the live field to one decimal place (live=" + liveChunk + ")");
+        }
         check(envLine == 3.7D,
                 "The environment line truncates to one decimal place (3.71 -> 3.7)");
         check(doseLine == 234.6D,
                 "The accumulated dose reads as 234.6 (storage rounds to 0.1 on write)");
 
         // Clean up state so it does not leak into neighboring tests.
-        ChunkRadiationManager.setRadiation(level, abs.getX(), abs.getY(), abs.getZ(), 0F);
+        if (simple) ChunkRadiationManager.setRadiation(level, abs.getX(), abs.getY(), abs.getZ(), 0F);
         HbmLivingProps.setRadBuf(player, 0F);
         HbmLivingProps.setRadiation(player, 0F);
         helper.succeed();
@@ -276,6 +281,22 @@ public final class RadiationObservabilityGameTest {
         helper.setBlock(pos, state);
         BlockPos abs = helper.absolutePos(pos);
         GeigerCounterBlockEntity geiger = (GeigerCounterBlockEntity) helper.getBlockEntity(pos);
+
+        if (!(ChunkRadiationManager.getProxy() instanceof ChunkRadiationHandlerSimple)) {
+            // radiationSystem=ADVANCED: kein exakter Rundlauf ueber setRadiation (Solver-Feld).
+            // Gleicher Vertrag am Live-Feld: Abtastung alle zehn Ticks, Komparator min(ceil(rad/5), 15).
+            for (int tick = 0; tick < 10; tick++) {
+                geiger.tick(level, abs, state);
+            }
+            float live = ChunkRadiationManager.getRadiation(level, abs.getX(), abs.getY(), abs.getZ());
+            check(Math.abs(geiger.getTicker() - live) < 1e-3F,
+                    "A placed Geiger counter samples the live field every ten ticks (ticker="
+                            + geiger.getTicker() + ", live=" + live + ")");
+            check(block.getAnalogOutputSignal(state, level, abs) == Math.min((int) Math.ceil(live / 5F), 15),
+                    "Comparator strength is min(ceil(rad/5), 15) of the live field");
+            helper.succeed();
+            return;
+        }
 
         ChunkRadiationManager.setRadiation(level, abs.getX(), abs.getY(), abs.getZ(), 12.0F);
         for (int tick = 0; tick < 10; tick++) {

@@ -9,14 +9,8 @@ import com.hbm_m.client.loader.AbstractObjPartModelLoader;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.resources.ResourceLocation;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 /**
  * Model loader for DNT power armor OBJ parts.
  * Part names must match the "o &lt;name&gt;" groups in dnt.obj.

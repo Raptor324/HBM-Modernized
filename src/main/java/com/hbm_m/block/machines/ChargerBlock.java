@@ -87,7 +87,7 @@ public class ChargerBlock extends BaseEntityBlock {
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
+        return RenderShape.ENTITYBLOCK_ANIMATED; // Platte/Arme/Licht zeichnet ChargerRenderer (RenderCharger)
     }
 
     @Nullable
@@ -102,13 +102,8 @@ public class ChargerBlock extends BaseEntityBlock {
         return createTickerHelper(type, ModBlockEntities.CHARGER_BE.get(),
                 (lvl, pos, st, be) -> ChargerBlockEntity.tick(lvl, pos, st, (ChargerBlockEntity) be));
     }
-
-    //? if >1.20.1 {
+    //? if >= 1.21.1 {
     /*public static final com.mojang.serialization.MapCodec<ChargerBlock> CODEC = simpleCodec(ChargerBlock::new);
-
-    @Override
-    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
-        return CODEC;
-    }
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
 }

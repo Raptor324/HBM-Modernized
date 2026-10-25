@@ -11,6 +11,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /** Slot-Koordinaten angelehnt an {@code ContainerRadiolysis} (1.7.10 Original): Fluid-ID (34,17),
  *  Batterie (8,53). RTG- und Sterilisations-Slots des Originals entfallen (siehe

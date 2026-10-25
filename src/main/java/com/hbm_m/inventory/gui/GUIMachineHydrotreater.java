@@ -13,16 +13,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
 
-/** Direktport der Slot-/Tank-Koordinaten aus {@code GUIMachineHydrotreater} (1.7.10 Original). */
-@OnlyIn(Dist.CLIENT)
 public class GUIMachineHydrotreater extends GuiInfoScreen<MachineHydrotreaterMenu> {
 
     private static final ResourceLocation TEXTURE =
@@ -89,7 +82,7 @@ public class GUIMachineHydrotreater extends GuiInfoScreen<MachineHydrotreaterMen
             }
         }
 
-        if (isPointInRect(CATALYST_X, CATALYST_Y, 16, 16, mouseX, mouseY) && menu.getCarried().isEmpty()) {
+        if (isPointInRect(CATALYST_X, CATALYST_Y, 16, 16, mouseX, mouseY) && menu.getCarried().isEmpty() && !menu.getSlot(10).hasItem()) { // Original: nur bei leerem Katalysator-Slot (10)
             ItemStack converter = new ItemStack(ModItems.CATALYTIC_CONVERTER.get());
             guiGraphics.renderTooltip(font, converter, mouseX, mouseY);
         }

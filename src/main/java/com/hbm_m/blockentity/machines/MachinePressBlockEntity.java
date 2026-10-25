@@ -11,17 +11,15 @@ import com.hbm_m.recipe.PressRecipe;
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
-//? if forge {
-import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import com.hbm_m.platform.ModItemStackHandler;
+//? if forge {
+import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
+//?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -42,9 +40,10 @@ import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.platform.recipe.RecipeInputWrapper;
 
 public class MachinePressBlockEntity extends BaseMachineBlockEntity {
-
-    // Слоты — как в 1.7.10: 4 рабочих + 9 слотов дополнительного хранилища
-    public static final int SLOT_COUNT = 13;
+    
+    // Слоты
+    /** Original {@code super(13)}: 4 Arbeitsslots + 9 Ablageslots (4-12, "Extra Storage") unter der Presse. */
+    private static final int SLOT_COUNT = 13;
     private static final int FUEL_SLOT = 0;
     private static final int STAMP_SLOT = 1;
     private static final int MATERIAL_SLOT = 2;
@@ -133,9 +132,51 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
                 || cap == ForgeCapabilities.ENERGY) {
             return LazyOptional.empty();
         }
+        if (cap == ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
         return super.getCapability(cap, side);
     }
-    //?}
+
+    /** Original: alle Seiten {0, 1, 2, 3}, einfuegen nach isItemValidForSlot, entnehmen nur den Ausgang. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(Direction side) { return new int[] { 0, 1, 2, 3 }; }
+                @Override public boolean canInsert(int slot, ItemStack stack, Direction side) { return isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, ItemStack stack, Direction side) { return slot == OUTPUT_SLOT; }
+            });
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        // Пресс НЕ является частью энергетической сети и не должен цепляться проводами/заряжаться.
+        if (cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_PROVIDER
+                || cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_RECEIVER
+                || cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_CONNECTOR
+                || cap == com.hbm_m.platform.HbmCap.ENERGY) {
+            return com.hbm_m.platform.LazyCap.empty();
+        }
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    // Original: alle Seiten {0, 1, 2, 3}, einfuegen nach isItemValidForSlot, entnehmen nur den Ausgang.
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(Direction side) { return new int[] { 0, 1, 2, 3 }; }
+                @Override public boolean canInsert(int slot, ItemStack stack, Direction side) { return isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, ItemStack stack, Direction side) { return slot == OUTPUT_SLOT; }
+            });
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
 
 
     
@@ -151,14 +192,14 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
     
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        // Оригинал isItemValidForSlot: штампы — только слот 1, топливо — только слот 0, остальное — слот 2
-        if (stack.getItem() instanceof com.hbm_m.item.industrial.ItemStamp)
-            return slot == STAMP_SLOT;
-
-        if (com.hbm_m.platform.PlatformHooks.getFuelBurnTime(stack) > 0 && slot == FUEL_SLOT)
-            return true;
-
-        return slot == MATERIAL_SLOT;
+        return switch (slot) {
+            // Original isItemValidForSlot: Stempel nur in Slot 1, Brennbares in Slot 0, alles andere in Slot 2
+            case FUEL_SLOT -> !(stack.getItem() instanceof com.hbm_m.item.industrial.ItemStamp) && com.hbm_m.platform.ItemHooks.getFuelBurnTime(stack) > 0;
+            case STAMP_SLOT -> stack.getItem() instanceof com.hbm_m.item.industrial.ItemStamp;
+            case MATERIAL_SLOT -> !(stack.getItem() instanceof com.hbm_m.item.industrial.ItemStamp);
+            case OUTPUT_SLOT -> false;
+            default -> false;
+        };
     }
     
     @Nullable
@@ -193,7 +234,7 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         // Добавление топлива (как у генератора); контейнер предмета возвращается (ведро и т.п.)
         ItemStack fuelStack = inventory.getStackInSlot(FUEL_SLOT);
         if (!fuelStack.isEmpty() && burnTime < FUEL_PER_OPERATION) {
-            int fuelValue = com.hbm_m.platform.PlatformHooks.getFuelBurnTime(fuelStack);
+            int fuelValue = com.hbm_m.platform.ItemHooks.getFuelBurnTime(fuelStack);
             if (fuelValue > 0) {
                 burnTime += fuelValue;
                 if (fuelStack.getCount() == 1 && fuelStack.hasCraftingRemainingItem()) {
@@ -206,7 +247,7 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         }
 
         boolean canProcess = canProcess();
-        // Оригинал: внешний нагреватель учитывается с любой из 6 сторон
+        // Original: Vorheizer an einer beliebigen der sechs Seiten
         boolean preheated = false;
         for (Direction dir : Direction.values()) {
             if (level.getBlockState(worldPosition.relative(dir)).is(com.hbm_m.block.ModBlocks.PRESS_PREHEATER.get())) {
@@ -279,6 +320,7 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         }
     }
     @OnlyIn(Dist.CLIENT)
+
     private void clientTick() {
         float target = convertPressToProgress();
         if (!clientPressInitialized) {
@@ -290,6 +332,7 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         visualPressPosition = Mth.lerp(0.25F, visualPressPosition, target);
     }
     @OnlyIn(Dist.CLIENT)
+
     public float getPressAnimationProgress(float partialTick) {
         float interpolated = Mth.lerp(partialTick, prevVisualPressPosition, visualPressPosition);
         return Mth.clamp(interpolated, 0.0F, 1.0F);
@@ -333,6 +376,7 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
 
             // Если штамп сломался - удаляем его
             if (stamp.getDamageValue() >= stamp.getMaxDamage()) {
+                // Original: der Stempel verschwindet ohne eigenes Geraeusch
                 inventory.setStackInSlot(STAMP_SLOT, ItemStack.EMPTY);
             }
         }
@@ -373,7 +417,7 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         if (level == null) return Optional.empty();
         long[] slotSigs = new long[inventory.getSlots()];
         for (int i = 0; i < slotSigs.length; i++) {
-            slotSigs[i] = com.hbm_m.platform.PlatformHooks.stackFingerprint(inventory.getStackInSlot(i));
+            slotSigs[i] = com.hbm_m.platform.StackNbt.fingerprint(inventory.getStackInSlot(i));
         }
         long signature = com.hbm_m.recipe.index.CachedRecipeResolver.sign(5, slotSigs);
         PressRecipe cached = recipeResolver.resolve(level, PressRecipe.Type.INSTANCE, signature, (lvl, all) -> {

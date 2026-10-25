@@ -65,6 +65,23 @@ public class PurexRecipe extends PlatformRecipe {
     @Nullable
     private final String blueprintPool;
 
+    /** Wahrscheinlichkeit je Item-Ausgabe (Original {@code ChanceOutput}); leer = alle 100 %. */
+    private List<Float> itemOutputChances = List.of();
+
+    public PurexRecipe withItemOutputChances(List<Float> chances) {
+        this.itemOutputChances = chances != null ? chances : List.of();
+        return this;
+    }
+
+    public List<Float> getItemOutputChances() {
+        return itemOutputChances;
+    }
+
+    /** Chance der i-ten Item-Ausgabe (1.0 = sicher). */
+    public float getItemOutputChance(int i) {
+        return i < itemOutputChances.size() ? itemOutputChances.get(i) : 1F;
+    }
+
     public PurexRecipe(ResourceLocation id,
                                List<CountedIngredient> itemInputs,
                                List<FluidIngredient> fluidInputs,
@@ -183,7 +200,7 @@ public class PurexRecipe extends PlatformRecipe {
 
     public static final class Serializer extends PlatformRecipeSerializer<PurexRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-                public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "purex");
+        public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "purex");
 
 
         @Override
@@ -200,7 +217,9 @@ public class PurexRecipe extends PlatformRecipe {
             ResourceLocation iconFluid = readIconFluid(json);
             ItemStack iconItem = finalizeIconStack(readIconItem(json), iconFluid);
 
-            return new PurexRecipe(recipeId, itemInputs, fluidInputs, itemOutputs, fluidOutputs, duration, power, iconItem, iconFluid, blueprintPool);
+            List<Float> chances = new ArrayList<>();
+            if (json.has("item_output_chances")) for (JsonElement el : GsonHelper.getAsJsonArray(json, "item_output_chances")) chances.add(el.getAsFloat());
+            return new PurexRecipe(recipeId, itemInputs, fluidInputs, itemOutputs, fluidOutputs, duration, power, iconItem, iconFluid, blueprintPool).withItemOutputChances(chances);
         }
 
         @Override
@@ -241,7 +260,11 @@ public class PurexRecipe extends PlatformRecipe {
                 fluidOutputs.add(readFluidStack(buf));
             }
 
-            return new PurexRecipe(recipeId, itemInputs, fluidInputs, itemOutputs, fluidOutputs, duration, power, iconItem, iconFluid, blueprintPool);
+            int chanceCount = buf.readVarInt();
+            List<Float> chances = new ArrayList<>(chanceCount);
+            for (int i = 0; i < chanceCount; i++) chances.add(buf.readFloat());
+
+            return new PurexRecipe(recipeId, itemInputs, fluidInputs, itemOutputs, fluidOutputs, duration, power, iconItem, iconFluid, blueprintPool).withItemOutputChances(chances);
         }
 
         @Override
@@ -291,6 +314,9 @@ public class PurexRecipe extends PlatformRecipe {
             for (FluidStack out : recipe.fluidOutputs) {
                 writeFluidStack(buf, out);
             }
+
+            buf.writeVarInt(recipe.itemOutputChances.size());
+            for (Float c : recipe.itemOutputChances) buf.writeFloat(c);
         }
 
         private static ItemStack readIconItem(JsonObject json) {

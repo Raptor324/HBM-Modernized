@@ -10,9 +10,11 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 public class MachineCraneGrabberMenu extends AbstractContainerMenu {
 
@@ -38,13 +40,7 @@ public class MachineCraneGrabberMenu extends AbstractContainerMenu {
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 3; col++) {
                 int filterIndex = col + row * 3 + FILTER_START;
-                this.addSlot(new Slot(container, filterIndex, 40 + col * 18, 17 + row * 18) {
-                    @Override
-                    public void set(ItemStack stack) {
-                        super.set(stack);
-                        blockEntity.getMatcher().initPattern(filterIndex, stack);
-                    }
-                });
+                this.addSlot(new PatternSlot(container, filterIndex, 40 + col * 18, 17 + row * 18));
             }
         }
 

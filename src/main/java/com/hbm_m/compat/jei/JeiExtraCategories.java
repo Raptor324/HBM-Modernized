@@ -247,8 +247,7 @@ public final class JeiExtraCategories {
                     if (chances.length() > 0) chances.append(", ");
                     chances.append(Math.round(output.weight() * 100.0 / total)).append('%');
                 }
-                return List.of(Component.literal(r.getDuration() + " ticks"),
-                               Component.literal(chances.toString()));
+                return List.of(Component.literal(chances.toString()));
             }
         }).withNotes(2));
 

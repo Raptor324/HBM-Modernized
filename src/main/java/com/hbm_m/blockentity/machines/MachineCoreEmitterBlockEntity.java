@@ -27,6 +27,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
 import java.util.List;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1-Port von {@code TileEntityCoreEmitter} (1.7.10): der Strahler des Dunklen Fusionsreaktors.
@@ -105,11 +106,26 @@ public class MachineCoreEmitterBlockEntity extends BaseMachineBlockEntity
         return MAX_POWER * watts / 2000L;
     }
 
-    public static void tick(Level level, BlockPos pos, BlockState state, MachineCoreEmitterBlockEntity be) {
-        if (level.isClientSide()) {
-            return;
+    //? if forge {
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
+            net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
+            return coolantTank.getForgeFluidCapability().cast();
         }
+        return super.getCapability(cap, side);
+    }
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER) {
+            return com.hbm_m.platform.LazyCap.ofObj(coolantTank.getCapability()).cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+    *///?}
 
+    public static void tick(Level level, BlockPos pos, BlockState state, MachineCoreEmitterBlockEntity be) {
         // A receiver only joins a duct network by subscribing to the pipes next to it.
         if (level.getGameTime() % 20 == 0) {
             for (net.minecraft.core.Direction dir : net.minecraft.core.Direction.values()) {
@@ -234,8 +250,13 @@ public class MachineCoreEmitterBlockEntity extends BaseMachineBlockEntity
         List<Entity> list = level.getEntitiesOfClass(Entity.class, new AABB(blx, bly, blz, bux, buy, buz));
 
         for (Entity e : list) {
+            //? if < 1.21.1 {
             e.hurt(com.hbm_m.damagesource.ModDamageSources.amsCore(level), 50F);
-            com.hbm_m.platform.PlatformHooks.setSecondsOnFire(e, 10);
+            e.setSecondsOnFire(10);
+            //?} else {
+            /*e.hurt(com.hbm_m.damagesource.ModDamageSources.amsCore(level), 50F);
+            com.hbm_m.platform.MobHooks.setSecondsOnFire(e, 10);
+            *///?}
         }
     }
 
@@ -347,5 +368,11 @@ public class MachineCoreEmitterBlockEntity extends BaseMachineBlockEntity
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         return false;
+    }
+
+    /** 1:1 TileEntityCoreEmitter.getRenderBoundingBox (Render-Migration: Raptors Pfad cullt nach dieser Box, der alte BER zeichnete immer). */
+    @Override
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return com.hbm_m.platform.RenderBounds.INFINITE;
     }
 }

@@ -18,6 +18,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
+import com.hbm_m.platform.LoaderHooks;
 
 /**
  * Arc furnace on the {@link MachineRenderers} factory: the electrodes switch between
@@ -66,7 +67,7 @@ public final class MachineArcFurnaceRenderer {
     @Nullable
     private static BakedModel getModel(ResourceLocation rid) {
         var modelManager = Minecraft.getInstance().getModelManager();
-        BakedModel model = PlatformHooks.getModel(modelManager, rid);
+        BakedModel model = LoaderHooks.getModel(modelManager, rid);
         return (model == null || model == modelManager.getMissingModel()) ? null : model;
     }
 

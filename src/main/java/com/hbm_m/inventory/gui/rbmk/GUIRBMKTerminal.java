@@ -14,13 +14,8 @@ import net.minecraft.network.chat.Component;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
 
 /**
  * Port of {@code GUIScreenRBMKTerminal} - a free-text RTTY command console. Commands are

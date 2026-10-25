@@ -126,8 +126,9 @@ public abstract class FusionMultiblockBlock extends BaseEntityBlock implements I
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        // w16b: nur die Kernzelle (Raycast pro Zelle wie Original); Umriss der ganzen Maschine: MultiblockOutlineForge
         MultiblockStructureHelper helper = getStructureHelper();
-        return helper != null ? helper.generateShapeFromParts(state.getValue(FACING)) : Shapes.block();
+        return helper != null ? helper.getControllerCellShape(state.getValue(FACING)) : Shapes.block();
     }
 
     @Override

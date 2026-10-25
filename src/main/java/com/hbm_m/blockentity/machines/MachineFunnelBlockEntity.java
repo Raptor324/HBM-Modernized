@@ -49,6 +49,7 @@ public class MachineFunnelBlockEntity extends BaseMachineBlockEntity {
     // Кэш скана CRAFTING-рецепта: по одному резолверу на (пара слотов, размер сетки),
     // ключ — фингерпринт входного стека + объём сетки. Пока вход не изменился, скан
     // RecipeManager не повторяется; проверка выходного слота остаётся per-tick.
+    @SuppressWarnings("unchecked")
     private final CachedRecipeResolver<CraftingRecipe>[] gridResolvers =
             new CachedRecipeResolver[SLOT_PAIRS * 2];
 
@@ -57,39 +58,45 @@ public class MachineFunnelBlockEntity extends BaseMachineBlockEntity {
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineFunnelBlockEntity be) {
-        if (level.isClientSide()) return;
+        if (level.isClientSide) return;
         be.serverTick(level);
     }
 
     private void serverTick(Level level) {
-        boolean changed = false;
+        // 1:1 Original: alle 9 Slot-Paare pro Tick durchgehen. Wenn ein Paar verarbeitet
+        // werden konnte, wird sofort der Block getriggert (setChanged) und der Tick fuer
+        // diesen Trichter ist fertig - pro Tick hoechstens eine Verdichtung.
         for (int i = 0; i < SLOT_PAIRS; i++) {
-            if (tryCompress(level, i)) {
-                changed = true;
+            if (processSlotPair(level, i)) {
+                setChanged();
+                return;
             }
-        }
-        if (changed) {
-            setChanged();
-            sendUpdateToClient();
         }
     }
 
-    private boolean tryCompress(Level level, int index) {
-        ItemStack input = inventory.getStackInSlot(INPUT_START + index);
+    private boolean processSlotPair(Level level, int index) {
+        int inputSlot = INPUT_START + index;
+        ItemStack input = inventory.getStackInSlot(inputSlot);
         if (input.isEmpty()) return false;
 
-        if (mode != MODE_2X2_ONLY && input.getCount() >= 9) {
-            if (tryCompressGrid(level, index, input, 9, 3, 3)) return true;
+        if (mode == MODE_3X3_THEN_2X2 || mode == MODE_3X3_ONLY) {
+            if (tryCompact(level, index, input, 3, 3, 9)) return true;
         }
-        if (mode != MODE_3X3_ONLY && input.getCount() >= 4) {
-            if (tryCompressGrid(level, index, input, 4, 2, 2)) return true;
+
+        if (mode == MODE_3X3_THEN_2X2 || mode == MODE_2X2_ONLY) {
+            if (tryCompact(level, index, input, 2, 2, 4)) return true;
         }
+
         return false;
     }
 
-    private boolean tryCompressGrid(Level level, int index, ItemStack input, int count, int width, int height) {
+    private boolean tryCompact(Level level, int index, ItemStack input, int width, int height, int count) {
+        if (input.getCount() < count) return false;
+
+        int inputSlot = INPUT_START + index;
+
         long sig = CachedRecipeResolver.sign(index,
-                com.hbm_m.platform.PlatformHooks.stackFingerprint(input), count);
+                com.hbm_m.platform.StackNbt.fingerprint(input), count);
         // Scanner чистый: только матч по входам из подписи; выходной слот проверяется per-tick ниже.
         CraftingRecipe recipe = gridResolver(index, width).resolve(level, RecipeType.CRAFTING, sig, (lvl, all) -> {
             NonNullList<ItemStack> gridItems = NonNullList.withSize(width * height, ItemStack.EMPTY);
@@ -109,18 +116,23 @@ public class MachineFunnelBlockEntity extends BaseMachineBlockEntity {
         if (result.isEmpty()) return false;
 
         int outputSlot = OUTPUT_START + index;
-        ItemStack outSlot = inventory.getStackInSlot(outputSlot);
-        if (!outSlot.isEmpty()) {
-            if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(outSlot, result)) return false;
-            if (outSlot.getCount() + result.getCount() > outSlot.getMaxStackSize()) return false;
+        ItemStack currentOutput = inventory.getStackInSlot(outputSlot);
+
+        if (!currentOutput.isEmpty()) {
+            if (!com.hbm_m.platform.StackNbt.sameItemSameTags(currentOutput, result)) return false;
+            if (currentOutput.getCount() + result.getCount() > currentOutput.getMaxStackSize()) return false;
         }
 
         input.shrink(count);
-        if (outSlot.isEmpty()) {
-            inventory.setStackInSlot(outputSlot, result);
+        inventory.setStackInSlot(inputSlot, input);
+
+        if (currentOutput.isEmpty()) {
+            inventory.setStackInSlot(outputSlot, result.copy());
         } else {
-            outSlot.grow(result.getCount());
+            currentOutput.grow(result.getCount());
+            inventory.setStackInSlot(outputSlot, currentOutput);
         }
+
         return true;
     }
 
@@ -181,4 +193,46 @@ public class MachineFunnelBlockEntity extends BaseMachineBlockEntity {
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
         return new MachineFunnelMenu(containerId, playerInventory, this);
     }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: unten {9-17}, sonst {0-8}; unten nur Ausgaenge, seitlich Eingaenge heraus, oben nichts. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return side == net.minecraft.core.Direction.DOWN ? com.hbm_m.blockentity.SidedItemAccess.range(9, 17) : com.hbm_m.blockentity.SidedItemAccess.range(0, 8); }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot < 9 && isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { if (side == net.minecraft.core.Direction.DOWN) return slot > 8; return side != net.minecraft.core.Direction.UP && slot < 9; }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: unten {9-17}, sonst {0-8}; unten nur Ausgaenge, seitlich Eingaenge heraus, oben nichts. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return side == net.minecraft.core.Direction.DOWN ? com.hbm_m.blockentity.SidedItemAccess.range(9, 17) : com.hbm_m.blockentity.SidedItemAccess.range(0, 8); }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot < 9 && isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { if (side == net.minecraft.core.Direction.DOWN) return slot > 8; return side != net.minecraft.core.Direction.UP && slot < 9; }
+            });
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
 }

@@ -38,6 +38,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import com.hbm_m.platform.BlockHooks;
 
 public class MultiblockStructureHelper {
     
@@ -81,6 +82,20 @@ public class MultiblockStructureHelper {
             removal.run();
         } finally {
             IS_ORPHAN_CLEANUP.set(false);
+        }
+    }
+
+    /**
+     * Original {@code BlockDummyable.safeRem = true; ...; safeRem = false}: Teile entfernen, ohne dass der Rest der
+     * Struktur samt Kern mit abgerissen wird (z.B. der geplatzte Boiler).
+     */
+    public static void runSafeRemove(Runnable action) {
+        boolean prev = IS_DESTROYING.get();
+        IS_DESTROYING.set(true);
+        try {
+            action.run();
+        } finally {
+            IS_DESTROYING.set(prev);
         }
     }
 
@@ -764,7 +779,7 @@ public class MultiblockStructureHelper {
                 
                 if (oldBE != null) {
                     // Хук кросс-версионный; x/y/z проставляются ниже вручную.
-                    nbt = com.hbm_m.platform.PlatformHooks.saveBlockEntityWithoutMetadata(oldBE, level.registryAccess());
+                    nbt = com.hbm_m.platform.BlockHooks.saveWithoutMetadata(oldBE, level.registryAccess());
                     level.removeBlockEntity(currentCtrlPos);
                 }
                 
@@ -777,7 +792,7 @@ public class MultiblockStructureHelper {
                     nbt.putInt("z", newCtrlPos.getZ());
                     BlockEntity newBE = level.getBlockEntity(newCtrlPos);
                     if (newBE != null) {
-                        com.hbm_m.platform.PlatformHooks.loadBlockEntityTag(newBE, nbt, level.registryAccess());
+                        com.hbm_m.platform.BlockHooks.loadCustomOnly(newBE, nbt, level.registryAccess());
                     }
                 }
                 level.updateNeighborsAt(currentCtrlPos, state.getBlock());
@@ -1437,11 +1452,27 @@ public class MultiblockStructureHelper {
         return true;
     }
 
+    /** Wie {@link #checkPlacementFromFacadeQuiet}, aber direkt am Kern (E7, Fork-Wandplatzierung). */
+    public boolean checkPlacementQuiet(Level level, BlockPos controllerPos, Direction facing) {
+        if (!level.getBlockState(controllerPos).canBeReplaced()) return false;
+        for (BlockPos relativePos : structureMap.keySet()) {
+            BlockPos worldPos = getRotatedPos(controllerPos, relativePos, facing);
+            if (worldPos.equals(controllerPos)) continue;
+            if (!isBlockReplaceable(level.getBlockState(worldPos))) return false;
+        }
+        return true;
+    }
+
     /**
      * @return A Set of all local offsets for the multiblock parts, relative to the controller.
      */
     public Set<BlockPos> getPartOffsets() {
         return this.partOffsets; // Возвращаем уже созданный Set
+    }
+
+    /** Phantom-Teilzustand wie in {@link #placeStructure} (fuer NBT-Strukturen, Wunsch W-R3b-1). */
+    public BlockState createPhantomState(Direction facing) {
+        return phantomBlockState.get().setValue(HorizontalDirectionalBlock.FACING, facing);
     }
 
     public synchronized void placeStructure(Level level, BlockPos controllerPos, Direction facing, IMultiblockController controller) {
@@ -1892,6 +1923,60 @@ public class MultiblockStructureHelper {
             }
             return finalShape.optimize();
         });
+    }
+
+    /**
+     * w16b: Zuschnitt-Cache je Masterform (Identitaet) und Zellversatz. Statische Masterformen (pro FACING
+     * zwischengespeichert) treffen immer; dynamische (Tueren in Bewegung) fallen per WeakHashMap wieder heraus.
+     */
+    private static final Map<VoxelShape, Map<BlockPos, VoxelShape>> CELL_SHAPE_CACHE =
+            Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    /**
+     * w16b: Form EINER Zelle aus der Masterform der ganzen Maschine.
+     *
+     * <p>Original {@code BlockDummyable}: jede Zelle ist ein eigener Block, die Auswahl trifft genau die Zelle,
+     * durch die der Strahl laeuft. Liefert eine Zelle die ganze Maschinenform (in fremde Zellen hinein), landet
+     * der Treffpunkt bei Formen mit Luecken (bounding-Listen, Startrampen, Tueren) in einer anderen Zelle - der
+     * 1.20-Server verwirft dann den Klick ("Location too far away from hit block"): GUI oeffnet nicht, Rechtsklick
+     * tut nichts. Deshalb wird die Masterform hier auf die eigene Zelle zugeschnitten; den Umriss der ganzen
+     * Maschine zeichnet {@code client.MultiblockOutlineForge}.</p>
+     *
+     * @param masterRelCore Masterform relativ zum Kern (Kern = 0,0,0)
+     * @param cellFromCore  Weltversatz der Zelle vom Kern
+     */
+    public static VoxelShape cellShape(VoxelShape masterRelCore, BlockPos cellFromCore) {
+        if (masterRelCore == null || masterRelCore.isEmpty()) return Shapes.empty();
+        Map<BlockPos, VoxelShape> byCell = CELL_SHAPE_CACHE.computeIfAbsent(masterRelCore, k -> new java.util.concurrent.ConcurrentHashMap<>());
+        return byCell.computeIfAbsent(cellFromCore.immutable(), o -> Shapes.join(
+                masterRelCore.move(-o.getX(), -o.getY(), -o.getZ()), Shapes.block(), BooleanOp.AND).optimize());
+    }
+
+    /**
+     * w16b: Original {@code BlockDummyable.bounding} (+ {@code getAABBRotationOffset}) als Masterform relativ zur Kernecke.
+     * Boxen wie im Original {minX, minY, minZ, maxX, maxY, maxZ} um die Kernmitte; {@code rot = dir.getRotation(UP)},
+     * fuer FACING NORTH also EAST: x' = -z, z' = x. Die anderen Richtungen ergibt {@link #rotateShape}.
+     */
+    public static VoxelShape boundingToMaster(double[][] boxes, Direction facing) {
+        VoxelShape north = Shapes.empty();
+        for (double[] b : boxes) {
+            north = Shapes.or(north, Shapes.box(0.5D - b[5], b[1], 0.5D + b[0], 0.5D - b[2], b[4], 0.5D + b[3]));
+        }
+        return rotateShape(north.optimize(), facing).optimize();
+    }
+
+    /** w16b: Masterformen je FACING aus einer Original-bounding-Liste vorberechnen. */
+    public static Map<Direction, VoxelShape> boundingMasters(double[][] boxes) {
+        Map<Direction, VoxelShape> map = new EnumMap<>(Direction.class);
+        for (Direction d : new Direction[] { Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST }) {
+            map.put(d, boundingToMaster(boxes, d));
+        }
+        return map;
+    }
+
+    /** w16b: Zellform des Kerns aus der Teilekarte (volle Zellen bzw. {@code shapeMap}). */
+    public VoxelShape getControllerCellShape(Direction facing) {
+        return cellShape(generateShapeFromParts(facing), BlockPos.ZERO);
     }
 
     public static VoxelShape rotateShape(VoxelShape shape, Direction facing) {

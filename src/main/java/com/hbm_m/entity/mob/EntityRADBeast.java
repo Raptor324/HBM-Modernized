@@ -68,7 +68,10 @@ public class EntityRADBeast extends Monster implements IRadiationImmune {
                 .add(Attributes.MAX_HEALTH, 120.0D)
                 .add(Attributes.ATTACK_DAMAGE, 16.0D)
                 .add(Attributes.ARMOR, 8.0D)
-                .add(Attributes.FOLLOW_RANGE, 32.0D);
+                // Original: alte KI (EntityMob ohne isAIEnabled) - Zielsuche closestVulnerablePlayer 16 Bloecke,
+                // Lauf mit moveForward 0.7 x getAIMoveSpeed 0.1 -> neue KI quadriert das Attribut: sqrt(0.07)
+                .add(Attributes.FOLLOW_RANGE, 16.0D)
+                .add(Attributes.MOVEMENT_SPEED, Math.sqrt(0.7D * 0.1D));
     }
 
     @Override
@@ -87,14 +90,16 @@ public class EntityRADBeast extends Monster implements IRadiationImmune {
     protected void defineSynchedData() {
         super.defineSynchedData();
         var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
+        defs.define(VICTIM_ID, 0);
+    }
     //?} else {
     /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
-    *///?}
         defs.define(VICTIM_ID, 0);
     }
+    *///?}
 
     /** {@code makeLeader}: triple health and a radiation coin that always drops. */
     public EntityRADBeast makeLeader() {
@@ -115,8 +120,9 @@ public class EntityRADBeast extends Monster implements IRadiationImmune {
     @Override public float getLightLevelDependentMagicValue() { return 1.0F; }
 
     @Override protected SoundEvent getHurtSound(@NotNull DamageSource source) { return SoundEvents.BLAZE_HURT; }
-    @Override protected SoundEvent getDeathSound() { return SoundEvents.IRON_GOLEM_STEP; }
-    @Override protected SoundEvent getAmbientSound() { return SoundEvents.BLAZE_AMBIENT; }
+    // Original: "hbm:step.iron" / "hbm:item.geiger" + (1 + rand.nextInt(6))
+    @Override protected SoundEvent getDeathSound() { return com.hbm_m.sound.HbmSoundsNT.get("hbm:step.iron"); }
+    @Override protected SoundEvent getAmbientSound() { return com.hbm_m.sound.HbmSoundsNT.get("hbm:item.geiger" + (1 + this.random.nextInt(6))); }
 
     /** The beast is a walking reactor: water is its only real weakness. */
     @Override

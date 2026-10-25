@@ -13,6 +13,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 //? if forge {
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 //?}
@@ -54,7 +55,7 @@ public class MachineIndustrialBoilerMenu extends AbstractContainerMenu {
         this.addSlot(new Slot(machineInventory, MachineIndustrialBoilerBlockEntity.SLOT_WATER_IN, 44, 16) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                return com.hbm_m.platform.PlatformHooks.isFluidContainer(stack);
+                return com.hbm_m.platform.FluidHooks.isFluidContainer(stack);
             }
         });
         this.addSlot(new Slot(machineInventory, MachineIndustrialBoilerBlockEntity.SLOT_WATER_OUT, 44, 52) {
@@ -68,7 +69,7 @@ public class MachineIndustrialBoilerMenu extends AbstractContainerMenu {
         this.addSlot(new Slot(machineInventory, MachineIndustrialBoilerBlockEntity.SLOT_STEAM_IN, 151, 16) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                return com.hbm_m.platform.PlatformHooks.isFluidContainer(stack);
+                return com.hbm_m.platform.FluidHooks.isFluidContainer(stack);
             }
         });
         this.addSlot(new Slot(machineInventory, MachineIndustrialBoilerBlockEntity.SLOT_STEAM_OUT, 151, 52) {
@@ -144,7 +145,7 @@ public class MachineIndustrialBoilerMenu extends AbstractContainerMenu {
                 return ItemStack.EMPTY;
             }
         } else {
-            boolean isFluidContainer = com.hbm_m.platform.PlatformHooks.isFluidContainer(slotStack);
+            boolean isFluidContainer = com.hbm_m.platform.FluidHooks.isFluidContainer(slotStack);
             if (isFluidContainer) {
                 if (!this.moveItemStackTo(slotStack, MachineIndustrialBoilerBlockEntity.SLOT_WATER_IN,
                         MachineIndustrialBoilerBlockEntity.SLOT_WATER_IN + 1, false)

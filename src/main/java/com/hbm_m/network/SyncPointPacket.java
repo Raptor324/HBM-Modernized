@@ -12,6 +12,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
+import com.hbm_m.platform.StackNbt;
 
 public class SyncPointPacket implements C2SPacket {
 
@@ -71,7 +72,7 @@ public class SyncPointPacket implements C2SPacket {
 
             if (detonatorStack.isEmpty()) return;
 
-            PlatformHooks.editItemTag(detonatorStack, nbt -> {
+            StackNbt.edit(detonatorStack, nbt -> {
                 ListTag pointsList;
                 if (!nbt.contains("Points", Tag.TAG_LIST)) {
                     pointsList = new ListTag();

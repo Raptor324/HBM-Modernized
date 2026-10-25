@@ -3,10 +3,11 @@ package com.hbm_m.platform;
 import com.hbm_m.recipe.index.ModRecipeIndex;
 
 /**
- * Тонкий серверный глюк шины событий: инвалидирует кэш {@link ModRecipeIndex}
- * в конце каждой перезагрузки датапаков, при синхронизации датапаков с клиентом
- * и при обновлении тегов (изменение membership тега без пересборки рецептов —
- * byIngredient-индекс строится по снапшоту тегов).
+ * Серверная инвалидация кэша {@link ModRecipeIndex}:
+ * инвалидирует кэш в начале цикла перезагрузки датапаков (AddReloadListenerEvent — сброс перед чтением),
+ * при синхронизации датапаков с клиентом (OnDatapackSyncEvent — после применения рецептов на сервере)
+ * и при обновлении тегов (TagsUpdatedEvent — изменение membership тега без пересборки рецептов,
+ * так как byIngredient-индекс строится по снапшоту тегов).
  *
  * ВАЖНО: RecipesUpdatedEvent НЕ используется — он КЛИЕНТСКИЙ на обеих версиях
  * (forge 1.20.1: net.minecraftforge.client.event; neoforge 1.21.1: net.neoforged.neoforge.client.event).

@@ -51,9 +51,16 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading
     private long explosionStart;
     public boolean fallout = true;
     private int falloutAdd = 0;
+    /** Reichweite des Niederschlags als Vielfaches des Kraterradius. */
+    private float falloutFactor = 2.5F;
 
     private IExplosionRay explosion;
     private boolean initialized = false;
+
+    /** Снапшот {@link NukeMk5ChunkEater} из NBT, ожидает восстановления в первом тике. */
+    private CompoundTag pendingExplosionState;
+    /** Какой движок был сохранён в NBT: 0 = ChunkEater, 1 = Parallelized. */
+    private int resumedEngine = -1;
 
     /** Разрушение блоков лучами MK5 (кратер). */
     public boolean destroyTerrain = true;
@@ -65,6 +72,10 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading
     public boolean applyCraterBiomes = true;
 
     /** Для API: задать дополнительный радиус fallout. */
+    public void setFalloutFactor(float factor) {
+        if (factor > 0.0F) this.falloutFactor = factor;
+    }
+
     public void setFalloutAdd(int add) {
         this.falloutAdd = add;
     }
@@ -87,6 +98,7 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading
         }
 
         if (!level().isClientSide) {
+            updateChunkTicket();
             // Аварийный выключатель (ориг. ключ 6.00): лимит жизни взрыва в секундах.
             // tickCount персистится в NBT, поэтому лимит срабатывает и после перезахода —
             // можно остановить зависший/нежелательный взрыв правкой конфига.
@@ -217,7 +229,7 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading
     }
 
     private void spawnFallout() {
-        int scale = (int) (this.length * 2.5 + getFalloutAdd());
+        int scale = (int) (this.length * this.falloutFactor + getFalloutAdd());
         scale = scale * ModClothConfig.get().falloutRangePercent / 100;
         if (scale < 1) scale = 1;
         com.hbm_m.entity.effect.EntityFalloutRain fallout = new com.hbm_m.entity.effect.EntityFalloutRain(ModEntities.NUKE_FALLOUT_RAIN.get(), level());

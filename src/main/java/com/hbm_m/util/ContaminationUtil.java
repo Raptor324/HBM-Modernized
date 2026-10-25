@@ -33,6 +33,7 @@ public final class ContaminationUtil {
         IMMUNE_ENTITIES.add(MushroomCow.class);
         IMMUNE_ENTITIES.add(Zombie.class);
         IMMUNE_ENTITIES.add(Skeleton.class);
+        IMMUNE_ENTITIES.add(com.hbm_m.entity.mob.EntityQuackos.class);
         IMMUNE_ENTITIES.add(Ocelot.class);
         IMMUNE_ENTITIES.add(IRadiationImmune.class);
     }
@@ -72,8 +73,8 @@ public final class ContaminationUtil {
     public static boolean neutronActivateItem(net.minecraft.world.item.ItemStack stack, float rad, float decay) {
         if (stack == null || stack.isEmpty() || stack.getCount() != 1 || isRadItem(stack)) return false;
 
-        // NBT ueber PlatformHooks: 1.21 hat kein com.hbm_m.platform.PlatformHooks.getItemTag(ItemStack)/setTag() mehr.
-        net.minecraft.nbt.CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
+        // NBT ueber PlatformHooks: 1.21 hat kein com.hbm_m.platform.StackNbt.read(ItemStack)/setTag() mehr.
+        net.minecraft.nbt.CompoundTag tag = com.hbm_m.platform.StackNbt.read(stack);
         float prevActivation = tag != null && tag.contains(NTM_NEUTRON_NBT_KEY)
                 ? tag.getFloat(NTM_NEUTRON_NBT_KEY) : 0F;
 
@@ -81,14 +82,14 @@ public final class ContaminationUtil {
 
         if (newActivation < 0.0001F) {
             if (prevActivation > 0 && tag != null) {
-                com.hbm_m.platform.PlatformHooks.remove(stack, NTM_NEUTRON_NBT_KEY);
+                com.hbm_m.platform.StackNbt.removeKey(stack, NTM_NEUTRON_NBT_KEY);
                 return true;
             }
             return false;
         }
 
         if (Math.abs(newActivation - prevActivation) > 1e-6F) {
-            com.hbm_m.platform.PlatformHooks.editItemTag(stack,
+            com.hbm_m.platform.StackNbt.edit(stack,
                     t -> t.putFloat(NTM_NEUTRON_NBT_KEY, newActivation));
             return true;
         }
@@ -98,13 +99,13 @@ public final class ContaminationUtil {
     /** The whole stack's induced dose (the stored per-item value times the count). */
     public static float getNeutronRads(net.minecraft.world.item.ItemStack stack) {
         if (stack == null || stack.isEmpty() || isRadItem(stack)) return 0F;
-        net.minecraft.nbt.CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
+        net.minecraft.nbt.CompoundTag tag = com.hbm_m.platform.StackNbt.read(stack);
         if (tag == null || !tag.contains(NTM_NEUTRON_NBT_KEY)) return 0F;
         return tag.getFloat(NTM_NEUTRON_NBT_KEY) * stack.getCount();
     }
 
     public static boolean isContaminated(net.minecraft.world.item.ItemStack stack) {
-        net.minecraft.nbt.CompoundTag tag = stack == null ? null : com.hbm_m.platform.PlatformHooks.getItemTag(stack);
+        net.minecraft.nbt.CompoundTag tag = stack == null ? null : com.hbm_m.platform.StackNbt.read(stack);
         return tag != null && tag.contains(NTM_NEUTRON_NBT_KEY);
     }
 
@@ -146,12 +147,15 @@ public final class ContaminationUtil {
         }
 
         // Original: if(((EntityLivingBase)e).isPotionActive(HbmPotion.mutation)) return true;
-        if (com.hbm_m.platform.PlatformHooks.hasEffect(living, com.hbm_m.effect.ModEffects.MUTATION)) {
+        if (com.hbm_m.platform.EffectHooks.hasEffect(living, com.hbm_m.effect.ModEffects.MUTATION)) {
             return true;
         }
 
         Class<?> entityClass = e.getClass();
+        // E15 (Fork, nur mit Space-Addon): Ozelot und Quackos sind im Space-Fork nicht mehr immun
+        boolean fork = com.hbm_m.api.space.SpaceApi.forkActive();
         for (Class<?> clazz : IMMUNE_ENTITIES) {
+            if (fork && (clazz == Ocelot.class || clazz == com.hbm_m.entity.mob.EntityQuackos.class)) continue;
             if (clazz.isAssignableFrom(entityClass)) {
                 return true;
             }
@@ -191,7 +195,7 @@ public final class ContaminationUtil {
             return;
         }
         // Original: if(entity.isPotionActive(HbmPotion.stability.id)) return;
-        if (com.hbm_m.platform.PlatformHooks.hasEffect(living, com.hbm_m.effect.ModEffects.STABILITY)) {
+        if (com.hbm_m.platform.EffectHooks.hasEffect(living, com.hbm_m.effect.ModEffects.STABILITY)) {
             return;
         }
         if (living instanceof Player player && ArmorUtil.checkForDigamma(player)) {
@@ -240,6 +244,10 @@ public final class ContaminationUtil {
         player.sendSystemMessage(geigerRadLine("geiger.chunkRad", rads, "RAD/s", getRadTierColor(rads)));
         player.sendSystemMessage(geigerRadLine("geiger.envRad", env, "RAD/s", getRadTierColor(env)));
         player.sendSystemMessage(geigerRadLine("geiger.playerRad", eRad, "RAD", getPlayerRadTierColor(eRad)));
+        if (com.hbm_m.api.space.SpaceApi.isInstalled()) { // NTM Space (W-R9A-2): Neutronenaktivierung, Farbe wie Umgebung (1:1)
+            double neut = ((int) (HbmLivingProps.getNeutronActivation(player) * 10)) / 10D;
+            player.sendSystemMessage(geigerRadLine("geiger.playerAct", neut, "RAD/s", getRadTierColor(env)));
+        }
         player.sendSystemMessage(Component.translatable("geiger.playerRes")
                 .withStyle(ChatFormatting.YELLOW)
                 .append(radValueComponent(String.valueOf(res), "% (" + resKoeff + ")", resKoeff > 0 ? ChatFormatting.GREEN : ChatFormatting.WHITE)));

@@ -11,6 +11,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * 1:1-Port von {@code ContainerPneumoStorageImporter} (1.7.10): drei mal drei Plaetze bei (62, 17),

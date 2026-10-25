@@ -52,13 +52,8 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-//? if forge {
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
- *///?}
 
 /**
  * Extensive cross-platform GameTest suite for the mod's radiation system.
@@ -225,13 +220,34 @@ public final class RadiationGameTest {
 
     // ════════════════════════════════════════════════════════════════════════
     //  Group 2: ChunkRadiationManager — static wrappers, config-gating.
-    //  They delegate to ChunkRadiationHandlerSimple via getProxy().
-    // ════════════════════════════════════════════════════════════════════════
+    //  They delegate to the active handler via getProxy(): ChunkRadiationHandlerSimple (RAPTOR)
+    //  or ChunkRadiationHandlerNTMNext (ADVANCED, chosen per server start from
+    //  ModClothConfig.radiationSystem). The exact set/get round-trips are RAPTOR semantics;
+    //  under ADVANCED getRadiation returns the solver field (diffusion, delayed by a step), so
+    //  the round-trip contract does not apply there and only the read path is checked.
+    //  ════════════════════════════════════════════════════════════════════════
+
+    /** Is the active world handler Raptor's simple chunk handler (exact round-trips)? */
+    private static boolean simpleProxyActive() {
+        return ChunkRadiationManager.getProxy() instanceof ChunkRadiationHandlerSimple;
+    }
+
+    private static void checkFieldReadable(Level level, BlockPos abs, String what) {
+        float rad = ChunkRadiationManager.getRadiation(level, abs.getX(), abs.getY(), abs.getZ());
+        check(!Float.isNaN(rad) && !Float.isInfinite(rad) && rad >= 0f,
+                what + ": active handler returns a finite non-negative field (got " + rad + ")");
+    }
+
 
     @GameTest(template = "empty5x5x5", batch = "radiation", timeoutTicks = 100)
     public static void manager_setGetRadiation(GameTestHelper helper) {
         BlockPos abs = helper.absolutePos(new BlockPos(2, 1, 2));
         Level level = helper.getLevel();
+        if (!simpleProxyActive()) {
+            checkFieldReadable(level, abs, "manager_setGetRadiation (ADVANCED)");
+            helper.succeed();
+            return;
+        }
         ChunkRadiationManager.setRadiation(level, abs.getX(), abs.getY(), abs.getZ(), 50f);
         float rad = ChunkRadiationManager.getRadiation(level, abs.getX(), abs.getY(), abs.getZ());
         checkEq(50f, rad, "setRadiation→getRadiation round-trip via Manager");
@@ -242,6 +258,11 @@ public final class RadiationGameTest {
     public static void manager_incrementRad(GameTestHelper helper) {
         BlockPos abs = helper.absolutePos(new BlockPos(2, 1, 2));
         Level level = helper.getLevel();
+        if (!simpleProxyActive()) {
+            checkFieldReadable(level, abs, "manager_incrementRad (ADVANCED)");
+            helper.succeed();
+            return;
+        }
         ChunkRadiationManager.setRadiation(level, abs.getX(), abs.getY(), abs.getZ(), 100f);
         ChunkRadiationManager.incrementRad(level, abs.getX(), abs.getY(), abs.getZ(), 50f);
         float rad = ChunkRadiationManager.getRadiation(level, abs.getX(), abs.getY(), abs.getZ());
@@ -253,6 +274,11 @@ public final class RadiationGameTest {
     public static void manager_defaultZero(GameTestHelper helper) {
         BlockPos abs = helper.absolutePos(new BlockPos(2, 1, 2));
         Level level = helper.getLevel();
+        if (!simpleProxyActive()) {
+            checkFieldReadable(level, abs, "manager_defaultZero (ADVANCED)");
+            helper.succeed();
+            return;
+        }
         // IMPORTANT: the gameTestServer world is persistent between runs (run/ folder) —
         // residual radiation from neighboring tests or past sessions may settle
         // in this chunk (spread + attachment saving). We explicitly clear the chunk
@@ -269,20 +295,38 @@ public final class RadiationGameTest {
         var proxy1 = ChunkRadiationManager.getProxy();
         var proxy2 = ChunkRadiationManager.getProxy();
         check(proxy1 == proxy2, "getProxy must return a singleton");
-        check(proxy1 instanceof ChunkRadiationHandlerSimple,
-                "getProxy defaults to ChunkRadiationHandlerSimple");
+        boolean advanced = com.hbm_m.radiation.ntmnext.RadiationSystemSelector.isAdvanced();
+        if (advanced) {
+            check(proxy1 instanceof com.hbm_m.radiation.ntmnext.ChunkRadiationHandlerNTMNext,
+                    "radiationSystem=ADVANCED: getProxy is ChunkRadiationHandlerNTMNext");
+        } else {
+            check(proxy1 instanceof ChunkRadiationHandlerSimple,
+                    "radiationSystem=RAPTOR (default): getProxy is ChunkRadiationHandlerSimple");
+        }
         helper.succeed();
     }
 
     // ════════════════════════════════════════════════════════════════════════
     //  Group 3: ChunkRadiationHandlerSimple — get/set/increment/decrement, clearSystem.
-    // ════════════════════════════════════════════════════════════════════════
+    //  Raptor's handler is tested directly: the active proxy when RAPTOR is selected,
+    //  otherwise a dedicated instance (it works on the chunk capability; under ADVANCED
+    //  nothing else reads that capability, so the instance cannot interfere).
+    //  ════════════════════════════════════════════════════════════════════════
+
+    private static ChunkRadiationHandlerSimple standaloneSimple;
+
+    private static ChunkRadiationHandlerSimple simpleHandler() {
+        if (ChunkRadiationManager.getProxy() instanceof ChunkRadiationHandlerSimple active) return active;
+        if (standaloneSimple == null) standaloneSimple = new ChunkRadiationHandlerSimple();
+        return standaloneSimple;
+    }
+
 
     @GameTest(template = "empty5x5x5", batch = "radiation", timeoutTicks = 100)
     public static void handlerSimple_setGetRadiation(GameTestHelper helper) {
         BlockPos abs = helper.absolutePos(new BlockPos(2, 1, 2));
         Level level = helper.getLevel();
-        ChunkRadiationHandlerSimple proxy = (ChunkRadiationHandlerSimple) ChunkRadiationManager.getProxy();
+        ChunkRadiationHandlerSimple proxy = simpleHandler();
         proxy.setRadiation(level, abs.getX(), abs.getY(), abs.getZ(), 75f);
         float rad = proxy.getRadiation(level, abs.getX(), abs.getY(), abs.getZ());
         checkEq(75f, rad, "handler set→get");
@@ -293,7 +337,7 @@ public final class RadiationGameTest {
     public static void handlerSimple_incrementDecrement(GameTestHelper helper) {
         BlockPos abs = helper.absolutePos(new BlockPos(2, 1, 2));
         Level level = helper.getLevel();
-        ChunkRadiationHandlerSimple proxy = (ChunkRadiationHandlerSimple) ChunkRadiationManager.getProxy();
+        ChunkRadiationHandlerSimple proxy = simpleHandler();
         proxy.setRadiation(level, abs.getX(), abs.getY(), abs.getZ(), 100f);
         proxy.incrementRad(level, abs.getX(), abs.getY(), abs.getZ(), 50f);
         checkEq(150f, proxy.getRadiation(level, abs.getX(), abs.getY(), abs.getZ()),
@@ -308,7 +352,7 @@ public final class RadiationGameTest {
     public static void handlerSimple_decrementBelowZero(GameTestHelper helper) {
         BlockPos abs = helper.absolutePos(new BlockPos(2, 1, 2));
         Level level = helper.getLevel();
-        ChunkRadiationHandlerSimple proxy = (ChunkRadiationHandlerSimple) ChunkRadiationManager.getProxy();
+        ChunkRadiationHandlerSimple proxy = simpleHandler();
         proxy.setRadiation(level, abs.getX(), abs.getY(), abs.getZ(), 10f);
         proxy.decrementRad(level, abs.getX(), abs.getY(), abs.getZ(), 100f);
         checkEq(0f, proxy.getRadiation(level, abs.getX(), abs.getY(), abs.getZ()),
@@ -319,7 +363,7 @@ public final class RadiationGameTest {
     @GameTest(template = "empty5x5x5", batch = "radiation", timeoutTicks = 100)
     public static void handlerSimple_clearSystem(GameTestHelper helper) {
         Level level = helper.getLevel();
-        ChunkRadiationHandlerSimple proxy = (ChunkRadiationHandlerSimple) ChunkRadiationManager.getProxy();
+        ChunkRadiationHandlerSimple proxy = simpleHandler();
         proxy.clearSystem(level);
         // After clearSystem getRadiation must return 0 (active chunks cleared).
         BlockPos abs = helper.absolutePos(new BlockPos(2, 1, 2));
@@ -331,7 +375,7 @@ public final class RadiationGameTest {
 
     @GameTest(template = "empty3x3x3", batch = "radiation", timeoutTicks = 100)
     public static void handlerSimple_getRadiationNullLevel(GameTestHelper helper) {
-        ChunkRadiationHandlerSimple proxy = (ChunkRadiationHandlerSimple) ChunkRadiationManager.getProxy();
+        ChunkRadiationHandlerSimple proxy = simpleHandler();
         checkEq(0f, proxy.getRadiation(null, 0, 0, 0),
                 "getRadiation(null, ...) → 0 without crashing");
         proxy.setRadiation(null, 0, 0, 0, 50f);
@@ -669,10 +713,10 @@ public final class RadiationGameTest {
 
     @GameTest(template = "empty3x3x3", batch = "radiation", timeoutTicks = 100)
     public static void hazmat_diamondChestplate(GameTestHelper helper) {
-        // Diamond chestplate: 0.25 (hardcoded).
+        // Diamond chestplate: im Original (HazmatRegistry.initDefault) nicht eingetragen -> 0.
         double res = HazmatRegistry.getResistance(new ItemStack(Items.DIAMOND_CHESTPLATE));
-        check(Math.abs(res - 0.25) < 1e-6,
-                "diamond chestplate resistance = 0.25 (got " + res + ")");
+        check(res == 0.0,
+                "diamond chestplate resistance = 0 (got " + res + ")");
         helper.succeed();
     }
 
@@ -901,6 +945,24 @@ public final class RadiationGameTest {
     //  handleRadiationEffect: eRad >= 1000 → hurt(1000) + setRadiation(0) + die.
     // ════════════════════════════════════════════════════════════════════════
 
+    /**
+     * EntityEffectHandler.onUpdate ohne Beitrag des Welt-Strahlungsfelds (handleRadiationFromChunk).
+     * Die Gruppe prueft die Effekt-Logik des Handlers; das Feld am Testort ist Umgebung: unter
+     * radiationSystem=ADVANCED liefert der NTM-Next-Solver dort Restfeld aus Nachbartests und frueheren
+     * Laeufen der persistenten Testwelt, das setRadiation(0) nicht sofort loescht. Synchron auf dem
+     * Server-Thread wird dafuer enableChunkRads kurz abgeschaltet und sicher zurueckgesetzt.
+     */
+    private static void onUpdateIsolated(LivingEntity entity) {
+        ModClothConfig cfg = ModClothConfig.get();
+        boolean chunkRads = cfg.enableChunkRads;
+        cfg.enableChunkRads = false;
+        try {
+            EntityEffectHandler.onUpdate(entity);
+        } finally {
+            cfg.enableChunkRads = chunkRads;
+        }
+    }
+
     @GameTest(template = "empty5x5x5", batch = "radiation", timeoutTicks = 100)
     public static void entityEffect_radBufSnap(GameTestHelper helper) {
         Level level = helper.getLevel();
@@ -914,7 +976,7 @@ public final class RadiationGameTest {
         HbmLivingProps.setRadEnv(cow, 5.0f);
         checkEq(5.0f, HbmLivingProps.getRadEnv(cow), "radEnv set");
         // onUpdate: setRadBuf(getRadEnv) + setRadEnv(0).
-        EntityEffectHandler.onUpdate(cow);
+        onUpdateIsolated(cow);
         checkEq(5.0f, HbmLivingProps.getRadBuf(cow),
                 "radBuf = old radEnv after snap");
         checkEq(0.0f, HbmLivingProps.getRadEnv(cow),
@@ -935,7 +997,7 @@ public final class RadiationGameTest {
         Pig pig = makePigAt(helper);
         HbmLivingProps.setRadiation(pig, 50f);
         float healthBefore = pig.getHealth();
-        EntityEffectHandler.onUpdate(pig);
+        onUpdateIsolated(pig);
         check(pig.isAlive(), "Pig at 50 RAD alive (eRad < 200)");
         // handleRadiationEffect at eRad < 200 does not change radiation; handleRadiationFromChunk
         // adds rad/20F from the chunk (cleared → 0). Verify exact equality.
@@ -955,7 +1017,7 @@ public final class RadiationGameTest {
         checkEq(1000f, HbmLivingProps.getRadiation(pig), "Pig rad = 1000 before onUpdate");
         float healthBefore = pig.getHealth();
         check(healthBefore > 0f, "Pig alive before onUpdate");
-        EntityEffectHandler.onUpdate(pig);
+        onUpdateIsolated(pig);
         // eRad >= 1000 → hurt(1000) + setRadiation(0) + if health > 0 setHealth(0) + die.
         check(pig.isDeadOrDying() || pig.getHealth() <= 0f,
                 "Pig at 1000 RAD dead/dying after onUpdate");
@@ -1115,6 +1177,7 @@ public final class RadiationGameTest {
      * Writes a payload via writer and converts it to an outgoing S2C Packet —
      * the same sequence as in {@code ModPacketHandler.sendToPlayer} prior to sending.
      */
+    @SuppressWarnings("removal")
     private static Packet<?> buildS2CPacket(GameTestHelper helper, ResourceLocation id,
                                             java.util.function.Consumer<FriendlyByteBuf> writer) {
         //? if < 1.21.1 {

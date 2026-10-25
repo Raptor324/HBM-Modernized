@@ -1,122 +1,76 @@
 package com.hbm_m.block.machines;
 
-import java.util.Map;
-import java.util.function.Supplier;
-
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.machines.MachineLpw2BlockEntity;
-import com.hbm_m.interfaces.IMultiblockController;
+import com.hbm_m.multiblock.DummyableStructureBuilder;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
-import com.hbm_m.multiblock.PartRole;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntityTicker;
-import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.Shapes;
-import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
- * LPW2 - Port von {@code MachineLPW2} (1.7.10 Original, dort {@code BlockDummyable}), auf diesem
- * Repo-eigenen {@link IMultiblockController}-Framework. Footprint: 5 breit x 5 tief x 3 hoch,
- * Controller mittig unten - vereinfacht-aber-proportionaler Ersatz fuer das riesige
- * Original-Dimension-Array {@code {6,0,3,3,9,10}} (20 breit x 7 tief x 7 hoch), analog zu
- * {@link MachineLargeTurbineBlock}. Rein dekorativ (siehe Klassenkommentar in
- * {@link MachineLpw2BlockEntity}) - kein Ticker, kein GUI, Rechtsklick tut nichts.
+ * 1:1 {@code MachineLPW2}: {@code getDimensions {6,0,3,3,9,10}}, {@code getOffset 3}, keine Anschluesse, kein GUI.
+ * Gezeichnet vom animierten {@code Lpw2Renderer}.
  */
-public class MachineLpw2Block extends BaseEntityBlock implements IMultiblockController {
-
-    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
-
-    private final MultiblockStructureHelper structureHelper;
+public class MachineLpw2Block extends DummyableMachineBlock {
 
     public MachineLpw2Block(Properties properties) {
         super(properties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
-        this.structureHelper = defineStructure();
-    }
-
-    private static MultiblockStructureHelper defineStructure() {
-        String[] bottom = { "OOOOO", "OOOOO", "OOCOO", "OOOOO", "OOOOO" };
-        String[] mid    = { "OOOOO", "OOOOO", "OOOOO", "OOOOO", "OOOOO" };
-        String[] top    = { "OOOOO", "OOOOO", "OOOOO", "OOOOO", "OOOOO" };
-
-        Map<Character, PartRole> roleMap = Map.of(
-                'O', PartRole.DEFAULT,
-                'C', PartRole.CONTROLLER
-        );
-
-        Map<Character, Supplier<BlockState>> symbolMap = Map.of();
-
-        return MultiblockStructureHelper.createFromLayersWithRoles(
-                new String[][] { bottom, mid, top },
-                symbolMap,
-                () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-                roleMap,
-                null,
-                null
-        );
     }
 
     @Override
-    public MultiblockStructureHelper getStructureHelper() {
-        return this.structureHelper;
+    protected MultiblockStructureHelper defineStructure() {
+        if (com.hbm_m.api.space.SpaceApi.lpw2().active()) {
+            // Space-API W-R6B-1, 1:1 NTM Space MachineLPW2: getOffset 9, makeExtra bei +-dir*3 - rot, y+3 (Fluid-Proxies)
+            return DummyableStructureBuilder.create()
+                    .box(6, 0, 3, 3, 9, 10)
+                    .placementOffset(9)
+                    .extra(3, 3, -1)
+                    .extra(-3, 3, -1)
+                    .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
+        }
+        return DummyableStructureBuilder.create()
+                .box(6, 0, 3, 3, 9, 10)
+                .placementOffset(3)
+                .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
+    }
+
+    /** Space-API W-R6B-1: {@code getDirModified = dir.getRotation(DOWN)} (N -> W) nur als Stationstriebwerk. */
+    @Override
+    public BlockState getStateForPlacement(net.minecraft.world.item.context.BlockPlaceContext context) {
+        BlockState state = super.getStateForPlacement(context);
+        if (state != null && com.hbm_m.api.space.SpaceApi.lpw2().active()) {
+            state = state.setValue(FACING, state.getValue(FACING).getCounterClockWise());
+        }
+        return state;
+    }
+
+    /** Ticker nur als Stationstriebwerk (Space-API W-R6B-1); ohne Addon Deko ohne Logik wie bisher. */
+    @Nullable
+    /** W-R9B4-2: mit aktivem Space-Triebwerk der Addon-Name ("LPW-2 Station Thruster"), sonst HBM. */
+    @Override
+    public String getDescriptionId() {
+        if (com.hbm_m.api.space.SpaceApi.lpw2().active()) {
+            String id = com.hbm_m.api.space.SpaceApi.lpw2().descriptionId();
+            if (id != null) return id;
+        }
+        return super.getDescriptionId();
     }
 
     @Override
-    public PartRole getPartRole(BlockPos localOffset) {
-        return structureHelper.resolvePartRole(localOffset, this);
-    }
-
-    @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
-    }
-
-    @Override
-    public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+    public <T extends BlockEntity> net.minecraft.world.level.block.entity.BlockEntityTicker<T> getTicker(net.minecraft.world.level.Level level, BlockState state,
+            net.minecraft.world.level.block.entity.BlockEntityType<T> type) {
+        if (!com.hbm_m.api.space.SpaceApi.lpw2().active()) return null;
+        return createTickerHelper(type, com.hbm_m.blockentity.ModBlockEntities.LPW2_BE.get(), MachineLpw2BlockEntity::tick);
     }
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
-    }
-
-    @Override
-    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return structureHelper.generateShapeFromParts(state.getValue(FACING));
-    }
-
-    @Override
-    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return structureHelper.getSpecificPartShape(structureHelper.getControllerOffset(), state.getValue(FACING));
-    }
-
-    @Override
-    public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
-        if (!structureHelper.isFullBlock(structureHelper.getControllerOffset(), state.getValue(FACING))) {
-            return Shapes.empty();
-        }
-        return Shapes.block();
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     @Nullable
@@ -125,57 +79,8 @@ public class MachineLpw2Block extends BaseEntityBlock implements IMultiblockCont
         return new MachineLpw2BlockEntity(pos, state);
     }
 
-    @Nullable
-    @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(
-            Level level,
-            BlockState state,
-            BlockEntityType<T> type
-    ) {
-        return null; // Rein dekorativ, kein Ticker.
-    }
-
-    @Override
-    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
-        super.onPlace(state, level, pos, oldState, isMoving);
-        if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            structureHelper.placeStructure(level, pos, state.getValue(FACING), this);
-        }
-    }
-
-    //? if < 1.21.1 {
-    @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos,
-                                  Player player, InteractionHand hand, BlockHitResult hit) {
-
-        return InteractionResult.PASS; // Kein GUI im Original.
-        }
-    //?} else {
-    /*@Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-
-        return InteractionResult.PASS; // Kein GUI im Original.
-        }
-    *///?}
-
-
-    @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos,
-                          BlockState newState, boolean isMoving) {
-        if (!state.is(newState.getBlock())) {
-            if (!level.isClientSide()) {
-                structureHelper.destroyStructure(level, pos, state.getValue(FACING));
-            }
-        }
-        super.onRemove(state, level, pos, newState, isMoving);
-    }
-
     //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<MachineLpw2Block> CODEC = simpleCodec(MachineLpw2Block::new);
-
-    @Override
-    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
-        return CODEC;
-    }
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
 }

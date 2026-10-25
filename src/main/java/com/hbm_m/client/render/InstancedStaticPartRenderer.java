@@ -1,14 +1,7 @@
 package com.hbm_m.client.render;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
-
 import java.lang.ref.Cleaner;
 import java.nio.Buffer;
 import java.nio.FloatBuffer;
@@ -56,6 +49,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
  * GL compatibility helpers live in {@link InstancedGlCompat}.
  */
 @OnlyIn(Dist.CLIENT)
+
 public class InstancedStaticPartRenderer extends AbstractGpuMesh
         implements VanillaInstancedMeshRenderer, IrisCompanionMeshRenderer {
 
@@ -2092,7 +2086,6 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     public void flush() {
         flush(RenderSystem.getProjectionMatrix());
     }
-
 
     /**
      * Mandatory re-bind of atlas + lightmap after {@link ShaderInstance#apply()} and before glDraw*.

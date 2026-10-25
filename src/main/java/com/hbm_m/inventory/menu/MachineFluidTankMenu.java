@@ -24,6 +24,7 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 
 import dev.architectury.fluid.FluidStack;
+import com.hbm_m.platform.ModItemStackHandler;
 
 
 @SuppressWarnings("UnstableApiUsage")
@@ -74,7 +75,7 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
         this.addSlot(new Slot(handlerContainer, MachineFluidTankBlockEntity.SLOT_LOAD_IN, 35, 17) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
-                return FluidItemAccess.hasFluidHandler(stack);
+                return FluidItemAccess.isFluidContainer(stack);
             }
         });
 
@@ -90,7 +91,7 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
         this.addSlot(new Slot(handlerContainer, MachineFluidTankBlockEntity.SLOT_UNLOAD_IN, 125, 17) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
-                return FluidItemAccess.hasFluidHandler(stack);
+                return FluidItemAccess.isFluidContainer(stack);
             }
         });
 
@@ -168,12 +169,10 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
                 // Move from player inventory to machine slots
                 if (stackInSlot.getItem() instanceof IItemFluidIdentifier) {
                     // Put into the input fluid identifier slot
-                    // The ID-in slot is added first, so it is index 0. MACHINE_SLOTS equals
-                    // PLAYER_INVENTORY_START, so the old range pointed at the player inventory.
-                    if (!moveItemStackTo(stackInSlot, 0, 1, false)) {
+                    if (!moveItemStackTo(stackInSlot, MachineFluidTankBlockEntity.SLOT_ID_IN, MachineFluidTankBlockEntity.SLOT_ID_IN + 1, false)) {
                         return ItemStack.EMPTY;
                     }
-                } else if (FluidItemAccess.hasFluidHandler(stackInSlot)) {
+                } else if (FluidItemAccess.isFluidContainer(stackInSlot)) {
                     // Try to put into LOAD_IN slot first
                     if (!moveItemStackTo(stackInSlot, MachineFluidTankBlockEntity.SLOT_LOAD_IN, MachineFluidTankBlockEntity.SLOT_LOAD_IN + 1, false)) {
                         // If that fails, try UNLOAD_IN slot

@@ -3,7 +3,7 @@ package com.hbm_m.client.render.implementations;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.hbm_m.blockentity.machines.FireboxBaseBlockEntity;
+import com.hbm_m.blockentity.machines.MachineFireboxBaseBlockEntity;
 import com.hbm_m.blockentity.machines.HeatingOvenBlockEntity;
 import com.hbm_m.blockentity.machines.MachineFireboxBlockEntity;
 import com.hbm_m.client.model.ConfiguredMultipartBakedModel;
@@ -63,17 +63,17 @@ public final class HeaterRenderers {
 
     // -- Fireboxes --------------------------------------------------------
 
-    private static List<BakedQuad> fireboxInnerQuads(FireboxBaseBlockEntity be) {
+    private static List<BakedQuad> fireboxInnerQuads(MachineFireboxBaseBlockEntity be) {
         String part = be.isBurning() ? "InnerBurning" : "InnerEmpty";
         return innerQuads(be, part);
     }
 
-    private static List<BakedQuad> ovenInnerQuads(FireboxBaseBlockEntity be) {
+    private static List<BakedQuad> ovenInnerQuads(MachineFireboxBaseBlockEntity be) {
         String part = be.isBurning() ? "InnerBurning" : "Inner";
         return innerQuads(be, part);
     }
 
-    private static List<BakedQuad> innerQuads(FireboxBaseBlockEntity be, String partName) {
+    private static List<BakedQuad> innerQuads(MachineFireboxBaseBlockEntity be, String partName) {
         BakedModel partModel = part(be, partName);
         if (partModel == null) return List.of();
 

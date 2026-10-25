@@ -48,13 +48,9 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.PushReaction;
-//? if forge {
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
- *///?}
+import com.hbm_m.platform.EffectHooks;
 
 /**
  * Кроссплатформенный набор GameTest-ов для системы газов ({@code com.hbm_m.block.gas}).
@@ -658,8 +654,8 @@ public final class GasGameTest {
         checkEq(5.0f, HbmLivingProps.getRadEnv(cow), "radon_dense contact must accumulate radEnv");
         check(HbmLivingProps.getAsbestos(cow) == 50, "radon_dense contact must add +5 asbestos per tick");
         // 1.7.10: PotionEffect(HbmPotion.radiation, 15 * 20, 0)
-        check(PlatformHooks.hasEffect(cow, ModEffects.RADIATION), "radon_dense must apply the radiation effect");
-        MobEffectInstance inst = PlatformHooks.getEffect(cow, ModEffects.RADIATION);
+        check(EffectHooks.hasEffect(cow, ModEffects.RADIATION), "radon_dense must apply the radiation effect");
+        MobEffectInstance inst = EffectHooks.getEffect(cow, ModEffects.RADIATION);
         check(inst != null && inst.getDuration() == 15 * 20 && inst.getAmplifier() == 0,
                 "radiation effect must be 15s amp 0, got " + (inst == null ? "null" : inst.getDuration() + "/" + inst.getAmplifier()));
         helper.succeed();
@@ -673,7 +669,7 @@ public final class GasGameTest {
         contacts(helper, ModBlocks.GAS_RADON_DENSE.get(), cow, 10);
         checkEq(0.0f, HbmLivingProps.getRadiation(cow), "protected: radon_dense must add no radiation");
         checkEq(0.0f, HbmLivingProps.getRadEnv(cow), "protected: radon_dense must add no radEnv");
-        check(!PlatformHooks.hasEffect(cow, ModEffects.RADIATION), "protected: no radiation effect");
+        check(!EffectHooks.hasEffect(cow, ModEffects.RADIATION), "protected: no radiation effect");
         check(HbmLivingProps.getAsbestos(cow) == 0, "protected: no asbestos");
         check(wornFilterDamage(cow) == 10, "filter must take 1 damage per contact, got " + wornFilterDamage(cow));
         helper.succeed();
@@ -688,8 +684,8 @@ public final class GasGameTest {
         checkEq(5.0f, HbmLivingProps.getRadEnv(cow), "meltdown contact must accumulate radEnv");
         check(HbmLivingProps.getAsbestos(cow) == 50, "meltdown contact must add +5 asbestos per tick");
         // 1.7.10: PotionEffect(HbmPotion.radiation, 60 * 20, 2) — всегда, даже в маске
-        check(PlatformHooks.hasEffect(cow, ModEffects.RADIATION), "meltdown must apply the radiation effect");
-        MobEffectInstance inst = PlatformHooks.getEffect(cow, ModEffects.RADIATION);
+        check(EffectHooks.hasEffect(cow, ModEffects.RADIATION), "meltdown must apply the radiation effect");
+        MobEffectInstance inst = EffectHooks.getEffect(cow, ModEffects.RADIATION);
         check(inst != null && inst.getDuration() == 60 * 20 && inst.getAmplifier() == 2,
                 "radiation effect must be 60s amp 2, got " + (inst == null ? "null" : inst.getDuration() + "/" + inst.getAmplifier()));
         helper.succeed();
@@ -707,7 +703,7 @@ public final class GasGameTest {
         checkEq(5.0f, HbmLivingProps.getRadiation(cow),
                 "meltdown radiation must bypass the mask (0.5 per tick)");
         checkEq(5.0f, HbmLivingProps.getRadEnv(cow), "meltdown radEnv must bypass the mask");
-        check(PlatformHooks.hasEffect(cow, ModEffects.RADIATION), "meltdown radiation effect must bypass the mask");
+        check(EffectHooks.hasEffect(cow, ModEffects.RADIATION), "meltdown radiation effect must bypass the mask");
         check(HbmLivingProps.getAsbestos(cow) == 0, "mask must block meltdown asbestos");
         check(wornFilterDamage(cow) == 10, "filter must take 1 damage per tick, got " + wornFilterDamage(cow));
         helper.succeed();
@@ -737,10 +733,10 @@ public final class GasGameTest {
     @GameTest(template = "empty3x3x3", batch = "gas", timeoutTicks = 100)
     public static void gas_contactTombRemovesRadaway(GameTestHelper helper) {
         Cow cow = makeCow(helper);
-        PlatformHooks.addEffect(cow, ModEffects.RADAWAY, 200, 0);
-        check(PlatformHooks.hasEffect(cow, ModEffects.RADAWAY), "sanity: radaway must be applied");
+        EffectHooks.addEffect(cow, ModEffects.RADAWAY, 200, 0);
+        check(EffectHooks.hasEffect(cow, ModEffects.RADAWAY), "sanity: radaway must be applied");
         contacts(helper, ModBlocks.GAS_RADON_TOMB.get(), cow, 1);
-        check(!PlatformHooks.hasEffect(cow, ModEffects.RADAWAY), "tomb must strip the radaway effect");
+        check(!EffectHooks.hasEffect(cow, ModEffects.RADAWAY), "tomb must strip the radaway effect");
         checkEq(0.5f, HbmLivingProps.getRadiation(cow), "tomb contact after strip adds 0.5 RAD");
         helper.succeed();
     }

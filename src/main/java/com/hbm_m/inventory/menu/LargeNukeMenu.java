@@ -55,6 +55,7 @@ public class LargeNukeMenu extends AbstractContainerMenu {
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
+        // Machines-Konvention (wie NukeFatManMenu): kein Shift-Transfer aus der Bombe
         return ItemStack.EMPTY;
     }
 }

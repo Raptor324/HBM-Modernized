@@ -2,6 +2,7 @@ package com.hbm_m.block.machines;
 
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineFoundryTankBlockEntity;
+import com.hbm_m.item.ModItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -21,9 +22,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Port of the 1.7.10 FoundryTank block. Right-click with a shovel empties its contents into a
- * material-specific scrap item ({@link CrucibleUtil#createScrap}, port of {@code ItemScraps.create});
- * breaking the block drops the remaining metal the same way (original breakBlock). No HUD overlay,
- * matching the original block.
+ * Schrott-Item des Materials ({@code ItemScraps} mit Menge), wie im Original.
  */
 public class MachineFoundryTankBlock extends BaseEntityBlock {
 
@@ -41,20 +40,9 @@ public class MachineFoundryTankBlock extends BaseEntityBlock {
         if (!(be instanceof MachineFoundryTankBlockEntity tank)) return InteractionResult.PASS;
 
         ItemStack held = player.getItemInHand(hand);
-        if (held.getItem() instanceof ShovelItem && tank.amount > 0) {
-            if (tank.type != null) {
-                // Оригинал: ItemScraps.create(new MaterialStack(cast.type, cast.amount))
-                ItemStack scrap = com.hbm_m.util.CrucibleUtil.createScrap(
-                        new com.hbm_m.inventory.material.MaterialStack(tank.type, tank.amount));
-                if (!scrap.isEmpty() && !player.addItem(scrap)) {
-                    level.addFreshEntity(new ItemEntity(level, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5, scrap));
-                }
-            }
-            tank.amount = 0;
-            tank.type = null;
-            tank.setChanged();
-            level.sendBlockUpdated(pos, state, state, 3);
-            return InteractionResult.SUCCESS;
+        if (FoundryBlockUtil.isShovel(held)) {
+            FoundryBlockUtil.shovelOut(level, pos, player, tank, 1.0);
+            return InteractionResult.CONSUME;
         }
 
         return InteractionResult.PASS;
@@ -68,20 +56,9 @@ public class MachineFoundryTankBlock extends BaseEntityBlock {
         if (!(be instanceof MachineFoundryTankBlockEntity tank)) return InteractionResult.PASS;
 
         ItemStack held = player.getItemInHand(InteractionHand.MAIN_HAND);
-        if (held.getItem() instanceof ShovelItem && tank.amount > 0) {
-            if (tank.type != null) {
-                // Оригинал: ItemScraps.create(new MaterialStack(cast.type, cast.amount))
-                ItemStack scrap = com.hbm_m.util.CrucibleUtil.createScrap(
-                        new com.hbm_m.inventory.material.MaterialStack(tank.type, tank.amount));
-                if (!scrap.isEmpty() && !player.addItem(scrap)) {
-                    level.addFreshEntity(new ItemEntity(level, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5, scrap));
-                }
-            }
-            tank.amount = 0;
-            tank.type = null;
-            tank.setChanged();
-            level.sendBlockUpdated(pos, state, state, 3);
-            return InteractionResult.SUCCESS;
+        if (FoundryBlockUtil.isShovel(held)) {
+            FoundryBlockUtil.shovelOut(level, pos, player, tank, 1.0);
+            return InteractionResult.CONSUME;
         }
 
         return InteractionResult.PASS;
@@ -91,14 +68,8 @@ public class MachineFoundryTankBlock extends BaseEntityBlock {
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moving) {
-        if (!state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof MachineFoundryTankBlockEntity tank
-                && tank.amount > 0 && tank.type != null) {
-            // Оригинал FoundryTank.breakBlock: шлак остатка расплава (per-material scrap)
-            ItemStack scrap = com.hbm_m.util.CrucibleUtil.createScrap(
-                    new com.hbm_m.inventory.material.MaterialStack(tank.type, tank.amount));
-            if (!scrap.isEmpty()) {
-                level.addFreshEntity(new ItemEntity(level, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5, scrap));
-            }
+        if (!state.is(newState.getBlock()) && !level.isClientSide && level.getBlockEntity(pos) instanceof MachineFoundryTankBlockEntity tank) {
+            FoundryBlockUtil.dropContents(level, pos, tank, 1.0);
         }
         super.onRemove(state, level, pos, newState, moving);
     }

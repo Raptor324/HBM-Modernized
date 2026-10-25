@@ -11,15 +11,7 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
 
-@OnlyIn(Dist.CLIENT)
 public class GUIMachinePyroOven extends GuiInfoScreen<MachinePyroOvenMenu> {
 
     private static final ResourceLocation TEXTURE =
@@ -48,8 +40,11 @@ public class GUIMachinePyroOven extends GuiInfoScreen<MachinePyroOvenMenu> {
         int p = (int) (pyro.getProgress() * 27);
         guiGraphics.blit(TEXTURE, this.leftPos + 57, this.topPos + 47, 176, 0, p, 12);
 
-        pyro.getTank0().renderTank(guiGraphics, this.leftPos + 8, this.topPos + 70, 16, 52);
-        pyro.getTank1().renderTank(guiGraphics, this.leftPos + 116, this.topPos + 70, 16, 52);
+        pyro.getTank0().renderTank(guiGraphics, this.leftPos + 8, this.topPos + 18, 16, 52);
+        pyro.getTank1().renderTank(guiGraphics, this.leftPos + 116, this.topPos + 18, 16, 52);
+
+        // Original: drawInfoPanel(guiLeft + 108, guiTop + 76, 8, 8, 8)
+        this.drawInfoPanel(guiGraphics, 108, 76, PanelType.SMALL_BLUE_STAR);
     }
 
     @Override
@@ -72,6 +67,8 @@ public class GUIMachinePyroOven extends GuiInfoScreen<MachinePyroOvenMenu> {
         drawElectricityInfo(guiGraphics, mouseX, mouseY,
                 152, 18, 16, 52,
                 pyro.getEnergyStored(), pyro.getMaxEnergyStored());
+
+        this.drawCustomInfoStat(guiGraphics, mouseX, mouseY, 108, 76, 8, 8, leftPos + 108, topPos + 76, getUpgradeInfo(pyro));
         }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);

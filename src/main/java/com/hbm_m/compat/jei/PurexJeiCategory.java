@@ -4,8 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.item.ModItems;
-import com.hbm_m.item.industrial.ItemBlueprintFolder;
+
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.PurexRecipe;
 import com.hbm_m.recipe.PurexRecipe.CountedIngredient;
@@ -13,14 +12,8 @@ import com.hbm_m.recipe.PurexRecipe.FluidIngredient;
 
 import dev.architectury.fluid.FluidStack;
 //? if forge {
-//? if forge {
 import mezz.jei.api.forge.ForgeTypes;
-//?} elif neoforge {
-/*import mezz.jei.api.neoforge.NeoForgeTypes;
-*///?}
-//? if forge {
 import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
-//?}
 //?} elif neoforge {
 /*import mezz.jei.api.neoforge.NeoForgeTypes;
 *///?}
@@ -35,18 +28,14 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
 
 /**
  * JEI port of {@code PurexRecipeHandler} (extends {@code NEIGenericRecipeHandler}).
  */
 @OnlyIn(Dist.CLIENT)
+
 public class PurexJeiCategory extends JeiGenericRecipeCategory<PurexRecipe> {
 
     public static final RecipeType<PurexRecipe> RECIPE_TYPE =
@@ -137,8 +126,9 @@ public class PurexJeiCategory extends JeiGenericRecipeCategory<PurexRecipe> {
                     .addIngredient(ForgeTypes.FLUID_STACK, FluidStackHooksForge.toForge(fluid));
                     //?} elif neoforge {
                     /*.setCustomRenderer(NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
-                    .addIngredient(NeoForgeTypes.FLUID_STACK, new net.neoforged.neoforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
+                    .addIngredient(NeoForgeTypes.FLUID_STACK, new net.minecraftforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()))
                     *///?}
+                    ;
             slotIndex++;
         }
     }
@@ -171,8 +161,9 @@ public class PurexJeiCategory extends JeiGenericRecipeCategory<PurexRecipe> {
                     .addIngredient(ForgeTypes.FLUID_STACK, FluidStackHooksForge.toForge(fluid));
                     //?} elif neoforge {
                     /*.setCustomRenderer(NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
-                    .addIngredient(NeoForgeTypes.FLUID_STACK, new net.neoforged.neoforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
+                    .addIngredient(NeoForgeTypes.FLUID_STACK, new net.minecraftforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()))
                     *///?}
+                    ;
             slotIndex++;
         }
     }
@@ -183,8 +174,7 @@ public class PurexJeiCategory extends JeiGenericRecipeCategory<PurexRecipe> {
             return;
         }
 
-        ItemStack folder = new ItemStack(ModItems.BLUEPRINT_FOLDER.get());
-        ItemBlueprintFolder.writeBlueprintPool(folder, recipe.getBlueprintPool());
+        ItemStack folder = com.hbm_m.item.industrial.ItemBlueprints.make(recipe.getBlueprintPool());
         addUnframedSlot(builder, RecipeIngredientRole.RENDER_ONLY, 75 + machineXOffset, 10)
                 .addItemStack(folder);
     }
@@ -242,3 +232,4 @@ public class PurexJeiCategory extends JeiGenericRecipeCategory<PurexRecipe> {
         return FluidStack.create(fluid, fluidInput.amount());
     }
 }
+

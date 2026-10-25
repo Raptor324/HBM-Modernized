@@ -1,0 +1,16 @@
+{
+  "parent": "minecraft:block/block",
+  "loader": "forge:obj",
+  "model": "hbm_m:models/block/crane_partitioner.obj",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "side": "hbm_m:block/crane_partitioner_side",
+    "back": "hbm_m:block/crane_partitioner_back",
+    "top": "hbm_m:block/crane_top",
+    "inner": "hbm_m:block/crane_splitter_inner",
+    "innerside": "hbm_m:block/crane_splitter_inner_side",
+    "belt": "hbm_m:block/crane_splitter_belt",
+    "particle": "hbm_m:block/crane_partitioner_side"
+  }
+}

@@ -109,9 +109,28 @@ public class MachineElectricFurnaceBlock extends BaseEntityBlock {
         super.onRemove(state, level, pos, newState, moving);
     }
 
+    /** audit10: 1:1 {@code MachineElectricFurnace.randomDisplayTick} - in Betrieb Rauch und Flamme vor der Front. */
+    @Override
+    public void animateTick(BlockState state, Level world, BlockPos pos, net.minecraft.util.RandomSource rand) {
+        if (state.getValue(LIT)) {
+            Direction dir = state.getValue(FACING);
+            float f = pos.getX() + 0.5F;
+            float f1 = pos.getY() + 0.0F + rand.nextFloat() * 6.0F / 16.0F;
+            float f2 = pos.getZ() + 0.5F;
+            float f3 = 0.52F;
+            float f4 = rand.nextFloat() * 0.6F - 0.3F;
+
+            double px = dir.getStepX() != 0 ? f + dir.getStepX() * f3 : f + f4;
+            double pz = dir.getStepZ() != 0 ? f2 + dir.getStepZ() * f3 : f2 + f4;
+            world.addParticle(net.minecraft.core.particles.ParticleTypes.SMOKE, px, f1, pz, 0.0D, 0.0D, 0.0D);
+            world.addParticle(net.minecraft.core.particles.ParticleTypes.FLAME, px, f1, pz, 0.0D, 0.0D, 0.0D);
+        }
+    }
+
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
 
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider p) {
             MenuRegistry.openExtendedMenu((ServerPlayer) player, p, buf -> buf.writeBlockPos(pos));
@@ -121,6 +140,7 @@ public class MachineElectricFurnaceBlock extends BaseEntityBlock {
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
 
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider p) {
             MenuRegistry.openExtendedMenu((ServerPlayer) player, p, buf -> buf.writeBlockPos(pos));

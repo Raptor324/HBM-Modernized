@@ -1,5 +1,7 @@
 package com.hbm_m.item.machine;
 
+import com.hbm_m.platform.StackNbt;
+
 import com.hbm_m.item.ITooltipProvider;
 
 import java.util.List;
@@ -47,7 +49,9 @@ public class ItemPileRodMK2 extends Item implements ITooltipProvider {
         /* 3 */ NU(1D, 25_000D, 0.25D, 4),
         /* 4 */ PU239(1D, 500D, 0.5D, 5),
         /* 5 */ RGP(1D, 1_000D, 0.5D, 6),
-        /* 6 */ WASTE(1D, 0D, 1.5D, 6);
+        /* 6 */ WASTE(1D, 0D, 1.5D, 6),
+        /* 7 */ THORIUM(1D, 35_000D, 0.25D, 8),
+        /* 8 */ THORIUM_FUEL(1D, 2_000D, 0.5D, 6);
 
         public final double reactionMult;
         public final double life;
@@ -101,12 +105,12 @@ public class ItemPileRodMK2 extends Item implements ITooltipProvider {
     // ── Abbrand ─────────────────────────────────────────────────────────────
 
     public static double getDepletion(ItemStack stack) {
-        CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
+        CompoundTag tag = StackNbt.read(stack);
         return tag == null ? 0D : tag.getDouble(KEY_NBT_DEPLETION);
     }
 
     public static void setDepletion(ItemStack stack, double depletion) {
-        com.hbm_m.platform.PlatformHooks.editItemTag(stack, t -> t.putDouble(KEY_NBT_DEPLETION, depletion));
+        StackNbt.orCreate(stack).putDouble(KEY_NBT_DEPLETION, depletion);
     }
 
     /** Original: {@code getDepletionPercent}. Gibt 0 zurueck, wenn der Stab nicht abbrennt. */
@@ -193,9 +197,11 @@ public class ItemPileRodMK2 extends Item implements ITooltipProvider {
             }
         }
 
-        if (rod.neutronSource > 0D) {
-            tooltip.add(Component.translatable("tooltip.hbm_m.pile_rod.source")
-                    .withStyle(ChatFormatting.YELLOW));
+        // Original: I18nUtil.autoBreak(fontRenderer, <name>.desc, 225), jede Zeile gelb
+        String desc = net.minecraft.client.resources.language.I18n.get(this.getDescriptionId() + ".desc");
+        for (net.minecraft.network.chat.FormattedText line : net.minecraft.client.Minecraft.getInstance().font.getSplitter()
+                .splitLines(desc, 225, net.minecraft.network.chat.Style.EMPTY)) {
+            tooltip.add(Component.literal(line.getString()).withStyle(ChatFormatting.YELLOW));
         }
     }
 }

@@ -81,6 +81,12 @@ public final class ArcWelderRecipeGenerator {
                 p(new ItemStack(ModMaterialItems.item(ModMaterials.FIBERGLASS, MaterialShape.INGOT), 4)),
                 p(new ItemStack(ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.PLATE), 4)));
 
+        // Титановая вариант LDE (порт из FFA): алюминиевые пластины заменены титановыми
+        emit(writer, "low_density_element_titanium", new ItemStack(ModItems.LOW_DENSITY_ELEMENT.get()), 200, 10_000L,
+                p(tag("ingots/plastic"), 1),
+                p(new ItemStack(ModMaterialItems.item(ModMaterials.FIBERGLASS, MaterialShape.INGOT), 4)),
+                p(new ItemStack(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE), 2)));
+
         emit(writer, "neutron_reflector", new ItemStack(ModItems.NEUTRON_REFLECTOR.get()), 200, 10_000L,
                 p(new ItemStack(ModMaterialItems.item(ModMaterials.DURA_STEEL, MaterialShape.PLATE))),
                 p(new ItemStack(ModItems.INGOT_TUNGSTEN_CARBIDE.get(), 2)));
@@ -172,6 +178,12 @@ public final class ArcWelderRecipeGenerator {
                 p(new ItemStack(ModItems.FUEL_TANK_SMALL.get())),
                 p(new ItemStack(ModItems.WARHEAD_INCENDIARY_SMALL.get())));
 
+        // Декой-ракета (порт из FFA)
+        emit(writer, "missile_decoy", new ItemStack(ModItems.MISSILE_DECOY.get()), 60, 2_500L,
+                p(new ItemStack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT), 1)),
+                p(new ItemStack(ModItems.FUEL_TANK_SMALL.get())),
+                p(new ItemStack(ModItems.THRUSTER_SMALL.get())));
+
         emit(writer, "missile_anti_ballistic", new ItemStack(ModItems.MISSILE_ANTI_BALLISTIC.get()), 60, 1_000L,
                 p(new ItemStack(ModItems.THRUSTER_SMALL.get(), 4)),
                 p(new ItemStack(ModItems.MISSILE_ASSEMBLY.get())),
@@ -212,6 +224,12 @@ public final class ArcWelderRecipeGenerator {
                 p(new ItemStack(ModItems.FUEL_TANK_MEDIUM.get(), 2)),
                 p(new ItemStack(ModItems.WARHEAD_GENERIC_LARGE.get())));
 
+        // Инферно-ракета (порт из FFA)
+        emit(writer, "missile_inferno", new ItemStack(ModItems.MISSILE_INFERNO.get()), 300, 25_000L,
+                p(new ItemStack(ModItems.WARHEAD_INCENDIARY_LARGE.get())),
+                p(new ItemStack(ModItems.FUEL_TANK_MEDIUM.get(), 2)),
+                p(new ItemStack(ModItems.THRUSTER_MEDIUM.get(), 4)));
+
         emit(writer, "missile_nuclear", new ItemStack(ModItems.MISSILE_NUCLEAR.get()), 200, 50_000L,
                 p(new ItemStack(ModItems.THRUSTER_LARGE.get(), 3)),
                 p(new ItemStack(ModItems.FUEL_TANK_LARGE.get())),
@@ -236,6 +254,7 @@ public final class ArcWelderRecipeGenerator {
         denseWire(writer, "titanium",      ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.WIRE_DENSE),      ModMaterialItems.stack(ModMaterials.TITANIUM, MaterialShape.WIRE,      8), 200, 10_000L);
         denseWireWithTag(writer, "lead",   ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.WIRE_DENSE),          tag("wires_fine/lead"),      8, 100,   500L);
         denseWire(writer, "copper",        ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.WIRE_DENSE),        ModMaterialItems.stack(ModMaterials.COPPER, MaterialShape.WIRE,        8), 100, 1_000L);
+        denseWire(writer, "red_copper",    ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.WIRE_DENSE),    ModMaterialItems.stack(ModMaterials.RED_COPPER, MaterialShape.WIRE,    8), 100, 10_000L);
         denseWire(writer, "steel",         ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.WIRE_DENSE),         ModMaterialItems.stack(ModMaterials.STEEL, MaterialShape.WIRE,         8), 100, 2_000L);
         denseWire(writer, "gold",          ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.WIRE_DENSE),          ModMaterialItems.stack(ModMaterials.GOLD, MaterialShape.WIRE,          8), 100, 1_000L);
         denseWire(writer, "advanced_alloy",ModMaterialItems.item(ModMaterials.ADVANCED_ALLOY, MaterialShape.WIRE_DENSE), ModMaterialItems.stack(ModMaterials.ADVANCED_ALLOY, MaterialShape.WIRE,8), 200, 20_000L);

@@ -1,5 +1,9 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.PlatformHooks;
+
+import com.hbm_m.platform.StackNbt;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -23,19 +27,21 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
+import com.hbm_m.platform.ItemHooks;
 
 /**
  * Radiolysis Collector: Direktport der Fluid-Crack-Kernmechanik aus
  * {@code TileEntityMachineRadiolysis} (1.7.10 Original).
  * <p>
- * <p><b>Er hat keinen Stromanschluss.</b> Seine ganze Leistung kommt aus zehn
+ * <p>Seine ganze Leistung kommt aus zehn
  * {@link com.hbm_m.item.machine.ItemRTGPellet RTG-Pellets}: ihre Waerme wird zu Energie
  * ({@code heat * 10} je Tick) <b>und</b> bestimmt, wie schnell gecrackt wird. Erst ab Hitze 100
  * laeuft ueberhaupt etwas, und je heisser, desto kuerzer der Abstand - von dreissig Ticks
  * herunter auf fuenf. Wer schnell cracken will, muss also teure Pellets verheizen.</p>
  *
- * <p><b>Nicht portiert:</b> das Entseuchen ({@code sterilize}, ab Hitze 200) - dieser Port hat
- * kein Seuchensystem, an dem es etwas zu entfernen gaebe. Die eigentliche Fluid-Crack-Logik (100mB Input -&gt; zwei Output-Fluessigkeiten alle
+ * Strom und Fluide gehen an den vier Anschluessen zwei Bloecke vom Kern ab; die Fluidkennung (Platz 10/11) legt
+ * den Eingangstyp fest. Ab Hitze 200 wird alle 100 Ticks ein verseuchter Gegenstand ({@code ntmContagion})
+ * entseucht, Nahrung (ausser Pfannkuchen) dabei vernichtet. Die eigentliche Fluid-Crack-Logik (100mB Input -&gt; zwei Output-Fluessigkeiten alle
  * {@code CRACK_INTERVAL} Ticks) ist 1:1 aus dem Original uebernommen, inkl. Wiederverwendung der
  * Cracking-Tower-Rezepttabelle wie im Original: eigene {@link RadiolysisRecipe}-Eintraege zuerst,
  * dann Fallback auf {@link CrackingTowerRecipe}.
@@ -66,7 +72,7 @@ public class MachineRadiolysisBlockEntity extends BaseMachineBlockEntity impleme
     private final FluidTank[] tanks = new FluidTank[3];
 
     public MachineRadiolysisBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.RADIOLYSIS_BE.get(), pos, state, SLOT_COUNT, MAX_POWER, MAX_POWER);
+        super(ModBlockEntities.RADIOLYSIS_BE.get(), pos, state, SLOT_COUNT, MAX_POWER, 0L, MAX_POWER);
         tanks[0] = new FluidTank(2_000);
         tanks[1] = new FluidTank(2_000);
         tanks[2] = new FluidTank(2_000);
@@ -88,79 +94,55 @@ public class MachineRadiolysisBlockEntity extends BaseMachineBlockEntity impleme
         // Original: chargeItemsFromTE - der Platz gibt Energie ab, statt welche zu holen.
         be.chargeItemInSlot(SLOT_BATTERY);
 
-        // Upstream: tanks[0].setType(10, 11, slots). Without it the input tank never gets a type,
-        // so trySubscribe asks the network for Fluids.EMPTY and the machine is never fed.
-        ItemStack[] slots = be.inventorySlotArray();
-        if (be.tanks[0].setType(SLOT_FLUID_ID, slots)) be.applySlotsArray(slots);
-
-        // trySubscribe — раз в 10 тиков (регистрация, идемпотентно). tryProvide — каждый тик:
-        // его вторая ветка — прямой пуш в соседний приёмник, гейт делит пропускную способность
-        // выдачи. Fill-проверки пропускают зонд, пока выходные баки пусты.
-        boolean subscribeDue = level.getGameTime() % 10 == 0;
-        for (Direction dir : Direction.values()) {
-            if (subscribeDue) be.trySubscribe(be.tanks[0], level, pos.relative(dir), dir);
-            if (be.tanks[1].getFill() > 0) be.tryProvide(be.tanks[1], level, pos.relative(dir), dir);
-            if (be.tanks[2].getFill() > 0) be.tryProvide(be.tanks[2], level, pos.relative(dir), dir);
+        // Original: tanks[0].setType(10, 11, slots) und setupTanks()
+        ItemStack[] slots = new ItemStack[be.inventory.getSlots()];
+        for (int i = 0; i < slots.length; i++) slots[i] = be.inventory.getStackInSlot(i);
+        if (be.tanks[0].setType(SLOT_FLUID_ID, SLOT_FLUID_ID_OUT, slots)) {
+            for (int i = 0; i < slots.length; i++) be.inventory.setStackInSlot(i, slots[i]);
         }
+        be.setupTanks();
 
         // 1:1: {@code crackTime = max(-0.1 * (heat - 100) + 30, 5)} - je heisser, desto oefter.
         if (be.heat > CRACK_HEAT_MIN) {
             int crackTime = (int) Math.max(-0.1D * (be.heat - CRACK_HEAT_MIN) + 30D, 5D);
             if (level.getGameTime() % crackTime == 0) be.crack();
+
+            if (be.heat >= 200 && level.getGameTime() % 100 == 0) be.sterilize();
         }
 
-        // P6: клиентский пакет только при реальном изменении состояния
-        // (энергия, heat + подписи всех трёх танков).
-        be.syncIfStateChanged(
-                (be.getEnergyStored() * 31L + be.heat),
-                tankFingerprint(be.tanks[0]) * 961L + tankFingerprint(be.tanks[1]) * 31L + tankFingerprint(be.tanks[2]));
-    }
+        if (level instanceof net.minecraft.server.level.ServerLevel world) {
+            for (Direction dir : Direction.Plane.HORIZONTAL) {
+                BlockPos con = pos.relative(dir, 2);
+                be.tryProvide(world, con.getX(), con.getY(), con.getZ(), dir);
+                be.trySubscribe(be.tanks[0].getTankType(), level, con, dir);
+                if (be.tanks[1].getFill() > 0) be.tryProvide(be.tanks[1], level, con, dir);
+                if (be.tanks[2].getFill() > 0) be.tryProvide(be.tanks[2], level, con, dir);
+            }
+        }
 
-    /** Подпись бака: тип жидкости + уровень заполнения (для sync-подписи и кэша рецептов). */
-    private static long tankFingerprint(FluidTank tank) {
-        Fluid f = tank.getTankType();
-        return (f == null ? 0L : f.hashCode()) * 31L + tank.getFill();
+        be.setChanged();
+        be.sendUpdateToClient();
     }
 
     /** Результат радиолиза/крекинга: (жидкость A, mB, жидкость B, mB) — общий для обоих рецептов. */
     private record CrackResult(net.minecraft.world.level.material.Fluid outA, int amountA,
                                net.minecraft.world.level.material.Fluid outB, int amountB) {}
 
-    /** Кэшированные сканы: по одному резолверу на таблицу, подпись — фингерпринт входного бака. */
-    private final com.hbm_m.recipe.index.CachedRecipeResolver<RadiolysisRecipe> ownResolver =
-            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
-    private final com.hbm_m.recipe.index.CachedRecipeResolver<CrackingTowerRecipe> fallbackResolver =
-            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
-
     /**
      * Data-driven поиск: сначала собственный RadiolysisRecipe (вода → пероксид+водород),
      * затем делегирование в CrackingTowerRecipe — как оригинальный RadiolysisRecipes
-     * делегировал в CrackingRecipes. Скай кэшируется по подписи бака (value-keyed),
-     * кэш сбрасывается при /reload через эпоху ModRecipeIndex.
+     * делегировал в CrackingRecipes.
      */
     @org.jetbrains.annotations.Nullable
     private CrackResult findCrackRecipe() {
         if (level == null) return null;
-        Fluid input = tanks[0].getTankType();
-        if (input == null) return null;
-        long signature = com.hbm_m.recipe.index.CachedRecipeResolver.sign(7, tankFingerprint(tanks[0]));
-        RadiolysisRecipe own = ownResolver.resolve(level, RadiolysisRecipe.Type.INSTANCE, signature, (lvl, all) -> {
-            for (RadiolysisRecipe recipe : all) {
-                if (recipe.matches(input)) return recipe;
-            }
-            return null;
-        });
+        RadiolysisRecipe own = RadiolysisRecipe.getRecipe(level, tanks[0].getTankType());
         if (own != null) {
             return new CrackResult(own.getOutputA(), own.getOutputAMb(),
                     own.getOutputB() != null ? own.getOutputB() : own.getOutputA(),
                     own.getOutputBMb());
         }
-        CrackingTowerRecipe fallback = fallbackResolver.resolve(level, CrackingTowerRecipe.Type.INSTANCE, signature, (lvl, all) -> {
-            for (CrackingTowerRecipe recipe : all) {
-                if (recipe.matches(input)) return recipe;
-            }
-            return null;
-        });
+        CrackingTowerRecipe fallback = CrackingTowerRecipe.getRecipe(level, tanks[0].getTankType());
         if (fallback != null) {
             return new CrackResult(fallback.getOutputA(), fallback.getOutputAMb(),
                     fallback.getOutputB() != null ? fallback.getOutputB() : fallback.getOutputA(),
@@ -183,17 +165,57 @@ public class MachineRadiolysisBlockEntity extends BaseMachineBlockEntity impleme
         }
     }
 
-    private ItemStack[] inventorySlotArray() {
-        ItemStack[] arr = new ItemStack[SLOT_COUNT];
-        for (int i = 0; i < SLOT_COUNT; i++) arr[i] = inventory.getStackInSlot(i);
-        return arr;
+    private void setupTanks() {
+        CrackResult recipe = findCrackRecipe();
+        net.minecraft.world.level.material.Fluid none = com.hbm_m.inventory.fluid.ModFluids.NONE.getSource();
+        if (recipe != null) {
+            tanks[1].setTankType(recipe.outA());
+            tanks[2].setTankType(recipe.outB());
+        } else {
+            tanks[0].setTankType(none);
+            tanks[1].setTankType(none);
+            tanks[2].setTankType(none);
+        }
     }
 
-    private void applySlotsArray(ItemStack[] arr) {
-        for (int i = 0; i < SLOT_COUNT; i++) {
-            inventory.setStackInSlot(i, arr[i] == null ? ItemStack.EMPTY : arr[i]);
+    /** Original {@code sterilize}: Nahrung verbrennt, verseuchte Gegenstaende kommen entseucht auf Platz 13. */
+    private void sterilize() {
+        ItemStack in = inventory.getStackInSlot(SLOT_IRRADIATE_IN);
+        if (in.isEmpty()) return;
+
+        if (ItemHooks.isEdible(in.getItem()) && in.getItem() != com.hbm_m.item.ModItems.PANCAKE.get()) {
+            in = in.copy();
+            in.shrink(1);
+            inventory.setStackInSlot(SLOT_IRRADIATE_IN, in);
         }
-        setChanged();
+
+        if (!checkIfValid()) return;
+
+        in = inventory.getStackInSlot(SLOT_IRRADIATE_IN);
+        ItemStack output = in.copy();
+        output.setCount(1);
+        StackNbt.removeKey(output, "ntmContagion");
+
+        ItemStack out = inventory.getStackInSlot(SLOT_IRRADIATE_OUT);
+        if (out.isEmpty()) {
+            ItemStack rest = in.copy();
+            rest.shrink(1);
+            inventory.setStackInSlot(SLOT_IRRADIATE_IN, rest);
+            inventory.setStackInSlot(SLOT_IRRADIATE_OUT, output);
+        } else if (out.getItem() == output.getItem() && out.getCount() + 1 <= out.getMaxStackSize()) {
+            ItemStack rest = in.copy();
+            rest.shrink(1);
+            inventory.setStackInSlot(SLOT_IRRADIATE_IN, rest);
+            ItemStack grown = out.copy();
+            grown.grow(1);
+            StackNbt.removeKey(grown, "ntmContagion");
+            inventory.setStackInSlot(SLOT_IRRADIATE_OUT, grown);
+        }
+    }
+
+    private boolean checkIfValid() {
+        ItemStack in = inventory.getStackInSlot(SLOT_IRRADIATE_IN);
+        return !in.isEmpty() && StackNbt.has(in) && StackNbt.read(in).getBoolean("ntmContagion");
     }
 
     private boolean hasSpace(int left, int right) {
@@ -229,6 +251,16 @@ public class MachineRadiolysisBlockEntity extends BaseMachineBlockEntity impleme
         tanks[0].writeToNBT(tag, "tank0");
         tanks[1].writeToNBT(tag, "tank1");
         tanks[2].writeToNBT(tag, "tank2");
+        tag.putInt("heat", heat);
+    }
+
+    /** Original: 3x3x3 um den Kern. */
+    //? if forge {
+    @Override
+    //?}
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return new net.minecraft.world.phys.AABB(worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1,
+                worldPosition.getX() + 2, worldPosition.getY() + 3, worldPosition.getZ() + 2);
     }
 
     @Override
@@ -237,6 +269,7 @@ public class MachineRadiolysisBlockEntity extends BaseMachineBlockEntity impleme
         tanks[0].readFromNBT(tag, "tank0");
         tanks[1].readFromNBT(tag, "tank1");
         tanks[2].readFromNBT(tag, "tank2");
+        heat = tag.getInt("heat");
     }
 
     // ==================== GUI ====================
@@ -271,4 +304,46 @@ public class MachineRadiolysisBlockEntity extends BaseMachineBlockEntity impleme
     public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
         return MachineRadiolysisMenu.create(id, inv, this);
     }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: Slots {0-9, 12, 13}; Pellets und Bestrahlgut hinein, verbrauchte Pellets und Ergebnis heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 13 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 12 || (slot < 10 && stack.getItem() instanceof com.hbm_m.item.machine.ItemRTGPellet); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return (slot < 10 && stack.getItem() instanceof com.hbm_m.item.machine.ItemRTGPelletDepleted) || slot == 13; }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: Slots {0-9, 12, 13}; Pellets und Bestrahlgut hinein, verbrauchte Pellets und Ergebnis heraus. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 13 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 12 || (slot < 10 && stack.getItem() instanceof com.hbm_m.item.machine.ItemRTGPellet); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return (slot < 10 && stack.getItem() instanceof com.hbm_m.item.machine.ItemRTGPelletDepleted) || slot == 13; }
+            });
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
 }

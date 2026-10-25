@@ -1,0 +1,152 @@
+{
+  "textures": {
+    "particle": "hbm_m:block/machine/satlink"
+  },
+  "loader": "forge:composite",
+  "children": {
+    "satlink_model": {
+      "loader": "forge:obj",
+      "model": "hbm_m:models/block/machines/satlink_item.obj",
+      "flip_v": true,
+      "render_type": "minecraft:cutout",
+      "textures": {
+        "default": "hbm_m:block/machine/satlink"
+      }
+    }
+  },
+  "transform": {
+    "translation": [
+      0.5,
+      0,
+      0.5
+    ],
+    "rotation": [
+      0,
+      0,
+      0
+    ],
+    "scale": 1.0
+  },
+  "display": {
+    "thirdperson_righthand": {
+      "rotation": [
+        75,
+        45,
+        0
+      ],
+      "translation": [
+        0.0,
+        2.5,
+        0.0
+      ],
+      "scale": [
+        0.102655,
+        0.102655,
+        0.102655
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        75,
+        45,
+        0
+      ],
+      "translation": [
+        0.0,
+        2.5,
+        0.0
+      ],
+      "scale": [
+        0.102655,
+        0.102655,
+        0.102655
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        45,
+        0
+      ],
+      "translation": [
+        0.75,
+        1.25,
+        0.0
+      ],
+      "scale": [
+        0.102655,
+        0.102655,
+        0.102655
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        45,
+        0
+      ],
+      "translation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.102655,
+        0.102655,
+        0.102655
+      ]
+    },
+    "gui": {"rotation": [30.0, -135.0, 0.0], "translation": [0.0, -5.572, -2.062], "scale": [0.1094, 0.1094, 0.1094]},
+    "head": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        0,
+        180,
+        0
+      ],
+      "translation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.13999999999999999,
+        0.13999999999999999,
+        0.13999999999999999
+      ]
+    },
+    "ground": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0.0,
+        3.0,
+        0.0
+      ],
+      "scale": [
+        0.093345,
+        0.093345,
+        0.093345
+      ]
+    }
+  }
+}

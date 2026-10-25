@@ -39,7 +39,8 @@ import net.minecraft.world.phys.Vec3;
  * <p><b>Abweichungen:</b> Die Sonderfaelle des Originals fuer seine eigenen Krabbenarten
  * (Taint-, Tesla- und Cyberkrabbe werden geheilt statt getroffen) entfallen, weil es diese Kreaturen
  * im Port nicht gibt. Ozelots bleiben wie im Original verschont, Creeper werden gezuendet. Der
- * Meteoritenakku unter der Spule, der sie im Original gratis speist, ist ebenfalls nicht portiert.</p>
+ * Meteoritenakku unter der Spule speist sie wie im Original gratis.</p>
+
  */
 public class TeslaBlockEntity extends BaseMachineBlockEntity {
 
@@ -51,6 +52,7 @@ public class TeslaBlockEntity extends BaseMachineBlockEntity {
     private static final double RANGE = 10.0D;
     /** Original: {@code offset = 1.75} - die Entladung geht von der Spulenspitze aus. */
     public static final double ORIGIN_OFFSET_Y = 1.75D;
+
 
     /** Positionen der zuletzt getroffenen Ziele - fuer die Blitzdarstellung. */
     private final List<Vec3> targets = new ArrayList<>();
@@ -64,6 +66,9 @@ public class TeslaBlockEntity extends BaseMachineBlockEntity {
 
         be.ensureNetworkInitialized();
         be.targets.clear();
+
+        // Original: ein Meteoritenakku direkt unter der Spule speist sie gratis
+        if (level.getBlockState(pos.below()).is(com.hbm_m.block.ModBlocks.METEOR_BATTERY.get())) be.setEnergyStored(MAX_POWER);
 
         // Discharge (entity query + per-candidate clips) phase-spread, not every tick.
         if (be.probeDue(5) && be.getEnergyStored() >= POWER_PER_ZAP) {
@@ -113,6 +118,25 @@ public class TeslaBlockEntity extends BaseMachineBlockEntity {
 
             if (isObstructed(level, x, y, z, e.getX(), eyeY, e.getZ())) continue;
 
+            // Original: Krabben werden nur angebunden; Tesla-/Taint-Krabben heilen sich dabei.
+            if (e instanceof com.hbm_m.entity.mob.EntityTaintCrab) {
+                hits.add(new Vec3(e.getX(), e.getY() + 1.25, e.getZ()));
+                e.heal(15F);
+                continue;
+            }
+
+            if (e instanceof com.hbm_m.entity.mob.EntityTeslaCrab) {
+                hits.add(new Vec3(e.getX(), e.getY() + 1, e.getZ()));
+                e.heal(10F);
+                continue;
+            }
+
+            if (e instanceof com.hbm_m.entity.mob.EntityCyberCrab) {
+                hits.add(new Vec3(e.getX(), eyeY, e.getZ()));
+                continue;
+            }
+
+
             // Original: Creeper werden gezuendet statt getroffen.
             if (e instanceof Creeper creeper) {
                 creeper.ignite();
@@ -128,11 +152,17 @@ public class TeslaBlockEntity extends BaseMachineBlockEntity {
 
                 if (e.hurt(ModDamageSources.electricity(level), damage)) {
                     level.playSound(null, e.getX(), e.getY(), e.getZ(),
-                            SoundEvents.LIGHTNING_BOLT_IMPACT, SoundSource.BLOCKS, 1.0F, 1.0F);
+                            com.hbm_m.sound.HbmSoundsNT.get("hbm:weapon.tesla"), SoundSource.BLOCKS, 1.0F, 1.0F);
                 }
             }
 
-            hits.add(new Vec3(e.getX(), eyeY, e.getZ()));
+            // Original: clientseitig (Krabben) endet der Blitz bei Spielern auf Fusshoehe
+            double offset = 0;
+            if (source != null && e instanceof Player && level.isClientSide)
+                offset = e.getBbHeight();
+
+            hits.add(new Vec3(e.getX(), eyeY - offset, e.getZ()));
+
         }
 
         return hits;
@@ -141,7 +171,7 @@ public class TeslaBlockEntity extends BaseMachineBlockEntity {
     /** Original: {@code Library.isObstructed} - Sichtlinie zwischen Spule und Ziel. */
     private static boolean isObstructed(Level level, double x, double y, double z,
                                         double tx, double ty, double tz) {
-        BlockHitResult hit = level.clip(com.hbm_m.platform.PlatformHooks.clipContext(
+        BlockHitResult hit = level.clip(com.hbm_m.platform.LevelHooks.clipContext(
                 new Vec3(x, y, z), new Vec3(tx, ty, tz), ClipContext.Fluid.NONE));
         return hit.getType() != HitResult.Type.MISS;
     }
@@ -160,6 +190,7 @@ public class TeslaBlockEntity extends BaseMachineBlockEntity {
             tag.putDouble("aY" + i, t.y);
             tag.putDouble("aZ" + i, t.z);
         }
+
     }
 
     @Override
@@ -175,6 +206,7 @@ public class TeslaBlockEntity extends BaseMachineBlockEntity {
     public List<Vec3> getTargets() {
         return targets;
     }
+
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
@@ -198,4 +230,11 @@ public class TeslaBlockEntity extends BaseMachineBlockEntity {
         // Original: kein GUI (getName() liefert dort einen leeren String).
         return null;
     }
+
+    /** 1:1 TileEntityTesla.getRenderBoundingBox (Render-Migration: Raptors Pfad cullt nach dieser Box, der alte BER zeichnete immer). */
+    @Override
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return com.hbm_m.platform.RenderBounds.INFINITE;
+    }
+
 }

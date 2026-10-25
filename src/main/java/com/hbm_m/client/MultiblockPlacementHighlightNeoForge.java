@@ -5,11 +5,11 @@ import com.hbm_m.multiblock.MultiblockBlockItem;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.phys.BlockHitResult;
-import net.neoforged.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderHighlightEvent;
-import net.neoforged.api.distmarker.OnlyIn;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /^*
  * NeoForge-only подписчик: при удержании предмета мультиблока отменяет ванильный

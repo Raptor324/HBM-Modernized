@@ -6,21 +6,16 @@ import com.hbm_m.blockentity.machines.MachineWoodBurnerBlockEntity;
 import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.MachineWoodBurnerMenu;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.network.ToggleWoodBurnerPacket;
+import com.hbm_m.network.NBTControlPacket;
+import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Inventory;
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
+import net.minecraft.world.inventory.Slot;
 
 /**
  * Порт {@code GUIMachineWoodBurner} (1.7.10 Original), текстура
@@ -32,9 +27,10 @@ import net.neoforged.api.distmarker.OnlyIn;
  * (46,37) 30×14 — смена режима твёрдое/жидкое ({@code receiveControl("switch")}),
  * оба с {@code gui.button.press}. Тултипы: энергия, бонусы топлива
  * ({@code burnModule.getDesc()} по пустому слоту топлива), бак (жидкий режим),
- * секунды горения (твёрдый режим), статус ON/OFF.
+ * статус ON/OFF. Шкала горения рисуется как полный индикатор, пока {@code isBurning()}:
+ * точное {@code burnTime}/{@code maxBurnTime} недоступны клиенту (приватные поля BE,
+ * меню не синхронизирует ContainerData).
  */
-@OnlyIn(Dist.CLIENT)
 public class GUIMachineWoodBurner extends GuiInfoScreen<MachineWoodBurnerMenu> {
 
     private static final ResourceLocation TEXTURE =
@@ -51,40 +47,37 @@ public class GUIMachineWoodBurner extends GuiInfoScreen<MachineWoodBurnerMenu> {
 
     @Override
     protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-        int x = this.leftPos;
-        int y = this.topPos;
-        guiGraphics.blit(TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        guiGraphics.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
 
         if (burner == null) return;
 
-        if (burner.isLiquidBurn()) {
-            guiGraphics.blit(TEXTURE, x + 16, y + 17, 176, 52, 60, 54);
-            guiGraphics.blit(TEXTURE, x + 79, y + 17, 176, 106, 36, 54);
+        if (burner.liquidBurn) {
+            guiGraphics.blit(TEXTURE, leftPos + 16, topPos + 17, 176, 52, 60, 54);
+            guiGraphics.blit(TEXTURE, leftPos + 79, topPos + 17, 176, 106, 36, 54);
         }
 
-        if (burner.isOn()) {
-            guiGraphics.blit(TEXTURE, x + 53, y + 17, 196, 0, 16, 15);
+        if (burner.isEnabled()) {
+            guiGraphics.blit(TEXTURE, leftPos + 53, topPos + 17, 196, 0, 16, 15);
         }
 
-        long maxPower = MachineWoodBurnerBlockEntity.MAX_POWER;
-        int p = (int) (burner.getEnergyStored() * 34 / maxPower);
-        guiGraphics.blit(TEXTURE, x + 143, y + 52 - p, 176, 52 - p, 16, p);
+        long maxPower = burner.getMaxEnergyStored();
+        int p = maxPower > 0 ? (int) (burner.getEnergyStored() * 34 / maxPower) : 0;
+        if (p > 0) guiGraphics.blit(TEXTURE, leftPos + 143, topPos + 52 - p, 176, 52 - p, 16, p);
 
-        if (burner.maxBurnTime > 0 && !burner.isLiquidBurn()) {
-            int b = burner.burnTime * 52 / burner.maxBurnTime;
-            guiGraphics.blit(TEXTURE, x + 17, y + 70 - b, 192, 52 - b, 4, b);
+        // Оригинал: burnTime/maxBurnTime 4x52. Клиенту недоступны (см. класс-комментарий) —
+        // рисуем полный индикатор, пока топливо горит.
+        if (burner.isBurning() && !burner.liquidBurn) {
+            guiGraphics.blit(TEXTURE, leftPos + 17, topPos + 18, 192, 0, 4, 52);
         }
 
-        if (burner.isLiquidBurn()) {
-            // Оригинал: tank.renderTank(guiLeft + 80, guiTop + 70, zLevel, 16, 52) — в порте
-            // renderTank принимает верхний левый угол: y = 70 - 52 = 18.
-            burner.getTank().renderTank(guiGraphics, x + 80, y + 18, 16, 52);
+        if (burner.liquidBurn) {
+            burner.tank.renderTank(guiGraphics, leftPos + 80, topPos + 18, 16, 52);
         }
     }
 
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        // Оригинал: имя по центру x=70, y=6, белый.
         guiGraphics.drawString(this.font, this.title, 70 - this.font.width(this.title) / 2, 6, 0xFFFFFF, false);
         guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, this.imageHeight - 96 + 2, 4210752, false);
     }
@@ -97,55 +90,54 @@ public class GUIMachineWoodBurner extends GuiInfoScreen<MachineWoodBurnerMenu> {
 
         if (burner == null) return;
 
-        // Оригинал: drawElectricityInfo(143, 18, 16, 34, power, maxPower).
         drawElectricityInfo(guiGraphics, mouseX, mouseY, 143, 18, 16, 34,
-                burner.getEnergyStored(), MachineWoodBurnerBlockEntity.MAX_POWER);
+                burner.getEnergyStored(), burner.getMaxEnergyStored());
 
         // Бонусы топлива — по пустому слоту топлива при пустом курсоре (оригинал burnModule.getDesc()).
         if (this.menu.getCarried().isEmpty()) {
             var fuelSlot = this.menu.slots.get(MachineWoodBurnerMenu.SLOT_FUEL);
             if (isMouseOver(mouseX, mouseY, 26, 18, 16, 16) && !fuelSlot.hasItem()) {
-                List<Component> bonuses = burner.getBurnModule().getDesc();
+                List<Component> bonuses = MachineWoodBurnerBlockEntity.burnModule.getDesc();
                 if (!bonuses.isEmpty()) {
                     guiGraphics.renderComponentTooltip(this.font, bonuses, mouseX, mouseY);
                 }
             }
         }
 
-        if (burner.isLiquidBurn()) {
-            // Оригинал: tank.renderTankInfo(80, 18, 16, 52).
-            burner.getTank().renderTankInfo(guiGraphics, this.font, mouseX, mouseY,
+        if (burner.liquidBurn) {
+            burner.tank.renderTankInfo(guiGraphics, this.font, mouseX, mouseY,
                     this.leftPos + 80, this.topPos + 18, 16, 52);
-        } else if (isMouseOver(mouseX, mouseY, 16, 17, 8, 54)) {
-            guiGraphics.renderTooltip(this.font,
-                    Component.literal((burner.burnTime / 20) + "s"), mouseX, mouseY);
         }
 
         if (isMouseOver(mouseX, mouseY, 53, 17, 16, 15)) {
             guiGraphics.renderTooltip(this.font,
-                    Component.literal(burner.isOn() ? "ON" : "OFF")
-                            .withStyle(burner.isOn() ? ChatFormatting.GREEN : ChatFormatting.RED),
+                    Component.literal(burner.isEnabled() ? "ON" : "OFF")
+                            .withStyle(burner.isEnabled() ? ChatFormatting.GREEN : ChatFormatting.RED),
                     mouseX, mouseY);
         }
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        // Оригинал: (53,17) 16×15 → NBTControlPacket "toggle".
+        // Оригинал: (53,17) 16×15 → receiveControl("toggle").
         if (isMouseOver(mouseX, mouseY, 53, 17, 16, 15)) {
             if (burner != null) {
                 playButtonPress();
-                ToggleWoodBurnerPacket.sendToServer(burner.getBlockPos(), false);
+                CompoundTag data = new CompoundTag();
+                data.putBoolean("toggle", false);
+                NBTControlPacket.sendToServer(burner.getBlockPos(), data);
                 return true;
             }
             return super.mouseClicked(mouseX, mouseY, button);
         }
 
-        // Оригинал: (46,37) 30×14 → NBTControlPacket "switch".
+        // Оригинал: (46,37) 30×14 → receiveControl("switch").
         if (isMouseOver(mouseX, mouseY, 46, 37, 30, 14)) {
             if (burner != null) {
                 playButtonPress();
-                ToggleWoodBurnerPacket.sendToServer(burner.getBlockPos(), true);
+                CompoundTag data = new CompoundTag();
+                data.putBoolean("switch", false);
+                NBTControlPacket.sendToServer(burner.getBlockPos(), data);
                 return true;
             }
             return super.mouseClicked(mouseX, mouseY, button);
@@ -157,7 +149,7 @@ public class GUIMachineWoodBurner extends GuiInfoScreen<MachineWoodBurnerMenu> {
     private void playButtonPress() {
         if (this.minecraft != null) {
             this.minecraft.getSoundManager().play(
-                    net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+                    net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F));
         }
     }
 

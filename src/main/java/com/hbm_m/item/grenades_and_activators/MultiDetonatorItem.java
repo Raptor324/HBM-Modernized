@@ -29,6 +29,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
 import org.jetbrains.annotations.Nullable;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * Мульти-детонатор: позволяет сохранять до 4 точек детонации
@@ -130,7 +131,7 @@ public class MultiDetonatorItem extends Item implements ITooltipProvider {
             // обязаны идти через editItemTag (read-modify-write), иначе NPE/потеря данных.
             final String[] finalNameHolder = new String[1];
 
-            PlatformHooks.editItemTag(stack, nbt -> {
+            StackNbt.edit(stack, nbt -> {
                 migrateLegacyPointsIfNeeded(nbt);
                 int activePoint = nbt.getInt(NBT_ACTIVE_POINT);
                 if (activePoint < 0 || activePoint >= MAX_POINTS) {
@@ -275,11 +276,11 @@ public class MultiDetonatorItem extends Item implements ITooltipProvider {
      * Получить данные точки по индексу
      */
     public PointData getPointData(ItemStack stack, int pointIndex) {
-        if (!PlatformHooks.hasItemTag(stack) || pointIndex < 0 || pointIndex >= MAX_POINTS) {
+        if (!StackNbt.has(stack) || pointIndex < 0 || pointIndex >= MAX_POINTS) {
             return null;
         }
 
-        CompoundTag nbt = PlatformHooks.getItemTag(stack);
+        CompoundTag nbt = StackNbt.read(stack);
 
         if (!nbt.contains(NBT_POINTS_TAG, Tag.TAG_LIST)) {
             if (nbt.contains("xValues", Tag.TAG_INT_ARRAY) && nbt.contains("yValues", Tag.TAG_INT_ARRAY) && nbt.contains("zValues", Tag.TAG_INT_ARRAY)) {
@@ -329,18 +330,18 @@ public class MultiDetonatorItem extends Item implements ITooltipProvider {
         }
         // editItemTag сам создаёт NBT при необходимости — ручной setItemTag был
         // анти-паттерном (на 1.21.1 пустой тег удаляет CUSTOM_DATA компонент).
-        PlatformHooks.editItemTag(stack, nbt -> nbt.putInt(NBT_ACTIVE_POINT, pointIndex));
+        StackNbt.edit(stack, nbt -> nbt.putInt(NBT_ACTIVE_POINT, pointIndex));
     }
 
     /**
      * Получить активную точку
      */
     public int getActivePoint(ItemStack stack) {
-        if (!PlatformHooks.hasItemTag(stack)) {
+        if (!StackNbt.has(stack)) {
             return 0;
         }
 
-        int activePoint = PlatformHooks.getInt(stack, NBT_ACTIVE_POINT);
+        int activePoint = StackNbt.getInt(stack, NBT_ACTIVE_POINT);
         return (activePoint >= 0 && activePoint < MAX_POINTS) ? activePoint : 0;
     }
 
@@ -353,7 +354,7 @@ public class MultiDetonatorItem extends Item implements ITooltipProvider {
         }
         // editItemTag (read-modify-write) — единственный корректный способ мутации
         // NBT предмета на 1.21.1, где getItemTag() возвращает копию.
-        PlatformHooks.editItemTag(stack, nbt -> {
+        StackNbt.edit(stack, nbt -> {
             migrateLegacyPointsIfNeeded(nbt);
             // Инициализируем список точек
             if (!nbt.contains(NBT_POINTS_TAG, Tag.TAG_LIST)) {
@@ -384,11 +385,11 @@ public class MultiDetonatorItem extends Item implements ITooltipProvider {
      * Очистить точку (только координаты, имя сохраняется!)
      */
     public void clearPoint(ItemStack stack, int pointIndex) {
-        if (!PlatformHooks.hasItemTag(stack) || pointIndex < 0 || pointIndex >= MAX_POINTS) {
+        if (!StackNbt.has(stack) || pointIndex < 0 || pointIndex >= MAX_POINTS) {
             return;
         }
         // Мутация копииgetItemTag на 1.21.1 не сохранялась бы — обернули в editItemTag.
-        PlatformHooks.editItemTag(stack, nbt -> {
+        StackNbt.edit(stack, nbt -> {
             migrateLegacyPointsIfNeeded(nbt);
             if (!nbt.contains(NBT_POINTS_TAG, Tag.TAG_LIST)) {
                 return;
@@ -427,10 +428,10 @@ public class MultiDetonatorItem extends Item implements ITooltipProvider {
      * Проверяет, установлена ли хотя бы одна позиция в мульти-детонаторе.
      */
     public boolean hasAnyLocationSet(ItemStack stack) {
-        if (!PlatformHooks.hasItemTag(stack)) {
+        if (!StackNbt.has(stack)) {
             return false;
         }
-        CompoundTag nbt = PlatformHooks.getItemTag(stack);
+        CompoundTag nbt = StackNbt.read(stack);
         if (nbt == null) {
             return false;
         }
@@ -454,7 +455,7 @@ public class MultiDetonatorItem extends Item implements ITooltipProvider {
      * Очищает все сохраненные позиции (сохраняя имена точек).
      */
     public void clearAllLocations(ItemStack stack) {
-        PlatformHooks.editItemTag(stack, nbt -> {
+        StackNbt.edit(stack, nbt -> {
             nbt.putIntArray("xValues", new int[0]);
             nbt.putIntArray("yValues", new int[0]);
             nbt.putIntArray("zValues", new int[0]);

@@ -22,6 +22,9 @@ public class ModSounds {
     public static final RegistrySupplier<SoundEvent> GEIGER_5 = registerSoundEvents("item.geiger5");
     public static final RegistrySupplier<SoundEvent> GEIGER_6 = registerSoundEvents("item.geiger6");
 
+    public static final RegistrySupplier<SoundEvent> MISSILE_ASSEMBLY = registerSoundEvents("block.missile_assembly");
+    public static final RegistrySupplier<SoundEvent> MISSILE_ASSEMBLY2 = registerSoundEvents("block.missile_assembly2");
+
     public static final RegistrySupplier<SoundEvent> SOYUZ_ALARM = registerSoundEvents("soyuz.alarm");
     public static final RegistrySupplier<SoundEvent> SOYUZ_READY = registerSoundEvents("soyuz.ready");
     public static final RegistrySupplier<SoundEvent> SOYUZ_TAKEOFF = registerSoundEvents("soyuz.takeoff");
@@ -125,6 +128,8 @@ public class ModSounds {
     // RBMK meltdown / boiler venting - the 1.7.10 originals are hbm:block.rbmk_explosion,
     // hbm:block.rbmk_az5_cover and hbm:block.steamEngineOperate.
     public static final RegistrySupplier<SoundEvent> RBMK_EXPLOSION = registerSoundEvents("block.rbmk_explosion");
+    /** Original NTMSounds.REACTOR_GEIGER_LOOP ("block.reactorLoop"). */
+    public static final RegistrySupplier<SoundEvent> REACTOR_LOOP = registerSoundEvents("block.reactorloop");
     public static final RegistrySupplier<SoundEvent> RBMK_AZ5_COVER = registerSoundEvents("block.rbmk_az5_cover");
     public static final RegistrySupplier<SoundEvent> STEAM_ENGINE_OPERATE = registerSoundEvents("block.steam_engine_operate");
     /** {@code hbm:weapon.dFlash}: the digamma spear discharging. */
@@ -174,6 +179,7 @@ public class ModSounds {
     public static final RegistrySupplier<SoundEvent> BROADCAST1 = registerSoundEvents("block.broadcast1");
     public static final RegistrySupplier<SoundEvent> BROADCAST2 = registerSoundEvents("block.broadcast2");
     public static final RegistrySupplier<SoundEvent> BROADCAST3 = registerSoundEvents("block.broadcast3");
+    public static final RegistrySupplier<SoundEvent> BROADCAST_RANDOM = registerSoundEvents("block.broadcast_random");
 
     // РЕГИСТРАЦИЯ АБСТРАКТНОГО СОБЫТИЯ 
     // Это тот самый звук, который мы будем вызывать в коде.
@@ -214,6 +220,7 @@ public class ModSounds {
     
     // Метод для регистрации в Forge EventBus
     public static void init() {
+        HbmSoundsNT.init();
         SOUND_EVENTS.register();
     }
 }

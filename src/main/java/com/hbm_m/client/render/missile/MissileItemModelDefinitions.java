@@ -57,6 +57,9 @@ public final class MissileItemModelDefinitions {
                 def(ModItems.MISSILE_INFERNO, MissileFormFactorModels.HUGE, MissileTextures.MISSILE_HUGE_INC),
                 def(ModItems.MISSILE_RAIN, MissileFormFactorModels.HUGE, MissileTextures.MISSILE_HUGE_CL),
                 def(ModItems.MISSILE_DRILL, MissileFormFactorModels.HUGE, MissileTextures.MISSILE_HUGE_BU),
+                def(ModItems.MISSILE_9M723, MissileFormFactorModels.ISKANDER, MissileTextures.MISSILE_9M723),
+                def(ModItems.MISSILE_9M723_BUSTER, MissileFormFactorModels.ISKANDER, MissileTextures.MISSILE_9M723_BU),
+                def(ModItems.MISSILE_TOPOL, MissileFormFactorModels.TOPOL, MissileTextures.MISSILE_TOPOL),
                 def(ModItems.MISSILE_SHUTTLE, MissileFormFactorModels.SHUTTLE, MissileTextures.MISSILE_SHUTTLE),
 
                 def(ModItems.MISSILE_NUCLEAR, MissileFormFactorModels.ATLAS, MissileTextures.MISSILE_ATLAS_NUCLEAR),

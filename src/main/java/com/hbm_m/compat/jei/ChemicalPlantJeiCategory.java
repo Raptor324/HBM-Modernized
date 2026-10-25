@@ -1,19 +1,12 @@
 package com.hbm_m.compat.jei;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 import java.util.ArrayList;
 import java.util.List;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.industrial.ItemBlueprintFolder;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
 import com.hbm_m.recipe.ChemicalPlantRecipe.CountedIngredient;
@@ -34,6 +27,7 @@ import net.minecraft.world.item.ItemStack;
  */
 
 @OnlyIn(Dist.CLIENT)
+
 public class ChemicalPlantJeiCategory extends JeiGenericRecipeCategory<ChemicalPlantRecipe> {
 
     public static final RecipeType<ChemicalPlantRecipe> RECIPE_TYPE =
@@ -112,23 +106,31 @@ public class ChemicalPlantJeiCategory extends JeiGenericRecipeCategory<ChemicalP
             slotIndex++;
         }
 
-        for (FluidStack fluid : recipe.getFluidInputs()) {
+        for (int fi = 0; fi < recipe.getFluidInputs().size(); fi++) {
+            FluidStack fluid = recipe.getFluidInputs().get(fi);
             if (fluid.isEmpty()) {
                 continue;
             }
+            IRecipeSlotBuilder fluidSlot = null;
             //? if forge {
-            addItemSlot(builder, RecipeIngredientRole.INPUT,
+            fluidSlot = addItemSlot(builder, RecipeIngredientRole.INPUT,
                     positions[slotIndex][0] + inputXOffset, positions[slotIndex][1])
                     .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
                     .setCustomRenderer(mezz.jei.api.forge.ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                     .addIngredient(mezz.jei.api.forge.ForgeTypes.FLUID_STACK, new net.minecraftforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount(), fluid.getTag()));
             //?} elif neoforge {
-            /*addItemSlot(builder, RecipeIngredientRole.INPUT,
+            /*fluidSlot = addItemSlot(builder, RecipeIngredientRole.INPUT,
                     positions[slotIndex][0] + inputXOffset, positions[slotIndex][1])
                     .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
                     .setCustomRenderer(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
-                    .addIngredient(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK, new net.neoforged.neoforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
+                    .addIngredient(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK, new net.minecraftforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
             *///?}
+            // Original ItemFluidIcon: rote Zeile "<N>PU" bei Druckeingaengen
+            int pressure = recipe.getFluidInputPressure(fi);
+            if (fluidSlot != null && pressure > 0) {
+                Component pu = Component.literal(pressure + "PU").withStyle(net.minecraft.ChatFormatting.RED);
+                fluidSlot.addRichTooltipCallback((view, tooltip) -> tooltip.add(pu));
+            }
             slotIndex++;
         }
     }
@@ -164,7 +166,7 @@ public class ChemicalPlantJeiCategory extends JeiGenericRecipeCategory<ChemicalP
                     positions[slotIndex][0] + outputXOffset, positions[slotIndex][1])
                     .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
                     .setCustomRenderer(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
-                    .addIngredient(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK, new net.neoforged.neoforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
+                    .addIngredient(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK, new net.minecraftforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
             *///?}
             slotIndex++;
         }
@@ -176,8 +178,7 @@ public class ChemicalPlantJeiCategory extends JeiGenericRecipeCategory<ChemicalP
             return;
         }
 
-        ItemStack folder = new ItemStack(ModItems.BLUEPRINT_FOLDER.get());
-        ItemBlueprintFolder.writeBlueprintPool(folder, recipe.getBlueprintPool());
+        ItemStack folder = com.hbm_m.item.industrial.ItemBlueprints.make(recipe.getBlueprintPool());
         addUnframedSlot(builder, RecipeIngredientRole.RENDER_ONLY, 75 + machineXOffset, 10)
                 .addItemStack(folder);
     }

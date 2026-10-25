@@ -17,4 +17,6 @@ public interface IResistanceProvider {
      * @return float array [dt, dr] where dt is damage threshold and dr is damage resistance
      */
     float[] getCurrentDTDR(DamageSource damage, float amount, float pierceDT, float pierceDR);
+
+    void onDamageDealt(DamageSource damage, float amount);
 }

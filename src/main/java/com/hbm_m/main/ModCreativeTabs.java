@@ -97,11 +97,11 @@ public class ModCreativeTabs {
                     .displayItems((params, output) -> CreativeModeTabEventHandler.populateMissilesTab(CreativeModeTabEventHandler.deduplicated(output::accept)))
                     .build());
 
-    // Оригинал: WeaponTab (иконка — gun_greasegun; у нас его пока нет, берём ближайшее оружие)
+    // Оригинал: WeaponTab (иконка — gun_greasegun)
     public static final RegistrySupplier<CreativeModeTab> NTM_WEAPON_TAB = CREATIVE_MODE_TABS.register("ntm_weapon_tab",
             () -> tabBuilderAfter("ntm_missile_tab")
                     .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_weapons_tab"))
-                    .icon(() -> new ItemStack(ModItems.GUN_B92.get()))
+                    .icon(() -> new ItemStack(com.hbm_m.creativetabs.WeaponTab.getTabIconItem()))
                     .displayItems((params, output) -> CreativeModeTabEventHandler.populateWeaponsTab(CreativeModeTabEventHandler.deduplicated(output::accept)))
                     .build());
 
@@ -119,7 +119,7 @@ public class ModCreativeTabs {
     public static final RegistrySupplier<CreativeModeTab> NTM_DEV_TAB = CREATIVE_MODE_TABS.register("ntm_dev_tab",
             () -> tabBuilderAfter("ntm_consumable_tab")
                     .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_dev_tab"))
-                    .icon(() -> new ItemStack(ModBlocks.BROADCASTER.get()))
+                    .icon(() -> new ItemStack(ModBlocks.BROADCASTER_PC.get()))
                     .displayItems((params, output) -> CreativeModeTabEventHandler.populateDevItemsTab(CreativeModeTabEventHandler.deduplicated(output::accept)))
                     .build());
 

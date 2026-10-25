@@ -9,6 +9,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -36,7 +37,7 @@ public class ItemDepthRockBreaker extends Item implements IDepthRockTool {
     }
 
     @Override
-    public boolean canBreakRock(Level level, Player player, ItemStack tool, BlockState state, BlockPos pos) {
+    public boolean canBreakRock(BlockGetter level, Player player, ItemStack tool, BlockState state, BlockPos pos) {
         // Оригинал: canOperate(tool) && this.rockBreaker — у заглушек «заряд» не тратится.
         return true;
     }

@@ -1,13 +1,7 @@
 package com.hbm_m.client.render.implementations;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 import com.hbm_m.block.ModBlocks;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;

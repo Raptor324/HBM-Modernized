@@ -1,5 +1,7 @@
 package com.hbm_m.api.fluids.bootstrap;
 
+import com.hbm_m.platform.EffectHooks;
+
 import static com.hbm_m.api.fluids.bootstrap.ModFluidPollutionPresets.POISON_EXTREME;
 import static com.hbm_m.api.fluids.bootstrap.ModFluidPollutionPresets.POISON_MINOR;
 import static com.hbm_m.api.fluids.bootstrap.ModFluidPollutionPresets.P_FUEL;
@@ -93,6 +95,8 @@ public final class ModFluidTraitsBootstrap {
         ModFluidCalculatedFuel.apply();
         registerHeatCoolChains();
         ModFluidHazardBootstrap.registerAll();
+        // Space-API W-R4A-2: Addon-Fluidwerte definiert NACH der HBM-Vorbelegung (ohne Addon: keine Aktionen)
+        com.hbm_m.api.space.HbmFluidApi.fireFluidDefaultsApplied();
     }
 
     private static void registerStructural() {
@@ -109,6 +113,8 @@ public final class ModFluidTraitsBootstrap {
         t(ModFluids.CUSTOM_WATER, null, LQ, UNS);
 
         t(ModFluids.AIR, null, GAS);
+        t(ModFluids.AIRBLAST, 1_200, GAS);
+        t(ModFluids.FLUE, null, new FT_Flammable(25_000), GAS, new FT_Polluting().burn(PollutionType.SOOT, ModFluidPollutionPresets.SOOT_GAS).release(PollutionType.SOOT, ModFluidPollutionPresets.SOOT_GAS * 25));
 
         t(ModFluids.STEAM, 100, GAS, UNS);
         t(ModFluids.HOTSTEAM, 300, GAS, UNS);
@@ -145,10 +151,8 @@ public final class ModFluidTraitsBootstrap {
         t(ModFluids.GASOLINE_LEADED, null, LQ, P_FUEL_LEADED);
         // AERO-Grade: 1:1-Vorbedingung fuer den Turbofan (nur AERO-Combustibles verbrennt er, siehe
         // TileEntityMachineTurbofan im Original).
-        // 1.7.10: registerCalculatedFuel(KEROSENE, ...) = 3_850_000 HE/ведро (100k/0.09*1*2*1.1*1.05*1.5);
-        // KEROSENE_REFORM = FT_Flammable(KEROSENE) 2_560_000 * complexityReform 2.5 = 6_400_000.
-        t(ModFluids.KEROSENE, null, LQ, P_FUEL, new FT_Combustible(FuelGrade.AERO, 3_850_000));
-        t(ModFluids.KEROSENE_REFORM, null, LQ, P_FUEL, new FT_Combustible(FuelGrade.AERO, 6_400_000));
+        t(ModFluids.KEROSENE, null, LQ, P_FUEL); // AERO-Combustible setzt ModFluidCalculatedFuel
+        t(ModFluids.KEROSENE_REFORM, null, LQ, P_FUEL); // AERO-Combustible setzt ModFluidCalculatedFuel
         t(ModFluids.HEAVYOIL_VACUUM, null, LQ, VIS, P_OIL);
         t(ModFluids.LIGHTOIL, null, LQ, P_FUEL);
         t(ModFluids.LIGHTOIL_CRACK, null, LQ, P_FUEL);
@@ -161,16 +165,13 @@ public final class ModFluidTraitsBootstrap {
         t(ModFluids.RECLAIMED, null, LQ, VIS, P_FUEL);
         t(ModFluids.PETROIL, null, LQ, P_FUEL);
         t(ModFluids.PETROIL_LEADED, null, LQ, P_FUEL_LEADED);
-        // GAS/SYNGAS/REFORMGAS/OXYHYDROGEN never had FT_Combustible in the 1.7.10 original either (confirmed
-        // via decompile + the original dev's own "redundant restriction that does nothing at best and at worst
-        // breaks shit" comment in ContainerMachineTurbineGas) - meaning TileEntityMachineTurbineGas.hasAcceptableFuel()
-        // was permanently false and the Gas Turbine could never actually run. Values below are invented (no
-        // 1:1 source) so the ported Gas Turbine is an actually-functional generator, consistent with the
-        // Industrial Generator precedent (built a real generator from originally-dead code, per user request).
-        t(ModFluids.GAS, null, GAS, P_GAS, new FT_Combustible(FuelGrade.GAS, 150_000));
+        // GAS/SYNGAS/REFORMGAS/OXYHYDROGEN: FT_Combustible(GAS, ...) kommt 1:1 aus registerCalculatedFuel
+        // (ModFluidCalculatedFuel ueberschreibt danach Flammable/Combustible): GAS 75.000, SYNGAS 1.375.000,
+        // REFORMGAS 15.750.000, OXYHYDROGEN 15.000.
+        t(ModFluids.GAS, null, GAS, P_GAS);
         t(ModFluids.GAS_COKER, null, GAS, P_GAS);
         t(ModFluids.PETROLEUM, null, GAS, P_GAS);
-        t(ModFluids.LPG, null, P_LIQUID_GAS);
+        t(ModFluids.LPG, null, LQ, P_LIQUID_GAS);
         t(ModFluids.BIOGAS, null, GAS, P_GAS);
         t(ModFluids.BIOFUEL, null, LQ, P_FUEL);
         t(ModFluids.NITAN, null, LQ, P_FUEL);
@@ -180,9 +181,9 @@ public final class ModFluidTraitsBootstrap {
         t(ModFluids.XYLENE, null, LQ, VIS, P_FUEL);
         t(ModFluids.COALGAS, null, LQ, P_FUEL);
         t(ModFluids.COALGAS_LEADED, null, LQ, P_FUEL_LEADED);
-        t(ModFluids.SYNGAS, null, GAS, new FT_Combustible(FuelGrade.GAS, 300_000));
-        t(ModFluids.REFORMGAS, null, GAS, P_GAS, new FT_Combustible(FuelGrade.GAS, 500_000));
-        t(ModFluids.SOURGAS, null, GAS, new FT_Corrosive(10), new FT_Poison(false, 1), P_GAS);
+        t(ModFluids.SYNGAS, null, GAS);
+        t(ModFluids.REFORMGAS, null, GAS, P_GAS);
+        t(ModFluids.SOURGAS, null, GAS, new FT_Corrosive(10), new FT_Poison(false, 1), new FT_Polluting().burn(PollutionType.SOOT, ModFluidPollutionPresets.SOOT_GAS).release(PollutionType.POISON, POISON_EXTREME));
         t(ModFluids.HEATINGOIL_VACUUM, null, LQ, VIS, P_OIL);
         t(ModFluids.ETHANOL, null, LQ, P_FUEL);
         t(ModFluids.WOODOIL, null, LQ, VIS, P_OIL);
@@ -191,7 +192,7 @@ public final class ModFluidTraitsBootstrap {
         t(ModFluids.SUNFLOWEROIL, null, LQ, P_FUEL);
         t(ModFluids.SOLVENT, null, LQ, new FT_Corrosive(30));
         t(ModFluids.RADIOSOLVENT, null, LQ, new FT_Corrosive(50));
-        t(ModFluids.OXYHYDROGEN, null, GAS, new FT_Combustible(FuelGrade.GAS, 60_000));
+        t(ModFluids.OXYHYDROGEN, null, GAS);
 
         t(ModFluids.DEUTERIUM, null, new FT_Flammable(5_000), new FT_Combustible(FuelGrade.HIGH, 10_000), GAS);
         t(ModFluids.TRITIUM, null, new FT_Flammable(5_000), new FT_Combustible(FuelGrade.HIGH, 10_000), GAS, new FT_VentRadiation(0.001F));
@@ -251,6 +252,7 @@ public final class ModFluidTraitsBootstrap {
         t(ModFluids.POTASSIUM_CHLORIDE, null, LQ, NOCON, new FT_Corrosive(60));
         t(ModFluids.CALCIUM_CHLORIDE, null, LQ, NOCON, new FT_Corrosive(60));
         t(ModFluids.CALCIUM_SOLUTION, null, LQ, NOCON, new FT_Corrosive(60));
+        t(ModFluids.TITANIUM_TETRACHLORIDE, null, LQ);
         t(ModFluids.LYE, null, new FT_Corrosive(40), LQ);
         t(ModFluids.SODIUM_ALUMINATE, null, new FT_Corrosive(30), LQ);
         t(ModFluids.BAUXITE_SOLUTION, null, new FT_Corrosive(40), LQ, VIS);
@@ -290,32 +292,28 @@ public final class ModFluidTraitsBootstrap {
 
     private static FT_Toxin toxinChlorine() {
         return new FT_Toxin()
-                .addTooltipLine(Component.translatable("fluid.hbm_m.toxin.chlorine.line1"))
-                .addTooltipLine(Component.translatable("fluid.hbm_m.toxin.chlorine.line2"));
+                .addEntry(new FT_Toxin.ToxinDirectDamage(com.hbm_m.damagesource.ModDamageSources::cloud, 2F, 20, com.hbm_m.handler.HazardClass.GAS_LUNG, false));
     }
 
     private static FT_Toxin toxinPhosgene() {
         return new FT_Toxin()
-                .addTooltipLine(Component.translatable("fluid.hbm_m.toxin.phosgene.line1"))
-                .addTooltipLine(Component.translatable("fluid.hbm_m.toxin.phosgene.line2"));
+                .addEntry(new FT_Toxin.ToxinDirectDamage(com.hbm_m.damagesource.ModDamageSources::cloud, 4F, 20, com.hbm_m.handler.HazardClass.GAS_LUNG, false));
     }
 
     private static FT_Toxin toxinMustard() {
         return new FT_Toxin()
-                .addTooltipLine(Component.translatable("fluid.hbm_m.toxin.mustard.line1"))
-                .addTooltipLine(Component.translatable("fluid.hbm_m.toxin.mustard.line2"));
+                .addEntry(new FT_Toxin.ToxinDirectDamage(com.hbm_m.damagesource.ModDamageSources::cloud, 4F, 10, com.hbm_m.handler.HazardClass.GAS_BLISTERING, false))
+                .addEntry(new FT_Toxin.ToxinEffects(com.hbm_m.handler.HazardClass.GAS_BLISTERING, true).add(() -> new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.WITHER, 100, 1), () -> new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.CONFUSION, 100, 0)));
     }
 
     private static FT_Toxin toxinEstradiol() {
         return new FT_Toxin()
-                .addTooltipLine(Component.translatable("fluid.hbm_m.toxin.estradiol.line1"))
-                .addTooltipLine(Component.translatable("fluid.hbm_m.toxin.estradiol.line2"));
+                .addEntry(new FT_Toxin.ToxinEffects(com.hbm_m.handler.HazardClass.PARTICLE_FINE, false).add(() -> new net.minecraft.world.effect.MobEffectInstance(EffectHooks.of(com.hbm_m.effect.ModEffects.DEATH), 72000, 0)));
     }
 
     private static FT_Toxin toxinRedmud() {
         return new FT_Toxin()
-                .addTooltipLine(Component.translatable("fluid.hbm_m.toxin.redmud.line1"))
-                .addTooltipLine(Component.translatable("fluid.hbm_m.toxin.redmud.line2"));
+                .addEntry(new FT_Toxin.ToxinEffects(com.hbm_m.handler.HazardClass.GAS_BLISTERING, false).add(() -> new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.WITHER, 600, 2)));
     }
 
     private static void registerHeatCoolChains() {
@@ -358,18 +356,7 @@ public final class ModFluidTraitsBootstrap {
                 .addStep(238, 1, sst, 1)
                 .addStep(2500, 10, ust, 1));
 
-        FluidType.addTrait(st, new FT_Heatable()
-                .setEff(HeatingType.BOILER, effSteamBoil)
-                .setEff(HeatingType.HEATEXCHANGER, effSteamHeatex)
-                .addStep(2, 10, hst, 1));
-        FluidType.addTrait(hst, new FT_Heatable()
-                .setEff(HeatingType.BOILER, effSteamBoil)
-                .setEff(HeatingType.HEATEXCHANGER, effSteamHeatex)
-                .addStep(18, 10, sst, 1));
-        FluidType.addTrait(sst, new FT_Heatable()
-                .setEff(HeatingType.BOILER, effSteamBoil)
-                .setEff(HeatingType.HEATEXCHANGER, effSteamHeatex)
-                .addStep(120, 10, ust, 1));
+        // Dampf selbst hat im Original kein FT_Heatable (nur Wasser -> Dampfstufen).
 
         FluidType.addTrait(st, new FT_Coolable(spent, 100, 1, 200)
                 .setEff(CoolingType.TURBINE, effSteamTurbine)
@@ -383,6 +370,11 @@ public final class ModFluidTraitsBootstrap {
         FluidType.addTrait(ust, new FT_Coolable(sst, 1, 10, 120)
                 .setEff(CoolingType.TURBINE, effSteamTurbine)
                 .setEff(CoolingType.HEATEXCHANGER, effSteamCool));
+
+        // 1:1 AIR.addTraits(new FT_Heatable().setEff(BOILER, 1.0).addStep(5, 1, AIRBLAST, 1))
+        FluidType.addTrait(ModFluids.AIR.getSource(), new FT_Heatable()
+                .setEff(HeatingType.BOILER, 1.0D)
+                .addStep(5, 1, ModFluids.AIRBLAST.getSource(), 1));
 
         Fluid oil = ModFluids.CRUDE_OIL.getSource();
         Fluid hotoil = ModFluids.HOTOIL.getSource();

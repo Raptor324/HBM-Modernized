@@ -27,24 +27,12 @@ import net.minecraft.client.resources.model.UnbakedModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
 
-//? if < 1.21.1 {
 import net.minecraftforge.client.model.geometry.IGeometryBakingContext;
 import net.minecraftforge.client.model.geometry.IGeometryLoader;
 import net.minecraftforge.client.model.geometry.IUnbakedGeometry;
 import net.minecraftforge.client.model.obj.ObjModel;
-//?} else {
-/*import net.neoforged.neoforge.client.model.geometry.IGeometryBakingContext;
-import net.neoforged.neoforge.client.model.geometry.IGeometryLoader;
-import net.neoforged.neoforge.client.model.geometry.IUnbakedGeometry;
-import net.neoforged.neoforge.client.model.obj.ObjModel;
-*///?}
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
 
 @OnlyIn(Dist.CLIENT)
 public abstract class AbstractObjPartModelLoader<T extends BakedModel> implements IGeometryLoader<AbstractObjPartModelLoader.ObjPartGeometry<T>> {
@@ -117,12 +105,14 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
 
         // Парсинг OBJ дедуплицируется глобально в LoaderHooks (по modelLocation + flipV)
         private ObjModel getOrLoadObjModel() {
+            ObjModel model;
             try {
-                return LoaderHooks.loadObjModel(modelLocation, flipV);
+                model = LoaderHooks.loadObjModel(modelLocation, flipV);
             } catch (Exception e) {
                 MainRegistry.LOGGER.error("Failed to load OBJ model: " + modelLocation, e);
                 throw new RuntimeException("Не удалось загрузить OBJ модель: " + modelLocation, e);
             }
+            return model;
         }
 
         @Override

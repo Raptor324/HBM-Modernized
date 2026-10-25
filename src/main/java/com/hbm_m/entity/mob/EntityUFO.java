@@ -40,6 +40,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1 port of {@code EntityUFO} - a 15x4 block flying fortress with 20000 HP.
@@ -238,7 +239,7 @@ public class EntityUFO extends Mob implements Enemy, IRadiationImmune {
         for (Entity entity : this.level().getEntities(this, column)) {
             if (!canAttack(entity)) continue;
             entity.hurt(this.damageSources().mobAttack(this), 1000F);
-            com.hbm_m.platform.PlatformHooks.setSecondsOnFire(entity, 5);
+            com.hbm_m.platform.MobHooks.setSecondsOnFire(entity, 5);
             if (entity instanceof LivingEntity living) {
                 ContaminationUtil.contaminate(living, HazardType.RADIATION, ContaminationType.CREATIVE, 5F);
             }

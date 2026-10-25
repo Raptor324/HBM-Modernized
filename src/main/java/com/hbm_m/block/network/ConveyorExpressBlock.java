@@ -16,4 +16,9 @@ public class ConveyorExpressBlock extends ConveyorBendableBlock {
     public Vec3 getTravelLocation(Level level, BlockPos pos, Vec3 itemPos, double speed) {
         return super.getTravelLocation(level, pos, itemPos, speed * 3);
     }
+
+    @Override
+    public net.minecraft.world.item.Item getWandItem() {
+        return com.hbm_m.item.ModItems.CONVEYOR_WAND_EXPRESS.get();
+    }
 }

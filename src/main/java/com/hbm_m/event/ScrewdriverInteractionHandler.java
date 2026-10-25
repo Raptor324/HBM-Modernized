@@ -32,6 +32,8 @@ public class ScrewdriverInteractionHandler {
             Level level = player.level();
             DoorBlockEntity doorEntity = resolveDoorController(level, pos);
             if (doorEntity == null) return EventResult.pass();
+            // Verschlossene Tuer ohne Schleichen: normaler Klick = Knackversuch (Original tryToggle/canAccess)
+            if (doorEntity.isLocked() && !player.isShiftKeyDown()) return EventResult.pass();
 
             // Блокируем стандартное взаимодействие (открытие/закрытие двери).
             // GUI выбора скина открываем только на клиенте.
@@ -55,11 +57,6 @@ public class ScrewdriverInteractionHandler {
 
     private static DoorBlockEntity resolveDoorController(Level level, BlockPos clickedPos) {
         BlockEntity be = level.getBlockEntity(clickedPos);
-        // Blast door: GUI скинов нет (NEXT BlastDoor.java:99-105) — отвёртка тогглит дверь
-        // как пустая рука; не перехватываем клик (паритет BlastDoorBlock/UniversalMachinePartBlock)
-        if (be instanceof com.hbm_m.block.entity.doors.BlastDoorBlockEntity) {
-            return null;
-        }
         if (be instanceof DoorBlockEntity doorBE && doorBE.isController()) {
             return doorBE;
         }
@@ -67,8 +64,7 @@ public class ScrewdriverInteractionHandler {
             BlockPos controllerPos = part.getControllerPos();
             if (controllerPos != null) {
                 BlockEntity ctrlBe = level.getBlockEntity(controllerPos);
-                if (ctrlBe instanceof DoorBlockEntity doorBE && doorBE.isController()
-                        && !(doorBE instanceof com.hbm_m.block.entity.doors.BlastDoorBlockEntity)) {
+                if (ctrlBe instanceof DoorBlockEntity doorBE && doorBE.isController()) {
                     return doorBE;
                 }
             }

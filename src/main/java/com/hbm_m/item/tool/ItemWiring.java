@@ -19,6 +19,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * Порт ItemWiring (1.7.10): проводка ЛЭП. ПКМ по первому пилону запоминает его,
@@ -41,7 +42,13 @@ public class ItemWiring extends Item {
         if (player == null || player.isShiftKeyDown()) {
             return InteractionResult.PASS;
         }
-        BlockPos pos = context.getClickedPos();
+        // Original: BlockDummyable -> findCore (Umspannwerk-Teile, Pylon-Dummies)
+        BlockPos clicked = com.hbm_m.multiblock.MultiblockInteractionHelper.resolveControllerPos(level, context.getClickedPos());
+        if (level.getBlockState(clicked).getBlock() instanceof com.hbm_m.block.network.PylonDummyBlock) {
+            BlockPos core = com.hbm_m.block.network.PylonDummyBlock.findCore(level, clicked);
+            if (core != null) clicked = core;
+        }
+        final BlockPos pos = clicked;
         BlockEntity te = level.getBlockEntity(pos);
         if (!(te instanceof PylonBaseBlockEntity pylon)) {
             return InteractionResult.PASS;
@@ -49,7 +56,7 @@ public class ItemWiring extends Item {
         ItemStack stack = context.getItemInHand();
 
         if (!hasStart(stack)) {
-            PlatformHooks.editItemTag(stack, tag -> {
+            StackNbt.edit(stack, tag -> {
                 tag.putInt(TAG_X, pos.getX());
                 tag.putInt(TAG_Y, pos.getY());
                 tag.putInt(TAG_Z, pos.getZ());
@@ -72,16 +79,16 @@ public class ItemWiring extends Item {
     }
 
     private static boolean hasStart(ItemStack stack) {
-        return PlatformHooks.hasItemTag(stack) && PlatformHooks.getItemTag(stack).contains(TAG_Y);
+        return StackNbt.has(stack) && StackNbt.read(stack).contains(TAG_Y);
     }
 
     private static BlockPos getStart(ItemStack stack) {
-        net.minecraft.nbt.CompoundTag tag = PlatformHooks.getItemTag(stack);
+        net.minecraft.nbt.CompoundTag tag = StackNbt.read(stack);
         return new BlockPos(tag.getInt(TAG_X), tag.getInt(TAG_Y), tag.getInt(TAG_Z));
     }
 
     private static void clearStart(ItemStack stack) {
-        PlatformHooks.editItemTag(stack, tag -> {
+        StackNbt.edit(stack, tag -> {
             tag.remove(TAG_X);
             tag.remove(TAG_Y);
             tag.remove(TAG_Z);
@@ -91,12 +98,14 @@ public class ItemWiring extends Item {
     //? if < 1.21.1 {
     @Override
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+        addTooltip(stack, tooltip);
+    }
     //?} else {
     /*@Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-    *///?}
         addTooltip(stack, tooltip);
     }
+    *///?}
 
     private void addTooltip(ItemStack stack, List<Component> tooltip) {
         if (hasStart(stack)) {

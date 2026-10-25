@@ -31,14 +31,13 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
+//? if forge {
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 //?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+/*import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 *///?}
@@ -46,13 +45,13 @@ import net.neoforged.fml.common.EventBusSubscriber;
 //? if forge {
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 //?} elif neoforge {
-/*@EventBusSubscriber(modid = RefStrings.MODID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
+/*@EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT)
 *///?}
 @SuppressWarnings({"UnstableApiUsage", "removal"})
 public class ClientModEvents {
 
     private static boolean initialized = false;
-    
+
     public static void init() {
         if (initialized) return;
         initialized = true;
@@ -76,6 +75,11 @@ public class ClientModEvents {
                 handleItemTooltip(stack, context.level(), lines, flag));
         *///?}
 
+        // ModEventHandlerClient.onClientTick (START): Aschezaehler der Digamma-Asche abbauen
+        ClientTickEvent.CLIENT_PRE.register(client -> {
+            if (client.level != null && client.player != null) com.hbm_m.block.generic.BlockAshes.clientTick();
+        });
+
         ClientTickEvent.CLIENT_POST.register(client -> {
             com.hbm_m.client.overlay.OverlayInfoToast.tick();
             // Порт ModEventHandlerClient:919 (1.7.10): метка в статус-стеке (ID_FILTER),
@@ -94,6 +98,7 @@ public class ClientModEvents {
             if (client.player != null) {
                 ParticleEffectClient.tickRadiationAura(client.player);
             }
+            DuckKeyHandler.tick(client);
         });
     }
 
@@ -120,6 +125,9 @@ public class ClientModEvents {
             provider.appendHbmTooltip(stack, level, lines, flag);
         }
 
+        // Original ItemBlockLore / ItemBlockBlastInfo / BlockMassStorage.addInformation
+        com.hbm_m.item.block.ItemBlockLore.appendTooltip(stack, lines);
+
         // Hazard-тултипы и теги не применяются к броне (у неё свой обработчик).
         if (stack.getItem() instanceof ArmorItem) {
             return;
@@ -127,7 +135,8 @@ public class ClientModEvents {
 
         HazardTooltipHandler.appendHazardTooltips(stack, Minecraft.getInstance().player, lines);
 
-        boolean hasTags = stack.getTags().findAny().isPresent();
+        // Original ClientConfig.ITEM_TOOLTIP_SHOW_OREDICT (Ore-Dictionary -> Tags)
+        boolean hasTags = com.hbm_m.config.ClientConfig.itemTooltipShowOredict && stack.getTags().findAny().isPresent();
         if (hasTags) {
             if (Screen.hasShiftDown()) {
                 lines.add(Component.empty());
@@ -146,6 +155,23 @@ public class ClientModEvents {
                         Component.translatable("tooltip.hbm_m.hold_shift_for_details")
                                 .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC)
                 );
+            }
+        }
+
+        /// CUSTOM NUKE /// (Original ClientConfig.ITEM_TOOLTIP_SHOW_CUSTOM_NUKE, TileEntityNukeCustom.entries)
+        if (com.hbm_m.config.ClientConfig.itemTooltipShowCustomNuke) {
+            com.hbm_m.explosion.CustomNukeExplosion.CustomNukeEntry entry = com.hbm_m.explosion.CustomNukeExplosion.entries().get(stack.getItem());
+
+            if (entry != null) {
+
+                if (!lines.isEmpty())
+                    lines.add(Component.empty());
+
+                if (entry.entry() == com.hbm_m.explosion.CustomNukeExplosion.EnumEntryType.ADD)
+                    lines.add(Component.literal("Adds " + entry.value() + " to the custom nuke stage " + entry.type()).withStyle(ChatFormatting.GOLD));
+
+                if (entry.entry() == com.hbm_m.explosion.CustomNukeExplosion.EnumEntryType.MULT)
+                    lines.add(Component.literal("Adds multiplier " + entry.value() + " to the custom nuke stage " + entry.type()).withStyle(ChatFormatting.GOLD));
             }
         }
     }
@@ -179,20 +205,19 @@ public class ClientModEvents {
         // событие в кадре — AFTER_SKY: восстанавливаем троицу до энтити/BER.
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_SKY) {
             com.hbm_m.client.render.shader.ShaderBindResync.restoreVanillaTextureBindings();
+            // Original RenderNTMSkyboxChainloader / RenderNTMSkyboxImpact: Zusaetze direkt nach dem Himmel
+            com.hbm_m.client.render.world.RenderNTMSkybox.renderAfterSky(event.getPoseStack(),
+                    com.hbm_m.platform.RenderHooks.getPartialTickRaw());
         }
 
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_SKY) {
             com.hbm_m.client.compat.dh.DhClientState.onAfterSky();
             // Захват чистой ванильной проекции кадра (FOV/zoom/bob) — из неё
             // строится проекция дальнего И ближнего NT-проходов.
-            Minecraft mcCapture = Minecraft.getInstance();
-            //? if < 1.21.1 {
-            com.hbm_m.client.compat.dh.DhClientCompat.captureVanillaProjection(mcCapture.getFrameTime());
-            //?} else {
-            /*com.hbm_m.client.compat.dh.DhClientCompat.captureVanillaProjection(
-                    mcCapture.getTimer().getGameTimeDeltaPartialTick(true));
-            *///?}
+            com.hbm_m.client.compat.dh.DhClientCompat.captureVanillaProjection(
+                    com.hbm_m.platform.RenderHooks.getPartialTickRaw());
             MissileTrackClient.beginRenderFrame();
+            com.hbm_m.client.render.implementations.RebarRenderer.beginFrame();
             logShadowBerDiagnostics();
         }
 
@@ -247,6 +272,7 @@ public class ClientModEvents {
             if (!com.hbm_m.compat.simulated.DiagramRenderCompat.isRenderingDiagram()) {
                 InstancedRenderFrame.presentAfterBlockEntities(event.getProjectionMatrix(), cameraPos);
             }
+            com.hbm_m.client.RebarPlacerPreview.render(event.getPoseStack(), cameraPos);
             return;
         }
 
@@ -258,11 +284,32 @@ public class ClientModEvents {
     }
 
     //? if forge {
+    /**
+     * Original GuiScreen.drawHoveringText: alle Zeilen ausser dem Namen bekommen "§7" - Zeilen ohne eigenen
+     * Farbcode sind grau. Laeuft zuletzt (LOWEST), damit alle Tooltip-Quellen (appendHoverText, ITooltipProvider,
+     * PersistentInfoTooltips, Hazard ...) erfasst sind; nur Gegenstaende dieses Mods.
+     */
+    @SubscribeEvent(priority = net.minecraftforge.eventbus.api.EventPriority.LOWEST)
+    public static void onItemTooltipLegacyGray(net.minecraftforge.event.entity.player.ItemTooltipEvent event) {
+        if (com.hbm_m.util.TooltipUtil.isHbmStack(event.getItemStack())) {
+            com.hbm_m.util.TooltipUtil.applyLegacyGray(event.getToolTip());
+        }
+    }
+    //?} elif neoforge {
+    /*@SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.LOWEST)
+    public static void onItemTooltipLegacyGray(net.neoforged.neoforge.event.entity.player.ItemTooltipEvent event) {
+        if (com.hbm_m.util.TooltipUtil.isHbmStack(event.getItemStack())) {
+            com.hbm_m.util.TooltipUtil.applyLegacyGray(event.getToolTip());
+        }
+    }
+    *///?}
+
+    //? if forge {
     @SubscribeEvent
     public static void onRenderGuiPre(net.minecraftforge.client.event.RenderGuiEvent.Pre event) {
         // Виньетка использует multiply-блендинг (ZERO/ONE_MINUS_SRC_COLOR) и
         // молча ломается при расхождении кеша факторов блендинга с физикой
-        // (GlStateManager._blendFuncSeparate но-опится при «совпадении»).
+        // (GlStateManager._blendFuncSeparate но-опятся при «совпадении»).
         // Форсируем честный блендинг ДО Gui.render.
         com.hbm_m.client.render.shader.ShaderBindResync.forceHonestBlendState();
     }
@@ -286,7 +333,7 @@ public class ClientModEvents {
     public static void onRenderGuiPre(net.neoforged.neoforge.client.event.RenderGuiEvent.Pre event) {
         // Виньетка использует multiply-блендинг (ZERO/ONE_MINUS_SRC_COLOR) и
         // молча ломается при расхождении кеша факторов блендинга с физикой
-        // (GlStateManager._blendFuncSeparate но-опится при «совпадении»).
+        // (GlStateManager._blendFuncSeparate но-опятся при «совпадении»).
         // Форсируем честный блендинг ДО Gui.render.
         com.hbm_m.client.render.shader.ShaderBindResync.forceHonestBlendState();
     }

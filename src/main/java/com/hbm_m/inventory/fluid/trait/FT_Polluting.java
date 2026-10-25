@@ -11,7 +11,6 @@ import com.google.gson.stream.JsonWriter;
 import com.hbm_m.handler.pollution.PollutionHandler;
 import com.hbm_m.inventory.fluid.FluidType;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
-import com.hbm_m.util.EnergyFormatter;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
@@ -76,25 +75,26 @@ public class FT_Polluting extends FluidTrait {
 
     @Override
     public void addInfo(List<Component> info) {
-        info.add(Component.translatable("fluid.hbm_m.trait.polluting").withStyle(ChatFormatting.GOLD));
+        info.add(Component.literal("[").append(Component.translatable("hbmfluid.trait.polluting")).append("]").withStyle(ChatFormatting.GOLD));
     }
 
     @Override
     public void addInfoHidden(List<Component> info) {
         if (!this.releaseMap.isEmpty()) {
-            info.add(Component.translatable("fluid.hbm_m.trait.polluting.when_spilled").withStyle(ChatFormatting.GREEN));
-            for (Entry<PollutionType, Float> entry : releaseMap.entrySet()) {
-                info.add(Component.translatable("fluid.hbm_m.trait.polluting.line",
-                        EnergyFormatter.formatTooltipNumber(entry.getValue()), entry.getKey().name()).withStyle(ChatFormatting.GREEN));
-            }
+            info.add(Component.translatable("hbmfluid.trait.spilled").append(":").withStyle(ChatFormatting.GREEN));
+            for (Entry<PollutionType, Float> entry : releaseMap.entrySet()) info.add(line(entry).withStyle(ChatFormatting.GREEN));
         }
         if (!this.burnMap.isEmpty()) {
-            info.add(Component.translatable("fluid.hbm_m.trait.polluting.when_burned").withStyle(ChatFormatting.RED));
-            for (Entry<PollutionType, Float> entry : burnMap.entrySet()) {
-                info.add(Component.translatable("fluid.hbm_m.trait.polluting.line",
-                        EnergyFormatter.formatTooltipNumber(entry.getValue()), entry.getKey().name()).withStyle(ChatFormatting.RED));
-            }
+            info.add(Component.translatable("hbmfluid.trait.burned").append(":").withStyle(ChatFormatting.RED));
+            for (Entry<PollutionType, Float> entry : burnMap.entrySet()) info.add(line(entry).withStyle(ChatFormatting.RED));
         }
+    }
+
+    /** " - <Wert> <pollution.trait.typ> per mB" wie im Original (Wert als Float.toString). */
+    private static net.minecraft.network.chat.MutableComponent line(Entry<PollutionType, Float> entry) {
+        return Component.literal(" - " + entry.getValue() + " ")
+                .append(Component.translatable("pollution.trait." + entry.getKey().name().toLowerCase(java.util.Locale.US)))
+                .append(" ").append(Component.translatable("hbmfluid.trait.perMB"));
     }
 
     @Override

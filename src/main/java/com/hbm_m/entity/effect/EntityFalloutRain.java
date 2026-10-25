@@ -47,6 +47,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.hbm_m.platform.BlockHooks;
 
 public class EntityFalloutRain extends EntityExplosionChunkloading {
 
@@ -67,6 +68,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
     private static final int MAX_SOLID_DEPTH = 3;
     /** Мягкие блоки (твёрдость ≤ 6) над воздухом осыпаются падающими сущностями. */
     private static final float HARDNESS_BOUND = 6.0F;
+
 
     private final LongSet issuedTickets = new LongOpenHashSet();
     private boolean firstTick = true;
@@ -269,6 +271,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 
         LongArrayList spawnFalling = new LongArrayList();
         int chunkTopY = topSolidY(ed);
+
         for (int x = minX; x < minX + 16; x++) {
             for (int z = minZ; z < minZ + 16; z++) {
                 double dx = x - ex;
@@ -293,6 +296,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
             ed.lightPositions.clear();
             ed.lightSectionsMask = 0;
         }
+
 
         modified |= ed.modified;
 
@@ -420,6 +424,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
     private boolean craterBiomesAllowed() {
         return applyCraterBiomes && ModClothConfig.get().enableCraterBiomes;
     }
+
 
     public static ResourceKey<Biome> getBiomeChange(double dist, int scale, ResourceKey<Biome> original) {
         if (!ModClothConfig.get().enableCraterBiomes || original == null) return null;
@@ -621,7 +626,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
                 state = state.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED, Boolean.FALSE);
             }
             net.minecraft.world.entity.item.FallingBlockEntity entity =
-                    com.hbm_m.platform.PlatformHooks.newFallingBlock(
+                    com.hbm_m.platform.BlockHooks.newFallingBlock(
                             level, pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, state);
             entity.dropItem = false;
             ed.set(pos.getX(), pos.getY(), pos.getZ(), state.getFluidState().createLegacyBlock());

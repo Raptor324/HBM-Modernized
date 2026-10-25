@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.menu;
 
 import com.hbm_m.blockentity.machines.MachineSilexBlockEntity;
+import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.core.BlockPos;
@@ -9,16 +10,17 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
-//? if forge {
-import net.minecraftforge.items.SlotItemHandler;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.items.SlotItemHandler;
-*///?}
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
+/**
+ * 1:1 {@code ContainerSILEX}: Eingang (80,12), Fluidkennung (8,24), Kanister ein/aus (26/44,24), Ausgang (116,90),
+ * Warteschlange 2x3 ab (134,72), Spielerinventar ab y 140.
+ */
 public class MachineSilexMenu extends AbstractContainerMenu {
 
-    private static final int MACHINE_SLOTS = 3;
+    private static final int MACHINE_SLOTS = 11;
 
     private final MachineSilexBlockEntity blockEntity;
 
@@ -30,22 +32,31 @@ public class MachineSilexMenu extends AbstractContainerMenu {
         super(ModMenuTypes.SILEX_MENU.get(), id);
         this.blockEntity = blockEntity;
 
-        // Upstream ContainerSILEX draws the lasered item at (80,12), its output at (116,90) and
-        // a column of aux slots at y=24; this port keeps input, output and a battery, so they go
-        // on those frames. Without them the machine could only be filled by automation.
-        var handler = blockEntity.getInventory();
-        addSlot(new SlotItemHandler(handler, MachineSilexBlockEntity.SLOT_INPUT, 80, 12));
-        addSlot(new SlotItemHandler(handler, MachineSilexBlockEntity.SLOT_OUTPUT, 116, 90));
-        addSlot(new SlotItemHandler(handler, MachineSilexBlockEntity.SLOT_BATTERY, 8, 24));
+        var handler = blockEntity != null ? blockEntity.getInventory() : new ModItemStackHandler.Dummy(MACHINE_SLOTS);
+        var container = new ModItemStackHandlerContainer(handler, blockEntity != null ? blockEntity::setChanged : () -> { });
+
+        // Eingang
+        this.addSlot(new Slot(container, 0, 80, 12));
+        // Fluidkennung
+        this.addSlot(new Slot(container, 1, 8, 24));
+        // Kanister
+        this.addSlot(new Slot(container, 2, 8 + 18, 24));
+        this.addSlot(new Slot(container, 3, 8 + 18 * 2, 24) { @Override public boolean mayPlace(ItemStack s) { return false; } });
+        // Ausgang
+        this.addSlot(new Slot(container, 4, 116, 90) { @Override public boolean mayPlace(ItemStack s) { return false; } });
+        // Warteschlange
+        int[][] q = { {134, 72}, {152, 72}, {134, 90}, {152, 90}, {134, 108}, {152, 108} };
+        for (int i = 0; i < 6; i++) {
+            this.addSlot(new Slot(container, 5 + i, q[i][0], q[i][1]) { @Override public boolean mayPlace(ItemStack s) { return false; } });
+        }
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 140 + row * 18));
+                this.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 84 + row * 18 + (18 * 3) + 2));
             }
         }
-
         for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(inventory, col, 8 + col * 18, 198));
+            this.addSlot(new Slot(inventory, col, 8 + col * 18, 142 + (18 * 3) + 2));
         }
     }
 
@@ -76,26 +87,28 @@ public class MachineSilexMenu extends AbstractContainerMenu {
         return MenuReach.stillValid(player, blockEntity);
     }
 
+    /** Original {@code transferStackInSlot}: Maschine -> Spieler, sonst in den Eingang. */
     @Override
-    public net.minecraft.world.item.ItemStack quickMoveStack(Player player, int index) {
-        net.minecraft.world.item.ItemStack result = net.minecraft.world.item.ItemStack.EMPTY;
-        Slot slot = slots.get(index);
-        if (slot == null || !slot.hasItem()) return result;
+    public ItemStack quickMoveStack(Player player, int index) {
+        ItemStack result = ItemStack.EMPTY;
+        Slot slot = this.slots.get(index);
 
-        net.minecraft.world.item.ItemStack stack = slot.getItem();
-        result = stack.copy();
+        if (slot != null && slot.hasItem()) {
+            ItemStack stack = slot.getItem();
+            result = stack.copy();
 
-        if (index < MACHINE_SLOTS) {
-            if (!moveItemStackTo(stack, MACHINE_SLOTS, slots.size(), true)) return net.minecraft.world.item.ItemStack.EMPTY;
-        } else {
-            // Never into the output slot.
-            if (!moveItemStackTo(stack, MachineSilexBlockEntity.SLOT_BATTERY, MachineSilexBlockEntity.SLOT_BATTERY + 1, false)
-             && !moveItemStackTo(stack, MachineSilexBlockEntity.SLOT_INPUT, MachineSilexBlockEntity.SLOT_INPUT + 1, false))
-                return net.minecraft.world.item.ItemStack.EMPTY;
+            if (index < MACHINE_SLOTS) {
+                if (!this.moveItemStackTo(stack, MACHINE_SLOTS, this.slots.size(), true)) return ItemStack.EMPTY;
+            } else {
+                if (!this.moveItemStackTo(stack, 0, 1, false)) return ItemStack.EMPTY;
+            }
+
+            if (stack.isEmpty()) slot.set(ItemStack.EMPTY);
+            else slot.setChanged();
+
+            if (stack.getCount() == result.getCount()) return ItemStack.EMPTY;
+            slot.onTake(player, stack);
         }
-
-        if (stack.isEmpty()) slot.set(net.minecraft.world.item.ItemStack.EMPTY);
-        else slot.setChanged();
         return result;
     }
 }

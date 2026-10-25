@@ -4,7 +4,6 @@ import com.hbm_m.blockentity.machines.PWRControllerBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.item.nuclear.PWRFuelItem;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -14,15 +13,12 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
-/**
- * Two machine slots (fresh fuel in / hot fuel out), matching the original {@code ContainerPWR}'s
- * layout intent (see {@code PWRControllerBlockEntity} for the scope note on why this is a
- * single-block reactor instead of a flood-fill multiblock).
- */
+/** 1:1 {@code ContainerPWR}: Brennstoff (0), heisser Brennstoff (1, nur Entnahme), Fluessigkeitskennung (2). */
 public class PWRControllerMenu extends AbstractContainerMenu {
 
-    private static final int MACHINE_SLOT_COUNT = 2;
+    private static final int MACHINE_SLOT_COUNT = 3;
     private static final int PLAYER_SLOT_START = MACHINE_SLOT_COUNT;
 
     private final PWRControllerBlockEntity blockEntity;
@@ -37,16 +33,15 @@ public class PWRControllerMenu extends AbstractContainerMenu {
         this.blockEntity = blockEntity;
         // тайл может отсутствовать на клиенте (реплей Flashback) — подставляем пустую заглушку
         this.machineContainer = new ModItemStackHandlerContainer(
-                blockEntity != null ? blockEntity.getInventory() : new DummyItemStackHandler(MACHINE_SLOT_COUNT),
+                blockEntity != null ? blockEntity.getInventory() : new ModItemStackHandler.Dummy(MACHINE_SLOT_COUNT),
                 blockEntity != null ? blockEntity::setChanged : () -> {});
 
         this.addSlot(new Slot(machineContainer, PWRControllerBlockEntity.SLOT_FUEL_IN, 53, 5));
         this.addSlot(new Slot(machineContainer, PWRControllerBlockEntity.SLOT_FUEL_OUT, 89, 32) {
-            @Override
-            public boolean mayPlace(ItemStack stack) {
-                return false;
-            }
+            // Original: SlotCraftingOutput - nur Entnahme
+            @Override public boolean mayPlace(ItemStack stack) { return false; }
         });
+        this.addSlot(new Slot(machineContainer, PWRControllerBlockEntity.SLOT_FLUID_ID, 8, 59));
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
@@ -98,12 +93,14 @@ public class PWRControllerMenu extends AbstractContainerMenu {
                 if (!this.moveItemStackTo(stack, PLAYER_SLOT_START, this.slots.size(), true)) {
                     return ItemStack.EMPTY;
                 }
-            } else if (stack.getItem() instanceof PWRFuelItem) {
-                if (!this.moveItemStackTo(stack, PWRControllerBlockEntity.SLOT_FUEL_IN, PWRControllerBlockEntity.SLOT_FUEL_IN + 1, false)) {
+            } else if (stack.getItem() instanceof com.hbm_m.interfaces.IItemFluidIdentifier) {
+                if (!this.moveItemStackTo(stack, PWRControllerBlockEntity.SLOT_FLUID_ID, PWRControllerBlockEntity.SLOT_FLUID_ID + 1, false)) {
                     return ItemStack.EMPTY;
                 }
             } else {
-                return ItemStack.EMPTY;
+                if (!this.moveItemStackTo(stack, PWRControllerBlockEntity.SLOT_FUEL_IN, PWRControllerBlockEntity.SLOT_FUEL_IN + 1, false)) {
+                    return ItemStack.EMPTY;
+                }
             }
 
             if (stack.isEmpty()) {

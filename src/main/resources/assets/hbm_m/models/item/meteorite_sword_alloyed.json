@@ -3,8 +3,8 @@
 	"model": "hbm_m:models/item/meteorite_blade.obj",
 	"flip_v": true,
 	"textures": {
-		"particle": "hbm_m:item/meteorite_sword",
-		"default": "hbm_m:item/meteorite_sword"
+		"particle": "hbm_m:item/meteorite_sword_icon",
+		"default": "hbm_m:item/meteorite_sword_icon"
 	},
     "display": {
         "thirdperson_righthand": {

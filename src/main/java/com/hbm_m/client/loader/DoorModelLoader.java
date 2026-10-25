@@ -19,18 +19,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-//? if < 1.21.1 {
 import net.minecraftforge.client.model.obj.ObjModel;
-//?} else {
-/*import net.neoforged.neoforge.client.model.obj.ObjModel;
-*///?}
 
 /**
  * Загрузчик дверных OBJ-моделей с ДЕДУПЛИКАЦИЕЙ текстурных скинов.

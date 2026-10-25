@@ -12,6 +12,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /** Port of {@code ContainerMassStorage} (1.7.10 Original). */
 public class MachineMassStorageMenu extends AbstractContainerMenu {
@@ -45,7 +46,24 @@ public class MachineMassStorageMenu extends AbstractContainerMenu {
         for (int col = 0; col < 9; col++) {
             this.addSlot(new Slot(inventory, col, 8 + col * 18, 197));
         }
+
+        // Original ContainerMassStorage: tile.openInventory() -> TileEntityCrateBase-Oeffnungsgeraeusch
+        if (!inventory.player.level().isClientSide) playCrateSound(com.hbm_m.sound.ModSounds.CRATE_OPEN.get());
     }
+
+    /** Original onContainerClosed: tile.closeInventory() -> Schliessgeraeusch. */
+    @Override
+    public void removed(Player player) {
+        super.removed(player);
+        if (!player.level().isClientSide) playCrateSound(com.hbm_m.sound.ModSounds.CRATE_CLOSE.get());
+    }
+
+    private void playCrateSound(net.minecraft.sounds.SoundEvent sound) {
+        if (blockEntity == null || blockEntity.getLevel() == null) return;
+        BlockPos p = blockEntity.getBlockPos();
+        blockEntity.getLevel().playSound(null, p.getX() + 0.5, p.getY() + 0.5, p.getZ() + 0.5,
+                sound, net.minecraft.sounds.SoundSource.BLOCKS, 1.0F, 1.0F);
+   }
 
     public static MachineMassStorageMenu create(int id, Inventory inventory, MachineMassStorageBlockEntity blockEntity) {
         return new MachineMassStorageMenu(id, inventory, blockEntity);
@@ -58,7 +76,7 @@ public class MachineMassStorageMenu extends AbstractContainerMenu {
             return massStorageBlockEntity;
         }
         throw new MenuBlockEntityMissingException("No MachineMassStorageBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":mass_storage_menu");
-    }
+   }
 
     public MachineMassStorageBlockEntity getBlockEntity() {
         return blockEntity;
@@ -67,7 +85,7 @@ public class MachineMassStorageMenu extends AbstractContainerMenu {
     @Override
     public boolean stillValid(Player player) {
         return MenuReach.stillValid(player, blockEntity);
-    }
+   }
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {

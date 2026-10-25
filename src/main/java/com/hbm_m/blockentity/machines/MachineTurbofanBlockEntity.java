@@ -1,5 +1,9 @@
 package com.hbm_m.blockentity.machines;
 
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.machines.MachineTurbofanBlock;
@@ -18,12 +22,14 @@ import com.hbm_m.inventory.fluid.trait.FT_Combustible;
 import com.hbm_m.inventory.fluid.trait.FT_Combustible.FuelGrade;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
+import com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.platform.PlatformHooks;
 import com.hbm_m.particle.helper.IParticleCreator;
 import com.hbm_m.sound.ClientSoundBootstrap;
 import com.hbm_m.sound.ModSounds;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -43,6 +49,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import com.hbm_m.platform.MobHooks;
+import com.hbm_m.platform.LevelHooks;
 
 /**
  * Турбовентилятор - 1:1-порт {@code TileEntityMachineTurbofan} (1.7.10).
@@ -64,7 +72,7 @@ import net.minecraft.world.phys.Vec3;
  * мировые координаты). См. также {@link TurbofanVehiclePhysics} - общие константы тяги.
  */
 public class MachineTurbofanBlockEntity extends MachinePollutingBlockEntity
-        implements com.hbm_m.api.fluids.IFluidStandardTransceiverMK2 {
+        implements com.hbm_m.api.fluids.IFluidStandardTransceiverMK2, com.hbm_m.interfaces.IUpgradeInfoProvider {
 
     public static final int SLOT_FUEL_CONTAINER = 0;
     public static final int SLOT_EMPTY_CONTAINER = 1;
@@ -483,7 +491,7 @@ public class MachineTurbofanBlockEntity extends MachinePollutingBlockEntity
             AABB hotZone = new AABB(pos).inflate(3.0D);
             for (Entity entity : level.getEntitiesOfClass(Entity.class, hotZone)) {
                 if (!entity.isAlive() || isProtectedFromFire(entity)) continue;
-                PlatformHooks.setSecondsOnFire(entity, 5);
+                MobHooks.setSecondsOnFire(entity, 5);
             }
         }
     }
@@ -513,7 +521,7 @@ public class MachineTurbofanBlockEntity extends MachinePollutingBlockEntity
         for (Entity entity : level.getEntitiesOfClass(Entity.class, exhaust)) {
             if (!entity.getBoundingBox().intersects(exhaust)) continue;
             if (afterburner > 0) {
-                PlatformHooks.setSecondsOnFire(entity, 5);
+                MobHooks.setSecondsOnFire(entity, 5);
                 entity.hurt(level.damageSources().onFire(), 5F);
             }
             push(entity, airflowPush);
@@ -596,7 +604,7 @@ public class MachineTurbofanBlockEntity extends MachinePollutingBlockEntity
 
         if (afterburner <= 90) return;
         if (level.random.nextInt(30) == 0) {
-            PlatformHooks.playSound(level, pos, ModSounds.MACHINE_DAMAGE.get(),
+            LevelHooks.playSound(level, pos, ModSounds.MACHINE_DAMAGE.get(),
                     SoundSource.BLOCKS, 3.0F, 0.95F + level.random.nextFloat() * 0.2F);
         }
 
@@ -753,13 +761,32 @@ public class MachineTurbofanBlockEntity extends MachinePollutingBlockEntity
         tank.readFromNBT(tag, "fuel");
         blood.readFromNBT(tag, "blood");
         showBlood = tag.getBoolean("showBlood");
-        afterburner = Math.max(tag.getInt("afterburner"), 0);
+        afterburner = tag.contains("afterburner") ? tag.getInt("afterburner") : tag.getByte("afterburner");
         wasOn = tag.getBoolean("wasOn");
         output = Math.max(tag.getInt("output"), 0);
         consumption = Math.max(tag.getInt("consumption"), 0);
     }
 
-    // ═══════════════════════════ GUI / меню ═══════════════════════════
+    // ── Upgrades ─────────────────────────────────────────────────────────────
+
+    @Override
+    public java.util.Map<ItemMachineUpgrade.UpgradeType, Integer> getValidUpgrades() {
+        return UPGRADE_CAPS;
+    }
+
+    @Override
+    public boolean canProvideInfo(UpgradeType type, int level, boolean extendedInfo) {
+        return type == UpgradeType.AFTERBURN;
+    }
+
+    @Override
+    public void provideInfo(UpgradeType type, int level, List<Component> info, boolean extendedInfo) {
+        info.add(com.hbm_m.interfaces.IUpgradeInfoProvider.getStandardLabel(getBlockState().getBlock()));
+        if (type == UpgradeType.AFTERBURN) {
+            info.add(Component.translatable(KEY_EFFICIENCY, "+" + (int) (level * 100 * (1 + Math.min(level / 3D, 4D))) + "%").withStyle(ChatFormatting.GREEN));
+            info.add(Component.translatable(KEY_CONSUMPTION, "+" + (level * 100) + "%").withStyle(ChatFormatting.RED));
+        }
+    }
 
     @Override
     public Component getDisplayName() {

@@ -240,6 +240,48 @@ public final class ModMaterialItems {
         if (mat == ModMaterials.COAL && shape == MaterialShape.CRYSTAL) {
             return new com.hbm_m.item.industrial.FuelItem(props, 6400);
         }
+        // Essbare Materialien des Originals: ingot_smore = ItemFood(10, 20F), ingot_semtex/ingot_c4 =
+        // ItemLemon(4, 5, true), powder_cement = ItemLemon(2, 0.5F).
+        if (mat == ModMaterials.SMORE && shape == MaterialShape.INGOT) {
+            return com.hbm_m.item.food.HbmFoodItem.of(10, 20F, false).noDesc().props(props).build();
+        }
+        if ((mat == ModMaterials.SEMTEX || mat == ModMaterials.C4) && shape == MaterialShape.INGOT) {
+            return com.hbm_m.item.food.HbmFoodItem.of(4, 5, true).props(props).build();
+        }
+        if (mat == ModMaterials.CEMENT && shape == MaterialShape.POWDER) {
+            return com.hbm_m.item.food.HbmFoodItem.of(2, 0.5F, false).props(props).build();
+        }
+        // Heisse Barren des Originals (ItemHot / ItemHotDusted, Meta 0 = steel_dusted_ingot)
+        if (shape == MaterialShape.INGOT && (mat == ModMaterials.METEORITE || mat == ModMaterials.METEORITE_FORGED
+                || mat == ModMaterials.CHAINSSTEEL)) {
+            String tex = mat == ModMaterials.CHAINSSTEEL ? "chainsteel" : mat == ModMaterials.METEORITE ? "meteorite" : "meteorite_forged";
+            return new com.hbm_m.item.special.ItemHot(mat == ModMaterials.CHAINSSTEEL ? 100 : 200,
+                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("hbm_m", "textures/item/ingot/ingot_" + tex + "_hot.png"), props);
+        }
+        if (shape == MaterialShape.INGOT && mat == ModMaterials.STEEL_DUSTED) {
+            return new com.hbm_m.item.special.ItemHotDusted(200, 0,
+                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("hbm_m", "textures/item/ingot/ingot_steel_dusted_hot.png"), props);
+        }
+        // ingot_u238m2 Meta 0 = ItemUnstable(350, 200): zerfaellt im Inventar zur MK5-Explosion
+        if (shape == MaterialShape.INGOT && mat == ModMaterials.U238M2) {
+            return new com.hbm_m.item.special.ItemUnstable(350, 200, props);
+        }
+        // crystal_xen = ItemDrop im Original (maxStack 1, verschiebt beim Aufprall Bloecke).
+        if (mat == ModMaterials.XEN && shape == MaterialShape.CRYSTAL) {
+            return new com.hbm_m.item.special.ItemDrop(props.stacksTo(1));
+        }
+        // ItemCustomLore 1:1 (item.hbm_m.<id>.desc mit $-Zeilen): Zeilenumbrueche sind je Sprache verschieden
+        if ((mat == ModMaterials.FLASHLEAD && shape == MaterialShape.BILLET)
+                || (mat == ModMaterials.EUPHEMIUM && shape == MaterialShape.NUGGET)
+                || (mat == ModMaterials.BISMUTH && shape == MaterialShape.PLATE)
+                // diese haben im Original zusaetzlich .desc.P11 (Polaroid 11)
+                || (mat == ModMaterials.NEPTUNIUM && shape == MaterialShape.INGOT)
+                || (mat == ModMaterials.LANTHANIUM && shape == MaterialShape.INGOT)
+                || (mat == ModMaterials.TANTALIUM && (shape == MaterialShape.INGOT || shape == MaterialShape.POWDER))
+                || (mat == ModMaterials.CHARRED && shape == MaterialShape.CRYSTAL)
+                || (mat == ModMaterials.HORN && shape == MaterialShape.CRYSTAL)) {
+            return new com.hbm_m.item.ItemCustomLore(props);
+        }
         // Лор-строки оригинала (desc в 1.7.10) для материалов.
         List<Component> lore = materialLore(mat, shape);
         if (lore != null) {
@@ -320,6 +362,10 @@ public final class ModMaterialItems {
         return out;
     }
 
+    /** Material, dessen Barren zum Block/Pulver gehoert: THORIUM -> THORIUM232 (Original ingot_th232). */
+    public static ModMaterials ingotMaterial(ModMaterials mat) {
+        return mat == ModMaterials.THORIUM ? ModMaterials.THORIUM232 : mat;
+    }
     public static boolean has(ModMaterials mat, MaterialShape shape) {
         EnumMap<MaterialShape, RegistrySupplier<Item>> map = ITEMS_BY_MATERIAL.get(mat);
         return map != null && map.containsKey(shape);

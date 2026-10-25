@@ -26,19 +26,11 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-//? if forge {
 import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.model.BakedModelWrapper;
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.client.model.data.ModelData.Builder;
 import net.minecraftforge.client.model.data.ModelProperty;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.client.ChunkRenderTypeSet;
-import net.neoforged.neoforge.client.model.BakedModelWrapper;
-import net.neoforged.neoforge.client.model.data.ModelData;
-import net.neoforged.neoforge.client.model.data.ModelData.Builder;
-import net.neoforged.neoforge.client.model.data.ModelProperty;
-*///?}
 
 /**
  * Connected-textures модель (как CT в 1.7.10): для каждой грани выбираются 4 фрагмента (TL/TR/BL/BR)
@@ -423,7 +415,9 @@ public class ConnectedDecoBlockBakedModel extends BakedModelWrapper<BakedModel> 
 
     @Override
     public ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand, ModelData data) {
-        return ChunkRenderTypeSet.of(RenderType.solid());
+        // Render-Typ des Ausgangsmodells (render_type im Modell-JSON) uebernehmen: fest "solid" liess die
+        // CT-Glaeser (glass_lead, glass_boron, reinforced_glass ...) an transparenten Texeln schwarz rendern.
+        return originalModel.getRenderTypes(state, rand, data);
     }
 
     private static final class CTBits {

@@ -40,10 +40,28 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 //? if forge {
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 //?}
 import dev.architectury.registry.menu.MenuRegistry;
 
 public class MachineDeuteriumTowerBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.interfaces.ILookOverlay {
+    /** w16b: Original {@code DeuteriumTower.printHook}: Energie (rot unter 1/20 Maximum) und beide Tanks. */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics g, Level world, BlockPos pos) {
+        if (!(world.getBlockEntity(pos) instanceof com.hbm_m.blockentity.machines.MachineDeuteriumTowerBlockEntity tower)) return;
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal("Power: " + com.hbm_m.util.BobMathUtil.getShortNumber(tower.getEnergyStored()) + "HE")
+                .withStyle(tower.getEnergyStored() < tower.getMaxEnergyStored() / 20 ? net.minecraft.ChatFormatting.RED : net.minecraft.ChatFormatting.GREEN));
+        for (int i = 0; i < 2; i++) {
+            com.hbm_m.inventory.fluid.tank.FluidTank tank = tower.getTank(i);
+            text.add((i < 1 ? net.minecraft.network.chat.Component.literal("-> ").withStyle(net.minecraft.ChatFormatting.GREEN)
+                            : net.minecraft.network.chat.Component.literal("<- ").withStyle(net.minecraft.ChatFormatting.RED))
+                    .append(net.minecraft.network.chat.Component.literal("").withStyle(net.minecraft.ChatFormatting.RESET)
+                            .append(com.hbm_m.inventory.fluid.FluidType.forFluid(tank.getTankType()).getLocalizedName())
+                            .append(": " + tank.getFill() + "/" + tank.getMaxFill() + "mB")));
+        }
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(g, net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
+    }
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     private final MultiblockStructureHelper structureHelper;
@@ -55,90 +73,15 @@ public class MachineDeuteriumTowerBlock extends BaseEntityBlock implements IMult
     }
 
     private static MultiblockStructureHelper defineStructureNew() {
-        // GIT DeuteriumTower: 2×2×10 + base-corner fluid/power proxies
-        String[] layer0 = {
-            "BB",
-            "BC",
-            "OO"
-        };
-        String[] layerShaft = {
-            "OO",
-            "OO"
-        };
-
-        Map<Character, PartRole> roleMap = Map.of(
-            'C', PartRole.CONTROLLER,
-            'O', PartRole.DEFAULT,
-            'B', PartRole.UNIVERSAL_CONNECTOR
-        );
-
-        Map<Character, Supplier<BlockState>> symbolMap = Map.of();
-
-        Map<Character, boolean[]> energySideMap = Map.of(
-            'B', MultiblockSideTuples.energy(true, true, true, true, true, false),
-            'C', MultiblockSideTuples.energy(true, true, true, true, true, false)
-        );
-        Map<Character, boolean[]> fluidSideMap = Map.of(
-            'B', MultiblockSideTuples.fluid(true, true, true, true, true, false),
-            'C', MultiblockSideTuples.fluid(true, true, true, true, true, false)
-        );
-
-        return MultiblockStructureHelper.createFromLayersWithRolesAndSides(
-            new String[][] {
-                layer0, layerShaft, layerShaft, layerShaft, layerShaft, layerShaft,
-                layerShaft, layerShaft, layerShaft, layerShaft
-            },
-            symbolMap,
-            () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-            roleMap,
-            null,
-            energySideMap,
-            fluidSideMap
-        );
-    }
-
-    /**
-     * Порт {@code DeuteriumTower.printHook}: запас энергии (красный, если меньше maxPower/20),
-     * затем вода (→) и тяжёлая вода (←) в формате "имя: fill/max mB".
-     */
-    @Override
-    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
-        BlockEntity be = level.getBlockEntity(pos);
-        if (!(be instanceof MachineDeuteriumTowerBlockEntity tower)) return;
-
-        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
-        net.minecraft.ChatFormatting powerColor = tower.getEnergyStored() < tower.getMaxEnergyStored() / 20
-                ? net.minecraft.ChatFormatting.RED : net.minecraft.ChatFormatting.GREEN;
-        text.add(net.minecraft.network.chat.Component.literal("Power: " + shortNumber(tower.getEnergyStored()) + "HE")
-                .withStyle(powerColor));
-
-        com.hbm_m.inventory.fluid.tank.FluidTank[] tanks = tower.getAllTanks();
-        for (int i = 0; i < tanks.length; i++) {
-            String body = com.hbm_m.inventory.fluid.FluidType.forFluid(tanks[i].getTankType()).getLocalizedName().getString()
-                    + ": " + tanks[i].getFill() + "/" + tanks[i].getMaxFill() + "mB";
-            text.add(net.minecraft.network.chat.Component.literal(i < 1 ? "-> " : "<- ")
-                    .withStyle(i < 1 ? net.minecraft.ChatFormatting.GREEN : net.minecraft.ChatFormatting.RED)
-                    .append(net.minecraft.network.chat.Component.literal(body).withStyle(net.minecraft.ChatFormatting.WHITE)));
-        }
-
-        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
-                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
-    }
-
-    /** Порт {@code BobMathUtil.getShortNumber} (как в оригинале: k/M/G/T/P/E с двумя знаками). */
-    private static String shortNumber(long value) {
-        double res;
-        String suffix = "";
-        long abs = Math.abs(value);
-        if (abs >= 1_000_000_000_000_000_000L) { res = value / 1.0E18; suffix = "E"; }
-        else if (abs >= 1_000_000_000_000_000L) { res = value / 1.0E15; suffix = "P"; }
-        else if (abs >= 1_000_000_000_000L) { res = value / 1.0E12; suffix = "T"; }
-        else if (abs >= 1_000_000_000L) { res = value / 1.0E9; suffix = "G"; }
-        else if (abs >= 1_000_000L) { res = value / 1.0E6; suffix = "M"; }
-        else if (abs >= 1_000L) { res = value / 1.0E3; suffix = "k"; }
-        else { return Long.toString(value); }
-        res = res <= -100.0 ? Math.round(res * 10.0) / 10.0 : Math.round(res * 100.0) / 100.0;
-        return res + suffix;
+        // 1:1 DeuteriumTower: getDimensions {9,0,1,0,0,1}, getOffset 0; makeExtra bei
+        // Kern - dir - rot, Kern - dir und Kern - rot (die drei Bodenfelder neben dem Kern).
+        return com.hbm_m.multiblock.DummyableStructureBuilder.create()
+                .box(9, 0, 1, 0, 0, 1)
+                .extra(-1, 0, -1)
+                .extra(-1, 0, 0)
+                .extra(0, 0, -1)
+                .placementOffset(0)
+                .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
     }
 
     @Override
@@ -181,7 +124,8 @@ public class MachineDeuteriumTowerBlock extends BaseEntityBlock implements IMult
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return structureHelper.generateShapeFromParts(state.getValue(FACING));
+        // w16b: nur die Kernzelle (Raycast pro Zelle wie Original); Umriss der ganzen Maschine: MultiblockOutlineForge
+        return structureHelper.getControllerCellShape(state.getValue(FACING));
     }
 
     @Override
@@ -206,24 +150,7 @@ public class MachineDeuteriumTowerBlock extends BaseEntityBlock implements IMult
         return new MachineDeuteriumTowerBlockEntity(pos, state);
     }
 
-    //? if < 1.21.1 {
-    @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        return openMenu(state, level, pos, player, hand, hit);
-    }
-    //?} else {
-    /*@Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
-    }
-    *///?}
-
-    private InteractionResult openMenu(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider menu) {
-            MenuRegistry.openExtendedMenu((ServerPlayer) player, menu, buf -> buf.writeBlockPos(pos));
-        }
-        return InteractionResult.sidedSuccess(level.isClientSide());
-    }
+    // Original DeuteriumTower/BlockDummyable: kein onBlockActivated - Rechtsklick ohne Wirkung (kein GUI).
 
     @Nullable
     @Override

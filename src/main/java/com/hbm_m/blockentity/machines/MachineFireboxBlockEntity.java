@@ -5,52 +5,48 @@ import com.hbm_m.module.ModuleBurnTime;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Порт {@code TileEntityHeaterFirebox} (1.7.10) — самый дешёвый внешний источник
- * тепла: baseHeat 100 TU/t, теплоёмкость 100k TU, модули топлива
- * (лигнит/уголь/кокс ×1.25 времени ×2 тепла; твёрдое ×1.5/×3; ракетное ×1.5/×5;
- * бэйлфаер ×0.5/×15).
+ * 1:1 {@code TileEntityHeaterFirebox}: 100 TU/t Grundhitze, Speicher 100.000 TU, Brennzeit x1.
  */
-public class MachineFireboxBlockEntity extends FireboxBaseBlockEntity {
+public class MachineFireboxBlockEntity extends MachineFireboxBaseBlockEntity {
 
-    public static final int INVENTORY_SIZE = FireboxBaseBlockEntity.FUEL_SLOTS;
+    public static int baseHeat = 100;
+    public static double timeMult = 1D;
+    public static int maxHeatEnergy = 100_000;
+    public static ModuleBurnTime burnModule = new ModuleBurnTime()
+            .setLigniteTimeMod(1.25)
+            .setCoalTimeMod(1.25)
+            .setCokeTimeMod(1.25)
+            .setSolidTimeMod(1.5)
+            .setRocketTimeMod(1.5)
+            .setBalefireTimeMod(0.5)
 
-    private static final int BASE_HEAT = 100;
-    private static final double TIME_MULT = 1.0D;
-    private static final int MAX_HEAT_ENERGY = 100_000;
-
-    /** Порт burnModule из TileEntityHeaterFirebox. */
-    public static final ModuleBurnTime BURN_MODULE = new ModuleBurnTime()
-            .setLigniteTimeMod(1.25).setCoalTimeMod(1.25).setCokeTimeMod(1.25)
-            .setSolidTimeMod(1.5).setRocketTimeMod(1.5).setBalefireTimeMod(0.5)
-            .setLigniteHeatMod(2).setCoalHeatMod(2).setCokeHeatMod(2)
-            .setSolidHeatMod(3).setRocketHeatMod(5).setBalefireHeatMod(15);
+            .setLigniteHeatMod(2)
+            .setCoalHeatMod(2)
+            .setCokeHeatMod(2)
+            .setSolidHeatMod(3)
+            .setRocketHeatMod(5)
+            .setBalefireHeatMod(15);
 
     public MachineFireboxBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.FIREBOX_BE.get(), pos, state);
     }
 
-    @Override
-    public ModuleBurnTime getModule() {
-        return BURN_MODULE;
+    /** Fuer Ziegelofen u.a. - siehe {@link MachineFireboxBaseBlockEntity#getAshFromFuel}. */
+    public static MachineAshpitBlockEntity.AshType ashFromFuel(ItemStack stack) {
+        return getAshFromFuel(stack);
     }
 
-    @Override
-    public int getBaseHeat() {
-        return BASE_HEAT;
-    }
-
-    @Override
-    public double getTimeMult() {
-        return TIME_MULT;
-    }
-
-    @Override
-    public int getMaxHeat() {
-        return MAX_HEAT_ENERGY;
-    }
+    @Override public ModuleBurnTime getModule() { return burnModule; }
+    @Override public int getBaseHeat() { return baseHeat; }
+    @Override public double getTimeMult() { return timeMult; }
+    @Override public int getMaxHeat() { return maxHeatEnergy; }
 
     @Override
     protected Component getDefaultName() {
@@ -63,7 +59,7 @@ public class MachineFireboxBlockEntity extends FireboxBaseBlockEntity {
     }
 
     @Override
-    public com.hbm_m.inventory.menu.MachineFireboxMenu createMenu(int id, net.minecraft.world.entity.player.Inventory inventory, net.minecraft.world.entity.player.Player player) {
-        return new com.hbm_m.inventory.menu.MachineFireboxMenu(id, inventory, this);
+    public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
+        return com.hbm_m.inventory.menu.MachineFireboxMenu.create(id, inventory, this);
     }
 }

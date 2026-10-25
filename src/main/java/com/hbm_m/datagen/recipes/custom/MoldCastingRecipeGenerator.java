@@ -127,7 +127,7 @@ public final class MoldCastingRecipeGenerator {
                 : ItemStack.EMPTY;
     }
 
-    /** Использует {@code MaterialType.name} как tag-суффикс (с тем же fallback的其他 spelling не поддерживается). */
+    /** Использует {@code MaterialType.name} как tag-суффикс (fallback-а с другим написанием нет). */
     private static String tagName(MaterialType mat) {
         return mat.name;
     }

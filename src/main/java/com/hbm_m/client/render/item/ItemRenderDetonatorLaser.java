@@ -1,9 +1,7 @@
 package com.hbm_m.client.render.item;
 
 import com.hbm_m.client.ClientRenderHandler;
-//? if forge {
 import com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat;
-//?}
 import com.hbm_m.client.model.MissileBakedModel;
 import com.hbm_m.client.render.missile.MissileRenderHelper;
 import com.mojang.blaze3d.platform.Lighting;
@@ -21,11 +19,7 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-//? if forge {
 import net.minecraftforge.client.model.data.ModelData;
-//?} else {
-/*import net.neoforged.neoforge.client.model.data.ModelData;
-*///?}
 import org.joml.Matrix4f;
 
 import java.util.List;
@@ -51,18 +45,11 @@ public class ItemRenderDetonatorLaser extends BlockEntityWithoutLevelRenderer {
     public void renderByItem(ItemStack stack, ItemDisplayContext displayContext, PoseStack poseStack,
                              MultiBufferSource buffer, int packedLight, int packedOverlay) {
         BakedModel displayModel = MissileRenderHelper.resolveBakedModel(stack);
-        //? if forge {
+        // Phase C: ItemTransformHelperCompat runs on NeoForge too -> same path
         MissileBakedModel model = ItemTransformHelperCompat.unwrapMissileDelegate(displayModel);
         if (model == null) {
             return;
         }
-        //?}
-        //? if neoforge {
-        /*MissileBakedModel model = displayModel instanceof MissileBakedModel m ? m : null;
-        if (model == null) {
-            return;
-        }
-        *///?}
 
         if (displayContext == ItemDisplayContext.GUI) {
             Lighting.setupFor3DItems();
@@ -73,17 +60,9 @@ public class ItemRenderDetonatorLaser extends BlockEntityWithoutLevelRenderer {
                 || displayContext == ItemDisplayContext.THIRD_PERSON_LEFT_HAND;
         poseStack.translate(0.5F, 0.5F, 0.5F);
         
-        //? if forge {
         ItemTransformHelperCompat.resolveDisplayTransforms(displayModel, model)
                 .getTransform(displayContext)
                 .apply(leftHand, poseStack);
-        //?}
-        //? if neoforge {
-        /*/// MissileBakedModel's applyTransform is a no-op (display is applied by the BEWLR itself),
-        /// so apply the JSON display directly, like the forge branch does via resolveDisplayTransforms.
-        model.getBewlrDisplayTransforms().getTransform(displayContext)
-                .apply(leftHand, poseStack);
-        *///?}
         poseStack.scale(BASE_MESH_SCALE, BASE_MESH_SCALE, BASE_MESH_SCALE);
 
         MissileRenderHelper.bindBlockAtlas();

@@ -63,21 +63,38 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 /**
  * Fluid duct: multipart blockstate + Forge OBJ visibility on {@code pipe_neo.obj}. Fluid type lives in the block entity.
  * Fluid identifier: normal click sets fluid on one duct; <b>sneak (Shift)</b> + click paints the connected network of the
  * same block type (depth-capped). Vanilla does not expose Ctrl on the server; use sneak for recursive mode.
  */
 @SuppressWarnings("UnstableApiUsage")
-public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
+public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay, com.hbm_m.interfaces.IAnalyzable {
+
+    /** Original {@code FluidDuctBase.getDebugInfo}. */
+    @Override
+    public java.util.List<String> getDebugInfo(Level world, BlockPos pos) {
+        if (world instanceof net.minecraft.server.level.ServerLevel server
+                && world.getBlockEntity(pos) instanceof com.hbm_m.blockentity.machines.FluidDuctBlockEntity pipe) {
+            net.minecraft.world.level.material.Fluid type = pipe.getFluidType();
+            if (type != null) {
+                var node = com.hbm_m.api.network.UniNodespace.getNode(server, pos, com.hbm_m.api.fluids.FluidNetProvider.forFluid(type));
+                if (node != null && node.net != null) {
+                    com.hbm_m.api.fluids.FluidNet net = (com.hbm_m.api.fluids.FluidNet) node.net;
+                    java.util.List<String> debug = new java.util.ArrayList<>();
+                    debug.add("Links: " + net.links.size());
+                    debug.add("Subscribers: " + net.receiverEntries.size());
+                    debug.add("Providers: " + net.providerEntries.size());
+                    debug.add("Transfer: " + net.fluidTracker);
+                    return debug;
+                }
+            }
+        }
+        return null;
+    }
+
 
     public static final BooleanProperty NORTH = BlockStateProperties.NORTH;
     public static final BooleanProperty EAST = BlockStateProperties.EAST;
@@ -404,118 +421,21 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
 
     private InteractionResult hbmOnUse(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
             @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
-        ItemStack stack = player.getItemInHand(hand);
-        if (stack.isEmpty() || !(stack.getItem() instanceof IItemFluidIdentifier idItem)) {
-            return InteractionResult.PASS;
-        }
-        Fluid fluid = normalizeDuctPaintFluid(idItem.getType(level, pos, stack));
-        if (fluid == null) {
-            return InteractionResult.PASS;
-        }
-        if (level.isClientSide) {
-            return InteractionResult.SUCCESS;
-        }
-        boolean recursive = player.isShiftKeyDown();
-        Block startBlock = state.getBlock();
-        if (!(startBlock instanceof FluidDuctBlock)) {
-            return InteractionResult.PASS;
-        }
-        if (recursive) {
-            applyIdentifierRecursive(level, pos, fluid, startBlock);
-        } else {
-            BlockEntity be = level.getBlockEntity(pos);
-            if (be instanceof FluidDuctBlockEntity duct) {
-                duct.setFluidType(fluid);
-                level.setBlock(pos, getConnectionState(level, pos), Block.UPDATE_CLIENTS);
-                refreshAdjacentDucts(level, pos);
-            }
-        }
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        // 1:1 FluidDuctBase.onBlockActivated (Identifikator: einzeln / geschlichen bzw. TOOL_CTRL rekursiv, TOOL_ALT kopiert)
+        return com.hbm_m.api.fluids.PipeTypeChanger.onIdentifier(level, pos, player, player.getItemInHand(hand))
+                ? InteractionResult.sidedSuccess(level.isClientSide) : InteractionResult.PASS;
     }
 
-    private static void applyIdentifierRecursive(Level level, BlockPos start, Fluid fluid, Block ductBlock) {
-        Set<BlockPos> visited = new HashSet<>();
-        ArrayDeque<BlockPos> queue = new ArrayDeque<>();
-        queue.add(start);
-        visited.add(start);
-        while (!queue.isEmpty() && visited.size() < IDENTIFIER_NETWORK_LIMIT) {
-            BlockPos p = queue.poll();
-            BlockState st = level.getBlockState(p);
-            if (st.getBlock() != ductBlock) {
-                continue;
-            }
-            for (Direction dir : Direction.values()) {
-                if (!st.getValue(PROPERTY_BY_DIRECTION.get(dir))) {
-                    continue;
-                }
-                BlockPos n = p.relative(dir);
-                if (visited.contains(n)) {
-                    continue;
-                }
-                BlockState ns = level.getBlockState(n);
-                if (ns.getBlock() != ductBlock) {
-                    continue;
-                }
-                if (!ns.getValue(PROPERTY_BY_DIRECTION.get(dir.getOpposite()))) {
-                    continue;
-                }
-                visited.add(n);
-                queue.add(n);
-            }
-        }
-        for (BlockPos p : visited) {
-            BlockEntity be = level.getBlockEntity(p);
-            if (be instanceof FluidDuctBlockEntity duct) {
-                duct.setFluidTypeSilent(fluid);
-            }
-        }
-        FluidDuctBlock fd = (FluidDuctBlock) ductBlock;
-        for (BlockPos p : visited) {
-            level.setBlock(p, fd.getConnectionState(level, p), Block.UPDATE_CLIENTS);
-        }
-        for (BlockPos p : visited) {
-            BlockEntity be = level.getBlockEntity(p);
-            if (be instanceof FluidDuctBlockEntity duct) {
-                duct.syncFluidToClients();
-            }
-        }
-        // Neighbors outside the BFS may need new connection flags
-        Set<BlockPos> border = new HashSet<>();
-        for (BlockPos p : visited) {
-            for (Direction d : Direction.values()) {
-                border.add(p.relative(d));
-            }
-        }
-        for (BlockPos p : border) {
-            if (visited.contains(p)) {
-                continue;
-            }
-            if (level.getBlockState(p).getBlock() == ductBlock) {
-                level.setBlock(p, fd.getConnectionState(level, p), Block.UPDATE_CLIENTS);
-                BlockEntity be = level.getBlockEntity(p);
-                if (be instanceof FluidDuctBlockEntity dbe) {
-                    dbe.syncFluidToClients();
-                }
-            }
-        }
-    }
-
-    /**
-     * Shift + fluid identifier on a duct: paints the whole connected network of the same duct block type.
-     * Used from {@link com.hbm_m.item.liquids.FluidIdentifierItem#useOn} because item {@code useOn} runs before block use
-     * and must consume the interaction so it is not confused with other UI.
-     */
     public static void paintConnectedDuctNetwork(Level level, BlockPos start, Fluid fluid) {
         fluid = normalizeDuctPaintFluid(fluid);
         if (level.isClientSide || fluid == null) {
             return;
         }
-        BlockState st = level.getBlockState(start);
-        Block b = st.getBlock();
-        if (!(b instanceof FluidDuctBlock)) {
-            return;
+        BlockEntity be = level.getBlockEntity(start);
+        Fluid cur = com.hbm_m.api.fluids.PipeTypeChanger.typeOf(be);
+        if (cur != null) {
+            com.hbm_m.api.fluids.PipeTypeChanger.changeTypeRecursively(level, start, cur, fluid, com.hbm_m.api.fluids.PipeTypeChanger.LOOPS);
         }
-        applyIdentifierRecursive(level, start, fluid, b);
     }
 
     @Nullable

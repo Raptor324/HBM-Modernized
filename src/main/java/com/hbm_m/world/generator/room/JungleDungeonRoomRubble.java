@@ -1,0 +1,24 @@
+package com.hbm_m.world.generator.room;
+
+import com.hbm_m.block.generic.JungleBricks.Trapped.Trap;
+import com.hbm_m.world.generator.CellularDungeon;
+import com.hbm_m.world.generator.TimedGenerator;
+
+import net.minecraft.world.level.LevelAccessor;
+
+/** 1:1 {@code com.hbm.world.generator.room.JungleDungeonRoomRubble}. */
+public class JungleDungeonRoomRubble extends JungleDungeonRoom {
+
+    public JungleDungeonRoomRubble(CellularDungeon parent) {
+        super(parent);
+    }
+
+    @Override
+    public void generateMain(final LevelAccessor world, final int x, final int y, final int z) {
+        super.generateMain(world, x, y, z);
+
+        TimedGenerator.addOp(world, () -> {
+            trap(world, x + 2, y + 4, z + 2, Trap.FALLING_ROCKS, false);
+        });
+    }
+}

@@ -8,7 +8,6 @@ import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.packet.PacketSyncEnergy;
-import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -22,6 +21,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 public class MachineGasCentMenu extends AbstractContainerMenu implements ILongEnergyMenu {
 
     private final MachineGasCentBlockEntity blockEntity;
@@ -59,7 +59,7 @@ public class MachineGasCentMenu extends AbstractContainerMenu implements ILongEn
         // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
         // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
         this.machineInventory = new ModItemStackHandlerContainer(
-                this.blockEntity != null ? this.blockEntity.getInventory() : new DummyItemStackHandler(MACHINE_SLOTS),
+                this.blockEntity != null ? this.blockEntity.getInventory() : new ModItemStackHandler.Dummy(MACHINE_SLOTS),
                 this.blockEntity != null ? this.blockEntity::setChanged : null);
 
         // Enrichment product outputs (2x2 grid), auto-filled only.

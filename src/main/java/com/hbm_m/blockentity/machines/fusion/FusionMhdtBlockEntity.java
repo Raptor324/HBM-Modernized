@@ -129,6 +129,7 @@ public class FusionMhdtBlockEntity extends FusionSyncedBlockEntity
             this.prevRotor -= 360F;
         }
 
+
         // Original: looped "turbineLargeLoop" 1.5 above the block within 30 blocks, pitch = rotorSpeed / 15.
         com.hbm_m.sound.ClientSoundBootstrap.updateMachineLoop(this, this.rotorSpeed > 0F,
                 com.hbm_m.sound.ModSounds.LARGE_TURBINE.get(), 1.5D, 30D,

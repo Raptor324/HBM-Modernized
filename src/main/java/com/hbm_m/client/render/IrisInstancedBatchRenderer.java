@@ -1,13 +1,7 @@
 package com.hbm_m.client.render;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 import java.util.List;
 
 import net.minecraft.client.Minecraft;
@@ -56,6 +50,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
  */
 
 @OnlyIn(Dist.CLIENT)
+
 final class IrisInstancedBatchRenderer {
 
     private final InstancedStaticPartRenderer parent;

@@ -56,6 +56,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
     @Override
     protected void registerStatesAndModels() {
+        registerR6aBlocks();
         registerMigratedManualBlocks();
 
         // ГЕНЕРАЦИЯ МОДЕЛЕЙ ДЛЯ БЛОКОВ-РЕСУРСОВ С ПРЕФИКСОМ "block_"
@@ -65,9 +66,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         blockWithItem(ModBlocks.GIGA_DET);
         // Textures ported from the 1.7.10 assets - these three had no blockstate at all.
-        blockWithItem(ModBlocks.ORE_OIL_EMPTY);
-        blockWithItem(ModBlocks.GEIGER);
-        blockWithItem(ModBlocks.BROADCASTER);
+        // geiger (geiger_counter_block) — ниже через customObjBlock (канон FFA); machines-дубль удалён.
         blockWithItem(ModBlocks.POLONIUM210_BLOCK);
         blockWithItem(ModBlocks.EXPLOSIVE_CHARGE);
         blockWithItem(ModBlocks.CRATE_WEAPON);
@@ -75,7 +74,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.CRATE);
         blockWithItem(ModBlocks.CRATE_LEAD);
         blockWithItem(ModBlocks.ASPHALT);
-        blockWithItem(ModBlocks.BARRICADE);
         blockWithItem(ModBlocks.DEAD_DIRT);
         blockWithItem(ModBlocks.GEYSIR_DIRT);
         blockWithItem(ModBlocks.GEYSIR_STONE);
@@ -90,12 +88,58 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.CONCRETE_BLACK);
         blockWithItem(ModBlocks.CONCRETE_BLUE);
         blockWithItem(ModBlocks.CONCRETE_BROWN);
-        blockWithItem(ModBlocks.CONCRETE_COLORED_BRONZE);
-        blockWithItem(ModBlocks.CONCRETE_COLORED_INDIGO);
-        blockWithItem(ModBlocks.CONCRETE_COLORED_MACHINE);
-        blockWithItem(ModBlocks.CONCRETE_COLORED_PINK);
-        blockWithItem(ModBlocks.CONCRETE_COLORED_PURPLE);
-        blockWithItem(ModBlocks.CONCRETE_COLORED_SAND);
+        // concrete_colored_ext (frueher auch concrete_colored_<typ>/concrete_hazard) vor Treppen/Stufen erzeugen
+        simpleBlockWithItem(ModBlocks.CONCRETE_COLORED_EXT_BRONZE.get(),
+                models().cubeAll(
+                        ModBlocks.CONCRETE_COLORED_EXT_BRONZE.getId().getPath(),
+                        modLoc("block/concrete_colored_ext_bronze")
+                )
+        );
+        simpleBlockWithItem(ModBlocks.CONCRETE_COLORED_EXT_HAZARD.get(),
+                models().cubeAll(
+                        ModBlocks.CONCRETE_COLORED_EXT_HAZARD.getId().getPath(),
+                        modLoc("block/concrete_colored_ext_hazard")
+                )
+        );
+        simpleBlockWithItem(ModBlocks.CONCRETE_COLORED_EXT_INDIGO.get(),
+                models().cubeAll(
+                        ModBlocks.CONCRETE_COLORED_EXT_INDIGO.getId().getPath(),
+                        modLoc("block/concrete_colored_ext_indigo")
+                )
+        );
+        simpleBlockWithItem(ModBlocks.CONCRETE_COLORED_EXT_MACHINE.get(),
+                models().cubeAll(
+                        ModBlocks.CONCRETE_COLORED_EXT_MACHINE.getId().getPath(),
+                        modLoc("block/concrete_colored_ext_machine")
+                )
+        );
+        // Original BlockConcreteColoredExt.getIcon: MACHINE_STRIPE oben/unten mit MACHINE-Textur
+        simpleBlockWithItem(ModBlocks.CONCRETE_COLORED_EXT_MACHINE_STRIPE.get(),
+                models().cubeBottomTop(
+                        ModBlocks.CONCRETE_COLORED_EXT_MACHINE_STRIPE.getId().getPath(),
+                        modLoc("block/concrete_colored_ext_machine_stripe"),
+                        modLoc("block/concrete_colored_ext_machine"),
+                        modLoc("block/concrete_colored_ext_machine")
+                )
+        );
+        simpleBlockWithItem(ModBlocks.CONCRETE_COLORED_EXT_PINK.get(),
+                models().cubeAll(
+                        ModBlocks.CONCRETE_COLORED_EXT_PINK.getId().getPath(),
+                        modLoc("block/concrete_colored_ext_pink")
+                )
+        );
+        simpleBlockWithItem(ModBlocks.CONCRETE_COLORED_EXT_PURPLE.get(),
+                models().cubeAll(
+                        ModBlocks.CONCRETE_COLORED_EXT_PURPLE.getId().getPath(),
+                        modLoc("block/concrete_colored_ext_purple")
+                )
+        );
+        simpleBlockWithItem(ModBlocks.CONCRETE_COLORED_EXT_SAND.get(),
+                models().cubeAll(
+                        ModBlocks.CONCRETE_COLORED_EXT_SAND.getId().getPath(),
+                        modLoc("block/concrete_colored_ext_sand")
+                )
+        );
         blockWithItem(ModBlocks.CONCRETE_CYAN);
         blockWithItem(ModBlocks.CONCRETE_GRAY);
         blockWithItem(ModBlocks.CONCRETE_GREEN);
@@ -109,8 +153,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.CONCRETE_REBAR_ALT);
         blockWithItem(ModBlocks.CONCRETE_RED);
         blockWithItem(ModBlocks.CONCRETE_SILVER);
-        blockWithItem(ModBlocks.CONCRETE_SUPER);
-        blockWithItem(ModBlocks.CONCRETE_SUPER_BROKEN);
         blockWithItem(ModBlocks.CONCRETE_SUPER_M0);
         blockWithItem(ModBlocks.CONCRETE_SUPER_M1);
         blockWithItem(ModBlocks.CONCRETE_SUPER_M2);
@@ -150,7 +192,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.DEPTH_BORAX);
         blockWithItem(ModBlocks.WASTE_LEAVES);
         blockWithItem(ModBlocks.REINFORCED_STONE);
-        blockWithItem(ModBlocks.CONCRETE_HAZARD);
         blockWithItem(ModBlocks.BRICK_CONCRETE);
         blockWithItem(ModBlocks.BRICK_CONCRETE_BROKEN);
         blockWithItem(ModBlocks.BRICK_CONCRETE_CRACKED);
@@ -165,6 +206,15 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.SELLAFIELD_SLAKED2);
         blockWithItem(ModBlocks.SELLAFIELD_SLAKED3);
         registerSellafieldSlaked(ModBlocks.SELLAFIELD_BEDROCK, "sellafield_bedrock");
+        // Restport: heisses Sellafit (Original sellafield Meta 0-5), vier Positionsvarianten je Stufe
+        registerSellafieldHot(ModBlocks.SELLAFIELD_0, 0);
+        registerSellafieldHot(ModBlocks.SELLAFIELD_1, 1);
+        registerSellafieldHot(ModBlocks.SELLAFIELD_2, 2);
+        registerSellafieldHot(ModBlocks.SELLAFIELD_3, 3);
+        registerSellafieldHot(ModBlocks.SELLAFIELD_4, 4);
+        registerSellafieldHot(ModBlocks.SELLAFIELD_5, 5);
+        // Restport: obj_tester (nur Blockentity-Renderer, Item = Original-Blockicon test_render)
+        rendererBlockWithCubeItem(ModBlocks.OBJ_TESTER, "block/test_render");
         registerSellafieldOre(ModBlocks.ORE_SELLAFIELD_DIAMOND, "sellafield_ore_diamond", "block/ore_overlay_diamond");
         registerSellafieldOre(ModBlocks.ORE_SELLAFIELD_EMERALD, "sellafield_ore_emerald", "block/ore_overlay_emerald");
         registerSellafieldOre(ModBlocks.ORE_SELLAFIELD_URANIUM_SCORCHED, "sellafield_ore_uranium_scorched", "block/ore_overlay_uranium_scorched");
@@ -203,7 +253,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // Эта функция автоматически создаст все 8 состояний высоты для блока
         // и свяжет их с моделями, которые выглядят как снег, но с вашей текстурой.
         registerFalloutLayerBlock(ModBlocks.NUCLEAR_FALLOUT, "nuclear_fallout");
-        registerFalloutBlock(ModBlocks.BLOCK_FALLOUT, "block_fallout", "nuclear_fallout");
+        registerFalloutBlock(ModBlocks.BLOCK_FALLOUT, "block_fallout", "ash"); // Original: hbm:ash
 
         // === РЕГИСТРАЦИЯ ПАДАЮЩИХ БЛОКОВ СЕЛЛАФИТА ===
         // Turrets: echte Original-Modelle (Base statisch per Blockmodell, Carriage/Pitch-Gruppe per BER animiert
@@ -212,7 +262,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         for (var turretBlock : java.util.List.of(
                 ModBlocks.TURRET_SENTRY, ModBlocks.TURRET_CHEKHOV, ModBlocks.TURRET_FRIENDLY, ModBlocks.TURRET_JEREMY,
                 ModBlocks.TURRET_TAUON, ModBlocks.TURRET_RICHARD, ModBlocks.TURRET_HOWARD,
-                ModBlocks.TURRET_MAXWELL, ModBlocks.TURRET_FRITZ, ModBlocks.TURRET_ARTY, ModBlocks.TURRET_HIMARS)) {
+                ModBlocks.TURRET_MAXWELL, ModBlocks.TURRET_FRITZ, ModBlocks.TURRET_ARTY, ModBlocks.TURRET_HIMARS,
+                ModBlocks.TURRET_SENTRY_DAMAGED, ModBlocks.TURRET_HOWARD_DAMAGED)) {
             // Blockstate only. The item model is hand-written under models/item/turret_<name>.json
             // because it needs per-turret display transforms: these composite OBJ models carry no
             // "display" section, so the items rendered at full world scale and spilled far out of
@@ -229,26 +280,13 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockWithItem(ModBlocks.BLOCK_COLTAN.get(), models().cubeAll("block_coltan", modLoc("block/ported/block_coltan")));
         simpleBlockWithItem(ModBlocks.BLOCK_CORIUM.get(), models().cubeAll("block_corium", modLoc("block/ported/block_corium")));
         simpleBlockWithItem(ModBlocks.BLOCK_CORIUM_COBBLE.get(), models().cubeAll("block_corium_cobble", modLoc("block/ported/block_corium_cobble")));
-        simpleBlockWithItem(ModBlocks.BLOCK_EUPHEMIUM_CLUSTER.get(), models().cubeBottomTop("block_euphemium_cluster",
-                modLoc("block/ported/block_euphemium_cluster_side"), modLoc("block/ported/block_euphemium_cluster_bottom"), modLoc("block/ported/block_euphemium_cluster_top")));
-        simpleBlockWithItem(ModBlocks.BLOCK_FIBERGLASS.get(), models().cubeBottomTop("block_fiberglass",
-                modLoc("block/ported/block_fiberglass_side"), modLoc("block/ported/block_fiberglass_bottom"), modLoc("block/ported/block_fiberglass_top")));
+        // block_euphemium_cluster — FFA-канон: axisBlock ниже по файлу; авто-порт-дубль удалён.
+        // block_fiberglass — FFA-канон: axisBlock ниже по файлу; авто-порт-дубль удалён.
         simpleBlockWithItem(ModBlocks.BLOCK_FLUORITE.get(), models().cubeAll("block_fluorite", modLoc("block/ported/block_fluorite")));
-        // CP-1 pile channel blocks: NEXT cube_column-Modelle mit gemeinsamer Seitentextur block_graphite.
-        pilePillarBlock(ModBlocks.BLOCK_GRAPHITE_DETECTOR.get(), "block_graphite_detector", "block_graphite_detector", "block_graphite_detector_out", true);
-        pilePillarBlock(ModBlocks.BLOCK_GRAPHITE_DRILLED.get(), "block_graphite_drilled", "block_graphite_drilled", null, false);
-        pilePillarBlock(ModBlocks.BLOCK_GRAPHITE_ROD.get(), "block_graphite_rod", "block_graphite_rod_in", "block_graphite_rod_out", true);
-        pilePillarBlock(ModBlocks.BLOCK_GRAPHITE_FUEL.get(), "block_graphite_fuel", "block_graphite_fuel", null, false);
-        pilePillarBlock(ModBlocks.BLOCK_GRAPHITE_LITHIUM.get(), "block_graphite_lithium", "block_graphite_lithium", null, false);
-        // Source/Plutonium: keine WITHDRAWN-Variante in NEXT (nur axis x|y|z, shrouded true|false).
-        pilePillarBlock(ModBlocks.BLOCK_GRAPHITE_PLUTONIUM.get(), "block_graphite_plutonium", "block_graphite_plutonium", null, false);
-        pilePillarBlock(ModBlocks.BLOCK_GRAPHITE_SOURCE.get(), "block_graphite_source", "block_graphite_source", null, false);
         simpleBlockWithItem(ModBlocks.BLOCK_GRAPHITE_TRITIUM.get(), models().cubeAll("block_graphite_tritium", modLoc("block/ported/block_graphite_tritium")));
-        simpleBlockWithItem(ModBlocks.BLOCK_INSULATOR.get(), models().cubeBottomTop("block_insulator",
-                modLoc("block/ported/block_insulator_side"), modLoc("block/ported/block_insulator_bottom"), modLoc("block/ported/block_insulator_top")));
+        // block_insulator — FFA-канон: axisBlock ниже по файлу; авто-порт-дубль удалён.
         simpleBlockWithItem(ModBlocks.BLOCK_LITHIUM.get(), models().cubeAll("block_lithium", modLoc("block/ported/block_lithium")));
         simpleBlockWithItem(ModBlocks.BLOCK_MAGNETIZED_TUNGSTEN.get(), models().cubeAll("block_magnetized_tungsten", modLoc("block/ported/block_magnetized_tungsten")));
-        simpleBlockWithItem(ModBlocks.BLOCK_METEOR_BROKEN.get(), models().cubeAll("block_meteor_broken", modLoc("block/ported/block_meteor_broken")));
         simpleBlockWithItem(ModBlocks.BLOCK_METEOR_MOLTEN.get(), models().cubeAll("block_meteor_molten", modLoc("block/ported/block_meteor_molten")));
         simpleBlockWithItem(ModBlocks.BLOCK_METEOR_TREASURE.get(), models().cubeAll("block_meteor_treasure", modLoc("block/ported/block_meteor_treasure")));
         simpleBlockWithItem(ModBlocks.BLOCK_NITER.get(), models().cubeAll("block_niter", modLoc("block/ported/block_niter")));
@@ -257,13 +295,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockWithItem(ModBlocks.BLOCK_RED_PHOSPHORUS.get(), models().cubeAll("block_red_phosphorus", modLoc("block/ported/block_red_phosphorus")));
         simpleBlockWithItem(ModBlocks.BLOCK_RUBBER.get(), models().cubeAll("block_rubber", modLoc("block/ported/block_rubber")));
         simpleBlockWithItem(ModBlocks.BLOCK_SEMTEX.get(), models().cubeAll("block_semtex", modLoc("block/ported/block_semtex")));
-        simpleBlockWithItem(ModBlocks.BLOCK_SMORE.get(), models().cubeBottomTop("block_smore",
-                modLoc("block/ported/block_smore_side"), modLoc("block/ported/block_smore_bottom"), modLoc("block/ported/block_smore_top")));
         simpleBlockWithItem(ModBlocks.BLOCK_SULFUR.get(), models().cubeAll("block_sulfur", modLoc("block/ported/block_sulfur")));
         simpleBlockWithItem(ModBlocks.BLOCK_TANTALIUM.get(), models().cubeAll("block_tantalium", modLoc("block/ported/block_tantalium")));
         simpleBlockWithItem(ModBlocks.BLOCK_TRINITITE.get(), models().cubeAll("block_trinitite", modLoc("block/ported/block_trinitite")));
-        simpleBlockWithItem(ModBlocks.BLOCK_TRITIUM.get(), models().cubeBottomTop("block_tritium",
-                modLoc("block/ported/block_tritium_side"), modLoc("block/ported/block_tritium_bottom"), modLoc("block/ported/block_tritium_top")));
+        // block_tritium — FFA-канон: axisBlock ниже по файлу; авто-порт-дубль удалён.
         simpleBlockWithItem(ModBlocks.BLOCK_WASTE.get(), models().cubeAll("block_waste", modLoc("block/ported/block_waste")));
         simpleBlockWithItem(ModBlocks.BLOCK_WASTE_VITRIFIED.get(), models().cubeAll("block_waste_vitrified", modLoc("block/ported/block_waste_vitrified")));
         simpleBlockWithItem(ModBlocks.BLOCK_WHITE_PHOSPHORUS.get(), models().cubeAll("block_white_phosphorus", modLoc("block/ported/block_white_phosphorus")));
@@ -278,9 +313,13 @@ public class ModBlockStateProvider extends BlockStateProvider {
         icfPhantomState();
         simpleBlockWithItem(ModBlocks.LAUNCH_TABLE.get(), models().cubeAll("launch_table", modLoc("block/ported/launch_table")));
         simpleBlockWithItem(ModBlocks.LOGIC_BLOCK.get(), models().cubeAll("logic_block", modLoc("block/ported/logic_block")));
-        simpleBlockWithItem(ModBlocks.MACHINE_RADAR.get(), models().cubeAll("machine_radar", modLoc("block/ported/machine_radar")));
         simpleBlockWithItem(ModBlocks.MUSH_BLOCK_STEM.get(), models().cubeAll("mush_block_stem", modLoc("block/ported/mush_block_stem")));
         simpleBlockWithItem(ModBlocks.ORE_GNEISS_URANIUM_SCORCHED.get(), models().cubeAll("ore_gneiss_uranium_scorched", modLoc("block/ported/ore_gneiss_uranium_scorched")));
+        simpleBlockWithItem(ModBlocks.ORE_ALUMINIUM.get(), models().cubeAll("ore_aluminium", modLoc("block/ported/ore_aluminium")));
+        simpleBlockWithItem(ModBlocks.ORE_AUSTRALIUM.get(), models().cubeAll("ore_australium", modLoc("block/ported/ore_australium")));
+        simpleBlockWithItem(ModBlocks.ORE_COPPER.get(), models().cubeAll("ore_copper", modLoc("block/ported/ore_copper")));
+        simpleBlockWithItem(ModBlocks.ORE_NETHER_PLUTONIUM.get(), models().cubeAll("ore_nether_plutonium", modLoc("block/ported/ore_nether_plutonium")));
+        simpleBlockWithItem(ModBlocks.ORE_NETHER_TUNGSTEN.get(), models().cubeAll("ore_nether_tungsten", modLoc("block/ported/ore_nether_tungsten")));
         simpleBlockWithItem(ModBlocks.ORE_NETHER_URANIUM_SCORCHED.get(), models().cubeAll("ore_nether_uranium_scorched", modLoc("block/ported/ore_nether_uranium_scorched")));
         simpleBlockWithItem(ModBlocks.ORE_TEKTITE_OSMIRIDIUM.get(), models().cubeAll("ore_tektite_osmiridium", modLoc("block/ported/ore_tektite_osmiridium")));
         simpleBlockWithItem(ModBlocks.ORE_URANIUM_SCORCHED.get(), models().cubeAll("ore_uranium_scorched", modLoc("block/ported/ore_uranium_scorched")));
@@ -342,7 +381,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         );
         // === КОНЕЦ РЕГИСТРАЦИИ ПАДАЮЩИХ БЛОКОВ ===
 
-        blockWithItem(ModBlocks.WASTE_PLANKS);
 
         simpleBlockWithItem(ModBlocks.WASTE_LOG.get(),
                 models().cubeBottomTop(
@@ -371,27 +409,12 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 )
         );
         simpleBlockWithItem(ModBlocks.METEOR_BRICK_CHISELED.get(),
+                // Original BlockGeneric: alle Seiten meteor_brick_chiseled
                 models().cubeBottomTop(
                         ModBlocks.METEOR_BRICK_CHISELED.getId().getPath(),
                         modLoc("block/meteor_brick_chiseled"),
-                        modLoc("block/meteor_brick"),
-                        modLoc("block/meteor_brick")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.GNEISS_CHISELED.get(),
-                models().cubeBottomTop(
-                        ModBlocks.GNEISS_CHISELED.getId().getPath(),
-                        modLoc("block/gneiss_chiseled"),
-                        modLoc("block/gneiss_stone"),
-                        modLoc("block/gneiss_stone")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.BRICK_CONCRETE_MARKED.get(),
-                models().cubeBottomTop(
-                        ModBlocks.BRICK_CONCRETE_MARKED.getId().getPath(),
-                        modLoc("block/brick_concrete_marked"),
-                        modLoc("block/brick_concrete"),
-                        modLoc("block/brick_concrete")
+                        modLoc("block/meteor_brick_chiseled"),
+                        modLoc("block/meteor_brick_chiseled")
                 )
         );
         simpleBlockWithItem(ModBlocks.CONCRETE_MARKED.get(),
@@ -402,32 +425,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/concrete")
                 )
         );
-        simpleBlockWithItem(ModBlocks.CONCRETE_PILLAR.get(),
-                models().cubeBottomTop(
-                        ModBlocks.CONCRETE_PILLAR.getId().getPath(),
-                        modLoc("block/concrete_pillar_side"),
-                        modLoc("block/concrete_pillar_top"),
-                        modLoc("block/concrete_pillar_top")
-                )
-        );
 
-        simpleBlockWithItem(ModBlocks.CONCRETE_COLORED_MACHINE_STRIPE.get(),
-                models().cubeBottomTop(
-                        ModBlocks.CONCRETE_COLORED_MACHINE_STRIPE.getId().getPath(),
-                        modLoc("block/concrete_colored_machine_stripe"),
-                        modLoc("block/concrete_colored_machine"),
-                        modLoc("block/concrete_colored_machine")
-                )
-        );
 
-        simpleBlockWithItem(ModBlocks.METEOR_PILLAR.get(),
-                models().cubeBottomTop(
-                        ModBlocks.METEOR_PILLAR.getId().getPath(),
-                        modLoc("block/meteor_pillar"),
-                        modLoc("block/meteor_pillar_top"),
-                        modLoc("block/meteor_pillar_top")
-                )
-        );
 
 		simpleBlockWithItem(ModBlocks.C4.get(),
                 models().withExistingParent(ModBlocks.C4.getId().getPath(), mcLoc("block/orientable"))
@@ -506,7 +505,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
 
 
-        doorBlockWithRenderType(((net.minecraft.world.level.block.DoorBlock) ModBlocks.METAL_DOOR.get()), modLoc("block/metal_door_bottom"), modLoc("block/metal_door_top"), "cutout");
+        doorBlockWithRenderType(((net.minecraft.world.level.block.DoorBlock) ModBlocks.METAL_DOOR.get()), modLoc("block/door_metal_bottom"), modLoc("block/door_metal_top"), "cutout");
         doorBlockWithRenderType(((net.minecraft.world.level.block.DoorBlock) ModBlocks.DOOR_BUNKER.get()), modLoc("block/door_bunker_bottom"), modLoc("block/door_bunker_top"), "cutout");
         doorBlockWithRenderType(((net.minecraft.world.level.block.DoorBlock) ModBlocks.DOOR_OFFICE.get()), modLoc("block/door_office_bottom"), modLoc("block/door_office_top"), "cutout");
 
@@ -529,6 +528,14 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 modLoc("block/armor_table_side"),
                 modLoc("block/armor_table_top"),
                 modLoc("block/armor_table_bottom")
+        );
+
+        // SEDNA: Original BlockWeaponTable (gun_table_side/top/bottom)
+        columnBlockWithItem(
+                ModBlocks.MACHINE_WEAPON_TABLE,
+                modLoc("block/gun_table_side"),
+                modLoc("block/gun_table_top"),
+                modLoc("block/gun_table_bottom")
         );
 
 		columnBlockWithItem(
@@ -564,7 +571,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customDoorBlock(ModBlocks.SECURE_ACCESS_DOOR);
         customDoorBlock(ModBlocks.VAULT_DOOR);
         customDoorBlock(ModBlocks.CARGO_DOOR);
-        customDoorBlock(ModBlocks.BLAST_DOOR);
+        // blast_door — FFA-канон: рукописный blockstate + BER BlastDoorRenderer; customDoorBlock (новая система) несовместим со старым блоком.
 
         // Machines
         customMachineBlock(ModBlocks.CRYSTALLIZER);
@@ -582,7 +589,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customMachineBlock(ModBlocks.MIXER);
         customMachineBlock(ModBlocks.DERRICK);
         customMachineBlock(ModBlocks.RBMK_CONSOLE);
-        customMachineBlock(ModBlocks.FLARE_STACK);
+        // Audit 7: RenderGasFlare dreht nicht nach Metadaten (fest 180 Grad im Modell-Transform)
+        simpleMachineBlock(ModBlocks.FLARE_STACK);
         customMachineBlock(ModBlocks.PUMPJACK);
         customMachineBlock(ModBlocks.RADAR);
         customMachineBlock(ModBlocks.LARGE_RADAR);
@@ -593,13 +601,30 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customMachineBlock(ModBlocks.FEL);
         customMachineBlock(ModBlocks.SILEX);
         simpleMachineBlock(ModBlocks.FOUNDRY_BASIN);
+        simpleMachineBlock(ModBlocks.FAN);
+        {
+            var gauge = models().getBuilder("fluid_duct_gauge").parent(models().getExistingFile(mcLoc("block/block"))).renderType("cutout")
+                    .texture("particle", modLoc("block/deco_steel")).texture("base", modLoc("block/deco_steel"))
+                    .texture("overlay", modLoc("block/fluid_duct_paintable_overlay")).texture("gauge", modLoc("block/pipe_gauge"))
+                    .element().from(0, 0, 0).to(16, 16, 16).allFaces((d, f) -> f.texture("#base").cullface(d)).end()
+                    .element().from(0, 0, 0).to(16, 16, 16).allFaces((d, f) -> f.texture(d == net.minecraft.core.Direction.UP ? "#gauge" : "#overlay").cullface(d)).end();
+            directionalBlock(ModBlocks.FLUID_DUCT_GAUGE.get(), gauge);
+            simpleBlockItem(ModBlocks.FLUID_DUCT_GAUGE.get(), gauge);
+        }
+        simpleBlockWithItem(ModBlocks.DEUTERIUM_EXTRACTOR.get(), models().cubeColumn("machine_deuterium_extractor", modLoc("block/deuterium_extractor_side"), modLoc("block/deuterium_extractor_top_water")));
+        directionalBlock(ModBlocks.PISTON_INSERTER.get(), models().getBuilder("piston_inserter").texture("particle", modLoc("block/block_steel")));
+        horizontalBlock(ModBlocks.REFUELER.get(), models().getBuilder("refueler").texture("particle", modLoc("block/block_steel")));
+        horizontalBlock(ModBlocks.LANTERN_BEHEMOTH.get(), models().getBuilder("lantern_behemoth").texture("particle", modLoc("block/block_rust")));
+        simpleBlockWithItem(ModBlocks.CRYSTAL_VIRUS.get(), models().cubeAll("crystal_virus", modLoc("block/crystal_virus")));
+        simpleBlockWithItem(ModBlocks.CRYSTAL_HARDENED.get(), models().cubeAll("crystal_hardened", modLoc("block/crystal_hardened")));
+        simpleBlockWithItem(ModBlocks.CRYSTAL_PULSAR.get(), models().cubeAll("crystal_pulsar", modLoc("block/crystal_pulsar")));
 
         // --- WIP Machines (3D OBJ models) ---
         customMachineBlock(ModBlocks.AMMO_PRESS);
         customMachineBlock(ModBlocks.ANNIHILATOR);
         customMachineBlock(ModBlocks.ARC_FURNACE);
         simpleMachineBlock(ModBlocks.ASSEMBLY_FACTORY);
-        horizontalBlock(ModBlocks.AUTOSAW.get(),
+        simpleBlock(ModBlocks.AUTOSAW.get(),
             models().getExistingFile(modLoc("block/machines/autosaw")));
         horizontalBlock(ModBlocks.THRESHER.get(),
             models().getExistingFile(modLoc("block/machines/thresher")));
@@ -620,11 +645,18 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customMachineBlock(ModBlocks.COMBUSTION_ENGINE);
         horizontalBlock(ModBlocks.COMPRESSOR.get(),
             models().getExistingFile(modLoc("block/machines/compressor")));
+        customMachineBlock(ModBlocks.COMPRESSOR_COMPACT);
         customMachineBlock(ModBlocks.CONDENSER_POWERED);
         customMachineBlock(ModBlocks.LPW2);
         customMachineBlock(ModBlocks.CONVEYOR_PRESS);
         customMachineBlock(ModBlocks.COUPLER);
-        simpleMachineBlock(ModBlocks.DETECTOR);
+        // Audit 7: PowerDetector ist ein Wuerfel (machine_detector_off / an: machine_detector), nicht das PA-Detektormodell
+        {
+            var detOff = models().cubeAll("detector", modLoc("block/machine_detector_off"));
+            var detOn = models().cubeAll("detector_on", modLoc("block/machine_detector"));
+            getVariantBuilder(ModBlocks.DETECTOR.get()).forAllStates(st -> ConfiguredModel.builder()
+                    .modelFile(st.getValue(com.hbm_m.block.machines.PowerDetectorBlock.POWERED) ? detOn : detOff).build());
+        }
         customMachineBlock(ModBlocks.DIESELGEN);
         customMachineBlock(ModBlocks.DIPOLE);
         simpleMachineBlock(ModBlocks.DRONE);
@@ -636,11 +668,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customMachineBlock(ModBlocks.EPRESS);
         horizontalBlock(ModBlocks.EXPOSURE_CHAMBER.get(),
             models().getExistingFile(modLoc("block/machines/exposure_chamber")));
-        simpleMachineBlock(ModBlocks.FENSU);
+        // fensu (machine_fensu) — зарегистрирован ниже через horizontalBlock+getBuilder (FFA-канон).
         // FENSU2 (machine_battery_redd) is a MachineBatteryBlock (FACING-Blockstate) - see orientableBlockWithItem below.
         horizontalBlock(ModBlocks.FIREBOX.get(),
             models().getExistingFile(modLoc("block/machines/firebox")));
-        simpleMachineBlock(ModBlocks.FRACTION_SPACER);
         horizontalBlock(ModBlocks.HEATEX.get(),
                 models().getExistingFile(modLoc("block/machines/heatex")));
         customMachineBlock(ModBlocks.HEPHAESTUS);
@@ -681,6 +712,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleMachineBlock(ModBlocks.SOURCE);
         customMachineBlock(ModBlocks.STEAM_ENGINE);
         customMachineBlock(ModBlocks.STIRLING);
+        customMachineBlock(ModBlocks.MACHINE_SATLINK);
         customMachineBlock(ModBlocks.STIRLING_CREATIVE);
         customMachineBlock(ModBlocks.STIRLING_STEEL);
         // Strand Caster: eigenes OBJ-Modell bereits vorhanden (block/machines/strand_caster.json), FACING-Rotation.
@@ -695,6 +727,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customMachineBlock(ModBlocks.BREEDER);
         customMachineBlock(ModBlocks.LARGE_PYLON);
         customMachineBlock(ModBlocks.LAUNCH_PAD);
+        customMachineBlock(ModBlocks.LAUNCH_PAD_LARGE);
+        customMachineBlock(ModBlocks.MOBILE_LAUNCH_PAD);
+        customMachineBlock(ModBlocks.TOPOL_LAUNCH_PAD);
         customMachineBlock(ModBlocks.LAUNCH_PAD_RUSTED);
         customBombBlock(ModBlocks.NUKE_FAT_MAN);
         customBombBlock(ModBlocks.NUKE_GADGET);
@@ -704,29 +739,19 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customBombBlock(ModBlocks.NUKE_FLEIJA);
         // The model and its OBJ were already ported, only the blockstate was never emitted.
         customBombBlock(ModBlocks.NUKE_PROTOTYPE);
-        customMachineBlock(ModBlocks.CORE_EMITTER);
-        customMachineBlock(ModBlocks.CORE_INJECTOR);
-        customMachineBlock(ModBlocks.CORE_RECEIVER);
+        simpleMachineBlock(ModBlocks.CORE_EMITTER);
+        simpleMachineBlock(ModBlocks.CORE_INJECTOR);
+        simpleMachineBlock(ModBlocks.CORE_RECEIVER);
         customMachineBlock(ModBlocks.VACUUM_DISTILL);
         customMachineBlock(ModBlocks.TURBOFAN);
         customMachineBlock(ModBlocks.INDUSTRIAL_TURBINE);
-        // TURBINE: ориентация модели отличается от стандартной horizontalBlock-развёртки
-        // (ручной эталон: east=0, north=90, south=270, west=180)
-        VariantBlockStateBuilder turbineBuilder = getVariantBuilder(ModBlocks.TURBINE.get());
-        ModelFile turbineModel = models().getExistingFile(modLoc("block/machines/turbine"));
-        turbineBuilder.partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.EAST)
-                .modelForState().modelFile(turbineModel).addModel();
-        turbineBuilder.partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH)
-                .modelForState().modelFile(turbineModel).rotationY(90).addModel();
-        turbineBuilder.partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.SOUTH)
-                .modelForState().modelFile(turbineModel).rotationY(270).addModel();
-        turbineBuilder.partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.WEST)
-                .modelForState().modelFile(turbineModel).rotationY(180).addModel();
+        // machine_large_turbine — FFA-канон: simpleMachineBlock (выше); ручная развёртка machines удалена.
         // MACHINE_CHUNGUS nutzt das bereits vorhandene chungus.obj-Modell (Pfad weicht von der
         // Registry-ID ab, daher kein customMachineBlock()).
         horizontalBlock(ModBlocks.MACHINE_CHUNGUS.get(),
                 models().getExistingFile(modLoc("block/machines/chungus")));
-        customMachineBlock(ModBlocks.SUBSTATION);
+        // Audit 7: RenderSubstation kennt nur zwei Lagen (2/3: 90 Grad, 4/5: 0 Grad)
+        customMachineBlockRotated(ModBlocks.SUBSTATION, Map.of(Direction.NORTH, 0, Direction.SOUTH, 0, Direction.EAST, 90, Direction.WEST, 90));
         registerMachineAssemblerBlock(ModBlocks.MACHINE_ASSEMBLER);
         registerAdvancedAssemblyMachineBlock(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
         customMachineBlock(ModBlocks.PRESS);
@@ -762,11 +787,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
         registerLitMachineBlock(ModBlocks.FURNACE_BRICK,
             com.hbm_m.block.machines.MachineFurnaceBrickBlock.FACING, com.hbm_m.block.machines.MachineFurnaceBrickBlock.LIT,
             "furnace_brick", "furnace_brick_on");
-        // Rotary Furnace: eigenes OBJ-Modell bereits vorhanden (block/machines/rotary_furnace.json),
-        // kein separates LIT-Modell portiert - gleiches Modell fuer beide Zustaende.
-        registerLitMachineBlock(ModBlocks.ROTARY_FURNACE,
-            com.hbm_m.block.machines.MachineRotaryFurnaceBlock.FACING, com.hbm_m.block.machines.MachineRotaryFurnaceBlock.LIT,
-            "rotary_furnace", "rotary_furnace");
+        // Rotary Furnace: eigenes OBJ-Modell (block/machines/rotary_furnace), kein LIT-Property
+        // im FFA-Block — FFA-Kanon: customMachineBlock.
+        customMachineBlock(ModBlocks.ROTARY_FURNACE);
 
         // FluidTank - FACING plus the wrecked variant
         explodableMachineBlock(ModBlocks.FLUID_TANK,
@@ -794,22 +817,16 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlock(ModBlocks.FLUID_EXHAUST.get(), fluidExhaustModel);
 
         // Decor
-        customObjBlock(ModBlocks.REBAR);
+        customObjBlockNoFacing(ModBlocks.REBAR);
         // Hand-written OBJ models existed, the blockstates never did: every barbed wire
         // block logged "missing model for variant" and rendered as the missing model.
-        customObjBlock(ModBlocks.BARBED_WIRE);
-        customObjBlock(ModBlocks.BARBED_WIRE_FIRE);
-        customObjBlock(ModBlocks.BARBED_WIRE_POISON);
+        customObjBlockNoFacing(ModBlocks.BARBED_WIRE);
+        customObjBlockNoFacing(ModBlocks.BARBED_WIRE_FIRE);
+        customObjBlockNoFacing(ModBlocks.BARBED_WIRE_POISON);
         customObjBlock(ModBlocks.BARBED_WIRE_WITHER);
         customObjBlock(ModBlocks.BARBED_WIRE_RAD);
 
         // Decor
-        customObjBlock(ModBlocks.CRT_BROKEN);
-        customObjBlock(ModBlocks.CRT_BSOD);
-        customObjBlock(ModBlocks.CRT_CLEAN);
-        customObjBlock(ModBlocks.STEEL_POLE);
-        customObjBlock(ModBlocks.ANTENNA_TOP);
-        customObjBlock(ModBlocks.PUTER);
         customObjBlock(ModBlocks.GEIGER_COUNTER_BLOCK);
 
         columnBlockWithItem(
@@ -819,12 +836,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 modLoc("block/decon_side")
         );
         registerRadAbsorber();
-        customObjBlockRotated(ModBlocks.TAPE_RECORDER, Map.of(
-                Direction.NORTH, 90, Direction.SOUTH, 270, Direction.WEST, 180, Direction.EAST, 0));
-        customObjBlockRotated(ModBlocks.TOASTER, Map.of(
-                Direction.NORTH, 270, Direction.SOUTH, 90, Direction.WEST, 0, Direction.EAST, 180));
-        customObjBlock(ModBlocks.DECO_STEEL_SCAFFOLD);
-        customObjBlock(ModBlocks.STEEL_WALL);
+        // steel_scaffold — objAxisBlockWithItem ниже (FFA-канон); алиас-дубль удалён.
 
         // Other
         customBombBlock(ModBlocks.AIRBOMB);
@@ -841,14 +853,15 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customObjBlock(ModBlocks.BARREL_TCALLOY);
         customObjBlock(ModBlocks.BARREL_VITRIFIED);
         customObjBlock(ModBlocks.BARREL_YELLOW);
-        customBombBlock(ModBlocks.DUD_CONVENTIONAL);
-        customBombBlock(ModBlocks.DUD_NUKE);
-        customBombBlock(ModBlocks.DUD_SALTED);
-        simpleBlockWithItem(ModBlocks.MINE_AP.get(), models().getExistingFile(modLoc("block/bomb/mine_ap")));
-        simpleBlockWithItem(ModBlocks.MINE_FAT.get(), models().getExistingFile(modLoc("block/bomb/mine_fat")));
-        customBombBlock(ModBlocks.NAVAL_MINE);
+        // mine_ap: Tarnung je Biom (RenderLandmine), Stein = mine_ap_placed.
+        getVariantBuilder(ModBlocks.MINE_AP.get()).forAllStates(state -> {
+            com.hbm_m.block.bomb.LandmineAPBlock.Camo camo = state.getValue(com.hbm_m.block.bomb.LandmineAPBlock.CAMO);
+            String suffix = camo == com.hbm_m.block.bomb.LandmineAPBlock.Camo.STONE ? "" : "_" + camo.getSerializedName();
+            return ConfiguredModel.builder().modelFile(models().getExistingFile(modLoc("block/bomb/mine_ap_placed" + suffix))).build();
+        });
+        placedMineBlock(ModBlocks.MINE_FAT, "mine_fat", false);
+        placedMineBlock(ModBlocks.MINE_NAVAL, "naval_mine", false);
         customObjBlock(ModBlocks.CRATE_CONSERVE);
-        customObjBlock(ModBlocks.FILE_CABINET);
 
         // Технический блок без визуала; particle нужен, чтобы партиклы разрушения не были missing tex.
         simpleBlock(ModBlocks.UNIVERSAL_MACHINE_PART.get(), models().getBuilder(ModBlocks.UNIVERSAL_MACHINE_PART.getId().getPath())
@@ -887,14 +900,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 modLoc("block/machine_battery_dineutronium_top")
         );
 
-        // FENSU / machine_battery_redd: nur eine flache Textur vorhanden (kein separates side/front/top-Set,
-        // Original nutzte ein rotierendes OBJ-Modell) - dieselbe Textur fuer alle drei Seiten.
-        orientableBlockWithItem(
-                ModBlocks.MACHINE_FENSU,
-                modLoc("block/machine_fensu"),
-                modLoc("block/machine_fensu"),
-                modLoc("block/machine_fensu")
-        );
+        // FENSU (machine_fensu): Multiblock, gerendert per FENSURenderer; Blockmodell nur fuer Partikel,
+        // Item-Modell = statisches OBJ block/machines/fensu (ModItemModelProvider)
+        horizontalBlock(ModBlocks.MACHINE_FENSU.get(), models().getBuilder("machine_fensu").texture("particle", modLoc("block/machine/fensu")));
         orientableBlockWithItem(
                 ModBlocks.FENSU2,
                 modLoc("block/machine/fensu2"),
@@ -1136,23 +1144,12 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 models().getExistingFile(modLoc("block/reinforced_stone_slab")));
 
         // ================== ДЕКОР СТРУКТУР (порт 1.7.10) ==================
-        blockWithItem(ModBlocks.BLOCK_METEOR);
-        blockWithItem(ModBlocks.BLOCK_METEOR_COBBLE);
         blockWithItem(ModBlocks.BLOCK_COPPER);
         // BLOCK_RED_COPPER / BLOCK_STARMETAL — алиасы слитковых блоков (auto-loop ниже), тут не конфигурируем.
-        blockWithItem(ModBlocks.BLOCK_SCRAP);
-        blockWithItem(ModBlocks.BLOCK_ELECTRICAL_SCRAP);
-        blockWithItem(ModBlocks.BLOCK_COAL_COKE);
-        blockWithItem(ModBlocks.BLOCK_LIGNITE_COKE);
-        blockWithItem(ModBlocks.BLOCK_PETROLEUM_COKE);
-        blockWithItem(ModBlocks.DECO_TITANIUM);
-        blockWithItem(ModBlocks.WOOD_STRUCTURE);
-        blockWithItem(ModBlocks.POLE_TOP);
-        customObjBlockNoFacing(ModBlocks.POLE_SATELLITE_RECEIVER);
+        // POLE_TOP — рукописный blockstate в assets (FFA-канон); генерация удалена.
         blockWithItem(ModBlocks.TOXIC_BLOCK);
         grateBlockWithItem(ModBlocks.STEEL_GRATE, "block/steel_grate", "block/steel_grate_end");
         grateBlockWithItem(ModBlocks.STEEL_GRATE_WIDE, "block/steel_grate_wide", "block/steel_grate_wide_end");
-        blockWithItem(ModBlocks.BALEFIRE);
 
         // груда лута
         simpleBlock(ModBlocks.DECO_LOOT.get(),
@@ -1161,12 +1158,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         // мёртвое растение (cross)
         ModelFile plantDead = models().cross("block/plant_dead", modLoc("block/plant_dead")).renderType("cutout");
-        simpleBlock(ModBlocks.PLANT_DEAD.get(), plantDead);
-        simpleBlockItem(ModBlocks.PLANT_DEAD.get(), plantDead);
+        // plant_dead регистрируется в секции cross-моделей ниже (канон FFA); machines-дубль удалён.
 
-        // стальные балки и трубы (axis-колонны)
-        // Порт DecoBlock: вертикальная колонна 2x2px, AXIS-ориентация
-        objAxisBlockWithItem(ModBlocks.STEEL_BEAM, "block/steel_beam", true);
+        // стальная балка — DecoObjBlock (Placement.NONE, только FACING): одна OBJ-модель без поворотов
+        customObjBlockSimple(ModBlocks.STEEL_BEAM);
         java.util.Map<Block, String[]> pipes = new java.util.LinkedHashMap<>();
         pipes.put(ModBlocks.DECO_PIPE.get(), new String[]{"block/deco_pipe", "block/deco_pipe_end"});        pipes.put(ModBlocks.DECO_PIPE_RUSTED.get(), new String[]{"block/deco_pipe_rusted", "block/deco_pipe_rusted_end"});
         pipes.put(ModBlocks.DECO_PIPE_RED.get(), new String[]{"block/deco_pipe_red", "block/deco_pipe_red_end"});
@@ -1575,7 +1570,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         oreWithItem(ModBlocks.URANIUM_ORE);
         oreWithItem(ModBlocks.URANIUM_ORE_DEEPSLATE);
         oreWithItem(ModBlocks.LIGNITE_ORE);
-        oreWithItem(ModBlocks.ALUMINUM_ORE);
         oreWithItem(ModBlocks.ALUMINUM_ORE_DEEPSLATE);
         oreWithItem(ModBlocks.LEAD_ORE);
         oreWithItem(ModBlocks.LEAD_ORE_DEEPSLATE);
@@ -1595,13 +1589,16 @@ public class ModBlockStateProvider extends BlockStateProvider {
         oreWithItem(ModBlocks.TITANIUM_ORE);
         oreWithItem(ModBlocks.TITANIUM_ORE_DEEPSLATE);
         oreWithItem(ModBlocks.SULFUR_ORE);
-        oreWithItem(ModBlocks.ORE_OIL);
+        // ore_oil и ore_oil_sand генерируются в registerR6aBlocks() со своими 1:1 моделями — здесь не дублировать
+        oreWithItem(ModBlocks.SEQUESTRUM_ORE);
         oreWithItem(ModBlocks.SCHRABIDIUM_ORE);
         oreWithItem(ModBlocks.SCHRABIDIUM_ORE_NETHER);
         oreWithItem(ModBlocks.SCHRABIDIUM_ORE_GNEISS);
         // Руды паритета генерации с 1.7.10 (медная руда не нужна — есть ванильная)
         oreWithItem(ModBlocks.NITER_ORE);
         oreWithItem(ModBlocks.NITER_ORE_DEEPSLATE);
+        oreWithItem(ModBlocks.LITHIUM_ORE);
+        oreWithItem(ModBlocks.LITHIUM_ORE_DEEPSLATE);
         oreWithItem(ModBlocks.ALEXANDRITE_ORE);
         oreWithItem(ModBlocks.COLTAN_ORE);
         oreWithItem(ModBlocks.COLTAN_ORE_DEEPSLATE);
@@ -1629,7 +1626,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         oreWithItem(ModBlocks.GNEISS_RARE_ORE);
         oreWithItem(ModBlocks.GNEISS_GAS_ORE);
         oreWithItem(ModBlocks.TIKITE_ORE);
-        oreWithItem(ModBlocks.ORE_OIL_SAND);
 
         // Метеоритные руды (порт BlockMeteorOre 1.7.10, ore_meteor.*)
         oreWithItem(ModBlocks.ORE_METEOR_IRON);
@@ -1694,14 +1690,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/barbed_wire_ultradeath")
                 )
         );
-        simpleBlockWithItem(ModBlocks.BASALT.get(),
-                models().cubeBottomTop(
-                        ModBlocks.BASALT.getId().getPath(),
-                        modLoc("block/basalt"),
-                        modLoc("block/basalt"),
-                        modLoc("block/basalt_top")
-                )
-        );
         simpleBlockWithItem(ModBlocks.BASALT_SMOOTH.get(),
                 models().cubeAll(
                         ModBlocks.BASALT_SMOOTH.getId().getPath(),
@@ -1738,12 +1726,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/battery_schrabidium_top")
                 )
         );
-        simpleBlockWithItem(ModBlocks.BLOCK_ALUMINIUM.get(),
-                models().cubeAll(
-                        ModBlocks.BLOCK_ALUMINIUM.getId().getPath(),
-                        modLoc("block/block_aluminium")
-                )
-        );
+        // block_aluminium уже генерируется в цикле INGOT_BLOCKS (resourceBlockWithItem) — здесь не дублировать
         simpleBlockWithItem(ModBlocks.BOXCAR.get(),
                 models().cubeAll(
                         ModBlocks.BOXCAR.getId().getPath(),
@@ -1786,28 +1769,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/brick_jungle_fragile")
                 )
         );
-        simpleBlockWithItem(ModBlocks.BRICK_JUNGLE_GLYPH.get(),
-                models().cubeAll(
-                        ModBlocks.BRICK_JUNGLE_GLYPH.getId().getPath(),
-                        modLoc("block/brick_jungle_glyph_0")
-                )
-        );
         simpleBlockWithItem(ModBlocks.BRICK_JUNGLE_LAVA.get(),
                 models().cubeAll(
                         ModBlocks.BRICK_JUNGLE_LAVA.getId().getPath(),
                         modLoc("block/brick_jungle_lava")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.BRICK_JUNGLE_MYSTIC.get(),
-                models().cubeAll(
-                        ModBlocks.BRICK_JUNGLE_MYSTIC.getId().getPath(),
-                        modLoc("block/brick_jungle_mystic")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.BRICK_JUNGLE_OOZE.get(),
-                models().cubeAll(
-                        ModBlocks.BRICK_JUNGLE_OOZE.getId().getPath(),
-                        modLoc("block/brick_jungle_ooze")
                 )
         );
         simpleBlockWithItem(ModBlocks.BRICK_JUNGLE_TRAP.get(),
@@ -1959,22 +1924,25 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/cluster_titanium")
                 )
         );
-        simpleBlockWithItem(ModBlocks.CM_FLUX.get(),
-                models().cubeBottomTop(
-                        ModBlocks.CM_FLUX.getId().getPath(),
-                        modLoc("block/cm_flux_side"),
-                        modLoc("block/cm_flux_side"),
-                        modLoc("block/cm_flux_top")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.CM_HEAT.get(),
-                models().cubeBottomTop(
-                        ModBlocks.CM_HEAT.getId().getPath(),
-                        modLoc("block/cm_heat_side"),
-                        modLoc("block/cm_heat_side"),
-                        modLoc("block/cm_heat_top")
-                )
-        );
+        axisBlock((net.minecraft.world.level.block.RotatedPillarBlock) ModBlocks.CM_FLUX.get(), modLoc("block/cm_flux_side"), modLoc("block/cm_flux_top"));
+        simpleBlockItem(ModBlocks.CM_FLUX.get(), models().getExistingFile(modLoc("block/cm_flux")));
+        axisBlock((net.minecraft.world.level.block.RotatedPillarBlock) ModBlocks.CM_HEAT.get(), modLoc("block/cm_heat_side"), modLoc("block/cm_heat_top"));
+        simpleBlockItem(ModBlocks.CM_HEAT.get(), models().getExistingFile(modLoc("block/cm_heat")));
+        // Custom-Machine-Bauteile: Textur cm_<art>_<enum> wie BlockCM.registerBlockIcons
+        for (var maps : java.util.List.of(ModBlocks.CM_BLOCK, ModBlocks.CM_SHEET, ModBlocks.CM_PORT, ModBlocks.CM_ENGINE, ModBlocks.CM_CIRCUIT)) {
+            for (var s : maps.values()) simpleBlockWithItem(s.get(), models().cubeAll(s.getId().getPath(), modLoc("block/" + s.getId().getPath())));
+        }
+        for (var s : ModBlocks.CM_TANK.values()) {
+            simpleBlockWithItem(s.get(), models().cubeAll(s.getId().getPath(), modLoc("block/" + s.getId().getPath())).renderType("cutout"));
+        }
+        {
+            // BlockCustomMachine: Front cm_terminal_front auf der Facing-Seite; BlockCMAnchor analog mit cmt_*
+            var cm = models().orientable("custom_machine", modLoc("block/cm_terminal_side"), modLoc("block/cm_terminal_front"), modLoc("block/cm_terminal_side"));
+            horizontalBlock(ModBlocks.CUSTOM_MACHINE.get(), cm);
+            var an = models().orientable("custom_machine_anchor", modLoc("block/cmt_terminal_side"), modLoc("block/cmt_terminal_front"), modLoc("block/cmt_terminal_side"));
+            horizontalBlock(ModBlocks.CM_ANCHOR.get(), an);
+            simpleBlockItem(ModBlocks.CM_ANCHOR.get(), an);
+        }
         simpleBlockWithItem(ModBlocks.CMB_BRICK.get(),
                 models().cubeAll(
                         ModBlocks.CMB_BRICK.getId().getPath(),
@@ -1991,54 +1959,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 models().cubeAll(
                         ModBlocks.COMPACT_LAUNCHER.getId().getPath(),
                         modLoc("block/compact_launcher")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.CONCRETE_COLORED_EXT_BRONZE.get(),
-                models().cubeAll(
-                        ModBlocks.CONCRETE_COLORED_EXT_BRONZE.getId().getPath(),
-                        modLoc("block/concrete_colored_ext_bronze")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.CONCRETE_COLORED_EXT_HAZARD.get(),
-                models().cubeAll(
-                        ModBlocks.CONCRETE_COLORED_EXT_HAZARD.getId().getPath(),
-                        modLoc("block/concrete_colored_ext_hazard")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.CONCRETE_COLORED_EXT_INDIGO.get(),
-                models().cubeAll(
-                        ModBlocks.CONCRETE_COLORED_EXT_INDIGO.getId().getPath(),
-                        modLoc("block/concrete_colored_ext_indigo")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.CONCRETE_COLORED_EXT_MACHINE.get(),
-                models().cubeAll(
-                        ModBlocks.CONCRETE_COLORED_EXT_MACHINE.getId().getPath(),
-                        modLoc("block/concrete_colored_ext_machine")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.CONCRETE_COLORED_EXT_MACHINE_STRIPE.get(),
-                models().cubeAll(
-                        ModBlocks.CONCRETE_COLORED_EXT_MACHINE_STRIPE.getId().getPath(),
-                        modLoc("block/concrete_colored_ext_machine_stripe")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.CONCRETE_COLORED_EXT_PINK.get(),
-                models().cubeAll(
-                        ModBlocks.CONCRETE_COLORED_EXT_PINK.getId().getPath(),
-                        modLoc("block/concrete_colored_ext_pink")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.CONCRETE_COLORED_EXT_PURPLE.get(),
-                models().cubeAll(
-                        ModBlocks.CONCRETE_COLORED_EXT_PURPLE.getId().getPath(),
-                        modLoc("block/concrete_colored_ext_purple")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.CONCRETE_COLORED_EXT_SAND.get(),
-                models().cubeAll(
-                        ModBlocks.CONCRETE_COLORED_EXT_SAND.getId().getPath(),
-                        modLoc("block/concrete_colored_ext_sand")
                 )
         );
         // Конвейеры: blockstate/модели остаются ручными (свойства facing+bend, element-модели network/)
@@ -2072,6 +1992,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/crate_ammo_top")
                 )
         );
+        simpleBlockWithItem(ModBlocks.CRATE_SUPPLY.get(), models().cubeBottomTop("crate_supply", modLoc("block/crate_can_side"), modLoc("block/crate_can_bottom"), modLoc("block/crate_can_top")));
         simpleBlockWithItem(ModBlocks.CRATE_CAN.get(),
                 models().cubeBottomTop(
                         ModBlocks.CRATE_CAN.getId().getPath(),
@@ -2092,60 +2013,16 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/crate_red")
                 )
         );
-        simpleBlockWithItem(ModBlocks.DECO_ALUMINIUM.get(),
-                models().cubeAll(
-                        ModBlocks.DECO_ALUMINIUM.getId().getPath(),
-                        modLoc("block/deco_aluminium")
-                )
-        );
         simpleBlockWithItem(ModBlocks.DEPTH_DNT.get(),
                 models().cubeAll(
                         ModBlocks.DEPTH_DNT.getId().getPath(),
                         modLoc("block/depth_dnt")
                 )
         );
-        simpleBlockWithItem(ModBlocks.DET_CHARGE.get(),
-                models().cubeAll(
-                        ModBlocks.DET_CHARGE.getId().getPath(),
-                        modLoc("block/det_charge")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.DET_CORD.get(),
-                models().cubeAll(
-                        ModBlocks.DET_CORD.getId().getPath(),
-                        modLoc("block/det_cord")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.DET_NUKE.get(),
-                models().cubeBottomTop(
-                        ModBlocks.DET_NUKE.getId().getPath(),
-                        modLoc("block/det_nuke"),
-                        modLoc("block/det_nuke"),
-                        modLoc("block/det_nuke_top")
-                )
-        );
         simpleBlockWithItem(ModBlocks.DFC_CORE.get(),
                 models().cubeAll(
                         ModBlocks.DFC_CORE.getId().getPath(),
                         modLoc("block/dfc_core")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.DFC_EMITTER.get(),
-                models().cubeAll(
-                        ModBlocks.DFC_EMITTER.getId().getPath(),
-                        modLoc("block/dfc_emitter")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.DFC_INJECTOR.get(),
-                models().cubeAll(
-                        ModBlocks.DFC_INJECTOR.getId().getPath(),
-                        modLoc("block/dfc_injector")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.DFC_RECEIVER.get(),
-                models().cubeAll(
-                        ModBlocks.DFC_RECEIVER.getId().getPath(),
-                        modLoc("block/dfc_receiver")
                 )
         );
         // Der Stabilisator schiesst in seine Blickrichtung, das Modell dreht sich mit.
@@ -2161,18 +2038,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
             });
             simpleBlockItem(ModBlocks.DFC_STABILIZER.get(), stabilizer);
         }
-        simpleBlockWithItem(ModBlocks.DIRT_DEAD.get(),
-                models().cubeAll(
-                        ModBlocks.DIRT_DEAD.getId().getPath(),
-                        modLoc("block/dirt_dead")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.DIRT_OILY.get(),
-                models().cubeAll(
-                        ModBlocks.DIRT_OILY.getId().getPath(),
-                        modLoc("block/dirt_oily")
-                )
-        );
         simpleBlockWithItem(ModBlocks.DRONE_CRATE.get(),
                 models().cubeBottomTop(
                         ModBlocks.DRONE_CRATE.getId().getPath(),
@@ -2259,14 +2124,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/ducrete")
                 )
         );
-        simpleBlockWithItem(ModBlocks.DYNAMITE.get(),
-                models().cubeBottomTop(
-                        ModBlocks.DYNAMITE.getId().getPath(),
-                        modLoc("block/dynamite_side"),
-                        modLoc("block/dynamite_bottom"),
-                        modLoc("block/dynamite_top")
-                )
-        );
         simpleBlockWithItem(ModBlocks.FACTORY_ADVANCED_HULL.get(),
                 models().cubeAll(
                         ModBlocks.FACTORY_ADVANCED_HULL.getId().getPath(),
@@ -2295,12 +2152,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/field_disturber")
                 )
         );
-        simpleBlockWithItem(ModBlocks.FIRE_DIGAMMA.get(),
-                models().cubeAll(
-                        ModBlocks.FIRE_DIGAMMA.getId().getPath(),
-                        modLoc("block/fire_digamma")
-                )
-        );
+        // slag_dynamic регистрируется ниже (канон FFA/machines); здесь был битый дубль с моделью fire_digamma.
         simpleBlockWithItem(ModBlocks.FIREWORKS.get(),
                 models().cubeBottomTop(
                         ModBlocks.FIREWORKS.getId().getPath(),
@@ -2371,32 +2223,12 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // foundry_slagtap uses a hand-written static blockstate+model (directional spout shape,
         // matching foundry_outlet's precedent - see assets/hbm_m/blockstates/foundry_slagtap.json).
         simpleMachineBlock(ModBlocks.FOUNDRY_TANK);
-        simpleBlockWithItem(ModBlocks.FROZEN_DIRT.get(),
-                models().cubeAll(
-                        ModBlocks.FROZEN_DIRT.getId().getPath(),
-                        modLoc("block/frozen_dirt")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.FROZEN_GRASS.get(),
-                models().cubeBottomTop(
-                        ModBlocks.FROZEN_GRASS.getId().getPath(),
-                        modLoc("block/frozen_grass_side"),
-                        modLoc("block/frozen_grass_side"),
-                        modLoc("block/frozen_grass_top")
-                )
-        );
         simpleBlockWithItem(ModBlocks.FROZEN_LOG.get(),
                 models().cubeBottomTop(
                         ModBlocks.FROZEN_LOG.getId().getPath(),
                         modLoc("block/frozen_log"),
                         modLoc("block/frozen_log"),
                         modLoc("block/frozen_log_top")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.FROZEN_PLANKS.get(),
-                models().cubeAll(
-                        ModBlocks.FROZEN_PLANKS.getId().getPath(),
-                        modLoc("block/frozen_planks")
                 )
         );
         simpleBlockWithItem(ModBlocks.FUSION_COMPONENT.get(),
@@ -2453,8 +2285,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(ModBlocks.PA_SOURCE.get(), models().getExistingFile(modLoc("block/machines/source")));
         horizontalBlock(ModBlocks.PA_DETECTOR.get(), models().getExistingFile(modLoc("block/machines/detector")));
         simpleBlockItem(ModBlocks.PA_DETECTOR.get(), models().getExistingFile(modLoc("block/machines/detector")));
-        simpleBlockWithItem(ModBlocks.YELLOW_BARREL.get(),
-                models().cubeAll(ModBlocks.YELLOW_BARREL.getId().getPath(), modLoc("block/barrel_yellow")));
+        // barrel_yellow — через customObjBlock (канон FFA); simpleBlockWithItem-дубль удалён.
         // Die Ladeplatte nutzt im Original die Stahlblock-Textur (die Teslaspule hat weiter unten
         // schon einen eigenen Eintrag mit passenderen Texturen).
         // Das Ladegeraet haengt an der Wand und hat eine Blickrichtung - das Modell muss mitdrehen,
@@ -2469,126 +2300,23 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // 1.7.10 OBJ: the generator is the block model, the cable connectors are drawn by RtgRenderer.
         simpleBlock(ModBlocks.MACHINE_RTG.get(), models().getExistingFile(modLoc("block/machines/rtg")));
         simpleBlockItem(ModBlocks.MACHINE_RTG.get(), models().getExistingFile(modLoc("block/machines/rtg_item")));
-        simpleBlockWithItem(ModBlocks.GLASS_ASH.get(),
-                models().cubeAll(
-                        ModBlocks.GLASS_ASH.getId().getPath(),
-                        modLoc("block/glass_ash")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.GLASS_BORON.get(),
-                models().cubeAll(
-                        ModBlocks.GLASS_BORON.getId().getPath(),
-                        modLoc("block/glass_boron")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.GLASS_LEAD.get(),
-                models().cubeAll(
-                        ModBlocks.GLASS_LEAD.getId().getPath(),
-                        modLoc("block/glass_lead")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.GLASS_POLARIZED.get(),
-                models().cubeAll(
-                        ModBlocks.GLASS_POLARIZED.getId().getPath(),
-                        modLoc("block/glass_polarized")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.GLASS_POLONIUM.get(),
-                models().cubeAll(
-                        ModBlocks.GLASS_POLONIUM.getId().getPath(),
-                        modLoc("block/glass_polonium")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.GLASS_QUARTZ.get(),
-                models().cubeAll(
-                        ModBlocks.GLASS_QUARTZ.getId().getPath(),
-                        modLoc("block/glass_quartz")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.GLASS_TRINITITE.get(),
-                models().cubeAll(
-                        ModBlocks.GLASS_TRINITITE.getId().getPath(),
-                        modLoc("block/glass_trinitite")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.GLASS_URANIUM.get(),
-                models().cubeAll(
-                        ModBlocks.GLASS_URANIUM.getId().getPath(),
-                        modLoc("block/glass_uranium")
-                )
-        );
         simpleBlockWithItem(ModBlocks.GLYPHID_BASE.get(),
                 models().cubeAll(
                         ModBlocks.GLYPHID_BASE.getId().getPath(),
                         modLoc("block/glyphid_base")
                 )
         );
-        simpleBlockWithItem(ModBlocks.GRAVEL_DIAMOND.get(),
-                models().cubeAll(
-                        ModBlocks.GRAVEL_DIAMOND.getId().getPath(),
-                        modLoc("block/gravel_diamond")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.GRAVEL_OBSIDIAN.get(),
-                models().cubeAll(
-                        ModBlocks.GRAVEL_OBSIDIAN.getId().getPath(),
-                        modLoc("block/gravel_obsidian")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.HADRON_COIL_ALLOY.get(),
-                models().cubeAll(
-                        ModBlocks.HADRON_COIL_ALLOY.getId().getPath(),
-                        modLoc("block/hadron_coil_alloy")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.HADRON_COIL_CHLOROPHYTE.get(),
-                models().cubeAll(
-                        ModBlocks.HADRON_COIL_CHLOROPHYTE.getId().getPath(),
-                        modLoc("block/hadron_coil_chlorophyte")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.HADRON_COIL_GOLD.get(),
-                models().cubeAll(
-                        ModBlocks.HADRON_COIL_GOLD.getId().getPath(),
-                        modLoc("block/hadron_coil_gold")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.HADRON_COIL_MAGTUNG.get(),
-                models().cubeAll(
-                        ModBlocks.HADRON_COIL_MAGTUNG.getId().getPath(),
-                        modLoc("block/hadron_coil_magtung")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.HADRON_COIL_MESE.get(),
-                models().cubeAll(
-                        ModBlocks.HADRON_COIL_MESE.getId().getPath(),
-                        modLoc("block/hadron_coil_mese")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.HADRON_COIL_NEODYMIUM.get(),
-                models().cubeAll(
-                        ModBlocks.HADRON_COIL_NEODYMIUM.getId().getPath(),
-                        modLoc("block/hadron_coil_neodymium")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.HADRON_COIL_SCHRABIDATE.get(),
-                models().cubeAll(
-                        ModBlocks.HADRON_COIL_SCHRABIDATE.getId().getPath(),
-                        modLoc("block/hadron_coil_schrabidate")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.HADRON_COIL_SCHRABIDIUM.get(),
-                models().cubeAll(
-                        ModBlocks.HADRON_COIL_SCHRABIDIUM.getId().getPath(),
-                        modLoc("block/hadron_coil_schrabidium")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.HADRON_COIL_STARMETAL.get(),
-                models().cubeAll(
-                        ModBlocks.HADRON_COIL_STARMETAL.getId().getPath(),
-                        modLoc("block/hadron_coil_starmetal")
-                )
-        );
+        simpleBlockWithItem(ModBlocks.HADRON_COIL_ALLOY.get(), models().getExistingFile(modLoc("block/hadron_coil_alloy")));
+        simpleBlockWithItem(ModBlocks.HADRON_COIL_CHLOROPHYTE.get(), models().getExistingFile(modLoc("block/hadron_coil_chlorophyte")));
+        simpleBlockWithItem(ModBlocks.HADRON_COIL_GOLD.get(), models().getExistingFile(modLoc("block/hadron_coil_gold")));
+        simpleBlockWithItem(ModBlocks.HADRON_COIL_MAGTUNG.get(), models().getExistingFile(modLoc("block/hadron_coil_magtung")));
+        simpleBlockWithItem(ModBlocks.HADRON_COIL_MESE.get(), models().getExistingFile(modLoc("block/hadron_coil_mese")));
+        simpleBlockWithItem(ModBlocks.HADRON_COIL_NEODYMIUM.get(), models().getExistingFile(modLoc("block/hadron_coil_neodymium")));
+        simpleBlockWithItem(ModBlocks.HADRON_COIL_SCHRABIDATE.get(), models().getExistingFile(modLoc("block/hadron_coil_schrabidate")));
+        simpleBlockWithItem(ModBlocks.HADRON_COIL_SCHRABIDIUM.get(), models().getExistingFile(modLoc("block/hadron_coil_schrabidium")));
+        simpleBlockWithItem(ModBlocks.HADRON_COIL_STARMETAL.get(), models().getExistingFile(modLoc("block/hadron_coil_starmetal")));
+        // FFA port: glyphid spawner nest (three TYPE variants share the eggs texture here)
+        simpleBlockWithItem(ModBlocks.GLYPHID_SPAWNER.get(), models().cubeAll("glyphid_eggs_alt_block", modLoc("block/glyphid_eggs_alt")));
         simpleBlockWithItem(ModBlocks.HEV_BATTERY.get(),
                 models().cubeAll(
                         ModBlocks.HEV_BATTERY.getId().getPath(),
@@ -2710,12 +2438,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/machine_autocrafter_top")
                 )
         );
-        simpleBlockWithItem(ModBlocks.MACHINE_BOILER.get(),
-                models().cubeAll(
-                        ModBlocks.MACHINE_BOILER.getId().getPath(),
-                        modLoc("block/machine_boiler_base")
-                )
-        );
         // Das Steuerpult ist im Original nur halb hoch ({@code setBlockBounds(0,0,0, 1,0.5F,1)}),
         // darum ein eigenes Modell statt eines vollen Wuerfels - sonst passte die Hitbox nicht zum Bild.
         simpleBlockWithItem(ModBlocks.MACHINE_CONTROLLER.get(),
@@ -2733,29 +2455,19 @@ public class ModBlockStateProvider extends BlockStateProvider {
                                 .face(net.minecraft.core.Direction.EAST).texture("#side").end()
                         .end()
         );
-        simpleBlockWithItem(ModBlocks.MACHINE_CRYSTALLIZER.get(),
-                models().cubeAll(
-                        ModBlocks.MACHINE_CRYSTALLIZER.getId().getPath(),
-                        modLoc("block/machine_crystallizer")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.MACHINE_DETECTOR.get(),
-                models().cubeAll(
-                        ModBlocks.MACHINE_DETECTOR.getId().getPath(),
-                        modLoc("block/machine_detector")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.MACHINE_EPRESS.get(),
-                models().cubeAll(
-                        ModBlocks.MACHINE_EPRESS.getId().getPath(),
-                        modLoc("block/machine_epress")
-                )
-        );
         // MachineBatteryBlock (FACING-Blockstate) statt simpleBlockWithItem - siehe orientableBlockWithItem-Aufrufe fuer MACHINE_BATTERY etc.
-        simpleBlockWithItem(ModBlocks.MACHINE_FLUIDTANK.get(),
+        // Конвертеры HE<->RF: оригинальная текстура machine_converter из 1.7.10 не портирована —
+        // временно общий машинный металл block_steel_machine (как у fluid_pump/fluid_valve).
+        simpleBlockWithItem(ModBlocks.MACHINE_CONVERTER_HE_RF.get(),
                 models().cubeAll(
-                        ModBlocks.MACHINE_FLUIDTANK.getId().getPath(),
-                        modLoc("block/machine_fluidtank")
+                        ModBlocks.MACHINE_CONVERTER_HE_RF.getId().getPath(),
+                        modLoc("block/block_steel_machine")
+                )
+        );
+        simpleBlockWithItem(ModBlocks.MACHINE_CONVERTER_RF_HE.get(),
+                models().cubeAll(
+                        ModBlocks.MACHINE_CONVERTER_RF_HE.getId().getPath(),
+                        modLoc("block/block_steel_machine")
                 )
         );
         simpleBlockWithItem(ModBlocks.MACHINE_FORCEFIELD.get(),
@@ -2774,6 +2486,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         );
         {
             // Multiblock mit Ausrichtung: das Modell dreht sich mit der Struktur.
+            // Текстура machine/precass из 1.7.10 не портирована — временно block_steel_machine.
+            horizontalBlock(ModBlocks.MACHINE_PRECASS.get(), models().getBuilder("machine_precass").texture("particle", modLoc("block/block_steel_machine")));
             var purex = models().cubeAll(ModBlocks.PUREX.getId().getPath(), modLoc("block/machine/purex"));
             horizontalBlock(ModBlocks.PUREX.get(), purex);
             simpleBlockItem(ModBlocks.PUREX.get(), purex);
@@ -2797,26 +2511,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 )
         );
         simpleMachineBlock(ModBlocks.MACHINE_LARGE_TURBINE);
-        simpleBlockWithItem(ModBlocks.MACHINE_MICROWAVE.get(),
-                models().cubeAll(
-                        ModBlocks.MACHINE_MICROWAVE.getId().getPath(),
-                        modLoc("block/machine_microwave")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.MACHINE_MINING_LASER.get(),
-                models().cubeAll(
-                        ModBlocks.MACHINE_MINING_LASER.getId().getPath(),
-                        modLoc("block/machine_mining_laser")
-                )
-        );
         // 1.7.10 OBJ (RenderMissileAssembly); the block has no facing, so it stands the one way.
         simpleBlockWithItem(ModBlocks.MACHINE_MISSILE_ASSEMBLY.get(), models().getExistingFile(modLoc("block/machines/missile_assembly")));
-        simpleBlockWithItem(ModBlocks.MACHINE_PRESS.get(),
-                models().cubeAll(
-                        ModBlocks.MACHINE_PRESS.getId().getPath(),
-                        modLoc("block/machine_press")
-                )
-        );
         simpleBlockWithItem(ModBlocks.MACHINE_PUF6_TANK.get(),
                 models().cubeAll(
                         ModBlocks.MACHINE_PUF6_TANK.getId().getPath(),
@@ -2836,6 +2532,20 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 modLoc("block/difurnace_front_off_tall"),
                 modLoc("block/difurnace_top_off_alt")
         );
+        {
+            // 1:1 MachineRtgFurnace: Front an/aus, Deckel/Boden base_alt, Seiten side_alt
+            var off = models().orientableWithBottom("machine_rtg_furnace_off", modLoc("block/machine_rtg_furnace_side_alt"),
+                    modLoc("block/machine_rtg_furnace_off_alt"), modLoc("block/machine_rtg_furnace_base_alt"), modLoc("block/machine_rtg_furnace_base_alt"))
+                    .texture("particle", modLoc("block/machine_rtg_furnace_side_alt"));
+            var on = models().orientableWithBottom("machine_rtg_furnace_on", modLoc("block/machine_rtg_furnace_side_alt"),
+                    modLoc("block/machine_rtg_furnace_on_alt"), modLoc("block/machine_rtg_furnace_base_alt"), modLoc("block/machine_rtg_furnace_base_alt"))
+                    .texture("particle", modLoc("block/machine_rtg_furnace_side_alt"));
+            getVariantBuilder(ModBlocks.MACHINE_RTG_FURNACE.get()).forAllStates(st -> ConfiguredModel.builder()
+                    .modelFile(st.getValue(com.hbm_m.block.machines.MachineRtgFurnaceBlock.LIT) ? on : off)
+                    .rotationY(((int) st.getValue(com.hbm_m.block.machines.MachineRtgFurnaceBlock.FACING).toYRot() + 180) % 360)
+                    .build());
+            simpleBlockItem(ModBlocks.MACHINE_RTG_FURNACE.get(), off);
+        }
         simpleBlockWithItem(ModBlocks.MACHINE_TELEPORTER.get(),
                 models().cubeBottomTop(
                         ModBlocks.MACHINE_TELEPORTER.getId().getPath(),
@@ -2869,31 +2579,14 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 )
         );
         customMachineBlock(ModBlocks.MACHINE_RADGEN);
-        craneDirectionalBlock(ModBlocks.CRANE_INSERTER, "crane");
-        craneDirectionalBlock(ModBlocks.CRANE_EXTRACTOR, "crane");
-        craneDirectionalBlock(ModBlocks.CRANE_GRABBER, "crane");
-        craneDirectionalBlock(ModBlocks.CRANE_BOXER, "crane");
-        craneDirectionalBlock(ModBlocks.CRANE_UNBOXER, "crane");
-        simpleBlockWithItem(ModBlocks.MACHINE_REACTOR.get(),
-                models().cubeBottomTop(
-                        ModBlocks.MACHINE_REACTOR.getId().getPath(),
-                        modLoc("block/machine_reactor"),
-                        modLoc("block/machine_reactor"),
-                        modLoc("block/machine_reactor_top")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.MACHINE_REACTOR_SMALL.get(),
-                models().cubeAll(
-                        ModBlocks.MACHINE_REACTOR_SMALL.getId().getPath(),
-                        modLoc("block/machine_reactor_small")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.MACHINE_REFINERY.get(),
-                models().cubeAll(
-                        ModBlocks.MACHINE_REFINERY.getId().getPath(),
-                        modLoc("block/machine_refinery")
-                )
-        );
+        // machine_radgen — зарегистрирован выше; дубль удалён.
+        // 1:1 BlockCraneBase.getIcon/getRotationFromSide je Eingang/Ausgang
+        // (краны конфигурируются только craneBlock1to1 ниже — craneDirectionalBlock дублировал те же состояния)
+        craneBlock1to1(ModBlocks.CRANE_INSERTER, com.hbm_m.block.network.CraneTextures.standard("crane_in", false));
+        craneBlock1to1(ModBlocks.CRANE_EXTRACTOR, com.hbm_m.block.network.CraneTextures.standard("crane_out", true));
+        craneBlock1to1(ModBlocks.CRANE_GRABBER, new com.hbm_m.block.network.CraneTextures.Set("crane_top", "crane_side", "crane_pull", "crane_side_pull", "crane_out", "crane_side_out", "crane_grabber", false));
+        craneBlock1to1(ModBlocks.CRANE_BOXER, new com.hbm_m.block.network.CraneTextures.Set("crane_top", "crane_side", "crane_in", "crane_side_in", "crane_box", "crane_side_box", "crane_boxer", false));
+        craneBlock1to1(ModBlocks.CRANE_UNBOXER, new com.hbm_m.block.network.CraneTextures.Set("crane_top", "crane_side", "crane_in", "crane_side_in", "crane_box", "crane_side_box", "crane_unboxer", true));
         simpleBlockWithItem(ModBlocks.MACHINE_SATLINKER.get(),
                 models().cubeBottomTop(
                         ModBlocks.MACHINE_SATLINKER.getId().getPath(),
@@ -2902,12 +2595,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/machine_satlinker_top")
                 )
         );
-        simpleBlockWithItem(ModBlocks.MACHINE_SOLAR_BOILER.get(),
-                models().cubeAll(
-                        ModBlocks.MACHINE_SOLAR_BOILER.getId().getPath(),
-                        modLoc("block/machine_solar_boiler")
-                )
-        );
+        // Original RenderStorageDrum: statisches drum.obj mit drum_gray - als OBJ-Blockmodell
         simpleBlockWithItem(ModBlocks.MACHINE_STORAGE_DRUM.get(),
                 models().cubeAll(
                         ModBlocks.MACHINE_STORAGE_DRUM.getId().getPath(),
@@ -2943,7 +2631,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 models().cubeBottomTop(
                         ModBlocks.METEOR_SPAWNER.getId().getPath(),
                         modLoc("block/meteor_spawner_side"),
-                        modLoc("block/meteor_spawner_side"),
+                        modLoc("block/meteor_polished"),
                         modLoc("block/meteor_spawner_top")
                 )
         );
@@ -2953,22 +2641,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/mine_he")
                 )
         );
-        simpleBlockWithItem(ModBlocks.MINE_NAVAL.get(),
-                models().cubeAll(
-                        ModBlocks.MINE_NAVAL.getId().getPath(),
-                        modLoc("block/mine_naval")
-                )
-        );
+        // mine_naval уже размещён через placedMineBlock (модель bomb/naval_mine_placed) — здесь не дублировать
         simpleBlockWithItem(ModBlocks.MINE_SHRAP.get(),
                 models().cubeAll(
                         ModBlocks.MINE_SHRAP.getId().getPath(),
                         modLoc("block/mine_shrap")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.MOON_TURF.get(),
-                models().cubeAll(
-                        ModBlocks.MOON_TURF.getId().getPath(),
-                        modLoc("block/moon_turf")
                 )
         );
         simpleBlockWithItem(ModBlocks.MUSH.get(),
@@ -3165,24 +2842,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/radio_autocal")
                 )
         );
-        simpleBlockWithItem(ModBlocks.RAIL_BOOSTER.get(),
-                models().cubeAll(
-                        ModBlocks.RAIL_BOOSTER.getId().getPath(),
-                        modLoc("block/rail_booster")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.RAIL_HIGHSPEED.get(),
-                models().cubeAll(
-                        ModBlocks.RAIL_HIGHSPEED.getId().getPath(),
-                        modLoc("block/rail_highspeed")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.RAIL_NARROW.get(),
-                models().cubeAll(
-                        ModBlocks.RAIL_NARROW.getId().getPath(),
-                        modLoc("block/rail_narrow")
-                )
-        );
+        railBlockstate(ModBlocks.RAIL_BOOSTER, "rail_booster");
+        railBlockstate(ModBlocks.RAIL_HIGHSPEED, "rail_highspeed");
+        railBlockstate(ModBlocks.RAIL_NARROW, "rail_narrow");
         simpleBlockWithItem(ModBlocks.RAIL_WOOD.get(),
                 models().cubeAll(
                         ModBlocks.RAIL_WOOD.getId().getPath(),
@@ -3232,12 +2894,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 modLoc("block/reinforced_glass_pane"), modLoc("block/reinforced_glass_pane_edge"),
                 mcLoc("cutout"));
         simpleBlockItem(ModBlocks.REINFORCED_GLASS_PANE.get(), models().getExistingFile(modLoc("block/reinforced_glass_pane_post")));
-        simpleBlockWithItem(ModBlocks.REINFORCED_LAMINATE.get(),
-                models().cubeAll(
-                        ModBlocks.REINFORCED_LAMINATE.getId().getPath(),
-                        modLoc("block/reinforced_laminate")
-                )
-        );
         simpleBlockWithItem(ModBlocks.REINFORCED_LAMINATE_PANE.get(),
                 models().cubeAll(
                         ModBlocks.REINFORCED_LAMINATE_PANE.getId().getPath(),
@@ -3268,28 +2924,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/reinforced_sand")
                 )
         );
-        simpleBlockWithItem(ModBlocks.SAFE.get(),
-                models().cubeAll(
-                        ModBlocks.SAFE.getId().getPath(),
-                        modLoc("block/safe_front")
-                )
-        );
         simpleBlockWithItem(ModBlocks.SAND_BORON.get(),
                 models().cubeAll(
                         ModBlocks.SAND_BORON.getId().getPath(),
                         modLoc("block/sand_boron")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.SAND_DIRTY.get(),
-                models().cubeAll(
-                        ModBlocks.SAND_DIRTY.getId().getPath(),
-                        modLoc("block/sand_dirty")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.SAND_DIRTY_RED.get(),
-                models().cubeAll(
-                        ModBlocks.SAND_DIRTY_RED.getId().getPath(),
-                        modLoc("block/sand_dirty_red")
                 )
         );
         simpleBlockWithItem(ModBlocks.SAND_LEAD.get(),
@@ -3316,18 +2954,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/sand_uranium")
                 )
         );
-        simpleBlockWithItem(ModBlocks.SANDBAGS.get(),
-                models().cubeAll(
-                        ModBlocks.SANDBAGS.getId().getPath(),
-                        modLoc("block/sandbags")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.SAT_DOCK.get(),
-                models().cubeAll(
-                        ModBlocks.SAT_DOCK.getId().getPath(),
-                        modLoc("block/sat_dock")
-                )
-        );
+        customMachineBlock(ModBlocks.SAT_DOCK);
         simpleBlockWithItem(ModBlocks.SAT_FOEQ.get(),
                 models().cubeAll(
                         ModBlocks.SAT_FOEQ.getId().getPath(),
@@ -3340,38 +2967,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/sat_scanner")
                 )
         );
-        simpleBlockWithItem(ModBlocks.SEAL_CONTROLLER.get(),
-                models().cubeAll(
-                        ModBlocks.SEAL_CONTROLLER.getId().getPath(),
-                        modLoc("block/seal_controller")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.SEAL_FRAME.get(),
-                models().cubeAll(
-                        ModBlocks.SEAL_FRAME.getId().getPath(),
-                        modLoc("block/seal_frame")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.SEAL_HATCH.get(),
-                models().cubeAll(
-                        ModBlocks.SEAL_HATCH.getId().getPath(),
-                        modLoc("block/seal_hatch_3")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.SEMTEX.get(),
-                models().cubeBottomTop(
-                        ModBlocks.SEMTEX.getId().getPath(),
-                        modLoc("block/semtex_side"),
-                        modLoc("block/semtex_bottom"),
-                        modLoc("block/semtex_top")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.SOYUZ_CAPSULE.get(),
-                models().cubeAll(
-                        ModBlocks.SOYUZ_CAPSULE.getId().getPath(),
-                        modLoc("block/soyuz_capsule")
-                )
-        );
+        // Kapsel rendert per BlockEntityRenderer (RenderCapsule); Blockmodell nur fuer Partikel
+        getVariantBuilder(ModBlocks.SOYUZ_CAPSULE.get()).forAllStates(st -> ConfiguredModel.builder()
+                .modelFile(models().getBuilder("soyuz_capsule").texture("particle", modLoc("block/soyuz_capsule"))).build());
         customObjBlock(ModBlocks.SOYUZ_LAUNCHER);
         customObjBlock(ModBlocks.DECO_SOYUZ_ROCKET);
         simpleBlockWithItem(ModBlocks.SPIKES.get(),
@@ -3380,33 +2978,16 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/spikes")
                 )
         );
-        simpleBlockWithItem(ModBlocks.STALACTITE_ASBESTOS.get(),
-                models().cubeAll(
-                        ModBlocks.STALACTITE_ASBESTOS.getId().getPath(),
-                        modLoc("block/stalactite_asbestos")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.STALACTITE_SULFUR.get(),
-                models().cubeAll(
-                        ModBlocks.STALACTITE_SULFUR.getId().getPath(),
-                        modLoc("block/stalactite_sulfur")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.STALAGMITE_ASBESTOS.get(),
-                models().cubeAll(
-                        ModBlocks.STALAGMITE_ASBESTOS.getId().getPath(),
-                        modLoc("block/stalagmite_asbestos")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.STALAGMITE_SULFUR.get(),
-                models().cubeAll(
-                        ModBlocks.STALAGMITE_SULFUR.getId().getPath(),
-                        modLoc("block/stalagmite_sulfur")
-                )
-        );
-        customObjBlockSimple(ModBlocks.STEEL_ROOF);
-        // Порт BlockScaffold: OBJ-панель 2/16..14/16, AXIS-ориентация (модель-обёртка в resources)
-        objAxisBlockWithItem(ModBlocks.STEEL_SCAFFOLD, "block/steel_scaffold", false);
+        simpleBlockWithItem(ModBlocks.STALACTITE_ASBESTOS.get(), models().getExistingFile(modLoc("block/stalactite_asbestos")));
+        simpleBlockWithItem(ModBlocks.STALACTITE_SULFUR.get(), models().getExistingFile(modLoc("block/stalactite_sulfur")));
+        simpleBlockWithItem(ModBlocks.STALAGMITE_ASBESTOS.get(), models().getExistingFile(modLoc("block/stalagmite_asbestos")));
+        simpleBlockWithItem(ModBlocks.STALAGMITE_SULFUR.get(), models().getExistingFile(modLoc("block/stalagmite_sulfur")));
+        // Порт BlockScaffold: SteelScaffoldBlock.ORIENT (4 ориентации), модели как у цветных вариантов
+        var scO = com.hbm_m.block.decorations.SteelScaffoldBlock.ORIENT;
+        getVariantBuilder(ModBlocks.STEEL_SCAFFOLD.get()).partialState().with(scO, com.hbm_m.block.decorations.SteelScaffoldBlock.Orient.UPRIGHT_X).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/steel_scaffold_upright_x"))).addModel();
+        getVariantBuilder(ModBlocks.STEEL_SCAFFOLD.get()).partialState().with(scO, com.hbm_m.block.decorations.SteelScaffoldBlock.Orient.UPRIGHT_Z).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/steel_scaffold_upright_z"))).addModel();
+        getVariantBuilder(ModBlocks.STEEL_SCAFFOLD.get()).partialState().with(scO, com.hbm_m.block.decorations.SteelScaffoldBlock.Orient.FLAT_NS).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/steel_scaffold_flat_ns"))).addModel();
+        getVariantBuilder(ModBlocks.STEEL_SCAFFOLD.get()).partialState().with(scO, com.hbm_m.block.decorations.SteelScaffoldBlock.Orient.FLAT_WE).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/steel_scaffold_flat_we"))).addModel();
         // RBMK support/deco blocks (1:1 with com.hbm.blocks.ModBlocks - deco_rbmk reuses
         // rbmk/rbmk_top, deco_rbmk_smooth reuses rbmk/rbmk_blank_top).
         // These four have textures of their own in CE; the first two were borrowing the RBMK
@@ -3433,12 +3014,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 "deco_rbmk_panel_smooth", "deco_rbmk_panel_smooth_side", 4);
         simpleBlockWithItem(ModBlocks.BLOCK_GRAPHITE.get(),
                 models().cubeAll(ModBlocks.BLOCK_GRAPHITE.getId().getPath(), modLoc("block/block_graphite")));
-        simpleBlockWithItem(ModBlocks.STONE_CRACKED.get(),
-                models().cubeAll(
-                        ModBlocks.STONE_CRACKED.getId().getPath(),
-                        modLoc("block/stone_cracked")
-                )
-        );
         simpleBlockWithItem(ModBlocks.STONE_DEPTH.get(),
                 models().cubeAll(
                         ModBlocks.STONE_DEPTH.getId().getPath(),
@@ -3605,24 +3180,14 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/tile_lab_cracked")
                 )
         );
-        simpleBlockWithItem(ModBlocks.TRAPDOOR_STEEL.get(),
-                models().cubeAll(
-                        ModBlocks.TRAPDOOR_STEEL.getId().getPath(),
-                        modLoc("block/trapdoor_steel")
-                )
-        );
         simpleBlockWithItem(ModBlocks.VACUUM.get(),
                 models().cubeAll(
                         ModBlocks.VACUUM.getId().getPath(),
                         modLoc("block/vacuum")
                 )
         );
-        simpleBlockWithItem(ModBlocks.VENT_CHLORINE.get(),
-                models().cubeAll(
-                        ModBlocks.VENT_CHLORINE.getId().getPath(),
-                        modLoc("block/vent_chlorine")
-                )
-        );
+        simpleBlockWithItem(ModBlocks.VENT_CHLORINE.get(), models().cubeBottomTop(ModBlocks.VENT_CHLORINE.getId().getPath(),
+                modLoc("block/vent_chlorine"), modLoc("block/vent_blank"), modLoc("block/vent_blank")));
         simpleBlockWithItem(ModBlocks.VENT_CHLORINE_SEAL.get(),
                 models().cubeBottomTop(
                         ModBlocks.VENT_CHLORINE_SEAL.getId().getPath(),
@@ -3647,12 +3212,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 models().cubeAll(
                         ModBlocks.VINE_PHOSPHOR.getId().getPath(),
                         modLoc("block/vine_phosphor")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.VINYL_TILE_LARGE.get(),
-                models().cubeAll(
-                        ModBlocks.VINYL_TILE_LARGE.getId().getPath(),
-                        modLoc("block/vinyl_tile_large")
                 )
         );
         // Ядро вулкана: 5 состояний (меты BlockVolcano 1.7.10), одна текстура на все
@@ -3722,34 +3281,1568 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/wand_loot_top")
                 )
         );
-        simpleBlockWithItem(ModBlocks.WASTE_EARTH.get(),
-                models().cubeAll(
-                        ModBlocks.WASTE_EARTH.getId().getPath(),
-                        modLoc("block/waste_earth_bottom")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.WATZ_COOLER.get(),
-                models().cubeBottomTop(
-                        ModBlocks.WATZ_COOLER.getId().getPath(),
-                        modLoc("block/watz_cooler_side"),
-                        modLoc("block/watz_cooler_side"),
-                        modLoc("block/watz_cooler_top")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.WATZ_ELEMENT.get(),
-                models().cubeBottomTop(
-                        ModBlocks.WATZ_ELEMENT.getId().getPath(),
-                        modLoc("block/watz_element_side"),
-                        modLoc("block/watz_element_side"),
-                        modLoc("block/watz_element_top")
-                )
-        );
         simpleBlockWithItem(ModBlocks.WOOD_BARRIER.get(),
                 models().cubeAll(
                         ModBlocks.WOOD_BARRIER.getId().getPath(),
                         modLoc("block/wood_barrier")
                 )
         );
+        simpleBlockWithItem(ModBlocks.WAND_STRUCTURE_SAVE.get(), models().cubeAll("wand_structure_save", modLoc("block/wand_structure_save")));
+        simpleBlockWithItem(ModBlocks.WAND_STRUCTURE_LOAD.get(), models().cubeAll("wand_structure_load", modLoc("block/wand_structure_load")));
+        simpleBlockWithItem(ModBlocks.LOGIC_BLOCK_INVIS.get(), models().cubeAll("logic_block_invis", modLoc("block/ported/logic_block")));
+        // FFA port: corium finite fluid levels (finiteFluid helper kept from FFA)
+        finiteFluid(ModBlocks.CORIUM_BLOCK.get(), "corium_block", "block/fluid/corium_still", 5);
+        registerPortedBlockstates();
+    }
+
+    /**
+     * Порт рукописных blockstates из assets (FFA-канон), собранный из фрагментов
+     * параллельных портеров (batch_1..batch_12). Один блок — одна регистрация:
+     * дубликаты отбрасываются (первое вхождение выигрывает); блоки, уже
+     * зарегистрированные выше по файлу, портерами исключены как redundant.
+     */
+    private void registerPortedBlockstates() {
+        getVariantBuilder(ModBlocks.ANTENNA_TOP.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/antenna_top"))).addModel();
+        getVariantBuilder(ModBlocks.ANTENNA_TOP.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/antenna_top"))).addModel();
+        getVariantBuilder(ModBlocks.ANTENNA_TOP.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/antenna_top"))).addModel();
+        getVariantBuilder(ModBlocks.ANTENNA_TOP.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/antenna_top"))).addModel();
+        getVariantBuilder(ModBlocks.B29.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/b29"))).addModel();
+        var balefireBuilder = getMultipartBuilder(ModBlocks.BALEFIRE.get());
+        net.minecraft.world.level.block.state.properties.BooleanProperty balefireNorth = net.minecraft.world.level.block.state.properties.BlockStateProperties.NORTH;
+        net.minecraft.world.level.block.state.properties.BooleanProperty balefireEast = net.minecraft.world.level.block.state.properties.BlockStateProperties.EAST;
+        net.minecraft.world.level.block.state.properties.BooleanProperty balefireSouth = net.minecraft.world.level.block.state.properties.BlockStateProperties.SOUTH;
+        net.minecraft.world.level.block.state.properties.BooleanProperty balefireWest = net.minecraft.world.level.block.state.properties.BlockStateProperties.WEST;
+        net.minecraft.world.level.block.state.properties.BooleanProperty balefireUp = net.minecraft.world.level.block.state.properties.BlockStateProperties.UP;
+        balefireBuilder.part().modelFile(models().getExistingFile(modLoc("block/bomb/balefire_floor"))).addModel().condition(balefireNorth, false).condition(balefireEast, false).condition(balefireSouth, false).condition(balefireWest, false).condition(balefireUp, false).end();
+        balefireBuilder.part().modelFile(models().getExistingFile(modLoc("block/bomb/balefire_side"))).nextModel().modelFile(models().getExistingFile(modLoc("block/bomb/balefire_side_alt"))).addModel().useOr().nestedGroup().condition(balefireNorth, true).end().nestedGroup().condition(balefireEast, false).end().nestedGroup().condition(balefireNorth, false).end().nestedGroup().condition(balefireSouth, false).end().nestedGroup().condition(balefireUp, false).end().nestedGroup().condition(balefireWest, false).end().end();
+        balefireBuilder.part().modelFile(models().getExistingFile(modLoc("block/bomb/balefire_side"))).rotationY(90).nextModel().modelFile(models().getExistingFile(modLoc("block/bomb/balefire_side_alt"))).rotationY(90).addModel().useOr().nestedGroup().condition(balefireEast, true).end().nestedGroup().condition(balefireEast, false).end().nestedGroup().condition(balefireNorth, false).end().nestedGroup().condition(balefireSouth, false).end().nestedGroup().condition(balefireUp, false).end().nestedGroup().condition(balefireWest, false).end().end();
+        balefireBuilder.part().modelFile(models().getExistingFile(modLoc("block/bomb/balefire_side"))).rotationY(180).nextModel().modelFile(models().getExistingFile(modLoc("block/bomb/balefire_side_alt"))).rotationY(180).addModel().useOr().nestedGroup().condition(balefireSouth, true).end().nestedGroup().condition(balefireEast, false).end().nestedGroup().condition(balefireNorth, false).end().nestedGroup().condition(balefireSouth, false).end().nestedGroup().condition(balefireUp, false).end().nestedGroup().condition(balefireWest, false).end().end();
+        balefireBuilder.part().modelFile(models().getExistingFile(modLoc("block/bomb/balefire_side"))).rotationY(270).nextModel().modelFile(models().getExistingFile(modLoc("block/bomb/balefire_side_alt"))).rotationY(270).addModel().useOr().nestedGroup().condition(balefireWest, true).end().nestedGroup().condition(balefireEast, false).end().nestedGroup().condition(balefireNorth, false).end().nestedGroup().condition(balefireSouth, false).end().nestedGroup().condition(balefireUp, false).end().nestedGroup().condition(balefireWest, false).end().end();
+        balefireBuilder.part().modelFile(models().getExistingFile(modLoc("block/bomb/balefire_up"))).nextModel().modelFile(models().getExistingFile(modLoc("block/bomb/balefire_up_alt"))).addModel().condition(balefireUp, true).end();
+        getVariantBuilder(ModBlocks.BARRICADE.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/deco/barricade"))).addModel();
+        getVariantBuilder(ModBlocks.BLAST_DOOR.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/blast_door_particle"))).addModel();
+        getVariantBuilder(ModBlocks.BLAST_DOOR.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/blast_door_particle"))).addModel();
+        getVariantBuilder(ModBlocks.BLAST_DOOR.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/blast_door_particle"))).addModel();
+        getVariantBuilder(ModBlocks.BLAST_DOOR.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/blast_door_particle"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DETECTOR.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 0).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_detector"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DETECTOR.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 1).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_detector"))).rotationX(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DETECTOR.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 2).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_detector"))).rotationX(90).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DETECTOR.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 3).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/plain"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DETECTOR.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 4).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_detector_aluminum"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DETECTOR.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 5).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_detector_aluminum"))).rotationX(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DETECTOR.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 6).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_detector_aluminum"))).rotationX(90).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DETECTOR.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 7).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/plain"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DETECTOR.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 8).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_detector_out"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DETECTOR.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 9).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_detector_out"))).rotationX(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DETECTOR.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 10).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_detector_out"))).rotationX(90).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DETECTOR.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 11).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/plain"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DETECTOR.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 12).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_detector_out_aluminum"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DETECTOR.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 13).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_detector_out_aluminum"))).rotationX(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DETECTOR.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 14).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_detector_out_aluminum"))).rotationX(90).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DETECTOR.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 15).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/plain"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DRILLED.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 0).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_drilled"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DRILLED.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 1).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_drilled"))).rotationX(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DRILLED.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 2).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_drilled"))).rotationX(90).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DRILLED.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 3).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/plain"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DRILLED.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 4).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_drilled_aluminum"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DRILLED.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 5).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_drilled_aluminum"))).rotationX(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DRILLED.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 6).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_drilled_aluminum"))).rotationX(90).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DRILLED.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 7).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/plain"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DRILLED.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 8).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_drilled"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DRILLED.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 9).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_drilled"))).rotationX(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DRILLED.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 10).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_drilled"))).rotationX(90).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DRILLED.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 11).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/plain"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DRILLED.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 12).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_drilled_aluminum"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DRILLED.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 13).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_drilled_aluminum"))).rotationX(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DRILLED.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 14).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_drilled_aluminum"))).rotationX(90).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DRILLED.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 15).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/plain"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_FUEL.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 0).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_fuel"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_FUEL.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 1).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_fuel"))).rotationX(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_FUEL.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 2).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_fuel"))).rotationX(90).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_FUEL.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 3).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/plain"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_FUEL.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 4).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_fuel_aluminum"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_FUEL.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 5).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_fuel_aluminum"))).rotationX(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_FUEL.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 6).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_fuel_aluminum"))).rotationX(90).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_FUEL.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 7).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/plain"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_FUEL.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 8).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_fuel"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_FUEL.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 9).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_fuel"))).rotationX(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_FUEL.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 10).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_fuel"))).rotationX(90).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_FUEL.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 11).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/plain"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_FUEL.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 12).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_fuel_aluminum"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_FUEL.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 13).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_fuel_aluminum"))).rotationX(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_FUEL.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 14).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_fuel_aluminum"))).rotationX(90).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_FUEL.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 15).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/plain"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_LITHIUM.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 0).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_lithium"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_LITHIUM.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 1).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_lithium"))).rotationX(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_LITHIUM.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 2).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_lithium"))).rotationX(90).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_LITHIUM.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 3).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/plain"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_LITHIUM.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 4).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_lithium_aluminum"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_LITHIUM.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 5).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_lithium_aluminum"))).rotationX(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_LITHIUM.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 6).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_lithium_aluminum"))).rotationX(90).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_LITHIUM.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 7).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/plain"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_LITHIUM.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 8).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_lithium"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_LITHIUM.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 9).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_lithium"))).rotationX(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_LITHIUM.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 10).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_lithium"))).rotationX(90).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_LITHIUM.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 11).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/plain"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_LITHIUM.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 12).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_lithium_aluminum"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_LITHIUM.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 13).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_lithium_aluminum"))).rotationX(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_LITHIUM.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 14).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_lithium_aluminum"))).rotationX(90).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_LITHIUM.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 15).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/plain"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_PLUTONIUM.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 0).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_plutonium"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_PLUTONIUM.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 1).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_plutonium"))).rotationX(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_PLUTONIUM.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 2).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_plutonium"))).rotationX(90).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_PLUTONIUM.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 3).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/plain"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_PLUTONIUM.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 4).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_plutonium_aluminum"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_PLUTONIUM.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 5).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_plutonium_aluminum"))).rotationX(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_PLUTONIUM.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 6).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_plutonium_aluminum"))).rotationX(90).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_PLUTONIUM.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 7).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/plain"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_PLUTONIUM.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 8).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_plutonium"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_PLUTONIUM.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 9).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_plutonium"))).rotationX(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_PLUTONIUM.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 10).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_plutonium"))).rotationX(90).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_PLUTONIUM.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 11).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/plain"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_PLUTONIUM.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 12).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_plutonium_aluminum"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_PLUTONIUM.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 13).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_plutonium_aluminum"))).rotationX(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_PLUTONIUM.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 14).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_plutonium_aluminum"))).rotationX(90).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_PLUTONIUM.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 15).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/plain"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_ROD.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 0).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_rod_in"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_ROD.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 1).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_rod_in"))).rotationX(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_ROD.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 2).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_rod_in"))).rotationX(90).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_ROD.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 3).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/plain"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_ROD.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 4).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_rod_in_aluminum"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_ROD.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 5).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_rod_in_aluminum"))).rotationX(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_ROD.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 6).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_rod_in_aluminum"))).rotationX(90).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_ROD.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 7).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/plain"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_ROD.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 8).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_rod_out"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_ROD.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 9).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_rod_out"))).rotationX(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_ROD.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 10).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_rod_out"))).rotationX(90).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_ROD.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 11).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/plain"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_ROD.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 12).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_rod_out_aluminum"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_ROD.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 13).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_rod_out_aluminum"))).rotationX(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_ROD.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 14).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_rod_out_aluminum"))).rotationX(90).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_ROD.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 15).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/plain"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_SOURCE.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 0).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_source"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_SOURCE.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 1).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_source"))).rotationX(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_SOURCE.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 2).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_source"))).rotationX(90).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_SOURCE.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 3).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/plain"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_SOURCE.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 4).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_source_aluminum"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_SOURCE.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 5).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_source_aluminum"))).rotationX(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_SOURCE.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 6).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_source_aluminum"))).rotationX(90).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_SOURCE.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 7).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/plain"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_SOURCE.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 8).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_source"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_SOURCE.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 9).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_source"))).rotationX(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_SOURCE.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 10).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_source"))).rotationX(90).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_SOURCE.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 11).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/plain"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_SOURCE.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 12).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_source_aluminum"))).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_SOURCE.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 13).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_source_aluminum"))).rotationX(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_SOURCE.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 14).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_source_aluminum"))).rotationX(90).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_SOURCE.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 15).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/plain"))).addModel();
+        getVariantBuilder(ModBlocks.BOAT.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/boat_particle"))).addModel();
+        getVariantBuilder(ModBlocks.BOAT.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/boat_particle"))).addModel();
+        getVariantBuilder(ModBlocks.BOAT.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/boat_particle"))).addModel();
+        getVariantBuilder(ModBlocks.BOAT.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/boat_particle"))).addModel();
+        getVariantBuilder(ModBlocks.BOAT.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/boat_particle"))).addModel();
+        getVariantBuilder(ModBlocks.BOAT.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/boat_particle"))).addModel();
+        getVariantBuilder(ModBlocks.BOBBLEHEAD.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.ROTATION_16, 0).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/bobblehead_particle"))).addModel();
+        getVariantBuilder(ModBlocks.BOBBLEHEAD.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.ROTATION_16, 1).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/bobblehead_particle"))).addModel();
+        getVariantBuilder(ModBlocks.BOBBLEHEAD.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.ROTATION_16, 2).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/bobblehead_particle"))).addModel();
+        getVariantBuilder(ModBlocks.BOBBLEHEAD.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.ROTATION_16, 3).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/bobblehead_particle"))).addModel();
+        getVariantBuilder(ModBlocks.BOBBLEHEAD.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.ROTATION_16, 4).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/bobblehead_particle"))).addModel();
+        getVariantBuilder(ModBlocks.BOBBLEHEAD.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.ROTATION_16, 5).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/bobblehead_particle"))).addModel();
+        getVariantBuilder(ModBlocks.BOBBLEHEAD.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.ROTATION_16, 6).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/bobblehead_particle"))).addModel();
+        getVariantBuilder(ModBlocks.BOBBLEHEAD.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.ROTATION_16, 7).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/bobblehead_particle"))).addModel();
+        getVariantBuilder(ModBlocks.BOBBLEHEAD.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.ROTATION_16, 8).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/bobblehead_particle"))).addModel();
+        getVariantBuilder(ModBlocks.BOBBLEHEAD.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.ROTATION_16, 9).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/bobblehead_particle"))).addModel();
+        getVariantBuilder(ModBlocks.BOBBLEHEAD.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.ROTATION_16, 10).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/bobblehead_particle"))).addModel();
+        getVariantBuilder(ModBlocks.BOBBLEHEAD.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.ROTATION_16, 11).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/bobblehead_particle"))).addModel();
+        getVariantBuilder(ModBlocks.BOBBLEHEAD.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.ROTATION_16, 12).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/bobblehead_particle"))).addModel();
+        getVariantBuilder(ModBlocks.BOBBLEHEAD.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.ROTATION_16, 13).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/bobblehead_particle"))).addModel();
+        getVariantBuilder(ModBlocks.BOBBLEHEAD.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.ROTATION_16, 14).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/bobblehead_particle"))).addModel();
+        getVariantBuilder(ModBlocks.BOBBLEHEAD.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.ROTATION_16, 15).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/bobblehead_particle"))).addModel();
+        getVariantBuilder(ModBlocks.BRICK_FORGOTTEN_LOCK.get()).partialState().with(com.hbm_m.block.generic.ForgottenBricks.Lock.META, 0).modelForState().modelFile(models().getExistingFile(modLoc("block/brick_forgotten_lock_0"))).addModel();
+        getVariantBuilder(ModBlocks.BRICK_FORGOTTEN_LOCK.get()).partialState().with(com.hbm_m.block.generic.ForgottenBricks.Lock.META, 1).modelForState().modelFile(models().getExistingFile(modLoc("block/brick_forgotten_lock_1"))).addModel();
+        getVariantBuilder(ModBlocks.BRICK_FORGOTTEN_LOCK.get()).partialState().with(com.hbm_m.block.generic.ForgottenBricks.Lock.META, 2).modelForState().modelFile(models().getExistingFile(modLoc("block/brick_forgotten_lock_2"))).addModel();
+        getVariantBuilder(ModBlocks.BRICK_FORGOTTEN_LOCK.get()).partialState().with(com.hbm_m.block.generic.ForgottenBricks.Lock.META, 3).modelForState().modelFile(models().getExistingFile(modLoc("block/brick_forgotten_lock_3"))).addModel();
+        getVariantBuilder(ModBlocks.BRICK_JUNGLE_GLYPH.get()).partialState().with(com.hbm_m.block.generic.JungleBricks.Glyph.GLYPH, 0).modelForState().modelFile(models().getExistingFile(modLoc("block/brick_jungle_glyph_0"))).addModel();
+        getVariantBuilder(ModBlocks.BRICK_JUNGLE_GLYPH.get()).partialState().with(com.hbm_m.block.generic.JungleBricks.Glyph.GLYPH, 1).modelForState().modelFile(models().getExistingFile(modLoc("block/brick_jungle_glyph_1"))).addModel();
+        getVariantBuilder(ModBlocks.BRICK_JUNGLE_GLYPH.get()).partialState().with(com.hbm_m.block.generic.JungleBricks.Glyph.GLYPH, 2).modelForState().modelFile(models().getExistingFile(modLoc("block/brick_jungle_glyph_2"))).addModel();
+        getVariantBuilder(ModBlocks.BRICK_JUNGLE_GLYPH.get()).partialState().with(com.hbm_m.block.generic.JungleBricks.Glyph.GLYPH, 3).modelForState().modelFile(models().getExistingFile(modLoc("block/brick_jungle_glyph_3"))).addModel();
+        getVariantBuilder(ModBlocks.BRICK_JUNGLE_GLYPH.get()).partialState().with(com.hbm_m.block.generic.JungleBricks.Glyph.GLYPH, 4).modelForState().modelFile(models().getExistingFile(modLoc("block/brick_jungle_glyph_4"))).addModel();
+        getVariantBuilder(ModBlocks.BRICK_JUNGLE_GLYPH.get()).partialState().with(com.hbm_m.block.generic.JungleBricks.Glyph.GLYPH, 5).modelForState().modelFile(models().getExistingFile(modLoc("block/brick_jungle_glyph_5"))).addModel();
+        getVariantBuilder(ModBlocks.BRICK_JUNGLE_GLYPH.get()).partialState().with(com.hbm_m.block.generic.JungleBricks.Glyph.GLYPH, 6).modelForState().modelFile(models().getExistingFile(modLoc("block/brick_jungle_glyph_6"))).addModel();
+        getVariantBuilder(ModBlocks.BRICK_JUNGLE_GLYPH.get()).partialState().with(com.hbm_m.block.generic.JungleBricks.Glyph.GLYPH, 7).modelForState().modelFile(models().getExistingFile(modLoc("block/brick_jungle_glyph_7"))).addModel();
+        getVariantBuilder(ModBlocks.BRICK_JUNGLE_GLYPH.get()).partialState().with(com.hbm_m.block.generic.JungleBricks.Glyph.GLYPH, 8).modelForState().modelFile(models().getExistingFile(modLoc("block/brick_jungle_glyph_8"))).addModel();
+        getVariantBuilder(ModBlocks.BRICK_JUNGLE_GLYPH.get()).partialState().with(com.hbm_m.block.generic.JungleBricks.Glyph.GLYPH, 9).modelForState().modelFile(models().getExistingFile(modLoc("block/brick_jungle_glyph_9"))).addModel();
+        getVariantBuilder(ModBlocks.BRICK_JUNGLE_GLYPH.get()).partialState().with(com.hbm_m.block.generic.JungleBricks.Glyph.GLYPH, 10).modelForState().modelFile(models().getExistingFile(modLoc("block/brick_jungle_glyph_10"))).addModel();
+        getVariantBuilder(ModBlocks.BRICK_JUNGLE_GLYPH.get()).partialState().with(com.hbm_m.block.generic.JungleBricks.Glyph.GLYPH, 11).modelForState().modelFile(models().getExistingFile(modLoc("block/brick_jungle_glyph_11"))).addModel();
+        getVariantBuilder(ModBlocks.BRICK_JUNGLE_GLYPH.get()).partialState().with(com.hbm_m.block.generic.JungleBricks.Glyph.GLYPH, 12).modelForState().modelFile(models().getExistingFile(modLoc("block/brick_jungle_glyph_12"))).addModel();
+        getVariantBuilder(ModBlocks.BRICK_JUNGLE_GLYPH.get()).partialState().with(com.hbm_m.block.generic.JungleBricks.Glyph.GLYPH, 13).modelForState().modelFile(models().getExistingFile(modLoc("block/brick_jungle_glyph_13"))).addModel();
+        getVariantBuilder(ModBlocks.BRICK_JUNGLE_GLYPH.get()).partialState().with(com.hbm_m.block.generic.JungleBricks.Glyph.GLYPH, 14).modelForState().modelFile(models().getExistingFile(modLoc("block/brick_jungle_glyph_14"))).addModel();
+        getVariantBuilder(ModBlocks.BRICK_JUNGLE_GLYPH.get()).partialState().with(com.hbm_m.block.generic.JungleBricks.Glyph.GLYPH, 15).modelForState().modelFile(models().getExistingFile(modLoc("block/brick_jungle_glyph_15"))).addModel();
+        customObjBlockNoFacing(ModBlocks.BROADCASTER);
+        // cargo_elevator.json — CargoElevatorBlock has no blockstate properties; single model block/cargo_elevator
+        customObjBlockNoFacing(ModBlocks.CARGO_ELEVATOR);
+        // conveyor.json — ConveyorBlock (ConveyorBlockBase.FACING + ConveyorBendableBlock.BEND), 12 variants
+        getVariantBuilder(ModBlocks.CONVEYOR.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.NORTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor"))).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.NORTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_curve_left"))).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.NORTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_curve_right"))).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.EAST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.EAST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_curve_left"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.EAST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_curve_right"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.SOUTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.SOUTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_curve_left"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.SOUTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_curve_right"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.WEST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.WEST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_curve_left"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.WEST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_curve_right"))).rotationY(270).addModel();
+        // conveyor_chute.json — ConveyorChuteBlock (ConveyorBlockBase.FACING only), single model
+        getVariantBuilder(ModBlocks.CONVEYOR_CHUTE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_chute"))).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_CHUTE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_chute"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_CHUTE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_chute"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_CHUTE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_chute"))).rotationY(270).addModel();
+        // conveyor_double.json — ConveyorDoubleBlock, 12 variants
+        getVariantBuilder(ModBlocks.CONVEYOR_DOUBLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.NORTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_double"))).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_DOUBLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.NORTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_double_curve_left"))).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_DOUBLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.NORTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_double_curve_right"))).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_DOUBLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.EAST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_double"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_DOUBLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.EAST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_double_curve_left"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_DOUBLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.EAST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_double_curve_right"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_DOUBLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.SOUTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_double"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_DOUBLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.SOUTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_double_curve_left"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_DOUBLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.SOUTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_double_curve_right"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_DOUBLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.WEST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_double"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_DOUBLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.WEST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_double_curve_left"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_DOUBLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.WEST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_double_curve_right"))).rotationY(270).addModel();
+        // conveyor_express.json — ConveyorExpressBlock, 12 variants
+        getVariantBuilder(ModBlocks.CONVEYOR_EXPRESS.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.NORTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_express"))).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_EXPRESS.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.NORTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_express_curve_left"))).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_EXPRESS.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.NORTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_express_curve_right"))).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_EXPRESS.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.EAST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_express"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_EXPRESS.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.EAST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_express_curve_left"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_EXPRESS.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.EAST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_express_curve_right"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_EXPRESS.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.SOUTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_express"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_EXPRESS.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.SOUTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_express_curve_left"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_EXPRESS.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.SOUTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_express_curve_right"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_EXPRESS.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.WEST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_express"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_EXPRESS.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.WEST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_express_curve_left"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_EXPRESS.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.WEST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_express_curve_right"))).rotationY(270).addModel();
+        // conveyor_lift.json — ConveyorLiftBlock (ConveyorBlockBase.FACING only), single model
+        getVariantBuilder(ModBlocks.CONVEYOR_LIFT.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_lift"))).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_LIFT.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_lift"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_LIFT.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_lift"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_LIFT.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_lift"))).rotationY(270).addModel();
+        // conveyor_triple.json — ConveyorTripleBlock, 12 variants
+        getVariantBuilder(ModBlocks.CONVEYOR_TRIPLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.NORTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_triple"))).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_TRIPLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.NORTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_triple_curve_left"))).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_TRIPLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.NORTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_triple_curve_right"))).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_TRIPLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.EAST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_triple"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_TRIPLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.EAST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_triple_curve_left"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_TRIPLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.EAST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_triple_curve_right"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_TRIPLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.SOUTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_triple"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_TRIPLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.SOUTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_triple_curve_left"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_TRIPLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.SOUTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_triple_curve_right"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_TRIPLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.WEST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_triple"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_TRIPLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.WEST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_triple_curve_left"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.CONVEYOR_TRIPLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.WEST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_triple_curve_right"))).rotationY(270).addModel();
+        // crt_blinking.json — DecoObjBlock (HORIZONTAL_FACING); json rotation map: south=270, west=0, north=90, east=180
+        getVariantBuilder(ModBlocks.CRT_BLINKING.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/crt_blinking"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.CRT_BLINKING.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/crt_blinking"))).addModel();
+        getVariantBuilder(ModBlocks.CRT_BLINKING.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/crt_blinking"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.CRT_BLINKING.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/crt_blinking"))).rotationY(180).addModel();
+        // crt_broken.json
+        getVariantBuilder(ModBlocks.CRT_BROKEN.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/crt_broken"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.CRT_BROKEN.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/crt_broken"))).addModel();
+        getVariantBuilder(ModBlocks.CRT_BROKEN.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/crt_broken"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.CRT_BROKEN.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/crt_broken"))).rotationY(180).addModel();
+        // crt_bsod.json
+        getVariantBuilder(ModBlocks.CRT_BSOD.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/crt_bsod"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.CRT_BSOD.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/crt_bsod"))).addModel();
+        getVariantBuilder(ModBlocks.CRT_BSOD.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/crt_bsod"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.CRT_BSOD.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/crt_bsod"))).rotationY(180).addModel();
+        // crt_clean.json
+        getVariantBuilder(ModBlocks.CRT_CLEAN.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/crt_clean"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.CRT_CLEAN.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/crt_clean"))).addModel();
+        getVariantBuilder(ModBlocks.CRT_CLEAN.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/crt_clean"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.CRT_CLEAN.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/crt_clean"))).rotationY(180).addModel();
+        // crucible.json — MachineCrucibleBlock inherits DummyableMachineBlock.FACING (HorizontalDirectionalBlock.FACING)
+        getVariantBuilder(ModBlocks.CRUCIBLE.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/crucible"))).addModel();
+        getVariantBuilder(ModBlocks.CRUCIBLE.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/crucible"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.CRUCIBLE.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/crucible"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.CRUCIBLE.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/crucible"))).rotationY(90).addModel();
+        // deco_emitter.json — EmitterBlock.FACING = BlockStateProperties.FACING (all 6), all variants same model, no rotation
+        getVariantBuilder(ModBlocks.DECO_EMITTER.get()).partialState().with(com.hbm_m.block.decorations.EmitterBlock.FACING, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/deco_emitter"))).addModel();
+        getVariantBuilder(ModBlocks.DECO_EMITTER.get()).partialState().with(com.hbm_m.block.decorations.EmitterBlock.FACING, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/deco_emitter"))).addModel();
+        getVariantBuilder(ModBlocks.DECO_EMITTER.get()).partialState().with(com.hbm_m.block.decorations.EmitterBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/deco_emitter"))).addModel();
+        getVariantBuilder(ModBlocks.DECO_EMITTER.get()).partialState().with(com.hbm_m.block.decorations.EmitterBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/deco_emitter"))).addModel();
+        getVariantBuilder(ModBlocks.DECO_EMITTER.get()).partialState().with(com.hbm_m.block.decorations.EmitterBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/deco_emitter"))).addModel();
+        getVariantBuilder(ModBlocks.DECO_EMITTER.get()).partialState().with(com.hbm_m.block.decorations.EmitterBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/deco_emitter"))).addModel();
+        // cage_lamp.json — SpotlightBlock.FACING (all 6) + SpotlightBlock.BROKEN; model per facing, no rotation; broken=true/false share the model
+        getVariantBuilder(ModBlocks.CAGE_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, false).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/cage_lamp_down"))).addModel();
+        getVariantBuilder(ModBlocks.CAGE_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, true).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/cage_lamp_down"))).addModel();
+        getVariantBuilder(ModBlocks.CAGE_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, false).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/cage_lamp_up"))).addModel();
+        getVariantBuilder(ModBlocks.CAGE_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, true).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/cage_lamp_up"))).addModel();
+        getVariantBuilder(ModBlocks.CAGE_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, false).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/cage_lamp_north"))).addModel();
+        getVariantBuilder(ModBlocks.CAGE_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, true).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/cage_lamp_north"))).addModel();
+        getVariantBuilder(ModBlocks.CAGE_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, false).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/cage_lamp_south"))).addModel();
+        getVariantBuilder(ModBlocks.CAGE_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, true).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/cage_lamp_south"))).addModel();
+        getVariantBuilder(ModBlocks.CAGE_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, false).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/cage_lamp_west"))).addModel();
+        getVariantBuilder(ModBlocks.CAGE_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, true).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/cage_lamp_west"))).addModel();
+        getVariantBuilder(ModBlocks.CAGE_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, false).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/cage_lamp_east"))).addModel();
+        getVariantBuilder(ModBlocks.CAGE_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, true).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/cage_lamp_east"))).addModel();
+        // cage_lamp_off.json — same SpotlightBlock properties, off model set
+        getVariantBuilder(ModBlocks.CAGE_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, false).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/cage_lamp_off_down"))).addModel();
+        getVariantBuilder(ModBlocks.CAGE_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, true).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/cage_lamp_off_down"))).addModel();
+        getVariantBuilder(ModBlocks.CAGE_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, false).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/cage_lamp_off_up"))).addModel();
+        getVariantBuilder(ModBlocks.CAGE_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, true).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/cage_lamp_off_up"))).addModel();
+        getVariantBuilder(ModBlocks.CAGE_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, false).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/cage_lamp_off_north"))).addModel();
+        getVariantBuilder(ModBlocks.CAGE_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, true).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/cage_lamp_off_north"))).addModel();
+        getVariantBuilder(ModBlocks.CAGE_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, false).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/cage_lamp_off_south"))).addModel();
+        getVariantBuilder(ModBlocks.CAGE_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, true).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/cage_lamp_off_south"))).addModel();
+        getVariantBuilder(ModBlocks.CAGE_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, false).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/cage_lamp_off_west"))).addModel();
+        getVariantBuilder(ModBlocks.CAGE_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, true).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/cage_lamp_off_west"))).addModel();
+        getVariantBuilder(ModBlocks.CAGE_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, false).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/cage_lamp_off_east"))).addModel();
+        getVariantBuilder(ModBlocks.CAGE_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, true).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/cage_lamp_off_east"))).addModel();
+        // deco_pipe_green.json (DecoPipeBlock extends RotatedPillarBlock -> AXIS only)
+        getVariantBuilder(ModBlocks.DECO_PIPE_GREEN.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS, Direction.Axis.X).modelForState().modelFile(models().getExistingFile(modLoc("block/pipes/deco_pipe_green_x"))).addModel();
+        getVariantBuilder(ModBlocks.DECO_PIPE_GREEN.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS, Direction.Axis.Y).modelForState().modelFile(models().getExistingFile(modLoc("block/pipes/deco_pipe_green_y"))).addModel();
+        getVariantBuilder(ModBlocks.DECO_PIPE_GREEN.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS, Direction.Axis.Z).modelForState().modelFile(models().getExistingFile(modLoc("block/pipes/deco_pipe_green_z"))).addModel();
+        // deco_pipe_green_rusted.json
+        getVariantBuilder(ModBlocks.DECO_PIPE_GREEN_RUSTED.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS, Direction.Axis.X).modelForState().modelFile(models().getExistingFile(modLoc("block/pipes/deco_pipe_green_rusted_x"))).addModel();
+        getVariantBuilder(ModBlocks.DECO_PIPE_GREEN_RUSTED.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS, Direction.Axis.Y).modelForState().modelFile(models().getExistingFile(modLoc("block/pipes/deco_pipe_green_rusted_y"))).addModel();
+        getVariantBuilder(ModBlocks.DECO_PIPE_GREEN_RUSTED.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS, Direction.Axis.Z).modelForState().modelFile(models().getExistingFile(modLoc("block/pipes/deco_pipe_green_rusted_z"))).addModel();
+        // deco_pipe_quad_green.json
+        getVariantBuilder(ModBlocks.DECO_PIPE_QUAD_GREEN.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS, Direction.Axis.X).modelForState().modelFile(models().getExistingFile(modLoc("block/pipes/deco_pipe_quad_green_x"))).addModel();
+        getVariantBuilder(ModBlocks.DECO_PIPE_QUAD_GREEN.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS, Direction.Axis.Y).modelForState().modelFile(models().getExistingFile(modLoc("block/pipes/deco_pipe_quad_green_y"))).addModel();
+        getVariantBuilder(ModBlocks.DECO_PIPE_QUAD_GREEN.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS, Direction.Axis.Z).modelForState().modelFile(models().getExistingFile(modLoc("block/pipes/deco_pipe_quad_green_z"))).addModel();
+        // deco_pipe_quad_green_rusted.json
+        getVariantBuilder(ModBlocks.DECO_PIPE_QUAD_GREEN_RUSTED.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS, Direction.Axis.X).modelForState().modelFile(models().getExistingFile(modLoc("block/pipes/deco_pipe_quad_green_rusted_x"))).addModel();
+        getVariantBuilder(ModBlocks.DECO_PIPE_QUAD_GREEN_RUSTED.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS, Direction.Axis.Y).modelForState().modelFile(models().getExistingFile(modLoc("block/pipes/deco_pipe_quad_green_rusted_y"))).addModel();
+        getVariantBuilder(ModBlocks.DECO_PIPE_QUAD_GREEN_RUSTED.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS, Direction.Axis.Z).modelForState().modelFile(models().getExistingFile(modLoc("block/pipes/deco_pipe_quad_green_rusted_z"))).addModel();
+        // deco_pipe_rim_green.json
+        getVariantBuilder(ModBlocks.DECO_PIPE_RIM_GREEN.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS, Direction.Axis.X).modelForState().modelFile(models().getExistingFile(modLoc("block/pipes/deco_pipe_rim_green_x"))).addModel();
+        getVariantBuilder(ModBlocks.DECO_PIPE_RIM_GREEN.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS, Direction.Axis.Y).modelForState().modelFile(models().getExistingFile(modLoc("block/pipes/deco_pipe_rim_green_y"))).addModel();
+        getVariantBuilder(ModBlocks.DECO_PIPE_RIM_GREEN.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS, Direction.Axis.Z).modelForState().modelFile(models().getExistingFile(modLoc("block/pipes/deco_pipe_rim_green_z"))).addModel();
+        // deco_pipe_rim_green_rusted.json
+        getVariantBuilder(ModBlocks.DECO_PIPE_RIM_GREEN_RUSTED.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS, Direction.Axis.X).modelForState().modelFile(models().getExistingFile(modLoc("block/pipes/deco_pipe_rim_green_rusted_x"))).addModel();
+        getVariantBuilder(ModBlocks.DECO_PIPE_RIM_GREEN_RUSTED.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS, Direction.Axis.Y).modelForState().modelFile(models().getExistingFile(modLoc("block/pipes/deco_pipe_rim_green_rusted_y"))).addModel();
+        getVariantBuilder(ModBlocks.DECO_PIPE_RIM_GREEN_RUSTED.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS, Direction.Axis.Z).modelForState().modelFile(models().getExistingFile(modLoc("block/pipes/deco_pipe_rim_green_rusted_z"))).addModel();
+        // deco_pipe_rim_red.json
+        getVariantBuilder(ModBlocks.DECO_PIPE_RIM_RED.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS, Direction.Axis.X).modelForState().modelFile(models().getExistingFile(modLoc("block/pipes/deco_pipe_rim_red_x"))).addModel();
+        getVariantBuilder(ModBlocks.DECO_PIPE_RIM_RED.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS, Direction.Axis.Y).modelForState().modelFile(models().getExistingFile(modLoc("block/pipes/deco_pipe_rim_red_y"))).addModel();
+        getVariantBuilder(ModBlocks.DECO_PIPE_RIM_RED.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS, Direction.Axis.Z).modelForState().modelFile(models().getExistingFile(modLoc("block/pipes/deco_pipe_rim_red_z"))).addModel();
+        // deco_pipe_framed_green.json
+        getVariantBuilder(ModBlocks.DECO_PIPE_FRAMED_GREEN.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS, Direction.Axis.X).modelForState().modelFile(models().getExistingFile(modLoc("block/pipes/deco_pipe_framed_green_x"))).addModel();
+        getVariantBuilder(ModBlocks.DECO_PIPE_FRAMED_GREEN.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS, Direction.Axis.Y).modelForState().modelFile(models().getExistingFile(modLoc("block/pipes/deco_pipe_framed_green_y"))).addModel();
+        getVariantBuilder(ModBlocks.DECO_PIPE_FRAMED_GREEN.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS, Direction.Axis.Z).modelForState().modelFile(models().getExistingFile(modLoc("block/pipes/deco_pipe_framed_green_z"))).addModel();
+        // deco_pipe_framed_marked.json
+        getVariantBuilder(ModBlocks.DECO_PIPE_FRAMED_MARKED.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS, Direction.Axis.X).modelForState().modelFile(models().getExistingFile(modLoc("block/pipes/deco_pipe_framed_marked_x"))).addModel();
+        getVariantBuilder(ModBlocks.DECO_PIPE_FRAMED_MARKED.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS, Direction.Axis.Y).modelForState().modelFile(models().getExistingFile(modLoc("block/pipes/deco_pipe_framed_marked_y"))).addModel();
+        getVariantBuilder(ModBlocks.DECO_PIPE_FRAMED_MARKED.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS, Direction.Axis.Z).modelForState().modelFile(models().getExistingFile(modLoc("block/pipes/deco_pipe_framed_marked_z"))).addModel();
+        // det_charge.json (ExplosiveCharge -> BlockDetonatable -> BlockFlammable -> Block, no properties; single variant;
+        // customObjBlockNoFacing not usable because it derives model path "block/det_charge" but the model lives at "block/bomb/det_charge")
+        getVariantBuilder(ModBlocks.DET_CHARGE.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/bomb/det_charge"))).addModel();
+        // det_cord — DetCordBlock uses PipeBlock.PROPERTY_BY_DIRECTION (BlockStateProperties NORTH/SOUTH/EAST/WEST/UP/DOWN);
+        // hand-written json is multipart with OR-groups; the AND/OR forms below were verified equivalent on all 64 states.
+        var dcB = ModBlocks.DET_CORD.get();
+        var dcN = net.minecraft.world.level.block.state.properties.BlockStateProperties.NORTH;
+        var dcS = net.minecraft.world.level.block.state.properties.BlockStateProperties.SOUTH;
+        var dcE = net.minecraft.world.level.block.state.properties.BlockStateProperties.EAST;
+        var dcW = net.minecraft.world.level.block.state.properties.BlockStateProperties.WEST;
+        var dcU = net.minecraft.world.level.block.state.properties.BlockStateProperties.UP;
+        var dcD = net.minecraft.world.level.block.state.properties.BlockStateProperties.DOWN;
+        var dcb = getMultipartBuilder(dcB);
+        // cx: (east|west) and not(north|south|up|down)
+        dcb.part().modelFile(models().getExistingFile(modLoc("block/bomb/det_cord_cx"))).addModel()
+            .nestedGroup().useOr().condition(dcE, true).condition(dcW, true).end()
+            .nestedGroup().useOr().condition(dcN, false).condition(dcS, false).condition(dcU, false).condition(dcD, false).end()
+            .end();
+        // cy: (up|down) and not(east|west|north|south)
+        dcb.part().modelFile(models().getExistingFile(modLoc("block/bomb/det_cord_cy"))).addModel()
+            .nestedGroup().useOr().condition(dcU, true).condition(dcD, true).end()
+            .nestedGroup().useOr().condition(dcE, false).condition(dcW, false).condition(dcN, false).condition(dcS, false).end()
+            .end();
+        // cz: (north|south) and not(east|west|up|down)
+        dcb.part().modelFile(models().getExistingFile(modLoc("block/bomb/det_cord_cz"))).addModel()
+            .nestedGroup().useOr().condition(dcN, true).condition(dcS, true).end()
+            .nestedGroup().useOr().condition(dcE, false).condition(dcW, false).condition(dcU, false).condition(dcD, false).end()
+            .end();
+        // core: not(cx|cy|cz) == AND of the three negated axis-corner groups (verified: 55 of 64 states, exactly the json's OR-list)
+        dcb.part().modelFile(models().getExistingFile(modLoc("block/bomb/det_cord_core"))).addModel()
+            .nestedGroup().useOr()
+                .nestedGroup().condition(dcN, false).condition(dcS, false).endNestedGroup()
+                .nestedGroup().condition(dcE, true).endNestedGroup()
+                .nestedGroup().condition(dcW, true).endNestedGroup()
+                .nestedGroup().condition(dcU, true).endNestedGroup()
+                .nestedGroup().condition(dcD, true).endNestedGroup()
+            .end()
+            .nestedGroup().useOr()
+                .nestedGroup().condition(dcU, false).condition(dcD, false).endNestedGroup()
+                .nestedGroup().condition(dcE, true).endNestedGroup()
+                .nestedGroup().condition(dcW, true).endNestedGroup()
+                .nestedGroup().condition(dcN, true).endNestedGroup()
+                .nestedGroup().condition(dcS, true).endNestedGroup()
+            .end()
+            .nestedGroup().useOr()
+                .nestedGroup().condition(dcE, false).condition(dcW, false).endNestedGroup()
+                .nestedGroup().condition(dcN, true).endNestedGroup()
+                .nestedGroup().condition(dcS, true).endNestedGroup()
+                .nestedGroup().condition(dcU, true).endNestedGroup()
+                .nestedGroup().condition(dcD, true).endNestedGroup()
+            .end()
+            .end();
+        // posx: east and (north|south|up|down)
+        dcb.part().modelFile(models().getExistingFile(modLoc("block/bomb/det_cord_posx"))).addModel()
+            .nestedGroup().condition(dcE, true).end()
+            .nestedGroup().useOr().condition(dcN, true).condition(dcS, true).condition(dcU, true).condition(dcD, true).end()
+            .end();
+        // negx: west and (north|south|up|down)
+        dcb.part().modelFile(models().getExistingFile(modLoc("block/bomb/det_cord_negx"))).addModel()
+            .nestedGroup().condition(dcW, true).end()
+            .nestedGroup().useOr().condition(dcN, true).condition(dcS, true).condition(dcU, true).condition(dcD, true).end()
+            .end();
+        // posy: up and (east|west|north|south)
+        dcb.part().modelFile(models().getExistingFile(modLoc("block/bomb/det_cord_posy"))).addModel()
+            .nestedGroup().condition(dcU, true).end()
+            .nestedGroup().useOr().condition(dcE, true).condition(dcW, true).condition(dcN, true).condition(dcS, true).end()
+            .end();
+        // negy: down and (east|west|north|south)
+        dcb.part().modelFile(models().getExistingFile(modLoc("block/bomb/det_cord_negy"))).addModel()
+            .nestedGroup().condition(dcD, true).end()
+            .nestedGroup().useOr().condition(dcE, true).condition(dcW, true).condition(dcN, true).condition(dcS, true).end()
+            .end();
+        // posz (json semantics): north and (east|west|up|down)
+        dcb.part().modelFile(models().getExistingFile(modLoc("block/bomb/det_cord_posz"))).addModel()
+            .nestedGroup().condition(dcN, true).end()
+            .nestedGroup().useOr().condition(dcE, true).condition(dcW, true).condition(dcU, true).condition(dcD, true).end()
+            .end();
+        // negz (json semantics): south and (east|west|up|down)
+        dcb.part().modelFile(models().getExistingFile(modLoc("block/bomb/det_cord_negz"))).addModel()
+            .nestedGroup().condition(dcS, true).end()
+            .nestedGroup().useOr().condition(dcE, true).condition(dcW, true).condition(dcU, true).condition(dcD, true).end()
+            .end();
+        // det_nuke — ExplosiveCharge (no blockstate properties), single variant
+        getVariantBuilder(ModBlocks.DET_NUKE.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/bomb/det_nuke"))).addModel();
+        // deuterium_tower — MachineDeuteriumTowerBlock.FACING (horizontal); model lives under machines/, so customObjBlockRotated's
+        // id-derived path would not resolve; explicit form with the json's y rotations.
+        getVariantBuilder(ModBlocks.DEUTERIUM_TOWER.get()).partialState().with(com.hbm_m.block.machines.MachineDeuteriumTowerBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/deuterium_tower"))).rotationY(0).addModel();
+        getVariantBuilder(ModBlocks.DEUTERIUM_TOWER.get()).partialState().with(com.hbm_m.block.machines.MachineDeuteriumTowerBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/deuterium_tower"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.DEUTERIUM_TOWER.get()).partialState().with(com.hbm_m.block.machines.MachineDeuteriumTowerBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/deuterium_tower"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.DEUTERIUM_TOWER.get()).partialState().with(com.hbm_m.block.machines.MachineDeuteriumTowerBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/deuterium_tower"))).rotationY(90).addModel();
+        // door_red — BlockModDoor extends vanilla DoorBlock (FACING/HALF/HINGE/OPEN; POWERED not keyed in json)
+        var drF = net.minecraft.world.level.block.DoorBlock.FACING;
+        var drH = net.minecraft.world.level.block.state.properties.BlockStateProperties.DOUBLE_BLOCK_HALF;
+        var drG = net.minecraft.world.level.block.state.properties.BlockStateProperties.DOOR_HINGE;
+        var drO = net.minecraft.world.level.block.DoorBlock.OPEN;
+        getVariantBuilder(ModBlocks.DOOR_RED_BLOCK.get()).partialState().with(drF, Direction.EAST).with(drH, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER).with(drG, net.minecraft.world.level.block.state.properties.DoorHingeSide.LEFT).with(drO, false).modelForState().modelFile(models().getExistingFile(modLoc("block/door_red_bottom_left"))).rotationY(0).addModel();
+        getVariantBuilder(ModBlocks.DOOR_RED_BLOCK.get()).partialState().with(drF, Direction.EAST).with(drH, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER).with(drG, net.minecraft.world.level.block.state.properties.DoorHingeSide.LEFT).with(drO, true).modelForState().modelFile(models().getExistingFile(modLoc("block/door_red_bottom_left_open"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.DOOR_RED_BLOCK.get()).partialState().with(drF, Direction.EAST).with(drH, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER).with(drG, net.minecraft.world.level.block.state.properties.DoorHingeSide.RIGHT).with(drO, false).modelForState().modelFile(models().getExistingFile(modLoc("block/door_red_bottom_right"))).rotationY(0).addModel();
+        getVariantBuilder(ModBlocks.DOOR_RED_BLOCK.get()).partialState().with(drF, Direction.EAST).with(drH, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER).with(drG, net.minecraft.world.level.block.state.properties.DoorHingeSide.RIGHT).with(drO, true).modelForState().modelFile(models().getExistingFile(modLoc("block/door_red_bottom_right_open"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.DOOR_RED_BLOCK.get()).partialState().with(drF, Direction.EAST).with(drH, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER).with(drG, net.minecraft.world.level.block.state.properties.DoorHingeSide.LEFT).with(drO, false).modelForState().modelFile(models().getExistingFile(modLoc("block/door_red_top_left"))).rotationY(0).addModel();
+        getVariantBuilder(ModBlocks.DOOR_RED_BLOCK.get()).partialState().with(drF, Direction.EAST).with(drH, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER).with(drG, net.minecraft.world.level.block.state.properties.DoorHingeSide.LEFT).with(drO, true).modelForState().modelFile(models().getExistingFile(modLoc("block/door_red_top_left_open"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.DOOR_RED_BLOCK.get()).partialState().with(drF, Direction.EAST).with(drH, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER).with(drG, net.minecraft.world.level.block.state.properties.DoorHingeSide.RIGHT).with(drO, false).modelForState().modelFile(models().getExistingFile(modLoc("block/door_red_top_right"))).rotationY(0).addModel();
+        getVariantBuilder(ModBlocks.DOOR_RED_BLOCK.get()).partialState().with(drF, Direction.EAST).with(drH, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER).with(drG, net.minecraft.world.level.block.state.properties.DoorHingeSide.RIGHT).with(drO, true).modelForState().modelFile(models().getExistingFile(modLoc("block/door_red_top_right_open"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.DOOR_RED_BLOCK.get()).partialState().with(drF, Direction.NORTH).with(drH, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER).with(drG, net.minecraft.world.level.block.state.properties.DoorHingeSide.LEFT).with(drO, false).modelForState().modelFile(models().getExistingFile(modLoc("block/door_red_bottom_left"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.DOOR_RED_BLOCK.get()).partialState().with(drF, Direction.NORTH).with(drH, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER).with(drG, net.minecraft.world.level.block.state.properties.DoorHingeSide.LEFT).with(drO, true).modelForState().modelFile(models().getExistingFile(modLoc("block/door_red_bottom_left_open"))).rotationY(0).addModel();
+        getVariantBuilder(ModBlocks.DOOR_RED_BLOCK.get()).partialState().with(drF, Direction.NORTH).with(drH, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER).with(drG, net.minecraft.world.level.block.state.properties.DoorHingeSide.RIGHT).with(drO, false).modelForState().modelFile(models().getExistingFile(modLoc("block/door_red_bottom_right"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.DOOR_RED_BLOCK.get()).partialState().with(drF, Direction.NORTH).with(drH, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER).with(drG, net.minecraft.world.level.block.state.properties.DoorHingeSide.RIGHT).with(drO, true).modelForState().modelFile(models().getExistingFile(modLoc("block/door_red_bottom_right_open"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.DOOR_RED_BLOCK.get()).partialState().with(drF, Direction.NORTH).with(drH, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER).with(drG, net.minecraft.world.level.block.state.properties.DoorHingeSide.LEFT).with(drO, false).modelForState().modelFile(models().getExistingFile(modLoc("block/door_red_top_left"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.DOOR_RED_BLOCK.get()).partialState().with(drF, Direction.NORTH).with(drH, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER).with(drG, net.minecraft.world.level.block.state.properties.DoorHingeSide.LEFT).with(drO, true).modelForState().modelFile(models().getExistingFile(modLoc("block/door_red_top_left_open"))).rotationY(0).addModel();
+        getVariantBuilder(ModBlocks.DOOR_RED_BLOCK.get()).partialState().with(drF, Direction.NORTH).with(drH, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER).with(drG, net.minecraft.world.level.block.state.properties.DoorHingeSide.RIGHT).with(drO, false).modelForState().modelFile(models().getExistingFile(modLoc("block/door_red_top_right"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.DOOR_RED_BLOCK.get()).partialState().with(drF, Direction.NORTH).with(drH, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER).with(drG, net.minecraft.world.level.block.state.properties.DoorHingeSide.RIGHT).with(drO, true).modelForState().modelFile(models().getExistingFile(modLoc("block/door_red_top_right_open"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.DOOR_RED_BLOCK.get()).partialState().with(drF, Direction.SOUTH).with(drH, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER).with(drG, net.minecraft.world.level.block.state.properties.DoorHingeSide.LEFT).with(drO, false).modelForState().modelFile(models().getExistingFile(modLoc("block/door_red_bottom_left"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.DOOR_RED_BLOCK.get()).partialState().with(drF, Direction.SOUTH).with(drH, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER).with(drG, net.minecraft.world.level.block.state.properties.DoorHingeSide.LEFT).with(drO, true).modelForState().modelFile(models().getExistingFile(modLoc("block/door_red_bottom_left_open"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.DOOR_RED_BLOCK.get()).partialState().with(drF, Direction.SOUTH).with(drH, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER).with(drG, net.minecraft.world.level.block.state.properties.DoorHingeSide.RIGHT).with(drO, false).modelForState().modelFile(models().getExistingFile(modLoc("block/door_red_bottom_right"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.DOOR_RED_BLOCK.get()).partialState().with(drF, Direction.SOUTH).with(drH, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER).with(drG, net.minecraft.world.level.block.state.properties.DoorHingeSide.RIGHT).with(drO, true).modelForState().modelFile(models().getExistingFile(modLoc("block/door_red_bottom_right_open"))).rotationY(0).addModel();
+        getVariantBuilder(ModBlocks.DOOR_RED_BLOCK.get()).partialState().with(drF, Direction.SOUTH).with(drH, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER).with(drG, net.minecraft.world.level.block.state.properties.DoorHingeSide.LEFT).with(drO, false).modelForState().modelFile(models().getExistingFile(modLoc("block/door_red_top_left"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.DOOR_RED_BLOCK.get()).partialState().with(drF, Direction.SOUTH).with(drH, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER).with(drG, net.minecraft.world.level.block.state.properties.DoorHingeSide.LEFT).with(drO, true).modelForState().modelFile(models().getExistingFile(modLoc("block/door_red_top_left_open"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.DOOR_RED_BLOCK.get()).partialState().with(drF, Direction.SOUTH).with(drH, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER).with(drG, net.minecraft.world.level.block.state.properties.DoorHingeSide.RIGHT).with(drO, false).modelForState().modelFile(models().getExistingFile(modLoc("block/door_red_top_right"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.DOOR_RED_BLOCK.get()).partialState().with(drF, Direction.SOUTH).with(drH, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER).with(drG, net.minecraft.world.level.block.state.properties.DoorHingeSide.RIGHT).with(drO, true).modelForState().modelFile(models().getExistingFile(modLoc("block/door_red_top_right_open"))).rotationY(0).addModel();
+        getVariantBuilder(ModBlocks.DOOR_RED_BLOCK.get()).partialState().with(drF, Direction.WEST).with(drH, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER).with(drG, net.minecraft.world.level.block.state.properties.DoorHingeSide.LEFT).with(drO, false).modelForState().modelFile(models().getExistingFile(modLoc("block/door_red_bottom_left"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.DOOR_RED_BLOCK.get()).partialState().with(drF, Direction.WEST).with(drH, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER).with(drG, net.minecraft.world.level.block.state.properties.DoorHingeSide.LEFT).with(drO, true).modelForState().modelFile(models().getExistingFile(modLoc("block/door_red_bottom_left_open"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.DOOR_RED_BLOCK.get()).partialState().with(drF, Direction.WEST).with(drH, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER).with(drG, net.minecraft.world.level.block.state.properties.DoorHingeSide.RIGHT).with(drO, false).modelForState().modelFile(models().getExistingFile(modLoc("block/door_red_bottom_right"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.DOOR_RED_BLOCK.get()).partialState().with(drF, Direction.WEST).with(drH, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER).with(drG, net.minecraft.world.level.block.state.properties.DoorHingeSide.RIGHT).with(drO, true).modelForState().modelFile(models().getExistingFile(modLoc("block/door_red_bottom_right_open"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.DOOR_RED_BLOCK.get()).partialState().with(drF, Direction.WEST).with(drH, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER).with(drG, net.minecraft.world.level.block.state.properties.DoorHingeSide.LEFT).with(drO, false).modelForState().modelFile(models().getExistingFile(modLoc("block/door_red_top_left"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.DOOR_RED_BLOCK.get()).partialState().with(drF, Direction.WEST).with(drH, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER).with(drG, net.minecraft.world.level.block.state.properties.DoorHingeSide.LEFT).with(drO, true).modelForState().modelFile(models().getExistingFile(modLoc("block/door_red_top_left_open"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.DOOR_RED_BLOCK.get()).partialState().with(drF, Direction.WEST).with(drH, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER).with(drG, net.minecraft.world.level.block.state.properties.DoorHingeSide.RIGHT).with(drO, false).modelForState().modelFile(models().getExistingFile(modLoc("block/door_red_top_right"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.DOOR_RED_BLOCK.get()).partialState().with(drF, Direction.WEST).with(drH, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER).with(drG, net.minecraft.world.level.block.state.properties.DoorHingeSide.RIGHT).with(drO, true).modelForState().modelFile(models().getExistingFile(modLoc("block/door_red_top_right_open"))).rotationY(90).addModel();
+        // dornier — vanilla net.minecraft.world.level.block.BarrelBlock (FACING/OPEN); json is a single "" variant, one unconditional partial state covers all states
+        getVariantBuilder(ModBlocks.DORNIER.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/dornier"))).addModel();
+        // dud_balefire — CrashedBombBlock (no blockstate properties)
+        getVariantBuilder(ModBlocks.DUD_BALEFIRE.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/bomb/dud_balefire_particle"))).addModel();
+        // dud_conventional — CrashedBombBlock
+        getVariantBuilder(ModBlocks.DUD_CONVENTIONAL.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/bomb/dud_conventional_particle"))).addModel();
+        // dud_nuke — CrashedBombBlock
+        getVariantBuilder(ModBlocks.DUD_NUKE.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/bomb/dud_nuke_particle"))).addModel();
+        // dud_salted — CrashedBombBlock
+        getVariantBuilder(ModBlocks.DUD_SALTED.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/bomb/dud_salted_particle"))).addModel();
+        // dungeon_chain — DungeonChainBlock.FACING (all but down) + END
+        getVariantBuilder(ModBlocks.DUNGEON_CHAIN.get()).partialState().with(com.hbm_m.block.decorations.DungeonChainBlock.END, false).with(com.hbm_m.block.decorations.DungeonChainBlock.FACING, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/dungeon_chain_hanging"))).addModel();
+        getVariantBuilder(ModBlocks.DUNGEON_CHAIN.get()).partialState().with(com.hbm_m.block.decorations.DungeonChainBlock.END, false).with(com.hbm_m.block.decorations.DungeonChainBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/dungeon_chain_wall"))).rotationY(0).addModel();
+        getVariantBuilder(ModBlocks.DUNGEON_CHAIN.get()).partialState().with(com.hbm_m.block.decorations.DungeonChainBlock.END, false).with(com.hbm_m.block.decorations.DungeonChainBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/dungeon_chain_wall"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.DUNGEON_CHAIN.get()).partialState().with(com.hbm_m.block.decorations.DungeonChainBlock.END, false).with(com.hbm_m.block.decorations.DungeonChainBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/dungeon_chain_wall"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.DUNGEON_CHAIN.get()).partialState().with(com.hbm_m.block.decorations.DungeonChainBlock.END, false).with(com.hbm_m.block.decorations.DungeonChainBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/dungeon_chain_wall"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.DUNGEON_CHAIN.get()).partialState().with(com.hbm_m.block.decorations.DungeonChainBlock.END, true).with(com.hbm_m.block.decorations.DungeonChainBlock.FACING, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/dungeon_chain_hanging_end"))).addModel();
+        getVariantBuilder(ModBlocks.DUNGEON_CHAIN.get()).partialState().with(com.hbm_m.block.decorations.DungeonChainBlock.END, true).with(com.hbm_m.block.decorations.DungeonChainBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/dungeon_chain_wall_end"))).rotationY(0).addModel();
+        getVariantBuilder(ModBlocks.DUNGEON_CHAIN.get()).partialState().with(com.hbm_m.block.decorations.DungeonChainBlock.END, true).with(com.hbm_m.block.decorations.DungeonChainBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/dungeon_chain_wall_end"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.DUNGEON_CHAIN.get()).partialState().with(com.hbm_m.block.decorations.DungeonChainBlock.END, true).with(com.hbm_m.block.decorations.DungeonChainBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/dungeon_chain_wall_end"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.DUNGEON_CHAIN.get()).partialState().with(com.hbm_m.block.decorations.DungeonChainBlock.END, true).with(com.hbm_m.block.decorations.DungeonChainBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/dungeon_chain_wall_end"))).rotationY(270).addModel();
+        // dynamite — TNTBlocks.Dynamite extends BlockTNTBase (IGNITE_ON_BREAK); both json variants use the same model
+        getVariantBuilder(ModBlocks.DYNAMITE.get()).partialState().with(com.hbm_m.block.bomb.BlockTNTBase.IGNITE_ON_BREAK, false).modelForState().modelFile(models().getExistingFile(modLoc("block/bomb/dynamite"))).addModel();
+        getVariantBuilder(ModBlocks.DYNAMITE.get()).partialState().with(com.hbm_m.block.bomb.BlockTNTBase.IGNITE_ON_BREAK, true).modelForState().modelFile(models().getExistingFile(modLoc("block/bomb/dynamite"))).addModel();
+        // emp_bomb — SimpleBombs.Float (no blockstate properties)
+        getVariantBuilder(ModBlocks.EMP_BOMB.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/bomb/emp_bomb"))).addModel();
+        // file_cabinet — FileCabinetBlock.FACING (horizontal); json has all 4 facings on one model without rotation
+        getVariantBuilder(ModBlocks.FILE_CABINET.get()).partialState().with(com.hbm_m.block.decorations.FileCabinetBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/file_cabinet_particle"))).addModel();
+        getVariantBuilder(ModBlocks.FILE_CABINET.get()).partialState().with(com.hbm_m.block.decorations.FileCabinetBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/file_cabinet_particle"))).addModel();
+        getVariantBuilder(ModBlocks.FILE_CABINET.get()).partialState().with(com.hbm_m.block.decorations.FileCabinetBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/file_cabinet_particle"))).addModel();
+        getVariantBuilder(ModBlocks.FILE_CABINET.get()).partialState().with(com.hbm_m.block.decorations.FileCabinetBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/file_cabinet_particle"))).addModel();
+        // file_cabinet_steel — FileCabinetBlock.FACING, same particle model
+        getVariantBuilder(ModBlocks.FILE_CABINET_STEEL.get()).partialState().with(com.hbm_m.block.decorations.FileCabinetBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/file_cabinet_particle"))).addModel();
+        getVariantBuilder(ModBlocks.FILE_CABINET_STEEL.get()).partialState().with(com.hbm_m.block.decorations.FileCabinetBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/file_cabinet_particle"))).addModel();
+        getVariantBuilder(ModBlocks.FILE_CABINET_STEEL.get()).partialState().with(com.hbm_m.block.decorations.FileCabinetBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/file_cabinet_particle"))).addModel();
+        getVariantBuilder(ModBlocks.FILE_CABINET_STEEL.get()).partialState().with(com.hbm_m.block.decorations.FileCabinetBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/file_cabinet_particle"))).addModel();
+        // fire_digamma — DigammaBlocks.Flame (no blockstate properties)
+        getVariantBuilder(ModBlocks.FIRE_DIGAMMA.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/bomb/fire_digamma"))).addModel();
+        // fissure_bomb json — not ported: ModBlocks.FISSURE_BOMB is already registered in ModBlockStateProvider (cubeBottomTop)
+        // fireworks json — not ported: ModBlocks.FIREWORKS is already registered in ModBlockStateProvider (cubeBottomTop)
+        // flame_war json — not ported: ModBlocks.FLAME_WAR is already registered in ModBlockStateProvider (cubeAll)
+        // digamma_matter json — not ported: ModBlocks.DIGAMMA_MATTER is already registered in ModBlockStateProvider (cubeAll)
+        // float_bomb — SimpleBombs.Float (no blockstate properties)
+        getVariantBuilder(ModBlocks.FLOAT_BOMB.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/bomb/float_bomb"))).addModel();
+        // flood_lamp — SpotlightBlock.FACING (all 6) + BROKEN; json maps both broken values to the same per-facing model, no rotations
+        getVariantBuilder(ModBlocks.FLOOD_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, false).with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/flood_lamp_down"))).addModel();
+        getVariantBuilder(ModBlocks.FLOOD_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, true).with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/flood_lamp_down"))).addModel();
+        getVariantBuilder(ModBlocks.FLOOD_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, false).with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/flood_lamp_up"))).addModel();
+        getVariantBuilder(ModBlocks.FLOOD_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, true).with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/flood_lamp_up"))).addModel();
+        getVariantBuilder(ModBlocks.FLOOD_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, false).with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/flood_lamp_north"))).addModel();
+        getVariantBuilder(ModBlocks.FLOOD_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, true).with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/flood_lamp_north"))).addModel();
+        getVariantBuilder(ModBlocks.FLOOD_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, false).with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/flood_lamp_south"))).addModel();
+        getVariantBuilder(ModBlocks.FLOOD_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, true).with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/flood_lamp_south"))).addModel();
+        getVariantBuilder(ModBlocks.FLOOD_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, false).with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/flood_lamp_west"))).addModel();
+        getVariantBuilder(ModBlocks.FLOOD_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, true).with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/flood_lamp_west"))).addModel();
+        getVariantBuilder(ModBlocks.FLOOD_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, false).with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/flood_lamp_east"))).addModel();
+        getVariantBuilder(ModBlocks.FLOOD_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, true).with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/flood_lamp_east"))).addModel();
+        // flood_lamp_off — SpotlightBlock, off variants
+        getVariantBuilder(ModBlocks.FLOOD_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, false).with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/flood_lamp_off_down"))).addModel();
+        getVariantBuilder(ModBlocks.FLOOD_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, true).with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/flood_lamp_off_down"))).addModel();
+        getVariantBuilder(ModBlocks.FLOOD_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, false).with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/flood_lamp_off_up"))).addModel();
+        getVariantBuilder(ModBlocks.FLOOD_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, true).with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/flood_lamp_off_up"))).addModel();
+        getVariantBuilder(ModBlocks.FLOOD_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, false).with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/flood_lamp_off_north"))).addModel();
+        getVariantBuilder(ModBlocks.FLOOD_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, true).with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/flood_lamp_off_north"))).addModel();
+        getVariantBuilder(ModBlocks.FLOOD_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, false).with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/flood_lamp_off_south"))).addModel();
+        getVariantBuilder(ModBlocks.FLOOD_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, true).with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/flood_lamp_off_south"))).addModel();
+        getVariantBuilder(ModBlocks.FLOOD_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, false).with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/flood_lamp_off_west"))).addModel();
+        getVariantBuilder(ModBlocks.FLOOD_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, true).with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/flood_lamp_off_west"))).addModel();
+        getVariantBuilder(ModBlocks.FLOOD_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, false).with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/flood_lamp_off_east"))).addModel();
+        getVariantBuilder(ModBlocks.FLOOD_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.BROKEN, true).with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/flood_lamp_off_east"))).addModel();
+        // floodlight — FloodlightBlock.META (0..11), all variants use the same particle model
+        getVariantBuilder(ModBlocks.FLOODLIGHT.get()).partialState().with(com.hbm_m.block.decorations.FloodlightBlock.META, 0).modelForState().modelFile(models().getExistingFile(modLoc("block/floodlight_particle"))).addModel();
+        getVariantBuilder(ModBlocks.FLOODLIGHT.get()).partialState().with(com.hbm_m.block.decorations.FloodlightBlock.META, 1).modelForState().modelFile(models().getExistingFile(modLoc("block/floodlight_particle"))).addModel();
+        getVariantBuilder(ModBlocks.FLOODLIGHT.get()).partialState().with(com.hbm_m.block.decorations.FloodlightBlock.META, 2).modelForState().modelFile(models().getExistingFile(modLoc("block/floodlight_particle"))).addModel();
+        getVariantBuilder(ModBlocks.FLOODLIGHT.get()).partialState().with(com.hbm_m.block.decorations.FloodlightBlock.META, 3).modelForState().modelFile(models().getExistingFile(modLoc("block/floodlight_particle"))).addModel();
+        getVariantBuilder(ModBlocks.FLOODLIGHT.get()).partialState().with(com.hbm_m.block.decorations.FloodlightBlock.META, 4).modelForState().modelFile(models().getExistingFile(modLoc("block/floodlight_particle"))).addModel();
+        getVariantBuilder(ModBlocks.FLOODLIGHT.get()).partialState().with(com.hbm_m.block.decorations.FloodlightBlock.META, 5).modelForState().modelFile(models().getExistingFile(modLoc("block/floodlight_particle"))).addModel();
+        getVariantBuilder(ModBlocks.FLOODLIGHT.get()).partialState().with(com.hbm_m.block.decorations.FloodlightBlock.META, 6).modelForState().modelFile(models().getExistingFile(modLoc("block/floodlight_particle"))).addModel();
+        getVariantBuilder(ModBlocks.FLOODLIGHT.get()).partialState().with(com.hbm_m.block.decorations.FloodlightBlock.META, 7).modelForState().modelFile(models().getExistingFile(modLoc("block/floodlight_particle"))).addModel();
+        getVariantBuilder(ModBlocks.FLOODLIGHT.get()).partialState().with(com.hbm_m.block.decorations.FloodlightBlock.META, 8).modelForState().modelFile(models().getExistingFile(modLoc("block/floodlight_particle"))).addModel();
+        getVariantBuilder(ModBlocks.FLOODLIGHT.get()).partialState().with(com.hbm_m.block.decorations.FloodlightBlock.META, 9).modelForState().modelFile(models().getExistingFile(modLoc("block/floodlight_particle"))).addModel();
+        getVariantBuilder(ModBlocks.FLOODLIGHT.get()).partialState().with(com.hbm_m.block.decorations.FloodlightBlock.META, 10).modelForState().modelFile(models().getExistingFile(modLoc("block/floodlight_particle"))).addModel();
+        getVariantBuilder(ModBlocks.FLOODLIGHT.get()).partialState().with(com.hbm_m.block.decorations.FloodlightBlock.META, 11).modelForState().modelFile(models().getExistingFile(modLoc("block/floodlight_particle"))).addModel();
+        // floodlight_beam — FloodlightBeamBlock (no blockstate properties)
+        getVariantBuilder(ModBlocks.FLOODLIGHT_BEAM.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/floodlight_particle"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_down_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_down_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_down_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_down_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_down_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_down_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_down_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_down_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_down_cap_north"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_down_cap_south"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_down_cap_west"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_down_cap_east"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_down_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_down_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_down_mid_north"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_down_mid_south"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_down_mid_west"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_down_mid_east"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_up_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_up_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_up_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_up_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_up_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_up_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_up_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_up_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_up_cap_north"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_up_cap_south"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_up_cap_west"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_up_cap_east"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_up_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_up_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_up_mid_north"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_up_mid_south"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_up_mid_west"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_up_mid_east"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_north_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_north_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_north_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_north_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_north_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_north_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_north_cap_down"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_north_cap_up"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_north_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_north_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_north_cap_west"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_north_cap_east"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_north_mid_down"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_north_mid_up"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_north_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_north_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_north_mid_west"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_north_mid_east"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_south_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_south_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_south_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_south_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_south_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_south_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_south_cap_down"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_south_cap_up"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_south_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_south_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_south_cap_west"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_south_cap_east"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_south_mid_down"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_south_mid_up"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_south_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_south_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_south_mid_west"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_south_mid_east"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_west_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_west_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_west_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_west_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_west_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_west_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_west_cap_down"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_west_cap_up"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_west_cap_north"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_west_cap_south"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_west_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_west_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_west_mid_down"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_west_mid_up"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_west_mid_north"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_west_mid_south"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_west_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_west_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_east_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_east_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_east_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_east_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_east_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_east_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_east_cap_down"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_east_cap_up"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_east_cap_north"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_east_cap_south"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_east_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_east_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_east_mid_down"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_east_mid_up"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_east_mid_north"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_east_mid_south"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_east_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_east_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_cap_north"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_cap_south"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_cap_west"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_cap_east"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_mid_north"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_mid_south"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_mid_west"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_mid_east"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_cap_north"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_cap_south"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_cap_west"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_cap_east"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_mid_north"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_mid_south"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_mid_west"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_mid_east"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_cap_down"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_cap_up"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_cap_west"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_cap_east"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_mid_down"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_mid_up"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_mid_west"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_mid_east"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_cap_down"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_cap_up"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_cap_west"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_cap_east"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_mid_down"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_mid_up"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_mid_west"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_mid_east"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_cap_down"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_cap_up"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_cap_north"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_cap_south"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_mid_down"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_mid_up"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_mid_north"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_mid_south"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_single"))).addModel();
+
+        registerPortedBlockstates2();
+    }
+
+    private void registerPortedBlockstates2() {        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_cap_down"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_cap_up"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_cap_north"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_cap_south"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_mid_down"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_mid_up"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_mid_north"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_mid_south"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_single"))).addModel();
+        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_single"))).addModel();
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/iso_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.ISOLATED);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/iso_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.ISOLATED);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/through_x_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.THROUGH_X);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/through_x_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.THROUGH_X);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/through_y_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.THROUGH_Y);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/through_y_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.THROUGH_Y);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/through_z_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.THROUGH_Z);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/through_z_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.THROUGH_Z);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/arm_east_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/arm_east_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/arm_west_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/arm_west_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/arm_up_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/arm_up_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/arm_down_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/arm_down_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/arm_south_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/arm_south_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/arm_north_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/arm_north_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/oct_ppn_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, false).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/oct_ppn_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, false).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/oct_ppp_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, false).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/oct_ppp_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, false).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/oct_npn_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, false).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/oct_npn_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, false).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/oct_npp_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, false).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/oct_npp_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, false).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/oct_pnn_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, false).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/oct_pnn_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, false).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/oct_pnp_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, false).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/oct_pnp_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, false).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/oct_nnn_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, false).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/oct_nnn_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, false).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/oct_nnp_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, false).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/oct_nnp_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, false).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/iso_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.ISOLATED);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/iso_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.ISOLATED);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/through_x_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.THROUGH_X);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/through_x_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.THROUGH_X);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/through_y_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.THROUGH_Y);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/through_y_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.THROUGH_Y);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/through_z_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.THROUGH_Z);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/through_z_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.THROUGH_Z);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/arm_east_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/arm_east_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/arm_west_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/arm_west_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/arm_up_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/arm_up_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/arm_down_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/arm_down_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/arm_south_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/arm_south_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/arm_north_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/arm_north_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/oct_ppn_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, false).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/oct_ppn_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, false).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/oct_ppp_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, false).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/oct_ppp_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, false).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/oct_npn_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, false).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/oct_npn_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, false).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/oct_npp_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, false).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/oct_npp_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, false).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/oct_pnn_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, false).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/oct_pnn_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, false).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/oct_pnp_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, false).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/oct_pnp_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, false).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/oct_nnn_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, false).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/oct_nnn_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, false).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/oct_nnp_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, false).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_COLORED.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_colored/oct_nnp_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, false).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/iso_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.ISOLATED);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/iso_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.ISOLATED);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/through_x_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.THROUGH_X);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/through_x_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.THROUGH_X);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/through_y_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.THROUGH_Y);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/through_y_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.THROUGH_Y);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/through_z_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.THROUGH_Z);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/through_z_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.THROUGH_Z);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/arm_east_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/arm_east_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/arm_west_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/arm_west_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/arm_up_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/arm_up_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/arm_down_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/arm_down_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/arm_south_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/arm_south_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/arm_north_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/arm_north_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, true);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/oct_ppn_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, false).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/oct_ppn_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, false).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/oct_ppp_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, false).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/oct_ppp_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, false).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/oct_npn_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, false).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/oct_npn_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, false).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/oct_npp_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, false).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/oct_npp_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, false).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/oct_pnn_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, false).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/oct_pnn_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, false).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/oct_pnp_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, false).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/oct_pnp_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, false).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/oct_nnn_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, false).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/oct_nnn_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, false).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/oct_nnp_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, false).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, false);
+        getMultipartBuilder(ModBlocks.FLUID_DUCT_SILVER.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_silver/oct_nnp_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, false).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, false);
+        getMultipartBuilder(ModBlocks.FOUNDRY_CHANNEL.get()).part().modelFile(models().getExistingFile(modLoc("block/machines/foundry_channel_center"))).addModel();
+        getMultipartBuilder(ModBlocks.FOUNDRY_CHANNEL.get()).part().modelFile(models().getExistingFile(modLoc("block/machines/foundry_channel_connected"))).addModel().condition(com.hbm_m.block.machines.MachineFoundryChannelBlock.EAST, true);
+        getMultipartBuilder(ModBlocks.FOUNDRY_CHANNEL.get()).part().modelFile(models().getExistingFile(modLoc("block/machines/foundry_channel_closed"))).addModel().condition(com.hbm_m.block.machines.MachineFoundryChannelBlock.EAST, false);
+        getMultipartBuilder(ModBlocks.FOUNDRY_CHANNEL.get()).part().modelFile(models().getExistingFile(modLoc("block/machines/foundry_channel_connected"))).rotationY(90).addModel().condition(com.hbm_m.block.machines.MachineFoundryChannelBlock.SOUTH, true);
+        getMultipartBuilder(ModBlocks.FOUNDRY_CHANNEL.get()).part().modelFile(models().getExistingFile(modLoc("block/machines/foundry_channel_closed"))).rotationY(90).addModel().condition(com.hbm_m.block.machines.MachineFoundryChannelBlock.SOUTH, false);
+        getMultipartBuilder(ModBlocks.FOUNDRY_CHANNEL.get()).part().modelFile(models().getExistingFile(modLoc("block/machines/foundry_channel_connected"))).rotationY(180).addModel().condition(com.hbm_m.block.machines.MachineFoundryChannelBlock.WEST, true);
+        getMultipartBuilder(ModBlocks.FOUNDRY_CHANNEL.get()).part().modelFile(models().getExistingFile(modLoc("block/machines/foundry_channel_closed"))).rotationY(180).addModel().condition(com.hbm_m.block.machines.MachineFoundryChannelBlock.WEST, false);
+        getMultipartBuilder(ModBlocks.FOUNDRY_CHANNEL.get()).part().modelFile(models().getExistingFile(modLoc("block/machines/foundry_channel_connected"))).rotationY(270).addModel().condition(com.hbm_m.block.machines.MachineFoundryChannelBlock.NORTH, true);
+        getMultipartBuilder(ModBlocks.FOUNDRY_CHANNEL.get()).part().modelFile(models().getExistingFile(modLoc("block/machines/foundry_channel_closed"))).rotationY(270).addModel().condition(com.hbm_m.block.machines.MachineFoundryChannelBlock.NORTH, false);
+        getVariantBuilder(ModBlocks.FOUNDRY_OUTLET.get()).partialState().with(com.hbm_m.block.machines.MachineFoundryOutletBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/foundry_outlet"))).addModel();
+        getVariantBuilder(ModBlocks.FOUNDRY_OUTLET.get()).partialState().with(com.hbm_m.block.machines.MachineFoundryOutletBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/foundry_outlet"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.FOUNDRY_OUTLET.get()).partialState().with(com.hbm_m.block.machines.MachineFoundryOutletBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/foundry_outlet"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.FOUNDRY_OUTLET.get()).partialState().with(com.hbm_m.block.machines.MachineFoundryOutletBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/foundry_outlet"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.FOUNDRY_SLAGTAP.get()).partialState().with(com.hbm_m.block.machines.MachineFoundrySlagtapBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/foundry_slagtap"))).addModel();
+        getVariantBuilder(ModBlocks.FOUNDRY_SLAGTAP.get()).partialState().with(com.hbm_m.block.machines.MachineFoundrySlagtapBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/foundry_slagtap"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.FOUNDRY_SLAGTAP.get()).partialState().with(com.hbm_m.block.machines.MachineFoundrySlagtapBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/foundry_slagtap"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.FOUNDRY_SLAGTAP.get()).partialState().with(com.hbm_m.block.machines.MachineFoundrySlagtapBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/foundry_slagtap"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.FRACTION_SPACER.get()).partialState().with(com.hbm_m.block.machines.FractionSpacerBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/fraction_spacer"))).addModel();
+        getVariantBuilder(ModBlocks.FRACTION_SPACER.get()).partialState().with(com.hbm_m.block.machines.FractionSpacerBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/fraction_spacer"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.FRACTION_SPACER.get()).partialState().with(com.hbm_m.block.machines.FractionSpacerBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/fraction_spacer"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.FRACTION_SPACER.get()).partialState().with(com.hbm_m.block.machines.FractionSpacerBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/fraction_spacer"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.GEYSIR_CHLORINE.get()).partialState().with(com.hbm_m.block.generic.BlockGeysir.ERUPTING, false).modelForState().modelFile(models().getExistingFile(modLoc("block/geysir_chlorine"))).addModel();
+        getVariantBuilder(ModBlocks.GEYSIR_CHLORINE.get()).partialState().with(com.hbm_m.block.generic.BlockGeysir.ERUPTING, true).modelForState().modelFile(models().getExistingFile(modLoc("block/geysir_chlorine"))).addModel();
+        // heating_oven (HeatingOvenBlock: FACING horizontal)
+        getVariantBuilder(ModBlocks.HEATING_OVEN.get()).partialState().with(com.hbm_m.block.machines.HeatingOvenBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/heating_oven"))).rotationY(0).addModel();
+        getVariantBuilder(ModBlocks.HEATING_OVEN.get()).partialState().with(com.hbm_m.block.machines.HeatingOvenBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/heating_oven"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.HEATING_OVEN.get()).partialState().with(com.hbm_m.block.machines.HeatingOvenBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/heating_oven"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.HEATING_OVEN.get()).partialState().with(com.hbm_m.block.machines.HeatingOvenBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/heating_oven"))).rotationY(270).addModel();
+        // hydrotreater (DummyableMachineBlock: FACING horizontal)
+        getVariantBuilder(ModBlocks.HYDROTREATER.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/hydrotreater"))).rotationY(0).addModel();
+        getVariantBuilder(ModBlocks.HYDROTREATER.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/hydrotreater"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.HYDROTREATER.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/hydrotreater"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.HYDROTREATER.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/hydrotreater"))).rotationY(90).addModel();
+        // industrial_boiler (MachineIndustrialBoilerBlock: FACING horizontal + LIT; json uses the same model for both lit states)
+        getVariantBuilder(ModBlocks.INDUSTRIAL_BOILER.get()).partialState().with(com.hbm_m.block.machines.MachineIndustrialBoilerBlock.FACING, Direction.NORTH).with(com.hbm_m.block.machines.MachineIndustrialBoilerBlock.LIT, false).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/industrial_boiler"))).rotationY(0).addModel();
+        getVariantBuilder(ModBlocks.INDUSTRIAL_BOILER.get()).partialState().with(com.hbm_m.block.machines.MachineIndustrialBoilerBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.machines.MachineIndustrialBoilerBlock.LIT, false).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/industrial_boiler"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.INDUSTRIAL_BOILER.get()).partialState().with(com.hbm_m.block.machines.MachineIndustrialBoilerBlock.FACING, Direction.WEST).with(com.hbm_m.block.machines.MachineIndustrialBoilerBlock.LIT, false).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/industrial_boiler"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.INDUSTRIAL_BOILER.get()).partialState().with(com.hbm_m.block.machines.MachineIndustrialBoilerBlock.FACING, Direction.EAST).with(com.hbm_m.block.machines.MachineIndustrialBoilerBlock.LIT, false).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/industrial_boiler"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.INDUSTRIAL_BOILER.get()).partialState().with(com.hbm_m.block.machines.MachineIndustrialBoilerBlock.FACING, Direction.NORTH).with(com.hbm_m.block.machines.MachineIndustrialBoilerBlock.LIT, true).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/industrial_boiler"))).rotationY(0).addModel();
+        getVariantBuilder(ModBlocks.INDUSTRIAL_BOILER.get()).partialState().with(com.hbm_m.block.machines.MachineIndustrialBoilerBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.machines.MachineIndustrialBoilerBlock.LIT, true).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/industrial_boiler"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.INDUSTRIAL_BOILER.get()).partialState().with(com.hbm_m.block.machines.MachineIndustrialBoilerBlock.FACING, Direction.WEST).with(com.hbm_m.block.machines.MachineIndustrialBoilerBlock.LIT, true).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/industrial_boiler"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.INDUSTRIAL_BOILER.get()).partialState().with(com.hbm_m.block.machines.MachineIndustrialBoilerBlock.FACING, Direction.EAST).with(com.hbm_m.block.machines.MachineIndustrialBoilerBlock.LIT, true).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/industrial_boiler"))).rotationY(90).addModel();
+        // lamp_demon (DemonLampBlock: FACING = DirectionalBlock.FACING, alle 6 Richtungen)
+        getVariantBuilder(ModBlocks.LAMP_DEMON.get()).partialState().with(com.hbm_m.block.decorations.DemonLampBlock.FACING, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lamp_demon"))).addModel();
+        getVariantBuilder(ModBlocks.LAMP_DEMON.get()).partialState().with(com.hbm_m.block.decorations.DemonLampBlock.FACING, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lamp_demon"))).rotationX(180).addModel();
+        getVariantBuilder(ModBlocks.LAMP_DEMON.get()).partialState().with(com.hbm_m.block.decorations.DemonLampBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lamp_demon"))).rotationX(90).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.LAMP_DEMON.get()).partialState().with(com.hbm_m.block.decorations.DemonLampBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lamp_demon"))).rotationX(90).addModel();
+        getVariantBuilder(ModBlocks.LAMP_DEMON.get()).partialState().with(com.hbm_m.block.decorations.DemonLampBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lamp_demon"))).rotationX(90).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.LAMP_DEMON.get()).partialState().with(com.hbm_m.block.decorations.DemonLampBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lamp_demon"))).rotationX(90).rotationY(90).addModel();
+        // lantern (LanternBlock extends DummyableMachineBlock: FACING horizontal; json: alle 4 Facings ohne Rotation)
+        getVariantBuilder(ModBlocks.LANTERN.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lantern_particle"))).addModel();
+        getVariantBuilder(ModBlocks.LANTERN.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lantern_particle"))).addModel();
+        getVariantBuilder(ModBlocks.LANTERN.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lantern_particle"))).addModel();
+        getVariantBuilder(ModBlocks.LANTERN.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lantern_particle"))).addModel();
+        // launchpad_lambda (DummyableMachineBlock: FACING horizontal)
+        getVariantBuilder(ModBlocks.LAUNCHPAD_LAMBDA.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/launchpad_lambda_particle"))).addModel();
+        getVariantBuilder(ModBlocks.LAUNCHPAD_LAMBDA.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/launchpad_lambda_particle"))).addModel();
+        getVariantBuilder(ModBlocks.LAUNCHPAD_LAMBDA.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/launchpad_lambda_particle"))).addModel();
+        getVariantBuilder(ModBlocks.LAUNCHPAD_LAMBDA.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/launchpad_lambda_particle"))).addModel();
+        // machine_rockmill (DummyableMachineBlock: FACING horizontal)
+        getVariantBuilder(ModBlocks.MACHINE_ROCKMILL.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/machine_rockmill_particle"))).addModel();
+        getVariantBuilder(ModBlocks.MACHINE_ROCKMILL.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/machine_rockmill_particle"))).addModel();
+        getVariantBuilder(ModBlocks.MACHINE_ROCKMILL.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/machine_rockmill_particle"))).addModel();
+        getVariantBuilder(ModBlocks.MACHINE_ROCKMILL.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/machine_rockmill_particle"))).addModel();
+        // machine_supercomputer (DummyableMachineBlock: FACING horizontal)
+        getVariantBuilder(ModBlocks.MACHINE_SUPERCOMPUTER.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/machine_supercomputer_particle"))).addModel();
+        getVariantBuilder(ModBlocks.MACHINE_SUPERCOMPUTER.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/machine_supercomputer_particle"))).addModel();
+        getVariantBuilder(ModBlocks.MACHINE_SUPERCOMPUTER.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/machine_supercomputer_particle"))).addModel();
+        getVariantBuilder(ModBlocks.MACHINE_SUPERCOMPUTER.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/machine_supercomputer_particle"))).addModel();
+        // machine_tape_drive (MachineTapeDriveBlock: eigenes FACING horizontal)
+        getVariantBuilder(ModBlocks.MACHINE_TAPE_DRIVE.get()).partialState().with(com.hbm_m.block.machines.MachineTapeDriveBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/machine_tape_drive_particle"))).addModel();
+        getVariantBuilder(ModBlocks.MACHINE_TAPE_DRIVE.get()).partialState().with(com.hbm_m.block.machines.MachineTapeDriveBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/machine_tape_drive_particle"))).addModel();
+        getVariantBuilder(ModBlocks.MACHINE_TAPE_DRIVE.get()).partialState().with(com.hbm_m.block.machines.MachineTapeDriveBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/machine_tape_drive_particle"))).addModel();
+        getVariantBuilder(ModBlocks.MACHINE_TAPE_DRIVE.get()).partialState().with(com.hbm_m.block.machines.MachineTapeDriveBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/machine_tape_drive_particle"))).addModel();
+        // mush_block (R6dPlants.MushHuge extends Block: keine Properties)
+        getVariantBuilder(ModBlocks.MUSH_BLOCK.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/deco/mush_block"))).addModel();
+        // part_emitter (PartEmitterBlock extends BaseEntityBlock: keine Properties)
+        getVariantBuilder(ModBlocks.PART_EMITTER.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/deco/part_emitter"))).addModel();
+        // pipe_anchor_exhaust (ExhaustPipeAnchorBlock extends PipeAnchorBlock: FACING = BlockStateProperties.FACING, alle 6 Richtungen; json: alle Facings ohne Rotation)
+        getVariantBuilder(ModBlocks.PIPE_ANCHOR_EXHAUST.get()).partialState().with(com.hbm_m.block.network.PipeAnchorBlock.FACING, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/pipe_anchor_particle"))).addModel();
+        getVariantBuilder(ModBlocks.PIPE_ANCHOR_EXHAUST.get()).partialState().with(com.hbm_m.block.network.PipeAnchorBlock.FACING, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/pipe_anchor_particle"))).addModel();
+        getVariantBuilder(ModBlocks.PIPE_ANCHOR_EXHAUST.get()).partialState().with(com.hbm_m.block.network.PipeAnchorBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/pipe_anchor_particle"))).addModel();
+        getVariantBuilder(ModBlocks.PIPE_ANCHOR_EXHAUST.get()).partialState().with(com.hbm_m.block.network.PipeAnchorBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/pipe_anchor_particle"))).addModel();
+        getVariantBuilder(ModBlocks.PIPE_ANCHOR_EXHAUST.get()).partialState().with(com.hbm_m.block.network.PipeAnchorBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/pipe_anchor_particle"))).addModel();
+        getVariantBuilder(ModBlocks.PIPE_ANCHOR_EXHAUST.get()).partialState().with(com.hbm_m.block.network.PipeAnchorBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/pipe_anchor_particle"))).addModel();
+        // oil_pipe (FluidDuctBlock: NORTH/EAST/SOUTH/WEST/UP/DOWN + SHAPE; Multipart 1:1 aus dem handgeschriebenen JSON, jeweils base + overlay)
+        var oilPipeBuilder = getMultipartBuilder(ModBlocks.OIL_PIPE.get());
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/iso_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.ISOLATED).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/iso_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.ISOLATED).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/through_x_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.THROUGH_X).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/through_x_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.THROUGH_X).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/through_y_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.THROUGH_Y).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/through_y_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.THROUGH_Y).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/through_z_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.THROUGH_Z).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/through_z_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.THROUGH_Z).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/arm_east_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, true).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/arm_east_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, true).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/arm_west_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, true).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/arm_west_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, true).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/arm_up_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, true).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/arm_up_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, true).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/arm_down_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, true).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/arm_down_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, true).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/arm_south_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, true).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/arm_south_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, true).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/arm_north_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, true).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/arm_north_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, true).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/oct_ppn_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, false).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, false).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/oct_ppn_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, false).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, false).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/oct_ppp_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, false).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, false).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/oct_ppp_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, false).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, false).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/oct_npn_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, false).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, false).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/oct_npn_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, false).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, false).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/oct_npp_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, false).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, false).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/oct_npp_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.UP, false).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, false).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/oct_pnn_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, false).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, false).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/oct_pnn_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, false).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, false).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/oct_pnp_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, false).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, false).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/oct_pnp_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.EAST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, false).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, false).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/oct_nnn_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, false).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, false).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/oct_nnn_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, false).condition(com.hbm_m.block.machines.FluidDuctBlock.SOUTH, false).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/oct_nnp_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, false).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, false).end();
+        oilPipeBuilder.part().modelFile(models().getExistingFile(modLoc("block/pipe_oil/oct_nnp_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.COMPLEX).condition(com.hbm_m.block.machines.FluidDuctBlock.WEST, false).condition(com.hbm_m.block.machines.FluidDuctBlock.DOWN, false).condition(com.hbm_m.block.machines.FluidDuctBlock.NORTH, false).end();
+        // pipe_anchor_pneumatic — PipeAnchorBlock: FACING (all 6), model block/pipe_anchor_particle, no rotations
+        getVariantBuilder(ModBlocks.PIPE_ANCHOR_PNEUMATIC.get()).partialState().with(com.hbm_m.block.network.PipeAnchorBlock.FACING, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/pipe_anchor_particle"))).addModel();
+        getVariantBuilder(ModBlocks.PIPE_ANCHOR_PNEUMATIC.get()).partialState().with(com.hbm_m.block.network.PipeAnchorBlock.FACING, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/pipe_anchor_particle"))).addModel();
+        getVariantBuilder(ModBlocks.PIPE_ANCHOR_PNEUMATIC.get()).partialState().with(com.hbm_m.block.network.PipeAnchorBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/pipe_anchor_particle"))).addModel();
+        getVariantBuilder(ModBlocks.PIPE_ANCHOR_PNEUMATIC.get()).partialState().with(com.hbm_m.block.network.PipeAnchorBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/pipe_anchor_particle"))).addModel();
+        getVariantBuilder(ModBlocks.PIPE_ANCHOR_PNEUMATIC.get()).partialState().with(com.hbm_m.block.network.PipeAnchorBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/pipe_anchor_particle"))).addModel();
+        getVariantBuilder(ModBlocks.PIPE_ANCHOR_PNEUMATIC.get()).partialState().with(com.hbm_m.block.network.PipeAnchorBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/pipe_anchor_particle"))).addModel();
+        // plant_reeds — NTMPlants.Reeds: no state properties, single variant, model path matches block id
+        customObjBlockNoFacing(ModBlocks.PLANT_REEDS);
+        // plant_tall_weed — NTMPlants.TallPlant: HALF (DoubleBlockHalf)
+        getVariantBuilder(ModBlocks.PLANT_TALL_WEED.get()).partialState().with(com.hbm_m.block.generic.NTMPlants.TallPlant.HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER).modelForState().modelFile(models().getExistingFile(modLoc("block/plant_tall_weed_lower"))).addModel();
+        getVariantBuilder(ModBlocks.PLANT_TALL_WEED.get()).partialState().with(com.hbm_m.block.generic.NTMPlants.TallPlant.HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER).modelForState().modelFile(models().getExistingFile(modLoc("block/plant_tall_weed_upper"))).addModel();
+        // plant_tall_cd2
+        getVariantBuilder(ModBlocks.PLANT_TALL_CD2.get()).partialState().with(com.hbm_m.block.generic.NTMPlants.TallPlant.HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER).modelForState().modelFile(models().getExistingFile(modLoc("block/plant_tall_cd2_lower"))).addModel();
+        getVariantBuilder(ModBlocks.PLANT_TALL_CD2.get()).partialState().with(com.hbm_m.block.generic.NTMPlants.TallPlant.HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER).modelForState().modelFile(models().getExistingFile(modLoc("block/plant_tall_cd2_upper"))).addModel();
+        // plant_tall_cd3
+        getVariantBuilder(ModBlocks.PLANT_TALL_CD3.get()).partialState().with(com.hbm_m.block.generic.NTMPlants.TallPlant.HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER).modelForState().modelFile(models().getExistingFile(modLoc("block/plant_tall_cd3_lower"))).addModel();
+        getVariantBuilder(ModBlocks.PLANT_TALL_CD3.get()).partialState().with(com.hbm_m.block.generic.NTMPlants.TallPlant.HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER).modelForState().modelFile(models().getExistingFile(modLoc("block/plant_tall_cd3_upper"))).addModel();
+        // plant_tall_cd4
+        getVariantBuilder(ModBlocks.PLANT_TALL_CD4.get()).partialState().with(com.hbm_m.block.generic.NTMPlants.TallPlant.HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER).modelForState().modelFile(models().getExistingFile(modLoc("block/plant_tall_cd4_lower"))).addModel();
+        getVariantBuilder(ModBlocks.PLANT_TALL_CD4.get()).partialState().with(com.hbm_m.block.generic.NTMPlants.TallPlant.HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER).modelForState().modelFile(models().getExistingFile(modLoc("block/plant_tall_cd4_upper"))).addModel();
+        // plushie — TrinketBlock: ROTATION_16, 16 variants, same model
+        getVariantBuilder(ModBlocks.PLUSHIE.get()).partialState().with(com.hbm_m.block.decorations.TrinketBlock.ROTATION, 0).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/plushie_particle"))).addModel();
+        getVariantBuilder(ModBlocks.PLUSHIE.get()).partialState().with(com.hbm_m.block.decorations.TrinketBlock.ROTATION, 1).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/plushie_particle"))).addModel();
+        getVariantBuilder(ModBlocks.PLUSHIE.get()).partialState().with(com.hbm_m.block.decorations.TrinketBlock.ROTATION, 2).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/plushie_particle"))).addModel();
+        getVariantBuilder(ModBlocks.PLUSHIE.get()).partialState().with(com.hbm_m.block.decorations.TrinketBlock.ROTATION, 3).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/plushie_particle"))).addModel();
+        getVariantBuilder(ModBlocks.PLUSHIE.get()).partialState().with(com.hbm_m.block.decorations.TrinketBlock.ROTATION, 4).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/plushie_particle"))).addModel();
+        getVariantBuilder(ModBlocks.PLUSHIE.get()).partialState().with(com.hbm_m.block.decorations.TrinketBlock.ROTATION, 5).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/plushie_particle"))).addModel();
+        getVariantBuilder(ModBlocks.PLUSHIE.get()).partialState().with(com.hbm_m.block.decorations.TrinketBlock.ROTATION, 6).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/plushie_particle"))).addModel();
+        getVariantBuilder(ModBlocks.PLUSHIE.get()).partialState().with(com.hbm_m.block.decorations.TrinketBlock.ROTATION, 7).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/plushie_particle"))).addModel();
+        getVariantBuilder(ModBlocks.PLUSHIE.get()).partialState().with(com.hbm_m.block.decorations.TrinketBlock.ROTATION, 8).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/plushie_particle"))).addModel();
+        getVariantBuilder(ModBlocks.PLUSHIE.get()).partialState().with(com.hbm_m.block.decorations.TrinketBlock.ROTATION, 9).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/plushie_particle"))).addModel();
+        getVariantBuilder(ModBlocks.PLUSHIE.get()).partialState().with(com.hbm_m.block.decorations.TrinketBlock.ROTATION, 10).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/plushie_particle"))).addModel();
+        getVariantBuilder(ModBlocks.PLUSHIE.get()).partialState().with(com.hbm_m.block.decorations.TrinketBlock.ROTATION, 11).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/plushie_particle"))).addModel();
+        getVariantBuilder(ModBlocks.PLUSHIE.get()).partialState().with(com.hbm_m.block.decorations.TrinketBlock.ROTATION, 12).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/plushie_particle"))).addModel();
+        getVariantBuilder(ModBlocks.PLUSHIE.get()).partialState().with(com.hbm_m.block.decorations.TrinketBlock.ROTATION, 13).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/plushie_particle"))).addModel();
+        getVariantBuilder(ModBlocks.PLUSHIE.get()).partialState().with(com.hbm_m.block.decorations.TrinketBlock.ROTATION, 14).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/plushie_particle"))).addModel();
+        getVariantBuilder(ModBlocks.PLUSHIE.get()).partialState().with(com.hbm_m.block.decorations.TrinketBlock.ROTATION, 15).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/plushie_particle"))).addModel();
+        // pole_satellite_receiver — DecoObjBlock: HORIZONTAL_FACING; replaces the "генерация удалена" removal at ModBlockStateProvider.java:1159
+        getVariantBuilder(ModBlocks.POLE_SATELLITE_RECEIVER.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/pole_satellite_receiver"))).addModel();
+        getVariantBuilder(ModBlocks.POLE_SATELLITE_RECEIVER.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/pole_satellite_receiver"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.POLE_SATELLITE_RECEIVER.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/pole_satellite_receiver"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.POLE_SATELLITE_RECEIVER.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/pole_satellite_receiver"))).rotationY(270).addModel();
+        // puter — DecoObjBlock: HORIZONTAL_FACING, non-standard rotation map (north=180, south=0, west=90, east=270)
+        getVariantBuilder(ModBlocks.PUTER.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/puter"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.PUTER.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/puter"))).rotationY(0).addModel();
+        getVariantBuilder(ModBlocks.PUTER.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/puter"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.PUTER.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/puter"))).rotationY(270).addModel();
+        // pylon_dummy — PylonDummyBlock: no state properties, single variant; registered without item, so no simpleBlockItem
+        getVariantBuilder(ModBlocks.PYLON_DUMMY.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/pylon_dummy"))).addModel();
+        // rail_large_straight — RailDummyableBlock: META 0..15
+        getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 0).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 1).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 2).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 3).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 4).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 5).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 6).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 7).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 8).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 9).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 10).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 11).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 12).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_r0_m12"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 13).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_r0_m13"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 14).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_r90_m14"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 15).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_r90_m15"))).addModel();
+        // rail_large_curve
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 0).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 1).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 2).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 3).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 4).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 5).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 6).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 7).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 8).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 9).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 10).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 11).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 12).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_r180"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 13).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_r0"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 14).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_r270"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 15).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_r90"))).addModel();
+        // rail_large_curve_7
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE_7.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 0).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_7_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE_7.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 1).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_7_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE_7.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 2).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_7_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE_7.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 3).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_7_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE_7.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 4).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_7_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE_7.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 5).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_7_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE_7.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 6).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_7_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE_7.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 7).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_7_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE_7.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 8).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_7_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE_7.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 9).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_7_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE_7.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 10).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_7_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE_7.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 11).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_7_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE_7.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 12).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_7_r180"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE_7.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 13).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_7_r0"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE_7.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 14).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_7_r270"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE_7.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 15).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_7_r90"))).addModel();
+        // rail_large_curve_9
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE_9.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 0).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_9_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE_9.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 1).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_9_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE_9.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 2).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_9_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE_9.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 3).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_9_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE_9.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 4).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_9_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE_9.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 5).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_9_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE_9.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 6).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_9_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE_9.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 7).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_9_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE_9.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 8).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_9_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE_9.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 9).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_9_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE_9.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 10).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_9_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE_9.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 11).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_9_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE_9.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 12).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_9_r180"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE_9.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 13).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_9_r0"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE_9.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 14).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_9_r270"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_CURVE_9.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 15).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_curve_9_r90"))).addModel();
+        // rail_large_ramp
+        getVariantBuilder(ModBlocks.RAIL_LARGE_RAMP.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 0).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_ramp_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_RAMP.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 1).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_ramp_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_RAMP.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 2).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_ramp_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_RAMP.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 3).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_ramp_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_RAMP.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 4).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_ramp_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_RAMP.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 5).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_ramp_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_RAMP.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 6).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_ramp_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_RAMP.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 7).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_ramp_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_RAMP.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 8).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_ramp_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_RAMP.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 9).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_ramp_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_RAMP.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 10).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_ramp_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_RAMP.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 11).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_ramp_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_RAMP.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 12).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_ramp_r180_m12"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_RAMP.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 13).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_ramp_r0_m13"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_RAMP.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 14).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_ramp_r270_m14"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_RAMP.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 15).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_ramp_r90_m15"))).addModel();
+        // rail_large_buffer
+        getVariantBuilder(ModBlocks.RAIL_LARGE_BUFFER.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 0).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_buffer_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_BUFFER.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 1).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_buffer_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_BUFFER.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 2).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_buffer_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_BUFFER.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 3).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_buffer_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_BUFFER.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 4).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_buffer_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_BUFFER.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 5).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_buffer_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_BUFFER.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 6).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_buffer_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_BUFFER.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 7).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_buffer_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_BUFFER.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 8).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_buffer_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_BUFFER.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 9).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_buffer_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_BUFFER.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 10).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_buffer_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_BUFFER.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 11).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_buffer_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_BUFFER.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 12).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_buffer_r180_m12"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_BUFFER.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 13).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_buffer_r0_m13"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_BUFFER.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 14).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_buffer_r270_m14"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_BUFFER.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 15).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_buffer_r90_m15"))).addModel();
+        // rail_large_straight_short — RailStandardStraightShort (RailDummyableBlock): META 0-15, rotations baked into model names
+        getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT_SHORT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 0).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_short_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT_SHORT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 1).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_short_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT_SHORT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 2).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_short_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT_SHORT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 3).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_short_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT_SHORT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 4).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_short_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT_SHORT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 5).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_short_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT_SHORT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 6).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_short_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT_SHORT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 7).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_short_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT_SHORT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 8).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_short_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT_SHORT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 9).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_short_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT_SHORT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 10).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_short_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT_SHORT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 11).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_short_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT_SHORT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 12).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_short_r0_m12"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT_SHORT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 13).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_short_r0_m13"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT_SHORT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 14).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_short_r90_m14"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT_SHORT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 15).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_short_r90_m15"))).addModel();
+        // rail_large_switch — RailStandardSwitch (BlockRailWaypointSystem extends RailDummyableBlock): META 0-15
+        getVariantBuilder(ModBlocks.RAIL_LARGE_SWITCH.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 0).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_switch_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_SWITCH.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 1).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_switch_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_SWITCH.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 2).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_switch_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_SWITCH.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 3).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_switch_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_SWITCH.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 4).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_switch_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_SWITCH.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 5).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_switch_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_SWITCH.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 6).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_switch_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_SWITCH.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 7).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_switch_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_SWITCH.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 8).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_switch_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_SWITCH.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 9).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_switch_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_SWITCH.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 10).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_switch_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_SWITCH.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 11).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_switch_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_SWITCH.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 12).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_switch_r180_m12"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_SWITCH.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 13).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_switch_r0_m13"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_SWITCH.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 14).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_switch_r270_m14"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_SWITCH.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 15).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_switch_r90_m15"))).addModel();
+        // rail_large_switch_flipped — RailStandardSwitchFlipped (BlockRailWaypointSystem extends RailDummyableBlock): META 0-15
+        getVariantBuilder(ModBlocks.RAIL_LARGE_SWITCH_FLIPPED.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 0).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_switch_flipped_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_SWITCH_FLIPPED.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 1).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_switch_flipped_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_SWITCH_FLIPPED.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 2).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_switch_flipped_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_SWITCH_FLIPPED.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 3).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_switch_flipped_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_SWITCH_FLIPPED.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 4).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_switch_flipped_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_SWITCH_FLIPPED.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 5).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_switch_flipped_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_SWITCH_FLIPPED.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 6).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_switch_flipped_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_SWITCH_FLIPPED.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 7).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_switch_flipped_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_SWITCH_FLIPPED.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 8).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_switch_flipped_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_SWITCH_FLIPPED.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 9).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_switch_flipped_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_SWITCH_FLIPPED.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 10).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_switch_flipped_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_SWITCH_FLIPPED.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 11).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_switch_flipped_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_SWITCH_FLIPPED.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 12).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_switch_flipped_r180_m12"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_SWITCH_FLIPPED.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 13).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_switch_flipped_r0_m13"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_SWITCH_FLIPPED.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 14).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_switch_flipped_r270_m14"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_LARGE_SWITCH_FLIPPED.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 15).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_switch_flipped_r90_m15"))).addModel();
+        // rail_narrow_curve — RailNarrowCurve (RailDummyableBlock): META 0-15
+        getVariantBuilder(ModBlocks.RAIL_NARROW_CURVE.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 0).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_narrow_curve_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_NARROW_CURVE.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 1).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_narrow_curve_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_NARROW_CURVE.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 2).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_narrow_curve_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_NARROW_CURVE.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 3).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_narrow_curve_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_NARROW_CURVE.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 4).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_narrow_curve_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_NARROW_CURVE.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 5).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_narrow_curve_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_NARROW_CURVE.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 6).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_narrow_curve_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_NARROW_CURVE.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 7).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_narrow_curve_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_NARROW_CURVE.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 8).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_narrow_curve_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_NARROW_CURVE.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 9).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_narrow_curve_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_NARROW_CURVE.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 10).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_narrow_curve_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_NARROW_CURVE.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 11).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_narrow_curve_empty"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_NARROW_CURVE.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 12).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_narrow_curve_r90"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_NARROW_CURVE.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 13).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_narrow_curve_r270"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_NARROW_CURVE.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 14).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_narrow_curve_r180"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_NARROW_CURVE.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 15).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_narrow_curve_r0"))).addModel();
+        // rail_narrow_straight — RailNarrowStraight (RailDummyableBlock): META 0-15, r90 for 2,3,12,13; r0 otherwise
+        getVariantBuilder(ModBlocks.RAIL_NARROW_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 0).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_narrow_straight_r0"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_NARROW_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 1).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_narrow_straight_r0"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_NARROW_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 2).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_narrow_straight_r90"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_NARROW_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 3).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_narrow_straight_r90"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_NARROW_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 4).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_narrow_straight_r0"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_NARROW_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 5).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_narrow_straight_r0"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_NARROW_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 6).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_narrow_straight_r0"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_NARROW_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 7).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_narrow_straight_r0"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_NARROW_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 8).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_narrow_straight_r0"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_NARROW_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 9).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_narrow_straight_r0"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_NARROW_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 10).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_narrow_straight_r0"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_NARROW_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 11).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_narrow_straight_r0"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_NARROW_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 12).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_narrow_straight_r90"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_NARROW_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 13).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_narrow_straight_r90"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_NARROW_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 14).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_narrow_straight_r0"))).addModel();
+        getVariantBuilder(ModBlocks.RAIL_NARROW_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 15).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_narrow_straight_r0"))).addModel();
+        // rbmk_column_filler — RBMKColumnFillerBlock: plain Block, no state properties, single model, no item (registerBlockWithoutItem)
+        getVariantBuilder(ModBlocks.RBMK_COLUMN_FILLER.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/rbmk_column_filler"))).addModel();
+        // red_cable — WireBlock: multipart; negated center conditions (e.g. "!straight_z") expressed as positive multi-value conditions
+        // ("junction|straight_x|straight_y"), which Forge serializes as vanilla's OR-of-values syntax.
+        getMultipartBuilder(ModBlocks.RED_CABLE.get()).part().modelFile(models().getExistingFile(modLoc("block/red_cable_core"))).addModel().condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.JUNCTION).end();
+        getMultipartBuilder(ModBlocks.RED_CABLE.get()).part().modelFile(models().getExistingFile(modLoc("block/red_cable_straight_x"))).addModel().condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_X).end();
+        getMultipartBuilder(ModBlocks.RED_CABLE.get()).part().modelFile(models().getExistingFile(modLoc("block/red_cable_straight_y"))).addModel().condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_Y).end();
+        getMultipartBuilder(ModBlocks.RED_CABLE.get()).part().modelFile(models().getExistingFile(modLoc("block/red_cable_straight_z"))).addModel().condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_Z).end();
+        getMultipartBuilder(ModBlocks.RED_CABLE.get()).part().modelFile(models().getExistingFile(modLoc("block/red_cable_arm_north"))).addModel().condition(com.hbm_m.api.energy.WireBlock.NORTH, true).condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.JUNCTION, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_X, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_Y).end();
+        getMultipartBuilder(ModBlocks.RED_CABLE.get()).part().modelFile(models().getExistingFile(modLoc("block/red_cable_arm_south"))).addModel().condition(com.hbm_m.api.energy.WireBlock.SOUTH, true).condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.JUNCTION, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_X, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_Y).end();
+        getMultipartBuilder(ModBlocks.RED_CABLE.get()).part().modelFile(models().getExistingFile(modLoc("block/red_cable_arm_east"))).addModel().condition(com.hbm_m.api.energy.WireBlock.EAST, true).condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.JUNCTION, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_Y, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_Z).end();
+        getMultipartBuilder(ModBlocks.RED_CABLE.get()).part().modelFile(models().getExistingFile(modLoc("block/red_cable_arm_west"))).addModel().condition(com.hbm_m.api.energy.WireBlock.WEST, true).condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.JUNCTION, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_Y, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_Z).end();
+        getMultipartBuilder(ModBlocks.RED_CABLE.get()).part().modelFile(models().getExistingFile(modLoc("block/red_cable_arm_up"))).addModel().condition(com.hbm_m.api.energy.WireBlock.UP, true).condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.JUNCTION, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_X, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_Z).end();
+        getMultipartBuilder(ModBlocks.RED_CABLE.get()).part().modelFile(models().getExistingFile(modLoc("block/red_cable_arm_down"))).addModel().condition(com.hbm_m.api.energy.WireBlock.DOWN, true).condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.JUNCTION, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_X, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_Z).end();
+        // red_cable_box — BoxDuctBlock (META + N/S/E/W/UP/DOWN): hand-written json is a single "" variant covering all states
+        getVariantBuilder(ModBlocks.RED_CABLE_BOX.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/red_cable_box"))).addModel();
+        // red_cable_classic.json — WireBlock (north/east/south/west/up/down BooleanProperty), multipart
+        getMultipartBuilder(ModBlocks.RED_CABLE_CLASSIC.get()).part().modelFile(models().getExistingFile(modLoc("block/cable_classic_core"))).addModel().end()
+                .part().modelFile(models().getExistingFile(modLoc("block/cable_classic_arm_north"))).addModel().condition(com.hbm_m.api.energy.WireBlock.NORTH, true).end()
+                .part().modelFile(models().getExistingFile(modLoc("block/cable_classic_arm_south"))).addModel().condition(com.hbm_m.api.energy.WireBlock.SOUTH, true).end()
+                .part().modelFile(models().getExistingFile(modLoc("block/cable_classic_arm_east"))).addModel().condition(com.hbm_m.api.energy.WireBlock.EAST, true).end()
+                .part().modelFile(models().getExistingFile(modLoc("block/cable_classic_arm_west"))).addModel().condition(com.hbm_m.api.energy.WireBlock.WEST, true).end()
+                .part().modelFile(models().getExistingFile(modLoc("block/cable_classic_arm_up"))).addModel().condition(com.hbm_m.api.energy.WireBlock.UP, true).end()
+                .part().modelFile(models().getExistingFile(modLoc("block/cable_classic_arm_down"))).addModel().condition(com.hbm_m.api.energy.WireBlock.DOWN, true).end();
+        // red_cable_gauge.json — RedCableGaugeBlock.FACING (six-way BlockStateProperties.FACING), x/y rotations
+        getVariantBuilder(ModBlocks.RED_CABLE_GAUGE.get()).partialState().with(com.hbm_m.block.network.RedCableGaugeBlock.FACING, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/cable_gauge_block"))).addModel();
+        getVariantBuilder(ModBlocks.RED_CABLE_GAUGE.get()).partialState().with(com.hbm_m.block.network.RedCableGaugeBlock.FACING, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/cable_gauge_block"))).rotationX(180).addModel();
+        getVariantBuilder(ModBlocks.RED_CABLE_GAUGE.get()).partialState().with(com.hbm_m.block.network.RedCableGaugeBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/cable_gauge_block"))).rotationX(90).addModel();
+        getVariantBuilder(ModBlocks.RED_CABLE_GAUGE.get()).partialState().with(com.hbm_m.block.network.RedCableGaugeBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/cable_gauge_block"))).rotationX(270).addModel();
+        getVariantBuilder(ModBlocks.RED_CABLE_GAUGE.get()).partialState().with(com.hbm_m.block.network.RedCableGaugeBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/cable_gauge_block"))).rotationX(90).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.RED_CABLE_GAUGE.get()).partialState().with(com.hbm_m.block.network.RedCableGaugeBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/cable_gauge_block"))).rotationX(90).rotationY(270).addModel();
+        // red_cable_paintable.json — RedCablePaintableBlock.OVERLAY ("overlay" BooleanProperty), both values use the base cube
+        getVariantBuilder(ModBlocks.RED_CABLE_PAINTABLE.get()).partialState().with(com.hbm_m.block.network.RedCablePaintableBlock.OVERLAY, true).modelForState().modelFile(models().getExistingFile(modLoc("block/red_cable_base_cube"))).addModel();
+        getVariantBuilder(ModBlocks.RED_CABLE_PAINTABLE.get()).partialState().with(com.hbm_m.block.network.RedCablePaintableBlock.OVERLAY, false).modelForState().modelFile(models().getExistingFile(modLoc("block/red_cable_base_cube"))).addModel();
+        // red_cable_paintable_base.json — plain Block, one variant, model name differs from block path
+        getVariantBuilder(ModBlocks.RED_CABLE_PAINTABLE_BASE.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/red_cable_base_cube"))).addModel();
+        // red_cable_paintable_veil.json — plain Block, one variant, model name differs from block path
+        getVariantBuilder(ModBlocks.RED_CABLE_PAINTABLE_VEIL.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/red_cable_overlay_cube"))).addModel();
+        // red_connector.json — RedConnectorBlock.FACING (six-way)
+        getVariantBuilder(ModBlocks.RED_CONNECTOR.get()).partialState().with(com.hbm_m.block.network.RedConnectorBlock.FACING, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/red_connector"))).addModel();
+        getVariantBuilder(ModBlocks.RED_CONNECTOR.get()).partialState().with(com.hbm_m.block.network.RedConnectorBlock.FACING, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/red_connector"))).rotationX(180).addModel();
+        getVariantBuilder(ModBlocks.RED_CONNECTOR.get()).partialState().with(com.hbm_m.block.network.RedConnectorBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/red_connector"))).rotationX(270).addModel();
+        getVariantBuilder(ModBlocks.RED_CONNECTOR.get()).partialState().with(com.hbm_m.block.network.RedConnectorBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/red_connector"))).rotationX(90).addModel();
+        getVariantBuilder(ModBlocks.RED_CONNECTOR.get()).partialState().with(com.hbm_m.block.network.RedConnectorBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/red_connector"))).rotationX(270).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.RED_CONNECTOR.get()).partialState().with(com.hbm_m.block.network.RedConnectorBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/red_connector"))).rotationX(270).rotationY(270).addModel();
+        // red_connector_super.json — same shape as red_connector
+        getVariantBuilder(ModBlocks.RED_CONNECTOR_SUPER.get()).partialState().with(com.hbm_m.block.network.RedConnectorBlock.FACING, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/red_connector_super"))).addModel();
+        getVariantBuilder(ModBlocks.RED_CONNECTOR_SUPER.get()).partialState().with(com.hbm_m.block.network.RedConnectorBlock.FACING, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/red_connector_super"))).rotationX(180).addModel();
+        getVariantBuilder(ModBlocks.RED_CONNECTOR_SUPER.get()).partialState().with(com.hbm_m.block.network.RedConnectorBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/red_connector_super"))).rotationX(270).addModel();
+        getVariantBuilder(ModBlocks.RED_CONNECTOR_SUPER.get()).partialState().with(com.hbm_m.block.network.RedConnectorBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/red_connector_super"))).rotationX(90).addModel();
+        getVariantBuilder(ModBlocks.RED_CONNECTOR_SUPER.get()).partialState().with(com.hbm_m.block.network.RedConnectorBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/red_connector_super"))).rotationX(270).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.RED_CONNECTOR_SUPER.get()).partialState().with(com.hbm_m.block.network.RedConnectorBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/red_connector_super"))).rotationX(270).rotationY(270).addModel();
+        // red_pylon.json — RedPylonBlock (FACING defined in RedPylonCoreBlock but json has only the "" variant, replicated as-is)
+        getVariantBuilder(ModBlocks.RED_PYLON.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/red_pylon"))).addModel();
+        // red_pylon_steel.json — same, "" variant only
+        getVariantBuilder(ModBlocks.RED_PYLON_STEEL.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/red_pylon_steel"))).addModel();
+        // red_pylon_large.json — RedPylonCoreBlock.FACING (horizontal), per-facing y
+        customObjBlockRotated(ModBlocks.RED_PYLON_LARGE, Map.of(Direction.NORTH, 180, Direction.SOUTH, 0, Direction.EAST, 270, Direction.WEST, 90));
+        // red_pylon_medium_steel.json
+        customObjBlockRotated(ModBlocks.RED_PYLON_MEDIUM_STEEL, Map.of(Direction.NORTH, 180, Direction.SOUTH, 0, Direction.EAST, 270, Direction.WEST, 90));
+        // red_pylon_medium_steel_transformer.json
+        customObjBlockRotated(ModBlocks.RED_PYLON_MEDIUM_STEEL_TRANSFORMER, Map.of(Direction.NORTH, 180, Direction.SOUTH, 0, Direction.EAST, 270, Direction.WEST, 90));
+        // red_pylon_medium_wood.json
+        customObjBlockRotated(ModBlocks.RED_PYLON_MEDIUM_WOOD, Map.of(Direction.NORTH, 180, Direction.SOUTH, 0, Direction.EAST, 270, Direction.WEST, 90));
+        // red_pylon_medium_wood_transformer.json
+        customObjBlockRotated(ModBlocks.RED_PYLON_MEDIUM_WOOD_TRANSFORMER, Map.of(Direction.NORTH, 180, Direction.SOUTH, 0, Direction.EAST, 270, Direction.WEST, 90));
+        // refinery.json — MachineRefineryBlock.FACING + EXPLODED, 8 variants
+        getVariantBuilder(ModBlocks.REFINERY.get()).partialState().with(com.hbm_m.block.machines.MachineRefineryBlock.EXPLODED, false).with(com.hbm_m.block.machines.MachineRefineryBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/refinery"))).addModel();
+        getVariantBuilder(ModBlocks.REFINERY.get()).partialState().with(com.hbm_m.block.machines.MachineRefineryBlock.EXPLODED, false).with(com.hbm_m.block.machines.MachineRefineryBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/refinery"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.REFINERY.get()).partialState().with(com.hbm_m.block.machines.MachineRefineryBlock.EXPLODED, false).with(com.hbm_m.block.machines.MachineRefineryBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/refinery"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.REFINERY.get()).partialState().with(com.hbm_m.block.machines.MachineRefineryBlock.EXPLODED, false).with(com.hbm_m.block.machines.MachineRefineryBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/refinery"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.REFINERY.get()).partialState().with(com.hbm_m.block.machines.MachineRefineryBlock.EXPLODED, true).with(com.hbm_m.block.machines.MachineRefineryBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/refinery_exploded"))).addModel();
+        getVariantBuilder(ModBlocks.REFINERY.get()).partialState().with(com.hbm_m.block.machines.MachineRefineryBlock.EXPLODED, true).with(com.hbm_m.block.machines.MachineRefineryBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/refinery_exploded"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.REFINERY.get()).partialState().with(com.hbm_m.block.machines.MachineRefineryBlock.EXPLODED, true).with(com.hbm_m.block.machines.MachineRefineryBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/refinery_exploded"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.REFINERY.get()).partialState().with(com.hbm_m.block.machines.MachineRefineryBlock.EXPLODED, true).with(com.hbm_m.block.machines.MachineRefineryBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/refinery_exploded"))).rotationY(90).addModel();
+        // safe.json — SafeBlock.FACING (BlockStateProperties.HORIZONTAL_FACING), standard y map; block has no item (registerBlockWithoutItem) so no helper item model
+        getVariantBuilder(ModBlocks.SAFE.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/safe"))).addModel();
+        getVariantBuilder(ModBlocks.SAFE.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/safe"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.SAFE.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/safe"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.SAFE.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/safe"))).rotationY(270).addModel();
+        // sandbags.json — R6dBlocks.Sandbags N/S/E/W booleans, 16 variants (bits N,S,E,W)
+        getVariantBuilder(ModBlocks.SANDBAGS.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.Sandbags.NORTH, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.SOUTH, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.EAST, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.WEST, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/sandbags_0000"))).addModel();
+        getVariantBuilder(ModBlocks.SANDBAGS.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.Sandbags.NORTH, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.SOUTH, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.EAST, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.WEST, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/sandbags_0001"))).addModel();
+        getVariantBuilder(ModBlocks.SANDBAGS.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.Sandbags.NORTH, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.SOUTH, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.EAST, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.WEST, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/sandbags_0010"))).addModel();
+        getVariantBuilder(ModBlocks.SANDBAGS.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.Sandbags.NORTH, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.SOUTH, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.EAST, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.WEST, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/sandbags_0011"))).addModel();
+        getVariantBuilder(ModBlocks.SANDBAGS.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.Sandbags.NORTH, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.SOUTH, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.EAST, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.WEST, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/sandbags_0100"))).addModel();
+        getVariantBuilder(ModBlocks.SANDBAGS.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.Sandbags.NORTH, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.SOUTH, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.EAST, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.WEST, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/sandbags_0101"))).addModel();
+        getVariantBuilder(ModBlocks.SANDBAGS.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.Sandbags.NORTH, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.SOUTH, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.EAST, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.WEST, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/sandbags_0110"))).addModel();
+        getVariantBuilder(ModBlocks.SANDBAGS.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.Sandbags.NORTH, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.SOUTH, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.EAST, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.WEST, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/sandbags_0111"))).addModel();
+        getVariantBuilder(ModBlocks.SANDBAGS.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.Sandbags.NORTH, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.SOUTH, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.EAST, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.WEST, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/sandbags_1000"))).addModel();
+        getVariantBuilder(ModBlocks.SANDBAGS.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.Sandbags.NORTH, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.SOUTH, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.EAST, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.WEST, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/sandbags_1001"))).addModel();
+        getVariantBuilder(ModBlocks.SANDBAGS.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.Sandbags.NORTH, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.SOUTH, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.EAST, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.WEST, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/sandbags_1010"))).addModel();
+        getVariantBuilder(ModBlocks.SANDBAGS.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.Sandbags.NORTH, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.SOUTH, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.EAST, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.WEST, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/sandbags_1011"))).addModel();
+        getVariantBuilder(ModBlocks.SANDBAGS.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.Sandbags.NORTH, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.SOUTH, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.EAST, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.WEST, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/sandbags_1100"))).addModel();
+        getVariantBuilder(ModBlocks.SANDBAGS.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.Sandbags.NORTH, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.SOUTH, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.EAST, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.WEST, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/sandbags_1101"))).addModel();
+        getVariantBuilder(ModBlocks.SANDBAGS.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.Sandbags.NORTH, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.SOUTH, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.EAST, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.WEST, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/sandbags_1110"))).addModel();
+        getVariantBuilder(ModBlocks.SANDBAGS.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.Sandbags.NORTH, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.SOUTH, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.EAST, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.WEST, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/sandbags_1111"))).addModel();
+        // seal_controller.json — SealBlocks.Controller.FACING + POWERED, powered does not change the model
+        getVariantBuilder(ModBlocks.SEAL_CONTROLLER.get()).partialState().with(com.hbm_m.block.machines.SealBlocks.Controller.FACING, Direction.NORTH).with(com.hbm_m.block.machines.SealBlocks.Controller.POWERED, false).modelForState().modelFile(models().getExistingFile(modLoc("block/seal_controller"))).addModel();
+        getVariantBuilder(ModBlocks.SEAL_CONTROLLER.get()).partialState().with(com.hbm_m.block.machines.SealBlocks.Controller.FACING, Direction.NORTH).with(com.hbm_m.block.machines.SealBlocks.Controller.POWERED, true).modelForState().modelFile(models().getExistingFile(modLoc("block/seal_controller"))).addModel();
+        getVariantBuilder(ModBlocks.SEAL_CONTROLLER.get()).partialState().with(com.hbm_m.block.machines.SealBlocks.Controller.FACING, Direction.EAST).with(com.hbm_m.block.machines.SealBlocks.Controller.POWERED, false).modelForState().modelFile(models().getExistingFile(modLoc("block/seal_controller"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.SEAL_CONTROLLER.get()).partialState().with(com.hbm_m.block.machines.SealBlocks.Controller.FACING, Direction.EAST).with(com.hbm_m.block.machines.SealBlocks.Controller.POWERED, true).modelForState().modelFile(models().getExistingFile(modLoc("block/seal_controller"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.SEAL_CONTROLLER.get()).partialState().with(com.hbm_m.block.machines.SealBlocks.Controller.FACING, Direction.SOUTH).with(com.hbm_m.block.machines.SealBlocks.Controller.POWERED, false).modelForState().modelFile(models().getExistingFile(modLoc("block/seal_controller"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.SEAL_CONTROLLER.get()).partialState().with(com.hbm_m.block.machines.SealBlocks.Controller.FACING, Direction.SOUTH).with(com.hbm_m.block.machines.SealBlocks.Controller.POWERED, true).modelForState().modelFile(models().getExistingFile(modLoc("block/seal_controller"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.SEAL_CONTROLLER.get()).partialState().with(com.hbm_m.block.machines.SealBlocks.Controller.FACING, Direction.WEST).with(com.hbm_m.block.machines.SealBlocks.Controller.POWERED, false).modelForState().modelFile(models().getExistingFile(modLoc("block/seal_controller"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.SEAL_CONTROLLER.get()).partialState().with(com.hbm_m.block.machines.SealBlocks.Controller.FACING, Direction.WEST).with(com.hbm_m.block.machines.SealBlocks.Controller.POWERED, true).modelForState().modelFile(models().getExistingFile(modLoc("block/seal_controller"))).rotationY(270).addModel();
+        // seal_frame.json — plain Block, one variant
+        customObjBlockNoFacing(ModBlocks.SEAL_FRAME);
+        // seal_hatch.json — SealBlocks.Hatch has no properties; registerBlockWithoutItem, so explicit form (no item model side effect)
+        getVariantBuilder(ModBlocks.SEAL_HATCH.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/seal_hatch"))).addModel();
+        // semtex.json — BlockTNTBase.IGNITE_ON_BREAK, both values use bomb/semtex
+        getVariantBuilder(ModBlocks.SEMTEX.get()).partialState().with(com.hbm_m.block.bomb.BlockTNTBase.IGNITE_ON_BREAK, false).modelForState().modelFile(models().getExistingFile(modLoc("block/bomb/semtex"))).addModel();
+        getVariantBuilder(ModBlocks.SEMTEX.get()).partialState().with(com.hbm_m.block.bomb.BlockTNTBase.IGNITE_ON_BREAK, true).modelForState().modelFile(models().getExistingFile(modLoc("block/bomb/semtex"))).addModel();
+        // skeleton_holder.json — SkeletonHolderBlock.FACING (horizontal), nonstandard y map;
+        // explicit form because the model lives at block/deco/skeleton_holder, not block/skeleton_holder
+        getVariantBuilder(ModBlocks.SKELETON_HOLDER.get()).partialState().with(com.hbm_m.block.decorations.SkeletonHolderBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/skeleton_holder"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.SKELETON_HOLDER.get()).partialState().with(com.hbm_m.block.decorations.SkeletonHolderBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/skeleton_holder"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.SKELETON_HOLDER.get()).partialState().with(com.hbm_m.block.decorations.SkeletonHolderBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/skeleton_holder"))).addModel();
+        getVariantBuilder(ModBlocks.SKELETON_HOLDER.get()).partialState().with(com.hbm_m.block.decorations.SkeletonHolderBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/skeleton_holder"))).rotationY(270).addModel();
+        // snowglobe.json — TrinketBlock.ROTATION (BlockStateProperties.ROTATION_16), same model for all 16 rotations
+        getVariantBuilder(ModBlocks.SNOWGLOBE.get()).partialState().with(com.hbm_m.block.decorations.TrinketBlock.ROTATION, 0).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/snowglobe_particle"))).addModel();
+        getVariantBuilder(ModBlocks.SNOWGLOBE.get()).partialState().with(com.hbm_m.block.decorations.TrinketBlock.ROTATION, 1).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/snowglobe_particle"))).addModel();
+        getVariantBuilder(ModBlocks.SNOWGLOBE.get()).partialState().with(com.hbm_m.block.decorations.TrinketBlock.ROTATION, 2).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/snowglobe_particle"))).addModel();
+        getVariantBuilder(ModBlocks.SNOWGLOBE.get()).partialState().with(com.hbm_m.block.decorations.TrinketBlock.ROTATION, 3).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/snowglobe_particle"))).addModel();
+        getVariantBuilder(ModBlocks.SNOWGLOBE.get()).partialState().with(com.hbm_m.block.decorations.TrinketBlock.ROTATION, 4).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/snowglobe_particle"))).addModel();
+        getVariantBuilder(ModBlocks.SNOWGLOBE.get()).partialState().with(com.hbm_m.block.decorations.TrinketBlock.ROTATION, 5).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/snowglobe_particle"))).addModel();
+        getVariantBuilder(ModBlocks.SNOWGLOBE.get()).partialState().with(com.hbm_m.block.decorations.TrinketBlock.ROTATION, 6).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/snowglobe_particle"))).addModel();
+        getVariantBuilder(ModBlocks.SNOWGLOBE.get()).partialState().with(com.hbm_m.block.decorations.TrinketBlock.ROTATION, 7).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/snowglobe_particle"))).addModel();
+        getVariantBuilder(ModBlocks.SNOWGLOBE.get()).partialState().with(com.hbm_m.block.decorations.TrinketBlock.ROTATION, 8).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/snowglobe_particle"))).addModel();
+        getVariantBuilder(ModBlocks.SNOWGLOBE.get()).partialState().with(com.hbm_m.block.decorations.TrinketBlock.ROTATION, 9).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/snowglobe_particle"))).addModel();
+        getVariantBuilder(ModBlocks.SNOWGLOBE.get()).partialState().with(com.hbm_m.block.decorations.TrinketBlock.ROTATION, 10).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/snowglobe_particle"))).addModel();
+        getVariantBuilder(ModBlocks.SNOWGLOBE.get()).partialState().with(com.hbm_m.block.decorations.TrinketBlock.ROTATION, 11).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/snowglobe_particle"))).addModel();
+        getVariantBuilder(ModBlocks.SNOWGLOBE.get()).partialState().with(com.hbm_m.block.decorations.TrinketBlock.ROTATION, 12).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/snowglobe_particle"))).addModel();
+        getVariantBuilder(ModBlocks.SNOWGLOBE.get()).partialState().with(com.hbm_m.block.decorations.TrinketBlock.ROTATION, 13).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/snowglobe_particle"))).addModel();
+        getVariantBuilder(ModBlocks.SNOWGLOBE.get()).partialState().with(com.hbm_m.block.decorations.TrinketBlock.ROTATION, 14).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/snowglobe_particle"))).addModel();
+        getVariantBuilder(ModBlocks.SNOWGLOBE.get()).partialState().with(com.hbm_m.block.decorations.TrinketBlock.ROTATION, 15).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/snowglobe_particle"))).addModel();
+        // solar_boiler — MachineSolarBoilerBlock (via DummyableMachineBlock): HORIZONTAL_FACING, all 4 facings same model, no rotations
+        getVariantBuilder(ModBlocks.SOLAR_BOILER.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/solar_boiler"))).addModel();
+        getVariantBuilder(ModBlocks.SOLAR_BOILER.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/solar_boiler"))).addModel();
+        getVariantBuilder(ModBlocks.SOLAR_BOILER.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/solar_boiler"))).addModel();
+        getVariantBuilder(ModBlocks.SOLAR_BOILER.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/solar_boiler"))).addModel();
+        // spotlight_beam — SpotlightBeamBlock: hand-written json has a single "" variant; block has COLOR+6 dir properties, replicated as the same "" partial state
+        getVariantBuilder(ModBlocks.SPOTLIGHT_BEAM.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/floodlight_particle"))).addModel();
+        // stalactite_ice — NTMPlants.Stalagmite: no state properties, single variant, model path matches block id
+        customObjBlockNoFacing(ModBlocks.STALACTITE_ICE);
+        // stalactite_snow — NTMPlants.Stalagmite: no state properties, single variant, model path matches block id
+        customObjBlockNoFacing(ModBlocks.STALACTITE_SNOW);
+        // stalactite_glyphid1 — NTMPlants.Stalagmite: no state properties, single variant, model path matches block id
+        customObjBlockNoFacing(ModBlocks.STALACTITE_GLYPHID1);
+        // stalactite_glyphid2 — NTMPlants.Stalagmite: no state properties, single variant, model path matches block id
+        customObjBlockNoFacing(ModBlocks.STALACTITE_GLYPHID2);
+        // stalactite_glyphid3 — NTMPlants.Stalagmite: no state properties, single variant, model path matches block id
+        customObjBlockNoFacing(ModBlocks.STALACTITE_GLYPHID3);
+        // stalagmite_ice — NTMPlants.Stalagmite: no state properties, single variant, model path matches block id
+        customObjBlockNoFacing(ModBlocks.STALAGMITE_ICE);
+        // stalagmite_snow — NTMPlants.Stalagmite: no state properties, single variant, model path matches block id
+        customObjBlockNoFacing(ModBlocks.STALAGMITE_SNOW);
+        // stalagmite_glyphid1 — NTMPlants.Stalagmite: no state properties, single variant, model path matches block id
+        customObjBlockNoFacing(ModBlocks.STALAGMITE_GLYPHID1);
+        // stalagmite_glyphid2 — NTMPlants.Stalagmite: no state properties, single variant, model path matches block id
+        customObjBlockNoFacing(ModBlocks.STALAGMITE_GLYPHID2);
+        // stalagmite_glyphid3 — NTMPlants.Stalagmite: no state properties, single variant, model path matches block id
+        customObjBlockNoFacing(ModBlocks.STALAGMITE_GLYPHID3);
+        // statue_elb_f — StatueBlock: HORIZONTAL_FACING, all 4 facings same model, no rotations
+        getVariantBuilder(ModBlocks.STATUE_ELB_F.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/statue_elb_f"))).addModel();
+        getVariantBuilder(ModBlocks.STATUE_ELB_F.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/statue_elb_f"))).addModel();
+        getVariantBuilder(ModBlocks.STATUE_ELB_F.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/statue_elb_f"))).addModel();
+        getVariantBuilder(ModBlocks.STATUE_ELB_F.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/statue_elb_f"))).addModel();
+        // steel_corner — SteelCornerBlock (via SteelWallBlock): has FACING, but hand-written json has only a single "" variant; replicated as the same "" partial state
+        getVariantBuilder(ModBlocks.STEEL_CORNER.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/steel_corner"))).addModel();
+        // steel_pole — DecoObjBlock (Placement.OPPOSITE): HORIZONTAL_FACING with y rotations north=0, south=180, west=270, east=90
+        getVariantBuilder(ModBlocks.STEEL_POLE.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/steel_pole"))).addModel();
+        getVariantBuilder(ModBlocks.STEEL_POLE.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/steel_pole"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.STEEL_POLE.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/steel_pole"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.STEEL_POLE.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/steel_pole"))).rotationY(90).addModel();
+        // steel_roof — DecorShapeBlock: HORIZONTAL_FACING, all 4 facings same model, no rotations; replaces the "генерация удалена" removal at ModBlockStateProvider.java:3089
+        getVariantBuilder(ModBlocks.STEEL_ROOF.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/steel_roof"))).addModel();
+        getVariantBuilder(ModBlocks.STEEL_ROOF.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/steel_roof"))).addModel();
+        getVariantBuilder(ModBlocks.STEEL_ROOF.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/steel_roof"))).addModel();
+        getVariantBuilder(ModBlocks.STEEL_ROOF.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/steel_roof"))).addModel();
+        getVariantBuilder(ModBlocks.STEEL_SCAFFOLD_RED.get()).partialState().with(com.hbm_m.block.decorations.SteelScaffoldBlock.ORIENT, com.hbm_m.block.decorations.SteelScaffoldBlock.Orient.UPRIGHT_X).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/steel_scaffold_red_upright_x"))).addModel();
+        getVariantBuilder(ModBlocks.STEEL_SCAFFOLD_RED.get()).partialState().with(com.hbm_m.block.decorations.SteelScaffoldBlock.ORIENT, com.hbm_m.block.decorations.SteelScaffoldBlock.Orient.FLAT_NS).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/steel_scaffold_red_flat_ns"))).addModel();
+        getVariantBuilder(ModBlocks.STEEL_SCAFFOLD_RED.get()).partialState().with(com.hbm_m.block.decorations.SteelScaffoldBlock.ORIENT, com.hbm_m.block.decorations.SteelScaffoldBlock.Orient.UPRIGHT_Z).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/steel_scaffold_red_upright_z"))).addModel();
+        getVariantBuilder(ModBlocks.STEEL_SCAFFOLD_RED.get()).partialState().with(com.hbm_m.block.decorations.SteelScaffoldBlock.ORIENT, com.hbm_m.block.decorations.SteelScaffoldBlock.Orient.FLAT_WE).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/steel_scaffold_red_flat_we"))).addModel();
+        getVariantBuilder(ModBlocks.STEEL_SCAFFOLD_WHITE.get()).partialState().with(com.hbm_m.block.decorations.SteelScaffoldBlock.ORIENT, com.hbm_m.block.decorations.SteelScaffoldBlock.Orient.UPRIGHT_X).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/steel_scaffold_white_upright_x"))).addModel();
+        getVariantBuilder(ModBlocks.STEEL_SCAFFOLD_WHITE.get()).partialState().with(com.hbm_m.block.decorations.SteelScaffoldBlock.ORIENT, com.hbm_m.block.decorations.SteelScaffoldBlock.Orient.FLAT_NS).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/steel_scaffold_white_flat_ns"))).addModel();
+        getVariantBuilder(ModBlocks.STEEL_SCAFFOLD_WHITE.get()).partialState().with(com.hbm_m.block.decorations.SteelScaffoldBlock.ORIENT, com.hbm_m.block.decorations.SteelScaffoldBlock.Orient.UPRIGHT_Z).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/steel_scaffold_white_upright_z"))).addModel();
+        getVariantBuilder(ModBlocks.STEEL_SCAFFOLD_WHITE.get()).partialState().with(com.hbm_m.block.decorations.SteelScaffoldBlock.ORIENT, com.hbm_m.block.decorations.SteelScaffoldBlock.Orient.FLAT_WE).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/steel_scaffold_white_flat_we"))).addModel();
+        getVariantBuilder(ModBlocks.STEEL_SCAFFOLD_YELLOW.get()).partialState().with(com.hbm_m.block.decorations.SteelScaffoldBlock.ORIENT, com.hbm_m.block.decorations.SteelScaffoldBlock.Orient.UPRIGHT_X).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/steel_scaffold_yellow_upright_x"))).addModel();
+        getVariantBuilder(ModBlocks.STEEL_SCAFFOLD_YELLOW.get()).partialState().with(com.hbm_m.block.decorations.SteelScaffoldBlock.ORIENT, com.hbm_m.block.decorations.SteelScaffoldBlock.Orient.FLAT_NS).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/steel_scaffold_yellow_flat_ns"))).addModel();
+        getVariantBuilder(ModBlocks.STEEL_SCAFFOLD_YELLOW.get()).partialState().with(com.hbm_m.block.decorations.SteelScaffoldBlock.ORIENT, com.hbm_m.block.decorations.SteelScaffoldBlock.Orient.UPRIGHT_Z).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/steel_scaffold_yellow_upright_z"))).addModel();
+        getVariantBuilder(ModBlocks.STEEL_SCAFFOLD_YELLOW.get()).partialState().with(com.hbm_m.block.decorations.SteelScaffoldBlock.ORIENT, com.hbm_m.block.decorations.SteelScaffoldBlock.Orient.FLAT_WE).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/steel_scaffold_yellow_flat_we"))).addModel();
+        getVariantBuilder(ModBlocks.STEEL_WALL.get()).partialState().with(com.hbm_m.block.decorations.SteelWallBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/steel_wall_north"))).addModel();
+        getVariantBuilder(ModBlocks.STEEL_WALL.get()).partialState().with(com.hbm_m.block.decorations.SteelWallBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/steel_wall_south"))).addModel();
+        getVariantBuilder(ModBlocks.STEEL_WALL.get()).partialState().with(com.hbm_m.block.decorations.SteelWallBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/steel_wall_east"))).addModel();
+        getVariantBuilder(ModBlocks.STEEL_WALL.get()).partialState().with(com.hbm_m.block.decorations.SteelWallBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/steel_wall_west"))).addModel();
+        getVariantBuilder(ModBlocks.TAPE_RECORDER.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/tape_recorder"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.TAPE_RECORDER.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/tape_recorder"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.TAPE_RECORDER.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/tape_recorder"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.TAPE_RECORDER.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/tape_recorder"))).addModel();
+        getVariantBuilder(ModBlocks.TEST_BLOCK.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/test/geo_dead"))).addModel();
+        getVariantBuilder(ModBlocks.TNT_NTM.get()).partialState().with(com.hbm_m.block.bomb.BlockTNTBase.IGNITE_ON_BREAK, false).modelForState().modelFile(models().getExistingFile(modLoc("block/bomb/tnt_ntm"))).addModel();
+        getVariantBuilder(ModBlocks.TNT_NTM.get()).partialState().with(com.hbm_m.block.bomb.BlockTNTBase.IGNITE_ON_BREAK, true).modelForState().modelFile(models().getExistingFile(modLoc("block/bomb/tnt_ntm"))).addModel();
+        getVariantBuilder(ModBlocks.TOASTER.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/toaster"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.TOASTER.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/toaster"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.TOASTER.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/toaster"))).addModel();
+        getVariantBuilder(ModBlocks.TOASTER.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/toaster"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.TOASTER_STEEL.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/toaster_steel"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.TOASTER_STEEL.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/toaster_steel"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.TOASTER_STEEL.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/toaster_steel"))).addModel();
+        getVariantBuilder(ModBlocks.TOASTER_STEEL.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/toaster_steel"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.TOASTER_WOOD.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/toaster_wood"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.TOASTER_WOOD.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/toaster_wood"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.TOASTER_WOOD.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/toaster_wood"))).addModel();
+        getVariantBuilder(ModBlocks.TOASTER_WOOD.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/toaster_wood"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.TRAPDOOR_STEEL.get()).partialState().with(net.minecraft.world.level.block.TrapDoorBlock.FACING, Direction.EAST).with(net.minecraft.world.level.block.TrapDoorBlock.HALF, net.minecraft.world.level.block.state.properties.Half.BOTTOM).with(net.minecraft.world.level.block.TrapDoorBlock.OPEN, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/trapdoor_steel_bottom"))).addModel();
+        getVariantBuilder(ModBlocks.TRAPDOOR_STEEL.get()).partialState().with(net.minecraft.world.level.block.TrapDoorBlock.FACING, Direction.EAST).with(net.minecraft.world.level.block.TrapDoorBlock.HALF, net.minecraft.world.level.block.state.properties.Half.BOTTOM).with(net.minecraft.world.level.block.TrapDoorBlock.OPEN, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/trapdoor_steel_open"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.TRAPDOOR_STEEL.get()).partialState().with(net.minecraft.world.level.block.TrapDoorBlock.FACING, Direction.EAST).with(net.minecraft.world.level.block.TrapDoorBlock.HALF, net.minecraft.world.level.block.state.properties.Half.TOP).with(net.minecraft.world.level.block.TrapDoorBlock.OPEN, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/trapdoor_steel_top"))).addModel();
+        getVariantBuilder(ModBlocks.TRAPDOOR_STEEL.get()).partialState().with(net.minecraft.world.level.block.TrapDoorBlock.FACING, Direction.EAST).with(net.minecraft.world.level.block.TrapDoorBlock.HALF, net.minecraft.world.level.block.state.properties.Half.TOP).with(net.minecraft.world.level.block.TrapDoorBlock.OPEN, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/trapdoor_steel_open"))).rotationY(90).addModel();
+        getVariantBuilder(ModBlocks.TRAPDOOR_STEEL.get()).partialState().with(net.minecraft.world.level.block.TrapDoorBlock.FACING, Direction.NORTH).with(net.minecraft.world.level.block.TrapDoorBlock.HALF, net.minecraft.world.level.block.state.properties.Half.BOTTOM).with(net.minecraft.world.level.block.TrapDoorBlock.OPEN, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/trapdoor_steel_bottom"))).addModel();
+        getVariantBuilder(ModBlocks.TRAPDOOR_STEEL.get()).partialState().with(net.minecraft.world.level.block.TrapDoorBlock.FACING, Direction.NORTH).with(net.minecraft.world.level.block.TrapDoorBlock.HALF, net.minecraft.world.level.block.state.properties.Half.BOTTOM).with(net.minecraft.world.level.block.TrapDoorBlock.OPEN, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/trapdoor_steel_open"))).addModel();
+        getVariantBuilder(ModBlocks.TRAPDOOR_STEEL.get()).partialState().with(net.minecraft.world.level.block.TrapDoorBlock.FACING, Direction.NORTH).with(net.minecraft.world.level.block.TrapDoorBlock.HALF, net.minecraft.world.level.block.state.properties.Half.TOP).with(net.minecraft.world.level.block.TrapDoorBlock.OPEN, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/trapdoor_steel_top"))).addModel();
+        getVariantBuilder(ModBlocks.TRAPDOOR_STEEL.get()).partialState().with(net.minecraft.world.level.block.TrapDoorBlock.FACING, Direction.NORTH).with(net.minecraft.world.level.block.TrapDoorBlock.HALF, net.minecraft.world.level.block.state.properties.Half.TOP).with(net.minecraft.world.level.block.TrapDoorBlock.OPEN, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/trapdoor_steel_open"))).addModel();
+        getVariantBuilder(ModBlocks.TRAPDOOR_STEEL.get()).partialState().with(net.minecraft.world.level.block.TrapDoorBlock.FACING, Direction.SOUTH).with(net.minecraft.world.level.block.TrapDoorBlock.HALF, net.minecraft.world.level.block.state.properties.Half.BOTTOM).with(net.minecraft.world.level.block.TrapDoorBlock.OPEN, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/trapdoor_steel_bottom"))).addModel();
+        getVariantBuilder(ModBlocks.TRAPDOOR_STEEL.get()).partialState().with(net.minecraft.world.level.block.TrapDoorBlock.FACING, Direction.SOUTH).with(net.minecraft.world.level.block.TrapDoorBlock.HALF, net.minecraft.world.level.block.state.properties.Half.BOTTOM).with(net.minecraft.world.level.block.TrapDoorBlock.OPEN, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/trapdoor_steel_open"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.TRAPDOOR_STEEL.get()).partialState().with(net.minecraft.world.level.block.TrapDoorBlock.FACING, Direction.SOUTH).with(net.minecraft.world.level.block.TrapDoorBlock.HALF, net.minecraft.world.level.block.state.properties.Half.TOP).with(net.minecraft.world.level.block.TrapDoorBlock.OPEN, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/trapdoor_steel_top"))).addModel();
+        getVariantBuilder(ModBlocks.TRAPDOOR_STEEL.get()).partialState().with(net.minecraft.world.level.block.TrapDoorBlock.FACING, Direction.SOUTH).with(net.minecraft.world.level.block.TrapDoorBlock.HALF, net.minecraft.world.level.block.state.properties.Half.TOP).with(net.minecraft.world.level.block.TrapDoorBlock.OPEN, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/trapdoor_steel_open"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.TRAPDOOR_STEEL.get()).partialState().with(net.minecraft.world.level.block.TrapDoorBlock.FACING, Direction.WEST).with(net.minecraft.world.level.block.TrapDoorBlock.HALF, net.minecraft.world.level.block.state.properties.Half.BOTTOM).with(net.minecraft.world.level.block.TrapDoorBlock.OPEN, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/trapdoor_steel_bottom"))).addModel();
+        getVariantBuilder(ModBlocks.TRAPDOOR_STEEL.get()).partialState().with(net.minecraft.world.level.block.TrapDoorBlock.FACING, Direction.WEST).with(net.minecraft.world.level.block.TrapDoorBlock.HALF, net.minecraft.world.level.block.state.properties.Half.BOTTOM).with(net.minecraft.world.level.block.TrapDoorBlock.OPEN, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/trapdoor_steel_open"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.TRAPDOOR_STEEL.get()).partialState().with(net.minecraft.world.level.block.TrapDoorBlock.FACING, Direction.WEST).with(net.minecraft.world.level.block.TrapDoorBlock.HALF, net.minecraft.world.level.block.state.properties.Half.TOP).with(net.minecraft.world.level.block.TrapDoorBlock.OPEN, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/trapdoor_steel_top"))).addModel();
+        getVariantBuilder(ModBlocks.TRAPDOOR_STEEL.get()).partialState().with(net.minecraft.world.level.block.TrapDoorBlock.FACING, Direction.WEST).with(net.minecraft.world.level.block.TrapDoorBlock.HALF, net.minecraft.world.level.block.state.properties.Half.TOP).with(net.minecraft.world.level.block.TrapDoorBlock.OPEN, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/trapdoor_steel_open"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.VENDING_MACHINE.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/vending_machine_particle"))).addModel();
+        getVariantBuilder(ModBlocks.VENDING_MACHINE.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/vending_machine_particle"))).addModel();
+        getVariantBuilder(ModBlocks.VENDING_MACHINE.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/vending_machine_particle"))).addModel();
+        getVariantBuilder(ModBlocks.VENDING_MACHINE.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/vending_machine_particle"))).addModel();
+        getVariantBuilder(ModBlocks.VENDING_MACHINE_SNACKS.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/vending_machine_particle"))).addModel();
+        getVariantBuilder(ModBlocks.VENDING_MACHINE_SNACKS.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/vending_machine_particle"))).addModel();
+        getVariantBuilder(ModBlocks.VENDING_MACHINE_SNACKS.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/vending_machine_particle"))).addModel();
+        getVariantBuilder(ModBlocks.VENDING_MACHINE_SNACKS.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/vending_machine_particle"))).addModel();
+        // --- watz_powerplant ---
+        getVariantBuilder(ModBlocks.WATZ_POWERPLANT.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, net.minecraft.core.Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/watz_powerplant"))).rotationY(0).addModel();
+        getVariantBuilder(ModBlocks.WATZ_POWERPLANT.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, net.minecraft.core.Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/watz_powerplant"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.WATZ_POWERPLANT.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, net.minecraft.core.Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/watz_powerplant"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.WATZ_POWERPLANT.get()).partialState().with(com.hbm_m.block.machines.DummyableMachineBlock.FACING, net.minecraft.core.Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/watz_powerplant"))).rotationY(90).addModel();
+        // --- zirnox_destroyed ---
+        getVariantBuilder(ModBlocks.ZIRNOX_DESTROYED.get()).partialState().with(com.hbm_m.block.machines.MachineZirnoxDestroyedBlock.FACING, net.minecraft.core.Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/zirnox_destroyed"))).rotationY(0).addModel();
+        getVariantBuilder(ModBlocks.ZIRNOX_DESTROYED.get()).partialState().with(com.hbm_m.block.machines.MachineZirnoxDestroyedBlock.FACING, net.minecraft.core.Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/zirnox_destroyed"))).rotationY(180).addModel();
+        getVariantBuilder(ModBlocks.ZIRNOX_DESTROYED.get()).partialState().with(com.hbm_m.block.machines.MachineZirnoxDestroyedBlock.FACING, net.minecraft.core.Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/zirnox_destroyed"))).rotationY(270).addModel();
+        getVariantBuilder(ModBlocks.ZIRNOX_DESTROYED.get()).partialState().with(com.hbm_m.block.machines.MachineZirnoxDestroyedBlock.FACING, net.minecraft.core.Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/machines/zirnox_destroyed"))).rotationY(90).addModel();
+        // --- zirnox_deb_* ---
+        getVariantBuilder(ModBlocks.ZIRNOX_DEB_BLANK.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/machines/zirnox_deb_blank"))).addModel();
+        getVariantBuilder(ModBlocks.ZIRNOX_DEB_ELEMENT.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/machines/zirnox_deb_element"))).addModel();
+        getVariantBuilder(ModBlocks.ZIRNOX_DEB_SHRAPNEL.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/machines/zirnox_deb_shrapnel"))).addModel();
+        getVariantBuilder(ModBlocks.ZIRNOX_DEB_CONCRETE.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/machines/zirnox_deb_concrete"))).addModel();
+        getVariantBuilder(ModBlocks.ZIRNOX_DEB_EXCHANGER.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/machines/zirnox_deb_exchanger"))).addModel();
+        // --- wood_structure (roof; Ziffernfolge = nx px) ---
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_roof_00"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_roof_01"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_roof_10"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_roof_11"))).addModel();
+        // --- wood_structure_ceiling ---
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_CEILING.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_ceiling"))).addModel();
+        // --- wood_structure_scaffold (Bits py nx nz px pz, py=MSB) ---
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_00000"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_00001"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_00010"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_00011"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_00100"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_00101"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_00110"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_00111"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_01000"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_01001"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_01010"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_01011"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_01100"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_01101"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_01110"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_01111"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_10000"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_10001"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_10010"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_10011"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_10100"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_10101"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_10110"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_10111"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_11000"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_11001"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_11010"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_11011"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_11100"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_11101"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_11110"))).addModel();
+        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_11111"))).addModel();
+        // --- wire_coated (multipart; !straight_x/y/z als positive OR-Liste) ---
+        getMultipartBuilder(ModBlocks.WIRE_COATED.get()).part().modelFile(models().getExistingFile(modLoc("block/wire_coated_core"))).addModel().condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.JUNCTION).end();
+        getMultipartBuilder(ModBlocks.WIRE_COATED.get()).part().modelFile(models().getExistingFile(modLoc("block/wire_coated_straight_x"))).addModel().condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_X).end();
+        getMultipartBuilder(ModBlocks.WIRE_COATED.get()).part().modelFile(models().getExistingFile(modLoc("block/wire_coated_straight_y"))).addModel().condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_Y).end();
+        getMultipartBuilder(ModBlocks.WIRE_COATED.get()).part().modelFile(models().getExistingFile(modLoc("block/wire_coated_straight_z"))).addModel().condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_Z).end();
+        getMultipartBuilder(ModBlocks.WIRE_COATED.get()).part().modelFile(models().getExistingFile(modLoc("block/wire_coated_arm_north"))).addModel().condition(com.hbm_m.api.energy.WireBlock.NORTH, true).condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.JUNCTION, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_X, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_Y).end();
+        getMultipartBuilder(ModBlocks.WIRE_COATED.get()).part().modelFile(models().getExistingFile(modLoc("block/wire_coated_arm_south"))).addModel().condition(com.hbm_m.api.energy.WireBlock.SOUTH, true).condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.JUNCTION, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_X, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_Y).end();
+        getMultipartBuilder(ModBlocks.WIRE_COATED.get()).part().modelFile(models().getExistingFile(modLoc("block/wire_coated_arm_east"))).addModel().condition(com.hbm_m.api.energy.WireBlock.EAST, true).condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.JUNCTION, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_Z, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_Y).end();
+        getMultipartBuilder(ModBlocks.WIRE_COATED.get()).part().modelFile(models().getExistingFile(modLoc("block/wire_coated_arm_west"))).addModel().condition(com.hbm_m.api.energy.WireBlock.WEST, true).condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.JUNCTION, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_Z, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_Y).end();
+        getMultipartBuilder(ModBlocks.WIRE_COATED.get()).part().modelFile(models().getExistingFile(modLoc("block/wire_coated_arm_up"))).addModel().condition(com.hbm_m.api.energy.WireBlock.UP, true).condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.JUNCTION, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_X, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_Z).end();
+        getMultipartBuilder(ModBlocks.WIRE_COATED.get()).part().modelFile(models().getExistingFile(modLoc("block/wire_coated_arm_down"))).addModel().condition(com.hbm_m.api.energy.WireBlock.DOWN, true).condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.JUNCTION, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_X, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_Z).end();
     }
 
     /**
@@ -3811,6 +4904,123 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // 6. Создаем модель для предмета
         simpleBlockItem(blockObject.get(), models().getExistingFile(blockTexture(blockObject.get())));
     }
+    /** R6a: Bloecke mit 1:1-Modellen (Saeulen, Schichten, Glas, Biomstein, Ueberbeton ...). */
+    private void registerR6aBlocks() {
+        simpleBlockWithItem(ModBlocks.BLOCK_SCRAP.get(), models().cubeAll("block_scrap", mcOrMod("block/block_scrap")));
+        simpleBlockWithItem(ModBlocks.BLOCK_ELECTRICAL_SCRAP.get(), models().cubeAll("block_electrical_scrap", mcOrMod("block/electrical_scrap")));
+        simpleBlockWithItem(ModBlocks.CONCRETE_SUPER_BROKEN.get(), models().cubeAll("concrete_super_broken", mcOrMod("block/concrete_super_broken")));
+        simpleBlockWithItem(ModBlocks.ORE_OIL_SAND.get(), models().cubeAll("ore_oil_sand", mcOrMod("block/ore_oil_sand_alt")));
+        simpleBlockWithItem(ModBlocks.DIRT_DEAD.get(), models().cubeAll("dirt_dead", mcOrMod("block/dirt_dead")));
+        simpleBlockWithItem(ModBlocks.DIRT_OILY.get(), models().cubeAll("dirt_oily", mcOrMod("block/dirt_oily")));
+        simpleBlockWithItem(ModBlocks.GRAVEL_DIAMOND.get(), models().cubeAll("gravel_diamond", mcOrMod("block/gravel_diamond")));
+        simpleBlockWithItem(ModBlocks.GRAVEL_OBSIDIAN.get(), models().cubeAll("gravel_obsidian", mcOrMod("block/gravel_obsidian")));
+        simpleBlockWithItem(ModBlocks.MOON_TURF.get(), models().cubeAll("moon_turf", mcOrMod("block/moon_turf")));
+        simpleBlockWithItem(ModBlocks.SAND_DIRTY.get(), models().cubeAll("sand_dirty", mcOrMod("block/sand_dirty")));
+        simpleBlockWithItem(ModBlocks.SAND_DIRTY_RED.get(), models().cubeAll("sand_dirty_red", mcOrMod("block/sand_dirty_red")));
+        simpleBlockWithItem(ModBlocks.STONE_CRACKED.get(), models().cubeAll("stone_cracked", mcOrMod("block/stone_cracked")));
+        simpleBlockWithItem(ModBlocks.ORE_OIL.get(), models().cubeAll("ore_oil", mcOrMod("block/ore_oil")));
+        // vI: erschoepftes Oelvorkommen hatte weder Blockzustand noch Modell (Missing-Model); Original BlockGeneric "ore_oil_empty"
+        simpleBlockWithItem(ModBlocks.ORE_OIL_EMPTY.get(), models().cubeAll("ore_oil_empty", modLoc("block/ore_oil_empty")));
+        simpleBlockWithItem(ModBlocks.BLOCK_METEOR.get(), models().cubeAll("block_meteor", mcOrMod("block/meteor")));
+        simpleBlockWithItem(ModBlocks.BLOCK_METEOR_COBBLE.get(), models().cubeAll("block_meteor_cobble", mcOrMod("block/meteor_cobble")));
+        simpleBlockWithItem(ModBlocks.BLOCK_METEOR_BROKEN.get(), models().cubeAll("block_meteor_broken", mcOrMod("block/meteor_crushed")));
+        simpleBlockWithItem(ModBlocks.DECO_TITANIUM.get(), models().cubeAll("deco_titanium", mcOrMod("block/deco_titanium")));
+        simpleBlockWithItem(ModBlocks.WASTE_PLANKS.get(), models().cubeAll("waste_planks", mcOrMod("block/waste_planks")));
+        simpleBlockWithItem(ModBlocks.FROZEN_DIRT.get(), models().cubeAll("frozen_dirt", mcOrMod("block/frozen_dirt")));
+        simpleBlockWithItem(ModBlocks.FROZEN_PLANKS.get(), models().cubeAll("frozen_planks", mcOrMod("block/frozen_planks")));
+        simpleBlockWithItem(ModBlocks.ORE_RARE.get(), models().cubeAll("ore_rare", mcOrMod("block/ported/ore_rare")));
+        simpleBlockWithItem(ModBlocks.BRICK_JUNGLE_OOZE.get(), models().cubeAll("brick_jungle_ooze", mcOrMod("block/brick_jungle_ooze")));
+        simpleBlockWithItem(ModBlocks.BRICK_JUNGLE_MYSTIC.get(), models().cubeAll("brick_jungle_mystic", mcOrMod("block/brick_jungle_mystic")));
+        axisBlock((net.minecraft.world.level.block.RotatedPillarBlock) ModBlocks.METEOR_PILLAR.get(), mcOrMod("block/meteor_pillar"), mcOrMod("block/meteor_pillar_top"));
+        simpleBlockItem(ModBlocks.METEOR_PILLAR.get(), models().getExistingFile(modLoc("block/meteor_pillar")));
+        axisBlock((net.minecraft.world.level.block.RotatedPillarBlock) ModBlocks.CONCRETE_PILLAR.get(), mcOrMod("block/concrete_pillar_side"), mcOrMod("block/concrete_pillar_top"));
+        simpleBlockItem(ModBlocks.CONCRETE_PILLAR.get(), models().getExistingFile(modLoc("block/concrete_pillar")));
+        axisBlock((net.minecraft.world.level.block.RotatedPillarBlock) ModBlocks.BLOCK_EUPHEMIUM_CLUSTER.get(), mcOrMod("block/block_euphemium_cluster_side"), mcOrMod("block/block_euphemium_cluster_top"));
+        simpleBlockItem(ModBlocks.BLOCK_EUPHEMIUM_CLUSTER.get(), models().getExistingFile(modLoc("block/block_euphemium_cluster")));
+        axisBlock((net.minecraft.world.level.block.RotatedPillarBlock) ModBlocks.BLOCK_FIBERGLASS.get(), mcOrMod("block/block_fiberglass_side"), mcOrMod("block/block_fiberglass_top"));
+        simpleBlockItem(ModBlocks.BLOCK_FIBERGLASS.get(), models().getExistingFile(modLoc("block/block_fiberglass")));
+        axisBlock((net.minecraft.world.level.block.RotatedPillarBlock) ModBlocks.BLOCK_INSULATOR.get(), mcOrMod("block/block_insulator_side"), mcOrMod("block/block_insulator_top"));
+        simpleBlockItem(ModBlocks.BLOCK_INSULATOR.get(), models().getExistingFile(modLoc("block/block_insulator")));
+        axisBlock((net.minecraft.world.level.block.RotatedPillarBlock) ModBlocks.BLOCK_TRITIUM.get(), mcOrMod("block/block_tritium_side"), mcOrMod("block/block_tritium_top"));
+        simpleBlockItem(ModBlocks.BLOCK_TRITIUM.get(), models().getExistingFile(modLoc("block/block_tritium")));
+        simpleBlockWithItem(ModBlocks.GNEISS_CHISELED.get(), models().cubeColumn("gneiss_chiseled", mcOrMod("block/gneiss_chiseled"), mcOrMod("block/gneiss_tile")));
+        simpleBlockWithItem(ModBlocks.BASALT.get(), models().cubeColumn("basalt", mcOrMod("block/basalt"), mcOrMod("block/basalt_top")));
+        simpleBlockWithItem(ModBlocks.WATZ_COOLER.get(), models().cubeColumn("watz_cooler", mcOrMod("block/watz_cooler_side"), mcOrMod("block/watz_cooler_top")));
+        simpleBlockWithItem(ModBlocks.WATZ_ELEMENT.get(), models().cubeColumn("watz_element", mcOrMod("block/watz_element_side"), mcOrMod("block/watz_element_top")));
+        simpleBlockWithItem(ModBlocks.BLOCK_SMORE.get(), models().cubeColumn("block_smore", mcOrMod("block/block_smore_side"), mcOrMod("block/block_smore_top")));
+        simpleBlockWithItem(ModBlocks.METEOR_BATTERY.get(), models().cubeColumn("meteor_battery", mcOrMod("block/meteor_spawner_side"), mcOrMod("block/meteor_power")));
+        simpleBlockWithItem(ModBlocks.BLOCK_WASTE_PAINTED.get(), models().cubeAll("block_waste_painted", mcOrMod("block/block_waste_painted")));
+        simpleBlockWithItem(ModBlocks.DECO_ASBESTOS.get(), models().cubeAll("deco_asbestos", mcOrMod("block/deco_asbestos")));
+        simpleBlockWithItem(ModBlocks.WASTE_EARTH.get(), models().cubeBottomTop("waste_earth", mcOrMod("block/waste_grass_side"), mcOrMod("block/waste_earth_bottom"), mcOrMod("block/waste_grass_top")));
+        simpleBlockWithItem(ModBlocks.FROZEN_GRASS.get(), models().cubeBottomTop("frozen_grass", mcOrMod("block/frozen_grass_side"), mcOrMod("block/frozen_dirt"), mcOrMod("block/frozen_grass_top")));
+        simpleBlockWithItem(ModBlocks.BURNING_EARTH.get(), models().cubeBottomTop("burning_earth", mcOrMod("block/burning_grass_side"), mcOrMod("block/waste_earth_bottom"), mcOrMod("block/burning_grass_top")));
+        simpleBlockWithItem(ModBlocks.IMPACT_DIRT.get(), models().cubeAll("impact_dirt", mcOrMod("block/waste_earth_bottom")));
+        simpleBlockWithItem(ModBlocks.NTM_DIRT.get(), models().cubeAll("ntm_dirt", mcOrMod("minecraft:block/dirt")));
+        { var b = ModBlocks.CONCRETE_SUPER.get(); var m0 = models().cubeAll("concrete_super", modLoc("block/concrete_super")); var ms = new net.minecraftforge.client.model.generators.ModelFile[4]; for (int q = 0; q < 4; q++) ms[q] = models().cubeAll("concrete_super_m" + q, modLoc("block/concrete_super_m" + q)); getVariantBuilder(b).forAllStates(st -> { int a = st.getValue(com.hbm_m.block.generic.BlockUberConcrete.AGE); var mf = a == 15 ? ms[3] : a == 14 ? ms[2] : a > 11 ? ms[1] : a > 9 ? ms[0] : m0; return net.minecraftforge.client.model.generators.ConfiguredModel.builder().modelFile(mf).build(); }); simpleBlockItem(b, m0); }
+        simpleBlockWithItem(ModBlocks.BRICK_CONCRETE_MARKED.get(), models().cubeColumn("brick_concrete_marked", mcOrMod("block/brick_concrete_marked"), mcOrMod("block/brick_concrete")));
+        { var m = models().cross("plant_dead", mcOrMod("block/plant_dead_generic")).renderType("cutout"); simpleBlock(ModBlocks.PLANT_DEAD.get(), m); itemModels().withExistingParent("plant_dead", "item/generated").texture("layer0", mcOrMod("block/plant_dead_generic")); }
+        { var m = models().cross("plant_dead_grass", mcOrMod("block/plant_dead_grass")).renderType("cutout"); simpleBlock(ModBlocks.PLANT_DEAD_GRASS.get(), m); itemModels().withExistingParent("plant_dead_grass", "item/generated").texture("layer0", mcOrMod("block/plant_dead_grass")); }
+        { var m = models().cross("plant_dead_flower", mcOrMod("block/plant_dead_flower")).renderType("cutout"); simpleBlock(ModBlocks.PLANT_DEAD_FLOWER.get(), m); itemModels().withExistingParent("plant_dead_flower", "item/generated").texture("layer0", mcOrMod("block/plant_dead_flower")); }
+        { var m = models().cross("plant_dead_bigflower", mcOrMod("block/plant_dead_bigflower")).renderType("cutout"); simpleBlock(ModBlocks.PLANT_DEAD_BIGFLOWER.get(), m); itemModels().withExistingParent("plant_dead_bigflower", "item/generated").texture("layer0", mcOrMod("block/plant_dead_bigflower")); }
+        { var m = models().cross("plant_dead_fern", mcOrMod("block/plant_dead_fern")).renderType("cutout"); simpleBlock(ModBlocks.PLANT_DEAD_FERN.get(), m); itemModels().withExistingParent("plant_dead_fern", "item/generated").texture("layer0", mcOrMod("block/plant_dead_fern")); }
+        simpleBlockWithItem(ModBlocks.GLASS_BORON.get(), models().cubeAll("glass_boron", mcOrMod("block/glass_boron")).renderType("cutout"));
+        simpleBlockWithItem(ModBlocks.GLASS_LEAD.get(), models().cubeAll("glass_lead", mcOrMod("block/glass_lead")).renderType("cutout"));
+        simpleBlockWithItem(ModBlocks.GLASS_URANIUM.get(), models().cubeAll("glass_uranium", mcOrMod("block/glass_uranium")).renderType("translucent"));
+        simpleBlockWithItem(ModBlocks.GLASS_TRINITITE.get(), models().cubeAll("glass_trinitite", mcOrMod("block/glass_trinitite")).renderType("translucent"));
+        simpleBlockWithItem(ModBlocks.GLASS_POLONIUM.get(), models().cubeAll("glass_polonium", mcOrMod("block/glass_polonium")).renderType("translucent"));
+        simpleBlockWithItem(ModBlocks.GLASS_ASH.get(), models().cubeAll("glass_ash", mcOrMod("block/glass_ash")).renderType("translucent"));
+        simpleBlockWithItem(ModBlocks.GLASS_QUARTZ.get(), models().cubeAll("glass_quartz", mcOrMod("block/glass_quartz")).renderType("cutout"));
+        simpleBlockWithItem(ModBlocks.GLASS_POLARIZED.get(), models().cubeAll("glass_polarized", mcOrMod("block/glass_polarized")).renderType("cutout"));
+        simpleBlockWithItem(ModBlocks.REINFORCED_LAMINATE.get(), models().cubeAll("reinforced_laminate", mcOrMod("block/reinforced_laminate")).renderType("translucent"));
+        { var b = ModBlocks.STONE_BIOME_DESERT.get(); var open = models().cubeBottomTop("stone_biome_desert", mcOrMod("block/stone_biome_layer_desert"), mcOrMod("block/stone_biome_top_desert"), mcOrMod("block/stone_biome_top_desert")); var cov = models().cubeBottomTop("stone_biome_desert_covered", mcOrMod("block/stone_biome_desert"), mcOrMod("block/stone_biome_top_desert"), mcOrMod("block/stone_biome_top_desert")); getVariantBuilder(b).forAllStates(st -> net.minecraftforge.client.model.generators.ConfiguredModel.builder().modelFile(st.getValue(com.hbm_m.block.generic.BlockBiomeStone.COVERED) ? cov : open).build()); simpleBlockItem(b, open); }
+        { var b = ModBlocks.STONE_BIOME_WOODLAND.get(); var open = models().cubeBottomTop("stone_biome_woodland", mcOrMod("block/stone_biome_layer_woodland"), mcOrMod("block/stone_biome_top_woodland"), mcOrMod("block/stone_biome_top_woodland")); var cov = models().cubeBottomTop("stone_biome_woodland_covered", mcOrMod("block/stone_biome_woodland"), mcOrMod("block/stone_biome_top_woodland"), mcOrMod("block/stone_biome_top_woodland")); getVariantBuilder(b).forAllStates(st -> net.minecraftforge.client.model.generators.ConfiguredModel.builder().modelFile(st.getValue(com.hbm_m.block.generic.BlockBiomeStone.COVERED) ? cov : open).build()); simpleBlockItem(b, open); }
+        simpleBlockWithItem(ModBlocks.BLOCK_COKE_COAL.get(), models().cubeAll("block_coke_coal", mcOrMod("block/block_coke_coal")));
+        simpleBlockWithItem(ModBlocks.BLOCK_COKE_LIGNITE.get(), models().cubeAll("block_coke_lignite", mcOrMod("block/block_coke_lignite")));
+        simpleBlockWithItem(ModBlocks.BLOCK_COKE_PETROLEUM.get(), models().cubeAll("block_coke_petroleum", mcOrMod("block/block_coke_petroleum")));
+        simpleBlockWithItem(ModBlocks.BLOCK_CAP_NUKA.get(), models().cubeBottomTop("block_cap_nuka", mcOrMod("block/block_cap_nuka"), mcOrMod("block/block_cap_nuka_top"), mcOrMod("block/block_cap_nuka_top")));
+        simpleBlockWithItem(ModBlocks.BLOCK_CAP_QUANTUM.get(), models().cubeBottomTop("block_cap_quantum", mcOrMod("block/block_cap_quantum"), mcOrMod("block/block_cap_quantum_top"), mcOrMod("block/block_cap_quantum_top")));
+        simpleBlockWithItem(ModBlocks.BLOCK_CAP_SPARKLE.get(), models().cubeBottomTop("block_cap_sparkle", mcOrMod("block/block_cap_sparkle"), mcOrMod("block/block_cap_sparkle_top"), mcOrMod("block/block_cap_sparkle_top")));
+        simpleBlockWithItem(ModBlocks.BLOCK_CAP_RAD.get(), models().cubeBottomTop("block_cap_rad", mcOrMod("block/block_cap_rad"), mcOrMod("block/block_cap_rad_top"), mcOrMod("block/block_cap_rad_top")));
+        simpleBlockWithItem(ModBlocks.BLOCK_CAP_KORL.get(), models().cubeBottomTop("block_cap_korl", mcOrMod("block/block_cap_korl"), mcOrMod("block/block_cap_korl_top"), mcOrMod("block/block_cap_korl_top")));
+        simpleBlockWithItem(ModBlocks.BLOCK_CAP_FRITZ.get(), models().cubeBottomTop("block_cap_fritz", mcOrMod("block/block_cap_fritz"), mcOrMod("block/block_cap_fritz_top"), mcOrMod("block/block_cap_fritz_top")));
+        simpleBlockWithItem(ModBlocks.PLATEMETAL_BASE.get(), models().cubeAll("platemetal_base", mcOrMod("block/platemetal_base")));
+        simpleBlockWithItem(ModBlocks.PLATEMETAL_BLACK.get(), models().cubeAll("platemetal_black", mcOrMod("block/platemetal_black")));
+        simpleBlockWithItem(ModBlocks.PLATEMETAL_WHITE.get(), models().cubeAll("platemetal_white", mcOrMod("block/platemetal_white")));
+        simpleBlockWithItem(ModBlocks.PLATEMETAL_RED.get(), models().cubeAll("platemetal_red", mcOrMod("block/platemetal_red")));
+        simpleBlockWithItem(ModBlocks.PLATEMETAL_GREEN.get(), models().cubeAll("platemetal_green", mcOrMod("block/platemetal_green")));
+        simpleBlockWithItem(ModBlocks.PLATEMETAL_LIGHT_GRAY.get(), models().cubeAll("platemetal_light_gray", mcOrMod("block/platemetal_light_gray")));
+        simpleBlockWithItem(ModBlocks.PLATEMETAL_BLUE.get(), models().cubeAll("platemetal_blue", mcOrMod("block/platemetal_blue")));
+        simpleBlockWithItem(ModBlocks.PLATEMETAL_PURPLE.get(), models().cubeAll("platemetal_purple", mcOrMod("block/platemetal_purple")));
+        simpleBlockWithItem(ModBlocks.PLATEMETAL_CYAN.get(), models().cubeAll("platemetal_cyan", mcOrMod("block/platemetal_cyan")));
+        simpleBlockWithItem(ModBlocks.PLATEMETAL_PINK.get(), models().cubeAll("platemetal_pink", mcOrMod("block/platemetal_pink")));
+        simpleBlockWithItem(ModBlocks.PLATEMETAL_LIME.get(), models().cubeAll("platemetal_lime", mcOrMod("block/platemetal_lime")));
+        simpleBlockWithItem(ModBlocks.PLATEMETAL_YELLOW.get(), models().cubeAll("platemetal_yellow", mcOrMod("block/platemetal_yellow")));
+        simpleBlockWithItem(ModBlocks.PLATEMETAL_LIGHT_BLUE.get(), models().cubeAll("platemetal_light_blue", mcOrMod("block/platemetal_light_blue")));
+        simpleBlockWithItem(ModBlocks.PLATEMETAL_MAGENTA.get(), models().cubeAll("platemetal_magenta", mcOrMod("block/platemetal_magenta")));
+        simpleBlockWithItem(ModBlocks.PLATEMETAL_ORANGE.get(), models().cubeAll("platemetal_orange", mcOrMod("block/platemetal_orange")));
+        simpleBlockWithItem(ModBlocks.CONCRETE_SMOOTH.get(), models().cubeAll("concrete_smooth", mcOrMod("block/concrete")));
+        simpleBlockWithItem(ModBlocks.DUCRETE_SMOOTH.get(), models().cubeAll("ducrete_smooth", mcOrMod("block/ducrete")));
+        stairsBlock((net.minecraft.world.level.block.StairBlock) ModBlocks.CONCRETE_SMOOTH_STAIRS.get(), mcOrMod("block/concrete")); simpleBlockItem(ModBlocks.CONCRETE_SMOOTH_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_smooth_stairs")));
+        stairsBlock((net.minecraft.world.level.block.StairBlock) ModBlocks.DUCRETE_SMOOTH_STAIRS.get(), mcOrMod("block/ducrete")); simpleBlockItem(ModBlocks.DUCRETE_SMOOTH_STAIRS.get(), models().getExistingFile(modLoc("block/ducrete_smooth_stairs")));
+        stairsBlock((net.minecraft.world.level.block.StairBlock) ModBlocks.BRICK_ASBESTOS_STAIRS.get(), mcOrMod("block/brick_asbestos")); simpleBlockItem(ModBlocks.BRICK_ASBESTOS_STAIRS.get(), models().getExistingFile(modLoc("block/brick_asbestos_stairs")));
+        // Restport: ducrete_stairs, brick_asbestos_slab, pink_slab, pink_stairs
+        stairsBlock((net.minecraft.world.level.block.StairBlock) ModBlocks.DUCRETE_STAIRS.get(), mcOrMod("block/ducrete")); simpleBlockItem(ModBlocks.DUCRETE_STAIRS.get(), models().getExistingFile(modLoc("block/ducrete_stairs")));
+        slabBlock((net.minecraft.world.level.block.SlabBlock) ModBlocks.BRICK_ASBESTOS_SLAB.get(), models().slab("brick_asbestos_slab", mcOrMod("block/brick_asbestos"), mcOrMod("block/brick_asbestos"), mcOrMod("block/brick_asbestos")), models().slabTop("brick_asbestos_slab_top", mcOrMod("block/brick_asbestos"), mcOrMod("block/brick_asbestos"), mcOrMod("block/brick_asbestos")), models().cubeAll("brick_asbestos_slab_double", mcOrMod("block/brick_asbestos"))); simpleBlockItem(ModBlocks.BRICK_ASBESTOS_SLAB.get(), models().getExistingFile(modLoc("block/brick_asbestos_slab")));
+        slabBlock((net.minecraft.world.level.block.SlabBlock) ModBlocks.PINK_SLAB.get(), models().slab("pink_slab", mcOrMod("block/pink_planks"), mcOrMod("block/pink_planks"), mcOrMod("block/pink_planks")), models().slabTop("pink_slab_top", mcOrMod("block/pink_planks"), mcOrMod("block/pink_planks"), mcOrMod("block/pink_planks")), models().cubeAll("pink_slab_double", mcOrMod("block/pink_planks"))); simpleBlockItem(ModBlocks.PINK_SLAB.get(), models().getExistingFile(modLoc("block/pink_slab")));
+        stairsBlock((net.minecraft.world.level.block.StairBlock) ModBlocks.PINK_STAIRS.get(), mcOrMod("block/pink_planks")); simpleBlockItem(ModBlocks.PINK_STAIRS.get(), models().getExistingFile(modLoc("block/pink_stairs")));
+        stairsBlock((net.minecraft.world.level.block.StairBlock) ModBlocks.LIGHTSTONE_TILE_STAIRS.get(), mcOrMod("block/lightstone_tile")); simpleBlockItem(ModBlocks.LIGHTSTONE_TILE_STAIRS.get(), models().getExistingFile(modLoc("block/lightstone_tile_stairs")));
+        slabBlock((net.minecraft.world.level.block.SlabBlock) ModBlocks.STONES_SLAB_TILE.get(), models().slab("stones_slab_tile", mcOrMod("block/lightstone_tile"), mcOrMod("block/lightstone_tile"), mcOrMod("block/lightstone_tile")), models().slabTop("stones_slab_tile_top", mcOrMod("block/lightstone_tile"), mcOrMod("block/lightstone_tile"), mcOrMod("block/lightstone_tile")), models().cubeAll("stones_slab_tile_double", mcOrMod("block/lightstone_tile"))); simpleBlockItem(ModBlocks.STONES_SLAB_TILE.get(), models().getExistingFile(modLoc("block/stones_slab_tile")));
+        slabBlock((net.minecraft.world.level.block.SlabBlock) ModBlocks.STONES_SLAB_BRICKS.get(), models().slab("stones_slab_bricks", mcOrMod("block/lightstone_bricks"), mcOrMod("block/lightstone_bricks"), mcOrMod("block/lightstone_bricks")), models().slabTop("stones_slab_bricks_top", mcOrMod("block/lightstone_bricks"), mcOrMod("block/lightstone_bricks"), mcOrMod("block/lightstone_bricks")), models().cubeAll("stones_slab_bricks_double", mcOrMod("block/lightstone_bricks"))); simpleBlockItem(ModBlocks.STONES_SLAB_BRICKS.get(), models().getExistingFile(modLoc("block/stones_slab_bricks")));
+        simpleBlockWithItem(ModBlocks.BLOCK_FOAM.get(), models().cubeAll("block_foam", mcOrMod("block/foam")));
+        { var b = ModBlocks.FOAM_LAYER.get(); getVariantBuilder(b).forAllStates(st -> { int l = st.getValue(net.minecraft.world.level.block.SnowLayerBlock.LAYERS); var m = l == 8 ? models().cubeAll("foam_layer_height16", mcOrMod("block/foam")) : models().withExistingParent("foam_layer_height" + (l * 2), mcLoc("block/snow_height" + (l * 2))).texture("texture", mcOrMod("block/foam")).texture("particle", mcOrMod("block/foam")); return net.minecraftforge.client.model.generators.ConfiguredModel.builder().modelFile(m).build(); }); simpleBlockItem(b, models().getExistingFile(modLoc("block/foam_layer_height2"))); }
+        { var b = ModBlocks.SAND_BORON_LAYER.get(); getVariantBuilder(b).forAllStates(st -> { int l = st.getValue(net.minecraft.world.level.block.SnowLayerBlock.LAYERS); var m = l == 8 ? models().cubeAll("sand_boron_layer_height16", mcOrMod("block/sand_boron")) : models().withExistingParent("sand_boron_layer_height" + (l * 2), mcLoc("block/snow_height" + (l * 2))).texture("texture", mcOrMod("block/sand_boron")).texture("particle", mcOrMod("block/sand_boron")); return net.minecraftforge.client.model.generators.ConfiguredModel.builder().modelFile(m).build(); }); simpleBlockItem(b, models().getExistingFile(modLoc("block/sand_boron_layer_height2"))); }
+        { var b = ModBlocks.LEAVES_LAYER.get(); getVariantBuilder(b).forAllStates(st -> { int l = st.getValue(net.minecraft.world.level.block.SnowLayerBlock.LAYERS); var m = l == 8 ? models().cubeAll("leaves_layer_height16", mcOrMod("block/waste_leaves")) : models().withExistingParent("leaves_layer_height" + (l * 2), mcLoc("block/snow_height" + (l * 2))).texture("texture", mcOrMod("block/waste_leaves")).texture("particle", mcOrMod("block/waste_leaves")); return net.minecraftforge.client.model.generators.ConfiguredModel.builder().modelFile(m).build(); }); simpleBlockItem(b, models().getExistingFile(modLoc("block/leaves_layer_height2"))); }
+    }
+
+    private net.minecraft.resources.ResourceLocation mcOrMod(String path) {
+        return path.startsWith("minecraft:") ? net.minecraft.resources.ResourceLocation.parse(path) : modLoc(path);
+    }
+
     private void oreWithItem(RegistrySupplier<Block> blockObject) {
         // 1. Получаем регистрационное имя блока (например, "uranium_ore")
         String registrationName = blockObject.getId().getPath();
@@ -4374,6 +5584,28 @@ public class ModBlockStateProvider extends BlockStateProvider {
      * Генерирует состояние для блока с кастомной OBJ моделью.
      * ВАЖНО: Сам файл модели (.json) должен быть создан вручную в /resources!
      */
+
+    /** Рельсы (RailGenericBlock extends RailBlock): 10 SHAPE-вариантов, 1:1 с исходными blockstate-JSON. */
+    private void railBlockstate(RegistrySupplier<? extends Block> block, String name) {
+        ModelFile flat = models().getExistingFile(modLoc("block/" + name + "_flat"));
+        ModelFile raisedNe = models().getExistingFile(modLoc("block/" + name + "_raised_ne"));
+        ModelFile raisedSw = models().getExistingFile(modLoc("block/" + name + "_raised_sw"));
+        ModelFile curved = models().getExistingFile(modLoc("block/" + name + "_curved"));
+        var p = net.minecraft.world.level.block.state.properties.BlockStateProperties.RAIL_SHAPE;
+        VariantBlockStateBuilder b = getVariantBuilder(block.get());
+        b.partialState().with(p, net.minecraft.world.level.block.state.properties.RailShape.NORTH_SOUTH).modelForState().modelFile(flat).addModel();
+        b.partialState().with(p, net.minecraft.world.level.block.state.properties.RailShape.EAST_WEST).modelForState().modelFile(flat).rotationY(90).addModel();
+        b.partialState().with(p, net.minecraft.world.level.block.state.properties.RailShape.ASCENDING_EAST).modelForState().modelFile(raisedNe).rotationY(90).addModel();
+        b.partialState().with(p, net.minecraft.world.level.block.state.properties.RailShape.ASCENDING_WEST).modelForState().modelFile(raisedSw).rotationY(90).addModel();
+        b.partialState().with(p, net.minecraft.world.level.block.state.properties.RailShape.ASCENDING_NORTH).modelForState().modelFile(raisedNe).addModel();
+        b.partialState().with(p, net.minecraft.world.level.block.state.properties.RailShape.ASCENDING_SOUTH).modelForState().modelFile(raisedSw).addModel();
+        b.partialState().with(p, net.minecraft.world.level.block.state.properties.RailShape.SOUTH_EAST).modelForState().modelFile(curved).addModel();
+        b.partialState().with(p, net.minecraft.world.level.block.state.properties.RailShape.SOUTH_WEST).modelForState().modelFile(curved).rotationY(90).addModel();
+        b.partialState().with(p, net.minecraft.world.level.block.state.properties.RailShape.NORTH_WEST).modelForState().modelFile(curved).rotationY(180).addModel();
+        b.partialState().with(p, net.minecraft.world.level.block.state.properties.RailShape.NORTH_EAST).modelForState().modelFile(curved).rotationY(270).addModel();
+        simpleBlockItem(block.get(), flat);
+    }
+
     private <T extends Block> void customObjBlock(RegistrySupplier<T> blockObject) {
         // Создаём только blockstate, который ссылается на JSON модель
         // JSON модель должна лежать в resources/assets/hbm_m/models/block/<название>.json
@@ -4440,6 +5672,16 @@ public class ModBlockStateProvider extends BlockStateProvider {
             models().getExistingFile(modLoc("block/machines/" + blockObject.getId().getPath())));
     }
 
+    /** Wie {@link #customMachineBlock}, aber mit eigener facing->y-Tabelle (Original-TESR mit abweichendem Drehschalter). */
+    private <T extends Block> void customMachineBlockRotated(RegistrySupplier<T> blockObject, Map<Direction, Integer> rotY) {
+        ModelFile model = models().getExistingFile(modLoc("block/machines/" + blockObject.getId().getPath()));
+        VariantBlockStateBuilder builder = getVariantBuilder(blockObject.get());
+        for (Direction facing : Direction.Plane.HORIZONTAL) {
+            builder.partialState().with(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING, facing)
+                    .modelForState().modelFile(model).rotationY(rotY.getOrDefault(facing, 0)).addModel();
+        }
+    }
+
     private <T extends Block> void simpleMachineBlock(RegistrySupplier<T> blockObject) {
         simpleBlock(blockObject.get(),
                 models().getExistingFile(modLoc("block/machines/" + blockObject.getId().getPath())));
@@ -4453,6 +5695,51 @@ public class ModBlockStateProvider extends BlockStateProvider {
      * Turn-Varianten fuer eine per Screwdriver ueberschriebene Ausgabeseite (siehe Klassenkommentar
      * an {@code MachineCraneInserterBlockEntity} fuer die volle Scope-Begruendung).
      */
+    /** 1:1 {@code BlockCraneBase}: ein Modell je (Eingang, wirksamer Ausgang) plus Inventarmodell ({@code getIcon(side, 0)}). */
+    private <T extends Block> void craneBlock1to1(RegistrySupplier<T> blockObject, com.hbm_m.block.network.CraneTextures.Set tex) {
+        VariantBlockStateBuilder builder = getVariantBuilder(blockObject.get());
+        String base = blockObject.getId().getPath();
+        java.util.Map<String, ModelFile> made = new java.util.HashMap<>();
+
+        for (Direction in : Direction.values()) {
+            for (Direction out : Direction.values()) {
+                Direction eff = out == in ? in.getOpposite() : out;
+                String name = base + "_" + in.getSerializedName() + "_" + eff.getSerializedName();
+                ModelFile file = made.computeIfAbsent(name, n -> {
+                    var model = models().withExistingParent(n, mcLoc("block/block")).texture("particle", modLoc("block/" + tex.side()));
+                    var el = model.element().from(0, 0, 0).to(16, 16, 16);
+                    for (Direction face : Direction.values()) {
+                        String t = com.hbm_m.block.network.CraneTextures.icon(tex, in, eff, face);
+                        var f = el.face(face).texture("#" + t).cullface(face);
+                        if (face == Direction.UP) {
+                            int deg = com.hbm_m.block.network.CraneTextures.topRotationDegrees(com.hbm_m.block.network.CraneTextures.topRotation(tex, in, eff));
+                            if (deg == 90) f.rotation(net.minecraftforge.client.model.generators.ModelBuilder.FaceRotation.CLOCKWISE_90);
+                            if (deg == 180) f.rotation(net.minecraftforge.client.model.generators.ModelBuilder.FaceRotation.UPSIDE_DOWN);
+                            if (deg == 270) f.rotation(net.minecraftforge.client.model.generators.ModelBuilder.FaceRotation.COUNTERCLOCKWISE_90);
+                        }
+                        f.end();
+                        model.texture(t, modLoc("block/" + t));
+                    }
+                    el.end();
+                    return model;
+                });
+                builder.partialState()
+                        .with(com.hbm_m.block.network.CraneBaseBlock.FACING, in)
+                        .with(com.hbm_m.block.network.CraneBaseBlock.OUTPUT, out)
+                        .modelForState().modelFile(file).addModel();
+            }
+        }
+
+        var inv = models().withExistingParent(base + "_inventory", mcLoc("block/block")).texture("particle", modLoc("block/" + tex.side()));
+        var el = inv.element().from(0, 0, 0).to(16, 16, 16);
+        for (Direction face : Direction.values()) {
+            String t = com.hbm_m.block.network.CraneTextures.itemIcon(tex, face);
+            el.face(face).texture("#" + t).end();
+            inv.texture(t, modLoc("block/" + t));
+        }
+        el.end();
+    }
+
     private <T extends Block> void craneDirectionalBlock(RegistrySupplier<T> blockObject, String texturePrefix) {
         ResourceLocation inTex = modLoc("block/" + texturePrefix + "_in");
         ResourceLocation outTex = modLoc("block/" + texturePrefix + "_out");
@@ -4517,6 +5804,12 @@ public class ModBlockStateProvider extends BlockStateProvider {
         if (face == out) return "out";
         if (face == Direction.UP) return "top";
         return "side";
+    }
+
+    /** 1:1 RenderLandmine: keine FACING-Drehung im Original; Weltmodell <model>_placed, Itemmodell <model>. */
+    private <T extends Block> void placedMineBlock(RegistrySupplier<T> blockObject, String model, boolean withItem) {
+        simpleBlock(blockObject.get(), models().getExistingFile(modLoc("block/bomb/" + model + "_placed")));
+        if (withItem) simpleBlockItem(blockObject.get(), models().getExistingFile(modLoc("block/bomb/" + model)));
     }
 
     private <T extends Block> void customBombBlock(RegistrySupplier<T> blockObject) {
@@ -4616,7 +5909,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
     /** Тонкий слой осадков (не snow-layer с LAYERS). */
     private void registerFalloutLayerBlock(RegistrySupplier<Block> block, String baseName) {
-        ResourceLocation texture = blockTexture(block.get());
+        // Original fallout: setBlockTextureName("hbm:ash")
+        ResourceLocation texture = modLoc("block/ash");
         ModelFile model = models().withExistingParent(baseName, mcLoc("block/snow_height2"))
                 .texture("texture", texture)
                 .texture("particle", texture);
@@ -4730,6 +6024,17 @@ public class ModBlockStateProvider extends BlockStateProvider {
             case EAST -> 90;
             default -> 0;
         };
+    }
+
+    /** Original getIcon(world,...): Variante aus Positionshash - hier die zufaellige (positionsfeste) Modellwahl. */
+    private void registerSellafieldHot(RegistrySupplier<Block> blockObject, int level) {
+        ConfiguredModel[] models = new ConfiguredModel[4];
+        for (int v = 0; v < 4; v++) {
+            String n = "sellafield_" + level + "_" + v;
+            models[v] = new ConfiguredModel(models().cubeAll(n, modLoc("block/" + n)));
+        }
+        getVariantBuilder(blockObject.get()).partialState().setModels(models);
+        simpleBlockItem(blockObject.get(), models().getExistingFile(modLoc("block/sellafield_" + level + "_0")));
     }
 
     private void registerSellafieldSlaked(RegistrySupplier<Block> blockObject, String modelBaseName) {
@@ -4950,6 +6255,21 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(blockObject.get(), model);
     }
 
+    /**
+     * Maschine, die ganz vom Blockentity-Renderer gezeichnet wird (Original getRenderType -1): jede Ausrichtung zeigt
+     * nur ein Partikelmodell, das Item den Original-Blockicon-Wuerfel.
+     */
+    private void rendererBlockWithCubeItem(RegistrySupplier<Block> blockObject, String texture) {
+        String name = blockObject.getId().getPath();
+        ModelFile particle = models().getBuilder(name + "_particle").texture("particle", modLoc(texture));
+        VariantBlockStateBuilder builder = getVariantBuilder(blockObject.get());
+        for (Direction facing : Direction.Plane.HORIZONTAL) {
+            builder.partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, facing)
+                    .modelForState().modelFile(particle).addModel();
+        }
+        simpleBlockItem(blockObject.get(), models().cubeAll(name, modLoc(texture)));
+    }
+
     /** OBJ-блок без свойства facing (обычный Block): один вариант, без поворотов. */
     private void customObjBlockNoFacing(RegistrySupplier<Block> blockObject) {
         ModelFile model = models().getExistingFile(modLoc("block/" + blockObject.getId().getPath()));
@@ -5126,5 +6446,41 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/icf_capacitor_top"), modLoc("block/icf_capacitor_top")));
     }
 
+    /**
+     * Welt-Fluessigkeiten: die fliessenden zeichnet der Fluid-Renderer, das Blockmodell traegt nur
+     * die Partikeltextur. Die endlichen Fluessigkeiten (Corium, Fluessigbeton) bekommen je Quantum
+     * einen Quader der passenden Hoehe; Basalterze sind Saeulen mit eigener Oberseite.
+     */
+    private void worldFluids() {
+        String[][] liquids = {
+                { "mud_block", "mud" }, { "acid_block", "acid" }, { "toxic_block", "toxic" },
+                { "schrabidic_block", "schrabidic_acid" }, { "volcanic_lava_block", "volcanic_lava" },
+                { "rad_lava_block", "rad_lava" }, { "sulfuric_acid_block", "sulfuric_acid" } };
+        for (String[] l : liquids) {
+            net.minecraft.world.level.block.Block b = net.minecraftforge.registries.ForgeRegistries.BLOCKS.getValue(modLoc(l[0]));
+            simpleBlock(b, models().getBuilder(l[0]).texture("particle", modLoc("block/fluid/" + l[1] + "_still")));
+        }
+        finiteFluid(ModBlocks.CORIUM_BLOCK.get(), "corium_block", "block/fluid/corium_still", 5);
+        finiteFluid(ModBlocks.CONCRETE_LIQUID.get(), "concrete_liquid", "block/fluid/concrete_liquid", 4);
+
+        for (String t : new String[] { "sulfur", "fluorite", "asbestos", "gem", "molysite" }) {
+            net.minecraft.world.level.block.Block b = net.minecraftforge.registries.ForgeRegistries.BLOCKS.getValue(modLoc("ore_basalt_" + t));
+            var model = models().cubeColumn("ore_basalt_" + t, modLoc("block/ore_basalt_" + t), modLoc("block/ore_basalt_" + t + "_top"));
+            simpleBlockWithItem(b, model);
+        }
+    }
+
+    private void finiteFluid(net.minecraft.world.level.block.Block block, String name, String texture, int quanta) {
+        var builder = getVariantBuilder(block);
+        for (int q = 0; q < 16; q++) {
+            int level = Math.min(q, quanta - 1) + 1;
+            float h = Math.max(1F, 14F * level / quanta);
+            var model = models().withExistingParent(name + "_" + level, mcLoc("block/block"))
+                    .texture("particle", modLoc(texture)).texture("tex", modLoc(texture))
+                    .renderType("translucent")
+                    .element().from(0, 0, 0).to(16, h, 16).allFaces((dir, face) -> face.texture("#tex")).end();
+            builder.partialState().with(com.hbm_m.block.fluid.FiniteFluidBlock.LEVEL, q).addModels(new net.minecraftforge.client.model.generators.ConfiguredModel(model));
+        }
+    }
 }
 //?}

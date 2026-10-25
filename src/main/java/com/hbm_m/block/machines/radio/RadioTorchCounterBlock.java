@@ -18,25 +18,22 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /** Port of {@code RadioTorchCounter} (1.7.10 Original) - the only radio-torch with a real item-filter GUI. */
-public class RadioTorchCounterBlock extends RadioTorchBaseBlock implements com.hbm_m.interfaces.ILookOverlay {
+public class RadioTorchCounterBlock extends RadioTorchBaseBlock {
 
     public RadioTorchCounterBlock(Properties properties) { super(properties); }
 
-    /** Port of {@code RadioTorchCounter.printHook}: per configured channel "Freq n:" and "Signal n:". */
+    /** Original {@code printHook}: je belegtem Kanal Frequenz und letzter Zaehlstand. */
     @Override
-    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
-        BlockEntity be = level.getBlockEntity(pos);
-        if (!(be instanceof RadioTorchCounterBlockEntity radio)) return;
+    public void printHook(net.minecraft.client.gui.GuiGraphics g, Level level, BlockPos pos) {
+        if (!(level.getBlockEntity(pos) instanceof RadioTorchCounterBlockEntity radio)) return;
         java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
-        for (int i = 0; i < RadioTorchCounterBlockEntity.SLOT_COUNT; i++) {
-            if (radio.channel[i].isEmpty()) continue;
-            text.add(net.minecraft.network.chat.Component.literal("Freq " + (i + 1) + ": " + radio.channel[i])
-                    .withStyle(net.minecraft.ChatFormatting.AQUA));
-            text.add(net.minecraft.network.chat.Component.literal("Signal " + (i + 1) + ": " + radio.lastCount[i])
-                    .withStyle(net.minecraft.ChatFormatting.RED));
+        for (int i = 0; i < 3; i++) {
+            if (radio.channel[i] != null && !radio.channel[i].isEmpty()) {
+                text.add(net.minecraft.network.chat.Component.literal("Freq " + (i + 1) + ": " + radio.channel[i]).withStyle(net.minecraft.ChatFormatting.AQUA));
+                text.add(net.minecraft.network.chat.Component.literal("Signal " + (i + 1) + ": " + radio.lastCount[i]).withStyle(net.minecraft.ChatFormatting.RED));
+            }
         }
-        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
-                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(g, getName(), 0xffff00, 0x404000, text);
     }
 
     @Nullable @Override
@@ -53,6 +50,7 @@ public class RadioTorchCounterBlock extends RadioTorchBaseBlock implements com.h
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen false
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MenuProvider menuProvider) {
@@ -64,6 +62,7 @@ public class RadioTorchCounterBlock extends RadioTorchBaseBlock implements com.h
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen false
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MenuProvider menuProvider) {
@@ -82,7 +81,6 @@ public class RadioTorchCounterBlock extends RadioTorchBaseBlock implements com.h
         return CODEC;
     }
     *///?}
-
     @Override
     public void onRemove(net.minecraft.world.level.block.state.BlockState state, net.minecraft.world.level.Level level,
                             net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState newState, boolean isMoving) {

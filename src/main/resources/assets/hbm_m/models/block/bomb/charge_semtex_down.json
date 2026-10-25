@@ -1,0 +1,11 @@
+{
+  "parent": "minecraft:block/block",
+  "loader": "forge:obj",
+  "model": "hbm_m:models/block/bomb/charge_c4_down.obj",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "texture": "hbm_m:block/bomb/charge_semtex",
+    "particle": "hbm_m:block/bomb/charge_semtex"
+  }
+}

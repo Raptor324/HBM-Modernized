@@ -20,10 +20,9 @@ import net.minecraft.world.level.material.Fluids;
  * While the drum has at least one adjacent water block, every stored {@code RBMKRodItem} cools down
  * (releasing heat into the surrounding pool) instead of remaining at reactor operating temperature.
  * <p>
- * SCOPE-Vereinfachung: Das Original transformiert zusaetzlich beliebige {@code FuelPoolRecipes}-
- * Items (nicht nur RBMK-Staebe) nach einer zufaelligen Zeit in ein anderes Item (z.B. langsamer
- * Abfallzerfall im Wasserbecken) - dieses Rezeptsystem existiert in diesem Port nicht und wurde
- * nicht mitportiert. Der Kernmechanismus (RBMK-Stab-Kuehlbecken, wasserabhaengig) bleibt erhalten.
+ * Alles andere aus {@link com.hbm_m.inventory.recipes.FuelPoolRecipes} (heisser Abfall, heisse PWR-Staebe)
+ * kuehlt zufaellig ab: Chance 1 / (60 * 60 * 20 / Wasserseiten) pro Tick und Slot.
+
  */
 public class MachineWasteDrumBlockEntity extends BaseMachineBlockEntity {
 
@@ -44,15 +43,20 @@ public class MachineWasteDrumBlockEntity extends BaseMachineBlockEntity {
         }
         if (water <= 0) return;
 
-        // Anti-waste: setChanged() (chunk dirty-mark) only when the cooling actually moved
-        // rod state (heat NBT is written per-tick while cooling) — no change, no write.
+        int r = 60 * 60 * 20 / water;
+
         long before = be.inventoryFingerprint();
         for (int i = 0; i < INVENTORY_SIZE; i++) {
             ItemStack stack = be.inventory.getStackInSlot(i);
-            if (stack.isEmpty() || !(stack.getItem() instanceof RBMKRodItem rod)) continue;
+            if (stack.isEmpty()) continue;
 
-            rod.updateHeat(level, stack, COOL_MOD);
-            rod.provideHeat(level, stack, PROVIDE_HEAT, COOL_MOD);
+            if (stack.getItem() instanceof RBMKRodItem rod) {
+                rod.updateHeat(level, stack, COOL_MOD);
+                rod.provideHeat(level, stack, PROVIDE_HEAT, COOL_MOD);
+            } else if (level.random.nextInt(r) == 0) {
+                ItemStack out = com.hbm_m.inventory.recipes.FuelPoolRecipes.recipes().get(stack.getItem());
+                if (out != null) be.inventory.setStackInSlot(i, out.copy());
+            }
         }
         if (be.inventoryFingerprint() != before) be.setChanged();
     }
@@ -60,14 +64,15 @@ public class MachineWasteDrumBlockEntity extends BaseMachineBlockEntity {
     private long inventoryFingerprint() {
         long h = 0L;
         for (int i = 0; i < INVENTORY_SIZE; i++) {
-            h = h * 31L + com.hbm_m.platform.PlatformHooks.stackFingerprint(inventory.getStackInSlot(i));
+            h = h * 31L + com.hbm_m.platform.StackNbt.fingerprint(inventory.getStackInSlot(i));
         }
         return h;
     }
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return stack.getItem() instanceof RBMKRodItem;
+        return com.hbm_m.inventory.recipes.FuelPoolRecipes.isInput(stack) || stack.getItem() instanceof RBMKRodItem;
+
     }
 
     @Override
@@ -84,4 +89,53 @@ public class MachineWasteDrumBlockEntity extends BaseMachineBlockEntity {
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
         return com.hbm_m.inventory.menu.MachineWasteDrumMenu.create(id, inventory, this);
     }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: alle 12 Plaetze; Abklingbares hinein, abgekuehlte Staebe und Fertiges heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.range(0, 11); }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { if (stack.getItem() instanceof com.hbm_m.item.rbmk.RBMKRodItem) {
+                        return com.hbm_m.item.rbmk.RBMKRodItem.getCoreHeat(stack) < 50 && com.hbm_m.item.rbmk.RBMKRodItem.getHullHeat(stack) < 50;
+                    }
+                    return !com.hbm_m.inventory.recipes.FuelPoolRecipes.isInput(stack); }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: alle 12 Plaetze; Abklingbares hinein, abgekuehlte Staebe und Fertiges heraus. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.range(0, 11); }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { if (stack.getItem() instanceof com.hbm_m.item.rbmk.RBMKRodItem) {
+                        return com.hbm_m.item.rbmk.RBMKRodItem.getCoreHeat(stack) < 50 && com.hbm_m.item.rbmk.RBMKRodItem.getHullHeat(stack) < 50;
+                    }
+                    return !com.hbm_m.inventory.recipes.FuelPoolRecipes.isInput(stack); }
+            });
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
+
 }

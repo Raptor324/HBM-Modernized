@@ -45,7 +45,6 @@ public class PileVentBlock extends PileDeviceBlock {
                                          Player player, InteractionHand hand, BlockHitResult hit) {
         return passDrillThrough(state, level, pos, player, hand, false);
     }
-
     //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<PileVentBlock> CODEC = simpleCodec(PileVentBlock::new);
 

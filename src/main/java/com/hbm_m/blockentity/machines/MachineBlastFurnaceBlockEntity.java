@@ -13,6 +13,7 @@ import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
 import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.platform.ModItemStackHandler;
+import com.hbm_m.recipe.index.CachedRecipeResolver;
 import com.hbm_m.platform.PlatformHooks;
 import com.hbm_m.recipe.BlastFurnaceRecipe;
 import com.hbm_m.platform.recipe.RecipeInputWrapper;
@@ -43,6 +44,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import com.hbm_m.platform.StackNbt;
+import com.hbm_m.platform.LevelHooks;
 
 //? if forge {
 import net.minecraftforge.common.capabilities.Capability;
@@ -85,11 +88,11 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
                 case OUTPUT_SLOT_FIRST, OUTPUT_SLOT_SECOND -> false;
                 case INPUT_SLOT_FIRST -> {
                     ItemStack other = itemHandler.getStackInSlot(INPUT_SLOT_SECOND);
-                    yield other.isEmpty() || !PlatformHooks.isSameItemSameTags(other, stack);
+                    yield other.isEmpty() || !StackNbt.sameItemSameTags(other, stack);
                 }
                 case INPUT_SLOT_SECOND -> {
                     ItemStack other = itemHandler.getStackInSlot(INPUT_SLOT_FIRST);
-                    yield other.isEmpty() || !PlatformHooks.isSameItemSameTags(other, stack);
+                    yield other.isEmpty() || !StackNbt.sameItemSameTags(other, stack);
                 }
                 default -> false;
             };
@@ -229,7 +232,56 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
             return new FluidStack(ModFluids.FLUE.getSource(), drained);
         }
     }
-    //?}
+    //?} elif neoforge {
+    /*private com.hbm_m.platform.LazyCap<net.minecraftforge.fluids.capability.IFluidHandler> lazyFluidHandler = com.hbm_m.platform.LazyCap.empty();
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        lazyFluidHandler = com.hbm_m.platform.LazyCap.of(() -> new CombinedFluidHandler());
+    }
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER) {
+            return lazyFluidHandler.cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        lazyFluidHandler.invalidate();
+    }
+
+    /^* Заполнение - только дутьё, слив - только дымовые газы (как в оригинале). ^/
+    private class CombinedFluidHandler implements net.minecraftforge.fluids.capability.IFluidHandler {
+        @Override public int getTanks() { return 2; }
+        @Override public net.minecraftforge.fluids.FluidStack getFluidInTank(int tank) {
+            if (tank == 0 && !airTank.isEmpty()) return new net.minecraftforge.fluids.FluidStack(airTank.getStoredFluid(), airTank.getFluidAmountMb());
+            if (tank == 1 && !flueTank.isEmpty()) return new net.minecraftforge.fluids.FluidStack(flueTank.getStoredFluid(), flueTank.getFluidAmountMb());
+            return net.minecraftforge.fluids.FluidStack.EMPTY;
+        }
+        @Override public int getTankCapacity(int tank) { return tank == 0 ? AIR_CAPACITY_MB : tank == 1 ? FLUE_CAPACITY_MB : 0; }
+        @Override public boolean isFluidValid(int tank, net.minecraftforge.fluids.FluidStack stack) {
+            return tank == 0 && !stack.isEmpty() && stack.getFluid() == ModFluids.AIRBLAST.getSource();
+        }
+        @Override public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty() || resource.getFluid() != ModFluids.AIRBLAST.getSource()) return 0;
+            return airTank.fillMb(resource.getFluid(), resource.getAmount(), action.simulate());
+        }
+        @Override public net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty() || resource.getFluid() != flueTank.getStoredFluid()) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            return drain(resource.getAmount(), action);
+        }
+        @Override public net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+            int drained = flueTank.drainMb(maxDrain, action.simulate());
+            if (drained <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            return new net.minecraftforge.fluids.FluidStack(ModFluids.FLUE.getSource(), drained);
+        }
+    }
+    *///?}
 
     @Override
     public @Nullable Object getFluidHandler(@Nullable Direction side) {
@@ -270,6 +322,9 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
 
     // ==================== TICK ====================
 
+    @Override public int getFloorCount() { return 2 * 2; }
+    @Override public BlockPos getFloorPosFromIndex(int index) { return this.standardFloor3x3(index); }
+
     public static void tick(Level level, BlockPos pos, BlockState state, MachineBlastFurnaceBlockEntity entity) {
         if (level.isClientSide()) {
             entity.clientTick(level, pos);
@@ -279,12 +334,14 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
     }
 
     private void serverTick(ServerLevel level, BlockPos pos, BlockState state) {
+        this.checkTilt(TiltType.CONFIG, false);
         loadFuel();
 
         boolean wasProgressing = progressing;
         speed = 0D;
         BlastFurnaceRecipe recipe = findRecipe();
-        if (recipe != null && canProcess(recipe)) {
+        // NTM Space: && breatheAir(1) - ohne Space-Addon immer true
+        if (!this.tilted && recipe != null && canProcess(recipe) && breatheAir(1)) {
             speed = Mth.clamp(0.5D + airTank.getFluidAmountMb() * 8D / AIR_CAPACITY_MB, 0.5D, 5D);
             progressing = true;
             progress += speed / recipe.getDuration();
@@ -293,7 +350,7 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
                 progress = 0D;
             }
             if (level.random.nextInt(10) == 0) {
-                PlatformHooks.playSound(level, pos, SoundEvents.FIRE_AMBIENT, SoundSource.BLOCKS,
+                LevelHooks.playSound(level, pos, SoundEvents.FIRE_AMBIENT, SoundSource.BLOCKS,
                         1.0F, 0.5F + level.random.nextFloat() * 0.25F);
             }
         } else {
@@ -412,26 +469,29 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
 
     // ==================== PROCESSING ====================
 
-    /** Кэшированный скан рецептов: подпись — фингерпринты обоих входных слотов (P3-правило). */
-    private final com.hbm_m.recipe.index.CachedRecipeResolver<BlastFurnaceRecipe> recipeResolver =
-            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+    /** Кэшированный скан рецептов: подпись — оба входных слота. */
+    private final CachedRecipeResolver<BlastFurnaceRecipe> recipeResolver = new CachedRecipeResolver<>();
 
+    /** Data-driven поиск BlastFurnaceRecipe по обоим входным слотам (NT-рецепты нового Hochofens). */
     @Nullable
     private BlastFurnaceRecipe findRecipe() {
+        Level level = getLevel();
         if (level == null) return null;
-        long signature = com.hbm_m.recipe.index.CachedRecipeResolver.sign(10,
-                PlatformHooks.stackFingerprint(itemHandler.getStackInSlot(INPUT_SLOT_FIRST)),
-                PlatformHooks.stackFingerprint(itemHandler.getStackInSlot(INPUT_SLOT_SECOND)));
+        long signature = CachedRecipeResolver.sign(1,
+                StackNbt.fingerprint(itemHandler.getStackInSlot(INPUT_SLOT_FIRST)),
+                StackNbt.fingerprint(itemHandler.getStackInSlot(INPUT_SLOT_SECOND)));
         return recipeResolver.resolve(level, BlastFurnaceRecipe.Type.INSTANCE, signature, (lvl, all) -> {
-            // CONTRACT 1: сканер — только матч рецепта по входам; топливо/headroom выходов —
-            // per-tick в canProcess вне сканера.
+            if (itemHandler.getStackInSlot(INPUT_SLOT_FIRST).isEmpty()
+                    && itemHandler.getStackInSlot(INPUT_SLOT_SECOND).isEmpty()) {
+                return null;
+            }
             SimpleContainer inventory = new SimpleContainer(itemHandler.getSlots());
             for (int i = 0; i < itemHandler.getSlots(); i++) {
                 inventory.setItem(i, itemHandler.getStackInSlot(i));
             }
             RecipeInputWrapper wrapper = new RecipeInputWrapper(inventory);
             for (BlastFurnaceRecipe recipe : all) {
-                if (recipe.matchesRecipe(wrapper, lvl)) {
+                if (recipe.isNT() && recipe.matchesRecipe(wrapper, lvl)) {
                     return recipe;
                 }
             }
@@ -449,7 +509,7 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
         if (output.isEmpty()) return true;
         ItemStack existing = itemHandler.getStackInSlot(slot);
         if (existing.isEmpty()) return true;
-        if (!PlatformHooks.isSameItemSameTags(existing, output)) return false;
+        if (!StackNbt.sameItemSameTags(existing, output)) return false;
         return existing.getCount() + output.getCount() <= existing.getMaxStackSize();
     }
 
@@ -460,8 +520,11 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
         addOutput(OUTPUT_SLOT_FIRST, primary);
         addOutput(OUTPUT_SLOT_SECOND, secondary);
 
-        itemHandler.extractItem(INPUT_SLOT_FIRST, 1, false);
-        itemHandler.extractItem(INPUT_SLOT_SECOND, 1, false);
+        // Mengen des Rezepts (z. B. 2 Eisenbarren + 1 Sand), Zutaten in beliebiger Reihenfolge
+        int[] use = recipe.getConsumption(itemHandler.getStackInSlot(INPUT_SLOT_FIRST), itemHandler.getStackInSlot(INPUT_SLOT_SECOND));
+        if (use == null) use = new int[] {1, 1};
+        if (use[0] > 0) itemHandler.extractItem(INPUT_SLOT_FIRST, use[0], false);
+        if (use[1] > 0) itemHandler.extractItem(INPUT_SLOT_SECOND, use[1], false);
 
         fuel -= FUEL_RATE;
 
@@ -512,7 +575,7 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(itemHandler, registries));
+        tag.put("inventory", itemHandler.serialize( registries));
         tag.putDouble("bf_progress", progress);
         tag.putDouble("bf_speed", speed);
         tag.putInt("bf_fuel", fuel);
@@ -525,7 +588,7 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        com.hbm_m.platform.ItemStackSerialization.deserialize(itemHandler, tag.getCompound("inventory"), registries);
+        itemHandler.deserialize(tag.getCompound("inventory"), registries);
         progress = Mth.clamp(tag.getDouble("bf_progress"), 0D, 1D);
         speed = tag.getDouble("bf_speed");
         fuel = Mth.clamp(tag.getInt("bf_fuel"), 0, MAX_FUEL);

@@ -45,7 +45,6 @@ import com.hbm_m.recipe.RadiolysisRecipe;
 import com.hbm_m.recipe.ElectrolyserFluidRecipe;
 import com.hbm_m.recipe.ElectrolyserMetalRecipe;
 import com.hbm_m.item.industrial.ItemAssemblyTemplate;
-import com.hbm_m.item.liquids.FluidBarrelItem;
 import com.hbm_m.item.liquids.FluidDuctItem;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 
@@ -66,14 +65,9 @@ import mezz.jei.api.registration.IRecipeRegistration;
 import mezz.jei.api.registration.ISubtypeRegistration;
 
 import javax.annotation.Nonnull;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
+import com.hbm_m.platform.StackNbt;
 @JeiPlugin
 @OnlyIn(Dist.CLIENT)
 public class HbmJeiPlugin implements IModPlugin {
@@ -90,6 +84,7 @@ public class HbmJeiPlugin implements IModPlugin {
     @Override
     public void registerCategories(@Nonnull IRecipeCategoryRegistration registration) {
         registration.addRecipeCategories(new AnvilJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new AnvilSmithingJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new AssemblerJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new CentrifugeJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new ChemicalPlantJeiCategory(registration.getJeiHelpers().getGuiHelper()));
@@ -126,6 +121,9 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeCategories(new ArcFurnaceJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new AmmoPressJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new PurexJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new SuperComputerJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new RockMillJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new PrecAssJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new ExposureChamberJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new RotaryFurnaceJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new CompressorJeiCategory(registration.getJeiHelpers().getGuiHelper()));
@@ -139,6 +137,8 @@ public class HbmJeiPlugin implements IModPlugin {
                 : JeiExtraCategories.create(registration.getJeiHelpers().getGuiHelper())) {
             registration.addRecipeCategories(extra);
         }
+        // Restliche NEI-Handler des Originals (Werkzeugumbau, Bauplaene, Brennstoffe, Raffinerie, Granaten ...)
+        NeiPortJeiCategories.registerCategories(registration);
     }
 
     @Override
@@ -149,7 +149,8 @@ public class HbmJeiPlugin implements IModPlugin {
 
         // Anvil — особый случай: рецепты идут через AnvilRecipeManager.getClientRecipes() (внутренний реестр),
         // а не через RecipeManager (AnvilRecipe — предметно-теговая система не через PlatformRecipe).
-        registration.addRecipes(AnvilJeiCategory.RECIPE_TYPE, AnvilRecipeManager.getClientRecipes());
+        registration.addRecipes(AnvilJeiCategory.RECIPE_TYPE, AnvilRecipeManager.getConstruction(level));
+        registration.addRecipes(AnvilSmithingJeiCategory.RECIPE_TYPE, AnvilRecipeManager.getSmithing(level));
 
         // Все остальные машины — data-driven (JSON), читаем напрямую через кросс-версионный RecipeHooks.
         registration.addRecipes(AssemblerJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, AssemblerRecipe.Type.INSTANCE));
@@ -199,6 +200,9 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipes(ArcFurnaceJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, ArcFurnaceRecipe.Type.INSTANCE));
         registration.addRecipes(AmmoPressJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, AmmoPressRecipe.Type.INSTANCE));
         registration.addRecipes(PurexJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, PurexRecipe.Type.INSTANCE));
+        registration.addRecipes(SuperComputerJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, com.hbm_m.recipe.SuperComputerRecipe.Type.INSTANCE));
+        registration.addRecipes(RockMillJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, com.hbm_m.recipe.RockMillRecipe.Type.INSTANCE));
+        registration.addRecipes(PrecAssJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, com.hbm_m.recipe.PrecAssRecipe.Type.INSTANCE));
         registration.addRecipes(ExposureChamberJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, ExposureChamberRecipe.Type.INSTANCE));
         registration.addRecipes(RotaryFurnaceJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, RotaryFurnaceRecipe.Type.INSTANCE));
         // Compressor / CrackingTower / Radiolysis / Electrolyser — теперь data-driven (JSON), раньше — статика.
@@ -214,13 +218,14 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipes(RBMKOutgasserJeiCategory.RECIPE_TYPE, RBMKOutgasserJeiCategory.all());
 
         JeiExtraCategories.registerRecipes(registration, level);
+        NeiPortJeiCategories.registerRecipes(registration, level);
     }
 
     @Override
     public void registerRecipeCatalysts(@Nonnull IRecipeCatalystRegistration registration) {
         JeiExtraCategories.registerCatalysts(registration);
         for (var anvil : ModBlocks.getAnvilBlocks()) {
-            registration.addRecipeCatalyst(new ItemStack(anvil.get()), AnvilJeiCategory.RECIPE_TYPE);
+            registration.addRecipeCatalyst(new ItemStack(anvil.get()), AnvilJeiCategory.RECIPE_TYPE, AnvilSmithingJeiCategory.RECIPE_TYPE);
         }
         registration.addRecipeCatalyst(new ItemStack(ModItems.MACHINE_ASSEMBLER.get()), AssemblerJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModItems.ADVANCED_ASSEMBLY_MACHINE.get()), AssemblerJeiCategory.RECIPE_TYPE);
@@ -263,6 +268,9 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.ARC_FURNACE.get()), ArcFurnaceJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.AMMO_PRESS.get()), AmmoPressJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.PUREX.get()), PurexJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.MACHINE_SUPERCOMPUTER.get()), SuperComputerJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.MACHINE_ROCKMILL.get()), RockMillJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.MACHINE_PRECASS.get()), PrecAssJeiCategory.RECIPE_TYPE);
         // E-Press und Conveyor Press teilen sich PressRecipe mit dem Basis-Press.
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.EPRESS.get()), PressJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.CONVEYOR_PRESS.get()), PressJeiCategory.RECIPE_TYPE);
@@ -275,12 +283,16 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.RADIOLYSIS.get()), RadiolysisJeiCategory.RECIPE_TYPE);
         // Microwave teilt sich Vanilla-Ofen-Rezepte mit dem eingebauten JEI-Ofen-Kategorie.
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.MACHINE_MICROWAVE.get()), mezz.jei.api.constants.RecipeTypes.SMELTING);
+
+        NeiPortJeiCategories.registerCatalysts(registration);
     }
 
     @Override
     public void registerGuiHandlers(@Nonnull IGuiHandlerRegistration registration) {
         registration.addRecipeClickArea(GUIAnvil.class, 11, 42, 36, 18, AnvilJeiCategory.RECIPE_TYPE);
         registration.addRecipeClickArea(GUIAnvil.class, 65, 42, 36, 18, AnvilJeiCategory.RECIPE_TYPE);
+        registration.addRecipeClickArea(GUIAnvil.class, 65, 15, 18, 18, AnvilSmithingJeiCategory.RECIPE_TYPE);
+        registration.addRecipeClickArea(GUIAnvil.class, 29, 15, 18, 18, AnvilSmithingJeiCategory.RECIPE_TYPE);
         // Assembler recipe click area around the progress bar
         registration.addRecipeClickArea(GUIMachineAssembler.class, 45, 82, 83, 32, AssemblerJeiCategory.RECIPE_TYPE);
         // Advanced assembler: JEI on progress arrow only (7,125 is recipe selector → GUIScreenRecipeSelector)
@@ -309,21 +321,25 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeClickArea(com.hbm_m.inventory.gui.GUIMachineArcFurnace.class, 45, 37, 38, 5, ArcFurnaceJeiCategory.RECIPE_TYPE);
         registration.addRecipeClickArea(com.hbm_m.inventory.gui.GUIMachineAmmoPress.class, 96, 20, 20, 32, AmmoPressJeiCategory.RECIPE_TYPE);
         registration.addRecipeClickArea(com.hbm_m.inventory.gui.GUIMachinePUREX.class, 45, 40, 24, 8, PurexJeiCategory.RECIPE_TYPE);
+        registration.addRecipeClickArea(com.hbm_m.inventory.gui.GUIMachineSuperComputer.class, 62, 81, 70, 16, SuperComputerJeiCategory.RECIPE_TYPE);
+        registration.addRecipeClickArea(com.hbm_m.inventory.gui.GUIMachineRockMill.class, 62, 90, 70, 16, RockMillJeiCategory.RECIPE_TYPE);
+        registration.addRecipeClickArea(com.hbm_m.inventory.gui.GUIMachinePrecAss.class, 62, 126, 70, 16, PrecAssJeiCategory.RECIPE_TYPE);
+
+        NeiPortJeiCategories.registerGuiHandlers(registration);
     }
 
     @Override
     public void registerItemSubtypes(@Nonnull ISubtypeRegistration registration) {
-        registration.registerSubtypeInterpreter(
-            ModItems.FLUID_BARREL.get(),
-            (stack, ctx) -> {
-                dev.architectury.fluid.FluidStack fluid = FluidBarrelItem.getFluid(stack);
-                if (fluid.isEmpty()) return "empty";
-                ResourceLocation fluidId = BuiltInRegistries.FLUID.getKey(fluid.getFluid());
-                return (fluidId != null ? fluidId.toString() : "unknown") + ":" + fluid.getAmount();
-            }
-        );
+        // Fluessigkeitsbehaelter: je Fluessigkeit ein eigener Eintrag (Original: Metadaten)
+        for (var sup : java.util.List.of(ModItems.FLUID_TANK_FULL, ModItems.FLUID_TANK_LEAD_FULL, ModItems.FLUID_BARREL_FULL, ModItems.FLUID_PACK_FULL,
+                ModItems.CANISTER_FULL, ModItems.GAS_FULL, ModItems.DISPERSER_CANISTER, ModItems.GLYPHID_GLAND)) {
+            subtype(registration, sup.get(), (stack, ctx) -> {
+                ResourceLocation fluidId = BuiltInRegistries.FLUID.getKey(com.hbm_m.item.liquids.ItemFluidTank.getFluid(stack));
+                return fluidId != null ? fluidId.toString() : "none";
+            });
+        }
 
-        registration.registerSubtypeInterpreter(
+        subtype(registration,
             ModItems.FLUID_IDENTIFIER.get(),
             (stack, ctx) -> {
                 String f1 = FluidIdentifierItem.getTypeName(stack, true);
@@ -332,19 +348,19 @@ public class HbmJeiPlugin implements IModPlugin {
             }
         );
 
-        registration.registerSubtypeInterpreter(
+        subtype(registration,
             ModItems.ASSEMBLY_TEMPLATE.get(),
             (stack, ctx) -> {
                 ItemStack output = ItemAssemblyTemplate.getRecipeOutput(stack);
                 if (output.isEmpty()) return "empty";
                 ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(output.getItem());
                 return (itemId != null ? itemId.toString() : "unknown") +
-                    (PlatformHooks.hasItemTag(output) ? PlatformHooks.getItemTag(output).toString() : "");
+                    (StackNbt.has(output) ? StackNbt.read(output).toString() : "");
             }
         );
 
         // Rad Absorber subtypes by tier
-        registration.registerSubtypeInterpreter(
+        subtype(registration,
             ModBlocks.RAD_ABSORBER.get().asItem(),
             (stack, ctx) -> {
                 BlockAbsorber.EnumAbsorberTier tier = BlockAbsorberItem.readTier(stack);
@@ -356,10 +372,37 @@ public class HbmJeiPlugin implements IModPlugin {
         registerDuctSubtype(registration, ModItems.FLUID_DUCT);
         registerDuctSubtype(registration, ModItems.FLUID_DUCT_COLORED);
         registerDuctSubtype(registration, ModItems.FLUID_DUCT_SILVER);
+
+        NeiPortJeiCategories.registerSubtypes(registration);
+    }
+
+    /** Versionsswitch: JEI 15 (1.20.1) kennt nur IIngredientSubtypeInterpreter, JEI 19+ (1.21.1) will das nicht-funktionale ISubtypeInterpreter. */
+    //? if < 1.21.1 {
+    static void subtype(ISubtypeRegistration registration, Item item, SubtypeFn fn) {
+        registration.registerSubtypeInterpreter(item, (stack, ctx) -> fn.data(stack, ctx));
+    }
+    //?} elif neoforge {
+    /*static void subtype(ISubtypeRegistration registration, Item item, SubtypeFn fn) {
+        registration.registerSubtypeInterpreter(item, new mezz.jei.api.ingredients.subtypes.ISubtypeInterpreter<ItemStack>() {
+            @Override
+            public Object getSubtypeData(ItemStack stack, mezz.jei.api.ingredients.subtypes.UidContext context) {
+                return fn.data(stack, context);
+            }
+            @Override
+            public String getLegacyStringSubtypeInfo(ItemStack stack, mezz.jei.api.ingredients.subtypes.UidContext context) {
+                return fn.data(stack, context);
+            }
+        });
+    }
+    *///?}
+
+    @FunctionalInterface
+    interface SubtypeFn {
+        String data(ItemStack stack, mezz.jei.api.ingredients.subtypes.UidContext context);
     }
 
     private void registerDuctSubtype(ISubtypeRegistration registration, RegistrySupplier<Item> ductSupplier) {
-        registration.registerSubtypeInterpreter(
+        subtype(registration,
             ductSupplier.get(),
             (stack, ctx) -> {
                 dev.architectury.fluid.FluidStack fluid = FluidDuctItem.getFluidType(stack);

@@ -16,10 +16,10 @@ import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import com.hbm_m.platform.MobHooks;
 
 public class EntityProcessorCross implements IEntityProcessor {
 
@@ -62,7 +62,7 @@ public class EntityProcessorCross implements IEntityProcessor {
         double maxZ = z + (double) size + 1.0D;
 
         List<Entity> list = level.getEntities(allowSelfDamage ? null : explosion.exploder, new AABB(minX, minY, minZ, maxX, maxY, maxZ));
-        com.hbm_m.platform.PlatformHooks.fireExplosionDetonate(level, explosion.compat, list, size);
+        com.hbm_m.platform.LevelHooks.fireExplosionDetonate(level, explosion.compat, list, size);
 
         Vec3[] nodes;
 
@@ -127,7 +127,7 @@ public class EntityProcessorCross implements IEntityProcessor {
 
                         double enchKnockback;
                         if (entity instanceof LivingEntity livingEntity) {
-                            enchKnockback = PlatformHooks.getExplosionKnockbackAfterDampener(livingEntity, knockback);
+                            enchKnockback = MobHooks.getExplosionKnockbackAfterDampener(livingEntity, knockback);
                         } else {
                             enchKnockback = knockback;
                         }

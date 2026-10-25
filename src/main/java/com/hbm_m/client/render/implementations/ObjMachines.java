@@ -35,7 +35,7 @@ final class ObjMachines {
     /** Block centre, blockstate facing, then the original's fixed pre-rotation about Y. */
     static void begin(PoseStack pose, BlockState state, float preRotation) {
         pose.translate(0.5D, 0D, 0.5D);
-        FusionTorusRenderer.applyFacing(state, pose);
+        MachineFusionComplexRenderer.applyFacing(state, pose);
         if (preRotation != 0F) pose.mulPose(Axis.YP.rotationDegrees(preRotation));
     }
 

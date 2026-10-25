@@ -28,6 +28,7 @@ public class MachineDroneCrateBlock extends BaseEntityBlock implements com.hbm_m
         super(properties);
     }
 
+
     /**
      * Port of {@code DroneCrate.printHook}: "Next waypoint: x / y / z" - nur wenn ein
      * naechstes Ziel gesetzt ist, sonst gar kein HUD (wie im Original).
@@ -50,6 +51,15 @@ public class MachineDroneCrateBlock extends BaseEntityBlock implements com.hbm_m
         return RenderShape.MODEL;
     }
 
+
+    /** audit10: 1:1 {@code DroneCrate.breakBlock} - Inhalt faellt beim Entfernen heraus. */
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moving) {
+        if (!state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof com.hbm_m.blockentity.network.MachineDroneCrateBlockEntity be) {
+            com.hbm_m.block.BlockDropUtil.dropSlots(level, pos, be.getInventory(), 0, Integer.MAX_VALUE);
+        }
+        super.onRemove(state, level, pos, newState, moving);
+    }
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
@@ -66,6 +76,9 @@ public class MachineDroneCrateBlock extends BaseEntityBlock implements com.hbm_m
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
+        // Original: mit dem Drohnenverknuepfer in der Hand reagiert der Block nicht, der Linker uebernimmt
+        if (player.getItemInHand(hand).getItem() instanceof com.hbm_m.item.tools_and_armor.ItemDroneLinker) return InteractionResult.PASS;
 
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
@@ -78,6 +91,7 @@ public class MachineDroneCrateBlock extends BaseEntityBlock implements com.hbm_m
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
 
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
@@ -99,12 +113,14 @@ public class MachineDroneCrateBlock extends BaseEntityBlock implements com.hbm_m
     }
     *///?}
 
+    /** Original {@code addInformation}: {@code addStandardInfo} (Umschalttaste zeigt {@code .desc}). */
     @Override
-    public void onRemove(net.minecraft.world.level.block.state.BlockState state, net.minecraft.world.level.Level level,
-                            net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState newState, boolean isMoving) {
-        if (!state.is(newState.getBlock())) {
-            com.hbm_m.block.MachineDrops.dropInventory(level, pos);
-        }
-        super.onRemove(state, level, pos, newState, isMoving);
+    //? if < 1.21.1 {
+    public void appendHoverText(net.minecraft.world.item.ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.BlockGetter level,
+                                java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(net.minecraft.world.item.ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    *///?}
+        com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
     }
 }

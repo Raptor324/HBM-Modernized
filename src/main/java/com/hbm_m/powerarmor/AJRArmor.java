@@ -4,6 +4,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import com.hbm_m.item.tools_and_armor.ModArmorMaterials;
 
+/** 1:1 {@code com.hbm.items.armor.ArmorAJR}: T-45 AJR. */
 public class AJRArmor extends ModPowerArmorItem {
 
     // AJR Specifications

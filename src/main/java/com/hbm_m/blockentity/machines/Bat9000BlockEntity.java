@@ -20,7 +20,8 @@ import net.minecraft.world.level.block.state.BlockState;
  */
 public class Bat9000BlockEntity extends MachineFluidTankBlockEntity {
 
-    public static final int CAPACITY = 2_450_000;
+    /** Original: {@code super(2048000)}. */
+    public static final int CAPACITY = 2_048_000;
 
     public Bat9000BlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.BAT9000_BE.get(), pos, state, CAPACITY);

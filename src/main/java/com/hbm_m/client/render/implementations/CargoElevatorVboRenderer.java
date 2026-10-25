@@ -18,11 +18,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
  * Analog of {@link MachineAssemblerVboRenderer}.
  */
 
-//? if < 1.21.1 {
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} else {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
 public class CargoElevatorVboRenderer {
 
     private final CargoElevatorBakedModel model;

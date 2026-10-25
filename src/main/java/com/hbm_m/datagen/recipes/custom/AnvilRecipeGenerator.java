@@ -11,12 +11,13 @@ import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
 import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.recipe.AnvilRecipe;
-import com.hbm_m.recipe.AnvilRecipe.AnvilIngredient;
+import com.hbm_m.recipe.AnvilRecipe.AStack;
 
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.block.Block;
 import dev.architectury.registry.registries.RegistrySupplier;
 
@@ -31,10 +32,10 @@ import dev.architectury.registry.registries.RegistrySupplier;
  * <p>Семантика порта:
  * <ul>
  *   <li>Кузнечные рецепты ({@code AnvilSmithingRecipe}, два слота) идут через
- *       {@code input_a}/{@code input_b} и не попадают в GUI-список construction-рецептов
+ *       {@code left}/{@code right} и не попадают в GUI-список construction-рецептов
  *       ({@code withOrder} им не нужен).</li>
  *   <li>Construction-рецепты ({@code AnvilConstructionRecipe}) крафтятся из инвентаря
- *       игрока — портятся как {@code inventoryRecipe} + {@code required_items}; каждому
+ *       игрока — портятся как {@code inventoryRecipe} + {@code inputs}; каждому
  *       назначается порядковый номер {@code withOrder(N)} в порядке регистрации оригинала.</li>
  *   <li>Оверлей берётся как в оригинале: из конструктора
  *       ({@code (AStack,AnvilOutput)=SMITHING}, {@code (AStack[],AnvilOutput)=CONSTRUCTION},
@@ -75,6 +76,23 @@ public final class AnvilRecipeGenerator {
         constructionOrder = 0;
         registerSmithing(writer);
         registerConstruction(writer);
+        registerPortStopgaps(writer);
+    }
+
+    /**
+     * Port-Notbehelfe: рецепты предметов, существующих только в порте (оригинального
+     * пути крафта нет), регистрируются после всех оригинальных рецептов.
+     */
+    private static void registerPortStopgaps(Consumer<FinishedRecipe> writer) {
+        // Порт-собственный высокотемпературный горелочный блок: горелка, усиленная
+        // литыми стальными плитами (в оригинале oilburner_hp отсутствует).
+        AnvilRecipeBuilder.inventoryRecipe(stack(ModBlocks.OILBURNER_HP), AnvilTier.STEEL)
+                .withOrder(nextOrder())
+                .withOverlay(AnvilRecipe.OverlayType.CONSTRUCTION)
+                .addInventoryRequirement(stack(ModBlocks.OILBURNER))
+                .addInventoryRequirement(ingCount(matStack(ModMaterials.STEEL, MaterialShape.PLATE_CAST, 1), 8))
+                .addInventoryRequirement(ingCount(stack(ModItems.PIPE_STEEL), 4))
+                .save(writer, anvilId("steel", "port", "oilburner_hp"));
     }
 
     // =====================================================================================
@@ -116,8 +134,8 @@ public final class AnvilRecipeGenerator {
             for (RegistrySupplier<Block> base : List.of(ModBlocks.ANVIL_IRON, ModBlocks.ANVIL_LEAD)) {
                 String baseName = base == ModBlocks.ANVIL_IRON ? "iron" : "lead";
                 AnvilRecipeBuilder.anvilRecipe(
-                                AnvilIngredient.of(stack(base)),
-                                AnvilIngredient.ofCount(material, 10),
+                                ing(stack(base)),
+                                ingCount(material, 10),
                                 output,
                                 AnvilTier.IRON)
                         .withOverlay(AnvilRecipe.OverlayType.SMITHING)
@@ -129,7 +147,7 @@ public final class AnvilRecipeGenerator {
     /** Пушечная бронза: медный слиток + алюминиевый слиток (тир 1). */
     private static void registerSmithingAlloys(Consumer<FinishedRecipe> writer) {
         AnvilRecipeBuilder.anvilRecipe(
-                        AnvilIngredient.of(new ItemStack(Items.COPPER_INGOT)),
+                        ing(new ItemStack(Items.COPPER_INGOT)),
                         aluminiumIngot(),
                         matStack(ModMaterials.GUNMETAL, MaterialShape.INGOT, 1),
                         AnvilTier.IRON)
@@ -151,44 +169,44 @@ public final class AnvilRecipeGenerator {
 
         /* ── Кузнечные формы (AnvilSmithingMold, тир 1, SMITHING) ── */
         // id 0:  nugget       <- GOLD.nugget()
-        mold(writer, "nugget", AnvilIngredient.of(new ItemStack(Items.GOLD_NUGGET)), ModItems.MOLD_NUGGET);            // original: AnvilRecipes.java#98
+        mold(writer, "nugget", ing(new ItemStack(Items.GOLD_NUGGET)), ModItems.MOLD_NUGGET);            // original: AnvilRecipes.java#98
         // id 1:  billet       <- U.billet()
-        mold(writer, "billet", AnvilIngredient.of(matStack(ModMaterials.URANIUM, MaterialShape.BILLET, 1)), ModItems.MOLD_BILLET); // original: AnvilRecipes.java#99
+        mold(writer, "billet", ing(matStack(ModMaterials.URANIUM, MaterialShape.BILLET, 1)), ModItems.MOLD_BILLET); // original: AnvilRecipes.java#99
         // id 2:  ingot        <- IRON.ingot() (любой железный слиток; в порту только ваниль)
-        mold(writer, "ingot", AnvilIngredient.of(new ItemStack(Items.IRON_INGOT)), ModItems.MOLD_INGOT);               // original: AnvilRecipes.java#100
+        mold(writer, "ingot", ing(new ItemStack(Items.IRON_INGOT)), ModItems.MOLD_INGOT);               // original: AnvilRecipes.java#100
         // id 3:  plate        <- IRON.plate()
-        mold(writer, "plate", AnvilIngredient.of(matStack(ModMaterials.IRON, MaterialShape.PLATE, 1)), ModItems.MOLD_PLATE); // original: AnvilRecipes.java#101
+        mold(writer, "plate", ing(matStack(ModMaterials.IRON, MaterialShape.PLATE, 1)), ModItems.MOLD_PLATE); // original: AnvilRecipes.java#101
         // id 19: plateTriple  <- IRON.plateCast()
-        mold(writer, "plate_cast", AnvilIngredient.of(matStack(ModMaterials.IRON, MaterialShape.PLATE_CAST, 1)), ModItems.MOLD_PLATE_CAST); // original: AnvilRecipes.java#102
+        mold(writer, "plate_cast", ing(matStack(ModMaterials.IRON, MaterialShape.PLATE_CAST, 1)), ModItems.MOLD_PLATE_CAST); // original: AnvilRecipes.java#102
         // id 13: plateTriple  x3
-        mold(writer, "plates_cast", AnvilIngredient.ofCount(matStack(ModMaterials.IRON, MaterialShape.PLATE_CAST, 1), 3), ModItems.MOLD_PLATES_CAST); // original: AnvilRecipes.java#103
+        mold(writer, "plates_cast", ingCount(matStack(ModMaterials.IRON, MaterialShape.PLATE_CAST, 1), 3), ModItems.MOLD_PLATES_CAST); // original: AnvilRecipes.java#103
         // id 4:  wireFine     <- CU.wireFine()
-        mold(writer, "wire", AnvilIngredient.of(matStack(ModMaterials.COPPER, MaterialShape.WIRE, 1)), ModItems.MOLD_WIRE); // original: AnvilRecipes.java#104
+        mold(writer, "wire", ing(matStack(ModMaterials.COPPER, MaterialShape.WIRE, 1)), ModItems.MOLD_WIRE); // original: AnvilRecipes.java#104
         // id 5:  blade        <- blade_titanium (также blade_tungsten)
-        mold(writer, "blade", AnvilIngredient.of(stack(ModItems.BLADE_TITANIUM), stack(ModItems.BLADE_TUNGSTEN)), ModItems.MOLD_BLADE); // original: AnvilRecipes.java#105
+        mold(writer, "blade", ing(stack(ModItems.BLADE_TITANIUM), stack(ModItems.BLADE_TUNGSTEN)), ModItems.MOLD_BLADE); // original: AnvilRecipes.java#105
         // id 6:  blades       <- blades_steel (также blades_titanium)
-        mold(writer, "blades", AnvilIngredient.of(stack(ModItems.BLADES_STEEL), stack(ModItems.BLADES_TITANIUM)), ModItems.MOLD_BLADES); // original: AnvilRecipes.java#109
+        mold(writer, "blades", ing(stack(ModItems.BLADES_STEEL), stack(ModItems.BLADES_TITANIUM)), ModItems.MOLD_BLADES); // original: AnvilRecipes.java#109
         // id 7:  stamp        <- stamp_iron_flat (также stone/steel/titanium/obsidian)
-        mold(writer, "stamp", AnvilIngredient.of(
+        mold(writer, "stamp", ing(
                 stack(ModItems.STAMP_STONE_FLAT),
                 stack(ModItems.STAMP_IRON_FLAT),
                 stack(ModItems.STAMP_STEEL_FLAT),
                 stack(ModItems.STAMP_TITANIUM_FLAT),
                 stack(ModItems.STAMP_OBSIDIAN_FLAT)), ModItems.MOLD_STAMP);                                            // original: AnvilRecipes.java#113
         // id 8:  shell        <- STEEL.shell()
-        mold(writer, "shell", AnvilIngredient.of(stack(ModItems.SHELL_STEEL)), ModItems.MOLD_SHELL);                   // original: AnvilRecipes.java#120
+        mold(writer, "shell", ing(stack(ModItems.SHELL_STEEL)), ModItems.MOLD_SHELL);                   // original: AnvilRecipes.java#120
         // id 9:  pipe         <- STEEL.pipe()
-        mold(writer, "pipe", AnvilIngredient.of(stack(ModItems.PIPE_STEEL)), ModItems.MOLD_PIPE);                      // original: AnvilRecipes.java#121
+        mold(writer, "pipe", ing(stack(ModItems.PIPE_STEEL)), ModItems.MOLD_PIPE);                      // original: AnvilRecipes.java#121
         // id 10: ingot        x9
-        mold(writer, "ingots", AnvilIngredient.ofCount(new ItemStack(Items.IRON_INGOT), 9), ModItems.MOLD_INGOTS);      // original: AnvilRecipes.java#122
+        mold(writer, "ingots", ingCount(new ItemStack(Items.IRON_INGOT), 9), ModItems.MOLD_INGOTS);      // original: AnvilRecipes.java#122
         // id 11: plate        x9
-        mold(writer, "plates", AnvilIngredient.ofCount(matStack(ModMaterials.IRON, MaterialShape.PLATE, 1), 9), ModItems.MOLD_PLATES); // original: AnvilRecipes.java#123
+        mold(writer, "plates", ingCount(matStack(ModMaterials.IRON, MaterialShape.PLATE, 1), 9), ModItems.MOLD_PLATES); // original: AnvilRecipes.java#123
         // id 12: block        <- IRON.block()
-        mold(writer, "block", AnvilIngredient.of(new ItemStack(Items.IRON_BLOCK)), ModItems.MOLD_BLOCK);               // original: AnvilRecipes.java#124
+        mold(writer, "block", ing(new ItemStack(Items.IRON_BLOCK)), ModItems.MOLD_BLOCK);               // original: AnvilRecipes.java#124
         // id 20: wireDense    x1 <- MINGRADE.wireDense()
-        mold(writer, "wire_dense", AnvilIngredient.of(matStack(ModMaterials.RED_COPPER, MaterialShape.WIRE_DENSE, 1)), ModItems.MOLD_WIRE_DENSE); // original: AnvilRecipes.java#125
+        mold(writer, "wire_dense", ing(matStack(ModMaterials.RED_COPPER, MaterialShape.WIRE_DENSE, 1)), ModItems.MOLD_WIRE_DENSE); // original: AnvilRecipes.java#125
         // id 21: wireDense    x9
-        mold(writer, "wires_dense", AnvilIngredient.ofCount(matStack(ModMaterials.RED_COPPER, MaterialShape.WIRE_DENSE, 1), 9), ModItems.MOLD_WIRES_DENSE); // original: AnvilRecipes.java#126
+        mold(writer, "wires_dense", ingCount(matStack(ModMaterials.RED_COPPER, MaterialShape.WIRE_DENSE, 1), 9), ModItems.MOLD_WIRES_DENSE); // original: AnvilRecipes.java#126
 
         /* ── Оружейные формы (registerConstructionAmmo, mold_base + сталь x4, тир 2) ──
          * Регистрируются в registerConstructionAmmo (см. ниже) — их withOrder должен
@@ -199,10 +217,10 @@ public final class AnvilRecipeGenerator {
     }
 
     /** Кузнечная форма: материал + mold_base -> форма, тир 1, материал не расходуется. */
-    private static void mold(Consumer<FinishedRecipe> writer, String name, AnvilIngredient material, RegistrySupplier<Item> moldItem) {
+    private static void mold(Consumer<FinishedRecipe> writer, String name, AStack material, RegistrySupplier<Item> moldItem) {
         AnvilRecipeBuilder.anvilRecipe(
                         material,
-                        AnvilIngredient.of(stack(ModItems.MOLD_BASE)),
+                        ing(stack(ModItems.MOLD_BASE)),
                         stack(moldItem),
                         AnvilTier.IRON)
                 .keepInputA() // материал остаётся (оригинальный AnvilSmithingMold.amountConsumed)
@@ -216,7 +234,7 @@ public final class AnvilRecipeGenerator {
                 .withOrder(nextOrder())
                 .withOverlay(AnvilRecipe.OverlayType.CONSTRUCTION)
                 .addInventoryRequirement(stack(ModItems.MOLD_BASE))
-                .addInventoryRequirement(AnvilIngredient.ofCount(matStack(ModMaterials.STEEL, MaterialShape.INGOT, 1), 4))
+                .addInventoryRequirement(ingCount(matStack(ModMaterials.STEEL, MaterialShape.INGOT, 1), 4))
                 .save(writer, anvilId("steel", "mold", name));
     }
 
@@ -227,7 +245,7 @@ public final class AnvilRecipeGenerator {
                 .withOverlay(AnvilRecipe.OverlayType.CONSTRUCTION)
                 .addInventoryRequirement(stack(ModItems.MOLD_BASE))
                 // Железный слиток в порту — ванильный предмет (см. smithing-форму "ingot").
-                .addInventoryRequirement(AnvilIngredient.ofCount(new ItemStack(Items.IRON_INGOT), 2))
+                .addInventoryRequirement(ingCount(new ItemStack(Items.IRON_INGOT), 2))
                 .save(writer, anvilId("iron", "mold", name));
     }
 
@@ -266,7 +284,7 @@ public final class AnvilRecipeGenerator {
     }
 
     private static void plate(Consumer<FinishedRecipe> writer, String name, ItemStack ingot, ItemStack plate) {
-        AnvilIngredient input = ingot != null ? AnvilIngredient.of(ingot) : aluminiumIngot();
+        AStack input = ingot != null ? ing(ingot) : aluminiumIngot();
         AnvilRecipeBuilder.inventoryRecipe(plate, AnvilTier.OIL)
                 .withOrder(nextOrder())
                 .withOverlay(AnvilRecipe.OverlayType.SMITHING) // конструктор (AStack, AnvilOutput) = SMITHING
@@ -297,7 +315,7 @@ public final class AnvilRecipeGenerator {
 
     private static void wire(Consumer<FinishedRecipe> writer, String name, ModMaterials mat) {
         ItemStack wire = matStackOrNull(mat, MaterialShape.WIRE, 1);
-        AnvilIngredient ingot = fineWireIngot(mat);
+        AStack ingot = fineWireIngot(mat);
         if (wire == null || ingot == null) {
             reportSkip("wire autogen (" + mat + "): нет проволоки/слитка");
             return;
@@ -310,13 +328,13 @@ public final class AnvilRecipeGenerator {
     }
 
     /** Слиток для автогена проволоки (ориг. условие doesOreNameExist(INGOT)); null = нет. */
-    private static AnvilIngredient fineWireIngot(ModMaterials mat) {
+    private static AStack fineWireIngot(ModMaterials mat) {
         switch (mat) {
-            case CARBON:     return AnvilIngredient.of(matStack(ModMaterials.GRAPHITE, MaterialShape.INGOT, 1)); // ориг. CARBON.ingot(ingot_graphite)
-            case GOLD:       return AnvilIngredient.of(new ItemStack(Items.GOLD_INGOT));
-            case COPPER:     return AnvilIngredient.of(new ItemStack(Items.COPPER_INGOT));
+            case CARBON:     return ing(matStack(ModMaterials.GRAPHITE, MaterialShape.INGOT, 1)); // ориг. CARBON.ingot(ingot_graphite)
+            case GOLD:       return ing(new ItemStack(Items.GOLD_INGOT));
+            case COPPER:     return ing(new ItemStack(Items.COPPER_INGOT));
             case ALUMINIUM:  return aluminiumIngot();
-            default:         return AnvilIngredient.of(matStack(mat, MaterialShape.INGOT, 1));
+            default:         return ing(matStack(mat, MaterialShape.INGOT, 1));
         }
     }
 
@@ -343,10 +361,10 @@ public final class AnvilRecipeGenerator {
         // Аннигилятор (ориг. #177, тир 2)
         construction(writer, "steel", "annihilator", AnvilTier.STEEL, AnvilRecipe.OverlayType.CONSTRUCTION,
                 stack(ModBlocks.ANNIHILATOR),
-                AnvilIngredient.ofCount(new ItemStack(Items.STONE_BRICKS), 16),
-                AnvilIngredient.ofCount(stack(ModItems.FIREBRICK), 16),
-                AnvilIngredient.ofCount(new ItemStack(Items.IRON_INGOT), 8),
-                AnvilIngredient.ofCount(new ItemStack(Items.COPPER_INGOT), 8)); // original: AnvilRecipes.java#177-179
+                ingCount(new ItemStack(Items.STONE_BRICKS), 16),
+                ingCount(stack(ModItems.FIREBRICK), 16),
+                ingCount(new ItemStack(Items.IRON_INGOT), 8),
+                ingCount(new ItemStack(Items.COPPER_INGOT), 8)); // original: AnvilRecipes.java#177-179
 
         // Деко-блоки (ориг. #181-188, тир 1, явный .setOverlay(CONSTRUCTION)); platemetal пропущен — нет блока
         deco(writer, "aluminium",  aluminiumIngot(), stack(ModBlocks.DECO_ALUMINIUM));   // original: AnvilRecipes.java#182
@@ -360,8 +378,8 @@ public final class AnvilRecipeGenerator {
         // Глубинный ДНТ-кирпич (ориг. #190-192, тир 1916169)
         construction(writer, "murky", "depth_dnt", AnvilTier.MURKY, AnvilRecipe.OverlayType.CONSTRUCTION,
                 stack(ModBlocks.DEPTH_DNT),
-                AnvilIngredient.ofCount(matStack(ModMaterials.DINEUTRONIUM, MaterialShape.INGOT, 1), 4),
-                AnvilIngredient.of(stack(ModBlocks.DEPTH_BRICK))); // original: AnvilRecipes.java#190-192
+                ingCount(matStack(ModMaterials.DINEUTRONIUM, MaterialShape.INGOT, 1), 4),
+                ing(stack(ModBlocks.DEPTH_BRICK))); // original: AnvilRecipes.java#190-192
 
         // Автоген корпусов (ориг. #194-196: плита x4 -> shell, тир 1). У weaponsteel и
         // saturnite предметов shell в порте нет — пропущены (см. reportSkip).
@@ -403,8 +421,8 @@ public final class AnvilRecipeGenerator {
         // Печь (ориг. #219-225, тир 1)
         construction(writer, "iron", "blast_furnace", AnvilTier.IRON, AnvilRecipe.OverlayType.CONSTRUCTION,
                 stack(ModBlocks.MACHINE_BLAST_FURNACE),
-                AnvilIngredient.ofCount(new ItemStack(Items.STONE_BRICKS), 4),
-                AnvilIngredient.ofCount(stack(ModItems.FIREBRICK), 32),
+                ingCount(new ItemStack(Items.STONE_BRICKS), 4),
+                ingCount(stack(ModItems.FIREBRICK), 32),
                 ingCount(matStack(ModMaterials.COPPER, MaterialShape.PLATE, 1), 8)); // original: AnvilRecipes.java#219-225
 
         // machine_rockmill (ориг. #229-235) — блока rockmill в порте нет, SKIP.
@@ -420,13 +438,13 @@ public final class AnvilRecipeGenerator {
         // Насосы (ориг. #245-260)
         construction(writer, "steel", "pump_steam", AnvilTier.STEEL, AnvilRecipe.OverlayType.CONSTRUCTION,
                 stack(ModBlocks.PUMP_STEAM),
-                AnvilIngredient.ofCount(new ItemStack(Items.COBBLESTONE), 8),   // KEY_COBBLESTONE
-                AnvilIngredient.ofCount(new ItemStack(Items.OAK_PLANKS), 16),   // KEY_PLANKS (представитель)
+                ingCount(new ItemStack(Items.COBBLESTONE), 8),   // KEY_COBBLESTONE
+                ingCount(new ItemStack(Items.OAK_PLANKS), 16),   // KEY_PLANKS (представитель)
                 ingCount(matStack(ModMaterials.COPPER, MaterialShape.PLATE, 1), 8),
                 ingCount(stack(ModItems.PIPE_LEAD), 2)); // original: AnvilRecipes.java#245-251
         construction(writer, "oil", "pump_electric", AnvilTier.OIL, AnvilRecipe.OverlayType.CONSTRUCTION,
                 stack(ModBlocks.PUMP_ELECTRIC),
-                AnvilIngredient.ofCount(new ItemStack(Items.STONE_BRICKS), 8),
+                ingCount(new ItemStack(Items.STONE_BRICKS), 8),
                 ingCount(matStack(ModMaterials.STEEL, MaterialShape.PLATE, 1), 16),
                 ingCount(stack(ModItems.PIPE_LEAD), 4),
                 ingCount(stack(ModItems.MOTOR), 2),
@@ -435,7 +453,7 @@ public final class AnvilRecipeGenerator {
         // Нагреватели (ориг. #262-306)
         construction(writer, "steel", "firebox", AnvilTier.STEEL, AnvilRecipe.OverlayType.CONSTRUCTION,
                 stack(ModBlocks.FIREBOX),
-                AnvilIngredient.ofCount(new ItemStack(Items.FURNACE), 1),
+                ingCount(new ItemStack(Items.FURNACE), 1),
                 ingCount(matStack(ModMaterials.STEEL, MaterialShape.PLATE, 1), 8),
                 ingCount(new ItemStack(Items.COPPER_INGOT), 8)); // original: AnvilRecipes.java#262-267
         construction(writer, "steel", "heating_oven", AnvilTier.STEEL, AnvilRecipe.OverlayType.CONSTRUCTION,
@@ -445,7 +463,7 @@ public final class AnvilRecipeGenerator {
                 ingCount(new ItemStack(Items.COPPER_INGOT), 8)); // original: AnvilRecipes.java#269-274
         construction(writer, "steel", "ashpit", AnvilTier.STEEL, AnvilRecipe.OverlayType.CONSTRUCTION,
                 stack(ModItems.ASHPIT),
-                AnvilIngredient.ofCount(new ItemStack(Items.STONE), 8),
+                ingCount(new ItemStack(Items.STONE), 8),
                 ingCount(matStack(ModMaterials.STEEL, MaterialShape.PLATE, 1), 2),
                 ingCount(new ItemStack(Items.IRON_INGOT), 4)); // original: AnvilRecipes.java#276-281
         construction(writer, "steel", "oilburner", AnvilTier.STEEL, AnvilRecipe.OverlayType.CONSTRUCTION,
@@ -471,21 +489,21 @@ public final class AnvilRecipeGenerator {
         // Прочие печи (ориг. #308-331)
         construction(writer, "steel", "furnace_steel", AnvilTier.STEEL, AnvilRecipe.OverlayType.CONSTRUCTION,
                 stack(ModBlocks.FURNACE_STEEL),
-                AnvilIngredient.ofCount(new ItemStack(Items.STONE_BRICKS), 16),
+                ingCount(new ItemStack(Items.STONE_BRICKS), 16),
                 ingCount(new ItemStack(Items.IRON_INGOT), 4),
                 ingCount(matStack(ModMaterials.STEEL, MaterialShape.PLATE, 1), 16),
                 ingCount(new ItemStack(Items.COPPER_INGOT), 8),
                 ingCount(stack(ModBlocks.STEEL_GRATE), 16)); // original: AnvilRecipes.java#308-315
         construction(writer, "steel", "combination_oven", AnvilTier.STEEL, AnvilRecipe.OverlayType.CONSTRUCTION,
                 stack(ModBlocks.COMBINATION_OVEN),
-                AnvilIngredient.ofCount(new ItemStack(Items.STONE_BRICKS), 8),
-                AnvilIngredient.ofCount(new ItemStack(Items.OAK_LOG), 16),      // KEY_LOG (представитель)
+                ingCount(new ItemStack(Items.STONE_BRICKS), 8),
+                ingCount(new ItemStack(Items.OAK_LOG), 16),      // KEY_LOG (представитель)
                 ingCount(matStack(ModMaterials.COPPER, MaterialShape.PLATE_CAST, 1), 2),
-                AnvilIngredient.ofCount(new ItemStack(Items.BRICK), 16));       // KEY_BRICK = ingotBrick
+                ingCount(new ItemStack(Items.BRICK), 16));       // KEY_BRICK = ingotBrick
         // original: AnvilRecipes.java#317-323
         construction(writer, "steel", "rotary_furnace", AnvilTier.STEEL, AnvilRecipe.OverlayType.CONSTRUCTION,
                 stack(ModBlocks.ROTARY_FURNACE),
-                AnvilIngredient.ofCount(new ItemStack(Items.STONE_BRICKS), 8),
+                ingCount(new ItemStack(Items.STONE_BRICKS), 8),
                 ingCount(stack(ModItems.FIREBRICK), 16),
                 ingCount(new ItemStack(Items.IRON_INGOT), 4),
                 ingCount(matStack(ModMaterials.COPPER, MaterialShape.PLATE, 1), 8)); // original: AnvilRecipes.java#325-331
@@ -493,7 +511,7 @@ public final class AnvilRecipeGenerator {
         // Двигатель Стирлинга (ориг. #333-349); gear_large meta 0/1 в порту единый предмет
         construction(writer, "steel", "stirling", AnvilTier.STEEL, AnvilRecipe.OverlayType.CONSTRUCTION,
                 stack(ModBlocks.STIRLING),
-                AnvilIngredient.ofCount(new ItemStack(Items.OAK_PLANKS), 16),
+                ingCount(new ItemStack(Items.OAK_PLANKS), 16),
                 ingCount(matStack(ModMaterials.STEEL, MaterialShape.PLATE, 1), 6),
                 ingCount(new ItemStack(Items.COPPER_INGOT), 8),
                 ingCount(stack(ModItems.COIL_COPPER), 4),
@@ -516,7 +534,7 @@ public final class AnvilRecipeGenerator {
                 ing(stack(ModItems.GEAR_LARGE))); // original: AnvilRecipes.java#351-358
         construction(writer, "steel", "sawmill", AnvilTier.STEEL, AnvilRecipe.OverlayType.CONSTRUCTION,
                 stack(ModBlocks.SAWMILL),
-                AnvilIngredient.ofCount(new ItemStack(Items.OAK_PLANKS), 16),
+                ingCount(new ItemStack(Items.OAK_PLANKS), 16),
                 ingCount(matStack(ModMaterials.STEEL, MaterialShape.PLATE, 1), 6),
                 ingCount(new ItemStack(Items.COPPER_INGOT), 8),
                 ingCount(new ItemStack(Items.IRON_INGOT), 4),
@@ -572,7 +590,7 @@ public final class AnvilRecipeGenerator {
         construction(writer, "oil", "tower_small", AnvilTier.OIL, AnvilRecipe.OverlayType.CONSTRUCTION,
                 stack(ModItems.TOWER_SMALL),
                 ingCount(stack(ModBlocks.BRICK_CONCRETE), 64),
-                AnvilIngredient.ofCount(new ItemStack(Items.IRON_BARS), 128),
+                ingCount(new ItemStack(Items.IRON_BARS), 128),
                 ingCount(stack(ModBlocks.STEAM_CONDENSER), 4)); // original: AnvilRecipes.java#434-439
         construction(writer, "nuclear", "cooling_tower", AnvilTier.NUCLEAR, AnvilRecipe.OverlayType.CONSTRUCTION,
                 stack(ModItems.COOLING_TOWER), // ориг. machine_tower_large
@@ -584,9 +602,9 @@ public final class AnvilRecipeGenerator {
         // Крылья (ориг. #448-453)
         construction(writer, "steel", "wings_limp", AnvilTier.STEEL, AnvilRecipe.OverlayType.CONSTRUCTION,
                 stack(ModItems.WINGS_LIMP),
-                AnvilIngredient.ofCount(new ItemStack(Items.BONE), 16),
-                AnvilIngredient.ofCount(new ItemStack(Items.LEATHER), 4),
-                AnvilIngredient.ofCount(new ItemStack(Items.FEATHER), 24)); // original: AnvilRecipes.java#448-453
+                ingCount(new ItemStack(Items.BONE), 16),
+                ingCount(new ItemStack(Items.LEATHER), 4),
+                ingCount(new ItemStack(Items.FEATHER), 24)); // original: AnvilRecipes.java#448-453
 
         // Депьютеризатор и башня (ориг. #455-473) — extractor: блока в порте нет, SKIP;
         // tower: требует fluid-стек SOURGAS x8 — fluid-требования не поддерживаются, SKIP.
@@ -610,7 +628,7 @@ public final class AnvilRecipeGenerator {
         construction(writer, "steel", "chimney_brick", AnvilTier.STEEL, AnvilRecipe.OverlayType.CONSTRUCTION,
                 stack(ModBlocks.CHIMNEY_BRICK),
                 ingCount(matStack(ModMaterials.STEEL, MaterialShape.PLATE, 1), 4),
-                AnvilIngredient.ofCount(new ItemStack(Items.BRICKS), 16),
+                ingCount(new ItemStack(Items.BRICKS), 16),
                 ingCount(stack(ModBlocks.STEEL_GRATE), 2)); // original: AnvilRecipes.java#493-499
         construction(writer, "oil", "chimney_industrial", AnvilTier.OIL, AnvilRecipe.OverlayType.CONSTRUCTION,
                 stack(ModBlocks.CHIMNEY_INDUSTRIAL),
@@ -731,7 +749,7 @@ public final class AnvilRecipeGenerator {
     }
 
     /** Деко-блок x4 из слитка (ориг. #181-188, тир 1, CONSTRUCTION). */
-    private static void deco(Consumer<FinishedRecipe> writer, String name, AnvilIngredient ingot, ItemStack deco) {
+    private static void deco(Consumer<FinishedRecipe> writer, String name, AStack ingot, ItemStack deco) {
         AnvilRecipeBuilder.inventoryRecipe(new ItemStack(deco.getItem(), 4), AnvilTier.IRON)
                 .withOrder(nextOrder())
                 .withOverlay(AnvilRecipe.OverlayType.CONSTRUCTION)
@@ -753,7 +771,7 @@ public final class AnvilRecipeGenerator {
     }
 
     /** Труба (pipe) из 3 плит/слитков, тир 1, SMITHING. */
-    private static void pipe(Consumer<FinishedRecipe> writer, String name, RegistrySupplier<Item> pipeItem, AnvilIngredient input) {
+    private static void pipe(Consumer<FinishedRecipe> writer, String name, RegistrySupplier<Item> pipeItem, AStack input) {
         if (pipeItem == null) {
             reportSkip("pipe autogen (" + name + "): предмет pipe не зарегистрирован");
             return;
@@ -1130,11 +1148,11 @@ public final class AnvilRecipeGenerator {
 
     /** Инвентарный construction-рецепт (многие-к-одному или 1:1 из инвентаря). */
     private static void construction(Consumer<FinishedRecipe> writer, String tierFolder, String name, AnvilTier tier,
-                                     AnvilRecipe.OverlayType overlay, ItemStack output, AnvilIngredient... requirements) {
+                                     AnvilRecipe.OverlayType overlay, ItemStack output, AStack... requirements) {
         AnvilRecipeBuilder builder = AnvilRecipeBuilder.inventoryRecipe(output, tier)
                 .withOrder(nextOrder())
                 .withOverlay(overlay);
-        for (AnvilIngredient requirement : requirements) {
+        for (AStack requirement : requirements) {
             builder.addInventoryRequirement(requirement);
         }
         builder.save(writer, anvilId(tierFolder, "craft", name));
@@ -1142,7 +1160,7 @@ public final class AnvilRecipeGenerator {
 
     /** Инвентарный recycling/разборочный рецепт с несколькими выходами. */
     private static void disassemble(Consumer<FinishedRecipe> writer, String tierFolder, String name, AnvilTier tier,
-                                    AnvilRecipe.OverlayType overlay, Consumer<AnvilRecipeBuilder> outputs, AnvilIngredient input) {
+                                    AnvilRecipe.OverlayType overlay, Consumer<AnvilRecipeBuilder> outputs, AStack input) {
         AnvilRecipeBuilder builder = AnvilRecipeBuilder.inventoryRecipe(ItemStack.EMPTY, tier)
                 .withOrder(nextOrder())
                 .withOverlay(overlay)
@@ -1156,40 +1174,50 @@ public final class AnvilRecipeGenerator {
         return ++constructionOrder;
     }
 
-    /** Ингредиент из одного предмета (количество 1). */
-    private static AnvilIngredient ing(ItemStack stack) {
-        return AnvilIngredient.of(stack);
+    /** Ингредиент из одного предмета (количество берётся из стака, минимум 1) — точный предмет. */
+    private static AStack ing(ItemStack stack) {
+        return new AStack(Ingredient.of(stack), Math.max(1, stack.getCount()), true);
+    }
+
+    /** Ингредиент с несколькими допустимыми предметами (количество берётся из первого стака). */
+    private static AStack ing(ItemStack first, ItemStack... more) {
+        List<ItemStack> variants = new ArrayList<>();
+        variants.add(first);
+        for (ItemStack extra : more) {
+            variants.add(extra);
+        }
+        return new AStack(Ingredient.of(variants.toArray(new ItemStack[0])), Math.max(1, first.getCount()), true);
     }
 
     /** Ингредиент из одного предмета с явным количеством. */
-    private static AnvilIngredient ing(ItemStack stack, int count) {
-        return AnvilIngredient.ofCount(stack, count);
+    private static AStack ing(ItemStack stack, int count) {
+        return new AStack(Ingredient.of(stack), Math.max(1, count), true);
     }
 
     /** Ингредиент из одного предмета с явным количеством. */
-    private static AnvilIngredient ingCount(ItemStack stack, int count) {
-        return AnvilIngredient.ofCount(stack, count);
+    private static AStack ingCount(ItemStack stack, int count) {
+        return ing(stack, count);
     }
 
     /** Ore-dict-группа: несколько допустимых предметов, общее количество. */
-    private static AnvilIngredient anyOf(int count, ItemStack... variants) {
+    private static AStack anyOf(int count, ItemStack... variants) {
         List<ItemStack> list = new ArrayList<>();
         for (ItemStack variant : variants) {
             ItemStack single = variant.copy();
             single.setCount(1);
             list.add(single);
         }
-        return new AnvilIngredient(list, count);
+        return new AStack(Ingredient.of(list.toArray(new ItemStack[0])), Math.max(1, count), false);
     }
 
     /** Алюминиевый слиток: исторический ingot_aluminium + автоген aluminum_ingot. */
-    private static AnvilIngredient aluminiumIngot() {
+    private static AStack aluminiumIngot() {
         ItemStack legacy = stack(ModItems.INGOT_ALUMINIUM);
         ItemStack autogen = matStackOrNull(ModMaterials.ALUMINUM, MaterialShape.INGOT, 1);
         if (autogen != null) {
-            return AnvilIngredient.of(legacy, autogen);
+            return new AStack(Ingredient.of(legacy, autogen), 1, false);
         }
-        return AnvilIngredient.of(legacy);
+        return ing(legacy);
     }
 
     /** Лом (ориг. ModItems.scrap) из таблицы материалов. */

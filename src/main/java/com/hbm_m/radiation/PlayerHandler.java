@@ -12,7 +12,6 @@ import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.RadiationDataPacket;
-import com.hbm_m.platform.PlayerPersistentData;
 import com.mojang.brigadier.arguments.FloatArgumentType;
 import dev.architectury.event.events.common.CommandRegistrationEvent;
 import dev.architectury.event.events.common.PlayerEvent;
@@ -35,6 +34,7 @@ import net.minecraft.world.item.ItemStack;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.UUID;
+import com.hbm_m.platform.MobHooks;
 
 
 
@@ -134,7 +134,7 @@ public class PlayerHandler {
      */
     private static void onPlayerJoin(ServerPlayer serverPlayer) {
         float rads = 0.0F;
-        CompoundTag persistentData = PlayerPersistentData.get(serverPlayer);
+        CompoundTag persistentData = MobHooks.getPersistentData(serverPlayer);
         if (persistentData.contains(NBT_KEY_PLAYER_RADIATION)) {
             CompoundTag data = persistentData.getCompound(NBT_KEY_PLAYER_RADIATION);
             rads = Math.round(data.getFloat("radiationLevel") * 10.0f) / 10.0f;
@@ -150,7 +150,7 @@ public class PlayerHandler {
      */
     private static void onPlayerQuit(ServerPlayer serverPlayer) {
         float rounded = Math.round(getPlayerRads(serverPlayer) * 10.0f) / 10.0f;
-        CompoundTag persistentData = PlayerPersistentData.get(serverPlayer);
+        CompoundTag persistentData = MobHooks.getPersistentData(serverPlayer);
         CompoundTag data = new CompoundTag();
         data.putFloat("radiationLevel", rounded);
         persistentData.put(NBT_KEY_PLAYER_RADIATION, data);

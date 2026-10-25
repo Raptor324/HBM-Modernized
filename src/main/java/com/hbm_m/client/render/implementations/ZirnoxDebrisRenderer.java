@@ -10,14 +10,14 @@ import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.state.BlockState;
 
-//? if < 1.21.1 {
+import java.util.List;
+import java.util.Map;
+
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} else {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
 public class ZirnoxDebrisRenderer extends EntityRenderer<ZirnoxDebrisEntity> {
 
     private final BlockRenderDispatcher blockRenderer;
@@ -33,6 +33,22 @@ public class ZirnoxDebrisRenderer extends EntityRenderer<ZirnoxDebrisEntity> {
         poseStack.pushPose();
 
         float rot = entity.lastRot + (entity.rot - entity.lastRot) * partialTicks;
+        if (entity.getDebrisType() == ZirnoxDebrisEntity.DebrisType.GRAPHITE) {
+            // Same mesh/skin the original and RBMK debris use for graphite chunks.
+            Map<String, List<float[]>> obj = RBMKColumnRenderer.getObj("models/rbmk/models/deb_graphite.obj");
+            if (!obj.isEmpty()) {
+                TextureAtlasSprite sprite = RBMKColumnRenderer.sprite(
+                        com.hbm_m.lib.RefStrings.MODID, "block/block_graphite");
+                poseStack.mulPose(Axis.YP.rotationDegrees(entity.getId() % 360));
+                RBMKColumnRenderer.renderObjGroup(buffer.getBuffer(net.minecraft.client.renderer.RenderType.solid()),
+                        poseStack.last().pose(), obj.values().iterator().next(), sprite,
+                        1F, 1F, 1F, packedLight, OverlayTexture.NO_OVERLAY);
+            }
+            poseStack.popPose();
+            super.render(entity, entityYaw, partialTicks, poseStack, buffer, packedLight);
+            return;
+        }
+
         poseStack.mulPose(Axis.YP.rotationDegrees(rot));
         poseStack.mulPose(Axis.XP.rotationDegrees(rot * 0.5F));
 
@@ -54,6 +70,8 @@ public class ZirnoxDebrisRenderer extends EntityRenderer<ZirnoxDebrisEntity> {
             case SHRAPNEL  -> ModBlocks.ZIRNOX_DEB_SHRAPNEL.get().defaultBlockState();
             case CONCRETE  -> ModBlocks.ZIRNOX_DEB_CONCRETE.get().defaultBlockState();
             case EXCHANGER -> ModBlocks.ZIRNOX_DEB_EXCHANGER.get().defaultBlockState();
+            // Rendered above via the deb_graphite OBJ; never reaches the block path.
+            case GRAPHITE  -> null;
         };
     }
 

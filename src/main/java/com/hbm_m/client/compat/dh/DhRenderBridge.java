@@ -1,13 +1,7 @@
 package com.hbm_m.client.compat.dh;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 import org.joml.Matrix4f;
 
 import com.hbm_m.main.MainRegistry;

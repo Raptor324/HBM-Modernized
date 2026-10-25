@@ -1,13 +1,7 @@
 package com.hbm_m.client.sound;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 import com.hbm_m.sound.ModSounds;
 
 import net.minecraft.client.Minecraft;

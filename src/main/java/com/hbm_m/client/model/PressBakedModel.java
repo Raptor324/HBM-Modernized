@@ -17,13 +17,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
 
 @OnlyIn(Dist.CLIENT)
 public class PressBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
@@ -89,7 +84,7 @@ public class PressBakedModel extends AbstractMultipartBakedModel implements Abst
     // иначе чанк-меш дублирует BER-меш.
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
-                                    RandomSource rand, net.neoforged.neoforge.client.model.data.ModelData modelData,
+                                    RandomSource rand, net.minecraftforge.client.model.data.ModelData modelData,
                                     @Nullable net.minecraft.client.renderer.RenderType renderType) {
         if (state == null) {
             return buildItemQuadsFromRenderParts(side, rand);

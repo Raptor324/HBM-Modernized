@@ -11,15 +11,7 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
 
-@OnlyIn(Dist.CLIENT)
 public class GUIMachineRadGen extends GuiInfoScreen<MachineRadGenMenu> {
 
     private static final ResourceLocation TEXTURE =
@@ -70,6 +62,16 @@ public class GUIMachineRadGen extends GuiInfoScreen<MachineRadGenMenu> {
         drawElectricityInfo(guiGraphics, mouseX, mouseY,
                 64, 83, 48, 4,
                 radgen.getEnergyStored(), radgen.getMaxEnergyStored());
+
+        for (int i = 0; i < MachineRadGenBlockEntity.QUEUE_COUNT; i++) {
+            int max = radgen.getMaxProgress(i);
+            if (max <= 0) continue;
+            int left = max - radgen.getProgress(i);
+            drawCustomInfoStat(guiGraphics, mouseX, mouseY, 65, 18 + i * 5, 46, 5, mouseX, mouseY,
+                    Component.literal("Slot " + (i + 1) + ":"),
+                    Component.literal(radgen.getProduction(i) + "HE/t for"),
+                    Component.literal(left + " ticks (" + (left * 100 / max) + "%)"));
+        }
         }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);

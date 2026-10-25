@@ -22,25 +22,27 @@ public class MachineSteamCondenserBlock extends BaseEntityBlock implements com.h
         super(properties);
     }
 
-    /** Порт MachineCondenser.printHook: баки входа/выхода. */
+    /**
+     * 1:1 {@code MachineCondenser.printHook} (NTM Space): Warnung ohne Atmosphaere, dann "-> Dampf" / "<- Wasser"
+     * mit Fuellstand.
+     */
     @Override
-    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
-        BlockEntity be = level.getBlockEntity(pos);
-        if (!(be instanceof MachineSteamCondenserBlockEntity condenser)) return;
+    public void printHook(net.minecraft.client.gui.GuiGraphics g, Level world, BlockPos pos) {
+        if (!(world.getBlockEntity(pos) instanceof MachineSteamCondenserBlockEntity condenser)) return;
 
         java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        if (com.hbm_m.api.space.SpaceApi.condenserNeedsAtmosphere(world, false)) {
+            text.add(com.hbm_m.api.space.SpaceApi.noVacuumWarning());
+        }
         com.hbm_m.inventory.fluid.tank.FluidTank[] tanks = condenser.getAllTanks();
         for (int i = 0; i < tanks.length; i++) {
-            com.hbm_m.inventory.fluid.tank.FluidTank tank = tanks[i];
             text.add(net.minecraft.network.chat.Component.literal(i < 1 ? "-> " : "<- ")
                     .withStyle(i < 1 ? net.minecraft.ChatFormatting.GREEN : net.minecraft.ChatFormatting.RED)
-                    .append(net.minecraft.network.chat.Component.literal(
-                            com.hbm_m.inventory.fluid.FluidType.forFluid(tank.getTankType()).getLocalizedName().getString()
-                            + ": " + tank.getFill() + "/" + tank.getMaxFill() + "mB")));
+                    .append(com.hbm_m.inventory.fluid.FluidType.forFluid(tanks[i].getTankType()).getLocalizedName().copy().withStyle(net.minecraft.ChatFormatting.WHITE))
+                    .append(net.minecraft.network.chat.Component.literal(": " + tanks[i].getFill() + "/" + tanks[i].getMaxFill() + "mB").withStyle(net.minecraft.ChatFormatting.WHITE)));
         }
 
-        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
-                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(g, net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     @Override
@@ -70,6 +72,7 @@ public class MachineSteamCondenserBlock extends BaseEntityBlock implements com.h
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return createTickerHelper(type, ModBlockEntities.STEAM_CONDENSER_BE.get(), MachineSteamCondenserBlockEntity::tick);
     }
+
 
     //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<MachineSteamCondenserBlock> CODEC = simpleCodec(MachineSteamCondenserBlock::new);

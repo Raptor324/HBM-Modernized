@@ -6,6 +6,7 @@ import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.MachineBreederMenu;
 import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.recipe.BreederRecipe;
 import com.hbm_m.recipe.index.CachedRecipeResolver;
 
@@ -22,6 +23,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * Breeder - true multiblock port of the original 1.7.10 {@code MachineReactorBreeding}/
@@ -60,7 +62,6 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
     private boolean isOn = false;
     /** Original: {@code flux} - Summe des Flusses aller angrenzenden Forschungsreaktoren. */
     private int flux = 0;
-
     /** Cached recipe-scan: keyed on the input stack fingerprint (output/energy checks stay per-tick). */
     private final CachedRecipeResolver<BreederRecipe> recipeResolver = new CachedRecipeResolver<>();
 
@@ -132,8 +133,6 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
      * entspricht dem {@code findCore(...)} des Originals.</p>
      */
     private void gatherFlux(Level level, BlockPos pos) {
-        // Neighbor-scan gate: probe the 4 horizontal neighbors every 20 ticks (phase-spread);
-        // the result is held in this.flux between probes.
         if (!probeDue(20)) return;
 
         int sum = 0;
@@ -162,6 +161,11 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
         return null;
     }
 
+    /** Fuer RenderBreeder: Funken, solange {@code progress > 0}. */
+    public int getProgress() {
+        return progress;
+    }
+
     public int getFlux() {
         return flux;
     }
@@ -180,7 +184,7 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
         if (output.isEmpty()) return true;
 
         ItemStack result = recipe.getOutput();
-        if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(output, result)) return false;
+        if (!com.hbm_m.platform.StackNbt.sameItemSameTags(output, result)) return false;
         return output.getCount() < output.getMaxStackSize();
     }
 
@@ -193,7 +197,7 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
         ItemStack output = inventory.getStackInSlot(SLOT_OUTPUT);
         if (output.isEmpty()) {
             inventory.setStackInSlot(SLOT_OUTPUT, result);
-        } else if (com.hbm_m.platform.PlatformHooks.isSameItemSameTags(output, result)) {
+        } else if (com.hbm_m.platform.StackNbt.sameItemSameTags(output, result)) {
             output.grow(result.getCount());
         }
 
@@ -205,7 +209,7 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
     private BreederRecipe findRecipe(ItemStack input) {
         Level level = getLevel();
         if (level == null || input.isEmpty()) return null;
-        long signature = CachedRecipeResolver.sign(1L, PlatformHooks.stackFingerprint(input));
+        long signature = CachedRecipeResolver.sign(1L, StackNbt.fingerprint(input));
         return recipeResolver.resolve(level, BreederRecipe.Type.INSTANCE, signature, (lvl, all) -> {
             for (BreederRecipe recipe : all) {
                 if (recipe.matches(input)) return recipe;
@@ -298,4 +302,58 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
         progress = tag.getInt("progress");
         isOn = tag.getBoolean("isOn");
     }
+    //? if forge {
+    /** Original {@code ISidedInventory}: Slots {0, 1}; Eingang hinein, Ergebnis heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0, 1 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 0; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 1; }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return sidedItems.get(side);
+    }
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?} elif neoforge {
+    /*
+    // Original {@code ISidedInventory}: Slots {0, 1}; Eingang hinein, Ergebnis heraus.
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0, 1 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 0; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 1; }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return sidedItems.get(side).resolve().orElse(null);
+    }
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
 }

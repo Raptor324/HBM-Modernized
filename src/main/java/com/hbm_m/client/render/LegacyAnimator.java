@@ -1,17 +1,10 @@
 package com.hbm_m.client.render;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 import org.joml.Matrix4f;
 
 import com.hbm_m.interfaces.IDoorAnimator;
-import com.hbm_m.util.MultipartFacingTransforms;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.core.Direction;

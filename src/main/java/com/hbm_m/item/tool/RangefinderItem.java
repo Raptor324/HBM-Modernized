@@ -32,7 +32,7 @@ public class RangefinderItem extends Item {
         if (level.isClientSide) {
             Vec3 start = player.getEyePosition(1.0F);
             Vec3 end = start.add(player.getViewVector(1.0F).scale(MAX_RANGE));
-            BlockHitResult hit = level.clip(new ClipContext(start, end, ClipContext.Block.OUTLINE,
+            BlockHitResult hit = level.clip(new ClipContext(start, end, ClipContext.Block.COLLIDER,
                     ClipContext.Fluid.NONE, player));
 
             if (hit.getType() == HitResult.Type.BLOCK) {
@@ -44,7 +44,7 @@ public class RangefinderItem extends Item {
             }
         }
 
-        return InteractionResultHolder.success(stack);
+        return InteractionResultHolder.pass(stack);
     }
 
     @Override

@@ -25,6 +25,7 @@ import dev.architectury.fluid.FluidStack;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 
 import net.minecraft.world.Container;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * Direct clone of {@link Bat9000Menu} (same slot layout/logic as {@link MachineFluidTankMenu}),

@@ -109,8 +109,8 @@ public class MassStorageUpgradeRecipe extends CustomRecipe {
         for (int i = 0; i < grid.size(); i++) {
             ItemStack stack = grid.item(i);
             if (Block.byItem(stack.getItem()) != step.from()) continue;
-            net.minecraft.nbt.CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
-            if (tag != null) com.hbm_m.platform.PlatformHooks.setItemTag(out, tag.copy());
+            net.minecraft.nbt.CompoundTag tag = com.hbm_m.platform.StackNbt.read(stack);
+            if (tag != null) com.hbm_m.platform.StackNbt.set(out, tag.copy());
             break;
         }
 

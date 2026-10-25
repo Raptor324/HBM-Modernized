@@ -20,6 +20,9 @@ public class HazardEventHandler {
     }
 
     private static void onLevelTick(ServerLevel level) {
+        // Original ModEventHandler.worldTick: nur alle ITEM_HAZARD_DROP_TICKRATE Ticks.
+        int tickrate = Math.max(1, com.hbm_m.config.ModClothConfig.get().itemHazardDropTickrate);
+        if (level.getGameTime() % tickrate != 0) return;
         for (Entity entity : level.getAllEntities()) {
             if (!(entity instanceof ItemEntity itemEntity) || itemEntity.isRemoved()) {
                 continue;

@@ -2,22 +2,27 @@ package com.hbm_m.item.machine;
 
 import java.util.List;
 
+import org.jetbrains.annotations.Nullable;
+
 import com.hbm_m.blockentity.machines.MachineReactorResearchBlockEntity;
 import com.hbm_m.blockentity.machines.UniversalMachinePartBlockEntity;
+import com.hbm_m.item.ITooltipProvider;
+import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.sound.ModSounds;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-
-import org.jetbrains.annotations.Nullable;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * 1:1-Port von {@code ItemReactorSensor} (1.7.10): mit einem Rechtsklick auf einen
@@ -25,7 +30,7 @@ import org.jetbrains.annotations.Nullable;
  * ({@code x}/{@code y}/{@code z}). Das Reaktorsteuerpult liest sie aus - siehe
  * {@code TileEntityReactorControl.establishLink()}.
  */
-public class ItemReactorSensor extends Item implements com.hbm_m.item.ITooltipProvider {
+public class ItemReactorSensor extends Item implements ITooltipProvider {
 
     public static final String NBT_X = "x";
     public static final String NBT_Y = "y";
@@ -45,12 +50,27 @@ public class ItemReactorSensor extends Item implements com.hbm_m.item.ITooltipPr
             return InteractionResult.PASS;
         }
 
+        Player player = context.getPlayer();
+
         if (!level.isClientSide()) {
-            com.hbm_m.platform.PlatformHooks.editItemTag(context.getItemInHand(), tag -> {
+            if (player != null) {
+                // Original: "[Reaktorfuehler] Position set!" (Name/Klammern dunkeltuerkis, Text gruen)
+                player.sendSystemMessage(Component.literal("[").withStyle(ChatFormatting.DARK_AQUA)
+                        .append(Component.translatable(this.getDescriptionId()).withStyle(ChatFormatting.DARK_AQUA))
+                        .append(Component.literal("] ").withStyle(ChatFormatting.DARK_AQUA))
+                        .append(Component.literal("Position set!").withStyle(ChatFormatting.GREEN)));
+            }
+
+            StackNbt.edit(context.getItemInHand(), tag -> {
                 tag.putInt(NBT_X, core.getX());
                 tag.putInt(NBT_Y, core.getY());
                 tag.putInt(NBT_Z, core.getZ());
             });
+
+            if (player != null) {
+                ModSounds.TOOL_TECH_BOOP.ifPresent(sound ->
+                        level.playSound(null, player.getX(), player.getY(), player.getZ(), sound, net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F));
+            }
         }
 
         return InteractionResult.sidedSuccess(level.isClientSide());
@@ -82,21 +102,21 @@ public class ItemReactorSensor extends Item implements com.hbm_m.item.ITooltipPr
     /** Gebundene Position, oder {@code null}, wenn der Fuehler noch nicht gesetzt wurde. */
     @Nullable
     public static BlockPos getBoundPos(ItemStack stack) {
-        CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
+        CompoundTag tag = StackNbt.read(stack);
         if (tag == null || !tag.contains(NBT_X)) return null;
         return new BlockPos(tag.getInt(NBT_X), tag.getInt(NBT_Y), tag.getInt(NBT_Z));
     }
 
-    // Tooltip through ITooltipProvider: appendHoverText's signature differs between 1.20.1 and 1.21.1.
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         BlockPos bound = getBoundPos(stack);
 
-        if (bound == null) {
-            tooltip.add(Component.translatable("item.hbm_m.reactor_sensor.unbound").withStyle(ChatFormatting.GRAY));
+        if (bound != null) {
+            tooltip.add(Component.literal("x: " + bound.getX()).withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.literal("y: " + bound.getY()).withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.literal("z: " + bound.getZ()).withStyle(ChatFormatting.GRAY));
         } else {
-            tooltip.add(Component.translatable("item.hbm_m.reactor_sensor.bound",
-                    bound.getX(), bound.getY(), bound.getZ()).withStyle(ChatFormatting.YELLOW));
+            tooltip.add(Component.literal("No reactor selected!").withStyle(ChatFormatting.GRAY));
         }
     }
 }

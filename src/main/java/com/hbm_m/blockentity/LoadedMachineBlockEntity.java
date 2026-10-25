@@ -12,7 +12,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * <p>Наследует {@link BaseHbmBlockEntity} : персистенция и клиент-синхронизация
  * идут через writeNbtData/readNbtData/applyClientUpdate — без stonecutter-ветвлений.
  */
-public abstract class LoadedMachineBlockEntity extends BaseHbmBlockEntity {
+public abstract class LoadedMachineBlockEntity extends BaseHbmBlockEntity implements IMuffleable {
     
     protected boolean isLoaded = true;
     protected boolean muffled = false;
@@ -30,8 +30,8 @@ public abstract class LoadedMachineBlockEntity extends BaseHbmBlockEntity {
         super.setRemoved();
         this.isLoaded = false;
     }
-    // Оба метода добавляются лоадером и есть и на Forge, и на NeoForge; под forge-only гардом
-    // флаг isLoaded на 1.21.1 никогда не сбрасывался.
+
+    // Оба метода добавляются лоадером и есть и на Forge, и на NeoForge.
     @Override
     public void onChunkUnloaded() {
         super.onChunkUnloaded();
@@ -72,36 +72,19 @@ public abstract class LoadedMachineBlockEntity extends BaseHbmBlockEntity {
     @Override
     public void clearRemoved() {
         super.clearRemoved();
-        
-        if (this.level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
-            serverLevel.getServer().submit(() -> {
-                if (this.isRemoved()) return;
-                
-                BlockState state = this.getBlockState();
-                if (state.getBlock() instanceof com.hbm_m.interfaces.IMultiblockController controller) {
-                    controller.getStructureHelper().attemptAutoRepair(serverLevel, this.worldPosition, state, controller);
-                }
-            });
-        }
-    }
-    
-    /**
-     * Отправляет обновление клиенту
-     */
-    protected void sendUpdateToClient() {
-        if (level != null && !level.isClientSide) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-        }
-    }
-    
-    /**
-     * Отправляет обновление клиенту с указанием дистанции
-     */
-    protected void sendUpdateToClient(int range) {
-        if (level != null && !level.isClientSide) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-            // В 1.20.1 нет прямого аналога networkPackNT с радиусом
-            // Используется стандартная синхронизация через getUpdatePacket()
+        if (level instanceof net.minecraft.server.level.ServerLevel serverLevel && !serverLevel.isClientSide()) {
+            BlockPos pos = this.getBlockPos();
+            serverLevel.getServer().tell(new net.minecraft.server.TickTask(
+                    serverLevel.getServer().getTickCount() + 1,
+                    () -> {
+                        if (serverLevel.isLoaded(pos)) {
+                            BlockState state = serverLevel.getBlockState(pos);
+                            if (state.getBlock() instanceof com.hbm_m.interfaces.IMultiblockController controller) {
+                                controller.getStructureHelper().attemptAutoRepair(serverLevel, pos, state, controller);
+                            }
+                        }
+                    }
+            ));
         }
     }
 }

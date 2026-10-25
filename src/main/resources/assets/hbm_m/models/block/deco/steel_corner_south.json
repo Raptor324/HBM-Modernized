@@ -1,0 +1,105 @@
+{
+ "parent": "minecraft:block/block",
+ "textures": {
+  "all": "hbm_m:block/steel_wall",
+  "particle": "hbm_m:block/steel_wall"
+ },
+ "elements": [
+  {
+   "from": [
+    4.0,
+    0,
+    14.0
+   ],
+   "to": [
+    16,
+    16,
+    16
+   ],
+   "faces": {
+    "down": {
+     "texture": "#all"
+    },
+    "up": {
+     "texture": "#all"
+    },
+    "north": {
+     "texture": "#all"
+    },
+    "south": {
+     "texture": "#all"
+    },
+    "west": {
+     "texture": "#all"
+    },
+    "east": {
+     "texture": "#all"
+    }
+   }
+  },
+  {
+   "from": [
+    0,
+    0,
+    12.0
+   ],
+   "to": [
+    4.0,
+    16,
+    16
+   ],
+   "faces": {
+    "down": {
+     "texture": "#all"
+    },
+    "up": {
+     "texture": "#all"
+    },
+    "north": {
+     "texture": "#all"
+    },
+    "south": {
+     "texture": "#all"
+    },
+    "west": {
+     "texture": "#all"
+    },
+    "east": {
+     "texture": "#all"
+    }
+   }
+  },
+  {
+   "from": [
+    0,
+    0,
+    0
+   ],
+   "to": [
+    2.0,
+    16,
+    12.0
+   ],
+   "faces": {
+    "down": {
+     "texture": "#all"
+    },
+    "up": {
+     "texture": "#all"
+    },
+    "north": {
+     "texture": "#all"
+    },
+    "south": {
+     "texture": "#all"
+    },
+    "west": {
+     "texture": "#all"
+    },
+    "east": {
+     "texture": "#all"
+    }
+   }
+  }
+ ]
+}

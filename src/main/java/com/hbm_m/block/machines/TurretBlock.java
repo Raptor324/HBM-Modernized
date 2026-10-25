@@ -25,10 +25,9 @@ import net.minecraft.world.phys.BlockHitResult;
 import dev.architectury.registry.menu.MenuRegistry;
 
 /**
- * Generischer MVP-Turret-Block: einzelner Block (kein Multiblock), statisches Modell.
- * Eine Java-Klasse fuer alle 11 Turret-Varianten - siehe {@link TurretBaseBlockEntity}
- * und {@link com.hbm_m.blockentity.machines.TurretStats}. Visuelle Barrel-Rotation ist
- * bewusst nicht implementiert (siehe Begruendung bei der urspruenglichen Sentry-MVP).
+ * 1:1 {@code TurretSentry}: im Original ein {@code BlockContainer}, also wirklich ein Einzelblock.
+ * Alle anderen Geschuetztuerme sind {@code BlockDummyable} - siehe {@link TurretMultiblockBlock}.
+ * Logik: {@link TurretBaseBlockEntity} / {@link com.hbm_m.blockentity.machines.TurretStats}.
  */
 public class TurretBlock extends BaseEntityBlock {
 

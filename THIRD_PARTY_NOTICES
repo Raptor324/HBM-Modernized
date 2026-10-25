@@ -1,0 +1,45 @@
+THIRD-PARTY NOTICES - HBM-Modernized
+====================================
+
+This file lists third-party source code incorporated into HBM-Modernized in
+addition to the upstream works named in NOTICE.md.
+
+-------------------------------------------------------------------------------
+NTM Next - radiation system (Java fallback path)
+-------------------------------------------------------------------------------
+
+Component : World radiation field ("RadiationSystemNT", Java fallback path)
+Source    : https://github.com/Warfactory-Official/ntm-next
+Commit    : 3f9a261a (3f9a261acb20451c97b8a8c5ba1df75e08597272)
+Author    : movblock <admin@movblock.mov>
+            Portions: Contributors to Hbm's Nuclear Tech Mod
+License   : GNU Lesser General Public License v3.0 only (LGPL-3.0-only),
+            see LICENSE.LESSER
+Permission: The author (movblock) confirmed that the Java kernel is
+            LGPL-3.0 and that the Java fallback may be used.
+
+Used in   : src/main/java/com/hbm_m/radiation/ntmnext/
+            src/main/java/com/hbm_m/mixin/LevelChunkNtmRadiationMixin.java
+            src/main/resources/data/hbm_m/ntm_radiation/
+            src/main/resources/data/minecraft/ntm_radiation/
+
+Ported from (fabric/src/main/java/com/hbm/):
+  handler/radiation/RadiationSystemNT, WorldRadiationData, DirtyChunkTracker,
+  EditTable, Emission, RadiationDiffusivity, RadiationSettings, RadSourceRule,
+  RadiationWorldHandler, ChunkRadiationStorage, RegionChunkRadiationStorage,
+  UniformDecay(Scalar), UniformExchange(Scalar); config/RadiationConfig;
+  data/RadiationData (radiation group); lib/Library (section key helpers);
+  util/SectionKeyHash, util/ObjectPool, util/DecodeException;
+  mixin/MixinLevelChunk (block change hook); datapack JSON
+  (radiation_config/radiation.json, radiation_settings/the_nether.json,
+  rad_diffusivity/*.json).
+
+Not used: the native simulation library (ntm-next/native, C++), RadsimBackend,
+RadsimBindings, RadsimWorld, RadsimTables, NativeLibrary, the Vector API
+kernels (UniformDecayVector/UniformExchangeVector) and the RadVis debug view.
+None of the native code was read or reimplemented.
+
+The files derived from this component carry SPDX headers with the original
+copyright lines and "SPDX-License-Identifier: LGPL-3.0-only". They were
+adapted to Minecraft 1.20.1 / Forge / Java 17 and to the HBM-Modernized code
+base; the algorithm of the Java fallback path is unchanged.

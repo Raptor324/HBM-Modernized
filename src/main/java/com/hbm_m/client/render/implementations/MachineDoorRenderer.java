@@ -1,13 +1,7 @@
 package com.hbm_m.client.render.implementations;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 import net.minecraft.world.level.block.entity.BlockEntityType;
 
 import java.util.ArrayList;
@@ -18,7 +12,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.joml.Matrix4f;
 
-import com.hbm_m.block.entity.doors.BlastDoorDecl;
 import com.hbm_m.block.entity.doors.DoorBlockEntity;
 import com.hbm_m.block.entity.doors.DoorDecl;
 import com.hbm_m.block.machines.TransitionSealBlock;
@@ -95,7 +88,6 @@ public final class MachineDoorRenderer {
             DoorDecl.SILO_HATCH_LARGE,
             DoorDecl.CARGO_DOOR,
             DoorDecl.VAULT_DOOR,
-            BlastDoorDecl.INSTANCE,
     };
 
     /** The nucleusDoorSkinSharing config is the primary source; -Dhbm.doorSkinSharing=false is an emergency override. */
@@ -267,9 +259,7 @@ public final class MachineDoorRenderer {
         Set<String> allParts = collectAllPartNames();
 
         registerDoorSpec("door", ModBlockEntities.DOOR_ENTITY.get(), allParts);
-        // Отдельный BE-тип blast door (hbm_m:blast_door) — класс BlastDoorBlockEntity
-        // выживает перезаход только под своим id, поэтому спек нужен и для него.
-        registerDoorSpec("blast_door", ModBlockEntities.BLAST_DOOR_ENTITY.get(), allParts);
+        // blast_door — FFA-канон: старая система с BER BlastDoorRenderer; спек новой системы удалён.
 
         MachineSpecBuilder<TransitionSealBlockEntity> seal =
                 MachineRenderers.machine("transition_seal", ModBlockEntities.TRANSITION_SEAL_BE.get(),
@@ -483,7 +473,7 @@ public final class MachineDoorRenderer {
         if (modelPath == null) return blockstateModel(be);
 
         ModelManager modelManager = Minecraft.getInstance().getModelManager();
-        BakedModel selectionModel = com.hbm_m.platform.PlatformHooks.getModel(modelManager, modelPath);
+        BakedModel selectionModel = com.hbm_m.platform.LoaderHooks.getModel(modelManager, modelPath);
         if (selectionModel == null || selectionModel == modelManager.getMissingModel()) {
             return blockstateModel(be);
         }
@@ -549,7 +539,6 @@ public final class MachineDoorRenderer {
         if (doorDecl == DoorDecl.SILO_HATCH_LARGE) return "silo_hatch_large";
         if (doorDecl == DoorDecl.VAULT_DOOR) return "vault_door";
         if (doorDecl == DoorDecl.CARGO_DOOR) return "cargo_door";
-        if (doorDecl == BlastDoorDecl.INSTANCE) return "blast_door";
         throw new IllegalStateException("Unknown door type: " + doorDecl.getClass().getName());
     }
 

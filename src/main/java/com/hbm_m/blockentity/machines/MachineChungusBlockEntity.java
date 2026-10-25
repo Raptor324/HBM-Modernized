@@ -28,16 +28,16 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+//? if forge {
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 //?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+/*import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 *///?}
 
 /**
@@ -45,7 +45,9 @@ import net.neoforged.api.distmarker.OnlyIn;
  * Kein Inventar/GUI (wie im Original) - Dampf kommt ausschließlich über Rohre an den
  * UNIVERSAL_CONNECTOR-Phantomblöcken der Multiblock-Struktur an, Energie geht über den
  * ENERGY_CONNECTOR-Phantomblock raus. Verbraucht (anders als die Industrial Turbine) pro Tick
- * 100% des verfügbaren Dampfs - das Flywheel ist hier der einzige Puffer/Dämpfer.
+ * 100% des verfügbaren Dampfs; wie im Original ({@code TileEntityTurbineBase}) gibt es keinen Energiespeicher,
+ * die Leistung eines Ticks wird im selben Tick abgegeben.
+
  * <p>
  * Dampfumsatz, Ausgabefluid und Energie kommen wie im Original ({@code TileEntityTurbineBase})
  * aus der {@code FT_Coolable}-Eigenschaft; der Ausgang ist die naechstniedrigere Dampfstufe.
@@ -59,23 +61,39 @@ import net.neoforged.api.distmarker.OnlyIn;
  */
 @SuppressWarnings("UnstableApiUsage")
 public class MachineChungusBlockEntity extends BaseMachineBlockEntity
-        implements IEnergyModeHolder, IFluidStandardReceiverMK2, IFluidStandardSenderMK2 {
+        implements IEnergyModeHolder, IFluidStandardReceiverMK2, IFluidStandardSenderMK2,
+        com.hbm_m.api.redstoneoverradio.IRORValueProvider, com.hbm_m.api.tile.IRepairable,
+        com.hbm_m.world.gen.nbt.INBTTileEntityTransformable, com.hbm_m.api.block.IPersistentNBT {
 
-    // Capacity constants (Platzhalter, ~16x Industrial Turbine - beim Playtesten nachjustieren)
-    private static final long ENERGY_CAPACITY = 8_000_000L;
-    private static final long ENERGY_EXTRACT_RATE = 160_000L;
-    private static final int STEAM_CAPACITY = 1_024_000;
-    private static final int SPENT_STEAM_CAPACITY = 1_024_000;
+    /**
+     * E9 (Fork, nur mit Space-Addon): beschaedigt (aus NBT-Strukturen oder nach einer Explosion). Steht still, bis
+     * mit dem Schweissbrenner repariert. Ohne Addon wird das Feld nie gesetzt.
+     */
+    public boolean damaged;
+    public net.minecraft.world.level.Explosion lastExplosion;
+
+    // Original TileEntityTurbineBase: kein Speicher - powerBuffer ist die Leistung dieses Ticks (getMaxPower == powerBuffer)
+    private static final long ENERGY_CAPACITY = 0L;
+    private static final long ENERGY_EXTRACT_RATE = Long.MAX_VALUE;
+    // 1:1 mit TileEntityChungus.inputTankSize/outputTankSize. Die Groesse ist beim Leviathan
+    // Absicht, nicht Willkuer: consumptionPercent() ist 1.0, die Turbine leert ihren Eingangstank
+    // also jeden Tick vollstaendig ("consumes all availible steam per tick") und muss dafuer einen
+    // ganzen Dampfstoss auf einmal aufnehmen koennen. Der Port hatte hier 1_024_000 - rund das
+    // Tausendstel davon.
+    private static final int STEAM_CAPACITY = 1_000_000_000;
+    private static final int SPENT_STEAM_CAPACITY = 1_000_000_000;
 
     // Conversion constants
     private static final double CONSUMPTION_PERCENT = 1.0D; // Original: consumptionPercent() = 1D (alles pro Tick)
     private static final double EFFICIENCY = 0.85D;         // Original: efficiency-Feld, Default 0.85
 
-    // Flywheel (Spin-up/Spin-down-Trägheit), gleiches Prinzip wie bei der Industrial Turbine.
-    private static final double FLYWHEEL_MAX_ENERGY = ENERGY_CAPACITY * 4.0;
-    private double spin = 0.0;
-    private long flywheelEnergy = 0L;
-    private long maxPower = 0L;
+    // Original TileEntityChungus: kein Schwungrad (das hat nur die Industrieturbine), sondern Rotor mit Anlaufkurve
+    public long powerBuffer;
+    private int turnTimer;
+    public float rotor;
+    public float lastRotor;
+    public float fanAcceleration = 0F;
+    private final float audioDesync = new java.util.Random().nextFloat() * 0.05F;
 
     // Fluid tanks
     private final FluidTank steamTank;
@@ -83,13 +101,16 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
 
     //? if forge {
     private LazyOptional<IFluidHandler> lazySpentHandler;
-    //?}
+    //?} elif neoforge {
+    /*private com.hbm_m.platform.LazyCap<net.minecraftforge.fluids.capability.IFluidHandler> lazySpentHandler;
+    *///?}
 
-    private boolean isActive = false;
-    /** Lever-Ersatz: per Rechtsklick auf den Controller umgeschaltet, gated den Dampfverbrauch. */
+    /**
+     * Ergebnis, kein Schalter: wird in {@link #processTurbine} jeden Tick aus dem tatsaechlichen
+     * Durchsatz neu bestimmt ({@code operational = ops > 0}), genau wie in
+     * {@code TileEntityTurbineBase.updateEntity}.
+     */
     private boolean operational = false;
-    private float anim = 0.0F;
-    private float prevAnim = 0.0F;
 
     public MachineChungusBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MACHINE_CHUNGUS_BE.get(), pos, state,
@@ -103,44 +124,79 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
 
         //? if forge {
         this.lazySpentHandler = LazyOptional.empty();
-        //?}
+        //?} elif neoforge {
+        /*this.lazySpentHandler = com.hbm_m.platform.LazyCap.empty();
+        *///?}
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineChungusBlockEntity be) {
-        be.prevAnim = be.anim;
 
         if (level.isClientSide()) {
-            if (be.isActive) {
-                be.anim += 0.15F;
-                if (be.anim > (float) (Math.PI * 2.0)) {
-                    be.anim -= (float) (Math.PI * 2.0);
-                }
-            }
-            ClientSoundBootstrap.updateSound(be, be.spin > 0.001D,
-                    () -> be.createLoopingSoundReflect(ModSounds.CHUNGUS_TURBINE.get()));
+            be.onClientTick(level, pos);
             return;
         }
 
         be.ensureNetworkInitialized();
 
-        be.processTurbine();
+        boolean wasTurning = be.turnTimer > 0;
 
-        if (be.energy > 0 && level.getGameTime() % 10L == 0L) {
+        be.powerBuffer = 0;
+        if (be.damaged) {
+            // E9: Space TileEntityChungus - beschaedigt nur synchronisieren
+            be.capacity = 0;
+            be.energy = 0;
+            be.operational = false;
+            be.turnTimer = 0;
+            if (wasTurning) { be.setChanged(); be.sendUpdateToClient(); }
+            return;
+        }
+
+        be.processTurbine();
+        be.onServerTick();
+
+        // getPower() == getMaxPower() == powerBuffer
+        be.capacity = be.powerBuffer;
+        be.energy = be.powerBuffer;
+
+        be.exchangeFluids(level);
+
+        if (level.getGameTime() % 10L == 0L) {
             be.updateEnergyDelta(be.getEnergyStored());
         }
 
-        // Anti-sync-spam: setChanged/sendBlockUpdated only when energy/rpm/flags moved
-        // (subsumes the old isActive-edge packet).
-        be.syncIfStateChanged(be.energy, be.syncSignature());
+        if (wasTurning != (be.turnTimer > 0)) {
+            be.setChanged();
+            be.sendUpdateToClient();
+        }
     }
 
-    /** 128-битная подпись синхронизируемого состояния: rpm (spin) + flywheel/maxPower + флаги. */
-    private long syncSignature() {
-        long hi = Double.doubleToLongBits(spin);
-        hi = hi * 31L + maxPower;
-        hi = hi * 31L + flywheelEnergy;
-        hi = hi * 31L + (isActive ? 1L : 0L);
-        return hi | (operational ? 2L : 0L);
+    /** Original {@code onServerTick}. */
+    private void onServerTick() {
+        turnTimer--;
+        if (operational) turnTimer = 25;
+    }
+
+    /** Original {@code onClientTick}: Rotor beschleunigt mit zufaelligem Versatz, Abdampffahne, Klang nach Drehzahl. */
+    private void onClientTick(Level level, BlockPos pos) {
+
+        this.lastRotor = this.rotor;
+        this.rotor += this.fanAcceleration;
+
+        if (this.rotor >= 360) {
+            this.rotor -= 360;
+            this.lastRotor -= 360;
+        }
+
+        if (turnTimer > 0) {
+            this.fanAcceleration = Math.max(0F, Math.min(25F, this.fanAcceleration += 0.075F + audioDesync));
+            spawnExhaust(level, pos);
+        } else {
+            this.fanAcceleration = Math.max(0F, Math.min(25F, this.fanAcceleration -= 0.1F));
+        }
+
+        ClientSoundBootstrap.updateSound(this, this.fanAcceleration > 0,
+                () -> createLoopingSoundReflect(ModSounds.CHUNGUS_TURBINE.get()));
+
     }
 
     /**
@@ -213,27 +269,12 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
                     steamTank.drainMb(ops * trait.amountReq);
                     spentSteamTank.fillMb(trait.coolsTo, ops * trait.amountProduced);
 
-                    maxPower = (long) (ops * trait.heatEnergy * eff);
-                    flywheelEnergy += maxPower;
+                    // Original generatePower: powerBuffer += power
+                    powerBuffer += (long) (ops * trait.heatEnergy * eff);
                 }
             }
         }
 
-        // 2. Flywheel-Trägheit: die Turbine fährt hoch/runter statt sofort volle Leistung zu liefern.
-        // Läuft auch weiter, wenn operational == false, damit das Flywheel sichtbar auslaufen kann.
-        spin = flywheelEnergy / FLYWHEEL_MAX_ENERGY;
-
-        long energySpace = Math.max(0L, getMaxEnergyStored() - getEnergyStored());
-        long potentialOutput = (long) (Math.max(spin, 0.05D) * maxPower);
-        long output = Math.min(Math.min(potentialOutput, flywheelEnergy), energySpace);
-
-        boolean generating = output > 0;
-        if (generating) {
-            flywheelEnergy -= output;
-            setEnergyStored(getEnergyStored() + output);
-        }
-
-        isActive = generating || flywheelEnergy > 0;
     }
 
     /**
@@ -279,6 +320,97 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
         return 2; // OUTPUT only, so the energy network treats this as a generator.
     }
 
+    /**
+     * Abdampffahne vor der Turbine, 1:1 aus {@code TileEntityChungus.onClientTick}: zehn
+     * Cloud-Partikel pro Tick, seitlich gaussverteilt, mit leichter Drift zurueck zur Maschine.
+     * Fehlte komplett - eine laufende Turbine war rein optisch nicht von einer stehenden zu
+     * unterscheiden.
+     */
+    private void spawnExhaust(Level level, BlockPos pos) {
+        net.minecraft.core.Direction dir = getBlockState()
+                .getValue(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING);
+        net.minecraft.core.Direction side = dir.getClockWise();
+        net.minecraft.util.RandomSource rand = level.random;
+
+        for (int i = 0; i < 10; i++) {
+            level.addParticle(net.minecraft.core.particles.ParticleTypes.CLOUD,
+                    pos.getX() + 0.5 + dir.getStepX() * (rand.nextDouble() + 1.25)
+                            + rand.nextGaussian() * side.getStepX() * 0.65,
+                    pos.getY() + 2.5 + rand.nextGaussian() * 0.65,
+                    pos.getZ() + 0.5 + dir.getStepZ() * (rand.nextDouble() + 1.25)
+                            + rand.nextGaussian() * side.getStepZ() * 0.65,
+                    -dir.getStepX() * 0.2, 0, -dir.getStepZ() * 0.2);
+        }
+    }
+
+    /**
+     * Anschlusspunkte der Struktur, an denen die Turbine mit dem Fluidnetz redet: jeder
+     * UNIVERSAL_/FLUID_CONNECTOR-Phantomblock, dazu die Nachbarfelder, die nicht selbst zur
+     * Struktur gehoeren. Wird einmal pro BlockEntity berechnet (Position und Blickrichtung
+     * aendern sich nicht mehr).
+     */
+    private java.util.List<com.mojang.datafixers.util.Pair<BlockPos, net.minecraft.core.Direction>> fluidPorts;
+
+    private java.util.List<com.mojang.datafixers.util.Pair<BlockPos, net.minecraft.core.Direction>> getFluidPorts() {
+        if (fluidPorts != null) return fluidPorts;
+
+        java.util.List<com.mojang.datafixers.util.Pair<BlockPos, net.minecraft.core.Direction>> ports =
+                new java.util.ArrayList<>();
+        if (getBlockState().getBlock() instanceof com.hbm_m.block.machines.MachineChungusBlock block) {
+            var helper = block.getStructureHelper();
+            net.minecraft.core.Direction facing = getBlockState()
+                    .getValue(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING);
+
+            java.util.Set<BlockPos> occupied = new java.util.HashSet<>();
+            for (BlockPos localPos : helper.getStructureMap().keySet())
+                occupied.add(helper.getRotatedPos(worldPosition, localPos, facing));
+
+            for (BlockPos localPos : helper.getStructureMap().keySet()) {
+                com.hbm_m.multiblock.PartRole role = helper.resolvePartRole(localPos, block);
+                if (role != com.hbm_m.multiblock.PartRole.UNIVERSAL_CONNECTOR
+                        && role != com.hbm_m.multiblock.PartRole.FLUID_CONNECTOR) continue;
+
+                BlockPos connector = helper.getRotatedPos(worldPosition, localPos, facing);
+                for (net.minecraft.core.Direction d : net.minecraft.core.Direction.values()) {
+                    BlockPos neighbour = connector.relative(d);
+                    if (occupied.contains(neighbour)) continue;
+                    ports.add(com.mojang.datafixers.util.Pair.of(neighbour, d));
+                }
+            }
+        }
+        fluidPorts = ports;
+        return ports;
+    }
+
+    /**
+     * 1:1 mit dem Schluss von {@code TileEntityTurbineBase.updateEntity}, das pro Tick ueber alle
+     * {@code getConPos()} laeuft und dort <b>beides</b> tut: {@code tryProvide(tanks[1], ...)} und
+     * {@code trySubscribe(tanks[0].getTankType(), ...)}.
+     * <p>
+     * Genau das fehlte hier komplett - die Turbine hat weder Dampf angefordert noch Altdampf
+     * abgegeben, sondern rein passiv darauf gewartet, bedient zu werden. Der Altdampftank lief
+     * damit voll, und weil {@code outputOps = (maxFill - fill) / amountProduced} den Durchsatz
+     * begrenzt, ging {@code ops} auf 0: die Turbine hoerte auf, ueberhaupt Dampf zu verbrauchen.
+     * Bei Heissdampf faellt das sofort auf, weil dort aus 1 mB Eingang 10 mB Ausgang werden - der
+     * Ausgangstank ist also zehnmal schneller voll, als der Eingang leer wird. Das ist die
+     * Ursache von "unable to release steam because the Leviathan turbines aren't working".
+     * <p>
+     * Der RBMK-Boiler und der Dampfauslass machen es im Port bereits genauso
+     * ({@code RBMKBoilerBlockEntity.exchangeFluids}) - die Turbine war die Ausnahme.
+     */
+    private void exchangeFluids(Level level) {
+        var ports = getFluidPorts();
+        if (ports.isEmpty()) return;
+
+        net.minecraft.world.level.material.Fluid intake = steamTank.getTankType();
+        boolean hasSpent = spentSteamTank.getFill() > 0;
+
+        for (var port : ports) {
+            trySubscribe(intake, level, port.getFirst(), port.getSecond());
+            if (hasSpent) tryProvide(spentSteamTank, level, port.getFirst(), port.getSecond());
+        }
+    }
+
     // --- MK2 Fluid-Netzwerk (UNIVERSAL_CONNECTOR-Phantomblöcke der Multiblock-Struktur) ---
 
     @Override
@@ -312,22 +444,25 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
     }
 
     public boolean isActive() {
-        return isActive;
+        return turnTimer > 0;
     }
 
-    /** 0.0 = Flywheel steht, 1.0 = volle Drehzahl. Steuert Sound-Pitch/Volume und Anim-Geschwindigkeit. */
+    /** Original {@code fanAcceleration / 25}: 0 = Stillstand, 1 = volle Drehzahl (Klang). */
     public double getSpin() {
-        return spin;
+        return fanAcceleration / 25F;
     }
 
+
+    @OnlyIn(Dist.CLIENT)
 
     private Object createLoopingSoundReflect(SoundEvent sound) {
         // Клиентская loop-фабрика через звуковой мост (без рефлексии).
         return com.hbm_m.sound.ClientSoundBootstrap.createChungusLoop(this, sound);
     }
 
+    /** Rotorwinkel in Grad (Original {@code lastRotor + (rotor - lastRotor) * interp}). */
     public float getAnim(float partialTicks) {
-        return prevAnim + (anim - prevAnim) * partialTicks;
+        return lastRotor + (rotor - lastRotor) * partialTicks;
     }
 
     // --- NBT ---
@@ -337,13 +472,10 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
         super.writeNbtData(tag, registries);
         steamTank.writeToNBT(tag, "steam");
         spentSteamTank.writeToNBT(tag, "spent");
-        tag.putBoolean("active", isActive);
         tag.putBoolean("operational", operational);
-        tag.putFloat("anim", anim);
-        tag.putFloat("prevAnim", prevAnim);
-        tag.putLong("flywheelEnergy", flywheelEnergy);
-        tag.putLong("maxPower", maxPower);
-        tag.putDouble("spin", spin);
+        tag.putLong("power", powerBuffer);
+        tag.putInt("turnTimer", turnTimer);
+        if (damaged) tag.putBoolean("damaged", true);
     }
 
     @Override
@@ -351,13 +483,57 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
         super.readNbtData(tag, registries);
         steamTank.readFromNBT(tag, "steam");
         spentSteamTank.readFromNBT(tag, "spent");
-        isActive = tag.getBoolean("active");
         operational = tag.getBoolean("operational");
-        anim = tag.getFloat("anim");
-        prevAnim = tag.getFloat("prevAnim");
-        flywheelEnergy = tag.getLong("flywheelEnergy");
-        maxPower = tag.getLong("maxPower");
-        spin = tag.getDouble("spin");
+        powerBuffer = tag.getLong("power");
+        turnTimer = tag.getInt("turnTimer");
+        damaged = tag.getBoolean("damaged");
+    }
+
+    // ==================== E9: Beschaedigung / Reparatur (Space-Fork) ====================
+
+    @Override
+    public boolean isDamaged() { return damaged; }
+
+    private final java.util.List<RepairStack> repair = new java.util.ArrayList<>();
+
+    @Override
+    public java.util.List<RepairStack> getRepairMaterials() {
+        if (!repair.isEmpty()) return repair;
+        repair.add(new RepairStack(net.minecraft.world.item.crafting.Ingredient.of(com.hbm_m.item.material.ModMaterialItems.item(com.hbm_m.item.material.ModMaterials.STEEL, com.hbm_m.item.material.MaterialShape.PLATE_WELDED)), 6));
+        repair.add(new RepairStack(net.minecraft.world.item.crafting.Ingredient.of(com.hbm_m.item.ModItems.PIPE_STEEL.get()), 8));
+        repair.add(new RepairStack(net.minecraft.world.item.crafting.Ingredient.of(com.hbm_m.item.material.ModMaterialItems.item(com.hbm_m.item.material.ModMaterials.TCALLOY, com.hbm_m.item.material.MaterialShape.INGOT), com.hbm_m.item.material.ModMaterialItems.item(com.hbm_m.item.material.ModMaterials.CDALLOY, com.hbm_m.item.material.MaterialShape.INGOT)), 8));
+        repair.add(new RepairStack(net.minecraft.world.item.crafting.Ingredient.of(com.hbm_m.item.material.ModMaterialItems.item(com.hbm_m.item.material.ModMaterials.GOLD, com.hbm_m.item.material.MaterialShape.WIRE_DENSE)), 24));
+        repair.add(new RepairStack(net.minecraft.world.item.crafting.Ingredient.of(com.hbm_m.item.ModItems.FLYWHEEL_BERYLLIUM.get()), 1));
+        return repair;
+    }
+
+    @Override
+    public void repair() {
+        damaged = false;
+        setChanged();
+        sendUpdateToClient();
+    }
+
+    @Override
+    public void tryExtinguish(Level world, BlockPos pos, EnumExtinguishType type) { }
+
+    /** Space: aus NBT-Strukturen immer beschaedigt - nur mit Addon. */
+    @Override
+    public void transformTE(net.minecraft.world.level.LevelAccessor world, int coordBaseMode) {
+        if (com.hbm_m.api.space.SpaceApi.forkActive()) damaged = true;
+    }
+
+    /** Space {@code writeNBT}: nur der Schaden wandert in den Drop. */
+    @Override
+    public void writeNBT(CompoundTag nbt) {
+        if (damaged) nbt.putBoolean("damaged", true);
+    }
+
+    /** Space {@code onBlockExploded}: erster Treffer beschaedigt. */
+    public void markDamaged() {
+        damaged = true;
+        setChanged();
+        sendUpdateToClient();
     }
 
     // --- Capabilities ---
@@ -488,7 +664,133 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
             return drained;
         }
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        // UP = spent output; остальные стороны (steam input) отдаёт базовый fluidHandlerOpt.
+        if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER && side == Direction.UP) {
+            return lazySpentHandler.cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    protected void setupFluidCapability() {
+        // Steam input — обработчик по умолчанию — через базовый fluidHandlerOpt.
+        setFluidHandler(new SteamInputHandler(this));
+        lazySpentHandler = com.hbm_m.platform.LazyCap.of(() -> new SpentSteamOutputHandler(this));
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        lazySpentHandler.invalidate();
+    }
+
+    private static class SteamInputHandler implements net.minecraftforge.fluids.capability.IFluidHandler {
+        private final MachineChungusBlockEntity be;
+
+        SteamInputHandler(MachineChungusBlockEntity be) {
+            this.be = be;
+        }
+
+        @Override
+        public int getTanks() { return 1; }
+
+        @Override
+        public @NotNull net.minecraftforge.fluids.FluidStack getFluidInTank(int tank) {
+            return new net.minecraftforge.fluids.FluidStack(be.steamTank.getTankType(), be.steamTank.getFill());
+        }
+
+        @Override
+        public int getTankCapacity(int tank) {
+            return be.steamTank.getMaxFill();
+        }
+
+        @Override
+        public boolean isFluidValid(int tank, @NotNull net.minecraftforge.fluids.FluidStack stack) {
+            return be.acceptsAsSteam(stack.getFluid());
+        }
+
+        @Override
+        public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty() || !be.acceptsAsSteam(resource.getFluid())) return 0;
+            if (be.steamTank.getFill() > 0 && be.steamTank.getTankType() != resource.getFluid()) return 0;
+            int space = be.steamTank.getMaxFill() - be.steamTank.getFill();
+            int toFill = Math.min(space, resource.getAmount());
+            if (toFill <= 0) return 0;
+            if (action.execute()) {
+                be.steamTank.setTankType(resource.getFluid());
+                be.steamTank.fill(be.steamTank.getFill() + toFill);
+            }
+            return toFill;
+        }
+
+        @Override
+        public @NotNull net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+            return net.minecraftforge.fluids.FluidStack.EMPTY;
+        }
+
+        @Override
+        public @NotNull net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+            return net.minecraftforge.fluids.FluidStack.EMPTY;
+        }
+    }
+
+    private static class SpentSteamOutputHandler implements net.minecraftforge.fluids.capability.IFluidHandler {
+        private final MachineChungusBlockEntity be;
+
+        SpentSteamOutputHandler(MachineChungusBlockEntity be) {
+            this.be = be;
+        }
+
+        @Override
+        public int getTanks() { return 1; }
+
+        @Override
+        public @NotNull net.minecraftforge.fluids.FluidStack getFluidInTank(int tank) {
+            return new net.minecraftforge.fluids.FluidStack(be.spentSteamTank.getTankType(), be.spentSteamTank.getFill());
+        }
+
+        @Override
+        public int getTankCapacity(int tank) {
+            return be.spentSteamTank.getMaxFill();
+        }
+
+        @Override
+        public boolean isFluidValid(int tank, @NotNull net.minecraftforge.fluids.FluidStack stack) {
+            return false;
+        }
+
+        @Override
+        public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+            return 0;
+        }
+
+        @Override
+        public @NotNull net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty() || be.spentSteamTank.getFill() <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            if (resource.getFluid() != be.spentSteamTank.getTankType()) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            int toDrain = Math.min(resource.getAmount(), be.spentSteamTank.getFill());
+            net.minecraftforge.fluids.FluidStack drained = new net.minecraftforge.fluids.FluidStack(be.spentSteamTank.getTankType(), toDrain);
+            if (action.execute()) {
+                be.spentSteamTank.fill(be.spentSteamTank.getFill() - toDrain);
+            }
+            return drained;
+        }
+
+        @Override
+        public @NotNull net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+            if (maxDrain <= 0 || be.spentSteamTank.getFill() <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            int toDrain = Math.min(maxDrain, be.spentSteamTank.getFill());
+            net.minecraftforge.fluids.FluidStack drained = new net.minecraftforge.fluids.FluidStack(be.spentSteamTank.getTankType(), toDrain);
+            if (action.execute()) {
+                be.spentSteamTank.fill(be.spentSteamTank.getFill() - toDrain);
+            }
+            return drained;
+        }
+    }
+    *///?}
 
     @Override
     public AABB getRenderBoundingBox() {
@@ -514,4 +816,20 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
             }
         }
         return ports.toArray(new BlockPos[0]);
-    }}
+    }
+    // ── Redstone-over-Radio (1:1 TileEntityChungus) ──
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+                PREFIX_VALUE + "output"
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "output").equals(name)) return "" + (int) this.powerBuffer;
+        return null;
+    }
+}
+

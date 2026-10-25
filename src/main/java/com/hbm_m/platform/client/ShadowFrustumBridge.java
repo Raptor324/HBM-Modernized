@@ -1,15 +1,11 @@
 package com.hbm_m.platform.client;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
 
 import java.lang.reflect.Field;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.world.phys.AABB;
@@ -32,8 +28,10 @@ public final class ShadowFrustumBridge {
     public static final int FLOATS_PER_PLANE = 4;
     public static final int TOTAL_PLANE_FLOATS = MAX_SHADOW_PLANES * FLOATS_PER_PLANE; // 52
 
-    private static final Map<Class<?>, Field> PLANES_FIELD_CACHE = new ConcurrentHashMap<>();
-    private static final Map<Class<?>, Field> COUNT_FIELD_CACHE = new ConcurrentHashMap<>();
+    // Optional в значении: ConcurrentHashMap не хранит null — без обёртки класс фрустума
+    // без поля "planes" перелезал бы через getDeclaredField/NoSuchFieldException КАЖДЫЙ кадр.
+    private static final Map<Class<?>, Optional<Field>> PLANES_FIELD_CACHE = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, Optional<Field>> COUNT_FIELD_CACHE = new ConcurrentHashMap<>();
     private static volatile Field shadowRendererFrustumField = null;
     private static volatile boolean shadowRendererFrustumLookedUp = false;
 
@@ -78,31 +76,36 @@ public final class ShadowFrustumBridge {
      *
      * @param frustum the shadow frustum instance (e.g. from {@link #getIrisShadowFrustum()}); if null, automatically resolved.
      * @param out13Planes output float array of length >= 52 (13 planes * 4 components: nx, ny, nz, d).
-     * @return true if planes were successfully extracted, false otherwise.
+     * @return the number of extracted (normalized) planes, 0 on failure.
      */
-    public static boolean extractShadowPlanes(@Nullable Object frustum, float[] out13Planes) {
+    public static int extractShadowPlanes(@Nullable Object frustum, float[] out13Planes) {
         if (frustum == null) {
             frustum = getIrisShadowFrustum();
         }
         if (frustum == null || out13Planes == null || out13Planes.length < TOTAL_PLANE_FLOATS) {
-            return false;
+            return 0;
         }
 
         try {
+            // Предзаливка нулями: null-элементы и неизвестные типы фоллбэка не оставляют
+            // stale-данных от предыдущего кадра
+            java.util.Arrays.fill(out13Planes, 0, TOTAL_PLANE_FLOATS, 0f);
+
             Class<?> clazz = frustum.getClass();
             Field planesField = getPlanesField(clazz);
             if (planesField == null) {
-                return false;
+                return 0;
             }
 
             Object planesObj = planesField.get(frustum);
             if (planesObj == null) {
-                return false;
+                return 0;
             }
 
             int planeCount = getPlaneCountInternal(clazz, frustum, planesObj);
             int count = Math.min(planeCount, MAX_SHADOW_PLANES);
 
+            boolean success = false;
             // Handle Oculus 1.20.1: org.joml.Vector4f[]
             if (planesObj instanceof org.joml.Vector4f[] vecArray) {
                 for (int i = 0; i < count; i++) {
@@ -112,18 +115,11 @@ public final class ShadowFrustumBridge {
                         out13Planes[i * 4 + 1] = v.y;
                         out13Planes[i * 4 + 2] = v.z;
                         out13Planes[i * 4 + 3] = v.w;
-                    } else {
-                        out13Planes[i * 4 + 0] = 0f;
-                        out13Planes[i * 4 + 1] = 0f;
-                        out13Planes[i * 4 + 2] = 0f;
-                        out13Planes[i * 4 + 3] = 0f;
                     }
                 }
-                return true;
-            }
-
-            // Handle Iris 1.21.1: float[][]
-            if (planesObj instanceof float[][] floatArray) {
+                success = true;
+            } else if (planesObj instanceof float[][] floatArray) {
+                // Handle Iris 1.21.1: float[][]
                 for (int i = 0; i < count; i++) {
                     float[] row = floatArray[i];
                     if (row != null && row.length >= 4) {
@@ -131,18 +127,11 @@ public final class ShadowFrustumBridge {
                         out13Planes[i * 4 + 1] = row[1];
                         out13Planes[i * 4 + 2] = row[2];
                         out13Planes[i * 4 + 3] = row[3];
-                    } else {
-                        out13Planes[i * 4 + 0] = 0f;
-                        out13Planes[i * 4 + 1] = 0f;
-                        out13Planes[i * 4 + 2] = 0f;
-                        out13Planes[i * 4 + 3] = 0f;
                     }
                 }
-                return true;
-            }
-
-            // Generic fallback via reflection array elements
-            if (planesObj.getClass().isArray()) {
+                success = true;
+            } else if (planesObj.getClass().isArray()) {
+                // Generic fallback via reflection array elements
                 int len = Math.min(java.lang.reflect.Array.getLength(planesObj), count);
                 for (int i = 0; i < len; i++) {
                     Object elem = java.lang.reflect.Array.get(planesObj, i);
@@ -158,51 +147,46 @@ public final class ShadowFrustumBridge {
                         out13Planes[i * 4 + 3] = row[3];
                     }
                 }
-                return true;
+                success = true;
+            }
+
+            if (success) {
+                // Плоскости нормализуются ОДИН РАЗ здесь: isSphereVisibleInShadow тогда
+                // чистое скалярное произведение — без sqrt/деления до 13 раз на сферу в кадре.
+                for (int i = 0; i < count; i++) {
+                    int o = i * 4;
+                    float len = (float) Math.sqrt(out13Planes[o] * out13Planes[o]
+                            + out13Planes[o + 1] * out13Planes[o + 1]
+                            + out13Planes[o + 2] * out13Planes[o + 2]);
+                    if (len > 1e-6f) {
+                        out13Planes[o] /= len;
+                        out13Planes[o + 1] /= len;
+                        out13Planes[o + 2] /= len;
+                        out13Planes[o + 3] /= len;
+                    }
+                }
+                return count;
             }
         } catch (Throwable ignored) {
             // Shield against any runtime reflection failure
         }
-        return false;
+        return 0;
     }
 
     /**
-     * Returns the plane count declared on the frustum, or 0 if unresolvable.
+     * Checks the given cached {@link AABB} without allocating a new one per frame
+     * (callers holding a cached render box use this overload).
      */
-    public static int getPlaneCount(@Nullable Object frustum) {
-        if (frustum == null) {
-            frustum = getIrisShadowFrustum();
+    public static boolean isAabbVisibleInShadow(@Nullable Object frustum, AABB aabb) {
+        if (aabb == null) {
+            return true;
         }
-        if (frustum == null) {
-            return 0;
-        }
-        try {
-            Class<?> clazz = frustum.getClass();
-            Field planesField = getPlanesField(clazz);
-            if (planesField == null) {
-                return 0;
-            }
-            Object planesObj = planesField.get(frustum);
-            if (planesObj == null) {
-                return 0;
-            }
-            return getPlaneCountInternal(clazz, frustum, planesObj);
-        } catch (Throwable ignored) {
-            return 0;
-        }
-    }
-
-    /**
-     * Checks if the given axis-aligned bounding box intersects the shadow frustum.
-     */
-    public static boolean isAabbVisibleInShadow(@Nullable Object frustum, double minX, double minY, double minZ,
-                                               double maxX, double maxY, double maxZ) {
         if (frustum == null) {
             frustum = getIrisShadowFrustum();
         }
         if (frustum instanceof Frustum mcFrustum) {
             try {
-                return mcFrustum.isVisible(new AABB(minX, minY, minZ, maxX, maxY, maxZ));
+                return mcFrustum.isVisible(aabb);
             } catch (Throwable ignored) {}
         }
         return true; // Conservative fallback: render shadow
@@ -210,6 +194,8 @@ public final class ShadowFrustumBridge {
 
     /**
      * Tests a bounding sphere against the extracted shadow planes.
+     * Требует НОРМАЛИЗОВАННЫЕ плоскости из {@link #extractShadowPlanes} (нормализация
+     * выполняется там один раз при извлечении) — здесь только скалярное произведение.
      */
     public static boolean isSphereVisibleInShadow(float[] planes, int planeCount,
                                                  float cx, float cy, float cz, float radius) {
@@ -222,46 +208,34 @@ public final class ShadowFrustumBridge {
             float py = planes[i * 4 + 1];
             float pz = planes[i * 4 + 2];
             float pw = planes[i * 4 + 3];
-            float len = (float) Math.sqrt(px * px + py * py + pz * pz);
-            if (len > 1e-6f) {
-                float dist = (px * cx + py * cy + pz * cz + pw) / len;
-                if (dist < -radius) {
-                    return false; // Completely outside plane
-                }
+            if (px * cx + py * cy + pz * cz + pw < -radius) {
+                return false; // Completely outside plane
             }
         }
         return true;
     }
 
     @Nullable
+    private static Field findFieldInHierarchy(Class<?> clazz, String name) {
+        Class<?> curr = clazz;
+        while (curr != null && curr != Object.class) {
+            try {
+                Field f = curr.getDeclaredField(name);
+                f.setAccessible(true);
+                return f;
+            } catch (NoSuchFieldException ignored) {}
+            curr = curr.getSuperclass();
+        }
+        return null;
+    }
+
+    @Nullable
     private static Field getPlanesField(Class<?> clazz) {
-        return PLANES_FIELD_CACHE.computeIfAbsent(clazz, c -> {
-            Class<?> curr = c;
-            while (curr != null && curr != Object.class) {
-                try {
-                    Field f = curr.getDeclaredField("planes");
-                    f.setAccessible(true);
-                    return f;
-                } catch (NoSuchFieldException ignored) {}
-                curr = curr.getSuperclass();
-            }
-            return null;
-        });
+        return PLANES_FIELD_CACHE.computeIfAbsent(clazz, c -> Optional.ofNullable(findFieldInHierarchy(c, "planes"))).orElse(null);
     }
 
     private static int getPlaneCountInternal(Class<?> clazz, Object frustum, Object planesObj) {
-        Field countField = COUNT_FIELD_CACHE.computeIfAbsent(clazz, c -> {
-            Class<?> curr = c;
-            while (curr != null && curr != Object.class) {
-                try {
-                    Field f = curr.getDeclaredField("planeCount");
-                    f.setAccessible(true);
-                    return f;
-                } catch (NoSuchFieldException ignored) {}
-                curr = curr.getSuperclass();
-            }
-            return null;
-        });
+        Field countField = COUNT_FIELD_CACHE.computeIfAbsent(clazz, c -> Optional.ofNullable(findFieldInHierarchy(c, "planeCount"))).orElse(null);
 
         if (countField != null) {
             try {

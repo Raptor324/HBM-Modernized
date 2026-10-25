@@ -50,7 +50,7 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 //?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -82,7 +82,7 @@ import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
 //? if forge {
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 //?} elif neoforge {
-/*@EventBusSubscriber(modid = RefStrings.MODID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
+/*@EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT)
 *///?}
 public class ModEventHandlerClient {
 

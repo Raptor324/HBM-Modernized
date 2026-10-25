@@ -132,7 +132,7 @@ public class PileBlock extends BaseEntityBlock {
             PileCoreBlockEntity core = pile.getCore(level);
             if (core != null) {
                 Direction dir = hit.getDirection().getOpposite();
-                core.drillChannel(level, pos, dir, player);
+                if (core.drillChannel(level, pos, dir, player)) com.hbm_m.item.tool.ItemTooling.onScrewed(player, hand);
                 return InteractionResult.CONSUME;
             }
         }
@@ -152,7 +152,6 @@ public class PileBlock extends BaseEntityBlock {
         return drill(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
     *///?}
-
     //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<PileBlock> CODEC = simpleCodec(PileBlock::new);
 

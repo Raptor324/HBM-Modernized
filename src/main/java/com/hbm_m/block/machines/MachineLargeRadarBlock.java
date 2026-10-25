@@ -70,7 +70,8 @@ public class MachineLargeRadarBlock extends MachineRadarBlock {
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return getStructureHelper().generateShapeFromParts(state.getValue(FACING));
+        // w16b: nur die Kernzelle (Raycast pro Zelle wie Original); Umriss der ganzen Maschine: MultiblockOutlineForge
+        return getStructureHelper().getControllerCellShape(state.getValue(FACING));
     }
 
     @Override

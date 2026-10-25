@@ -67,3 +67,4 @@ public class PyroOvenJeiCategory extends JeiFluidRecipeCategory<PyroOvenRecipe> 
         return list;
     }
 }
+

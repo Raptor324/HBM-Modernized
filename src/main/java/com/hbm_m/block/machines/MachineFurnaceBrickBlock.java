@@ -107,9 +107,30 @@ public class MachineFurnaceBrickBlock extends BaseEntityBlock {
         super.onRemove(state, level, pos, newState, moving);
     }
 
+    /** audit10: 1:1 {@code MachineBrickFurnace.randomDisplayTick} - brennend Rauch und Flamme vor der Front. */
+    @Override
+    public void animateTick(BlockState state, Level world, BlockPos pos, net.minecraft.util.RandomSource rand) {
+        if (state.getValue(LIT)) {
+            Direction dir = state.getValue(FACING);
+            float cX = pos.getX() + 0.5F;
+            float cY = pos.getY() + rand.nextFloat() * 0.375F;
+            float cZ = pos.getZ() + 0.5F;
+            float off = 0.52F;
+            float var = rand.nextFloat() * 0.6F - 0.3F;
+            rand.nextFloat();
+            rand.nextFloat();
+
+            double px = dir.getStepX() != 0 ? cX + dir.getStepX() * off : cX + var;
+            double pz = dir.getStepZ() != 0 ? cZ + dir.getStepZ() * off : cZ + var;
+            world.addParticle(net.minecraft.core.particles.ParticleTypes.SMOKE, px, cY, pz, 0.0D, 0.0D, 0.0D);
+            world.addParticle(net.minecraft.core.particles.ParticleTypes.FLAME, px, cY, pz, 0.0D, 0.0D, 0.0D);
+        }
+    }
+
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
 
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider p) {
             MenuRegistry.openExtendedMenu((ServerPlayer) player, p, buf -> buf.writeBlockPos(pos));
@@ -119,6 +140,7 @@ public class MachineFurnaceBrickBlock extends BaseEntityBlock {
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
 
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider p) {
             MenuRegistry.openExtendedMenu((ServerPlayer) player, p, buf -> buf.writeBlockPos(pos));

@@ -1,10 +1,6 @@
 package com.hbm_m.compat.jei;
 
-//? if forge {
 import net.minecraftforge.fluids.FluidStack;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.fluids.FluidStack;
-*///?}
 import mezz.jei.api.ingredients.IIngredientTypeWithSubtypes;
 import net.minecraft.world.level.material.Fluid;
 

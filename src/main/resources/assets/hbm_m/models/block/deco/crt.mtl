@@ -1,0 +1,4 @@
+newmtl screen
+map_Kd #screen
+newmtl texture
+map_Kd #texture

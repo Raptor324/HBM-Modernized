@@ -16,9 +16,8 @@ import com.hbm_m.inventory.menu.AnvilMenu;
 import com.hbm_m.item.fekal_electric.ModBatteryItem;
 import com.hbm_m.platform.ModItemStackHandler;
 import com.hbm_m.recipe.AnvilRecipe;
-import com.hbm_m.recipe.AnvilRecipe.AnvilIngredient;
+import com.hbm_m.recipe.AnvilRecipe.AStack;
 import com.hbm_m.recipe.AnvilRecipeManager;
-import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -37,6 +36,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.platform.StackNbt;
 
 public class AnvilBlockEntity extends BaseHbmBlockEntity implements MenuProvider {
 
@@ -72,7 +72,7 @@ public class AnvilBlockEntity extends BaseHbmBlockEntity implements MenuProvider
         // dropping it handed out free items, so it is left out of the tag and recomputed on load.
         ItemStack preview = itemHandler.getStackInSlot(2);
         itemHandler.setStackInSlot(2, ItemStack.EMPTY);
-        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(itemHandler, registries));
+        tag.put("inventory", itemHandler.serialize( registries));
         itemHandler.setStackInSlot(2, preview);
 
         if (selectedRecipeId != null) {
@@ -85,7 +85,7 @@ public class AnvilBlockEntity extends BaseHbmBlockEntity implements MenuProvider
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        com.hbm_m.platform.ItemStackSerialization.deserialize(itemHandler, tag.getCompound("inventory"), registries);
+        itemHandler.deserialize(tag.getCompound("inventory"), registries);
         selectedRecipeId = tag.contains("SelectedRecipe") ?
             ResourceLocation.tryParse(tag.getString("SelectedRecipe")) : null;
     }
@@ -160,8 +160,10 @@ public class AnvilBlockEntity extends BaseHbmBlockEntity implements MenuProvider
         ItemStack slotB = itemHandler.getStackInSlot(1);
         Optional<AnvilRecipe> recipeOpt = resolveCombineRecipe(level, slotA, slotB);
 
+        // FFA-рецепт: спец-формы (cyanide/rename/hot) формируют результат из слотов,
+        // поэтому выход берётся через getSmithingOutput, а не из первого outputs-элемента.
         ItemStack result = recipeOpt
-                .map(recipe -> recipe.getResultItem(level.registryAccess()).copy())
+                .map(recipe -> recipe.getSmithingOutput(slotA, slotB))
                 .orElse(ItemStack.EMPTY);
 
         ItemStack currentOutput = itemHandler.getStackInSlot(2);
@@ -174,110 +176,40 @@ public class AnvilBlockEntity extends BaseHbmBlockEntity implements MenuProvider
     }
 
     /**
-     * Проверяет, можно ли выполнить рецепт с текущими материалами
+     * Проверяет, можно ли выполнить рецепт с текущими материалами.
+     * FFA-рецепт: матчинг строго позиционный ({@link AnvilRecipe#matchesSmithing},
+     * включая спец-формы cyanide/rename/mold и проверку жара).
      */
     private boolean canCraftRecipe(AnvilRecipe recipe, ItemStack slotA, ItemStack slotB) {
-        if (!hasMatchingInputs(slotA, slotB, recipe)) {
+        if (!recipe.matchesSmithing(slotA, slotB)) {
             return false;
         }
         return recipe.canCraftOn(getTier());
     }
 
-    private boolean hasMatchingInputs(ItemStack slotA, ItemStack slotB, AnvilRecipe recipe) {
-        return resolveOrientation(slotA, slotB, recipe) != InputOrientation.NONE;
-    }
-
-    /**
-     * Оригинальные smithing-рецепты чувствительны к порядку слотов;
-     * зеркальная ориентация допускается только для shapeless-рецептов.
-     */
-    private InputOrientation resolveOrientation(ItemStack slotA, ItemStack slotB, AnvilRecipe recipe) {
-        if (matchesPair(slotA, slotB, recipe.getInputA(), recipe.getInputB())) {
-            return InputOrientation.NORMAL;
-        }
-        if (recipe.isShapeless() && matchesPair(slotA, slotB, recipe.getInputB(), recipe.getInputA())) {
-            return InputOrientation.SWAPPED;
-        }
-        return InputOrientation.NONE;
-    }
-
-    private InputOrientation chooseBestOrientation(ItemStack slotA, ItemStack slotB, AnvilRecipe recipe) {
-        InputOrientation resolved = resolveOrientation(slotA, slotB, recipe);
-        if (resolved != InputOrientation.NONE) {
-            return resolved;
-        }
-        if (!recipe.isShapeless()) {
-            return InputOrientation.NORMAL;
-        }
-
-        int normalConflicts = conflictValue(slotA, recipe.getInputA()) + conflictValue(slotB, recipe.getInputB());
-        int swappedConflicts = conflictValue(slotA, recipe.getInputB()) + conflictValue(slotB, recipe.getInputA());
-
-        return swappedConflicts < normalConflicts ? InputOrientation.SWAPPED : InputOrientation.NORMAL;
-    }
-
-    private int conflictValue(ItemStack actual, AnvilIngredient required) {
-        if (required.isEmpty()) {
-            return actual.isEmpty() ? 0 : 1;
-        }
-        if (actual.isEmpty()) {
-            return 1;
-        }
-        return required.matches(actual) ? 0 : 1;
-    }
-
-    private boolean matchesPair(ItemStack first, ItemStack second, AnvilIngredient requiredFirst, AnvilIngredient requiredSecond) {
-        return requiredFirst.matches(first) && requiredSecond.matches(second);
-    }
-
-    private int computeMaxCrafts(ItemStack slotA, ItemStack slotB, AnvilRecipe recipe, InputOrientation orientation) {
-        AnvilIngredient firstRequired = orientation == InputOrientation.NORMAL ? recipe.getInputA() : recipe.getInputB();
-        AnvilIngredient secondRequired = orientation == InputOrientation.NORMAL ? recipe.getInputB() : recipe.getInputA();
+    private int computeMaxCrafts(ItemStack slotA, ItemStack slotB, AnvilRecipe recipe) {
         return Math.min(
-                computeMaxCrafts(slotA, firstRequired),
-                computeMaxCrafts(slotB, secondRequired)
+                computeMaxCrafts(slotA, recipe.getLeft()),
+                computeMaxCrafts(slotB, recipe.getRight())
         );
     }
 
-    private void shrinkSlotInput(ItemStack slotA, ItemStack slotB, AnvilRecipe recipe, InputOrientation orientation, int craftCount) {
-        // NORMAL: slotA -> inputA, slotB -> inputB
-        // SWAPPED: slotA -> inputB, slotB -> inputA
+    private void shrinkSlotInput(ItemStack slotA, ItemStack slotB, AnvilRecipe recipe, int craftCount) {
+        // amountConsumed учитывает consume_left/consume_right (форма сохраняет заготовку и т.п.)
+        int consumeForSlotA = recipe.amountConsumed(0);
+        int consumeForSlotB = recipe.amountConsumed(1);
 
-        boolean isNormal = orientation == InputOrientation.NORMAL;
-
-        AnvilIngredient reqForSlotA = isNormal ? recipe.getInputA() : recipe.getInputB();
-        AnvilIngredient reqForSlotB = isNormal ? recipe.getInputB() : recipe.getInputA();
-
-        // Если ориентация NORMAL, смотрим consumesA. Если SWAPPED, смотрим consumesB.
-        boolean shouldConsumeSlotA = isNormal ? recipe.consumesA() : recipe.consumesB();
-        boolean shouldConsumeSlotB = isNormal ? recipe.consumesB() : recipe.consumesA();
-
-        if (shouldConsumeSlotA) {
-            slotA.shrink(reqForSlotA.count() * craftCount);
+        if (consumeForSlotA > 0) {
+            slotA.shrink(consumeForSlotA * craftCount);
         }
 
-        if (shouldConsumeSlotB) {
-            slotB.shrink(reqForSlotB.count() * craftCount);
+        if (consumeForSlotB > 0) {
+            slotB.shrink(consumeForSlotB * craftCount);
         }
     }
 
-    private boolean populateInputsForOrientation(ServerPlayer player, AnvilRecipe recipe, InputOrientation orientation) {
-        boolean changed = false;
-        changed |= fillSlotFromPlayer(player, 0, requiredForSlot(recipe, orientation, 0));
-        changed |= fillSlotFromPlayer(player, 1, requiredForSlot(recipe, orientation, 1));
-        return changed;
-    }
-
-    private AnvilIngredient requiredForSlot(AnvilRecipe recipe, InputOrientation orientation, int slotIndex) {
-        boolean normal = orientation == InputOrientation.NORMAL;
-        if (slotIndex == 0) {
-            return normal ? recipe.getInputA() : recipe.getInputB();
-        }
-        return normal ? recipe.getInputB() : recipe.getInputA();
-    }
-
-    private boolean fillSlotFromPlayer(ServerPlayer player, int slotIndex, AnvilIngredient required) {
-        if (required.isEmpty()) {
+    private boolean fillSlotFromPlayer(ServerPlayer player, int slotIndex, @Nullable AStack required) {
+        if (required == null || required.count() <= 0) {
             ItemStack currentStack = itemHandler.getStackInSlot(slotIndex);
             if (currentStack.isEmpty()) {
                 return false;
@@ -293,7 +225,7 @@ public class AnvilBlockEntity extends BaseHbmBlockEntity implements MenuProvider
         ItemStack current = itemHandler.getStackInSlot(slotIndex);
         boolean changed = false;
 
-        if (!current.isEmpty() && !required.matches(current)) {
+        if (!current.isEmpty() && !required.matchesIgnoreSize(current)) {
             ItemStack toReturn = current.copy();
             itemHandler.setStackInSlot(slotIndex, ItemStack.EMPTY);
             if (!player.getInventory().add(toReturn)) {
@@ -347,21 +279,20 @@ public class AnvilBlockEntity extends BaseHbmBlockEntity implements MenuProvider
 
         AnvilRecipe recipe = recipeOpt.get();
 
-        InputOrientation orientation = resolveOrientation(slotA, slotB, recipe);
-        if (orientation == InputOrientation.NONE) {
+        if (!recipe.matchesSmithing(slotA, slotB)) {
             return false;
         }
 
         int craftCount = craftMax ? maxCraftsPerAction(recipe) : 1;
         if (craftMax) {
-            craftCount = Math.min(craftCount, computeMaxCrafts(slotA, slotB, recipe, orientation));
+            craftCount = Math.min(craftCount, computeMaxCrafts(slotA, slotB, recipe));
         }
         if (craftCount <= 0) {
             return false;
         }
 
-        for (AnvilIngredient required : recipe.getInventoryInputs()) {
-            if (required.isEmpty()) {
+        for (AStack required : recipe.getInputs()) {
+            if (required.count() <= 0) {
                 continue;
             }
             int available = countItemInInventory(player, required);
@@ -372,10 +303,10 @@ public class AnvilBlockEntity extends BaseHbmBlockEntity implements MenuProvider
             return false;
         }
 
-        shrinkSlotInput(slotA, slotB, recipe, orientation, craftCount);
+        shrinkSlotInput(slotA, slotB, recipe, craftCount);
 
-        for (AnvilIngredient required : recipe.getInventoryInputs()) {
-            if (required.isEmpty()) {
+        for (AStack required : recipe.getInputs()) {
+            if (required.count() <= 0) {
                 continue;
             }
             removeItemFromInventory(player, required, required.count() * craftCount, tracker);
@@ -402,15 +333,8 @@ public class AnvilBlockEntity extends BaseHbmBlockEntity implements MenuProvider
         }
 
         AnvilRecipe recipe = recipeOpt.get();
-        InputOrientation orientation = resolveOrientation(slotACopy, slotBCopy, recipe);
-        if (orientation == InputOrientation.NONE) {
-            consumeMaterials(player, false, null);
-            updateCrafting();
-            return;
-        }
-
         EnergyTransferTracker tracker = new EnergyTransferTracker();
-        collectEnergyFromSlots(tracker, slotACopy, slotBCopy, recipe, orientation, 1);
+        collectEnergyFromSlots(tracker, slotACopy, slotBCopy, recipe, 1);
 
         boolean crafted = consumeMaterials(player, false, tracker);
         if (crafted && !outputStack.isEmpty()) {
@@ -420,7 +344,7 @@ public class AnvilBlockEntity extends BaseHbmBlockEntity implements MenuProvider
     }
 
     /**
-     * Выполняет крафт и помещает результат в инвентарь игрока
+     * Выполняет выбранный construction-рецепт и помещает результат в инвентарь игрока
      */
     public boolean craft(Player player, boolean craftMax) {
         Level level = getLevel();
@@ -433,7 +357,25 @@ public class AnvilBlockEntity extends BaseHbmBlockEntity implements MenuProvider
             return false;
         }
 
-        AnvilRecipe recipe = recipeOpt.get();
+        if (!(player instanceof ServerPlayer serverPlayer)) {
+            return false;
+        }
+
+        return craftConstruction(serverPlayer, recipeOpt.get(), craftMax ? 1 : 0);
+    }
+
+    /**
+     * FFA {@code AnvilCraftPacket}: крафт construction-рецепта из инвентаря игрока.
+     * mode >= 1 (Shift) — крафтить максимально возможное количество.
+     */
+    public boolean craftConstruction(ServerPlayer player, @Nullable AnvilRecipe recipe, int mode) {
+        Level level = getLevel();
+        if (level == null || level.isClientSide() || recipe == null || !recipe.isConstruction()) {
+            return false;
+        }
+        if (!recipe.canCraftOn(getTier())) {
+            return false;
+        }
 
         int maxCrafts = computeInventoryCraftLimit(player, recipe);
         if (maxCrafts <= 0) {
@@ -441,7 +383,7 @@ public class AnvilBlockEntity extends BaseHbmBlockEntity implements MenuProvider
         }
 
         // Оригинал AnvilCraftPacket: один выход — до maxStackSize/размерВыхода крафтов, несколько — 64
-        int craftCount = Math.min(craftMax ? maxCraftsPerAction(recipe) : 1, maxCrafts);
+        int craftCount = Math.min(mode >= 1 ? maxCraftsPerAction(recipe) : 1, maxCrafts);
         if (craftCount <= 0) {
             return false;
         }
@@ -480,15 +422,9 @@ public class AnvilBlockEntity extends BaseHbmBlockEntity implements MenuProvider
             return;
         }
 
-        ItemStack slotA = itemHandler.getStackInSlot(0);
-        ItemStack slotB = itemHandler.getStackInSlot(1);
-        InputOrientation orientation = chooseBestOrientation(slotA, slotB, recipe);
-
-        boolean changed = populateInputsForOrientation(player, recipe, orientation);
-        if (!changed && recipe.isShapeless()) {
-            InputOrientation fallback = orientation == InputOrientation.NORMAL ? InputOrientation.SWAPPED : InputOrientation.NORMAL;
-            changed = populateInputsForOrientation(player, recipe, fallback);
-        }
+        // FFA-матчинг строго позиционный: слот 0 <- left, слот 1 <- right.
+        boolean changed = fillSlotFromPlayer(player, 0, recipe.getLeft())
+                | fillSlotFromPlayer(player, 1, recipe.getRight());
 
         if (changed) {
             player.getInventory().setChanged();
@@ -499,7 +435,7 @@ public class AnvilBlockEntity extends BaseHbmBlockEntity implements MenuProvider
 
     private Optional<AnvilRecipe> resolveCombineRecipe(Level level, ItemStack slotA, ItemStack slotB) {
         Optional<AnvilRecipe> selected = resolveSelectedRecipe(level)
-                .filter(AnvilRecipe::usesMachineInputs)
+                .filter(AnvilRecipe::isSmithing)
                 .filter(recipe -> canCraftRecipe(recipe, slotA, slotB));
 
         if (selected.isPresent()) {
@@ -507,8 +443,7 @@ public class AnvilBlockEntity extends BaseHbmBlockEntity implements MenuProvider
         }
 
         return AnvilRecipeManager
-                .findRecipe(level, slotA, slotB, getTier())
-                .filter(AnvilRecipe::usesMachineInputs)
+                .findSmithing(level, slotA, slotB, getTier())
                 .filter(recipe -> canCraftRecipe(recipe, slotA, slotB));
     }
 
@@ -527,7 +462,7 @@ public class AnvilBlockEntity extends BaseHbmBlockEntity implements MenuProvider
     }
 
     private Optional<AnvilRecipe> resolveSelectedInventoryRecipe(Level level) {
-        return resolveSelectedRecipe(level).filter(recipe -> !recipe.usesMachineInputs());
+        return resolveSelectedRecipe(level).filter(AnvilRecipe::isConstruction);
     }
 
     private void setChangedAndNotify() {
@@ -546,8 +481,8 @@ public class AnvilBlockEntity extends BaseHbmBlockEntity implements MenuProvider
         }
     }
 
-    private int computeMaxCrafts(ItemStack available, AnvilIngredient required) {
-        if (required.isEmpty() || required.count() <= 0) {
+    private int computeMaxCrafts(ItemStack available, @Nullable AStack required) {
+        if (required == null || required.count() <= 0) {
             return Integer.MAX_VALUE;
         }
         if (available.isEmpty()) {
@@ -556,29 +491,29 @@ public class AnvilBlockEntity extends BaseHbmBlockEntity implements MenuProvider
         return available.getCount() / required.count();
     }
 
-    private int countItemInInventory(Player player, AnvilIngredient required) {
-        if (required.isEmpty()) {
+    private int countItemInInventory(Player player, AStack required) {
+        if (required.count() <= 0) {
             return 0;
         }
         int count = 0;
         for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
             ItemStack invStack = player.getInventory().getItem(i);
-            if (required.matches(invStack)) {
+            if (required.matchesIgnoreSize(invStack)) {
                 count += invStack.getCount();
             }
         }
         return count;
     }
 
-    private int removeItemFromInventory(Player player, AnvilIngredient required, int amount, @Nullable EnergyTransferTracker tracker) {
-        if (required.isEmpty() || amount <= 0) {
+    private int removeItemFromInventory(Player player, AStack required, int amount, @Nullable EnergyTransferTracker tracker) {
+        if (required.count() <= 0 || amount <= 0) {
             return 0;
         }
         int remaining = amount;
         int removed = 0;
         for (int i = 0; i < player.getInventory().getContainerSize() && remaining > 0; i++) {
             ItemStack invStack = player.getInventory().getItem(i);
-            if (required.matches(invStack)) {
+            if (required.matchesIgnoreSize(invStack)) {
                 int toRemove = Math.min(remaining, invStack.getCount());
                 if (tracker != null && isBattery(invStack)) {
                     long energyPerItem = ModBatteryItem.getEnergy(invStack);
@@ -596,14 +531,14 @@ public class AnvilBlockEntity extends BaseHbmBlockEntity implements MenuProvider
     }
 
     private int computeInventoryCraftLimit(Player player, AnvilRecipe recipe) {
-        List<AnvilIngredient> requirements = recipe.getInventoryInputs();
+        List<AStack> requirements = recipe.getInputs();
         if (requirements.isEmpty()) {
             return 0;
         }
 
         int limit = Integer.MAX_VALUE;
-        for (AnvilIngredient required : requirements) {
-            if (required.isEmpty()) {
+        for (AStack required : requirements) {
+            if (required.count() <= 0) {
                 continue;
             }
             int available = countItemInInventory(player, required);
@@ -613,8 +548,8 @@ public class AnvilBlockEntity extends BaseHbmBlockEntity implements MenuProvider
     }
 
     private void consumeInventory(Player player, AnvilRecipe recipe, int craftCount, @Nullable EnergyTransferTracker tracker) {
-        for (AnvilIngredient required : recipe.getInventoryInputs()) {
-            if (required.isEmpty()) {
+        for (AStack required : recipe.getInputs()) {
+            if (required.count() <= 0) {
                 continue;
             }
             removeItemFromInventory(player, required, required.count() * craftCount, tracker);
@@ -643,7 +578,7 @@ public class AnvilBlockEntity extends BaseHbmBlockEntity implements MenuProvider
         }
 
         for (ItemStack existing : stacks) {
-            if (PlatformHooks.isSameItemSameTags(existing, addition)) {
+            if (StackNbt.sameItemSameTags(existing, addition)) {
                 existing.grow(addition.getCount());
                 return;
             }
@@ -662,14 +597,14 @@ public class AnvilBlockEntity extends BaseHbmBlockEntity implements MenuProvider
     }
 
     private void collectEnergyFromSlots(@Nullable EnergyTransferTracker tracker, ItemStack slotA, ItemStack slotB,
-                                        AnvilRecipe recipe, InputOrientation orientation, int craftCount) {
+                                        AnvilRecipe recipe, int craftCount) {
         if (tracker == null) {
             return;
         }
-        AnvilIngredient firstRequired = orientation == InputOrientation.NORMAL ? recipe.getInputA() : recipe.getInputB();
-        AnvilIngredient secondRequired = orientation == InputOrientation.NORMAL ? recipe.getInputB() : recipe.getInputA();
-        tracker.add(extractEnergyFromStack(slotA, firstRequired.count() * craftCount));
-        tracker.add(extractEnergyFromStack(slotB, secondRequired.count() * craftCount));
+        AStack firstRequired = recipe.getLeft();
+        AStack secondRequired = recipe.getRight();
+        tracker.add(extractEnergyFromStack(slotA, (firstRequired == null ? 0 : firstRequired.count()) * craftCount));
+        tracker.add(extractEnergyFromStack(slotB, (secondRequired == null ? 0 : secondRequired.count()) * craftCount));
     }
 
     private long extractEnergyFromStack(ItemStack stack, int itemCount) {
@@ -743,15 +678,15 @@ public class AnvilBlockEntity extends BaseHbmBlockEntity implements MenuProvider
         }
     }
 
-    private int moveMatchingItemsFromInventory(Player player, AnvilIngredient template, int amount, Consumer<ItemStack> consumer) {
-        if (player == null || template.isEmpty() || amount <= 0) {
+    private int moveMatchingItemsFromInventory(Player player, @Nullable AStack template, int amount, Consumer<ItemStack> consumer) {
+        if (player == null || template == null || template.count() <= 0 || amount <= 0) {
             return 0;
         }
         Inventory inventory = player.getInventory();
         int remaining = amount;
         for (int i = 0; i < inventory.getContainerSize() && remaining > 0; i++) {
             ItemStack invStack = inventory.getItem(i);
-            if (!template.matches(invStack)) {
+            if (!template.matchesIgnoreSize(invStack)) {
                 continue;
             }
             int toExtract = Math.min(remaining, invStack.getCount());
@@ -766,12 +701,6 @@ public class AnvilBlockEntity extends BaseHbmBlockEntity implements MenuProvider
             inventory.setChanged();
         }
         return amount - remaining;
-    }
-
-    private enum InputOrientation {
-        NORMAL,
-        SWAPPED,
-        NONE
     }
 
     // getUpdateTag / getUpdatePacket / handleUpdateTag удалены:

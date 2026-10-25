@@ -1,0 +1,14 @@
+{
+  "type": "hbm_m:combination_oven",
+  "ingredient": {
+    "item": "hbm_m:sawdust_briquette"
+  },
+  "result": {
+    "item": "minecraft:charcoal",
+    "count": 1
+  },
+  "fluid": {
+    "fluid": "hbm_m:woodoil",
+    "amount": 500
+  }
+}

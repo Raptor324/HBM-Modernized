@@ -92,9 +92,9 @@ public abstract class MissileTier1 extends MissileBaseEntity {
             }
 
             if (level() instanceof net.minecraft.server.level.ServerLevel server) {
+                // Original: nur explodeStandard(15F, 24, true) + composeEffectSmall, kein Zusatzfeuer
                 MissileWarheadEffects.warheadTier1(this, server, pos, true);
             }
-            ExplosionChaos.flameDeath(level(), pos.getX(), pos.getY(), pos.getZ(), 24);
 
         }
 
@@ -177,9 +177,11 @@ public abstract class MissileTier1 extends MissileBaseEntity {
 
             }
 
-            if (level() instanceof net.minecraft.server.level.ServerLevel server) {
-                MissileWarheadEffects.warheadBusterTier1(this, server, pos);
-            }
+            // 1:1 EntityMissileBunkerBuster: 15x createExplosion(5F, true) nach unten, dann Partikel/Splitter/Truemmer je 5
+            for (int i = 0; i < 15; i++) level().explode(this, getX(), getY() - i, getZ(), 5F, Level.ExplosionInteraction.TNT);
+            com.hbm_m.explosion.ExplosionLarge.spawnParticles(level(), getX(), getY(), getZ(), 5);
+            com.hbm_m.explosion.ExplosionLarge.spawnShrapnels(level(), getX(), getY(), getZ(), 5);
+            com.hbm_m.explosion.ExplosionLarge.spawnRubble(level(), getX(), getY(), getZ(), 5);
         }
 
     }
@@ -216,9 +218,8 @@ public abstract class MissileTier1 extends MissileBaseEntity {
 
             }
 
-            level().explode(this, pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D,
-
-                    4.0F, Level.ExplosionInteraction.BLOCK);
+            // Original newExplosion(this, posX, posY, posZ, 4F, false, false): kein Feuer, kein Blockschaden
+            level().explode(this, getX(), getY(), getZ(), 4.0F, false, Level.ExplosionInteraction.NONE);
 
         }
 

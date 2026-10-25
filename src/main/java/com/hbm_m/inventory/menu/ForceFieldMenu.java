@@ -13,6 +13,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * Menue des Kraftfeldgenerators. Slotkoordinaten 1:1 aus {@code ContainerForceField} (1.7.10):
@@ -36,7 +37,8 @@ public class ForceFieldMenu extends AbstractContainerMenu {
         this.level = inv.player.level();
         this.data = blockEntity.getContainerData();
 
-        checkContainerDataCount(data, 6);
+        // ForceFieldBlockEntity.ContainerData liefert 7 Werte: 0..5 plus Farbe an Index 6.
+        checkContainerDataCount(data, 7);
         addDataSlots(data);
 
         ModItemStackHandlerContainer container =
@@ -72,6 +74,7 @@ public class ForceFieldMenu extends AbstractContainerMenu {
     public int getCooldown()  { return data.get(3); }
     public int getPowerCons() { return data.get(4); }
     public boolean isOn()     { return data.get(5) != 0; }
+    public int getColor()     { return data.get(6); }
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {

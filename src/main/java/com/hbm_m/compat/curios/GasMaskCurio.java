@@ -1,5 +1,6 @@
 package com.hbm_m.compat.curios;
 
+import com.hbm_m.platform.PlatformHooks;
 import java.util.UUID;
 
 import net.minecraft.world.entity.EquipmentSlot;
@@ -14,6 +15,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 
 import top.theillusivec4.curios.api.SlotContext;
 import top.theillusivec4.curios.api.type.capability.ICurio;
+import com.hbm_m.platform.AttributeHooks;
 
 /**
  * Обёртка противогаза для слота лица Curios.
@@ -68,7 +70,7 @@ public class GasMaskCurio implements ICurio {
                 com.google.common.collect.ImmutableMultimap.builder();
         for (java.util.Map.Entry<Attribute, AttributeModifier> e : base.entries()) {
             AttributeModifier m = e.getValue();
-            builder.put(e.getKey(), new AttributeModifier(uuid, m.getName() + "_curios", m.getAmount(), m.getOperation()));
+            builder.put(e.getKey(), AttributeHooks.modifier(uuid, m.getName() + "_curios", m.getAmount(), m.getOperation()));
         }
         return builder.build();
     }

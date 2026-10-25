@@ -1,0 +1,8 @@
+{
+ "parent": "minecraft:block/cube_bottom_top",
+ "textures": {
+  "side": "hbm_m:block/playground/nullstone_demo_2_wip",
+  "top": "hbm_m:block/playground/nullstone_demo_1_wip",
+  "bottom": "hbm_m:block/playground/nullstone_demo_1_wip"
+ }
+}

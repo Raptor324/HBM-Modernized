@@ -1,5 +1,6 @@
 package com.hbm_m.blockentity.machines.pile;
 
+
 import com.hbm_m.item.machine.ItemPileRodMK2;
 
 import net.minecraft.core.BlockPos;
@@ -102,10 +103,10 @@ public class PileChannel {
 
         BlockPos at = entry.relative(dir, depth);
 
-        CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
+        CompoundTag tag = com.hbm_m.platform.StackNbt.copy(stack);
         if (tag != null && tag.contains(ItemPileRodMK2.KEY_NBT_DEPLETION)) {
             tag.remove(ItemPileRodMK2.KEY_NBT_DEPLETION);
-            com.hbm_m.platform.PlatformHooks.setItemTag(stack, tag.isEmpty() ? null : tag);
+            com.hbm_m.platform.StackNbt.set(stack, tag.isEmpty() ? null : tag);
         }
 
         level.addFreshEntity(new ItemEntity(level,
@@ -127,7 +128,7 @@ public class PileChannel {
                 if (rods[i] != null && !rods[i].isEmpty()) {
                     CompoundTag entryTag = new CompoundTag();
                     entryTag.putByte("slot", (byte) i);
-                    com.hbm_m.platform.PlatformHooks.saveItemStack(rods[i], entryTag, registries);
+                    com.hbm_m.platform.StackNbt.save(rods[i], entryTag, registries);
                     list.add(entryTag);
                 }
             }
@@ -159,7 +160,7 @@ public class PileChannel {
                 CompoundTag entryTag = list.getCompound(i);
                 int slot = entryTag.getByte("slot") & 0xFF;
                 if (slot < chan.rods.length) {
-                    chan.rods[slot] = com.hbm_m.platform.PlatformHooks.itemStackOf(entryTag, registries);
+                    chan.rods[slot] = com.hbm_m.platform.StackNbt.parse(entryTag, registries);
                 }
             }
             chan.heat = nbt.getDouble(name + "heat");

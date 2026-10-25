@@ -1,0 +1,22 @@
+{
+  "loader": "forge:obj",
+  "model": "hbm_m:models/block/rail/rail_narrow_bend.obj",
+  "flip_v": true,
+  "automatic_culling": false,
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "default": "hbm_m:block/rail_narrow_neo",
+    "particle": "hbm_m:block/rail_narrow_neo"
+  },
+  "transform": {
+    "origin": "corner",
+    "translation": [
+      0.5,
+      0,
+      0.5
+    ],
+    "rotation": {
+      "y": 90
+    }
+  }
+}

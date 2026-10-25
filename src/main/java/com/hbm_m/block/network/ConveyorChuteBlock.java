@@ -60,6 +60,16 @@ public class ConveyorChuteBlock extends ConveyorBlockBase {
     }
 
     @Override
+    public Direction getInputDirection(BlockState state) {
+        return Direction.UP;
+    }
+
+    @Override
+    public Direction getOutputDirection(BlockState state) {
+        return Direction.DOWN;
+    }
+
+    @Override
     public Direction getTravelDirection(Level level, BlockPos pos, Vec3 itemPos) {
         if (isFunnelExit(level, pos, itemPos)) return Direction.UP;
         return level.getBlockState(pos).getValue(FACING);

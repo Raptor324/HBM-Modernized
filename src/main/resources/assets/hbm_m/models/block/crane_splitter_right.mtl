@@ -1,0 +1,16 @@
+newmtl top_right
+map_Kd #top_right
+newmtl top_left
+map_Kd #top_left
+newmtl back_right
+map_Kd #back_right
+newmtl front_right
+map_Kd #front_right
+newmtl inner
+map_Kd #inner
+newmtl inner_side
+map_Kd #inner_side
+newmtl belt
+map_Kd #belt
+newmtl right
+map_Kd #right

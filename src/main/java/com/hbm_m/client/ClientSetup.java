@@ -51,18 +51,45 @@ import com.hbm_m.client.render.implementations.ZirnoxDebrisRenderer;
 import com.hbm_m.client.render.implementations.AirNukeBombProjectileEntityRenderer;
 import com.hbm_m.client.render.implementations.AirstrikeEntityRenderer;
 import com.hbm_m.client.render.implementations.AirstrikeNukeEntityRenderer;
-import com.hbm_m.client.render.implementations.BatterySocketCreativeRenderer;
 import com.hbm_m.client.render.implementations.MachineDoorRenderer;
-import com.hbm_m.client.render.implementations.MachineGasCentRenderer;
 import com.hbm_m.client.render.implementations.HeaterRenderers;
 import com.hbm_m.client.render.implementations.MachineFluidTankRenderer;
+import com.hbm_m.client.render.implementations.MachineFoundryRenderer;
+import com.hbm_m.client.render.implementations.MachineFoundryTankRenderer;
 import com.hbm_m.client.render.implementations.BarrelTankRenderer;
-import com.hbm_m.client.render.implementations.IndustrialTurbineRenderer;
+import com.hbm_m.client.render.implementations.MachinePumpjackRenderer;
+import com.hbm_m.client.render.implementations.MachinePetrochemRenderer;
+import com.hbm_m.client.render.implementations.MachineTankRenderer;
+import com.hbm_m.client.render.implementations.MachineSolidifierRenderer;
+import com.hbm_m.client.render.implementations.MachineEngineRenderer;
+import com.hbm_m.client.render.implementations.MachineTurbineRenderer;
+import com.hbm_m.client.render.implementations.MachineBoilerRenderer;
+import com.hbm_m.client.render.implementations.MachinePowerRenderer;
+import com.hbm_m.client.render.implementations.MachineWorkbenchRenderer;
+import com.hbm_m.client.render.implementations.MachineFurnaceRenderer;
+import com.hbm_m.client.render.implementations.MachinePressGroupRenderer;
+import com.hbm_m.client.render.implementations.MachineFactoryRenderer;
+import com.hbm_m.client.render.implementations.MachineSawmillRenderer;
+import com.hbm_m.client.render.implementations.MachineMetallurgyMiscRenderer;
+import com.hbm_m.client.render.implementations.MachineChemistryRenderer;
+import com.hbm_m.client.render.implementations.MachineSeparationRenderer;
+import com.hbm_m.client.render.implementations.MachineCentrifugeRenderer;
+import com.hbm_m.client.render.implementations.MachineReactorResearchRenderer;
+import com.hbm_m.client.render.implementations.MachineAcceleratorRenderer;
+import com.hbm_m.client.render.implementations.MachineDFCRenderers;
+import com.hbm_m.client.render.implementations.MachinePileRenderers;
+import com.hbm_m.client.render.implementations.MachineRbmkControlRenderer;
+import com.hbm_m.client.render.implementations.MachineRbmkDisplayRenderer;
+import com.hbm_m.client.render.implementations.MachineResearchFacilityRenderer;
+import com.hbm_m.client.render.implementations.MachineFusionComplexRenderer;
+import com.hbm_m.client.render.implementations.MachineLaserResearchRenderer;
+import com.hbm_m.client.render.implementations.MachineAerospaceRenderer;
 import com.hbm_m.client.render.implementations.LaunchPadMissileRenderer;
 import com.hbm_m.client.render.implementations.MachineAdvancedAssemblerRenderer;
 import com.hbm_m.client.render.implementations.MachineAssemblerRenderer;
 import com.hbm_m.client.render.implementations.MachineChemicalPlantRenderer;
 import com.hbm_m.client.render.implementations.MachineChemicalFactoryRenderer;
+import com.hbm_m.client.render.implementations.MachineFoundryChannelRenderer;
 import com.hbm_m.client.render.implementations.MachineZirnoxDestroyedRenderer;
 import com.hbm_m.client.render.implementations.MachineZirnoxRenderer;
 import com.hbm_m.client.render.implementations.CrucibleRenderer;
@@ -77,11 +104,11 @@ import com.hbm_m.client.render.implementations.SoyuzLauncherRenderer;
 import com.hbm_m.client.render.implementations.MachinePressRenderer;
 import com.hbm_m.client.render.implementations.MachineTurbofanRenderer;
 import com.hbm_m.client.render.implementations.MachineRadarRenderer;
-import com.hbm_m.client.render.implementations.RBMKColumnRenderer;
+import com.hbm_m.client.render.implementations.MachineRBMKColumnRenderer;
+import com.hbm_m.client.render.implementations.MachineRBMKPanelRenderers;
 import com.hbm_m.client.render.implementations.MissileEntityRenderer;
 import com.hbm_m.client.render.entity.mob.RenderCreeperUniversal;
 import com.hbm_m.client.render.implementations.NoloEntityRenderer;
-// import com.hbm_m.client.render.implementations.TestBlockRenderer;
 import com.hbm_m.client.render.shader.ShaderReloadListener;
 import com.hbm_m.client.tooltip.CrateContentsTooltipComponent;
 import com.hbm_m.client.tooltip.CrateContentsTooltipComponentRenderer;
@@ -111,7 +138,6 @@ import com.hbm_m.inventory.gui.GUIMachineFel;
 import com.hbm_m.inventory.gui.GUIMachineFlareStack;
 import com.hbm_m.inventory.gui.GUIMachineGasCent;
 import com.hbm_m.inventory.gui.GUIMachineIndustrialBoiler;
-import com.hbm_m.inventory.gui.GUIMachineSolarBoiler;
 import com.hbm_m.inventory.gui.GUIMachineFractionTower;
 import com.hbm_m.inventory.gui.GUIMachineLargePylon;
 import com.hbm_m.inventory.gui.GUIMachineMixer;
@@ -190,6 +216,8 @@ import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
+import com.hbm_m.platform.LoaderHooks;
+import com.hbm_m.platform.RenderHooks;
 //? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.ChunkRenderTypeSet;
@@ -207,15 +235,15 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import com.hbm_m.client.render.missile.MissileItemModelDefinitions;
 //?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.neoforge.client.ChunkRenderTypeSet;
+/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
 import net.neoforged.neoforge.client.event.RegisterClientTooltipComponentFactoriesEvent;
-import net.neoforged.neoforge.client.model.BakedModelWrapper;
-import net.neoforged.neoforge.client.model.data.ModelData;
+import net.minecraftforge.client.model.BakedModelWrapper;
+import net.minecraftforge.client.model.data.ModelData;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -227,7 +255,7 @@ import com.hbm_m.client.render.missile.MissileItemModelDefinitions;
 //? if forge {
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 //?} elif neoforge {
-/*@EventBusSubscriber(modid = RefStrings.MODID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+/*@EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT)
 *///?}
 @SuppressWarnings({"UnstableApiUsage", "removal"})
 public class ClientSetup {
@@ -339,6 +367,25 @@ public class ClientSetup {
         *///?}
 
         event.enqueueWork(ClientSetup::registerRadAbsorberItemProperties);
+        // SEDNA: Original GunFactoryClient.init() + Client-Empfaenger der Orchestras
+        event.enqueueWork(() -> {
+            com.hbm_m.item.weapon.sedna.factory.GunFactory.init();
+            com.hbm_m.client.weapon.OrchestrasClient.init();
+            com.hbm_m.client.weapon.GunFactoryClient.init();
+        });
+        event.enqueueWork(ClientSetup::registerAlexandriteItemProperties);
+        event.enqueueWork(ClientSetup::registerR4ItemProperties);
+        event.enqueueWork(ClientSetup::registerPolaroidItemProperties);
+        event.enqueueWork(() -> {
+            for (var b : new net.minecraft.world.level.block.Block[] { ModBlocks.BRICK_FORGOTTEN.get(), ModBlocks.BRICK_FORGOTTEN_LOCK.get() })
+                net.minecraft.client.renderer.item.ItemProperties.register(b.asItem(), ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "meta"),
+                        (stack, level, entity, seed) -> { try { return Integer.parseInt(com.hbm_m.block.generic.JungleBricks.stateOf(stack, "meta")); } catch (NumberFormatException e) { return 0; } });
+        });
+        event.enqueueWork(() -> net.minecraft.client.renderer.item.ItemProperties.register(ModBlocks.BRICK_JUNGLE_GLYPH.get().asItem(),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "glyph"),
+                (stack, level, entity, seed) -> { try { return Integer.parseInt(com.hbm_m.block.generic.JungleBricks.stateOf(stack, "glyph")); } catch (NumberFormatException e) { return 0; } }));
+        event.enqueueWork(ClientSetup::registerBlueprintItemProperties);
+        event.enqueueWork(ClientSetup::registerPipetteItemProperties);
         event.enqueueWork(ClientSetup::registerRbmkPelletItemProperties);
         event.enqueueWork(ClientSetup::registerRenderLayers);
     }
@@ -376,13 +423,14 @@ public class ClientSetup {
 
     @SubscribeEvent
     public static void onRegisterClientExtensions(net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent event) {
+        // Только powered-комплекты (наследники ModPowerArmorItem — на Forge их расширение
+        // побеждает через override initializeClient). Обычная FSB-броня (DNT, Bismuth)
+        // регистрируется сама через ModArmorFSB.initializeClient — двойная регистрация крашит.
         var ext = com.hbm_m.powerarmor.ModPowerArmorItem.createNeoForgeClientExtensions();
         event.registerItem(ext,
                 ModItems.T51_HELMET.get(), ModItems.T51_CHESTPLATE.get(), ModItems.T51_LEGGINGS.get(), ModItems.T51_BOOTS.get(),
                 ModItems.AJR_HELMET.get(), ModItems.AJR_CHESTPLATE.get(), ModItems.AJR_LEGGINGS.get(), ModItems.AJR_BOOTS.get(),
-                ModItems.AJRO_HELMET.get(), ModItems.AJRO_CHESTPLATE.get(), ModItems.AJRO_LEGGINGS.get(), ModItems.AJRO_BOOTS.get(),
-                ModItems.DNT_HELMET.get(), ModItems.DNT_CHESTPLATE.get(), ModItems.DNT_LEGGINGS.get(), ModItems.DNT_BOOTS.get(),
-                ModItems.BISMUTH_HELMET.get(), ModItems.BISMUTH_CHESTPLATE.get(), ModItems.BISMUTH_LEGGINGS.get(), ModItems.BISMUTH_BOOTS.get());
+                ModItems.AJRO_HELMET.get(), ModItems.AJRO_CHESTPLATE.get(), ModItems.AJRO_LEGGINGS.get(), ModItems.AJRO_BOOTS.get());
     }
     *///?}
 
@@ -417,6 +465,64 @@ public class ClientSetup {
                 ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "tier"),
                 (stack, level, entity, seed) -> BlockAbsorberItem.readTier(stack).ordinal()
         );
+    }
+
+    private static void registerR4ItemProperties() {
+        net.minecraft.client.renderer.item.ItemProperties.register(ModItems.COLTAN_TOOL.get(),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "angle"),
+                (stack, level, entity, seed) -> {
+                    net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+                    if (mc.level == null || mc.player == null)
+                        return com.hbm_m.item.tool.ItemColtanCompass.needleFrame(null, 0, 0, 0, 32) / 32F;
+                    return com.hbm_m.item.tool.ItemColtanCompass.needleFrame(mc.level, mc.player.getX(), mc.player.getZ(), mc.player.getYRot(), 32) / 32F;
+                });
+        net.minecraft.client.renderer.item.ItemProperties.register(ModItems.TOOLBOX.get(),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "open"),
+                (stack, level, entity, seed) -> com.hbm_m.platform.StackNbt.has(stack) && com.hbm_m.platform.StackNbt.read(stack).getBoolean("isOpen") ? 1F : 0F);
+        // Original ItemAmmoArty#getIconIndex: Frachtgranate mit Ladung
+        net.minecraft.client.renderer.item.ItemProperties.register(ModItems.AMMO_ARTY_CARGO.get(),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "cargo"),
+                (stack, level, entity, seed) -> com.hbm_m.item.weapon.ItemAmmoArty.hasCargo(stack) ? 1F : 0F);
+        // Original RenderStirling: Item-Schaden 1 = Motor ohne Zahnrad
+        for (net.minecraft.world.level.ItemLike s : new net.minecraft.world.level.ItemLike[] { ModBlocks.STIRLING.get(), ModBlocks.STIRLING_STEEL.get() })
+            net.minecraft.client.renderer.item.ItemProperties.register(s.asItem(),
+                    ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "no_cog"),
+                    (stack, level, entity, seed) -> com.hbm_m.block.machines.MachineStirlingBlock.isNoCog(stack) ? 1F : 0F);
+    }
+
+    private static void registerAlexandriteItemProperties() {
+        net.minecraft.client.renderer.item.ItemProperties.register(
+                ModItems.GEM_ALEXANDRITE.get(),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "light"),
+                (stack, level, entity, seed) -> {
+                    net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+                    if (mc.level == null || mc.player == null) return 0F;
+                    return mc.level.getBrightness(net.minecraft.world.level.LightLayer.BLOCK, mc.player.blockPosition()) / 15F;
+                }
+        );
+    }
+
+    /** Original setTextureName("polaroid_" / "glitch_" + MainRegistry.polaroidID). */
+    private static void registerPipetteItemProperties() {
+        for (var item : new net.minecraft.world.item.Item[] { ModItems.PIPETTE.get(), ModItems.PIPETTE_BORON.get(), ModItems.PIPETTE_LABORATORY.get() }) {
+            net.minecraft.client.renderer.item.ItemProperties.register(item,
+                    ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "filled"),
+                    (stack, level, entity, seed) -> com.hbm_m.platform.StackNbt.has(stack) && com.hbm_m.platform.StackNbt.read(stack).getShort("fill") > 0 ? 1F : 0F);
+        }
+    }
+
+    private static void registerBlueprintItemProperties() {
+        net.minecraft.client.renderer.item.ItemProperties.register(ModItems.BLUEPRINTS.get(),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "blueprint"),
+                (stack, level, entity, seed) -> com.hbm_m.item.industrial.ItemBlueprints.iconIndex(stack));
+    }
+
+    private static void registerPolaroidItemProperties() {
+        for (var item : new net.minecraft.world.item.Item[] { ModItems.POLAROID.get(), ModItems.GLITCH.get() }) {
+            net.minecraft.client.renderer.item.ItemProperties.register(item,
+                    ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "polaroid"),
+                    (stack, level, entity, seed) -> com.hbm_m.main.Polaroid.id() / 18F);
+        }
     }
 
     private static void registerScreens() {
@@ -477,7 +583,6 @@ public class ClientSetup {
         MenuRegistry.registerScreenFactory(ModMenuTypes.SILEX_MENU.get(), GUIMachineSilex::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.MACHINE_GASCENT_MENU.get(), GUIMachineGasCent::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.INDUSTRIAL_BOILER_MENU.get(), GUIMachineIndustrialBoiler::new);
-        MenuRegistry.registerScreenFactory(ModMenuTypes.SOLAR_BOILER_MENU.get(), GUIMachineSolarBoiler::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.TURBINE_MENU.get(), GUIMachineTurbine::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.LARGE_TURBINE_MENU.get(), com.hbm_m.inventory.gui.GUIMachineLargeTurbine::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.TURBINEGAS_MENU.get(), com.hbm_m.inventory.gui.GUIMachineTurbineGas::new);
@@ -616,7 +721,7 @@ public class ClientSetup {
         ModEntities.MISSILE_DOOMSDAY.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
         ModEntities.MISSILE_DOOMSDAY_RUSTED.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
         ModEntities.CLUSTER_ROCKET.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.projectile.ClusterRocketEntityRenderer::new));
-        ModEntities.SHRAPNEL.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.projectile.ShrapnelEntityRenderer::new));
+        ModEntities.SHRAPNEL.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.effect.ShrapnelRenderer::new));
         ModEntities.EMP_PULSE.ifPresent(entityType -> EntityRenderers.register(entityType, EmptyEntityRenderer::new));
         ModEntities.BLACK_HOLE.ifPresent(entityType -> EntityRenderers.register(entityType, RenderBlackHole::new));
         ModEntities.VORTEX.ifPresent(entityType -> EntityRenderers.register(entityType, RenderBlackHole::new));
@@ -634,11 +739,44 @@ public class ClientSetup {
             BlockEntityRenderers.register(ModBlockEntities.RED_PYLON_BE.get(), wireRenderer);
             BlockEntityRenderers.register(ModBlockEntities.RED_PYLON_MEDIUM_BE.get(), wireRenderer);
             BlockEntityRenderers.register(ModBlockEntities.RED_PYLON_LARGE_BE.get(), wireRenderer);
+        BlockEntityRenderers.register(ModBlockEntities.SUBSTATION_BE.get(), wireRenderer);
             BlockEntityRenderers.register(ModBlockEntities.RED_CABLE_PAINTABLE_BE.get(), com.hbm_m.client.render.implementations.RedCablePaintableRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.FLUID_DUCT_PAINTABLE.get(), com.hbm_m.client.render.implementations.PaintableDuctRenderer::new);
         }
 
+        // Petrochem & Energy
+        MachinePumpjackRenderer.register();
+        MachinePetrochemRenderer.register();
+        MachineTankRenderer.register();
+        MachineSolidifierRenderer.register();
+        MachineEngineRenderer.register();
+        MachineTurbineRenderer.register();
+        MachineBoilerRenderer.register();
+        MachinePowerRenderer.register();
+
+        // Metallurgy & Chemistry
+        MachineWorkbenchRenderer.register();
+        MachineFurnaceRenderer.register();
+        MachinePressGroupRenderer.register();
+        MachineFactoryRenderer.register();
+        MachineSawmillRenderer.register();
+        MachineMetallurgyMiscRenderer.register();
+        MachineChemistryRenderer.register();
+        MachineSeparationRenderer.register();
+        MachineCentrifugeRenderer.register();
+
+        // Nuclear & Research
+        MachineReactorResearchRenderer.register();
+        MachineAcceleratorRenderer.register();
+        MachineDFCRenderers.register();
+        MachinePileRenderers.register();
+        MachineRbmkControlRenderer.register();
+        MachineResearchFacilityRenderer.register();
+        MachineFusionComplexRenderer.register();
+        MachineLaserResearchRenderer.register();
+        MachineAerospaceRenderer.register();
+
         MachineAdvancedAssemblerRenderer.register();
-        BlockEntityRenderers.register(ModBlockEntities.CARGO_ELEVATOR_BE.get(), com.hbm_m.client.render.implementations.CargoElevatorRenderer::new);
         MachineAssemblerRenderer.register();
         MachineDoorRenderer.register();
         BlockEntityRenderers.register(ModBlockEntities.PEDESTAL_BE.get(), com.hbm_m.client.render.implementations.PedestalRenderer::new);
@@ -653,17 +791,14 @@ public class ClientSetup {
         MachineHydraulicFrackiningTowerRenderer.register();
         SoyuzLauncherRenderer.register();
         SoyuzRocketRenderer.register();
+        BlockEntityRenderers.register(ModBlockEntities.SOYUZ_CAPSULE_BE.get(), com.hbm_m.client.render.implementations.SoyuzCapsuleRenderer::new);
         HeaterRenderers.register();
-        // BlockEntityRenderers.register(ModBlockEntities.TEST_BE.get(), TestBlockRenderer::new);
         MachineCrystallizerRenderer.register();
-        BlockEntityRenderers.register(ModBlockEntities.INDUSTRIAL_TURBINE_BE.get(), IndustrialTurbineRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.BATTERY_SOCKET_BE.get(), BatterySocketCreativeRenderer::new);
         MachineFluidTankRenderer.register();
         BarrelTankRenderer.register();
         BlockEntityRenderers.register(ModBlockEntities.LAUNCH_PAD_BE.get(), LaunchPadMissileRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.LAUNCH_PAD_RUSTED_BE.get(), LaunchPadMissileRenderer::new);
         MachineCoolingTowerRenderer.register();
-        BlockEntityRenderers.register(ModBlockEntities.MACHINE_GASCENT_BE.get(), MachineGasCentRenderer::new);
         MachineMiningDrillRenderer.register();
         MachineOreSlopperRenderer.register();
         MachineArcFurnaceRenderer.register();
@@ -682,39 +817,98 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.RADAR_SCREEN_BE.get(), com.hbm_m.client.render.implementations.MachineRadarScreenRenderer::new);
         CrucibleRenderer.register();
         com.hbm_m.client.render.implementations.StrandCasterRenderer.register();
-        BlockEntityRenderers.register(ModBlockEntities.FOUNDRY_BASIN_BE.get(), com.hbm_m.client.render.implementations.FoundryBasinRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.FOUNDRY_MOLD_BE.get(), com.hbm_m.client.render.implementations.FoundryBasinRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.FOUNDRY_CHANNEL_BE.get(), com.hbm_m.client.render.implementations.FoundryChannelRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.FOUNDRY_TANK_BE.get(), com.hbm_m.client.render.implementations.FoundryTankRenderer::new);
+        MachineFoundryRenderer.register(); // basin + mold, Nucleus factory
+        MachineFoundryChannelRenderer.register();
+        MachineFoundryTankRenderer.register(); // tank melt, Nucleus factory
         // ─── RBMK column renderers ─────
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_ROD_BE.get(),          RBMKColumnRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_BLANK_BE.get(),        RBMKColumnRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_ABSORBER_BE.get(),     RBMKColumnRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_REFLECTOR_BE.get(),    RBMKColumnRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_COOLER_BE.get(),       RBMKColumnRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_BOILER_BE.get(),       RBMKColumnRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_HEATER_BE.get(),       RBMKColumnRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_MODERATOR_BE.get(),    RBMKColumnRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_OUTGASSER_BE.get(),    RBMKColumnRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_STORAGE_BE.get(),      RBMKColumnRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_CONTROL_BE.get(),      RBMKColumnRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_CONTROL_AUTO_BE.get(), RBMKColumnRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_AUTOLOADER_BE.get(),    com.hbm_m.client.render.rbmk.RBMKAutoloaderRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_CRANE_CONSOLE_BE.get(), com.hbm_m.client.render.rbmk.RBMKCraneConsoleRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_PANEL_BE.get(),         RBMKColumnRenderer::new);
+        // Nucleus: 13 specs (one per column BE type), all sharing the MachineRBMKColumnRenderer
+        // hook that draws the procedural column geometry (flat sides, lid plate, rod cap, OBJ
+        // fuel-channel internals, Cherenkov glow).
+        MachineRBMKColumnRenderer.register();
         // The 7 RTTY panel devices each get their own renderer, ported 1:1 from the original's
         // RenderRBMK* tile entity special renderers.
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_DISPLAY_BE.get(),   com.hbm_m.client.render.rbmk.RBMKDisplayRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_GAUGE_BE.get(),     com.hbm_m.client.render.rbmk.RBMKGaugeRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_INDICATOR_BE.get(), com.hbm_m.client.render.rbmk.RBMKIndicatorRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_LEVER_BE.get(),     com.hbm_m.client.render.rbmk.RBMKLeverRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_KEYPAD_BE.get(),    com.hbm_m.client.render.rbmk.RBMKKeyPadRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_NUMITRON_BE.get(),  com.hbm_m.client.render.rbmk.RBMKNumitronRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_GRAPH_BE.get(),     com.hbm_m.client.render.rbmk.RBMKGraphRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_TERMINAL_BE.get(),  com.hbm_m.client.render.rbmk.RBMKTerminalRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_CONSOLE_BE.get(),
-                com.hbm_m.client.render.implementations.MachineRbmkConsoleRenderer::new);
+        // Nucleus: the display mini-map is a hook-only spec (the panel body is the static block model).
+        MachineRbmkDisplayRenderer.register();
+        // Nucleus: the remaining 7 panel devices are hook-only specs in MachineRBMKPanelRenderers
+        // (the default factory block transform reproduces the legacy facing rotation).
+        MachineRBMKPanelRenderers.register();
         // Steam inlet/outlet are floor blocks (not columns) — rendered via MODEL + JSON
+
+        // Renderer registrations restored after the FFA merge (2026-10-24)
+        // BARREL_*_BE: kein Legacy-TankRenderers.Barrel hier - es ueberschriebe den
+        // Nucleus-BER aus BarrelTankRenderer.register() (Spec zeichnet Korpus per VBO,
+        // der Legacy-BER nur Stutzen/Rauten => Fass unsichtbar).
+        BlockEntityRenderers.register(ModBlockEntities.CARGO_ELEVATOR_BE.get(), com.hbm_m.client.render.implementations.CargoElevatorRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.CHARGE.get(), com.hbm_m.client.render.implementations.ChargeRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.COMPACT_LAUNCHER_BE.get(), com.hbm_m.client.render.implementations.CustomLauncherRenderers.Compact::new);
+        BlockEntityRenderers.register(ModBlockEntities.CRASHED_BOMB.get(), com.hbm_m.client.render.implementations.CrashedBombRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.CUSTOM_MACHINE_BE.get(), com.hbm_m.client.render.implementations.CustomMachineRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.DECO_BLOCK.get(), com.hbm_m.client.render.implementations.DecoBlockRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.DECO_EMITTER.get(), com.hbm_m.client.render.implementations.EmitterRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.FILE_CABINET.get(), com.hbm_m.client.render.implementations.FileCabinetRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.FLOODLIGHT.get(), com.hbm_m.client.render.implementations.FloodlightRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.FUSION_KLYSTRON_BE.get(), com.hbm_m.client.render.implementations.FusionKlystronRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.FUSION_KLYSTRON_CREATIVE_BE.get(), com.hbm_m.client.render.implementations.FusionKlystronCreativeRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.FUSION_MHDT_BE.get(), com.hbm_m.client.render.implementations.FusionMhdtRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.ICF_CONTROLLER_BE.get(), com.hbm_m.client.render.implementations.ICFControllerRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.ICF_STRUCT_BE.get(), com.hbm_m.client.render.implementations.ICFStructRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.LANTERN_BEHEMOTH_BE.get(), com.hbm_m.client.render.implementations.LanternBehemothRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.LANTERN.get(), com.hbm_m.client.render.implementations.LanternRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.LAUNCH_TABLE_BE.get(), com.hbm_m.client.render.implementations.CustomLauncherRenderers.Table::new);
+        BlockEntityRenderers.register(ModBlockEntities.LAUNCHPAD_LAMBDA_BE.get(), com.hbm_m.client.render.implementations.LaunchpadLambdaRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.LOGIC_BLOCK.get(), com.hbm_m.client.render.implementations.LogicBlockRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.ANNIHILATOR_BE.get(), com.hbm_m.client.render.implementations.AnnihilatorRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.MACHINE_CHUNGUS_BE.get(), com.hbm_m.client.render.implementations.ChungusRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.CONDENSER_POWERED_BE.get(), com.hbm_m.client.render.implementations.CondenserPoweredRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.MACHINE_FENSU_BE.get(), com.hbm_m.client.render.implementations.FENSURenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.FAN_BE.get(), com.hbm_m.client.render.implementations.FanRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.HEPHAESTUS_BE.get(), com.hbm_m.client.render.implementations.HephaestusRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.INTAKE_BE.get(), com.hbm_m.client.render.implementations.IntakeRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.PRECASS_BE.get(), com.hbm_m.client.render.implementations.MachinePrecAssRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.MACHINE_PUMP_ELECTRIC_BE.get(), com.hbm_m.client.render.implementations.PumpRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.MACHINE_PUMP_STEAM_BE.get(), com.hbm_m.client.render.implementations.PumpRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RADGEN_BE.get(), com.hbm_m.client.render.implementations.RadGenRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.SATLINK_BE.get(), com.hbm_m.client.render.implementations.SatLinkRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.TAPE_DRIVE_BE.get(), com.hbm_m.client.render.implementations.TapeDriveRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.MISSILE_ASSEMBLY_BE.get(), com.hbm_m.client.render.implementations.MissileAssemblyRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.MOBILE_LAUNCH_PAD_BE.get(), com.hbm_m.client.render.implementations.MobileLaunchPadMissileRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.NUKE_FSTBMB_BE.get(), com.hbm_m.client.render.implementations.NukeFstbmbRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.OBJ_TESTER.get(), com.hbm_m.client.render.implementations.ObjTesterRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.PIPE_ANCHOR.get(), com.hbm_m.client.render.implementations.PipeAnchorRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.PIPE_ANCHOR_PNEUMATIC.get(), ctx -> new com.hbm_m.client.render.implementations.PipeAnchorRenderer<>(ctx, com.hbm_m.client.render.implementations.PipeAnchorRenderer.TEX_PNEUMATIC));
+        BlockEntityRenderers.register(ModBlockEntities.PIPE_ANCHOR_EXHAUST.get(), ctx -> new com.hbm_m.client.render.implementations.PipeAnchorRenderer<>(ctx, com.hbm_m.client.render.implementations.PipeAnchorRenderer.TEX_EXHAUST));
+        BlockEntityRenderers.register(ModBlockEntities.PISTON_INSERTER_BE.get(), com.hbm_m.client.render.implementations.PistonInserterRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.PNEUMO_TUBE_PAINTABLE_BE.get(), com.hbm_m.client.render.implementations.PneumoTubePaintableRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RBMK_ABSORBER_BE.get(), com.hbm_m.client.render.implementations.RBMKColumnRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RBMK_BLANK_BE.get(), com.hbm_m.client.render.implementations.RBMKColumnRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RBMK_BOILER_BE.get(), com.hbm_m.client.render.implementations.RBMKColumnRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RBMK_CONTROL_AUTO_BE.get(), com.hbm_m.client.render.implementations.RBMKColumnRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RBMK_CONTROL_BE.get(), com.hbm_m.client.render.implementations.RBMKColumnRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RBMK_COOLER_BE.get(), com.hbm_m.client.render.implementations.RBMKColumnRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RBMK_HEATER_BE.get(), com.hbm_m.client.render.implementations.RBMKColumnRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RBMK_MODERATOR_BE.get(), com.hbm_m.client.render.implementations.RBMKColumnRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RBMK_OUTGASSER_BE.get(), com.hbm_m.client.render.implementations.RBMKColumnRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RBMK_PANEL_BE.get(), com.hbm_m.client.render.implementations.RBMKColumnRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RBMK_REFLECTOR_BE.get(), com.hbm_m.client.render.implementations.RBMKColumnRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RBMK_ROD_BE.get(), com.hbm_m.client.render.implementations.RBMKColumnRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RBMK_STORAGE_BE.get(), com.hbm_m.client.render.implementations.RBMKColumnRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RADIOBOX_BE.get(), com.hbm_m.client.render.implementations.RadioboxRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RAIL_SWITCH.get(), com.hbm_m.client.render.implementations.RailSwitchRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.REBAR_BE.get(), com.hbm_m.client.render.implementations.RebarRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.SKELETON_HOLDER.get(), com.hbm_m.client.render.implementations.SkeletonHolderRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.SLAG_BE.get(), com.hbm_m.client.render.implementations.SlagRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.SOLAR_MIRROR_BE.get(), com.hbm_m.client.render.implementations.SolarMirrorRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.STATUE_ELB_F.get(), com.hbm_m.client.render.implementations.StatueRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.STRUCT_LAUNCHER_CORE_BE.get(), com.hbm_m.client.render.implementations.CustomLauncherRenderers.Struct::new);
+        BlockEntityRenderers.register(ModBlockEntities.STRUCT_WATZ_CORE.get(), com.hbm_m.client.render.implementations.StructWatzCoreRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.STRUCT_TORUS_CORE_BE.get(), com.hbm_m.client.render.implementations.StructTorusCoreRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.TOPOL_LAUNCH_PAD_BE.get(), com.hbm_m.client.render.implementations.TopolLauncherRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.TRINKET.get(), com.hbm_m.client.render.implementations.TrinketRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.VENDING_MACHINE.get(), com.hbm_m.client.render.implementations.VendingMachineRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.WAND_STRUCTURE.get(), com.hbm_m.client.render.implementations.WandStructureRenderer::new);
+        // Follow-up one-liners (same merge loss): renderer classes that already live in the tree
+        BlockEntityRenderers.register(ModBlockEntities.TOWER_SMALL_BE.get(), com.hbm_m.client.render.implementations.CoolingTowerRenderer::small);
+        BlockEntityRenderers.register(ModBlockEntities.BATTERY_REDD_BE.get(), com.hbm_m.client.render.implementations.BatteryREDDRenderer::new);
     }
 
     private static void clearClientCachesDeferred() {
@@ -771,7 +965,7 @@ public class ClientSetup {
     @SubscribeEvent
     public static void onModelBake(ModelEvent.ModifyBakingResult event) {
         java.util.Map modelRegistry = event.getModels();
-        Object leavesLocation = PlatformHooks.createModelLocation(ModBlocks.WASTE_LEAVES.getId(), "");
+        Object leavesLocation = LoaderHooks.createModelLocation(ModBlocks.WASTE_LEAVES.getId(), "");
         BakedModel originalModel = (BakedModel) modelRegistry.get(leavesLocation);
         
         if (originalModel != null) {
@@ -802,7 +996,7 @@ public class ClientSetup {
 
         for (Object entryObj : models.entrySet()) {
             java.util.Map.Entry entry = (java.util.Map.Entry) entryObj;
-            ResourceLocation keyLoc = PlatformHooks.getModelId(entry.getKey());
+            ResourceLocation keyLoc = LoaderHooks.getModelId(entry.getKey());
             
             if (!RefStrings.MODID.equals(keyLoc.getNamespace())) continue;
             BakedModel original = (BakedModel) entry.getValue();
@@ -827,12 +1021,174 @@ public class ClientSetup {
         }
 
         wrapConnectedDecoCtTerrainModels(models);
+        wrapPileCtTerrainModels(models);
+        wrapIcfCtTerrainModels(models);
+        wrapPwrCtTerrainModels(models);
+        wrapHadronCoilCtTerrainModels(models);
+        wrapBoxDuctModels(models);
+        // R6e: RenderReeds - Schilf bis zum Gewaessergrund
+        {
+            Object loc = LoaderHooks.createModelLocation(ModBlocks.PLANT_REEDS.getId(), "");
+            BakedModel baked = (BakedModel) models.get(loc);
+            if (baked != null && !(baked instanceof com.hbm_m.client.model.ReedsBakedModel)) models.put(loc, new com.hbm_m.client.model.ReedsBakedModel(baked));
+        }
+        // checkTilt: gekippte Maschinen (Absenkung wie in den Originalrenderern)
+        wrapTilted(models, ModBlocks.MACHINE_BIGASSTANK.get(), 1D);
+        wrapTilted(models, ModBlocks.MACHINE_BLAST_FURNACE.get(), 0.25D);
+        wrapTilted(models, ModBlocks.FLARE_STACK.get(), 0.25D);
+        wrapTilted(models, ModBlocks.REFINERY.get(), 0.25D);
+        wrapTilted(models, ModBlocks.ZIRNOX.get(), 0.5D);
 
         //? if forge {
         @SuppressWarnings("unchecked")
         Map<ResourceLocation, BakedModel> typedModels = (Map<ResourceLocation, BakedModel>) models;
+        // 1:1 ItemRendererMeteorSword: eingefaerbter Glanz der Meteoritenschwerter
+        com.hbm_m.client.model.MeteorSwordGlintModel.wrapAll(typedModels);
         com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat.installDisplayTransformGuards(typedModels);
-        //?}
+        //?} elif neoforge {
+        /*@SuppressWarnings("unchecked")
+        Map<net.minecraft.client.resources.model.ModelResourceLocation, BakedModel> typedModels =
+                (Map<net.minecraft.client.resources.model.ModelResourceLocation, BakedModel>) models;
+        // 1:1 ItemRendererMeteorSword: eingefaerbter Glanz der Meteoritenschwerter
+        com.hbm_m.client.model.MeteorSwordGlintModel.wrapAll(typedModels);
+        com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat.installDisplayTransformGuards(typedModels);
+        *///?}
+    }
+
+    private static ResourceLocation ctTex(String name) {
+        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/ported/" + name);
+    }
+
+    /**
+     * 1:1-Port von {@code BlockPile.getFragments}: Deckel und Boden tragen ein anderes Texturpaar
+     * als die Seiten, und Ein-, Auslass, Steuerung und Kern noch einmal ein eigenes. Verbunden wird
+     * mit jedem anderen Meilerblock, gleich welcher Sorte.
+     */
+    private static void wrapPileCtTerrainModels(java.util.Map models) {
+        var block = ModBlocks.PILE_BLOCK.get();
+        java.util.function.BiPredicate<net.minecraft.world.level.block.Block,
+                net.minecraft.world.level.block.Block> connects = (a, b) -> b == block;
+
+        ResourceLocation sideFull = ctTex("pile_block");
+        ResourceLocation topFull = ctTex("pile_block_top");
+
+        for (net.minecraft.world.level.block.state.BlockState state : block.getStateDefinition().getPossibleStates()) {
+            var type = state.getValue(com.hbm_m.block.machines.pile.PileBlock.TYPE);
+
+            // Oben und unten: die Steuerung hat einen eigenen Deckel, alle anderen den gewoehnlichen.
+            ResourceLocation topCt = ctTex(type == com.hbm_m.block.machines.pile.PileBlockType.CONTROL
+                    ? "pile_block_control_top_ct" : "pile_block_top_ct");
+
+            // An den Seiten: Einlass, Auslass, Kern - sonst die glatte Ziegelwand.
+            ResourceLocation[] side = switch (type) {
+                case FUEL_IN, AIR_IN -> new ResourceLocation[] { sideFull, ctTex("pile_block_input_ct") };
+                case FUEL_OUT, AIR_OUT -> new ResourceLocation[] { sideFull, ctTex("pile_block_output_ct") };
+                // Original: der Kern nimmt hier ausdruecklich die Deckeltextur als Grundlage.
+                case CORE -> new ResourceLocation[] { topFull, ctTex("pile_block_core_ct") };
+                default -> new ResourceLocation[] { sideFull, ctTex("pile_block_ct") };
+            };
+            ResourceLocation[] top = { topFull, topCt };
+
+            java.util.function.Function<net.minecraft.core.Direction, ResourceLocation[]> perSide =
+                    dir -> dir.getAxis().isVertical() ? top : side;
+
+            Object loc = LoaderHooks.createModelLocation(ModBlocks.PILE_BLOCK.getId(),
+                    "type=" + type.getSerializedName());
+            BakedModel baked = (BakedModel) models.get(loc);
+            if (baked == null || baked instanceof ConnectedDecoBlockBakedModel) continue;
+
+            models.put(loc, new ConnectedDecoBlockBakedModel(baked, side[0], side[1], perSide, connects));
+        }
+    }
+
+    /** 1:1 {@code BlockHadronCoil.canConnect}: jede Spule verbindet sich mit jeder anderen Spule. */
+    private static void wrapHadronCoilCtTerrainModels(java.util.Map models) {
+        java.util.function.BiPredicate<net.minecraft.world.level.block.Block, net.minecraft.world.level.block.Block> connects =
+                (a, b) -> b instanceof com.hbm_m.block.machines.HadronCoilBlock;
+        for (RegistrySupplier<Block> coil : List.of(ModBlocks.HADRON_COIL_ALLOY, ModBlocks.HADRON_COIL_GOLD, ModBlocks.HADRON_COIL_NEODYMIUM,
+                ModBlocks.HADRON_COIL_MAGTUNG, ModBlocks.HADRON_COIL_SCHRABIDIUM, ModBlocks.HADRON_COIL_SCHRABIDATE, ModBlocks.HADRON_COIL_STARMETAL,
+                ModBlocks.HADRON_COIL_CHLOROPHYTE, ModBlocks.HADRON_COIL_MESE)) {
+            Object loc = LoaderHooks.createModelLocation(coil.getId(), "");
+            BakedModel baked = (BakedModel) models.get(loc);
+            if (baked == null || baked instanceof ConnectedDecoBlockBakedModel) continue;
+            String base = coil.getId().getPath();
+            models.put(loc, new ConnectedDecoBlockBakedModel(baked, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/" + base),
+                    ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/" + base + "_ct"), null, connects));
+        }
+    }
+
+    /** 1:1 {@code BlockPWR.getFragments}: Huelle und Anschluss je mit eigener CT-Textur, verbunden mit Traeger und Controller. */
+    private static void wrapPwrCtTerrainModels(java.util.Map models) {
+        var block = ModBlocks.PWR_BLOCK.get();
+        var controller = ModBlocks.PWR_CONTROLLER.get();
+        java.util.function.BiPredicate<net.minecraft.world.level.block.Block,
+                net.minecraft.world.level.block.Block> connects = (a, b) -> b == block || b == controller;
+
+        for (net.minecraft.world.level.block.state.BlockState state : block.getStateDefinition().getPossibleStates()) {
+            boolean port = state.getValue(com.hbm_m.block.machines.PWRBlock.PORT);
+            ResourceLocation full = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, port ? "block/pwr_casing_port" : "block/pwr_block");
+            ResourceLocation ct = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, port ? "block/pwr_casing_port_ct" : "block/pwr_block_ct");
+
+            Object loc = LoaderHooks.createModelLocation(ModBlocks.PWR_BLOCK.getId(), "port=" + port);
+            BakedModel baked = (BakedModel) models.get(loc);
+            if (baked == null || baked instanceof ConnectedDecoBlockBakedModel) continue;
+
+            models.put(loc, new ConnectedDecoBlockBakedModel(baked, full, ct, null, connects));
+        }
+    }
+
+    private static void wrapIcfCtTerrainModels(java.util.Map models) {
+        var block = ModBlocks.ICF_BLOCK.get();
+        var controller = ModBlocks.ICF_CONTROLLER.get();
+        java.util.function.BiPredicate<net.minecraft.world.level.block.Block,
+                net.minecraft.world.level.block.Block> connects = (a, b) -> b == block || b == controller;
+
+        for (net.minecraft.world.level.block.state.BlockState state : block.getStateDefinition().getPossibleStates()) {
+            boolean port = state.getValue(com.hbm_m.block.machines.icf.ICFPhantomBlock.PORT);
+
+            ResourceLocation full = port
+                    ? ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/icf_block_port")
+                    : ctTex("icf_block");
+            ResourceLocation ct = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID,
+                    port ? "block/icf_block_port_ct" : "block/icf_block_ct");
+
+            Object loc = LoaderHooks.createModelLocation(ModBlocks.ICF_BLOCK.getId(), "port=" + port);
+            BakedModel baked = (BakedModel) models.get(loc);
+            if (baked == null || baked instanceof ConnectedDecoBlockBakedModel) continue;
+
+            models.put(loc, new ConnectedDecoBlockBakedModel(baked, full, ct, null, connects));
+        }
+    }
+
+    /** R7i: Kastenrohre - jeder Blockzustand und das Gegenstandsmodell bekommen das RenderBoxDuct-Modell. */
+    @SuppressWarnings("unchecked")
+    private static void wrapTilted(java.util.Map models, Block block, double drop) {
+        // Phase C: auch 1.21.1 (Modelle und Schluessel gibt es dort genauso; vorher fehlten Kippung/Kastenrohre)
+        for (net.minecraft.world.level.block.state.BlockState st : block.getStateDefinition().getPossibleStates()) {
+            Object loc = net.minecraft.client.renderer.block.BlockModelShaper.stateToModelLocation(st);
+            BakedModel baked = (BakedModel) models.get(loc);
+            if (baked != null && !(baked instanceof com.hbm_m.client.model.TiltedBakedModel))
+                models.put(loc, new com.hbm_m.client.model.TiltedBakedModel(baked, drop));
+        }
+    }
+
+    private static void wrapBoxDuctModels(java.util.Map models) {
+        // Phase C: auch 1.21.1 (Modelle und Schluessel gibt es dort genauso; vorher fehlten Kippung/Kastenrohre)
+        for (RegistrySupplier<Block> sup : List.of(ModBlocks.FLUID_DUCT_BOX, ModBlocks.FLUID_DUCT_EXHAUST, ModBlocks.RED_CABLE_BOX)) {
+            com.hbm_m.block.network.BoxDuctBlock block = (com.hbm_m.block.network.BoxDuctBlock) sup.get();
+            BakedModel shared = null;
+            for (net.minecraft.world.level.block.state.BlockState st : block.getStateDefinition().getPossibleStates()) {
+                Object loc = net.minecraft.client.renderer.block.BlockModelShaper.stateToModelLocation(st);
+                BakedModel orig = (BakedModel) models.get(loc);
+                if (orig == null || orig instanceof com.hbm_m.client.model.BoxDuctBakedModel) continue;
+                if (shared == null) shared = new com.hbm_m.client.model.BoxDuctBakedModel(block.kind, orig);
+                models.put(loc, shared);
+            }
+            Object itemLoc = new net.minecraft.client.resources.model.ModelResourceLocation(sup.getId(), "inventory");
+            BakedModel itemOrig = (BakedModel) models.get(itemLoc);
+            if (itemOrig != null && !(itemOrig instanceof com.hbm_m.client.model.BoxDuctBakedModel.Item))
+                models.put(itemLoc, new com.hbm_m.client.model.BoxDuctBakedModel.Item(block.kind, itemOrig));
+        }
     }
 
     /**
@@ -861,7 +1217,7 @@ public class ClientSetup {
         };
 
         for (CtEntry e : entries) {
-            Object loc = PlatformHooks.createModelLocation(e.block.getId(), "");
+            Object loc = LoaderHooks.createModelLocation(e.block.getId(), "");
             BakedModel baked = (BakedModel) models.get(loc);
             if (baked == null || baked instanceof ConnectedDecoBlockBakedModel) {
                 continue;
@@ -876,35 +1232,35 @@ public class ClientSetup {
     @SubscribeEvent
     public static void onModelRegisterAdditional(ModelEvent.RegisterAdditional event) {
         // Power armor: общие multipart-модели сетов (рендер на entity через OBJ-слои)
-        PlatformHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.T51_MODEL_ID);
-        PlatformHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.AJR_MODEL_ID);
-        PlatformHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.AJRO_MODEL_ID);
-        PlatformHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.BISMUTH_MODEL_ID);
-        PlatformHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.DNT_MODEL_ID);
-        PlatformHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.HAZMAT_MODEL_ID);
-        PlatformHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.HAZMAT_RED_MODEL_ID);
-        PlatformHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.HAZMAT_GREY_MODEL_ID);
+        LoaderHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.T51_MODEL_ID);
+        LoaderHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.AJR_MODEL_ID);
+        LoaderHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.AJRO_MODEL_ID);
+        LoaderHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.BISMUTH_MODEL_ID);
+        LoaderHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.DNT_MODEL_ID);
+        LoaderHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.HAZMAT_MODEL_ID);
+        LoaderHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.HAZMAT_RED_MODEL_ID);
+        LoaderHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.HAZMAT_GREY_MODEL_ID);
 
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_legacy"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/crystallizer_fluid"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/crystallizer_spinner"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_legacy"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/crystallizer_fluid"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/crystallizer_spinner"));
 
         // mining_drill
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/mining_drill_bit"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/mining_drill_shaft"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/mining_drill_crusher1"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/mining_drill_crusher2"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/mining_drill_bit"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/mining_drill_shaft"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/mining_drill_crusher1"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/mining_drill_crusher2"));
 
         // ore_slopper
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/ore_slopper_fan"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/ore_slopper_blades_left"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/ore_slopper_blades_right"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/ore_slopper_fan"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/ore_slopper_blades_left"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/ore_slopper_blades_right"));
 
         // arc_furnace
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/arc_furnace_electrodes_cold"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/arc_furnace_electrodes_hot"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/arc_furnace_electrodes_cold"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/arc_furnace_electrodes_hot"));
 
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/deco_soyuz_rocket"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/deco_soyuz_rocket"));
 
         for (String part : new String[] {
                 "chekhov_carriage", "chekhov_carriage_friendly", "chekhov_body", "chekhov_barrels",
@@ -915,66 +1271,66 @@ public class ClientSetup {
                 "himars_carriage", "himars_launcher", "himars_crane",
                 "sentry_pivot", "sentry_body", "sentry_drum", "sentry_barrell", "sentry_barrelr"
         }) {
-            PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/turret_parts/" + part));
+            LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/turret_parts/" + part));
         }
 
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_modern"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_modern_clean"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_modern_green"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_legacy"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_modern"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_modern_rad"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_modern_clean"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_legacy"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_black"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_orange"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_trefoil"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_yellow"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_legacy"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern_gray"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern_yellow"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern_black"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/water_door_legacy"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/water_door_modern"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/water_door_clean"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_legacy"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_modern"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_modern_trefoil"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_modern_trefoil_yellow"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_sliding_door_legacy"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_sliding_door_modern"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_legacy"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_modern"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_modern_variant1"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_modern_variant2"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_modern_industrial"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_seal_door_legacy"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_seal_door_modern"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_seal_door_modern_clean"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_seal_door_modern_trefoil"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_seal_door_modern_skull"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_sliding_door_modern_black"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_sliding_door_modern_grid"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_sliding_door_modern_plate"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_sliding_door_modern_white"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_modern_black"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_modern_blue"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_modern_red"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_modern"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_modern_clean"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_modern_green"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_legacy"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_modern"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_modern_rad"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_modern_clean"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_legacy"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_black"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_orange"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_trefoil"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_yellow"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_legacy"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern_gray"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern_yellow"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern_black"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/water_door_legacy"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/water_door_modern"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/water_door_clean"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_legacy"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_modern"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_modern_trefoil"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_modern_trefoil_yellow"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_sliding_door_legacy"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_sliding_door_modern"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_legacy"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_modern"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_modern_variant1"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_modern_variant2"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_modern_industrial"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_seal_door_legacy"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_seal_door_modern"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_seal_door_modern_clean"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_seal_door_modern_trefoil"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_seal_door_modern_skull"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_sliding_door_modern_black"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_sliding_door_modern_grid"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_sliding_door_modern_plate"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_sliding_door_modern_white"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_modern_black"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_modern_blue"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_modern_red"));
 
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_2"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_81"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_87"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_99"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_101"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_106"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_111"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_2"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_81"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_87"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_99"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_101"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_106"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_111"));
 
         for (MissileItemModelDefinitions.Definition definition : MissileItemModelDefinitions.all()) {
             ResourceLocation meshId = MissileRenderHelper.meshModelId(
                     ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, definition.itemPath()));
-            PlatformHooks.registerAdditionalModel(event, meshId);
+            LoaderHooks.registerAdditionalModel(event, meshId);
         }
 
         MainRegistry.LOGGER.debug("Registered door and missile variant models for loading");
@@ -985,33 +1341,33 @@ public class ClientSetup {
         MainRegistry.LOGGER.info("DoorDeclRegistry initialized with {} doors", DoorDeclRegistry.getAll().size());
 
         // Станки используют единый machine_parts_loader; конфиг — в JSON модели.
-        PlatformHooks.registerGeometryLoader(event, "battery_socket_loader", new MachineBatterySocketModelLoader());
-        PlatformHooks.registerGeometryLoader(event, "battery_pack", new com.hbm_m.client.loader.BatteryPackModelLoader());
-        PlatformHooks.registerGeometryLoader(event, "door", new DoorModelLoader());
-        PlatformHooks.registerGeometryLoader(event, "cargo_elevator", new CargoElevatorModelLoader());
-        PlatformHooks.registerGeometryLoader(event, "dae", new DaeModelLoader());
-        PlatformHooks.registerGeometryLoader(event, "template_loader", new TemplateModelLoader());
-        PlatformHooks.registerGeometryLoader(event, "box_cable", new BoxCableModelLoader());
-        PlatformHooks.registerGeometryLoader(event, "press_loader", new PressModelLoader());
-        PlatformHooks.registerGeometryLoader(event, "missile_loader", new MissileModelLoader());
-        PlatformHooks.registerGeometryLoader(event, "machine_parts_loader", new MachinePartsModelLoader<ConfiguredMultipartBakedModel>());
-        // PlatformHooks.registerGeometryLoader(event, "test", new TestModelLoader());
+        LoaderHooks.registerGeometryLoader(event, "battery_socket_loader", new MachineBatterySocketModelLoader());
+        LoaderHooks.registerGeometryLoader(event, "battery_pack", new com.hbm_m.client.loader.BatteryPackModelLoader());
+        LoaderHooks.registerGeometryLoader(event, "door", new DoorModelLoader());
+        LoaderHooks.registerGeometryLoader(event, "cargo_elevator", new CargoElevatorModelLoader());
+        LoaderHooks.registerGeometryLoader(event, "dae", new DaeModelLoader());
+        LoaderHooks.registerGeometryLoader(event, "template_loader", new TemplateModelLoader());
+        LoaderHooks.registerGeometryLoader(event, "box_cable", new BoxCableModelLoader());
+        LoaderHooks.registerGeometryLoader(event, "press_loader", new PressModelLoader());
+        LoaderHooks.registerGeometryLoader(event, "missile_loader", new MissileModelLoader());
+        LoaderHooks.registerGeometryLoader(event, "machine_parts_loader", new MachinePartsModelLoader<ConfiguredMultipartBakedModel>());
+        // LoaderHooks.registerGeometryLoader(event, "test", new TestModelLoader());
 
         //? if neoforge {
         /*event.register(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("forge", "composite"), net.neoforged.neoforge.client.model.CompositeModel.Loader.INSTANCE);
-        event.register(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("forge", "obj"), net.neoforged.neoforge.client.model.obj.ObjLoader.INSTANCE);
+        event.register(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("forge", "obj"), net.minecraftforge.client.model.obj.ObjLoader.INSTANCE);
         *///?}
         
-        PlatformHooks.registerGeometryLoader(event, "radar_loader", new MachineRadarModelLoader());
-        PlatformHooks.registerGeometryLoader(event, "soyuz_launcher_loader", new com.hbm_m.client.loader.SoyuzLauncherModelLoader());
-        PlatformHooks.registerGeometryLoader(event, "soyuz_rocket_loader", new com.hbm_m.client.loader.SoyuzRocketModelLoader());
+        LoaderHooks.registerGeometryLoader(event, "radar_loader", new MachineRadarModelLoader());
+        LoaderHooks.registerGeometryLoader(event, "soyuz_launcher_loader", new com.hbm_m.client.loader.SoyuzLauncherModelLoader());
+        LoaderHooks.registerGeometryLoader(event, "soyuz_rocket_loader", new com.hbm_m.client.loader.SoyuzRocketModelLoader());
 
         // Power armor OBJ loaders
-        PlatformHooks.registerGeometryLoader(event, "t51_armor_parts", new com.hbm_m.powerarmor.render.T51ArmorModelLoader());
-        PlatformHooks.registerGeometryLoader(event, "ajr_armor_parts", new com.hbm_m.powerarmor.render.AJRArmorModelLoader());
-        PlatformHooks.registerGeometryLoader(event, "bismuth_armor_parts", new com.hbm_m.powerarmor.render.BismuthArmorModelLoader());
-        PlatformHooks.registerGeometryLoader(event, "dnt_armor_parts", new com.hbm_m.powerarmor.render.DNTArmorModelLoader());
-        PlatformHooks.registerGeometryLoader(event, "hazmat_armor_parts", new com.hbm_m.item.hazmat.render.HazmatArmorModelLoader());
+        LoaderHooks.registerGeometryLoader(event, "t51_armor_parts", new com.hbm_m.powerarmor.render.T51ArmorModelLoader());
+        LoaderHooks.registerGeometryLoader(event, "ajr_armor_parts", new com.hbm_m.powerarmor.render.AJRArmorModelLoader());
+        LoaderHooks.registerGeometryLoader(event, "bismuth_armor_parts", new com.hbm_m.powerarmor.render.BismuthArmorModelLoader());
+        LoaderHooks.registerGeometryLoader(event, "dnt_armor_parts", new com.hbm_m.powerarmor.render.DNTArmorModelLoader());
+        LoaderHooks.registerGeometryLoader(event, "hazmat_armor_parts", new com.hbm_m.item.hazmat.render.HazmatArmorModelLoader());
 
         MainRegistry.LOGGER.info("Registered geometry loaders successfully");
     }
@@ -1148,7 +1504,7 @@ public class ClientSetup {
         EntityRendererRegistry.register(ModEntities.MISSILE_DOOMSDAY, MissileEntityRenderer::new);
         EntityRendererRegistry.register(ModEntities.MISSILE_DOOMSDAY_RUSTED, MissileEntityRenderer::new);
         EntityRendererRegistry.register(ModEntities.CLUSTER_ROCKET, com.hbm_m.client.render.projectile.ClusterRocketEntityRenderer::new);
-        EntityRendererRegistry.register(ModEntities.SHRAPNEL, com.hbm_m.client.render.projectile.ShrapnelEntityRenderer::new);
+        EntityRendererRegistry.register(ModEntities.SHRAPNEL, com.hbm_m.client.render.effect.ShrapnelRenderer::new);
         EntityRendererRegistry.register(ModEntities.EMP_PULSE, ctx -> new EmptyEntityRenderer<>(ctx));
         EntityRendererRegistry.register(ModEntities.BLACK_HOLE, RenderBlackHole::new);
         EntityRendererRegistry.register(ModEntities.VORTEX, RenderBlackHole::new);
@@ -1161,9 +1517,7 @@ public class ClientSetup {
         EntityRendererRegistry.register(ModEntities.BOT_PRIME_BODY, com.hbm_m.client.render.mob.BOTPrimeRenderer::body);
         EntityRendererRegistry.register(ModEntities.UFO, com.hbm_m.client.render.mob.UFORenderer::new);
         EntityRendererRegistry.register(ModEntities.BOMBER, com.hbm_m.client.render.plane.BomberRenderer::new);
-        // The bomblet is a 0.5-block object falling at terminal velocity; the original renders a
-        // small model, but it is on screen for a fraction of a second either way.
-        EntityRendererRegistry.register(ModEntities.BOMBLET_ZETA, com.hbm_m.client.render.EmptyEntityRenderer::new);
+        EntityRendererRegistry.register(ModEntities.BOMBLET_ZETA, com.hbm_m.client.render.projectile.BombletThetaRenderer::new);
         EntityRendererRegistry.register(ModEntities.MASKMAN, com.hbm_m.client.render.mob.MaskManRenderer::new);
         EntityRendererRegistry.register(ModEntities.NOLO, NoloEntityRenderer::new);
         EntityRendererRegistry.register(ModEntities.ENTITY_MOB_TAINTED_CREEPER, RenderCreeperUniversal::tainted);
@@ -1172,6 +1526,96 @@ public class ClientSetup {
         EntityRendererRegistry.register(ModEntities.ENTITY_MIST, ctx -> new EmptyEntityRenderer<>(ctx));
         EntityRendererRegistry.register(ModEntities.ENTITY_MOB_GOLD_CREEPER, RenderCreeperUniversal::goldCreeper);
         EntityRendererRegistry.register(ModEntities.ENTITY_MOB_NUCLEAR_CREEPER, RenderCreeperUniversal::nuclear);
+
+        // Renderer registrations restored after the FFA merge (2026-10-24)
+        EntityRendererRegistry.register(ModEntities.MISSILE_9M723, MissileEntityRenderer::new);
+        EntityRendererRegistry.register(ModEntities.MISSILE_TOPOL, MissileEntityRenderer::new);
+        EntityRendererRegistry.register(ModEntities.CHLORINE_FX, ctx -> new com.hbm_m.client.render.entity.MultiCloudRenderer<>(ctx, "chlorine"));
+        EntityRendererRegistry.register(ModEntities.ORANGE_FX, ctx -> new com.hbm_m.client.render.entity.MultiCloudRenderer<>(ctx, "orange"));
+        EntityRendererRegistry.register(ModEntities.COG, com.hbm_m.client.render.effect.CogRenderer::new);
+        EntityRendererRegistry.register(ModEntities.ARTILLERY_ROCKET, com.hbm_m.client.render.projectile.RenderArtilleryRocket::new);
+        EntityRendererRegistry.register(ModEntities.ARTILLERY_SHELL, com.hbm_m.client.render.projectile.RenderArtilleryShell::new);
+        EntityRendererRegistry.register(ModEntities.B92_BEAM, com.hbm_m.client.render.projectile.B92BeamRenderer::new);
+        EntityRendererRegistry.register(ModEntities.BLOCK_SPIDER, com.hbm_m.client.render.mob.MiscMobRenderers.BlockSpider::new);
+        EntityRendererRegistry.register(ModEntities.BOAT_RUBBER, com.hbm_m.client.render.implementations.BoatRubberRenderer::new);
+        EntityRendererRegistry.register(ModEntities.BOBMAZON, com.hbm_m.client.render.implementations.BobmazonRenderer::new);
+        EntityRendererRegistry.register(ModEntities.BOXCAR, com.hbm_m.client.render.implementations.BoxcarRenderer::new);
+        EntityRendererRegistry.register(ModEntities.BUILDING, com.hbm_m.client.render.implementations.FallingProjectileRenderer::new);
+        EntityRendererRegistry.register(ModEntities.BULLET, com.hbm_m.client.render.projectile.BulletRenderer::new);
+        EntityRendererRegistry.register(ModEntities.BULLET_MK4, com.hbm_m.client.weapon.BulletRenderers.MK4::new);
+        EntityRendererRegistry.register(ModEntities.BULLET_MK4_CL, com.hbm_m.client.weapon.BulletRenderers.MK4::new);
+        EntityRendererRegistry.register(ModEntities.BULLET_BASE_NT, com.hbm_m.client.render.projectile.RenderBulletNT::new);
+        EntityRendererRegistry.register(ModEntities.BULLET_BEAM, com.hbm_m.client.weapon.BulletRenderers.Beam::new);
+        EntityRendererRegistry.register(ModEntities.BURNING_FOEQ, com.hbm_m.client.render.projectile.BurningFOEQRenderer::new);
+        EntityRendererRegistry.register(ModEntities.C130, com.hbm_m.client.render.entity.C130Renderers.C130Renderer::new);
+        EntityRendererRegistry.register(ModEntities.CHOPPER_MINE, com.hbm_m.client.render.projectile.ChopperMineRenderer::new);
+        EntityRendererRegistry.register(ModEntities.CLOUD_FLEIJA_RAINBOW, com.hbm_m.client.render.effect.RenderCloudRainbow::new);
+        EntityRendererRegistry.register(ModEntities.CLOUD_SOLINIUM, com.hbm_m.client.render.effect.RenderCloudSolinium::new);
+        EntityRendererRegistry.register(ModEntities.CLOUD_TOM, com.hbm_m.client.render.effect.TomRenderers.CloudTom::new);
+        EntityRendererRegistry.register(ModEntities.CYBER_CRAB, com.hbm_m.client.render.mob.CrabRenderers.Cyber::new);
+        EntityRendererRegistry.register(ModEntities.CHEMICAL, com.hbm_m.client.render.projectile.ChemicalRenderer::new);
+        EntityRendererRegistry.register(ModEntities.DEATH_BLAST, com.hbm_m.client.render.effect.OrbitalStrikeRenderer::deathBlast);
+        EntityRendererRegistry.register(ModEntities.DUCHESS_GAMBIT, com.hbm_m.client.render.implementations.FallingProjectileRenderer::new);
+        EntityRendererRegistry.register(ModEntities.DUCK, com.hbm_m.client.render.mob.DuckRenderer::new);
+        EntityRendererRegistry.register(ModEntities.TEST_DUMMY, com.hbm_m.client.render.mob.MiscMobRenderers.Dummy::new);
+        EntityRendererRegistry.register(ModEntities.EMP_BLAST, com.hbm_m.client.render.entity.EMPBlastRenderer::new);
+        EntityRendererRegistry.register(ModEntities.FBI, com.hbm_m.client.render.mob.FBIRenderers.FBI::new);
+        EntityRendererRegistry.register(ModEntities.FBI_DRONE, com.hbm_m.client.render.mob.FBIRenderers.Drone::new);
+        EntityRendererRegistry.register(ModEntities.FALLING_NUKE, com.hbm_m.client.render.projectile.FallingNukeRenderer::new);
+        EntityRendererRegistry.register(ModEntities.FIREWORKS, ctx -> new EmptyEntityRenderer<>(ctx));
+        EntityRendererRegistry.register(ModEntities.FOG_FX, com.hbm_m.client.render.entity.FogRenderer::new);
+        EntityRendererRegistry.register(ModEntities.GHOST, com.hbm_m.client.render.mob.MiscMobRenderers.Ghost::new);
+        EntityRendererRegistry.register(ModEntities.GLYPHID, com.hbm_m.client.render.mob.GlyphidRenderer::new);
+        EntityRendererRegistry.register(ModEntities.GLYPHID_BEHEMOTH, com.hbm_m.client.render.mob.GlyphidRenderer::new);
+        EntityRendererRegistry.register(ModEntities.GLYPHID_BLASTER, com.hbm_m.client.render.mob.GlyphidRenderer::new);
+        EntityRendererRegistry.register(ModEntities.GLYPHID_BOMBARDIER, com.hbm_m.client.render.mob.GlyphidRenderer::new);
+        EntityRendererRegistry.register(ModEntities.GLYPHID_BRAWLER, com.hbm_m.client.render.mob.GlyphidRenderer::new);
+        EntityRendererRegistry.register(ModEntities.GLYPHID_BRENDA, com.hbm_m.client.render.mob.GlyphidRenderer::new);
+        EntityRendererRegistry.register(ModEntities.GLYPHID_DIGGER, com.hbm_m.client.render.mob.GlyphidRenderer::new);
+        EntityRendererRegistry.register(ModEntities.GLYPHID_NUCLEAR, com.hbm_m.client.render.mob.GlyphidRenderer::new);
+        EntityRendererRegistry.register(ModEntities.GLYPHID_SCOUT, com.hbm_m.client.render.mob.GlyphidRenderer::new);
+        EntityRendererRegistry.register(ModEntities.GRENADE_UNIVERSAL, com.hbm_m.client.weapon.render.RenderGrenadeUniversal::new);
+        EntityRendererRegistry.register(ModEntities.HUNTER_CHOPPER, com.hbm_m.client.render.mob.HunterChopperRenderer::new);
+        EntityRendererRegistry.register(ModEntities.ITEM_BUOYANT, net.minecraft.client.renderer.entity.ItemEntityRenderer::new);
+        EntityRendererRegistry.register(ModEntities.METEOR, com.hbm_m.client.render.implementations.MeteorRenderer::new);
+        EntityRendererRegistry.register(ModEntities.CART_CRATE, com.hbm_m.client.render.entity.NeoCartRenderer::new);
+        EntityRendererRegistry.register(ModEntities.CART_DESTROYER, com.hbm_m.client.render.entity.NeoCartRenderer::new);
+        EntityRendererRegistry.register(ModEntities.CART_ORE, com.hbm_m.client.render.entity.NeoCartRenderer::new);
+        EntityRendererRegistry.register(ModEntities.CART_POWDER, com.hbm_m.client.render.entity.NeoCartRenderer::new);
+        EntityRendererRegistry.register(ModEntities.CART_SEMTEX, com.hbm_m.client.render.entity.NeoCartRenderer::new);
+        EntityRendererRegistry.register(ModEntities.MINECART_TEST, com.hbm_m.client.render.entity.RenderMinecartTest::new);
+        EntityRendererRegistry.register(ModEntities.MINER_ROCKET, com.hbm_m.client.render.implementations.MinerRocketRenderer::new);
+        EntityRendererRegistry.register(ModEntities.PARACHUTE_CRATE, com.hbm_m.client.render.entity.C130Renderers.ParachuteCrateRenderer::new);
+        EntityRendererRegistry.register(ModEntities.PARASITE_MAGGOT, com.hbm_m.client.render.mob.ParasiteMaggotRenderer::new);
+        EntityRendererRegistry.register(ModEntities.PIGEON, com.hbm_m.client.render.mob.MiscMobRenderers.Pigeon::new);
+        EntityRendererRegistry.register(ModEntities.PLASTIC_BAG, com.hbm_m.client.render.mob.MiscMobRenderers.PlasticBag::new);
+        EntityRendererRegistry.register(ModEntities.QUACKOS, com.hbm_m.client.render.mob.MiscMobRenderers.Quackos::new);
+        EntityRendererRegistry.register(ModEntities.SIEGE_CRAFT, com.hbm_m.client.render.mob.SiegeCraftRenderer::new);
+        EntityRendererRegistry.register(ModEntities.SIEGE_LASER, com.hbm_m.client.render.projectile.SiegeLaserRenderer::new);
+        EntityRendererRegistry.register(ModEntities.SIEGE_TUNNELER, com.hbm_m.client.render.mob.SiegeTunnelerRenderer::new);
+        EntityRendererRegistry.register(ModEntities.TAINT_CRAB, com.hbm_m.client.render.mob.CrabRenderers.Taint::new);
+        EntityRendererRegistry.register(ModEntities.TESLA_CRAB, com.hbm_m.client.render.mob.CrabRenderers.Tesla::new);
+        EntityRendererRegistry.register(ModEntities.TORPEDO, com.hbm_m.client.render.implementations.FallingProjectileRenderer::new);
+        EntityRendererRegistry.register(ModEntities.UNDEAD_SOLDIER, com.hbm_m.client.render.entity.UndeadSoldierRenderer::new);
+        EntityRendererRegistry.register(ModEntities.WASTE_PEARL, com.hbm_m.client.render.entity.WhiteBoxRenderer::new);
+        EntityRendererRegistry.register(ModEntities.ROCKET_LAMBDA, com.hbm_m.client.render.entity.LambdaRocketRenderer::new);
+        EntityRendererRegistry.register(ModEntities.SATELLITE_POD, com.hbm_m.client.render.entity.SatellitePodRenderer::new);
+        EntityRendererRegistry.register(ModEntities.SAWBLADE, com.hbm_m.client.render.effect.SawbladeRenderer::new);
+        EntityRendererRegistry.register(ModEntities.TRAIN_CARGO_TRAM, com.hbm_m.client.render.entity.RenderTrainCargoTram::new);
+        EntityRendererRegistry.register(ModEntities.TRAIN_CARGO_TRAM_TRAILER, com.hbm_m.client.render.entity.RenderTrainCargoTramTrailer::new);
+        // Follow-up one-liners (same merge loss): renderer classes that already live in the tree
+        EntityRendererRegistry.register(ModEntities.MISSILE_CUSTOM, com.hbm_m.client.render.entity.MissileCustomRenderer::new);
+        EntityRendererRegistry.register(ModEntities.TNT_PRIMED_BASE, com.hbm_m.client.render.entity.TNTPrimedBaseRenderer::new);
+        EntityRendererRegistry.register(ModEntities.ORBITAL_LASER, com.hbm_m.client.render.effect.OrbitalStrikeRenderer::orbitalLaser);
+        EntityRendererRegistry.register(ModEntities.PINK_CLOUD_FX, ctx -> new com.hbm_m.client.render.entity.MultiCloudRenderer<>(ctx, "pc"));
+        EntityRendererRegistry.register(ModEntities.ACID_BOMB, net.minecraft.client.renderer.entity.ThrownItemRenderer::new);
+        EntityRendererRegistry.register(ModEntities.DISPERSER_CANISTER, net.minecraft.client.renderer.entity.ThrownItemRenderer::new);
+        EntityRendererRegistry.register(ModEntities.GRENADE_BOUNCY_GENERIC, net.minecraft.client.renderer.entity.ThrownItemRenderer::new);
+        EntityRendererRegistry.register(ModEntities.COIN, EmptyEntityRenderer::new);
+        EntityRendererRegistry.register(ModEntities.FIRE_LINGERING, EmptyEntityRenderer::new);
+        EntityRendererRegistry.register(ModEntities.WAYPOINT, EmptyEntityRenderer::new);
+        EntityRendererRegistry.register(ModEntities.TRAIN_BOUNDING_DUMMY, EmptyEntityRenderer::new);
+        EntityRendererRegistry.register(ModEntities.TRAIN_SEAT_DUMMY, EmptyEntityRenderer::new);
     }
 
     @SubscribeEvent
@@ -1302,15 +1746,15 @@ public class ClientSetup {
                 .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
                 .put("Normal",   DefaultVertexFormat.ELEMENT_NORMAL)
                 .put("UV0",      DefaultVertexFormat.ELEMENT_UV0)
-                .put("BoneId", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.INT, VertexFormatElement.Usage.GENERIC, 1))
-                .put("InstPos", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
-                .put("InstRot", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstBboxMin", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
-                .put("InstBboxSize", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightC01", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightC23", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightC45", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightC67", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("BoneId", RenderHooks.createVertexFormatElement(0, VertexFormatElement.Type.INT, VertexFormatElement.Usage.GENERIC, 1))
+                .put("InstPos", RenderHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
+                .put("InstRot", RenderHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstBboxMin", RenderHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
+                .put("InstBboxSize", RenderHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightC01", RenderHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightC23", RenderHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightC45", RenderHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightC67", RenderHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
                 .build()
         );
         //?} else {
@@ -1318,15 +1762,15 @@ public class ClientSetup {
                 .add("Position", com.mojang.blaze3d.vertex.VertexFormatElement.POSITION)
                 .add("Normal",   com.mojang.blaze3d.vertex.VertexFormatElement.NORMAL)
                 .add("UV0",      com.mojang.blaze3d.vertex.VertexFormatElement.UV0)
-                .add("BoneId", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.INT, VertexFormatElement.Usage.GENERIC, 1))
-                .add("InstPos", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
-                .add("InstRot", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .add("InstBboxMin", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
-                .add("InstBboxSize", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .add("InstLightC01", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .add("InstLightC23", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .add("InstLightC45", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .add("InstLightC67", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .add("BoneId", RenderHooks.createVertexFormatElement(0, VertexFormatElement.Type.INT, VertexFormatElement.Usage.GENERIC, 1))
+                .add("InstPos", RenderHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
+                .add("InstRot", RenderHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .add("InstBboxMin", RenderHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
+                .add("InstBboxSize", RenderHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .add("InstLightC01", RenderHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .add("InstLightC23", RenderHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .add("InstLightC45", RenderHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .add("InstLightC67", RenderHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
                 .build();
         *///?}
 
@@ -1483,6 +1927,8 @@ public class ClientSetup {
     public static void registerLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
         event.registerLayerDefinition(ModModelLayers.POWER_ARMOR, PowerArmorEmptyModel::createBodyLayer);
         event.registerLayerDefinition(ModModelLayers.GAS_MASK, com.hbm_m.client.model.GasMaskModels::createGasMask);
+        event.registerLayerDefinition(com.hbm_m.client.render.armor.ArmorAccessoryModels.GOGGLES, com.hbm_m.client.render.armor.ArmorAccessoryModels::createGoggles);
+        event.registerLayerDefinition(com.hbm_m.client.render.armor.ArmorAccessoryModels.JETPACK, com.hbm_m.client.render.armor.ArmorAccessoryModels::createJetpack);
         event.registerLayerDefinition(ModModelLayers.M65, com.hbm_m.client.model.GasMaskModels::createM65);
     }
 }

@@ -1,10 +1,12 @@
 package com.hbm_m.inventory.menu;
 
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.machines.anvils.AnvilTier;
 import com.hbm_m.blockentity.machines.AnvilBlockEntity;
 import com.hbm_m.platform.ModItemStackHandler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.Container;
@@ -20,9 +22,18 @@ public class AnvilMenu extends AbstractContainerMenu {
     private final Level level;
     private final ContainerLevelAccess access;
 
-    // Конструктор для клиента
+    // Конструктор для клиента (FFA-Writer schreibt Pos + Tier-Ordinal, siehe AnvilBlock#openAnvil)
     public AnvilMenu(int containerId, Inventory inv, FriendlyByteBuf extraData) {
-        this(containerId, inv, extraData.readBlockPos());
+        this(containerId, inv, extraData.readBlockPos(), AnvilTier.values()[extraData.readVarInt()]);
+    }
+
+    /**
+     * FFA-Konstruktor (AnvilBlock#openAnvil): der Block kennt nur Position und Stufe. Die
+     * verbindliche Stufe liefert die BlockEntity (AnvilBlockEntity#getTier liest sie aus dem
+     * Blockstate) - der Parameter dient dem Client-Handshake und der API-Kompatibilitaet.
+     */
+    public AnvilMenu(int containerId, Inventory inv, BlockPos pos, AnvilTier tier) {
+        this(containerId, inv, pos);
     }
 
     // Конструктор для клиента с BlockPos
@@ -67,6 +78,14 @@ public class AnvilMenu extends AbstractContainerMenu {
 
     public void tryCraft(Player player, boolean craftAll) {
         blockEntity.craft(player, craftAll);
+    }
+
+    /**
+     * FFA {@code AnvilCraftPacket}: Construction-Rezept aus dem Spielerinventar fertigen.
+     * mode >= 1 (Shift) heisst "so oft wie moeglich".
+     */
+    public void craftConstruction(ServerPlayer player, com.hbm_m.recipe.AnvilRecipe recipe, int mode) {
+        blockEntity.craftConstruction(player, recipe, mode);
     }
 
     @Override

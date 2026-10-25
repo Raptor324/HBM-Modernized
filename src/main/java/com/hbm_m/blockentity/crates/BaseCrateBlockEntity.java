@@ -8,6 +8,7 @@ import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.platform.ModItemStackHandler;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -16,7 +17,6 @@ import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.loot.LootParams;
@@ -36,16 +36,14 @@ import net.minecraft.world.phys.Vec3;
  * {@code WeightedRandomChestContent.generateChestContents}; современный эквивалент —
  * JSON лут-таблица, назначаемая {@link com.hbm_m.worldgen.StructureLootProcessor}.</p>
  */
-public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements MenuProvider, com.hbm_m.interfaces.ILockable {
+public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements MenuProvider, com.hbm_m.api.tile.ILockableTile {
+
+    /** 1:1 {@code TileEntityLockableBase}: Schloss der Kiste. */
+    public final com.hbm_m.api.tile.LockState lockState = new com.hbm_m.api.tile.LockState();
+    /** 1:1 {@code TileEntityCrateBase.hasSpiders}: beim ersten Oeffnen springen drei Hoehlenspinnen heraus. */
+    public boolean hasSpiders = false;
 
     protected final ModItemStackHandler itemHandler;
-
-    // ==================== Замок (порт TileEntityCrateBase extends TileEntityLockableBase) ====================
-    /** Пин-код замка. 0 = не установлен. */
-    private int lock = 0;
-    private boolean locked = false;
-    private double lockMod = 0.1D;
-    private boolean cheesable = true;
 
     /** Лут-таблица структуры (null у размещённых игроком ящиков). */
     @Nullable
@@ -68,10 +66,38 @@ public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements
         };
     }
 
-    // Forge item handler capabilities removed for Fabric compilation.
+    //? if forge {
+    /** Original {@code TileEntityCrateBase}: alle Plaetze von allen Seiten, ein und aus nur ohne Schloss. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> getItemHandler(),
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.range(0, itemHandler.getSlots() - 1); }
+                @Override public boolean canInsert(int slot, ItemStack stack, net.minecraft.core.Direction side) { return canInsertAutomation(slot, stack); }
+                @Override public boolean canExtract(int slot, ItemStack stack, net.minecraft.core.Direction side) { return canExtractAutomation(slot, stack); }
+            });
 
-    
-    // (устраняет вложенный stonecutter-баг в load())
+    @Override
+    public @NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?}
+
+    /** Original {@code canInsertItem}: {@code isItemValidForSlot && !isLocked}. */
+    protected boolean canInsertAutomation(int slot, ItemStack stack) {
+        return !isLocked() && itemHandler.isItemValid(slot, stack);
+    }
+
+    /** Original {@code canExtractItem}: {@code !isLocked}. */
+    protected boolean canExtractAutomation(int slot, ItemStack stack) {
+        return !isLocked();
+    }
+
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
@@ -81,12 +107,9 @@ public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements
                 tag.putLong("LootTableSeed", this.lootTableSeed);
             }
         }
-        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(itemHandler, registries));
-        // Замок (ключи как в оригинальном TileEntityLockableBase)
-        tag.putInt("lock", lock);
-        tag.putBoolean("locked", locked);
-        tag.putDouble("lockMod", lockMod);
-        tag.putBoolean("cheesable", cheesable);
+        tag.put("inventory", itemHandler.serialize( registries));
+        if (lockState.isLocked) lockState.write(tag);
+        if (hasSpiders) tag.putBoolean("spiders", true);
     }
 
     @Override
@@ -97,77 +120,46 @@ public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements
             this.lootTableSeed = tag.getLong("LootTableSeed");
         }
         if (tag.contains("inventory")) {
-            com.hbm_m.platform.ItemStackSerialization.deserialize(itemHandler, tag.getCompound("inventory"), registries);
+            itemHandler.deserialize(tag.getCompound("inventory"), registries);
         }
-        this.lock = tag.getInt("lock");
-        this.locked = tag.getBoolean("locked");
-        this.lockMod = tag.contains("lockMod") ? tag.getDouble("lockMod") : 0.1D;
-        this.cheesable = !tag.contains("cheesable") || tag.getBoolean("cheesable");
+        if (tag.contains("isLocked")) lockState.read(tag);
+        hasSpiders = tag.getBoolean("spiders");
     }
 
-    // ==================== ILockable ====================
-
-    @Override
-    public int getPins() {
-        return lock;
+    public boolean canAccess(Player player) {
+        return lockState.canAccess(level, player);
     }
 
-    @Override
-    public void setPins(int pins) {
-        this.lock = pins;
+    // ---- ILockableTile ----
+    @Override public com.hbm_m.api.tile.LockState getLockState() { return lockState; }
+    @Override public boolean isLocked() { return lockState.isLocked; }
+    @Override public void lock() { lockState.lock(this); setChanged(); }
+    @Override public void unlock() { lockState.isLocked = false; setChanged(); }
+    @Override public void setPins(int pins) { lockState.lock = pins; setChanged(); }
+    @Override public int getPins() { return lockState.lock; }
+    @Override public void setMod(double mod) { lockState.lockMod = mod; setChanged(); }
+    @Override public double getMod() { return lockState.lockMod; }
+    @Override public boolean isCheesable() { return lockState.cheesable; }
+
+    /** 1:1 {@code TileEntityCrateBase.fillWithSpiders}. */
+    public void fillWithSpiders() {
+        this.hasSpiders = true;
         setChanged();
     }
 
-    @Override
-    public boolean isLocked() {
-        return locked;
-    }
-
-    @Override
-    public void lock() {
-        if (lock == 0) {
-            com.hbm_m.main.MainRegistry.LOGGER.error("Attempted to lock a crate with no pins set at {}", worldPosition);
+    /** 1:1 {@code TileEntityCrateBase.spawnSpiders}: drei Hoehlenspinnen mit dem Oeffnenden als Ziel. */
+    public void spawnSpiders(Player player) {
+        if (!hasSpiders || level == null) return;
+        java.util.Random random = new java.util.Random();
+        for (int i = 0; i < 3; i++) {
+            net.minecraft.world.entity.monster.CaveSpider spider = net.minecraft.world.entity.EntityType.CAVE_SPIDER.create(level);
+            if (spider == null) continue;
+            spider.moveTo(worldPosition.getX() + random.nextGaussian() * 2, worldPosition.getY() + 1, worldPosition.getZ() + random.nextGaussian() * 2, random.nextFloat(), 0);
+            spider.setTarget(player);
+            level.addFreshEntity(spider);
         }
-        this.locked = true;
+        hasSpiders = false;
         setChanged();
-    }
-
-    @Override
-    public void unlock() {
-        this.locked = false;
-        setChanged();
-    }
-
-    @Override
-    public double getLockMod() {
-        return lockMod;
-    }
-
-    @Override
-    public void setLockMod(double mod) {
-        this.lockMod = mod;
-        setChanged();
-    }
-
-    @Override
-    public boolean isCheesable() {
-        return cheesable;
-    }
-
-    @Override
-    public void setCheesable(boolean cheesable) {
-        this.cheesable = cheesable;
-        setChanged();
-    }
-
-    @Override
-    public BlockPos getLockPos() {
-        return worldPosition;
-    }
-
-    @Override
-    public Level getLockLevel() {
-        return level;
     }
 
     public boolean isEmpty() {
@@ -219,7 +211,7 @@ public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements
     // Upstream TileEntityCrateBase is an ISidedInventory open on every side; the port dropped the
     // item capability during the Fabric port, so hoppers, pipes and every automation mod saw nothing.
     @Override
-    public @Nullable Object getItemHandler(@Nullable net.minecraft.core.Direction side) {
+    public @Nullable Object getItemHandler(@Nullable Direction side) {
         return itemHandler;
     }
 

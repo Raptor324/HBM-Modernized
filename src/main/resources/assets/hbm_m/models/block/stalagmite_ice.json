@@ -1,0 +1,7 @@
+{
+ "parent": "minecraft:block/cross",
+ "textures": {
+  "cross": "hbm_m:block/stalagmite_ice"
+ },
+ "render_type": "minecraft:cutout"
+}

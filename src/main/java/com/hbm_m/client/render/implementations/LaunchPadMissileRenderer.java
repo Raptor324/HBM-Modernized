@@ -16,11 +16,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
-//? if < 1.21.1 {
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} else {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
 public class LaunchPadMissileRenderer implements com.hbm_m.client.render.HbmBerBounds<LaunchPadBaseBlockEntity> {
 
     public LaunchPadMissileRenderer(BlockEntityRendererProvider.Context context) {
@@ -44,16 +40,39 @@ public class LaunchPadMissileRenderer implements com.hbm_m.client.render.HbmBerB
         // always went through the slow path without batching.
         if (ShaderCompatibilityDetector.isExternalShaderActive()) {
             try (IrisRenderBatch batch = IrisRenderBatch.begin(shadowPass, RenderSystem.getProjectionMatrix())) {
-                drawMissileOnPad(be, renderData, poseStack, buffer, packedLight);
+                drawMissileOnPad(be, renderData, poseStack, buffer, packedLight, partialTicks);
             }
             return;
         }
 
-        drawMissileOnPad(be, renderData, poseStack, buffer, packedLight);
+        drawMissileOnPad(be, renderData, poseStack, buffer, packedLight, partialTicks);
     }
 
-    private static void drawMissileOnPad(LaunchPadBaseBlockEntity be, MissileRenderData renderData,
-                                         PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
+    /**
+     * Standpunkt der Rakete im lokalen Blockraum, gemessen nach der Drehung um FACING - dort
+     * zeigt -Z immer in Blickrichtung der Rampe. Standard ist die Blockmitte, einen Block hoch.
+     */
+    protected net.minecraft.world.phys.Vec3 missileOffset(LaunchPadBaseBlockEntity be, float partialTicks) {
+        return new net.minecraft.world.phys.Vec3(0.0D, 1.0D, 0.0D);
+    }
+
+    /** Massstab der dargestellten Rakete. Rampen mit engem Startrahmen verkleinern hier. */
+    protected float missileScale() {
+        return 1.0F;
+    }
+
+    /**
+     * Neigung der Rakete um den Standpunkt, in Grad. 0 = senkrecht; positive Werte kippen sie
+     * nach hinten weg von der Blickrichtung, bei 90 liegt sie waagerecht. Rampen mit Aufrichter
+     * geben hier ihren Fortschritt aus.
+     */
+    protected float missilePitch(LaunchPadBaseBlockEntity be, float partialTicks) {
+        return 0.0F;
+    }
+
+    private void drawMissileOnPad(LaunchPadBaseBlockEntity be, MissileRenderData renderData,
+                                  PoseStack poseStack, MultiBufferSource buffer, int packedLight,
+                                  float partialTicks) {
         poseStack.pushPose();
         poseStack.translate(0.5D, 0.0D, 0.5D);
 
@@ -68,7 +87,16 @@ public class LaunchPadMissileRenderer implements com.hbm_m.client.render.HbmBerB
             default -> { }
         }
 
-        poseStack.translate(0.0F, 1.0F, 0.0F);
+        net.minecraft.world.phys.Vec3 offset = missileOffset(be, partialTicks);
+        poseStack.translate(offset.x, offset.y, offset.z);
+        float pitch = missilePitch(be, partialTicks);
+        if (pitch != 0.0F) {
+            poseStack.mulPose(Axis.XP.rotationDegrees(pitch));
+        }
+        float scale = missileScale();
+        if (scale != 1.0F) {
+            poseStack.scale(scale, scale, scale);
+        }
 
         renderData.render(poseStack, packedLight, be.getBlockPos(), buffer, be);
         poseStack.popPose();

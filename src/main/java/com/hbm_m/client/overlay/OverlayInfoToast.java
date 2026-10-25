@@ -7,14 +7,8 @@ import java.util.List;
 import com.hbm_m.config.ModClothConfig;
 import com.mojang.blaze3d.systems.RenderSystem;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -123,14 +117,21 @@ public class OverlayInfoToast {
         Font font = mc.font;
 
         ModClothConfig cfg = ModClothConfig.get();
-        int pX = cfg.infoToastOffsetX;
-        int pZ = cfg.infoToastOffsetY; // 15 by default
 
         int longest = 0;
         for (Entry e : ENTRIES) {
             int w = font.width(e.text);
             if (w > longest) longest = w;
         }
+
+        // Original RenderInfoSystem: Position nach INFO_POSITION, dann INFO_OFFSET_*. Die Port-Werte
+        // infoToastOffsetX/Y (Vorgabe 15) ersetzen dabei die feste 15 der oberen Ecken.
+        int mode = com.hbm_m.config.ClientConfig.infoPosition;
+        int pX = mode == 0 ? cfg.infoToastOffsetX : mode == 1 ? (screenWidth - longest - cfg.infoToastOffsetX) : mode == 2 ? (screenWidth / 2 + 7) : (screenWidth / 2 - longest - 6);
+        int pZ = mode == 0 ? cfg.infoToastOffsetY : mode == 1 ? cfg.infoToastOffsetY : screenHeight / 2 + 7;
+
+        pX += com.hbm_m.config.ClientConfig.infoOffsetHorizontal;
+        pZ += com.hbm_m.config.ClientConfig.infoOffsetVertical;
 
         int padY = 5;
 
@@ -164,6 +165,7 @@ public class OverlayInfoToast {
         RenderSystem.disableBlend();
     }
 
+    // neo-pendant: ClientSetup.onRegisterGuiOverlays (neoforge-Zweig)
     //? if forge {
     public static final IGuiOverlay OVERLAY = (gui, gfx, partialTick, screenWidth, screenHeight) ->
             render(gfx, partialTick, screenWidth, screenHeight);

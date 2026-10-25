@@ -14,10 +14,11 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /** Slot-Koordinaten (176x166 Textur) 1:1 aus {@code ContainerFurnaceIron} (1.7.10 Original)
- *  uebernommen: Input (53,17), Brennstoff (53,53)+(71,53), Output (125,35). Der Upgrade-Slot
- *  (17,35) des Originals entfaellt - siehe {@link MachineFurnaceIronBlockEntity}. */
+ *  uebernommen: Input (53,17), Brennstoff (53,53)+(71,53), Output (125,35), Upgrade (17,35)
+ *  (Upgrade-Slot vom {@link MachineFurnaceIronBlockEntity} verwaltet). */
 public class MachineFurnaceIronMenu extends AbstractContainerMenu {
 
     public final MachineFurnaceIronBlockEntity blockEntity;
@@ -36,12 +37,12 @@ public class MachineFurnaceIronMenu extends AbstractContainerMenu {
     private static final int DATA_PROGRESS = 2;
 
     public MachineFurnaceIronMenu(int id, Inventory inventory, FriendlyByteBuf extraData) {
-        this(id, inventory, getBlockEntity(inventory, extraData), new SimpleContainerData(3));
+        this(id, inventory, getBlockEntity(inventory, extraData), new SimpleContainerData(MachineFurnaceIronBlockEntity.DATA_COUNT));
     }
 
     public MachineFurnaceIronMenu(int id, Inventory inventory, BlockEntity entity, ContainerData data) {
         super(ModMenuTypes.FURNACE_IRON_MENU.get(), id);
-        checkContainerDataCount(data, 3);
+        checkContainerDataCount(data, MachineFurnaceIronBlockEntity.DATA_COUNT);
         this.blockEntity = (MachineFurnaceIronBlockEntity) entity;
         this.data = data;
 
@@ -88,8 +89,12 @@ public class MachineFurnaceIronMenu extends AbstractContainerMenu {
         return duration > 0 ? getLitTime() * scale / duration : 0;
     }
 
+    public int getProcessingTime() { return data.get(3); }
+    public boolean canSmelt() { return data.get(4) != 0; }
+
+    /** Original: {@code progress * 70 / max(processingTime, 1)}. */
     public int getCookProgressScaled(int scale) {
-        return getProgress() * scale / 160;
+        return getProgress() * scale / Math.max(getProcessingTime(), 1);
     }
 
     public boolean isLit() {

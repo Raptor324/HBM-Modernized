@@ -10,13 +10,8 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
 
 /** GUI der Belichtungskammer - Fortschritts-/Partikelvorrats-/Energieanzeigen als Fuellrechtecke
  *  (siehe {@code GUIMachineElectricFurnace}). */
@@ -53,7 +48,7 @@ public class GUIMachineExposureChamber extends AbstractContainerScreen<MachineEx
                 guiGraphics.fill(x + 26, y + 52 - particles, x + 35, y + 52, 0xFF30D0FF);
             }
 
-            int energy = blockEntity.getEnergyScaled(34);
+            int energy = (int) (blockEntity.getEnergyStored() * 34 / MachineExposureChamberBlockEntity.maxPower);
             if (energy > 0) {
                 guiGraphics.fill(x + 152, y + 52 - energy, x + 168, y + 52, 0xFF3080FF);
             }

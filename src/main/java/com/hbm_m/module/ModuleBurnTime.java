@@ -1,5 +1,8 @@
 package com.hbm_m.module;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.hbm_m.item.ModItems;
 import com.hbm_m.platform.PlatformHooks;
 
@@ -7,6 +10,7 @@ import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
+import com.hbm_m.platform.ItemHooks;
 
 /**
  * Порт {@code com.hbm.module.ModuleBurnTime} (1.7.10): категоризация твёрдого топлива
@@ -25,6 +29,15 @@ public class ModuleBurnTime {
     public enum FuelCategory {
         LOG, WOOD, COAL, LIGNITE, COKE, SOLID, ROCKET, BALEFIRE, NONE
     }
+
+    private static final int modLog = FuelCategory.LOG.ordinal();
+    private static final int modWood = FuelCategory.WOOD.ordinal();
+    private static final int modCoal = FuelCategory.COAL.ordinal();
+    private static final int modLignite = FuelCategory.LIGNITE.ordinal();
+    private static final int modCoke = FuelCategory.COKE.ordinal();
+    private static final int modSolid = FuelCategory.SOLID.ordinal();
+    private static final int modRocket = FuelCategory.ROCKET.ordinal();
+    private static final int modBalefire = FuelCategory.BALEFIRE.ordinal();
 
     private final double[] modTime = new double[8];
     private final double[] modHeat = new double[8];
@@ -58,12 +71,27 @@ public class ModuleBurnTime {
     public double getTimeMod(FuelCategory cat) { return modTime[cat.ordinal()]; }
     public double getHeatMod(FuelCategory cat) { return modHeat[cat.ordinal()]; }
 
+    /** Доступ к массивам модификаторов (FFA). */
+    public double[] getModHeat() { return modHeat; }
+    public double[] getModTime() { return modTime; }
+
+    /** Множитель для стека по массиву модификаторов (FFA {@code getMod}); категория определяется {@link #getCategory}. */
+    public double getMod(ItemStack stack, double[] mod, double def) {
+        if (stack == null || stack.isEmpty()) return def;
+        FuelCategory cat = getCategory(stack);
+        return cat == FuelCategory.NONE ? def : mod[cat.ordinal()];
+    }
+
+    public double getMod(ItemStack stack, double[] mod) {
+        return getMod(stack, mod, 1.0D);
+    }
+
     /**
      * Базовое время горения (тики) из печной карты топлива / переопределений предмета.
-     * Порт {@code FuelHandler.getBurnTimeFromCache} без кеша ( lookup дешёвый).
+     * Порт {@code FuelHandler.getBurnTimeFromCache} без кеша (lookup дешёвый).
      */
     public static int getBaseBurnTime(ItemStack stack) {
-        return PlatformHooks.getFuelBurnTime(stack);
+        return ItemHooks.getFuelBurnTime(stack);
     }
 
     /** Категория топлива для предмета. Порт {@code ModuleBurnTime.getMod}. */
@@ -115,8 +143,8 @@ public class ModuleBurnTime {
      * Подсказка для тултипа GUI — перечисляет только неединичные модификаторы.
      * Порт {@code getDesc()}.
      */
-    public java.util.List<net.minecraft.network.chat.Component> getDesc() {
-        java.util.List<net.minecraft.network.chat.Component> list = new java.util.ArrayList<>();
+    public List<net.minecraft.network.chat.Component> getDesc() {
+        List<net.minecraft.network.chat.Component> list = new ArrayList<>();
         String[] names = {
                 "log", "wood", "coal", "lignite", "coke", "solid_fuel", "rocket_fuel", "balefire"
         };

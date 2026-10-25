@@ -65,6 +65,7 @@ public class EntityCreeperGold extends Creeper {
         vnt.setBlockProcessor(new BlockProcessorStandard()
                 .withBlockEffect(new BlockMutatorBulkie(Blocks.GOLD_ORE)));
         vnt.setEntityProcessor(new EntityProcessorStandard().withRangeMod(0.5F));
+        vnt.setPlayerProcessor(new com.hbm_m.explosion.vanillant.standard.PlayerProcessorStandard());
         vnt.setSFX(new ExplosionEffectStandard());
         vnt.explode();
     }
@@ -77,6 +78,7 @@ public class EntityCreeperGold extends Creeper {
         for (int i = 0; i < amount; ++i) {
             this.spawnAtLocation(ModMaterialItems.stack(ModMaterials.GOLD, MaterialShape.CRYSTAL, 1));
         }
+        CreeperDrops.dropRecord(this, source);
     }
     //?} else {
     /*@Override
@@ -87,6 +89,7 @@ public class EntityCreeperGold extends Creeper {
         for (int i = 0; i < amount; ++i) {
             this.spawnAtLocation(ModMaterialItems.stack(ModMaterials.GOLD, MaterialShape.CRYSTAL, 1));
         }
+        CreeperDrops.dropRecord(this, source);
     }
     *///?}
 }

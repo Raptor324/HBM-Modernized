@@ -63,7 +63,7 @@ public class RBMKDebrisDigammaBlock extends Block {
         return state.is(ModBlocks.RBMK_DEBRIS.get())
                 || state.is(ModBlocks.RBMK_DEBRIS_BURNING.get())
                 || state.is(ModBlocks.RBMK_DEBRIS_RADIATING.get())
-                || state.is(ModBlocks.RBMK_CORIUM.get());
+                || state.is(ModBlocks.RBMK_CORIUM.get()) || state.is(ModBlocks.CORIUM_BLOCK.get());
     }
 
     private static void radiate(ServerLevel level, BlockPos pos) {

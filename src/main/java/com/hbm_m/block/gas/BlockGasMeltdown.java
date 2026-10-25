@@ -5,7 +5,7 @@ import com.hbm_m.effect.ModEffects;
 import com.hbm_m.extprop.HbmLivingProps;
 import com.hbm_m.handler.ArmorRegistry;
 import com.hbm_m.handler.HazardClass;
-import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.platform.EffectHooks;
 import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.util.ContaminationUtil;
 import com.hbm_m.util.ContaminationUtil.ContaminationType;
@@ -22,22 +22,20 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Газ расплава: радиационное заражение и асбестоз лёгких; расползается в
- * gas_radon_dense по соседнему воздуху, при видимом небе качает радиацию в чанк.
- * Порт {@link com.hbm.blocks.gas.BlockGasMeltdown} (1.7.10).
+ * 1:1-Port von {@code BlockGasMeltdown} (1.7.10): die Wolke ueber einer Kernschmelze. Sie
+ * verstrahlt jeden im Inneren ungefiltert, setzt unter freiem Himmel Chunkstrahlung frei und
+ * gebiert laufend dichtes Radon. Sehr langlebig (Zerfall 1/350).
  */
 public class BlockGasMeltdown extends BlockGasBase {
 
     public BlockGasMeltdown() {
-        super();
+        super(0.1F, 0.4F, 0.1F);
     }
 
     @Override
     protected void affect(LivingEntity living) {
-        // 1.7.10: ContaminationUtil.contaminate RADIATION CREATIVE 0.5F — всегда, в обход маски
         ContaminationUtil.contaminate(living, HazardType.RADIATION, ContaminationType.CREATIVE, 0.5F);
-        // 1.7.10: PotionEffect(HbmPotion.radiation, 60 * 20, 2)
-        PlatformHooks.addEffect(living, ModEffects.RADIATION, 60 * 20, 2);
+        living.addEffect(new MobEffectInstance(EffectHooks.of(ModEffects.RADIATION), 60 * 20, 2));
 
         if (ArmorRegistry.hasProtection(living, 3, HazardClass.PARTICLE_FINE)) {
             damageWornFilter(living);
@@ -47,49 +45,42 @@ public class BlockGasMeltdown extends BlockGasBase {
     }
 
     @Override
-    public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-        // 1.7.10: 1/7 — случайный сосед-воздух становится gas_radon_dense
-        Direction dir = Direction.getRandom(random);
-        BlockPos neighbor = pos.relative(dir);
-        if (random.nextInt(7) == 0 && level.getBlockState(neighbor).isAir()) {
-            level.setBlockAndUpdate(neighbor, ModBlocks.GAS_RADON_DENSE.get().defaultBlockState());
+    protected boolean onGasTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+        Direction dir = randomAny(random);
+        BlockPos target = pos.relative(dir);
+
+        if (random.nextInt(7) == 0 && level.getBlockState(target).isAir()) {
+            level.setBlock(target, ModBlocks.GAS_RADON_DENSE.get().defaultBlockState(), 3);
         }
 
-        // 1.7.10: при видимом небе — +5 RAD в чанк
         if (level.canSeeSky(pos)) {
             ChunkRadiationManager.incrementRad(level, pos.getX(), pos.getY(), pos.getZ(), 5F);
         }
 
-        // 1/350 рассеивание
         if (random.nextInt(350) == 0) {
             level.removeBlock(pos, false);
-            return;
+            return true;
         }
 
-        super.tick(state, level, pos, random);
-    }
-
-    @Override
-    protected void spawnAmbientParticles(BlockState state, Level level, BlockPos pos, RandomSource random) {
-        level.addParticle(
-                ParticleTypes.MYCELIUM,
-                pos.getX() + random.nextDouble(),
-                pos.getY() + random.nextDouble(),
-                pos.getZ() + random.nextDouble(),
-                0.0D, 0.0D, 0.0D
-        );
+        return false;
     }
 
     @Override
     public Direction getFirstDirection(Level level, BlockPos pos, RandomSource random) {
-        if (random.nextInt(2) == 0) {
-            return Direction.UP;
-        }
+        if (random.nextInt(2) == 0) return Direction.UP;
         return Direction.DOWN;
     }
 
     @Override
     public Direction getSecondDirection(Level level, BlockPos pos, RandomSource random) {
         return randomHorizontal(random);
+    }
+
+    @Override
+    public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
+        super.animateTick(state, level, pos, random);
+        level.addParticle(ParticleTypes.MYCELIUM,
+                pos.getX() + random.nextFloat(), pos.getY() + random.nextFloat(), pos.getZ() + random.nextFloat(),
+                0.0D, 0.0D, 0.0D);
     }
 }

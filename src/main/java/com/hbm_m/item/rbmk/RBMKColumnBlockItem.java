@@ -19,6 +19,7 @@ public class RBMKColumnBlockItem extends BlockItem {
 
     //? if forge {
     @Override
+@SuppressWarnings("removal")
     public void initializeClient(Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> consumer) {
         consumer.accept(new net.minecraftforge.client.extensions.common.IClientItemExtensions() {
             @Override
@@ -31,6 +32,7 @@ public class RBMKColumnBlockItem extends BlockItem {
     /*// The neoforge branch was missing, so on 1.21.1 the hook never fired and RBMK columns kept
     // flat item icons. Mirrors MissileItem, which has both branches.
     @Override
+@SuppressWarnings("removal")
     public void initializeClient(Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
         consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
             @Override

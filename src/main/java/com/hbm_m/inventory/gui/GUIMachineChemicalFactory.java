@@ -24,14 +24,8 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 /**
  * GUI для Chemical Factory — порт 1.7.10 {@code GUIMachineChemicalFactory}.
  *
@@ -45,7 +39,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public class GUIMachineChemicalFactory extends AbstractContainerScreen<MachineChemicalFactoryMenu> {
 
-    private static final int LANE_COUNT = 4;
+    private static final int LANE_COUNT = com.hbm_m.blockentity.machines.MachineChemicalFactoryBlockEntity.LANE_COUNT;
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             RefStrings.MODID, "textures/gui/processing/gui_chemical_factory.png");
@@ -76,6 +70,9 @@ public class GUIMachineChemicalFactory extends AbstractContainerScreen<MachineCh
             }
         }
 
+        var be = menu.getBlockEntity();
+        boolean canCool = be != null && be.canCool();
+
         for (int lane = 0; lane < LANE_COUNT; lane++) {
             ChemicalPlantRecipe recipe = getLaneRecipe(lane);
             boolean didProcess = menu.getLaneDidProcess(lane);
@@ -99,7 +96,7 @@ public class GUIMachineChemicalFactory extends AbstractContainerScreen<MachineCh
             // ПРАВЫЙ LED: горит при обработке, тусклый если есть рецепт + энергия + охлаждение
             if (didProcess) {
                 guiGraphics.blit(TEXTURE, this.leftPos + 121, this.topPos + 21 + lane * 22, 4, 222, 4, 4);
-            } else if (recipe != null && energyStored >= recipe.getPowerConsumption() && menu.getCanCool()) {
+            } else if (recipe != null && energyStored >= recipe.getPowerConsumption() && canCool) {
                 guiGraphics.blit(TEXTURE, this.leftPos + 121, this.topPos + 21 + lane * 22, 0, 222, 4, 4);
             }
 

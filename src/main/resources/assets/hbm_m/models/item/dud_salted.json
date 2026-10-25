@@ -1,0 +1,10 @@
+{
+  "parent": "minecraft:block/block",
+  "loader": "forge:obj",
+  "model": "hbm_m:models/item/dud_salted_item.obj",
+  "flip_v": true,
+  "textures": {
+    "texture": "hbm_m:block/bomb/dud_salted_model",
+    "particle": "hbm_m:block/bomb/dud_salted_model"
+  }
+}

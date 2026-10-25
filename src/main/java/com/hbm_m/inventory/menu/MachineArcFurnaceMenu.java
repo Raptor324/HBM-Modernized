@@ -2,63 +2,115 @@ package com.hbm_m.inventory.menu;
 
 import com.hbm_m.blockentity.machines.MachineArcFurnaceBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
+import com.hbm_m.item.industrial.ItemArcElectrode;
+import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.platform.DummyItemStackHandler;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.recipe.ArcFurnaceRecipe;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
+import org.jetbrains.annotations.Nullable;
+import com.hbm_m.platform.ModItemStackHandler;
+
+/**
+ * 1:1 {@code ContainerMachineArcFurnaceLarge}: Elektroden (62-98,22), Batterie (8,108), Upgrade (152,108), 4x5
+ * Eingabefelder ab (44,54) mit {@code SlotArcFurnace}-Regeln, Warteschlange (44-116,129), Spielerinventar ab (8,174).
+ */
 public class MachineArcFurnaceMenu extends AbstractContainerMenu {
 
-    private final MachineArcFurnaceBlockEntity blockEntity;
-
-    private static final int SLOT_INPUT = MachineArcFurnaceBlockEntity.SLOT_INPUT;
-    private static final int SLOT_OUTPUT = MachineArcFurnaceBlockEntity.SLOT_OUTPUT;
-    private static final int MACHINE_SLOT_COUNT = 2;
-    private static final int PLAYER_INV_START = MACHINE_SLOT_COUNT;
-    private static final int PLAYER_INV_END = MACHINE_SLOT_COUNT + 36;
+    private final MachineArcFurnaceBlockEntity furnace;
 
     public MachineArcFurnaceMenu(int id, Inventory inventory, FriendlyByteBuf extraData) {
         this(id, inventory, getBlockEntity(inventory, extraData));
     }
 
-    public MachineArcFurnaceMenu(int id, Inventory inventory, MachineArcFurnaceBlockEntity blockEntity) {
+    public MachineArcFurnaceMenu(int id, Inventory playerInv, MachineArcFurnaceBlockEntity tile) {
         super(ModMenuTypes.ARC_FURNACE_MENU.get(), id);
-        this.blockEntity = blockEntity;
+        this.furnace = tile;
 
         // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
         // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
-        var container = new ModItemStackHandlerContainer(
-                blockEntity != null ? blockEntity.getInventory() : new DummyItemStackHandler(MACHINE_SLOT_COUNT),
-                blockEntity != null ? blockEntity::setChanged : null);
+        Container c = new ModItemStackHandlerContainer(
+                tile != null ? tile.getInventory() : new ModItemStackHandler.Dummy(MachineArcFurnaceBlockEntity.INVENTORY_SIZE),
+                tile != null ? tile::setChanged : null);
 
-        // Kompaktes Einzelblock-Layout (eigenes Design, das Original ist ein Multiblock mit
-        // anderen Koordinaten - siehe Klassenkommentar in MachineArcFurnaceBlockEntity).
-        this.addSlot(new Slot(container, SLOT_INPUT, 26, 36));
+        //Electrodes
+        for (int i = 0; i < 3; i++) this.addSlot(new Slot(c, i, 62 + i * 18, 22));
+        //Battery
+        this.addSlot(new Slot(c, 3, 8, 108));
+        //Upgrade
+        this.addSlot(new Slot(c, 4, 152, 108));
+        //Inputs
+        for (int i = 0; i < 4; i++) for (int j = 0; j < 5; j++) this.addSlot(new SlotArcFurnace(c, 5 + j + i * 5, 44 + j * 18, 54 + i * 18));
+        //IO
+        for (int i = 0; i < 5; i++) this.addSlot(new Slot(c, i + 25, 44 + i * 18, 129));
 
-        this.addSlot(new Slot(container, SLOT_OUTPUT, 89, 36) {
-            @Override
-            public boolean mayPlace(ItemStack stack) {
-                return false; // Nur Entnahme - wird von der Maschine befuellt.
-            }
-        });
-
-        int playerInvX = 8;
-        int playerInvY = 104;
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(inventory, col + row * 9 + 9, playerInvX + col * 18, playerInvY + row * 18));
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 9; j++) {
+                this.addSlot(new Slot(playerInv, j + i * 9 + 9, 8 + j * 18, 174 + i * 18));
             }
         }
-        int hotbarY = playerInvY + 58;
-        for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(inventory, col, playerInvX + col * 18, hotbarY));
+
+        for (int i = 0; i < 9; i++) {
+            this.addSlot(new Slot(playerInv, i, 8 + i * 18, 232));
+        }
+    }
+
+    /**
+     * Kanonische Rezeptsuche (ersetzt das FFA-{@code ArcFurnaceRecipes.getOutput(stack, liquid, level)}):
+     * datengetriebene {@link ArcFurnaceRecipe}s aus dem Vanilla-RecipeManager, gefiltert nach Ausgabeart
+     * (Fluessig-Modus: Fluid-Ausgang, Fest-Modus: Item-Ausgang). Entspricht dem Muster von
+     * {@code MachineCombinationOvenBlockEntity.findRecipe}.
+     */
+    @Nullable
+    private static ArcFurnaceRecipe findRecipe(@Nullable Level level, ItemStack stack, boolean liquid) {
+        if (level == null || stack.isEmpty()) return null;
+        for (ArcFurnaceRecipe recipe : RecipeHooks.getAllRecipes(level, ArcFurnaceRecipe.Type.INSTANCE)) {
+            if (!recipe.matchesInput(stack)) continue;
+            boolean hasOutput = liquid ? recipe.hasFluidOutput1() || recipe.hasFluidOutput2() : recipe.hasItemOutput();
+            if (hasOutput) return recipe;
+        }
+        return null;
+    }
+
+    /** Original {@code SlotArcFurnace}: im Fest-Modus nur passende Mengen, Stapelgrenze nach Upgrade. */
+    private class SlotArcFurnace extends Slot {
+
+        SlotArcFurnace(Container inventory, int id, int x, int y) {
+            super(inventory, id, x, y);
+        }
+
+        @Override
+        public boolean mayPlace(ItemStack stack) {
+            if (furnace == null) return false;
+            if (furnace.liquidMode) return true;
+            ArcFurnaceRecipe recipe = findRecipe(furnace.getLevel(), stack, furnace.liquidMode);
+            if (recipe != null && recipe.hasItemOutput()) {
+                ItemStack output = recipe.getOutput();
+                return output.getCount() * stack.getCount() <= output.getMaxStackSize() && stack.getCount() <= furnace.getMaxInputSize();
+            }
+            return false;
+        }
+
+        @Override
+        public int getMaxStackSize() {
+            if (furnace == null) return 1;
+            return this.hasItem() ? furnace.getMaxInputSize() : 1;
+        }
+
+        @Override
+        public int getMaxStackSize(ItemStack stack) {
+            return Math.min(getMaxStackSize(), stack.getMaxStackSize());
         }
     }
 
@@ -77,44 +129,47 @@ public class MachineArcFurnaceMenu extends AbstractContainerMenu {
     }
 
     public MachineArcFurnaceBlockEntity getBlockEntity() {
-        return blockEntity;
+        return furnace;
     }
 
     @Override
     public boolean stillValid(Player player) {
-        return MenuReach.stillValid(player, blockEntity);
+        return MenuReach.stillValid(player, furnace);
     }
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
-        ItemStack result = ItemStack.EMPTY;
+        ItemStack rStack = ItemStack.EMPTY;
         Slot slot = this.slots.get(index);
 
         if (slot != null && slot.hasItem()) {
-            ItemStack slotStack = slot.getItem();
-            result = slotStack.copy();
+            ItemStack stack = slot.getItem();
+            rStack = stack.copy();
 
-            if (index < MACHINE_SLOT_COUNT) {
-                if (!this.moveItemStackTo(slotStack, PLAYER_INV_START, PLAYER_INV_END, true)) {
+            if (index <= 29) {
+                if (!this.moveItemStackTo(stack, 30, this.slots.size(), true)) {
                     return ItemStack.EMPTY;
                 }
             } else {
-                if (!this.moveItemStackTo(slotStack, SLOT_INPUT, SLOT_INPUT + 1, false)) {
-                    return ItemStack.EMPTY;
+
+                if (rStack.getItem() instanceof com.hbm_m.api.item.IBatteryItem) {
+                    if (!this.moveItemStackTo(stack, 3, 4, false)) return ItemStack.EMPTY;
+                } else if (rStack.getItem() instanceof ItemArcElectrode) {
+                    if (!this.moveItemStackTo(stack, 0, 3, false)) return ItemStack.EMPTY;
+                } else if (rStack.getItem() instanceof ItemMachineUpgrade) {
+                    if (!this.moveItemStackTo(stack, 4, 5, false)) return ItemStack.EMPTY;
+                } else {
+                    if (!this.moveItemStackTo(stack, 25, 30, false)) return ItemStack.EMPTY;
                 }
             }
 
-            if (slotStack.isEmpty()) {
+            if (stack.isEmpty()) {
                 slot.set(ItemStack.EMPTY);
             } else {
                 slot.setChanged();
             }
-
-            if (slotStack.getCount() == result.getCount()) {
-                return ItemStack.EMPTY;
-            }
-            slot.onTake(player, slotStack);
         }
-        return result;
+
+        return rStack;
     }
 }

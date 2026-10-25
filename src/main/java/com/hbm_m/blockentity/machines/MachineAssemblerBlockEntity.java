@@ -42,16 +42,14 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import com.hbm_m.platform.StackNbt;
+//? if forge {
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
+//?}
 
 
 /**
@@ -80,7 +78,10 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     //? if forge {
     private LazyOptional<IItemHandler> lazyInputProxy = LazyOptional.empty();
     private LazyOptional<IItemHandler> lazyOutputProxy = LazyOptional.empty();
-    //?}
+    //?} elif neoforge {
+    /*private com.hbm_m.platform.LazyCap<net.minecraftforge.items.IItemHandler> lazyInputProxy = com.hbm_m.platform.LazyCap.empty();
+    private com.hbm_m.platform.LazyCap<net.minecraftforge.items.IItemHandler> lazyOutputProxy = com.hbm_m.platform.LazyCap.empty();
+    *///?}
 
 
     // РћС‚СЃР»РµР¶РёРІР°РЅРёРµ РёСЃС‚РѕС‡РЅРёРєРѕРІ РїСЂРµРґРјРµС‚РѕРІ
@@ -257,7 +258,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     // template, the battery and the finished product, and one on ITEM_OUTPUT could push into the
     // input slots.
     //? if neoforge {
-    /*public net.neoforged.neoforge.items.IItemHandler getItemHandlerForPart(PartRole role) {
+    /*public net.minecraftforge.items.IItemHandler getItemHandlerForPart(PartRole role) {
         if (role == PartRole.ITEM_INPUT) {
             return new net.neoforged.neoforge.items.wrapper.RangedWrapper(inventory, INPUT_SLOT_START, INPUT_SLOT_END + 1) {
                 @Override
@@ -375,9 +376,6 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             return;
         }
 
-        // The two platform blocks that used to live here had no neoforge branch, so a normal battery
-        // in the slot transferred nothing. BaseMachineBlockEntity already does this for every other
-        // machine and covers both the HBM capability and vanilla FE.
         chargeFromBatterySlot(ENERGY_SLOT);
     }
 
@@ -400,13 +398,13 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             return Optional.empty();
         }
 
-        // CONTRACT 1: сканер — только матч результата по шаблону; hasResources/canInsertResult — per-tick вне сканера.
         long signature = com.hbm_m.recipe.index.CachedRecipeResolver.sign(8,
-                PlatformHooks.stackFingerprint(templateStack),
-                PlatformHooks.stackFingerprint(outputStack));
+                StackNbt.fingerprint(templateStack),
+                StackNbt.fingerprint(outputStack));
         AssemblerRecipe found = recipeResolver.resolve(level, AssemblerRecipe.Type.INSTANCE, signature, (lvl, all) ->
                 all.stream()
-                        .filter(r -> PlatformHooks.isSameItemSameTags(r.getResultItemSafe(), outputStack))
+                        .filter(r -> StackNbt.sameItemSameTags(r.getResultItemSafe(), outputStack))
+                        .filter(r -> r.getFluidInputs().isEmpty() && r.getFluidOutputs().isEmpty())
                         .findFirst()
                         .orElse(null));
         return Optional.ofNullable(found);
@@ -436,7 +434,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     private boolean canInsertResult(ItemStack result) {
         ItemStack outputSlotStack = inventory.getStackInSlot(OUTPUT_SLOT);
         return outputSlotStack.isEmpty() ||
-                (PlatformHooks.isSameItemSameTags(outputSlotStack, result) &&
+                (StackNbt.sameItemSameTags(outputSlotStack, result) &&
                         outputSlotStack.getCount() + result.getCount() <= outputSlotStack.getMaxStackSize());
     }
 
@@ -612,6 +610,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
 
             out = inventory.getStackInSlot(OUTPUT_SLOT);
 
+
         }
     }
 
@@ -653,7 +652,13 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     }
     //?}
 
+    @Override
+    public @Nullable Object getItemHandler(@Nullable Direction side) {
+        return this.inventory;
+    }
+
     // ==================== CLIENT ====================
+
 
 
     private ItemStack clientRecipeIconTemplate = ItemStack.EMPTY;

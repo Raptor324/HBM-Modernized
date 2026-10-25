@@ -39,7 +39,7 @@ public class NukeFleijaBlock extends NukeBaseBlock implements IBomb {
         } catch (Exception e) {
             radius = 50;
         }
-        com.hbm_m.platform.PlatformHooks.playSound(level, x, y, z, SoundEvents.GENERIC_EXPLODE,
+        com.hbm_m.platform.LevelHooks.playSound(level, x, y, z, SoundEvents.GENERIC_EXPLODE,
                 SoundSource.BLOCKS, 6.0F, (1.0F + (level.random.nextFloat() - level.random.nextFloat()) * 0.2F) * 0.7F);
         FleijaExplosionAPI.start(level, x, y, z, radius);
     }
@@ -48,8 +48,6 @@ public class NukeFleijaBlock extends NukeBaseBlock implements IBomb {
     public BombReturnCode explode(Level level, BlockPos pos) {
         if (level.isClientSide) return BombReturnCode.UNDEFINED;
         if (level.getBlockEntity(pos) instanceof NukeFleijaBlockEntity nuke && nuke.isReady()) {
-            // Clear first: setBlock triggers onRemove, which drops the container - a detonated bomb
-            // handed its payload back.
             nuke.clearContent();
             level.setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
             explode(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);

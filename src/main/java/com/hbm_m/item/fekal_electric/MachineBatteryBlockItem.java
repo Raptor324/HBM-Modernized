@@ -15,6 +15,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import com.hbm_m.platform.StackNbt;
 
 public class MachineBatteryBlockItem extends BlockItem implements ITooltipProvider {
 
@@ -35,13 +36,13 @@ public class MachineBatteryBlockItem extends BlockItem implements ITooltipProvid
         pTooltip.add(Component.translatable("tooltip.hbm_m.machine_battery.discharge_speed", maxPower / 600).withStyle(ChatFormatting.GOLD));
 
         // Читаем энергию из NBT
-        if (PlatformHooks.hasItemTag(pStack)) {
+        if (StackNbt.has(pStack)) {
             // BlockEntityTag на 1.20.1 — NBT-подтег (getTagElement); на 1.21.1 — тот же ключ
             // "BlockEntityTag" внутри CUSTOM_DATA (BlockItem пишет туда BE-данные при placement-копии).
             //? if < 1.21.1 {
             CompoundTag blockEntityTag = pStack.getTagElement("BlockEntityTag");
             //?} else {
-            /*CompoundTag custom = PlatformHooks.getItemTag(pStack);
+            /*CompoundTag custom = StackNbt.read(pStack);
             CompoundTag blockEntityTag = custom != null && custom.contains("BlockEntityTag")
                     ? custom.getCompound("BlockEntityTag") : null;
             *///?}

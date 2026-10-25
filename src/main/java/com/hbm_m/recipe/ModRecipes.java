@@ -20,15 +20,15 @@ public class ModRecipes {
 
 
 
+    /** Original ContainerUpgradeCraftingHandler (Tresor aus der Stahlkiste) - siehe {@link ContainerUpgradeRecipe}. */
+    public static final RegistrySupplier<RecipeSerializer<?>> CONTAINER_UPGRADE =
+            SERIALIZERS.register("container_upgrade", () -> ContainerUpgradeRecipe.Serializer.INSTANCE);
+
     /** Die inhaltserhaltende Aufwertung des Massenspeichers - siehe {@link MassStorageUpgradeRecipe}. */
     public static final dev.architectury.registry.registries.RegistrySupplier<RecipeSerializer<?>> MASS_STORAGE_UPGRADE =
             SERIALIZERS.register("mass_storage_upgrade",
                     () -> new net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer<>(
-                            //? if < 1.21.1 {
                             MassStorageUpgradeRecipe::new
-                            //?} else {
-                            /*MassStorageUpgradeRecipe::new
-                            *///?}
                     ));
 
     public static final RegistrySupplier<RecipeSerializer<AssemblerRecipe>> ASSEMBLER_SERIALIZER =
@@ -77,9 +77,22 @@ public class ModRecipes {
 
     public static final RegistrySupplier<RecipeSerializer<PurexRecipe>> PUREX_SERIALIZER =
             SERIALIZERS.register("purex", () -> PurexRecipe.Serializer.INSTANCE);
+    public static final RegistrySupplier<RecipeSerializer<PrecAssRecipe>> PRECASS_SERIALIZER =
+            SERIALIZERS.register("precass", () -> PrecAssRecipe.Serializer.INSTANCE);
 
     public static final RegistrySupplier<RecipeType<PurexRecipe>> PUREX_TYPE =
             RECIPE_TYPES.register("purex", () -> PurexRecipe.Type.INSTANCE);
+
+    public static final RegistrySupplier<RecipeSerializer<SuperComputerRecipe>> SUPERCOMPUTER_SERIALIZER =
+            SERIALIZERS.register("supercomputer", () -> SuperComputerRecipe.Serializer.INSTANCE);
+    public static final RegistrySupplier<RecipeType<SuperComputerRecipe>> SUPERCOMPUTER_TYPE =
+            RECIPE_TYPES.register("supercomputer", () -> SuperComputerRecipe.Type.INSTANCE);
+    public static final RegistrySupplier<RecipeSerializer<RockMillRecipe>> ROCKMILL_SERIALIZER =
+            SERIALIZERS.register("rockmill", () -> RockMillRecipe.Serializer.INSTANCE);
+    public static final RegistrySupplier<RecipeType<RockMillRecipe>> ROCKMILL_TYPE =
+            RECIPE_TYPES.register("rockmill", () -> RockMillRecipe.Type.INSTANCE);
+    public static final RegistrySupplier<RecipeType<PrecAssRecipe>> PRECASS_TYPE =
+            RECIPE_TYPES.register("precass", () -> PrecAssRecipe.Type.INSTANCE);
 
     public static final RegistrySupplier<RecipeSerializer<BlastFurnaceRecipe>> BLAST_FURNACE_SERIALIZER =
             SERIALIZERS.register("blast_furnace", () -> BlastFurnaceRecipe.Serializer.INSTANCE);
@@ -118,6 +131,15 @@ public class ModRecipes {
     // 1:1 port of the original's RBMKFuelCraftingHandler (rod -> 8 pellets, see that class).
     public static final RegistrySupplier<RecipeSerializer<?>> RBMK_FUEL_DISASSEMBLY_SERIALIZER =
             SERIALIZERS.register("rbmk_fuel_disassembly", () -> RBMKFuelDisassemblyRecipe.SERIALIZER);
+    /** Original {@code GrenadeCraftingHandler} ("hbm:grenades"). */
+    public static final RegistrySupplier<RecipeSerializer<?>> GRENADE_CRAFTING_SERIALIZER =
+            SERIALIZERS.register("grenades", () -> GrenadeCraftingRecipe.SERIALIZER);
+    /** Original {@code CargoShellCraftingHandler} ("hbm:cargo"). */
+    public static final RegistrySupplier<RecipeSerializer<?>> CARGO_SHELL_SERIALIZER =
+            SERIALIZERS.register("cargo", () -> CargoShellCraftingRecipe.SERIALIZER);
+    /** Original {@code MKUCraftingHandler}: MKUNICORN-Spritze, Anordnung je Weltseed. */
+    public static final RegistrySupplier<RecipeSerializer<?>> MKU_SERIALIZER =
+            SERIALIZERS.register("mku", () -> MKUCraftingRecipe.SERIALIZER);
     public static final RegistrySupplier<RecipeType<CrystallizerRecipe>> CRYSTALLIZER_TYPE =
             RECIPE_TYPES.register("crystallizer", () -> CrystallizerRecipe.Type.INSTANCE);
 
@@ -218,6 +240,10 @@ public class ModRecipes {
     public static final RegistrySupplier<RecipeType<CokerRecipe>> COKER_TYPE =
             RECIPE_TYPES.register("coker", () -> CokerRecipe.Type.INSTANCE);
 
+    // W-R9B5-1/2: Mischer- und Elektrolyse(Fluid)-Rezepte aus dem Datapack — ersetzt durch die
+    // data-driven Klassen MixerRecipe / ElectrolyserFluidRecipe (oben registriert); die statischen
+    // Tabellen mischen die JSONs zur Laufzeit ein.
+
     // Compressor — компрессор. ID = "compressor" (см. CompressorRecipe.Type.ID).
     // Замена статике CompressorRecipes — теперь data-driven (JSON).
     public static final RegistrySupplier<RecipeSerializer<CompressorRecipe>> COMPRESSOR_SERIALIZER =
@@ -289,13 +315,6 @@ public class ModRecipes {
     public static final RegistrySupplier<RecipeType<RadiolysisRecipe>> RADIOLYSIS_TYPE =
             RECIPE_TYPES.register("radiolysis", () -> RadiolysisRecipe.Type.INSTANCE);
 
-    // RotaryFurnace — вращающаяся печь. ID = "rotary_furnace" (см. RotaryFurnaceRecipe.Type.ID).
-    // Замена статике RotaryFurnaceRecipes — теперь data-driven (JSON).
-    public static final RegistrySupplier<RecipeSerializer<RotaryFurnaceRecipe>> ROTARY_FURNACE_SERIALIZER =
-            SERIALIZERS.register("rotary_furnace", () -> RotaryFurnaceRecipe.Serializer.INSTANCE);
-
-    public static final RegistrySupplier<RecipeType<RotaryFurnaceRecipe>> ROTARY_FURNACE_TYPE =
-            RECIPE_TYPES.register("rotary_furnace", () -> RotaryFurnaceRecipe.Type.INSTANCE);
 
     // Solidification — солидификатор. ID = "solidification" (см. SolidificationRecipe.Type.ID).
     // Замена статике SolidificationRecipes — теперь data-driven (JSON).
@@ -313,6 +332,14 @@ public class ModRecipes {
     public static final RegistrySupplier<RecipeType<VacuumDistillRecipe>> VACUUM_DISTILL_TYPE =
             RECIPE_TYPES.register("vacuum_distill", () -> VacuumDistillRecipe.Type.INSTANCE);
 
+    // RotaryFurnace — вращающаяся печь. ID = "rotary_furnace" (см. RotaryFurnaceRecipe.Type.ID).
+    // Замена статике RotaryFurnaceRecipes — теперь data-driven (JSON).
+    public static final RegistrySupplier<RecipeSerializer<RotaryFurnaceRecipe>> ROTARY_FURNACE_SERIALIZER =
+            SERIALIZERS.register("rotary_furnace", () -> RotaryFurnaceRecipe.Serializer.INSTANCE);
+
+    public static final RegistrySupplier<RecipeType<RotaryFurnaceRecipe>> ROTARY_FURNACE_TYPE =
+            RECIPE_TYPES.register("rotary_furnace", () -> RotaryFurnaceRecipe.Type.INSTANCE);
+
     // ElectrolyserFluid — электролизёр (жидкостный рецепт). ID = "electrolyser_fluid" (см. ElectrolyserFluidRecipe.Type.ID).
     // Замена статике ElectrolyserRecipes (fluid) — теперь data-driven (JSON).
     public static final RegistrySupplier<RecipeSerializer<ElectrolyserFluidRecipe>> ELECTROLYSER_FLUID_SERIALIZER =
@@ -329,9 +356,61 @@ public class ModRecipes {
     public static final RegistrySupplier<RecipeType<ElectrolyserMetalRecipe>> ELECTROLYSER_METAL_TYPE =
             RECIPE_TYPES.register("electrolyser_metal", () -> ElectrolyserMetalRecipe.Type.INSTANCE);
 
+
     public static void init() {
         SERIALIZERS.register();
         RECIPE_TYPES.register();
     }
 
+    /**
+     * Диагностика загрузки рецептов — вызывается из {@link MainRegistry#commonSetup()},
+     * т.е. ПОСЛЕ RegisterEvent, когда Deferred-записи уже разрешены в реестрах.
+     */
+    //? if >= 1.21.1 {
+    /*public static void debugRecipeSerializerRegistry() {
+        try {
+            var reg = net.minecraft.core.registries.BuiltInRegistries.RECIPE_SERIALIZER;
+            System.err.println("[HBM DEBUG] commonSetup: ASSEMBLER_SERIALIZER present=" + ASSEMBLER_SERIALIZER.isPresent()
+                    + " id=" + ASSEMBLER_SERIALIZER.getId());
+            System.err.println("[HBM DEBUG] commonSetup: RECIPE_SERIALIZER registry contains hbm_m:assembler = "
+                    + (reg.get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("hbm_m", "assembler")) != null));
+
+            // Manual codec test: parse a minimal assembler recipe JSON via Recipe.CODEC
+            // to see the exact dispatch error.
+            String testJson = "{"
+                + "\"type\": \"hbm_m:assembler\","
+                + "\"duration\": 100,"
+                + "\"ingredients\": [ { \"item\": \"minecraft:iron_ingot\", \"count\": 1 } ],"
+                + "\"output\": { \"item\": \"minecraft:iron_nugget\", \"count\": 9 },"
+                + "\"power\": 50"
+                + "}";
+            com.google.gson.JsonObject obj = com.google.gson.JsonParser.parseString(testJson).getAsJsonObject();
+            com.mojang.serialization.DataResult<net.minecraft.world.item.crafting.Recipe<?>> result =
+                    net.minecraft.world.item.crafting.Recipe.CODEC.parse(com.mojang.serialization.JsonOps.INSTANCE, obj);
+            result.resultOrPartial(err -> {
+                System.err.println("[HBM DEBUG] Recipe.CODEC.parse FAILED: " + err);
+            }).ifPresent(recipe -> {
+                System.err.println("[HBM DEBUG] Recipe.CODEC.parse SUCCESS: " + recipe.getClass().getSimpleName()
+                        + " type=" + recipe.getType());
+            });
+
+            // Test CONDITIONAL_CODEC — this is what RecipeManager.apply actually uses.
+            com.mojang.serialization.DataResult<java.util.Optional<net.neoforged.neoforge.common.conditions.WithConditions<net.minecraft.world.item.crafting.Recipe<?>>>> condResult =
+                    net.minecraft.world.item.crafting.Recipe.CONDITIONAL_CODEC.parse(com.mojang.serialization.JsonOps.INSTANCE, obj);
+            condResult.resultOrPartial(err -> {
+                System.err.println("[HBM DEBUG] CONDITIONAL_CODEC.parse FAILED: " + err);
+            }).ifPresent(opt -> {
+                if (opt.isPresent()) {
+                    System.err.println("[HBM DEBUG] CONDITIONAL_CODEC.parse SUCCESS: WithConditions present, recipe="
+                            + opt.get().carrier().getClass().getSimpleName());
+                } else {
+                    System.err.println("[HBM DEBUG] CONDITIONAL_CODEC.parse returned Optional.empty() — conditions not met!");
+                }
+            });
+        } catch (Throwable t) {
+            System.err.println("[HBM DEBUG] commonSetup: RECIPE_SERIALIZER check failed: " + t);
+            t.printStackTrace();
+        }
+    }
+    *///?}
 }

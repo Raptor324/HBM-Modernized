@@ -7,9 +7,10 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
-/** Блок кокса — порт BlockCoke 1.7.10 (BlockEnumMulti(EnumCokeType); в порте варианты
- *  вынесены в отдельные блоки). Горюч: flammability 5, fire spread 10, как в оригинале.
- *  Item-вариант блока — топливо (32000 тиков, FuelHandler 1.7.10). */
+/**
+ * 1:1 {@link com.hbm.blocks.generic.BlockCoke} ({@code block_coke}, Metadaten COAL/LIGNITE/PETROLEUM als
+ * {@code block_coke_coal/_lignite/_petroleum}): brennbar (Entflammbarkeit 5, Ausbreitung 10).
+ */
 public class BlockCoke extends Block {
 
     public BlockCoke(Properties properties) {
@@ -25,7 +26,6 @@ public class BlockCoke extends Block {
     }
     *///?}
 
-    // IForgeBlock/IBlockExtension — одинаково на 1.20.1-forge и 1.21.1-neoforge.
     @Override
     public int getFlammability(BlockState state, BlockGetter level, BlockPos pos, @Nullable Direction direction) {
         return 5;

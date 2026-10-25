@@ -13,13 +13,8 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureManager;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
 
 /**
  * Additive particle blending: {@code glBlendFunc(GL_SRC_ALPHA, GL_ONE)}, as used by every
@@ -71,9 +66,11 @@ public class AdditiveParticleRenderType implements ParticleRenderType {
     }
     //?} else {
     /*// 1.21: begin() bekommt den Tesselator und liefert den BufferBuilder zurueck;
-    // einen end()-Hook gibt es nicht mehr - der Zustand wird vom Partikel-Pass zurueckgesetzt.
+    // einen end()-Hook gibt es nicht mehr - Ruecksetzen in ParticleRenderStateNeoForge (AFTER_PARTICLES).
     @Override
     public BufferBuilder begin(com.mojang.blaze3d.vertex.Tesselator tesselator, TextureManager textureManager) {
+        // 1.21.1 hat kein end() mehr - Ruecksetzen nach dem Partikel-Pass, siehe ParticleRenderStateNeoForge
+        ParticleRenderStateNeoForge.capture();
         RenderSystem.enableBlend();
         RenderSystem.blendFuncSeparate(
                 GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE,

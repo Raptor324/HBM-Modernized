@@ -4,7 +4,7 @@ import com.hbm_m.block.bomb.BlockTaint;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.damagesource.ModDamageSources;
 import com.hbm_m.entity.mob.EntityCreeperTainted;
-import com.hbm_m.platform.ClientEffectHooks;
+import com.hbm_m.entity.mob.EntityTaintCrab;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.effect.MobEffect;
@@ -17,18 +17,14 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Consumer;
 
-//? if forge {
 import net.minecraftforge.client.extensions.common.IClientMobEffectExtensions;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.client.extensions.common.IClientMobEffectExtensions;
- *///?}
 
 /**
  * Эффект порчи — периодический урон и следы блока taint под сущностью.
  * Порт {@link com.hbm.potion.HbmPotion#taint} (1.7.10).
  *
  * <p>Вся версия-специфика — тонкие гейты, логика едина для 1.20.1/1.21.1;
- * иконки HUD/инвентаря рисует {@link ClientEffectHooks} (на обеих версиях).
+ * иконки HUD/инвентаря рисует RADAWAY_ICONS/TAINT_ICONS (на обеих версиях).
  */
 public class TaintEffect extends MobEffect {
 
@@ -43,11 +39,9 @@ public class TaintEffect extends MobEffect {
             return;
         }
 
-        if (entity instanceof EntityCreeperTainted) {
-            return;
-        }
-
-        if (level.random.nextInt(40) == 0) {
+        // Original: getainte Creeper und Krabben nehmen keinen Schaden, die Spur hinterlassen sie trotzdem.
+        if (!(entity instanceof EntityCreeperTainted) && !(entity instanceof EntityTaintCrab)
+                && level.random.nextInt(40) == 0) {
             entity.hurt(ModDamageSources.taint(level), amplifier + 1);
         }
 
@@ -93,10 +87,28 @@ public class TaintEffect extends MobEffect {
     }
      *///?}
 
-    // Клиентские иконки (HUD + инвентарь) — реализация в платформенном слое;
-    // работает и на forge, и на neoforge (раньше на 1.21.1 иконок не было).
+    // Клиентские иконки (HUD + инвентарь), обе версии. Расширение живёт здесь —
+    // платформенный слой не знает про конкретные эффекты мода.
     @Override
+@SuppressWarnings("removal")
     public void initializeClient(@NotNull Consumer<IClientMobEffectExtensions> consumer) {
-        ClientEffectHooks.initializeClient(this, (Consumer<Object>) (Object) consumer);
+        consumer.accept(TAINT_ICONS);
     }
+
+    private static final IClientMobEffectExtensions TAINT_ICONS = new IClientMobEffectExtensions() {
+        @Override
+        public boolean renderInventoryIcon(net.minecraft.world.effect.MobEffectInstance instance,
+                net.minecraft.client.gui.screens.inventory.EffectRenderingInventoryScreen<?> screen,
+                net.minecraft.client.gui.GuiGraphics gfx, int x, int y, int blitOffset) {
+            com.hbm_m.effect.render.TaintEffectRenderer.renderInventory(gfx, x, y, blitOffset);
+            return true;
+        }
+
+        @Override
+        public boolean renderGuiIcon(net.minecraft.world.effect.MobEffectInstance instance, net.minecraft.client.gui.Gui gui,
+                net.minecraft.client.gui.GuiGraphics gfx, int x, int y, float z, float alpha) {
+            com.hbm_m.effect.render.TaintEffectRenderer.renderHud(gfx, x, y, (int) z, alpha);
+            return true;
+        }
+    };
 }

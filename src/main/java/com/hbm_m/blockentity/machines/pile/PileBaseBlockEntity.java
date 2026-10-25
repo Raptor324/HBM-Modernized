@@ -53,7 +53,6 @@ public class PileBaseBlockEntity extends LoadedMachineBlockEntity implements com
         if (corePos != null) corePos = transform.apply(corePos).immutable();
         cachedCore = null;
     }
-
     public static void tick(Level level, BlockPos pos, BlockState state, PileBaseBlockEntity be) {
         if (level.isClientSide() || be.corePos == null) return;
 

@@ -24,6 +24,342 @@
       "type": "directory",
       "source": "entity_obj",
       "prefix": "entity_obj/"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/ammo_press"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/annihilator"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/arc_furnace"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/autosaw"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/boiler"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/boxcar"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/catalytic_cracker"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/chimney_brick"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/chimney_industrial"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/combination_oven"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/combustion_engine"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/compressor"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/compressor_compact"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/condenser"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/core_stabilizer"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/crucible_heat"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/duchessgambit"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/electrolyser"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/exposure_chamber"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/fan"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/fel"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/file_cabinet"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/file_cabinet_steel"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/fraction_tower"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/furnace_steel"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/hephaestus"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/liquefactor"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/lpw2"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/machines/bigasstank"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/machines/catalytic_reformer"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/machines/chemical_factory"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/machines/chungus"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/machines/cyclotron"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/machines/cyclotron_ashes"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/machines/cyclotron_ashes_filled"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/machines/cyclotron_book"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/machines/cyclotron_book_filled"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/machines/cyclotron_coin"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/machines/cyclotron_coin_filled"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/machines/cyclotron_gavel"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/machines/cyclotron_gavel_filled"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/machines/demon_lamp"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/machines/firebox"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/machines/heating_oven"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/machines/industrial_turbine"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/machines/mixer"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/machines/piston_inserter"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/machines/pumpjack"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/machines/refueler"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/machines/rockmill"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/machines/supercomputer"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/machines/tape_drive"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/machines/vending_machine"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/mining_drill"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/mining_laser_base"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/mining_laser_laser"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/mining_laser_pivot"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/network/pipe_anchor"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/network/pipe_anchor_exhaust"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/network/pipe_anchor_pneumatic"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/ore_slopper"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/pump_electric"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/pump_steam"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/purex"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/pyrooven"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/radgen"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/radiolysis"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/reactor_small_base"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/reactor_small_rods"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/rotary_furnace"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/sawmill"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/silex"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/solidifier"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/steam_engine"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/strand_caster"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/tesla"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/trinkets/lantern_rusty"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/turbine"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/turbinegas"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/turbofan"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/turbofan_afterburner"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/turbofan_back"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/turbofan_blades"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/vacuum_distill"
     }
   ]
 }

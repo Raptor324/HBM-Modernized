@@ -1,0 +1,23 @@
+{
+  "parent": "builtin/entity",
+  "gui_light": "side",
+  "display": {
+    "gui": {
+      "rotation": [
+        30.0,
+        45.0,
+        0.0
+      ],
+      "translation": [
+        0.0,
+        -5.681,
+        -2.125
+      ],
+      "scale": [
+        0.0937,
+        0.0937,
+        0.0937
+      ]
+    }
+  }
+}

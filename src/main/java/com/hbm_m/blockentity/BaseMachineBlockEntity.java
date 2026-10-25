@@ -42,8 +42,8 @@ import net.minecraftforge.items.IItemHandler;
 
 //? if neoforge {
 /*import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.energy.IEnergyStorage;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.energy.IEnergyStorage;
+import net.minecraftforge.fluids.capability.IFluidHandler;
 *///?}
 
 /**
@@ -55,6 +55,7 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
 
     // Инвентарь
     protected final ModItemStackHandler inventory;
+    // neo-pendant: getHbmCapability-Zweig unten (itemHandler/feLow/feHigh als LazyCap)
     //? if forge {
     
     protected LazyOptional<IItemHandler> itemHandler = LazyOptional.empty();//?}
@@ -142,6 +143,7 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
         this.capacity = capacity;
         this.maxReceive = maxReceive;
         this.maxExtract = maxExtract;
+        // neo-pendant: getHbmCapability-Zweig unten (itemHandler/feLow/feHigh als LazyCap)
         //? if forge {
         this.feCapabilityProvider = new PackedEnergyCapabilityProvider(this);//?}
     }
@@ -320,7 +322,7 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
     // --- NBT ---
     @Override
     protected void writeNbtData(@NotNull CompoundTag tag, @Nullable net.minecraft.core.HolderLookup.Provider registries) {
-        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(inventory, registries));
+        tag.put("inventory", inventory.serialize( registries));
         tag.putLong("energy", energy);
         tag.putLong("capacity", capacity);
         tag.putLong("lastEnergy", lastEnergy);
@@ -333,19 +335,13 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
         if (inventoryTag.contains("Size")) {
             inventoryTag.putInt("Size", inventory.getSlots());
         }
-        com.hbm_m.platform.ItemStackSerialization.deserialize(inventory, inventoryTag, registries);
+        inventory.deserialize(inventoryTag, registries);
         energy = tag.getLong("energy");
         if (tag.contains("capacity")) {
             capacity = Math.max(0L, tag.getLong("capacity"));
         }
         lastEnergy = tag.getLong("lastEnergy");
         energyDelta = tag.getLong("energyDelta");
-    }
-
-    protected void sendUpdateToClient() {
-        if (level != null && !level.isClientSide && !isRemoved()) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-        }
     }
 
     /**
@@ -393,7 +389,46 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
         feCapabilityProvider.invalidate();
         fluidHandlerOpt.invalidate();
     }
-    //?}
+    //?} elif neoforge {
+    /*// Spiegel des Forge-getCapability (ModCapabilities meldet das fuer alle eigenen BE-Typen an).
+    private final com.hbm_m.platform.LazyCap<IEnergyProvider> hbmProvider = com.hbm_m.platform.LazyCap.of(() -> this);
+    private final com.hbm_m.platform.LazyCap<IEnergyReceiver> hbmReceiver = com.hbm_m.platform.LazyCap.of(() -> this);
+    private final com.hbm_m.platform.LazyCap<IEnergyConnector> hbmConnector = com.hbm_m.platform.LazyCap.of(() -> this);
+    private final com.hbm_m.platform.LazyCap<IEnergyStorage> fe =
+            com.hbm_m.platform.LazyCap.of(() -> new com.hbm_m.api.energy.LongEnergyWrapper(this));
+    protected com.hbm_m.platform.LazyCap<net.minecraftforge.items.IItemHandler> itemHandler = com.hbm_m.platform.LazyCap.empty();
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @Nullable Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_PROVIDER)  return hbmProvider.cast();
+        if (cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_RECEIVER)  return hbmReceiver.cast();
+        if (cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_CONNECTOR) return hbmConnector.cast();
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER)         return itemHandler.cast();
+        if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER && fluidHandlerNeo != null) return com.hbm_m.platform.LazyCap.ofObj(fluidHandlerNeo);
+
+        // PackedEnergyCapabilityProvider: DOWN = obere Bits, sonst untere
+        if (cap == com.hbm_m.platform.HbmCap.ENERGY) return fe.cast();
+
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        itemHandler = com.hbm_m.platform.LazyCap.of(this::getAutomationItemHandler);
+        setupFluidCapability();
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        itemHandler.invalidate();
+        hbmProvider.invalidate();
+        hbmReceiver.invalidate();
+        hbmConnector.invalidate();
+        fe.invalidate();
+    }
+    *///?}
 
     /**
      * Handler, который видит автоматика (воронки/трубы) через ITEM_HANDLER-капабилити и
@@ -454,13 +489,26 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
         long toTransfer = Math.min(this.energy, this.maxExtract > 0 ? this.maxExtract : this.maxReceive);
         if (toTransfer <= 0) return;
 
-        // Сначала HBM-приёмник (наша capability предмета), затем чужой FE
-        // через конверсионный хелпер ItemEnergyAccess (5:1, квант).
+        chargeStack(itemToCharge, toTransfer);
+    }
+
+    /**
+     * Заряжает отдельный предмет и вычитает переданную энергию из внутреннего буфера машины.
+     * Сначала проверяется HBM-приёмник, затем FE через ItemEnergyAccess (5:1, квант).
+     *
+     * @return фактически переданная энергия
+     */
+    protected long chargeStack(ItemStack itemToCharge, long toTransfer) {
+        if (itemToCharge == null || itemToCharge.isEmpty() || toTransfer <= 0) return 0L;
+
         long acceptedHe = ItemEnergyAccess.getHbmReceiver(itemToCharge)
                 .filter(target -> target.canReceive())
                 .map(target -> target.receiveEnergy(toTransfer, false))
                 .orElseGet(() -> ItemEnergyAccess.receiveHeIntoFe(itemToCharge, toTransfer, false));
-        if (acceptedHe > 0) setEnergyStored(energy - acceptedHe);
+        if (acceptedHe > 0) {
+            setEnergyStored(energy - acceptedHe);
+        }
+        return acceptedHe;
     }
 
     /**
@@ -483,18 +531,6 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
                 || ItemEnergyAccess.canForgeReceive(stack);
     }
 
-    /**
-     * Рендер-баундинг бокс по умолчанию.
-     * На Forge это {@code @Override} метода из BlockEntity, на Fabric — обычный public метод.
-     * Подклассы могут переопределить для мультиблоков с увеличенным размером.
-     */
-    //? if forge {
-    @Override
-    //?}
-    public AABB getRenderBoundingBox() {
-        return new AABB(worldPosition).inflate(0.5D);
-    }
-
     // ═══════════════════════════ Network initialization ════════════════════════════════
 
     /**
@@ -514,6 +550,8 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
     /**
      * Дополнительные позиции портов подписки для мультиблоков.
      * У каждой такой позиции проверяются все 6 граней на предмет проводов.
+     * Вызывается также из setRemoved (выгрузка/остановка сервера): доступ к миру
+     * только через ChunkSafe, не загружая чанки принудительно.
      */
     protected net.minecraft.core.BlockPos[] getExtraEnergyPorts() {
         return new net.minecraft.core.BlockPos[0];
@@ -565,8 +603,6 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
         invalidateEnergyPortCache();
     }
 
-
-
     // И при загрузке/установке блока:
     @Override
     public void setLevel(Level pLevel) {
@@ -606,7 +642,7 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
 
         // Если у машины есть локальный бак через setFluidHandler
         //? if neoforge {
-        /*if (this.fluidHandlerNeo instanceof net.neoforged.neoforge.fluids.capability.IFluidHandler neoHandler) {
+        /*if (this.fluidHandlerNeo instanceof net.minecraftforge.fluids.capability.IFluidHandler neoHandler) {
             return neoHandler;
         }
         *///?}

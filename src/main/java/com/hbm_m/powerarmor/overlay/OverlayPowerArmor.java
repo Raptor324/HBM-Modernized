@@ -6,6 +6,8 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 //? if forge {
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
@@ -15,13 +17,6 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.hbm_m.powerarmor.ModPowerArmorItem;
 import com.mojang.blaze3d.systems.RenderSystem;
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
 // рендер полосок энергии брони
 @OnlyIn(Dist.CLIENT)
 public class OverlayPowerArmor {
@@ -39,7 +34,7 @@ public class OverlayPowerArmor {
         }
     
         ItemStack chestplate = player.getItemBySlot(EquipmentSlot.CHEST);
-        if (!(chestplate.getItem() instanceof ModPowerArmorItem armorItem)) {
+        if (!(chestplate.getItem() instanceof com.hbm_m.powerarmor.ModArmorFSB armorItem)) {
             return;
         }
     
@@ -50,7 +45,7 @@ public class OverlayPowerArmor {
             player.getItemBySlot(EquipmentSlot.FEET)
         };
     
-        boolean noHelmet = armorItem.getSpecs().noHelmetRequired;
+        boolean noHelmet = armorItem.noHelmet;
         int piecesToShow = noHelmet ? 3 : 4;
     
         // Базовая позиция слева (центр - 91)
@@ -81,12 +76,12 @@ public class OverlayPowerArmor {
     
         for (int i = 0; i < piecesToShow; i++) {
             ItemStack stack = armorPieces[i];
-            if (!(stack.getItem() instanceof ModPowerArmorItem pieceArmor)) {
+            if (!(stack.getItem() instanceof com.hbm_m.powerarmor.ModArmorFSBPowered pieceArmor)) {
                 continue;
             }
     
-            long currentEnergy = pieceArmor.getEnergy(stack);
-            long maxEnergy = pieceArmor.getModifiedCapacity(stack); 
+            long currentEnergy = pieceArmor.getCharge(stack);
+            long maxEnergy = pieceArmor.getMaxCharge(stack); 
     
             if (maxEnergy <= 0) continue;
     
@@ -126,8 +121,8 @@ public class OverlayPowerArmor {
             LocalPlayer player = mc.player;
             if (player != null && !player.isCreative()) {
                 ItemStack chestplate = player.getItemBySlot(EquipmentSlot.CHEST);
-                if (chestplate.getItem() instanceof ModPowerArmorItem armorItem) {
-                    boolean noHelmet = armorItem.getSpecs().noHelmetRequired;
+                if (chestplate.getItem() instanceof com.hbm_m.powerarmor.ModArmorFSB armorItem) {
+                    boolean noHelmet = armorItem.noHelmet;
                     int piecesToShow = noHelmet ? 3 : 4;
                     gui.leftHeight += (piecesToShow * 3) + 2;
                 }
@@ -136,5 +131,20 @@ public class OverlayPowerArmor {
     }
 
     public static final IGuiOverlay POWER_ARMOR_OVERLAY = OverlayPowerArmor::onRenderOverlay;
-    //?}
+    //?} elif neoforge {
+    /*/^* NeoForge-Gegenstueck zu onRenderOverlay: leftHeight liegt an Minecraft.gui. ^/
+    public static void renderNeo(GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
+        render(guiGraphics, partialTick, screenWidth, screenHeight);
+        Minecraft mc = Minecraft.getInstance();
+        LocalPlayer player = mc.player;
+        if (player != null && !player.isCreative()) {
+            ItemStack chestplate = player.getItemBySlot(EquipmentSlot.CHEST);
+            if (chestplate.getItem() instanceof com.hbm_m.powerarmor.ModArmorFSB armorItem) {
+                boolean noHelmet = armorItem.noHelmet;
+                int piecesToShow = noHelmet ? 3 : 4;
+                mc.gui.leftHeight += (piecesToShow * 3) + 2;
+            }
+        }
+    }
+    *///?}
 }

@@ -22,6 +22,8 @@ import net.minecraft.world.level.material.Fluids;
 import dev.architectury.fluid.FluidStack;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.platform.FluidHooks;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * Единое меню для всех вариантов «жидкостной бочки» (tcalloy/plastic/corroded/antimatter/orbus и т.д.) —
@@ -166,7 +168,7 @@ public class FluidTankMenu extends AbstractContainerMenu {
                     if (!moveItemStackTo(stackInSlot, 0, 1, false)) {
                         return ItemStack.EMPTY;
                     }
-                } else if (PlatformHooks.isFluidContainer(stackInSlot)) {
+                } else if (FluidHooks.isFluidContainer(stackInSlot)) {
                     if (!moveItemStackTo(stackInSlot, MachineFluidTankBlockEntity.SLOT_LOAD_IN, MachineFluidTankBlockEntity.SLOT_LOAD_IN + 1, false)) {
                         if (!moveItemStackTo(stackInSlot, MachineFluidTankBlockEntity.SLOT_UNLOAD_IN, MachineFluidTankBlockEntity.SLOT_UNLOAD_IN + 1, false)) {
                             return ItemStack.EMPTY;

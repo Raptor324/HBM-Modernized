@@ -110,7 +110,7 @@ public class MoltenAlloyRecipe extends PlatformRecipe {
                     throw new IllegalStateException("Unknown material '" + matName
                             + "' in molten_alloy recipe " + key);
                 }
-                int amount = GsonHelper.getAsInt(el, "amount", MaterialShapes.INGOT);
+                int amount = GsonHelper.getAsInt(el, "amount", MaterialShapes.INGOT.q(1));
                 out[i] = new MaterialStack(mat, amount);
             }
             return out;

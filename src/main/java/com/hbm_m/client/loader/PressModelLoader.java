@@ -11,13 +11,8 @@ import com.hbm_m.client.model.PressBakedModel;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
 
 /**
  * Лоадер пресса: две части (Base/Head) из отдельных OBJ + параметры анимации

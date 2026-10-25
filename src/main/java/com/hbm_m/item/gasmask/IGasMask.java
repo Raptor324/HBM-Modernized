@@ -11,6 +11,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * Предмет-противогаз, принимающий фильтр (NBT на стаке маски).
@@ -30,12 +31,12 @@ public interface IGasMask {
 
     /** id предмета фильтра ("hbm_m:gas_mask_filter") или пустая строка, если фильтра нет. */
     static String getFilterId(ItemStack mask) {
-        CompoundTag tag = PlatformHooks.getItemTag(mask);
+        CompoundTag tag = StackNbt.read(mask);
         return tag == null ? "" : tag.getString(FILTER_KEY);
     }
 
     static int getFilterDamage(ItemStack mask) {
-        CompoundTag tag = PlatformHooks.getItemTag(mask);
+        CompoundTag tag = StackNbt.read(mask);
         return tag == null ? 0 : tag.getInt(FILTER_DMG_KEY);
     }
 
@@ -49,7 +50,7 @@ public interface IGasMask {
 
     /** Установить новый фильтр (id предмета); повреждение сбрасывается. */
     static void installFilter(ItemStack mask, Item filter) {
-        PlatformHooks.editItemTag(mask, tag -> {
+        StackNbt.edit(mask, tag -> {
             tag.putString(FILTER_KEY, BuiltInRegistries.ITEM.getKey(filter).toString());
             tag.putInt(FILTER_DMG_KEY, 0);
         });
@@ -62,14 +63,14 @@ public interface IGasMask {
     static void installFilter(ItemStack mask, ItemStack filter) {
         Item item = filter.getItem();
         int damage = Math.max(0, filter.getDamageValue());
-        PlatformHooks.editItemTag(mask, tag -> {
+        StackNbt.edit(mask, tag -> {
             tag.putString(FILTER_KEY, BuiltInRegistries.ITEM.getKey(item).toString());
             tag.putInt(FILTER_DMG_KEY, damage);
         });
     }
 
     static void removeFilter(ItemStack mask) {
-        PlatformHooks.editItemTag(mask, tag -> {
+        StackNbt.edit(mask, tag -> {
             tag.remove(FILTER_KEY);
             tag.remove(FILTER_DMG_KEY);
         });
@@ -93,7 +94,7 @@ public interface IGasMask {
             removeFilter(mask);
         } else {
             int fd = dmg;
-            PlatformHooks.editItemTag(mask, tag -> tag.putInt(FILTER_DMG_KEY, fd));
+            StackNbt.edit(mask, tag -> tag.putInt(FILTER_DMG_KEY, fd));
         }
         return true;
     }

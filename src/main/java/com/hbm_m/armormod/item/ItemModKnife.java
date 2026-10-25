@@ -1,23 +1,29 @@
 package com.hbm_m.armormod.item;
 
+import java.util.List;
+import java.util.UUID;
+
+import org.jetbrains.annotations.Nullable;
+
 import com.hbm_m.advancement.ModAdvancements;
 import com.hbm_m.armormod.util.ArmorModificationHelper;
+import com.hbm_m.network.AuxParticlePacket;
+import com.hbm_m.particle.helper.IParticleCreator;
+import com.hbm_m.sound.HbmSoundsNT;
 
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundEvents;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-
-import java.util.List;
-import java.util.UUID;
+import net.minecraft.world.level.Level;
+import com.hbm_m.platform.AttributeHooks;
 
 /**
  * 1:1 port of {@code ItemModKnife} - the injector knife.
@@ -37,7 +43,7 @@ public class ItemModKnife extends ItemArmorMod {
     private static final float FLOOR = 2F;
 
     public ItemModKnife(Properties properties) {
-        super(properties, ArmorModificationHelper.extra);
+        super(properties.stacksTo(1), ArmorModificationHelper.extra, false, true, false, false);
     }
 
     @Override
@@ -46,6 +52,11 @@ public class ItemModKnife extends ItemArmorMod {
                 Component.literal("Pain.").withStyle(ChatFormatting.RED),
                 Component.empty(),
                 Component.literal("Hurts, doesn't it?").withStyle(ChatFormatting.RED));
+    }
+
+    @Override
+    public void addDesc(List<Component> list, ItemStack stack, ItemStack armor) {
+        list.add(descLine(ChatFormatting.RED, stack, ""));
     }
 
     @Override
@@ -58,11 +69,13 @@ public class ItemModKnife extends ItemArmorMod {
         if (maxHealth == null) return;
 
         entity.level().playSound(null, entity.getX(), entity.getY(), entity.getZ(),
-                SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 1.0F, 1.0F);
+                HbmSoundsNT.get("hbm:entity.slicer"), SoundSource.PLAYERS, 1.0F, 1.0F);
 
         if (entity.level() instanceof ServerLevel server) {
-            server.sendParticles(ParticleTypes.DAMAGE_INDICATOR,
-                    entity.getX(), entity.getEyeY(), entity.getZ(), 8, 0.2D, 0.2D, 0.2D, 0.1D);
+            CompoundTag nbt = new CompoundTag();
+            nbt.putString("type", "bloodvomit");
+            nbt.putInt("entity", entity.getId());
+            IParticleCreator.sendPacket(server, entity.getX(), entity.getY(), entity.getZ(), 25, nbt);
         }
 
         // The original reads the current max, drops the old modifier, and applies a new one two
@@ -72,7 +85,7 @@ public class ItemModKnife extends ItemArmorMod {
         AttributeModifier existing = maxHealth.getModifier(TRIGAMMA_UUID);
         double previous = existing != null ? existing.getAmount() : 0D;
         if (existing != null) maxHealth.removeModifier(TRIGAMMA_UUID);
-        maxHealth.addPermanentModifier(com.hbm_m.platform.PlatformHooks.attributeModifier(
+        maxHealth.addPermanentModifier(com.hbm_m.platform.AttributeHooks.modifier(
                 TRIGAMMA_UUID, "digamma", previous - 2D, AttributeModifier.Operation.ADDITION));
         //?} else {
         /*// 1.21 identifiziert Modifikatoren per ResourceLocation; dieselbe Ableitung aus der UUID
@@ -83,15 +96,27 @@ public class ItemModKnife extends ItemArmorMod {
         AttributeModifier existing = maxHealth.getModifier(trigammaId);
         double previous = existing != null ? existing.amount() : 0D;
         if (existing != null) maxHealth.removeModifier(trigammaId);
-        maxHealth.addPermanentModifier(com.hbm_m.platform.PlatformHooks.attributeModifier(
+        maxHealth.addPermanentModifier(com.hbm_m.platform.AttributeHooks.modifier(
                 TRIGAMMA_UUID, "digamma", previous - 2D, AttributeModifier.Operation.ADD_VALUE));
         *///?}
 
         // Clamp so the wearer cannot be knifed into negative health.
         if (entity.getHealth() > entity.getMaxHealth()) entity.setHealth(entity.getMaxHealth());
 
-        if (entity instanceof Player player && entity.getMaxHealth() <= FLOOR) {
-            ModAdvancements.grant(player, ModAdvancements.SOME_WOUNDS);
+        if (entity instanceof ServerPlayer player) {
+            CompoundTag data = new CompoundTag();
+            data.putString("type", "properJolt");
+
+            if (entity.getMaxHealth() > FLOOR) {
+                data.putInt("time", 10000 + entity.getRandom().nextInt(10000));
+                data.putInt("maxTime", 10000);
+            } else {
+                data.putInt("time", 0);
+                data.putInt("maxTime", 0);
+                ModAdvancements.grant(player, ModAdvancements.SOME_WOUNDS);
+            }
+
+            AuxParticlePacket.sendTo(player, data, 0, 0, 0);
         }
     }
 }

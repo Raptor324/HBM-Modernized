@@ -1,6 +1,5 @@
 package com.hbm_m.inventory.menu;
 
-import com.hbm_m.api.energy.ItemEnergyAccess;
 import com.hbm_m.blockentity.machines.MachineDieselGeneratorBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.lib.RefStrings;
@@ -13,14 +12,22 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
+
+/**
+ * 1:1 {@code ContainerMachineDiesel}: Kanister rein (17,17), leer raus (17,53, nur entnehmen), Batterie (141,71),
+ * Fluid-Identifier (35,71), Spielerinventar bei y=121.
+ *
+ * <p>Merge note: slot layout resolved against the machines-branch
+ * {@link MachineDieselGeneratorBlockEntity}, which defines
+ * {@code SLOT_FLUID_IN=0, SLOT_FLUID_OUT=1, SLOT_BATTERY=2, SLOT_FLUID_ID=3} (4 slots total) —
+ * the machines-side menu variant with a single battery slot did not match this BE.</p>
+ */
 public class MachineDieselGeneratorMenu extends AbstractContainerMenu {
 
-    private final MachineDieselGeneratorBlockEntity blockEntity;
+    private static final int MACHINE_SLOT_COUNT = 4;
 
-    private static final int SLOT_BATTERY = MachineDieselGeneratorBlockEntity.SLOT_BATTERY;
-    private static final int MACHINE_SLOT_COUNT = 1;
-    private static final int PLAYER_INV_START = MACHINE_SLOT_COUNT;
-    private static final int PLAYER_INV_END = MACHINE_SLOT_COUNT + 36;
+    private final MachineDieselGeneratorBlockEntity blockEntity;
 
     public MachineDieselGeneratorMenu(int id, Inventory inventory, FriendlyByteBuf extraData) {
         this(id, inventory, getBlockEntity(inventory, extraData));
@@ -30,25 +37,25 @@ public class MachineDieselGeneratorMenu extends AbstractContainerMenu {
         super(ModMenuTypes.DIESEL_GENERATOR_MENU.get(), id);
         this.blockEntity = blockEntity;
 
-        var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
+        var tedf = new ModItemStackHandlerContainer(
+                blockEntity != null ? blockEntity.getInventory() : new ModItemStackHandler.Dummy(MACHINE_SLOT_COUNT),
+                blockEntity != null ? blockEntity::setChanged : null);
 
-        this.addSlot(new Slot(container, SLOT_BATTERY, 141, 71) {
-            @Override
-            public boolean mayPlace(ItemStack stack) {
-                return ItemEnergyAccess.isEnergySource(stack);
-            }
+        this.addSlot(new Slot(tedf, 0, 17, 17));
+        // Original SlotTakeOnly
+        this.addSlot(new Slot(tedf, 1, 17, 53) {
+            @Override public boolean mayPlace(ItemStack stack) { return false; }
         });
+        this.addSlot(new Slot(tedf, 2, 141, 71));
+        this.addSlot(new Slot(tedf, 3, 35, 71));
 
-        int playerInvX = 8;
-        int playerInvY = 104;
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(inventory, col + row * 9 + 9, playerInvX + col * 18, playerInvY + row * 18));
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 9; j++) {
+                this.addSlot(new Slot(inventory, j + i * 9 + 9, 8 + j * 18, 121 + i * 18));
             }
         }
-        int hotbarY = playerInvY + 58;
-        for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(inventory, col, playerInvX + col * 18, hotbarY));
+        for (int i = 0; i < 9; i++) {
+            this.addSlot(new Slot(inventory, i, 8 + i * 18, 179));
         }
     }
 
@@ -58,6 +65,9 @@ public class MachineDieselGeneratorMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineDieselGeneratorBlockEntity generator) {
             return generator;
         }
+        // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (inventory.player.level().isClientSide) return null;
         throw new MenuBlockEntityMissingException("No MachineDieselGeneratorBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":dieselgen_menu");
     }
 
@@ -70,37 +80,38 @@ public class MachineDieselGeneratorMenu extends AbstractContainerMenu {
         return MenuReach.stillValid(player, blockEntity);
     }
 
+    /**
+     * {@code transferStackInSlot} mit den Original-Fallbacks (Kanister -> Slot 0, Batterie -> Slot 2,
+     * Fluid-Identifier -> Slot 3), an das 4-Slot-Layout dieses Menues angepasst: Maschinen-Slots sind
+     * Container-Indizes 0..3, das Spielerinventar beginnt bei Index 4 (FFA-Original: Grenze
+     * {@code par2 <= 4}, Uebergabe ab 5, Ersatzziel 4..5 bei 5 Maschinen-Slots).
+     */
     @Override
-    public ItemStack quickMoveStack(Player player, int index) {
-        ItemStack result = ItemStack.EMPTY;
-        Slot slot = this.slots.get(index);
+    public ItemStack quickMoveStack(Player player, int par2) {
+        ItemStack var3 = ItemStack.EMPTY;
+        Slot var4 = this.slots.get(par2);
 
-        if (slot != null && slot.hasItem()) {
-            ItemStack slotStack = slot.getItem();
-            result = slotStack.copy();
+        if (var4 != null && var4.hasItem()) {
+            ItemStack var5 = var4.getItem();
+            var3 = var5.copy();
 
-            if (index < MACHINE_SLOT_COUNT) {
-                if (!this.moveItemStackTo(slotStack, PLAYER_INV_START, PLAYER_INV_END, true)) {
+            if (par2 < MACHINE_SLOT_COUNT) {
+                if (!this.moveItemStackTo(var5, MACHINE_SLOT_COUNT, this.slots.size(), true)) {
                     return ItemStack.EMPTY;
                 }
-            } else {
-                boolean isEnergySource = ItemEnergyAccess.isEnergySource(slotStack);
-                if (!this.moveItemStackTo(slotStack, SLOT_BATTERY, SLOT_BATTERY + 1, false)) {
-                    return ItemStack.EMPTY;
-                }
+            } else if (!this.moveItemStackTo(var5, 0, 1, false)) {
+                if (!this.moveItemStackTo(var5, 2, 3, false))
+                    if (!this.moveItemStackTo(var5, 3, 4, false))
+                        return ItemStack.EMPTY;
             }
 
-            if (slotStack.isEmpty()) {
-                slot.set(ItemStack.EMPTY);
+            if (var5.isEmpty()) {
+                var4.set(ItemStack.EMPTY);
             } else {
-                slot.setChanged();
+                var4.setChanged();
             }
-
-            if (slotStack.getCount() == result.getCount()) {
-                return ItemStack.EMPTY;
-            }
-            slot.onTake(player, slotStack);
         }
-        return result;
+
+        return var3;
     }
 }

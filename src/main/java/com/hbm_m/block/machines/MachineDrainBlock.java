@@ -72,7 +72,8 @@ public class MachineDrainBlock extends com.hbm_m.block.machines.DummyableMachine
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 
-        if (level.isClientSide() || !player.isShiftKeyDown()) return InteractionResult.PASS;
+        // Original MachineDrain.onBlockActivated: nur ohne Schleichen auf dem Server, sonst immer verbraucht
+        if (level.isClientSide() || player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide());
 
         ItemStack held = player.getItemInHand(hand);
         if (!(held.getItem() instanceof IItemFluidIdentifier identifier)) return InteractionResult.PASS;
@@ -80,14 +81,16 @@ public class MachineDrainBlock extends com.hbm_m.block.machines.DummyableMachine
 
         var fluid = identifier.getType(level, pos, held);
         be.retype(fluid);
-        player.displayClientMessage(Component.literal("Changed type"), true);
+        player.displayClientMessage(Component.literal("Changed type to ").withStyle(net.minecraft.ChatFormatting.YELLOW)
+                .append(com.hbm_m.inventory.fluid.FluidType.forFluid(fluid).getLocalizedName()).append(Component.literal("!")), false);
         return InteractionResult.CONSUME;
         }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
 
-        if (level.isClientSide() || !player.isShiftKeyDown()) return InteractionResult.PASS;
+        // Original MachineDrain.onBlockActivated: nur ohne Schleichen auf dem Server, sonst immer verbraucht
+        if (level.isClientSide() || player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide());
 
         ItemStack held = player.getItemInHand(InteractionHand.MAIN_HAND);
         if (!(held.getItem() instanceof IItemFluidIdentifier identifier)) return InteractionResult.PASS;
@@ -95,7 +98,8 @@ public class MachineDrainBlock extends com.hbm_m.block.machines.DummyableMachine
 
         var fluid = identifier.getType(level, pos, held);
         be.retype(fluid);
-        player.displayClientMessage(Component.literal("Changed type"), true);
+        player.displayClientMessage(Component.literal("Changed type to ").withStyle(net.minecraft.ChatFormatting.YELLOW)
+                .append(com.hbm_m.inventory.fluid.FluidType.forFluid(fluid).getLocalizedName()).append(Component.literal("!")), false);
         return InteractionResult.CONSUME;
         }
     *///?}

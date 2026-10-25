@@ -5,10 +5,8 @@ import com.hbm_m.extprop.HbmLivingProps;
 import com.hbm_m.item.ModItems;
 
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
@@ -78,7 +76,8 @@ public class ItemCigarette extends Item {
                                               @NotNull LivingEntity entity) {
         if (!(entity instanceof Player player)) return stack;
 
-        if (!player.isCreative()) stack.shrink(1);
+        // Original: stackSize-- auch im Kreativmodus.
+        stack.shrink(1);
 
         if (!level.isClientSide) {
             if (!crackpipe) {
@@ -95,15 +94,16 @@ public class ItemCigarette extends Item {
                 player.heal(10F);
             }
 
-            // The original plays hbm:player.cough and throws a burst of smoke; the port has no
-            // cough sample, so this borrows the closest vanilla one.
             level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                    SoundEvents.PLAYER_BREATH, SoundSource.PLAYERS, 1.0F, 1.0F);
+                    com.hbm_m.sound.HbmSoundsNT.get("hbm:player.cough"), SoundSource.PLAYERS, 1.0F, 1.0F);
 
             if (level instanceof ServerLevel server) {
-                server.sendParticles(ParticleTypes.SMOKE,
-                        player.getX(), player.getEyeY(), player.getZ(),
-                        30, 0.25D, 0.25D, 0.25D, 0.02D);
+                net.minecraft.nbt.CompoundTag nbt = new net.minecraft.nbt.CompoundTag();
+                nbt.putString("type", "vomit");
+                nbt.putString("mode", "smoke");
+                nbt.putInt("count", 30);
+                nbt.putInt("entity", player.getId());
+                com.hbm_m.particle.helper.IParticleCreator.sendPacket(server, player.getX(), player.getY(), player.getZ(), 25, nbt);
             }
         }
 

@@ -1,10 +1,12 @@
 package com.hbm_m.inventory.menu;
 
 import com.hbm_m.blockentity.machines.MachineStrandCasterBlockEntity;
-import com.hbm_m.inventory.ModItemStackHandlerContainer;
+import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.Container;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -13,106 +15,107 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
- * Порт {@code ContainerMachineStrandCaster} (1.7.10): изложница на (57,62),
- * шесть слотов выхода 3×2 на (125,26) с шагом 18 (take-only), инвентарь
- * игрока (8,132)/хотбар (8,190). Shift-клик: машина → игрок, игрок → изложница.
+ * 1:1 {@code ContainerMachineStrandCaster}: Formplatz (57,62), sechs Ausgaben 2x3 ab (125,26), Spielerinventar ab
+ * (8,132). Shift-Klick setzt eine Form ein.
  */
 public class MachineStrandCasterMenu extends AbstractContainerMenu {
 
-    public static final int MACHINE_SLOTS = MachineStrandCasterBlockEntity.SLOT_COUNT; // 7
-    private static final int PLAYER_INV_START = MACHINE_SLOTS;
-    private static final int PLAYER_INV_END = PLAYER_INV_START + 27;
-    private static final int HOTBAR_END = PLAYER_INV_END + 9;
+    private final MachineStrandCasterBlockEntity caster;
 
-    public final MachineStrandCasterBlockEntity blockEntity;
+    /** Sicht auf das Slot-Feld des Block-Entities. */
+    private static final class CasterContainer implements Container {
+        private final MachineStrandCasterBlockEntity be;
+        CasterContainer(MachineStrandCasterBlockEntity be) { this.be = be; }
+        @Override public int getContainerSize() { return be.slots.length; }
+        @Override public boolean isEmpty() { for (ItemStack s : be.slots) if (!s.isEmpty()) return false; return true; }
+        @Override public ItemStack getItem(int i) { return be.slots[i]; }
+        @Override public ItemStack removeItem(int i, int n) {
+            ItemStack s = be.slots[i];
+            if (s.isEmpty()) return ItemStack.EMPTY;
+            ItemStack out = s.split(n);
+            if (s.isEmpty()) be.slots[i] = ItemStack.EMPTY;
+            be.setChanged();
+            return out;
+        }
+        @Override public ItemStack removeItemNoUpdate(int i) { ItemStack s = be.slots[i]; be.slots[i] = ItemStack.EMPTY; return s; }
+        @Override public void setItem(int i, ItemStack stack) { be.slots[i] = stack; be.setChanged(); }
+        @Override public void setChanged() { be.setChanged(); }
+        @Override public boolean stillValid(Player player) { return true; }
+        @Override public void clearContent() { for (int i = 0; i < be.slots.length; i++) be.slots[i] = ItemStack.EMPTY; }
+        @Override public boolean canPlaceItem(int i, ItemStack stack) { return be.isItemValidForSlot(i, stack); }
+    }
 
     public MachineStrandCasterMenu(int id, Inventory inventory, FriendlyByteBuf extraData) {
         this(id, inventory, getBlockEntity(inventory, extraData));
     }
 
-    public MachineStrandCasterMenu(int id, Inventory inventory, BlockEntity entity) {
+    public MachineStrandCasterMenu(int id, Inventory invPlayer, MachineStrandCasterBlockEntity caster) {
         super(ModMenuTypes.STRAND_CASTER_MENU.get(), id);
-        this.blockEntity = (MachineStrandCasterBlockEntity) entity;
+        this.caster = caster;
 
-        var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
+        Container container = caster != null ? new CasterContainer(caster) : new SimpleContainer(7);
 
-        // the wretched mold
-        this.addSlot(new Slot(container, MachineStrandCasterBlockEntity.SLOT_MOLD, 57, 62));
+        this.addSlot(new Slot(container, 0, 57, 62) {
+            @Override public int getMaxStackSize() { return 1; }
+            @Override public boolean mayPlace(ItemStack stack) { return container.canPlaceItem(0, stack); }
+        });
 
-        // выход: 3 ряда × 2 колонки, индекс j + i*2 + 1
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 2; j++) {
-                this.addSlot(new OutputSlot(container, j + i * 2 + 1, 125 + j * 18, 26 + i * 18));
+                this.addSlot(new Slot(container, j + i * 2 + 1, 125 + j * 18, 26 + i * 18) {
+                    @Override public boolean mayPlace(ItemStack stack) { return false; }
+                });
             }
         }
 
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 132 + row * 18));
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 9; j++) {
+                this.addSlot(new Slot(invPlayer, j + i * 9 + 9, 8 + j * 18, 132 + i * 18));
             }
         }
-        for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(inventory, col, 8 + col * 18, 190));
+
+        for (int i = 0; i < 9; i++) {
+            this.addSlot(new Slot(invPlayer, i, 8 + i * 18, 190));
         }
     }
 
     private static MachineStrandCasterBlockEntity getBlockEntity(Inventory inventory, FriendlyByteBuf buffer) {
         BlockPos pos = buffer.readBlockPos();
-        BlockEntity blockEntity = inventory.player.level().getBlockEntity(pos);
-        if (blockEntity instanceof MachineStrandCasterBlockEntity be) {
-            return be;
-        }
-        throw new IllegalStateException("No MachineStrandCasterBlockEntity found at " + pos);
+        BlockEntity be = inventory.player.level().getBlockEntity(pos);
+        if (be instanceof MachineStrandCasterBlockEntity caster) return caster;
+        if (inventory.player.level().isClientSide) return null;
+        throw new MenuBlockEntityMissingException("No MachineStrandCasterBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":strand_caster_menu");
+    }
+
+    public MachineStrandCasterBlockEntity getBlockEntity() {
+        return caster;
     }
 
     @Override
     public boolean stillValid(Player player) {
-        return blockEntity != null
-                && blockEntity.getLevel() == player.level()
-                && player.distanceToSqr(
-                        blockEntity.getBlockPos().getX() + 0.5D,
-                        blockEntity.getBlockPos().getY() + 0.5D,
-                        blockEntity.getBlockPos().getZ() + 0.5D) <= 128.0D;
+        if (caster == null || caster.getLevel() != player.level()) return false;
+        BlockPos pos = caster.getBlockPos();
+        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 128.0D;
     }
 
-    /** Порт transferStackInSlot: машина → игрок; игрок → слот изложницы. */
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
-        ItemStack copy = ItemStack.EMPTY;
         Slot slot = this.slots.get(index);
-        if (slot == null || !slot.hasItem()) return copy;
+        if (slot == null || !slot.hasItem()) return ItemStack.EMPTY;
 
-        ItemStack stack = slot.getItem();
-        copy = stack.copy();
+        ItemStack originalStack = slot.getItem();
+        ItemStack stack = originalStack.copy();
 
-        if (index < MACHINE_SLOTS) {
-            if (!this.moveItemStackTo(stack, PLAYER_INV_START, HOTBAR_END, true)) {
-                return ItemStack.EMPTY;
-            }
-        } else {
-            if (!this.moveItemStackTo(stack, 0, 1, false)) {
-                return ItemStack.EMPTY;
-            }
+        if (index <= 6) {
+            if (!this.moveItemStackTo(originalStack, 7, this.slots.size(), true)) return ItemStack.EMPTY;
+            slot.onQuickCraft(originalStack, stack);
+        } else if (!this.moveItemStackTo(originalStack, 0, 1, false)) {
+            return ItemStack.EMPTY;
         }
 
-        if (stack.isEmpty()) {
-            slot.setByPlayer(ItemStack.EMPTY);
-        } else {
-            slot.setChanged();
-        }
-        slot.onTake(player, stack);
-        return copy;
-    }
+        if (originalStack.isEmpty()) slot.set(ItemStack.EMPTY);
+        else slot.setChanged();
 
-    /** Порт SlotCraftingOutput: только извлечение. */
-    private static class OutputSlot extends Slot {
-        public OutputSlot(net.minecraft.world.Container container, int index, int x, int y) {
-            super(container, index, x, y);
-        }
-
-        @Override
-        public boolean mayPlace(ItemStack stack) {
-            return false;
-        }
+        return stack;
     }
 }

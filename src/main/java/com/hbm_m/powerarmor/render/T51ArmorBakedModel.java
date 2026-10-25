@@ -12,13 +12,8 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ArmorItem;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
 
 /**
  * Модель для рендеринга T51 Power Armor в GUI и руке.
@@ -79,7 +74,7 @@ public class T51ArmorBakedModel extends AbstractArmorBakedModel {
         }
 
         @Override
-        public Class<? extends ModPowerArmorItem> getArmorItemClass() {
+        public Class<? extends net.minecraft.world.item.Item> getArmorItemClass() {
             return T51Armor.class;
         }
 

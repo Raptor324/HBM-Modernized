@@ -31,7 +31,7 @@ import net.minecraft.world.inventory.InventoryMenu;
  * Sutherland-Hodgman cut of the quads with the plane {@code v.z + t <= 0.5}
  * (equivalent to per-fragment culling: only the "sponge" of the slab sticking out of
  * the machine as it fills remains visible), and the shift becomes a static transform.
- * Both parts are tinted with the melt color {@code type.color} (moltenColor);
+ * Both parts are tinted with the melt color {@code type.moltenColor};
  * the "Surface" is synthesized: 2x2 (x +-0.9, z +-0.999) at
  * {@code y = 2.3 + level}, fullbright (240/240), sprite {@code lava_gray}.
  */
@@ -45,12 +45,12 @@ public final class StrandCasterRenderer {
 
     /** Plate cache key: quantized shift + metal color (the tint is baked into the vertices). */
     private static String plateCacheKey(MachineStrandCasterBlockEntity be) {
-        return (int) (moldOffset(be) * 64) + "_" + (be.type != null ? be.type.color : 0);
+        return (int) (moldOffset(be) * 64) + "_" + (be.type != null ? be.type.moltenColor : 0);
     }
 
     /** Surface cache key: melt level + metal color. */
     private static String surfaceCacheKey(MachineStrandCasterBlockEntity be) {
-        return (int) (meltLevel(be) * 256) + "_" + (be.type != null ? be.type.color : 0);
+        return (int) (meltLevel(be) * 256) + "_" + (be.type != null ? be.type.moltenColor : 0);
     }
 
     public static void register() {
@@ -283,8 +283,8 @@ public final class StrandCasterRenderer {
             data[off + 1] = Float.floatToRawIntBits(y);
             data[off + 2] = Float.floatToRawIntBits(z);
             data[off + 3] = color;
-            data[off + 4] = Float.floatToRawIntBits(sprite.getU(u));
-            data[off + 5] = Float.floatToRawIntBits(sprite.getV(v));
+            data[off + 4] = Float.floatToRawIntBits(com.hbm_m.platform.RenderHooks.spriteU(sprite, u));
+            data[off + 5] = Float.floatToRawIntBits(com.hbm_m.platform.RenderHooks.spriteV(sprite, v));
             data[off + 6] = LightTexture.FULL_BRIGHT; // fullbright 240/240
             // leave the normal untouched -- the template's byte packing (horizontal quad)
             data[off + 7] = oldData[off + 7];
@@ -295,7 +295,7 @@ public final class StrandCasterRenderer {
 
     /** moltenColor baked into the vertex color: RGBA, alpha 255. */
     private static int moltenColorRgba(MachineStrandCasterBlockEntity be) {
-        int c = be.type != null ? be.type.color : 0xFFFFFF;
+        int c = be.type != null ? be.type.moltenColor : 0xFFFFFF;
         int r = (c >> 16) & 0xFF;
         int g = (c >> 8) & 0xFF;
         int b = c & 0xFF;

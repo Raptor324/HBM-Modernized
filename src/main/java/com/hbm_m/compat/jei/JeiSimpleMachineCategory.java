@@ -1,13 +1,7 @@
 package com.hbm_m.compat.jei;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 import java.util.List;
 
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;

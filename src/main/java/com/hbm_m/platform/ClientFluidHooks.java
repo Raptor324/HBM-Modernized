@@ -6,13 +6,17 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.material.Fluid;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+
 /**
  * Клиентские мосты для рендера жидкостей (IClientFluidTypeExtensions).
  *
- * <p>ТОЛЬКО КЛИЕНТ — вызывается из BER. Тела forge/neoforge идентичны
- * (отличаются только пакеты {@code IClientFluidTypeExtensions} и {@code FluidStack}),
- * поэтому весь loader-gating собран здесь, а рендереры остаются чистыми.
+ * <p>ТОЛЬКО КЛИЕНТ — вызывается из BER. Тела единые: пакеты
+ * {@code IClientFluidTypeExtensions} и {@code FluidStack} переписываются
+ * автозаменой {@code !loader_packages} при neoforge-prepare.
  */
+@OnlyIn(Dist.CLIENT)
 public final class ClientFluidHooks {
 
     private ClientFluidHooks() {
@@ -27,44 +31,23 @@ public final class ClientFluidHooks {
      */
     @org.jetbrains.annotations.Nullable
     public static TextureAtlasSprite stillSprite(Fluid fluid, int amount) {
-        //? if forge {
+        // Вызывается из BER каждый кадр: без FluidStack-аллокации — перегрузка со стеком
+        // в обоих лоадерах лишь дефолт-делегирует к безаргументной, а наши жидкости её не переопределяют.
         net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions ext =
                 net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions.of(fluid);
-        net.minecraftforge.fluids.FluidStack stack = new net.minecraftforge.fluids.FluidStack(fluid, amount);
-        ResourceLocation stillTexture = ext.getStillTexture(stack);
+        ResourceLocation stillTexture = ext.getStillTexture();
         if (stillTexture == null) return null;
         return net.minecraft.client.Minecraft.getInstance()
                 .getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(stillTexture);
-        //?} elif neoforge {
-        /*net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions ext =
-                net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions.of(fluid);
-        net.neoforged.neoforge.fluids.FluidStack stack = new net.neoforged.neoforge.fluids.FluidStack(fluid, amount);
-        ResourceLocation stillTexture = ext.getStillTexture(stack);
-        if (stillTexture == null) return null;
-        return net.minecraft.client.Minecraft.getInstance()
-                .getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(stillTexture);
-        *///?} else {
-        /*return null;
-        *///?}
     }
 
     /**
      * Tint жидкости (ARGB) для данного объёма.
      */
     public static int tint(Fluid fluid, int amount) {
-        //? if forge {
         net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions ext =
                 net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions.of(fluid);
-        net.minecraftforge.fluids.FluidStack stack = new net.minecraftforge.fluids.FluidStack(fluid, amount);
-        return ext.getTintColor(stack);
-        //?} elif neoforge {
-        /*net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions ext =
-                net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions.of(fluid);
-        net.neoforged.neoforge.fluids.FluidStack stack = new net.neoforged.neoforge.fluids.FluidStack(fluid, amount);
-        return ext.getTintColor(stack);
-        *///?} else {
-        /*return 0xFFFFFFFF;
-        *///?}
+        return ext.getTintColor();
     }
 
     /**

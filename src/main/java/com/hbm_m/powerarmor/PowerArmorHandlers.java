@@ -5,7 +5,6 @@ import java.util.List;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.packets.PowerArmorDashPacket;
-import com.hbm_m.platform.PlayerPersistentData;
 import com.hbm_m.sound.ModSounds;
 
 import dev.architectury.event.events.common.TickEvent;
@@ -30,6 +29,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import com.hbm_m.platform.MobHooks;
 
 //? if forge {
 import com.hbm_m.powerarmor.resist.DamageResistanceHandler;
@@ -116,7 +116,7 @@ public final class PowerArmorHandlers {
         
         if (calculatedDamage < event.getAmount()) {
             // Пишем в "персистентные" данные игрока, чтобы прочитать на LOWEST фазе.
-            CompoundTag data = PlayerPersistentData.get(player);
+            CompoundTag data = MobHooks.getPersistentData(player);
             data.putFloat("hbm_power_armor_damage", calculatedDamage);
         }
     }
@@ -132,7 +132,7 @@ public final class PowerArmorHandlers {
         if (player.level().isClientSide) return;
         if (player.getAbilities().instabuild || player.isSpectator()) return;
         
-        CompoundTag data = PlayerPersistentData.get(player);
+        CompoundTag data = MobHooks.getPersistentData(player);
         if (data.contains("hbm_power_armor_damage")) {
             float calculated = data.getFloat("hbm_power_armor_damage");
             event.setAmount(calculated);
@@ -146,7 +146,7 @@ public final class PowerArmorHandlers {
     private static void onPlayerTickPre(Player player) {
         if (player.level().isClientSide()) return;
 
-        CompoundTag tag = PlayerPersistentData.get(player);
+        CompoundTag tag = MobHooks.getPersistentData(player);
         int cooldown = tag.getInt(TAG_DASH_COOLDOWN);
         if (cooldown > 0) {
             tag.putInt(TAG_DASH_COOLDOWN, cooldown - 1);
@@ -202,7 +202,7 @@ public final class PowerArmorHandlers {
         if (specs.dashCount <= 0) return;
         
         // Проверка кулдауна
-        CompoundTag tag = PlayerPersistentData.get(player);
+        CompoundTag tag = MobHooks.getPersistentData(player);
         int cooldown = tag.getInt(TAG_DASH_COOLDOWN);
         if (cooldown > 0) return;
         
@@ -259,7 +259,7 @@ public final class PowerArmorHandlers {
         PowerArmorSpecs specs = armorItem.getSpecs();
         if (!specs.hasHardLanding) return;
         
-        CompoundTag tag = PlayerPersistentData.get(player);
+        CompoundTag tag = MobHooks.getPersistentData(player);
         boolean onGround = player.onGround();
         boolean wasInAir = tag.getBoolean(TAG_WAS_IN_AIR);
         boolean smashingSoft = tag.getBoolean(TAG_SMASHING_SOFT);
@@ -366,7 +366,7 @@ public final class PowerArmorHandlers {
         // Обычная "жёсткая посадка" на твёрдый блок
         if (belowState.isAir() || !belowState.getFluidState().isEmpty()) return;
 
-        PlayerPersistentData.get(player).putBoolean("hbm_hard_landing_occured", true);
+        MobHooks.getPersistentData(player).putBoolean("hbm_hard_landing_occured", true);
         
         var sound = fallDist > MACE_HEAVY_FALL
                 ? ModSounds.MACE_SMASH_GROUND_HEAVY.get()
@@ -391,7 +391,7 @@ public final class PowerArmorHandlers {
         
         if (fallDist < HBM_AOE_MIN_FALL) return;
         applyHardLandingAOE(level, player);
-        PlayerPersistentData.get(player).putBoolean("hbm_hard_landing_occured", true);
+        MobHooks.getPersistentData(player).putBoolean("hbm_hard_landing_occured", true);
     }
 
     // ============ NeoForge: the same three handlers ============

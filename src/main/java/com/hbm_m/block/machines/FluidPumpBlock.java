@@ -98,6 +98,7 @@ public class FluidPumpBlock extends BaseEntityBlock implements com.hbm_m.interfa
 
     private InteractionResult handleUse(BlockState state, Level level, BlockPos pos,
                                         Player player, InteractionHand hand, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.PASS;
         var stack = player.getItemInHand(hand);
         if (!stack.isEmpty() && stack.getItem() instanceof IItemFluidIdentifier idItem) {
             if (!level.isClientSide) {
@@ -112,13 +113,14 @@ public class FluidPumpBlock extends BaseEntityBlock implements com.hbm_m.interfa
             }
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
-        return InteractionResult.PASS;
+        // Original: sonst GUIPump oeffnen (Durchsatz, Druck, Prioritaet)
+        if (level.isClientSide) {
+            dev.architectury.utils.EnvExecutor.runInEnv(dev.architectury.utils.Env.CLIENT, () -> () ->
+                    com.hbm_m.inventory.gui.GUIPump.open(pos));
+        }
+        return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
-    /**
-     * Порт {@code FluidPump.printHook}: тип и давление буфера с расходом mB/t, приоритет
-     * в сети и объём буферизованной жидкости.
-     */
     @Override
     public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
         BlockEntity be = level.getBlockEntity(pos);
@@ -142,7 +144,6 @@ public class FluidPumpBlock extends BaseEntityBlock implements com.hbm_m.interfa
         com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
                 net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
-
     //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<FluidPumpBlock> CODEC = simpleCodec(FluidPumpBlock::new);
 

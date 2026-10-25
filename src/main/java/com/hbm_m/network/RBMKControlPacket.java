@@ -92,6 +92,7 @@ public class RBMKControlPacket implements C2SPacket {
         return Double.isFinite(value) ? value : 0D;
     }
 
+
     // ─── Static send helpers ──────────────────────────────────────────────────
 
     public static void sendSetTarget(BlockPos pos, double target) {

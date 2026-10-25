@@ -60,6 +60,8 @@ public class DataGenerators {
         // Создаем и регистрируем провайдер для тегов ПРЕДМЕТОВ.
         // Он зависит от провайдера блоков, поэтому мы передаем в него blockTagProvider.contentsGetter()
         generator.addProvider(event.includeServer(), new ModItemTagProvider(packOutput, lookupProvider, blockTagProvider.contentsGetter(), existingFileHelper));
+        // OreDict-Schluessel des Originals als Tags hbm_m:oredict/... (Zutaten der uebersetzten Rezepte)
+        generator.addProvider(event.includeServer(), new com.hbm_m.datagen.recipes.custom.OreDictTagProvider(packOutput, lookupProvider, blockTagProvider.contentsGetter(), existingFileHelper));
 
         DatapackBuiltinEntriesProvider datapackProvider = new DatapackBuiltinEntriesProvider(
                 packOutput, lookupProvider, getRegistrySetBuilder(), Set.of(RefStrings.MODID)
@@ -83,14 +85,15 @@ public class DataGenerators {
                             try {
                                 @SuppressWarnings("unchecked")
                                 ResourceKey<DamageType> key = (ResourceKey<DamageType>) field.get(null);
+                                String path = key.location().getPath();
                                 DamageType value;
-                                if (key.location().getPath().equals("broadcast")) {
+                                if (path.equals("broadcast")) {
                                     // NEXT data/hbm/damage_type/broadcast.json: exhaustion 0.0,
                                     // scaling never — broadcast drains no hunger.
-                                    value = new DamageType(key.location().getPath(),
+                                    value = new DamageType(ModDamageTypes.msgIdFor(path),
                                             net.minecraft.world.damagesource.DamageScaling.NEVER, 0.0F);
                                 } else {
-                                    value = new DamageType(key.location().getPath(), 0.1F);
+                                    value = new DamageType(ModDamageTypes.msgIdFor(path), 0.1F);
                                 }
                                 context.register(key, value);
                             } catch (IllegalAccessException e) {

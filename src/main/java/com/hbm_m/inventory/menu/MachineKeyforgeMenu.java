@@ -12,6 +12,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /** Port of {@code ContainerMachineKeyForge} (1.7.10 Original). */
 public class MachineKeyforgeMenu extends AbstractContainerMenu {
@@ -33,7 +34,6 @@ public class MachineKeyforgeMenu extends AbstractContainerMenu {
         this.addSlot(keyforgeSlot(container, MachineKeyforgeBlockEntity.SLOT_SOURCE, 44, 36));
         this.addSlot(keyforgeSlot(container, MachineKeyforgeBlockEntity.SLOT_DUPE, 80, 36));
         this.addSlot(keyforgeSlot(container, MachineKeyforgeBlockEntity.SLOT_CUT, 116, 36));
-
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
                 this.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 104 + row * 18));
@@ -64,14 +64,14 @@ public class MachineKeyforgeMenu extends AbstractContainerMenu {
         };
     }
 
-    private static MachineKeyforgeBlockEntity getBlockEntity(Inventory inventory, FriendlyByteBuf buffer) {
+   private static MachineKeyforgeBlockEntity getBlockEntity(Inventory inventory, FriendlyByteBuf buffer) {
         BlockPos pos = buffer.readBlockPos();
         BlockEntity blockEntity = inventory.player.level().getBlockEntity(pos);
         if (blockEntity instanceof MachineKeyforgeBlockEntity keyforgeBlockEntity) {
             return keyforgeBlockEntity;
         }
         throw new MenuBlockEntityMissingException("No MachineKeyforgeBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":machine_keyforge_menu");
-    }
+   }
 
     public MachineKeyforgeBlockEntity getBlockEntity() {
         return blockEntity;
@@ -80,7 +80,7 @@ public class MachineKeyforgeMenu extends AbstractContainerMenu {
     @Override
     public boolean stillValid(Player player) {
         return MenuReach.stillValid(player, blockEntity);
-    }
+   }
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {

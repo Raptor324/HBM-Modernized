@@ -1,6 +1,7 @@
 {
   "parent": "minecraft:block/cube_all",
   "textures": {
-    "all": "hbm_m:block/machine/rbmk_console"
+    "all": "hbm_m:block/machine/rbmk_console",
+    "particle": "hbm_m:block/machine/rbmk_console"
   }
 }

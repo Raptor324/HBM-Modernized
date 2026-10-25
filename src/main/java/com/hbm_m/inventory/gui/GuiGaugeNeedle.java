@@ -11,13 +11,8 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.util.Mth;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
 
 /**
  * 1:1-Port von {@code GUIElements.drawSmoothGauge} (1.7.10): ein Zeiger als zwei Dreiecke -

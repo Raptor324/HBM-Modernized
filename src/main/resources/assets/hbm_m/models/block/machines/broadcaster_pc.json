@@ -1,8 +1,8 @@
 {
+    "parent": "block/block",
     "credit": "Ported from the original 1.7.10 ModelBroadcaster (Techne, Shape1-4)",
-    "ambientocclusion": false,
     "textures": {
-        "0": "hbm_m:block/model_broadcaster",
+        "0": "hbm_m:block/broadcaster",
         "particle": "hbm_m:block/broadcaster"
     },
     "elements": [
@@ -14,9 +14,9 @@
                 "up":    { "uv": [2, 0, 5.5, 4],   "texture": "#0" },
                 "down":  { "uv": [5.5, 0, 9, 4],    "texture": "#0" },
                 "east":  { "uv": [0, 4, 2, 9],      "texture": "#0" },
-                "south": { "uv": [7.5, 4, 11, 9],   "texture": "#0" },
+                "south": { "uv": [2, 4, 5.5, 9],    "texture": "#0" },
                 "west":  { "uv": [5.5, 4, 7.5, 9],  "texture": "#0" },
-                "north": { "uv": [2, 4, 5.5, 9],    "texture": "#0" }
+                "north": { "uv": [7.5, 4, 11, 9],   "texture": "#0" }
             }
         },
         {

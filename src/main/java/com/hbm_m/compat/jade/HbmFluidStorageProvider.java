@@ -51,11 +51,7 @@ import snownee.jade.api.view.IServerExtensionProvider;
 public final class HbmFluidStorageProvider {
 
     public static final ResourceLocation UID =
-        //? if < 1.21.1 {
-        new ResourceLocation("hbm_m", "fluid_storage");
-        //?} else {
-        /*ResourceLocation.fromNamespaceAndPath("hbm_m", "fluid_storage");
-        *///?}
+        ResourceLocation.fromNamespaceAndPath("hbm_m", "fluid_storage");
 
     /** Lower runs earlier; Jade's universal bridge sits at 1000 and only answers if we return null. */
     private static final int PRIORITY = 400;
@@ -199,7 +195,6 @@ public final class HbmFluidStorageProvider {
         }
     }
 
-    //? if forge {
     private static List<TankView> readCapabilityTanks(Level level, BlockEntity be) {
         net.minecraftforge.fluids.capability.IFluidHandler handler =
                 FluidBlockAccess.getFluidHandler(level, be.getBlockPos(), null);
@@ -219,25 +214,4 @@ public final class HbmFluidStorageProvider {
         }
         return out;
     }
-    //?} else {
-    /*private static List<TankView> readCapabilityTanks(Level level, BlockEntity be) {
-        net.neoforged.neoforge.fluids.capability.IFluidHandler handler =
-                FluidBlockAccess.getFluidHandler(level, be.getBlockPos(), null);
-        List<TankView> out = new ArrayList<>();
-        if (handler == null) {
-            return out;
-        }
-        for (int i = 0; i < handler.getTanks(); i++) {
-            int capacity = handler.getTankCapacity(i);
-            if (capacity <= 0) {
-                continue;
-            }
-            net.neoforged.neoforge.fluids.FluidStack stack = handler.getFluidInTank(i);
-            out.add(stack.isEmpty()
-                    ? new TankView(Fluids.EMPTY, 0, capacity)
-                    : new TankView(stack.getFluid(), stack.getAmount(), capacity));
-        }
-        return out;
-    }
-    *///?}
 }

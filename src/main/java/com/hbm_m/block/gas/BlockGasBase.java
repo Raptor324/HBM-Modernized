@@ -1,7 +1,7 @@
 package com.hbm_m.block.gas;
 
-import com.hbm_m.item.gasmask.IGasMask;
 import com.hbm_m.item.gasmask.GasMaskUtil;
+import com.hbm_m.item.gasmask.IGasMask;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -21,40 +21,100 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.MapColor;
-import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
- * Невидимый газ, заполняющий воздух и травящий сущностей.
- * Порт {@link com.hbm.blocks.gas.BlockGas} (1.7.10).
+ * 1:1-Port von {@code com.hbm.blocks.gas.BlockGasBase} (1.7.10): ein unsichtbarer, nicht
+ * kollidierender Block, der sich ueber geplante Blockupdates durch die Luft bewegt.
  */
 public abstract class BlockGasBase extends Block {
 
-    protected BlockGasBase() {
+    private final float red;
+    private final float green;
+    private final float blue;
+
+    /**
+     * @param r,g,b Wolkenfarbe aus dem Original-Konstruktor fuer Partikelwolke mit Aschebrille.
+     */
+    protected BlockGasBase(float r, float g, float b) {
         super(gasProps());
+        this.red = r;
+        this.green = g;
+        this.blue = b;
+    }
+
+    protected BlockGasBase() {
+        this(1.0F, 1.0F, 1.0F);
+    }
+
+    public float getRed()   { return red; }
+    public float getGreen() { return green; }
+    public float getBlue()  { return blue; }
+
+    /** 1:1 {@code randomDisplayTick}: mit Aschebrille (Helmplatz) eine eingefaerbte "vanillaExt"-Wolke. */
+    @Override
+    public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource rand) {
+        super.animateTick(state, level, pos, rand);
+
+        Player p = com.hbm_m.client.ClientAccess.player();
+        if (p != null && p.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.HEAD).is(com.hbm_m.item.ModItems.ASHGLASSES.get())
+                && (!com.hbm_m.api.space.SpaceApi.forkActive() || rand.nextInt(9) == 1)) {
+            net.minecraft.nbt.CompoundTag data = new net.minecraft.nbt.CompoundTag();
+            data.putString("type", "vanillaExt");
+            data.putString("mode", "cloud");
+            data.putDouble("posX", pos.getX() + 0.5);
+            data.putDouble("posY", pos.getY() + 0.5);
+            data.putDouble("posZ", pos.getZ() + 0.5);
+            data.putFloat("r", red);
+            data.putFloat("g", green);
+            data.putFloat("b", blue);
+            com.hbm_m.particle.helper.ParticleEffectClient.effectNT(data);
+        }
+
+        Player player = level.getNearestPlayer(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, 24.0D, EntitySelector.NO_SPECTATORS);
+        if (player != null && isHoldingGas(player, this)) {
+            level.addParticle(
+                    new BlockParticleOption(ParticleTypes.BLOCK_MARKER, state),
+                    pos.getX() + 0.5D,
+                    pos.getY() + 0.5D,
+                    pos.getZ() + 0.5D,
+                    0.0D, 0.0D, 0.0D
+            );
+        }
+
+        spawnAmbientParticles(state, level, pos, rand);
+    }
+
+    protected void spawnAmbientParticles(BlockState state, Level level, BlockPos pos, RandomSource random) {
+    }
+
+    protected static boolean isHoldingGas(Player player, Block gasBlock) {
+        if (player.isHolding(gasBlock.asItem())) {
+            return true;
+        }
+        ItemStack main = player.getMainHandItem();
+        ItemStack off = player.getOffhandItem();
+        return (main.getItem() instanceof BlockItem bi1 && bi1.getBlock() instanceof BlockGasBase)
+                || (off.getItem() instanceof BlockItem bi2 && bi2.getBlock() instanceof BlockGasBase);
     }
 
     protected static Block.Properties gasProps() {
         return Block.Properties.of()
-                .mapColor(MapColor.NONE)
                 .noCollission()
                 .noOcclusion()
                 .replaceable()
-                .pushReaction(PushReaction.DESTROY)
-                // -1.0F destroyTime = невозможно сломать/добыть в выживании (как бедрок/барьер).
-                // 0.0F blastResistance = взрыв развеивает газ без дропа.
-                .strength(-1.0F, 0.0F)
+                .instabreak()
+                .strength(-1.0F, 6000000.0F)
                 .noLootTable()
-                .randomTicks();
+                .mapColor(MapColor.NONE);
     }
 
-    /* =================== РЕНДЕР И ФОРМА =================== */
+    /* =================== RENDER & FORM =================== */
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        // Газ полностью прозрачен в мире
         return RenderShape.INVISIBLE;
     }
 
@@ -70,66 +130,34 @@ public abstract class BlockGasBase extends Block {
         return Shapes.empty();
     }
 
-    @Override
-    public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
-        // Если игрок рядом держит в руке этот (или любой) газ — визуализируем маркер (как у барьера)
-        Player player = level.getNearestPlayer(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, 24.0D, EntitySelector.NO_SPECTATORS);
-        if (player != null && isHoldingGas(player, this)) {
-            level.addParticle(
-                    new BlockParticleOption(ParticleTypes.BLOCK_MARKER, state),
-                    pos.getX() + 0.5D,
-                    pos.getY() + 0.5D,
-                    pos.getZ() + 0.5D,
-                    0.0D, 0.0D, 0.0D
-            );
-        }
-
-        spawnAmbientParticles(state, level, pos, random);
-    }
-
-    protected void spawnAmbientParticles(BlockState state, Level level, BlockPos pos, RandomSource random) {
-        // По умолчанию без частиц, подклассы переопределяют
-    }
-
-    protected static boolean isHoldingGas(Player player, Block gasBlock) {
-        if (player.isHolding(gasBlock.asItem())) {
-            return true;
-        }
-        ItemStack main = player.getMainHandItem();
-        ItemStack off = player.getOffhandItem();
-        return (main.getItem() instanceof BlockItem bi1 && bi1.getBlock() instanceof BlockGasBase)
-                || (off.getItem() instanceof BlockItem bi2 && bi2.getBlock() instanceof BlockGasBase);
-    }
-
-    /* =================== ФИЗИКА И ДВИЖЕНИЕ ГАЗОВ =================== */
+    /* =================== AUSBREITUNG =================== */
 
     @Override
+    @Deprecated
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
-        super.onPlace(state, level, pos, oldState, isMoving);
-        if (!level.isClientSide()) {
-            level.scheduleTick(pos, this, 10);
-        }
+        if (!level.isClientSide()) level.scheduleTick(pos, this, 10);
     }
 
     @Override
-    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
-        super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
-        if (!level.isClientSide()) {
-            if (!level.getBlockTicks().hasScheduledTick(pos, this)) {
-                level.scheduleTick(pos, this, 10);
-            }
-        }
+    @Deprecated
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block,
+                                BlockPos fromPos, boolean isMoving) {
+        if (!level.isClientSide()) level.scheduleTick(pos, this, 10);
     }
 
     @Override
+    @Deprecated
     public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-        // Проверяем возможность перемещения в первом направлении
-        Direction first = getFirstDirection(level, pos, random);
-        if (!tryMove(level, pos, state, first)) {
-            // Если первое заблокировано — пробуем второе
-            Direction second = getSecondDirection(level, pos, random);
-            if (!tryMove(level, pos, state, second)) {
-                // Если никуда не сместились — планируем следующий тик
+        int decay = getDecayChance();
+        if (decay > 0 && random.nextInt(decay) == 0) {
+            level.removeBlock(pos, false);
+            return;
+        }
+
+        if (onGasTick(state, level, pos, random)) return;
+
+        if (!tryMove(level, pos, state, getFirstDirection(level, pos, random))) {
+            if (!tryMove(level, pos, state, getSecondDirection(level, pos, random))) {
                 level.scheduleTick(pos, this, getDelay(level, random));
             }
         }
@@ -137,15 +165,19 @@ public abstract class BlockGasBase extends Block {
 
     @Override
     public void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-        // Страховка от зависания при выгрузке чанков
         if (!level.getBlockTicks().hasScheduledTick(pos, this)) {
             level.scheduleTick(pos, this, getDelay(level, random));
         }
     }
 
+    protected boolean onGasTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+        return false;
+    }
+
     protected boolean tryMove(ServerLevel level, BlockPos pos, BlockState state, Direction dir) {
         if (dir == null) return false;
         BlockPos target = pos.relative(dir);
+
         if (level.getBlockState(target).isAir()) {
             level.removeBlock(pos, false);
             level.setBlock(target, state, 3);
@@ -161,24 +193,32 @@ public abstract class BlockGasBase extends Block {
         return getFirstDirection(level, pos, random);
     }
 
-    public Direction randomHorizontal(RandomSource random) {
-        return Direction.Plane.HORIZONTAL.getRandomDirection(random);
-    }
-
     public int getDelay(Level level, RandomSource random) {
         return 2;
     }
 
-    /* =================== ВЗАИМОДЕЙСТВИЕ С СУЩНОСТЯМИ =================== */
+    protected int getDecayChance() {
+        return 0;
+    }
+
+    protected static Direction randomHorizontal(RandomSource random) {
+        return Direction.from3DDataValue(random.nextInt(4) + 2);
+    }
+
+    protected static Direction randomAny(RandomSource random) {
+        return Direction.from3DDataValue(random.nextInt(6));
+    }
+
+    protected static Direction randomVertical(RandomSource random) {
+        return Direction.from3DDataValue(random.nextInt(2));
+    }
+
+    /* =================== WIRKUNG =================== */
 
     @Override
     public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
-        if (level.isClientSide() || !(entity instanceof LivingEntity living)) {
-            return;
-        }
-        if (living instanceof Player player && (player.isCreative() || player.isSpectator())) {
-            return;
-        }
+        if (level.isClientSide() || !(entity instanceof LivingEntity living)) return;
+        if (living instanceof Player player && (player.isCreative() || player.isSpectator())) return;
         affect(living);
     }
 

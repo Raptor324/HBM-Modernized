@@ -53,3 +53,4 @@ public class LiquefactorJeiCategory extends JeiFluidRecipeCategory<LiquefactorRe
         return List.of(recipe.getOutput());
     }
 }
+

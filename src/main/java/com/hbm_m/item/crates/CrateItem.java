@@ -23,6 +23,8 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import com.hbm_m.platform.ModItemStackHandler;
+import com.hbm_m.platform.StackNbt;
+import com.hbm_m.platform.BlockEntityItemData;
 
 /**
  * Базовый Item для ящиков HBM с отображением содержимого в тултипе.
@@ -38,55 +40,108 @@ public class CrateItem extends BlockItem implements ITooltipProvider {
         this.totalSlots = totalSlots;
     }
 
+    /** Platzzahl der Kiste (ContainerUpgradeRecipe kuerzt uebernommene Inhalte darauf). */
+    public int getTotalSlots() {
+        return totalSlots;
+    }
+
+    // ---- 1:1 ItemBlockStorageCrate: Kiste aus der Hand oeffnen (ServerConfig.CRATE_OPEN_HELD) ----
+
+    /** Original: nur Eisen-, Stahl-, Desh-, Wolframkiste und Tresor sind {@code ItemBlockStorageCrate}. */
+    private boolean opensHeld() {
+        Block b = getBlock();
+        return b == com.hbm_m.block.ModBlocks.CRATE_IRON.get() || b == com.hbm_m.block.ModBlocks.CRATE_STEEL.get()
+                || b == com.hbm_m.block.ModBlocks.CRATE_DESH.get() || b == com.hbm_m.block.ModBlocks.CRATE_TUNGSTEN.get()
+                || b == com.hbm_m.block.ModBlocks.SAFE.get();
+    }
+
+    /** Original {@code onItemUse}: mit CRATE_OPEN_HELD setzt man die Kiste nur schleichend. */
+    @Override
+    public net.minecraft.world.InteractionResult useOn(net.minecraft.world.item.context.UseOnContext ctx) {
+        if (com.hbm_m.config.ModClothConfig.get().crateOpenHeld && opensHeld() && ctx.getPlayer() != null && !ctx.getPlayer().isShiftKeyDown()) {
+            return net.minecraft.world.InteractionResult.PASS;
+        }
+        return super.useOn(ctx);
+    }
+
+    /** Original {@code onItemRightClick}. */
+    @Override
+    public net.minecraft.world.InteractionResultHolder<ItemStack> use(Level level, net.minecraft.world.entity.player.Player player, net.minecraft.world.InteractionHand hand) {
+        ItemStack stack = player.getItemInHand(hand);
+        if (!com.hbm_m.config.ModClothConfig.get().crateOpenHeld || !opensHeld() || hand != net.minecraft.world.InteractionHand.MAIN_HAND) {
+            return super.use(level, player, hand);
+        }
+
+        if (!level.isClientSide && stack.getCount() == 1 && player instanceof net.minecraft.server.level.ServerPlayer sp) {
+            HeldCrate.tryOpen(sp, stack, getBlock());
+        }
+
+        return net.minecraft.world.InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
+    }
+
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level,
                                 List<Component> tooltip, TooltipFlag flag) {
 
-        CrateTooltipData data = readTooltipData(stack);
-        if (data == null) return;
-
-        int occupiedSlots = data.occupiedSlots();
-
-        if (data.totalRows() > PREVIEW_LIMIT) {
-            int remaining = data.totalRows() - PREVIEW_LIMIT;
-            tooltip.add(Component.literal(" ...and " + remaining + " more")
-                    .withStyle(getFillColor(occupiedSlots)));
+        // 1:1 BlockStorageCrate.addInformation: Spinnen und Schloss verbergen den Inhalt
+        CompoundTag be = com.hbm_m.platform.BlockEntityItemData.read(stack);
+        if (be != null) {
+            boolean locked = be.getBoolean("isLocked");
+            if (be.getBoolean("spiders")) {
+                if (locked) tooltip.add(Component.literal("This container is locked.").withStyle(ChatFormatting.RED));
+                tooltip.add(Component.literal("Skittering emanates from within...").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
+                return;
+            }
+            if (locked) {
+                tooltip.add(Component.literal("This container is locked.").withStyle(ChatFormatting.RED));
+                CrateTooltipData d = readTooltipData(stack);
+                tooltip.add(Component.literal(d != null && d.occupiedSlots() > 0 ? "It feels heavy..." : "It feels empty...").withStyle(ChatFormatting.YELLOW));
+                return;
+            }
         }
 
-        if (occupiedSlots == 0) {
-            tooltip.add(Component.literal(" [Empty]")
-                    .withStyle(ChatFormatting.GRAY));
-        } else {
-            tooltip.add(Component.literal(" " + occupiedSlots + "/" + totalSlots + " slots used")
-                    .withStyle(getFillColor(occupiedSlots)));
+        // 1:1 Inhaltsliste: "Contains:" + bis zu 10 Stapel (Slot-Reihenfolge) + "...and N more."
+        if (be == null || !be.contains("inventory")) return;
+        ModItemStackHandler handler = new ModItemStackHandler(totalSlots) {
+            @Override
+            protected void onContentsChanged(int slot) {}
+        };
+        //? if < 1.21.1 {
+        handler.deserializeNBT(be.getCompound("inventory"));
+        //?} else {
+        /*handler.deserializeNBT(PlatformHooks.clientProvider(), be.getCompound("inventory"));
+        *///?}
+        List<Component> contents = new ArrayList<>();
+        int amount = 0;
+        for (int i = 0; i < handler.getSlots(); i++) {
+            ItemStack content = handler.getStackInSlot(i);
+            if (!content.isEmpty()) {
+                amount++;
+                if (contents.size() < 10) {
+                    contents.add(Component.literal(" - ").append(content.getHoverName()).append(content.getCount() > 1 ? (" x" + content.getCount()) : "").withStyle(ChatFormatting.AQUA));
+                }
+            }
+        }
+        if (!contents.isEmpty()) {
+            tooltip.add(Component.literal("Contains:").withStyle(ChatFormatting.AQUA));
+            tooltip.addAll(contents);
+            amount -= contents.size();
+            if (amount > 0) {
+                tooltip.add(Component.literal("...and " + amount + " more.").withStyle(ChatFormatting.AQUA));
+            }
         }
     }
 
+    /** Original zeigt den Inhalt nur als Text (siehe appendHbmTooltip); keine Bildvorschau. */
     @Override
     public Optional<TooltipComponent> getTooltipImage(ItemStack stack) {
-        CrateTooltipData data = readTooltipData(stack);
-        if (data == null || data.previewEntries().isEmpty()) {
-            return Optional.empty();
-        }
-        return Optional.of(new CrateContentsTooltipComponent(data.previewEntries()));
+        return Optional.empty();
     }
 
     private @Nullable CrateTooltipData readTooltipData(ItemStack stack) {
-        // BaseCrateBlockEntity.saveToItem writes BLOCK_ENTITY_DATA on 1.21.1 (a "BlockEntityTag"
-        // element only on 1.20.1); reading CUSTOM_DATA and looking for that sub-tag found nothing,
-        // so the whole contents tooltip was dead.
-        CompoundTag beTag = null;
-        //? if < 1.21.1 {
-        if (PlatformHooks.hasItemTag(stack)) {
-            CompoundTag tag = PlatformHooks.getItemTag(stack);
-            if (tag != null && tag.contains("BlockEntityTag")) beTag = tag.getCompound("BlockEntityTag");
-        }
-        //?} else {
-        /*net.minecraft.world.item.component.CustomData data =
-                stack.get(net.minecraft.core.component.DataComponents.BLOCK_ENTITY_DATA);
-        if (data != null) beTag = data.copyTag();
-        *///?}
-        if (beTag == null || !beTag.contains("inventory")) return null;
+        CompoundTag beTag = com.hbm_m.platform.BlockEntityItemData.read(stack);
+        if (beTag == null) return null;
+        if (!beTag.contains("inventory")) return null;
 
         CompoundTag inventoryTag = beTag.getCompound("inventory");
         ModItemStackHandler handler = new ModItemStackHandler(totalSlots) {
@@ -140,7 +195,7 @@ public class CrateItem extends BlockItem implements ITooltipProvider {
         CompoundTag keyTag = stack.copy().save(new CompoundTag());
         //?} else {
         /*// Tooltip-path — клиентский; провайдер из клиентского Level (1.21.1 требует Provider для save).
-        CompoundTag keyTag = PlatformHooks.safeItemSave(stack.copy(), PlatformHooks.clientProvider());
+        CompoundTag keyTag = StackNbt.saveNew(stack.copy(), PlatformHooks.clientProvider());
         *///?}
         // This line is outside the version branches, and the two branches spell the key
         // differently: 1.20.1 ItemStack.save writes "Count", 1.21.1 ItemStack.CODEC writes "count".

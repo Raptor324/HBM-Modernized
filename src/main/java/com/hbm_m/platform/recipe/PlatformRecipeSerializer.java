@@ -28,7 +28,8 @@ public abstract class PlatformRecipeSerializer<R extends Recipe<?>> implements R
     
     @Override
     public @NotNull R fromJson(@NotNull ResourceLocation id, @NotNull JsonObject json) {
-        return readJson(id, json);
+        // Konfig-Fassungen (Original inputItemsEx / 528 / LBSM) vor dem Lesen aufloesen
+        return readJson(id, com.hbm_m.recipe.condition.ConfigRecipeFlags.resolveVariants(json));
     }
 
     @Override
@@ -60,7 +61,7 @@ public abstract class PlatformRecipeSerializer<R extends Recipe<?>> implements R
                 JsonObject json = map instanceof JsonObject obj
                         ? obj
                         : new com.mojang.serialization.Dynamic<>(ops, map).convert(JsonOps.INSTANCE).getValue().getAsJsonObject();
-                return DataResult.success(readJson(DUMMY_ID, json));
+                return DataResult.success(readJson(DUMMY_ID, com.hbm_m.recipe.condition.ConfigRecipeFlags.resolveVariants(json)));
             } catch (Exception e) {
                 // RecipeManager only surfaces the message, so log the cause with its stack trace.
                 com.hbm_m.main.MainRegistry.LOGGER.error("Failed to parse recipe", e);

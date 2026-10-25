@@ -1,444 +1,352 @@
 package com.hbm_m.blockentity.machines;
 
-import com.hbm_m.api.fluids.IFluidStandardReceiverMK2;
 import com.hbm_m.block.machines.MachineWoodBurnerBlock;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
+import com.hbm_m.handler.pollution.PollutionHandler;
+import com.hbm_m.inventory.fluid.trait.PollutionType;
 import com.hbm_m.blockentity.ModBlockEntities;
-import com.hbm_m.inventory.fluid.FluidType;
-import com.hbm_m.inventory.fluid.ModFluids;
-import com.hbm_m.inventory.fluid.tank.FluidTank;
-import com.hbm_m.inventory.fluid.trait.FT_Flammable;
-import com.hbm_m.module.ModuleBurnTime;
-import com.hbm_m.platform.ModItemStackHandler;
+import com.hbm_m.inventory.menu.MachineWoodBurnerMenu;
+import com.hbm_m.item.ModItems;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.Containers;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.item.Item;
+import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
+import org.jetbrains.annotations.Nullable;
+
 /**
- * Порт {@code TileEntityMachineWoodBurner} (1.7.10 Original) — дровяной генератор
- * (мультиблок 2×2×2): сжигает твёрдое топливо (слот 0) или жидкость из бака
- * ({@link ModuleBurnTime} с множителями log ×4 / wood ×2), выдаёт 100 HE/t в буфер
- * 100k HE и заряжает предмет-батарею в слоте 5 ({@code Library.chargeItemsFromTE}).
- *
- * <p>Два режима, переключаются кнопкой GUI ({@code receiveControl("switch")}):
- * твёрдый ({@code liquidBurn = false}) и жидкий ({@code liquidBurn = true}, бак
- * WOODOIL 16k mB, смена типа fluid identifier'ом, контейнеры в слотах 3/4).
- * Кнопка {@code receiveControl("toggle")} — вкл/выкл: при выключенной горелке
- * топливо НЕ тратится ({@code burnTime} замирает), при полном буфере — тоже.
- *
- * <p>Зола — порт оригинальной схемы WoodBurner: три счётчика (WOOD/COAL/MISC),
- * каждый тик горения накапливает время горения топлива, на пороге 2000 — предмет
- * золы в слот 1. Загрязнение — {@code PollutionHandler.SOOT_PER_SECOND} раз в секунду;
- * мировой сетки загрязнения в порте нет, конвертация в дымовой бак — как у
- * {@link FireboxBaseBlockEntity}/{@link MachineOilburnerBlockEntity}.
- *
- * <p>Частицы: дым из трубы (y+4, задний угол структуры) каждый тик генерации —
- * порт клиентской ветки {@code updateEntity} ({@code spawnParticle("smoke")}).
+ * 1:1 {@code TileEntityMachineWoodBurner}: 100000 HE, Feststoff (Brenndauer ueber {@code ModuleBurnTime}, Holzstaemme x4,
+ * Holz x2) liefert 100 HE/t, Fluessigmodus verbrennt bis 2 mB/t aus dem Holzoeltank (16000 mB) mit
+ * {@code Brennwert * mB / 2000}. Asche je Sorte ab 2000 Brennticks. Ohne Einschalten ({@code isOn}) laeuft nichts.
+ * Port-Slotlage (GUI): 0 Brennstoff, 1 Asche, 2 Ladeslot; 3 Fluid-ID, 4/5 Kanister ein/aus (Original 2, 3/4, Batterie 5).
  */
-public class MachineWoodBurnerBlockEntity extends BaseMachineBlockEntity implements IFluidStandardReceiverMK2 {
+public class MachineWoodBurnerBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.fluids.IFluidStandardReceiverMK2, com.hbm_m.api.tile.IControlReceiver {
 
-    public static final int SLOT_FUEL = 0;
-    public static final int SLOT_ASH = 1;
-    public static final int SLOT_FLUID_ID = 2;
-    public static final int SLOT_FLUID_IN = 3;
-    public static final int SLOT_FLUID_OUT = 4;
-    public static final int SLOT_BATTERY = 5;
-    public static final int INVENTORY_SIZE = 6;
+    private static final int FUEL_SLOT = 0;
+    private static final int ASH_SLOT = 1;
+    private static final int CHARGE_SLOT = 2;
+    private static final int FLUID_ID_SLOT = 3;
+    private static final int FLUID_IN_SLOT = 4;
+    private static final int FLUID_OUT_SLOT = 5;
+    private static final int INVENTORY_SIZE = 6;
 
-    /** Оригинальный {@code maxPower = 100_000}. */
-    public static final long MAX_POWER = 100_000L;
-    /** Оригинальный темп генерации: {@code powerGen += 100} за тик горения. */
-    public static final int GENERATION_PER_TICK = 100;
-    /** Порог золы оригинала ({@code int threshold = 2000}). */
-    public static final int ASH_THRESHOLD = 2000;
-    /** Ёмкость бака оригинала: {@code new FluidTank(Fluids.WOODOIL, 16_000)}. */
-    public static final int TANK_CAPACITY = 16_000;
-    /** Буфер дымового бака — как у портированной TileEntityMachinePolluting(2, 50). */
-    public static final int SMOKE_BUFFER = 50;
-    /** {@code PollutionHandler.SOOT_PER_SECOND} оригинала. */
-    public static final float SOOT_PER_SECOND = 1.0F / 25.0F;
+    /** Original: {@code maxPower = 100_000}. */
+    private static final long CAPACITY = 100_000L;
 
-    /** Оригинал: {@code burnModule = new ModuleBurnTime().setLogTimeMod(4).setWoodTimeMod(2)}. */
-    public static final ModuleBurnTime BURN_MODULE = new ModuleBurnTime().setLogTimeMod(4).setWoodTimeMod(2);
+    /** Original: {@code new ModuleBurnTime().setLogTimeMod(4).setWoodTimeMod(2)}. */
+    public static final com.hbm_m.module.ModuleBurnTime burnModule = new com.hbm_m.module.ModuleBurnTime().setLogTimeMod(4).setWoodTimeMod(2);
 
-    /** Оригинальный {@code tank}. */
-    private final FluidTank tank = new FluidTank(ModFluids.WOODOIL.getSource(), TANK_CAPACITY);
-    /** Конверсия SOOT-загрязнения (мировой сетки в порте нет). */
-    private final FluidTank smoke = new FluidTank(ModFluids.SMOKE.getSource(), SMOKE_BUFFER);
+    // GUI данные
+    protected final ContainerData data;
 
-    public int burnTime;
-    public int maxBurnTime;
-    /** Оригинальный {@code liquidBurn} — режим сжигания жидкости. */
-    private boolean liquidBurn = false;
-    /** Оригинальный {@code isOn} — кнопка GUI. */
-    private boolean isOn = false;
+    // Состояние горения
+    private int burnTime = 0;
+    private int maxBurnTime = 0;
+    /** Original {@code isOn}: startet ausgeschaltet. */
+    private boolean enabled = false;
+    public boolean liquidBurn = false;
+    protected int powerGen = 0;
 
-    /** Доступ для {@code ToggleWoodBurnerPacket} (GUI-кнопка вкл/выкл). */
-    public boolean isEnabled() { return isOn; }
+    public int ashLevelWood;
+    public int ashLevelCoal;
+    public int ashLevelMisc;
 
-    public void setEnabled(boolean on) { this.isOn = on; }
-    /** {@code powerGen} — сбрасывается в начале тика, синхронизируется для частиц/GUI. */
-    public int powerGen = 0;
+    public final com.hbm_m.inventory.fluid.tank.FluidTank tank =
+            new com.hbm_m.inventory.fluid.tank.FluidTank(com.hbm_m.inventory.fluid.ModFluids.WOODOIL.getSource(), 16_000);
 
-    private final int[] ashLevel = new int[3]; // WOOD, COAL, MISC — порядок EnumAshType оригинала
+    public MachineWoodBurnerBlockEntity(BlockPos pPos, BlockState pBlockState) {
+        super(ModBlockEntities.WOOD_BURNER_BE.get(), pPos, pBlockState,
+              INVENTORY_SIZE, CAPACITY, 0L, CAPACITY); // Original: nur Erzeuger, gibt alles ab
 
-    public MachineWoodBurnerBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.WOOD_BURNER_BE.get(), pos, state, INVENTORY_SIZE, MAX_POWER, 0L, GENERATION_PER_TICK * 2);
+        this.data = new ContainerData() {
+            @Override
+            public int get(int i) {
+                return switch (i) {
+                    case 0 -> burnTime;
+                    case 1 -> maxBurnTime;
+                    case 2 -> isBurning() ? 1 : 0;
+                    case 3 -> enabled ? 1 : 0;
+                    default -> 0;
+                };
+            }
+
+            @Override
+            public void set(int i, int v) {
+                if (i == 3) enabled = v != 0;
+            }
+
+            @Override
+            public int getCount() {
+                return 4;
+            }
+        };
     }
 
-    public ModuleBurnTime getBurnModule() {
-        return BURN_MODULE;
-    }
+    public static void tick(Level level, BlockPos pos, BlockState state, MachineWoodBurnerBlockEntity be) {
+        if (level.isClientSide()) return;
 
-    public FluidTank getTank() {
-        return tank;
-    }
+        // Инициализация сети через базовый класс
+        be.ensureNetworkInitialized();
 
-    // ─────────────────────────── Тик ───────────────────────────
+        boolean wasBurning = be.isBurning();
 
-    public static void serverTick(Level level, BlockPos pos, BlockState state, MachineWoodBurnerBlockEntity be) {
         be.powerGen = 0;
 
-        // Оригинал: tank.setType(2, slots); tank.loadTank(3, 4, slots);
-        ItemStack[] slots = be.getSlotsArray();
-        boolean slotsChanged = false;
-        if (be.tank.setType(SLOT_FLUID_ID, slots)) slotsChanged = true;
-        if (be.tank.loadTank(SLOT_FLUID_IN, SLOT_FLUID_OUT, slots)) slotsChanged = true;
-        if (slotsChanged) be.applySlotsArray(slots);
+        ItemStack[] slots = new ItemStack[INVENTORY_SIZE];
+        for (int i = 0; i < INVENTORY_SIZE; i++) slots[i] = be.inventory.getStackInSlot(i);
+        boolean changed = be.tank.setType(FLUID_ID_SLOT, slots);
+        changed |= be.tank.loadTank(FLUID_IN_SLOT, FLUID_OUT_SLOT, slots);
+        if (changed) {
+            for (int i = 0; i < INVENTORY_SIZE; i++) be.inventory.setStackInSlot(i, slots[i] == null ? ItemStack.EMPTY : slots[i]);
+        }
+        be.chargeItem();
 
-        // Оригинал: Library.chargeItemsFromTE(slots, 5, power, maxPower) — заряд предмета из буфера.
-        be.chargeItemInSlot(SLOT_BATTERY);
-
-        // Оригинал: раз в секунду trySubscribe(tank.getTankType()) на обеих задних позициях.
-        // Порты идут через TTL-кэш базы (пересбор — раз на изменение структуры, не каждый раз).
         if (level.getGameTime() % 20 == 0) {
-            for (BlockPos portPos : be.getCachedExtraPorts()) {
-                be.trySubscribe(be.tank.getTankType(), level, portPos, getDirectionTo(pos, portPos));
+            for (BlockPos port : be.getExtraEnergyPorts()) {
+                for (Direction dir : Direction.values()) be.trySubscribe(be.tank.getTankType(), level, port.relative(dir), dir);
             }
         }
 
         if (!be.liquidBurn) {
 
             if (be.burnTime <= 0) {
-                // Оригинальная ветка потребления топлива: работает и при isOn = false —
-                // горелка «держит» burnTime до включения или заполнения буфера.
-                ItemStack fuel = be.inventory.getStackInSlot(SLOT_FUEL);
+
+                ItemStack fuel = be.inventory.getStackInSlot(FUEL_SLOT);
                 if (!fuel.isEmpty()) {
-                    int burn = be.BURN_MODULE.getBurnTime(fuel);
+                    int burn = burnModule.getBurnTime(fuel);
                     if (burn > 0) {
-                        be.addAsh(FireboxBaseBlockEntity.getAshFromFuel(fuel), burn);
-                        be.processAsh();
+                        MachineAshpitBlockEntity.AshType type = MachineFireboxBaseBlockEntity.getAshFromFuel(fuel);
+                        if (type == MachineAshpitBlockEntity.AshType.WOOD) be.ashLevelWood += burn;
+                        if (type == MachineAshpitBlockEntity.AshType.COAL) be.ashLevelCoal += burn;
+                        if (type == MachineAshpitBlockEntity.AshType.MISC) be.ashLevelMisc += burn;
+                        int threshold = 2000;
+                        while (be.processAsh(be.ashLevelWood, ModItems.ASH_WOOD.get(), threshold)) be.ashLevelWood -= threshold;
+                        while (be.processAsh(be.ashLevelCoal, ModItems.ASH_COAL.get(), threshold)) be.ashLevelCoal -= threshold;
+                        while (be.processAsh(be.ashLevelMisc, ModItems.ASH_MISC.get(), threshold)) be.ashLevelMisc -= threshold;
 
                         be.maxBurnTime = be.burnTime = burn;
-
-                        // Оригинал: getContainerItem → decrStackSize → контейнер, если слот опустел.
-                        Item containerItem = fuel.getItem().getCraftingRemainingItem();
-                        if (fuel.getCount() == 1) {
-                            be.inventory.setStackInSlot(SLOT_FUEL, containerItem == null ? ItemStack.EMPTY : new ItemStack(containerItem));
-                        } else {
-                            fuel.shrink(1);
-                        }
-                        be.setChanged();
+                        net.minecraft.world.item.Item container = fuel.getItem().getCraftingRemainingItem();
+                        ItemStack rest = fuel.copy();
+                        rest.shrink(1);
+                        if (rest.isEmpty() && container != null) be.inventory.setStackInSlot(FUEL_SLOT, new ItemStack(container));
+                        else be.inventory.setStackInSlot(FUEL_SLOT, rest);
                     }
                 }
 
-            } else if (be.energy < be.capacity && be.isOn) {
+            } else if (be.energy < CAPACITY && be.enabled && be.breatheAir(1)) { // NTM Space: breatheAir - ohne Addon true
                 be.burnTime--;
-                be.powerGen += GENERATION_PER_TICK;
-                if (level.getGameTime() % 20 == 0) be.polluteSoot(SOOT_PER_SECOND);
+                be.powerGen += 100;
+                if (level.getGameTime() % 20 == 0) {
+                    PollutionHandler.incrementPollution(level, pos, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND);
+                }
             }
 
         } else {
 
-            if (be.energy < be.capacity && be.tank.getFill() > 0 && be.isOn) {
-                FT_Flammable trait = FluidType.getTrait(be.tank.getTankType(), FT_Flammable.class);
+            if (be.energy < CAPACITY && be.tank.getFill() > 0 && be.enabled && be.breatheAir(1)) { // NTM Space: breatheAir
+                com.hbm_m.inventory.fluid.trait.FT_Flammable trait =
+                        com.hbm_m.inventory.fluid.FluidType.getTrait(be.tank.getTankType(), com.hbm_m.inventory.fluid.trait.FT_Flammable.class);
 
                 if (trait != null) {
-                    // Оригинал: 2 mB за тик, heatEnergy * toBurn / 2000.
                     int toBurn = Math.min(be.tank.getFill(), 2);
 
                     if (toBurn > 0) {
                         be.powerGen += (int) (trait.getHeatEnergy() * toBurn / 2_000L);
                         be.tank.setFill(be.tank.getFill() - toBurn);
-                        if (level.getGameTime() % 20 == 0) be.polluteSoot(SOOT_PER_SECOND * toBurn / 2.0F);
+                        if (level.getGameTime() % 20 == 0) {
+                            PollutionHandler.incrementPollution(level, pos, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND * toBurn / 2F);
+                        }
                     }
                 }
             }
         }
 
-        // Оригинал: power += powerGen; кламп сверху.
-        be.setEnergyStored(be.energy + be.powerGen);
+        be.setEnergyStored(Math.min(CAPACITY, be.energy + be.powerGen));
 
-        // LIT-свойство повторяет факт генерации (в блокстейте обе версии ведут к одной модели).
-        boolean burning = be.powerGen > 0;
-        if (state.getValue(MachineWoodBurnerBlock.LIT) != burning) {
-            level.setBlock(pos, state.setValue(MachineWoodBurnerBlock.LIT, burning), 3);
+        // Обновляем визуальное состояние блока
+        if (wasBurning != be.isBurning()) {
+            level.setBlock(pos, state.setValue(MachineWoodBurnerBlock.LIT, be.isBurning()), 3);
         }
 
-        // Оригинал: networkPackNT(25) — полная синхронизация каждый тик; здесь — по подписи
-        // отрисовываемого состояния (P6: буфер, burnTime/powerGen, зола, режим, инвентарь).
-        // При горении подпись меняется каждый тик (энергия/burnTime), в простое — только
-        // при реальном изменении.
-        be.syncIfStateChanged(be.syncEnergyBucket(), be.syncStateBucket());
+        long lo = (be.isBurning() ? 1L : 0L) | (be.enabled ? 2L : 0L) | (be.liquidBurn ? 4L : 0L) | (((long) be.burnTime) << 3);
+        long hi = be.energy | (((long) be.tank.getFill()) << 32);
+        be.syncIfStateChanged(lo, hi);
     }
 
-    /** lo-часть подписи: энергия и счётчики горения (меняются каждый тик генерации). */
-    private long syncEnergyBucket() {
-        return ((energy * 31L + burnTime) * 31L + maxBurnTime) * 31L + powerGen;
-    }
-
-    /** hi-часть подписи: баки, счётчики золы, режим и инвентарь. */
-    private long syncStateBucket() {
-        long h = tankFingerprint(tank);
-        h = h * 31L + tankFingerprint(smoke);
-        h = h * 31L + ashLevel[0];
-        h = h * 31L + ashLevel[1];
-        h = h * 31L + ashLevel[2];
-        h = h * 31L + (isOn ? 1L : 0L) + (liquidBurn ? 2L : 0L);
-        for (int i = 0; i < INVENTORY_SIZE; i++) {
-            h = h * 31L + com.hbm_m.platform.PlatformHooks.stackFingerprint(inventory.getStackInSlot(i));
-        }
-        return h;
-    }
-
-    private static long tankFingerprint(FluidTank t) {
-        net.minecraft.world.level.material.Fluid type = t.getTankType();
-        return (type == null ? 0L : type.hashCode() * 31L) + t.getFill();
-    }
-
-    /** Клиентский тик: дым из трубы при генерации (порт spawnParticle("smoke")). */
-    public static void clientTick(Level level, BlockPos pos, BlockState state, MachineWoodBurnerBlockEntity be) {
-        if (be.powerGen <= 0) return;
-
-        // Оригинал: dir = facing; smoke в (0.5 - dir + rot, y + 4), rot = dir.getRotation(UP).
-        Direction dir = state.getValue(MachineWoodBurnerBlock.FACING).getOpposite();
-        Direction rot = dir.getClockWise();
-        double px = pos.getX() + 0.5 - dir.getStepX() + rot.getStepX();
-        double pz = pos.getZ() + 0.5 - dir.getStepZ() + rot.getStepZ();
-        level.addParticle(ParticleTypes.SMOKE, px, pos.getY() + 4, pz, 0, 0.05, 0);
-    }
-
-    private static Direction getDirectionTo(BlockPos from, BlockPos to) {
-        return Direction.getNearest(to.getX() - from.getX(), to.getY() - from.getY(), to.getZ() - from.getZ());
-    }
-
-    // ─────────────────────────── Зола ───────────────────────────
-
-    /** Оригинал: {@code ashLevelWood/Coal/Misc += burn} (burn — время с множителем модуля). */
-    private void addAsh(MachineAshpitBlockEntity.AshType type, int amount) {
-        switch (type) {
-            case WOOD -> ashLevel[0] += amount;
-            case COAL -> ashLevel[1] += amount;
-            default -> ashLevel[2] += amount;
-        }
-    }
-
-    /** Оригинал: while(processAsh(level, type, 2000)) level -= 2000 — предмет золы в слот 1. */
-    private void processAsh() {
-        for (int i = 0; i < ashLevel.length; i++) {
-            Item ashItem = ashItemFor(i);
-            while (ashLevel[i] >= ASH_THRESHOLD) {
-                if (!tryInsertAsh(ashItem)) break;
-                ashLevel[i] -= ASH_THRESHOLD;
+    /** Original {@code processAsh}: legt bei erreichter Schwelle ein Aschehaeufchen in den Ascheplatz, falls es passt. */
+    protected boolean processAsh(int level, net.minecraft.world.item.Item ash, int threshold) {
+        if (level >= threshold) {
+            ItemStack slot = inventory.getStackInSlot(ASH_SLOT);
+            if (slot.isEmpty()) {
+                inventory.setStackInSlot(ASH_SLOT, new ItemStack(ash));
+                return true;
+            } else if (slot.getCount() < slot.getMaxStackSize() && slot.is(ash)) {
+                ItemStack grown = slot.copy();
+                grown.grow(1);
+                inventory.setStackInSlot(ASH_SLOT, grown);
+                return true;
             }
-        }
-    }
-
-    private static Item ashItemFor(int index) {
-        return switch (index) {
-            case 0 -> com.hbm_m.item.ModItems.ASH_WOOD.get();
-            case 1 -> com.hbm_m.item.ModItems.ASH_COAL.get();
-            default -> com.hbm_m.item.ModItems.ASH_MISC.get();
-        };
-    }
-
-    private boolean tryInsertAsh(Item ashItem) {
-        ItemStack ash = inventory.getStackInSlot(SLOT_ASH);
-        if (ash.isEmpty()) {
-            inventory.setStackInSlot(SLOT_ASH, new ItemStack(ashItem));
-            return true;
-        }
-        if (ash.is(ashItem) && ash.getCount() < ash.getMaxStackSize()) {
-            ash.grow(1);
-            return true;
         }
         return false;
     }
 
-    // ─────────────────────────── Загрязнение ───────────────────────────
-
-    /** SOOT → дымовой бак: ceil(amount * 100) mB, переполнение отбрасывается (сетки pollution нет). */
-    private void polluteSoot(float amount) {
-        int mB = (int) Math.ceil(amount * 100);
-        smoke.setFill(Math.min(smoke.getMaxFill(), smoke.getFill() + mB));
-    }
-
-    // ─────────────────────────── Жидкости ───────────────────────────
-
+    /** Original {@code receiveControl}: "toggle" schaltet ein/aus, "switch" wechselt Fest-/Fluessigbetrieb. */
     @Override
-    public FluidTank[] getReceivingTanks() {
-        return new FluidTank[] { tank };
+    public void receiveControl(CompoundTag data) {
+        if (data.contains("toggle")) setEnabled(!enabled);
+        if (data.contains("switch")) {
+            toggleLiquidBurn();
+            sendUpdateToClient();
+        }
     }
 
+    /** Original {@code hasPermission}: Spieler in Reichweite (16 Bloecke). */
     @Override
-    public FluidTank[] getAllTanks() {
-        return new FluidTank[] { tank, smoke };
+    public boolean hasPermission(Player player) {
+        return player.distanceToSqr(worldPosition.getX() + 0.5D, worldPosition.getY() + 0.5D, worldPosition.getZ() + 0.5D) <= 256.0D;
     }
+
+    /** Original {@code receiveControl("switch")}: Fest-/Fluessigbetrieb umschalten. */
+    public void toggleLiquidBurn() {
+        this.liquidBurn = !this.liquidBurn;
+        setChanged();
+    }
+
+    public int getPowerGen() { return powerGen; }
+
+    @Override public com.hbm_m.inventory.fluid.tank.FluidTank[] getAllTanks() { return new com.hbm_m.inventory.fluid.tank.FluidTank[] { tank }; }
+    @Override public com.hbm_m.inventory.fluid.tank.FluidTank[] getReceivingTanks() { return new com.hbm_m.inventory.fluid.tank.FluidTank[] { tank }; }
 
     @Override
     public boolean isLoaded() {
         return level != null && !isRemoved() && level.isLoaded(worldPosition);
     }
 
-    /** Оригинал canConnect(FluidType, dir): только задняя сторона. */
-    @Override
-    public boolean canConnect(net.minecraft.world.level.material.Fluid fluid, Direction dir) {
-        return dir == getBlockState().getValue(MachineWoodBurnerBlock.FACING).getOpposite();
+    public boolean isBurning() {
+        return this.burnTime > 0;
     }
 
-    private ItemStack[] getSlotsArray() {
-        ItemStack[] arr = new ItemStack[INVENTORY_SIZE];
-        for (int i = 0; i < INVENTORY_SIZE; i++) arr[i] = inventory.getStackInSlot(i);
-        return arr;
+
+        @Override
+    public boolean canConnect(net.minecraft.world.level.material.Fluid fluid, Direction fromDir) {
+        return fromDir != null;
     }
 
-    private void applySlotsArray(ItemStack[] arr) {
-        for (int i = 0; i < INVENTORY_SIZE; i++) inventory.setStackInSlot(i, arr[i]);
-    }
-
-    // ─────────────────────────── Управление (receiveControl) ───────────────────────────
-
-    /** Оригинал {@code receiveControl("toggle")} — без NBT-флага всегда инвертирует. */
-    public void toggleOn() {
-        this.isOn = !this.isOn;
-        setChanged();
-        sendUpdateToClient();
-    }
-
-    /** Оригинал {@code receiveControl("switch")}. */
-    public void switchMode() {
-        this.liquidBurn = !this.liquidBurn;
-        setChanged();
-        sendUpdateToClient();
-    }
-
-    public boolean isOn() {
-        return isOn;
-    }
-
-    public boolean isLiquidBurn() {
-        return liquidBurn;
-    }
-
-    // ─────────────────────────── Автоматизация ───────────────────────────
-
-    /** Оригинал getAccessibleSlotsFromSide {0, 1} / canExtractItem(slot 1) — воронки: топливо внутрь, зола наружу. */
-    private ModItemStackHandler automationHandler;
-
-    @Override
-    protected ModItemStackHandler getAutomationItemHandler() {
-        if (automationHandler == null) {
-            automationHandler = new ModItemStackHandler(INVENTORY_SIZE) {
-                @Override public int getSlots() { return INVENTORY_SIZE; }
-                @Override public ItemStack getStackInSlot(int slot) { return inventory.getStackInSlot(slot); }
-                @Override public void setStackInSlot(int slot, ItemStack stack) { inventory.setStackInSlot(slot, stack); }
-                @Override public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
-                    if (slot != SLOT_FUEL) return stack;
-                    return inventory.insertItem(slot, stack, simulate);
-                }
-                @Override public ItemStack extractItem(int slot, int amount, boolean simulate) {
-                    if (slot != SLOT_ASH) return ItemStack.EMPTY;
-                    return inventory.extractItem(slot, amount, simulate);
-                }
-                @Override public int getSlotLimit(int slot) { return inventory.getSlotLimit(slot); }
-                @Override public boolean isItemValid(int slot, ItemStack stack) { return inventory.isItemValid(slot, stack); }
-            };
-        }
-        return automationHandler;
-    }
-
-    /** Оригинал isItemValidForSlot: только слот 0 и только топливо (по модулю с множителями). */
-    @Override
-    protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return slot == SLOT_FUEL && !stack.isEmpty() && BURN_MODULE.getBurnTime(stack) > 0;
-    }
-
-    // ─────────────────────────── NBT ───────────────────────────
-
+    // --- NBT ---
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.writeNbtData(tag, registries);
+        super.writeNbtData(tag, registries); // Сохраняет inventory и energy из базового класса
         tag.putInt("burnTime", burnTime);
         tag.putInt("maxBurnTime", maxBurnTime);
-        tag.putBoolean("isOn", isOn);
+        tag.putBoolean("enabled", enabled);
         tag.putBoolean("liquidBurn", liquidBurn);
         tag.putInt("powerGen", powerGen);
-        tank.writeToNBT(tag, "tank");
-        smoke.writeToNBT(tag, "smoke");
-        tag.putInt("ashWood", ashLevel[0]);
-        tag.putInt("ashCoal", ashLevel[1]);
-        tag.putInt("ashMisc", ashLevel[2]);
+        tag.putInt("ashWood", ashLevelWood);
+        tag.putInt("ashCoal", ashLevelCoal);
+        tag.putInt("ashMisc", ashLevelMisc);
+        tank.writeToNBT(tag, "t");
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.readNbtData(tag, registries);
+        super.readNbtData(tag, registries); // Загружает inventory и energy из базового класса
         burnTime = tag.getInt("burnTime");
         maxBurnTime = tag.getInt("maxBurnTime");
-        isOn = tag.getBoolean("isOn");
+        if (tag.contains("enabled")) enabled = tag.getBoolean("enabled");
+        else if (tag.contains("isOn")) enabled = tag.getBoolean("isOn");
         liquidBurn = tag.getBoolean("liquidBurn");
         powerGen = tag.getInt("powerGen");
-        if (tag.contains("tank")) tank.readFromNBT(tag, "tank");
-        if (tag.contains("smoke")) smoke.readFromNBT(tag, "smoke");
-        ashLevel[0] = tag.getInt("ashWood");
-        ashLevel[1] = tag.getInt("ashCoal");
-        ashLevel[2] = tag.getInt("ashMisc");
+        ashLevelWood = tag.getInt("ashWood");
+        ashLevelCoal = tag.getInt("ashCoal");
+        ashLevelMisc = tag.getInt("ashMisc");
+        if (tag.contains("t")) tank.readFromNBT(tag, "t");
+        else if (tag.contains("tank")) tank.readFromNBT(tag, "tank");
     }
 
-    // ─────────────────────────── GUI / Menu ───────────────────────────
+    // --- GUI ---
+    @Override
+    public Component getDisplayName() {
+        return Component.translatable("container.hbm_m.wood_burner");
+    }
 
+    @Nullable
+    @Override
+    public AbstractContainerMenu createMenu(int id, Inventory inv, Player p) {
+        return new MachineWoodBurnerMenu(id, inv, this);
+    }
+
+    public void drops() {
+        if (level != null) {
+            SimpleContainer simpleContainer = new SimpleContainer(inventory.getSlots());
+            for (int i = 0; i < inventory.getSlots(); i++) {
+                simpleContainer.setItem(i, inventory.getStackInSlot(i));
+            }
+            Containers.dropContents(this.level, this.worldPosition, simpleContainer);
+        }
+    }
+
+    public boolean isEnabled() {
+        return this.enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+        setChanged();
+        if (level != null && !level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
+    }
+
+
+
+    private void chargeItem() {
+        chargeItemInSlot(CHARGE_SLOT);
+    }
+
+    // --- Реализация абстрактных методов ---
     @Override
     protected Component getDefaultName() {
         return Component.translatable("container.hbm_m.wood_burner");
     }
 
     @Override
-    public Component getDisplayName() {
-        return getDefaultName();
+    protected boolean isItemValidForSlot(int slot, ItemStack stack) {
+        if (slot == FUEL_SLOT) {
+            // Original: alles mit Brennwert
+            return burnModule.getBurnTime(stack) > 0;
+        }
+        if (slot == FLUID_ID_SLOT || slot == FLUID_IN_SLOT) return true;
+        if (slot == ASH_SLOT) {
+            // Ничего нельзя положить в слот пепла
+            return false;
+        }
+        if (slot == CHARGE_SLOT) {
+            return isEnergyReceiverItem(stack);
+        }
+        return false;
     }
 
-    @Override
-    public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
-        return new com.hbm_m.inventory.menu.MachineWoodBurnerMenu(id, inventory, this);
-    }
-
-    /** Оригинальный getRenderBoundingBox: задняя 3×3, высота 6 (труба). */
-    @Override
-    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
-        return new net.minecraft.world.phys.AABB(
-                worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1,
-                worldPosition.getX() + 2, worldPosition.getY() + 6, worldPosition.getZ() + 2);
-    }
-
-    // ─────────────────────────── Энергопорты мультиблока ───────────────────────────
-
+    // Энергопорты мультиблока: позиции фантомов структуры, ранее регистрировавшиеся блоком.
+    // Ядро (worldPosition) подписывается в BaseMachineBlockEntity.ensureNetworkInitialized().
     @Override
     protected BlockPos[] getExtraEnergyPorts() {
         if (level == null || level.isClientSide) return new BlockPos[0];
-        if (!(getBlockState().getBlock() instanceof MachineWoodBurnerBlock block)) return new BlockPos[0];
+        if (!(getBlockState().getBlock() instanceof com.hbm_m.block.machines.MachineWoodBurnerBlock block)) return new BlockPos[0];
 
         var helper = block.getStructureHelper();
-        Direction facing = getBlockState().getValue(MachineWoodBurnerBlock.FACING);
+        Direction facing = getBlockState().getValue(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING);
 
         java.util.List<BlockPos> ports = new java.util.ArrayList<>();
         for (BlockPos localPos : helper.getStructureMap().keySet()) {
@@ -447,5 +355,53 @@ public class MachineWoodBurnerBlockEntity extends BaseMachineBlockEntity impleme
             }
         }
         return ports.toArray(new BlockPos[0]);
+    }
+    //? if forge {
+    /** Original {@code ISidedInventory}: Slots {0, 1}; Brennstoff hinein, Asche heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0, 1 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 0 && burnModule.getBurnTime(stack) > 0; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 1; }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: Slots {0, 1}; Brennstoff hinein, Asche heraus. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0, 1 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 0 && burnModule.getBurnTime(stack) > 0; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 1; }
+            });
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
+    //? if forge {
+    @Override
+    //?}
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return new net.minecraft.world.phys.AABB(worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1,
+                worldPosition.getX() + 2, worldPosition.getY() + 2, worldPosition.getZ() + 2);
     }
 }

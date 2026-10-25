@@ -1,17 +1,18 @@
 package com.hbm_m.blockentity.network.radio;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import com.hbm_m.api.redstoneoverradio.IRORInteractive;
 import com.hbm_m.api.redstoneoverradio.RORFunctionException;
 import com.hbm_m.block.machines.radio.RadioTorchBaseBlock;
 import com.hbm_m.blockentity.ModBlockEntities;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
-import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
@@ -38,8 +39,9 @@ public class RadioTorchControllerBlockEntity extends com.hbm_m.blockentity.BaseH
         if (be.channel.isEmpty()) return;
 
         Direction facing = state.hasProperty(RadioTorchBaseBlock.FACING) ? state.getValue(RadioTorchBaseBlock.FACING) : Direction.UP;
-        BlockPos sourcePos = pos.relative(facing.getOpposite());
-        if (!(level.getBlockEntity(sourcePos) instanceof IRORInteractive ror)) return;
+        // FACING zeigt in den Halteblock (Original: getOrientation(meta).getOpposite())
+        BlockPos sourcePos = pos.relative(facing);
+        if (!(com.hbm_m.api.redstoneoverradio.IRORInfo.resolve(level, sourcePos) instanceof IRORInteractive ror)) return;
 
         RTTYNetwork.RttyChannel chan = RTTYNetwork.listen(level, be.channel);
         if (chan == null) return;
@@ -49,9 +51,7 @@ public class RadioTorchControllerBlockEntity extends com.hbm_m.blockentity.BaseH
         // 1:1-Port: der Sonderbefehl sprengt den Empfaenger. Wer den Kanal kennt, kann eine
         // fremde Anlage damit lahmlegen - genau das ist im Original der Reiz daran.
         if ("selfdestruct".equals(rec)) {
-            level.destroyBlock(pos, false);
-            level.explode(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                    5.0F, Level.ExplosionInteraction.BLOCK);
+            RTTYNetwork.selfDestruct(level, pos);
             return;
         }
 
@@ -72,17 +72,18 @@ public class RadioTorchControllerBlockEntity extends com.hbm_m.blockentity.BaseH
     }
 
     @Override
-    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+    protected void writeNbtData(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putBoolean("polling", polling);
         tag.putString("channel", channel);
         tag.putString("prev", prev);
     }
 
     @Override
-    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+    protected void readNbtData(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         polling = tag.getBoolean("polling");
         channel = tag.getString("channel");
         prev = tag.getString("prev");
     }
-
 }

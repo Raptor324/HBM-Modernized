@@ -1,0 +1,90 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "hbm_m:block/soyuz_capsule"
+  },
+  "loader": "forge:composite",
+  "children": {
+    "capsule": {
+      "loader": "forge:obj",
+      "model": "hbm_m:models/block/machines/soyuz_capsule_item.obj",
+      "flip_v": true,
+      "render_type": "minecraft:cutout",
+      "visibility": {
+        "Chute": false
+      },
+      "textures": {
+        "default": "hbm_m:block/soyuz_lander_item"
+      }
+    }
+  },
+  "transform": {
+    "translation": [
+      0.5,
+      0,
+      0.5
+    ],
+    "rotation": [
+      0,
+      0,
+      0
+    ],
+    "scale": 1.0
+  },
+  "display": {
+    "gui": {"rotation": [30.0, -135.0, 0.0], "translation": [0.0, -3.299, -0.75], "scale": [0.3125, 0.3125, 0.3125]},
+    "ground": {
+      "translation": [
+        0,
+        3,
+        0
+      ],
+      "scale": [
+        0.25,
+        0.25,
+        0.25
+      ]
+    },
+    "fixed": {
+      "translation": [
+        0,
+        -3,
+        0
+      ],
+      "scale": [
+        0.4,
+        0.4,
+        0.4
+      ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [
+        75,
+        45,
+        0
+      ],
+      "translation": [
+        0,
+        2.5,
+        0
+      ],
+      "scale": [
+        0.25,
+        0.25,
+        0.25
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        45,
+        0
+      ],
+      "scale": [
+        0.3,
+        0.3,
+        0.3
+      ]
+    }
+  }
+}

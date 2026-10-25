@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/block",
+  "loader": "forge:obj",
+  "model": "hbm_m:models/block/pipes/pipe_z.obj",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "top": "hbm_m:block/pipe/pipe_top_marked",
+    "side": "hbm_m:block/pipe/pipe_side_marked",
+    "particle": "hbm_m:block/pipe/pipe_side_marked"
+  }
+}

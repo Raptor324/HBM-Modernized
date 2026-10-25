@@ -1,0 +1,30 @@
+{
+  "loader": "forge:composite",
+  "textures": {
+    "particle": "hbm_m:block/bomb/nuke_fleija_model"
+  },
+  "children": {
+    "model": {
+      "loader": "forge:obj",
+      "model": "hbm_m:models/block/bomb/fleija.obj",
+      "flip_v": true,
+      "textures": {
+        "default": "hbm_m:block/bomb/nuke_fleija_model"
+      }
+    }
+  },
+  "transform": {
+    "origin": "corner",
+    "translation": [
+      0.5,
+      0,
+      0.5
+    ],
+    "rotation": [
+      0,
+      90,
+      0
+    ],
+    "scale": 1
+  }
+}

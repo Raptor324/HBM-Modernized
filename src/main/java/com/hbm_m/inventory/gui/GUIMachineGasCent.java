@@ -17,14 +17,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 /**
  * Direct port of the 1.7.10 {@code GUIMachineGasCent}: same 206x204 canvas, same widget/tank/
  * slot coordinates, sourcing the energy-bar and progress-arrow sprites from the actual texture
@@ -40,13 +34,6 @@ public class GUIMachineGasCent extends GuiInfoScreen<MachineGasCentMenu> {
         super(menu, playerInventory, title);
         this.imageWidth = 206;
         this.imageHeight = 204;
-        this.inventoryLabelY = this.imageHeight - 94;
-    }
-
-    @Override
-    protected void init() {
-        super.init();
-        this.titleLabelX = (this.imageWidth - this.font.width(this.title)) / 2;
     }
 
     // Energy bar sprite: UV (206, 0), 16x52 (green top / blue bottom); fills bottom-up by
@@ -72,7 +59,8 @@ public class GUIMachineGasCent extends GuiInfoScreen<MachineGasCentMenu> {
     private static final int INPUT_TANK_X = 16;
     private static final int OUTPUT_TANK_X = 138;
     private static final int TANK_Y = 16;
-    private static final int TANK_WIDTH = 12;
+    /** Original: je Tank zwei 6 Pixel breite Saeulen im Abstand 16 (16/32 bzw. 138/154). */
+    private static final int TANK_WIDTH = 6;
     private static final int TANK_HEIGHT = 52;
 
     private static final int INFO_X = -12;
@@ -128,7 +116,8 @@ public class GUIMachineGasCent extends GuiInfoScreen<MachineGasCentMenu> {
         int filled = (int) ((long) tank.getFill() * TANK_HEIGHT / tank.getMaxFill());
         if (filled <= 0) return;
 
-        int fluidColor = HbmFluidRegistry.getTintColor(realFluid) & 0xFFFFFF;
+        // Original GUIMachineGasCent.renderTank: Textur ohne Einfaerbung (GUI-Tint 0xFFFFFF)
+        int fluidColor = com.hbm_m.inventory.fluid.FluidType.forFluid(realFluid).getTint() & 0xFFFFFF;
         float r = (fluidColor >> 16 & 255) / 255.0F;
         float g = (fluidColor >> 8 & 255) / 255.0F;
         float b = (fluidColor & 255) / 255.0F;
@@ -144,13 +133,15 @@ public class GUIMachineGasCent extends GuiInfoScreen<MachineGasCentMenu> {
         com.mojang.blaze3d.systems.RenderSystem.defaultBlendFunc();
         com.mojang.blaze3d.systems.RenderSystem.setShaderColor(r, g, b, 1.0F);
         FluidGuiRendering.renderTiledFluid(guiGraphics, fluidPng, x0, y0 + TANK_HEIGHT - filled, TANK_WIDTH, filled);
+        FluidGuiRendering.renderTiledFluid(guiGraphics, fluidPng, x0 + 16, y0 + TANK_HEIGHT - filled, TANK_WIDTH, filled);
         com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         com.mojang.blaze3d.systems.RenderSystem.disableBlend();
     }
 
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        guiGraphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 4210752, false);
+        // Original: kein Titel, nur "Inventar"
+        guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, this.imageHeight - 96 + 2, 4210752, false);
     }
 
     @Override
@@ -167,28 +158,36 @@ public class GUIMachineGasCent extends GuiInfoScreen<MachineGasCentMenu> {
 
         var blockEntity = menu.getBlockEntity();
         if (blockEntity != null) { // тайл может отсутствовать в реплее Flashback
+            // Original: Hochgeschwindigkeits-Stufen rot (ohne Speed-Upgrade) bzw. gold
+            Component[] in = tankTooltip(blockEntity.getInputTank());
+            if (blockEntity.getInputTank().getTankType().isHighSpeed()) {
+                in[0] = in[0].copy().withStyle(blockEntity.getProcessingSpeed() > 150 - 70
+                        ? net.minecraft.ChatFormatting.DARK_RED : net.minecraft.ChatFormatting.GOLD);
+            }
             drawCustomInfoStat(guiGraphics, mouseX, mouseY,
                     INPUT_TANK_X, TANK_Y, TANK_WIDTH, TANK_HEIGHT,
-                    mouseX, mouseY,
-                    tankTooltip(blockEntity.getInputTank()));
+                    mouseX, mouseY, in);
 
+            Component[] out = tankTooltip(blockEntity.getOutputTank());
+            if (blockEntity.getOutputTank().getTankType().isHighSpeed()) {
+                out[0] = out[0].copy().withStyle(net.minecraft.ChatFormatting.GOLD);
+            }
             drawCustomInfoStat(guiGraphics, mouseX, mouseY,
                     OUTPUT_TANK_X, TANK_Y, TANK_WIDTH, TANK_HEIGHT,
-                    mouseX, mouseY,
-                    tankTooltip(blockEntity.getOutputTank()));
+                    mouseX, mouseY, out);
         }
 
         drawInfoPanel(guiGraphics, INFO_X, INFO_ENRICHMENT_Y, PanelType.LARGE_GREEN_INFO);
         drawCustomInfoStat(guiGraphics, mouseX, mouseY,
                 INFO_X, INFO_ENRICHMENT_Y, INFO_SIZE, INFO_SIZE,
-                mouseX, mouseY,
-                Component.translatable("desc.gui.gasCent.enrichment"));
+                leftPos - 8, topPos + 16 + 16,
+                resolveKeyArray("desc.gui.gasCent.enrichment"));
 
         drawInfoPanel(guiGraphics, INFO_X, INFO_OUTPUT_Y, PanelType.LARGE_BLUE_INFO);
         drawCustomInfoStat(guiGraphics, mouseX, mouseY,
                 INFO_X, INFO_OUTPUT_Y, INFO_SIZE, INFO_SIZE,
-                mouseX, mouseY,
-                Component.translatable("desc.gui.gasCent.output"));
+                leftPos - 8, topPos + 32 + 16,
+                resolveKeyArray("desc.gui.gasCent.output"));
     }
 
     private Component[] tankTooltip(PseudoFluidTank tank) {

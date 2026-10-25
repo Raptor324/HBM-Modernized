@@ -20,13 +20,8 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.entity.player.Player;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
 
 /**
  * Кубическая рамка выделения при удержании предмета мультиблока (порт
@@ -66,7 +61,19 @@ public final class MultiblockPlacementHighlight {
         BlockPlaceContext shifted = item.updatePlacementContext(facadeContext);
         BlockPos corePos = shifted != null ? shifted.getClickedPos() : facadePos;
 
-        boolean canPlace = helper.checkPlacementFromFacadeQuiet(level, facadePos, facing, item.getBlock());
+        boolean canPlace;
+        // E7 (Fork, nur mit Space-Addon): Ausrichtung/Kern nach der Klickseite
+        BlockPlaceContext fork = item instanceof com.hbm_m.multiblock.DoorBlockItem ? null
+                : com.hbm_m.multiblock.ForkMultiblockPlacement.shift(facadeContext, item.getBlock());
+        if (fork != null) {
+            BlockState forkState = item.getBlock().getStateForPlacement(fork);
+            if (forkState == null || !forkState.hasProperty(HorizontalDirectionalBlock.FACING)) return;
+            facing = forkState.getValue(HorizontalDirectionalBlock.FACING);
+            corePos = fork.getClickedPos();
+            canPlace = helper.checkPlacementQuiet(level, corePos, facing);
+        } else {
+            canPlace = helper.checkPlacementFromFacadeQuiet(level, facadePos, facing, item.getBlock());
+        }
 
         // Пульсация цвета как в оригинале 1.7.10: (ms % 1000*PI)/250, амплитуда 0.75..1.0
         float pulse = (float) (Math.sin((System.currentTimeMillis() % 3141.59) / 250.0) * 0.25 + 0.75);

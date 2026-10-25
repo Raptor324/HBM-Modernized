@@ -6,21 +6,46 @@ import com.hbm_m.powerarmor.ArmorTooltipHandler;
 import dev.architectury.event.events.client.ClientTooltipEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 
 import java.util.List;
+
 //? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import com.hbm_m.main.MainRegistry;
 //?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import com.hbm_m.main.MainRegistry;
 *///?}
 
 @OnlyIn(Dist.CLIENT)
+//? if forge {
+@Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+//?} elif neoforge {
+/*@EventBusSubscriber(modid = MainRegistry.MOD_ID, value = Dist.CLIENT)
+*///?}
 public class ArmorModificationClientEvents {
+
+    //? if forge {
+    @SubscribeEvent
+    public static void onClientSetup(FMLClientSetupEvent event) {
+        init();
+    }
+    //?} elif neoforge {
+    /*@SubscribeEvent
+    public static void onClientSetup(FMLClientSetupEvent event) {
+        init();
+    }
+    *///?}
 
     public static void init() {
         //? if < 1.21.1 {
@@ -31,22 +56,7 @@ public class ArmorModificationClientEvents {
     }
 
     private static void onArmorTooltip(ItemStack stack, List<Component> tooltip, TooltipFlag flag) {
-        // Работаем только с броней
-        if (!(stack.getItem() instanceof ArmorItem)) {
-            return;
-        }
-
-        // 2. Модификации (показываем, если Shift ИЛИ открыт стол)
         boolean isArmorTableOpen = Minecraft.getInstance().screen instanceof GUIArmorTable;
-        ArmorTooltipHandler.getModificationsTooltip(stack, isArmorTableOpen).ifPresent(tooltip::addAll);
-
-        // 3. Сопротивления FSB (Фиолетовый текст) - только с Shift
-        ArmorTooltipHandler.getFSBResistancesTooltip(stack).ifPresent(tooltip::addAll);
-
-        // 4. Подсказка "Зажмите Shift" (отображается, если есть что скрывать и шифт НЕ нажат)
-        ArmorTooltipHandler.getContextualHelpTooltip(stack, isArmorTableOpen).ifPresent(tooltip::add);
-
-        // 5. Рад защита (в самом низу)
-        ArmorTooltipHandler.getRadResistanceTooltip(stack).ifPresent(tooltip::add);
+        ArmorTooltipHandler.drawTooltip(stack, tooltip, isArmorTableOpen);
     }
 }

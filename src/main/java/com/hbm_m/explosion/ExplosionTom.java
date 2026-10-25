@@ -142,7 +142,8 @@ public class ExplosionTom {
                     clearMeltableNeighbors(pX, y, pZ);
                     level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
                 }
-            } else {
+            } else if (distance < 500 || !com.hbm_m.api.space.SpaceApi.forkActive()) {
+                // E14 (Fork, nur mit Space-Addon): Lava-Bearbeitung ebenfalls nur bis 500 Bloecke Abstand
                 floodLavaNeighbors(pX, y, pZ);
                 level.setBlock(pos, Blocks.LAVA.defaultBlockState(), 2);
             }

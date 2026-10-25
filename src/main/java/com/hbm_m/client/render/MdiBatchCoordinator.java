@@ -1,13 +1,7 @@
 package com.hbm_m.client.render;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -92,6 +86,7 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
  */
 
 @OnlyIn(Dist.CLIENT)
+
 public final class MdiBatchCoordinator {
 
     /**
@@ -343,7 +338,6 @@ public final class MdiBatchCoordinator {
         if (ShaderCompatibilityDetector.isExternalShaderActive()) {
             return null;
         }
-
         retainedFrameStamp++;
         MdiBatchCoordinator session = new MdiBatchCoordinator(projectionMatrix);
         ACTIVE.set(session);

@@ -11,14 +11,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
 import java.util.List;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 /**
  * 1:1-Port von {@code GUIICF} (1.7.10), 248x222.
  *
@@ -110,4 +104,5 @@ public class GUIMachineICF extends AbstractContainerScreen<MachineICFMenu> {
         int localY = mouseY - topPos;
         return localX >= x && localX < x + w && localY >= y && localY < y + h;
     }
+
 }

@@ -34,9 +34,7 @@ public class RadioTorchReceiverBlockEntity extends RadioTorchBaseBlockEntity {
         // 1:1-Port: der Sonderbefehl sprengt den Empfaenger. Wer den Kanal kennt, kann eine
         // fremde Anlage damit lahmlegen - genau das ist im Original der Reiz daran.
         if ("selfdestruct".equals(msg)) {
-            level.destroyBlock(pos, false);
-            level.explode(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                    5.0F, Level.ExplosionInteraction.BLOCK);
+            RTTYNetwork.selfDestruct(level, pos);
             return;
         }
 

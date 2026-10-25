@@ -21,6 +21,8 @@ public class AssemblerRecipeBuilder extends BaseRecipeBuilder<AssemblerRecipeBui
     private final int duration;
     private final int power;
     private final List<CountableIngredient> ingredients = new ArrayList<>();
+    private final List<dev.architectury.fluid.FluidStack> fluidInputs = new ArrayList<>();
+    private final List<dev.architectury.fluid.FluidStack> fluidOutputs = new ArrayList<>();
 
     @Nullable
     private String blueprintPool = null;
@@ -42,6 +44,18 @@ public class AssemblerRecipeBuilder extends BaseRecipeBuilder<AssemblerRecipeBui
 
     public AssemblerRecipeBuilder addIngredient(Item item, int count) {
         return addIngredient(Ingredient.of(item), count);
+    }
+
+    /** Original {@code inputFluids(new FluidStack(...))}. */
+    public AssemblerRecipeBuilder addFluidInput(net.minecraft.world.level.material.Fluid fluid, int amountMb) {
+        this.fluidInputs.add(dev.architectury.fluid.FluidStack.create(fluid, amountMb));
+        return this;
+    }
+
+    /** Original {@code outputFluids(new FluidStack(...))}. */
+    public AssemblerRecipeBuilder addFluidOutput(net.minecraft.world.level.material.Fluid fluid, int amountMb) {
+        this.fluidOutputs.add(dev.architectury.fluid.FluidStack.create(fluid, amountMb));
+        return this;
     }
 
     public AssemblerRecipeBuilder withBlueprintPool(String pool) {
@@ -71,6 +85,10 @@ public class AssemblerRecipeBuilder extends BaseRecipeBuilder<AssemblerRecipeBui
         if (this.output.getCount() > 1) {
             jsonOutput.addProperty("count", this.output.getCount());
         }
+        // NBT der Ausgabe (z.B. Fluessigkeitspaket mit Sorte); Forge liest "nbt" im Ergebnis
+        if (this.output.getTag() != null) {
+            jsonOutput.addProperty("nbt", this.output.getTag().toString());
+        }
         json.add("output", jsonOutput);
 
         json.addProperty("duration", this.duration);
@@ -78,6 +96,17 @@ public class AssemblerRecipeBuilder extends BaseRecipeBuilder<AssemblerRecipeBui
 
         if (this.blueprintPool != null) {
             json.addProperty("blueprint_pool", this.blueprintPool);
+        }
+
+        if (!fluidInputs.isEmpty()) {
+            JsonArray arr = new JsonArray();
+            for (dev.architectury.fluid.FluidStack fs : fluidInputs) arr.add(fluidStackToJson(fs));
+            json.add("fluid_inputs", arr);
+        }
+        if (!fluidOutputs.isEmpty()) {
+            JsonArray arr = new JsonArray();
+            for (dev.architectury.fluid.FluidStack fs : fluidOutputs) arr.add(fluidStackToJson(fs));
+            json.add("fluid_outputs", arr);
         }
     }
 

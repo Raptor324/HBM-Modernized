@@ -5,6 +5,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * Direkter Java-Port von {@code ItemPlateFuel} (1.7.10 Original, {@code
@@ -32,11 +33,35 @@ public class ItemPlateFuel extends Item {
     }
 
     public static long getLifeTime(ItemStack stack) {
-        return PlatformHooks.getLong(stack, "lifetime");
+        return StackNbt.getLong(stack, "lifetime");
     }
 
     public static void setLifeTime(ItemStack stack, long value) {
-        PlatformHooks.putLong(stack, "lifetime", value);
+        StackNbt.putLong(stack, "lifetime", value);
+    }
+
+    /** 1:1 {@code ItemPlateFuel.addInformation}. */
+    @Override
+    //? if < 1.21.1 {
+    public void appendHoverText(ItemStack stack, @org.jetbrains.annotations.Nullable Level level,
+                                java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    *///?}
+        list.add(net.minecraft.network.chat.Component.literal("[Research Reactor Plate Fuel]").withStyle(net.minecraft.ChatFormatting.YELLOW));
+        list.add(net.minecraft.network.chat.Component.literal("   " + getFunctionDesc()).withStyle(net.minecraft.ChatFormatting.DARK_AQUA));
+        list.add(net.minecraft.network.chat.Component.literal("   Yield of " + com.hbm_m.util.BobMathUtil.getShortNumber(lifeTime) + " events").withStyle(net.minecraft.ChatFormatting.DARK_AQUA));
+    }
+
+    /** 1:1 {@code getFunctionDesc}. */
+    public String getFunctionDesc() {
+        return switch (function) {
+            case LOGARITHM -> "f(x) = log10(x + 1) * 0.5 * " + reactivity;
+            case SQUARE_ROOT -> "f(x) = sqrt(x) * " + reactivity + " / 10";
+            case NEGATIVE_QUADRATIC -> "f(x) = [x - (x² / 10000)] / 100 * " + reactivity;
+            case LINEAR -> "f(x) = x / 100 * " + reactivity;
+            case PASSIVE -> "f(x) = " + reactivity;
+        };
     }
 
     /** 1:1 aus dem Original ({@code react(World, ItemStack, int)}). */

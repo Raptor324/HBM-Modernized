@@ -67,3 +67,4 @@ public class ParticleAcceleratorJeiCategory extends JeiUniversalRecipeCategory<P
         return outputs;
     }
 }
+

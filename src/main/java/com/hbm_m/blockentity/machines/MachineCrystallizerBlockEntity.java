@@ -39,6 +39,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.AABB;
+import com.hbm_m.platform.StackNbt;
+import com.hbm_m.platform.ModItemStackHandler;
 //? if forge {
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
@@ -51,6 +53,30 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 
 public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         implements com.hbm_m.api.fluids.IFluidStandardReceiverMK2 {
+
+    /** Original {@code setInventorySlotContents}: Aufwertung einstecken macht das Steckgeraeusch. */
+    @Override
+    protected com.hbm_m.platform.ModItemStackHandler createInventoryHandler(int size) {
+        return new com.hbm_m.platform.ModItemStackHandler(size) {
+            @Override
+            protected void onContentsChanged(int slot) {
+                setChanged();
+                if (isCriticalSlot(slot)) sendUpdateToClient();
+                net.minecraft.world.item.ItemStack stack = getStackInSlot(slot);
+                if (level != null && !level.isClientSide && slot >= 5 && slot <= 6
+                        && stack.getItem() instanceof com.hbm_m.item.industrial.ItemMachineUpgrade) {
+                    level.playSound(null, worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5,
+                            com.hbm_m.sound.HbmSoundsNT.get("hbm:item.upgradePlug"), net.minecraft.sounds.SoundSource.BLOCKS, 1.0F, 1.0F);
+                }
+            }
+
+            @Override
+            public boolean isItemValid(int slot, @org.jetbrains.annotations.NotNull net.minecraft.world.item.ItemStack stack) {
+                return isItemValidForSlot(slot, stack);
+            }
+        };
+    }
+
 
     private static final String CRYSTALLIZER_SOUND_INSTANCE = "com.hbm_m.sound.CrystallizerSoundInstance";
 
@@ -65,10 +91,19 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
 
     private static final int SLOT_COUNT = 8;
     private static final long MAX_POWER = 1_000_000;
-    private static final long MAX_RECEIVE = 1_000;
+    /** Original nimmt bis maxPower beliebig schnell an. */
+    private static final long MAX_RECEIVE = MAX_POWER;
     private static final int TANK_CAPACITY = 8_000;
     private static final int DEFAULT_DURATION = 600;
+    /** Original: {@code demand = 1000}. */
     private static final int BASE_POWER_PER_TICK = 1_000;
+
+    /** Original getValidUpgrades: Tempo, Wirkung, Overdrive je bis 3. */
+    private static final java.util.Map<com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType, Integer> VALID_UPGRADES = java.util.Map.of(
+            com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.SPEED, 3,
+            com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.EFFECT, 3,
+            com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.OVERDRIVE, 3);
+    private final com.hbm_m.inventory.UpgradeManager upgradeManager = new com.hbm_m.inventory.UpgradeManager();
 
     private final FluidTank tank = new FluidTank(TANK_CAPACITY) {
         @Override
@@ -135,8 +170,8 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         // кэшированный на тик+подпись через CachedRecipeResolver.
         CrystallizerRecipe recipe = entity.recipeResolver.resolve(level, CrystallizerRecipe.Type.INSTANCE,
                 CachedRecipeResolver.sign(0L,
-                        PlatformHooks.stackFingerprint(inputStack),
-                        PlatformHooks.fluidFingerprint(tankFluid)),
+                        StackNbt.fingerprint(inputStack),
+                        FluidHooks.fingerprint(tankFluid)),
                 (lvl, all) -> all.stream()
                         .filter(r -> r.matchesInput(inputStack) && r.matchesAcid(tankFluid))
                         .findFirst()
@@ -145,34 +180,32 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         boolean wasOn = entity.isOn;
         entity.isOn = false;
 
-        if (recipe != null) {
-            entity.duration = entity.calcDuration(recipe);
+        entity.upgradeManager.checkSlots(entity.inventory, SLOT_UPGRADE_1, SLOT_UPGRADE_2, VALID_UPGRADES);
+        entity.duration = entity.calcDuration(recipe);
 
-            if (entity.canProcess(recipe)) {
-                int powerCost = entity.getPowerRequired();
-                entity.setEnergyStored(entity.getEnergyStored() - powerCost);
+        // 1:1 Original: bis zu getCycleCount() Durchlaeufe pro Tick (Overdrive)
+        for (int i = 0; i < entity.getCycleCount(); i++) {
+
+            if (recipe != null && entity.canProcess(recipe)) {
                 entity.progress++;
+                entity.setEnergyStored(entity.getEnergyStored() - entity.getPowerRequired());
                 entity.isOn = true;
 
-                if (entity.progress >= entity.duration) {
+                if (entity.progress > entity.duration) {
                     entity.progress = 0;
                     entity.processItem(recipe);
+                    // nach dem Verbrauch kann sich das Rezept erledigt haben
+                    ItemStack in = entity.inventory.getStackInSlot(SLOT_INPUT);
+                    if (in.isEmpty() || in.getCount() < recipe.getInputCount()) recipe = null;
                 }
                 // Анти-sync-spam: пакет только при изменении отрисовываемого состояния (P6).
                 entity.syncIfStateChanged(entity.getEnergyStored(),
                         (long) entity.progress | ((long) entity.duration << 32));
             } else {
-                if (entity.progress != 0) {
-                    entity.progress = 0;
-                    entity.setChanged();
-                }
-            }
-        } else {
-            if (entity.progress != 0) {
                 entity.progress = 0;
-                entity.setChanged();
             }
         }
+        if (entity.isOn) entity.sendUpdateToClient();
 
         if (wasOn != entity.isOn) {
             entity.sendUpdateToClient();
@@ -236,7 +269,7 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         ItemStack outSlot = inventory.getStackInSlot(SLOT_OUTPUT);
         ItemStack out = recipe.getOutput();
         if (!outSlot.isEmpty()) {
-            if (!PlatformHooks.isSameItemSameTags(outSlot, out)) return false;
+            if (!StackNbt.sameItemSameTags(outSlot, out)) return false;
             if (outSlot.getCount() + out.getCount() > outSlot.getMaxStackSize()) return false;
         }
 
@@ -256,8 +289,9 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
             tank.drainMb(recipe.getAcidAmount());
         }
 
-        float freeChance = recipe.getProductivity();
-        if (freeChance <= 0f || level.random.nextFloat() >= freeChance) {
+        // Original getFreeChance: nur mit Wirkungs-Aufwertung, min(Stufe * productivity, 0.99)
+        float freeChance = getFreeChance(recipe);
+        if (freeChance == 0f || freeChance < level.random.nextFloat()) {
             inventory.getStackInSlot(SLOT_INPUT).shrink(recipe.getInputCount());
         }
 
@@ -301,80 +335,15 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         ItemStack fillStack = inventory.getStackInSlot(SLOT_FLUID_INPUT);
         if (fillStack.isEmpty()) return;
 
-        // Кросс-платформенная реализация через FluidHooks + tank.fillMb.
-        // Заменяет прежние раздельные ветки Forge/Fabric/NeoForge.
-        Fluid currentType = tank.getTankType();
-        if (currentType == Fluids.EMPTY || currentType == ModFluids.NONE.getSource()) {
-            return;
-        }
-
-        // Сначала пробуем извлечь жидкость из контейнера (simulate), чтобы узнать тип/объём.
-        int tankSpace = tank.getSpaceMb();
-        if (tankSpace <= 0) return;
-
-        FluidHooks.FluidExtraction sim = FluidHooks.extractFluidFromItem(fillStack, tankSpace, true);
-        if (sim.amount() <= 0) {
-            // Контейнер пуст — отправляем его в выходной слот (воспроизводим forge-поведение).
-            FluidHooks.FluidExtraction probe = FluidHooks.extractFluidFromItem(fillStack, 1, true);
-            if (probe.amount() == 0) {
-                ItemStack singleEmpty = fillStack.copy();
-                singleEmpty.setCount(1);
-                tryMoveContainerToOutput(singleEmpty, fillStack);
-            }
-            return;
-        }
-
-        // Согласовываем тип жидкости с баком — заливаем только совместимую.
-        int toFill = sim.amount();
-        int accepted = tank.fillMb(sim.fluid(), toFill, true);
-        if (accepted <= 0) return;
-
-        // Реально извлекаем (execute) и заливаем в бак.
-        FluidHooks.FluidExtraction real = FluidHooks.extractFluidFromItem(fillStack, accepted, false);
-        if (real.amount() <= 0) return;
-        tank.fillMb(real.fluid(), real.amount(), false);
-
-        ItemStack updatedContainer = real.remainder();
-        if (updatedContainer.isEmpty() || FluidHooks.extractFluidFromItem(updatedContainer, 1, true).amount() == 0) {
-            // Контейнер опустел после перелива — отправляем в выходной слот.
-            tryMoveContainerToOutput(updatedContainer, fillStack);
-        } else {
-            inventory.setStackInSlot(SLOT_FLUID_INPUT, updatedContainer);
-        }
-        setChanged();
-    }
-
-    private void tryMoveContainerToOutput(ItemStack emptyContainer, ItemStack originalFillStack) {
-        if (emptyContainer.isEmpty()) {
-            ItemStack remaining = originalFillStack.copy();
-            remaining.shrink(1);
-            inventory.setStackInSlot(SLOT_FLUID_INPUT, remaining);
-            return;
-        }
-
-        ItemStack outSlot = inventory.getStackInSlot(SLOT_FLUID_OUTPUT);
-
-        if (outSlot.isEmpty()) {
-            ItemStack remaining = originalFillStack.copy();
-            remaining.shrink(1);
-            inventory.setStackInSlot(SLOT_FLUID_INPUT, remaining);
-            inventory.setStackInSlot(SLOT_FLUID_OUTPUT, emptyContainer);
-            return;
-        }
-
-        if (PlatformHooks.isSameItemSameTags(outSlot, emptyContainer)) {
-            int max = outSlot.getMaxStackSize();
-            int totalAfter = outSlot.getCount() + emptyContainer.getCount();
-            if (totalAfter <= max) {
-                ItemStack newOut = outSlot.copy();
-                newOut.setCount(totalAfter);
-                inventory.setStackInSlot(SLOT_FLUID_OUTPUT, newOut);
-
-                ItemStack remaining = originalFillStack.copy();
-                remaining.shrink(1);
-                inventory.setStackInSlot(SLOT_FLUID_INPUT, remaining);
-            }
-            return;
+        // Original TileEntityMachineCrystallizer: tank.loadTank(3, 4, slots) - ueber die Loader-Kette, also auch die
+        // HBM-Behaelter der FluidContainerRegistry (Kanister, Tanks, Faesser ...), die keine Plattform-Capability tragen;
+        // Capability-Behaelter (Eimer, Fremdmods) laufen dort ueber FluidLoaderStandard.
+        ItemStack[] slots = new ItemStack[inventory.getSlots()];
+        for (int i = 0; i < slots.length; i++) slots[i] = inventory.getStackInSlot(i);
+        if (tank.loadTank(SLOT_FLUID_INPUT, SLOT_FLUID_OUTPUT, slots)) {
+            inventory.setStackInSlot(SLOT_FLUID_INPUT, slots[SLOT_FLUID_INPUT]);
+            inventory.setStackInSlot(SLOT_FLUID_OUTPUT, slots[SLOT_FLUID_OUTPUT]);
+            setChanged();
         }
     }
 
@@ -387,8 +356,28 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         chargeFromBatterySlot(SLOT_BATTERY);
     }
 
-    private int calcDuration(CrystallizerRecipe recipe) {
-        return recipe.getDuration();
+    /** Original {@code getDuration}: Grundzeit (600 ohne Rezept), Tempo kuerzt um je 25 % bis auf 25 %. */
+    private int calcDuration(@Nullable CrystallizerRecipe recipe) {
+        int base = recipe != null ? recipe.getDuration() : DEFAULT_DURATION;
+        int speed = upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.SPEED);
+        if (speed > 0) {
+            return (short) Math.ceil((base * Math.max(1F - 0.25F * speed, 0.25F)));
+        }
+        return (short) base;
+    }
+
+    public float getFreeChance(CrystallizerRecipe recipe) {
+        int efficiency = upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.EFFECT);
+        if (efficiency > 0) {
+            return Math.min(efficiency * recipe.getProductivity(), 0.99F);
+        }
+        return 0;
+    }
+
+    /** Original {@code getCycleCount}: 1 + 2 je Overdrive-Stufe, hoechstens 7. */
+    public float getCycleCount() {
+        int speed = upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.OVERDRIVE);
+        return Math.min(1 + speed * 2, 7);
     }
 
     private FluidStack getTankFluidStack() {
@@ -400,8 +389,11 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         return FluidStack.create(fluid, amount);
     }
 
+    /** Original: {@code demand + speed * demand + effect * demand * 2}. */
     public int getPowerRequired() {
-        return BASE_POWER_PER_TICK;
+        int speed = upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.SPEED);
+        int effect = upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.EFFECT);
+        return BASE_POWER_PER_TICK + speed * BASE_POWER_PER_TICK + effect * BASE_POWER_PER_TICK * 2;
     }
 
     public int getDuration() {
@@ -497,7 +489,7 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
             return false;
         }
         if (slot == SLOT_FLUID_INPUT) {
-            return PlatformHooks.isFluidContainer(stack);
+            return com.hbm_m.api.fluids.FluidItemAccess.isFluidContainer(stack);
         }
         if (slot == SLOT_FLUID_ID) {
             return stack.getItem() instanceof IItemFluidIdentifier;
@@ -543,10 +535,50 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         }
     }
 
-    //? if forge {
     @Override
     protected void setupFluidCapability() {
         setFluidHandler(tank);
     }
-    //?}
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: Slots {0, 2}; nur der Eingang hinein, nur das Ergebnis heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0, 2 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 0 && isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 2; }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: Slots {0, 2}; nur der Eingang hinein, nur das Ergebnis heraus. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0, 2 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 0 && isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 2; }
+            });
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
 }

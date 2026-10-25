@@ -14,13 +14,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-//? if forge {
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
- *///?}
 
 /**
  * Armor modification table driven through real container clicks
@@ -84,7 +79,7 @@ public final class ArmorTableGameTest {
         check(menu.getCarried().isEmpty(), "heart piece must be accepted by the special slot");
         ItemStack centre = menu.getSlot(ArmorTableMenu.SLOT_ARMOR_IN).getItem();
         check(!ArmorModificationHelper.pryMod(centre, ArmorModificationHelper.extra).isEmpty(),
-                "heart piece must be written into the armour NBT, got " + com.hbm_m.platform.PlatformHooks.getItemTag(centre));
+                "heart piece must be written into the armour NBT, got " + com.hbm_m.platform.StackNbt.read(centre));
 
         pickup(menu, player, ArmorTableMenu.SLOT_ARMOR_IN);
         ItemStack armor = menu.getCarried();

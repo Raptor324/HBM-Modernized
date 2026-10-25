@@ -31,6 +31,7 @@ import net.minecraft.world.item.ItemStack;
  * <p>Data-driven: рецепты читаются напрямую aus {@code RecipeManager} (JSON {@code hbm_m:radiolysis}),
  * ранее — статический {@code RadiolysisRecipes} (делегат в {@code CrackingTowerRecipes}).</p>
  */
+
 public class RadiolysisJeiCategory extends JeiGenericRecipeCategory<RadiolysisRecipe> {
 
     public static final RecipeType<RadiolysisRecipe> RECIPE_TYPE =
@@ -97,7 +98,7 @@ public class RadiolysisJeiCategory extends JeiGenericRecipeCategory<RadiolysisRe
                 .addIngredient(ForgeTypes.FLUID_STACK, FluidStackHooksForge.toForge(fluid));
                 //?} elif neoforge {
                 /*.setCustomRenderer(NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
-                .addIngredient(NeoForgeTypes.FLUID_STACK, new net.neoforged.neoforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
+                .addIngredient(NeoForgeTypes.FLUID_STACK, new net.minecraftforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
                 *///?}
     }
 
@@ -106,3 +107,4 @@ public class RadiolysisJeiCategory extends JeiGenericRecipeCategory<RadiolysisRe
         // Kein Blueprint-Slot fuer Radiolysis-Rezepte.
     }
 }
+

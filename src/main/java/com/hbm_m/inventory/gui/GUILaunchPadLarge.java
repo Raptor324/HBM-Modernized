@@ -129,6 +129,10 @@ public class GUILaunchPadLarge extends GuiInfoScreen<LaunchPadLargeMenu> {
             case STEALTH -> 1.125F;
             case STRONG -> 1.375F;
             case HUGE -> 0.925F;
+            // 6,35 statt 13,5 Bloecke hoch, also gut doppelt so gross in der Vorschau.
+            case ISKANDER -> 1.9F;
+            // 22,5 Bloecke hoch - die groesste Rakete der Mod, entsprechend klein in der Vorschau.
+            case TOPOL -> 0.55F;
             case ATLAS -> 0.875F;
             case OTHER -> 1.0F;
         };
@@ -192,7 +196,7 @@ public class GUILaunchPadLarge extends GuiInfoScreen<LaunchPadLargeMenu> {
         LaunchPadBaseBlockEntity be = menu.getBlockEntity();
         if (be != null) {
             drawElectricityInfo(guiGraphics, mouseX, mouseY,
-                    this.leftPos + ENERGY_TANK_X, this.topPos + TANK_TOP_Y, TANK_W, TANK_H,
+                    ENERGY_TANK_X, TANK_TOP_Y, TANK_W, TANK_H,
                     menu.getEnergyLong(), menu.getMaxEnergyLong());
 
             FluidTank[] tanks = be.getTanks();

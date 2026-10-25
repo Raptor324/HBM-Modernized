@@ -1,13 +1,7 @@
 package com.hbm_m.particle.custom;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -31,6 +25,7 @@ import net.minecraft.world.phys.Vec3;
  * Engine glare at the missile nozzle — flash + flare textures, yellow tint, flickering brightness.
  */
 @OnlyIn(Dist.CLIENT)
+
 public class MissileNozzleFlareParticle extends TextureSheetParticle {
 
     /** 0 = flash.png, 1 = nuke_explosion_flare.png */

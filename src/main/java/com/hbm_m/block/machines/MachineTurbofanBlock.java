@@ -1,132 +1,61 @@
 package com.hbm_m.block.machines;
 
-import java.util.Map;
+import java.util.List;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineTurbofanBlockEntity;
-import com.hbm_m.interfaces.IMultiblockController;
+import com.hbm_m.multiblock.DummyableStructureBuilder;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
-import com.hbm_m.multiblock.PartRole;
 
+import dev.architectury.registry.menu.MenuRegistry;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.Shapes;
-import net.minecraft.world.phys.shapes.VoxelShape;
-//? if forge {
-//?}
-import dev.architectury.registry.menu.MenuRegistry;
 
 /**
- * Турбовентилятор - мультиблок 7 (ширина) x 3 (глубина) x 3 (высота).
- * Оригинал: {@code MachineTurbofan} / {@code TileEntityMachineTurbofan} (1.7.10):
- * габариты {2, 0, 1, 1, 3, 3}, ядро внизу по центру, четыре порта
- * ({@code TileEntityProxyCombo} fluid+power) у нижнего ряда спереди и сзади.
- * Топология портов 1:1: y0, ряды спереди/сзади, колонки 2-3 из 7.
+ * 1:1 {@code MachineTurbofan}: {@code getDimensions {2,0,1,1,3,3}}, {@code getOffset 1}; die vier Anschluesse liegen an
+ * den Zellen beiderseits des Kerns (Extras vor/hinter dem Kern und deren linke Nachbarn). Gezeichnet von der
+ * Nucleus-Spec in {@code MachineTurbofanRenderer}.
  */
-public class MachineTurbofanBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachineTurbofanBlock extends DummyableMachineBlock {
 
-    public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
-
-    private final MultiblockStructureHelper structureHelper;
-
-    public MachineTurbofanBlock(BlockBehaviour.Properties properties) {
+    public MachineTurbofanBlock(Properties properties) {
         super(properties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
-        this.structureHelper = defineStructure();
     }
 
-    private static MultiblockStructureHelper defineStructure() {
-        // Слои: Y (3). Строки в слое: Z (3, глубина). Символы в строке: X (7, ширина).
-        // Ядро - центр среднего ряда нижнего слоя; порты (P) - y0, ряды спереди/сзади, колонки 2-3.
-        String[] bottom = {
-                "OOPPOOO",
-                "OOOCOOO",
-                "OOPPOOO"
-        };
-        String[] full = {
-                "OOOOOOO",
-                "OOOOOOO",
-                "OOOOOOO"
-        };
-
-        Map<Character, PartRole> roleMap = Map.of(
-                'C', PartRole.CONTROLLER,
-                'O', PartRole.DEFAULT,
-                'P', PartRole.UNIVERSAL_CONNECTOR
-        );
-
-        return MultiblockStructureHelper.createFromLayersWithRoles(
-                new String[][] { bottom, full, full },
-                Map.of(),
-                () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-                roleMap,
-                null,
-                null
-        );
+    @Override
+    protected MultiblockStructureHelper defineStructure() {
+        // Original fillSpace nutzt die Setzposition (Kern + dir), nicht den Kern
+        return DummyableStructureBuilder.create()
+                .box(2, 0, 1, 1, 3, 3)
+                .extra(1, 0, 0)
+                .extra(1, 0, -1)
+                .extra(-1, 0, 0)
+                .extra(-1, 0, -1)
+                .placementOffset(1)
+                .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
     }
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
-    }
-
-    @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
-    }
-
-    @Nullable
-    @Override
-    public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
-    }
-
-    @Override
-    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
-        super.onPlace(state, level, pos, oldState, isMoving);
-        if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            placeMultiblockStructure(level, pos, state);
-        }
-    }
-
-    @Override
-    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
-        return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
-    }
-
-    @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (state.getBlock() != newState.getBlock() && !level.isClientSide()) {
-            if (level.getBlockEntity(pos) instanceof com.hbm_m.blockentity.BaseMachineBlockEntity machine) {
-                machine.dropInventoryContents();
-            }
-            structureHelper.destroyStructure(level, pos, state.getValue(FACING));
-        }
-        super.onRemove(state, level, pos, newState, isMoving);
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     @Nullable
@@ -135,67 +64,48 @@ public class MachineTurbofanBlock extends BaseEntityBlock implements IMultiblock
         return new MachineTurbofanBlockEntity(pos, state);
     }
 
+    @Nullable
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        return createTickerHelper(type, ModBlockEntities.TURBOFAN_BE.get(),
+                (lvl, pos, st, be) -> MachineTurbofanBlockEntity.tick(lvl, pos, st, (MachineTurbofanBlockEntity) be));
+    }
+
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        return openMenu(state, level, pos, player, hand, hit);
+        return open(level, pos, player);
     }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+        return open(level, pos, player);
     }
     *///?}
 
-    private InteractionResult openMenu(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider p) {
-            MenuRegistry.openExtendedMenu((ServerPlayer) player, p, buf -> buf.writeBlockPos(pos));
+    private InteractionResult open(Level level, BlockPos pos, Player player) {
+        if (level.isClientSide()) return InteractionResult.SUCCESS;
+        if (!player.isShiftKeyDown() && level.getBlockEntity(pos) instanceof MachineTurbofanBlockEntity machine) {
+            MenuRegistry.openExtendedMenu((ServerPlayer) player, machine, buf -> buf.writeBlockPos(pos));
         }
-        return InteractionResult.sidedSuccess(level.isClientSide());
-    }
-
-    @Nullable
-    @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return createTickerHelper(type, ModBlockEntities.TURBOFAN_BE.get(), MachineTurbofanBlockEntity::tick);
+        return InteractionResult.CONSUME;
     }
 
     @Override
-    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return structureHelper.generateShapeFromParts(state.getValue(FACING));
-    }
-
-    @Override
-    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return structureHelper.getSpecificCollisionShape(structureHelper.getControllerOffset(), state.getValue(FACING));
-    }
-
-    @Override
-    public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
-        if (structureHelper.isFullBlock(structureHelper.getControllerOffset(), state.getValue(FACING))) {
-            return Shapes.block();
-        }
-        return Shapes.empty();
-    }
-
-    // --- IMultiblockController ---
-
-    @Override
-    public MultiblockStructureHelper getStructureHelper() {
-        return structureHelper;
-    }
-
-    @Override
-    public PartRole getPartRole(BlockPos localOffset) {
-        return structureHelper.resolvePartRole(localOffset, this);
+    //? if < 1.21.1 {
+    public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> list, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+    *///?}
+        list.add(Component.literal("Fuel efficiency:").withStyle(ChatFormatting.YELLOW));
+        list.add(Component.literal("-").withStyle(ChatFormatting.YELLOW)
+                .append(Component.translatable("hbmfluid.trait.fuel.aviation"))
+                .append(Component.literal(": ").withStyle(ChatFormatting.YELLOW))
+                .append(Component.literal("100%").withStyle(ChatFormatting.RED)));
     }
 
     //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<MachineTurbofanBlock> CODEC = simpleCodec(MachineTurbofanBlock::new);
-
-    @Override
-    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
-        return CODEC;
-    }
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
 }

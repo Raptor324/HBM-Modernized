@@ -65,6 +65,9 @@ public class VolcanoCoreBlock extends BaseEntityBlock {
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return createTickerHelper(type, ModBlockEntities.VOLCANO_CORE_BE.get(), VolcanoCoreBlockEntity::tick);
+        // Der gemergte VolcanoCoreBlockEntity (FFA-Koerper) bindet seinen Konstruktor an
+        // ModBlockEntities.VOLCANO_CORE und exposeziert serverTick - identisch zum live
+        // registrierten VolcanoBlock-Ticker.
+        return createTickerHelper(type, ModBlockEntities.VOLCANO_CORE.get(), VolcanoCoreBlockEntity::serverTick);
     }
 }

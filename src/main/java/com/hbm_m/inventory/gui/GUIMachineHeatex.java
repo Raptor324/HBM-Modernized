@@ -13,13 +13,8 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
 
 /**
  * Port of {@code GUIHeaterHeatex} (1.7.10 Original).
@@ -66,7 +61,7 @@ public class GUIMachineHeatex extends GuiInfoScreen<MachineHeatexMenu> {
         // amountToCool — оригинал: (73, 31), 30x10, зелёный текст, без фона, макс 5 символов
         this.fieldCycles = new EditBox(this.font, this.leftPos + FIELD_X, this.topPos + FIELD_CYCLES_Y, FIELD_W, FIELD_H, Component.literal("Amount per cycle"));
         initText(this.fieldCycles);
-        this.fieldCycles.setValue(String.valueOf(be.getAmountToCool()));
+        this.fieldCycles.setValue(String.valueOf(be.amountToCool));
         this.fieldCycles.setResponder(text -> {
             int cyc = Math.max(safeParseInt(text), 1);
             SetHeatexControlC2SPacket.sendToServer(be.getBlockPos(), cyc, null);
@@ -76,7 +71,7 @@ public class GUIMachineHeatex extends GuiInfoScreen<MachineHeatexMenu> {
         // tickDelay — оригинал: (73, 49), 30x10
         this.fieldDelay = new EditBox(this.font, this.leftPos + FIELD_X, this.topPos + FIELD_DELAY_Y, FIELD_W, FIELD_H, Component.literal("Cycle tick delay"));
         initText(this.fieldDelay);
-        this.fieldDelay.setValue(String.valueOf(be.getTickDelay()));
+        this.fieldDelay.setValue(String.valueOf(be.tickDelay));
         this.fieldDelay.setResponder(text -> {
             int delay = Math.max(safeParseInt(text), 1);
             SetHeatexControlC2SPacket.sendToServer(be.getBlockPos(), null, delay);

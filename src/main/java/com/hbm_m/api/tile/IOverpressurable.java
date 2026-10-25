@@ -13,4 +13,13 @@ import net.minecraft.world.level.Level;
 public interface IOverpressurable {
 
     void explode(Level level, BlockPos pos);
+
+    /**
+     * false = dieser Block nimmt (gerade) nicht am Ueberdruck teil und wird wie jeder andere Empfaenger entfernt und
+     * gesprengt. Standard true; HBM-Faesser nur mit Space-Addon (E3, Fork {@code TileEntityBarrel implements
+     * IOverpressurable}).
+     */
+    default boolean handlesOverpressure() {
+        return true;
+    }
 }

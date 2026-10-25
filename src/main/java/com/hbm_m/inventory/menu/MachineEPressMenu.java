@@ -14,6 +14,7 @@ import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 public class MachineEPressMenu extends AbstractContainerMenu {
 
     public final MachineEPressBlockEntity blockEntity;

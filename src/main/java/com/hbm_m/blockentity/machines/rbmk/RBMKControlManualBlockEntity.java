@@ -7,7 +7,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class RBMKControlManualBlockEntity extends RBMKControlBlockEntity implements com.hbm_m.interfaces.ICopiable {
+public class RBMKControlManualBlockEntity extends RBMKControlBlockEntity implements com.hbm_m.interfaces.ICopiable, com.hbm_m.api.redstoneoverradio.IRORInteractive {
 
     public boolean moderated = false;
 
@@ -124,6 +124,34 @@ public class RBMKControlManualBlockEntity extends RBMKControlBlockEntity impleme
             color = -1;
         }
         setChanged();
+    }
+
+    // ── Redstone-over-Radio (1:1 TileEntityRBMKControlManual) ──
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+                PREFIX_VALUE + "extraction",
+                PREFIX_FUNCTION + "setrods" + NAME_SEPARATOR + "percent",
+                PREFIX_FUNCTION + "extendrods" + NAME_SEPARATOR + "percent"
+        };
+    }
+
+    @Override
+    public String runRORFunction(String name, String[] params) {
+        if ((PREFIX_FUNCTION + "setrods").equals(name) && params.length > 0) {
+            int percent = com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[0], 0, 100);
+            this.setTarget(percent / 100D);
+            this.setChanged();
+            return null;
+        }
+        if ((PREFIX_FUNCTION + "extendrods").equals(name) && params.length > 0) {
+            int percent = com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[0], -100, 100);
+            this.setTarget(net.minecraft.util.Mth.clamp(this.targetLevel + percent / 100D, 0D, 1D));
+            this.setChanged();
+            return null;
+        }
+        return null;
     }
 }
 

@@ -5,16 +5,15 @@ import com.hbm_m.lib.RefStrings;
 import net.minecraft.client.Minecraft;
 import dev.architectury.event.events.client.ClientTickEvent;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
+//? if forge {
 import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.client.event.RenderGuiEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 //?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.neoforge.client.event.ViewportEvent;
+/*import net.neoforged.neoforge.client.event.ViewportEvent;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.bus.api.EventPriority;
@@ -146,12 +145,11 @@ public class CameraShakeHandler {
     //
     // Forge/NeoForge: direct camera + GUI hooks via ViewportEvent / RenderGuiEvent.
 
-    //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+        @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//? if forge {
     @Mod.EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT)
     //?} elif neoforge {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-    @EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT)
+/*    @EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT)
     *///?}
     public static final class ShakeHooks {
 

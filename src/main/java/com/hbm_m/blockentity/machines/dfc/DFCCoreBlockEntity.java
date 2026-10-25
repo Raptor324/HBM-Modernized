@@ -1,5 +1,6 @@
 package com.hbm_m.blockentity.machines.dfc;
 
+import com.hbm_m.platform.PlatformHooks;
 import com.hbm_m.api.fluids.IFluidStandardReceiverMK2;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
@@ -26,6 +27,7 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.AABB;
 
 import org.jetbrains.annotations.Nullable;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1-Port von {@code TileEntityCore} (1.7.10): der Kern des Dunklen Fusionsreaktors.
@@ -82,6 +84,9 @@ public class DFCCoreBlockEntity extends BaseMachineBlockEntity implements IFluid
     /** Die Mischfarbe beider Katalysatoren; 0 heisst "kein Betrieb moeglich". */
     private int color;
     private boolean meltdownTick = false;
+    /** Original serialize schickt heat und meltdownTick vor dem Zuruecksetzen - nur zur Darstellung (RenderCore). */
+    private int syncHeat;
+    private boolean syncMeltdown;
 
     /**
      * 1:1-Port von {@code EntityNukeExplosionMK3.at}: jede Atomexplosion traegt sich hier ein und
@@ -173,6 +178,8 @@ public class DFCCoreBlockEntity extends BaseMachineBlockEntity implements IFluid
             }
         }
 
+        be.syncHeat = be.heat;
+        be.syncMeltdown = be.meltdownTick;
         be.heat = 0;
         if (be.field > 0) be.field--;
 
@@ -206,7 +213,7 @@ public class DFCCoreBlockEntity extends BaseMachineBlockEntity implements IFluid
                 level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, size);
         level.addFreshEntity(ex);
 
-        com.hbm_m.platform.PlatformHooks.playSound(level, pos, net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE,
+        com.hbm_m.platform.LevelHooks.playSound(level, pos, net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE,
                 net.minecraft.sounds.SoundSource.BLOCKS, 100000.0F, 1.0F);
 
         // Original: EntityCloudFleijaRainbow mit dem Radius als Groesse.
@@ -252,7 +259,7 @@ public class DFCCoreBlockEntity extends BaseMachineBlockEntity implements IFluid
             if (e instanceof Player player && com.hbm_m.util.ArmorUtil.checkForHazmat(player)) continue;
             if (isObstructed(level, centre.x, centre.y + 6D, centre.z, e.getX(), e.getEyeY(), e.getZ())) continue;
             e.hurt(com.hbm_m.damagesource.ModDamageSources.ams(level), 1000F);
-            com.hbm_m.platform.PlatformHooks.setSecondsOnFire(e, 3);
+            com.hbm_m.platform.MobHooks.setSecondsOnFire(e, 3);
         }
 
         AABB inner = new AABB(pos).inflate(scale);
@@ -264,7 +271,7 @@ public class DFCCoreBlockEntity extends BaseMachineBlockEntity implements IFluid
 
     /** Original: {@code Library.isObstructed}. */
     private static boolean isObstructed(Level level, double x, double y, double z, double tx, double ty, double tz) {
-        return level.clip(com.hbm_m.platform.PlatformHooks.clipContext(
+        return level.clip(com.hbm_m.platform.LevelHooks.clipContext(
                 new net.minecraft.world.phys.Vec3(x, y, z), new net.minecraft.world.phys.Vec3(tx, ty, tz),
                 net.minecraft.world.level.ClipContext.Fluid.NONE)).getType() != net.minecraft.world.phys.HitResult.Type.MISS;
     }
@@ -376,6 +383,8 @@ public class DFCCoreBlockEntity extends BaseMachineBlockEntity implements IFluid
         tag.putInt("color", color);
         tag.putInt("heat", heat);
         tag.putBoolean("meltdown", meltdownTick);
+        tag.putInt("renderHeat", syncHeat);
+        tag.putBoolean("renderMeltdown", syncMeltdown);
     }
 
     @Override
@@ -387,9 +396,15 @@ public class DFCCoreBlockEntity extends BaseMachineBlockEntity implements IFluid
         color = tag.getInt("color");
         heat = tag.getInt("heat");
         meltdownTick = tag.getBoolean("meltdown");
+        syncHeat = tag.contains("renderHeat") ? tag.getInt("renderHeat") : heat;
+        syncMeltdown = tag.contains("renderMeltdown") ? tag.getBoolean("renderMeltdown") : meltdownTick;
     }
 
     public boolean isMeltdownTick() { return meltdownTick; }
+    /** Fuer RenderCore: Hitze des letzten Ticks (0 = Bereitschaft). */
+    public int getRenderHeat() { return syncHeat; }
+    /** Fuer RenderCore: Durchschmelzen im letzten Tick (Flare statt Kugel). */
+    public boolean isRenderMeltdown() { return syncMeltdown; }
 
     @Override
     protected Component getDefaultName() {

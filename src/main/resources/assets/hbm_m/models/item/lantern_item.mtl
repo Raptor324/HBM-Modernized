@@ -1,0 +1,4 @@
+newmtl body
+map_Kd #texture
+newmtl glow
+map_Kd #light

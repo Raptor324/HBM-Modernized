@@ -31,11 +31,7 @@ import net.minecraft.resources.ResourceLocation;
  * {@link com.hbm_m.client.missile.track.MissileTrackWorldRender}; otherwise vanilla entity lerp here.
  */
 
-//? if < 1.21.1 {
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} else {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
 public class MissileEntityRenderer<T extends MissileBaseEntity> extends EntityRenderer<T> {
 
     public MissileEntityRenderer(EntityRendererProvider.Context context) {

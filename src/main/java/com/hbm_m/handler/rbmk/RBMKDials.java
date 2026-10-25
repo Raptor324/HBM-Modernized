@@ -72,7 +72,8 @@ public class RBMKDials {
     public static double getSurgeMod(Level world)                { return Math.max(dial(d -> d.surgeMod, SURGE_MOD), 0.0); }
     public static int    getFluxRange(Level world)               { return clampInt(rule(world, RBMKGameRules.FLUX_RANGE, FLUX_RANGE), 1, 100); }
     public static int    getReaSimRange(Level world)             { return clampInt(rule(world, RBMKGameRules.REASIM_RANGE, REASIM_RANGE), 1, 100); }
-    public static boolean getReasimBoilers(Level world)          { return rule(world, RBMKGameRules.REASIM_BOILERS, REASIM_BOILERS); }
+    /** Original: Spielregel ODER {@code GeneralConfig.enable528ReasimBoilers} (528-Modus). */
+    public static boolean getReasimBoilers(Level world)          { return rule(world, RBMKGameRules.REASIM_BOILERS, REASIM_BOILERS) || com.hbm_m.config.GeneralConfig.reasimBoilers528(); }
     public static double getReaSimBoilerSpeed(Level world)       { return clamp(dial(d -> d.reasimBoilerSpeed, REASIM_BOILER_SPEED), 0.0, 1.0); }
     public static boolean getMeltdownsDisabled(Level world)      { return rule(world, RBMKGameRules.DISABLE_MELTDOWNS, DISABLE_MELTDOWNS); }
     public static boolean getOverpressure(Level world)           { return rule(world, RBMKGameRules.MELTDOWN_OVERPRESSURE, ENABLE_OVERPRESSURE); }

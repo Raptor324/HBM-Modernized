@@ -31,7 +31,7 @@ public final class HbmMixinConfigPlugin implements IMixinConfigPlugin {
         //? if forge {
         return net.minecraftforge.fml.loading.FMLEnvironment.dist.isDedicatedServer();
         //?} elif neoforge {
-        /*return net.neoforged.fml.loading.FMLEnvironment.dist.isDedicatedServer();
+        /*return net.minecraftforge.fml.loading.FMLEnvironment.dist.isDedicatedServer();
         *///?} else {
         /*return false;
         *///?}

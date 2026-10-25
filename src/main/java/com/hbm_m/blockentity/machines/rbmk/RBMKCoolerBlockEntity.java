@@ -154,6 +154,14 @@ public class RBMKCoolerBlockEntity extends RBMKColumnBlockEntity
     }
     //?}
 
+    //? if neoforge {
+    /*@Override
+    public @org.jetbrains.annotations.Nullable Object getFluidHandler(@org.jetbrains.annotations.Nullable Direction side) {
+        if (side == Direction.DOWN || side == null) return coldTank.getCapability();
+        return hotTank.getCapability();
+    }
+    *///?}
+
     @Override public RBMKType getRBMKType()      { return RBMKType.OTHER; }
     @Override public ColumnType getConsoleType() { return ColumnType.COOLER; }
 

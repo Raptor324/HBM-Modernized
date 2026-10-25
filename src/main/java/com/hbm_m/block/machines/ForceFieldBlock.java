@@ -29,8 +29,8 @@ import org.jetbrains.annotations.Nullable;
  * Ueber dem Block steigen Funken auf, solange das Feld laeuft, und Rauch, waehrend es abkuehlt.</p>
  *
  * <p>Der Block hat wie im Original <b>kein eigenes Modell</b> ({@code getRenderType() == -1}):
- * Sockel, Kopf und die Feldkugel zeichnet
- * {@link com.hbm_m.client.render.implementations.ForceFieldRenderer}.</p>
+ * Sockel, Kopf und die Feldkugel zeichnet die Nucleus-Spec in
+ * {@link com.hbm_m.client.render.implementations.MachineResearchFacilityRenderer}.</p>
  */
 public class ForceFieldBlock extends BaseEntityBlock {
 
@@ -87,20 +87,10 @@ public class ForceFieldBlock extends BaseEntityBlock {
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
-    // Same body for both loaders' signatures (rule 2 of the hooks convention).
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        return hbmUse(state, level, pos, player, hit);
-    }
-    //?} else {
-    /*@Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        return hbmUse(state, level, pos, player, hit);
-    }
-    *///?}
-
-    private InteractionResult hbmUse(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        // Original: beim Schleichen passiert nichts.
         if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide());
 
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider menuProvider) {
@@ -108,13 +98,19 @@ public class ForceFieldBlock extends BaseEntityBlock {
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
     }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide());
 
-    //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<ForceFieldBlock> CODEC = simpleCodec(ForceFieldBlock::new);
-
-    @Override
-    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
-        return CODEC;
+        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider menuProvider) {
+            MenuRegistry.openExtendedMenu((ServerPlayer) player, menuProvider, buf -> buf.writeBlockPos(pos));
+        }
+        return InteractionResult.sidedSuccess(level.isClientSide());
     }
+    *///?}
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<ForceFieldBlock> CODEC = simpleCodec(ForceFieldBlock::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
 }

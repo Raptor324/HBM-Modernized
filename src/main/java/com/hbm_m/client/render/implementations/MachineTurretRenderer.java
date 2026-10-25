@@ -21,6 +21,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import com.hbm_m.platform.LoaderHooks;
 
 /**
  * Generischer BER fuer alle 11 Turret-Varianten (siehe {@link TurretStats}): rotiert die
@@ -36,11 +37,7 @@ import net.minecraft.util.Mth;
  * Embeddium-kompatibel. Barrel-Spin/Recoil ist bewusst NICHT animiert - siehe {@link TurretStats}.
  */
 
-//? if < 1.21.1 {
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} else {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
 public class MachineTurretRenderer implements com.hbm_m.client.render.HbmBerBounds<TurretBaseBlockEntity> {
 
     private static final Map<String, ResourceLocation> MODEL_IDS = new HashMap<>();
@@ -141,7 +138,7 @@ public class MachineTurretRenderer implements com.hbm_m.client.render.HbmBerBoun
         ResourceLocation id = MODEL_IDS.computeIfAbsent(partKey,
                 key -> ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/turret_parts/" + key));
         var modelManager = Minecraft.getInstance().getModelManager();
-        BakedModel model = PlatformHooks.getModel(modelManager, id);
+        BakedModel model = LoaderHooks.getModel(modelManager, id);
         return (model == null || model == modelManager.getMissingModel()) ? null : model;
     }
 }

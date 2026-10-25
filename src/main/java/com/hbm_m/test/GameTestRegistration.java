@@ -59,6 +59,12 @@ public final class GameTestRegistration {
         event.register(TurbofanGameTest.class);
         event.register(TurbofanIntegrationGameTest.class);
         event.register(NukeProfileGameTest.class);
+        event.register(LegacyBlockTableGameTest.class);
+        event.register(GrenadeThrowGameTest.class);
+        event.register(SpaceEnvironmentGameTest.class);
+        event.register(BarrelTankGameTest.class);
+        event.register(CreativeTabsGameTest.class); // Creative-Tabs bauen (NeoForge-Absturz 2026-10-13)
+        event.register(BedrockFragmentRecipeGameTest.class);
     }
     //?} elif neoforge {
     /*@SubscribeEvent
@@ -82,9 +88,12 @@ public final class GameTestRegistration {
         event.register(TurbofanGameTest.class);
         event.register(TurbofanIntegrationGameTest.class);
         event.register(NukeProfileGameTest.class);
+        event.register(LegacyBlockTableGameTest.class);
+        event.register(GrenadeThrowGameTest.class);
+        event.register(SpaceEnvironmentGameTest.class);
+        event.register(BarrelTankGameTest.class);
+        event.register(CreativeTabsGameTest.class); // Creative-Tabs bauen (NeoForge-Absturz 2026-10-13)
+        event.register(BedrockFragmentRecipeGameTest.class);
     }
      *///?}
 }
-
-
-

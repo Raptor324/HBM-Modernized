@@ -26,7 +26,7 @@ public class TeslaBlock extends BaseEntityBlock {
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
+        return RenderShape.ENTITYBLOCK_ANIMATED; // Spule und Blitze zeichnet TeslaRenderer (RenderTesla)
     }
 
     @Nullable
@@ -41,13 +41,8 @@ public class TeslaBlock extends BaseEntityBlock {
         return createTickerHelper(type, ModBlockEntities.TESLA_BE.get(),
                 (lvl, pos, st, be) -> TeslaBlockEntity.tick(lvl, pos, st, (TeslaBlockEntity) be));
     }
-
-    //? if >1.20.1 {
+    //? if >= 1.21.1 {
     /*public static final com.mojang.serialization.MapCodec<TeslaBlock> CODEC = simpleCodec(TeslaBlock::new);
-
-    @Override
-    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
-        return CODEC;
-    }
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
 }

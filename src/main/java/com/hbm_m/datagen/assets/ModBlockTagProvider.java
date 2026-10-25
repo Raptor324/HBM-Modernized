@@ -52,22 +52,40 @@ public class ModBlockTagProvider extends BlockTagsProvider {
         // --- 2. Списки исключений (Кто чем копается) ---
 
         // А. Блоки для ЛОПАТЫ (Земля, песок, сыпучее)
-        Set<Block> shovelBlocks = Set.of(
+        Set<Block> shovelBlocks = new java.util.HashSet<>(Set.of(
                 ModBlocks.WASTE_GRASS.get(),
                 ModBlocks.DEAD_DIRT.get(),
                 ModBlocks.BURNED_GRASS.get(),
                 ModBlocks.ORE_OIL_SAND.get() // CE: BlockFallingBase.setHarvestLevel("shovel", 0)
-        );
+        ));
+        // R6a: Erde/Sand/Schnee (Original Material.ground/sand/snow)
+        for (var s : java.util.List.of(ModBlocks.BLOCK_SCRAP, ModBlocks.ORE_OIL_SAND, ModBlocks.DIRT_DEAD, ModBlocks.DIRT_OILY, ModBlocks.GRAVEL_DIAMOND, ModBlocks.MOON_TURF, ModBlocks.SAND_DIRTY, ModBlocks.SAND_DIRTY_RED, ModBlocks.FROZEN_DIRT, ModBlocks.BLOCK_RED_PHOSPHORUS, ModBlocks.BLOCK_YELLOWCAKE, ModBlocks.WASTE_EARTH, ModBlocks.FROZEN_GRASS, ModBlocks.BURNING_EARTH, ModBlocks.IMPACT_DIRT, ModBlocks.NTM_DIRT, ModBlocks.BARRICADE, ModBlocks.ASH_DIGAMMA, ModBlocks.BLOCK_FOAM, ModBlocks.FOAM_LAYER, ModBlocks.SAND_BORON_LAYER)) shovelBlocks.add(s.get());
+        // R6a: im Original ohne Werkzeugstufe (Material.rock/iron = beliebige Spitzhacke)
+        Set<Block> r6aNoTier = new java.util.HashSet<>();
+        for (var s : java.util.List.of(ModBlocks.VENT_CHLORINE, ModBlocks.STALAGMITE_SULFUR, ModBlocks.STALAGMITE_ASBESTOS, ModBlocks.STALAGMITE_ICE, ModBlocks.STALAGMITE_SNOW, ModBlocks.STALAGMITE_GLYPHID1, ModBlocks.STALAGMITE_GLYPHID2, ModBlocks.STALAGMITE_GLYPHID3, ModBlocks.STALACTITE_SULFUR, ModBlocks.STALACTITE_ASBESTOS, ModBlocks.STALACTITE_ICE, ModBlocks.STALACTITE_SNOW, ModBlocks.STALACTITE_GLYPHID1, ModBlocks.STALACTITE_GLYPHID2, ModBlocks.STALACTITE_GLYPHID3, ModBlocks.STONE_RESOURCE_SULFUR, ModBlocks.STONE_RESOURCE_ASBESTOS, ModBlocks.STONE_RESOURCE_HEMATITE, ModBlocks.STONE_RESOURCE_MALACHITE, ModBlocks.STONE_RESOURCE_LIMESTONE, ModBlocks.STONE_RESOURCE_BAUXITE, ModBlocks.PWR_BLOCK, ModBlocks.CRANE_SPLITTER, ModBlocks.SEAL_CONTROLLER, ModBlocks.SEAL_FRAME, ModBlocks.BLAST_DOOR, ModBlocks.FRACTION_SPACER, ModBlocks.CRANE_PARTITIONER, ModBlocks.PIPE_ANCHOR, ModBlocks.PIPE_ANCHOR_EXHAUST, ModBlocks.PIPE_ANCHOR_PNEUMATIC, ModBlocks.FLUID_DUCT_BOX, ModBlocks.FLUID_DUCT_EXHAUST, ModBlocks.RED_CABLE_BOX, ModBlocks.FLUID_DUCT_PAINTABLE, ModBlocks.FLUID_DUCT_PAINTABLE_BLOCK_EXHAUST, ModBlocks.FLUID_VALVE, ModBlocks.FLUID_SWITCH, ModBlocks.FLUID_COUNTER_VALVE, ModBlocks.MACHINE_UF6_TANK, ModBlocks.MACHINE_PUF6_TANK, ModBlocks.CABLE_SWITCH, ModBlocks.CABLE_DETECTOR, ModBlocks.CABLE_DIODE, ModBlocks.RAIL_NARROW, ModBlocks.RAIL_HIGHSPEED, ModBlocks.RAIL_BOOSTER, ModBlocks.FIELD_DISTURBER, ModBlocks.TELEANCHOR, ModBlocks.CM_FLUX, ModBlocks.CM_HEAT, ModBlocks.HADRON_COIL_ALLOY, ModBlocks.HADRON_COIL_GOLD, ModBlocks.HADRON_COIL_NEODYMIUM, ModBlocks.HADRON_COIL_MAGTUNG, ModBlocks.HADRON_COIL_SCHRABIDIUM, ModBlocks.HADRON_COIL_SCHRABIDATE, ModBlocks.HADRON_COIL_STARMETAL, ModBlocks.HADRON_COIL_CHLOROPHYTE, ModBlocks.HADRON_COIL_MESE, ModBlocks.BLOCK_GRAPHITE_DRILLED, ModBlocks.BLOCK_GRAPHITE_FUEL, ModBlocks.BLOCK_GRAPHITE_PLUTONIUM, ModBlocks.BLOCK_GRAPHITE_SOURCE, ModBlocks.BLOCK_GRAPHITE_LITHIUM, ModBlocks.BLOCK_GRAPHITE_TRITIUM, ModBlocks.BLOCK_GRAPHITE_DETECTOR, ModBlocks.BLOCK_GRAPHITE_ROD, ModBlocks.GEYSIR_NETHER, ModBlocks.GEYSIR_CHLORINE, ModBlocks.CRATE_LEAD, ModBlocks.CRATE_METAL, ModBlocks.CRATE_RED, ModBlocks.CRATE_AMMO, ModBlocks.CRATE_JUNGLE, ModBlocks.SAFE, ModBlocks.BRICK_JUNGLE, ModBlocks.BRICK_JUNGLE_CRACKED, ModBlocks.BRICK_JUNGLE_LAVA, ModBlocks.BRICK_JUNGLE_CIRCLE, ModBlocks.BRICK_JUNGLE_FRAGILE, ModBlocks.BRICK_JUNGLE_GLYPH, ModBlocks.BRICK_JUNGLE_TRAP, ModBlocks.VENT_CLOUD, ModBlocks.VENT_PINK_CLOUD, ModBlocks.BLOCK_SCRAP, ModBlocks.BLOCK_ELECTRICAL_SCRAP, ModBlocks.CONCRETE_SUPER_BROKEN, ModBlocks.ORE_OIL_SAND, ModBlocks.DIRT_DEAD, ModBlocks.DIRT_OILY, ModBlocks.GRAVEL_DIAMOND, ModBlocks.GRAVEL_OBSIDIAN, ModBlocks.MOON_TURF, ModBlocks.SAND_DIRTY, ModBlocks.SAND_DIRTY_RED, ModBlocks.STONE_CRACKED, ModBlocks.ORE_OIL, ModBlocks.BLOCK_METEOR, ModBlocks.BLOCK_METEOR_COBBLE, ModBlocks.BLOCK_METEOR_BROKEN, ModBlocks.DECO_TITANIUM, ModBlocks.WASTE_PLANKS, ModBlocks.FROZEN_DIRT, ModBlocks.FROZEN_PLANKS, ModBlocks.ORE_RARE, ModBlocks.BRICK_JUNGLE_OOZE, ModBlocks.BRICK_JUNGLE_MYSTIC, ModBlocks.BLOCK_COPPER, ModBlocks.BLOCK_ALUMINIUM, ModBlocks.BLOCK_BAKELITE, ModBlocks.BLOCK_COLTAN, ModBlocks.BLOCK_FLUORITE, ModBlocks.BLOCK_MAGNETIZED_TUNGSTEN, ModBlocks.BLOCK_NITER, ModBlocks.BLOCK_POLYMER, ModBlocks.BLOCK_RUBBER, ModBlocks.BLOCK_SULFUR, ModBlocks.BLOCK_TANTALIUM, ModBlocks.METEOR_PILLAR, ModBlocks.CONCRETE_PILLAR, ModBlocks.BLOCK_EUPHEMIUM_CLUSTER, ModBlocks.BLOCK_FIBERGLASS, ModBlocks.BLOCK_INSULATOR, ModBlocks.BLOCK_TRITIUM, ModBlocks.GNEISS_CHISELED, ModBlocks.BASALT, ModBlocks.WATZ_COOLER, ModBlocks.WATZ_ELEMENT, ModBlocks.BLOCK_SMORE, ModBlocks.METEOR_BATTERY, ModBlocks.CLUSTER_IRON, ModBlocks.CLUSTER_TITANIUM, ModBlocks.CLUSTER_ALUMINIUM, ModBlocks.CLUSTER_COPPER, ModBlocks.CLUSTER_DEPTH_IRON, ModBlocks.CLUSTER_DEPTH_TITANIUM, ModBlocks.CLUSTER_DEPTH_TUNGSTEN, ModBlocks.DEPTH_DNT, ModBlocks.STONE_DEPTH, ModBlocks.STONE_DEPTH_NETHER, ModBlocks.BLOCK_CORIUM, ModBlocks.BLOCK_PU_MIX, ModBlocks.BLOCK_TRINITITE, ModBlocks.BLOCK_WHITE_PHOSPHORUS, ModBlocks.BLOCK_WASTE, ModBlocks.BLOCK_WASTE_VITRIFIED, ModBlocks.BLOCK_WASTE_PAINTED, ModBlocks.BLOCK_RED_PHOSPHORUS, ModBlocks.BLOCK_YELLOWCAKE, ModBlocks.BLOCK_CORIUM_COBBLE, ModBlocks.ORE_GNEISS_URANIUM_SCORCHED, ModBlocks.ORE_NETHER_URANIUM_SCORCHED, ModBlocks.ORE_URANIUM_SCORCHED, ModBlocks.DECO_ASBESTOS, ModBlocks.ASPHALT, ModBlocks.ASPHALT_LIGHT, ModBlocks.WASTE_LOG, ModBlocks.FROZEN_LOG, ModBlocks.BARBED_WIRE, ModBlocks.BARBED_WIRE_FIRE, ModBlocks.BARBED_WIRE_POISON, ModBlocks.BARBED_WIRE_ACID, ModBlocks.BARBED_WIRE_WITHER, ModBlocks.BARBED_WIRE_ULTRADEATH, ModBlocks.WASTE_EARTH, ModBlocks.FROZEN_GRASS, ModBlocks.BURNING_EARTH, ModBlocks.IMPACT_DIRT, ModBlocks.NTM_DIRT, ModBlocks.REINFORCED_LAMP_OFF, ModBlocks.REINFORCED_LAMP_ON, ModBlocks.BLOCK_LITHIUM, ModBlocks.BARRICADE, ModBlocks.CONCRETE_SUPER, ModBlocks.BRICK_CONCRETE_MARKED, ModBlocks.ASH_DIGAMMA, ModBlocks.GLASS_BORON, ModBlocks.GLASS_LEAD, ModBlocks.GLASS_URANIUM, ModBlocks.GLASS_TRINITITE, ModBlocks.GLASS_POLONIUM, ModBlocks.GLASS_ASH, ModBlocks.GLASS_QUARTZ, ModBlocks.GLASS_POLARIZED, ModBlocks.REINFORCED_LAMINATE, ModBlocks.STONE_BIOME_DESERT, ModBlocks.STONE_BIOME_WOODLAND, ModBlocks.BLOCK_COKE_COAL, ModBlocks.BLOCK_COKE_LIGNITE, ModBlocks.BLOCK_COKE_PETROLEUM, ModBlocks.BLOCK_CAP_NUKA, ModBlocks.BLOCK_CAP_QUANTUM, ModBlocks.BLOCK_CAP_SPARKLE, ModBlocks.BLOCK_CAP_RAD, ModBlocks.BLOCK_CAP_KORL, ModBlocks.BLOCK_CAP_FRITZ, ModBlocks.PLATEMETAL_BASE, ModBlocks.PLATEMETAL_BLACK, ModBlocks.PLATEMETAL_WHITE, ModBlocks.PLATEMETAL_RED, ModBlocks.PLATEMETAL_GREEN, ModBlocks.PLATEMETAL_LIGHT_GRAY, ModBlocks.PLATEMETAL_BLUE, ModBlocks.PLATEMETAL_PURPLE, ModBlocks.PLATEMETAL_CYAN, ModBlocks.PLATEMETAL_PINK, ModBlocks.PLATEMETAL_LIME, ModBlocks.PLATEMETAL_YELLOW, ModBlocks.PLATEMETAL_LIGHT_BLUE, ModBlocks.PLATEMETAL_MAGENTA, ModBlocks.PLATEMETAL_ORANGE, ModBlocks.CONCRETE_SMOOTH, ModBlocks.DUCRETE_SMOOTH, ModBlocks.CONCRETE_SMOOTH_STAIRS, ModBlocks.DUCRETE_SMOOTH_STAIRS, ModBlocks.BRICK_ASBESTOS_STAIRS, ModBlocks.LIGHTSTONE_TILE_STAIRS, ModBlocks.STONES_SLAB_TILE, ModBlocks.STONES_SLAB_BRICKS, ModBlocks.BLOCK_FOAM, ModBlocks.FOAM_LAYER, ModBlocks.SAND_BORON_LAYER)) r6aNoTier.add(s.get());
+        // R6b: Deko aus Material.iron (beliebige Spitzhacke)
+        for (var s : java.util.List.of(ModBlocks.TAPE_RECORDER, ModBlocks.STEEL_POLE, ModBlocks.ANTENNA_TOP, ModBlocks.POLE_SATELLITE_RECEIVER, ModBlocks.PUTER, ModBlocks.CRT_CLEAN, ModBlocks.CRT_BROKEN, ModBlocks.CRT_BLINKING, ModBlocks.CRT_BSOD, ModBlocks.TOASTER, ModBlocks.TOASTER_STEEL, ModBlocks.TOASTER_WOOD, ModBlocks.STEEL_CORNER, ModBlocks.STEEL_WALL, ModBlocks.STEEL_ROOF, ModBlocks.STEEL_BEAM, ModBlocks.STEEL_SCAFFOLD, ModBlocks.STEEL_SCAFFOLD_RED, ModBlocks.STEEL_SCAFFOLD_WHITE, ModBlocks.STEEL_SCAFFOLD_YELLOW, ModBlocks.DUNGEON_CHAIN, ModBlocks.DECO_EMITTER, ModBlocks.PART_EMITTER, ModBlocks.DET_CORD, ModBlocks.DET_CHARGE, ModBlocks.DET_NUKE, ModBlocks.DUD_BALEFIRE, ModBlocks.DUD_CONVENTIONAL, ModBlocks.DUD_NUKE, ModBlocks.DUD_SALTED, ModBlocks.FIREWORKS, ModBlocks.VOLCANO_CORE, ModBlocks.VOLCANO_RAD_CORE, ModBlocks.SPIKES, ModBlocks.TRAPDOOR_STEEL, ModBlocks.REINFORCED_LAMINATE_PANE, ModBlocks.STONE_POROUS, ModBlocks.LAMP_DEMON, ModBlocks.THERM_ENDO, ModBlocks.THERM_EXO, ModBlocks.FLOAT_BOMB, ModBlocks.EMP_BOMB, ModBlocks.FLAME_WAR, ModBlocks.SKELETON_HOLDER, ModBlocks.FILE_CABINET, ModBlocks.FILE_CABINET_STEEL, ModBlocks.VENDING_MACHINE, ModBlocks.VENDING_MACHINE_SNACKS, ModBlocks.STEEL_GRATE, ModBlocks.STEEL_GRATE_WIDE, ModBlocks.BOXCAR, ModBlocks.BOAT, ModBlocks.DECO_PIPE, ModBlocks.DECO_PIPE_RUSTED, ModBlocks.DECO_PIPE_GREEN, ModBlocks.DECO_PIPE_GREEN_RUSTED, ModBlocks.DECO_PIPE_RED, ModBlocks.DECO_PIPE_MARKED, ModBlocks.DECO_PIPE_RIM, ModBlocks.DECO_PIPE_RIM_RUSTED, ModBlocks.DECO_PIPE_RIM_GREEN, ModBlocks.DECO_PIPE_RIM_GREEN_RUSTED, ModBlocks.DECO_PIPE_RIM_RED, ModBlocks.DECO_PIPE_RIM_MARKED, ModBlocks.DECO_PIPE_FRAMED, ModBlocks.DECO_PIPE_FRAMED_RUSTED, ModBlocks.DECO_PIPE_FRAMED_GREEN, ModBlocks.DECO_PIPE_FRAMED_GREEN_RUSTED, ModBlocks.DECO_PIPE_FRAMED_RED, ModBlocks.DECO_PIPE_FRAMED_MARKED, ModBlocks.DECO_PIPE_QUAD, ModBlocks.DECO_PIPE_QUAD_RUSTED, ModBlocks.DECO_PIPE_QUAD_GREEN, ModBlocks.DECO_PIPE_QUAD_GREEN_RUSTED, ModBlocks.DECO_PIPE_QUAD_RED, ModBlocks.DECO_PIPE_QUAD_MARKED)) r6aNoTier.add(s.get());
+        // SEDNA: Waffenmodifikationstisch, Original Material.iron (beliebige Spitzhacke)
+        r6aNoTier.add(ModBlocks.MACHINE_WEAPON_TABLE.get());
+        // Zugsystem: Schienen im Original Material.iron (beliebige Spitzhacke)
+        for (var s : java.util.List.of(ModBlocks.RAIL_NARROW_STRAIGHT, ModBlocks.RAIL_NARROW_CURVE, ModBlocks.RAIL_LARGE_STRAIGHT, ModBlocks.RAIL_LARGE_STRAIGHT_SHORT, ModBlocks.RAIL_LARGE_CURVE, ModBlocks.RAIL_LARGE_CURVE_7, ModBlocks.RAIL_LARGE_CURVE_9, ModBlocks.RAIL_LARGE_RAMP, ModBlocks.RAIL_LARGE_BUFFER, ModBlocks.RAIL_LARGE_SWITCH, ModBlocks.RAIL_LARGE_SWITCH_FLIPPED)) r6aNoTier.add(s.get());
+        Set<Block> r6aNoTool = new java.util.HashSet<>();
+        // R6d: Holz/Erde/Sand ohne Spitzhacke
+        for (var s : java.util.List.of(ModBlocks.VINE_PHOSPHOR, ModBlocks.MUSH, ModBlocks.MUSH_BLOCK, ModBlocks.MUSH_BLOCK_STEM, ModBlocks.SANDBAGS, ModBlocks.BARRICADE, ModBlocks.PINK_LOG, ModBlocks.PINK_PLANKS, ModBlocks.PINK_SLAB, ModBlocks.PINK_STAIRS, ModBlocks.WOOD_BARRIER, ModBlocks.WOOD_STRUCTURE, ModBlocks.WOOD_STRUCTURE_SCAFFOLD, ModBlocks.WOOD_STRUCTURE_CEILING)) r6aNoTool.add(s.get());
+        for (var s : java.util.List.of(ModBlocks.DYNAMITE, ModBlocks.SEMTEX, ModBlocks.TNT_NTM, ModBlocks.FISSURE_BOMB, ModBlocks.BLOCK_C4, ModBlocks.BLOCK_SEMTEX, ModBlocks.CHARGE_DYNAMITE, ModBlocks.CHARGE_MINER, ModBlocks.CHARGE_C4, ModBlocks.CHARGE_SEMTEX)) r6aNoTool.add(s.get());
+        for (var s : java.util.List.of(ModBlocks.PLANT_DEAD, ModBlocks.PLANT_DEAD_GRASS, ModBlocks.PLANT_DEAD_FLOWER, ModBlocks.PLANT_DEAD_BIGFLOWER, ModBlocks.PLANT_DEAD_FERN, ModBlocks.LEAVES_LAYER)) r6aNoTool.add(s.get());
 
         // Б. Блоки для ТОПОРА (Дерево, ящики, деревянные двери)
-        Set<Block> axeBlocks = Set.of(
+        Set<Block> axeBlocks = new java.util.HashSet<>(Set.of(
                 ModBlocks.WASTE_LOG.get(),
                 ModBlocks.WASTE_PLANKS.get(),
                 ModBlocks.CRATE.get(),        // Деревянный ящик
-                ModBlocks.CRATE_WEAPON.get(), // Оружейный ящик (обычно дерево)
-                ModBlocks.DOOR_OFFICE.get(),  // Офисная дверь (обычно дерево)
-                ModBlocks.WOOD_BURNER.get()   // В названии Wood, возможно логично рубить топором? (если нет - уберите)
-        );
+                // door_office: im Original Material.iron (Spitzhacke), siehe unten
+                ModBlocks.CRATE_WEAPON.get()
+                // wood_burner: im Original Material.iron (Spitzhacke)
+        ));
+        for (var s : java.util.List.of(ModBlocks.WASTE_PLANKS, ModBlocks.FROZEN_PLANKS, ModBlocks.WASTE_LOG, ModBlocks.FROZEN_LOG)) axeBlocks.add(s.get());
+        for (var s : java.util.List.of(ModBlocks.RAIL_WOOD)) axeBlocks.add(s.get());
 
         // В. РУДЫ И РЕСУРСНЫЕ БЛОКИ — тиры взяты из HBM-CE (setHarvestLevel("pickaxe", N)):
         // тир 0 = без тега needs_* (любая кирка дает дроп, рука ломает без дропа);
@@ -78,8 +96,7 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 // --- Тир 0 (CE harvest 0 / без harvest level) ---
                 ModBlocks.LIGNITE_ORE.get(), ModBlocks.LIGNITE_ORE_DEEPSLATE.get(),
                 ModBlocks.GNEISS_LITHIUM_ORE.get(),
-                ModBlocks.GNEISS_GAS_ORE.get(), ModBlocks.ORE_GNEISS_GAS.get(),
-                ModBlocks.NETHER_SMOLDERING_ORE.get(), ModBlocks.ORE_NETHER_SMOLDERING.get(), // CE BlockSmolder — без harvest level
+                ModBlocks.GNEISS_GAS_ORE.get(),                 ModBlocks.NETHER_SMOLDERING_ORE.get(), // CE BlockSmolder — без harvest level
                 ModBlocks.ORE_SELLAFIELD_DIAMOND.get(), ModBlocks.ORE_SELLAFIELD_EMERALD.get(),
                 ModBlocks.ORE_SELLAFIELD_URANIUM_SCORCHED.get(), ModBlocks.ORE_SELLAFIELD_SCHRABIDIUM.get(),
                 ModBlocks.ORE_SELLAFIELD_RADGEM.get(),
@@ -94,26 +111,18 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 ModBlocks.STONE_RESOURCE_MALACHITE.get(), ModBlocks.STONE_RESOURCE_SULFUR.get(), // CE BlockResourceStone — без harvest level
                 // --- Тир 1 (CE harvest 1) ---
                 ModBlocks.SULFUR_ORE.get(), ModBlocks.SULFUR_ORE_DEEPSLATE.get(),
-                ModBlocks.NETHER_SULFUR_ORE.get(), ModBlocks.ORE_NETHER_SULFUR.get(),
-                ModBlocks.NITER_ORE.get(), ModBlocks.NITER_ORE_DEEPSLATE.get(),
+                ModBlocks.NETHER_SULFUR_ORE.get(),                 ModBlocks.NITER_ORE.get(), ModBlocks.NITER_ORE_DEEPSLATE.get(),
                 ModBlocks.ALUMINUM_ORE.get(), ModBlocks.ALUMINUM_ORE_DEEPSLATE.get(),
-                ModBlocks.ORE_ALUMINIUM.get(),
-                ModBlocks.FLUORITE_ORE.get(), ModBlocks.FLUORITE_ORE_DEEPSLATE.get(),
+                                ModBlocks.FLUORITE_ORE.get(), ModBlocks.FLUORITE_ORE_DEEPSLATE.get(),
                 ModBlocks.ASBESTOS_ORE.get(), ModBlocks.ASBESTOS_ORE_DEEPSLATE.get(),
                 ModBlocks.CINNABAR_ORE.get(), ModBlocks.CINNABAR_ORE_DEEPSLATE.get(),
-                ModBlocks.ORE_CINNEBAR.get(),
-                ModBlocks.ORE_OIL.get(),
+                                ModBlocks.ORE_OIL.get(),
                 ModBlocks.URANIUM_ORE.get(), ModBlocks.URANIUM_ORE_DEEPSLATE.get(),
                 ModBlocks.ORE_URANIUM_SCORCHED.get(),
-                ModBlocks.GNEISS_URANIUM_ORE.get(), ModBlocks.ORE_GNEISS_URANIUM.get(),
-                ModBlocks.ORE_GNEISS_URANIUM_SCORCHED.get(),
-                ModBlocks.NETHER_URANIUM_ORE.get(), ModBlocks.ORE_NETHER_URANIUM.get(),
-                ModBlocks.ORE_NETHER_URANIUM_SCORCHED.get(), // урановые руды CE — BlockOutgas (tier 1)
-                ModBlocks.GNEISS_IRON_ORE.get(), ModBlocks.ORE_GNEISS_IRON.get(),
-                ModBlocks.GNEISS_COPPER_ORE.get(), ModBlocks.ORE_GNEISS_COPPER.get(),
-                ModBlocks.ORE_COPPER.get(),
-                ModBlocks.NETHER_FIRE_ORE.get(), ModBlocks.ORE_NETHER_FIRE.get(),
-                ModBlocks.NETHER_COAL_ORE.get(), ModBlocks.ORE_NETHER_COAL.get(), // CE BlockNetherCoal -> BlockOutgas (tier 1)
+                ModBlocks.GNEISS_URANIUM_ORE.get(),                 ModBlocks.ORE_GNEISS_URANIUM_SCORCHED.get(),
+                ModBlocks.NETHER_URANIUM_ORE.get(),                 ModBlocks.ORE_NETHER_URANIUM_SCORCHED.get(), // урановые руды CE — BlockOutgas (tier 1)
+                ModBlocks.GNEISS_IRON_ORE.get(),                 ModBlocks.GNEISS_COPPER_ORE.get(),                 ModBlocks.ORE_COPPER.get(),
+                ModBlocks.NETHER_FIRE_ORE.get(),                 ModBlocks.NETHER_COAL_ORE.get(), // CE BlockNetherCoal -> BlockOutgas (tier 1)
                 ModBlocks.CLUSTER_IRON.get(), ModBlocks.CLUSTER_TITANIUM.get(),
                 ModBlocks.CLUSTER_ALUMINIUM.get(), ModBlocks.CLUSTER_COPPER.get(), // CE BlockCluster extends BlockNTMOre(1)
                 ModBlocks.BLOCK_METEOR_BROKEN.get(), // CE block_meteor_broken = tier 1
@@ -126,56 +135,40 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 ModBlocks.BERYLLIUM_ORE.get(), ModBlocks.BERYLLIUM_ORE_DEEPSLATE.get(),
                 ModBlocks.RAREGROUND_ORE.get(), ModBlocks.RAREGROUND_ORE_DEEPSLATE.get(),
                 ModBlocks.ORE_RARE.get(),
-                ModBlocks.GNEISS_GOLD_ORE.get(), ModBlocks.ORE_GNEISS_GOLD.get(),
-                ModBlocks.GNEISS_ASBESTOS_ORE.get(), ModBlocks.ORE_GNEISS_ASBESTOS.get(),
-                ModBlocks.BLOCK_METEOR_COBBLE.get(), // CE block_meteor_cobble = tier 2
+                ModBlocks.GNEISS_GOLD_ORE.get(),                 ModBlocks.GNEISS_ASBESTOS_ORE.get(),                 ModBlocks.BLOCK_METEOR_COBBLE.get(), // CE block_meteor_cobble = tier 2
                 // --- Тиры 3-4 (CE harvest 3/4 -> needs_diamond_tool) ---
                 ModBlocks.SCHRABIDIUM_ORE.get(), ModBlocks.SCHRABIDIUM_ORE_NETHER.get(),
                 ModBlocks.SCHRABIDIUM_ORE_GNEISS.get(),
-                ModBlocks.ALEXANDRITE_ORE.get(), ModBlocks.ORE_ALEXANDRITE.get(), // CE: BlockDepthOre = tier 3
+                ModBlocks.ALEXANDRITE_ORE.get(), // CE: BlockDepthOre = tier 3
                 ModBlocks.COBALT_ORE.get(), ModBlocks.COBALT_ORE_DEEPSLATE.get(),
                 ModBlocks.COLTAN_ORE.get(), ModBlocks.COLTAN_ORE_DEEPSLATE.get(),
-                ModBlocks.ORE_COLTAN.get(),
-                ModBlocks.NETHER_COBALT_ORE.get(), ModBlocks.ORE_NETHER_COBALT.get(),
-                ModBlocks.NETHER_PLUTONIUM_ORE.get(), ModBlocks.ORE_NETHER_PLUTONIUM.get(),
+                                ModBlocks.NETHER_COBALT_ORE.get(),                 ModBlocks.NETHER_PLUTONIUM_ORE.get(), ModBlocks.ORE_NETHER_PLUTONIUM.get(),
                 ModBlocks.ORE_METEOR_IRON.get(), ModBlocks.ORE_METEOR_COPPER.get(),
                 ModBlocks.ORE_METEOR_ALUMINIUM.get(), ModBlocks.ORE_METEOR_RAREEARTH.get(),
                 ModBlocks.ORE_METEOR_COBALT.get(),
                 ModBlocks.BLOCK_METEOR.get(), ModBlocks.BLOCK_METEOR_TREASURE.get(), // CE block_meteor/_treasure = tier 3
-                ModBlocks.GNEISS_RARE_ORE.get(), ModBlocks.ORE_GNEISS_RARE.get(), // CE ore_gneiss_rare = tier 3
+                ModBlocks.GNEISS_RARE_ORE.get(), // CE ore_gneiss_rare = tier 3
                 ModBlocks.AUSTRALIUM_ORE.get(), ModBlocks.ORE_AUSTRALIUM.get(), // CE tier 4
                 ModBlocks.TIKITE_ORE.get(), // CE tier 4
-                ModBlocks.DEPTH_STONE.get(), ModBlocks.DEPTH_BORAX.get(), ModBlocks.ORE_DEPTH_BORAX.get(),
-                ModBlocks.DEPTH_CINNABAR.get(), ModBlocks.ORE_DEPTH_CINNEBAR.get(),
-                ModBlocks.DEPTH_ZIRCONIUM.get(), ModBlocks.ORE_DEPTH_ZIRCONIUM.get(),
-                ModBlocks.CLUSTER_DEPTH_IRON.get(), ModBlocks.CLUSTER_DEPTH_TITANIUM.get(),
+                ModBlocks.DEPTH_STONE.get(), ModBlocks.DEPTH_BORAX.get(),                 ModBlocks.DEPTH_CINNABAR.get(),                 ModBlocks.DEPTH_ZIRCONIUM.get(),                 ModBlocks.CLUSTER_DEPTH_IRON.get(), ModBlocks.CLUSTER_DEPTH_TITANIUM.get(),
                 ModBlocks.CLUSTER_DEPTH_TUNGSTEN.get(),
-                ModBlocks.DEPTH_NETHER_NEODYMIUM.get(), ModBlocks.ORE_DEPTH_NETHER_NEODYMIUM.get() // CE BlockDepth = tier 3
+                ModBlocks.DEPTH_NETHER_NEODYMIUM.get() // CE BlockDepth = tier 3
         );
 
         Set<Block> stoneTierOres = Set.of(
                 ModBlocks.SULFUR_ORE.get(), ModBlocks.SULFUR_ORE_DEEPSLATE.get(),
-                ModBlocks.NETHER_SULFUR_ORE.get(), ModBlocks.ORE_NETHER_SULFUR.get(),
-                ModBlocks.NITER_ORE.get(), ModBlocks.NITER_ORE_DEEPSLATE.get(),
+                ModBlocks.NETHER_SULFUR_ORE.get(),                 ModBlocks.NITER_ORE.get(), ModBlocks.NITER_ORE_DEEPSLATE.get(),
                 ModBlocks.ALUMINUM_ORE.get(), ModBlocks.ALUMINUM_ORE_DEEPSLATE.get(),
-                ModBlocks.ORE_ALUMINIUM.get(),
-                ModBlocks.FLUORITE_ORE.get(), ModBlocks.FLUORITE_ORE_DEEPSLATE.get(),
+                                ModBlocks.FLUORITE_ORE.get(), ModBlocks.FLUORITE_ORE_DEEPSLATE.get(),
                 ModBlocks.ASBESTOS_ORE.get(), ModBlocks.ASBESTOS_ORE_DEEPSLATE.get(),
                 ModBlocks.CINNABAR_ORE.get(), ModBlocks.CINNABAR_ORE_DEEPSLATE.get(),
-                ModBlocks.ORE_CINNEBAR.get(),
-                ModBlocks.ORE_OIL.get(),
+                                ModBlocks.ORE_OIL.get(),
                 ModBlocks.URANIUM_ORE.get(), ModBlocks.URANIUM_ORE_DEEPSLATE.get(),
                 ModBlocks.ORE_URANIUM_SCORCHED.get(),
-                ModBlocks.GNEISS_URANIUM_ORE.get(), ModBlocks.ORE_GNEISS_URANIUM.get(),
-                ModBlocks.ORE_GNEISS_URANIUM_SCORCHED.get(),
-                ModBlocks.NETHER_URANIUM_ORE.get(), ModBlocks.ORE_NETHER_URANIUM.get(),
-                ModBlocks.ORE_NETHER_URANIUM_SCORCHED.get(),
-                ModBlocks.GNEISS_IRON_ORE.get(), ModBlocks.ORE_GNEISS_IRON.get(),
-                ModBlocks.GNEISS_COPPER_ORE.get(), ModBlocks.ORE_GNEISS_COPPER.get(),
-                ModBlocks.ORE_COPPER.get(),
-                ModBlocks.NETHER_FIRE_ORE.get(), ModBlocks.ORE_NETHER_FIRE.get(),
-                ModBlocks.NETHER_COAL_ORE.get(), ModBlocks.ORE_NETHER_COAL.get(),
-                ModBlocks.CLUSTER_IRON.get(), ModBlocks.CLUSTER_TITANIUM.get(),
+                ModBlocks.GNEISS_URANIUM_ORE.get(),                 ModBlocks.ORE_GNEISS_URANIUM_SCORCHED.get(),
+                ModBlocks.NETHER_URANIUM_ORE.get(),                 ModBlocks.ORE_NETHER_URANIUM_SCORCHED.get(),
+                ModBlocks.GNEISS_IRON_ORE.get(),                 ModBlocks.GNEISS_COPPER_ORE.get(),                 ModBlocks.ORE_COPPER.get(),
+                ModBlocks.NETHER_FIRE_ORE.get(),                 ModBlocks.NETHER_COAL_ORE.get(),                 ModBlocks.CLUSTER_IRON.get(), ModBlocks.CLUSTER_TITANIUM.get(),
                 ModBlocks.CLUSTER_ALUMINIUM.get(), ModBlocks.CLUSTER_COPPER.get(),
                 ModBlocks.BLOCK_METEOR_BROKEN.get()
         );
@@ -189,9 +182,7 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 ModBlocks.BERYLLIUM_ORE.get(), ModBlocks.BERYLLIUM_ORE_DEEPSLATE.get(),
                 ModBlocks.RAREGROUND_ORE.get(), ModBlocks.RAREGROUND_ORE_DEEPSLATE.get(),
                 ModBlocks.ORE_RARE.get(),
-                ModBlocks.GNEISS_GOLD_ORE.get(), ModBlocks.ORE_GNEISS_GOLD.get(),
-                ModBlocks.GNEISS_ASBESTOS_ORE.get(), ModBlocks.ORE_GNEISS_ASBESTOS.get(),
-                ModBlocks.BLOCK_METEOR_COBBLE.get()
+                ModBlocks.GNEISS_GOLD_ORE.get(),                 ModBlocks.GNEISS_ASBESTOS_ORE.get(),                 ModBlocks.BLOCK_METEOR_COBBLE.get()
         );
 
         Set<Block> diamondTierOres = Set.of(
@@ -199,22 +190,16 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 ModBlocks.SCHRABIDIUM_ORE_GNEISS.get(),
                 ModBlocks.COBALT_ORE.get(), ModBlocks.COBALT_ORE_DEEPSLATE.get(),
                 ModBlocks.COLTAN_ORE.get(), ModBlocks.COLTAN_ORE_DEEPSLATE.get(),
-                ModBlocks.ORE_COLTAN.get(),
-                ModBlocks.NETHER_COBALT_ORE.get(), ModBlocks.ORE_NETHER_COBALT.get(),
-                ModBlocks.NETHER_PLUTONIUM_ORE.get(), ModBlocks.ORE_NETHER_PLUTONIUM.get(),
+                                ModBlocks.NETHER_COBALT_ORE.get(),                 ModBlocks.NETHER_PLUTONIUM_ORE.get(), ModBlocks.ORE_NETHER_PLUTONIUM.get(),
                 ModBlocks.ORE_METEOR_IRON.get(), ModBlocks.ORE_METEOR_COPPER.get(),
                 ModBlocks.ORE_METEOR_ALUMINIUM.get(), ModBlocks.ORE_METEOR_RAREEARTH.get(),
                 ModBlocks.ORE_METEOR_COBALT.get(),
                 ModBlocks.BLOCK_METEOR.get(), ModBlocks.BLOCK_METEOR_TREASURE.get(),
-                ModBlocks.GNEISS_RARE_ORE.get(), ModBlocks.ORE_GNEISS_RARE.get(),
-                ModBlocks.AUSTRALIUM_ORE.get(), ModBlocks.ORE_AUSTRALIUM.get(),
+                ModBlocks.GNEISS_RARE_ORE.get(),                 ModBlocks.AUSTRALIUM_ORE.get(), ModBlocks.ORE_AUSTRALIUM.get(),
                 ModBlocks.TIKITE_ORE.get(),
-                ModBlocks.DEPTH_STONE.get(), ModBlocks.DEPTH_BORAX.get(), ModBlocks.ORE_DEPTH_BORAX.get(),
-                ModBlocks.DEPTH_CINNABAR.get(), ModBlocks.ORE_DEPTH_CINNEBAR.get(),
-                ModBlocks.DEPTH_ZIRCONIUM.get(), ModBlocks.ORE_DEPTH_ZIRCONIUM.get(),
-                ModBlocks.CLUSTER_DEPTH_IRON.get(), ModBlocks.CLUSTER_DEPTH_TITANIUM.get(),
+                ModBlocks.DEPTH_STONE.get(), ModBlocks.DEPTH_BORAX.get(),                 ModBlocks.DEPTH_CINNABAR.get(),                 ModBlocks.DEPTH_ZIRCONIUM.get(),                 ModBlocks.CLUSTER_DEPTH_IRON.get(), ModBlocks.CLUSTER_DEPTH_TITANIUM.get(),
                 ModBlocks.CLUSTER_DEPTH_TUNGSTEN.get(),
-                ModBlocks.DEPTH_NETHER_NEODYMIUM.get(), ModBlocks.ORE_DEPTH_NETHER_NEODYMIUM.get()
+                ModBlocks.DEPTH_NETHER_NEODYMIUM.get()
         );
 
         // Г. Блоки, требующие МИНИМУМ КАМЕННЫЙ инструмент (Не важно, топор или кирка)
@@ -229,9 +214,28 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 ModBlocks.BROADCASTER_PC.get()
         );
 
+        // audit4: Werkzeugtyp nach Original-Material (rock/iron/anvil -> Spitzhacke, wood -> Axt,
+        // ground/grass/sand/snow -> Schaufel, alles andere ohne Werkzeug).
+        Set<String> a4Shovel = Set.of("block_fallout", "oil_spill", "ore_tektite_osmiridium", "sand_boron", "tektite",
+                "waste_mycelium", "waste_trinitite", "waste_trinitite_red", "barricade", "sandbags");
+        Set<String> a4Axe = Set.of("crate_can", "crate_supply", "radio_telex", "red_pylon_medium_wood",
+                "red_pylon_medium_wood_transformer", "pink_planks", "pink_slab", "pink_stairs", "wood_barrier", "wood_structure");
+        Set<String> a4NoTool = Set.of("block_asbestos", "block_fiberglass", "block_insulator", "block_tritium", "c4",
+                "deco_asbestos", "digamma_matter", "drone_waypoint", "drone_waypoint_request", "fire_digamma", "floodlight_beam",
+                "glass_ash", "glass_boron", "glass_lead", "glass_polarized", "glass_polonium", "glass_quartz", "glass_trinitite",
+                "glass_uranium", "glyphid_base", "glyphid_spawner", "lamp_tritium_blue_off", "lamp_tritium_blue_on",
+                "lamp_tritium_green_off", "lamp_tritium_green_on", "plant_reeds", "plant_tall_cd2", "plant_tall_cd3",
+                "plant_tall_cd4", "plant_tall_weed", "plushie", "rad_lava_block", "radio_torch_controller", "radio_torch_counter",
+                "radio_torch_logic", "radio_torch_reader", "radio_torch_receiver", "radio_torch_sender", "snowglobe",
+                "spotlight_beam", "sulfuric_acid_block", "volcanic_lava_block", "wand_air");
+
         // --- 3. Автоматический цикл ---
         for (RegistrySupplier<Block> regObject : ModBlocks.BLOCKS) {
             Block block = regObject.get();
+            String a4Id = regObject.getId().getPath();
+            if (a4NoTool.contains(a4Id)) continue;
+            if (a4Shovel.contains(a4Id)) { shovelTag.add(block); continue; }
+            if (a4Axe.contains(a4Id)) { axeTag.add(block); continue; }
 
             // Фильтр: пропускаем растения, листья, паутину
             boolean isPlantOrSoft = block instanceof FlowerBlock
@@ -239,7 +243,7 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                     || block instanceof LeavesBlock
                     || block instanceof WebBlock;
 
-            if (!isPlantOrSoft) {
+            if (!isPlantOrSoft && !r6aNoTool.contains(block)) {
 
                 // --- ЛОГИКА РАСПРЕДЕЛЕНИЯ ---
 
@@ -275,6 +279,9 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                     } else {
                         ironToolTag.add(block); // Железная (по умолчанию)
                     }
+
+                    // audit4: Das Original setzt fuer keinen Block eine Abbaustufe (kein setHarvestLevel ausser
+                    // den Schienen mit Stufe 0) - jede Spitzhacke reicht. Daher keine needs_*_tool-Tags.
                 }
             }
         }
@@ -347,35 +354,7 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 .add(Blocks.BLACK_STAINED_GLASS_PANE)
                 .add(ModBlocks.REINFORCED_GLASS_PANE.get());
 
-        // ============ CP-1 PILE NEUTRON TAGS (hbm_m namespace, port of NEXT data/hbm/tags/block/pile) ============
-        // NEXT flux_absorber contains only hbm:block_boron, which has no Modernized analog
-        // (only glass_boron/sand_boron exist) - the empty tag makes the absorber check a no-op,
-        // exact parity for the blocks actually available.
-        this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "pile/flux_absorber")));
-        // NEXT flux_attenuator: brick_concrete + concrete + concrete_asbestos + concrete_smooth +
-        // 16 colored concretes = 20 entries. concrete_smooth is the one deliberate omission (no
-        // Modernized block exists); all other 19 analogs are mapped, incl. concrete_red.
-        this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "pile/flux_attenuator")))
-                .add(ModBlocks.BRICK_CONCRETE.get())
-                .add(ModBlocks.CONCRETE.get())
-                .add(ModBlocks.CONCRETE_ASBESTOS.get())
-                .add(ModBlocks.CONCRETE_WHITE.get())
-                .add(ModBlocks.CONCRETE_ORANGE.get())
-                .add(ModBlocks.CONCRETE_MAGENTA.get())
-                .add(ModBlocks.CONCRETE_LIGHT_BLUE.get())
-                .add(ModBlocks.CONCRETE_YELLOW.get())
-                .add(ModBlocks.CONCRETE_LIME.get())
-                .add(ModBlocks.CONCRETE_PINK.get())
-                .add(ModBlocks.CONCRETE_GRAY.get())
-                .add(ModBlocks.CONCRETE_SILVER.get())
-                .add(ModBlocks.CONCRETE_CYAN.get())
-                .add(ModBlocks.CONCRETE_PURPLE.get())
-                .add(ModBlocks.CONCRETE_BLUE.get())
-                .add(ModBlocks.CONCRETE_BROWN.get())
-                .add(ModBlocks.CONCRETE_GREEN.get())
-                .add(ModBlocks.CONCRETE_RED.get())
-                .add(ModBlocks.CONCRETE_BLACK.get());
-
+        // ============ CP-1 PILE NEUTRON TAGS (hbm_m namespace, port of NEXT data/hbm/tags/block/pile) =====
 
         // ============ ТЕГИ СОВМЕСТИМОСТИ С ДРУГИМИ МОДАМИ ============
         //  Storage blocks for every material with a BLOCK form. Only uranium and plutonium were
@@ -425,6 +404,27 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 beaconBaseTag.add(regObject.get());
             }
         }
+        // R6a: BlockBeaconable / BlockLithium / BlockHazardFalling.makeBeaconable()
+        beaconBaseTag.add(ModBlocks.BLOCK_COPPER.get());
+        beaconBaseTag.add(ModBlocks.BLOCK_ALUMINIUM.get());
+        beaconBaseTag.add(ModBlocks.BLOCK_BAKELITE.get());
+        beaconBaseTag.add(ModBlocks.BLOCK_COLTAN.get());
+        beaconBaseTag.add(ModBlocks.BLOCK_FLUORITE.get());
+        beaconBaseTag.add(ModBlocks.BLOCK_MAGNETIZED_TUNGSTEN.get());
+        beaconBaseTag.add(ModBlocks.BLOCK_NITER.get());
+        beaconBaseTag.add(ModBlocks.BLOCK_POLYMER.get());
+        beaconBaseTag.add(ModBlocks.BLOCK_RUBBER.get());
+        beaconBaseTag.add(ModBlocks.BLOCK_SULFUR.get());
+        beaconBaseTag.add(ModBlocks.BLOCK_TANTALIUM.get());
+        beaconBaseTag.add(ModBlocks.BLOCK_PU_MIX.get());
+        beaconBaseTag.add(ModBlocks.BLOCK_TRINITITE.get());
+        beaconBaseTag.add(ModBlocks.BLOCK_WHITE_PHOSPHORUS.get());
+        beaconBaseTag.add(ModBlocks.BLOCK_WASTE.get());
+        beaconBaseTag.add(ModBlocks.BLOCK_WASTE_VITRIFIED.get());
+        beaconBaseTag.add(ModBlocks.BLOCK_WASTE_PAINTED.get());
+        beaconBaseTag.add(ModBlocks.BLOCK_RED_PHOSPHORUS.get());
+        beaconBaseTag.add(ModBlocks.BLOCK_YELLOWCAKE.get());
+        beaconBaseTag.add(ModBlocks.BLOCK_LITHIUM.get());
 
     }
 }

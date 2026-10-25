@@ -6,7 +6,7 @@ import com.hbm_m.api.energy.ItemEnergyAccess;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.machines.MachineChemicalFactoryBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
-import com.hbm_m.item.industrial.ItemBlueprintFolder;
+import com.hbm_m.item.industrial.ItemBlueprints;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 
 import net.minecraft.network.FriendlyByteBuf;
@@ -18,6 +18,7 @@ import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * Menu для Chemical Factory — порт 1.7.10 {@code ContainerMachineChemicalFactory}.
@@ -34,8 +35,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 @SuppressWarnings("UnstableApiUsage")
 public class MachineChemicalFactoryMenu extends AbstractContainerMenu {
 
-    private static final int LANE_COUNT = 4;
-    private static final int TE_SLOT_COUNT = 4 + LANE_COUNT * 7;
+    private static final int LANE_COUNT = MachineChemicalFactoryBlockEntity.LANE_COUNT;
+    private static final int TE_SLOT_COUNT = MachineChemicalFactoryBlockEntity.SLOT_COUNT;
     private static final int VANILLA_SLOT_COUNT = 36;
     private static final int VANILLA_FIRST_SLOT_INDEX = TE_SLOT_COUNT;
 
@@ -43,7 +44,7 @@ public class MachineChemicalFactoryMenu extends AbstractContainerMenu {
     private final ContainerData data;
 
     public MachineChemicalFactoryMenu(int id, Inventory inv, FriendlyByteBuf extraData) {
-        this(id, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(LANE_COUNT * 3 + 5));
+        this(id, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(LANE_COUNT * 2 + 5));
     }
 
     public MachineChemicalFactoryMenu(int id, Inventory inv, BlockEntity entity, ContainerData data) {
@@ -73,7 +74,7 @@ public class MachineChemicalFactoryMenu extends AbstractContainerMenu {
             addSlot(new Slot(container, base, 93, rowY) {
                 @Override
                 public boolean mayPlace(@NotNull ItemStack stack) {
-                    return stack.getItem() instanceof ItemBlueprintFolder;
+                    return stack.getItem() instanceof ItemBlueprints;
                 }
 
                 @Override
@@ -130,30 +131,22 @@ public class MachineChemicalFactoryMenu extends AbstractContainerMenu {
         return blockEntity;
     }
 
-    // === ContainerData layout: 0..3 progress, 4..7 max, 8..11 didProcess, 12 canCool, 13/14 energy, 15/16 max ===
+    // === ContainerData layout (1:1 mit MachineChemicalFactoryBlockEntity.data):
+    // 0..3 progress, 4..7 max progress, 8/9 energy, 10/11 max energy, 12 didProcess-Bitmaske ===
 
-    public int getLaneProgress(int lane) {
-        return data.get(lane);
-    }
-
-    public int getLaneMaxProgress(int lane) {
-        return data.get(LANE_COUNT + lane);
-    }
-
-    public boolean getLaneDidProcess(int lane) {
-        return data.get(LANE_COUNT * 2 + lane) != 0;
-    }
-
-    public boolean getCanCool() {
-        return data.get(LANE_COUNT * 3) != 0;
-    }
+    public int getLaneProgress(int lane) { return data.get(lane); }
+    public int getLaneMaxProgress(int lane) { return data.get(LANE_COUNT + lane); }
 
     public long getEnergyStored() {
-        return ((long) data.get(LANE_COUNT * 3 + 2) << 32) | (data.get(LANE_COUNT * 3 + 1) & 0xFFFFFFFFL);
+        return ((long) data.get(LANE_COUNT * 2 + 1) << 32) | (data.get(LANE_COUNT * 2) & 0xFFFFFFFFL);
     }
 
     public long getMaxEnergyStored() {
-        return ((long) data.get(LANE_COUNT * 3 + 4) << 32) | (data.get(LANE_COUNT * 3 + 3) & 0xFFFFFFFFL);
+        return ((long) data.get(LANE_COUNT * 2 + 3) << 32) | (data.get(LANE_COUNT * 2 + 2) & 0xFFFFFFFFL);
+    }
+
+    public boolean getLaneDidProcess(int lane) {
+        return (data.get(LANE_COUNT * 2 + 4) & (1 << lane)) != 0;
     }
 
     @Override
@@ -165,14 +158,12 @@ public class MachineChemicalFactoryMenu extends AbstractContainerMenu {
         ItemStack stack = slot.getItem();
         result = stack.copy();
 
-        if (index < TE_SLOT_COUNT) {
-            if (!moveItemStackTo(stack, VANILLA_FIRST_SLOT_INDEX, VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT, true)) {
-                return ItemStack.EMPTY;
-            }
+        if (index <= TE_SLOT_COUNT - 1) {
+            if (!moveItemStackTo(stack, TE_SLOT_COUNT, slots.size(), true)) return ItemStack.EMPTY;
         } else {
             if (ItemEnergyAccess.isEnergyItem(stack)) {
                 if (!moveItemStackTo(stack, 0, 1, false)) return ItemStack.EMPTY;
-            } else if (stack.getItem() instanceof ItemBlueprintFolder) {
+            } else if (stack.getItem() instanceof ItemBlueprints) {
                 // Папка чертежей — в слот шаблона первой свободной линии (как в оригинале)
                 boolean placed = false;
                 for (int lane = 0; lane < LANE_COUNT && !placed; lane++) {

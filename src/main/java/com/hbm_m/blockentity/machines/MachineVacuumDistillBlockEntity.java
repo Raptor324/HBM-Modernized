@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineVacuumDistillMenu;
 import com.hbm_m.recipe.VacuumDistillRecipe;
@@ -14,6 +15,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -21,90 +23,89 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.phys.AABB;
 
 /**
- * Vakuumdestillator: Portierung der Kernlogik aus {@code TileEntityMachineVacuumDistill} (1.7.10
- * Original). Spaltet 100mB Rohoel (Tank 0) pro Tick in vier leichtere Fraktionen (Tanks 1-4) auf,
- * ueber die data-driven Rezeptliste {@link VacuumDistillRecipe} (Port von
- * {@code VacuumRefineryRecipes}). Energie kommt wie im Original aus einer Batterie im Slot statt
- * aus dem HBM-Energienetz.
- * <p>
- * Vereinfachung ggue. Original: Einzelblock-Kern (Anschluss ans MK2-Rohrnetz an allen 6 Seiten)
- * innerhalb eines echten Mehrblock-Footprints (siehe {@link com.hbm_m.block.machines.MachineVacuumDistillBlock}),
- * statt der festen Multiblock-Anschlusspunkte des 1.7.10-Originals - analog zu
- * {@link MachineFractionTowerBlockEntity}.
+ * 1:1 {@code TileEntityMachineVacuumDistill}: 12 Slots (Batterie, zwei stillgelegte Kanisterplaetze, je Ausgang ein
+ * Paar Fuell-/Ausgabeplaetze, Fluidkennung), Eingangstank 64.000 mB unter Druck 2, vier Ausgangstanks je 24.000 mB.
+ * Jeden Tick 100 mB Eingang + 10.000 HE -> vier Fraktionen ({@code VacuumRefineryRecipes}). Strom und Fluide an acht
+ * Anschluessen; Kochgeraeusch, solange sie arbeitet.
  */
-public class MachineVacuumDistillBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
+public class MachineVacuumDistillBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.block.IPersistentNBT, IFluidStandardTransceiverMK2 {
 
     public static final int SLOT_BATTERY = 0;
-    private static final int SLOT_COUNT = 1;
+    public static final int SLOT_COUNT = 12;
 
-    private static final long MAX_POWER = 1_000_000L;
-    private static final long POWER_PER_CYCLE = 10_000L;
-    private static final int OIL_CAPACITY_MB = 4000;
-    private static final int OUTPUT_CAPACITY_MB = 2000;
-    private static final int OIL_PER_CYCLE_MB = 100;
+    public static final long maxPower = 1_000_000;
 
-    private final FluidTank[] tanks = new FluidTank[5];
-    private boolean isOn = false;
+    public final FluidTank[] tanks = new FluidTank[] {
+            new FluidTank(ModFluids.CRUDE_OIL.getSource(), 64_000).withPressure(2),
+            new FluidTank(ModFluids.HEAVYOIL_VACUUM.getSource(), 24_000),
+            new FluidTank(ModFluids.REFORMATE.getSource(), 24_000),
+            new FluidTank(ModFluids.LIGHTOIL_VACUUM.getSource(), 24_000),
+            new FluidTank(ModFluids.SOURGAS.getSource(), 24_000)
+    };
 
-    /** Cached recipe-scan: keyed on the input fluid identity (covers setupTanks, refine
-     *  and the tank-validity/canConnect checks); output-tank headroom stays per-tick. */
-    private final com.hbm_m.recipe.index.CachedRecipeResolver<VacuumDistillRecipe> recipeResolver =
-            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+    public boolean isOn;
+    private int audioTime;
 
     public MachineVacuumDistillBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.VACUUM_DISTILL_BE.get(), pos, state, SLOT_COUNT, MAX_POWER, MAX_POWER, 0L);
-        tanks[0] = new FluidTank(OIL_CAPACITY_MB) {
-            @Override
-            public boolean isFluidValid(Fluid fluid) {
-                // Data-driven: рецепт ищется в RecipeManager (заменяет VacuumDistillRecipes.has).
-                return findRecipe(level, fluid) != null;
-            }
-        };
-        tanks[1] = new FluidTank(OUTPUT_CAPACITY_MB);
-        tanks[2] = new FluidTank(OUTPUT_CAPACITY_MB);
-        tanks[3] = new FluidTank(OUTPUT_CAPACITY_MB);
-        tanks[4] = new FluidTank(OUTPUT_CAPACITY_MB);
+        super(ModBlockEntities.VACUUM_DISTILL_BE.get(), pos, state, SLOT_COUNT, maxPower, maxPower, 0L);
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineVacuumDistillBlockEntity be) {
-        if (level.isClientSide) return;
-
-        be.chargeFromBatterySlot(SLOT_BATTERY);
-        be.setupTanks();
-        be.isOn = be.refine();
-
-        // Neighbor handling: subscribe into the MK2 net is throttled (registration only, idempotent);
-        // tryProvide stays per tick — its second branch is a DIRECT push to the adjacent receiver,
-        // and gating it would divide transfer throughput, not just scan cost. The per-tank fill
-        // check skips the probe while the output tank is empty.
-        boolean subscribeDue = be.probeDue(20);
-        for (Direction dir : Direction.values()) {
-            BlockPos neighborPos = pos.relative(dir);
-            if (subscribeDue) be.trySubscribe(be.tanks[0], level, neighborPos, dir);
-            if (be.tanks[1].getFill() > 0) be.tryProvide(be.tanks[1], level, neighborPos, dir);
-            if (be.tanks[2].getFill() > 0) be.tryProvide(be.tanks[2], level, neighborPos, dir);
-            if (be.tanks[3].getFill() > 0) be.tryProvide(be.tanks[3], level, neighborPos, dir);
-            if (be.tanks[4].getFill() > 0) be.tryProvide(be.tanks[4], level, neighborPos, dir);
-        }
-
-        // Anti-sync-spam: setChanged/sendBlockUpdated only when energy, tank contents or run
-        // flag moved (P6: signature covers every field writeNbtData ships and the client renders).
-        be.syncIfStateChanged(be.energy, be.tankSyncSignature());
+        if (level instanceof ServerLevel world) be.serverTick(world, pos);
+        else be.clientTick();
     }
 
-    /** Cached поиск VacuumDistillRecipe по входной жидкости (подпись = идентичность жидкости). */
-    @Nullable
-    private VacuumDistillRecipe findRecipe(Level level, Fluid input) {
-        if (level == null || input == null) return null;
-        long signature = com.hbm_m.recipe.index.CachedRecipeResolver.sign(7L, input.hashCode());
-        return recipeResolver.resolve(level, VacuumDistillRecipe.Type.INSTANCE, signature, (lvl, all) -> {
-            for (VacuumDistillRecipe recipe : all) {
-                if (recipe.matches(input)) return recipe;
+    private record DirPos(BlockPos pos, Direction dir) { }
+
+    public DirPos[] getConPos() {
+        BlockPos p = worldPosition;
+        return new DirPos[] {
+                new DirPos(p.offset(2, 0, 1), Direction.EAST),
+                new DirPos(p.offset(2, 0, -1), Direction.EAST),
+                new DirPos(p.offset(-2, 0, 1), Direction.WEST),
+                new DirPos(p.offset(-2, 0, -1), Direction.WEST),
+                new DirPos(p.offset(1, 0, 2), Direction.SOUTH),
+                new DirPos(p.offset(-1, 0, 2), Direction.SOUTH),
+                new DirPos(p.offset(1, 0, -2), Direction.NORTH),
+                new DirPos(p.offset(-1, 0, -2), Direction.NORTH)
+        };
+    }
+
+    private void serverTick(ServerLevel world, BlockPos pos) {
+
+        this.isOn = false;
+
+        if (probeDue(20)) {
+            for (DirPos con : getConPos()) {
+                this.trySubscribe(world, con.pos.getX(), con.pos.getY(), con.pos.getZ(), con.dir);
+                this.trySubscribe(tanks[0].getTankType(), world, con.pos, con.dir);
             }
-            return null;
-        });
+        }
+        chargeFromBatterySlot(SLOT_BATTERY);
+
+        ItemStack[] slots = new ItemStack[SLOT_COUNT];
+        for (int i = 0; i < SLOT_COUNT; i++) slots[i] = inventory.getStackInSlot(i);
+        boolean changed = tanks[0].setType(11, slots);
+        changed |= tanks[0].loadTank(1, 2, slots);
+
+        refine();
+
+        changed |= tanks[1].unloadTank(3, 4, slots);
+        changed |= tanks[2].unloadTank(5, 6, slots);
+        changed |= tanks[3].unloadTank(7, 8, slots);
+        changed |= tanks[4].unloadTank(9, 10, slots);
+        if (changed) for (int i = 0; i < SLOT_COUNT; i++) inventory.setStackInSlot(i, slots[i] == null ? ItemStack.EMPTY : slots[i]);
+
+        for (DirPos con : getConPos()) {
+            for (int i = 1; i < 5; i++) {
+                if (tanks[i].getFill() > 0) this.tryProvide(tanks[i], world, con.pos, con.dir);
+            }
+        }
+
+        syncIfStateChanged(this.energy, this.tankSyncSignature());
     }
 
     private long tankSyncSignature() {
@@ -121,93 +122,103 @@ public class MachineVacuumDistillBlockEntity extends BaseMachineBlockEntity impl
         return (type == null ? 0L : type.hashCode() * 31L) + tank.getFill();
     }
 
-    private void setupTanks() {
-        VacuumDistillRecipe recipe = findRecipe(level, tanks[0].getTankType());
-        if (recipe == null) return;
-        if (tanks[1].isEmpty()) tanks[1].conform(recipe.getHeavy());
-        if (tanks[2].isEmpty()) tanks[2].conform(recipe.getReformate());
-        if (tanks[3].isEmpty()) tanks[3].conform(recipe.getLight());
-        if (tanks[4].isEmpty()) tanks[4].conform(recipe.getSour());
+    private void clientTick() {
+        if (this.isOn) audioTime = 20;
+        boolean play = audioTime > 0;
+        if (audioTime > 0) audioTime--;
+        com.hbm_m.sound.ClientSoundBootstrap.updateSound(this, play, this::createAudioLoop);
     }
 
-    /** Direktport von {@code refine()} — объёмы фракций берутся из JSON (совпадают с константами
-     *  {@link VacuumDistillRecipe#HEAVY_MB}/{@link VacuumDistillRecipe#REFORMATE_MB}/
-     *  {@link VacuumDistillRecipe#LIGHT_MB}/{@link VacuumDistillRecipe#SOUR_MB}). */
-    private boolean refine() {
-        VacuumDistillRecipe recipe = findRecipe(level, tanks[0].getTankType());
-        if (recipe == null) return false;
-        if (getEnergyStored() < POWER_PER_CYCLE) return false;
-        if (tanks[0].getFill() < OIL_PER_CYCLE_MB) return false;
-        if (tanks[1].getFill() + recipe.getHeavyMb() > tanks[1].getMaxFill()) return false;
-        if (tanks[2].getFill() + recipe.getReformateMb() > tanks[2].getMaxFill()) return false;
-        if (tanks[3].getFill() + recipe.getLightMb() > tanks[3].getMaxFill()) return false;
-        if (tanks[4].getFill() + recipe.getSourMb() > tanks[4].getMaxFill()) return false;
-
-        setEnergyStored(getEnergyStored() - POWER_PER_CYCLE);
-        tanks[0].drainMb(OIL_PER_CYCLE_MB);
-        tanks[1].fillMb(recipe.getHeavy(), recipe.getHeavyMb());
-        tanks[2].fillMb(recipe.getReformate(), recipe.getReformateMb());
-        tanks[3].fillMb(recipe.getLight(), recipe.getLightMb());
-        tanks[4].fillMb(recipe.getSour(), recipe.getSourMb());
-        return true;
-    }
-
-    // ==================== GUI ====================
-
-    public boolean isOn() {
-        return isOn;
-    }
-
-    public FluidTank[] getTanks() {
-        return tanks;
-    }
-
-    // ==================== IFluidUserMK2 / MK2-Netz ====================
-
-    @Override
-    public FluidTank[] getAllTanks() {
-        return tanks;
+    private Object createAudioLoop() {
+        try {
+            return Class.forName("com.hbm_m.client.sound.VacuumDistillLoopSoundFactory").getMethod("create", MachineVacuumDistillBlockEntity.class).invoke(null, this);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
-    public FluidTank[] getReceivingTanks() {
-        return new FluidTank[] { tanks[0] };
+    public void setRemoved() {
+        super.setRemoved();
+        if (level != null && level.isClientSide) com.hbm_m.sound.ClientSoundBootstrap.updateSound(this, false, null);
+    }
+
+    /** Fuer den Loop-Sound: laeuft 20 Ticks nach dem letzten Arbeitstick nach. */
+    public boolean isAudible() {
+        return audioTime > 0 || isOn;
+    }
+
+    private void refine() {
+        VacuumDistillRecipe refinery = VacuumDistillRecipe.getRecipe(level, tanks[0].getTankType());
+        if (refinery == null) {
+            for (int i = 1; i < 5; i++) tanks[i].setTankType(ModFluids.NONE.getSource());
+            return;
+        }
+
+        Fluid[] types = { refinery.getHeavy(), refinery.getReformate(), refinery.getLight(), refinery.getSour() };
+        int[] fills = { refinery.getHeavyMb(), refinery.getReformateMb(), refinery.getLightMb(), refinery.getSourMb() };
+        for (int i = 0; i < 4; i++) tanks[i + 1].setTankType(types[i]);
+
+        if (energy < 10_000) return;
+        if (tanks[0].getFill() < 100) return;
+        for (int i = 0; i < 4; i++) if (tanks[i + 1].getFill() + fills[i] > tanks[i + 1].getMaxFill()) return;
+
+        this.isOn = true;
+        energy -= 10_000;
+        tanks[0].setFill(tanks[0].getFill() - 100);
+
+        for (int i = 0; i < 4; i++) tanks[i + 1].setFill(tanks[i + 1].getFill() + fills[i]);
     }
 
     @Override
-    public FluidTank[] getSendingTanks() {
-        return new FluidTank[] { tanks[1], tanks[2], tanks[3], tanks[4] };
+    public boolean canConnectEnergy(Direction side) {
+        return side != null && side != Direction.DOWN;
     }
 
-    @Override
+    // ==================== Fluid ====================
+
+    @Override public FluidTank[] getAllTanks() { return tanks; }
+    @Override public FluidTank[] getReceivingTanks() { return new FluidTank[] { tanks[0] }; }
+    @Override public FluidTank[] getSendingTanks() { return new FluidTank[] { tanks[1], tanks[2], tanks[3], tanks[4] }; }
     public boolean isLoaded() {
         return level != null && !isRemoved() && level.isLoaded(worldPosition);
     }
 
     @Override
     public boolean canConnect(Fluid fluid, Direction fromDir) {
-        return fromDir != null && (findRecipe(level, fluid) != null
-                || tanks[1].getTankType() == fluid || tanks[2].getTankType() == fluid
-                || tanks[3].getTankType() == fluid || tanks[4].getTankType() == fluid);
+        return fromDir != null && fromDir != Direction.DOWN;
     }
 
+    public boolean isOn() { return isOn; }
+    public FluidTank[] getTanks() { return tanks; }
     // ==================== NBT ====================
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
-        for (int i = 0; i < tanks.length; i++) {
-            tanks[i].writeToNBT(tag, "tank" + i);
-        }
+        tag.putLong("power", energy);
+        tanks[0].writeToNBT(tag, "input");
+        tanks[1].writeToNBT(tag, "heavy");
+        tanks[2].writeToNBT(tag, "reformate");
+        tanks[3].writeToNBT(tag, "light");
+        tanks[4].writeToNBT(tag, "gas");
         tag.putBoolean("isOn", isOn);
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        for (int i = 0; i < tanks.length; i++) {
-            tanks[i].readFromNBT(tag, "tank" + i);
-        }
+        energy = tag.getLong("power");
+        if (tag.contains("input")) tanks[0].readFromNBT(tag, "input");
+        else tanks[0].readFromNBT(tag, "tank0");
+        if (tag.contains("heavy")) tanks[1].readFromNBT(tag, "heavy");
+        else tanks[1].readFromNBT(tag, "tank1");
+        if (tag.contains("reformate")) tanks[2].readFromNBT(tag, "reformate");
+        else tanks[2].readFromNBT(tag, "tank2");
+        if (tag.contains("light")) tanks[3].readFromNBT(tag, "light");
+        else tanks[3].readFromNBT(tag, "tank3");
+        if (tag.contains("gas")) tanks[4].readFromNBT(tag, "gas");
+        else tanks[4].readFromNBT(tag, "tank4");
         isOn = tag.getBoolean("isOn");
     }
 
@@ -223,12 +234,42 @@ public class MachineVacuumDistillBlockEntity extends BaseMachineBlockEntity impl
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return slot == SLOT_BATTERY && isEnergyProviderItem(stack);
+        if (slot == SLOT_BATTERY) return isEnergyProviderItem(stack);
+        if (slot == 11) return true;
+        // Original: Platz 1/2 stillgelegt (Kanister brauchen Druck), Ausgaben nur entnehmbar
+        return slot == 3 || slot == 5 || slot == 7 || slot == 9;
     }
 
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
         return MachineVacuumDistillMenu.create(id, inventory, this);
+    }
+
+    /** Original: 3x9x3 um den Kern. */
+    //? if forge {
+    @Override
+    //?}
+    public AABB getRenderBoundingBox() {
+        return new AABB(worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1,
+                worldPosition.getX() + 2, worldPosition.getY() + 9, worldPosition.getZ() + 2);
+    }
+
+    /** Original {@code TileEntityMachineVacuumDistill.writeNBT}: die fuenf Tanks, sofern einer etwas enthaelt. */
+    @Override
+    public void writeNBT(CompoundTag nbt) {
+        boolean empty = true;
+        for (var tank : tanks) if (tank.getFill() > 0) empty = false;
+        if (empty) return;
+        tanks[0].writeToNBT(nbt, "input");
+        tanks[1].writeToNBT(nbt, "heavy");
+        tanks[2].writeToNBT(nbt, "reformate");
+        tanks[3].writeToNBT(nbt, "light");
+        tanks[4].writeToNBT(nbt, "gas");
+    }
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        return this.inventory;
     }
 }

@@ -73,15 +73,28 @@ public class ModRecipeProvider extends RecipeProvider {
     }
 
     @Override
-    protected void buildRecipes(@NotNull Consumer<FinishedRecipe> pWriter) {
+    protected void buildRecipes(@NotNull Consumer<FinishedRecipe> rawWriter) {
+        // Vom Original abweichende Port-Werkbankrezepte weglassen (ersetzt durch OrigCraftingRecipeGenerator)
+        Consumer<FinishedRecipe> pWriter = com.hbm_m.datagen.recipes.custom.SupersededRecipes.filter(
+                com.hbm_m.datagen.recipes.custom.OrigMachineRecipeGenerator.filter(rawWriter));
+        com.hbm_m.datagen.recipes.custom.OrigCraftingRecipeGenerator.generate(pWriter);
+        // Fehlende Schredder-/Kristallisierer-/Ofenrezepte des Originals (rc/machines.py) + Handuebersetzungen
+        com.hbm_m.datagen.recipes.custom.OrigMachineRecipeGenerator.generate(pWriter);
+        com.hbm_m.datagen.recipes.custom.RestRecipeGenerator.generate(pWriter);
+        // Konfig-Rezepte (LBSM-Hilfsaufrufe/Feindraht/Legierungsofen) - rc/config_extra.py
+        com.hbm_m.datagen.recipes.custom.ConfigVariantRecipeGenerator.generate(pWriter);
 
         BlastFurnaceRecipeGenerator.generate(pWriter);
         PressRecipeGenerator.generate(pWriter);
+        // 1:1 aus AssemblyMachineRecipes (automatisch uebersetzt) + verbliebene Port-Notbehelfe
+        com.hbm_m.datagen.recipes.custom.AssemblyMachineRecipeGenerator.generate(pWriter);
         AssemblerRecipeGenerator.generate(pWriter);
         ChemicalPlantRecipeGenerator.generate(pWriter);
         AnvilRecipeGenerator.generate(pWriter);
         ArcFurnaceRecipeGenerator.generate(pWriter);
         CombinationOvenRecipeGenerator.generate(pWriter);
+        // FFA: machine-frame crafting recipes
+        com.hbm_m.datagen.recipes.custom.MachineCraftingRecipeGenerator.generate(pWriter);
         ShredderRecipeGenerator.generate(pWriter, ModRecipeProvider::unlockedByItem);
         CentrifugeRecipeGenerator.generate(pWriter);
         CrystallizerRecipeGenerator.generate(pWriter);
@@ -93,11 +106,25 @@ public class ModRecipeProvider extends RecipeProvider {
         CrucibleSmeltingRecipeGenerator.generate(pWriter);
         MoltenAlloyRecipeGenerator.generate(pWriter);
         MoldCastingRecipeGenerator.generate(pWriter);
+        // FFA: item-category and bedrock-fragment recipe generators
+        com.hbm_m.datagen.recipes.custom.ConsumableRecipeGenerator.generate(pWriter);
+        com.hbm_m.datagen.recipes.custom.RodRecipeGenerator.generate(pWriter);
+        com.hbm_m.datagen.recipes.custom.WeaponRecipeGenerator.generate(pWriter);
+        com.hbm_m.datagen.recipes.custom.GrenadeRecipeGenerator.generate(pWriter);
+        com.hbm_m.datagen.recipes.custom.ArmorRecipeGenerator.generate(pWriter);
+        com.hbm_m.datagen.recipes.custom.CustomMachineRecipeGenerator.generate(pWriter);
+        com.hbm_m.datagen.recipes.custom.LegacyBedrockOreRecipeGenerator.generate(pWriter);
+        com.hbm_m.datagen.recipes.custom.BedrockFragmentRecipeGenerator.generate(pWriter);
+        com.hbm_m.datagen.recipes.custom.ToolRecipeGenerator.generate(pWriter);
         ArcWelderRecipeGenerator.generate(pWriter);
         SolderingRecipeGenerator.generate(pWriter);
         GasCentrifugeRecipeGenerator.generate(pWriter);
         AmmoPressRecipeGenerator.generate(pWriter);
         PurexRecipeGenerator.generate(pWriter);
+        // FFA: super-computer, rock mill and PrecAss generators
+        com.hbm_m.datagen.recipes.custom.SuperComputerRecipeGenerator.generate(pWriter);
+        com.hbm_m.datagen.recipes.custom.RockMillRecipeGenerator.generate(pWriter);
+        com.hbm_m.datagen.recipes.custom.PrecAssRecipeGenerator.generate(pWriter);
         BreederRecipeGenerator.generate(pWriter);
         RadGenRecipeGenerator.generate(pWriter);
         ExposureChamberRecipeGenerator.generate(pWriter);

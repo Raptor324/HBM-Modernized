@@ -85,6 +85,10 @@ public class ModDamageTypeTagProvider extends DamageTypeTagsProvider {
         );
         
         // Тег: Урон, который является снарядом
+        // SEDNA: Original setProjectile / setFireDamage / setExplosion je DamageClass
+        tag(DamageTypeTags.IS_PROJECTILE).add(ModDamageTypes.SEDNA_PHYSICAL);
+        tag(DamageTypeTags.IS_FIRE).add(ModDamageTypes.SEDNA_FIRE);
+        tag(DamageTypeTags.IS_EXPLOSION).add(ModDamageTypes.SEDNA_EXPLOSIVE);
         tag(DamageTypeTags.IS_PROJECTILE).add(
                 ModDamageTypes.REVOLVER_BULLET,
                 ModDamageTypes.CHOPPER_BULLET,
@@ -97,7 +101,7 @@ public class ModDamageTypeTagProvider extends DamageTypeTagsProvider {
         // DamageTypeTags.NO_KNOCKBACK only exists from 1.20.5; datagen runs on 1.20.1, so name it
         // directly - the generated JSON is converted for 1.21.1 in processResources.
         tag(net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.DAMAGE_TYPE,
-                new net.minecraft.resources.ResourceLocation("minecraft", "no_knockback"))).add(
+                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("minecraft", "no_knockback"))).add(
                 ModDamageTypes.RADIATION,
                 ModDamageTypes.TAINT,
                 ModDamageTypes.CLOUD,

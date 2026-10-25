@@ -71,6 +71,15 @@ public abstract class AbstractExplosionParticle extends TextureSheetParticle {
         return distanceSq > MAX_RENDER_DISTANCE_SQ;
     }
 
+    //? if neoforge {
+    /*// NeoForge 1.21.1 fragt kein shouldCull mehr ab: nahe Partikel (shouldCull false) nie wegcullen,
+    // ferne wie bisher per Frustum - gleiches Verhalten wie Forge.
+    @Override
+    public net.minecraft.world.phys.AABB getRenderBoundingBox(float partialTicks) {
+        return shouldCull() ? super.getRenderBoundingBox(partialTicks) : net.minecraft.world.phys.AABB.INFINITE;
+    }
+    *///?}
+
     /**
      *  КРИТИЧЕСКОЕ ПЕРЕОПРЕДЕЛЕНИЕ!
      * Без этого будет использоваться ванильный рендер

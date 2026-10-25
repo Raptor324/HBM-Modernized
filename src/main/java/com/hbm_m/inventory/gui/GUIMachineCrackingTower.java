@@ -11,14 +11,8 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 @OnlyIn(Dist.CLIENT)
 public class GUIMachineCrackingTower extends GuiInfoScreen<MachineCrackingTowerMenu> {
 
@@ -80,7 +74,7 @@ public class GUIMachineCrackingTower extends GuiInfoScreen<MachineCrackingTowerM
                 tower.getEnergyStored(), tower.getMaxEnergyStored());
 
             drawCustomInfoStat(guiGraphics, mouseX, mouseY,
-                this.leftPos + 78, this.topPos + 67, 8, 8,
+                78, 67, 8, 8,
                 this.leftPos + 78, this.topPos + 67,
                     Component.literal("Progress:"),
                     Component.literal("   " + tower.getProgress() + " / " + tower.getMaxProgress()));

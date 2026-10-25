@@ -23,11 +23,15 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
  *   "input":    { "fluid": "...", "amount": 2000 },
  *   "output_a": { "fluid": "...", "amount": 200 },   // optional
  *   "output_b": { "fluid": "...", "amount": 200 },   // optional
- *   "byproducts": [ { "item": "...", "count": 1 } ]  // optional
+ *   "byproducts": [ { "item": "...", "count": 1 } ], // optional
+ *   "duration": 10                                   // стандарт 20
  * }
  * }</pre>
  */
 public class ElectrolyserFluidRecipeBuilder extends BaseRecipeBuilder<ElectrolyserFluidRecipeBuilder> {
+
+    /** Стандартная длительность FFA-таблицы. */
+    private static final int DEFAULT_DURATION = 20;
 
     private final FluidStack input;
     @Nullable
@@ -35,20 +39,30 @@ public class ElectrolyserFluidRecipeBuilder extends BaseRecipeBuilder<Electrolys
     @Nullable
     private final FluidStack outputB;
     private final ItemStack[] byproducts;
+    private final int duration;
 
     private ElectrolyserFluidRecipeBuilder(FluidStack input, @Nullable FluidStack outputA,
-                                            @Nullable FluidStack outputB, ItemStack[] byproducts) {
+                                            @Nullable FluidStack outputB, ItemStack[] byproducts, int duration) {
         this.input = input;
         this.outputA = outputA;
         this.outputB = outputB;
         this.byproducts = byproducts;
+        this.duration = duration;
     }
 
     public static ElectrolyserFluidRecipeBuilder electrolyserFluidRecipe(FluidStack input,
                                                                           @Nullable FluidStack outputA,
                                                                           @Nullable FluidStack outputB,
                                                                           ItemStack... byproducts) {
-        return new ElectrolyserFluidRecipeBuilder(input, outputA, outputB, byproducts);
+        return electrolyserFluidRecipe(input, outputA, outputB, DEFAULT_DURATION, byproducts);
+    }
+
+    public static ElectrolyserFluidRecipeBuilder electrolyserFluidRecipe(FluidStack input,
+                                                                          @Nullable FluidStack outputA,
+                                                                          @Nullable FluidStack outputB,
+                                                                          int duration,
+                                                                          ItemStack... byproducts) {
+        return new ElectrolyserFluidRecipeBuilder(input, outputA, outputB, byproducts, duration);
     }
 
     @Override
@@ -75,6 +89,7 @@ public class ElectrolyserFluidRecipeBuilder extends BaseRecipeBuilder<Electrolys
             }
             if (arr.size() > 0) json.add("byproducts", arr);
         }
+        json.addProperty("duration", duration);
     }
 
     @Override

@@ -23,16 +23,31 @@ public final class UpgradeManager {
         Arrays.fill(levels, 0);
         if (inv == null) return;
 
+        // Original UpgradeManagerNT: nur gueltige Typen zaehlen, Mutex-Typen verdraengen sich (hoeherer Ordinal gewinnt)
+        if (caps == null) return;
+        ItemMachineUpgrade.UpgradeType mutexType = null;
+
         for (int slot = slotStartInclusive; slot <= slotEndInclusive; slot++) {
             ItemStack stack = inv.getStackInSlot(slot);
             if (stack == null || stack.isEmpty()) continue;
             if (!(stack.getItem() instanceof ItemMachineUpgrade up)) continue;
 
             ItemMachineUpgrade.UpgradeType type = up.getUpgradeType();
+            if (!caps.containsKey(type)) continue;
             int idx = type.ordinal();
-            int add = Math.max(up.getTier(), 1);
-            int cap = caps != null ? caps.getOrDefault(type, Integer.MAX_VALUE) : Integer.MAX_VALUE;
-            levels[idx] = Math.min(cap, levels[idx] + add);
+
+            if (type.mutex) {
+                if (mutexType == null) {
+                    levels[idx] = 1;
+                    mutexType = type;
+                } else if (type.ordinal() > mutexType.ordinal()) {
+                    levels[mutexType.ordinal()] = 0;
+                    levels[idx] = 1;
+                    mutexType = type;
+                }
+            } else {
+                levels[idx] = Math.min(levels[idx] + up.getTier(), caps.get(type));
+            }
         }
     }
 

@@ -5,7 +5,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.Block;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
  *
  * <p>В оригинале источником копии мог быть и TileEntity, и Block (Either) —
  * на блоке его реализовывали краски-кабели 1.7.10. В этом порте все цели —
- * BE-блоки, поэтому интерфейс BE-only; "фиктивный" this - это BlockEntity.
+ * BE-блоки; блок-цель передаётся методам-хелперам явно (см. ItemSettingsTool).
  */
 public interface ICopiable {
 
@@ -28,13 +28,13 @@ public interface ICopiable {
     void pasteSettings(CompoundTag nbt, int index, Level level, Player player, BlockPos pos);
 
     /** Оригинал getSettingsSourceID: descriptionId блока, сохраняется как "tileName". */
-    default String getSettingsSourceID() {
-        return ((BlockEntity) this).getBlockState().getBlock().getDescriptionId();
+    default String getSettingsSourceID(Block block) {
+        return block.getDescriptionId();
     }
 
     /** Оригинал getSettingsSourceDisplay: локализованное имя блока для чата. */
-    default Component getSettingsSourceDisplay() {
-        return ((BlockEntity) this).getBlockState().getBlock().getName();
+    default Component getSettingsSourceDisplay(Block block) {
+        return block.getName();
     }
 
     /** Ключи строк для экранного информера; null = список не показывать. */

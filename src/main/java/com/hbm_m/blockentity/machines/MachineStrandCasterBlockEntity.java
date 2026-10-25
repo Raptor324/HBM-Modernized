@@ -3,453 +3,314 @@ package com.hbm_m.blockentity.machines;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.block.ICrucibleAcceptor;
-import com.hbm_m.api.fluids.IFluidStandardReceiverMK2;
-import com.hbm_m.api.fluids.IFluidStandardSenderMK2;
-import com.hbm_m.blockentity.BaseHbmBlockEntity;
+import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
+import com.hbm_m.block.machines.DummyableMachineBlock;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
-import com.hbm_m.inventory.material.MaterialStack;
-import com.hbm_m.inventory.material.MaterialType;
+import com.hbm_m.inventory.material.Mats;
+import com.hbm_m.inventory.material.Mats.MaterialStack;
 import com.hbm_m.inventory.menu.MachineStrandCasterMenu;
 import com.hbm_m.item.material.ItemCastMold;
-import com.hbm_m.platform.ModItemStackHandler;
-import com.hbm_m.recipe.MoldCastingRecipe;
-import com.hbm_m.recipe.index.CachedRecipeResolver;
+import com.hbm_m.item.material.ItemMold;
+import com.hbm_m.item.material.ItemScraps;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.phys.AABB;
+import com.hbm_m.platform.StackNbt;
 
 /**
- * Порт {@code TileEntityMachineStrandCaster} (1.7.10) — машина непрерывного
- * литья: буфер расплава ({@code type}/{@code amount}) с изложницей в слоте 0
- * и шестью слотами выхода; партия литься ({@code maxProcessable}) расходует
- * воду и выдаёт отработанный пар. Налив расплава — только сверху, на 2×2
- * верх башни (порт {@code getMetalPourPos}).
+ * 1:1 {@code TileEntityMachineStrandCaster}: Stranggiessanlage. Nimmt fluessiges Metall an den vier oberen Einguessen
+ * auf (bis 9 Formfuellungen), giesst bis zu 9 Formen auf einmal - spaetestens nach 10 Sekunden Ruhe - in die sechs
+ * Ausgabeplaetze und kuehlt dabei je Guss {@code 5 * Formkosten} mB Wasser zu Abdampf.
  */
-public class MachineStrandCasterBlockEntity extends BaseHbmBlockEntity implements MenuProvider, ICrucibleAcceptor, IFluidStandardReceiverMK2, IFluidStandardSenderMK2 {
+public class MachineStrandCasterBlockEntity extends MachineFoundryCastingBaseBlockEntity implements IFluidStandardTransceiverMK2, MenuProvider {
 
-    public static final int SLOT_MOLD = 0;
-    public static final int SLOT_OUTPUT_START = 1;
-    public static final int SLOT_COUNT = 7;
-    private static final int OUTPUT_SLOTS = 6;
-
-    public static final int TANK_CAPACITY = 64_000;
-
-    @Nullable public MaterialType type = null;
-    public int amount = 0;
+    public final FluidTank water = new FluidTank(ModFluids.WATER.getSource(), 64_000);
+    public final FluidTank steam = new FluidTank(ModFluids.SPENTSTEAM.getSource(), 64_000);
     private long lastProgressTick = 0;
 
-    /** Последние отправленные клиенту уровни баков (транзиентные; для синка GUI по изменению). */
-    private transient int lastSyncedWater = -1;
-    private transient int lastSyncedSteam = -1;
-
-    private final FluidTank water = new FluidTank(ModFluids.WATER.getSource(), TANK_CAPACITY);
-    private final FluidTank steam = new FluidTank(ModFluids.SPENTSTEAM.getSource(), TANK_CAPACITY);
-
-    private final ModItemStackHandler inventory = new ModItemStackHandler(SLOT_COUNT) {
-        @Override
-        public int getSlotLimit(int slot) {
-            return 64; // как в оригинале getInventoryStackLimit()
-        }
-
-        @Override
-        protected void onContentsChanged(int slot) {
-            setChanged();
-        }
-
-        @Override
-        public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-            return isItemValidForSlot(slot, stack);
-        }
-    };
-
-    /**
-     * Обёртка инвентаря для внешней автоматизации:
-     * - извлечение разрешено только из слотов выхода 1..6 (слот 0 с изложницей защищён);
-     * - загрузка предметов через автоматизацию запрещена (как в 1.7.10).
-     */
-    private final ModItemStackHandler automationHandler = new ModItemStackHandler(0) {
-        @Override
-        public int getSlots() {
-            return inventory.getSlots();
-        }
-
-        @Override
-        public @NotNull ItemStack getStackInSlot(int slot) {
-            return inventory.getStackInSlot(slot);
-        }
-
-        @Override
-        public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
-            return stack;
-        }
-
-        @Override
-        public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
-            if (slot == SLOT_MOLD) return ItemStack.EMPTY;
-            return inventory.extractItem(slot, amount, simulate);
-        }
-
-        @Override
-        public int getSlotLimit(int slot) {
-            return inventory.getSlotLimit(slot);
-        }
-
-        @Override
-        public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-            return false;
-        }
-
-        @Override
-        public void setStackInSlot(int slot, @NotNull ItemStack stack) {
-            if (slot != SLOT_MOLD) {
-                inventory.setStackInSlot(slot, stack);
-            }
-        }
-    };
-
     public MachineStrandCasterBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.STRAND_CASTER_BE.get(), pos, state);
+        super(ModBlockEntities.STRAND_CASTER_BE.get(), pos, state, 7);
     }
 
-    public ModItemStackHandler getInventory() { return inventory; }
-    public FluidTank getWaterTank() { return water; }
-    public FluidTank getSteamTank() { return steam; }
-
-    public ItemStack getStackInSlot(int slot) { return inventory.getStackInSlot(slot); }
-    public void setStackInSlot(int slot, ItemStack stack) { inventory.setStackInSlot(slot, stack); }
-
-    public void drops() {
-        if (level == null) return;
-        net.minecraft.world.SimpleContainer container = new net.minecraft.world.SimpleContainer(inventory.getSlots());
-        for (int i = 0; i < inventory.getSlots(); i++) {
-            container.setItem(i, inventory.getStackInSlot(i));
-        }
-        net.minecraft.world.Containers.dropContents(level, worldPosition, container);
+    private Direction facing() {
+        BlockState state = getBlockState();
+        return state.hasProperty(DummyableMachineBlock.FACING) ? state.getValue(DummyableMachineBlock.FACING) : Direction.NORTH;
     }
 
-    // ═══════════════════════════════ Логика ═══════════════════════════════
+    @Override
+    public void updateEntity() {
 
-    public @Nullable ItemCastMold getInstalledMold() {
-        ItemStack stack = inventory.getStackInSlot(SLOT_MOLD);
-        return stack.getItem() instanceof ItemCastMold mold ? mold : null;
-    }
+        if (level instanceof ServerLevel world) {
 
-    /** Стоимость изложницы (квантов за отливку) для рендера; 0 если изложницы нет. */
-    public int getMoldCost() {
-        ItemCastMold mold = getInstalledMold();
-        return mold == null ? 0 : mold.getMoldType().getCost();
-    }
-
-    /** Порт getCapacity: без изложницы буфер вмещает 50 000 квантов, с изложницей — 10 стоимостей. */
-    public int getCapacity() {
-        ItemCastMold mold = getInstalledMold();
-        return mold == null ? 50_000 : mold.getMoldType().getCost() * 10;
-    }
-
-    /** Порт getWaterRequired: 5 mB воды на каждый квант стоимости изложницы. */
-    private int getWaterRequired() {
-        ItemCastMold mold = getInstalledMold();
-        if (mold == null) return 50;
-        return Math.max(1, mold.getMoldType().getCost() * 5);
-    }
-
-    /** Кэшированный скан рецептов: подпись — (изложница, материал), сканер — только матч по списку. */
-    private final CachedRecipeResolver<MoldCastingRecipe> castingResolver = new CachedRecipeResolver<>();
-
-    /** Data-driven поиск результата (mold, material) — замена {@code mold.getOutput(type)}.
-     *  Подпись кэша: (mold, material); проверка headroom выходных слотов остаётся per-tick
-     *  в {@link #maxProcessable()} (CachedRecipeResolver CONTRACT 1). */
-    private @Nullable ItemStack getResultFor(MaterialType mat, ItemCastMold.MoldType mold) {
-        if (level == null) return null;
-        long signature = CachedRecipeResolver.sign(3,
-                mold == null ? 0L : mold.ordinal(),
-                mat == null ? 0L : mat.name.hashCode());
-        MoldCastingRecipe r = castingResolver.resolve(level, MoldCastingRecipe.Type.INSTANCE, signature,
-                (lvl, all) -> {
-                    for (MoldCastingRecipe recipe : all) {
-                        if (recipe.matches(mold, mat)) return recipe;
-                    }
-                    return null;
-                });
-        if (r == null) return null;
-        ItemStack out = r.getOutput();
-        return out.isEmpty() ? null : out;
-    }
-
-    public static void tick(Level level, BlockPos pos, BlockState state, MachineStrandCasterBlockEntity be) {
-        if (level.isClientSide) return;
-
-        boolean sync = false;
-        int oldAmount = be.amount;
-        MaterialType oldType = be.type;
-
-        // Переполнение — излишек высыпается шлаком (порт overfill check)
-        if (be.amount > be.getCapacity()) {
-            ItemStack scrap = com.hbm_m.util.CrucibleUtil.createScrap(
-                    new MaterialStack(be.type != null ? be.type : MaterialType.IRON, Math.max(be.amount - be.getCapacity(), 0)));
-            if (!scrap.isEmpty()) {
-                ItemEntity item = new ItemEntity(level, pos.getX() + 0.5, pos.getY() + 2, pos.getZ() + 0.5, scrap);
-                level.addFreshEntity(item);
+            if (this.lastType != this.type || this.lastAmount != this.amount) {
+                markForUpdate();
+                this.lastType = this.type;
+                this.lastAmount = this.amount;
             }
-            be.amount = be.getCapacity();
-        }
 
-        if (be.amount == 0) {
-            be.type = null;
-        }
+            // In case of overfill problems, spit out the excess as scrap
+            if (amount > getCapacity()) {
+                ItemStack scrap = ItemScraps.create(new MaterialStack(type, Math.max(amount - getCapacity(), 0)));
+                world.addFreshEntity(new ItemEntity(world, worldPosition.getX() + 0.5, worldPosition.getY() + 2, worldPosition.getZ() + 0.5, scrap));
+                this.amount = this.getCapacity();
+            }
 
-        int moldsToCast = be.maxProcessable();
+            if (this.amount == 0) {
+                this.type = null;
+            }
 
-        // Партия сливается после 10 секунд простоя или когда слоты почти полны
-        if (moldsToCast > 0 && (moldsToCast >= 9 || level.getGameTime() >= be.lastProgressTick + 200)) {
-            ItemCastMold mold = be.getInstalledMold();
+            this.updateConnections(world);
 
-            // Результат ищем ДО списания металла. В 1.7.10 mold.getOutput(type)
-            // детерминирован, здесь же data-driven поиск по рецептам: если рецепта
-            // нет — металл не расходуем (раньше металл уходил «в нишу», а слоты
-            // выхода оставались пустыми).
-            ItemStack out = be.getResultFor(be.type, mold.getMoldType());
+            int moldsToCast = maxProcessable();
 
-            if (out != null && !out.isEmpty()) {
-                be.amount -= moldsToCast * mold.getMoldType().getCost();
+            // Makes it flush the buffers after 10 seconds of inactivity, or when they're full
+            if (moldsToCast > 0 && (moldsToCast >= 9 || world.getDayTime() >= lastProgressTick + 200)) {
 
+                ItemMold.Mold mold = this.getInstalledMold();
+
+                this.amount -= moldsToCast * mold.getCost();
+
+                ItemStack out = mold.getOutput(type);
                 int remaining = out.getCount() * moldsToCast;
-                int maxStackSize = out.getMaxStackSize();
+                final int maxStackSize = out.getMaxStackSize();
 
-                for (int i = SLOT_OUTPUT_START; i < SLOT_COUNT; i++) {
-                    if (remaining <= 0) break;
-
-                    ItemStack slot = be.inventory.getStackInSlot(i);
-                    if (slot.isEmpty()) {
-                        slot = out.copyWithCount(0);
-                        be.inventory.setStackInSlot(i, slot);
+                for (int i = 1; i < 7; i++) {
+                    if (remaining <= 0) {
+                        break;
                     }
 
-                    if (com.hbm_m.platform.PlatformHooks.isSameItemSameTags(slot, out)) {
-                        int toDeposit = Math.min(remaining, maxStackSize - slot.getCount());
-                        if (toDeposit > 0) {
-                            slot.grow(toDeposit);
-                            remaining -= toDeposit;
-                        }
+                    if (slots[i].isEmpty()) {
+                        slots[i] = out.copyWithCount(0);
+                    }
+
+                    if (slots[i].isEmpty() || StackNbt.sameItemSameTags(slots[i], out)) {
+                        int current = slots[i].isEmpty() ? 0 : slots[i].getCount();
+                        int toDeposit = Math.min(remaining, maxStackSize - current);
+                        slots[i] = out.copyWithCount(current + toDeposit);
+                        remaining -= toDeposit;
                     }
                 }
 
-                be.water.drainMb(be.getWaterRequired() * moldsToCast);
-                be.steam.setFill(Math.min(be.steam.getMaxFill(),
-                        be.steam.getFill() + be.getWaterRequired() * moldsToCast));
+                setChanged();
 
-                be.lastProgressTick = level.getGameTime();
-                be.setChanged();
-            } else {
-                // Рецепта нет — откладываем следующую попытку как завершённую партию.
-                be.lastProgressTick = level.getGameTime();
+                water.setFill(water.getFill() - getWaterRequired() * moldsToCast);
+                steam.setFill(steam.getFill() + getWaterRequired() * moldsToCast);
+
+                lastProgressTick = world.getDayTime();
             }
-        }
 
-        // Порт networkPackNT(150) — в 1.7.10 баки рассылались клиенту каждый тик.
-        // Уровни воды/пара меняются БЕЗ изменения amount/type, поэтому без этого
-        // синка баки в GUI навсегда оставались пустыми («нет воды»).
-        if (oldAmount != be.amount || oldType != be.type
-                || be.water.getFill() != be.lastSyncedWater
-                || be.steam.getFill() != be.lastSyncedSteam) {
-            be.lastSyncedWater = be.water.getFill();
-            be.lastSyncedSteam = be.steam.getFill();
-            be.syncToClient();
+            sendUpdateToClient();
         }
     }
 
-    /** Порт maxProcessable: партия ограничена металлом, местом в 6 слотах, водой и паром. */
-    private int maxProcessable() {
-        ItemCastMold mold = getInstalledMold();
-        if (type == null || mold == null) return 0;
-        ItemStack out = getResultFor(type, mold.getMoldType());
-        if (out == null || out.isEmpty()) return 0;
+    /* sendUpdateToClient() kommt aus BaseHbmBlockEntity (protected, mit isRemoved-Guard);
+       die fruehere private Lokalkopie schattierte die Basismethode und war kein Override. */
 
-        int cost = mold.getMoldType().getCost();
-        if (cost <= 0) return 0;
+    private int maxProcessable() {
+        ItemMold.Mold mold = this.getInstalledMold();
+        if (type == null || mold == null || mold.getOutput(type) == null) {
+            return 0;
+        }
 
         int freeSlots = 0;
-        int stackLimit = out.getMaxStackSize();
+        final int stackLimit = mold.getOutput(type).getMaxStackSize();
 
-        for (int i = SLOT_OUTPUT_START; i < SLOT_COUNT; i++) {
-            ItemStack slot = inventory.getStackInSlot(i);
-            if (slot.isEmpty()) {
+        for (int i = 1; i < 7; i++) {
+            if (slots[i].isEmpty()) {
                 freeSlots += stackLimit;
-            } else if (com.hbm_m.platform.PlatformHooks.isSameItemSameTags(slot, out)) {
-                freeSlots += stackLimit - slot.getCount();
+            } else if (StackNbt.sameItemSameTags(slots[i], mold.getOutput(type))) {
+                freeSlots += stackLimit - slots[i].getCount();
             }
         }
 
-        int moldsToCast = amount / cost;
-        moldsToCast = Math.min(moldsToCast, freeSlots / out.getCount());
+        int moldsToCast = amount / mold.getCost();
+        moldsToCast = Math.min(moldsToCast, freeSlots / mold.getOutput(type).getCount());
         moldsToCast = Math.min(moldsToCast, water.getFill() / getWaterRequired());
         moldsToCast = Math.min(moldsToCast, (steam.getMaxFill() - steam.getFill()) / getWaterRequired());
 
         return moldsToCast;
     }
 
-    // Подписка в трубные сети НЕ здесь: в оригинале (fluidmk2) ей занимается система
-    // портов (setupAllPorts по getPorts()), у нас — тик частей с ролью FLUID_CONNECTOR
-    // (UniversalMachinePartBlockEntity.tickFluidConnector), который создаёт узлы FluidNet
-    // на клетках портов и подписывает этот контроллер (getReceivingTanks/getSendingTanks).
+    /** Anschluss samt Richtung (Original {@code DirPos}). */
+    private record DirPos(BlockPos pos, Direction dir) { }
 
-    private Direction getFacing() {
-        BlockState state = getBlockState();
-        if (state.hasProperty(com.hbm_m.block.machines.MachineStrandCasterBlock.FACING)) {
-            return state.getValue(com.hbm_m.block.machines.MachineStrandCasterBlock.FACING);
-        }
-        return Direction.NORTH;
-    }
-
-    // ══════════════════ Налив расплава (ICrucibleAcceptor) ══════════════════
-
-    /**
-     * Порт canAcceptPartialPour: только сверху и только на 2×2 верх башни
-     * (позиции {rot-dir, -dir, rot, 0} на y+2 от ядра).
-     */
-    @Override
-    public boolean canAcceptPartialPour(Level level, BlockPos pos, Direction side, MaterialStack stack) {
-        if (side != Direction.UP) return false;
-        if (!isTowerTopPourPos(pos)) return false;
-        return standardCheck(stack);
-    }
-
-    /** Проверка: позиция налива — одна из 4 клеток верха башни (порт getMetalPourPos). */
-    private boolean isTowerTopPourPos(BlockPos pourPos) {
-        Direction dir = getFacing();
+    public DirPos[] getFluidConPos() {
+        Direction dir = facing();
         Direction rot = dir.getClockWise();
-        BlockPos rel = pourPos.subtract(worldPosition);
-        if (rel.getY() != 2) return false;
-
-        int dx = rel.getX();
-        int dz = rel.getZ();
-        int[][] candidates = {
-                { rot.getStepX() - dir.getStepX(), rot.getStepZ() - dir.getStepZ() },
-                { -dir.getStepX(), -dir.getStepZ() },
-                { rot.getStepX(), rot.getStepZ() },
-                { 0, 0 }
+        BlockPos p = worldPosition;
+        return new DirPos[] {
+                new DirPos(p.relative(rot, 2).relative(dir, -1), rot),
+                new DirPos(p.relative(rot, -1).relative(dir, -1), rot.getOpposite()),
+                new DirPos(p.relative(rot, 2).relative(dir, -5), rot),
+                new DirPos(p.relative(rot, -1).relative(dir, -5), rot.getOpposite())
         };
-        for (int[] c : candidates) {
-            if (c[0] == dx && c[1] == dz) return true;
+    }
+
+    public BlockPos[] getMetalPourPos() {
+        Direction dir = facing();
+        Direction rot = dir.getClockWise();
+        BlockPos p = worldPosition.above(2);
+        return new BlockPos[] {
+                p.relative(rot).relative(dir, -1),
+                p.relative(dir, -1),
+                p.relative(rot),
+                p
+        };
+    }
+
+    /** Original: jede Formgroesse passt, die Form bestimmt die Groesse. */
+    @Override
+    @Nullable
+    public ItemMold.Mold getInstalledMold() {
+        if (slots[0].isEmpty()) return null;
+        return ItemMold.getMold(slots[0]);
+    }
+
+    @Override
+    public int getMoldSize() {
+        ItemMold.Mold mold = getInstalledMold();
+        return mold == null ? 0 : mold.size;
+    }
+
+    /** Стоимость изложницы (квантов за отливку) для рендера; 0 если изложницы нет. */
+    public int getMoldCost() {
+        ItemMold.Mold mold = getInstalledMold();
+        return mold == null ? 0 : mold.getCost();
+    }
+
+    @Override
+    public boolean canAcceptPartialPour(Level world, BlockPos pos, double dX, double dY, double dZ, Direction side, MaterialStack stack) {
+        if (side != Direction.UP) return false;
+        for (BlockPos p : getMetalPourPos()) {
+            if (p.equals(pos)) {
+                return this.standardCheck(world, pos, side, stack);
+            }
         }
         return false;
     }
 
-    /** Порт standardCheck: совпадение типа, лимит (9 стоимостей изложницы) и наличие изложницы. */
-    private boolean standardCheck(MaterialStack stack) {
-        if (this.type != null && this.type != stack.type) return false;
-        ItemCastMold mold = getInstalledMold();
-        int limit = mold != null ? mold.getMoldType().getCost() * 9 : this.getCapacity();
+    @Override public boolean canAcceptPartialFlow(Level world, BlockPos pos, Direction side, MaterialStack stack) { return false; }
+    @Override @Nullable public MaterialStack flow(Level world, BlockPos pos, Direction side, MaterialStack stack) { return null; }
+
+    @Override
+    public boolean standardCheck(Level world, BlockPos pos, Direction side, MaterialStack stack) {
+        if (this.type != null && this.type != stack.material) return false;
+        int limit = this.getInstalledMold() != null ? this.getInstalledMold().getCost() * 9 : this.getCapacity();
         return !(this.amount >= limit || getInstalledMold() == null);
     }
 
-    /** Порт standardAdd: тип ставится до проверки, излишек возвращается, прогресс сбрасывается. */
     @Override
-    public @Nullable MaterialStack pour(Level level, BlockPos pos, Direction side, MaterialStack stack) {
-        this.type = stack.type;
-        ItemCastMold mold = getInstalledMold();
-        int limit = mold != null ? mold.getMoldType().getCost() * 9 : this.getCapacity();
+    public int getCapacity() {
+        ItemMold.Mold mold = this.getInstalledMold();
+        return mold == null ? 50000 : mold.getCost() * 10;
+    }
+
+    private int getWaterRequired() {
+        return getInstalledMold() != null ? 5 * getInstalledMold().getCost() : 50;
+    }
+
+    private void updateConnections(ServerLevel world) {
+        for (DirPos pos : getFluidConPos()) {
+            this.trySubscribe(water.getTankType(), world, pos.pos, pos.dir);
+            if (steam.getFill() > 0) this.tryProvide(steam, world, pos.pos, pos.dir);
+        }
+    }
+
+    @Override
+    @Nullable
+    public MaterialStack standardAdd(Level world, BlockPos pos, Direction side, MaterialStack stack) {
+        this.type = stack.material;
+
+        int limit = this.getInstalledMold() != null ? this.getInstalledMold().getCost() * 9 : this.getCapacity();
 
         if (stack.amount + this.amount <= limit) {
             this.amount += stack.amount;
-            setChanged();
-            syncToClient();
             return null;
         }
 
         int required = limit - this.amount;
         this.amount = limit;
+
         stack.amount -= required;
 
-        this.lastProgressTick = level.getGameTime();
-        setChanged();
-        syncToClient();
+        lastProgressTick = world.getDayTime();
+
         return stack;
     }
 
-    @Override public boolean canAcceptPartialFlow(Level level, BlockPos pos, Direction side, MaterialStack stack) { return false; }
-    @Override public @Nullable MaterialStack flow(Level level, BlockPos pos, Direction side, MaterialStack stack) { return null; }
-
-    // ═══════════════════════════ Жидкости (MK2) ═══════════════════════════
-
-    @Override
-    public FluidTank[] getAllTanks() { return new FluidTank[] { water, steam }; }
-
-    @Override
-    public FluidTank[] getReceivingTanks() { return new FluidTank[] { water }; }
-
-    @Override
-    public FluidTank[] getSendingTanks() { return new FluidTank[] { steam }; }
-
-    /**
-     * Порт getMaxRenderDistanceSquared/getRenderBoundingBox (1.7.10): AABB всей
-     * структуры (стол 2×7 + башня 2×2×3), иначе фрустум-куллинг отсекает машину,
-     * как только клетка-ядро уходит за экран. Бокс берётся из схемы хелпера
-     * (кэш по FACING) и на 1.20.1, и на 1.21.1 попадает в culler через
-     * {@link com.hbm_m.api.render.RenderBoundsProvider}.
-     */
-    @Override
-    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
-        BlockState state = getBlockState();
-        if (state.getBlock() instanceof com.hbm_m.block.machines.MachineStrandCasterBlock block) {
-            return block.getStructureHelper()
-                    .getRenderBoundingBox(worldPosition, getFacing(), 1.0);
-        }
-        return super.getRenderBoundingBox();
-    }
+    @Override public FluidTank[] getSendingTanks() { return new FluidTank[] { steam }; }
+    @Override public FluidTank[] getReceivingTanks() { return new FluidTank[] { water }; }
+    @Override public FluidTank[] getAllTanks() { return new FluidTank[] { water, steam }; }
 
     @Override
     public boolean isLoaded() {
         return level != null && !isRemoved() && level.isLoaded(worldPosition);
     }
 
-    // ═══════════════════════════ Инвентарь/NBT ═══════════════════════════
-
-    /** Порт isItemValidForSlot: только изложница в слот 0. */
-    public boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return slot == SLOT_MOLD && stack.getItem() instanceof ItemCastMold;
-    }
-
-    /** Порт getAccessibleSlotsFromSide: наружу доступны только слоты выхода 1..6. */
-    public int[] getAccessibleSlots() {
-        return new int[] { 1, 2, 3, 4, 5, 6 };
+    @Override
+    protected void writeNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(nbt, registries);
+        water.writeToNBT(nbt, "w");
+        steam.writeToNBT(nbt, "s");
+        nbt.putLong("t", lastProgressTick);
     }
 
     @Override
-    public @Nullable Object getItemHandler(@Nullable Direction side) {
-        return this.automationHandler;
+    protected void readNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(nbt, registries);
+        water.readFromNBT(nbt, "w");
+        steam.readFromNBT(nbt, "s");
+        lastProgressTick = nbt.getLong("t");
+    }
+
+    public boolean isItemValidForSlot(int i, ItemStack stack) {
+        if (i == 0) return stack.getItem() instanceof ItemCastMold;
+        return false;
     }
 
     //? if forge {
-    private net.minecraftforge.common.util.LazyOptional<net.minecraftforge.items.IItemHandler> lazyItemHandler = net.minecraftforge.common.util.LazyOptional.empty();
+    private net.minecraftforge.common.util.LazyOptional<net.minecraftforge.items.IItemHandler> casterHandler;
 
-    @Override
-    public void onLoad() {
-        super.onLoad();
-        lazyItemHandler = net.minecraftforge.common.util.LazyOptional.of(() -> automationHandler);
-    }
-
+    /** Original {@code getAccessibleSlotsFromSide {1..6}}: nur die Ausgaben, entnehmbar. */
     @Override
     public @NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER) {
-            return lazyItemHandler.cast();
+            if (casterHandler == null) {
+                casterHandler = net.minecraftforge.common.util.LazyOptional.of(() -> new net.minecraftforge.items.IItemHandler() {
+                    @Override public int getSlots() { return 6; }
+                    @Override public @NotNull ItemStack getStackInSlot(int slot) { return slots[slot + 1]; }
+                    @Override public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) { return stack; }
+                    @Override public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+                        ItemStack s = slots[slot + 1];
+                        if (s.isEmpty()) return ItemStack.EMPTY;
+                        ItemStack out = s.copyWithCount(Math.min(amount, s.getCount()));
+                        if (!simulate) {
+                            s.shrink(out.getCount());
+                            if (s.isEmpty()) slots[slot + 1] = ItemStack.EMPTY;
+                            setChanged();
+                        }
+                        return out;
+                    }
+                    @Override public int getSlotLimit(int slot) { return 64; }
+                    @Override public boolean isItemValid(int slot, @NotNull ItemStack stack) { return false; }
+                });
+            }
+            return casterHandler.cast();
         }
         return super.getCapability(cap, side);
     }
@@ -457,55 +318,70 @@ public class MachineStrandCasterBlockEntity extends BaseHbmBlockEntity implement
     @Override
     public void invalidateCaps() {
         super.invalidateCaps();
-        lazyItemHandler.invalidate();
+        if (casterHandler != null) casterHandler.invalidate();
+        casterHandler = null;
     }
-    //?}
+    //?} elif neoforge {
+    /*private com.hbm_m.platform.LazyCap<net.minecraftforge.items.IItemHandler> casterHandler;
 
+    /^* Original {@code getAccessibleSlotsFromSide {1..6}}: nur die Ausgaben, entnehmbar. ^/
     @Override
-    protected void writeNbtData(CompoundTag tag, HolderLookup.Provider registries) {
-        super.writeNbtData(tag, registries);
-        tag.put("items", com.hbm_m.platform.ItemStackSerialization.serialize(inventory, registries));
-        if (type != null) tag.putString("mat_type", type.name);
-        tag.putInt("mat_amount", amount);
-        water.writeToNBT(tag, "w");
-        steam.writeToNBT(tag, "s");
-        tag.putLong("t", lastProgressTick);
-    }
-
-    @Override
-    protected void readNbtData(CompoundTag tag, HolderLookup.Provider registries) {
-        super.readNbtData(tag, registries);
-        if (tag.contains("items")) {
-            com.hbm_m.platform.ItemStackSerialization.deserialize(inventory, tag.getCompound("items"), registries);
-        } else if (tag.contains("inventory")) {
-            com.hbm_m.platform.ItemStackSerialization.deserialize(inventory, tag.getCompound("inventory"), registries);
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER) {
+            if (casterHandler == null) {
+                casterHandler = com.hbm_m.platform.LazyCap.of(() -> new net.minecraftforge.items.IItemHandler() {
+                    @Override public int getSlots() { return 6; }
+                    @Override public @NotNull ItemStack getStackInSlot(int slot) { return slots[slot + 1]; }
+                    @Override public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) { return stack; }
+                    @Override public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+                        ItemStack s = slots[slot + 1];
+                        if (s.isEmpty()) return ItemStack.EMPTY;
+                        ItemStack out = s.copyWithCount(Math.min(amount, s.getCount()));
+                        if (!simulate) {
+                            s.shrink(out.getCount());
+                            if (s.isEmpty()) slots[slot + 1] = ItemStack.EMPTY;
+                            setChanged();
+                        }
+                        return out;
+                    }
+                    @Override public int getSlotLimit(int slot) { return 64; }
+                    @Override public boolean isItemValid(int slot, @NotNull ItemStack stack) { return false; }
+                });
+            }
+            return casterHandler.cast();
         }
-        type = tag.contains("mat_type") ? MaterialType.byName(tag.getString("mat_type")) : null;
-        amount = tag.getInt("mat_amount");
-        water.readFromNBT(tag, "w");
-        steam.readFromNBT(tag, "s");
-        lastProgressTick = tag.getLong("t");
-    }
-
-    // ═══════════════════════════ Синхронизация/GUI ═══════════════════════════
-
-    /** Полный NBT-sync клиенту (рендер уровня расплава + баки GUI). UPDATE_CLIENTS без
-     *  соседних апдейтов — в 1.7.10 networkPackNT соседей не трогал, а синк теперь может
-     *  идти каждый тик при активной подаче воды. */
-    public void syncToClient() {
-        if (level != null && !level.isClientSide()) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
-        }
+        return super.getHbmCapability(cap, side);
     }
 
     @Override
-    public @NotNull Component getDisplayName() {
-        return Component.translatable("container.hbm_m.strand_caster");
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        if (casterHandler != null) casterHandler.invalidate();
+        casterHandler = null;
+    }
+    *///?}
+
+    @Override
+    public Component getDisplayName() {
+        return Component.translatable("container.machineStrandCaster");
     }
 
     @Nullable
     @Override
-    public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
-        return new MachineStrandCasterMenu(id, inv, this);
+    public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
+        return new MachineStrandCasterMenu(id, inventory, this);
+    }
+
+    //? if forge {
+    @Override
+    //?}
+    public AABB getRenderBoundingBox() {
+        return new AABB(worldPosition.getX() - 7, worldPosition.getY(), worldPosition.getZ() - 7,
+                worldPosition.getX() + 7, worldPosition.getY() + 3, worldPosition.getZ() + 7);
+    }
+
+    /** Fuer die GUI. */
+    public String formatAmount(boolean mb) {
+        return Mats.formatAmount(amount, mb);
     }
 }

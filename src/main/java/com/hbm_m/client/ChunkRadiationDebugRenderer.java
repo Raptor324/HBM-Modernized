@@ -15,14 +15,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 @OnlyIn(Dist.CLIENT)
 public class ChunkRadiationDebugRenderer {
 
@@ -43,7 +37,7 @@ public class ChunkRadiationDebugRenderer {
         // Объявляем переменную dimension и получаем ее из текущего уровня.
         final ResourceLocation dimension = level.dimension().location();
 
-        if (!ModClothConfig.get().enableDebugRender || !RenderHooks.isDebugOverlayShown(mc)) return;
+        if (!ModClothConfig.get().enableDebugRender || !RenderHooks.isDebugScreenVisible()) return;
 
         // Если радиация отключена в конфиге, не рендерим ничего.
         // ClientRadiationData может содержать устаревшие значения с прошлого сеанса,

@@ -172,9 +172,11 @@ public abstract class MissileTier2 extends MissileBaseEntity {
 
             }
 
-            if (level() instanceof net.minecraft.server.level.ServerLevel server) {
-                MissileWarheadEffects.warheadBusterTier2(this, server, pos);
-            }
+            // 1:1 EntityMissileBusterStrong: 20x createExplosion(7.5F, true) nach unten, dann Partikel/Splitter/Truemmer je 8
+            for (int i = 0; i < 20; i++) level().explode(this, getX(), getY() - i, getZ(), 7.5F, Level.ExplosionInteraction.TNT);
+            com.hbm_m.explosion.ExplosionLarge.spawnParticles(level(), getX(), getY(), getZ(), 8);
+            com.hbm_m.explosion.ExplosionLarge.spawnShrapnels(level(), getX(), getY(), getZ(), 8);
+            com.hbm_m.explosion.ExplosionLarge.spawnRubble(level(), getX(), getY(), getZ(), 8);
         }
 
     }

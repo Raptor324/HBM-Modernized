@@ -14,13 +14,13 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Асбестовая пыль в воздухе: +1 asbestos за тик контакта (неизлечимо без лекарств),
- * защищённый фильтр изнашивается. Порт {@link com.hbm.blocks.gas.BlockGasAsbestos} (1.7.10).
+ * 1:1-Port von {@code BlockGasAsbestos} (1.7.10): Asbeststaub in der Luft, +1 Asbest je Tick
+ * Kontakt. Sinkt bevorzugt nach unten, loest sich mit 1/50 je Tick auf.
  */
 public class BlockGasAsbestos extends BlockGasBase {
 
     public BlockGasAsbestos() {
-        super();
+        super(0.6F, 0.6F, 0.5F);
     }
 
     @Override
@@ -33,37 +33,28 @@ public class BlockGasAsbestos extends BlockGasBase {
     }
 
     @Override
-    public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-        if (random.nextInt(50) == 0) {
-            level.removeBlock(pos, false);
-            return;
-        }
-        super.tick(state, level, pos, random);
-    }
-
-    @Override
-    protected void spawnAmbientParticles(BlockState state, Level level, BlockPos pos, RandomSource random) {
-        if (random.nextInt(5) == 0) {
-            level.addParticle(
-                    ParticleTypes.MYCELIUM,
-                    pos.getX() + random.nextDouble(),
-                    pos.getY() + random.nextDouble(),
-                    pos.getZ() + random.nextDouble(),
-                    0.0D, 0.0D, 0.0D
-            );
-        }
-    }
-
-    @Override
     public Direction getFirstDirection(Level level, BlockPos pos, RandomSource random) {
-        if (random.nextInt(5) == 0) {
-            return Direction.DOWN;
-        }
-        return Direction.getRandom(random);
+        if (random.nextInt(5) == 0) return Direction.DOWN;
+        return randomAny(random);
     }
 
     @Override
     public Direction getSecondDirection(Level level, BlockPos pos, RandomSource random) {
         return randomHorizontal(random);
+    }
+
+    @Override
+    protected int getDecayChance() {
+        return 50;
+    }
+
+    @Override
+    public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
+        super.animateTick(state, level, pos, random);
+        if (random.nextInt(5) == 0) {
+            level.addParticle(ParticleTypes.MYCELIUM,
+                    pos.getX() + random.nextFloat(), pos.getY() + random.nextFloat(), pos.getZ() + random.nextFloat(),
+                    0.0D, 0.0D, 0.0D);
+        }
     }
 }

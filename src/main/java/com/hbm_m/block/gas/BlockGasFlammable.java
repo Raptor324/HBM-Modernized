@@ -11,87 +11,21 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Горючий газ: вспыхивает от источников огня рядом или от горящей сущности.
- * Порт {@link com.hbm.blocks.gas.BlockGasFlammable} (1.7.10).
+ * 1:1-Port von {@code BlockGasFlammable} (1.7.10): brennbares Gas. Liegt eine Zuendquelle daneben
+ * oder laeuft eine brennende Kreatur hinein, faengt es Feuer. Ueber Luft loest es sich mit 1/20
+ * auf, ansonsten steigt es auf und verteilt sich.
  */
 public class BlockGasFlammable extends BlockGasBase {
 
     public BlockGasFlammable() {
-        super();
+        super(0.8F, 0.8F, 0.2F);
     }
 
-    @Override
-    protected void affect(LivingEntity living) {
-        // Урона дыханием не наносит
-    }
-
-    @Override
-    public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
-        if (!level.isClientSide()) {
-            // Поджиг от горящей сущности или удержания факела/огня в руках
-            if (entity.isOnFire() || isHoldingFireSource(entity)) {
-                combust(level, pos);
-                return;
-            }
-        }
-        super.entityInside(state, level, pos, entity);
-    }
-
-    @Override
-    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
-        super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
-        if (!level.isClientSide() && isFireSource(level.getBlockState(neighborPos))) {
-            level.scheduleTick(pos, this, 2);
-        }
-    }
-
-    @Override
-    public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-        // Проверяем соседей на источник огня
-        for (Direction dir : Direction.values()) {
-            if (isFireSource(level.getBlockState(pos.relative(dir)))) {
-                combust(level, pos);
-                return;
-            }
-        }
-
-        // 1/20 — рассеивается, если под газом воздух
-        if (random.nextInt(20) == 0 && level.getBlockState(pos.below()).isAir()) {
-            level.removeBlock(pos, false);
-            return;
-        }
-
-        super.tick(state, level, pos, random);
-    }
-
-    @Override
-    public Direction getFirstDirection(Level level, BlockPos pos, RandomSource random) {
-        if (random.nextInt(3) == 0) {
-            return random.nextBoolean() ? Direction.UP : Direction.DOWN;
-        }
-        return randomHorizontal(random);
-    }
-
-    @Override
-    public Direction getSecondDirection(Level level, BlockPos pos, RandomSource random) {
-        return randomHorizontal(random);
-    }
-
-    @Override
-    public int getDelay(Level level, RandomSource random) {
-        return random.nextInt(5) + 16;
-    }
-
-    protected void combust(Level level, BlockPos pos) {
-        level.setBlockAndUpdate(pos, Blocks.FIRE.defaultBlockState());
-    }
-
-    public static boolean isFireSource(BlockState state) {
+    protected static boolean isFireSource(BlockState state) {
         return state.is(Blocks.FIRE)
                 || state.is(Blocks.SOUL_FIRE)
                 || state.is(Blocks.LAVA)
@@ -122,5 +56,61 @@ public class BlockGasFlammable extends BlockGasBase {
                 || item == Items.CAMPFIRE
                 || item == Items.SOUL_CAMPFIRE
                 || stack.is(ItemTags.CANDLES);
+    }
+
+    @Override
+    public boolean isFlammable(BlockState state, net.minecraft.world.level.BlockGetter level, BlockPos pos, Direction direction) {
+        return true;
+    }
+
+    protected void combust(ServerLevel level, BlockPos pos) {
+        level.setBlock(pos, Blocks.FIRE.defaultBlockState(), 3);
+    }
+
+    @Override
+    protected boolean onGasTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+        for (Direction dir : Direction.values()) {
+            if (isFireSource(level.getBlockState(pos.relative(dir)))) {
+                combust(level, pos);
+                return true;
+            }
+        }
+
+        if (random.nextInt(20) == 0 && level.getBlockState(pos.below()).isAir()) {
+            level.removeBlock(pos, false);
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
+    public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
+        if (!level.isClientSide() && (entity.isOnFire() || isHoldingFireSource(entity)) && level instanceof ServerLevel serverLevel) {
+            combust(serverLevel, pos);
+            return;
+        }
+        super.entityInside(state, level, pos, entity);
+    }
+
+    @Override
+    protected void affect(LivingEntity living) {
+    }
+
+    @Override
+    public Direction getFirstDirection(Level level, BlockPos pos, RandomSource random) {
+        if (random.nextInt(3) == 0) return randomVertical(random);
+        return randomHorizontal(random);
+    }
+
+    @Override
+    public Direction getSecondDirection(Level level, BlockPos pos, RandomSource random) {
+        return randomHorizontal(random);
+    }
+
+    /** Original: zufaellige Verzoegerung 16..20 Ticks vor der Selbstentzuendung. */
+    @Override
+    public int getDelay(Level level, RandomSource random) {
+        return random.nextInt(5) + 16;
     }
 }

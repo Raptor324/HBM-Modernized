@@ -1,0 +1,5 @@
+{
+  "priority": 20,
+  "blocks": ["hbm_m:block_lead", "hbm_m:deco_lead", "hbm_m:crate_lead", "hbm_m:anvil_lead"],
+  "hvl": { "gamma": 0.25, "neutron": 6.0, "beta": 0.05 }
+}

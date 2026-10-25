@@ -27,6 +27,7 @@ public class MachineSirenBlock extends BaseEntityBlock {
     @Override
     public RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; }
 
+
     @Nullable @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineSirenBlockEntity(pos, state);
@@ -73,7 +74,6 @@ public class MachineSirenBlock extends BaseEntityBlock {
         return CODEC;
     }
     *///?}
-
     @Override
     public void onRemove(net.minecraft.world.level.block.state.BlockState state, net.minecraft.world.level.Level level,
                             net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState newState, boolean isMoving) {

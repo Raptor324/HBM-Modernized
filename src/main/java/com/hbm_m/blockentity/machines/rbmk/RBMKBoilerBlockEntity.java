@@ -30,7 +30,7 @@ import net.minecraft.world.level.material.Fluid;
  * ordinary steam from ultra-hot steam.</p>
  */
 public class RBMKBoilerBlockEntity extends RBMKColumnBlockEntity
-        implements MenuProvider, com.hbm_m.api.fluids.IFluidStandardTransceiverMK2 {
+        implements MenuProvider, com.hbm_m.api.fluids.IFluidStandardTransceiverMK2, com.hbm_m.api.redstoneoverradio.IRORValueProvider {
 
     public final FluidTank waterTank;
     public final FluidTank steamTank;
@@ -287,6 +287,42 @@ public class RBMKBoilerBlockEntity extends RBMKColumnBlockEntity
     }
     //?}
 
+    //? if neoforge {
+    /*@Override
+    public @org.jetbrains.annotations.Nullable Object getFluidHandler(@org.jetbrains.annotations.Nullable Direction side) {
+        if (side == Direction.DOWN) return waterTank.getCapability();
+        if (side != null)           return steamTank.getCapability();
+        return new net.minecraftforge.fluids.capability.IFluidHandler() {
+            private net.minecraftforge.fluids.capability.IFluidHandler feed() {
+                return (net.minecraftforge.fluids.capability.IFluidHandler) waterTank.getCapability();
+            }
+            private net.minecraftforge.fluids.capability.IFluidHandler steam() {
+                return (net.minecraftforge.fluids.capability.IFluidHandler) steamTank.getCapability();
+            }
+            @Override public int getTanks() { return 2; }
+            @Override public @org.jetbrains.annotations.NotNull net.minecraftforge.fluids.FluidStack getFluidInTank(int tank) {
+                return tank == 0 ? feed().getFluidInTank(0) : steam().getFluidInTank(0);
+            }
+            @Override public int getTankCapacity(int tank) {
+                return tank == 0 ? waterTank.getMaxFill() : steamTank.getMaxFill();
+            }
+            @Override public boolean isFluidValid(int tank, @org.jetbrains.annotations.NotNull net.minecraftforge.fluids.FluidStack stack) {
+                return tank == 0 && feed().isFluidValid(0, stack);
+            }
+            @Override public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+                return feed().fill(resource, action);
+            }
+            @Override public @org.jetbrains.annotations.NotNull net.minecraftforge.fluids.FluidStack drain(
+                    net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+                return steam().drain(resource, action);
+            }
+            @Override public @org.jetbrains.annotations.NotNull net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+                return steam().drain(maxDrain, action);
+            }
+        };
+    }
+    *///?}
+
     /**
      * {@code cyceCompressor}: each stage swaps the tank to the next steam type and divides the
      * contents by ten, and wrapping back round from ultra-hot multiplies by a thousand instead
@@ -375,5 +411,24 @@ public class RBMKBoilerBlockEntity extends RBMKColumnBlockEntity
         waterTank.readFromNBT(tag, "water");
         steamTank.readFromNBT(tag, "steam");
         ventDelay = tag.getInt("ventDelay");
+    }
+
+    // ── Redstone-over-Radio (1:1 TileEntityRBMKBoiler) ──
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+                PREFIX_VALUE + "feed",
+                PREFIX_VALUE + "steam",
+                PREFIX_VALUE + "consumption"
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "feed").equals(name))        return "" + this.waterTank.getFill();
+        if ((PREFIX_VALUE + "steam").equals(name))       return "" + this.steamTank.getFill();
+        if ((PREFIX_VALUE + "consumption").equals(name)) return "" + this.lastConsumption;
+        return null;
     }
 }

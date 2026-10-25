@@ -6,36 +6,23 @@ import java.util.List;
 import java.util.Locale;
 
 import com.hbm_m.blockentity.machines.MachineOilburnerBlockEntity;
+import com.hbm_m.inventory.fluid.FluidType;
 import com.hbm_m.inventory.fluid.trait.FT_Flammable;
 import com.hbm_m.inventory.menu.MachineOilburnerMenu;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.network.ToggleOilburnerC2SPacket;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Inventory;
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
 
 /**
- * Порт {@code GUIOilburner} (1.7.10 Original). Также используется вариантом
- * {@code oilburner_hp} ({@code gui_oilburner_hp.png}, выбирается по блоку BE).
- *
- * <p>Порт 1:1: тепловая колонна (116,17..69), пламя при isOn (70,54) 35×14,
- * иконка огня (79,34) 18×18 при isOn + есть топливо и FT_Flammable, бак
- * (44,17) 16×52, кнопка вкл/выкл (80,54) 16×14 → {@link ToggleOilburnerC2SPacket}
- * (оригинальный NBTControlPacket "toggle"), тултипы горения "N mB/t" / "N TU/t".
+ * Port of {@code GUIOilburner} (1.7.10 Original). Also used for the {@code oilburner_hp} variant
+ * (uses {@code gui_oilburner_hp.png}, chosen by looking at which block the block entity belongs to).
+ * Ein Klick auf den Schalter (80,54) schickt wie im Original ein {@code NBTControlPacket "toggle"}.
  */
-@OnlyIn(Dist.CLIENT)
 public class GUIMachineOilburner extends GuiInfoScreen<MachineOilburnerMenu> {
 
     private static final ResourceLocation TEXTURE =
@@ -60,9 +47,10 @@ public class GUIMachineOilburner extends GuiInfoScreen<MachineOilburnerMenu> {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(texture, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
+        // тайл может отсутствовать в реплее Flashback
+        if (oilburner == null) return;
 
-        // Heat column, ported 1:1 from GUIOilburner:
-        // drawTexturedModalRect(guiLeft + 116, guiTop + 69 - i, 194, 52 - i, 16, i), i = heat*52/max.
+        // Heat bar (right side tank-style indicator), ported 1:1 from GUIOilburner.
         int heat = oilburner.getHeatStored();
         int maxHeat = oilburner.getMaxHeatStored();
         int i = maxHeat > 0 ? heat * 52 / maxHeat : 0;
@@ -70,19 +58,30 @@ public class GUIMachineOilburner extends GuiInfoScreen<MachineOilburnerMenu> {
             guiGraphics.blit(texture, this.leftPos + 116, this.topPos + 69 - i, 194, 52 - i, 16, i);
         }
 
-        // Flame overlay while switched on + fire icon when it can actually burn.
-        if (oilburner.isOn()) {
+        if (oilburner.isBurning()) {
             guiGraphics.blit(texture, this.leftPos + 70, this.topPos + 54, 210, 0, 35, 14);
 
-            FT_Flammable trait = com.hbm_m.inventory.fluid.FluidType.getTrait(oilburner.getOilTank().getTankType(), FT_Flammable.class);
-            if (oilburner.getOilTank().getFill() > 0 && trait != null) {
+            FT_Flammable trait = FluidType.getTrait(oilburner.getOilTank().getTankType(), FT_Flammable.class);
+            if (oilburner.getOilTank().getFluidAmountMb() > 0 && trait != null) {
                 guiGraphics.blit(texture, this.leftPos + 79, this.topPos + 34, 176, 0, 18, 18);
             }
         }
 
-        // Oil tank fluid render, ported from diFurnace.tank.renderTank(guiLeft + 44, guiTop + 69, zLevel, 16, 52)
-        // (в порте renderTank принимает верхний левый угол: y = 69 - 52 = 17).
+        // Oil tank fluid render, ported from diFurnace.tank.renderTank(...).
         oilburner.getOilTank().renderTank(guiGraphics, this.leftPos + 44, this.topPos + 17, 16, 52);
+    }
+
+    @Override
+    public boolean mouseClicked(double x, double y, int i) {
+        if (oilburner != null && leftPos + 80 <= x && leftPos + 80 + 16 > x && topPos + 54 < y && topPos + 54 + 14 >= y) {
+            if (this.minecraft != null) this.minecraft.getSoundManager().play(
+                    net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            net.minecraft.nbt.CompoundTag data = new net.minecraft.nbt.CompoundTag();
+            data.putBoolean("toggle", true);
+            com.hbm_m.network.NBTControlPacket.sendToServer(oilburner.getBlockPos(), data);
+            return true;
+        }
+        return super.mouseClicked(x, y, i);
     }
 
     @Override
@@ -98,48 +97,32 @@ public class GUIMachineOilburner extends GuiInfoScreen<MachineOilburnerMenu> {
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
         if (oilburner != null) {
-            // Heat column tooltip.
-            int heat = oilburner.getHeatStored();
-            int maxHeat = oilburner.getMaxHeatStored();
-            List<Component> heatTooltip = new ArrayList<>();
-            heatTooltip.add(Component.literal(
-                    String.format(Locale.US, "%,d", Math.min(heat, maxHeat)) + " / " + String.format(Locale.US, "%,d", maxHeat) + " TU"));
+        int heat = oilburner.getHeatStored();
+        int maxHeat = oilburner.getMaxHeatStored();
+        List<Component> heatTooltip = new ArrayList<>();
+        heatTooltip.add(Component.literal(
+                String.format(Locale.US, "%,d", Math.min(heat, maxHeat)) + " / " + String.format(Locale.US, "%,d", maxHeat) + " TU"));
+        // GuiInfoScreen erwartet relative Koordinaten
+        drawCustomInfoStat(guiGraphics, mouseX, mouseY,
+                116, 17, 16, 52,
+                mouseX, mouseY, heatTooltip.toArray(new Component[0]));
+
+        FT_Flammable trait = FluidType.getTrait(oilburner.getOilTank().getTankType(), FT_Flammable.class);
+        if (trait != null) {
+            int setting = oilburner.getSetting();
+            List<Component> burnTooltip = new ArrayList<>();
+            burnTooltip.add(Component.literal(setting + " mB/t"));
+            burnTooltip.add(Component.literal(
+                    String.format(Locale.US, "%,d", (int) (trait.getHeatEnergy() / 1000L) * setting) + " TU/t"));
             drawCustomInfoStat(guiGraphics, mouseX, mouseY,
-                    this.leftPos + 116, this.topPos + 17, 16, 52,
-                    mouseX, mouseY, heatTooltip.toArray(new Component[0]));
+                    79, 34, 18, 18,
+                    mouseX, mouseY, burnTooltip.toArray(new Component[0]));
+        }
 
-            // Burn info tooltip: "setting mB/t" / "(heatEnergy/1000)*setting TU/t".
-            FT_Flammable trait = com.hbm_m.inventory.fluid.FluidType.getTrait(oilburner.getOilTank().getTankType(), FT_Flammable.class);
-            if (trait != null) {
-                int setting = oilburner.getSetting();
-                List<Component> burnTooltip = new ArrayList<>();
-                burnTooltip.add(Component.literal(setting + " mB/t"));
-                burnTooltip.add(Component.literal(
-                        String.format(Locale.US, "%,d", (int) (trait.getHeatEnergy() / 1000L) * setting) + " TU/t"));
-                drawCustomInfoStat(guiGraphics, mouseX, mouseY,
-                        this.leftPos + 79, this.topPos + 34, 18, 18,
-                        mouseX, mouseY, burnTooltip.toArray(new Component[0]));
-            }
-
-            oilburner.getOilTank().renderTankInfo(guiGraphics, this.font, mouseX, mouseY,
-                    this.leftPos + 44, this.topPos + 17, 16, 52);
+        oilburner.getOilTank().renderTankInfo(guiGraphics, this.font, mouseX, mouseY,
+                this.leftPos + 44, this.topPos + 17, 16, 52);
         }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
-    }
-
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        // Toggle button region (80,54) 16x14 — порт mouseClicked из GUIOilburner.
-        if (this.leftPos + 80 <= mouseX && this.leftPos + 80 + 16 > mouseX
-                && this.topPos + 54 < mouseY && this.topPos + 54 + 14 >= mouseY) {
-            if (this.minecraft != null) {
-                this.minecraft.getSoundManager().play(
-                        net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
-            }
-            ToggleOilburnerC2SPacket.sendToServer(oilburner.getBlockPos());
-            return true;
-        }
-        return super.mouseClicked(mouseX, mouseY, button);
     }
 }

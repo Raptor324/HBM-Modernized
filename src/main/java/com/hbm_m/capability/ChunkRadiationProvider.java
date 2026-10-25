@@ -43,32 +43,37 @@ public class ChunkRadiationProvider implements ICapabilitySerializable<CompoundT
         return LazyOptional.empty();
     }
 
+    public void invalidate() {
+        optional.invalidate();
+    }
+
     @Override
     public CompoundTag serializeNBT() {
         IChunkRadiation radiation = getOrCreate();
-        float ambient = radiation.getAmbientRadiation();
-        if (ambient > 1e-6F) {
-            CompoundTag tag = new CompoundTag();
-            tag.putFloat(NBT_KEY_AMBIENT, ambient);
-
-            if (ModClothConfig.get().enableDebugLogging) {
-                MainRegistry.LOGGER.debug("Serializing ChunkRadiation: {}", tag);
-            }
-            return tag;
+        CompoundTag tag = new CompoundTag();
+        if (radiation instanceof ChunkRadiation cr) {
+            cr.saveNBT(tag);
+        } else if (radiation.getAmbientRadiation() > 1e-6F) {
+            tag.putFloat(ChunkRadiation.NBT_KEY_AMBIENT, radiation.getAmbientRadiation());
         }
 
-        return new CompoundTag();
+        if (ModClothConfig.get().enableDebugLogging && tag.contains(ChunkRadiation.NBT_KEY_AMBIENT)) {
+            MainRegistry.LOGGER.debug("Serializing ChunkRadiation: {}", tag);
+        }
+        return tag;
     }
 
     @Override
     public void deserializeNBT(CompoundTag nbt) {
         IChunkRadiation radiation = getOrCreate();
-        radiation.setAmbientRadiation(nbt.contains(NBT_KEY_AMBIENT, Tag.TAG_FLOAT) ? nbt.getFloat(NBT_KEY_AMBIENT) : 0F);
+        if (radiation instanceof ChunkRadiation cr) {
+            cr.loadNBT(nbt);
+        } else {
+            radiation.setAmbientRadiation(nbt != null && nbt.contains(ChunkRadiation.NBT_KEY_AMBIENT, Tag.TAG_FLOAT) ? nbt.getFloat(ChunkRadiation.NBT_KEY_AMBIENT) : 0F);
+        }
 
-        if (ModClothConfig.get().enableDebugLogging) {
-            if (nbt.size() > 0) {
-                MainRegistry.LOGGER.debug("Deserialized ChunkRadiation: ambient={}", radiation.getAmbientRadiation());
-            }
+        if (ModClothConfig.get().enableDebugLogging && nbt != null && nbt.size() > 0) {
+            MainRegistry.LOGGER.debug("Deserialized ChunkRadiation: ambient={}", radiation.getAmbientRadiation());
         }
     }
 }

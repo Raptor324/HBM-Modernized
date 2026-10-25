@@ -4,6 +4,7 @@ import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.entity.LivingEntity;
 
 import org.jetbrains.annotations.NotNull;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1-Port von {@code HbmPotion.phosphorus} (1.7.10): haelt den Traeger dauerhaft in Brand.
@@ -22,6 +23,6 @@ public class PhosphorusEffect extends HbmEffect {
 
     @Override
     protected void tick(@NotNull LivingEntity entity, int amplifier) {
-        com.hbm_m.platform.PlatformHooks.setSecondsOnFire(entity, 1);
+        com.hbm_m.platform.MobHooks.setSecondsOnFire(entity, 1);
     }
 }

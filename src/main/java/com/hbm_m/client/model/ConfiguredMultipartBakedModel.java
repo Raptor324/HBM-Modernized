@@ -140,7 +140,7 @@ public class ConfiguredMultipartBakedModel extends AbstractMultipartBakedModel i
     //?} elif neoforge {
     /*@Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
-                                    RandomSource rand, net.neoforged.neoforge.client.model.data.ModelData modelData,
+                                    RandomSource rand, net.minecraftforge.client.model.data.ModelData modelData,
                                     @Nullable RenderType renderType) {
         if (state == null) {
             return getItemQuads(side, rand);

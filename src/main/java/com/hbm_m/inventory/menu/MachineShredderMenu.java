@@ -5,7 +5,6 @@ import com.hbm_m.blockentity.machines.MachineShredderBlockEntity;
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.item.industrial.ItemBlades;
-import com.hbm_m.platform.DummyItemStackHandler;
 import com.hbm_m.platform.ModItemStackHandler;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
@@ -62,7 +61,7 @@ public class MachineShredderMenu extends AbstractContainerMenu implements ILongE
         // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
         ModItemStackHandler itemHandler = this.blockEntity != null
                 ? this.blockEntity.getInventory()
-                : new DummyItemStackHandler(BATTERY_SLOT + 1);
+                : new ModItemStackHandler.Dummy(BATTERY_SLOT + 1);
         this.machineInventory = new HandlerContainer(itemHandler);
 
         // Входные слоты (3x3 сетка) - верхняя левая часть GUI (0-8)

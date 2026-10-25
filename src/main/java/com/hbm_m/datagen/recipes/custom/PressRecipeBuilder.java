@@ -21,8 +21,8 @@ import net.minecraft.world.level.ItemLike;
 public class PressRecipeBuilder extends BaseRecipeBuilder<PressRecipeBuilder> {
 
     private final ItemStack output;
-    private JsonObject stampJson;
-    private JsonObject materialJson;
+    private com.google.gson.JsonElement stampJson;
+    private com.google.gson.JsonElement materialJson;
 
     private PressRecipeBuilder(ItemStack output) {
         this.output = output;
@@ -33,7 +33,7 @@ public class PressRecipeBuilder extends BaseRecipeBuilder<PressRecipeBuilder> {
     }
 
     public PressRecipeBuilder stamp(Ingredient ingredient) {
-        this.stampJson = ingredient.toJson().getAsJsonObject();
+        this.stampJson = ingredient.toJson();
         return this;
     }
 
@@ -54,7 +54,7 @@ public class PressRecipeBuilder extends BaseRecipeBuilder<PressRecipeBuilder> {
     }
 
     public PressRecipeBuilder material(Ingredient ingredient) {
-        this.materialJson = ingredient.toJson().getAsJsonObject();
+        this.materialJson = ingredient.toJson();
         return this;
     }
 

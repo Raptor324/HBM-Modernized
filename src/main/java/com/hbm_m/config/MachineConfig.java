@@ -6,6 +6,11 @@ package com.hbm_m.config;
  */
 public class MachineConfig {
 
+    /** Original 9.00_scaleRTGPower: RTG-/Betavoltaik-Leistung sinkt mit dem Zerfall (Lesen ueber VersatileConfig). */
+    public static boolean scaleRTGPower = false;
+    /** Original 9.01_doRTGsDecay: RTG-Pellets zerfallen ueberhaupt (wirkt auf Pelletwerte - Neustart). */
+    public static boolean doRTGsDecay = true;
+
     //=====================================================================================//
     // КЛАСС КОНФИГУРАЦИИ ДЛЯ ПЕРЕДАЧИ В BLOCKENTITY
     //=====================================================================================//

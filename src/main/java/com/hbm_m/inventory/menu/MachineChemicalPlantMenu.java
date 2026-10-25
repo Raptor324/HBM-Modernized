@@ -9,7 +9,6 @@ import com.hbm_m.api.fluids.FluidItemAccess;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.machines.MachineChemicalPlantBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
-import com.hbm_m.item.industrial.ItemBlueprintFolder;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 
 import net.minecraft.network.FriendlyByteBuf;
@@ -21,6 +20,7 @@ import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * Menu для Chemical Plant — порт с 1.7.10.
@@ -195,11 +195,11 @@ public class MachineChemicalPlantMenu extends AbstractContainerMenu {
         } else {
             if (ItemEnergyAccess.isEnergyItem(stack)) {
                 if (!moveItemStackTo(stack, 0, 1, false)) return ItemStack.EMPTY;
-            } else if (stack.getItem() instanceof ItemBlueprintFolder) {
+            } else if (stack.getItem() instanceof com.hbm_m.item.industrial.ItemBlueprints) {
                 if (!moveItemStackTo(stack, 1, 2, false)) return ItemStack.EMPTY;
             } else if (stack.getItem() instanceof ItemMachineUpgrade) {
                 if (!moveItemStackTo(stack, 2, 4, false)) return ItemStack.EMPTY;
-            } else if (FluidItemAccess.hasFluidHandler(stack)) {
+            } else if (FluidItemAccess.isFluidContainer(stack)) {
                 if (!moveItemStackTo(stack, 10, 13, false) && !moveItemStackTo(stack, 16, 19, false)) {
                     return ItemStack.EMPTY;
                 }

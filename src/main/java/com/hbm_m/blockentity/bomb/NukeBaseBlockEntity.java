@@ -22,6 +22,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.platform.StackNbt;
 
 public abstract class NukeBaseBlockEntity extends BaseHbmBlockEntity implements WorldlyContainer, Nameable, MenuProvider {
 
@@ -118,10 +119,8 @@ public abstract class NukeBaseBlockEntity extends BaseHbmBlockEntity implements 
 
     @Override
     public int[] getSlotsForFace(Direction direction) {
-        int n = slots.size();
-        int[] out = new int[n];
-        for (int i = 0; i < n; i++) out[i] = i;
-        return out;
+        // Original (alle Atombomben): getAccessibleSlotsFromSide = new int[0] - kein Trichterzugriff
+        return new int[0];
     }
 
     @Override
@@ -131,7 +130,7 @@ public abstract class NukeBaseBlockEntity extends BaseHbmBlockEntity implements 
             CompoundTag itemTag = list.getCompound(i);
             byte b = itemTag.getByte("Slot");
             if (b >= 0 && b < slots.size()) {
-                slots.set(b, PlatformHooks.itemStackOf(itemTag, registries));
+                slots.set(b, StackNbt.parse(itemTag, registries));
             }
         }
         if (tag.contains("CustomName", 8)) {
@@ -151,7 +150,7 @@ public abstract class NukeBaseBlockEntity extends BaseHbmBlockEntity implements 
             if (!stack.isEmpty()) {
                 CompoundTag itemTag = new CompoundTag();
                 itemTag.putByte("Slot", (byte) i);
-                PlatformHooks.saveItemStack(stack, itemTag, registries);
+                StackNbt.save(stack, itemTag, registries);
                 list.add(itemTag);
             }
         }

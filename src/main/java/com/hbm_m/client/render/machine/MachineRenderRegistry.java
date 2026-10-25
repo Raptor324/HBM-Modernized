@@ -1,13 +1,7 @@
 package com.hbm_m.client.render.machine;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -19,6 +13,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.platform.LoaderHooks;
 
 /**
  * Registry of all factory machine specs. Replaces per-renderer boilerplate:
@@ -135,7 +130,7 @@ public final class MachineRenderRegistry {
             if (!(entry.getValue() instanceof com.hbm_m.client.model.ConfiguredMultipartBakedModel model)) {
                 continue;
             }
-            net.minecraft.resources.ResourceLocation key = PlatformHooks.getModelId(entry.getKey());
+            net.minecraft.resources.ResourceLocation key = LoaderHooks.getModelId(entry.getKey());
             String path = key.getPath();
             MachineSpec<?> spec = path.startsWith("item/")
                     ? byItem.get(key.getNamespace() + ":" + path.substring("item/".length()))

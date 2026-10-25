@@ -1,21 +1,14 @@
 package com.hbm_m.blockentity.network;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import com.hbm_m.block.machines.MachineCraneBoxerBlock;
+import com.hbm_m.api.tile.IControlReceiver;
 import com.hbm_m.block.network.IConveyorBelt;
-import com.hbm_m.block.network.IEnterableBlock;
-import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
-import com.hbm_m.entity.conveyor.MovingConveyorItemEntity;
-import com.hbm_m.entity.conveyor.MovingConveyorPackageEntity;
 import com.hbm_m.inventory.menu.MachineCraneBoxerMenu;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -24,162 +17,98 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Crane Boxer - Port von {@code TileEntityCraneBoxer} (1.7.10 Original). 21-Slot-Puffer, der
- * Items von jeder Seite annimmt ({@link IEnterableBlock}) und sie je nach Modus zu einem
- * {@link MovingConveyorPackageEntity} buendelt: MODE_4/8/16 buendeln N volle Stacks, sobald genug
- * vorhanden sind; MODE_REDSTONE buendelt ALLE belegten Slots bei steigender Redstone-Flanke.
+ * 1:1 {@code TileEntityCraneBoxer}: packt alle zwei Ticks je nach Modus 4/8/16 volle Stapel zu einem Paket, im
+ * Redstone-Modus bei steigender Flanke alles, was da ist, und legt es auf das Band am Ausgang.
  */
-public class MachineCraneBoxerBlockEntity extends BaseMachineBlockEntity implements IEnterableBlock {
+public class MachineCraneBoxerBlockEntity extends CraneBaseBlockEntity implements IControlReceiver {
 
-    public static final int INVENTORY_SIZE = 21;
+    public static final int INVENTORY_SIZE = 7 * 3;
 
     public static final byte MODE_4 = 0;
     public static final byte MODE_8 = 1;
     public static final byte MODE_16 = 2;
     public static final byte MODE_REDSTONE = 3;
 
-    private byte mode = MODE_4;
+    public byte mode = 0;
     private boolean lastRedstone = false;
 
     public MachineCraneBoxerBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.CRANE_BOXER_BE.get(), pos, state, INVENTORY_SIZE, 0L, 0L, 0L);
+        super(ModBlockEntities.CRANE_BOXER_BE.get(), pos, state, INVENTORY_SIZE);
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineCraneBoxerBlockEntity be) {
-        if (!level.isClientSide) {
-            be.serverTick(level, pos, state);
-        }
+        be.serverTick(level, pos);
     }
 
-    private void serverTick(Level level, BlockPos pos, BlockState state) {
+    private void serverTick(Level level, BlockPos pos) {
         boolean redstone = level.hasNeighborSignal(pos);
 
-        // The original gates the whole packing on a conveyor belt sitting in front and only clears
-        // the slots once it has one. Collecting first and dropping the box on the floor when there
-        // is no belt made a boxer facing a wall spit its buffer out every other tick.
-        if (outputBelt(level, pos, state) != null) {
-            if (mode == MODE_REDSTONE) {
-                if (redstone && !lastRedstone) {
-                    packAll(level, pos, state);
+        if (mode == MODE_REDSTONE && redstone && !lastRedstone) {
+            Direction outputSide = getOutputSide();
+            IConveyorBelt belt = CraneInventoryUtil.beltAt(level, pos.relative(outputSide));
+
+            int pack = 0;
+            for (int i = 0; i < INVENTORY_SIZE; i++) {
+                if (!inventory.getStackInSlot(i).isEmpty()) pack++;
+            }
+
+            if (belt != null && pack > 0) {
+                ItemStack[] box = new ItemStack[pack];
+                for (int i = 0; i < INVENTORY_SIZE && pack > 0; i++) {
+                    if (!inventory.getStackInSlot(i).isEmpty()) {
+                        pack--;
+                        box[pack] = inventory.getStackInSlot(i).copy();
+                        inventory.setStackInSlot(i, ItemStack.EMPTY);
+                    }
                 }
-            } else if (level.getGameTime() % 2 == 0) {
-                int packSize = switch (mode) {
-                    case MODE_8 -> 8;
-                    case MODE_16 -> 16;
-                    default -> 4;
-                };
-                packFullStacks(level, pos, state, packSize);
+                CraneInventoryUtil.sendPackage(level, pos, outputSide, belt, box);
             }
         }
 
-        if (lastRedstone != redstone) {
-            lastRedstone = redstone;
-            setChanged();
-        }
-    }
+        this.lastRedstone = redstone;
 
-    /** Conveyor belt the packed box is handed to, or null when the output side has none. */
-    private IConveyorBelt outputBelt(Level level, BlockPos pos, BlockState state) {
-        BlockPos outPos = pos.relative(state.getValue(MachineCraneBoxerBlock.FACING));
-        return level.getBlockState(outPos).getBlock() instanceof IConveyorBelt belt ? belt : null;
-    }
-
-    private void packAll(Level level, BlockPos pos, BlockState state) {
-        List<ItemStack> collected = new ArrayList<>();
-        for (int i = 0; i < INVENTORY_SIZE; i++) {
-            ItemStack stack = inventory.getStackInSlot(i);
-            if (!stack.isEmpty()) {
-                collected.add(stack.copy());
-                inventory.setStackInSlot(i, ItemStack.EMPTY);
+        if (mode != MODE_REDSTONE && level.getGameTime() % 2 == 0) {
+            int pack = 1;
+            switch (mode) {
+                case MODE_4: pack = 4; break;
+                case MODE_8: pack = 8; break;
+                case MODE_16: pack = 16; break;
             }
-        }
-        if (!collected.isEmpty()) {
-            sendPackage(level, pos, state, collected.toArray(new ItemStack[0]));
-        }
-    }
 
-    private void packFullStacks(Level level, BlockPos pos, BlockState state, int packSize) {
-        int fullStacks = 0;
-        for (int i = 0; i < INVENTORY_SIZE; i++) {
-            ItemStack stack = inventory.getStackInSlot(i);
-            if (!stack.isEmpty() && stack.getCount() == stack.getMaxStackSize()) fullStacks++;
-        }
-        if (fullStacks < packSize) return;
-
-        List<ItemStack> collected = new ArrayList<>();
-        for (int i = 0; i < INVENTORY_SIZE && collected.size() < packSize; i++) {
-            ItemStack stack = inventory.getStackInSlot(i);
-            if (!stack.isEmpty() && stack.getCount() == stack.getMaxStackSize()) {
-                collected.add(stack.copy());
-                inventory.setStackInSlot(i, ItemStack.EMPTY);
+            int fullStacks = 0;
+            for (int i = 0; i < INVENTORY_SIZE; i++) {
+                ItemStack s = inventory.getStackInSlot(i);
+                if (!s.isEmpty() && s.getCount() == s.getMaxStackSize()) fullStacks++;
             }
-        }
-        sendPackage(level, pos, state, collected.toArray(new ItemStack[0]));
-    }
 
-    private void sendPackage(Level level, BlockPos pos, BlockState state, ItemStack[] box) {
-        BlockPos outPos = pos.relative(state.getValue(MachineCraneBoxerBlock.FACING));
-        IConveyorBelt belt = outputBelt(level, pos, state);
-        if (belt == null) {
-            // serverTick checks for the belt before clearing the slots, so this is unreachable from
-            // there. Guard a direct call anyway - and drop rather than void, because the caller has
-            // already emptied the buffer by the time we get here.
-            for (ItemStack stack : box) {
-                if (!stack.isEmpty()) {
-                    level.addFreshEntity(new ItemEntity(level, outPos.getX() + 0.5, outPos.getY() + 0.5, outPos.getZ() + 0.5, stack));
+            Direction outputSide = getOutputSide();
+            IConveyorBelt belt = CraneInventoryUtil.beltAt(level, pos.relative(outputSide));
+
+            if (belt != null && fullStacks >= pack) {
+                ItemStack[] box = new ItemStack[pack];
+                for (int i = 0; i < INVENTORY_SIZE && pack > 0; i++) {
+                    ItemStack s = inventory.getStackInSlot(i);
+                    if (!s.isEmpty() && s.getCount() == s.getMaxStackSize()) {
+                        pack--;
+                        box[pack] = s.copy();
+                        inventory.setStackInSlot(i, ItemStack.EMPTY);
+                    }
                 }
-            }
-            return;
-        }
-        var snap = belt.snapNewItem(level, outPos, new net.minecraft.world.phys.Vec3(
-                outPos.getX() + 0.5, outPos.getY() + 0.5, outPos.getZ() + 0.5));
-        level.addFreshEntity(MovingConveyorPackageEntity.create(level, snap.x, snap.y, snap.z, box));
-        setChanged();
-    }
-
-    // ── IEnterableBlock (item input from any side) ──────────────────────────
-
-    @Override
-    public void onItemEnter(Level level, BlockPos pos, MovingConveyorItemEntity item) {
-        if (level.isClientSide) return;
-
-        ItemStack incoming = item.getItem().copy();
-        ItemStack remainder = insertIntoBuffer(incoming);
-
-        if (remainder.isEmpty()) {
-            item.discard();
-        } else if (remainder.getCount() != incoming.getCount()) {
-            item.discard();
-            ItemEntity drop = new ItemEntity(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, remainder);
-            level.addFreshEntity(drop);
-        }
-        setChanged();
-    }
-
-    private ItemStack insertIntoBuffer(ItemStack stack) {
-        for (int i = 0; i < INVENTORY_SIZE && !stack.isEmpty(); i++) {
-            ItemStack current = inventory.getStackInSlot(i);
-            if (current.isEmpty()) {
-                inventory.setStackInSlot(i, stack);
-                return ItemStack.EMPTY;
-            } else if (com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, stack)) {
-                int space = current.getMaxStackSize() - current.getCount();
-                if (space > 0) {
-                    int toMove = Math.min(space, stack.getCount());
-                    current.grow(toMove);
-                    stack.shrink(toMove);
-                }
+                CraneInventoryUtil.sendPackage(level, pos, outputSide, belt, box);
             }
         }
-        return stack;
-    }
 
-    // ── Mode toggle ──────────────────────────────────────────────────────────
+        sendUpdateToClient();
+    }
 
     public byte getMode() { return mode; }
-    public void nextMode() { mode = (byte) ((mode + 1) % 4); setChanged(); sendUpdateToClient(); }
 
-    // ── NBT ─────────────────────────────────────────────────────────────────
+    @Override
+    public void receiveControl(CompoundTag data) {
+        if (data.contains("toggle")) this.mode = (byte) ((this.mode + 1) % 4);
+        setChanged();
+        sendUpdateToClient();
+    }
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
@@ -195,22 +124,11 @@ public class MachineCraneBoxerBlockEntity extends BaseMachineBlockEntity impleme
         lastRedstone = tag.getBoolean("lastRedstone");
     }
 
-    // ── Slot validation / Menu ─────────────────────────────────────────────
+    /** Original: Einfuegen auf allen 21 Plaetzen erlaubt, Entnahme nicht ({@code TileEntityMachineBase}). */
+    @Override protected boolean isItemValidForSlot(int slot, ItemStack stack) { return true; }
 
-    @Override
-    protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return true;
-    }
-
-    @Override
-    protected Component getDefaultName() {
-        return Component.translatable("container.hbm_m.crane_boxer");
-    }
-
-    @Override
-    public Component getDisplayName() {
-        return getDefaultName();
-    }
+    @Override protected Component getDefaultName() { return Component.translatable("container.craneBoxer"); }
+    @Override public Component getDisplayName() { return getDefaultName(); }
 
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {

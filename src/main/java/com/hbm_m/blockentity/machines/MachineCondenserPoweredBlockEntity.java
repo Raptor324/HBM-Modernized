@@ -2,7 +2,6 @@ package com.hbm_m.blockentity.machines;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.fluids.IFluidConnectorMK2;
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
@@ -11,121 +10,249 @@ import com.hbm_m.inventory.fluid.tank.FluidTank;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.phys.AABB;
 
 /**
- * Powered Condenser - Port von {@code TileEntityCondenserPowered} (1.7.10 Original, erbt von
- * {@code TileEntityCondenser}). Wandelt SPENTSTEAM 1:1 in WATER um, begrenzt durch Tankfuellstand
- * und freien Ausgangsplatz ({@code convert = min(inFill, outSpace)}); zusaetzlich gate-t die
- * gepowerte Variante die Umwandlung an {@code power >= convert*10} und zieht danach {@code
- * convert*powerConsumption(=10)} HE ab - 1:1 aus dem Original. Kein Inventar, kein GUI (das
- * Original hatte weder Container noch Screen, nur einen Hover-Tooltip - hier nicht uebernommen,
- * analog zu {@code MachineSteamEngineBlockEntity}).
+ * 1:1 {@code TileEntityCondenserPowered} (samt {@code TileEntityCondenser.updateEntity}): kondensiert Abdampf zu
+ * Wasser, soviel Eingang und freier Ausgang erlauben ({@code convert}), sofern mindestens {@code convert * 10} HE da
+ * sind; verbraucht {@code convert * powerConsumption}. Nach jeder Umwandlung laufen die Luefter eine Sekunde nach und
+ * blasen Wolken seitlich aus. Sechs Anschluesse auf Hoehe 1 (Fluid und Strom).
  */
-public class MachineCondenserPoweredBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
+public class MachineCondenserPoweredBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2,
+        com.hbm_m.api.tile.IRepairable, com.hbm_m.world.gen.nbt.INBTTileEntityTransformable, com.hbm_m.api.block.IPersistentNBT {
 
-    private static final int INPUT_TANK_CAPACITY  = 1_000_000;
-    private static final int OUTPUT_TANK_CAPACITY  = 1_000_000;
-    private static final long MAX_POWER            = 10_000_000L;
-    private static final long POWER_CONSUMPTION_PER_MB = 10L;
+    /**
+     * E9 (Fork, nur mit Space-Addon): beschaedigt (aus NBT-Strukturen oder nach einer Explosion). Steht still, bis
+     * mit dem Schweissbrenner repariert. Ohne Addon wird das Feld nie gesetzt.
+     */
+    public boolean damaged;
+    public net.minecraft.world.level.Explosion lastExplosion;
 
-    private final FluidTank spentSteamTank = new FluidTank(ModFluids.SPENTSTEAM.getSource(), INPUT_TANK_CAPACITY);
-    private final FluidTank waterTank      = new FluidTank(ModFluids.WATER.getSource(), OUTPUT_TANK_CAPACITY);
+    /* KONFIGURIERBAR (Original IConfigurableMachine "condenserPowered") */
+    public static long maxPower = 10_000_000;
+    public static int inputTankSizeP = 1_000_000;
+    public static int outputTankSizeP = 1_000_000;
+    public static int powerConsumption = 10;
 
-    private int throughput = 0;
+    public final FluidTank[] tanks = new FluidTank[] {
+            new FluidTank(ModFluids.SPENTSTEAM.getSource(), inputTankSizeP),
+            new FluidTank(ModFluids.WATER.getSource(), outputTankSizeP)
+    };
+
+    public int age = 0;
+    public int waterTimer = 0;
+    protected int throughput;
+
+    public float spin;
+    public float lastSpin;
 
     public MachineCondenserPoweredBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.CONDENSER_POWERED_BE.get(), pos, state, 0, MAX_POWER, MAX_POWER, 0L);
+        super(ModBlockEntities.CONDENSER_POWERED_BE.get(), pos, state, 0, maxPower, maxPower, 0L);
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineCondenserPoweredBlockEntity be) {
-        if (level.isClientSide()) return;
-        be.serverTick(level, pos);
+        if (level instanceof ServerLevel serverLevel) be.serverTick(serverLevel);
+        else be.clientTick(level, pos);
     }
 
-    private void serverTick(Level level, BlockPos pos) {
-        ensureNetworkInitialized();
+    private Direction dir() {
+        BlockState state = getBlockState();
+        return state.hasProperty(com.hbm_m.block.machines.DummyableMachineBlock.FACING)
+                ? state.getValue(com.hbm_m.block.machines.DummyableMachineBlock.FACING) : Direction.NORTH;
+    }
 
-        // trySubscribe — раз в 20 тиков (регистрация, идемпотентно). tryProvide — каждый тик:
-        // его вторая ветка — прямой пуш воды в соседний приёмник, гейт делит пропускную
-        // способность выдачи. Fill-проверка пропускает зонд, пока бак воды пуст.
-        boolean subscribeDue = level.getGameTime() % 20 == 0;
-        for (Direction dir : Direction.values()) {
-            BlockPos neighborPos = pos.relative(dir);
-            if (waterTank.getFill() > 0) {
-                tryProvide(waterTank, level, neighborPos, dir);
-            }
-            if (!subscribeDue) continue;
-            BlockEntity neighborBe = level.getBlockEntity(neighborPos);
-            if (neighborBe instanceof IFluidConnectorMK2) {
-                trySubscribe(spentSteamTank, level, neighborPos, dir);
-            }
+    private void serverTick(ServerLevel world) {
+
+        // E9: Space TileEntityCondenserPowered - beschaedigt steht alles still
+        if (damaged) return;
+
+        age++;
+        if (age >= 2) {
+            age = 0;
         }
 
-        int convert = Math.min(spentSteamTank.getFluidAmountMb(), waterTank.getCapacityMb() - waterTank.getFluidAmountMb());
-        throughput = convert;
+        if (this.waterTimer > 0)
+            this.waterTimer--;
 
-        boolean dirty = false;
-        if (convert > 0 && getEnergyStored() >= convert * POWER_CONSUMPTION_PER_MB) {
-            spentSteamTank.drainMb(convert);
-            waterTank.fillMb(ModFluids.WATER.getSource(), convert);
-            setEnergyStored(Math.max(0L, getEnergyStored() - convert * POWER_CONSUMPTION_PER_MB));
-            dirty = true;
+        int convert = Math.min(tanks[0].getFill(), tanks[1].getMaxFill() - tanks[1].getFill());
+        this.throughput = convert;
+
+        if (extraCondition(convert)) {
+            tanks[0].setFill(tanks[0].getFill() - convert);
+
+            if (convert > 0)
+                this.waterTimer = 20;
+
+            // NTM Space: vacuumOptimised = true -> nur der Tom-Feuersturm laesst verdampfen (ohne Space-Addon nie)
+            if (com.hbm_m.api.space.SpaceApi.condenserEvaporates(world, worldPosition, true)) {
+                tanks[1].setFill(tanks[1].getFill() - convert);
+            } else {
+                tanks[1].setFill(tanks[1].getFill() + convert);
+            }
+            postConvert(convert);
         }
 
-        if (dirty) {
-            setChanged();
-            sendUpdateToClient();
+        for (DirPos con : getConPos()) {
+            this.trySubscribe(this.tanks[0].getTankType(), world, con.pos, con.dir);
+            this.trySubscribe(world, con.pos.getX(), con.pos.getY(), con.pos.getZ(), con.dir);
+        }
+        for (DirPos con : getConPos()) {
+            this.tryProvide(this.tanks[1], world, con.pos, con.dir);
+        }
+
+        long lo = (long) throughput | (((long) waterTimer) << 16) | (damaged ? 1L << 31 : 0L);
+        long hi = (long) tanks[0].getFill() | (((long) tanks[1].getFill()) << 32);
+        syncIfStateChanged(lo, hi);
+    }
+
+    private void clientTick(Level world, BlockPos pos) {
+
+        this.lastSpin = this.spin;
+
+        if (this.waterTimer > 0) {
+            this.spin += 30F;
+
+            if (this.spin >= 360F) {
+                this.spin -= 360F;
+                this.lastSpin -= 360F;
+            }
+
+            if (world.getGameTime() % 4 == 0) {
+                Direction dir = dir();
+                world.addParticle(ParticleTypes.CLOUD, pos.getX() + 0.5 + dir.getStepX() * 1.5, pos.getY() + 1.5, pos.getZ() + 0.5 + dir.getStepZ() * 1.5, dir.getStepX() * 0.1, 0, dir.getStepZ() * 0.1);
+                world.addParticle(ParticleTypes.CLOUD, pos.getX() + 0.5 - dir.getStepX() * 1.5, pos.getY() + 1.5, pos.getZ() + 0.5 - dir.getStepZ() * 1.5, dir.getStepX() * -0.1, 0, dir.getStepZ() * -0.1);
+            }
         }
     }
 
-    // ==================== IFluidUserMK2 / MK2-Netz ====================
+    public boolean extraCondition(int convert) {
+        return energy >= convert * 10L;
+    }
 
-    @Override
-    public FluidTank[] getAllTanks() { return new FluidTank[] { spentSteamTank, waterTank }; }
+    public void postConvert(int convert) {
+        this.energy -= (long) convert * powerConsumption;
+        if (this.energy < 0) this.energy = 0;
+    }
 
-    @Override
-    public FluidTank[] getSendingTanks() { return new FluidTank[] { waterTank }; }
+    /** Anschluss samt Richtung (Original {@code DirPos}). */
+    private record DirPos(BlockPos pos, Direction dir) { }
 
-    @Override
-    public FluidTank[] getReceivingTanks() { return new FluidTank[] { spentSteamTank }; }
+    public DirPos[] getConPos() {
+        Direction dir = dir();
+        Direction rot = dir.getClockWise(); // Original: dir.getRotation(UP)
+        BlockPos p = worldPosition.above();
+
+        return new DirPos[] {
+                new DirPos(p.relative(rot, 4), rot),
+                new DirPos(p.relative(rot, -4), rot.getOpposite()),
+                new DirPos(p.relative(dir, 2).relative(rot, -1), dir),
+                new DirPos(p.relative(dir, 2).relative(rot, 1), dir),
+                new DirPos(p.relative(dir, -2).relative(rot, -1), dir.getOpposite()),
+                new DirPos(p.relative(dir, -2).relative(rot, 1), dir.getOpposite())
+        };
+    }
+
+    // ==================== Fluid ====================
+
+    @Override public FluidTank[] getAllTanks() { return tanks; }
+    @Override public FluidTank[] getSendingTanks() { return new FluidTank[] { tanks[1] }; }
+    @Override public FluidTank[] getReceivingTanks() { return new FluidTank[] { tanks[0] }; }
 
     @Override
     public boolean isLoaded() {
         return level != null && !isRemoved() && level.isLoaded(worldPosition);
     }
 
-    @Override
-    public boolean canConnect(Fluid fluid, Direction fromDir) {
+    public int getThroughput() { return throughput; }
+
+        @Override
+    public boolean canConnect(net.minecraft.world.level.material.Fluid fluid, Direction fromDir) {
         return fromDir != null;
     }
+
+    public FluidTank getSpentSteamTank() { return tanks[0]; }
+    public FluidTank getWaterTank()      { return tanks[1]; }
 
     // ==================== NBT ====================
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
-        spentSteamTank.writeToNBT(tag, "tank_spentsteam");
-        waterTank.writeToNBT(tag, "tank_water");
+        tanks[0].writeToNBT(tag, "water");
+        tanks[1].writeToNBT(tag, "steam");
+        tag.putByte("waterTimer", (byte) waterTimer);
+        if (damaged) tag.putBoolean("damaged", true);
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        spentSteamTank.readFromNBT(tag, "tank_spentsteam");
-        waterTank.readFromNBT(tag, "tank_water");
+        if (tag.contains("water")) tanks[0].readFromNBT(tag, "water");
+        else if (tag.contains("tank_spentsteam")) tanks[0].readFromNBT(tag, "tank_spentsteam");
+        if (tag.contains("steam")) tanks[1].readFromNBT(tag, "steam");
+        else if (tag.contains("tank_water")) tanks[1].readFromNBT(tag, "tank_water");
+        waterTimer = tag.getByte("waterTimer");
+        damaged = tag.getBoolean("damaged");
     }
 
-    // ==================== GETTERS / MENU ====================
+    // ==================== E9: Beschaedigung / Reparatur (Space-Fork) ====================
+
+    @Override
+    public boolean isDamaged() { return damaged; }
+
+    private final java.util.List<RepairStack> repair = new java.util.ArrayList<>();
+
+    @Override
+    public java.util.List<RepairStack> getRepairMaterials() {
+        if (!repair.isEmpty()) return repair;
+        repair.add(new RepairStack(net.minecraft.world.item.crafting.Ingredient.of(com.hbm_m.item.material.ModMaterialItems.item(com.hbm_m.item.material.ModMaterials.STEEL, com.hbm_m.item.material.MaterialShape.PLATE_WELDED)), 4));
+        repair.add(new RepairStack(net.minecraft.world.item.crafting.Ingredient.of(com.hbm_m.item.ModItems.PIPE_STEEL.get()), 12));
+        repair.add(new RepairStack(net.minecraft.world.item.crafting.Ingredient.of(com.hbm_m.item.material.ModMaterialItems.item(com.hbm_m.item.material.ModMaterials.TCALLOY, com.hbm_m.item.material.MaterialShape.PLATE_WELDED), com.hbm_m.item.material.ModMaterialItems.item(com.hbm_m.item.material.ModMaterials.CDALLOY, com.hbm_m.item.material.MaterialShape.PLATE_WELDED)), 2));
+        return repair;
+    }
+
+    @Override
+    public void repair() {
+        damaged = false;
+        long lo = (long) throughput | (((long) waterTimer) << 16) | (damaged ? 1L << 31 : 0L);
+        long hi = (long) tanks[0].getFill() | (((long) tanks[1].getFill()) << 32);
+        syncIfStateChanged(lo, hi);
+    }
+
+    @Override
+    public void tryExtinguish(Level world, BlockPos pos, EnumExtinguishType type) { }
+
+    /** Space: aus NBT-Strukturen immer beschaedigt - nur mit Addon. */
+    @Override
+    public void transformTE(net.minecraft.world.level.LevelAccessor world, int coordBaseMode) {
+        if (com.hbm_m.api.space.SpaceApi.forkActive()) damaged = true;
+    }
+
+    /** Space {@code writeNBT}: nur der Schaden wandert in den Drop. */
+    @Override
+    public void writeNBT(CompoundTag nbt) {
+        if (damaged) nbt.putBoolean("damaged", true);
+    }
+
+    /** Space {@code onBlockExploded}: erster Treffer beschaedigt. */
+    public void markDamaged() {
+        damaged = true;
+        long lo = (long) throughput | (((long) waterTimer) << 16) | (damaged ? 1L << 31 : 0L);
+        long hi = (long) tanks[0].getFill() | (((long) tanks[1].getFill()) << 32);
+        syncIfStateChanged(lo, hi);
+    }
+
+    // ==================== Sonstiges ====================
 
     @Override
     protected Component getDefaultName() {
@@ -139,7 +266,7 @@ public class MachineCondenserPoweredBlockEntity extends BaseMachineBlockEntity i
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return false; // Kein Inventar - siehe Klassenkommentar.
+        return false;
     }
 
     @Nullable
@@ -148,7 +275,14 @@ public class MachineCondenserPoweredBlockEntity extends BaseMachineBlockEntity i
         return null; // Kein GUI im Original.
     }
 
-    public FluidTank getSpentSteamTank() { return spentSteamTank; }
-    public FluidTank getWaterTank()      { return waterTank; }
-    public int getThroughput()           { return throughput; }
+    private AABB bb = null;
+
+    //? if forge {
+    @Override
+    //?}
+    public AABB getRenderBoundingBox() {
+        if (bb == null) bb = new AABB(worldPosition.getX() - 3, worldPosition.getY(), worldPosition.getZ() - 3,
+                worldPosition.getX() + 4, worldPosition.getY() + 3, worldPosition.getZ() + 4);
+        return bb;
+    }
 }

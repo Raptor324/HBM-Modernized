@@ -113,6 +113,16 @@ public class RBMKDebrisRadiatingBlock extends Block {
             double dmgLen = Math.max(len, RANGE * 0.05D);
             float dose = (float) (rads / (dmgLen * dmgLen));
             ContaminationUtil.contaminate(e, HazardType.RADIATION, ContaminationType.CREATIVE, dose);
+
+            // 1.7.10 RBMKDebrisRadiating.radiate: ein Marshmallow in der Hand roestet naeher als 10 Bloecke
+            // mit 1 % pro Durchlauf (Meta 1 = eigener Gegenstand marshmallow_roasted)
+            if (e instanceof net.minecraft.world.entity.player.Player p && len < 10) {
+                net.minecraft.world.item.ItemStack held = p.getMainHandItem();
+                if (held.is(com.hbm_m.item.ModItems.MARSHMALLOW.get()) && p.getRandom().nextInt(100) == 0) {
+                    p.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND,
+                            new net.minecraft.world.item.ItemStack(com.hbm_m.item.ModItems.MARSHMALLOW_ROASTED.get(), held.getCount()));
+                }
+            }
         }
     }
 

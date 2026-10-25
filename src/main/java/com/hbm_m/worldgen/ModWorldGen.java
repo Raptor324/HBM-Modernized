@@ -21,11 +21,48 @@ public class ModWorldGen {
     //? if forge {
     public static final net.minecraftforge.registries.DeferredRegister<net.minecraftforge.common.world.BiomeModifier> BIOME_MODIFIERS =
             net.minecraftforge.registries.DeferredRegister.create(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIERS, RefStrings.MODID);
+    /** Forge 1.20.1 hat kein forge:add_carvers → eigener Typ hbm_m:add_carvers (siehe forge/biome_modifier/add_ntm_terrain.json). */
+    public static final net.minecraftforge.registries.DeferredRegister<com.mojang.serialization.Codec<? extends net.minecraftforge.common.world.BiomeModifier>> BIOME_MODIFIER_SERIALIZERS =
+            net.minecraftforge.registries.DeferredRegister.create(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIER_SERIALIZERS, RefStrings.MODID);
+    public static final net.minecraftforge.registries.RegistryObject<com.mojang.serialization.Codec<AddCarversBiomeModifier>> ADD_CARVERS =
+            BIOME_MODIFIER_SERIALIZERS.register("add_carvers", () -> AddCarversBiomeModifier.CODEC);
     //?}
 
     public static final DeferredRegister<Feature<?>> FEATURES =
             DeferredRegister.create(RefStrings.MODID, Registries.FEATURE);
 
+
+    /** R9: Weltgen-Teil von NBTStructure (Strukturtyp, Bauteil, Gitterplatzierung). */
+    public static final DeferredRegister<net.minecraft.world.level.levelgen.structure.StructureType<?>> STRUCTURE_TYPES =
+            DeferredRegister.create(RefStrings.MODID, Registries.STRUCTURE_TYPE);
+    public static final DeferredRegister<net.minecraft.world.level.levelgen.structure.pieces.StructurePieceType> STRUCTURE_PIECES =
+            DeferredRegister.create(RefStrings.MODID, Registries.STRUCTURE_PIECE);
+    public static final DeferredRegister<net.minecraft.world.level.levelgen.structure.placement.StructurePlacementType<?>> STRUCTURE_PLACEMENTS =
+            DeferredRegister.create(RefStrings.MODID, Registries.STRUCTURE_PLACEMENT);
+
+    public static final RegistrySupplier<net.minecraft.world.level.levelgen.structure.StructureType<com.hbm_m.world.gen.nbt.NBTStructureGen.GenStructure>> NTM_STRUCTURE_TYPE =
+            STRUCTURE_TYPES.register("ntm", com.hbm_m.world.gen.nbt.NBTStructureGen::structureType);
+    public static final RegistrySupplier<net.minecraft.world.level.levelgen.structure.pieces.StructurePieceType> NBT_COMPONENT =
+            STRUCTURE_PIECES.register("nbt_component", () -> (net.minecraft.world.level.levelgen.structure.pieces.StructurePieceType.ContextlessType) com.hbm_m.world.gen.nbt.NBTStructureGen.Component::new);
+    public static final RegistrySupplier<net.minecraft.world.level.levelgen.structure.placement.StructurePlacementType<com.hbm_m.world.gen.nbt.NBTStructureGen.GridPlacement>> NTM_GRID_PLACEMENT =
+            STRUCTURE_PLACEMENTS.register("ntm_grid", com.hbm_m.world.gen.nbt.NBTStructureGen::placementType);
+    /** R9: grosse Altbauwerke (Wuesten-Kraftwerk, Raumschiff, Dschungelverlies, Pyramide). */
+    public static final RegistrySupplier<net.minecraft.world.level.levelgen.structure.StructureType<com.hbm_m.world.gen.LegacyDungeonStructure>> LEGACY_DUNGEON_TYPE =
+            STRUCTURE_TYPES.register("legacy_dungeon", com.hbm_m.world.gen.LegacyDungeonStructure::structureType);
+    public static final RegistrySupplier<net.minecraft.world.level.levelgen.structure.pieces.StructurePieceType> LEGACY_DUNGEON_PIECE =
+            STRUCTURE_PIECES.register("legacy_dungeon", () -> (net.minecraft.world.level.levelgen.structure.pieces.StructurePieceType.ContextlessType) com.hbm_m.world.gen.LegacyDungeonStructure.Piece::new);
+
+    /** R9: 1.7.10-MapGenBase-Generatoren (Krater, Oelblasen, Grundgestein-Oel) als Carver. */
+    public static final DeferredRegister<net.minecraft.world.level.levelgen.carver.WorldCarver<?>> CARVERS =
+            DeferredRegister.create(RefStrings.MODID, Registries.CARVER);
+    public static final RegistrySupplier<net.minecraft.world.level.levelgen.carver.WorldCarver<net.minecraft.world.level.levelgen.carver.CarverConfiguration>> CRATER_CARVER =
+            CARVERS.register("crater", () -> new com.hbm_m.world.gen.terrain.MapGenCrater(net.minecraft.world.level.levelgen.carver.CarverConfiguration.CODEC.codec()));
+    public static final RegistrySupplier<net.minecraft.world.level.levelgen.carver.WorldCarver<net.minecraft.world.level.levelgen.carver.CarverConfiguration>> OIL_BUBBLE_CARVER =
+            CARVERS.register("oil_bubble", () -> new com.hbm_m.world.gen.terrain.MapGenBubble(net.minecraft.world.level.levelgen.carver.CarverConfiguration.CODEC.codec(), false));
+    public static final RegistrySupplier<net.minecraft.world.level.levelgen.carver.WorldCarver<net.minecraft.world.level.levelgen.carver.CarverConfiguration>> SAND_OIL_BUBBLE_CARVER =
+            CARVERS.register("sand_oil_bubble", () -> new com.hbm_m.world.gen.terrain.MapGenBubble(net.minecraft.world.level.levelgen.carver.CarverConfiguration.CODEC.codec(), true));
+    public static final RegistrySupplier<net.minecraft.world.level.levelgen.carver.WorldCarver<net.minecraft.world.level.levelgen.carver.CarverConfiguration>> BEDROCK_OIL_CARVER =
+            CARVERS.register("bedrock_oil", () -> new com.hbm_m.world.gen.terrain.MapGenBedrockOil(net.minecraft.world.level.levelgen.carver.CarverConfiguration.CODEC.codec()));
 
     public static final DeferredRegister<StructureProcessorType<?>> PROCESSORS =
             DeferredRegister.create(RefStrings.MODID, Registries.STRUCTURE_PROCESSOR);
@@ -70,6 +107,25 @@ public class ModWorldGen {
     /** Порт колтановых месторождений (HbmWorldGen enable528ColtanDeposit, seed-гауссовы центры). */
     public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> COLTAN_DEPOSIT =
             FEATURES.register("coltan_deposit", () -> new ColtanDepositFeature());
+
+    /** HbmWorldGen: Glyphidennester (1/hiveSpawn je Chunk). */
+    public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> GLYPHID_HIVE =
+            FEATURES.register("glyphid_hive", () -> new GlyphidHiveFeature(NoneFeatureConfiguration.CODEC));
+    /** HbmWorldGen: verrostete Landekapsel am Strand (1/capsuleStructure je Chunk). */
+    public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> SOYUZ_CAPSULE =
+            FEATURES.register("soyuz_capsule", () -> new SoyuzCapsuleFeature(NoneFeatureConfiguration.CODEC));
+    /** 1:1 BiomeDecoratorNoMansLand: Sellafit-Flecken des Bioms No Man's Land. */
+    public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> NO_MANS_LAND_SPOTS =
+            FEATURES.register("no_mans_land_spots", () -> new NoMansLandSpotsFeature(NoneFeatureConfiguration.CODEC));
+    /** R9: 1:1 Ereignis-Generatoren aus MainRegistry (Gneisschiefer, Erzhoehlen, Erzlagen). */
+    public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> HBM_STRATA =
+            FEATURES.register("hbm_strata", () -> new HbmWorldGenFeature(NoneFeatureConfiguration.CODEC, true));
+    /** R9: 1:1 HbmWorldGen (IWorldGenerator). */
+    public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> HBM_WORLDGEN =
+            FEATURES.register("hbm_worldgen", () -> new HbmWorldGenFeature(NoneFeatureConfiguration.CODEC, false));
+
+    public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> LANTERN_BEHEMOTH =
+            FEATURES.register("lantern_behemoth", () -> new LanternBehemothFeature(NoneFeatureConfiguration.CODEC));
 
     /** Порт MapGenBubble (каменные нефтяные месторождения). */
     public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> OIL_DEPOSIT =
@@ -157,12 +213,18 @@ public class ModWorldGen {
     public static void register() {
         FEATURES.register();
         PROCESSORS.register();
+        STRUCTURE_TYPES.register();
+        STRUCTURE_PIECES.register();
+        STRUCTURE_PLACEMENTS.register();
+        CARVERS.register();
+        com.hbm_m.world.gen.component.ComponentTypes.register();
     }
 
     //? if forge {
     /** Регистрация worldgen DeferredRegister на Forge mod event bus (как в старом {@code MainRegistry}). */
     public static void register(net.minecraftforge.eventbus.api.IEventBus modEventBus) {
         BIOME_MODIFIERS.register(modEventBus);
+        BIOME_MODIFIER_SERIALIZERS.register(modEventBus);
         register();
     }
     //?}

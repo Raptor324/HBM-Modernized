@@ -15,13 +15,17 @@ import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.neoforged.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.api.distmarker.OnlyIn;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
-@EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+/^*
+ * NeoForge-only подписчик слоёв силовой брони. Зеркалирует ClientPowerArmorRenderForge:
+ * навешивает T51/AJR/AJRO/Bismuth/DNT, OBJ-броню, аксессуары, противогаз и hazmat-слои.
+ ^/
+@EventBusSubscriber(value = Dist.CLIENT)
 @OnlyIn(Dist.CLIENT)
 public final class ClientPowerArmorRenderNeoForge {
 
@@ -85,6 +89,9 @@ public final class ClientPowerArmorRenderNeoForge {
         raw.addLayer(new AJROPowerArmorLayer(raw));
         raw.addLayer(new BismuthPowerArmorLayer(raw));
         raw.addLayer(new DNTPowerArmorLayer(raw));
+        // wie ClientPowerArmorRenderForge: OBJ-Ruestungen und Zubehoer (Brille, Hut, Umhaenge ...)
+        raw.addLayer(new com.hbm_m.client.render.armor.ObjArmorLayer(raw));
+        raw.addLayer(new com.hbm_m.client.render.armor.ArmorAccessoryLayer(raw));
         raw.addLayer(new GasMaskLayer(raw));
         // Костюмы химзащиты - по слою на окрас (общая геометрия, разные текстуры).
         for (com.hbm_m.item.hazmat.HazmatArmorItem.Variant variant : com.hbm_m.item.hazmat.HazmatArmorItem.Variant.values()) {

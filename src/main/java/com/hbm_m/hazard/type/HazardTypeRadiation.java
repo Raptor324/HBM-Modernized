@@ -1,6 +1,8 @@
 package com.hbm_m.hazard.type;
 
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.ToDoubleFunction;
 
 import com.hbm_m.config.GeneralConfig;
 import com.hbm_m.hazard.modifier.HazardModifier;
@@ -19,6 +21,26 @@ import net.minecraft.world.item.ItemStack;
 
 public class HazardTypeRadiation extends HazardTypeBase {
 
+    /** Space-API (W-GR-1): stapelabhaengige Zusatzpegel, s. {@link #registerExtraLevel}. */
+    private static final List<ToDoubleFunction<ItemStack>> EXTRA_LEVELS = new CopyOnWriteArrayList<>();
+
+    /**
+     * Space-API (W-GR-1): Zusatzpegel je Stapel, der nach der Stapelmultiplikation (Wirkung) bzw. nach den Modifikatoren
+     * (Tooltip) addiert wird - Original NTM Space {@code level += stack.nbt.getFloat(HazardTypeNeutron.NEUTRON_KEY)}
+     * (neutronenaktivierte Gegenstaende strahlen zusaetzlich). Ohne Anmeldung (kein Addon) unveraendert.
+     */
+    public static void registerExtraLevel(ToDoubleFunction<ItemStack> extra) {
+        EXTRA_LEVELS.add(extra);
+    }
+
+    /** Summe aller angemeldeten Zusatzpegel (0 ohne Anmeldung). */
+    public static float extraLevel(ItemStack stack) {
+        if (EXTRA_LEVELS.isEmpty() || stack.isEmpty()) return 0F;
+        double sum = 0D;
+        for (ToDoubleFunction<ItemStack> f : EXTRA_LEVELS) sum += f.applyAsDouble(stack);
+        return (float) sum;
+    }
+
     /**
      * 1:1 с {@link com.hbm.hazard.type.HazardTypeRadiation#onUpdate} (1.7.10).
      * <p>Без reacher: {@code rad = level / 20F} (линейно).<br>
@@ -33,6 +55,7 @@ public class HazardTypeRadiation extends HazardTypeBase {
         boolean reacher = target instanceof Player player && hasReacher(player);
 
         level *= stack.getCount();
+        level += extraLevel(stack);
 
         if (level > 0) {
             float rad = level / 20F;
@@ -69,6 +92,7 @@ public class HazardTypeRadiation extends HazardTypeBase {
     public void addHazardInformation(Player player, List<Component> list, float level, ItemStack stack,
             List<HazardModifier> modifiers) {
         level = HazardModifier.evalAllModifiers(stack, player, level, modifiers);
+        level += extraLevel(stack);
 
         if (level < 1e-5F) {
             return;

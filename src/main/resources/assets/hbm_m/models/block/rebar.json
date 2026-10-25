@@ -1,63 +1,393 @@
 {
-  "loader": "forge:composite",
+  "parent": "block/block",
   "textures": {
+    "rebar": "hbm_m:block/rebar",
     "particle": "hbm_m:block/rebar"
   },
-  "children": {
-    "rebar_model": {
-      "loader": "forge:obj",
-      "model": "hbm_m:models/block/rebar.obj",
-      "flip_v": true,
-      "textures": {
-        "default": "hbm_m:block/rebar"
+  "elements": [
+    {
+      "from": [
+        3,
+        -0.016,
+        3
+      ],
+      "to": [
+        5,
+        16.016,
+        5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#rebar"
+        },
+        "south": {
+          "texture": "#rebar"
+        },
+        "east": {
+          "texture": "#rebar"
+        },
+        "west": {
+          "texture": "#rebar"
+        },
+        "up": {
+          "texture": "#rebar"
+        },
+        "down": {
+          "texture": "#rebar"
+        }
+      }
+    },
+    {
+      "from": [
+        3,
+        -0.016,
+        11
+      ],
+      "to": [
+        5,
+        16.016,
+        13
+      ],
+      "faces": {
+        "north": {
+          "texture": "#rebar"
+        },
+        "south": {
+          "texture": "#rebar"
+        },
+        "east": {
+          "texture": "#rebar"
+        },
+        "west": {
+          "texture": "#rebar"
+        },
+        "up": {
+          "texture": "#rebar"
+        },
+        "down": {
+          "texture": "#rebar"
+        }
+      }
+    },
+    {
+      "from": [
+        11,
+        -0.016,
+        3
+      ],
+      "to": [
+        13,
+        16.016,
+        5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#rebar"
+        },
+        "south": {
+          "texture": "#rebar"
+        },
+        "east": {
+          "texture": "#rebar"
+        },
+        "west": {
+          "texture": "#rebar"
+        },
+        "up": {
+          "texture": "#rebar"
+        },
+        "down": {
+          "texture": "#rebar"
+        }
+      }
+    },
+    {
+      "from": [
+        11,
+        -0.016,
+        11
+      ],
+      "to": [
+        13,
+        16.016,
+        13
+      ],
+      "faces": {
+        "north": {
+          "texture": "#rebar"
+        },
+        "south": {
+          "texture": "#rebar"
+        },
+        "east": {
+          "texture": "#rebar"
+        },
+        "west": {
+          "texture": "#rebar"
+        },
+        "up": {
+          "texture": "#rebar"
+        },
+        "down": {
+          "texture": "#rebar"
+        }
+      }
+    },
+    {
+      "from": [
+        -0.016,
+        3,
+        3
+      ],
+      "to": [
+        16.016,
+        5,
+        5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#rebar"
+        },
+        "south": {
+          "texture": "#rebar"
+        },
+        "east": {
+          "texture": "#rebar"
+        },
+        "west": {
+          "texture": "#rebar"
+        },
+        "up": {
+          "texture": "#rebar"
+        },
+        "down": {
+          "texture": "#rebar"
+        }
+      }
+    },
+    {
+      "from": [
+        -0.016,
+        3,
+        11
+      ],
+      "to": [
+        16.016,
+        5,
+        13
+      ],
+      "faces": {
+        "north": {
+          "texture": "#rebar"
+        },
+        "south": {
+          "texture": "#rebar"
+        },
+        "east": {
+          "texture": "#rebar"
+        },
+        "west": {
+          "texture": "#rebar"
+        },
+        "up": {
+          "texture": "#rebar"
+        },
+        "down": {
+          "texture": "#rebar"
+        }
+      }
+    },
+    {
+      "from": [
+        -0.016,
+        11,
+        3
+      ],
+      "to": [
+        16.016,
+        13,
+        5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#rebar"
+        },
+        "south": {
+          "texture": "#rebar"
+        },
+        "east": {
+          "texture": "#rebar"
+        },
+        "west": {
+          "texture": "#rebar"
+        },
+        "up": {
+          "texture": "#rebar"
+        },
+        "down": {
+          "texture": "#rebar"
+        }
+      }
+    },
+    {
+      "from": [
+        -0.016,
+        11,
+        11
+      ],
+      "to": [
+        16.016,
+        13,
+        13
+      ],
+      "faces": {
+        "north": {
+          "texture": "#rebar"
+        },
+        "south": {
+          "texture": "#rebar"
+        },
+        "east": {
+          "texture": "#rebar"
+        },
+        "west": {
+          "texture": "#rebar"
+        },
+        "up": {
+          "texture": "#rebar"
+        },
+        "down": {
+          "texture": "#rebar"
+        }
+      }
+    },
+    {
+      "from": [
+        3,
+        3,
+        -0.016
+      ],
+      "to": [
+        5,
+        5,
+        16.016
+      ],
+      "faces": {
+        "north": {
+          "texture": "#rebar"
+        },
+        "south": {
+          "texture": "#rebar"
+        },
+        "east": {
+          "texture": "#rebar"
+        },
+        "west": {
+          "texture": "#rebar"
+        },
+        "up": {
+          "texture": "#rebar"
+        },
+        "down": {
+          "texture": "#rebar"
+        }
+      }
+    },
+    {
+      "from": [
+        3,
+        11,
+        -0.016
+      ],
+      "to": [
+        5,
+        13,
+        16.016
+      ],
+      "faces": {
+        "north": {
+          "texture": "#rebar"
+        },
+        "south": {
+          "texture": "#rebar"
+        },
+        "east": {
+          "texture": "#rebar"
+        },
+        "west": {
+          "texture": "#rebar"
+        },
+        "up": {
+          "texture": "#rebar"
+        },
+        "down": {
+          "texture": "#rebar"
+        }
+      }
+    },
+    {
+      "from": [
+        11,
+        3,
+        -0.016
+      ],
+      "to": [
+        13,
+        5,
+        16.016
+      ],
+      "faces": {
+        "north": {
+          "texture": "#rebar"
+        },
+        "south": {
+          "texture": "#rebar"
+        },
+        "east": {
+          "texture": "#rebar"
+        },
+        "west": {
+          "texture": "#rebar"
+        },
+        "up": {
+          "texture": "#rebar"
+        },
+        "down": {
+          "texture": "#rebar"
+        }
+      }
+    },
+    {
+      "from": [
+        11,
+        11,
+        -0.016
+      ],
+      "to": [
+        13,
+        13,
+        16.016
+      ],
+      "faces": {
+        "north": {
+          "texture": "#rebar"
+        },
+        "south": {
+          "texture": "#rebar"
+        },
+        "east": {
+          "texture": "#rebar"
+        },
+        "west": {
+          "texture": "#rebar"
+        },
+        "up": {
+          "texture": "#rebar"
+        },
+        "down": {
+          "texture": "#rebar"
+        }
       }
     }
-  },
-  "transform": {
-    "translation": [0.50, 0.0, -1.5],
-    "rotation": [0, 90, 0],
-    "scale": 1.0
-  },
-  "display": {
-    "thirdperson_righthand": {
-      "rotation": [ 75, 180, 0 ],
-      "translation": [ 0.00, 2.50, 0.00 ],
-      "scale": [ 0.38, 0.38, 0.38 ]
-    },
-    "thirdperson_lefthand": {
-      "rotation": [ 75, 180, 0 ],
-      "translation": [ 0.00, 2.50, 0.00 ],
-      "scale": [ 0.38, 0.38, 0.38 ]
-    },
-    "firstperson_righthand": {
-      "rotation": [ 0, 134, 0 ],
-      "translation": [ 1.00, 2.00, 0.00 ],
-      "scale": [ 0.30, 0.30, 0.30 ]
-    },
-    "firstperson_lefthand": {
-      "rotation": [ 0, 180, 0 ],
-      "translation": [ 2.00, -1.00, 0.00 ],
-      "scale": [ 0.40, 0.40, 0.40 ]
-    },
-    "gui": {
-      "rotation": [ 30, 225, 0 ],
-      "translation": [ 0.00, 0.00, 0.00 ],
-      "scale": [ 0.60, 0.60, 0.60 ]
-    },
-    "head": {
-      "rotation": [ 0, 180, 0 ],
-      "translation": [ 0.00, 13.00, 7.00 ],
-      "scale": [ 1.00, 1.00, 1.00 ]
-    },
-    "fixed": {
-      "rotation": [ 0, 0, 0 ],
-      "translation": [ 0.00, 0.00, 0.00 ],
-      "scale": [ 0.50, 0.50, 0.50 ]
-    },
-    "ground": {
-      "rotation": [ 0, 0, 0 ],
-      "translation": [ 0.00, 3.00, 0.00 ],
-      "scale": [ 0.35, 0.35, 0.35 ]
-    }
-  }
+  ]
 }

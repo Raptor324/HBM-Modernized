@@ -15,14 +15,8 @@ import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 @OnlyIn(Dist.CLIENT)
 public class OverlayRadiationVisuals {
     private static final RandomSource random = RandomSource.create();
@@ -88,6 +82,7 @@ public class OverlayRadiationVisuals {
         }
     }
 
+    // neo-pendant: ClientSetup.onRegisterGuiOverlays (neoforge-Zweig)
     //? if forge {
     public static final IGuiOverlay RADIATION_PIXELS_OVERLAY = (gui, guiGraphics, partialTick, width, height) ->
             render(guiGraphics, partialTick, width, height);

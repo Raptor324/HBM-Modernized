@@ -45,6 +45,17 @@ public enum LargeNukeType {
     public String id() { return id; }
     public String containerKey() { return containerKey; }
     public int slots() { return slots; }
+    /** Original {@code getInventoryStackLimit}: Little Boy 64, alle anderen 1. */
+    public int stackLimit() { return this == BOY ? 64 : 1; }
+    /** Original {@code desc.gui.nuke*.desc} (Info-Panel links). */
+    public String descKey() {
+        return switch (this) {
+            case GADGET -> "desc.gui.nukeGadget.desc";
+            case BOY -> "desc.gui.nukeBoy.desc";
+            case MIKE -> "desc.gui.nukeMike.desc";
+            case TSAR -> "desc.gui.nukeTsar.desc";
+        };
+    }
     public int guiWidth() { return guiWidth; }
     public int guiHeight() { return guiHeight; }
     public int inventoryX() { return inventoryX; }
@@ -81,6 +92,7 @@ public enum LargeNukeType {
 
     /** Заряд собран до минимально боеспособного состояния. */
     public boolean isReady(ItemStack[] items) {
+        if (items.length < slots) return false; // Ersatzpfad ohne Inventar
         return switch (this) {
             case GADGET -> items[0].is(ModItems.GADGET_WIREING.get())
                     && lenses(items, ModItems.FAT_MAN_EXPLOSIVE.get())
@@ -115,7 +127,8 @@ public enum LargeNukeType {
         return switch (this) {
             case GADGET -> cfg.gadgetRadius;
             case BOY -> cfg.boyRadius;
-            case MIKE -> cfg.mikeRadius;
+            // 1:1 NukeMike: ohne Mike-Kern/Deuterium/Kuehlung (nur isReady) zuendet sie mit Fat-Man-Radius
+            case MIKE -> isFilled(items) ? cfg.mikeRadius : cfg.manRadius;
             // Особенность оригинала: без tsar_core взрыв по радиусу Fat Man
             case TSAR -> isFilled(items) ? cfg.tsarRadius : cfg.manRadius;
         };

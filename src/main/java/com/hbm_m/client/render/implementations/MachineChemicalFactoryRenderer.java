@@ -45,30 +45,12 @@ public final class MachineChemicalFactoryRenderer {
     private static final float FAN2_PIVOT_X = -0.5f;
     private static final float FAN_PIVOT_Z = 0.5f;
 
-    // Fans spin -45 deg/tick: -360 deg over an 8-tick cycle (ANIM TRACK v2).
-    private static final MachineSpec.Track FAN_SPIN_TRACK = MachineSpec.Track.linear(-360f, 0f);
-
-    /** The fan segment runs while anim advanced this tick (didProcess on an active lane). */
-    private static boolean isFanSpinning(MachineChemicalFactoryBlockEntity be) {
-        return be.getAnim(1.0F) != be.getAnim(0.0F);
-    }
-
     public static void register() {
         MachineRenderers.machine("chemfactory", ModBlockEntities.CHEMICAL_FACTORY_BE.get(),
                 MachineChemicalFactoryBlockEntity.class)
             .part("Base")
-            .trackedChainPart("Fan1",
-                    be -> MachineChemicalFactoryRenderer.isFanSpinning(be) ? 1L : 0L,
-                    be -> 0.0,
-                    be -> isFanSpinning(be) ? 8.0 : 0.0,
-                    MachineSpec.JointNode.rotate(0f, 1f, 0f, FAN1_PIVOT_X, 0f, FAN_PIVOT_Z,
-                            (be, pt, gt, out, off) -> true, FAN_SPIN_TRACK))
-            .trackedChainPart("Fan2",
-                    be -> MachineChemicalFactoryRenderer.isFanSpinning(be) ? 1L : 0L,
-                    be -> 0.0,
-                    be -> isFanSpinning(be) ? 8.0 : 0.0,
-                    MachineSpec.JointNode.rotate(0f, 1f, 0f, FAN2_PIVOT_X, 0f, FAN_PIVOT_Z,
-                            (be, pt, gt, out, off) -> true, FAN_SPIN_TRACK))
+            .rotateY("Fan1", FAN1_PIVOT_X, FAN_PIVOT_Z, (be, pt) -> -be.getAnim(pt) * 45.0)
+            .rotateY("Fan2", FAN2_PIVOT_X, FAN_PIVOT_Z, (be, pt) -> -be.getAnim(pt) * 45.0)
             .conditionalPart("Frame", be -> {
                 var state = be.getBlockState();
                 return state.hasProperty(MachineChemicalFactoryBlock.FRAME)

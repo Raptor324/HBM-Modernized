@@ -1,6 +1,6 @@
 package com.hbm_m.inventory.menu;
 
-import com.hbm_m.blockentity.machines.FireboxBaseBlockEntity;
+import com.hbm_m.blockentity.machines.MachineFireboxBaseBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.module.ModuleBurnTime;
 
@@ -14,6 +14,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
 import org.jetbrains.annotations.Nullable;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * Общая логика контейнера печей — порт {@code ContainerFirebox} (1.7.10):
@@ -22,16 +23,18 @@ import org.jetbrains.annotations.Nullable;
  *
  * @param <BE> конкретный BlockEntity печи
  */
-public abstract class FireboxBaseMenu<BE extends FireboxBaseBlockEntity> extends AbstractContainerMenu {
+public abstract class FireboxBaseMenu<BE extends MachineFireboxBaseBlockEntity> extends AbstractContainerMenu {
 
-    public static final int MACHINE_SLOT_COUNT = FireboxBaseBlockEntity.FUEL_SLOTS;
+    public static final int MACHINE_SLOT_COUNT = MachineFireboxBaseBlockEntity.INVENTORY_SIZE;
 
-    public static final int IDX_BURN_TIME     = 0;
-    public static final int IDX_MAX_BURN_TIME = 1;
+    // Index order of MachineFireboxBaseBlockEntity.data (heat first, wasOn sixth).
+    public static final int IDX_HEAT_ENERGY   = 0;
+    public static final int IDX_MAX_HEAT      = 1;
     public static final int IDX_BURN_HEAT     = 2;
-    public static final int IDX_HEAT_ENERGY   = 3;
-    public static final int IDX_MAX_HEAT      = 4;
-    public static final int DATA_SLOTS = 5;
+    public static final int IDX_BURN_TIME     = 3;
+    public static final int IDX_MAX_BURN_TIME = 4;
+    public static final int IDX_WAS_ON        = 5;
+    public static final int DATA_SLOTS = 6;
 
     public final BE blockEntity;
     protected final ContainerData data;
@@ -44,9 +47,8 @@ public abstract class FireboxBaseMenu<BE extends FireboxBaseBlockEntity> extends
         addDataSlots(data);
 
         // Порт ContainerFirebox: openInventory в конструкторе — дверца открывается
-        if (!playerInventory.player.level().isClientSide()) {
-            be.playerOpened();
-        }
+        // (openInventory сам гвардит серверную сторону)
+        be.openInventory();
 
         var container = new ModItemStackHandlerContainer(be.getInventory(), be::setChanged);
         for (int i = 0; i < MACHINE_SLOT_COUNT; i++) {
@@ -66,9 +68,7 @@ public abstract class FireboxBaseMenu<BE extends FireboxBaseBlockEntity> extends
     @Override
     public void removed(Player player) {
         super.removed(player);
-        if (!player.level().isClientSide()) {
-            blockEntity.playerClosed();
-        }
+        blockEntity.closeInventory();
     }
 
     @Override

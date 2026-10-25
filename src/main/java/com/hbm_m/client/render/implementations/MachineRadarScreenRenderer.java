@@ -50,11 +50,7 @@ import java.util.List;
  * not drawn - the BER draws the whole body.
  */
 
-//? if < 1.21.1 {
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} else {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
 public class MachineRadarScreenRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineRadarScreenBlockEntity> {
 
     private static final ResourceLocation RADAR_TEX =

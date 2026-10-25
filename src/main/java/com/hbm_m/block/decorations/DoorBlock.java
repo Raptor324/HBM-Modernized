@@ -42,7 +42,23 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-public class DoorBlock extends BaseEntityBlock implements IMultiblockController {
+public class DoorBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.api.bomb.IBomb {
+
+    /** audit10: 1:1 {@code BlockDoorGeneric.explode} - Zuender schalten fernsteuerbare Tueren um. */
+    @Override
+    public BombReturnCode explode(Level world, BlockPos pos) {
+        BlockEntity be = world.getBlockEntity(pos);
+        if (be instanceof DoorBlockEntity door && !door.isController() && door.getControllerPos() != null) {
+            be = world.getBlockEntity(door.getControllerPos());
+        }
+        if (!(be instanceof DoorBlockEntity door)) return BombReturnCode.ERROR_INCOMPATIBLE;
+        DoorDecl decl = door.getDoorDecl();
+        if (decl == null || !decl.remoteControllable()) return BombReturnCode.ERROR_INCOMPATIBLE;
+        if (door.tryToggle((Player) null)) {
+            return BombReturnCode.TRIGGERED;
+        }
+        return BombReturnCode.ERROR_INCOMPATIBLE;
+    }
 
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final EnumProperty<PartRole> PART_ROLE = EnumProperty.create("part_role", PartRole.class);
@@ -204,22 +220,20 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
     private InteractionResult hbmOnUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         BlockEntity be = level.getBlockEntity(pos);
         DoorBlockEntity doorBE = be instanceof DoorBlockEntity d ? d.getController() : null;
+        if (doorBE == null) return InteractionResult.PASS;
 
-        // Паритет 1.7.10 (BlockDoorGeneric.onBlockActivated: "return !playerIn.isSneaking()"):
-        // shift-клик НЕ переключает дверь. PASS отдаёт ход useOn предметов —
-        // отвёртка откроет GUI скинов, key_kit/padlock — свою логику.
-        if (player.isShiftKeyDown()) {
-            return InteractionResult.PASS;
-        }
-        // Отвёртка зарезервирована под GUI скинов, НО на запертой двери оригинал пропускал
-        // клик в tryToggle → canAccess → tryPick (взлом отвёрткой в руке + отмычка в инвентаре)
-        if (hasScrewdriver(player) && !(doorBE != null && doorBE.isLocked())) {
+        boolean pickAttempt = !player.isSecondaryUseActive() && (
+                player.getMainHandItem().is(ModItems.SCREWDRIVER.get())
+                || player.getMainHandItem().is(ModItems.SCREWDRIVER_DESH.get()));
+        if (doorBE.isLocked() && pickAttempt) {
+            doorBE.tryToggle(player);
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
-        if (!level.isClientSide && doorBE != null) {
-            doorBE.tryToggle(player); // Порт TileEntityDoorGeneric.tryToggle: замок + canAccess + взлом
+
+        if (doorBE.tryToggle(player)) {
+            return InteractionResult.sidedSuccess(level.isClientSide);
         }
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        return InteractionResult.PASS;
     }
 
     private static boolean hasScrewdriver(Player player) {
@@ -390,7 +404,7 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock())) {
             if (level.isClientSide) {
-                com.hbm_m.platform.RenderHooks.onMultiblockPartRemoved(level, pos, pos);
+                com.hbm_m.platform.CommonRenderHooks.onMultiblockPartRemoved(level, pos, pos);
             } else {
                 Direction facing = state.getValue(FACING);
                 structureHelper.destroyStructure(level, pos, facing);

@@ -12,16 +12,18 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
+/**
+ * 1:1 {@code ContainerMachineAnnihilator}: Muell, Fluidkennung, sechs Auszahlungsslots, Monitor, Auszahlungsanfrage
+ * und deren Ausgabe.
+ */
 public class MachineAnnihilatorMenu extends AbstractContainerMenu {
 
-    private final MachineAnnihilatorBlockEntity blockEntity;
+    // SLOT_COUNT ist in der BE privat; abgeleitet aus dem hoechsten oeffentlichen Slot-Index (SLOT_PAYOUT=10) => 11.
+    private static final int MACHINE_SLOT_COUNT = MachineAnnihilatorBlockEntity.SLOT_PAYOUT + 1;
 
-    private static final int SLOT_INPUT = MachineAnnihilatorBlockEntity.SLOT_INPUT;
-    private static final int SLOT_MONITOR = MachineAnnihilatorBlockEntity.SLOT_MONITOR;
-    private static final int MACHINE_SLOT_COUNT = 2;
-    private static final int PLAYER_INV_START = MACHINE_SLOT_COUNT;
-    private static final int PLAYER_INV_END = MACHINE_SLOT_COUNT + 36;
+    private final MachineAnnihilatorBlockEntity blockEntity;
 
     public MachineAnnihilatorMenu(int id, Inventory inventory, FriendlyByteBuf extraData) {
         this(id, inventory, getBlockEntity(inventory, extraData));
@@ -31,22 +33,40 @@ public class MachineAnnihilatorMenu extends AbstractContainerMenu {
         super(ModMenuTypes.ANNIHILATOR_MENU.get(), id);
         this.blockEntity = blockEntity;
 
-        var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
+        var container = new ModItemStackHandlerContainer(
+                blockEntity != null ? blockEntity.getInventory() : new ModItemStackHandler.Dummy(MACHINE_SLOT_COUNT),
+                blockEntity != null ? blockEntity::setChanged : null);
 
-        this.addSlot(new Slot(container, SLOT_INPUT, 26, 36));
-        this.addSlot(new Slot(container, SLOT_MONITOR, 134, 36));
-
-        int playerInvX = 8;
-        int playerInvY = 104;
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(inventory, col + row * 9 + 9, playerInvX + col * 18, playerInvY + row * 18));
+        // Muell
+        this.addSlot(new Slot(container, 0, 17, 45));
+        // Fluidkennung
+        this.addSlot(new Slot(container, 1, 35, 45));
+        // Ausgabe (addOutputSlots 2, 80, 36, 2 Reihen, 3 Spalten)
+        for (int row = 0; row < 2; row++) {
+            for (int col = 0; col < 3; col++) {
+                this.addSlot(new OutputSlot(container, 2 + row * 3 + col, 80 + col * 18, 36 + row * 18));
             }
         }
-        int hotbarY = playerInvY + 58;
-        for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(inventory, col, playerInvX + col * 18, hotbarY));
+        // Monitor
+        this.addSlot(new Slot(container, MachineAnnihilatorBlockEntity.SLOT_MONITOR, 152, 18));
+        // Auszahlungsanfrage
+        this.addSlot(new Slot(container, MachineAnnihilatorBlockEntity.SLOT_REQUEST, 152, 62));
+        // Auszahlung
+        this.addSlot(new OutputSlot(container, MachineAnnihilatorBlockEntity.SLOT_PAYOUT, 152, 80));
+
+        for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 9; col++) {
+                this.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 126 + row * 18));
+            }
         }
+        for (int col = 0; col < 9; col++) {
+            this.addSlot(new Slot(inventory, col, 8 + col * 18, 126 + 58));
+        }
+    }
+
+    private static final class OutputSlot extends Slot {
+        OutputSlot(net.minecraft.world.Container container, int slot, int x, int y) { super(container, slot, x, y); }
+        @Override public boolean mayPlace(ItemStack stack) { return false; }
     }
 
     private static MachineAnnihilatorBlockEntity getBlockEntity(Inventory inventory, FriendlyByteBuf buffer) {
@@ -55,6 +75,7 @@ public class MachineAnnihilatorMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineAnnihilatorBlockEntity annihilator) {
             return annihilator;
         }
+        if (inventory.player.level().isClientSide) return null;
         throw new MenuBlockEntityMissingException("No MachineAnnihilatorBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":annihilator_menu");
     }
 
@@ -77,12 +98,14 @@ public class MachineAnnihilatorMenu extends AbstractContainerMenu {
             result = slotStack.copy();
 
             if (index < MACHINE_SLOT_COUNT) {
-                if (!this.moveItemStackTo(slotStack, PLAYER_INV_START, PLAYER_INV_END, true)) {
+                if (!this.moveItemStackTo(slotStack, MACHINE_SLOT_COUNT, this.slots.size(), true)) {
                     return ItemStack.EMPTY;
                 }
             } else {
-                if (!this.moveItemStackTo(slotStack, SLOT_INPUT, SLOT_INPUT + 1, false)) {
-                    return ItemStack.EMPTY;
+                if (slotStack.getItem() instanceof com.hbm_m.interfaces.IItemFluidIdentifier) {
+                    if (!this.moveItemStackTo(slotStack, MachineAnnihilatorBlockEntity.SLOT_FLUID_ID, MachineAnnihilatorBlockEntity.SLOT_FLUID_ID + 1, false)) return ItemStack.EMPTY;
+                } else {
+                    if (!this.moveItemStackTo(slotStack, MachineAnnihilatorBlockEntity.SLOT_INPUT, MachineAnnihilatorBlockEntity.SLOT_INPUT + 1, false)) return ItemStack.EMPTY;
                 }
             }
 

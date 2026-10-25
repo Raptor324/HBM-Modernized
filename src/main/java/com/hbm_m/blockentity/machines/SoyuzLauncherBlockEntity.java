@@ -43,7 +43,7 @@ import net.minecraft.world.phys.Vec3;
  * simulation - that legacy subsystem ({@code com.hbm.saveddata.satellites.Satellite})
  * doesn't exist anywhere in this port. Launching just consumes the satellite chip.
  */
-public class SoyuzLauncherBlockEntity extends BaseMachineBlockEntity {
+public class SoyuzLauncherBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.fluids.IFluidStandardReceiverMK2 {
 
     public static final int SLOT_ROCKET = 0;
     public static final int SLOT_DESIGNATOR = 1;
@@ -73,7 +73,6 @@ public class SoyuzLauncherBlockEntity extends BaseMachineBlockEntity {
 
     private int mode = MODE_SATELLITE;
     private boolean starting = false;
-    private boolean wasStarting = false;
     private int countdown = MAX_COUNTDOWN;
 
     /** Cached slot snapshot for the tank load loops; rebuilt whenever slot contents change. */
@@ -113,9 +112,20 @@ public class SoyuzLauncherBlockEntity extends BaseMachineBlockEntity {
             return;
         }
 
+        // Original: alle 20 Ticks Strom und beide Treibstoffe an den Feldern rund um den Tisch abonnieren
+        if (level.getGameTime() % 20 == 0 && level instanceof ServerLevel server) {
+            for (Object[] con : be.getConPos()) {
+                BlockPos at = (BlockPos) con[0];
+                net.minecraft.core.Direction dir = (net.minecraft.core.Direction) con[1];
+                be.trySubscribe(server, at.getX(), at.getY(), at.getZ(), dir);
+                be.trySubscribe(be.tanks[0].getTankType(), server, at, dir);
+                be.trySubscribe(be.tanks[1].getTankType(), server, at, dir);
+            }
+        }
+
         // One slot snapshot per tick, shared by both tank loads and the write-back;
         // rebuilt each tick it is needed so external slot changes are always seen.
-        be.cachedSlots = be.buildSlotArray();
+        be.cachedSlots = be.slotArray();
         boolean fuelChanged = be.tanks[0].loadTank(SLOT_FUEL_IN, SLOT_FUEL_OUT, be.cachedSlots);
         boolean oxyChanged = be.tanks[1].loadTank(SLOT_OXIDIZER_IN, SLOT_OXIDIZER_OUT, be.cachedSlots);
         be.writeBackSlots();
@@ -127,19 +137,13 @@ public class SoyuzLauncherBlockEntity extends BaseMachineBlockEntity {
             be.countdown = MAX_COUNTDOWN;
             be.starting = false;
         } else if (be.countdown > 0) {
-            if (be.starting && !be.wasStarting) {
-                // Ignition sequence just began - one distinct "ready" cue, separate from
-                // the periodic countdown beeps and well before the takeoff sound.
-                level.playSound(null, pos, ModSounds.SOYUZ_READY.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
-            }
             be.countdown--;
             if (be.countdown % 100 == 0 && be.countdown > 0) {
-                level.playSound(null, pos, ModSounds.SOYUZ_ALARM.get(), SoundSource.BLOCKS, 1.0F, 1.1F);
+                level.playSound(null, pos, com.hbm_m.sound.HbmSoundsNT.get("hbm:alarm.hatch"), SoundSource.BLOCKS, 100F, 1.1F);
             }
         } else {
             be.liftOff();
         }
-        be.wasStarting = be.starting;
 
         if (fuelChanged || oxyChanged) {
             be.setChanged();
@@ -159,10 +163,38 @@ public class SoyuzLauncherBlockEntity extends BaseMachineBlockEntity {
     }
 
     private long slotFingerprint(int slot) {
-        return com.hbm_m.platform.PlatformHooks.stackFingerprint(inventory.getStackInSlot(slot));
+        return com.hbm_m.platform.StackNbt.fingerprint(inventory.getStackInSlot(slot));
     }
 
-    private ItemStack[] buildSlotArray() {
+    /** Original updateEntity (Client): Bereitschafts-Schleifenton waehrend des Countdowns, Rauch beim Abheben. */
+    public static void clientTick(Level level, BlockPos pos, BlockState state, SoyuzLauncherBlockEntity be) {
+        com.hbm_m.sound.ClientSoundBootstrap.updateSound(be, be.starting && be.countdown > 0, be::createAudioLoop);
+
+        java.util.List<SoyuzEntity> entities = level.getEntitiesOfClass(SoyuzEntity.class,
+                new AABB(pos.getX() - 0.5, pos.getY(), pos.getZ() - 0.5, pos.getX() + 1.5, pos.getY() + 10, pos.getZ() + 1.5));
+
+        if (!entities.isEmpty()) {
+            CompoundTag data = new CompoundTag();
+            data.putString("type", "smoke");
+            data.putString("mode", "shockRand");
+            data.putInt("count", 50);
+            data.putDouble("strength", level.random.nextGaussian() * 3 + 6);
+            data.putDouble("posX", pos.getX() + 0.5);
+            data.putDouble("posY", pos.getY() - 3);
+            data.putDouble("posZ", pos.getZ() + 0.5);
+            com.hbm_m.particle.helper.ParticleEffectClient.effectNT(data);
+        }
+    }
+
+    private Object createAudioLoop() {
+        try {
+            return Class.forName("com.hbm_m.client.sound.SoyuzReadyLoopSoundFactory").getMethod("create", SoyuzLauncherBlockEntity.class).invoke(null, this);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private ItemStack[] slotArray() {
         ItemStack[] slots = new ItemStack[SLOT_COUNT];
         for (int i = 0; i < SLOT_COUNT; i++) {
             slots[i] = inventory.getStackInSlot(i);
@@ -172,7 +204,7 @@ public class SoyuzLauncherBlockEntity extends BaseMachineBlockEntity {
 
     private void writeBackSlots() {
         // loadTank() mutates the snapshot array in place for the in/out slot pair; push both back.
-        ItemStack[] slots = this.cachedSlots != null ? this.cachedSlots : buildSlotArray();
+        ItemStack[] slots = this.cachedSlots != null ? this.cachedSlots : slotArray();
         inventory.setStackInSlot(SLOT_FUEL_IN, slots[SLOT_FUEL_IN]);
         inventory.setStackInSlot(SLOT_FUEL_OUT, slots[SLOT_FUEL_OUT]);
         inventory.setStackInSlot(SLOT_OXIDIZER_IN, slots[SLOT_OXIDIZER_IN]);
@@ -229,8 +261,9 @@ public class SoyuzLauncherBlockEntity extends BaseMachineBlockEntity {
             return;
         }
         soyuz.initLaunch(worldPosition.getX() + 0.5, worldPosition.getY() + 1, worldPosition.getZ() + 0.5, mode);
+        soyuz.setSkin(getRocketType());
         level.addFreshEntity(soyuz);
-        level.playSound(null, worldPosition, ModSounds.SOYUZ_TAKEOFF.get(), SoundSource.BLOCKS, 1.0F, 1.1F);
+        level.playSound(null, worldPosition, com.hbm_m.sound.HbmSoundsNT.get("hbm:entity.soyuzTakeoff"), SoundSource.BLOCKS, 100F, 1.1F);
 
         tanks[0].drainMb(fuelReq);
         tanks[1].drainMb(fuelReq);
@@ -317,13 +350,14 @@ public class SoyuzLauncherBlockEntity extends BaseMachineBlockEntity {
         return (getEnergyStored() * scale) / MAX_POWER;
     }
 
-    /** The launcher accepts the existing decorative Soyuz rocket item (no separate "missile_soyuz" item). */
-    public static net.minecraft.world.item.Item rocketItem() {
-        return ModBlocks.DECO_SOYUZ_ROCKET.get().asItem();
+    /** Original {@code hasRocket}: eine missile_soyuz (jeder Skin) im Raketenplatz. */
+    public boolean hasRocket() {
+        return inventory.getStackInSlot(SLOT_ROCKET).getItem() instanceof com.hbm_m.item.special.ItemSoyuz;
     }
 
-    public boolean hasRocket() {
-        return inventory.getStackInSlot(SLOT_ROCKET).is(rocketItem());
+    /** Original {@code getType()}: Skin der Rakete oder -1. */
+    public int getRocketType() {
+        return com.hbm_m.item.special.ItemSoyuz.skinOf(inventory.getStackInSlot(SLOT_ROCKET));
     }
 
     /** 0 = not required (satellite mode), 1 = required but missing/not-ready, 2 = present & ready. */
@@ -377,7 +411,7 @@ public class SoyuzLauncherBlockEntity extends BaseMachineBlockEntity {
 
     @Override
     protected boolean isItemValidForSlot(int slot, @NotNull ItemStack stack) {
-        if (slot == SLOT_ROCKET) return stack.is(rocketItem());
+        if (slot == SLOT_ROCKET) return stack.getItem() instanceof com.hbm_m.item.special.ItemSoyuz;
         if (slot == SLOT_DESIGNATOR) return stack.getItem() instanceof IDesignatorItem;
         if (slot == SLOT_LANDER) return stack.is(ModItems.MISSILE_SOYUZ_LANDER.get());
         if (slot == SLOT_BATTERY) return isEnergyProviderItem(stack) || stack.getItem() instanceof ItemCreativeBattery;
@@ -392,7 +426,7 @@ public class SoyuzLauncherBlockEntity extends BaseMachineBlockEntity {
     @Override
     public AABB getRenderBoundingBox() {
         BlockPos p = this.getBlockPos();
-        return new AABB(p.getX() - 8, p.getY() - 1, p.getZ() - 8,
+        return new AABB(p.getX() - 8, p.getY() - 5, p.getZ() - 8,
                          p.getX() + 9, p.getY() + 66, p.getZ() + 9);
     }
 
@@ -415,5 +449,31 @@ public class SoyuzLauncherBlockEntity extends BaseMachineBlockEntity {
         countdown = tag.getInt("soyuz_countdown");
         tanks[0].readFromNBT(tag, "fuel");
         tanks[1].readFromNBT(tag, "oxidizer");
+    }
+
+    private java.util.List<Object[]> conPos;
+
+    /** Original {@code getConPos}: je Seite 13 Felder in Abstand 7, auf Kernhoehe und eins darunter. */
+    private java.util.List<Object[]> getConPos() {
+        if (conPos != null) return conPos;
+        conPos = new java.util.ArrayList<>();
+        for (net.minecraft.core.Direction dir : new net.minecraft.core.Direction[] {
+                net.minecraft.core.Direction.EAST, net.minecraft.core.Direction.SOUTH, net.minecraft.core.Direction.WEST, net.minecraft.core.Direction.NORTH }) {
+            net.minecraft.core.Direction rot = dir.getClockWise();
+            for (int i = -6; i <= 6; i++) {
+                BlockPos base = worldPosition.relative(dir, 7).relative(rot, i);
+                conPos.add(new Object[] { base, dir });
+                conPos.add(new Object[] { base.below(), dir });
+            }
+        }
+        return conPos;
+    }
+
+    @Override public FluidTank[] getAllTanks() { return tanks; }
+    @Override public FluidTank[] getReceivingTanks() { return tanks; }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
     }
 }

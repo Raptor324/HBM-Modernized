@@ -31,6 +31,8 @@ import net.minecraft.world.level.ChunkPos;
 
 import dev.architectury.platform.Platform;
 import dev.architectury.utils.Env;
+import com.hbm_m.platform.MobHooks;
+import com.hbm_m.platform.BlockHooks;
 
 /**
  * Crater Generator v21.0 - BIOME SYNC FIX
@@ -683,7 +685,7 @@ public class CraterGenerator {
 
                         // [ИСПРАВЛЕНИЕ]: Мягкие блоки просто удаляются, а не превращаются в камень
                         if (state.is(BlockTags.LEAVES) || state.is(BlockTags.FLOWERS) ||
-                                com.hbm_m.platform.PlatformHooks.isGrassBlock(state) || state.is(Blocks.TALL_GRASS) ||
+                                com.hbm_m.platform.BlockHooks.isShortGrass(state) || state.is(Blocks.TALL_GRASS) ||
                                 state.getCollisionShape(level, pos).isEmpty()) {
 
                             level.removeBlock(pos, false);
@@ -944,7 +946,7 @@ public class CraterGenerator {
         // Здесь мы удаляем всё, что имеет звук дерева, но НЕ является бревном/доской (например, забор)
         boolean isOtherWood = state.getSoundType() == net.minecraft.world.level.block.SoundType.WOOD;
 
-        boolean isFoliage = state.is(BlockTags.LEAVES) || state.is(BlockTags.FLOWERS) || com.hbm_m.platform.PlatformHooks.isGrassBlock(state) || state.is(Blocks.TALL_GRASS) || state.is(Blocks.VINE);
+        boolean isFoliage = state.is(BlockTags.LEAVES) || state.is(BlockTags.FLOWERS) || com.hbm_m.platform.BlockHooks.isShortGrass(state) || state.is(Blocks.TALL_GRASS) || state.is(Blocks.VINE);
         boolean isWeak = state.getCollisionShape(level, pos).isEmpty() || state.is(Blocks.SNOW) || state.is(Blocks.SNOW_BLOCK) || state.is(BlockTags.WOOL);
 
         if (isFoliage || isWeak || isOtherWood) {
@@ -996,7 +998,7 @@ public class CraterGenerator {
         } else if (state.is(Blocks.DIRT) || state.is(Blocks.COARSE_DIRT) ||
                 state.is(Blocks.ROOTED_DIRT)) {
             level.setBlock(pos, deadDirtBlock.defaultBlockState(), 3);
-        } else if (com.hbm_m.platform.PlatformHooks.isGrassBlock(state) || state.is(Blocks.TALL_GRASS) ||
+        } else if (com.hbm_m.platform.BlockHooks.isShortGrass(state) || state.is(Blocks.TALL_GRASS) ||
                 state.is(Blocks.SEAGRASS) || state.is(Blocks.TALL_SEAGRASS) ||
                 state.is(Blocks.SNOW) || state.is(Blocks.SNOW_BLOCK) ||
                 state.is(Blocks.ICE) || state.is(Blocks.FROSTED_ICE) ||
@@ -1220,15 +1222,15 @@ public class CraterGenerator {
 
                 if (distSq <= r3Sq) {
                     ent.hurt(level.damageSources().generic(), ZONE_3_DAMAGE);
-                    com.hbm_m.platform.PlatformHooks.setSecondsOnFire(ent, (int) FIRE_DURATION / 20);
+                    com.hbm_m.platform.MobHooks.setSecondsOnFire(ent, (int) FIRE_DURATION / 20);
                     applyExplosionKnockback(ent, centerPos, z3);
                 } else if (distSq <= r4Sq) {
                     ent.hurt(level.damageSources().generic(), ZONE_4_DAMAGE);
-                    com.hbm_m.platform.PlatformHooks.setSecondsOnFire(ent, (int) FIRE_DURATION / 20);
+                    com.hbm_m.platform.MobHooks.setSecondsOnFire(ent, (int) FIRE_DURATION / 20);
                     applyExplosionKnockback(ent, centerPos, z4);
                 } else if (distSq <= r5Sq) {
                     ent.hurt(level.damageSources().generic(), 500.0F);
-                    com.hbm_m.platform.PlatformHooks.setSecondsOnFire(ent, 10);
+                    com.hbm_m.platform.MobHooks.setSecondsOnFire(ent, 10);
                     applyExplosionKnockback(ent, centerPos, z5);
                 } else {
                     ent.hurt(level.damageSources().generic(), 100.0F);

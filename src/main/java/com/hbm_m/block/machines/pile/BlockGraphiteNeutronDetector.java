@@ -22,6 +22,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
+import com.hbm_m.platform.LevelHooks;
 
 /**
  * Port of NEXT {@code com.hbm.blocks.machine.pile.BlockGraphiteNeutronDetector}: the CP-1
@@ -60,7 +61,7 @@ public class BlockGraphiteNeutronDetector extends BlockGraphiteDrilledTE {
 
         level.setBlock(pos, state.setValue(WITHDRAWN, !withdrawn), 3);
 
-        PlatformHooks.playSound(
+        LevelHooks.playSound(
                 level,
                 pos.getX() + 0.5D,
                 pos.getY() + 0.5D,

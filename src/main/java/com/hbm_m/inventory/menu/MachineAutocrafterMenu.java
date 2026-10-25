@@ -13,6 +13,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 public class MachineAutocrafterMenu extends AbstractContainerMenu {
 
@@ -20,7 +21,7 @@ public class MachineAutocrafterMenu extends AbstractContainerMenu {
 
     private static final int SLOT_OUTPUT = MachineAutocrafterBlockEntity.SLOT_OUTPUT;
     private static final int SLOT_BATTERY = MachineAutocrafterBlockEntity.SLOT_BATTERY;
-    private static final int MACHINE_SLOT_COUNT = 11;
+    private static final int MACHINE_SLOT_COUNT = 21; // 9 template + preview + 9 working grid + output + battery
     private static final int PLAYER_INV_START = MACHINE_SLOT_COUNT;
     private static final int PLAYER_INV_END = MACHINE_SLOT_COUNT + 36;
 
@@ -192,7 +193,11 @@ public class MachineAutocrafterMenu extends AbstractContainerMenu {
                     if (!this.moveItemStackTo(slotStack, SLOT_BATTERY, SLOT_BATTERY + 1, false)) {
                         return ItemStack.EMPTY;
                     }
-                } else if (!this.moveItemStackTo(slotStack, 0, 9, false)) {
+                } else if (!this.moveItemStackTo(slotStack,
+                        MachineAutocrafterBlockEntity.RECIPE_START,
+                        MachineAutocrafterBlockEntity.RECIPE_START + MachineAutocrafterBlockEntity.GRID_SIZE, false)) {
+                    // Nur ins Arbeitsgitter (10-18) - die Vorlage (0-8) ist ein Geisterbild und
+                    // nimmt nichts per Shift-Klick an (siehe isItemValidForSlot im BlockEntity).
                     return ItemStack.EMPTY;
                 }
             }

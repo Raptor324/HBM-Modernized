@@ -1,13 +1,7 @@
 package com.hbm_m.compat.jei;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.GasCentrifugeRecipe;
@@ -93,7 +87,7 @@ public class GasCentrifugeJeiCategory extends JeiGenericRecipeCategory<GasCentri
                 positions[0][0] + inputXOffset, positions[0][1])
                 .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
                 .setCustomRenderer(NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
-                .addIngredient(NeoForgeTypes.FLUID_STACK, new net.neoforged.neoforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
+                .addIngredient(NeoForgeTypes.FLUID_STACK, new net.minecraftforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
         *///?}
     }
 

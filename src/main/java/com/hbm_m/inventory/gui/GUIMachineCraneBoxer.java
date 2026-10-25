@@ -1,6 +1,6 @@
 package com.hbm_m.inventory.gui;
 
-import com.hbm_m.network.CraneControlPacket;
+import com.hbm_m.network.NBTControlPacket;
 import com.hbm_m.blockentity.network.MachineCraneBoxerBlockEntity;
 import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.MachineCraneBoxerMenu;
@@ -9,17 +9,12 @@ import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 @OnlyIn(Dist.CLIENT)
 public class GUIMachineCraneBoxer extends GuiInfoScreen<MachineCraneBoxerMenu> {
 
@@ -77,7 +72,10 @@ public class GUIMachineCraneBoxer extends GuiInfoScreen<MachineCraneBoxerMenu> {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (boxer != null && isHovering(151, 34, 18, 18, (int) mouseX, (int) mouseY)) {
-            CraneControlPacket.sendToServer(boxer.getBlockPos(), CraneControlPacket.BOXER_MODE, 0);
+            // TileEntityCraneBoxer.receiveControl({"toggle"}) - cycles mode = (mode + 1) % 4 (MODE_4/8/16/REDSTONE)
+            CompoundTag data = new CompoundTag();
+            data.putBoolean("toggle", true);
+            NBTControlPacket.sendToServer(boxer.getBlockPos(), data);
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);

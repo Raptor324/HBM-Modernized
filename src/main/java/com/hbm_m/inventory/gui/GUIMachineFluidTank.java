@@ -27,14 +27,8 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import dev.architectury.fluid.FluidStack;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 @OnlyIn(Dist.CLIENT)
 public class GUIMachineFluidTank extends AbstractContainerScreen<MachineFluidTankMenu> {
 
@@ -56,7 +50,7 @@ public class GUIMachineFluidTank extends AbstractContainerScreen<MachineFluidTan
      * 2=output, 3=off), совпадающая с логической после выравнивания на оригинал.
      */
     private static int modeButtonSpriteRow(int logicalMode) {
-        return logicalMode;
+        return logicalMode; // Original: Zeile = Modus
     }
 
     public GUIMachineFluidTank(MachineFluidTankMenu menu, Inventory inv, Component title) {
@@ -125,5 +119,13 @@ public class GUIMachineFluidTank extends AbstractContainerScreen<MachineFluidTan
     private boolean isHovering(int x, int y, int w, int h, int mouseX, int mouseY) {
         return mouseX >= this.leftPos + x && mouseX < this.leftPos + x + w &&
                 mouseY >= this.topPos + y && mouseY < this.topPos + y + h;
+    }
+
+    @Override
+    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        // Original drawGuiContainerForegroundLayer
+        String name = this.title.getString();
+        guiGraphics.drawString(this.font, name, 88 - this.font.width(name) / 2, 6, 4210752, false);
+        guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, 72, 4210752, false);
     }
 }

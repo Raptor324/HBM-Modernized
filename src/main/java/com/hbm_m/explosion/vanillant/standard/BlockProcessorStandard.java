@@ -11,7 +11,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -74,7 +73,7 @@ public class BlockProcessorStandard implements IBlockProcessor {
 
                     ItemStack toolWith = new ItemStack(Items.DIAMOND_PICKAXE);
                     if (dropFortune > 0) {
-                        // Хук скрывает переход Enchantment -> Holder<Enchantment> и динамический реестр 1.21.1.
+                        // Хук скрывает переход Enchantment (1.20.1) -> ResourceKey<Enchantment> (1.21.1).
                         com.hbm_m.platform.ItemHooks.setEnchantmentLevel(toolWith, level, "minecraft:fortune", dropFortune);
                     }
 

@@ -1,13 +1,7 @@
 package com.hbm_m.client.render.implementations;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
- *///?}
-
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
@@ -76,7 +70,7 @@ public class DemonLampRenderer implements BlockEntityRenderer<DemonLampBlockEnti
     private static final float CORE_HALF = 0.22F;
 
     private static final ResourceLocation WHITE_TEXTURE =
-            ResourceLocation.fromNamespaceAndPath("minecraft", "textures/misc/white.png");
+            ResourceLocation.tryParse("hbm_m:textures/misc/white.png");
 
     public DemonLampRenderer(BlockEntityRendererProvider.Context context) {}
 
@@ -90,13 +84,7 @@ public class DemonLampRenderer implements BlockEntityRenderer<DemonLampBlockEnti
 
     private static synchronized MultiBufferSource.BufferSource raysSource() {
         if (raysSource == null) {
-            //? if < 1.21.1 {
-            raysSource = new PlainBufferSource(
-                    new com.mojang.blaze3d.vertex.BufferBuilder(256));
-            //?} else {
-            /*raysSource = new PlainBufferSource(
-                    new com.mojang.blaze3d.vertex.ByteBufferBuilder(256));
-             *///?}
+            raysSource = RenderHooks.createPlainBufferSource(256);
         }
         return raysSource;
     }

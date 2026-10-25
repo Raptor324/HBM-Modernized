@@ -23,6 +23,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * Port of {@code com.hbm.entity.item.EntityMovingItem} (which extends the abstract
@@ -108,6 +109,16 @@ public class MovingConveyorItemEntity extends Entity implements ItemSupplier {
         this.level().addFreshEntity(item);
     }
 
+    /** Original: {@code onLeaveConveyor} - mit doppeltem Schwung abwerfen, 60 s Lebensdauer. */
+    private void onLeaveConveyor() {
+        this.discard();
+        Vec3 m = getDeltaMovement();
+        ItemEntity item = new ItemEntity(this.level(), getX() + m.x * 2, getY() + m.y * 2, getZ() + m.z * 2, this.getItem());
+        item.lifespan = 60 * 20;
+        item.setDeltaMovement(m.x * 2, 0.1, m.z * 2);
+        this.level().addFreshEntity(item);
+    }
+
     @Override
     public InteractionResult interact(Player player, InteractionHand hand) {
         if (!this.level().isClientSide && !this.isRemoved()) {
@@ -128,10 +139,10 @@ public class MovingConveyorItemEntity extends Entity implements ItemSupplier {
 
         // Jam safety net: if too many conveyor items pile up in one spot, blow the belt (1:1 w/ original).
         if ((this.tickCount + this.getId()) % 400 == 0) {
-            var nearby = this.level().getEntitiesOfClass(MovingConveyorItemEntity.class,
-                    this.getBoundingBox().inflate(0.125, 0.125, 0.125));
+            var nearby = this.level().getEntitiesOfClass(Entity.class, this.getBoundingBox().inflate(0.125, 0.125, 0.125),
+                    e -> e instanceof MovingConveyorItemEntity || e instanceof MovingConveyorPackageEntity);
             if (nearby.size() >= 25) {
-                for (MovingConveyorItemEntity obj : nearby) obj.discard();
+                for (Entity obj : nearby) obj.discard();
                 BlockPos pos = BlockPos.containing(getX(), getY(), getZ());
                 this.level().explode(this, getX(), getY() + 0.125, getZ(), 1.0F, Level.ExplosionInteraction.BLOCK);
                 // The original also requires the entity to be older than 400 ticks before it takes
@@ -152,7 +163,7 @@ public class MovingConveyorItemEntity extends Entity implements ItemSupplier {
                 && belt.canItemStay(this.level(), blockPos, currentPos);
 
         if (!onConveyor) {
-            knockOff();
+            onLeaveConveyor();
             return;
         }
 
@@ -167,7 +178,18 @@ public class MovingConveyorItemEntity extends Entity implements ItemSupplier {
         if (!before.equals(after)) {
             Block enteredBlock = this.level().getBlockState(after).getBlock();
             if (enteredBlock instanceof com.hbm_m.block.network.IEnterableBlock enterable) {
-                enterable.onItemEnter(this.level(), after, this);
+                // Eintrittsseite wie EntityMovingConveyorObject (nur bei genau einem Achsenschritt, sonst UNKNOWN)
+                net.minecraft.core.Direction dir = null;
+                BlockPos d = before.subtract(after);
+                if (d.distManhattan(BlockPos.ZERO) == 1) dir = net.minecraft.core.Direction.fromDelta(d.getX(), d.getY(), d.getZ());
+                if (enterable.canItemEnter(this.level(), after, dir, this)) enterable.onItemEnter(this.level(), after, this);
+            } else if (!this.level().getBlockState(after).isSolid()) {
+                // enterBlockFalling: in einen darunterliegenden Block von oben
+                BlockPos below = after.below();
+                if (this.level().getBlockState(below).getBlock() instanceof com.hbm_m.block.network.IEnterableBlock enterable
+                        && enterable.canItemEnter(this.level(), below, net.minecraft.core.Direction.UP, this)) {
+                    enterable.onItemEnter(this.level(), below, this);
+                }
             }
         }
     }
@@ -183,7 +205,7 @@ public class MovingConveyorItemEntity extends Entity implements ItemSupplier {
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {
         if (tag.contains("Item")) {
-            ItemStack stack = PlatformHooks.itemStackOf(tag.getCompound("Item"), this.level().registryAccess());
+            ItemStack stack = StackNbt.parse(tag.getCompound("Item"), this.level().registryAccess());
             if (stack.isEmpty()) {
                 this.discard();
             } else {
@@ -196,7 +218,7 @@ public class MovingConveyorItemEntity extends Entity implements ItemSupplier {
     protected void addAdditionalSaveData(CompoundTag tag) {
         ItemStack stack = getItem();
         if (!stack.isEmpty()) {
-            tag.put("Item", PlatformHooks.safeItemSave(stack, this.level().registryAccess()));
+            tag.put("Item", StackNbt.saveNew(stack, this.level().registryAccess()));
         }
     }
 

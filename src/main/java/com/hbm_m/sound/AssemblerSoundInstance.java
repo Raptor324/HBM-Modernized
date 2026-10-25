@@ -1,14 +1,8 @@
 package com.hbm_m.sound;
 
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 // Звук, воспроизводимый Ассемблером во время работы.
 // Использует AbstractTickableSoundInstance для управления воспроизведением и остановкой звука.
 

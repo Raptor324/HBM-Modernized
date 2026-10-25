@@ -1,0 +1,7 @@
+{
+ "parent": "minecraft:block/cross",
+ "textures": {
+  "cross": "hbm_m:block/stalactite_glyphid1"
+ },
+ "render_type": "minecraft:cutout"
+}

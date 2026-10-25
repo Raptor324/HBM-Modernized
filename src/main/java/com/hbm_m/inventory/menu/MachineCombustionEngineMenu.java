@@ -15,6 +15,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * Порт {@code ContainerCombustionEngine} (1.7.10): Fluid in (17,17), Fluid out =
@@ -30,7 +31,7 @@ public class MachineCombustionEngineMenu extends AbstractContainerMenu {
     private static final int SLOT_PISTON = MachineCombustionEngineBlockEntity.SLOT_PISTON;
     private static final int SLOT_BATTERY = MachineCombustionEngineBlockEntity.SLOT_BATTERY;
     private static final int SLOT_FLUID_ID = MachineCombustionEngineBlockEntity.SLOT_FLUID_ID;
-    private static final int MACHINE_SLOT_COUNT = MachineCombustionEngineBlockEntity.INVENTORY_SIZE;
+    private static final int MACHINE_SLOT_COUNT = 5;
     private static final int PLAYER_INV_START = MACHINE_SLOT_COUNT;
     private static final int PLAYER_INV_END = MACHINE_SLOT_COUNT + 36;
 
@@ -119,7 +120,7 @@ public class MachineCombustionEngineMenu extends AbstractContainerMenu {
                     if (!this.moveItemStackTo(slotStack, SLOT_FLUID_ID, SLOT_FLUID_ID + 1, false)) {
                         return ItemStack.EMPTY;
                     }
-                } else if (MachineCombustionEngineBlockEntity.isPistonSet(slotStack.getItem())) {
+                } else if (MachineCombustionEngineBlockEntity.pistonType(slotStack.getItem()) >= 0) {
                     if (!this.moveItemStackTo(slotStack, SLOT_PISTON, SLOT_PISTON + 1, false)) {
                         return ItemStack.EMPTY;
                     }

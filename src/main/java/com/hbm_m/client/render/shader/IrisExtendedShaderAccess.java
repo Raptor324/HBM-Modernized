@@ -16,15 +16,8 @@ import com.hbm_m.main.MainRegistry;
 import net.minecraft.client.renderer.ShaderInstance;
 import dev.architectury.platform.Platform;
 import org.lwjgl.opengl.GL20;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
-
 /**
  * Reflective bridge to Iris/Oculus internals that exposes the
  * {@link ShaderInstance} (an {@code ExtendedShader} when Iris is active) to be

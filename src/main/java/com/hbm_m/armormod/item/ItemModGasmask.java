@@ -32,7 +32,7 @@ public class ItemModGasmask extends ItemArmorMod implements IGasMask {
     private final boolean mono;
 
     public ItemModGasmask(Properties properties, boolean mono) {
-        super(properties.stacksTo(1), ArmorModificationHelper.helmet_only);
+        super(properties.stacksTo(1), ArmorModificationHelper.helmet_only, true, false, false, false);
         this.mono = mono;
     }
 
@@ -79,6 +79,12 @@ public class ItemModGasmask extends ItemArmorMod implements IGasMask {
                     .append(Component.literal(" (" + Math.max(0, (max - dmg) * 100 / max) + "%)"))
                     .withStyle(ChatFormatting.YELLOW));
         }
+    }
+
+    @Override
+    public void addDesc(List<Component> list, ItemStack stack, ItemStack armor) {
+        list.add(descLine(ChatFormatting.GREEN, stack, " (gas protection)"));
+        GasMaskUtil.addGasMaskTooltip(stack, list, getBlacklist());
     }
 
     /** Текстура M65-модели для рендера прицепленной маски (см. клиентский GasMaskLayer). */

@@ -20,6 +20,7 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FlowingFluid;
 
 import java.util.function.Supplier;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * Порт {@code com.hbm.blocks.fluid.VolcanicBlock} (1.7.10) — вулканическая лава
@@ -127,7 +128,7 @@ public class VolcanicLavaBlock extends LiquidBlock {
     public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
         if (!level.isClientSide && entity instanceof LivingEntity living) {
             living.hurt(level.damageSources().lava(), 4.0F);
-            com.hbm_m.platform.PlatformHooks.setSecondsOnFire(living, 15);
+            com.hbm_m.platform.MobHooks.setSecondsOnFire(living, 15);
             onEntityInsideRad(level, living);
         }
     }

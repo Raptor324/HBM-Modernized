@@ -4,7 +4,6 @@ import com.hbm_m.blockentity.machines.MachinePumpjackBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -14,8 +13,9 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
-/** Upstream shares ContainerMachineOilWell between derrick and pumpjack, so the layouts are identical. */
+/** 1:1 {@code ContainerMachineOilWell} (1.7.10) - dasselbe Slotlayout wie der Bohrturm. */
 public class MachinePumpjackMenu extends AbstractContainerMenu {
 
     private final MachinePumpjackBlockEntity blockEntity;
@@ -28,39 +28,35 @@ public class MachinePumpjackMenu extends AbstractContainerMenu {
         super(ModMenuTypes.PUMPJACK_MENU.get(), id);
         this.blockEntity = blockEntity;
 
-        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
-        // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
+        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку
         var container = new ModItemStackHandlerContainer(
-                blockEntity != null ? blockEntity.getInventory() : new DummyItemStackHandler(8),
+                blockEntity != null ? blockEntity.getInventory() : new ModItemStackHandler.Dummy(8),
                 blockEntity != null ? blockEntity::setChanged : null);
 
-        // slot 0: battery
-        this.addSlot(new Slot(container, 0, 8, 53));
-        // slot 1: oil canister input
-        this.addSlot(new Slot(container, 1, 80, 17));
-        // slot 2: oil canister output (take-only)
-        this.addSlot(new Slot(container, 2, 80, 53) {
+        // Battery
+        this.addSlot(new Slot(container, 0, 8, 58));
+        // Canister Input / Output
+        this.addSlot(new Slot(container, 1, 94, 22));
+        this.addSlot(new Slot(container, 2, 94, 58) {
             @Override public boolean mayPlace(ItemStack stack) { return false; }
         });
-        // slot 3: gas canister input
-        this.addSlot(new Slot(container, 3, 125, 17));
-        // slot 4: gas canister output (take-only)
-        this.addSlot(new Slot(container, 4, 125, 53) {
+        // Gas Input / Output
+        this.addSlot(new Slot(container, 3, 130, 22));
+        this.addSlot(new Slot(container, 4, 130, 58) {
             @Override public boolean mayPlace(ItemStack stack) { return false; }
         });
-        // slots 5-7: upgrades
-        this.addSlot(new Slot(container, 5, 152, 17));
-        this.addSlot(new Slot(container, 6, 152, 35));
-        this.addSlot(new Slot(container, 7, 152, 53));
+        // Upgrades
+        this.addSlot(new Slot(container, 5, 156, 36));
+        this.addSlot(new Slot(container, 6, 156, 54));
 
-        // player inventory
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
+                this.addSlot(new Slot(inventory, col + row * 9 + 9, 12 + col * 18, 108 + row * 18));
             }
         }
+
         for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(inventory, col, 8 + col * 18, 142));
+            this.addSlot(new Slot(inventory, col, 12 + col * 18, 166));
         }
     }
 
@@ -79,7 +75,7 @@ public class MachinePumpjackMenu extends AbstractContainerMenu {
         if (inventory.player.level().isClientSide) {
             return null;
         }
-        throw new MenuBlockEntityMissingException("No MachinePumpjackBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":pumpjack_menu");
+        throw new IllegalStateException("No MachinePumpjackBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":pumpjack_menu");
     }
 
     public MachinePumpjackBlockEntity getBlockEntity() {
@@ -88,47 +84,29 @@ public class MachinePumpjackMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return MenuReach.stillValid(player, blockEntity);
+        // audit13: Original isUseableByPlayer (<= 128 zur Kernmitte) oder Huelle <= 64; Vanilla 64 schloss die GUI an grossen Maschinen
+        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
     }
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
         ItemStack result = ItemStack.EMPTY;
         Slot slot = this.slots.get(index);
-
         if (slot == null || !slot.hasItem()) return result;
 
         ItemStack stack = slot.getItem();
         result = stack.copy();
 
-        if (index <= 7) {
-            // machine slot → move to player inventory
-            if (!this.moveItemStackTo(stack, 8, this.slots.size(), true)) {
-                return ItemStack.EMPTY;
-            }
-        } else {
-            // player slot → move to machine
-            if (stack.getItem() instanceof ItemMachineUpgrade) {
-                if (!this.moveItemStackTo(stack, 5, 8, false)) {
-                    return ItemStack.EMPTY;
-                }
-            } else {
-                // Slots 2 and 4 are take-only outputs and must stay out of the insert ranges: vanilla
-                // moveItemStackTo skips mayPlace when it merges onto an existing stack.
-                if (!this.moveItemStackTo(stack, 0, 2, false)) {
-                    if (!this.moveItemStackTo(stack, 3, 4, false)) {
-                        return ItemStack.EMPTY;
-                    }
-                }
-            }
+        if (index <= 6) {
+            if (!this.moveItemStackTo(stack, 7, this.slots.size(), true)) return ItemStack.EMPTY;
+        } else if (stack.getItem() instanceof ItemMachineUpgrade) {
+            if (!this.moveItemStackTo(stack, 5, 7, false)) return ItemStack.EMPTY;
+        } else if (!this.moveItemStackTo(stack, 0, 2, false)) {
+            if (!this.moveItemStackTo(stack, 3, 4, false)) return ItemStack.EMPTY;
         }
 
-        if (stack.isEmpty()) {
-            slot.set(ItemStack.EMPTY);
-        } else {
-            slot.setChanged();
-        }
-
+        if (stack.isEmpty()) slot.set(ItemStack.EMPTY);
+        else slot.setChanged();
         return result;
     }
 }

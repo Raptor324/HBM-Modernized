@@ -19,18 +19,12 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import com.hbm_m.platform.DummyItemStackHandler;
 import com.hbm_m.platform.ModItemStackHandler;
 
 /**
- * Меню для обычной (и большой) пусковой площадки.
- *
- * Это упрощённый порт старого ContainerLaunchPadLarge:
- * - 7 слотов машины (ракета, дизайнатор, батарея, топливо/окислитель in/out)
- * - 36 слотов инвентаря игрока.
- *
- * Логика сортировки/переноса предметов (shift‑клик) упрощена и не
- * повторяет в точности поведение 1.7.10, но достаточно для базового UX.
+ * 1:1 {@code ContainerLaunchPadLarge} (fuer die normale und die grosse Startrampe): Rakete, Zielgeraet, Batterie,
+ * Treibstoff/Oxidator rein/raus; Shift-Klick sortiert wie im Original nach Batterie, Rakete, unendlichem Fass,
+ * Behaelter des jeweiligen Tanks und Zielgeraet.
  */
 public class LaunchPadLargeMenu extends AbstractContainerMenu implements ILongEnergyMenu {
 
@@ -63,7 +57,7 @@ public class LaunchPadLargeMenu extends AbstractContainerMenu implements ILongEn
         // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
         Container machineContainer = new HandlerContainer(blockEntity != null
                 ? blockEntity.getInventory()
-                : new DummyItemStackHandler(MACHINE_SLOTS));
+                : new ModItemStackHandler.Dummy(MACHINE_SLOTS));
 
         // Слоты машины - координаты соответствуют старому GUI
         // Missile

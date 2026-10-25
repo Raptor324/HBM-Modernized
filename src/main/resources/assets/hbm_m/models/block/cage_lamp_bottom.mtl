@@ -1,9 +1,0 @@
-newmtl cage_lamp_bottom
-Ns 19.999999999999996
-d 1.0
-illum 2
-Kd 0.8 0.8 0.8
-Ka 0.0 0.0 0.0
-Ks 0.2 0.2 0.2
-Ke 0.0 0.0 0.0
-map_Kd hbm_m:block/cage_lamp_bottom

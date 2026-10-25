@@ -67,7 +67,7 @@ public final class MultiblockExpander {
     /**
      * Находит позицию контроллера мультиблока по любой его части или по самому контроллеру.
      *
-     * @param be  BlockEntity на позиции pos
+     * @param level уровень
      * @param pos позиция блока
      * @return позиция контроллера, или null если блок не является частью мультиблока HBM
      */

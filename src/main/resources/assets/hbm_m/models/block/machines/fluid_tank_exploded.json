@@ -1,5 +1,5 @@
 {
-  "__comment": "Wrecked variant, drawn when the blockstate has exploded=true. Plain forge:obj: a burst machine shows no fluid level, so it needs none of the dynamic model machinery the intact version uses.",
+  "__comment": "Wrecked variant, drawn when the blockstate has exploded=true. Translation z -2.5 (was -1.5): the core moved one cell back into the structure centre (original getOffset 1). Plain forge:obj: a burst machine shows no fluid level, so it needs none of the dynamic model machinery the intact version uses.",
   "textures": {
     "particle": "hbm_m:block/tank/tank_frame"
   },
@@ -18,7 +18,7 @@
     "translation": [
       -2.5,
       0,
-      -1.5
+      -2.5
     ],
     "rotation": [
       0,

@@ -1,13 +1,11 @@
 package com.hbm_m.item.designator;
 
-import com.hbm_m.item.ISatChip;
 import com.hbm_m.item.satellite.ItemSatChip;
 import com.hbm_m.satellite.Satellite;
 import com.hbm_m.satellite.SatelliteManager;
-import com.hbm_m.sound.ModSounds;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
@@ -17,10 +15,9 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 
 /**
- * Remote control for an orbited satellite: sneak + right-click sets its own frequency
- * ({@link ItemSatChip}); a plain right-click raytraces 300 blocks and fires
- * {@link Satellite#onCoordAction} on whatever satellite shares that frequency (e.g. Gerald's
- * one-time orbital strike). Port of legacy {@code com.hbm.items.tool.ItemSatDesignator}.
+ * 1:1 {@code com.hbm.items.tool.ItemSatDesignator}: Rechtsklick zielt 300 Bloecke weit und loest beim Satelliten
+ * mit gleicher Frequenz {@link Satellite#onCoordAction} am Block vor der getroffenen Seite aus. Die Frequenz setzt
+ * wie bei allen Chips der Satelliten-Verknuepfer.
  */
 public class ItemSatDesignator extends ItemSatChip {
 
@@ -29,33 +26,22 @@ public class ItemSatDesignator extends ItemSatChip {
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
-        if (player.isShiftKeyDown()) {
-            return super.use(level, player, hand);
-        }
-
+    public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        if (level.isClientSide() || !(level instanceof ServerLevel server)) {
-            return InteractionResultHolder.pass(stack);
+
+        if (world instanceof ServerLevel server) {
+            Satellite sat = SatelliteManager.get(server).getSatFromFreq(this.getFreq(stack));
+
+            if (sat != null) {
+                HitResult hit = player.pick(300, 1F, false);
+
+                if (hit instanceof BlockHitResult pos && hit.getType() == HitResult.Type.BLOCK) {
+                    BlockPos target = pos.getBlockPos().relative(pos.getDirection());
+                    sat.onCoordAction(server, player, target.getX(), target.getY(), target.getZ());
+                }
+            }
         }
 
-        HitResult hit = player.pick(300, 1f, false);
-        if (hit.getType() != HitResult.Type.BLOCK) {
-            return InteractionResultHolder.pass(stack);
-        }
-
-        BlockHitResult blockHit = (BlockHitResult) hit;
-        var pos = blockHit.getBlockPos().relative(blockHit.getDirection());
-
-        Satellite sat = SatelliteManager.get(server).getSatFromFreq(ISatChip.getFreqS(stack));
-        if (sat == null) {
-            return InteractionResultHolder.pass(stack);
-        }
-
-        sat.onCoordAction(server, player, pos.getX(), pos.getY(), pos.getZ());
-        level.playSound(null, player.blockPosition(), ModSounds.TOOL_TECH_BLEEP.get(),
-                SoundSource.PLAYERS, 1.0F, 1.0F);
-
-        return InteractionResultHolder.success(stack);
+        return InteractionResultHolder.pass(stack);
     }
 }

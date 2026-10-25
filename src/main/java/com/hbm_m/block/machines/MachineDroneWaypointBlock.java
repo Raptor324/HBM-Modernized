@@ -31,22 +31,56 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * Drone Waypoint - Port von {@code DroneWaypoint} (1.7.10 Original). Duenner "Sensor"-Block, an
  * jeder Seite montierbar (FACING = Montagerichtung); Rechtsklick (ohne Schraubenzieher) verstellt
  * die Projektionsdistanz ({@link MachineDroneWaypointBlockEntity#getHeight()}), Rechtsklick mit
- * {@link com.hbm_m.item.tools_and_armor.ItemDroneLinker} verlinkt stattdessen (siehe dort - der
- * Linker faengt den Klick zuerst ab, bevor {@code use()} hier feuert).
+ * {@link com.hbm_m.item.tools_and_armor.ItemDroneLinker} verlinkt stattdessen ({@code use()} gibt dann PASS).
  * <p>
- * SCOPE-Vereinfachung: Das Original berechnet eine praezise, richtungsabhaengige duenne Hitbox samt
- * Support-Block-Abriss-Logik. Hier: einfache kleine Box (wie ein Redstone-Fackel-Aequivalent),
- * platziert an der geklickten Flaeche - funktional ausreichend fuer einen reinen Wegpunkt-Marker.
+ * Auswahlbox, fehlende Kollision und Abfallen ohne Halt wie im Original ({@link com.hbm_m.block.machines.radio.AttachedTorchShape}).
  */
 public class MachineDroneWaypointBlock extends BaseEntityBlock implements com.hbm_m.interfaces.ILookOverlay {
 
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
-    private static final VoxelShape SHAPE = Block.box(6, 6, 6, 10, 10, 10);
 
     public MachineDroneWaypointBlock(Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.UP));
     }
+
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(FACING);
+    }
+
+    @Nullable
+    @Override
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        return this.defaultBlockState().setValue(FACING, context.getClickedFace().getOpposite());
+    }
+
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return com.hbm_m.block.machines.radio.AttachedTorchShape.shape(state.getValue(FACING));
+    }
+
+    /** Original: {@code getCollisionBoundingBoxFromPool} = null. */
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return net.minecraft.world.phys.shapes.Shapes.empty();
+    }
+
+    @Override
+    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
+        return com.hbm_m.block.machines.radio.AttachedTorchShape.canStayWaypoint(level, pos, state.getValue(FACING));
+    }
+
+    /** Original {@code onNeighborBlockChange}: ohne Halt faellt der Block als Gegenstand ab. */
+    @Override
+    public BlockState updateShape(BlockState state, net.minecraft.core.Direction dir, BlockState neighbor,
+                                  net.minecraft.world.level.LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
+        if (dir == state.getValue(FACING) && !state.canSurvive(level, pos)) {
+            return net.minecraft.world.level.block.Blocks.AIR.defaultBlockState();
+        }
+        return super.updateShape(state, dir, neighbor, level, pos, neighborPos);
+    }
+
 
     /**
      * Port of {@code DroneWaypoint.printHook}: "Waypoint distance: n" plus "Next waypoint:
@@ -65,22 +99,6 @@ public class MachineDroneWaypointBlock extends BaseEntityBlock implements com.hb
         }
         com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
                 net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
-    }
-
-    @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
-    }
-
-    @Nullable
-    @Override
-    public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState().setValue(FACING, context.getClickedFace().getOpposite());
-    }
-
-    @Override
-    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return SHAPE;
     }
 
     @Override
@@ -104,6 +122,8 @@ public class MachineDroneWaypointBlock extends BaseEntityBlock implements com.hb
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        // Original: mit dem Drohnenverknuepfer in der Hand reagiert der Block nicht, der Linker uebernimmt
+        if (player.getItemInHand(hand).getItem() instanceof com.hbm_m.item.tools_and_armor.ItemDroneLinker) return InteractionResult.PASS;
 
         if (level.isClientSide()) return InteractionResult.SUCCESS;
 
@@ -136,4 +156,15 @@ public class MachineDroneWaypointBlock extends BaseEntityBlock implements com.hb
         return CODEC;
     }
     *///?}
+
+    /** Original {@code addInformation}: {@code addStandardInfo} (Umschalttaste zeigt {@code .desc}). */
+    @Override
+    //? if < 1.21.1 {
+    public void appendHoverText(net.minecraft.world.item.ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.BlockGetter level,
+                                java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(net.minecraft.world.item.ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    *///?}
+        com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
+    }
 }

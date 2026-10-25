@@ -3,12 +3,16 @@ package com.hbm_m.client.model;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.machines.MachineBatterySocketBlock;
+import com.hbm_m.blockentity.machines.BatterySocketBlockEntity;
+import com.hbm_m.item.fekal_electric.ItemBatteryPack;
 import com.hbm_m.lib.RefStrings;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
@@ -18,13 +22,11 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
-//? if forge {
 import net.minecraftforge.client.model.data.ModelData;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.client.model.data.ModelData;
-*///?}
 
 public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
+
+    private final Map<String, List<BakedQuad>> packQuadCache = new ConcurrentHashMap<>();
 
     public MachineBatterySocketBakedModel(Map<String, BakedModel> parts, ItemTransforms transforms) {
         super(parts, transforms);
@@ -61,6 +63,23 @@ public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel 
             quads.addAll(rotationY != 0 ? ModelHelper.transformQuadsByFacing(socketQuads, rotationY) : socketQuads);
         }
 
+        boolean showBattery = modelData != null && Boolean.TRUE.equals(modelData.get(BatterySocketBlockEntity.HAS_INSERT));
+        ItemBatteryPack.EnumBatteryPack pack = modelData != null ? modelData.get(BatterySocketBlockEntity.PACK) : null;
+        if (showBattery && pack != null) {
+            BakedModel part = getPart(pack.isCapacitor() ? "Capacitor" : "Battery");
+            if (part != null) {
+                List<BakedQuad> packQuads = getPackQuads(part, pack.name(), "block/machine/battery_pack/" + pack.texture, querySide, rand);
+                quads.addAll(rotationY != 0 ? ModelHelper.transformQuadsByFacing(packQuads, rotationY) : packQuads);
+            }
+        } else if (showBattery && Boolean.TRUE.equals(modelData.get(BatterySocketBlockEntity.SC))) {
+            BakedModel part = getPart("Battery");
+            if (part != null) {
+                List<BakedQuad> scQuads = getPackQuads(part, "SC", "block/machine/battery_sc", querySide, rand);
+                quads.addAll(rotationY != 0 ? ModelHelper.transformQuadsByFacing(scQuads, rotationY) : scQuads);
+            }
+        }
+        // Original RenderBatterySocket: andere Batterien (und die kreative) zeichnet nur der TESR als drehenden
+        // Gegenstand bzw. Sonnenpony (BatterySocketRenderer) - kein zusaetzliches Batteriemodell im Sockel.
 
         return quads;
     }
@@ -86,4 +105,40 @@ public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel 
         return r;
     }
 
+    private List<BakedQuad> getPackQuads(BakedModel part, String name, String texture, @Nullable Direction side, RandomSource rand) {
+        String key = name + "|" + (side == null ? "null" : side.getName());
+        return packQuadCache.computeIfAbsent(key, k -> {
+            List<BakedQuad> out = new ArrayList<>();
+            TextureAtlasSprite sprite = Minecraft.getInstance().getTextureAtlas(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS)
+                    .apply(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, texture));
+            for (BakedQuad q : part.getQuads(null, side, rand, ModelData.EMPTY, null)) {
+                out.add(retextureQuad(q, sprite));
+            }
+            return out;
+        });
+    }
+
+    private static BakedQuad retextureQuad(BakedQuad original, TextureAtlasSprite newSprite) {
+        int[] oldData = original.getVertices();
+        int[] newData = new int[oldData.length];
+        System.arraycopy(oldData, 0, newData, 0, oldData.length);
+        TextureAtlasSprite oldSprite = original.getSprite();
+        if (oldSprite == null) return original;
+        float oldUDiff = oldSprite.getU1() - oldSprite.getU0();
+        float oldVDiff = oldSprite.getV1() - oldSprite.getV0();
+        float newUDiff = newSprite.getU1() - newSprite.getU0();
+        float newVDiff = newSprite.getV1() - newSprite.getV0();
+        if (oldUDiff == 0 || oldVDiff == 0) return original;
+        int vertexSize = oldData.length / 4;
+        for (int i = 0; i < 4; i++) {
+            int offset = i * vertexSize;
+            float oldU = Float.intBitsToFloat(oldData[offset + 4]);
+            float oldV = Float.intBitsToFloat(oldData[offset + 5]);
+            float normU = (oldU - oldSprite.getU0()) / oldUDiff;
+            float normV = (oldV - oldSprite.getV0()) / oldVDiff;
+            newData[offset + 4] = Float.floatToRawIntBits(newSprite.getU0() + normU * newUDiff);
+            newData[offset + 5] = Float.floatToRawIntBits(newSprite.getV0() + normV * newVDiff);
+        }
+        return new BakedQuad(newData, original.getTintIndex(), original.getDirection(), newSprite, original.isShade());
+    }
 }

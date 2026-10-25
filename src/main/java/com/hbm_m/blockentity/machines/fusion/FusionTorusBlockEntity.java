@@ -53,9 +53,7 @@ import net.minecraft.world.phys.AABB;
  * Originals ({@code TileEntityCooledBase}), die hier - wie im Original - direkt im Tick steht
  * statt ueber die Basisklasse zu laufen.</p>
  *
- * <p><b>Nicht portiert:</b> {@code checkTilt(TiltType.CONFIG, true)} - die "Maschinen-Schwerkraft"
- * des Originals ist ein globales, per Config abschaltbares System, das es in diesem Port (noch)
- * nicht gibt. Mit ausgeschalteter Config verhaelt sich das Original identisch.</p>
+ * <p>{@code checkTilt(TiltType.CONFIG, true)} wie im Original: gekippt zuendet das Plasma nicht.</p>
  */
 public class FusionTorusBlockEntity extends BaseMachineBlockEntity
         implements IFluidStandardTransceiverMK2, NodeNet.ILoadedEntry, IRORValueProvider, IRORInteractive {
@@ -135,6 +133,10 @@ public class FusionTorusBlockEntity extends BaseMachineBlockEntity
 
     // ═══════════════════════════════════ Tick ═══════════════════════════════════
 
+    @Override public int getFloorCount() { return 6 * 6; }
+    @Override public BlockPos getFloorPosFromIndex(int index) {
+        return new BlockPos(worldPosition.getX() - 5 + (index / 6) * 2, worldPosition.getY() - 1, worldPosition.getZ() - 5 + (index % 6) * 2);
+    }
     public static void tick(Level level, BlockPos pos, BlockState state, FusionTorusBlockEntity be) {
         if (level instanceof ServerLevel serverLevel) {
             be.serverTick(serverLevel, pos);
@@ -144,6 +146,7 @@ public class FusionTorusBlockEntity extends BaseMachineBlockEntity
     }
 
     private void serverTick(ServerLevel level, BlockPos pos) {
+        this.checkTilt(TiltType.CONFIG, true);
 
         ensureNetworkInitialized();
 
@@ -235,7 +238,7 @@ public class FusionTorusBlockEntity extends BaseMachineBlockEntity
 
         this.processSpeed = factor;
         this.bonusSpeed = collectors * 0.5D;
-        moduleUpdate(recipe, isCool() && ignition);
+        moduleUpdate(recipe, !this.tilted && isCool() && ignition);
 
         if (didProcess && recipe != null) {
             this.plasmaEnergy = (long) Math.ceil(recipe.getOutputTemp() * factor);
@@ -287,6 +290,7 @@ public class FusionTorusBlockEntity extends BaseMachineBlockEntity
             this.magnet -= 360F;
             this.prevMagnet -= 360F;
         }
+
 
         // Original: looped "fusionReactorLoop" 2.5 above the core within 50 blocks, pitch = magnetSpeed / 30.
         com.hbm_m.sound.ClientSoundBootstrap.updateMachineLoop(this, this.magnetSpeed > 0F,
@@ -519,7 +523,7 @@ public class FusionTorusBlockEntity extends BaseMachineBlockEntity
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == SLOT_BATTERY) return true;
-        if (slot == SLOT_BLUEPRINT) return stack.is(ModItems.BLUEPRINT_FOLDER.get());
+        if (slot == SLOT_BLUEPRINT) return stack.is(ModItems.BLUEPRINTS.get()) || stack.is(ModItems.BLUEPRINT_FOLDER.get());
         return false;
     }
 
@@ -617,7 +621,7 @@ public class FusionTorusBlockEntity extends BaseMachineBlockEntity
         if ((PREFIX_VALUE + "plasma").equals(name))      return "" + this.plasmaEnergy;
         if ((PREFIX_VALUE + "consumption").equals(name)) return "" + (int) (this.fuelConsumption * 100);
         if ((PREFIX_VALUE + "progress").equals(name))    return "" + (int) Math.round(this.progress * 100);
-        if ((PREFIX_VALUE + "recipe").equals(name))      return selectedRecipeId != null ? selectedRecipeId.toString() : "null";
+        if ((PREFIX_VALUE + "recipe").equals(name))      return com.hbm_m.api.redstoneoverradio.RORRecipeNames.name(selectedRecipeId);
         if ((PREFIX_VALUE + "active").equals(name))      return "" + (this.didProcess ? 1 : 0);
         if ((PREFIX_VALUE + "temp").equals(name))        return "" + (int) this.temperature;
         return null;
@@ -625,8 +629,9 @@ public class FusionTorusBlockEntity extends BaseMachineBlockEntity
 
     @Override
     public String runRORFunction(String name, String[] params) {
-        if ((PREFIX_FUNCTION + "setrecipe").equals(name) && params.length == 1) {
-            setSelectedRecipeId(ResourceLocation.tryParse(params[0]));
+        // Original: params.length == 1; Rezept-IDs mit Namensraum zerfallen am Parametertrenner (RORRecipeNames)
+        if ((PREFIX_FUNCTION + "setrecipe").equals(name) && (params.length == 1 || params.length == 2)) {
+            setSelectedRecipeId(com.hbm_m.api.redstoneoverradio.RORRecipeNames.parse(params));
             sendUpdateToClient();
         }
         return null;
@@ -649,5 +654,59 @@ public class FusionTorusBlockEntity extends BaseMachineBlockEntity
     /** Nur fuer die Rezeptauswahl im GUI: alle registrierten Fusionsrezepte. */
     public static List<FusionRecipe> getAllRecipes(Level level) {
         return com.hbm_m.platform.recipe.RecipeHooks.getAllRecipes(level, ModRecipes.FUSION_TYPE.get());
+    }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: Slot {2}; nichts hinein, Ausgabe heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 2 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return false; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 2; }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: Slot {2}; nichts hinein, Ausgabe heraus. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 2 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return false; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 2; }
+            });
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
+
+    @Override
+    public @Nullable Object getItemHandler(@Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        //? if forge {
+        return getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER, side).resolve().orElse(null);
+        //?} elif neoforge {
+        /*return getHbmCapability(com.hbm_m.platform.HbmCap.ITEM_HANDLER, side).orElse(null);
+        *///?} else {
+        /*return this.inventory;
+        *///?}
     }
 }

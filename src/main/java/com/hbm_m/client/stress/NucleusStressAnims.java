@@ -1,13 +1,7 @@
 package com.hbm_m.client.stress;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;

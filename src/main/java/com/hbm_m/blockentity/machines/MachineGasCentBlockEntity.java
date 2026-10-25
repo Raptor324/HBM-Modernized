@@ -38,6 +38,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * Gas Centrifuge BlockEntity.
@@ -254,7 +255,7 @@ public class MachineGasCentBlockEntity extends BaseMachineBlockEntity implements
         for (int slot = SLOT_OUTPUT_0; slot <= SLOT_OUTPUT_3; slot++) {
             ItemStack existing = inventory.getStackInSlot(slot);
             if (existing.isEmpty()) return true;
-            if (PlatformHooks.isSameItemSameTags(existing, stack)
+            if (StackNbt.sameItemSameTags(existing, stack)
                     && existing.getCount() + stack.getCount() <= existing.getMaxStackSize()) {
                 return true;
             }
@@ -281,7 +282,7 @@ public class MachineGasCentBlockEntity extends BaseMachineBlockEntity implements
                 inventory.setStackInSlot(slot, stack);
                 return;
             }
-            if (PlatformHooks.isSameItemSameTags(existing, stack)
+            if (StackNbt.sameItemSameTags(existing, stack)
                     && existing.getCount() + stack.getCount() <= existing.getMaxStackSize()) {
                 existing.grow(stack.getCount());
                 return;
@@ -459,4 +460,59 @@ public class MachineGasCentBlockEntity extends BaseMachineBlockEntity implements
             }
         }
         return ports.toArray(new BlockPos[0]);
-    }}
+    }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: Slots {0-3}; nichts hinein, Ausgaenge heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0, 1, 2, 3 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return false; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot < 4; }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?} elif neoforge {
+    /*private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0, 1, 2, 3 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return false; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot < 4; }
+            });
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        //? if forge {
+        if (side == null) return this.inventory;
+        return sidedItems.get(side).resolve().orElse(null);
+        //?} elif neoforge {
+        /*if (side == null) return this.inventory;
+        return sidedItems.get(side).resolve().orElse(null);
+        *///?} else {
+        /*return this.inventory;
+        *///?}
+    }
+}

@@ -1,15 +1,18 @@
 package com.hbm_m.util;
 
 import com.hbm_m.api.block.ICrucibleAcceptor;
-import com.hbm_m.inventory.material.MaterialStack;
+import com.hbm_m.inventory.material.Mats.MaterialStack;
+import com.hbm_m.inventory.material.NTMMaterial.SmeltingBehavior;
 import com.hbm_m.item.material.ModMaterialItems;
 import com.hbm_m.item.material.ModMaterials;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
@@ -24,86 +27,156 @@ import java.util.List;
 public class CrucibleUtil {
 
     /**
-     * Finds the first non-air block from startPos (inclusive) downward within range
-     * and returns its position if its block entity is an ICrucibleAcceptor, else null.
+     * Standard pouring, casting a hitscan straight down at the given coordinates with the given range. Returns the leftover material, just like ICrucibleAcceptor's pour.
+     * The method directly modifies the original stack, so be careful and make a copy beforehand if you don't want that.
      */
-    public static @Nullable BlockPos getPouringTarget(Level level, BlockPos startPos, int range) {
-        for (int i = 0; i <= range; i++) {
-            BlockPos pos = startPos.below(i);
-            if (level.getBlockState(pos).isAir()) continue;
-            BlockEntity be = level.getBlockEntity(pos);
-            return be instanceof ICrucibleAcceptor ? pos : null;
+    @Nullable
+    public static MaterialStack pourSingleStack(Level world, double x, double y, double z, double range, boolean safe, MaterialStack stack, int quanta, @Nullable double[] impactPosHolder) {
+
+        Vec3 start = new Vec3(x, y, z);
+        Vec3 end = new Vec3(x, y - range, z);
+
+        BlockHitResult[] mopHolder = new BlockHitResult[1];
+        ICrucibleAcceptor acc = getPouringTarget(world, start, end, mopHolder);
+        BlockHitResult mop = mopHolder[0];
+
+        if (acc == null) {
+            spill(mop, safe, stack, quanta, impactPosHolder);
+            return stack;
         }
-        return null;
+
+        MaterialStack ret = tryPourStack(world, acc, mop, stack, impactPosHolder);
+
+        if (ret != null) {
+            return ret;
+        }
+
+        spill(mop, safe, stack, quanta, impactPosHolder);
+        return stack;
     }
 
     /**
-     * Порт {@code pourSingleStack(world, x, y, z, range, safe, stack, quanta, impact)}:
-     * наливает в приёмник не более {@code maxAmount} mB стакана; при safe=true и
-     * отсутствии приёмника ничего не теряется. Возвращает реально налитое количество.
+     * Standard pouring, casting a hitscan straight down at the given coordinates with the given range. Returns the materialStack that has been removed.
+     * The method doesn't make copies of the MaterialStacks in the list, so the materials being subtracted or outright removed will apply to the original list.
      */
-    public static int pourSingleStack(Level level, BlockPos startPos, int range, MaterialStack stack) {
-        return pourSingleStack(level, startPos, range, stack, stack.amount);
-    }
+    @Nullable
+    public static MaterialStack pourFullStack(Level world, double x, double y, double z, double range, boolean safe, List<MaterialStack> stacks, int quanta, @Nullable double[] impactPosHolder) {
 
-    /** Как выше, но с ограничением порции (порт параметра quanta). */
-    public static int pourSingleStack(Level level, BlockPos startPos, int range, MaterialStack stack, int maxAmount) {
-        if (stack.isEmpty()) return 0;
+        if (stacks.isEmpty()) return null;
 
-        BlockPos target = getPouringTarget(level, startPos, range);
-        if (target == null) return 0;
+        Vec3 start = new Vec3(x, y, z);
+        Vec3 end = new Vec3(x, y - range, z);
 
-        BlockEntity be = level.getBlockEntity(target);
-        if (!(be instanceof ICrucibleAcceptor acc)) return 0;
+        BlockHitResult[] mopHolder = new BlockHitResult[1];
+        ICrucibleAcceptor acc = getPouringTarget(world, start, end, mopHolder);
+        BlockHitResult mop = mopHolder[0];
 
-        MaterialStack portion = new MaterialStack(stack.type, Math.min(stack.amount, maxAmount));
-        if (!acc.canAcceptPartialPour(level, target, Direction.UP, portion)) return 0;
-
-        MaterialStack left = acc.pour(level, target, Direction.UP, portion);
-        int poured = left == null ? portion.amount : portion.amount - left.amount;
-        stack.amount -= poured;
-        return poured;
-    }
-
-    /**
-     * Порт {@code pourFullStack}: розлив списка стаканов porциями по {@code minQuanta} mB
-     * в порядке списка (первый совпавший приёмник). Стаканы мутируются (уменьшаются);
-     * {@code impact} (если не null) получает точку попадания потока.
-     *
-     * @return стакан материала, который удалось налить (для цвета/частиц), либо null.
-     */
-    public static @Nullable MaterialStack pourFullStack(Level level, double x, double y, double z,
-                                                        int range, boolean safe, List<MaterialStack> stacks,
-                                                        int minQuanta, @Nullable Vec3[] impact) {
-        BlockPos startPos = BlockPos.containing(x, y, z);
+        if (acc == null) {
+            return spill(mop, safe, stacks, quanta, impactPosHolder);
+        }
 
         for (MaterialStack stack : stacks) {
-            if (stack.isEmpty()) continue;
-            // Порт tryPourStack: не-SMELTABLE материалы (добавки) не наливаются
-            if (!stack.type.isPourable()) continue;
+            if (stack.material == null) continue;
 
-            int amountToPour = Math.min(stack.amount, minQuanta);
-            MaterialStack portion = new MaterialStack(stack.type, amountToPour);
-            int poured = pourSingleStack(level, startPos, range, stack, amountToPour);
-            if (poured > 0) {
-                if (impact != null && impact.length > 0) {
-                    impact[0] = new Vec3(x, y - 0.875, z);
-                }
-                return new MaterialStack(stack.type, poured);
+            int amountToPour = Math.min(stack.amount, quanta);
+            MaterialStack toPour = new MaterialStack(stack.material, amountToPour);
+            MaterialStack left = tryPourStack(world, acc, mop, toPour, impactPosHolder);
+
+            if (left != null) {
+                stack.amount -= (amountToPour - left.amount);
+                return new MaterialStack(stack.material, stack.amount - left.amount);
             }
-            // В оригинале при неудаче первого стакана выполняется spill (waste) — но кран
-            // тигля всегда вызывает safe=true: без приёмника ничего не теряется.
-            if (!safe) {
-                int toWaste = Math.min(stack.amount, minQuanta);
-                stack.amount -= toWaste;
-                if (impact != null && impact.length > 0) {
-                    impact[0] = new Vec3(x, y - 0.875, z);
-                }
-                return null;
+        }
+
+        return spill(mop, safe, stacks, quanta, impactPosHolder);
+    }
+
+    /**
+     * Tries to pour the stack onto the supplied crucible acceptor instance.
+     * Returns whatever is left of the stack when successful or null when unsuccessful (potential spillage).
+     */
+    @Nullable
+    public static MaterialStack tryPourStack(Level world, ICrucibleAcceptor acc, BlockHitResult mop, MaterialStack stack, @Nullable double[] impactPosHolder) {
+        Vec3 hit = mop.getLocation();
+
+        if (stack.material.smeltable != SmeltingBehavior.SMELTABLE) {
+            return null;
+        }
+
+        if (acc.canAcceptPartialPour(world, mop.getBlockPos(), hit.x, hit.y, hit.z, mop.getDirection(), stack)) {
+            MaterialStack left = acc.pour(world, mop.getBlockPos(), hit.x, hit.y, hit.z, mop.getDirection(), stack);
+            if (left == null) {
+                left = new MaterialStack(stack.material, 0);
             }
-            break; // как в оригинале: только один стакан за вызов при safe
+
+            if (impactPosHolder != null) {
+                impactPosHolder[0] = hit.x;
+                impactPosHolder[1] = hit.y;
+                impactPosHolder[2] = hit.z;
+            }
+
+            return left;
+        }
+
+        return null;
+    }
+
+    /** Uses hitscan to find the target of the pour, from start (the top) to end (the bottom). */
+    @Nullable
+    public static ICrucibleAcceptor getPouringTarget(Level world, Vec3 start, Vec3 end, @Nullable BlockHitResult[] mopHolder) {
+
+        BlockHitResult mop = world.clip(new ClipContext(start, end, ClipContext.Block.OUTLINE, ClipContext.Fluid.ANY, (net.minecraft.world.entity.Entity) null));
+
+        if (mopHolder != null) {
+            mopHolder[0] = mop;
+        }
+
+        if (mop == null || mop.getType() != HitResult.Type.BLOCK) {
+            return null;
+        }
+
+        return acceptorAt(world, mop.getBlockPos());
+    }
+
+    /** Der Abnehmer an einer Stelle - Block-Entity selbst oder der Kern eines Multiblocks. */
+    @Nullable
+    public static ICrucibleAcceptor acceptorAt(Level world, BlockPos pos) {
+        BlockEntity be = world.getBlockEntity(pos);
+        if (be instanceof ICrucibleAcceptor acc) return acc;
+        if (be instanceof com.hbm_m.blockentity.machines.UniversalMachinePartBlockEntity part) {
+            BlockPos core = part.getControllerPos();
+            if (core != null && world.getBlockEntity(core) instanceof ICrucibleAcceptor acc) return acc;
         }
         return null;
+    }
+
+    /** Regular spillage routine but accepts a stack list instead of a stack. simply uses the first available stack from the list. */
+    @Nullable
+    public static MaterialStack spill(@Nullable BlockHitResult mop, boolean safe, List<MaterialStack> stacks, int quanta, @Nullable double[] impactPos) {
+        MaterialStack top = stacks.get(0);
+        MaterialStack ret = spill(mop, safe, top, quanta, impactPos);
+        stacks.removeIf(o -> o.amount <= 0);
+        return ret;
+    }
+
+    /** The routine used for then there is no valid crucible acceptor found. Will NOP with safe mode on. Returns the MaterialStack that was lost. */
+    @Nullable
+    public static MaterialStack spill(@Nullable BlockHitResult mop, boolean safe, MaterialStack stack, int quanta, @Nullable double[] impactPos) {
+
+        if (safe) {
+            return null;
+        }
+
+        MaterialStack toWaste = new MaterialStack(stack.material, Math.min(stack.amount, quanta));
+        stack.amount -= toWaste.amount;
+
+        if (impactPos != null && mop != null) {
+            impactPos[0] = mop.getLocation().x;
+            impactPos[1] = mop.getLocation().y;
+            impactPos[2] = mop.getLocation().z;
+        }
+
+        return toWaste;
     }
 
     /**
@@ -111,7 +184,7 @@ public class CrucibleUtil {
      * {@code amount} предмета), материал — по имени MaterialType через
      * {@link ModMaterials#byId}; без предмета шлака для материала возвращает EMPTY.
      */
-    public static ItemStack createScrap(MaterialStack stack) {
+    public static ItemStack createScrap(com.hbm_m.inventory.material.MaterialStack stack) {
         if (stack == null || stack.isEmpty()) return ItemStack.EMPTY;
         ModMaterials mat = ModMaterials.byId(stack.type.name);
         if (mat == null) return ItemStack.EMPTY;
@@ -123,7 +196,7 @@ public class CrucibleUtil {
 
         ItemStack out = new ItemStack(item, 1);
         // ScrapItem читает количество из тега "amount"
-        com.hbm_m.platform.PlatformHooks.editItemTag(out, tag -> tag.putInt("amount", quanta));
+        com.hbm_m.platform.StackNbt.edit(out, tag -> tag.putInt("amount", quanta));
         return out;
     }
 }

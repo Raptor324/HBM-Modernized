@@ -1,0 +1,192 @@
+{
+ "parent": "minecraft:block/block",
+ "ambientocclusion": false,
+ "render_type": "minecraft:cutout",
+ "textures": {
+  "base": "hbm_m:block/deco/vine_phosphor_ground",
+  "glow": "hbm_m:block/deco/vine_phosphor_spots",
+  "particle": "hbm_m:block/deco/vine_phosphor_ground"
+ },
+ "elements": [
+  {
+   "from": [
+    0.8,
+    0,
+    8
+   ],
+   "to": [
+    15.2,
+    16,
+    8
+   ],
+   "rotation": {
+    "origin": [
+     8,
+     8,
+     8
+    ],
+    "axis": "y",
+    "angle": 45,
+    "rescale": true
+   },
+   "shade": false,
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#base"
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#base"
+    }
+   }
+  },
+  {
+   "from": [
+    8,
+    0,
+    0.8
+   ],
+   "to": [
+    8,
+    16,
+    15.2
+   ],
+   "rotation": {
+    "origin": [
+     8,
+     8,
+     8
+    ],
+    "axis": "y",
+    "angle": 45,
+    "rescale": true
+   },
+   "shade": false,
+   "faces": {
+    "west": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#base"
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#base"
+    }
+   }
+  },
+  {
+   "from": [
+    0.8,
+    0,
+    8
+   ],
+   "to": [
+    15.2,
+    16,
+    8
+   ],
+   "rotation": {
+    "origin": [
+     8,
+     8,
+     8
+    ],
+    "axis": "y",
+    "angle": 45,
+    "rescale": true
+   },
+   "shade": false,
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#glow"
+    },
+    "south": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#glow"
+    }
+   },
+   "forge_data": {
+    "block_light": 15,
+    "sky_light": 15
+   }
+  },
+  {
+   "from": [
+    8,
+    0,
+    0.8
+   ],
+   "to": [
+    8,
+    16,
+    15.2
+   ],
+   "rotation": {
+    "origin": [
+     8,
+     8,
+     8
+    ],
+    "axis": "y",
+    "angle": 45,
+    "rescale": true
+   },
+   "shade": false,
+   "faces": {
+    "west": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#glow"
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#glow"
+    }
+   },
+   "forge_data": {
+    "block_light": 15,
+    "sky_light": 15
+   }
+  }
+ ]
+}

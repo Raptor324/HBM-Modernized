@@ -1,5 +1,7 @@
 package com.hbm_m.hazard;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -39,6 +41,9 @@ public final class HazardSystem {
     private static final Map<TagKey<Item>, HazardData> TAG_RULES = new ConcurrentHashMap<>();
     // Правила для конкретных предметов (самый высокий приоритет)
     private static final Map<Item, HazardData> ITEM_RULES = new ConcurrentHashMap<>();
+    /** Original HazardSystem.trafos: stapelabhaengige Nachbearbeitung (NBT-Strahlung, Behaelterinhalt, ME). */
+    public static final List<com.hbm_m.hazard.transformer.HazardTransformerBase> trafos = new ArrayList<>();
+
     // Кэш для уже вычисленных результатов. Ключ - Item, Значение - финальный список опасностей.
     private static final Map<Item, List<HazardEntry>> HAZARD_CACHE = new ConcurrentHashMap<>();
 
@@ -74,6 +79,33 @@ public final class HazardSystem {
         register(block.asItem(), data);
     }
 
+    /**
+     * Space-API (W-R4b-2): haengt einen Eintrag an die Gegenstandsregel an, statt sie zu ersetzen (Original: mehrere
+     * {@code HazardRegistry}-Zeilen bzw. Ore-Dictionary-Rahmen fuer denselben Gegenstand). Fehlt eine Regel, wird eine
+     * neue angelegt. Die vorhandene {@link HazardData} wird nicht veraendert (kann mit anderen Items geteilt sein),
+     * sondern durch eine Kopie mit dem Zusatzeintrag ersetzt. Ohne Aufrufer (kein Addon) wirkungslos.
+     */
+    public static void addEntry(Item item, HazardEntry entry) {
+        ITEM_RULES.compute(item, (k, old) -> withEntry(old, entry));
+        HAZARD_CACHE.clear();
+    }
+
+    /** Wie {@link #addEntry(Item, HazardEntry)} fuer eine Tag-Regel (Original: {@code .neutron()} am DictFrame). */
+    public static void addEntry(TagKey<Item> tag, HazardEntry entry) {
+        TAG_RULES.compute(tag, (k, old) -> withEntry(old, entry));
+        HAZARD_CACHE.clear();
+    }
+
+    private static HazardData withEntry(@org.jetbrains.annotations.Nullable HazardData old, HazardEntry entry) {
+        HazardData copy = new HazardData();
+        if (old != null) {
+            copy.entries.addAll(old.entries);
+            copy.doesOverride = old.doesOverride;
+        }
+        copy.entries.add(entry);
+        return copy;
+    }
+
     // ПУБЛИЧНЫЕ МЕТОДЫ ПОЛУЧЕНИЯ ДАННЫХ 
 
     /**
@@ -87,6 +119,20 @@ public final class HazardSystem {
         if (stack == null || stack.isEmpty()) {
             return Collections.emptyList();
         }
+
+        List<HazardEntry> base = getItemHazards(stack);
+        if (trafos.isEmpty() || !StackNbt.has(stack)) return base;
+
+        // transformPre (alle Originale leer) laeuft vor den Regeln, transformPost danach - wie im Original.
+        List<HazardEntry> entries = new ArrayList<>(base);
+        for (com.hbm_m.hazard.transformer.HazardTransformerBase trafo : trafos) {
+            trafo.transformPost(stack, entries);
+        }
+        return entries.size() == base.size() ? base : entries;
+    }
+
+    /** Regeln aus Tags und Gegenstand (pro Gegenstand zwischengespeichert). */
+    private static List<HazardEntry> getItemHazards(ItemStack stack) {
 
         Item item = stack.getItem();
 

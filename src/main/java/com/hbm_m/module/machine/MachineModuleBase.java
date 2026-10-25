@@ -14,9 +14,9 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.interfaces.IEnergyReceiver;
-import com.hbm_m.item.industrial.ItemBlueprintFolder;
 import com.hbm_m.platform.ModItemStackHandler;
 import com.hbm_m.recipe.index.ModRecipeIndex;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * Р‘Р°Р·РѕРІС‹Р№ РјРѕРґСѓР»СЊ РјР°С€РёРЅС‹, РёРЅРєР°РїСЃСѓР»РёСЂСѓСЋС‰РёР№ Р»РѕРіРёРєСѓ РєСЂР°С„С‚Р°.
@@ -66,6 +66,8 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
     // === SIGNALS ===
     public boolean didProcess = false;
     public boolean needsSync = false;
+    /** Original {@code restrictedMode}: per Funk (RoR) gesetztes Rezept - Maschine laeuft mit Viertelgeschwindigkeit. */
+    public boolean restrictedMode = false;
 
     // === INPUT SIGNATURE CACHE (recipe-resolution gating) ===
     // Recomputed cheaply every tick from input slot fingerprints; external insertions via
@@ -123,7 +125,8 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
      * - false: РєР°Рє Сѓ С…РёРјРјР°С€РёРЅС‹ РІ 1.7.10 вЂ” РґРѕСЃС‚Р°С‚РѕС‡РЅРѕ СЌРЅРµСЂРіРёРё С‚РѕР»СЊРєРѕ РЅР° С‚РµРєСѓС‰РёР№ С‚РёРє.
      */
     protected boolean requiresFullEnergyBufferToStart() {
-        return true;
+        // Original ModuleMachineBase.canProcess prueft nur die Energie fuer den aktuellen Tick
+        return false;
     }
 
     /**
@@ -131,7 +134,7 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
      */
     protected static boolean isBlueprintPoolAllowed(@Nullable String recipePool, ItemStack blueprint) {
         if (recipePool == null || recipePool.isEmpty()) return true;
-        String installed = ItemBlueprintFolder.getBlueprintPool(blueprint);
+        String installed = com.hbm_m.item.industrial.ItemBlueprints.getBlueprintPool(blueprint);
         return installed != null && !installed.isEmpty() && installed.equals(recipePool);
     }
 
@@ -224,7 +227,7 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
             if (inputSlot == slot) {
                 // Memoize the expensive findRecipeForItem scan per (signature, slot, item, epoch).
                 long sig = inputSignature;
-                long fp = PlatformHooks.stackFingerprint(stack);
+                long fp = StackNbt.fingerprint(stack);
                 long epoch = ModRecipeIndex.epoch();
                 if (signatureScanned && sig == memoSignature && slot == memoSlot
                         && fp == memoItemFingerprint && epoch == memoEpoch) {
@@ -293,12 +296,14 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
     public void writeToNBT(CompoundTag nbt) {
         nbt.putDouble("Progress_" + moduleIndex, progress);
         nbt.putInt("MaxProgress_" + moduleIndex, maxProgress);
+        nbt.putBoolean("restrictedMode", restrictedMode);
         writeExtraToNbt(nbt);
     }
 
     public void readFromNBT(CompoundTag nbt) {
         this.progress = nbt.getDouble("Progress_" + moduleIndex);
         this.maxProgress = nbt.getInt("MaxProgress_" + moduleIndex);
+        this.restrictedMode = nbt.getBoolean("restrictedMode");
         readExtraFromNbt(nbt);
     }
 
@@ -308,12 +313,14 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
     public void serialize(FriendlyByteBuf buf) {
         buf.writeDouble(progress);
         buf.writeInt(maxProgress);
+        buf.writeBoolean(restrictedMode);
         writeExtraToBuf(buf);
     }
 
     public void deserialize(FriendlyByteBuf buf) {
         this.progress = buf.readDouble();
         this.maxProgress = buf.readInt();
+        this.restrictedMode = buf.readBoolean();
         readExtraFromBuf(buf);
     }
 
@@ -361,11 +368,11 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
         long sig = 17L;
         if (inputSlots != null) {
             for (int slot : inputSlots) {
-                sig = sig * 31L + PlatformHooks.stackFingerprint(itemHandler.getStackInSlot(slot));
+                sig = sig * 31L + StackNbt.fingerprint(itemHandler.getStackInSlot(slot));
             }
         }
         if (blueprint != null) {
-            sig = sig * 31L + PlatformHooks.stackFingerprint(blueprint);
+            sig = sig * 31L + StackNbt.fingerprint(blueprint);
         }
         return sig;
     }
@@ -432,12 +439,21 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
                 return;
             }
             if (!hasEnoughEnergyForTick(storedEnergy, energyPerTick)) {
+                // Original: zu wenig Strom heisst canProcess == false, der Fortschritt verfaellt
+                if (progress > 0.0) {
+                    progress = 0.0;
+                    needsSync = true;
+                }
                 return;
             }
 
             energyStorage.setEnergyStored(storedEnergy - energyPerTick);
 
-            double step = Math.max(0.0, speedMultiplier);
+            // Original process(): if(restrictedMode) speed *= 0.25 - RoR-gesteuerte Maschinen sind langsamer
+            if (this.restrictedMode) speedMultiplier *= 0.25;
+
+            // Original: step = min(speed / duration, 1) - hoechstens ein Durchlauf pro Tick
+            double step = Math.min(Math.max(0.0, speedMultiplier), Math.max(1, maxProgress));
             if (step <= 0.0) return;
 
             this.progress += step;
@@ -499,7 +515,7 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
             if (incoming == null || incoming.isEmpty()) return true;
             if (slotStack == null || slotStack.isEmpty()) return true;
             //? if < 1.21.1 {
-            if (!PlatformHooks.isSameItemSameTags(slotStack, incoming)) return false;
+            if (!StackNbt.sameItemSameTags(slotStack, incoming)) return false;
             //?} else {
             /*if (!ItemStack.isSameItemSameComponents(slotStack, incoming)) return false;
             *///?}

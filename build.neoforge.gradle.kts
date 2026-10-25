@@ -259,7 +259,11 @@ tasks.named<ProcessResources>("processResources") {
 				target.walkTopDown().filter { it.isFile && it.extension == "json" }.forEach { f ->
 					f.writeText(f.readText()
 						.replace("\"forge:add_features\"", "\"neoforge:add_features\"")
-						.replace("\"forge:add_spawns\"", "\"neoforge:add_spawns\""))
+						.replace("\"forge:add_spawns\"", "\"neoforge:add_spawns\"")
+						// Карверы: свой forge-тип hbm_m:add_carvers на NeoForge 1.21.1 не
+						// зарегистрирован — ремапим на встроенный neoforge:add_carvers
+						// (формат полей biomes/carvers/step идентичен).
+						.replace("\"hbm_m:add_carvers\"", "\"neoforge:add_carvers\""))
 				}
 			}
 		}
@@ -414,6 +418,9 @@ tasks.named<Jar>("jar") {
 tasks.withType<JavaCompile>().configureEach {
 	options.compilerArgs.addAll(listOf("-Xmaxerrs", "10000"))
 	options.encoding = "UTF-8"
+	// The forked compiler worker defaults to -Xmx512m, which the mixin annotation
+	// processor can exhaust on large merges (javac OOM "Java heap space").
+	options.forkOptions.memoryMaximumSize = "3g"
 }
 
 stonecutter {

@@ -4,17 +4,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import com.hbm_m.item.tools_and_armor.ModArmorMaterials;
 
-/**
- * AJRO Power Armor – "orange" AJR variant.
- *
- * In 1.7.10 this was implemented as {@code ArmorAJRO}:
- * - Uses the same OBJ model as AJR (armor_ajr/dnt.obj groups)
- * - Has slightly higher energy capacity and drain than AJR
- * - Shares the same resistance profile and general role as AJR
- *
- * Here we mirror AJR's protection/features/effects, but with the original
- * AJRO energy numbers (capacity/receive/drain/consumption).
- */
+/** 1:1 {@code com.hbm.items.armor.ArmorAJRO}: T-45 AJR (Offizier). */
 public class AJROArmor extends ModPowerArmorItem {
 
     /**
@@ -55,4 +45,3 @@ public class AJROArmor extends ModPowerArmorItem {
         super(material, type, properties, AJRO_SPECS);
     }
 }
-

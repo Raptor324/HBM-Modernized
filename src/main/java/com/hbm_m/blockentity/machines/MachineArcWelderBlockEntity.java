@@ -15,8 +15,33 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.platform.ModItemStackHandler;
 
-public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity {
+public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.fluids.IFluidStandardReceiverMK2, com.hbm_m.interfaces.IConditionalInvAccess {
+
+    /** Original {@code setInventorySlotContents}: Aufwertung einstecken macht das Steckgeraeusch. */
+    @Override
+    protected com.hbm_m.platform.ModItemStackHandler createInventoryHandler(int size) {
+        return new com.hbm_m.platform.ModItemStackHandler(size) {
+            @Override
+            protected void onContentsChanged(int slot) {
+                setChanged();
+                if (isCriticalSlot(slot)) sendUpdateToClient();
+                net.minecraft.world.item.ItemStack stack = getStackInSlot(slot);
+                if (level != null && !level.isClientSide && slot >= 6 && slot <= 7
+                        && stack.getItem() instanceof com.hbm_m.item.industrial.ItemMachineUpgrade) {
+                    level.playSound(null, worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5,
+                            com.hbm_m.sound.HbmSoundsNT.get("hbm:item.upgradePlug"), net.minecraft.sounds.SoundSource.BLOCKS, 1.0F, 1.0F);
+                }
+            }
+
+            @Override
+            public boolean isItemValid(int slot, @org.jetbrains.annotations.NotNull net.minecraft.world.item.ItemStack stack) {
+                return isItemValidForSlot(slot, stack);
+            }
+        };
+    }
+
 
     // ─── Slot map ─────────────────────────────────────────────────────────────
     public static final int SLOTS      = 8;
@@ -27,12 +52,23 @@ public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity {
     public static final int SLOT_UPG1  = 6, SLOT_UPG2 = 7;
 
     // ─── Energy constants ─────────────────────────────────────────────────────
-    public static final long MAX_ENERGY  = 100_000L;
-    public static final long CONSUMPTION =   2_000L; // HE per tick while active
+    /** Original: {@code maxPower = 2_000}, ohne Rezept {@code consumption = 100}; mit Rezept {@code maxPower = consumption * 20}. */
+    public static final long MAX_ENERGY  = 2_000L;
+    public static final long CONSUMPTION =   100L;
+    /** Original nimmt beliebig viel an (bis maxPower). */
+    private static final long RECEIVE_RATE = 1_000_000_000_000L;
+
+    private static final java.util.Map<com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType, Integer> VALID_UPGRADES = java.util.Map.of(
+            com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.SPEED, 3,
+            com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.POWER, 3,
+            com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.OVERDRIVE, 3);
+    private final com.hbm_m.inventory.UpgradeManager upgradeManager = new com.hbm_m.inventory.UpgradeManager();
 
     // ─── Processing state ─────────────────────────────────────────────────────
+    /** Original {@code display}: Ergebnis des passenden Rezepts, nur zur Darstellung synchronisiert. */
+    public ItemStack display = ItemStack.EMPTY;
     public int  progress    = 0;
-    public int  processTime = 200;      // default; will be set by recipe
+    public int  processTime = 1;        // Original-Startwert; wird vom Rezept gesetzt
     public long consumption = CONSUMPTION;
 
     // ─── Fluid tank ───────────────────────────────────────────────────────────
@@ -42,7 +78,7 @@ public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity {
     // ─── Constructor ──────────────────────────────────────────────────────────
 
     public MachineArcWelderBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.ARC_WELDER_BE.get(), pos, state, SLOTS, MAX_ENERGY, CONSUMPTION);
+        super(ModBlockEntities.ARC_WELDER_BE.get(), pos, state, SLOTS, MAX_ENERGY, RECEIVE_RATE);
     }
 
     /** Exposes the machine inventory for SlotItemHandler in the menu. */
@@ -53,6 +89,10 @@ public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity {
     public static void tick(Level level, BlockPos pos, BlockState state, MachineArcWelderBlockEntity be) {
         if (level.isClientSide) return;
 
+        // Original: Strom- und Fluessigkeitsanschluesse rund um den Sockel
+        be.ensureNetworkInitialized();
+        if (level.getGameTime() % 20 == 0) be.subscribeFluid(level);
+
         // Charge from battery slot (extract energy from battery item in SLOT_BAT)
         com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(
                 be.inventory.getStackInSlot(SLOT_BAT)).ifPresent(provider -> {
@@ -61,19 +101,44 @@ public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity {
             if (got > 0) be.energy += got;
         });
 
+        // Original: tank.setType(5, slots) - Fluid-ID im Slot 5 legt die Sorte fest
+        ItemStack[] slotArr = new ItemStack[SLOTS];
+        for (int i = 0; i < SLOTS; i++) slotArr[i] = be.inventory.getStackInSlot(i);
+        be.tank.setType(SLOT_FLUID, slotArr);
+
         // Data-driven поиск рецепта: итерируем ArcWelderRecipe из RecipeManager (заменяет статику ArcWelderRecipes).
         ArcWelderRecipe recipe = be.findArcWelderRecipe(level);
+        // Original serialize: das Rezeptergebnis geht als display an den Client (Renderer zeigt es auf dem Tisch)
+        be.display = recipe != null ? recipe.getOutput() : ItemStack.EMPTY;
+        long intendedMaxPower;
+
+        // 1:1 Original: Tempo (rot), Sparsamkeit (blau), Overdrive (schwarz)
+        be.upgradeManager.checkSlots(be.inventory, SLOT_UPG1, SLOT_UPG2, VALID_UPGRADES);
+        int redLevel = be.upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.SPEED);
+        int blueLevel = be.upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.POWER);
+        int blackLevel = be.upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.OVERDRIVE);
+
         if (recipe != null) {
-            be.processTime  = recipe.getDuration();
-            be.consumption  = recipe.getConsumption();
+            int duration = recipe.getDuration();
+            long cons = recipe.getConsumption();
+            be.processTime  = duration - (duration * redLevel / 6) + (duration * blueLevel / 3);
+            be.consumption  = cons + (cons * redLevel) - (cons * blueLevel / 6);
+            be.consumption *= (long) Math.pow(2, blackLevel);
+            intendedMaxPower = be.consumption * 20;
+        } else {
+            be.progress = 0;
+            be.consumption = CONSUMPTION;
+            intendedMaxPower = MAX_ENERGY;
         }
+        // Original: maxPower = max(intendedMaxPower, power)
+        be.setEnergyCapacity(Math.max(intendedMaxPower, be.energy));
         // matchesFluid на ArcWelderRecipe заменяет прежний recipe.fluid.satisfiedBy(tank) (теперь FluidStack-based).
         boolean hasRecipe  = recipe != null && recipe.matchesFluid(be.tank);
         boolean canProcess = hasRecipe && be.energy >= be.consumption
                 && be.canOutput(recipe.getOutput());
 
         if (canProcess) {
-            be.progress++;
+            be.progress += (1 + blackLevel);
             be.energy = Math.max(0, be.energy - be.consumption);
 
             // 1:1-Port: alle zwei Ticks ein Schwall Funken ueber der Schweissstelle, jeden
@@ -100,7 +165,8 @@ public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity {
                 be.processRecipe(recipe);
                 be.setChanged();
             }
-        } else if (recipe == null || be.energy < be.consumption) {
+        } else {
+            // Original: progress = 0, sobald das Rezept nicht laufen kann
             be.progress = 0;
         }
 
@@ -140,7 +206,7 @@ public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity {
         ItemStack existing = inventory.getStackInSlot(SLOT_OUT);
         if (existing.isEmpty()) {
             inventory.setStackInSlot(SLOT_OUT, result);
-        } else if (com.hbm_m.platform.PlatformHooks.isSameItemSameTags(existing, result)) {
+        } else if (com.hbm_m.platform.StackNbt.sameItemSameTags(existing, result)) {
             existing.grow(result.getCount());
         }
     }
@@ -154,7 +220,7 @@ public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity {
         ItemStack out = inventory.getStackInSlot(SLOT_OUT);
         if (out.isEmpty()) return true;
         if (result == null) return false;
-        return com.hbm_m.platform.PlatformHooks.isSameItemSameTags(out, result) && out.getCount() + result.getCount() <= out.getMaxStackSize();
+        return com.hbm_m.platform.StackNbt.sameItemSameTags(out, result) && out.getCount() + result.getCount() <= out.getMaxStackSize();
     }
 
     /** Кэшированный скан рецептов: подпись — фингерпринты значений трёх входных стаков (P4, value-keyed). */
@@ -168,9 +234,9 @@ public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity {
         ItemStack s1 = inventory.getStackInSlot(SLOT_IN2);
         ItemStack s2 = inventory.getStackInSlot(SLOT_IN3);
         long signature = com.hbm_m.recipe.index.CachedRecipeResolver.sign(6,
-                com.hbm_m.platform.PlatformHooks.stackFingerprint(s0),
-                com.hbm_m.platform.PlatformHooks.stackFingerprint(s1),
-                com.hbm_m.platform.PlatformHooks.stackFingerprint(s2));
+                com.hbm_m.platform.StackNbt.fingerprint(s0),
+                com.hbm_m.platform.StackNbt.fingerprint(s1),
+                com.hbm_m.platform.StackNbt.fingerprint(s2));
         return recipeResolver.resolve(level, ArcWelderRecipe.Type.INSTANCE, signature, (lvl, all) -> {
             // CONTRACT 1: сканер — только матч по входам; matchesFluid/canOutput/energy — per-tick вне сканера.
             for (ArcWelderRecipe recipe : all) {
@@ -213,6 +279,7 @@ public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity {
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
+        if (!display.isEmpty()) tag.put("display", com.hbm_m.platform.StackNbt.save(display, new CompoundTag(), registries));
         tag.putInt("progress",    progress);
         tag.putInt("processTime", processTime);
         tank.writeToNBT(tag, "tank");
@@ -221,9 +288,138 @@ public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity {
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
+        display = tag.contains("display") ? com.hbm_m.platform.StackNbt.parse(tag.getCompound("display"), registries) : ItemStack.EMPTY;
         progress    = tag.getInt("progress");
         processTime = tag.getInt("processTime");
-        if (processTime <= 0) processTime = 200;
+        if (processTime <= 0) processTime = 1;
         tank.readFromNBT(tag, "tank");
+    }
+
+    // ─── Anschluesse (Original getConPos: Strom und Fluessigkeit rund um den Sockel) ───────────────────────
+
+    private net.minecraft.core.BlockPos[] structureCells = null;
+
+    /** Alle Zellen der unteren Lage; Kabel und Rohre an jeder Seite davon zaehlen als Anschluss. */
+    private net.minecraft.core.BlockPos[] baseCells() {
+        if (structureCells != null) return structureCells;
+        java.util.List<net.minecraft.core.BlockPos> cells = new java.util.ArrayList<>();
+        cells.add(worldPosition);
+        if (getBlockState().getBlock() instanceof com.hbm_m.interfaces.IMultiblockController ctrl
+                && getBlockState().hasProperty(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING)) {
+            net.minecraft.core.Direction facing = getBlockState().getValue(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING);
+            var helper = ctrl.getStructureHelper();
+            for (net.minecraft.core.BlockPos local : helper.getStructureMap().keySet()) {
+                if (local.getY() == 0) cells.add(helper.getRotatedPos(worldPosition, local, facing));
+            }
+        }
+        structureCells = cells.toArray(new net.minecraft.core.BlockPos[0]);
+        return structureCells;
+    }
+
+    @Override
+    protected net.minecraft.core.BlockPos[] getExtraEnergyPorts() {
+        if (level == null || level.isClientSide) return new net.minecraft.core.BlockPos[0];
+        return baseCells();
+    }
+
+    /** Original: {@code trySubscribe(tank.getTankType(), ...)} an allen Anschluessen, alle 20 Ticks. */
+    private void subscribeFluid(Level level) {
+        if (tank.getTankType() == com.hbm_m.inventory.fluid.ModFluids.NONE.getSource()
+                || tank.getTankType() == net.minecraft.world.level.material.Fluids.EMPTY) return;
+        java.util.Set<net.minecraft.core.BlockPos> cells = new java.util.HashSet<>(java.util.Arrays.asList(baseCells()));
+        for (net.minecraft.core.BlockPos cell : cells) {
+            for (net.minecraft.core.Direction dir : net.minecraft.core.Direction.Plane.HORIZONTAL) {
+                net.minecraft.core.BlockPos n = cell.relative(dir);
+                if (!cells.contains(n)) trySubscribe(tank.getTankType(), level, n, dir);
+            }
+        }
+    }
+
+    @Override public com.hbm_m.inventory.fluid.tank.FluidTank[] getAllTanks() { return new com.hbm_m.inventory.fluid.tank.FluidTank[] { tank }; }
+    @Override public com.hbm_m.inventory.fluid.tank.FluidTank[] getReceivingTanks() { return new com.hbm_m.inventory.fluid.tank.FluidTank[] { tank }; }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
+    }
+
+    // ─── Original IConditionalInvAccess: rote/gelbe/gruene Anschlusszellen am Sockel ────────────────────
+
+    //? if forge {
+    /** Original: rot Slot 0, gelb Slot 1, gruen Slot 2 (je plus Ausgang 3); alle anderen Zellen ohne Zugriff. */
+    @Override
+    public net.minecraftforge.items.IItemHandler getConditionalItemHandler(net.minecraft.core.BlockPos part, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        net.minecraft.world.level.block.state.BlockState state = getBlockState();
+        net.minecraft.core.Direction dir = state.hasProperty(com.hbm_m.block.machines.MachineArcWelderBlock.FACING)
+                ? state.getValue(com.hbm_m.block.machines.MachineArcWelderBlock.FACING) : net.minecraft.core.Direction.NORTH;
+        net.minecraft.core.Direction rot = dir.getClockWise(); // ForgeDirection.getRotation(UP)
+        net.minecraft.core.BlockPos c = worldPosition;
+
+        // Rot
+        if (part.equals(c.relative(rot)) || part.equals(c.relative(rot.getOpposite()).relative(dir.getOpposite())))
+            return itemAccess(new int[] {0, 3});
+        // Gelb
+        if (part.equals(c.relative(dir.getOpposite())))
+            return itemAccess(new int[] {1, 3});
+        // Gruen
+        if (part.equals(c.relative(rot.getOpposite())) || part.equals(c.relative(rot).relative(dir.getOpposite())))
+            return itemAccess(new int[] {2, 3});
+
+        return itemAccess(new int[] { });
+    }
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) {
+            net.minecraftforge.items.IItemHandler h = itemAccess(new int[] {1, 3});
+            return net.minecraftforge.common.util.LazyOptional.of(() -> h).cast();
+        }
+        return super.getCapability(cap, side);
+    }
+
+    private net.minecraftforge.items.IItemHandler itemAccess(int[] slots) {
+        return com.hbm_m.blockentity.SidedItemAccess.fixed(() -> inventory, slots, (slot, stack) -> slot < 3, (slot, stack) -> slot == SLOT_OUT);
+    }
+    //?} elif neoforge {
+    /*/^* Original: rot Slot 0, gelb Slot 1, gruen Slot 2 (je plus Ausgang 3); alle anderen Zellen ohne Zugriff. ^/
+    @Override
+    public net.minecraftforge.items.IItemHandler getConditionalItemHandler(net.minecraft.core.BlockPos part, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        net.minecraft.world.level.block.state.BlockState state = getBlockState();
+        net.minecraft.core.Direction dir = state.hasProperty(com.hbm_m.block.machines.MachineArcWelderBlock.FACING)
+                ? state.getValue(com.hbm_m.block.machines.MachineArcWelderBlock.FACING) : net.minecraft.core.Direction.NORTH;
+        net.minecraft.core.Direction rot = dir.getClockWise(); // ForgeDirection.getRotation(UP)
+        net.minecraft.core.BlockPos c = worldPosition;
+
+        // Rot
+        if (part.equals(c.relative(rot)) || part.equals(c.relative(rot.getOpposite()).relative(dir.getOpposite())))
+            return itemAccess(new int[] {0, 3});
+        // Gelb
+        if (part.equals(c.relative(dir.getOpposite())))
+            return itemAccess(new int[] {1, 3});
+        // Gruen
+        if (part.equals(c.relative(rot.getOpposite())) || part.equals(c.relative(rot).relative(dir.getOpposite())))
+            return itemAccess(new int[] {2, 3});
+
+        return itemAccess(new int[] { });
+    }
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) {
+            net.minecraftforge.items.IItemHandler h = itemAccess(new int[] {1, 3});
+            return com.hbm_m.platform.LazyCap.of(() -> h).cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+
+    private net.minecraftforge.items.IItemHandler itemAccess(int[] slots) {
+        return com.hbm_m.blockentity.SidedItemAccess.fixed(() -> inventory, slots, (slot, stack) -> slot < 3, (slot, stack) -> slot == SLOT_OUT);
+    }
+    *///?}
+
+    /** 1:1 TileEntityMachineArcWelder.getRenderBoundingBox (Render-Migration: Raptors Pfad cullt nach dieser Box, der alte BER zeichnete immer). */
+    @Override
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return new net.minecraft.world.phys.AABB(worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1, worldPosition.getX() + 2, worldPosition.getY() + 3, worldPosition.getZ() + 2);
     }
 }

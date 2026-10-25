@@ -28,6 +28,8 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.platform.StackNbt;
+import com.hbm_m.platform.LevelHooks;
 
 public class DetonatorItem extends Item implements ITooltipProvider {
 
@@ -46,7 +48,7 @@ public class DetonatorItem extends Item implements ITooltipProvider {
      * Supports both IBomb and IDetonatable blocks.
      */
     public static BombReturnCode triggerDetonation(Level level, BlockPos pos, @Nullable Player player) {
-        if (!PlatformHooks.loadChunkTemporary(level, pos)) {
+        if (!LevelHooks.loadChunkTemporary(level, pos)) {
             return BombReturnCode.ERROR_NO_BOMB;
         }
         BlockState state = level.getBlockState(pos);
@@ -55,7 +57,7 @@ public class DetonatorItem extends Item implements ITooltipProvider {
             BlockPos controllerPos = part.getControllerPos();
             if (controllerPos != null) {
                 pos = controllerPos;
-                if (!PlatformHooks.loadChunkTemporary(level, pos)) {
+                if (!LevelHooks.loadChunkTemporary(level, pos)) {
                     return BombReturnCode.ERROR_NO_BOMB;
                 }
                 state = level.getBlockState(pos);
@@ -86,10 +88,10 @@ public class DetonatorItem extends Item implements ITooltipProvider {
      */
     @Nullable
     public static BlockPos getSavedPosition(ItemStack stack) {
-        if (!PlatformHooks.hasItemTag(stack)) {
+        if (!StackNbt.has(stack)) {
             return null;
         }
-        CompoundTag nbt = PlatformHooks.getItemTag(stack);
+        CompoundTag nbt = StackNbt.read(stack);
         if (nbt == null) {
             return null;
         }
@@ -142,7 +144,7 @@ public class DetonatorItem extends Item implements ITooltipProvider {
 
         // Shift right-click saves position
         if (player.isCrouching()) {
-            PlatformHooks.editItemTag(stack, nbt -> {
+            StackNbt.edit(stack, nbt -> {
                 // 1.7.10 tag format
                 nbt.putInt("x", pos.getX());
                 nbt.putInt("y", pos.getY());

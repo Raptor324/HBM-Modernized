@@ -6,7 +6,6 @@ import com.hbm_m.blockentity.machines.rbmk.RBMKControlBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKControlManualBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKRodBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKColumnBlockEntity.ColumnType;
-import com.hbm_m.client.render.cache.RenderCacheManager;
 import com.hbm_m.handler.rbmk.RBMKDials;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -35,11 +34,7 @@ import java.util.*;
  * characteristic hollow octagonal channel appearance visible from the top.
  */
 
-//? if < 1.21.1 {
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} else {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
 public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements com.hbm_m.client.render.HbmBerBounds<T> {
 
     // ─── Caches ──────────────────────────────────────────────────────────────
@@ -48,18 +43,6 @@ public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements com.
     private static final Map<String, Map<String, List<float[]>>> OBJ_CACHE   = new HashMap<>();
     /** Texture sprite cache. */
     private static final Map<String, TextureAtlasSprite>         SPRITE_CACHE = new HashMap<>();
-
-    // Cached sprites hold the UV rects of the atlas layout they were fetched under (u0/v0 are
-    // final on TextureAtlasSprite and a re-stitch builds fresh instances), so both caches must be
-    // dropped on reload/session end - the next sprite()/getObj() call lazily re-fetches from the
-    // re-stitched atlas / current resource pack. Clears the shared cache for every RBMK-family
-    // renderer that routes through sprite()/getObj().
-    static {
-        RenderCacheManager.register(reason -> {
-            OBJ_CACHE.clear();
-            SPRITE_CACHE.clear();
-        });
-    }
 
     // ─── Constructor ─────────────────────────────────────────────────────────
 
@@ -149,19 +132,19 @@ public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements com.
         // and "_glass" (glass lid) - but the renderer only ever loaded the plain one, so every
         // column looked the same regardless of whether it actually had a lid on. Matches the
         // reference screenshots' distinct capped/vented tops per lid state.
-        // Must gate on hasLid() (overridden to always be false for control rods, which never
-        // have a real lid - the rod cap stands in for it) rather than the raw getLidState()
-        // field, which still defaults to 1 ("has a concrete lid") even for types that can never
-        // actually have one: reading it directly sent every control rod, moderated or not,
-        // looking for a "..._cover_top" texture that doesn't exist for that type, rendering as
-        // the classic missing-texture magenta/black checkerboard on the whole top face.
-        String topSuffix;
-        if (!be.hasLid()) {
-            topSuffix = "_top";
-        } else {
-            topSuffix = be.getLidState() == 2 ? "_glass_top" : "_cover_top";
-        }
-        TextureAtlasSprite topSprite  = sprite(RefStrings.MODID, "block/rbmk/" + prefix + topSuffix);
+        // Must gate on hasLid() && !hasOwnLid() rather than the raw getLidState() field, which
+        // still defaults to 1 ("has a concrete lid") even for types that can never actually have
+        // one: reading it directly sent every control rod, moderated or not, looking for a
+        // "..._cover_top" texture that doesn't exist for that type, rendering as the classic
+        // missing-texture magenta/black checkerboard on the whole top face.
+        // The column body always wears its plain "_top". A lid is NOT a texture swap on that face -
+        // it is a real 0.25-block plate drawn on top of the column further down (see the lid box
+        // below), which is what the "_cover_side"/"_glass_side" textures are for: they are the
+        // plate's rim, and nothing in this renderer had ever used them. Swapping only the top face
+        // also left a lidded column visibly flat next to a fully-inserted control rod, whose cap
+        // mesh stands 0.25 blocks proud of the column.
+        TextureAtlasSprite topSprite = sprite(RefStrings.MODID, "block/rbmk/" + prefix + "_top");
+        String lidSuffix = be.getLidState() == 2 ? "_glass" : "_cover";
 
         VertexConsumer vc = buf.getBuffer(RenderType.solid());
         int height = RBMKDials.COLUMN_HEIGHT + 1;
@@ -211,6 +194,34 @@ public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements com.
             quad(vc, m, s0,y1,s0, s0,y1,s1, s1,y1,s1, s1,y1,s0,  0, 1, 0, pipeTop,  packedLight, packedOverlay, 1,1,1);
         }
 
+        // ── Lid: a real plate sitting on top of the column ────────────────────
+        // Geometry taken from the lid's own mesh (models/rbmk/models/deb_lid.obj, the debris entity
+        // that pops off when a lid is knocked loose): a full-width plate 0.25 blocks thick. Placed
+        // with its underside on the column's top face, its top ends up at height + 0.25 - exactly
+        // level with the top of a control rod cap at level 0, which is how the two read as one
+        // continuous reactor floor.
+        // hasOwnLid() types (control rods, panel devices) are logically lidded - hasLid() is true
+        // for them so they do not leak neutron flux - but they ship no "_cover_*"/"_glass_*"
+        // textures, so the generic plate must not be drawn on them. Their own cap mesh stands in
+        // for it. Matches RBMKBase.getIcon's "if(!hasOwnLid())" guard in the original.
+        if (be.hasLid() && !be.hasOwnLid()) {
+            TextureAtlasSprite lidTop  = sprite(RefStrings.MODID, "block/rbmk/" + prefix + lidSuffix + "_top");
+            TextureAtlasSprite lidSide = sprite(RefStrings.MODID, "block/rbmk/" + prefix + lidSuffix + "_side");
+            // A glass lid has to go on RenderType.cutout(): its textures are mostly hole (191 of 256
+            // pixels on the top face, 220 of 256 on the rim) with strictly binary alpha, and
+            // RenderType.solid() ignores alpha outright - which drew the glass lid as an opaque
+            // slab you could not see the channel through. Concrete lids are fully opaque and stay
+            // on the solid layer.
+            VertexConsumer lvc = be.getLidState() == 2 ? buf.getBuffer(RenderType.cutout()) : vc;
+            float ly0 = height, ly1 = height + 0.25f;
+            quad(lvc, m, 1,ly0,0, 0,ly0,0, 0,ly1,0, 1,ly1,0,  0, 0,-1, lidSide, packedLight, packedOverlay, 1,1,1);
+            quad(lvc, m, 0,ly0,1, 1,ly0,1, 1,ly1,1, 0,ly1,1,  0, 0, 1, lidSide, packedLight, packedOverlay, 1,1,1);
+            quad(lvc, m, 0,ly0,0, 0,ly0,1, 0,ly1,1, 0,ly1,0, -1, 0, 0, lidSide, packedLight, packedOverlay, 1,1,1);
+            quad(lvc, m, 1,ly0,1, 1,ly0,0, 1,ly1,0, 1,ly1,1,  1, 0, 0, lidSide, packedLight, packedOverlay, 1,1,1);
+            // No underside: it would be coplanar with the column's own top face and z-fight.
+            quad(lvc, m, 0,ly1,0, 0,ly1,1, 1,ly1,1, 1,ly1,0,  0, 1, 0, lidTop, packedLight, packedOverlay, 1,1,1);
+        }
+
         // ── Control rod only: animated rod-cap sliding with insertion level ───
         if (be instanceof RBMKControlBlockEntity ctrl) {
             renderControlRod(ctrl, pt, ps, buf, height, packedLight, packedOverlay);
@@ -240,9 +251,16 @@ public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements com.
                 float b = ( color        & 0xFF) / 255f;
                 Map<String, List<float[]>> rodsObj = getObj("models/rbmk/models/rbmk_element_rods.obj");
                 TextureAtlasSprite fuelSprite = sprite(RefStrings.MODID, "block/rbmk/rbmk_element_fuel");
+                // The rod mesh is one block tall (OBJ Y spans 0..1) and has to be stacked up the
+                // whole channel, exactly like the "Inner"/"Cap" geometry above. It was drawn once
+                // at the base instead, so a loaded fuel channel showed its rods only in the bottom
+                // block and looked empty for the remaining COLUMN_HEIGHT blocks.
                 ps.pushPose();
                 ps.translate(0.5, 0, 0.5);
-                renderObjGroup(vc, ps.last().pose(), rodsObj.get("Rods"), fuelSprite, r, g, b, packedLight, packedOverlay);
+                for (int y = 0; y < height; y++) {
+                    renderObjGroup(vc, ps.last().pose(), rodsObj.get("Rods"), fuelSprite, r, g, b, packedLight, packedOverlay);
+                    ps.translate(0, 1, 0);
+                }
                 ps.popPose();
 
                 // 1:1 with the original's RenderRBMKFuelChannel Cherenkov glow: a faint additive
@@ -259,7 +277,10 @@ public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements com.
     // ─── Cherenkov glow ──────────────────────────────────────────────────────
 
     private static void renderCherenkovGlow(PoseStack ps, MultiBufferSource buf, int height) {
-        VertexConsumer vc = buf.getBuffer(RenderType.lightning());
+        // NOT RenderType.lightning(): its WEATHER_TARGET output state makes the haze render
+        // through blocks under Fabulous graphics. See CustomRenderTypes.RBMK_CHERENKOV.
+        VertexConsumer vc = buf.getBuffer(
+                com.hbm_m.client.ClientRenderHandler.CustomRenderTypes.RBMK_CHERENKOV);
         ps.pushPose();
         ps.translate(0.5, 0.75, 0.5);
         Matrix4f m = ps.last().pose();

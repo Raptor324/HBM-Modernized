@@ -26,6 +26,7 @@ import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.SmeltingRecipe;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * Electric Furnace: Direktport der Kernlogik aus {@code TileEntityMachineElectricFurnace}
@@ -173,7 +174,7 @@ public class MachineElectricFurnaceBlockEntity extends BaseMachineBlockEntity {
     private boolean canAcceptResult(ItemStack result) {
         ItemStack current = inventory.getStackInSlot(SLOT_OUTPUT);
         if (current.isEmpty()) return true;
-        if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, result)) return false;
+        if (!com.hbm_m.platform.StackNbt.sameItemSameTags(current, result)) return false;
         return current.getCount() + result.getCount() <= current.getMaxStackSize();
     }
 
@@ -199,7 +200,7 @@ public class MachineElectricFurnaceBlockEntity extends BaseMachineBlockEntity {
         // 1.21.1: getRecipeFor требует RecipeInput (SingleRecipeInput) и возвращает RecipeHolder —
         // через CachedRecipeResolver, чтобы RecipeHooks.getRecipeFor звался только при открытом гейте.
         SmeltingRecipe cached = recipeResolver.resolve(level, RecipeType.SMELTING,
-                CachedRecipeResolver.sign(0L, PlatformHooks.stackFingerprint(input)),
+                CachedRecipeResolver.sign(0L, StackNbt.fingerprint(input)),
                 (lvl, all) -> com.hbm_m.platform.recipe.RecipeHooks.getRecipeFor(lvl, RecipeType.SMELTING, input)
                         .orElse(null));
         return java.util.Optional.ofNullable(cached);
@@ -242,5 +243,53 @@ public class MachineElectricFurnaceBlockEntity extends BaseMachineBlockEntity {
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
         return new MachineElectricFurnaceMenu(id, inv, this, data);
+    }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: Slots {0, 1, 2}; leere Akkus und das Ergebnis heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0, 1, 2 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot != 2 && isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return (slot == 0 && com.hbm_m.blockentity.SidedItemAccess.isEmptyBattery(stack)) || slot == 2; }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: Slots {0, 1, 2}; leere Akkus und das Ergebnis heraus. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0, 1, 2 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot != 2 && isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return (slot == 0 && com.hbm_m.blockentity.SidedItemAccess.isEmptyBattery(stack)) || slot == 2; }
+            });
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return sidedItems.get(side);
     }
 }

@@ -1,0 +1,60 @@
+{
+  "loader": "hbm_m:soyuz_rocket_loader",
+  "textures": {
+    "particle": "hbm_m:block/soyuz_authentic/bottomstage",
+    "booster": "hbm_m:block/soyuz_authentic/booster",
+    "boosterside": "hbm_m:block/soyuz_authentic/boosterside",
+    "boosterengines": "hbm_m:block/soyuz_authentic/mainengines",
+    "bottomstage": "hbm_m:block/soyuz_authentic/bottomstage",
+    "engineblock": "hbm_m:block/soyuz_authentic/engineblock",
+    "les": "hbm_m:block/soyuz_authentic/les",
+    "lesthrusters": "hbm_m:block/soyuz_authentic/lesthrusters",
+    "mainengines": "hbm_m:block/soyuz_authentic/mainengines",
+    "payload": "hbm_m:block/soyuz_authentic/payload",
+    "payloadblocks": "hbm_m:block/soyuz_authentic/payloadblocks",
+    "sideengines": "hbm_m:block/soyuz_authentic/sideengines",
+    "topstage": "hbm_m:block/soyuz_authentic/topstage"
+  },
+  "display": {
+    "thirdperson_righthand": {
+      "rotation": [75, 45, 0],
+      "translation": [0.0, 2.5, 0.0],
+      "scale": [0.015, 0.015, 0.015]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [75, 45, 0],
+      "translation": [0.0, 2.5, 0.0],
+      "scale": [0.015, 0.015, 0.015]
+    },
+    "firstperson_righthand": {
+      "rotation": [0, 45, 0],
+      "translation": [0.0, 1.0, 0.0],
+      "scale": [0.015, 0.015, 0.015]
+    },
+    "firstperson_lefthand": {
+      "rotation": [0, 45, 0],
+      "translation": [0.0, 1.0, 0.0],
+      "scale": [0.015, 0.015, 0.015]
+    },
+    "gui": {
+      "rotation": [30, 225, 0],
+      "translation": [0.0, -3.0, 0.0],
+      "scale": [0.015, 0.015, 0.015]
+    },
+    "head": {
+      "rotation": [0, 0, 0],
+      "translation": [0.0, 0.0, 0.0],
+      "scale": [0.015, 0.015, 0.015]
+    },
+    "fixed": {
+      "rotation": [0, 180, 0],
+      "translation": [0.0, 0.0, 0.0],
+      "scale": [0.015, 0.015, 0.015]
+    },
+    "ground": {
+      "rotation": [0, 0, 0],
+      "translation": [0.0, 3.0, 0.0],
+      "scale": [0.015, 0.015, 0.015]
+    }
+  }
+}

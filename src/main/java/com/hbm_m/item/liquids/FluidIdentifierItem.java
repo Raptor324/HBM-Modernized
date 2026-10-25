@@ -35,6 +35,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * Universal fluid identifier. Has two slots (primary/secondary) for fluid types.
@@ -50,6 +51,11 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
         super(properties.stacksTo(1));
     }
 
+    /**
+     * Tanks/Faesser/BAT9000 (Original MachineFluidTank/BlockFluidBarrel/MachineBigAssTank9000, geschlichener Zweig):
+     * die Bloecke geben geschlichen PASS zurueck, die Sorte stellt der Identifikator hier. Rohre laufen ueber
+     * {@link com.hbm_m.api.fluids.PipeTypeChanger#onIdentifier} im Block (dank {@link #doesSneakBypassUse}).
+     */
     @Override
     public InteractionResult useOn(UseOnContext context) {
         Player player = context.getPlayer();
@@ -77,42 +83,26 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
 
         MachineFluidTankBlockEntity tankBE = findTankEntity(level, pos);
         if (tankBE != null) {
-            // Паритет NEXT BlockFluidBarrel.Functional.useItemOn: у БОЧЕК тип применяется
-            // ОБЫЧНЫМ ПКМ; sneak+ПКМ по бочке ничего не делает (меню не открывает и тип не меняет).
-            // Generic-мультиблочный бак сохраняет прежнее поведение (меню по обычному ПКМ).
-            boolean barrel = level.getBlockState(tankBE.getBlockPos()).getBlock()
-                    instanceof com.hbm_m.block.machines.BarrelTankBlock;
-            if (barrel) {
-                if (player.isShiftKeyDown()) {
-                    return InteractionResult.SUCCESS;
-                }
-            } else if (!player.isShiftKeyDown()) {
+            if (tankBE.hasExploded) {
                 return InteractionResult.PASS;
             }
             if (level.isClientSide) {
                 return InteractionResult.SUCCESS;
             }
             tankBE.setTankTypeFromIdentifier(stack);
-            Fluid tankType = tankBE.getFluidTank().getTankType();
-            String nameKey;
-            if (tankType == ModFluids.NONE.getSource() || tankType == Fluids.EMPTY) {
-                nameKey = "fluid.hbm_m.none";
-            } else {
-                nameKey = "fluid."
-                        + BuiltInRegistries.FLUID.getKey(tankType).getNamespace()
-                        + "."
-                        + BuiltInRegistries.FLUID.getKey(tankType).getPath();
-            }
-            Component fluidName = Component.translatable(nameKey).withStyle(ChatFormatting.YELLOW);
-            // Паритет NEXT BlockFluidBarrel.Functional.useItemOn: системное сообщение в чат,
-            // без звука.
-            Component line = Component.translatable("gui.hbm_m.fluid_tank.filter_set", fluidName)
-                    .withStyle(ChatFormatting.YELLOW);
-            player.displayClientMessage(line, false);
-            return InteractionResult.sidedSuccess(level.isClientSide());
+            Fluid type = getType(level, pos, stack);
+            player.displayClientMessage(Component.literal("Changed type to ").withStyle(ChatFormatting.YELLOW)
+                    .append(getFluidDisplayName(type)).append(Component.literal("!")), false);
+            return InteractionResult.CONSUME;
         }
 
         return InteractionResult.PASS;
+    }
+
+    /** Original {@code doesSneakBypassUse}: auch geschlichen bekommt der Block den Rechtsklick. */
+    @Override
+    public boolean doesSneakBypassUse(ItemStack stack, net.minecraft.world.level.LevelReader level, BlockPos pos, Player player) {
+        return true;
     }
 
     @Nullable
@@ -155,33 +145,29 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
                 setType(stack, secondary, true);
                 setType(stack, primary, false);
                 level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                    SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 0.45F, 1.25F);
+                    SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 0.25F, 1.25F);
             }
             return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
         }
     }
 
+    /** Original getContainerItem = Kopie: bleibt beim Handwerk im Raster (Rezepte fuer Kanister-Etiketten u. a.). */
     @Override
-    public Component getName(ItemStack stack) {
-        Fluid primary = getType(stack, true);
-        
-        if (primary == null || primary == net.minecraft.world.level.material.Fluids.EMPTY || primary == ModFluids.NONE.getSource()) {
-            return Component.translatable("item.hbm_m.fluid_identifier.none");
-        }
+    public boolean hasCraftingRemainingItem(ItemStack stack) {
+        return true;
+    }
 
-        // Позволяем клиенту самому переводить и склеивать текст (работает в мультиплеере для разных языков)
-        Component fluidName = FluidStack.create(primary, 1000).getName();
-
-        return Component.translatable("item.hbm_m.fluid_identifier", fluidName);
+    public ItemStack getCraftingRemainingItem(ItemStack stack) {
+        return stack.copy();
     }
 
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.translatable("item.hbm_m.fluid_identifier.info").withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.literal("   ").append(getFluidDisplayName(getType(stack, true)).copy().withStyle(ChatFormatting.AQUA)));
+        tooltip.add(Component.translatable(getDescriptionId() + ".info").withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.literal("   ").append(getFluidDisplayName(getType(stack, true)).copy().withStyle(ChatFormatting.GRAY)));
         
-        tooltip.add(Component.translatable("item.hbm_m.fluid_identifier.info2").withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.literal("   ").append(getFluidDisplayName(getType(stack, false)).copy().withStyle(ChatFormatting.AQUA)));
+        tooltip.add(Component.translatable(getDescriptionId() + ".info2").withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.literal("   ").append(getFluidDisplayName(getType(stack, false)).copy().withStyle(ChatFormatting.GRAY)));
     }
 
     private static Component getFluidDisplayName(Fluid fluid) {
@@ -241,7 +227,7 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
     }
 
     public static String getTypeName(ItemStack stack, boolean primary) {
-        CompoundTag tag = PlatformHooks.getItemTag(stack);
+        CompoundTag tag = StackNbt.read(stack);
         if (tag == null) return "none";
         String key = primary ? NBT_FLUID1 : NBT_FLUID2;
         return tag.getString(key);
@@ -252,7 +238,7 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
     }
 
     public static void setType(ItemStack stack, String fluidName, boolean primary) {
-        PlatformHooks.putString(stack, primary ? NBT_FLUID1 : NBT_FLUID2, fluidName != null ? fluidName : "none");
+        StackNbt.putString(stack, primary ? NBT_FLUID1 : NBT_FLUID2, fluidName != null ? fluidName : "none");
     }
 
     /** Returns tint color for primary fluid (for ItemColor). */
@@ -272,8 +258,9 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
         public static void showSwapActiveTypeToast(ItemStack stack) {
             Fluid newActive = getType(stack, false);
             Component fluidLine = getFluidDisplayName(newActive);
+            // Original: PlayerInformPacket(secondary.getConditionalName(), 7, 3000) - nur der Name
             com.hbm_m.client.overlay.OverlayInfoToast.show(
-                    Component.translatable("toast.hbm_m.fluid_identifier_active", fluidLine),
+                    fluidLine,
                     60,
                     com.hbm_m.client.overlay.OverlayInfoToast.ID_FLUID_IDENTIFIER_SWAP);
         }

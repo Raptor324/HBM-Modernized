@@ -1,8 +1,11 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.EffectHooks;
+
 import java.util.List;
 
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.effect.ModEffects;
 import com.hbm_m.extprop.HbmLivingProps;
 import com.hbm_m.particle.ModParticleTypes;
 
@@ -32,7 +35,10 @@ public class DeconBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity {
                 List<LivingEntity> entities = level.getEntitiesOfClass(LivingEntity.class, box);
 
                 for (LivingEntity entity : entities) {
-                    HbmLivingProps.incrementRadiation(entity, -0.5F);
+                    HbmLivingProps.incrementRadiation(entity, -5.0F);
+                    entity.removeEffect(EffectHooks.of(ModEffects.RADIATION));
+                    HbmLivingProps.setCont(entity, new java.util.ArrayList<>());
+                    com.hbm_m.api.space.SpaceApi.decontaminate(entity); // Space: deconNeutron (ohne Addon no-op)
                 }
             }
         } else {

@@ -38,7 +38,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * Multiblock structure: 3x3x7 (в плане 3x7, высота 3 блока).
  * Model parts: Turbine (body), Flywheel (animated), Gauge
  */
-public class MachineIndustrialTurbineBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.interfaces.ILookOverlay {
+public class MachineIndustrialTurbineBlock extends BaseEntityBlock implements IMultiblockController {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
@@ -51,45 +51,25 @@ public class MachineIndustrialTurbineBlock extends BaseEntityBlock implements IM
     }
 
     private static MultiblockStructureHelper defineStructure() {
-        // 7 рядов по Z (от фронта к заду), 3 по X; контроллер — центр переднего ряда нижнего слоя.
-        String[] base = {
-            "UOOOUOO",
-            "OOOOOOO",
-            "UOOCUOO"
-        };
-        String[] medium = {
-            "OOOOOOO",
-            "OOOOOOE",
-            "OOOOOOO"
-        };
-        String[] upper = {
-            "OOOOOOO",
-            "OOOOOOO",
-            "OOOOOOO"
-        };
-
-        Map<Character, PartRole> roleMap = Map.of(
-                'C', PartRole.CONTROLLER,
-                'O', PartRole.DEFAULT,
-                'E', PartRole.ENERGY_CONNECTOR,
-                'U', PartRole.UNIVERSAL_CONNECTOR
-        );
-
-        Map<Character, Supplier<BlockState>> symbolMap = Map.of();
-
-        return MultiblockStructureHelper.createFromLayersWithRoles(
-                new String[][] { base, medium, upper },
-                symbolMap,
-                () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-                roleMap,
-                null,
-                null
-        );
+        // 1:1 MachineIndustrialTurbine: getDimensions {2,0,3,3,1,1}, getOffset 3 (Kern in der Mitte, 3x3x7 laengs dir);
+        // makeExtra (fluid+power) bei dir*3 +- rot, -dir +- rot, dir*3 / -dir auf Hoehe 2, -dir*3 auf Hoehe 1.
+        return com.hbm_m.multiblock.DummyableStructureBuilder.create()
+                .box(2, 0, 3, 3, 1, 1)
+                .extra(3, 0, 1)
+                .extra(3, 0, -1)
+                .extra(-1, 0, 1)
+                .extra(-1, 0, -1)
+                .extra(3, 2, 0)
+                .extra(-1, 2, 0)
+                .extra(-3, 1, 0)
+                .placementOffset(3)
+                .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
     }
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
+        // Original RenderIndustrialTurbine (BER)
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     @Override
@@ -139,46 +119,6 @@ public class MachineIndustrialTurbineBlock extends BaseEntityBlock implements IM
         return new MachineIndustrialTurbineBlockEntity(pos, state);
     }
 
-    /** Порт MachineIndustrialTurbine.printHook: баки, буфер HE и спиннер оборотов. */
-    @Override
-    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
-        BlockEntity be = level.getBlockEntity(pos);
-        if (!(be instanceof MachineIndustrialTurbineBlockEntity turbine)) return;
-
-        var inputTank = turbine.getSteamTank();
-        var outputTank = turbine.getSpentSteamTank();
-        net.minecraft.world.level.material.Fluid inputType = inputTank.getTankType();
-        net.minecraft.world.level.material.Fluid outputType = com.hbm_m.inventory.fluid.ModFluids.NONE.getSource();
-        com.hbm_m.inventory.fluid.trait.FT_Coolable trait =
-                com.hbm_m.inventory.fluid.FluidType.getTrait(inputType, com.hbm_m.inventory.fluid.trait.FT_Coolable.class);
-        if (trait != null) outputType = trait.coolsTo;
-
-        double spin = turbine.getSpin();
-        int color = ((int) (0xFF - 0xFF * spin)) << 16 | ((int) (0xFF * spin) << 8);
-        int time = (int) ((level.getGameTime() / 4) % 4);
-        String[] spinner = {"▖ ", "▘ ", " ▘", " ▖"};
-
-        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
-        text.add(net.minecraft.network.chat.Component.literal("-> ").withStyle(net.minecraft.ChatFormatting.GREEN)
-                .append(net.minecraft.network.chat.Component.literal(
-                        com.hbm_m.inventory.fluid.FluidType.forFluid(inputType).getLocalizedName().getString()
-                        + ": " + String.format(java.util.Locale.US, "%,d", inputTank.getFill())
-                        + "/" + String.format(java.util.Locale.US, "%,d", inputTank.getMaxFill()) + "mB")));
-        text.add(net.minecraft.network.chat.Component.literal("<- ").withStyle(net.minecraft.ChatFormatting.RED)
-                .append(net.minecraft.network.chat.Component.literal(
-                        com.hbm_m.inventory.fluid.FluidType.forFluid(outputType).getLocalizedName().getString()
-                        + ": " + String.format(java.util.Locale.US, "%,d", outputTank.getFill())
-                        + "/" + String.format(java.util.Locale.US, "%,d", outputTank.getMaxFill()) + "mB")));
-        text.add(net.minecraft.network.chat.Component.literal("<- "
-                + com.hbm_m.util.EnergyFormatter.format(turbine.getEnergyStored()) + "HE ("
-                + spinner[turbine.getEnergyStored() <= 0 ? 0 : time]
-                + (int) Math.round(spin * 100) + "%)")
-                .withStyle(style -> style.withColor(net.minecraft.network.chat.TextColor.fromRgb(color))));
-
-        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
-                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
-    }
-
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
@@ -190,12 +130,14 @@ public class MachineIndustrialTurbineBlock extends BaseEntityBlock implements IM
     public net.minecraft.world.InteractionResult use(BlockState state, Level level, BlockPos pos,
             net.minecraft.world.entity.player.Player player, net.minecraft.world.InteractionHand hand,
             net.minecraft.world.phys.BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return net.minecraft.world.InteractionResult.PASS; // Original: geschlichen false
         return pullLever(level, pos, player);
     }
     //?} else {
     /*@Override
     protected net.minecraft.world.InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
             net.minecraft.world.entity.player.Player player, net.minecraft.world.phys.BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return net.minecraft.world.InteractionResult.PASS; // Original: geschlichen false
         return pullLever(level, pos, player);
     }
     *///?}
@@ -224,7 +166,8 @@ public class MachineIndustrialTurbineBlock extends BaseEntityBlock implements IM
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return structureHelper.generateShapeFromParts(state.getValue(FACING));
+        // w16b: nur die Kernzelle (Raycast pro Zelle wie Original); Umriss der ganzen Maschine: MultiblockOutlineForge
+        return structureHelper.getControllerCellShape(state.getValue(FACING));
     }
 
     @Override
@@ -260,4 +203,15 @@ public class MachineIndustrialTurbineBlock extends BaseEntityBlock implements IM
         return CODEC;
     }
     *///?}
+
+    /** Original {@code addInformation}: {@code addStandardInfo} (Umschalttaste zeigt {@code .desc}). */
+    @Override
+    //? if < 1.21.1 {
+    public void appendHoverText(net.minecraft.world.item.ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.BlockGetter level,
+                                java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(net.minecraft.world.item.ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    *///?}
+        com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
+    }
 }

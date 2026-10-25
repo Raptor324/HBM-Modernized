@@ -61,6 +61,25 @@ public class MachineCoreReceiverBlockEntity extends BaseMachineBlockEntity
         super(ModBlockEntities.CORE_RECEIVER_BE.get(), pos, state, 4, MAX_POWER, 0L, MAX_POWER);
     }
 
+    //? if forge {
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
+            net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
+            return coolantTank.getForgeFluidCapability().cast();
+        }
+        return super.getCapability(cap, side);
+    }
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER) {
+            return com.hbm_m.platform.LazyCap.ofObj(coolantTank.getCapability()).cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+    *///?}
+
     public FluidTank getCoolantTank() { return coolantTank; }
     public long getJoules()           { return joules; }
 

@@ -21,6 +21,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * Range designator: right-click in air to raycast (300 blocks) and set target at looked block.
@@ -34,10 +35,10 @@ public class ItemDesignatorRange extends Item implements IDesignatorItem, IToolt
 
     @Override
     public void appendHbmTooltip(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
-        if (PlatformHooks.hasItemTag(stack) && PlatformHooks.getItemTag(stack).contains("xCoord")) {
+        if (StackNbt.has(stack) && StackNbt.read(stack).contains("xCoord")) {
             tooltip.add(Component.translatable("tooltip.hbm_m.designator.target"));
-            tooltip.add(Component.literal("X: " + PlatformHooks.getItemTag(stack).getInt("xCoord")).withStyle(ChatFormatting.GRAY));
-            tooltip.add(Component.literal("Z: " + PlatformHooks.getItemTag(stack).getInt("zCoord")).withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.literal("X: " + StackNbt.read(stack).getInt("xCoord")).withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.literal("Z: " + StackNbt.read(stack).getInt("zCoord")).withStyle(ChatFormatting.GRAY));
         } else {
             tooltip.add(Component.translatable("tooltip.hbm_m.designator.no_target"));
         }
@@ -48,7 +49,8 @@ public class ItemDesignatorRange extends Item implements IDesignatorItem, IToolt
         ItemStack stack = player.getItemInHand(hand);
         HitResult hit = player.pick(300, 1f, false);
 
-        if (hit.getType() != HitResult.Type.BLOCK) {
+        // Original rayTrace(..., mopOnMiss = true): auch ohne Treffer gilt der Block am Strahlende
+        if (!(hit instanceof BlockHitResult)) {
             return InteractionResultHolder.pass(stack);
         }
 
@@ -60,14 +62,14 @@ public class ItemDesignatorRange extends Item implements IDesignatorItem, IToolt
             return InteractionResultHolder.pass(stack);
         }
 
-        PlatformHooks.editItemTag(stack, tag -> {
+        StackNbt.edit(stack, tag -> {
             tag.putInt("xCoord", pos.getX());
             tag.putInt("zCoord", pos.getZ());
         });
 
         if (level.isClientSide()) {
             player.displayClientMessage(
-                    Component.translatable("message.hbm_m.designator.position_set_xy", pos.getX(), pos.getZ()), true);
+                    Component.translatable("message.hbm_m.designator.position_set_xy", pos.getX(), pos.getZ()), false);
         }
         level.playSound(player, player.blockPosition(), ModSounds.TOOL_TECH_BLEEP.get(),
                 SoundSource.PLAYERS, 1.0F, 1.0F);
@@ -77,13 +79,13 @@ public class ItemDesignatorRange extends Item implements IDesignatorItem, IToolt
 
     @Override
     public boolean isReady(Level level, ItemStack stack, int x, int y, int z) {
-        var tag = PlatformHooks.getItemTag(stack);
+        var tag = StackNbt.read(stack);
         return tag != null && tag.contains("xCoord") && tag.contains("zCoord");
     }
 
     @Override
     public Vec3 getCoords(Level level, ItemStack stack, int x, int y, int z) {
-        var tag = PlatformHooks.getItemTag(stack);
+        var tag = StackNbt.read(stack);
         if (tag == null || !tag.contains("xCoord")) return Vec3.ZERO;
         return new Vec3(tag.getInt("xCoord"), 0, tag.getInt("zCoord"));
     }

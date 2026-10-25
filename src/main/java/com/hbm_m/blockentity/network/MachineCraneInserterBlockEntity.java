@@ -1,10 +1,7 @@
 package com.hbm_m.blockentity.network;
 
-import com.hbm_m.block.network.IEnterableBlock;
-import com.hbm_m.block.machines.MachineCraneInserterBlock;
-import com.hbm_m.blockentity.BaseMachineBlockEntity;
+import com.hbm_m.api.tile.IControlReceiver;
 import com.hbm_m.blockentity.ModBlockEntities;
-import com.hbm_m.entity.conveyor.MovingConveyorItemEntity;
 import com.hbm_m.inventory.menu.MachineCraneInserterMenu;
 
 import net.minecraft.core.BlockPos;
@@ -17,131 +14,169 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-import com.hbm_m.api.item.ItemHandlerAccess;
+//? if forge {
+import net.minecraftforge.items.IItemHandler;
+//?}
 
 /**
- * Crane Inserter - Port von {@code TileEntityCraneInserter} (1.7.10 Original). 21-Slot-Puffer, der
- * Items von einem Foerderband annimmt ({@link IEnterableBlock}) und jeden Tick versucht, sie in
- * das Inventar auf der Ausgabeseite zu schieben (per Forge-{@code IItemHandler}-Capability statt
- * des Original-{@code ISidedInventory}-Masquerade-Systems - funktional aequivalent, moderner Weg).
- * Fallback auf Einzelitem-Einfuegung, falls der volle Stack nicht passt - 1:1 aus dem Original.
- * <p>
- * SCOPE-Entscheidung: Die Screwdriver-Ausgabeseite-Ueberschreibung (Sneak-Klick mit Schraubenzieher
- * auf eine andere Seite) und das Copy-Tool-Einstellungssystem entfallen - kein Copy-Tool in diesem
- * Port vorhanden, Ausgabeseite ist immer die der Eingabeseite (FACING) gegenueberliegende Seite.
+ * 1:1 {@code TileEntityCraneInserter}: 21 Pufferplaetze. Jeden Tick (ohne Redstone) wird der erste Stapel, von dem etwas in
+ * das Zielinventar passt, eingesetzt; klappt das mit keinem ganzen Stapel, wird es einzeln versucht.
  */
-public class MachineCraneInserterBlockEntity extends BaseMachineBlockEntity implements IEnterableBlock {
+public class MachineCraneInserterBlockEntity extends CraneBaseBlockEntity implements IControlReceiver {
 
     public static final int INVENTORY_SIZE = 21;
-    public static final int SLOT_DESTROYER_TOGGLE = -1; // kein echter Slot, siehe GUI-Klick-Handling
 
-    private boolean destroyer = true;
+    public boolean destroyer = true;
 
     public MachineCraneInserterBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.CRANE_INSERTER_BE.get(), pos, state, INVENTORY_SIZE, 0L, 0L, 0L);
+        super(ModBlockEntities.CRANE_INSERTER_BE.get(), pos, state, INVENTORY_SIZE);
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineCraneInserterBlockEntity be) {
-        if (!level.isClientSide) {
-            be.serverTick(level, pos, state);
-        }
+        be.serverTick(level, pos);
     }
 
-    private void serverTick(Level level, BlockPos pos, BlockState state) {
-        if (level.hasNeighborSignal(pos)) return;
+    private void serverTick(Level level, BlockPos pos) {
+        if (!level.hasNeighborSignal(pos)) {
+            //? if forge {
+            Direction outputSide = getOutputSide();
+            IItemHandler te = CraneInventoryUtil.inventoryAt(level, pos.relative(outputSide), outputSide.getOpposite());
 
-        Direction outputSide = state.getValue(MachineCraneInserterBlock.FACING).getOpposite();
-        BlockPos targetPos = pos.relative(outputSide);
-        BlockEntity target = level.getBlockEntity(targetPos);
-        if (target == null) return;
+            boolean didSomething = false;
 
-        // This used to sit in a forge-only Stonecutter branch with no NeoForge counterpart, so on
-        // 1.21.1 the inserter never inserted anything at all. ItemHandlerAccess resolves the
-        // handler on both platforms; var infers the platform's own IItemHandler type.
-        Direction accessSide = outputSide.getOpposite();
-        if (ItemHandlerAccess.getItemHandler(level, targetPos, accessSide) == null) return;
+            if (te != null) {
+                for (int i = 0; i < INVENTORY_SIZE; i++) {
+                    ItemStack stack = inventory.getStackInSlot(i);
+                    if (!stack.isEmpty()) {
+                        ItemStack ret = CraneInventoryUtil.addToInventory(te, stack.copy());
+                        if (ret.isEmpty() || ret.getCount() != stack.getCount()) {
+                            inventory.setStackInSlot(i, ret);
+                            setChanged();
+                            didSomething = true;
+                            break;
+                        }
+                    }
+                }
 
-        boolean didSomething = false;
-        for (int i = 0; i < INVENTORY_SIZE && !didSomething; i++) {
-            ItemStack stack = inventory.getStackInSlot(i);
-            if (stack.isEmpty()) continue;
-
-            ItemStack remainder = ItemHandlerAccess.insert(level, targetPos, accessSide, stack.copy(), false);
-            if (remainder.getCount() != stack.getCount()) {
-                inventory.setStackInSlot(i, remainder);
-                didSomething = true;
-            }
-        }
-
-        // Fallback: single-item insertion, falls kein voller Stack passte (1:1 aus dem Original).
-        if (!didSomething) {
-            for (int i = 0; i < INVENTORY_SIZE; i++) {
-                ItemStack stack = inventory.getStackInSlot(i);
-                if (stack.isEmpty()) continue;
-
-                ItemStack single = stack.copy();
-                single.setCount(1);
-                if (ItemHandlerAccess.insert(level, targetPos, accessSide, single, false).isEmpty()) {
-                    stack.shrink(1);
-                    if (stack.isEmpty()) inventory.setStackInSlot(i, ItemStack.EMPTY);
-                    didSomething = true;
-                    break;
+                // klappt es mit keinem ganzen Stapel, einzeln versuchen (Ziele mit Stapelgrenze)
+                if (!didSomething) for (int i = 0; i < INVENTORY_SIZE; i++) {
+                    ItemStack stack = inventory.getStackInSlot(i);
+                    if (!stack.isEmpty()) {
+                        ItemStack single = stack.copy();
+                        single.setCount(1);
+                        ItemStack ret = CraneInventoryUtil.addToInventory(te, single.copy());
+                        if (ret.isEmpty() || ret.getCount() != single.getCount()) {
+                            inventory.extractItem(i, 1, false);
+                            setChanged();
+                            break;
+                        }
+                    }
                 }
             }
+            //?} elif neoforge {
+            /*Direction outputSide = getOutputSide();
+            net.minecraftforge.items.IItemHandler te = CraneInventoryUtil.inventoryAt(level, pos.relative(outputSide), outputSide.getOpposite());
+
+            boolean didSomething = false;
+
+            if (te != null) {
+                for (int i = 0; i < INVENTORY_SIZE; i++) {
+                    ItemStack stack = inventory.getStackInSlot(i);
+                    if (!stack.isEmpty()) {
+                        ItemStack ret = CraneInventoryUtil.addToInventory(te, stack.copy());
+                        if (ret.isEmpty() || ret.getCount() != stack.getCount()) {
+                            inventory.setStackInSlot(i, ret);
+                            setChanged();
+                            didSomething = true;
+                            break;
+                        }
+                    }
+                }
+
+                // klappt es mit keinem ganzen Stapel, einzeln versuchen (Ziele mit Stapelgrenze)
+                if (!didSomething) for (int i = 0; i < INVENTORY_SIZE; i++) {
+                    ItemStack stack = inventory.getStackInSlot(i);
+                    if (!stack.isEmpty()) {
+                        ItemStack single = stack.copy();
+                        single.setCount(1);
+                        ItemStack ret = CraneInventoryUtil.addToInventory(te, single.copy());
+                        if (ret.isEmpty() || ret.getCount() != single.getCount()) {
+                            inventory.extractItem(i, 1, false);
+                            setChanged();
+                            break;
+                        }
+                    }
+                }
+            }
+            *///?}
         }
 
-        if (didSomething) setChanged();
+        sendUpdateToClient();
     }
 
-    // ── IEnterableBlock ──────────────────────────────────────────────────────
-
-    @Override
-    public void onItemEnter(Level level, BlockPos pos, MovingConveyorItemEntity item) {
-        if (level.isClientSide) return;
-
-        ItemStack incoming = item.getItem().copy();
-        ItemStack remainder = insertIntoBuffer(incoming);
-
-        if (remainder.isEmpty()) {
-            item.discard();
-        } else if (remainder.getCount() != incoming.getCount()) {
-            // teilweise aufgenommen: Rest im Item-Entity belassen
-            item.discard();
-            if (!destroyer) {
-                ItemEntity drop = new ItemEntity(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, remainder);
-                level.addFreshEntity(drop);
-            }
+    /** Original {@code CraneInserter.onItemEnter}. */
+    public void accept(Level level, BlockPos pos, ItemStack toAdd) {
+        //? if forge {
+        Direction outputDirection = getOutputSide();
+        if (!level.hasNeighborSignal(pos)) {
+            IItemHandler te = CraneInventoryUtil.inventoryAt(level, pos.relative(outputDirection), outputDirection.getOpposite());
+            if (te != null) CraneInventoryUtil.addToInventory(te, toAdd);
+        }
+        if (!toAdd.isEmpty()) CraneInventoryUtil.addToInventory(inventory, toAdd);
+        //?} elif neoforge {
+        /*Direction outputDirection = getOutputSide();
+        if (!level.hasNeighborSignal(pos)) {
+            net.minecraftforge.items.IItemHandler te = CraneInventoryUtil.inventoryAt(level, pos.relative(outputDirection), outputDirection.getOpposite());
+            if (te != null) CraneInventoryUtil.addToInventory(te, toAdd);
+        }
+        if (!toAdd.isEmpty()) CraneInventoryUtil.addToInventory(inventory, toAdd);
+        *///?}
+        if (!toAdd.isEmpty() && !destroyer) {
+            level.addFreshEntity(new ItemEntity(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, toAdd.copy()));
         }
         setChanged();
     }
 
-    private ItemStack insertIntoBuffer(ItemStack stack) {
-        for (int i = 0; i < INVENTORY_SIZE && !stack.isEmpty(); i++) {
-            ItemStack current = inventory.getStackInSlot(i);
-            if (current.isEmpty()) {
-                inventory.setStackInSlot(i, stack);
-                return ItemStack.EMPTY;
-            } else if (com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, stack)) {
-                int space = current.getMaxStackSize() - current.getCount();
-                if (space > 0) {
-                    int toMove = Math.min(space, stack.getCount());
-                    current.grow(toMove);
-                    stack.shrink(toMove);
-                }
+    /** Original {@code CraneInserter.onPackageEnter}. */
+    public void acceptAll(Level level, BlockPos pos, ItemStack[] toAdd) {
+        //? if forge {
+        Direction outputDirection = getOutputSide();
+        if (!level.hasNeighborSignal(pos)) {
+            IItemHandler te = CraneInventoryUtil.inventoryAt(level, pos.relative(outputDirection), outputDirection.getOpposite());
+            if (te != null) for (ItemStack stack : toAdd) CraneInventoryUtil.addToInventory(te, stack);
+        }
+        for (ItemStack stack : toAdd) {
+            if (!stack.isEmpty()) CraneInventoryUtil.addToInventory(inventory, stack);
+            if (!stack.isEmpty() && !destroyer) {
+                level.addFreshEntity(new ItemEntity(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, stack.copy()));
             }
         }
-        return stack;
+        //?} elif neoforge {
+        /*Direction outputDirection = getOutputSide();
+        if (!level.hasNeighborSignal(pos)) {
+            net.minecraftforge.items.IItemHandler te = CraneInventoryUtil.inventoryAt(level, pos.relative(outputDirection), outputDirection.getOpposite());
+            if (te != null) for (ItemStack stack : toAdd) CraneInventoryUtil.addToInventory(te, stack);
+        }
+        for (ItemStack stack : toAdd) {
+            if (!stack.isEmpty()) CraneInventoryUtil.addToInventory(inventory, stack);
+            if (!stack.isEmpty() && !destroyer) {
+                level.addFreshEntity(new ItemEntity(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, stack.copy()));
+            }
+        }
+        *///?}
+        setChanged();
     }
 
-    // ── Toggle ───────────────────────────────────────────────────────────────
-
     public boolean isDestroyer() { return destroyer; }
-    public void toggleDestroyer() { destroyer = !destroyer; setChanged(); sendUpdateToClient(); }
 
-    // ── NBT ─────────────────────────────────────────────────────────────────
+    @Override
+    public void receiveControl(CompoundTag data) {
+        if (data.contains("destroyer")) this.destroyer = !this.destroyer;
+        setChanged();
+        sendUpdateToClient();
+    }
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
@@ -155,22 +190,11 @@ public class MachineCraneInserterBlockEntity extends BaseMachineBlockEntity impl
         destroyer = tag.getBoolean("destroyer");
     }
 
-    // ── Slot validation / Menu ─────────────────────────────────────────────
+    @Override protected boolean isItemValidForSlot(int slot, ItemStack stack) { return true; }
+    @Override protected boolean canExtractItem(int slot, ItemStack stack) { return true; }
 
-    @Override
-    protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return true;
-    }
-
-    @Override
-    protected Component getDefaultName() {
-        return Component.translatable("container.hbm_m.crane_inserter");
-    }
-
-    @Override
-    public Component getDisplayName() {
-        return getDefaultName();
-    }
+    @Override protected Component getDefaultName() { return Component.translatable("container.craneInserter"); }
+    @Override public Component getDisplayName() { return getDefaultName(); }
 
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {

@@ -24,10 +24,10 @@ import net.minecraft.world.level.block.state.BlockState;
 /**
  * Microwave: Direktport der Kernlogik aus {@code TileEntityMicrowave} (1.7.10 Original).
  * <p>
- * Vereinfachung: das Original nutzt Vanilla {@code FurnaceRecipes.smelting()} gefiltert auf
+ * Rezepte: das Original nutzt Vanilla {@code FurnaceRecipes.smelting()} gefiltert auf
  * {@code ItemFood}-Eingaben/-Ergebnisse - hier 1:1 uebernommen ueber die moderne
  * {@code RecipeType.SMELTING}-Suche mit einem zusaetzlichen {@code isEdible()}-Filter auf
- * Eingang UND Ergebnis (entspricht {@code instanceof ItemFood} Check im Original). Das
+ * Eingang ODER Ergebnis (wie der {@code instanceof ItemFood}-Check im Original). Das
  * OpenComputers-Interface des Originals entfaellt (dieser Port hat keine OC-Integration).
  * <p>
  * WICHTIG - 1:1 aus dem Original uebernommenes Verhalten: bei {@code speed == maxSpeed} (5)
@@ -86,9 +86,9 @@ public class MachineMicrowaveBlockEntity extends BaseMachineBlockEntity implemen
         // Anti-sync-spam: подпись покрывает энергию, time/speed и фингерпринты всех слотов
         // (всё, что пишет writeNbtData) — пакет только при реальном изменении.
         long sig = be.time * 31L + be.speed;
-        sig = sig * 31L + com.hbm_m.platform.PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_INPUT));
-        sig = sig * 31L + com.hbm_m.platform.PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_OUTPUT));
-        sig = sig * 31L + com.hbm_m.platform.PlatformHooks.stackFingerprint(be.inventory.getStackInSlot(SLOT_BATTERY));
+        sig = sig * 31L + com.hbm_m.platform.StackNbt.fingerprint(be.inventory.getStackInSlot(SLOT_INPUT));
+        sig = sig * 31L + com.hbm_m.platform.StackNbt.fingerprint(be.inventory.getStackInSlot(SLOT_OUTPUT));
+        sig = sig * 31L + com.hbm_m.platform.StackNbt.fingerprint(be.inventory.getStackInSlot(SLOT_BATTERY));
         be.syncIfStateChanged(be.energy, sig);
     }
 
@@ -126,11 +126,11 @@ public class MachineMicrowaveBlockEntity extends BaseMachineBlockEntity implemen
 
         ItemStack result = recipe.get().getResultItem(level.registryAccess());
         if (result.isEmpty()) return false;
-        if (!com.hbm_m.platform.PlatformHooks.isEdible(input) && !com.hbm_m.platform.PlatformHooks.isEdible(result)) return false;
+        if (!com.hbm_m.platform.ItemHooks.isEdible(input) && !com.hbm_m.platform.ItemHooks.isEdible(result)) return false;
 
         ItemStack current = inventory.getStackInSlot(SLOT_OUTPUT);
         if (current.isEmpty()) return true;
-        if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, result)) return false;
+        if (!com.hbm_m.platform.StackNbt.sameItemSameTags(current, result)) return false;
         return current.getCount() + result.getCount() <= result.getMaxStackSize();
     }
 
@@ -139,7 +139,7 @@ public class MachineMicrowaveBlockEntity extends BaseMachineBlockEntity implemen
         // Скан кэшируется по фингерпринту входного стека (value-keyed); негативный результат
         // тоже кэшируется; epoch сбрасывает кэш при /reload.
         SmeltingRecipe recipe = recipeResolver.resolve(level, RecipeType.SMELTING,
-                com.hbm_m.platform.PlatformHooks.stackFingerprint(input),
+                com.hbm_m.platform.StackNbt.fingerprint(input),
                 (lvl, all) -> com.hbm_m.platform.recipe.RecipeHooks.getRecipeFor(lvl, RecipeType.SMELTING, input).orElse(null));
         return java.util.Optional.ofNullable(recipe);
     }
@@ -218,5 +218,59 @@ public class MachineMicrowaveBlockEntity extends BaseMachineBlockEntity implemen
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
         return MachineMicrowaveMenu.create(id, inv, this);
+    }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: unten {1}, sonst {0}; Schmelzbares hinein, Ergebnis heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return side == net.minecraft.core.Direction.DOWN ? new int[] { 1 } : new int[] { 0 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 0 && level != null && getRecipe(level, stack).isPresent(); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 1; }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: unten {1}, sonst {0}; Schmelzbares hinein, Ergebnis heraus. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return side == net.minecraft.core.Direction.DOWN ? new int[] { 1 } : new int[] { 0 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 0 && level != null && getRecipe(level, stack).isPresent(); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 1; }
+            });
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
+
+    /** 1:1 TileEntityMicrowave.getRenderBoundingBox (Render-Migration: Raptors Pfad cullt nach dieser Box, der alte BER zeichnete immer). */
+    @Override
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return com.hbm_m.platform.RenderBounds.INFINITE;
+    }
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return sidedItems.get(side);
     }
 }

@@ -18,6 +18,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import com.hbm_m.platform.recipe.RecipeHooks;
 import net.minecraft.world.level.Level;
+import com.hbm_m.platform.StackNbt;
 
 public class TemplateTooltipUtil {
 
@@ -31,7 +32,7 @@ public class TemplateTooltipUtil {
 
         Optional<AssemblerRecipe> recipeOpt = RecipeHooks.getAllRecipes(level, AssemblerRecipe.Type.INSTANCE)
                 .stream()
-                .filter(r -> PlatformHooks.isSameItemSameTags(r.getResultItemSafe(), output))
+                .filter(r -> StackNbt.sameItemSameTags(r.getResultItemSafe(), output))
                 .findFirst();
         if (recipeOpt.isEmpty()) {
             return;

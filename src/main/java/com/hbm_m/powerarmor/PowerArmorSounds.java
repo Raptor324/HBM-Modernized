@@ -3,7 +3,6 @@ package com.hbm_m.powerarmor;
 // import java.util.Random;
 
 import com.hbm_m.main.MainRegistry;
-import com.hbm_m.platform.PlayerPersistentData;
 
 import dev.architectury.event.events.common.TickEvent;
 
@@ -34,7 +33,7 @@ public final class PowerArmorSounds {
 
         var specs = armorItem.getSpecs();
         
-        var pdata = PlayerPersistentData.get(player);
+        var pdata = player.getPersistentData();
 
         // 0. Jump Sound Logic (multiloader, client tick based)
         // Jump is: wasOnGround -> !onGround with positive Y velocity.

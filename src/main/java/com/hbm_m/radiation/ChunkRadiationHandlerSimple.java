@@ -31,6 +31,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
+import com.hbm_m.platform.BlockHooks;
 //? if forge {
 import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.event.level.LevelEvent;
@@ -43,10 +44,7 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
     private static final float WORLD_RAD_EFFECTS_THRESHOLD = 10F;
     private static final int WORLD_RAD_BLOCK_OPS_PER_CHUNK = 10;
     private static final int WORLD_RAD_CHUNKS_PER_TICK = 5;
-    /** {@link com.hbm.config.RadiationConfig#fogRad} */
-    private static final float CHUNK_FOG_RAD_THRESHOLD = 100F;
-    /** {@link com.hbm.config.RadiationConfig#fogCh} — 1:n раз в секунду (раз в 20 тиков). */
-    private static final int CHUNK_FOG_SPAWN_CHANCE = 20;
+    // fogRad/fogCh: Restport liest sie aus com.hbm_m.config.RadiationConfig (Vorgabe 100 RAD, 1:20).
 
     private static final float MAX_RAD = ModClothConfig.get().maxRad;
     private final Map<ResourceLocation, Set<ChunkPos>> activeChunksByDimension = new ConcurrentHashMap<>();
@@ -142,8 +140,8 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
 
                         float rad = radiation.get(newCoord);
                         if (ModClothConfig.get().enableRadFogEffect
-                                && rad > CHUNK_FOG_RAD_THRESHOLD
-                                && level.random.nextInt(CHUNK_FOG_SPAWN_CHANCE) == 0
+                                && rad > com.hbm_m.config.RadiationConfig.fogRad
+                                && level.random.nextInt(Math.max(1, com.hbm_m.config.RadiationConfig.fogCh)) == 0
                                 && level.hasChunk(newCoord.x, newCoord.z)) {
                             int x = newCoord.getMinBlockX() + level.random.nextInt(16);
                             int z = newCoord.getMinBlockZ() + level.random.nextInt(16);
@@ -423,7 +421,7 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
 
                     if (state.is(Blocks.GRASS_BLOCK)) {
                         level.setBlock(blockPos, ModBlocks.WASTE_GRASS.get().defaultBlockState(), 2);
-                    } else if (com.hbm_m.platform.PlatformHooks.isGrassBlock(state)) {
+                    } else if (com.hbm_m.platform.BlockHooks.isShortGrass(state)) {
                         level.setBlock(blockPos, Blocks.AIR.defaultBlockState(), 2);
                     } else if (state.is(BlockTags.LEAVES) && !state.is(ModBlocks.WASTE_LEAVES.get())) {
                         if (level.random.nextInt(7) <= 5) {

@@ -4,6 +4,10 @@ import com.hbm_m.explosion.vanillant.interfaces.IBlockAllocator;
 import com.hbm_m.explosion.vanillant.interfaces.IBlockProcessor;
 import com.hbm_m.explosion.vanillant.interfaces.IEntityProcessor;
 import com.hbm_m.explosion.vanillant.interfaces.IExplosionSFX;
+import com.hbm_m.explosion.vanillant.interfaces.IPlayerProcessor;
+import com.hbm_m.explosion.vanillant.standard.PlayerProcessorStandard;
+import com.hbm_m.explosion.vanillant.standard.CustomDamageHandlerAmat;
+import com.hbm_m.explosion.vanillant.standard.ExplosionEffectAmat;
 import com.hbm_m.explosion.vanillant.standard.BlockAllocatorStandard;
 import com.hbm_m.explosion.vanillant.standard.BlockMutatorFire;
 import com.hbm_m.explosion.vanillant.standard.BlockProcessorStandard;
@@ -34,6 +38,7 @@ public class ExplosionVNT {
     private IBlockAllocator blockAllocator;
     private IEntityProcessor entityProcessor;
     private IBlockProcessor blockProcessor;
+    private IPlayerProcessor playerProcessor;
     private IExplosionSFX[] sfx;
 
     public Level level;
@@ -68,7 +73,7 @@ public class ExplosionVNT {
 
     public void explode() {
         boolean processBlocks = blockAllocator != null && blockProcessor != null;
-        boolean processEntities = entityProcessor != null;
+        boolean processEntities = entityProcessor != null && playerProcessor != null;
 
         HashSet<BlockPos> affectedBlocks = null;
         HashMap<Player, Vec3> affectedPlayers = null;
@@ -98,6 +103,8 @@ public class ExplosionVNT {
             }
         }
 
+        if (processEntities) playerProcessor.process(this, level, x, y, z, affectedPlayers);
+
         if (sfx != null) {
             for (IExplosionSFX fx : sfx) {
                 fx.doEffect(this, level, x, y, z, size);
@@ -120,6 +127,11 @@ public class ExplosionVNT {
         return this;
     }
 
+    public ExplosionVNT setPlayerProcessor(IPlayerProcessor playerProcessor) {
+        this.playerProcessor = playerProcessor;
+        return this;
+    }
+
     public ExplosionVNT setSFX(IExplosionSFX... sfx) {
         this.sfx = sfx;
         return this;
@@ -129,7 +141,20 @@ public class ExplosionVNT {
         this.setBlockAllocator(new BlockAllocatorStandard());
         this.setBlockProcessor(new BlockProcessorStandard());
         this.setEntityProcessor(new EntityProcessorStandard());
+        this.setPlayerProcessor(new PlayerProcessorStandard());
         this.setSFX(new ExplosionEffectStandard());
+        return this;
+    }
+
+    public ExplosionVNT makeAmat() {
+        this.setBlockAllocator(new BlockAllocatorStandard(this.size < 15 ? 16 : 32));
+        this.setBlockProcessor(new BlockProcessorStandard()
+                .setNoDrop());
+        this.setEntityProcessor(new EntityProcessorStandard()
+                .withRangeMod(2F)
+                .withDamageMod(new CustomDamageHandlerAmat(50F)));
+        this.setPlayerProcessor(new PlayerProcessorStandard());
+        this.setSFX(new ExplosionEffectAmat());
         return this;
     }
 
@@ -145,6 +170,7 @@ public class ExplosionVNT {
                 .setBlockAllocator(isSmoking ? new BlockAllocatorStandard() : null)
                 .setBlockProcessor(isSmoking ? new BlockProcessorStandard().withBlockEffect(fire ? new BlockMutatorFire() : null) : null)
                 .setEntityProcessor(new EntityProcessorStandard())
+                .setPlayerProcessor(new PlayerProcessorStandard())
                 .setSFX(new ExplosionEffectStandard());
         vnt.explode();
     }

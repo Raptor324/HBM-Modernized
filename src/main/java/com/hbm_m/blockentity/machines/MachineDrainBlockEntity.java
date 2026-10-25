@@ -57,7 +57,20 @@ public class MachineDrainBlockEntity extends BaseMachineBlockEntity implements I
         }
         return super.getCapability(cap, side);
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER) {
+            return com.hbm_m.platform.LazyCap.ofObj(tank.getCapability()).cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+    *///?}
+
+    @Override
+    public @Nullable Object getFluidHandler(@Nullable Direction side) {
+        return tank.getCapability();
+    }
 
     @Override
     public FluidTank[] getAllTanks() { return new FluidTank[] { tank }; }
@@ -96,10 +109,17 @@ public class MachineDrainBlockEntity extends BaseMachineBlockEntity implements I
 
             // 1:1: die Haelfte je Tick, mindestens ein Millibucket.
             int toSpill = Math.max(tank.getFluidAmountMb() / 2, 1);
+            net.minecraft.world.level.material.Fluid spilled = tank.getStoredFluid();
             tank.drainMb(toSpill);
 
             com.hbm_m.inventory.fluid.trait.FT_Polluting.pollute(level, pos, tank.getStoredFluid(),
                     com.hbm_m.inventory.fluid.trait.FluidTrait.FluidReleaseType.SPILL, toSpill);
+
+            // NTM Space FT_Gaseous.release (W-R9A-1): Gase gehen in die Koerper-Atmosphaere (ohne Addon no-op)
+            if (FluidType.getTrait(spilled, com.hbm_m.inventory.fluid.trait.FluidTraitSimple.FT_Gaseous.class) != null
+                    || FluidType.getTrait(spilled, com.hbm_m.inventory.fluid.trait.FluidTraitSimple.FT_Gaseous_ART.class) != null) {
+                com.hbm_m.api.space.SpaceApi.emitGas(level, pos, net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(spilled), toSpill);
+            }
 
             spillPuddle(level, pos, toSpill);
 
@@ -136,7 +156,7 @@ public class MachineDrainBlockEntity extends BaseMachineBlockEntity implements I
         net.minecraft.world.phys.Vec3 end = start.add(
                 level.getRandom().nextGaussian() * 5, -25, level.getRandom().nextGaussian() * 5);
 
-        var hit = level.clip(com.hbm_m.platform.PlatformHooks.clipContext(start, end, net.minecraft.world.level.ClipContext.Fluid.NONE));
+        var hit = level.clip(com.hbm_m.platform.LevelHooks.clipContext(start, end, net.minecraft.world.level.ClipContext.Fluid.NONE));
 
         // Nur auf einer Oberseite bildet sich eine Pfuetze.
         if (hit.getType() != net.minecraft.world.phys.HitResult.Type.BLOCK) return;

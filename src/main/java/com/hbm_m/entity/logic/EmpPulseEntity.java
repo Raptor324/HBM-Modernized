@@ -1,12 +1,16 @@
 package com.hbm_m.entity.logic;
 
+import com.hbm_m.interfaces.IEnergyProvider;
 import com.hbm_m.interfaces.IEnergyReceiver;
+import com.hbm_m.network.ParticleBurstPacket;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.chunk.LevelChunk;
 
@@ -16,6 +20,9 @@ import java.util.List;
 /**
  * Импульс EMP: обнуляет энергию машин в радиусе 100 блоков (порт {@code com.hbm.entity.logic.EntityEMP}).
  * Сканирует только block entity в загруженных чанках — не перебирает каждый блок сферы.
+ * <p>1:1 wie das Original: erfasst wird alles mit Energiespeicher ({@code IEnergyHandlerMK2} = Empfaenger
+ * und Erzeuger/Speicher), und jede getroffene Maschine sprueht pro Tick mit 1/20 Chance hellblaue
+ * Glassplitter ({@code ParticleBurstPacket}, Umkreis 50 um den Impuls).</p>
  */
 public class EmpPulseEntity extends Entity {
 
@@ -62,7 +69,7 @@ public class EmpPulseEntity extends Entity {
                 }
                 for (BlockEntity be : chunk.getBlockEntities().values()) {
                     BlockPos pos = be.getBlockPos();
-                    if (be instanceof IEnergyReceiver && center.distSqr(pos) <= RADIUS_SQR) {
+                    if ((be instanceof IEnergyReceiver || be instanceof IEnergyProvider) && center.distSqr(pos) <= RADIUS_SQR) {
                         this.machines.add(pos.immutable());
                     }
                 }
@@ -72,14 +79,30 @@ public class EmpPulseEntity extends Entity {
 
     private void shock() {
         for (BlockPos pos : this.machines) {
-            // Positions were collected in allocate() on an earlier tick, so an edge chunk may have
-            // unloaded since then — resolving it here would pull it back in.
-            BlockEntity be = com.hbm_m.util.Compat.getTileStandard(this.level(), pos);
-            if (be instanceof IEnergyReceiver receiver) {
-                receiver.setEnergyStored(0);
-            }
+            emp(pos);
         }
     }
+
+    private void emp(BlockPos pos) {
+        // Positions were collected in allocate() on an earlier tick, so an edge chunk may have
+        // unloaded since then — resolving it here would pull it back in.
+        BlockEntity be = com.hbm_m.util.Compat.getTileStandard(this.level(), pos);
+        boolean flag = false;
+
+        if (be instanceof IEnergyReceiver receiver) {
+            receiver.setEnergyStored(0);
+            flag = true;
+        } else if (be instanceof IEnergyProvider provider) {
+            provider.setEnergyStored(0);
+            flag = true;
+        }
+
+        if (flag && this.random.nextInt(20) == 0 && this.level() instanceof ServerLevel server) {
+            ParticleBurstPacket.sendAround(server, getX(), getY(), getZ(), 50, pos.getX(), pos.getY(), pos.getZ(),
+                    Blocks.LIGHT_BLUE_STAINED_GLASS.defaultBlockState());
+        }
+    }
+
 
     //? if < 1.21.1 {
 

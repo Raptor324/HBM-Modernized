@@ -12,13 +12,8 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
 //? if forge {
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 //?}
@@ -105,6 +100,7 @@ public class OverlayGasMask {
         int dmg = IGasMask.getFilterDamage(maskStack);
         return Math.min((int) (dmg / (float) max * 6F), 5);
     }
+
 
     private static void drawOverlay(GuiGraphics gfx, ResourceLocation texture, int width, int height) {
         RenderSystem.enableBlend();

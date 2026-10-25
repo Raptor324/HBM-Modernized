@@ -1,0 +1,200 @@
+package com.hbm_m.itempool;
+
+import com.hbm_m.item.ModItems;
+import com.hbm_m.item.weapon.grenade.ItemGrenadeExtra.EnumGrenadeExtra;
+import com.hbm_m.item.weapon.grenade.ItemGrenadeFilling.EnumGrenadeFilling;
+import com.hbm_m.item.weapon.grenade.ItemGrenadeFuze.EnumGrenadeFuze;
+import com.hbm_m.item.weapon.grenade.ItemGrenadeShell.EnumGrenadeShell;
+import com.hbm_m.item.weapon.grenade.ItemGrenadeUniversal;
+
+/** 1:1 {@code com.hbm.itempool.ItemPoolsLegacy}. Eintraege als Registernamen (Port-Umbenennungen beruecksichtigt). */
+public final class ItemPoolsLegacy {
+
+    private ItemPoolsLegacy() { }
+
+    public static final String POOL_GENERIC = "POOL_GENERIC";
+    public static final String POOL_ANTENNA = "POOL_ANTENNA";
+    public static final String POOL_EXPENSIVE = "POOL_EXPENSIVE";
+    public static final String POOL_NUKE_TRASH = "POOL_NUKE_TRASH";
+    public static final String POOL_NUKE_MISC = "POOL_NUKE_MISC";
+    public static final String POOL_VERTIBIRD = "POOL_VERTIBIRD";
+    public static final String POOL_SPACESHIP = "POOL_SPACESHIP";
+
+    public static void init() {
+
+        new ItemPool(POOL_GENERIC)
+                .add("minecraft:bread", 1, 5, 8)
+                .add("twinkie", 1, 3, 6)
+                .add("minecraft:iron_ingot", 2, 6, 10)
+                .add("steel_ingot", 2, 5, 7)
+                .add("beryllium_ingot", 1, 2, 4)
+                .add("titanium_ingot", 1, 1, 3)
+                .add("vacuum_tube", 1, 1, 5)
+                .add("gun_light_revolver", 1, 1, 3)
+                .add("ammo_standard_m357_sp", 2, 6, 4)
+                .add("ammo_standard_g12_bp", 3, 6, 3)
+                .add("ammo_standard_g26_flare_supply", 1, 1, 1)
+                .add("gun_kit_1", 1, 3, 4)
+                .add("gun_maresleg", 1, 1, 1)
+                .add("casing_small", 4, 10, 3)
+                .add("casing_shotshell", 4, 10, 3)
+                .add("cordite", 4, 6, 5)
+                .add("battery_pack_battery_redstone", 1, 1, 1)
+                .add("scrap", 1, 3, 10)
+                .add("dust", 2, 4, 9)
+                .add("bottle_opener", 1, 1, 2)
+                .add("bottle_nuka", 1, 3, 4)
+                .add("bottle_cherry", 1, 1, 2)
+                .add("stealth_boy", 1, 1, 1)
+                .add("cap_nuka", 1, 15, 7)
+                .add(() -> com.hbm_m.item.liquids.ItemFluidTank.make(ModItems.CANISTER_FULL.get(), com.hbm_m.inventory.fluid.ModFluids.DIESEL.getSource(), 1), 1, 2, 2)
+                .add(() -> com.hbm_m.item.liquids.ItemFluidTank.make(ModItems.CANISTER_FULL.get(), com.hbm_m.inventory.fluid.ModFluids.BIOFUEL.getSource(), 1), 1, 2, 3)
+                .add("gas_mask_m65", 60, 1, 1, 2)
+                .add("gas_mask_filter", 1, 1, 3)
+                .add("blueprint_folder", 1, 1, 1)
+                .add("coin_token", 1, 1, 2)
+                .build();
+
+        new ItemPool(POOL_ANTENNA)
+                .add("twinkie", 1, 3, 4)
+                .add("steel_ingot", 1, 2, 7)
+                .add("red_copper_ingot", 1, 1, 4)
+                .add("titanium_ingot", 1, 3, 5)
+                .add("wire_red_copper", 2, 3, 7)
+                .add("vacuum_tube", 1, 1, 4)
+                .add("capacitor", 1, 1, 2)
+                .add("battery_pack_battery_redstone", 1, 1, 1)
+                .add("iodine_powder", 1, 1, 1)
+                .add("bromide_powder", 1, 1, 1)
+                .add("steel_pole", 1, 4, 8)
+                .add("steel_scaffold", 1, 3, 8)
+                .add("antenna_top", 1, 1, 4)
+                .add("pole_satellite_receiver", 1, 1, 7)
+                .add("scrap", 1, 3, 10)
+                .add("dust", 2, 4, 9)
+                .add("bottle_opener", 1, 1, 2)
+                .add("bottle_nuka", 1, 3, 4)
+                .add("bottle_cherry", 1, 1, 2)
+                .add("stealth_boy", 1, 1, 1)
+                .add("cap_nuka", 1, 15, 7)
+                .add("bomb_caller", 1, 1, 1)
+                .add("gas_mask_filter", 1, 1, 2)
+                .build();
+
+        new ItemPool(POOL_EXPENSIVE)
+                .add("chlorine_pinwheel", 1, 1, 1)
+                .add("vacuum_tube", 1, 1, 4)
+                .add("analog_circuit", 1, 1, 3)
+                .add("microchip", 1, 1, 2)
+                .add("gun_kit_1", 1, 3, 6)
+                .add("gun_kit_2", 1, 2, 3)
+                .add("gun_panzerschreck", 1, 1, 4)
+                .add("ammo_standard_rocket_he", 1, 4, 5)
+                .add("ammo_standard_g26_flare_supply", 1, 1, 5)
+                .add("ammo_standard_g26_flare_weapon", 1, 1, 3)
+                .add(() -> ItemGrenadeUniversal.make(EnumGrenadeShell.NUKE, EnumGrenadeFilling.NUCLEAR, EnumGrenadeFuze.S7), 1, 1, 2)
+                .add(() -> ItemGrenadeUniversal.make(EnumGrenadeShell.FRAG, EnumGrenadeFilling.CLUSTER, EnumGrenadeFuze.S7), 1, 3, 3)
+                .add("grenade_extra_triplex", 1, 1, 1)
+                .add("stealth_boy", 1, 1, 2)
+                .add("battery_pack_battery_lithium", 1, 1, 1)
+                .add("syringe_awesome", 1, 1, 1)
+                .add("fusion_core", 1, 1, 4)
+                .add("bottle_nuka", 1, 3, 6)
+                .add("bottle_quantum", 1, 1, 3)
+                .add("barrel_red", 1, 1, 6)
+                .add(() -> com.hbm_m.item.liquids.ItemFluidTank.make(ModItems.CANISTER_FULL.get(), com.hbm_m.inventory.fluid.ModFluids.DIESEL.getSource(), 1), 1, 2, 2)
+                .add(() -> com.hbm_m.item.liquids.ItemFluidTank.make(ModItems.CANISTER_FULL.get(), com.hbm_m.inventory.fluid.ModFluids.BIOFUEL.getSource(), 1), 1, 2, 3)
+                .add("gas_mask_m65", 60, 1, 1, 5)
+                .add("bomb_caller", 1, 1, 2)
+                .add("bomb_caller_napalm", 1, 1, 1)
+                .add("bomb_caller_chlorine", 1, 1, 1)
+                .add("gas_mask_filter", 1, 1, 4)
+                .add("launch_code_piece", 1, 1, 1)
+                .add("gun_double_barrel", 1, 1, 1)
+                .add("blueprint_folder_discover", 1, 1, 1)
+                .build();
+
+        new ItemPool(POOL_NUKE_TRASH)
+                .add("nugget_u238", 3, 12, 5)
+                .add("nugget_pu240", 3, 8, 5)
+                .add("nugget_neptunium", 1, 4, 3)
+                .add("rod_u238", 1, 1, 3)
+                .add("rod_dual_u238", 1, 1, 3)
+                .add("rod_quad_u238", 1, 1, 3)
+                .add("bottle_quantum", 1, 1, 1)
+                .add("gas_mask_m65", 60, 1, 1, 5)
+                .add("hazmat_kit", 1, 1, 1)
+                .add("gas_mask_filter", 1, 1, 5)
+                .add("yellow_barrel", 1, 1, 2)
+                .build();
+
+        new ItemPool(POOL_NUKE_MISC)
+                .add("nugget_u235", 3, 12, 5)
+                .add("nugget_pu238", 3, 12, 5)
+                .add("nugget_ra226", 3, 6, 5)
+                .add("rod_u235", 1, 1, 3)
+                .add("rod_dual_u235", 1, 1, 3)
+                .add("rod_quad_u235", 1, 1, 3)
+                .add("rod_zirnox_uranium_fuel", 1, 1, 4)
+                .add("rod_zirnox_mox_fuel", 1, 1, 4)
+                .add("rod_zirnox_lithium", 1, 1, 3)
+                .add("rod_zirnox_thorium_fuel", 1, 1, 3)
+                .add("rod_dual_thf", 1, 1, 3)
+                .add("rod_zirnox_tritium", 1, 1, 1)
+                .add("rod_zirnox_u233_fuel", 1, 1, 1)
+                .add("rod_zirnox_u235_fuel", 1, 1, 1)
+                .add("pellet_rtg", 1, 1, 3)
+                .add("thorium_powder", 1, 1, 1)
+                .add("neptunium_powder", 1, 1, 1)
+                .add("strontium_powder", 1, 1, 1)
+                .add("cobalt_powder", 1, 1, 1)
+                .add("bottle_quantum", 1, 1, 1)
+                .add("gas_mask_m65", 60, 1, 1, 5)
+                .add("hazmat_kit", 1, 1, 2)
+                .add("gas_mask_filter", 1, 1, 5)
+                .add("yellow_barrel", 1, 3, 3)
+                .build();
+
+        new ItemPool(POOL_VERTIBIRD)
+                .add("t51_helmet", 1, 1, 15)
+                .add("t51_plate", 1, 1, 15)
+                .add("t51_legs", 1, 1, 15)
+                .add("t51_boots", 1, 1, 15)
+                .add("fusion_core", 1, 1, 10)
+                .add("gun_light_revolver", 1, 1, 4)
+                .add("gun_kit_1", 2, 3, 4)
+                .add("ammo_standard_m357_fmj", 1, 24, 4)
+                .add("ammo_standard_g40_he", 1, 6, 3)
+                .add("ammo_standard_g26_flare_weapon", 1, 1, 5)
+                .add("rod_u235", 1, 1, 2)
+                .add("billet_uranium_fuel", 1, 1, 2)
+                .add("uranium_fuel_ingot", 1, 1, 2)
+                .add("bottle_nuka", 1, 3, 6)
+                .add("bottle_quantum", 1, 1, 3)
+                .add("stealth_boy", 1, 1, 7)
+                .add("gas_mask_m65", 0, 1, 1, 5)
+                .add("gas_mask_filter", 1, 1, 5)
+                .add(() -> ItemGrenadeUniversal.make(EnumGrenadeShell.NUKE, EnumGrenadeFilling.NUCLEAR, EnumGrenadeFuze.S7), 1, 2, 2)
+                .add("bomb_caller", 1, 1, 1)
+                .add("bomb_caller_napalm", 1, 1, 1)
+                .add("bomb_caller_chlorine", 1, 1, 2)
+                .build();
+
+        new ItemPool(POOL_SPACESHIP)
+                .add("battery_pack_battery_lead", 1, 1, 2)
+                .add("coil_copper", 2, 16, 5)
+                .add("wire_red_copper", 8, 32, 5)
+                .add("cell_deuterium", 1, 8, 5)
+                .add("cell_tritium", 1, 8, 5)
+                .add("cell_antimatter", 1, 1, 1)
+                .add("neodymium_powder", 1, 1, 1)
+                .add("niobium_powder", 1, 1, 1)
+                .add("wire_dense_red_copper", 2, 4, 5)
+                .add("wire_dense_gold", 1, 3, 5)
+                .add("pwr_fuel", 1, 2, 5)
+                .add("block_tungsten", 3, 8, 5)
+                .add("red_wire_coated", 4, 8, 5)
+                .add("red_cable", 8, 16, 5)
+                .build();
+    }
+}

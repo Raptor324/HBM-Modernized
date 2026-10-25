@@ -37,7 +37,11 @@ public class ItemBombCaller extends Item {
         CARPET("Carpet bombing"),
         NAPALM("Napalm"),
         CHLORINE("Poison gas"),
-        ATOMIC("Atomic bomb");
+        ORANGE("Agent orange"),
+        ATOMIC("Atomic bomb"),
+        STINGER("VT stinger rockets"),
+        BOXCAR("PIP OH GOD"),
+        PC("Cloud the cloud oh god the cloud");
 
         final String label;
 
@@ -65,8 +69,9 @@ public class ItemBombCaller extends Item {
         Vec3 eye = player.getEyePosition();
         Vec3 target = eye.add(player.getViewVector(1F).scale(RANGE));
         HitResult hit = level.clip(new ClipContext(eye, target,
-                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
-        if (!(hit instanceof BlockHitResult block) || hit.getType() == HitResult.Type.MISS) {
+                ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player));
+        // Original rayTrace(..., mopOnMiss = true): auch ohne Treffer kommt der Bomber zum Strahlende
+        if (!(hit instanceof BlockHitResult block)) {
             return InteractionResultHolder.pass(stack);
         }
 
@@ -78,7 +83,11 @@ public class ItemBombCaller extends Item {
             EntityBomber bomber = switch (this.strike) {
                 case NAPALM   -> EntityBomber.napalm(level, x, y, z);
                 case CHLORINE -> EntityBomber.chlorine(level, x, y, z);
+                case ORANGE   -> EntityBomber.orange(level, x, y, z);
                 case ATOMIC   -> EntityBomber.aBomb(level, x, y, z);
+                case STINGER  -> EntityBomber.stinger(level, x, y, z);
+                case BOXCAR   -> EntityBomber.boxcar(level, x, y, z);
+                case PC       -> EntityBomber.pc(level, x, y, z);
                 default       -> EntityBomber.carpet(level, x, y, z);
             };
             level.addFreshEntity(bomber);
@@ -88,7 +97,8 @@ public class ItemBombCaller extends Item {
                     com.hbm_m.sound.ModSounds.TOOL_TECH_BLEEP.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
         }
 
-        if (!player.isCreative()) stack.shrink(1);
+        // Original: stackSize -= 1 ohne Kreativ-Ausnahme
+        stack.shrink(1);
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
     }
 
@@ -101,6 +111,13 @@ public class ItemBombCaller extends Item {
     public void appendHoverText(@NotNull ItemStack stack, @NotNull Item.TooltipContext context,
                                 @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
     *///?}
+        tooltip.add(Component.literal("Aim & click to call an airstrike!").withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal("Type: " + this.strike.label).withStyle(ChatFormatting.GRAY));
+    }
+
+    /** Original {@code hasEffect}: ab Meta 4 (Atombombe) leuchtet der Markierer. */
+    @Override
+    public boolean isFoil(@NotNull ItemStack stack) {
+        return this.strike.ordinal() >= Strike.ATOMIC.ordinal();
     }
 }

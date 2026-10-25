@@ -39,12 +39,24 @@ public class AmmoPressRecipe extends PlatformRecipe {
     public static final int GRID_SIZE = 9;
 
     private final NonNullList<Ingredient> inputs;
+    /** Original {@code AStack.stacksize}: so viele Stueck je Feld werden gebraucht und verbraucht. */
+    private final int[] counts;
     private final ItemStack output;
 
     public AmmoPressRecipe(ResourceLocation id, NonNullList<Ingredient> inputs, ItemStack output) {
+        this(id, inputs, null, output);
+    }
+
+    public AmmoPressRecipe(ResourceLocation id, NonNullList<Ingredient> inputs, int[] counts, ItemStack output) {
         super(id);
         this.inputs = inputs;
+        this.counts = new int[GRID_SIZE];
+        for (int i = 0; i < GRID_SIZE; i++) this.counts[i] = counts != null && i < counts.length ? Math.max(1, counts[i]) : 1;
         this.output = output;
+    }
+
+    public int getCount(int slot) {
+        return counts[slot];
     }
 
     public NonNullList<Ingredient> getInputs() {
@@ -58,7 +70,12 @@ public class AmmoPressRecipe extends PlatformRecipe {
     /** Prueft, ob die 9 GUI-Input-Slots exakt (nicht verschiebbar) auf dieses Rezept passen. */
     public boolean matchesGrid(NonNullList<ItemStack> grid) {
         for (int i = 0; i < GRID_SIZE; i++) {
-            if (!inputs.get(i).test(grid.get(i))) return false;
+            Ingredient in = inputs.get(i);
+            ItemStack s = grid.get(i);
+            // Original hasIngredients: leere Rezeptfelder muessen leer sein, gefuellte genug Material haben
+            if (in.isEmpty() && s.isEmpty()) continue;
+            if (in.isEmpty() || s.isEmpty()) return false;
+            if (!in.test(s) || s.getCount() < counts[i]) return false;
         }
         return true;
     }
@@ -120,17 +137,21 @@ public class AmmoPressRecipe extends PlatformRecipe {
             JsonArray ingredientsArray = GsonHelper.getAsJsonArray(json, "ingredients");
             NonNullList<Ingredient> inputs = NonNullList.withSize(AmmoPressRecipe.GRID_SIZE, Ingredient.EMPTY);
             for (int i = 0; i < AmmoPressRecipe.GRID_SIZE && i < ingredientsArray.size(); i++) {
-                // A null entry is an empty slot of the 3x3 grid; Ingredient.CODEC rejects JsonNull.
-                JsonElement entry = ingredientsArray.get(i);
-                if (entry.isJsonNull()) {
-                    continue;
-                }
-                inputs.set(i, RecipeHooks.ingredientFromJson(entry));
+                // leere Felder stehen als JSON-null im Rezept (Datagen) -> Ingredient.EMPTY
+                JsonElement el = ingredientsArray.get(i);
+                inputs.set(i, el == null || el.isJsonNull() ? Ingredient.EMPTY : RecipeHooks.ingredientFromJson(el));
+            }
+
+            int[] counts = new int[AmmoPressRecipe.GRID_SIZE];
+            java.util.Arrays.fill(counts, 1);
+            if (json.has("counts")) {
+                JsonArray ca = GsonHelper.getAsJsonArray(json, "counts");
+                for (int i = 0; i < AmmoPressRecipe.GRID_SIZE && i < ca.size(); i++) counts[i] = ca.get(i).getAsInt();
             }
 
             ItemStack output = RecipeHooks.itemStackFromJson(GsonHelper.getAsJsonObject(json, "result"));
 
-            return new AmmoPressRecipe(recipeId, inputs, output);
+            return new AmmoPressRecipe(recipeId, inputs, counts, output);
         }
 
         @Override
@@ -139,8 +160,10 @@ public class AmmoPressRecipe extends PlatformRecipe {
             for (int i = 0; i < AmmoPressRecipe.GRID_SIZE; i++) {
                 inputs.set(i, RecipeHooks.readIngredient(buf));
             }
+            int[] counts = new int[AmmoPressRecipe.GRID_SIZE];
+            for (int i = 0; i < AmmoPressRecipe.GRID_SIZE; i++) counts[i] = buf.readVarInt();
             ItemStack output = RecipeHooks.readItem(buf);
-            return new AmmoPressRecipe(recipeId, inputs, output);
+            return new AmmoPressRecipe(recipeId, inputs, counts, output);
         }
 
         @Override
@@ -148,6 +171,7 @@ public class AmmoPressRecipe extends PlatformRecipe {
             for (int i = 0; i < AmmoPressRecipe.GRID_SIZE; i++) {
                 RecipeHooks.writeIngredient(buf, recipe.inputs.get(i));
             }
+            for (int i = 0; i < AmmoPressRecipe.GRID_SIZE; i++) buf.writeVarInt(recipe.counts[i]);
             RecipeHooks.writeItem(buf, recipe.output);
         }
     }

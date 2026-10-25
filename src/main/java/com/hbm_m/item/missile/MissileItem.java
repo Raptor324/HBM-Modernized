@@ -31,7 +31,7 @@ public class MissileItem extends Item implements ITooltipProvider {
     }
 
     public MissileItem(MissileFormFactor form, MissileTier tier, MissileFuel fuel) {
-        super(new Item.Properties());
+        super(new Item.Properties().stacksTo(1)); // Original ItemMissile: Stapelgroesse 1
         this.formFactor = form;
         this.tier = tier;
         this.fuel = fuel;
@@ -66,6 +66,8 @@ public class MissileItem extends Item implements ITooltipProvider {
                         .append(String.valueOf(this.fuelCap))
                         .append("mB"));
             }
+            // Original: super.addInformation (ItemCustomLore) - .desc-Zeilen, z.B. missile_volcano
+            com.hbm_m.item.ItemCustomLore.addLore(this.getDescriptionId(), tooltip);
             if (this.fuel != MissileFuel.SOLID) {
                 tooltip.add(Component.translatable("item.hbm_m.missile.desc.fluidNotRequiredWip")
                         .withStyle(ChatFormatting.YELLOW));
@@ -75,6 +77,7 @@ public class MissileItem extends Item implements ITooltipProvider {
 
     //? if forge {
     @Override
+@SuppressWarnings("removal")
     public void initializeClient(Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> consumer) {
         consumer.accept(new net.minecraftforge.client.extensions.common.IClientItemExtensions() {
             @Override
@@ -85,6 +88,7 @@ public class MissileItem extends Item implements ITooltipProvider {
     }
     //?} elif neoforge {
     /*@Override
+@SuppressWarnings("removal")
     public void initializeClient(Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
         consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
             @Override
@@ -102,6 +106,10 @@ public class MissileItem extends Item implements ITooltipProvider {
         STEALTH(MissileFuel.KEROSENE_PEROXIDE),
         STRONG(MissileFuel.KEROSENE_PEROXIDE),
         HUGE(MissileFuel.KEROSENE_LOXY),
+        /** Massstabsgetreue 9M723: 6,35 Bloecke hoch statt der 13,5 der HUGE-Huelle. */
+        ISKANDER(MissileFuel.KEROSENE_LOXY),
+        /** RT-2PM2 Topol-M: 22,5 Bloecke hoch, eigener Rumpf. */
+        TOPOL(MissileFuel.JETFUEL_LOXY),
         ATLAS(MissileFuel.JETFUEL_LOXY),
         OTHER(MissileFuel.KEROSENE_PEROXIDE);
 

@@ -1,0 +1,7 @@
+{
+ "parent": "minecraft:block/cross",
+ "textures": {
+  "cross": "hbm_m:block/plant_flower_cd0"
+ },
+ "render_type": "minecraft:cutout"
+}

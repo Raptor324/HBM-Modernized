@@ -1,0 +1,41 @@
+{
+ "parent": "minecraft:block/block",
+ "textures": {
+  "all": "hbm_m:block/deco/steel_wall",
+  "particle": "hbm_m:block/deco/steel_wall"
+ },
+ "elements": [
+  {
+   "from": [
+    0,
+    0,
+    14.0
+   ],
+   "to": [
+    16,
+    16,
+    16
+   ],
+   "faces": {
+    "down": {
+     "texture": "#all"
+    },
+    "up": {
+     "texture": "#all"
+    },
+    "north": {
+     "texture": "#all"
+    },
+    "south": {
+     "texture": "#all"
+    },
+    "west": {
+     "texture": "#all"
+    },
+    "east": {
+     "texture": "#all"
+    }
+   }
+  }
+ ]
+}

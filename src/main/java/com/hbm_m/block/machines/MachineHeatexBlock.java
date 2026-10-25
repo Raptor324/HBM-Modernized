@@ -1,185 +1,118 @@
 package com.hbm_m.block.machines;
 
-import java.util.Map;
-import java.util.function.Supplier;
-
-import org.jetbrains.annotations.Nullable;
-
-import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineHeatexBlockEntity;
-import com.hbm_m.interfaces.IMultiblockController;
-import com.hbm_m.multiblock.MultiblockStructureHelper;
-import com.hbm_m.multiblock.PartRole;
 
-import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.Shapes;
-import net.minecraft.world.phys.shapes.VoxelShape;
+import org.jetbrains.annotations.Nullable;
+import dev.architectury.registry.menu.MenuRegistry;
+
+import com.hbm_m.block.ModBlocks;
+import com.hbm_m.multiblock.DummyableStructureBuilder;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
 
 /**
- * Heatex — порт {@code HeaterHeatex} (1.7.10, BlockDummyable {@code {0,0,1,1,1,1}}):
- * мультиблок 3×3×1, контроллер в центре. Модель — полный 3×3 OBJ с контроллера.
+ * 1:1-Port von {@code HeaterHeatex} (1.7.10): der Waermetauscher.
+ *
+ * <p>Ein Feld hoch, drei mal drei breit ({@code getDimensions {0,0,1,1,1,1}}) - und die vier
+ * <b>Ecken</b> sind die Anschlusszellen. Das ist der Grund, warum man die Rohre bei diesem Geraet
+ * diagonal ansetzt und nicht gerade.</p>
  */
-public class MachineHeatexBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.interfaces.ILookOverlay {
+public class MachineHeatexBlock extends DummyableMachineBlock {
 
-    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
-
-    private final MultiblockStructureHelper structureHelper;
-
-    public MachineHeatexBlock(Properties properties) {
-        super(properties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
-        this.structureHelper = defineStructure();
-    }
-
-    private static MultiblockStructureHelper defineStructure() {
-        String[] layer = { "OOO", "OCO", "OOO" };
-
-        Map<Character, PartRole> roleMap = Map.of(
-                'O', PartRole.DEFAULT,
-                'C', PartRole.CONTROLLER
-        );
-
-        Map<Character, Supplier<BlockState>> symbolMap = Map.of();
-
-        return MultiblockStructureHelper.createFromLayersWithRoles(
-                new String[][] { layer },
-                symbolMap,
-                () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-                roleMap,
-                null,
-                null
-        );
-    }
+    public MachineHeatexBlock(Properties properties) { super(properties); }
 
     @Override
-    public MultiblockStructureHelper getStructureHelper() {
-        return this.structureHelper;
+    protected MultiblockStructureHelper defineStructure() {
+        // Original: getDimensions {0,0,1,1,1,1}, getOffset 1, vier diagonale Zusatzzellen.
+        return DummyableStructureBuilder.create()
+                .box(0, 0, 1, 1, 1, 1)
+                .extra(1, 0, 1)
+                .extra(1, 0, -1)
+                .extra(-1, 0, 1)
+                .extra(-1, 0, -1)
+                .placementOffset(1)
+                .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
     }
 
-    @Override
-    public PartRole getPartRole(BlockPos localOffset) {
-        return structureHelper.resolvePartRole(localOffset, this);
-    }
-
-    @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
-    }
-
-    @Override
-    public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
-    }
-
-    @Override
-    public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
-    }
-
-    @Override
-    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return structureHelper.generateShapeFromParts(state.getValue(FACING));
-    }
-
-    @Override
-    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return structureHelper.getSpecificPartShape(structureHelper.getControllerOffset(), state.getValue(FACING));
-    }
-
-    @Override
-    public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
-        if (!structureHelper.isFullBlock(structureHelper.getControllerOffset(), state.getValue(FACING))) {
-            return Shapes.empty();
-        }
-        return Shapes.block();
-    }
-
-    @Nullable
-    @Override
+    @Nullable @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineHeatexBlockEntity(pos, state);
     }
 
-    /** Порт HeaterHeatex.printHook: запас тепла в TU. */
-    @Override
-    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
-        BlockEntity be = level.getBlockEntity(pos);
-        if (!(be instanceof MachineHeatexBlockEntity heater)) return;
-
-        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
-        text.add(net.minecraft.network.chat.Component.literal(
-                String.format(java.util.Locale.US, "%,d", heater.getHeatEnergy()) + " TU"));
-        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
-                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
-    }
-
-    @Nullable
-    @Override
+    @Nullable @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return createTickerHelper(type, ModBlockEntities.HEATEX_BE.get(),
                 (lvl, pos, st, be) -> MachineHeatexBlockEntity.tick(lvl, pos, st, (MachineHeatexBlockEntity) be));
     }
 
-    @Override
-    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
-        super.onPlace(state, level, pos, oldState, isMoving);
-        if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            structureHelper.placeStructure(level, pos, state.getValue(FACING), this);
-        }
-    }
-
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        return openMenu(state, level, pos, player);
-    }
-    //?} else {
-    /*@Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        return openMenu(state, level, pos, player);
-    }
-    *///?}
 
-    private InteractionResult openMenu(BlockState state, Level level, BlockPos pos, Player player) {
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
-            if (entity instanceof MenuProvider menuProvider && player instanceof ServerPlayer serverPlayer) {
-                MenuRegistry.openExtendedMenu(serverPlayer, menuProvider, buf -> buf.writeBlockPos(pos));
+            // Original HeaterHeatex: geschlichen stellt der Identifikator tanks[0], keine GUI
+            if (player.isShiftKeyDown()) {
+                net.minecraft.world.item.ItemStack held = player.getItemInHand(hand);
+                if (entity instanceof MachineHeatexBlockEntity heatex && !held.isEmpty()
+                        && held.getItem() instanceof com.hbm_m.interfaces.IItemFluidIdentifier id) {
+                    net.minecraft.world.level.material.Fluid type = id.getType(level, pos, held);
+                    heatex.tanks[0].setTankType(type);
+                    heatex.setChanged();
+                    player.displayClientMessage(net.minecraft.network.chat.Component.literal("Changed type to ").withStyle(net.minecraft.ChatFormatting.YELLOW)
+                            .append(com.hbm_m.inventory.fluid.FluidType.forFluid(type).getLocalizedName())
+                            .append(net.minecraft.network.chat.Component.literal("!")), false);
+                }
+                return InteractionResult.SUCCESS;
+            }
+            if (entity instanceof MenuProvider menuProvider) {
+                MenuRegistry.openExtendedMenu((ServerPlayer) player, menuProvider, buf -> buf.writeBlockPos(pos));
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
-    }
-
-    @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (!state.is(newState.getBlock()) && !level.isClientSide()) {
-            structureHelper.destroyStructure(level, pos, state.getValue(FACING));
         }
-        super.onRemove(state, level, pos, newState, isMoving);
-    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+
+        if (!level.isClientSide()) {
+            BlockEntity entity = level.getBlockEntity(pos);
+            // Original HeaterHeatex: geschlichen stellt der Identifikator tanks[0], keine GUI
+            if (player.isShiftKeyDown()) {
+                net.minecraft.world.item.ItemStack held = player.getMainHandItem();
+                if (entity instanceof MachineHeatexBlockEntity heatex && !held.isEmpty()
+                        && held.getItem() instanceof com.hbm_m.interfaces.IItemFluidIdentifier id) {
+                    net.minecraft.world.level.material.Fluid type = id.getType(level, pos, held);
+                    heatex.tanks[0].setTankType(type);
+                    heatex.setChanged();
+                    player.displayClientMessage(net.minecraft.network.chat.Component.literal("Changed type to ").withStyle(net.minecraft.ChatFormatting.YELLOW)
+                            .append(com.hbm_m.inventory.fluid.FluidType.forFluid(type).getLocalizedName())
+                            .append(net.minecraft.network.chat.Component.literal("!")), false);
+                }
+                return InteractionResult.SUCCESS;
+            }
+            if (entity instanceof MenuProvider menuProvider) {
+                MenuRegistry.openExtendedMenu((ServerPlayer) player, menuProvider, buf -> buf.writeBlockPos(pos));
+            }
+        }
+        return InteractionResult.sidedSuccess(level.isClientSide());
+        }
+    *///?}
+
 
     //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<MachineHeatexBlock> CODEC = simpleCodec(MachineHeatexBlock::new);
@@ -189,4 +122,15 @@ public class MachineHeatexBlock extends BaseEntityBlock implements IMultiblockCo
         return CODEC;
     }
     *///?}
+
+    /** Original {@code addInformation}: {@code addStandardInfo} (Umschalttaste zeigt {@code .desc}). */
+    @Override
+    //? if < 1.21.1 {
+    public void appendHoverText(net.minecraft.world.item.ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.BlockGetter level,
+                                java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(net.minecraft.world.item.ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    *///?}
+        com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
+    }
 }

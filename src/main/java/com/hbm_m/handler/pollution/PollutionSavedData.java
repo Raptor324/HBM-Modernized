@@ -30,7 +30,7 @@ public class PollutionSavedData extends SavedData {
     public final Map<ChunkPos, PollutionData> pollution = new HashMap<>();
 
     public static PollutionSavedData get(ServerLevel level) {
-        return com.hbm_m.platform.PlatformHooks.getOrCreateSavedData(level, DATA_NAME,
+        return com.hbm_m.platform.LevelHooks.getOrCreateSavedData(level, DATA_NAME,
                 PollutionSavedData::load, PollutionSavedData::new);
     }
 

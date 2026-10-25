@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/handheld",
+  "textures": {
+    "layer0": "hbm_m:item/meteorite_sword_icon"
+  }
+}

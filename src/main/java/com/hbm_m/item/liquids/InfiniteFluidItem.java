@@ -16,6 +16,7 @@ import net.minecraft.world.level.material.Fluids;
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.core.registries.BuiltInRegistries;
+import com.hbm_m.platform.StackNbt;
 // Forge/NeoForge: сигнатуры IFluidHandlerItem идентичны, различаются только пакеты.
 //? if forge {
 import net.minecraft.nbt.CompoundTag;
@@ -30,9 +31,9 @@ import org.jetbrains.annotations.NotNull;
 import net.minecraft.core.Direction;
 //?}
 //? if neoforge {
-/*import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
+/*import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 *///?}
 
 /**
@@ -53,6 +54,8 @@ public class InfiniteFluidItem extends Item implements ITooltipProvider {
     @Nullable
     private final Fluid fixedFluid;
     private final boolean instantNetwork;
+    /** Original {@code ItemInfiniteFluid.chance}: nur jede n-te Uebertragung liefert (chlorine_pinwheel: 1 mB, 1:2). */
+    private int chance = 1;
 
     /** Универсальная бесконечная бочка (тип берётся из NBT или запроса), instant для сети. */
     public InfiniteFluidItem(Properties properties, int transferRate) {
@@ -79,10 +82,19 @@ public class InfiniteFluidItem extends Item implements ITooltipProvider {
         if (fixedFluid != null && fixedFluid != Fluids.EMPTY) {
             return fixedFluid;
         }
-        if (PlatformHooks.hasItemTag(stack) && PlatformHooks.contains(stack, "FluidType")) {
-            return BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(PlatformHooks.getString(stack, "FluidType")));
+        if (StackNbt.has(stack) && StackNbt.contains(stack, "FluidType")) {
+            return BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(StackNbt.getString(stack, "FluidType")));
         }
         return Fluids.EMPTY;
+    }
+
+    public InfiniteFluidItem chance(int chance) {
+        this.chance = chance;
+        return this;
+    }
+
+    public int getChance() {
+        return chance;
     }
 
     /** true только для универсальной бесконечной бочки (fluid_barrel_infinite). */
@@ -105,6 +117,60 @@ public class InfiniteFluidItem extends Item implements ITooltipProvider {
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.literal("§bInfinite Fluid"));
         tooltip.add(Component.literal("§7Output Rate: §e" + transferRate + " mB/t"));
+        appendTableTooltip(stack, tooltip);
+    }
+
+    // ── NTM Space: Wassertabelle (ItemInfiniteFluid.requiresTable / CBT_Water) ──────────────────────
+
+    /**
+     * NTM Space {@code requiresTable}: im Original nur {@code inf_water}/{@code inf_water_mk2} (feste Fluessigkeit Wasser,
+     * nicht die universelle Bochka) - sie arbeiten nur, wenn der Himmelskoerper eine Wasser-Wassertabelle hat.
+     */
+    public boolean requiresTable() {
+        return !instantNetwork && fixedFluid != null && com.hbm_m.api.fluids.VanillaFluidEquivalence.isWater(fixedFluid);
+    }
+
+    /** NTM Space {@code onUpdate}: merkt sich im Item-NBT, ob die aktuelle Umgebung eine passende Tabelle hat. Ohne Space-Addon wirkungslos. */
+    @Override
+    public void inventoryTick(ItemStack stack, Level level, net.minecraft.world.entity.Entity entity, int slot, boolean selected) {
+        super.inventoryTick(stack, level, entity, slot, selected);
+        if (!requiresTable() || !com.hbm_m.api.space.SpaceApi.isInstalled()) return;
+
+        // waterTableFluid: im Orbit und ohne Tabelle null
+        Fluid table = com.hbm_m.api.space.SpaceApi.waterTableFluid(level, com.hbm_m.inventory.fluid.ModFluids.WATER.getSource());
+        boolean canOperate = table != null && com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(table, fixedFluid);
+        String fluid = table != null ? String.valueOf(BuiltInRegistries.FLUID.getKey(table)) : "";
+
+        if (com.hbm_m.platform.StackNbt.has(stack)) {
+            net.minecraft.nbt.CompoundTag cur = com.hbm_m.platform.StackNbt.read(stack);
+            if (cur.contains("noAtmo") && cur.getBoolean("noAtmo") == !canOperate && fluid.equals(cur.getString("fluid"))) return;
+        }
+        net.minecraft.nbt.CompoundTag tag = com.hbm_m.platform.StackNbt.orCreate(stack);
+        tag.putBoolean("noAtmo", !canOperate);
+        tag.putString("fluid", fluid);
+    }
+
+    /** NTM Space {@code canOperate(stack)}: kein NBT oder {@code noAtmo == false}. */
+    public boolean canOperate(ItemStack stack) {
+        return !com.hbm_m.platform.StackNbt.has(stack) || !com.hbm_m.platform.StackNbt.read(stack).getBoolean("noAtmo");
+    }
+
+    private void appendTableTooltip(ItemStack stack, List<Component> tooltip) {
+        if (canOperate(stack)) return;
+        String fluidId = com.hbm_m.platform.StackNbt.read(stack).getString("fluid");
+        Fluid current = fluidId.isEmpty() ? Fluids.EMPTY : BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(fluidId));
+        boolean none = current == null || current == Fluids.EMPTY;
+        if (none) {
+            tooltip.add(Component.literal("Current environment has insufficient vapor pressure"));
+        } else {
+            tooltip.add(Component.literal("Current environment has an incompatible fluid table"));
+        }
+        tooltip.add(Component.literal("Requires: ").append(com.hbm_m.inventory.fluid.FluidType.forFluid(fixedFluid).getLocalizedName()).append(" table"));
+        if (none) {
+            tooltip.add(Component.literal("Releasing 0.2atm of vapor into the atmosphere will add a table on dry celestial bodies"));
+        } else {
+            tooltip.add(Component.literal("Current environment: ").append(com.hbm_m.inventory.fluid.FluidType.forFluid(current).getLocalizedName()).append(" table"));
+        }
     }
 
     // ================================================================== //
@@ -129,15 +195,22 @@ public class InfiniteFluidItem extends Item implements ITooltipProvider {
 
         public Fluid getConfiguredFluid() {
             if (fixedFluid != null && fixedFluid != Fluids.EMPTY) return fixedFluid;
-            if (PlatformHooks.hasItemTag(container) && PlatformHooks.contains(container, "FluidType")) {
-                return BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(PlatformHooks.getString(container, "FluidType")));
+            if (StackNbt.has(container) && StackNbt.contains(container, "FluidType")) {
+                return BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(StackNbt.getString(container, "FluidType")));
             }
             return Fluids.EMPTY;
+        }
+
+        /** Original FluidLoaderInfinite: bei chance > 1 greift nur jede chance-te Uebertragung. */
+        protected boolean rollChance() {
+            int chance = container.getItem() instanceof InfiniteFluidItem inf ? inf.chance : 1;
+            return chance <= 1 || java.util.concurrent.ThreadLocalRandom.current().nextInt(chance) == 0;
         }
 
         /** Возвращает фактически поглощённый объём (mB). */
         public int fill(Fluid fluid, int amount, boolean simulate) {
             if (fluid == null || amount <= 0) return 0;
+            if (!rollChance()) return 0;
             Fluid type = getConfiguredFluid();
             // Если не настроена — поглощаем любой тип (универсальная бочка).
             // Если настроена — поглощаем только тот же substance (для ванильных water/lava).
@@ -151,6 +224,7 @@ public class InfiniteFluidItem extends Item implements ITooltipProvider {
         public dev.architectury.fluid.FluidStack drain(int maxDrain, boolean simulate) {
             Fluid type = getConfiguredFluid();
             if (type == Fluids.EMPTY) return dev.architectury.fluid.FluidStack.empty();
+            if (!rollChance()) return dev.architectury.fluid.FluidStack.empty();
             return dev.architectury.fluid.FluidStack.create(type, Math.min(maxDrain, rate));
         }
 
@@ -160,6 +234,7 @@ public class InfiniteFluidItem extends Item implements ITooltipProvider {
             if (type != Fluids.EMPTY && !com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(type, fluid)) {
                 return dev.architectury.fluid.FluidStack.empty();
             }
+            if (!rollChance()) return dev.architectury.fluid.FluidStack.empty();
             return dev.architectury.fluid.FluidStack.create(fluid, Math.min(maxDrain, rate));
         }
     }
@@ -215,6 +290,7 @@ public class InfiniteFluidItem extends Item implements ITooltipProvider {
         }
     }
 
+    // neo-pendant: ModCapabilities.registerBatteryItemCaps (RegisterCapabilitiesEvent, Item-Capabilities)
     //? if forge {
     @Override
     public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {

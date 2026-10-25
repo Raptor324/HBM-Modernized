@@ -18,6 +18,7 @@ import net.minecraft.world.level.Level;
 import com.hbm_m.platform.PlatformHooks;
 
 import java.util.Arrays;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * Port von {@code com.hbm.entity.item.EntityDeliveryDrone} (1.7.10 Original) - Pipeline A ("manuelle
@@ -165,7 +166,7 @@ public class EntityDeliveryDrone extends EntityDroneBase {
             CompoundTag entry = list.getCompound(i);
             int slot = entry.getInt("slot");
             if (slot >= 0 && slot < items.length) {
-                items[slot] = PlatformHooks.itemStackOf(entry, this.level().registryAccess());
+                items[slot] = StackNbt.parse(entry, this.level().registryAccess());
             }
         }
 
@@ -181,7 +182,7 @@ public class EntityDeliveryDrone extends EntityDroneBase {
         ListTag list = new ListTag();
         for (int i = 0; i < items.length; i++) {
             if (!items[i].isEmpty()) {
-                CompoundTag entry = PlatformHooks.safeItemSave(items[i], this.level().registryAccess());
+                CompoundTag entry = StackNbt.saveNew(items[i], this.level().registryAccess());
                 entry.putInt("slot", i);
                 list.add(entry);
             }

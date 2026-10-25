@@ -13,6 +13,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import com.hbm_m.platform.LevelHooks;
 
 /**
  * Порт {@code TileEntityLockableBase} (1.7.10) — навесной замок с числовым пин-кодом.
@@ -87,7 +88,7 @@ public interface ILockable {
 
     /** Звук отпирания ключом — у позиции игрока, как playSoundAtEntity в оригинале. */
     private void playLockOpen(Player player) {
-        PlatformHooks.playSound(player.level(), player.blockPosition(),
+        LevelHooks.playSound(player.level(), player.blockPosition(),
                 ModSounds.LOCK_OPEN.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
     }
 
@@ -123,11 +124,11 @@ public interface ILockable {
             }
             double rand = player.getRandom().nextDouble() * 100;
             if (chanceOfSuccess > rand) {
-                PlatformHooks.playSound(player.level(), player.blockPosition(),
+                LevelHooks.playSound(player.level(), player.blockPosition(),
                         ModSounds.PIN_UNLOCK.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
                 return true;
             }
-            PlatformHooks.playSound(player.level(), player.blockPosition(),
+            LevelHooks.playSound(player.level(), player.blockPosition(),
                     ModSounds.PIN_BREAK.get(), SoundSource.PLAYERS, 1.0F,
                     0.8F + player.getRandom().nextFloat() * 0.2F);
         }

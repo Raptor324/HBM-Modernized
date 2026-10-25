@@ -156,7 +156,7 @@ public class CrucibleSmeltingRecipe extends PlatformRecipe {
                 throw new IllegalStateException("Unknown material '" + matName
                         + "' in crucible_smelting recipe " + recipeId);
             }
-            int amount = GsonHelper.getAsInt(json, "amount", MaterialShapes.INGOT);
+            int amount = GsonHelper.getAsInt(json, "amount", MaterialShapes.INGOT.q(1));
             return new CrucibleSmeltingRecipe(recipeId, input, mat, amount);
         }
 

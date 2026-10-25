@@ -1,13 +1,7 @@
 package com.hbm_m.client.model;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
@@ -17,11 +11,7 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
-//? if forge {
 import net.minecraftforge.client.model.data.ModelData;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.client.model.data.ModelData;
-*///?}
 
 import org.jetbrains.annotations.Nullable;
 
@@ -34,6 +24,7 @@ import java.util.List;
  */
 
 @OnlyIn(Dist.CLIENT)
+
 public class DaeBakedModel implements BakedModel {
 
     private final List<BakedQuad> quads;

@@ -30,9 +30,9 @@ import net.minecraft.world.level.material.Fluids;
  *
  * <p>Порт 1.7.10 статического {@code com.hbm.inventory.recipes.RotaryFurnaceRecipes}: до 3
  * предметных входов (каждый — {@link Ingredient} + обязательный {@code count}) → один предметный
- * выход за фиксированную длительность, с опциональной входной жидкостью (mB). Оригинальный
- * {@code MaterialStack}-выход (розлив расплавленного металла) в этом порте — предметный
- * {@link ItemStack} (та же упрощённость, что и раньше).</p>
+ * выход за фиксированную длительность, с опциональной входной жидкостью (mB) и потреблением пара
+ * ({@code steam}). Оригинальный {@code MaterialStack}-выход (розлив расплавленного металла) в этом
+ * порте — предметный {@link ItemStack} (та же упрощённость, что и раньше).</p>
  *
  * <p><b>Замена статике:</b> прежний {@code RotaryFurnaceRecipes} хранил {@code List<RotaryFurnaceRecipe>}
  * в Java-статике, пополнявшуюся из static-блока вручную. Это блокировало data-driven рецепты.
@@ -53,7 +53,8 @@ import net.minecraft.world.level.material.Fluids;
  *   ],
  *   "fluid": { "fluid": "hbm_m:lightoil", "amount": 100 },  // optional; отсутствие => без жидкости
  *   "result": { "item": "...", "count": 1 },
- *   "duration": 100
+ *   "duration": 100,
+ *   "steam": 100                        // optional; потребление пара за операцию (0 => без пара)
  * }
  * }</pre>
  */
@@ -65,9 +66,10 @@ public class RotaryFurnaceRecipe extends PlatformRecipe {
     private final FluidStack fluid;
     private final ItemStack output;
     private final int duration;
+    private final int steam;
 
     public RotaryFurnaceRecipe(ResourceLocation id, Ingredient[] inputs, int[] counts,
-                               @Nullable FluidStack fluid, ItemStack output, int duration) {
+                               @Nullable FluidStack fluid, ItemStack output, int duration, int steam) {
         super(id);
         if (inputs.length != counts.length) {
             throw new IllegalArgumentException("RotaryFurnaceRecipe: ingredients/counts length mismatch");
@@ -77,6 +79,7 @@ public class RotaryFurnaceRecipe extends PlatformRecipe {
         this.fluid = (fluid != null && !fluid.isEmpty() && fluid.getAmount() > 0) ? fluid : null;
         this.output = output;
         this.duration = Math.max(1, duration);
+        this.steam = Math.max(0, steam);
     }
 
     public Ingredient[] getInputs() { return inputs; }
@@ -91,6 +94,9 @@ public class RotaryFurnaceRecipe extends PlatformRecipe {
 
     public ItemStack getOutput() { return output.copy(); }
     public int getDuration() { return duration; }
+
+    /** Потребление пара за операцию в единицах парового бака (0 = пар не требуется). */
+    public int getSteam() { return steam; }
 
     /**
      * Совпадение входа по 3 слотам машины (семантика оригинального {@code RotaryFurnaceRecipes.getRecipe}):
@@ -179,7 +185,8 @@ public class RotaryFurnaceRecipe extends PlatformRecipe {
 
             ItemStack output = RecipeHooks.itemStackFromJson(GsonHelper.getAsJsonObject(json, "result"));
             int duration = GsonHelper.getAsInt(json, "duration", 100);
-            return new RotaryFurnaceRecipe(recipeId, inputs, counts, fluid, output, duration);
+            int steam = GsonHelper.getAsInt(json, "steam", 0);
+            return new RotaryFurnaceRecipe(recipeId, inputs, counts, fluid, output, duration, steam);
         }
 
         @Override
@@ -194,7 +201,8 @@ public class RotaryFurnaceRecipe extends PlatformRecipe {
             FluidStack fluid = RecipeHooks.readFluidStack(buf);
             ItemStack output = RecipeHooks.readItem(buf);
             int duration = buf.readVarInt();
-            return new RotaryFurnaceRecipe(recipeId, inputs, counts, fluid, output, duration);
+            int steam = buf.readVarInt();
+            return new RotaryFurnaceRecipe(recipeId, inputs, counts, fluid, output, duration, steam);
         }
 
         @Override
@@ -207,6 +215,7 @@ public class RotaryFurnaceRecipe extends PlatformRecipe {
             RecipeHooks.writeFluidStack(buf, recipe.fluid != null ? recipe.fluid : FluidStack.empty());
             RecipeHooks.writeItem(buf, recipe.output);
             buf.writeVarInt(recipe.duration);
+            buf.writeVarInt(recipe.steam);
         }
     }
 }

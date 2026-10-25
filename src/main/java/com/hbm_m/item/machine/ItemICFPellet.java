@@ -1,5 +1,7 @@
 package com.hbm_m.item.machine;
 
+import com.hbm_m.platform.StackNbt;
+
 import com.hbm_m.item.ITooltipProvider;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.inventory.fluid.ModFluids;
@@ -154,7 +156,7 @@ public class ItemICFPellet extends Item implements ITooltipProvider {
     }
 
     public static long getDepletion(ItemStack stack) {
-        CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
+        CompoundTag tag = StackNbt.read(stack);
         return tag == null ? 0L : tag.getLong(KEY_DEPLETION);
     }
 
@@ -163,12 +165,13 @@ public class ItemICFPellet extends Item implements ITooltipProvider {
      * mit dem Reaktionsfaktor beider Brennstoffe zu Hitze.
      */
     public static long react(ItemStack stack, long heat) {
-        com.hbm_m.platform.PlatformHooks.editItemTag(stack, tag -> tag.putLong(KEY_DEPLETION, tag.getLong(KEY_DEPLETION) + heat));
+        CompoundTag tag = StackNbt.orCreate(stack);
+        tag.putLong(KEY_DEPLETION, tag.getLong(KEY_DEPLETION) + heat);
         return (long) (heat * getType(stack, true).reactionMult * getType(stack, false).reactionMult);
     }
 
     public static boolean isMuon(ItemStack stack) {
-        CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
+        CompoundTag tag = StackNbt.read(stack);
         return tag != null && tag.getBoolean(KEY_MUON);
     }
 
@@ -178,11 +181,10 @@ public class ItemICFPellet extends Item implements ITooltipProvider {
     }
 
     public static ItemStack setup(ItemStack stack, EnumICFFuel type1, EnumICFFuel type2, boolean muon) {
-        com.hbm_m.platform.PlatformHooks.editItemTag(stack, tag -> {
-            tag.putByte(KEY_TYPE_1, (byte) type1.ordinal());
-            tag.putByte(KEY_TYPE_2, (byte) type2.ordinal());
-            tag.putBoolean(KEY_MUON, muon);
-        });
+        CompoundTag tag = StackNbt.orCreate(stack);
+        tag.putByte(KEY_TYPE_1, (byte) type1.ordinal());
+        tag.putByte(KEY_TYPE_2, (byte) type2.ordinal());
+        tag.putBoolean(KEY_MUON, muon);
         return stack;
     }
 
@@ -204,7 +206,7 @@ public class ItemICFPellet extends Item implements ITooltipProvider {
     }
 
     public static EnumICFFuel getType(ItemStack stack, boolean first) {
-        CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
+        CompoundTag tag = StackNbt.read(stack);
         if (tag == null) return first ? EnumICFFuel.DEUTERIUM : EnumICFFuel.TRITIUM;
 
         int ordinal = tag.getByte(first ? KEY_TYPE_1 : KEY_TYPE_2);
@@ -253,12 +255,12 @@ public class ItemICFPellet extends Item implements ITooltipProvider {
                 Component.translatable("icffuel.hbm_m." + getType(stack, false).getName()))
                 .withStyle(ChatFormatting.YELLOW));
 
-        tooltip.add(Component.translatable("tooltip.hbm_m.icf_pellet.heat", getFusingDifficulty(stack))
+        tooltip.add(Component.translatable("tooltip.hbm_m.icf_pellet.heat", com.hbm_m.util.BobMathUtil.getShortNumber(getFusingDifficulty(stack)))
                 .withStyle(ChatFormatting.YELLOW));
 
         double mult = getType(stack, true).reactionMult * getType(stack, false).reactionMult;
         tooltip.add(Component.translatable("tooltip.hbm_m.icf_pellet.reactivity",
-                String.format(Locale.US, "%.2f", mult))
+                String.valueOf((int) (mult * 100) / 100D))
                 .withStyle(ChatFormatting.YELLOW));
 
         if (isMuon(stack)) {

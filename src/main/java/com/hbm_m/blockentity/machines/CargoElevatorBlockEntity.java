@@ -18,6 +18,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import com.hbm_m.platform.BlockHooks;
 
 /**
  * Cargo elevator: a self-stacking 3x3 shaft (see {@link com.hbm_m.block.machines.CargoElevatorBlock})
@@ -106,7 +107,6 @@ public class CargoElevatorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlock
             level.removeBlock(pos, false);
         }
     }
-
     private void liftEntities(Level level, BlockPos corePos) {
         double liftLower = corePos.getY() + 1 + Math.min(extension, prevExtension);
         double liftUpper = corePos.getY() + 1 + Math.max(extension, prevExtension) + 1;
@@ -161,7 +161,7 @@ public class CargoElevatorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlock
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         if (corePos != null) {
-            com.hbm_m.platform.PlatformHooks.writeBlockPos(tag, "CorePos", corePos);
+            com.hbm_m.platform.BlockHooks.writeBlockPos(tag, "CorePos", corePos);
         }
         tag.putInt("height", height);
         tag.putDouble("extension", extension);
@@ -170,12 +170,16 @@ public class CargoElevatorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlock
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        corePos = tag.contains("CorePos") ? com.hbm_m.platform.PlatformHooks.readBlockPos(tag, "CorePos") : null;
+        corePos = tag.contains("CorePos") ? com.hbm_m.platform.BlockHooks.readBlockPos(tag, "CorePos") : null;
         height = tag.getInt("height");
         extension = tag.getDouble("extension");
         prevExtension = extension;
         isExtending = tag.getBoolean("isExtending");
     }
 
-
+    /** 1:1 TileEntityCargoElevator.getRenderBoundingBox (Render-Migration: Raptors Pfad cullt nach dieser Box, der alte BER zeichnete immer). */
+    @Override
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return new net.minecraft.world.phys.AABB(worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1, worldPosition.getX() + 2, worldPosition.getY() + 1 + height, worldPosition.getZ() + 2);
+    }
 }

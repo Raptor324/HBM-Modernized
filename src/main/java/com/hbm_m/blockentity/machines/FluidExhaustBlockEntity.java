@@ -81,7 +81,6 @@ public class FluidExhaustBlockEntity extends BaseHbmBlockEntity implements IFlui
         }
     }
 
-    //? if forge {
     @Override
     public void onLoad() {
         super.onLoad();
@@ -89,7 +88,6 @@ public class FluidExhaustBlockEntity extends BaseHbmBlockEntity implements IFlui
             initNodes(serverLevel);
         }
     }
-    //?}
 
 
     @Override

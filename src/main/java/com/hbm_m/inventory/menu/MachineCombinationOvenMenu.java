@@ -3,7 +3,6 @@ package com.hbm_m.inventory.menu;
 import com.hbm_m.blockentity.machines.MachineCombinationOvenBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -13,6 +12,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 public class MachineCombinationOvenMenu extends AbstractContainerMenu {
 
@@ -20,7 +20,7 @@ public class MachineCombinationOvenMenu extends AbstractContainerMenu {
 
     private static final int SLOT_INPUT = MachineCombinationOvenBlockEntity.SLOT_INPUT;
     private static final int SLOT_OUTPUT = MachineCombinationOvenBlockEntity.SLOT_OUTPUT;
-    private static final int MACHINE_SLOT_COUNT = 2;
+    private static final int MACHINE_SLOT_COUNT = MachineCombinationOvenBlockEntity.INVENTORY_SIZE;
     private static final int PLAYER_INV_START = MACHINE_SLOT_COUNT;
     private static final int PLAYER_INV_END = MACHINE_SLOT_COUNT + 36;
 
@@ -35,7 +35,7 @@ public class MachineCombinationOvenMenu extends AbstractContainerMenu {
         // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
         // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
         var container = new ModItemStackHandlerContainer(
-                blockEntity != null ? blockEntity.getInventory() : new DummyItemStackHandler(MACHINE_SLOT_COUNT),
+                blockEntity != null ? blockEntity.getInventory() : new ModItemStackHandler.Dummy(MACHINE_SLOT_COUNT),
                 blockEntity != null ? blockEntity::setChanged : null);
 
         // Eingangsslot - Koordinaten aus dem 1.7.10-Original (ContainerFurnaceCombo, Slot 0).
@@ -46,6 +46,14 @@ public class MachineCombinationOvenMenu extends AbstractContainerMenu {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false; // Nur Entnahme - wird von der Maschine befuellt.
+            }
+        });
+
+        this.addSlot(new Slot(container, MachineCombinationOvenBlockEntity.SLOT_CONTAINER_IN, 136, 18));
+        this.addSlot(new Slot(container, MachineCombinationOvenBlockEntity.SLOT_CONTAINER_OUT, 136, 54) {
+            @Override
+            public boolean mayPlace(ItemStack stack) {
+                return false;
             }
         });
 

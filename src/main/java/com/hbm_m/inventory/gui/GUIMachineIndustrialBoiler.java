@@ -16,14 +16,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 /**
  * Industrial Boiler GUI: two fluid-container slot pairs (water in/out, steam in/out) flanking
  * two tank bars, using the previously-unwired {@code gui_industrial_boiler.png} art (a copy of
@@ -65,8 +59,8 @@ public class GUIMachineIndustrialBoiler extends GuiInfoScreen<MachineIndustrialB
 
         var be = menu.getBlockEntity();
         if (be != null) { // тайл может отсутствовать в реплее Flashback
-            renderTank(guiGraphics, WATER_TANK_X, be.getTankFluid(true), menu.getWaterAmount(), menu.getWaterCapacity());
-            renderTank(guiGraphics, STEAM_TANK_X, be.getTankFluid(false), menu.getSteamAmount(), menu.getSteamCapacity());
+            renderTank(guiGraphics, WATER_TANK_X, be.tanks[0].getTankType(), menu.getWaterAmount(), menu.getWaterCapacity());
+            renderTank(guiGraphics, STEAM_TANK_X, be.tanks[1].getTankType(), menu.getSteamAmount(), menu.getSteamCapacity());
         }
     }
 

@@ -39,6 +39,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import com.hbm_m.platform.StackNbt;
 //? if forge {
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 //?}
@@ -131,7 +132,8 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
     public final List<int[]> nearbyMissiles = new ArrayList<>();
 
     public MachineRadarBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.RADAR_BE.get(), pos, state, SLOT_COUNT, 250_000L, 2_500L, 0L);
+        // Original: maxPower = 100_000, Annahme bis zum vollen Speicher
+        super(ModBlockEntities.RADAR_BE.get(), pos, state, SLOT_COUNT, 100_000L, 100_000L, 0L);
     }
 
     /**
@@ -473,7 +475,40 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
                 receiveEnergy(extracted, false);
             }
         });
-        //?}
+        //?} elif neoforge {
+        /*com.hbm_m.platform.HbmCaps.get(source, com.hbm_m.platform.HbmCap.HBM_ENERGY_PROVIDER, side).ifPresent(provider -> {
+            if (!provider.canExtract()) {
+                return;
+            }
+            long toPull = Math.min(pullLimit, provider.getProvideSpeed());
+            long extracted = provider.extractEnergy(toPull, false);
+            if (extracted > 0) {
+                receiveEnergy(extracted, false);
+            }
+        });
+
+        if (!canReceive()) {
+            return;
+        }
+        long feNeeded = Math.min(getMaxEnergyStored() - getEnergyStored(), getReceiveSpeed());
+        if (feNeeded <= 0) {
+            return;
+        }
+        final int fePullLimit = (int) Math.min(Integer.MAX_VALUE, feNeeded);
+
+        com.hbm_m.platform.HbmCaps.get(source, com.hbm_m.platform.HbmCap.ENERGY, side).ifPresent(fe -> {
+            if (!fe.canExtract()) {
+                return;
+            }
+            if (fePullLimit <= 0) {
+                return;
+            }
+            int extracted = fe.extractEnergy(fePullLimit, false);
+            if (extracted > 0) {
+                receiveEnergy(extracted, false);
+            }
+        });
+        *///?}
     }
 
     private void performRadarScan() {
@@ -573,7 +608,7 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
             if (missile.getY() < worldPosition.getY() + RADAR_BUFFER) {
                 continue;
             }
-            if (!missile.canBeDetectedByRadar()) {
+            if (!missile.canBeSeenBy(this)) {
                 continue;
             }
             int type = getTargetTypeIndex(missile);
@@ -753,10 +788,31 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
      * @return true если команда принята установкой
      */
     public boolean handleLaunchCommand(int linkSlot, int action, int targetId, int x, int z) {
+        return handleLaunchCommand(null, linkSlot, action, targetId, x, z);
+    }
+
+    public boolean handleLaunchCommand(@org.jetbrains.annotations.Nullable net.minecraft.world.entity.player.Player player,
+                                       int linkSlot, int action, int targetId, int x, int z) {
         if (level == null || level.isClientSide) {
             return false;
         }
         if (linkSlot < SLOT_LINK_FIRST || linkSlot > SLOT_LINK_LAST) {
+            return false;
+        }
+
+        // 1:1 TileEntityMachineRadarNT.receiveControl: ein Relais-Satellitenchip im Linkplatz schickt die
+        // Koordinaten (y = 60) als onCoordAction an den Satelliten seiner Frequenz.
+        net.minecraft.world.item.ItemStack linkStack = inventory.getStackInSlot(linkSlot);
+        if (!linkStack.isEmpty() && linkStack.is(com.hbm_m.item.ModItems.SAT_RELAY.get())) {
+            if (action == ACTION_LAUNCH_AT_COORDS && player != null && level instanceof net.minecraft.server.level.ServerLevel server) {
+                com.hbm_m.satellite.Satellite sat = com.hbm_m.satellite.SatelliteManager.get(server)
+                        .getSatFromFreq(com.hbm_m.item.ISatChip.getFreqS(linkStack));
+                int y = 60; //one day I will make radars transmit Y coordinate as well and you will be butchered alhamdulila
+                level.playSound(null, player.getX(), player.getY(), player.getZ(), com.hbm_m.sound.ModSounds.TOOL_TECH_BLEEP.get(),
+                        SoundSource.PLAYERS, 1.0F, 1.0F);
+                if (sat != null) sat.onCoordAction(server, player, x, y, z);
+                return true;
+            }
             return false;
         }
 
@@ -816,7 +872,7 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
         if (linker.isEmpty()) {
             return null;
         }
-        net.minecraft.nbt.CompoundTag tag = PlatformHooks.getItemTag(linker);
+        net.minecraft.nbt.CompoundTag tag = StackNbt.read(linker);
         if (tag == null || !tag.contains("xCoord")) {
             return null;
         }
@@ -964,6 +1020,8 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
+        setEnergyCapacity(100_000L); // alte Welten: frueher 250000
+
         progress = tag.getInt("progress");
         maxProgress = tag.getInt("max_progress");
         if (maxProgress <= 0) {
@@ -1241,8 +1299,8 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
 
     @Override
     public void onDataPacket(net.minecraft.network.Connection net, net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket pkt) {
-        if (PlatformHooks.getItemTag(pkt) != null) {
-            handleUpdateTag(PlatformHooks.getItemTag(pkt));
+        if (pkt.getTag() != null) {
+            handleUpdateTag(pkt.getTag());
         }
     }
     //?}
@@ -1272,6 +1330,7 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
         if (slot >= SLOT_LINK_FIRST && slot <= SLOT_LINK_LAST) {
             return stack.getItem() instanceof com.hbm_m.item.tool.ItemRadarLinker
                     || stack.getItem() instanceof com.hbm_m.api.item.IDesignatorItem
+                    || stack.is(com.hbm_m.item.ModItems.SAT_RELAY.get())
                     || isBattery(stack);
         }
         return false;

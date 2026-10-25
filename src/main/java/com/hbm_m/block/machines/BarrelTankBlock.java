@@ -41,6 +41,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.item.Item;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * Small single-block fluid barrel (no multiblock structure — same full-cube hitbox as the
@@ -56,8 +57,8 @@ public class BarrelTankBlock extends BaseEntityBlock
 
     public static final DirectionProperty FACING = DirectionProperty.create("facing", Direction.Plane.HORIZONTAL);
 
-    // Паритет 1.7.10 BlockFluidBarrel.setBlockBoundsBasedOnState: 2/16..14/16 по горизонтали, полная высота.
-    private static final VoxelShape SHAPE = Shapes.box(2 / 16.0, 0, 2 / 16.0, 14 / 16.0, 1, 14 / 16.0);
+    /** w16b: Original BlockFluidBarrel.setBlockBoundsBasedOnState: 2/16 .. 14/16 (Einzelfass). */
+    private static final VoxelShape SHAPE = Shapes.box(0.125D, 0, 0.125D, 0.875D, 1, 0.875D);
 
     /**
      * Die meisten Faesser sind Einzelbloecke; der Orbus ist im Original ein Multiblock. Steht hier
@@ -77,16 +78,15 @@ public class BarrelTankBlock extends BaseEntityBlock
      * mod's per-material barrel info panel (capacity + hot/corrosive/highly-corrosive/antimatter
      * storage permissions). Declared statically here (rather than read off a live BlockEntity)
      * so it also shows up on the item in inventory/JEI, before the block is ever placed.
-     * <p>
-     * Parity notes (1.7.10 {@code BlockFluidBarrel.addInformation}): {@code canStoreHighlyCorrosive}
-     * is nullable — {@code null} hides the line entirely (the original plastic barrel only lists
-     * 3 permission lines); {@code leaky} adds the red "Leaky" line of the corroded barrel.
-     * {@code canStoreCorrosive} follows the same pattern: NEXT's tcalloy/antimatter/corroded
-     * desc-line lists have no plain-corrosive entry at all, so {@code null} omits the line.
      */
     public record TooltipInfo(int capacityMb, boolean canStoreHot, @Nullable Boolean canStoreCorrosive,
                               @Nullable Boolean canStoreHighlyCorrosive, boolean canStoreAntimatter,
-                              boolean leaky) {}
+                              boolean leaky) {
+        public TooltipInfo(int capacityMb, boolean canStoreHot, boolean canStoreCorrosive,
+                           boolean canStoreHighlyCorrosive, boolean canStoreAntimatter) {
+            this(capacityMb, canStoreHot, canStoreCorrosive, canStoreHighlyCorrosive, canStoreAntimatter, false);
+        }
+    }
 
     public BarrelTankBlock(Properties properties,
                            BiFunction<BlockPos, BlockState, ? extends MachineFluidTankBlockEntity> beFactory,
@@ -145,8 +145,8 @@ public class BarrelTankBlock extends BaseEntityBlock
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock()) && !level.isClientSide()) {
-            // Паритет NEXT BlockEntityMachineBase.preRemoveSideEffects → spillInventory:
-            // при разрушении бочки содержимое слотов выбрасывается в мир. НЕ через setRemoved —
+            // Паритет NEXT BlockEntityMachineBase.preRemoveSideEffects -> spillInventory:
+            // при разрушении бочки содержимое слотов выбрасывается в мир. НЕ через setRemoved -
             // BaseHbmBlockEntity.dropInventory: ваниль зовёт setRemoved и при выгрузке чанка (дюп).
             if (level.getBlockEntity(pos) instanceof MachineFluidTankBlockEntity tank) {
                 tank.dropInventory();
@@ -210,17 +210,22 @@ public class BarrelTankBlock extends BaseEntityBlock
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
+        // w16b: Mehrblock - nur die Kernzelle (Umriss der ganzen Maschine: MultiblockOutlineForge)
         return structureHelper != null
-                ? structureHelper.generateShapeFromParts(state.getValue(FACING))
+                ? structureHelper.getControllerCellShape(state.getValue(FACING))
                 : SHAPE;
     }
 
     @Override
     public RenderShape getRenderShape(@NotNull BlockState state) {
+        // Orbus und Grosstank zeichnet TankRenderers komplett (RenderOrbus/RenderBigAssTank); Faesser behalten das Blockmodell.
+        if (this == com.hbm_m.block.ModBlocks.ORBUS.get() || this == com.hbm_m.block.ModBlocks.MACHINE_BIGASSTANK.get()) {
+            return RenderShape.ENTITYBLOCK_ANIMATED;
+        }
         return RenderShape.MODEL;
     }
 
-    // ═══════════════ Компаратор (порт BlockFluidBarrel.Functional.hasAnalogOutputSignal) ═══════════════
+    // ------- Компаратор (порт BlockFluidBarrel.Functional.hasAnalogOutputSignal) 
 
     @Override
     public boolean hasAnalogOutputSignal(BlockState state) {
@@ -229,10 +234,8 @@ public class BarrelTankBlock extends BaseEntityBlock
 
     @Override
     public int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
-        if (level.getBlockEntity(pos) instanceof MachineFluidTankBlockEntity tank) {
-            return tank.getComparatorPower();
-        }
-        return 0;
+        BlockEntity te = level.getBlockEntity(pos);
+        return te instanceof MachineFluidTankBlockEntity tank ? tank.getComparatorPower() : 0;
     }
 
     //? if < 1.21.1 {
@@ -248,11 +251,9 @@ public class BarrelTankBlock extends BaseEntityBlock
     *///?}
 
     private InteractionResult hbmOnUse(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
-        // NEXT BlockFluidBarrel.Functional: identifier применяется обычным ПКМ (useItemOn),
-        // поэтому на 1.20.1 (блок-первым) отдаём PASS, чтобы сработал item.useOn;
-        // sneak+ПКМ меню не открывает вовсе (useWithoutItem: isSecondaryUseActive → SUCCESS).
+        // Original BlockFluidBarrel: geschlichen keine GUI; der Identifikator (doesSneakBypassUse) stellt dann im useOn die Sorte
         if (player.isShiftKeyDown()) {
-            return InteractionResult.SUCCESS;
+            return InteractionResult.PASS;
         }
         if (player.getItemInHand(hand).getItem() instanceof com.hbm_m.item.liquids.FluidIdentifierItem) {
             return InteractionResult.PASS;
@@ -289,7 +290,7 @@ public class BarrelTankBlock extends BaseEntityBlock
             CompoundTag data = new CompoundTag();
             persistent.writeNBT(data);
             if (!data.isEmpty()) {
-                PlatformHooks.setItemTag(stack, data);
+                StackNbt.set(stack, data);
             }
             return List.of(stack);
         }
@@ -321,7 +322,7 @@ public class BarrelTankBlock extends BaseEntityBlock
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
         super.setPlacedBy(level, pos, state, placer, stack);
         if (level.isClientSide) return;
-        CompoundTag tag = PlatformHooks.getItemTag(stack);
+        CompoundTag tag = StackNbt.copy(stack);
         if (tag == null || !tag.contains(IPersistentNBT.NBT_PERSISTENT_KEY)) return;
         if (level.getBlockEntity(pos) instanceof IPersistentNBT persistent) {
             persistent.readNBT(tag);

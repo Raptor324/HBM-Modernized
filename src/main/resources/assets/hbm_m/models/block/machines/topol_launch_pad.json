@@ -1,0 +1,7 @@
+{
+    "_comment": "Leeres Modell mit Absicht: gezeichnet wird der Werfer vollstaendig vom TopolLauncherRenderer. Die Textur dient nur den Bruchpartikeln.",
+    "textures": {
+        "particle": "hbm_m:block/topol_launch_pad"
+    },
+    "elements": []
+}

@@ -25,7 +25,8 @@ import net.minecraft.world.item.ItemStack;
  * - Слот 2: Канистра вывод (80, 53)
  * - Слот 3: Газ баллон ввод (125, 17)
  * - Слот 4: Газ баллон вывод (125, 53)
- * - Слоты 5-7: Апгрейды (152, 17), (152, 35), (152, 53)
+ * - Слоты 5-7: Апгрейды (156, 36), (156, 54), (156, 72)
+ *   (BlockEntity сканирует все три слота: SLOT_UPGRADE_1..SLOT_UPGRADE_3)
  */
 public class MachineFrackingTowerMenu extends AbstractContainerMenu {
 
@@ -72,15 +73,15 @@ public class MachineFrackingTowerMenu extends AbstractContainerMenu {
 
         // Слот 0: Батарея (8, 53)
         this.addSlot(new Slot(machineInventory,
-                MachineFrackingTowerBlockEntity.SLOT_BATTERY, 8, 53));
+                MachineFrackingTowerBlockEntity.SLOT_BATTERY, 8, 58));
 
         // Слот 1: Канистра ввод (80, 17)
         this.addSlot(new Slot(machineInventory,
-                MachineFrackingTowerBlockEntity.SLOT_CANISTER_IN, 80, 17));
+                MachineFrackingTowerBlockEntity.SLOT_CANISTER_IN, 94, 22));
 
         // Слот 2: Канистра вывод - только вывод (80, 53)
         this.addSlot(new Slot(machineInventory,
-                MachineFrackingTowerBlockEntity.SLOT_CANISTER_OUT, 80, 53) {
+                MachineFrackingTowerBlockEntity.SLOT_CANISTER_OUT, 94, 58) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false; // Только вывод
@@ -89,36 +90,39 @@ public class MachineFrackingTowerMenu extends AbstractContainerMenu {
 
         // Слот 3: Газ баллон ввод (125, 17)
         this.addSlot(new Slot(machineInventory,
-                MachineFrackingTowerBlockEntity.SLOT_GAS_IN, 125, 17));
+                MachineFrackingTowerBlockEntity.SLOT_GAS_IN, 130, 22));
 
         // Слот 4: Газ баллон вывод - только вывод (125, 53)
         this.addSlot(new Slot(machineInventory,
-                MachineFrackingTowerBlockEntity.SLOT_GAS_OUT, 125, 53) {
+                MachineFrackingTowerBlockEntity.SLOT_GAS_OUT, 130, 58) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false; // Только вывод
             }
         });
 
-        // Слоты 5-7: Апгрейды (152, 17), (152, 35), (152, 53)
+        // Слоты 5-7: Апгрейды (156, 36), (156, 54), (156, 72)
+        // Все три слота апгрейдов из BlockEntity (SLOT_UPGRADE_1..SLOT_UPGRADE_3):
+        // updateUpgrades() сканирует 5..7 и ожидает SPEED/POWER/AFTERBURN/OVERDRIVE,
+        // поэтому третий слот обязателен, иначе Afterburner/Overdrive недостижимы.
         this.addSlot(new SlotUpgrade(machineInventory,
-                MachineFrackingTowerBlockEntity.SLOT_UPGRADE_1, 152, 17));
+                MachineFrackingTowerBlockEntity.SLOT_UPGRADE_1, 156, 36));
         this.addSlot(new SlotUpgrade(machineInventory,
-                MachineFrackingTowerBlockEntity.SLOT_UPGRADE_2, 152, 35));
+                MachineFrackingTowerBlockEntity.SLOT_UPGRADE_2, 156, 54));
         this.addSlot(new SlotUpgrade(machineInventory,
-                MachineFrackingTowerBlockEntity.SLOT_UPGRADE_3, 152, 53));
+                MachineFrackingTowerBlockEntity.SLOT_UPGRADE_3, 156, 72));
 
         // Инвентарь игрока (3 строки по 9 слотов)
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
                 this.addSlot(new Slot(playerInventory,
-                        col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
+                        col + row * 9 + 9, 12 + col * 18, 108 + row * 18));
             }
         }
 
         // Хотбар игрока (9 слотов)
         for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(playerInventory, col, 8 + col * 18, 142));
+            this.addSlot(new Slot(playerInventory, col, 12 + col * 18, 166));
         }
     }
 
@@ -161,7 +165,7 @@ public class MachineFrackingTowerMenu extends AbstractContainerMenu {
             else {
                 // Проверка на апгрейд
                 if (slotStack.getItem() instanceof ItemMachineUpgrade) {
-                    // Сначала пробуем в слоты апгрейдов (5-8)
+                    // Сначала пробуем в слоты апгрейдов (5-7)
                     if (!this.moveItemStackTo(slotStack, 5, 8, false)) {
                         return ItemStack.EMPTY;
                     }

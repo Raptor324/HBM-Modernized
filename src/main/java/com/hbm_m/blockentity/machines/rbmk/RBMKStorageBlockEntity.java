@@ -103,7 +103,7 @@ public class RBMKStorageBlockEntity extends RBMKColumnBlockEntity
             if (!slots_empty(slots[i])) {
                 CompoundTag s = new CompoundTag();
                 s.putByte("s", (byte) i);
-                s.put("item", com.hbm_m.platform.PlatformHooks.safeItemSave(slots[i], registries));
+                s.put("item", com.hbm_m.platform.StackNbt.saveNew(slots[i], registries));
                 list.add(s);
             }
         }
@@ -119,7 +119,7 @@ public class RBMKStorageBlockEntity extends RBMKColumnBlockEntity
             CompoundTag s = list.getCompound(i);
             int idx = s.getByte("s") & 0xFF;
             if (idx < SLOTS && s.contains("item"))
-                slots[idx] = com.hbm_m.platform.PlatformHooks.itemStackOf(s.getCompound("item"), registries);
+                slots[idx] = com.hbm_m.platform.StackNbt.parse(s.getCompound("item"), registries);
         }
     }
 }

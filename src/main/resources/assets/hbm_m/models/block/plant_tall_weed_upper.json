@@ -1,0 +1,7 @@
+{
+ "parent": "minecraft:block/tinted_cross",
+ "textures": {
+  "cross": "hbm_m:block/plant_tall_weed_upper"
+ },
+ "render_type": "minecraft:cutout"
+}

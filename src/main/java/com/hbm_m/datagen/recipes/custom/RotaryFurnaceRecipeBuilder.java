@@ -24,7 +24,8 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
  *   "ingredients": [ { "ingredient": { ... }, "count": 1 }, ... ],   // 0..3
  *   "fluid": { "fluid": "...", "amount": 100 },  // optional
  *   "result": { "item": "...", "count": 1 },
- *   "duration": 100
+ *   "duration": 100,
+ *   "steam": 100    // optional; > 0
  * }
  * }</pre>
  */
@@ -36,30 +37,32 @@ public class RotaryFurnaceRecipeBuilder extends BaseRecipeBuilder<RotaryFurnaceR
     private final FluidStack fluid;
     private final ItemStack output;
     private final int duration;
+    private final int steam;
 
     private RotaryFurnaceRecipeBuilder(Ingredient[] inputs, int[] counts, @Nullable FluidStack fluid,
-                                        ItemStack output, int duration) {
+                                        ItemStack output, int duration, int steam) {
         this.inputs = inputs;
         this.counts = counts;
         this.fluid = fluid;
         this.output = output;
         this.duration = duration;
+        this.steam = steam;
     }
 
-    /** Полная перегрузка: массивы ingredient+count, опциональная жидкость, выход, длительность. */
+    /** Полная перегрузка: массивы ingredient+count, опциональная жидкость, выход, длительность, пар. */
     public static RotaryFurnaceRecipeBuilder rotaryFurnaceRecipe(Ingredient[] inputs, int[] counts,
                                                                  @Nullable FluidStack fluid,
-                                                                 ItemStack output, int duration) {
+                                                                 ItemStack output, int duration, int steam) {
         if (inputs.length != counts.length) {
             throw new IllegalArgumentException("rotaryFurnaceRecipe: inputs/counts length mismatch");
         }
-        return new RotaryFurnaceRecipeBuilder(inputs, counts, fluid, output, duration);
+        return new RotaryFurnaceRecipeBuilder(inputs, counts, fluid, output, duration, steam);
     }
 
     /** Без жидкости — упрощённая перегрузка. */
     public static RotaryFurnaceRecipeBuilder rotaryFurnaceRecipe(Ingredient[] inputs, int[] counts,
-                                                                 ItemStack output, int duration) {
-        return rotaryFurnaceRecipe(inputs, counts, null, output, duration);
+                                                                 ItemStack output, int duration, int steam) {
+        return rotaryFurnaceRecipe(inputs, counts, null, output, duration, steam);
     }
 
     @Override
@@ -84,6 +87,7 @@ public class RotaryFurnaceRecipeBuilder extends BaseRecipeBuilder<RotaryFurnaceR
         }
         json.add("result", stackToJson(output));
         json.addProperty("duration", duration);
+        if (steam > 0) json.addProperty("steam", steam);
     }
 
     @Override

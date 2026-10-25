@@ -13,6 +13,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /** Slot-Koordinaten (176x186 Textur) 1:1 aus {@code ContainerElectricFurnace} (1.7.10 Original)
  *  uebernommen: Batterie (152,54), Input (20,35), Output (80,35). Der Upgrade-Slot (152,20) des

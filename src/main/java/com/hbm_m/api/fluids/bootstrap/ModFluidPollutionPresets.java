@@ -35,7 +35,8 @@ public final class ModFluidPollutionPresets {
             .release(PollutionType.HEAVYMETAL, LEAD_FUEL * 0.1f);
 
     public static final FT_Polluting P_GAS = new FT_Polluting()
-            .burn(PollutionType.SOOT, SOOT_GAS);
+            .burn(PollutionType.SOOT, SOOT_GAS)
+            .release(PollutionType.POISON, POISON_OIL);
 
     public static final FT_Polluting P_LIQUID_GAS = new FT_Polluting()
             .burn(PollutionType.SOOT, SOOT_GAS * 2f);

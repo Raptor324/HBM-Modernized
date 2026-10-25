@@ -91,6 +91,13 @@ public class RBMKSteamOutletBlockEntity extends com.hbm_m.blockentity.BaseHbmBlo
     }
     //?}
 
+    //? if neoforge {
+    /*@Override
+    public @org.jetbrains.annotations.Nullable Object getFluidHandler(@org.jetbrains.annotations.Nullable Direction side) {
+        return steamTank.getCapability();
+    }
+    *///?}
+
     // ─── NBT / Sync ──────────────────────────────────────────────────────────
 
     @Override

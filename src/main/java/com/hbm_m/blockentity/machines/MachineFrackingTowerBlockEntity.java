@@ -43,7 +43,7 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
  * - Поддержка апгрейдов скорости и энергии
  */
 @SuppressWarnings("UnstableApiUsage")
-public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.fluids.IFluidStandardTransceiverMK2 {
+public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.block.IPersistentNBT, com.hbm_m.api.fluids.IFluidStandardTransceiverMK2 {
     
     // Энергия
     protected static long maxPower = 5_000_000L;
@@ -116,17 +116,20 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
         // Инициализация танков - единая инициализация для всех лоадеров
         // Capacities: oil/gas = 128_000 mB (Forge/NeoForge) / 64_000 mB (Fabric), fracksol = 64_000 mB
         // Using 128_000 as base capacity - Fabric will handle droplet conversion via FluidTank
-        this.oilTank = new FluidTank(128_000) {
+        this.oilTank = new FluidTank(64_000) { // Original 64.000 mB
             @Override
             public boolean isFluidValid(net.minecraft.world.level.material.Fluid fluid) {
-                return fluid.isSame(ModFluids.CRUDE_OIL.getSource());
+                // Space-Addon: Lagerstaette setzt den Tanktyp (Original setTankType), ohne Addon nur Rohoel
+                return fluid.isSame(ModFluids.CRUDE_OIL.getSource())
+                        || (com.hbm_m.api.space.SpaceApi.isInstalled() && fluid.isSame(getTankType()));
             }
         };
 
-        this.gasTank = new FluidTank(128_000) {
+        this.gasTank = new FluidTank(64_000) { // Original 64.000 mB
             @Override
             public boolean isFluidValid(net.minecraft.world.level.material.Fluid fluid) {
-                return fluid.isSame(ModFluids.GAS.getSource());
+                return fluid.isSame(ModFluids.GAS.getSource())
+                        || (com.hbm_m.api.space.SpaceApi.isInstalled() && fluid.isSame(getTankType()));
             }
         };
 
@@ -180,10 +183,8 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
     }
 
     private boolean isFluidContainer(ItemStack stack) {
-        // capability обвязка сейчас не компилируется в этой точке.
-        // Чтобы не блокировать сборку, принимаем любой fluid item.
-        // Логику можно будет ужесточить после синка capability-слоя.
-        return true;
+        // Registry-Behaelter (Kanister, Gasflaschen ...) und Capability-Behaelter
+        return com.hbm_m.api.fluids.FluidItemAccess.isFluidContainer(stack);
     }
 
     private boolean isUpgradeItem(ItemStack stack) {
@@ -250,6 +251,8 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
         entity.updateUpgrades();
         entity.burnAfterburnerGas();
         entity.processFluidContainers();
+
+
         
         // Проверка условий для работы
         if (!entity.canOperate()) {
@@ -323,45 +326,16 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
      * Обработка жидкостных контейнеров (канистр и баллонов).
      */
     protected void processFluidContainers() {
-        // Обработка канистры для нефти
-        processContainerPair(SLOT_CANISTER_IN, SLOT_CANISTER_OUT, oilTank);
-
-        // Обработка баллона для газа
-        processContainerPair(SLOT_GAS_IN, SLOT_GAS_OUT, gasTank);
-    }
-
-    /**
-     * Перелив из танка машины в контейнер в слоте инвентаря.
-     * Кросс-платформенная реализация через FluidHooks.
-     */
-    protected void processContainerPair(int inputSlot, int outputSlot, FluidTank sourceTank) {
-        ItemStack inputStack = inventory.getStackInSlot(inputSlot);
-        if (inputStack.isEmpty() || sourceTank.isEmpty()) return;
-
-        int drainable = sourceTank.getFluidAmountMb();
-        var result = com.hbm_m.platform.FluidHooks.insertFluidIntoItem(inputStack, sourceTank.getStoredFluid(), drainable, false);
-        if (result.amountInserted() <= 0) return;
-
-        // insertFluidIntoItem fills a copy, so the filled container exists only as the remainder:
-        // draining before knowing it can be placed voided both the fluid and the container.
-        ItemStack outStack = inventory.getStackInSlot(outputSlot);
-        boolean placed;
-        if (outStack.isEmpty()) {
-            inventory.setStackInSlot(outputSlot, result.remainder());
-            placed = true;
-        } else if (com.hbm_m.platform.FluidHooks.areItemsStackable(outStack, result.remainder())
-                && outStack.getCount() + result.remainder().getCount() <= outStack.getMaxStackSize()) {
-            outStack.grow(result.remainder().getCount());
-            placed = true;
-        } else {
-            placed = false;
+        // Original TileEntityOilDrillBase: tanks[0].unloadTank(1, 2, slots); tanks[1].unloadTank(3, 4, slots) - ueber die
+        // Loader-Kette, damit auch Kanister/Gasflaschen/Tanks der FluidContainerRegistry (ohne Capability) gefuellt werden.
+        ItemStack[] slots = new ItemStack[inventory.getSlots()];
+        for (int i = 0; i < slots.length; i++) slots[i] = inventory.getStackInSlot(i);
+        boolean changed = oilTank.unloadTank(SLOT_CANISTER_IN, SLOT_CANISTER_OUT, slots);
+        changed |= gasTank.unloadTank(SLOT_GAS_IN, SLOT_GAS_OUT, slots);
+        if (changed) {
+            for (int i : new int[] { SLOT_CANISTER_IN, SLOT_CANISTER_OUT, SLOT_GAS_IN, SLOT_GAS_OUT }) inventory.setStackInSlot(i, slots[i]);
+            setChanged();
         }
-
-        if (!placed) return;
-
-        sourceTank.drainMb(result.amountInserted());
-        inputStack.shrink(1);
-        setChanged();
     }
 
     /**
@@ -399,6 +373,25 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
 
         // Добыча
         Block depositBlock = level.getBlockState(orePos).getBlock();
+
+        // NTM Space: Addon-Lagerstaette (BlockOreFluid) -> TileEntityOilDrillBase.onSuck(block, ...) (W-R8B-2)
+        com.hbm_m.api.space.SpaceResources.FluidDepositBlock dep = com.hbm_m.api.space.SpaceResources.fluidDepositBlock(depositBlock);
+        if (dep != null) {
+            oilTank.setTankType(com.hbm_m.blockentity.OilDrillBaseBlockEntity.depositFluid(dep.getPrimaryFluid()));
+            gasTank.setTankType(com.hbm_m.blockentity.OilDrillBaseBlockEntity.depositFluid(dep.getSecondaryFluid()));
+            oilTank.setFill(Math.min(oilTank.getFill() + dep.getPrimaryFluidAmount(), oilTank.getMaxFill()));
+            if (gasTank.getTankType() != ModFluids.NONE.getSource())
+                gasTank.setFill(Math.min(gasTank.getFill() + dep.getSecondaryFluidAmount(), gasTank.getMaxFill()));
+            dep.drain(level, orePos, 1D);
+            indicator = 0;
+            return;
+        }
+        if (com.hbm_m.api.space.SpaceApi.isInstalled()) {
+            // Tanks koennen von einer Addon-Lagerstaette umgestellt sein; HBM-Lagerstaetten liefern Rohoel/Erdgas
+            oilTank.setTankType(ModFluids.CRUDE_OIL.getSource());
+            gasTank.setTankType(ModFluids.GAS.getSource());
+        }
+
         boolean isBedrockDeposit = isBedrockOilDeposit(depositBlock);
         int oil, gas;
 
@@ -476,8 +469,10 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
     }
 
     protected boolean isAnyOilDeposit(Block block) {
-        return block == ModBlocks.ORE_OIL.get()
-                || block == ModBlocks.ORE_BEDROCK_OIL.get();
+        return com.hbm_m.api.space.SpaceResources.fluidDepositBlock(block) != null
+                || block == ModBlocks.ORE_OIL.get()
+                || block == ModBlocks.ORE_BEDROCK_OIL.get()
+                || block == ModBlocks.BEDROCK_OIL.get();
     }
 
     protected boolean isBedrockOilDeposit(Block block) {
@@ -540,10 +535,7 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
     // CAPABILITIES
     //=====================================================================================//
 
-    // ==================== IFluidUserMK2 / MK2-ÑÐµÑÑ ====================
-    // ÐÑÐ¸Ð²ÑÐ·ÐºÐ° Ð¾Ð±ÑÐ°Ð±Ð¾ÑÑÐ¸ÐºÐ° Ð¶Ð¸Ð´ÐºÐ¾ÑÑÐ¸ Ð½Ð¸Ð¶Ðµ Ð¶Ð¸Ð²ÑÑ Ð² //? if forge, Ð° BaseMachineBlockEntity
-    // Ð¾ÑÐ´Ð°ÑÑ NeoForge-Ð¾Ð±ÑÑÑÐºÑ ÑÐ¾Ð»ÑÐºÐ¾ ÑÐµÐ°Ð»Ð¸Ð·Ð°ÑÐ¸ÑÐ¼ IFluidUserMK2 â Ð±ÐµÐ· ÑÑÐ¾Ð³Ð¾ Ñ Ð¼Ð°ÑÐ¸Ð½Ñ
-    // Ð½Ð° NeoForge Ð½Ðµ Ð±ÑÐ»Ð¾ fluid-ÐºÐ°Ð¿Ð°Ð±Ð¸Ð»Ð¸ÑÐ¸ Ð²Ð¾Ð¾Ð±ÑÐµ, Ð¸ ÑÑÑÐ±Ñ Ðº Ð½ÐµÐ¹ Ð½Ðµ Ð¿Ð¾Ð´ÐºÐ»ÑÑÐ°Ð»Ð¸ÑÑ.
+    // ==================== IFluidUserMK2 / MK2-Netz ====================
 
     @Override
     public FluidTank[] getAllTanks() { return new FluidTank[] { oilTank, gasTank, fracksolTank }; }
@@ -564,13 +556,10 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
         return fromDir != null;
     }
 
-
-    //? if forge {
     @Override
     protected void setupFluidCapability() {
         setFluidHandler(new FrackingTowerFluidHandler(this));
     }
-    //?}
 
     //=====================================================================================//
     // РЕНДЕРИНГ
@@ -601,5 +590,19 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
         gasPerBedrockDepositMin = config.gasPerBedrockDepositMin;
         gasPerBedrockDepositMax = config.gasPerBedrockDepositMax;
         destructionRange = config.destructionRange;
+    }
+
+    /** Original {@code TileEntityOilDrillBase.writeNBT}: Strom und Tanks, sofern nicht leer. */
+    @Override
+    public void writeNBT(CompoundTag nbt) {
+        if (getEnergyStored() == 0 && oilTank.getFill() == 0 && gasTank.getFill() == 0 && fracksolTank.getFill() == 0) return;
+        nbt.putLong("energy", getEnergyStored());
+        nbt.put("oilTank", oilTank.writeNBT(new CompoundTag()));
+        nbt.put("gasTank", gasTank.writeNBT(new CompoundTag()));
+        nbt.put("fracksolTank", fracksolTank.writeNBT(new CompoundTag()));
+    }
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        return this.inventory;
     }
 }

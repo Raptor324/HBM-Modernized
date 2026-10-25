@@ -1,13 +1,7 @@
 package com.hbm_m.compat.jei;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.inventory.material.MaterialStack;
 import com.hbm_m.lib.RefStrings;

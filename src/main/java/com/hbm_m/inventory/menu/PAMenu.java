@@ -14,6 +14,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * Gemeinsames Menue aller Bauteile des Teilchenbeschleunigers.
@@ -129,6 +130,7 @@ public class PAMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return MenuReach.stillValid(player, blockEntity, block);
+        // audit13: Original isUseableByPlayer (<= 128 zur Kernmitte) oder Huelle <= 64; Vanilla 64 schloss die GUI an grossen Maschinen
+        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
     }
 }

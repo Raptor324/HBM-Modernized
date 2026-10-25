@@ -18,11 +18,12 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.platform.StackNbt;
 
 /**
- * Port of {@code ItemTeleLink} (1.7.10 Original). Sneak-right-click any block records its position
- * into the item's NBT; right-click a {@code machine_teleporter} block applies the saved position as
- * that teleporter's destination.
+ * 1:1 {@code ItemTeleLink} (1.7.10 Original): Rechtsklick (ohne Schleichen) auf einen beliebigen Block merkt
+ * dessen Position als Ausgang, Rechtsklick auf einen {@code machine_teleporter} traegt die gemerkte Position als
+ * dessen Ziel ein. Schleichen tut nichts.
  */
 public class ItemTeleLink extends Item implements com.hbm_m.item.ITooltipProvider {
 
@@ -33,27 +34,33 @@ public class ItemTeleLink extends Item implements com.hbm_m.item.ITooltipProvide
     @Override
     public InteractionResult useOn(UseOnContext context) {
         Level level = context.getLevel();
-        if (level.isClientSide()) return InteractionResult.SUCCESS;
-        if (context.getPlayer() == null || !context.getPlayer().isShiftKeyDown()) {
+        // Original: nur ohne Schleichen und nur serverseitig
+        if (context.getPlayer() != null && !context.getPlayer().isShiftKeyDown() && !level.isClientSide()) {
             return useAsLinker(context);
         }
-        return recordPosition(context);
+        return InteractionResult.PASS;
+    }
+
+    private static void sound(UseOnContext context, String key) {
+        if (context.getPlayer() == null) return;
+        net.minecraft.world.entity.player.Player p = context.getPlayer();
+        context.getLevel().playSound(null, p.getX(), p.getY(), p.getZ(), "hbm:item.techBoop".equals(key) ? com.hbm_m.sound.ModSounds.TOOL_TECH_BOOP.get() : com.hbm_m.sound.ModSounds.TOOL_TECH_BLEEP.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
     }
 
     private InteractionResult recordPosition(UseOnContext context) {
         BlockPos pos = context.getClickedPos();
         ItemStack stack = context.getItemInHand();
-        PlatformHooks.putInt(stack, "x", pos.getX());
-        PlatformHooks.putInt(stack, "y", pos.getY());
-        PlatformHooks.putInt(stack, "z", pos.getZ());
-        PlatformHooks.putString(stack, "dim", context.getLevel().dimension().location().toString());
+        StackNbt.putInt(stack, "x", pos.getX());
+        StackNbt.putInt(stack, "y", pos.getY());
+        StackNbt.putInt(stack, "z", pos.getZ());
+        StackNbt.putString(stack, "dim", context.getLevel().dimension().location().toString());
 
-        Level level = context.getLevel();
-        PlatformHooks.playSound(level, pos, SoundEvents.NOTE_BLOCK_PLING, SoundSource.PLAYERS, 1.0F, 1.0F);
+        sound(context, "hbm:item.techBleep");
         if (context.getPlayer() != null) {
             context.getPlayer().displayClientMessage(
                     Component.literal("[TeleLink] Set teleporter exit to " + pos.getX() + ", " + pos.getY() + ", " + pos.getZ() + ".")
                             .withStyle(ChatFormatting.AQUA), false);
+            context.getPlayer().swing(context.getHand(), true);
         }
         return InteractionResult.CONSUME;
     }
@@ -67,32 +74,34 @@ public class ItemTeleLink extends Item implements com.hbm_m.item.ITooltipProvide
             return recordPosition(context);
         }
 
-        if (!PlatformHooks.contains(stack, "x")) {
+        if (!StackNbt.contains(stack, "x")) {
+            sound(context, "hbm:item.techBoop");
             if (context.getPlayer() != null) {
                 context.getPlayer().displayClientMessage(
                         Component.literal("[TeleLink] No destination set!").withStyle(ChatFormatting.RED), false);
             }
-            return InteractionResult.FAIL;
+            return InteractionResult.PASS;
         }
 
-        teleporter.setTarget(PlatformHooks.getInt(stack, "x"), PlatformHooks.getInt(stack, "y"), PlatformHooks.getInt(stack, "z"),
-                PlatformHooks.contains(stack, "dim") ? PlatformHooks.getString(stack, "dim") : "minecraft:overworld");
+        teleporter.setTarget(StackNbt.getInt(stack, "x"), StackNbt.getInt(stack, "y"), StackNbt.getInt(stack, "z"),
+                StackNbt.contains(stack, "dim") ? StackNbt.getString(stack, "dim") : "minecraft:overworld");
 
-        PlatformHooks.playSound(level, pos, SoundEvents.NOTE_BLOCK_PLING, SoundSource.PLAYERS, 1.0F, 1.0F);
+        sound(context, "hbm:item.techBleep");
         if (context.getPlayer() != null) {
             context.getPlayer().displayClientMessage(
-                    Component.literal("[TeleLink] Teleporter's destination has been set!").withStyle(ChatFormatting.AQUA), false);
+                    Component.literal("[TeleLink] Teleporters destination has been set!").withStyle(ChatFormatting.AQUA), false);
+            context.getPlayer().swing(context.getHand(), true);
         }
         return InteractionResult.CONSUME;
     }
 
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        if (PlatformHooks.contains(stack, "x")) {
-            tooltip.add(Component.literal("X: " + PlatformHooks.getInt(stack, "x")));
-            tooltip.add(Component.literal("Y: " + PlatformHooks.getInt(stack, "y")));
-            tooltip.add(Component.literal("Z: " + PlatformHooks.getInt(stack, "z")));
-            tooltip.add(Component.literal("D: " + PlatformHooks.getString(stack, "dim")));
+        if (StackNbt.contains(stack, "x")) {
+            tooltip.add(Component.literal("X: " + StackNbt.getInt(stack, "x")));
+            tooltip.add(Component.literal("Y: " + StackNbt.getInt(stack, "y")));
+            tooltip.add(Component.literal("Z: " + StackNbt.getInt(stack, "z")));
+            tooltip.add(Component.literal("D: " + StackNbt.getString(stack, "dim")));
         } else {
             tooltip.add(Component.literal("Select exit location first!").withStyle(ChatFormatting.RED));
         }

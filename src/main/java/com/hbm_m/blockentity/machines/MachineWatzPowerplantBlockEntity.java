@@ -1,6 +1,8 @@
 package com.hbm_m.blockentity.machines;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
 
 import org.jetbrains.annotations.NotNull;
@@ -8,370 +10,613 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
+import com.hbm_m.api.redstoneoverradio.IRORValueProvider;
+import com.hbm_m.api.tile.IControlReceiver;
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
-import com.hbm_m.explosion.ExplosionNukeGeneric;
+import com.hbm_m.entity.projectile.EntityShrapnel;
 import com.hbm_m.interfaces.IMultiblockSidedIO;
+import com.hbm_m.inventory.fluid.FluidType;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
+import com.hbm_m.inventory.fluid.trait.FT_Heatable;
+import com.hbm_m.inventory.fluid.trait.FT_Heatable.HeatingStep;
 import com.hbm_m.inventory.menu.MachineWatzPowerplantMenu;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.platform.ModItemStackHandler;
 import com.hbm_m.item.nuclear.WatzPelletItem;
 import com.hbm_m.item.nuclear.WatzPelletType;
+import com.hbm_m.platform.ModItemStackHandler;
+import com.hbm_m.platform.StackNbt;
 import com.hbm_m.radiation.ChunkRadiationManager;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.phys.AABB;
 
 //? if forge {
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
+import net.minecraftforge.items.IItemHandler;
 //?}
 
 /**
- * Watz Powerplant reactor core. Ported from {@code com.hbm.tileentity.machine.TileEntityWatz}
- * (1.7.10, 674 lines) onto this port's multiblock/fluid-tank framework, using
- * {@code MachineZirnoxBlockEntity} as the structural template for tanks/heat/fluid I/O.
- * <p>
- * <b>SCOPE (single-segment):</b> the original stacked multiple 3-tall {@code TileEntityWatz}
- * segments vertically into a tower, with pellets "falling" between segments and shared tanks
- * merged across the whole stack each tick. This port implements exactly ONE segment (one
- * controller, one 24-slot inventory, one set of 3 tanks) per multiblock structure - no
- * inter-segment stacking or pellet-falling. This is a deliberate scope reduction; the reaction/
- * coolant/waste-production math below is otherwise a faithful per-tick port.
- * <p>
- * <b>Fuel/absorber pellets:</b> the original's {@code ItemWatzPellet} was a single NBT-enum-meta
- * item with 12 variants driven by a small function-object algebra library. This port uses
- * {@link WatzPelletType} (5 representative archetypes covering self-igniting fuel, flux-fed
- * fuel, and two absorber response curves) as separate items (see {@link WatzPelletItem}),
- * matching this port's existing {@code ZirnoxRodItem} convention.
- * <p>
- * <b>Coolant heating:</b> the original used an {@code FT_Heatable} fluid trait
- * (heatReq/amountReq/amountProduced) looked up from the coolant fluid's registered traits. No
- * such generic heating-trait system exists in this port, so a fixed conversion ratio is used
- * instead: {@link #COOLANT_HEAT_PER_MB} heat is consumed to convert 1 mB of cold coolant into
- * 1 mB of hot coolant, bounded by the tick's {@link #COOLING_FACTOR} heat budget exactly as in
- * the original ({@code heatToUse = heat * 0.2}).
- * <p>
- * <b>Meltdown:</b> the original's mud/waste overflow triggered a violent structural
- * disassembly (rubble blocks, ~100 shrapnel entities, achievement). This port implements a
- * simplified meltdown: production stops, half the waste tank is vented, a radiation spike is
- * applied (reusing {@link ExplosionNukeGeneric#incrementRad}), a modest block-damage explosion
- * is triggered, and simple particles are spawned - no shrapnel entities or structure
- * destruction, following the same simplification already used by
- * {@code MachineZirnoxBlockEntity#meltdown()} in this port for a comparable large reactor.
- * <p>
- * <b>On/off control:</b> unlike the original (pump block + redstone above pump), this port
- * follows the {@code MachineZirnoxBlockEntity} convention: a GUI toggle button is the primary
- * control, and an external redstone signal into the structure forces the reactor on (mirroring
- * {@code MachineZirnoxBlock#neighborChanged}).
- * <p>
- * <b>Output:</b> faithful to the original - Watz produces heat and hot coolant/waste fluid
- * only, no direct FE output. Downstream consumers (turbines) are out of scope for this task;
- * the hot coolant and waste tanks are exposed via the standard fluid pipe network exactly like
- * every other fluid-producing machine in this port, so they are usable once such consumers
- * exist.
+ * 1:1 {@code TileEntityWatz}. Mehrere Watz-Segmente (je 3 Bloecke hoch) lassen sich uebereinander stapeln: das oberste
+ * Segment steuert alle darunter, die Tanks werden jeden Tick zu gemeinsamen Tanks zusammengelegt, die Reaktion laeuft
+ * von oben nach unten, Pellets fallen in leere Plaetze des Segments darunter bzw. tauschen mit verbrauchten.
+ * Eingeschaltet wird ueber eine Watz-Pumpe direkt auf dem obersten Segment, die von oben mit Redstone versorgt wird,
+ * oder ueber GUI / Redstone-Steuerung.
+ * Laeuft der Schlammtank ueber, zerlegt sich der Reaktor.
  */
-@SuppressWarnings("UnstableApiUsage")
 public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
-        implements IFluidStandardTransceiverMK2, IMultiblockSidedIO {
+        implements IFluidStandardTransceiverMK2, IMultiblockSidedIO, IControlReceiver, IRORValueProvider {
 
     public static final int PELLET_SLOTS = 24;
 
-    public static final int COOLANT_MAX = 32_000;
-    public static final int COOLANT_HOT_MAX = 32_000;
-    public static final int WASTE_MAX = 16_000;
-
-    /** Fraction of stored heat usable as the coolant-conversion budget each tick (faithful to original). */
-    private static final double COOLING_FACTOR = 0.2D;
-    /** Heat consumed per mB of cold coolant converted to hot coolant (simplified fixed ratio, see class doc). */
-    private static final double COOLANT_HEAT_PER_MB = 2.0D;
-    /** Passive heat loss per tick (faithful to original's {@code heat *= 0.99}). */
-    private static final double PASSIVE_COOLING = 0.99D;
-    /** Heat level at/above which the reactor is considered dangerously overheated for GUI warnings. */
+    public static final int COOLANT_MAX = 64_000;
+    public static final int COOLANT_HOT_MAX = 64_000;
+    public static final int WASTE_MAX = 64_000;
     public static final double MAX_SAFE_HEAT = 1_000_000D;
 
+    public FluidTank[] tanks;
+    public FluidTank[] sharedTanks;
     public final FluidTank coolantTank;
     public final FluidTank coolantHotTank;
     public final FluidTank wasteTank;
 
-    public double heat = 0D;
-    public double fluxLastBase = 0D;
-    public double fluxLastReaction = 0D;
-    public boolean isOn = false;
+    public int heat;
+    /** Fluss aus der passiven Emission (nur Anzeige). */
+    public double fluxLastBase;
+    /** Fluss der letzten Reaktion (fliesst in die naechste ein). */
+    public double fluxLastReaction;
+    public double fluxDisplay;
+    public boolean isOn;
     public boolean redstonePowered = false;
+
+    /* Sperrtypen fuer Item-IO */
+    public boolean isLocked = false;
+    public ItemStack[] locks;
 
     private Set<Direction> allowedFluidSides = EnumSet.noneOf(Direction.class);
     private boolean fluidSidesFromMultiblockStructure = false;
 
     //? if forge {
     private final LazyOptional<IFluidHandler> lazyFluidHandler;
-    //?}
+    private final LazyOptional<IItemHandler> automationHandler;
+    //?} elif neoforge {
+    /*private final com.hbm_m.platform.LazyCap<net.minecraftforge.items.IItemHandler> automationHandler;
+    *///?}
 
     public MachineWatzPowerplantBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.WATZ_POWERPLANT_BE.get(), pos, state, PELLET_SLOTS, 0L, 0L);
-        this.coolantTank = new FluidTank(ModFluids.COOLANT.getSource(), COOLANT_MAX);
-        this.coolantHotTank = new FluidTank(ModFluids.COOLANT_HOT.getSource(), COOLANT_HOT_MAX);
-        this.wasteTank = new FluidTank(ModFluids.WATZ.getSource(), WASTE_MAX);
+        this.locks = emptyLocks();
+        this.tanks = new FluidTank[3];
+        this.tanks[0] = new FluidTank(ModFluids.COOLANT.getSource(), COOLANT_MAX);
+        this.tanks[1] = new FluidTank(ModFluids.COOLANT_HOT.getSource(), COOLANT_HOT_MAX);
+        this.tanks[2] = new FluidTank(ModFluids.WATZ.getSource(), WASTE_MAX);
+        this.coolantTank = this.tanks[0];
+        this.coolantHotTank = this.tanks[1];
+        this.wasteTank = this.tanks[2];
+        resetSharedTanks();
         //? if forge {
         this.lazyFluidHandler = LazyOptional.of(() -> new UnifiedFluidHandler(this));
-        //?}
+        this.automationHandler = LazyOptional.of(() -> new AutomationHandler(inventory));
+        //?} elif neoforge {
+        /*this.automationHandler = com.hbm_m.platform.LazyCap.of(() -> new AutomationHandler(inventory));
+        *///?}
+    }
+
+    private static ItemStack[] emptyLocks() {
+        ItemStack[] l = new ItemStack[PELLET_SLOTS];
+        java.util.Arrays.fill(l, ItemStack.EMPTY);
+        return l;
+    }
+
+    @Override
+    protected ModItemStackHandler createInventoryHandler(int size) {
+        return new ModItemStackHandler(size) {
+            @Override
+            protected void onContentsChanged(int slot) {
+                setChanged();
+                if (isCriticalSlot(slot)) sendUpdateToClient();
+            }
+
+            @Override
+            public boolean isItemValid(int slot, @NotNull ItemStack stack) { return isItemValidForSlot(slot, stack); }
+
+            /** Original: {@code getInventoryStackLimit() = 1}. */
+            @Override
+            public int getSlotLimit(int slot) { return 1; }
+        };
+    }
+
+    protected void resetSharedTanks() {
+        this.sharedTanks = new FluidTank[3];
+        this.sharedTanks[0] = new FluidTank(ModFluids.COOLANT.getSource(), COOLANT_MAX);
+        this.sharedTanks[1] = new FluidTank(ModFluids.COOLANT_HOT.getSource(), COOLANT_HOT_MAX);
+        this.sharedTanks[2] = new FluidTank(ModFluids.WATZ.getSource(), WASTE_MAX);
+        this.sharedTanks[0].setFill(tanks[0].getFill());
+        this.sharedTanks[1].setFill(tanks[1].getFill());
+        this.sharedTanks[2].setFill(tanks[2].getFill());
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineWatzPowerplantBlockEntity be) {
-        if (level.isClientSide()) return;
+        if (level.isClientSide) return;
         be.ensureNetworkInitialized();
-        be.update(level, pos);
+        be.updateEntity(level, pos);
     }
 
-    private void update(Level level, BlockPos pos) {
-        int oldCoolant = coolantTank.getFill();
-        int oldHot = coolantHotTank.getFill();
-        int oldWaste = wasteTank.getFill();
-        double oldHeat = heat;
-        boolean oldOn = isOn;
+    private void updateEntity(Level level, BlockPos pos) {
 
-        if (redstonePowered) isOn = true;
+        resetSharedTanks();
 
-        updateReaction();
-        updateCoolant();
-        heat *= PASSIVE_COOLING;
+        if (updateLock()) return;
 
-        // push hot coolant + waste out / pull cold coolant in via pipes
-        // trySubscribe (registration only, idempotent) stays behind the probeDue(20) gate —
-        // pipe connections don't change per-tick, event/miss self-heals within 1 s.
-        // tryProvide runs EVERY tick: its second branch is a DIRECT push to the adjacent
-        // receiver, and gating it would divide coolant/waste throughput. The per-tank fill
-        // check skips the probe while the tank is empty.
-        boolean subscribeDue = probeDue(20);
-        for (Direction dir : Direction.values()) {
-            if (fluidSidesFromMultiblockStructure) {
-                if (!allowedFluidSides.contains(dir)) continue;
-            } else if (!allowedFluidSides.isEmpty() && !allowedFluidSides.contains(dir)) {
-                continue;
+        boolean turnedOn = (level.getBlockState(pos.above(3)).is(ModBlocks.WATZ_PUMP.get())
+                && level.getSignal(pos.above(5), Direction.DOWN) > 0)
+                || redstonePowered || isOn;
+        List<MachineWatzPowerplantBlockEntity> segments = new ArrayList<>();
+        segments.add(this);
+        this.subscribeToTop();
+
+        /* alle Segmente sammeln */
+        for (int y = pos.getY() - 3; y >= level.getMinBuildHeight(); y -= 3) {
+            BlockEntity tile = level.getBlockEntity(new BlockPos(pos.getX(), y, pos.getZ()));
+            if (tile instanceof MachineWatzPowerplantBlockEntity watz) {
+                segments.add(watz);
+            } else {
+                break;
             }
-            BlockPos pipePos = pos.relative(dir);
-            if (coolantHotTank.getFill() > 0) tryProvide(coolantHotTank, level, pipePos, dir);
-            if (wasteTank.getFill() > 0) tryProvide(wasteTank, level, pipePos, dir);
-            if (subscribeDue && coolantTank.getFill() < coolantTank.getMaxFill()) {
-                BlockEntity pipeBe = level.getBlockEntity(pipePos);
-                if (pipeBe instanceof com.hbm_m.api.fluids.IFluidConnectorMK2) {
-                    trySubscribe(coolantTank, level, pipePos, dir);
+        }
+
+        /* gemeinsame Tanks aufsetzen */
+        FluidTank[] shared = new FluidTank[3];
+        for (int i = 0; i < 3; i++) shared[i] = new FluidTank(tanks[i].getTankType(), 0);
+
+        for (MachineWatzPowerplantBlockEntity segment : segments) {
+            segment.setupCoolant();
+            for (int i = 0; i < 3; i++) {
+                shared[i].changeTankSize(shared[i].getMaxFill() + segment.tanks[i].getMaxFill());
+                shared[i].setFill(shared[i].getFill() + segment.tanks[i].getFill());
+            }
+        }
+
+        // Kuehlmittel, unten nach oben
+        for (int i = segments.size() - 1; i >= 0; i--) {
+            segments.get(i).updateCoolant(shared);
+        }
+
+        /* Reaktion, oben nach unten */
+        this.updateReaction(null, shared, turnedOn);
+        for (int i = 1; i < segments.size(); i++) {
+            segments.get(i).updateReaction(segments.get(i - 1), shared, turnedOn);
+        }
+
+        /* Sync (Reihenfolge egal) & anti-sync spam */
+        boolean syncDue = probeDue(20);
+        for (MachineWatzPowerplantBlockEntity segment : segments) {
+            int oldHeat = segment.heat;
+            int oldFill0 = segment.sharedTanks[0].getFill();
+            int oldFill1 = segment.sharedTanks[1].getFill();
+            int oldFill2 = segment.sharedTanks[2].getFill();
+            boolean oldOn = segment.isOn;
+
+            segment.sharedTanks[0] = shared[0];
+            segment.sharedTanks[1] = shared[1];
+            segment.sharedTanks[2] = shared[2];
+            segment.isOn = turnedOn;
+            segment.heat = (int) (segment.heat * 0.99); // 1% Abkuehlung pro Tick
+
+            if (oldOn != segment.isOn || Math.abs(oldHeat - segment.heat) > 50
+                    || oldFill0 != shared[0].getFill() || oldFill1 != shared[1].getFill() || oldFill2 != shared[2].getFill()
+                    || syncDue) {
+                segment.setChanged();
+                segment.sendUpdateToClient();
+            }
+        }
+
+        /* Fluessigkeit aus den gemeinsamen Tanks zurueckverteilen, unten nach oben */
+        for (int i = segments.size() - 1; i >= 0; i--) {
+            MachineWatzPowerplantBlockEntity segment = segments.get(i);
+            for (int j = 0; j < 3; j++) {
+                int min = Math.min(segment.tanks[j].getMaxFill(), shared[j].getFill());
+                shared[j].setFill(shared[j].getFill() - min);
+                segment.tanks[j].setFill(min);
+            }
+        }
+
+        segments.get(segments.size() - 1).sendOutBottom();
+
+        /* Explosion bei Schlammueberlauf */
+        if (shared[2].getFill() > 0) {
+            for (int x = -3; x <= 3; x++) {
+                for (int y = 3; y < 6; y++) {
+                    for (int z = -3; z <= 3; z++) {
+                        level.setBlock(pos.offset(x, y, z), Blocks.AIR.defaultBlockState(), 3);
+                    }
+                }
+            }
+            this.disassemble(level, pos);
+
+            ChunkRadiationManager.incrementRad(level, pos.getX(), pos.getY() + 1, pos.getZ(), 1_000F);
+
+            level.playSound(null, pos.getX() + 0.5, pos.getY() + 2, pos.getZ() + 0.5,
+                    com.hbm_m.sound.ModSounds.RBMK_EXPLOSION.get(), SoundSource.BLOCKS, 50.0F, 1.0F);
+            if (level instanceof ServerLevel server) {
+                // Anzahl 0: der Client nimmt xd als Skalierung (Original: "rbmkmush", scale 5)
+                server.sendParticles(com.hbm_m.particle.ModParticleTypes.RBMK_MUSH.get(),
+                        pos.getX() + 0.5, pos.getY() + 2, pos.getZ() + 0.5, 0, 5, 0, 0, 1);
+            }
+        }
+    }
+
+    /** Plausibilitaetspruefung, greift normalerweise nur bei verkorkstem NBT. */
+    public void setupCoolant() {
+        tanks[0].setTankType(ModFluids.COOLANT.getSource());
+        FT_Heatable trait = FluidType.getTrait(tanks[0].getTankType(), FT_Heatable.class);
+        if (trait != null && trait.getFirstStep() != null) tanks[1].setTankType(trait.getFirstStep().typeProduced);
+    }
+
+    public void updateCoolant(FluidTank[] tanks) {
+
+        double coolingFactor = 0.2D; // 20% pro Tick
+        double heatToUse = this.heat * coolingFactor;
+
+        FT_Heatable trait = FluidType.getTrait(tanks[0].getTankType(), FT_Heatable.class);
+        if (trait == null) return;
+        HeatingStep step = trait.getFirstStep();
+        if (step == null) return;
+
+        int heatCycles = (int) (heatToUse / step.heatReq);
+        int coolCycles = tanks[0].getFill() / step.amountReq;
+        int hotCycles = (tanks[1].getMaxFill() - tanks[1].getFill()) / step.amountProduced;
+
+        int cycles = Math.min(heatCycles, Math.min(hotCycles, coolCycles));
+        this.heat -= cycles * step.heatReq;
+        tanks[0].setFill(tanks[0].getFill() - cycles * step.amountReq);
+        tanks[1].setFill(tanks[1].getFill() + cycles * step.amountProduced);
+    }
+
+    /** Erzwingt die strikte Aktualisierung von oben nach unten. */
+    public void updateReaction(@Nullable MachineWatzPowerplantBlockEntity above, FluidTank[] tanks, boolean turnedOn) {
+
+        if (turnedOn) {
+            List<ItemStack> pellets = new ArrayList<>();
+
+            for (int i = 0; i < PELLET_SLOTS; i++) {
+                ItemStack stack = inventory.getStackInSlot(i);
+                if (WatzPelletItem.isFresh(stack)) pellets.add(stack);
+            }
+
+            double baseFlux = 0D;
+
+            /* Grundfluss */
+            for (ItemStack stack : pellets) {
+                baseFlux += WatzPelletItem.typeOf(stack).passive;
+            }
+
+            double inputFlux = baseFlux + fluxLastReaction;
+            double addedFlux = 0D;
+            double addedHeat = 0D;
+
+            for (ItemStack stack : pellets) {
+                WatzPelletType type = WatzPelletItem.typeOf(stack);
+
+                if (type.burnFunc != null) {
+                    double div = type.heatDiv != null ? type.heatDiv.effonix(heat) : 1D;
+                    double burn = type.burnFunc.effonix(inputFlux) / div;
+                    WatzPelletItem.setYield(stack, WatzPelletItem.getYield(stack) - burn);
+                    addedFlux += burn;
+                    addedHeat += type.heatEmission * burn;
+                    tanks[2].setFill(tanks[2].getFill() + (int) Math.round(type.mudContent * burn));
+                }
+            }
+
+            for (ItemStack stack : pellets) {
+                WatzPelletType type = WatzPelletItem.typeOf(stack);
+
+                if (type.absorbFunc != null) {
+                    double absorb = type.absorbFunc.effonix(baseFlux + fluxLastReaction);
+                    addedHeat += absorb;
+                    WatzPelletItem.setYield(stack, WatzPelletItem.getYield(stack) - absorb);
+                    tanks[2].setFill(tanks[2].getFill() + (int) Math.round(type.mudContent * absorb));
+                }
+            }
+
+            this.heat += (int) addedHeat;
+            this.fluxLastBase = baseFlux;
+            this.fluxLastReaction = addedFlux;
+
+        } else {
+            this.fluxLastBase = 0;
+            this.fluxLastReaction = 0;
+        }
+
+        for (int i = 0; i < PELLET_SLOTS; i++) {
+            ItemStack stack = inventory.getStackInSlot(i);
+
+            /* verbrauchen */
+            if (WatzPelletItem.isFresh(stack) && WatzPelletItem.getEnrichment(stack) <= 0) {
+                inventory.setStackInSlot(i, new ItemStack(WatzPelletItem.typeOf(stack).depletedItem())); // W-R4b-5: auch Addon-Typen
+            }
+        }
+
+        if (above != null) {
+            for (int i = 0; i < PELLET_SLOTS; i++) {
+                ItemStack stackBottom = inventory.getStackInSlot(i);
+                ItemStack stackTop = above.inventory.getStackInSlot(i);
+
+                /* Items fallen nach unten, wenn der untere Platz leer ist */
+                if (stackBottom.isEmpty() && !stackTop.isEmpty()) {
+                    inventory.setStackInSlot(i, stackTop.copy());
+                    above.inventory.setStackInSlot(i, ItemStack.EMPTY);
+                }
+
+                /* Items tauschen, wenn der obere Platz verbraucht ist (Original: vorige Stack-Referenzen) */
+                if (WatzPelletItem.isFresh(stackBottom) && WatzPelletItem.isDepleted(stackTop)) {
+                    ItemStack buf = stackTop.copy();
+                    above.inventory.setStackInSlot(i, stackBottom.copy());
+                    inventory.setStackInSlot(i, buf);
                 }
             }
         }
+    }
 
-        checkWasteOverflow(level);
+    /** Verhindert eigene Updates, solange ein anderes Segment darueber sitzt. */
+    public boolean updateLock() {
+        return level != null && level.getBlockEntity(worldPosition.above(3)) instanceof MachineWatzPowerplantBlockEntity;
+    }
 
-        // small passive radiation leak proportional to stored waste (this port's radiation manager hook)
-        if (wasteTank.getFill() > 0 && level.getGameTime() % 20 == 0) {
-            float leak = (wasteTank.getFill() / (float) WASTE_MAX) * 2.0F;
-            if (leak > 0) {
-                ChunkRadiationManager.incrementRad(level, pos.getX(), pos.getY() + 1, pos.getZ(), leak);
-            }
+    protected void subscribeToTop() {
+        BlockPos p = worldPosition;
+        trySubscribe(tanks[0].getTankType(), level, p.offset(0, 3, 0), Direction.UP);
+        trySubscribe(tanks[0].getTankType(), level, p.offset(2, 3, 0), Direction.UP);
+        trySubscribe(tanks[0].getTankType(), level, p.offset(-2, 3, 0), Direction.UP);
+        trySubscribe(tanks[0].getTankType(), level, p.offset(0, 3, 2), Direction.UP);
+        trySubscribe(tanks[0].getTankType(), level, p.offset(0, 3, -2), Direction.UP);
+    }
+
+    protected void sendOutBottom() {
+        for (BlockPos pos : getSendingPos()) {
+            if (tanks[1].getFill() > 0) tryProvide(tanks[1], level, pos, Direction.DOWN);
+            if (tanks[2].getFill() > 0) tryProvide(tanks[2], level, pos, Direction.DOWN);
+        }
+    }
+
+    protected BlockPos[] getSendingPos() {
+        BlockPos p = worldPosition;
+        return new BlockPos[] {
+                p.offset(0, -1, 0),
+                p.offset(2, -1, 0),
+                p.offset(-2, -1, 0),
+                p.offset(0, -1, 2),
+                p.offset(0, -1, -2)
+        };
+    }
+
+    // ── Zerlegung ───────────────────────────────────────────────────────────
+
+    private void disassemble(Level world, BlockPos pos) {
+
+        int count = 20;
+        RandomSource rand = world.random;
+        for (int i = 0; i < count * 5; i++) {
+            EntityShrapnel shrapnel = new EntityShrapnel(world);
+            shrapnel.setPos(pos.getX() + 0.5, pos.getY() + 3, pos.getZ() + 0.5);
+            double my = ((rand.nextFloat() * 0.5) + 0.5) * (1 + (count / (15 + rand.nextInt(21)))) + (rand.nextFloat() / 50 * count);
+            double mx = rand.nextGaussian() * 1 * (1 + (count / 100));
+            double mz = rand.nextGaussian() * 1 * (1 + (count / 100));
+            shrapnel.setDeltaMovement(mx, my, mz);
+            shrapnel.setWatz(true);
+            world.addFreshEntity(shrapnel);
         }
 
-        if (oldCoolant != coolantTank.getFill() || oldHot != coolantHotTank.getFill() || oldWaste != wasteTank.getFill()
-                || oldHeat != heat || oldOn != isOn) {
+        Block mud = ModBlocks.MUD_BLOCK.get();
+        world.setBlock(pos, mud.defaultBlockState(), 3);
+        world.setBlock(pos.above(1), mud.defaultBlockState(), 3);
+        world.setBlock(pos.above(2), mud.defaultBlockState(), 3);
+
+        Block element = ModBlocks.WATZ_ELEMENT.get();
+        Block cooler = ModBlocks.WATZ_COOLER.get();
+        Block end = ModBlocks.WATZ_END_BOLTED.get();
+
+        setBrokenColumn(world, pos, 0, element, 1, 0);
+        setBrokenColumn(world, pos, 0, element, 2, 0);
+        setBrokenColumn(world, pos, 0, element, 0, 1);
+        setBrokenColumn(world, pos, 0, element, 0, 2);
+        setBrokenColumn(world, pos, 0, element, -1, 0);
+        setBrokenColumn(world, pos, 0, element, -2, 0);
+        setBrokenColumn(world, pos, 0, element, 0, -1);
+        setBrokenColumn(world, pos, 0, element, 0, -2);
+        setBrokenColumn(world, pos, 0, element, 1, 1);
+        setBrokenColumn(world, pos, 0, element, 1, -1);
+        setBrokenColumn(world, pos, 0, element, -1, 1);
+        setBrokenColumn(world, pos, 0, element, -1, -1);
+        setBrokenColumn(world, pos, 0, cooler, 2, 1);
+        setBrokenColumn(world, pos, 0, cooler, 2, -1);
+        setBrokenColumn(world, pos, 0, cooler, 1, 2);
+        setBrokenColumn(world, pos, 0, cooler, -1, 2);
+        setBrokenColumn(world, pos, 0, cooler, -2, 1);
+        setBrokenColumn(world, pos, 0, cooler, -2, -1);
+        setBrokenColumn(world, pos, 0, cooler, 1, -2);
+        setBrokenColumn(world, pos, 0, cooler, -1, -2);
+
+        for (int j = -1; j < 2; j++) {
+            setBrokenColumn(world, pos, 1, end, 3, j);
+            setBrokenColumn(world, pos, 1, end, j, 3);
+            setBrokenColumn(world, pos, 1, end, -3, j);
+            setBrokenColumn(world, pos, 1, end, j, -3);
+        }
+        setBrokenColumn(world, pos, 1, end, 2, 2);
+        setBrokenColumn(world, pos, 1, end, 2, -2);
+        setBrokenColumn(world, pos, 1, end, -2, 2);
+        setBrokenColumn(world, pos, 1, end, -2, -2);
+
+        com.hbm_m.advancement.ModAdvancements.grantNearby(world, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 50D,
+                com.hbm_m.advancement.ModAdvancements.WATZ_BOOM);
+    }
+
+    private void setBrokenColumn(Level world, BlockPos pos, int minHeight, Block b, int x, int z) {
+
+        int height = minHeight + world.random.nextInt(3 - minHeight);
+
+        for (int i = 0; i < 3; i++) {
+            if (i <= height) {
+                world.setBlock(pos.offset(x, i, z), b.defaultBlockState(), 3);
+            } else {
+                world.setBlock(pos.offset(x, i, z), ModBlocks.MUD_BLOCK.get().defaultBlockState(), 3);
+            }
+        }
+    }
+
+    // ── NBT / Sync ──────────────────────────────────────────────────────────
+
+    @Override
+    protected void writeNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(nbt, registries);
+
+        ListTag list = new ListTag();
+        for (int i = 0; i < locks.length; i++) {
+            if (!locks[i].isEmpty()) {
+                CompoundTag nbt1 = new CompoundTag();
+                nbt1.putByte("slot", (byte) i);
+                StackNbt.save(locks[i], nbt1);
+                list.add(nbt1);
+            }
+        }
+        nbt.put("locks", list);
+
+        for (int i = 0; i < tanks.length; i++) tanks[i].writeToNBT(nbt, "t" + i);
+        nbt.putInt("heat", this.heat);
+        nbt.putDouble("lastFluxB", fluxLastBase);
+        nbt.putDouble("lastFluxR", fluxLastReaction);
+        nbt.putBoolean("isLocked", isLocked);
+
+        // Original: serialize() schickt die gemeinsamen Tanks und die Flussanzeige an den Client
+        nbt.putBoolean("isOn", isOn);
+        nbt.putBoolean("redstonePowered", redstonePowered);
+        nbt.putDouble("fluxDisplay", this.fluxLastReaction + this.fluxLastBase);
+        for (int i = 0; i < sharedTanks.length; i++) {
+            sharedTanks[i].writeToNBT(nbt, "s" + i);
+            nbt.putInt("sc" + i, sharedTanks[i].getMaxFill());
+        }
+
+        int fluidSideMask = 0;
+        for (Direction dir : allowedFluidSides) fluidSideMask |= (1 << dir.get3DDataValue());
+        nbt.putInt("AllowedFluidSides", fluidSideMask);
+        nbt.putBoolean("FluidSidesFromMbStructure", fluidSidesFromMultiblockStructure);
+    }
+
+    @Override
+    protected void readNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(nbt, registries);
+
+        this.locks = emptyLocks();
+        ListTag list = nbt.getList("locks", 10);
+        for (int i = 0; i < list.size(); i++) {
+            CompoundTag nbt1 = list.getCompound(i);
+            byte b0 = nbt1.getByte("slot");
+            if (b0 >= 0 && b0 < locks.length) locks[b0] = StackNbt.parse(nbt1);
+        }
+
+        for (int i = 0; i < tanks.length; i++) tanks[i].readFromNBT(nbt, "t" + i);
+        this.heat = nbt.getInt("heat");
+        this.fluxLastBase = nbt.getDouble("lastFluxB");
+        this.fluxLastReaction = nbt.getDouble("lastFluxR");
+        this.isLocked = nbt.getBoolean("isLocked");
+        this.redstonePowered = nbt.getBoolean("redstonePowered");
+
+        if (nbt.contains("AllowedFluidSides")) {
+            int fluidSideMask = nbt.getInt("AllowedFluidSides");
+            allowedFluidSides.clear();
+            for (Direction dir : Direction.values()) {
+                if ((fluidSideMask & (1 << dir.get3DDataValue())) != 0) allowedFluidSides.add(dir);
+            }
+        }
+        this.fluidSidesFromMultiblockStructure = nbt.getBoolean("FluidSidesFromMbStructure");
+    }
+
+    /** Original: {@code deserialize} liest die gemeinsamen Tanks in die eigenen Tanks. */
+    @Override
+    protected void applyClientUpdate(@NotNull CompoundTag nbt) {
+        readNbtData(nbt, null);
+        this.isOn = nbt.getBoolean("isOn");
+        this.fluxDisplay = nbt.getDouble("fluxDisplay");
+        for (int i = 0; i < tanks.length; i++) {
+            if (nbt.contains("sc" + i)) tanks[i].changeTankSize(nbt.getInt("sc" + i));
+            tanks[i].readFromNBT(nbt, "s" + i);
+        }
+    }
+
+    // ── Steuerung ───────────────────────────────────────────────────────────
+
+    @Override
+    public boolean hasPermission(Player player) {
+        return player.distanceToSqr(worldPosition.getX() + 0.5D, worldPosition.getY() + 0.5D, worldPosition.getZ() + 0.5D) <= 64.0D;
+    }
+
+    public void handleButtonPress(int action) {
+        if (action == 0) {
+            this.isOn = !this.isOn;
             setChanged();
             sendUpdateToClient();
         }
     }
 
-    /** Faithful port of {@code TileEntityWatz.updateReaction} for a single segment (no `above`/pellet-falling). */
-    private void updateReaction() {
-        if (!isOn) {
-            fluxLastBase = 0D;
-            fluxLastReaction = 0D;
-            depletePellets();
-            return;
-        }
-
-        double baseFlux = 0D;
-        for (int i = 0; i < PELLET_SLOTS; i++) {
-            ItemStack stack = inventory.getStackInSlot(i);
-            if (stack.getItem() instanceof WatzPelletItem pellet) {
-                baseFlux += pellet.getType().passiveFlux;
+    @Override
+    public void receiveControl(CompoundTag data) {
+        if (data.contains("lock")) {
+            if (this.isLocked) {
+                this.locks = emptyLocks();
+            } else {
+                for (int i = 0; i < PELLET_SLOTS; i++) this.locks[i] = inventory.getStackInSlot(i).copy();
             }
-        }
-
-        double inputFlux = baseFlux + fluxLastReaction;
-        double addedFlux = 0D;
-        double addedHeat = 0D;
-
-        for (int i = 0; i < PELLET_SLOTS; i++) {
-            ItemStack stack = inventory.getStackInSlot(i);
-            if (!(stack.getItem() instanceof WatzPelletItem pellet)) continue;
-            WatzPelletType type = pellet.getType();
-            if (type.burnFunc == null) continue;
-
-            double div = type.heatDiv != null ? type.heatDiv.applyAsDouble(heat) : 1D;
-            double burn = type.burnFunc.applyAsDouble(inputFlux) / Math.max(1e-6, div);
-            if (burn <= 0) continue;
-
-            WatzPelletItem.setYield(stack, WatzPelletItem.getYield(stack) - burn);
-            addedFlux += burn;
-            addedHeat += type.heatEmission * burn;
-            wasteTank.fillMb(wasteTank.getTankType(), (int) Math.round(type.mudContent * burn));
-        }
-
-        for (int i = 0; i < PELLET_SLOTS; i++) {
-            ItemStack stack = inventory.getStackInSlot(i);
-            if (!(stack.getItem() instanceof WatzPelletItem pellet)) continue;
-            WatzPelletType type = pellet.getType();
-            if (type.absorbFunc == null) continue;
-
-            double absorb = type.absorbFunc.applyAsDouble(baseFlux + fluxLastReaction);
-            if (absorb <= 0) continue;
-
-            addedHeat += absorb;
-            WatzPelletItem.setYield(stack, WatzPelletItem.getYield(stack) - absorb);
-            wasteTank.fillMb(wasteTank.getTankType(), (int) Math.round(type.mudContent * absorb));
-        }
-
-        heat += addedHeat;
-        fluxLastBase = baseFlux;
-        fluxLastReaction = addedFlux;
-
-        // deplete
-        depletePellets();
-    }
-
-    /** Upstream runs this outside the turned-on branch, so a pellet that hit zero on the last tick
-     * before shutdown still converts instead of sitting there as a "fresh" pellet with no yield. */
-    private void depletePellets() {
-        for (int i = 0; i < PELLET_SLOTS; i++) {
-            ItemStack stack = inventory.getStackInSlot(i);
-            if (stack.getItem() instanceof WatzPelletItem pellet && WatzPelletItem.getEnrichment(stack) <= 0D) {
-                inventory.setStackInSlot(i, new ItemStack(depletedVariantOf(pellet.getType())));
-            }
+            this.isLocked = !this.isLocked;
+            setChanged();
+            sendUpdateToClient();
         }
     }
 
-    /** Faithful port of {@code TileEntityWatz.updateCoolant}, using a fixed-ratio heating step (see class doc). */
-    private void updateCoolant() {
-        double heatToUse = heat * COOLING_FACTOR;
-
-        int heatCycles = (int) (heatToUse / COOLANT_HEAT_PER_MB);
-        int coolCycles = coolantTank.getFill();
-        int hotCycles = coolantHotTank.getMaxFill() - coolantHotTank.getFill();
-
-        int cycles = Math.max(0, Math.min(heatCycles, Math.min(coolCycles, hotCycles)));
-        if (cycles <= 0) return;
-
-        heat -= cycles * COOLANT_HEAT_PER_MB;
-        coolantTank.drainMb(cycles);
-        coolantHotTank.fillMb(coolantHotTank.getTankType(), cycles);
+    @Override
+    protected boolean isItemValidForSlot(int i, ItemStack stack) {
+        if (!WatzPelletItem.isFresh(stack)) return false;
+        if (!this.isLocked) return true;
+        return this.locks != null && !this.locks[i].isEmpty() && this.locks[i].getItem() == stack.getItem();
     }
 
-    /** Simplified meltdown - see class doc for what was dropped relative to the original. */
-    private void checkWasteOverflow(Level level) {
-        if (wasteTank.getFill() < wasteTank.getMaxFill()) return;
-        isOn = false;
-        wasteTank.drainMb(wasteTank.getFill() / 2);
-        heat = Math.max(0D, heat * 0.5D);
-
-        if (level instanceof ServerLevel serverLevel && !level.isClientSide()) {
-            double x = worldPosition.getX() + 0.5D;
-            double y = worldPosition.getY() + 1.0D;
-            double z = worldPosition.getZ() + 0.5D;
-            ExplosionNukeGeneric.incrementRad(level, x, y, z, 15F);
-            serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE, x, y, z, 40, 1.5D, 1.0D, 1.5D, 0.03D);
-            serverLevel.sendParticles(ParticleTypes.EXPLOSION, x, y, z, 4, 0.8D, 0.5D, 0.8D, 0.01D);
-            level.explode(null, x, y, z, 3.0F, Level.ExplosionInteraction.BLOCK);
-            // The structural collapse is still simplified (see the class doc), but the meltdown
-            // itself is real, so it credits everyone within 50 blocks as the original does.
-            com.hbm_m.advancement.ModAdvancements.grantNearby(level, x, y, z, 50D,
-                    com.hbm_m.advancement.ModAdvancements.WATZ_BOOM);
-        }
+    /** Original: {@code canExtractItem} - frische Pellets bleiben fuer Automatisierung im Reaktor. */
+    public boolean canExtractItem(ItemStack stack) {
+        return !WatzPelletItem.isFresh(stack);
     }
 
-    private Item depletedVariantOf(WatzPelletType type) {
-        return switch (type) {
-            case SCHRABIDIUM_OXIDE -> ModItems.WATZ_PELLET_SCHRABIDIUM_OXIDE_DEPLETED.get();
-            case LES_OXIDE -> ModItems.WATZ_PELLET_LES_OXIDE_DEPLETED.get();
-            case NATURAL_URANIUM -> ModItems.WATZ_PELLET_NATURAL_URANIUM_DEPLETED.get();
-            case BORON_CARBIDE -> ModItems.WATZ_PELLET_BORON_CARBIDE_DEPLETED.get();
-            case LEAD_SHIELD -> ModItems.WATZ_PELLET_LEAD_SHIELD_DEPLETED.get();
-        };
-    }
+    // ── Fluessigkeiten ──────────────────────────────────────────────────────
 
-    // ── GUI gauges ──────────────────────────────────────────────────────────
-
-    public int getGaugeScaled(int scale, int type) {
-        return switch (type) {
-            case 0 -> (int) Math.min((long) coolantTank.getFill() * scale / COOLANT_MAX, scale);
-            case 1 -> (int) Math.min((long) coolantHotTank.getFill() * scale / COOLANT_HOT_MAX, scale);
-            case 2 -> (int) Math.min((long) wasteTank.getFill() * scale / WASTE_MAX, scale);
-            case 3 -> (int) Math.min((long) (heat * scale / MAX_SAFE_HEAT), scale);
-            default -> 0;
-        };
-    }
-
-    // ── Button / redstone control ─────────────────────────────────────────
-
-    public void handleButtonPress(int action) {
-        if (action == 0 && !redstonePowered) isOn = !isOn;
-        setChanged();
-        if (level != null && !level.isClientSide) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-        }
-    }
-
-    public void setRedstonePowered(boolean powered) {
-        if (!powered && redstonePowered) isOn = false;
-        redstonePowered = powered;
-        setChanged();
-        sendUpdateToClient();
-    }
-
-    // ── IFluidStandardTransceiverMK2 ───────────────────────────────────────
-
-    @Override public FluidTank[] getAllTanks() { return new FluidTank[]{ coolantTank, coolantHotTank, wasteTank }; }
-    @Override public FluidTank[] getReceivingTanks() { return new FluidTank[]{ coolantTank }; }
-    @Override public FluidTank[] getSendingTanks() { return new FluidTank[]{ coolantHotTank, wasteTank }; }
+    @Override public FluidTank[] getAllTanks() { return tanks; }
+    @Override public FluidTank[] getSendingTanks() { return new FluidTank[] { tanks[1], tanks[2] }; }
+    @Override public FluidTank[] getReceivingTanks() { return new FluidTank[] { tanks[0] }; }
 
     @Override
     public boolean isLoaded() {
         return level != null && !isRemoved() && level.isLoaded(worldPosition);
-    }
-
-    @Override
-    public boolean canConnect(Fluid fluid, Direction fromDir) {
-        if (fromDir != null) {
-            if (fluidSidesFromMultiblockStructure && !allowedFluidSides.contains(fromDir)) return false;
-            if (!fluidSidesFromMultiblockStructure && !allowedFluidSides.isEmpty() && !allowedFluidSides.contains(fromDir)) {
-                return false;
-            }
-        }
-        if (fluid == null || fluid == Fluids.EMPTY) return false;
-        if (VanillaFluidEquivalence.sameSubstance(fluid, ModFluids.COOLANT.getSource())) {
-            return coolantTank.getFill() < coolantTank.getMaxFill();
-        }
-        if (VanillaFluidEquivalence.sameSubstance(fluid, ModFluids.COOLANT_HOT.getSource())) {
-            return coolantHotTank.getFill() > 0;
-        }
-        if (VanillaFluidEquivalence.sameSubstance(fluid, ModFluids.WATZ.getSource())) {
-            return wasteTank.getFill() > 0;
-        }
-        return false;
     }
 
     @Override
@@ -390,11 +635,11 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
         sendUpdateToClient();
     }
 
-    /**
-     * Безопасная defensive-копия Set<Direction> в EnumSet. EnumSet.copyOf(Collection)
-     * бросает IllegalArgumentException на пустой коллекции; здесь всегда возвращаем
-     * валидный EnumSet (пустой ли, нет) и принимаем null как пустое множество.
-     */
+    @Override
+    public Set<Direction> getAllowedFluidSides() {
+        return this.allowedFluidSides;
+    }
+
     private static EnumSet<Direction> safeCopyDirectionSet(Set<Direction> sides) {
         EnumSet<Direction> out = EnumSet.noneOf(Direction.class);
         if (sides != null && !sides.isEmpty()) {
@@ -403,86 +648,32 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
         return out;
     }
 
-    @Override
-    public Set<Direction> getAllowedFluidSides() {
-        return this.allowedFluidSides;
-    }
+    // ── ROR ─────────────────────────────────────────────────────────────────
 
-    // ── NBT ───────────────────────────────────────────────────────────────
-
-    @Override
-    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.writeNbtData(tag, registries);
-        CompoundTag ct = new CompoundTag(); coolantTank.writeToNBT(ct, "coolant"); tag.put("CoolantTank", ct);
-        CompoundTag ht = new CompoundTag(); coolantHotTank.writeToNBT(ht, "coolantHot"); tag.put("CoolantHotTank", ht);
-        CompoundTag wt = new CompoundTag(); wasteTank.writeToNBT(wt, "waste"); tag.put("WasteTank", wt);
-        tag.putDouble("heat", heat);
-        tag.putDouble("fluxLastBase", fluxLastBase);
-        tag.putDouble("fluxLastReaction", fluxLastReaction);
-        tag.putBoolean("isOn", isOn);
-        tag.putBoolean("redstonePowered", redstonePowered);
-        // The multiblock's controller side configuration is applied only when the structure is placed
-        // or rebuilt, never on chunk load: without persisting it, a restart re-opened the face the
-        // structure had deliberately closed.
-        int fluidSideMask = 0;
-        for (Direction dir : allowedFluidSides) fluidSideMask |= (1 << dir.get3DDataValue());
-        tag.putInt("AllowedFluidSides", fluidSideMask);
-        tag.putBoolean("FluidSidesFromMbStructure", fluidSidesFromMultiblockStructure);
-    }
+    public static final String[] ROR = new String[] { // nicht mit RUR verwechseln
+            PREFIX_VALUE + "heat",
+            PREFIX_VALUE + "flux",
+            PREFIX_VALUE + "mud",
+            PREFIX_VALUE + "coolant_hot",
+            PREFIX_VALUE + "coolant_cold",
+    };
 
     @Override
-    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.readNbtData(tag, registries);
-        if (tag.contains("CoolantTank")) coolantTank.readFromNBT(tag.getCompound("CoolantTank"), "coolant");
-        if (tag.contains("CoolantHotTank")) coolantHotTank.readFromNBT(tag.getCompound("CoolantHotTank"), "coolantHot");
-        if (tag.contains("WasteTank")) wasteTank.readFromNBT(tag.getCompound("WasteTank"), "waste");
-        heat = tag.getDouble("heat");
-        fluxLastBase = tag.getDouble("fluxLastBase");
-        fluxLastReaction = tag.getDouble("fluxLastReaction");
-        isOn = tag.getBoolean("isOn");
-        redstonePowered = tag.getBoolean("redstonePowered");
-        if (tag.contains("AllowedFluidSides")) {
-            int fluidSideMask = tag.getInt("AllowedFluidSides");
-            allowedFluidSides.clear();
-            for (Direction dir : Direction.values()) {
-                if ((fluidSideMask & (1 << dir.get3DDataValue())) != 0) allowedFluidSides.add(dir);
-            }
-        }
-        fluidSidesFromMultiblockStructure = tag.getBoolean("FluidSidesFromMbStructure");
-    }
-
-    // ── Misc ──────────────────────────────────────────────────────────────
+    public String[] getFunctionInfo() { return ROR; }
 
     @Override
-    protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return slot >= 0 && slot < PELLET_SLOTS && stack.getItem() instanceof WatzPelletItem;
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "heat").equals(name)) return "" + this.heat;
+        if ((PREFIX_VALUE + "flux").equals(name)) return "" + (int) (this.fluxLastBase + this.fluxLastReaction);
+        if ((PREFIX_VALUE + "mud").equals(name)) return "" + this.tanks[2].getFill();
+        if ((PREFIX_VALUE + "coolant_hot").equals(name)) return "" + this.tanks[1].getFill();
+        if ((PREFIX_VALUE + "coolant_cold").equals(name)) return "" + this.tanks[0].getFill();
+        return null;
     }
 
-    // Upstream getInventoryStackLimit() is 1. Pellets stack to 16 and a slot shares a single yield
-    // tag, so a full slot burned as one pellet and was replaced by a single depleted item when it
-    // ran out - the rest of the stack was deleted.
-    @Override
-    protected ModItemStackHandler createInventoryHandler(int size) {
-        return new ModItemStackHandler(size) {
-            @Override
-            protected void onContentsChanged(int slot) {
-                setChanged();
-                if (isCriticalSlot(slot)) sendUpdateToClient();
-            }
+    // ── Sonstiges ───────────────────────────────────────────────────────────
 
-            @Override
-            public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-                return isItemValidForSlot(slot, stack);
-            }
-
-            @Override
-            public int getSlotLimit(int slot) {
-                return 1;
-            }
-        };
-    }
-
-    @Override protected Component getDefaultName() { return Component.translatable("container.hbm_m.watz_powerplant"); }
+    @Override protected Component getDefaultName() { return Component.translatable("container.watzPowerplant"); }
     @Override public Component getDisplayName() { return getDefaultName(); }
 
     @Nullable
@@ -491,9 +682,23 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
         return MachineWatzPowerplantMenu.create(id, inv, this);
     }
 
+    private AABB bb = null;
+
+    //? if forge {
+    @Override
+    //?}
+    public AABB getRenderBoundingBox() {
+        if (bb == null) {
+            bb = new AABB(worldPosition.getX() - 3, worldPosition.getY(), worldPosition.getZ() - 3,
+                    worldPosition.getX() + 4, worldPosition.getY() + 3, worldPosition.getZ() + 4);
+        }
+        return bb;
+    }
+
     //? if forge {
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+        if (cap == ForgeCapabilities.ITEM_HANDLER) return automationHandler.cast();
         if (cap == ForgeCapabilities.FLUID_HANDLER) {
             if (side != null) {
                 if (fluidSidesFromMultiblockStructure && !allowedFluidSides.contains(side)) return LazyOptional.empty();
@@ -510,6 +715,27 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
     public void invalidateCaps() {
         super.invalidateCaps();
         lazyFluidHandler.invalidate();
+        automationHandler.invalidate();
+    }
+
+    @Override
+    public @Nullable Object getItemHandler(@Nullable Direction side) {
+        return automationHandler.orElse(null);
+    }
+
+    /** Automatisierungszugriff mit den Regeln von {@code isItemValidForSlot} / {@code canExtractItem}. */
+    private class AutomationHandler implements IItemHandler {
+        private final ModItemStackHandler inv;
+        AutomationHandler(ModItemStackHandler inv) { this.inv = inv; }
+        @Override public int getSlots() { return inv.getSlots(); }
+        @Override public @NotNull ItemStack getStackInSlot(int slot) { return inv.getStackInSlot(slot); }
+        @Override public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) { return inv.insertItem(slot, stack, simulate); }
+        @Override public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+            if (!canExtractItem(inv.getStackInSlot(slot))) return ItemStack.EMPTY;
+            return inv.extractItem(slot, amount, simulate);
+        }
+        @Override public int getSlotLimit(int slot) { return 1; }
+        @Override public boolean isItemValid(int slot, @NotNull ItemStack stack) { return inv.isItemValid(slot, stack); }
     }
 
     private static class UnifiedFluidHandler implements IFluidHandler {
@@ -524,9 +750,9 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
         @Override
         public @NotNull net.minecraftforge.fluids.FluidStack getFluidInTank(int tank) {
             return switch (tank) {
-                case 0 -> new net.minecraftforge.fluids.FluidStack(be.coolantTank.getTankType(), be.coolantTank.getFill());
-                case 1 -> new net.minecraftforge.fluids.FluidStack(be.coolantHotTank.getTankType(), be.coolantHotTank.getFill());
-                case 2 -> new net.minecraftforge.fluids.FluidStack(be.wasteTank.getTankType(), be.wasteTank.getFill());
+                case 0 -> new net.minecraftforge.fluids.FluidStack(be.tanks[0].getTankType(), be.tanks[0].getFill());
+                case 1 -> new net.minecraftforge.fluids.FluidStack(be.tanks[1].getTankType(), be.tanks[1].getFill());
+                case 2 -> new net.minecraftforge.fluids.FluidStack(be.tanks[2].getTankType(), be.tanks[2].getFill());
                 default -> net.minecraftforge.fluids.FluidStack.EMPTY;
             };
         }
@@ -534,9 +760,9 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
         @Override
         public int getTankCapacity(int tank) {
             return switch (tank) {
-                case 0 -> be.coolantTank.getMaxFill();
-                case 1 -> be.coolantHotTank.getMaxFill();
-                case 2 -> be.wasteTank.getMaxFill();
+                case 0 -> be.tanks[0].getMaxFill();
+                case 1 -> be.tanks[1].getMaxFill();
+                case 2 -> be.tanks[2].getMaxFill();
                 default -> 0;
             };
         }
@@ -550,10 +776,10 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
         public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
             if (resource.isEmpty()) return 0;
             if (!VanillaFluidEquivalence.sameSubstance(resource.getFluid(), ModFluids.COOLANT.getSource())) return 0;
-            int space = be.coolantTank.getMaxFill() - be.coolantTank.getFill();
+            int space = be.tanks[0].getMaxFill() - be.tanks[0].getFill();
             int toFill = Math.min(space, resource.getAmount());
             if (toFill <= 0) return 0;
-            if (action.execute()) be.coolantTank.fillMb(ModFluids.COOLANT.getSource(), toFill);
+            if (action.execute()) be.tanks[0].fillMb(ModFluids.COOLANT.getSource(), toFill);
             return toFill;
         }
 
@@ -570,7 +796,7 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
 
         @Override
         public @NotNull net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
-            FluidTank source = be.coolantHotTank.getFill() > 0 ? be.coolantHotTank : be.wasteTank;
+            FluidTank source = be.tanks[1].getFill() > 0 ? be.tanks[1] : be.tanks[2];
             if (maxDrain <= 0 || source.getFill() <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
             int toDrain = Math.min(maxDrain, source.getFill());
             net.minecraftforge.fluids.FluidStack drained = new net.minecraftforge.fluids.FluidStack(source.getTankType(), toDrain);
@@ -579,10 +805,41 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
         }
 
         private FluidTank pickDrainTank(Fluid fluid) {
-            if (VanillaFluidEquivalence.sameSubstance(fluid, be.coolantHotTank.getTankType())) return be.coolantHotTank;
-            if (VanillaFluidEquivalence.sameSubstance(fluid, be.wasteTank.getTankType())) return be.wasteTank;
+            if (VanillaFluidEquivalence.sameSubstance(fluid, be.tanks[1].getTankType())) return be.tanks[1];
+            if (VanillaFluidEquivalence.sameSubstance(fluid, be.tanks[2].getTankType())) return be.tanks[2];
             return null;
         }
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER) return automationHandler.cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public @Nullable Object getItemHandler(@Nullable Direction side) {
+        return automationHandler.orElse(null);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        automationHandler.invalidate();
+    }
+
+    private class AutomationHandler implements net.minecraftforge.items.IItemHandler {
+        private final ModItemStackHandler inv;
+        AutomationHandler(ModItemStackHandler inv) { this.inv = inv; }
+        @Override public int getSlots() { return inv.getSlots(); }
+        @Override public @NotNull ItemStack getStackInSlot(int slot) { return inv.getStackInSlot(slot); }
+        @Override public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) { return inv.insertItem(slot, stack, simulate); }
+        @Override public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+            if (!canExtractItem(inv.getStackInSlot(slot))) return ItemStack.EMPTY;
+            return inv.extractItem(slot, amount, simulate);
+        }
+        @Override public int getSlotLimit(int slot) { return 1; }
+        @Override public boolean isItemValid(int slot, @NotNull ItemStack stack) { return inv.isItemValid(slot, stack); }
+    }
+    *///?}
 }

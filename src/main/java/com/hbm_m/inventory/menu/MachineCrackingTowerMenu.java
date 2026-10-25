@@ -50,6 +50,7 @@ public class MachineCrackingTowerMenu extends AbstractContainerMenu {
             return null;
         }
         throw new MenuBlockEntityMissingException("No MachineCrackingTowerBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":cracking_tower_menu");
+
     }
 
     public MachineCrackingTowerBlockEntity getBlockEntity() {

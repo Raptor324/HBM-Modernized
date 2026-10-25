@@ -1,6 +1,5 @@
 package com.hbm_m.client;
 
-import com.hbm_m.lib.RefStrings;
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.particle.ModParticleTypes;
 import com.hbm_m.particle.custom.AgentOrangeParticle;
@@ -29,14 +28,8 @@ import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleType;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.api.distmarker.Dist;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.OnlyIn;
-import net.neoforged.api.distmarker.Dist;
-*///?}
-
 @OnlyIn(Dist.CLIENT)
 public class ClientParticleHandler {
 

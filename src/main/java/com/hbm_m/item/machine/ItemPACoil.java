@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
  * unterhalb von {@code quadMin}/{@code diMin} arbeitet das Bauteil zwar, braucht aber die zehnfache
  * Energie; oberhalb von {@code quadMax}/{@code diMax} verliert der Strahl die Spur.</p>
  */
-public class ItemPACoil extends Item implements com.hbm_m.item.ITooltipProvider {
+public class ItemPACoil extends Item {
 
     /** 1:1 aus {@code ItemPACoil.EnumCoilType}. */
     public enum CoilType {
@@ -65,14 +65,21 @@ public class ItemPACoil extends Item implements com.hbm_m.item.ITooltipProvider 
         return stack != null && stack.getItem() instanceof ItemPACoil coil ? coil.getCoilType() : null;
     }
 
-    // Tooltip through ITooltipProvider: appendHoverText's signature differs between 1.20.1 and 1.21.1.
     @Override
-    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.translatable("item.hbm_m.pa_coil.quad", type.quadMin, type.quadMax)
-                .withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.translatable("item.hbm_m.pa_coil.dipole", type.diMin, type.diMax)
-                .withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.translatable("item.hbm_m.pa_coil.dist", type.diDistMin)
-                .withStyle(ChatFormatting.DARK_GRAY));
+    //? if < 1.21.1 {
+    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> tooltip, TooltipFlag flag) {
+    *///?}
+        // 1:1 Original addInformation: blaue Beschriftung, Wert nach RESET weiss, drei rote Warnzeilen
+        tooltip.add(Component.literal("Quadrupole operational range: ").withStyle(ChatFormatting.BLUE)
+                .append(Component.literal(String.format(java.util.Locale.US, "%,d", type.quadMin) + " - " + String.format(java.util.Locale.US, "%,d", type.quadMax)).withStyle(ChatFormatting.WHITE)));
+        tooltip.add(Component.literal("Dipole operational range: ").withStyle(ChatFormatting.BLUE)
+                .append(Component.literal(String.format(java.util.Locale.US, "%,d", type.diMin) + " - " + String.format(java.util.Locale.US, "%,d", type.diMax)).withStyle(ChatFormatting.WHITE)));
+        tooltip.add(Component.literal("Dipole minimum side length: ").withStyle(ChatFormatting.BLUE)
+                .append(Component.literal(String.valueOf(type.diDistMin)).withStyle(ChatFormatting.WHITE)));
+        tooltip.add(Component.literal("Minimums not met result in a power draw penalty!").withStyle(ChatFormatting.RED));
+        tooltip.add(Component.literal("Maximums exceeded result in the particle crashing!").withStyle(ChatFormatting.RED));
+        tooltip.add(Component.literal("Particles will crash in dipoles if both penalties take effect!").withStyle(ChatFormatting.RED));
     }
 }

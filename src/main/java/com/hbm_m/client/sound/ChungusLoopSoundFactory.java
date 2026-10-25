@@ -11,14 +11,8 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 /**
  * Клиентский цикл звука турбины Chungus — вынесен из {@link MachineChungusBlockEntity}, чтобы
  * серверный класс BE не содержал в bytecode ссылок на {@link AbstractTickableSoundInstance}.
@@ -50,10 +44,11 @@ public final class ChungusLoopSoundFactory {
                 this.z = world.z;
             }
 
+            /** Original: Lautstaerke 0,5 * Drehzahl, Tonhoehe 0,25 + 0,75 * Drehzahl (TURBINE_LEVI_LOOP, Reichweite 20). */
             private void applySpin(double spin) {
-                float spinNum = (float) Math.min(1.0D, spin * 2.0D);
-                this.volume = 0.25F + spinNum * 0.75F;
-                this.pitch = 0.5F + spinNum * 0.5F;
+                float turbineSpeed = (float) spin;
+                this.volume = 0.5F * turbineSpeed;
+                this.pitch = 0.25F + 0.75F * turbineSpeed;
             }
 
             @Override

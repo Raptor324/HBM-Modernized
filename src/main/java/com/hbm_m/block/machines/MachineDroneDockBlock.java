@@ -33,6 +33,15 @@ public class MachineDroneDockBlock extends BaseEntityBlock {
         return RenderShape.MODEL;
     }
 
+
+    /** audit10: 1:1 {@code DroneDock (drone_dock: Slots 0-8).breakBlock} - Inhalt faellt beim Entfernen heraus. */
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moving) {
+        if (!state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof com.hbm_m.blockentity.network.MachineDroneDockBlockEntity be) {
+            com.hbm_m.block.BlockDropUtil.dropSlots(level, pos, be.getInventory(), 0, 9);
+        }
+        super.onRemove(state, level, pos, newState, moving);
+    }
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
@@ -49,6 +58,7 @@ public class MachineDroneDockBlock extends BaseEntityBlock {
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
 
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
@@ -61,6 +71,7 @@ public class MachineDroneDockBlock extends BaseEntityBlock {
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
 
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
@@ -82,12 +93,14 @@ public class MachineDroneDockBlock extends BaseEntityBlock {
     }
     *///?}
 
+    /** Original {@code addInformation}: {@code addStandardInfo} (Umschalttaste zeigt {@code .desc}). */
     @Override
-    public void onRemove(net.minecraft.world.level.block.state.BlockState state, net.minecraft.world.level.Level level,
-                            net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState newState, boolean isMoving) {
-        if (!state.is(newState.getBlock())) {
-            com.hbm_m.block.MachineDrops.dropInventory(level, pos);
-        }
-        super.onRemove(state, level, pos, newState, isMoving);
+    //? if < 1.21.1 {
+    public void appendHoverText(net.minecraft.world.item.ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.BlockGetter level,
+                                java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(net.minecraft.world.item.ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    *///?}
+        com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
     }
 }

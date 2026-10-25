@@ -76,7 +76,7 @@ public final class RenderBoundsCache {
 
     public static net.minecraft.world.phys.AABB get(net.minecraft.world.level.block.entity.BlockEntity be) {
         Entry e = getOrCreateEntry(be);
-        return e != null ? e.box : com.hbm_m.platform.RenderHooks.getRenderBoundingBox(be);
+        return e != null ? e.box : com.hbm_m.platform.RenderBounds.get(be);
     }
 
     /**
@@ -144,7 +144,7 @@ public final class RenderBoundsCache {
         if (needsRecompute) {
             net.minecraft.world.phys.AABB oldBox = e != null ? e.box : null;
             e = new Entry();
-            e.box = com.hbm_m.platform.RenderHooks.getRenderBoundingBox(be);
+            e.box = com.hbm_m.platform.RenderBounds.get(be);
             e.physicalBox = computePhysicalBounds(be);
             e.localPhysicalBox = computeLocalPhysicalBounds(be);
             e.stampTick = tick;

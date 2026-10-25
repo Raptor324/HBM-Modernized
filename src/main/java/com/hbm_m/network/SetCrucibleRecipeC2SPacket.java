@@ -47,7 +47,9 @@ public class SetCrucibleRecipeC2SPacket implements C2SPacket {
             BlockEntity be = level.getBlockEntity(msg.pos);
 
             if (be instanceof MachineCrucibleBlockEntity crucible) {
-                crucible.setSelectedRecipe(msg.recipeId);
+                // FFA-Variante des Tiegels: oeffentliches Feld + setChanged (wie receiveControl index=0).
+                crucible.recipe = msg.recipeId == null ? "null" : msg.recipeId;
+                crucible.setChanged();
             }
         });
     }

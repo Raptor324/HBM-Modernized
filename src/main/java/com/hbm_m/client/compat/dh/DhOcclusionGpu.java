@@ -137,6 +137,7 @@ public final class DhOcclusionGpu {
 
     private static java.lang.reflect.Method nearClipBlocksMethod;
 
+
     /**
      * Конфиг «Overdraw Prevention» (<0 = авто).
      *

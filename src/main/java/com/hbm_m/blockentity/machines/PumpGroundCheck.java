@@ -19,6 +19,8 @@ public final class PumpGroundCheck {
 
     public static final int GROUND_HEIGHT = 70;
     public static final int GROUND_DEPTH = 4;
+    /** NTM Space {@code TileEntityMachinePumpBase.nonWaterDebuff}: andere Wassertabellen als Wasser pumpen 100x langsamer. */
+    public static final int NON_WATER_DEBUFF = 100;
 
     private static final Set<Block> VALID_GROUND = new HashSet<>();
 
@@ -40,6 +42,9 @@ public final class PumpGroundCheck {
     public static boolean check(Level level, BlockPos pos) {
         init();
         if (!level.dimensionType().hasSkyLight()) return false;
+        // NTM Space: im Orbit (WorldProviderOrbit) und ohne Wassertabelle (CBT_Water) kein Pumpen - ohne Space-Addon
+        // gibt es immer die Wassertabelle "Wasser"
+        if (com.hbm_m.api.space.SpaceApi.waterTableFluid(level, com.hbm_m.inventory.fluid.ModFluids.WATER.getSource()) == null) return false;
 
         int valid = 0, invalid = 0;
         for (int x = -1; x <= 1; x++) {
@@ -48,11 +53,29 @@ public final class PumpGroundCheck {
                     BlockPos check = pos.offset(x, y, z);
                     BlockState state = level.getBlockState(check);
                     if (y == -1 && !state.isRedstoneConductor(level, check)) return false;
-                    if (VALID_GROUND.contains(state.getBlock())) valid++;
+                    if (VALID_GROUND.contains(state.getBlock())
+                            || com.hbm_m.api.space.SpaceResources.isExtraPumpGround(state.getBlock())) valid++;
                     else invalid++;
                 }
             }
         }
         return valid >= invalid;
+    }
+
+    /**
+     * NTM Space {@code checkGround}: {@code water.setTankType(table.fluid)} - der Pumpentank folgt der Wassertabelle des
+     * Koerpers. Ohne Space-Addon ist das immer HBM-Wasser (Tank bleibt unveraendert).
+     */
+    public static void applyWaterTable(Level level, com.hbm_m.inventory.fluid.tank.FluidTank water) {
+        if (!com.hbm_m.api.space.SpaceApi.isInstalled()) return;
+        net.minecraft.world.level.material.Fluid table =
+                com.hbm_m.api.space.SpaceApi.waterTableFluid(level, com.hbm_m.inventory.fluid.ModFluids.WATER.getSource());
+        if (table != null && table != water.getTankType()) water.setTankType(table);
+    }
+
+    /** NTM Space: {@code water.getTankType() == Fluids.WATER ? speed : speed / nonWaterDebuff}. */
+    public static int pumpSpeed(net.minecraft.world.level.material.Fluid tankType, int speed) {
+        if (!com.hbm_m.api.space.SpaceApi.isInstalled()) return speed;
+        return com.hbm_m.api.fluids.VanillaFluidEquivalence.isWater(tankType) ? speed : speed / NON_WATER_DEBUFF;
     }
 }

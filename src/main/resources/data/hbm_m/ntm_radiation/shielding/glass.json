@@ -1,0 +1,5 @@
+{
+  "priority": 5,
+  "blocks": ["minecraft:*glass*", "hbm_m:*glass*"],
+  "hvl": { "gamma": 8.0, "neutron": 6.0, "beta": 0.2 }
+}

@@ -10,7 +10,7 @@ import net.minecraft.world.phys.AABB;
  * Тривиальный BlockEntity для тестового блока: нужен только как якорь BER (VBO-рендер).
  * Никакой логики и тика.
  */
-public class TestBlockEntity extends BlockEntity {
+public class TestBlockEntity extends BlockEntity implements com.hbm_m.api.render.RenderBoundsProvider {
 
     public TestBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.TEST_BE.get(), pos, state);

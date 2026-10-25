@@ -1,13 +1,7 @@
 package com.hbm_m.client.render;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 import java.lang.reflect.Field;
 
 import org.joml.Matrix3f;
@@ -90,6 +84,7 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
      * would otherwise fire this every frame while TeardownTrace is on). */
     private static final it.unimi.dsi.fastutil.longs.LongOpenHashSet SUPPRESSED_DRAW_LOGGED =
             new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
+
 
     @Override
     public void render(T blockEntity, float partialTick, PoseStack poseStack,

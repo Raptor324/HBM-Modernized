@@ -74,12 +74,12 @@ public class MachineAutocrafterBlockEntity extends BaseMachineBlockEntity {
 
     public com.hbm_m.inventory.filter.ModulePatternMatcher getMatcher() { return matcher; }
     public int getRecipeIndex() { return recipeIndex; }
-    public int getRecipeCount() { return recipes.size(); }
+    public int getRecipeCount() { return level != null && level.isClientSide ? recipeCountClient : recipes.size(); }
 
     /** 1:1-Port von {@code nextMode}: ein Rechtsklick schaltet den Filter dieses Platzes weiter. */
     public void nextMode(int index) {
         if (index < 0 || index >= GRID_SIZE) return;
-        matcher.nextMode(index);
+        matcher.nextMode(index, inventory.getStackInSlot(index));
         setChanged();
         sendUpdateToClient();
     }
@@ -126,7 +126,23 @@ public class MachineAutocrafterBlockEntity extends BaseMachineBlockEntity {
         be.serverTick(level);
     }
 
+    /** Original {@code readFromNBT}: nach dem Laden die passenden Rezepte neu suchen, Index behalten. */
+    private boolean recipesLoaded = false;
+    private int recipeCountClient = 0;
+
+    /** Sucht alle zur Vorlage passenden Rezepte neu - im Gegensatz zu {@link #updateTemplateGrid()} bleibt der gewaehlte {@code recipeIndex} erhalten. */
+    private void reloadRecipes() {
+        int keep = recipeIndex;
+        recipes = com.hbm_m.platform.recipe.RecipeHooks.getAllCraftingRecipesFor(level, buildGrid(TEMPLATE_START));
+        recipeIndex = recipes.isEmpty() ? 0 : Math.min(keep, recipes.size() - 1);
+        updateTemplateResult();
+    }
+
     private void serverTick(Level level) {
+        if (!recipesLoaded) {
+            reloadRecipes();
+            recipesLoaded = true;
+        }
         chargeFromBatterySlot(SLOT_BATTERY);
         if (getEnergyStored() < CONSUMPTION) return;
         if (recipes.isEmpty()) return;
@@ -142,7 +158,7 @@ public class MachineAutocrafterBlockEntity extends BaseMachineBlockEntity {
 
         ItemStack outSlot = inventory.getStackInSlot(SLOT_OUTPUT);
         if (!outSlot.isEmpty()) {
-            if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(outSlot, result)) return;
+            if (!com.hbm_m.platform.StackNbt.sameItemSameTags(outSlot, result)) return;
             if (outSlot.getCount() + result.getCount() > outSlot.getMaxStackSize()) return;
         }
 
@@ -209,12 +225,55 @@ public class MachineAutocrafterBlockEntity extends BaseMachineBlockEntity {
         // Ohne Vorlage an dieser Stelle geht nichts hinein.
         if (filter.isEmpty()) return false;
 
+        // Original: gestapelte Behaelter-Items nie
+        if (stack.getCount() > 1 && stack.hasCraftingRemainingItem()) return false;
+
         // Original: hoechstens vier Stueck je Platz - der Autocrafter ist kein Lager.
-        if (stack.getCount() > 4) return false;
         ItemStack present = inventory.getStackInSlot(slot);
         if (!present.isEmpty() && present.getCount() + stack.getCount() > 4) return false;
+        if (stack.getCount() > 4) return false;
 
-        return matcher.isValidForFilter(filter, filterIndex, stack);
+        // Original: alle Plaetze sammeln, in die das Item passen wuerde
+        java.util.List<Integer> validSlots = new java.util.ArrayList<>();
+        for (int i = 0; i < GRID_SIZE; i++) {
+            ItemStack f = inventory.getStackInSlot(TEMPLATE_START + i);
+            if (f.isEmpty() || matcher.getMode(i) == null || matcher.getMode(i).isEmpty()) continue;
+
+            if (matcher.isValidForFilter(f, i, stack)) {
+                validSlots.add(i + RECIPE_START);
+                // leerer, passender Platz: sofort ja
+                if (i + RECIPE_START == slot && present.isEmpty()) return true;
+            }
+        }
+
+        if (!validSlots.contains(slot)) return false;
+
+        int size = present.getCount();
+
+        // Original: ein anderer Platz, der dasselbe Item dringender braucht, hat Vorrang
+        for (Integer i : validSlots) {
+            ItemStack valid = inventory.getStackInSlot(i);
+            if (valid.isEmpty()) return false;
+            if (valid.getItem() != stack.getItem()) continue;
+            if (valid.getCount() < size) return false;
+        }
+
+        // Original: Behaelter-Items nicht stapeln
+        return !stack.hasCraftingRemainingItem();
+    }
+
+    /** Original {@code breakBlock}: nur die echten Plaetze ab 10 fallen heraus, die Vorlage ist ein Geisterbild. */
+    @Override
+    public void dropInventoryContents() {
+        if (level == null) return;
+        if (com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) return;
+        for (int i = RECIPE_START; i < inventory.getSlots(); i++) {
+            ItemStack stack = inventory.getStackInSlot(i);
+            if (!stack.isEmpty()) {
+                net.minecraft.world.Containers.dropItemStack(level, worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(), stack.copy());
+                inventory.setStackInSlot(i, ItemStack.EMPTY);
+            }
+        }
     }
 
     /** Die Vorlage aendert sich nur ueber die Oberflaeche - danach muss neu gesucht werden. */
@@ -229,6 +288,7 @@ public class MachineAutocrafterBlockEntity extends BaseMachineBlockEntity {
         super.writeNbtData(tag, registries);
         matcher.writeToNBT(tag);
         tag.putInt("recipeIndex", recipeIndex);
+        tag.putInt("recipeCount", recipes.size());
     }
 
     @Override
@@ -237,11 +297,72 @@ public class MachineAutocrafterBlockEntity extends BaseMachineBlockEntity {
         super.readNbtData(tag, registries);
         matcher.readFromNBT(tag);
         recipeIndex = tag.getInt("recipeIndex");
+        recipeCountClient = tag.getInt("recipeCount");
     }
 
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
         return new MachineAutocrafterMenu(containerId, playerInventory, this);
+    }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: Slots {10-19}; Zutaten nach Vorlage hinein, das Ergebnis und nicht mehr passende Zutaten heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.range(10, 19); }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { if (slot == 19) return true;
+                    if (slot > 9 && slot < 19) {
+                        net.minecraft.world.item.ItemStack filter = inventory.getStackInSlot(slot - 10);
+                        if (filter.isEmpty() || matcher.getMode(slot - 10) == null || matcher.getMode(slot - 10).isEmpty()) return true;
+                        return !matcher.isValidForFilter(filter, slot - 10, stack);
+                    }
+                    return false; }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: Slots {10-19}; Zutaten nach Vorlage hinein, das Ergebnis und nicht mehr passende Zutaten heraus. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.range(10, 19); }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { if (slot == 19) return true;
+                    if (slot > 9 && slot < 19) {
+                        net.minecraft.world.item.ItemStack filter = inventory.getStackInSlot(slot - 10);
+                        if (filter.isEmpty() || matcher.getMode(slot - 10) == null || matcher.getMode(slot - 10).isEmpty()) return true;
+                        return !matcher.isValidForFilter(filter, slot - 10, stack);
+                    }
+                    return false; }
+            });
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return sidedItems.get(side);
     }
 }

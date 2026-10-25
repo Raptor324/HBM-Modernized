@@ -25,15 +25,9 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 
 import com.hbm_m.util.EnergyFormatter;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
-
+import com.hbm_m.platform.StackNbt;
 // TODO: РќСѓР¶РµРЅ СѓС‚РёР»РёС‚Р°СЂРЅС‹Р№ РєР»Р°СЃСЃ РґР»СЏ РѕС‚СЂРёСЃРѕРІРєРё РїРѕРґСЃРєР°Р·РѕРє Рё Р¶РёРґРєРѕСЃС‚РµР№.
 // Р­С‚РѕС‚ С„СѓРЅРєС†РёРѕРЅР°Р» СЃРµР№С‡Р°СЃ РІСЃС‚СЂРѕРµРЅ РІ СЌС‚РѕС‚ РєР»Р°СЃСЃ
 
@@ -41,7 +35,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<MachineAdvancedAssemblerMenu> {
 
     // РўРµРєСЃС‚СѓСЂР° РёР· СЃС‚Р°СЂРѕРіРѕ GUI
-        private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_assembler.png");
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_assembler.png");
 
     // private static final ResourceLocation TEMPLATE_FOLDER_ICON = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/item/template_folder.png");
 
@@ -81,7 +75,9 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
             int maxProgress = this.menu.getMaxProgress(); // <-- РР—РњР•РќР•РќРћ
             if (maxProgress > 0) {
                 int progressWidth = (int) Math.ceil(70.0 * progress / maxProgress);
-                guiGraphics.blit(TEXTURE, this.leftPos + 62, this.topPos + 126, 176, 61, progressWidth, 16);
+                // Original: v = 61 + (restrictedMode ? 16 : 0) - blaue Leiste, wenn das Rezept per Funk (RoR) gesetzt wurde
+                boolean restrictedMode = this.menu.getBlockEntity() != null && this.menu.getBlockEntity().isRestrictedMode();
+                guiGraphics.blit(TEXTURE, this.leftPos + 62, this.topPos + 126, 176, 61 + (restrictedMode ? 16 : 0), progressWidth, 16);
             }
         }
 
@@ -96,7 +92,8 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
         }
 
         boolean hasRecipe = recipe != null;
-        boolean canProcess = hasRecipe && energyStored >= 100;
+        // Original: rechte LED, wenn power >= recipe.power
+        boolean canProcess = hasRecipe && energyStored >= recipe.getPowerConsumption();
         
         // РћС‚СЂРёСЃРѕРІРєР° СЃРІРµС‚РѕРґРёРѕРґРѕРІ (LEDs) - РёСЃРїРѕР»СЊР·СѓРµРј isCrafting() РёР· menu
         if (this.menu.isCrafting()) { // <-- РџР РђР’РР›Р¬РќРћ: РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ menu
@@ -115,7 +112,13 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
 
         // РћС‚СЂРёСЃРѕРІРєР° "РїСЂРёР·СЂР°С‡РЅС‹С…" РїСЂРµРґРјРµС‚РѕРІ РІ РїСѓСЃС‚С‹С… СЃР»РѕС‚Р°С…
         renderGhostItems(guiGraphics);
-        
+
+        // Original: inputTank (8,99 / 52x16) und outputTank (80,99 / 52x16), waagerecht gefuellt
+        if (this.menu.getBlockEntity() != null) {
+            this.menu.getBlockEntity().getInputTank().renderTank(guiGraphics, this.leftPos + 8, this.topPos + 99, 52, 16, 1);
+            this.menu.getBlockEntity().getOutputTank().renderTank(guiGraphics, this.leftPos + 80, this.topPos + 99, 52, 16, 1);
+        }
+
         // TODO: РћС‚СЂРёСЃРѕРІРєР° Р¶РёРґРєРѕСЃС‚РµР№ РІ С‚Р°РЅРєР°С…
         // РљРѕРіРґР° Сѓ BlockEntity Р±СѓРґСѓС‚ РјРµС‚РѕРґС‹ getInputTank() Рё getOutputTank(), СЂР°СЃРєРѕРјРјРµРЅС‚РёСЂСѓР№С‚Рµ:
         /*
@@ -155,7 +158,7 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
             // РС‰РµРј СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓСЋС‰РёР№ РїСЂРµРґРјРµС‚ РІ РіСЂСѓРїРїРµ
             ItemStack found = null;
             for (ItemStack key : groupedItems.keySet()) {
-                if (PlatformHooks.isSameItemSameTags(key, stack)) {
+                if (StackNbt.sameItemSameTags(key, stack)) {
                     found = key;
                     break;
                 }
@@ -273,7 +276,12 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
             }
         }
         
-        // TODO: РџРѕРґСЃРєР°Р·РєРё РґР»СЏ С‚Р°РЅРєРѕРІ - Р’РћРЎРЎРўРђРќРћР’Р›Р•РќРћ РёР· РѕСЂРёРіРёРЅР°Р»Р°
+        // РџРѕРґСЃРєР°Р·РєРё РґР»СЏ С‚Р°РЅРєРѕРІ (РёР· РѕСЂРёРіРёРЅР°Р»Р°, РїРѕСЂС‚РёСЂРѕРІР°РЅРѕ РёР· FFA)
+        if (this.menu.getBlockEntity() != null) {
+            this.menu.getBlockEntity().getInputTank().renderTankInfo(guiGraphics, this.font, pMouseX, pMouseY, this.leftPos + 8, this.topPos + 99, 52, 16);
+            this.menu.getBlockEntity().getOutputTank().renderTankInfo(guiGraphics, this.font, pMouseX, pMouseY, this.leftPos + 80, this.topPos + 99, 52, 16);
+        }
+
         /*
         if (isMouseOver(pMouseX, pMouseY, 8, 99, 52, 16)) {
             FluidTank inputTank = this.menu.getBlockEntity().getInputTank();

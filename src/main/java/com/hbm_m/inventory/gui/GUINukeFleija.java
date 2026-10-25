@@ -5,19 +5,15 @@ import org.jetbrains.annotations.NotNull;
 import com.hbm_m.blockentity.bomb.NukeFleijaBlockEntity;
 import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.NukeFleijaMenu;
+import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
 
 /**
  * Экран бомбы FLEIJA (схема размещения компонентов).
@@ -49,11 +45,30 @@ public class GUINukeFleija extends GuiInfoScreen<NukeFleijaMenu> {
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, imageWidth, imageHeight);
 
         // тайл может отсутствовать в реплее Flashback
-        if (be != null && be.isReady()) {
-            guiGraphics.blit(TEXTURE, this.leftPos + imageWidth - 42, this.topPos + 6, 176, 48, 16, 16);
+        if (be != null) {
+            // Original: Teile-Overlays je Slot
+            if (has(0, ModItems.FLEIJA_IGNITER.get())) guiGraphics.blit(TEXTURE, leftPos + 7, topPos + 88, 176, 0, 30, 20);
+            if (has(1, ModItems.FLEIJA_IGNITER.get())) guiGraphics.blit(TEXTURE, leftPos + 139, topPos + 88, 206, 0, 30, 20);
+            if (has(2, ModItems.FLEIJA_PROPELLANT.get())) guiGraphics.blit(TEXTURE, leftPos + 57, topPos + 77, 176, 62, 18, 14);
+            if (has(3, ModItems.FLEIJA_PROPELLANT.get())) guiGraphics.blit(TEXTURE, leftPos + 57, topPos + 91, 176, 76, 18, 14);
+            if (has(4, ModItems.FLEIJA_PROPELLANT.get())) guiGraphics.blit(TEXTURE, leftPos + 57, topPos + 105, 176, 90, 18, 14);
+            if (has(5, ModItems.FLEIJA_CORE.get())) guiGraphics.blit(TEXTURE, leftPos + 85, topPos + 77, 176, 20, 18, 15);
+            if (has(6, ModItems.FLEIJA_CORE.get())) guiGraphics.blit(TEXTURE, leftPos + 103, topPos + 77, 194, 20, 18, 15);
+            if (has(7, ModItems.FLEIJA_CORE.get())) guiGraphics.blit(TEXTURE, leftPos + 85, topPos + 92, 176, 35, 18, 12);
+            if (has(8, ModItems.FLEIJA_CORE.get())) guiGraphics.blit(TEXTURE, leftPos + 103, topPos + 92, 194, 35, 18, 12);
+            if (has(9, ModItems.FLEIJA_CORE.get())) guiGraphics.blit(TEXTURE, leftPos + 85, topPos + 104, 176, 47, 18, 15);
+            if (has(10, ModItems.FLEIJA_CORE.get())) guiGraphics.blit(TEXTURE, leftPos + 103, topPos + 104, 194, 47, 18, 15);
+            // Bereitschaftsanzeige (Machines-Seite)
+            if (be.isReady()) {
+                guiGraphics.blit(TEXTURE, this.leftPos + imageWidth - 42, this.topPos + 6, 176, 48, 16, 16);
+            }
         }
 
         this.drawInfoPanel(guiGraphics, -16, 16, PanelType.LARGE_BLUE_INFO);
+    }
+
+    private boolean has(int slot, net.minecraft.world.item.Item item) {
+        return be.slots.get(slot).is(item);
     }
 
     @Override

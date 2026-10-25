@@ -1,0 +1,5 @@
+{
+  "priority": 12,
+  "blocks": ["hbm_m:*ducrete*"],
+  "hvl": { "gamma": 0.5, "neutron": 0.9, "beta": 0.05 }
+}

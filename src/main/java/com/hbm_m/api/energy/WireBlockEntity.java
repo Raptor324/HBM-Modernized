@@ -126,12 +126,12 @@ public class WireBlockEntity extends BlockEntity implements PowerConductor {
     //?}
 
     //? if neoforge {
-    /*private net.neoforged.neoforge.energy.IEnergyStorage feBridgeInstance;
+    /*private net.minecraftforge.energy.IEnergyStorage feBridgeInstance;
 
     // Вызывается из регистрации капабилити (ModCapabilities).
-    public net.neoforged.neoforge.energy.IEnergyStorage getFeStorage() {
+    public net.minecraftforge.energy.IEnergyStorage getFeStorage() {
         if (feBridgeInstance == null) {
-            feBridgeInstance = new net.neoforged.neoforge.energy.IEnergyStorage() {
+            feBridgeInstance = new net.minecraftforge.energy.IEnergyStorage() {
                 @Override public int receiveEnergy(int maxReceive, boolean simulate) {
                     ForeignEnergyBridge b = bridge();
                     return b == null ? 0 : (int) b.insertFe(maxReceive, feKey(), feTick());

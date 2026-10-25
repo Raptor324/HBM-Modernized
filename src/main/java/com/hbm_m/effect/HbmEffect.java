@@ -9,9 +9,7 @@ import net.minecraft.world.entity.LivingEntity;
 
 import org.jetbrains.annotations.NotNull;
 
-//? if forge {
 import net.minecraftforge.client.extensions.common.IClientMobEffectExtensions;
-//?}
 
 /**
  * Gemeinsame Basis der aus {@code HbmPotion} portierten Effekte: Farbe, Kategorie und das Symbol
@@ -26,6 +24,7 @@ public abstract class HbmEffect extends MobEffect {
     /** Same numbers as PotionSheetRenderer.ICON_SIZE / SHEET_ORIGIN_V (potions.png, mod rows from 198). */
     private static final int SHEET_ICON_SIZE = 18;
     private static final int SHEET_ORIGIN_V = 198;
+
 
     private final int iconU;
     private final int iconV;
@@ -79,16 +78,26 @@ public abstract class HbmEffect extends MobEffect {
     public int getIconU() { return iconU; }
     public int getIconV() { return iconV; }
 
-    // Icon rendering lives in ClientEffectHooks (both loaders); the sheet coordinates come from here.
-    //? if forge {
+    // Клиентские иконки с общего листа (HUD + инвентарь), обе версии; расширение
+    // живёт здесь — платформенный слой не знает про конкретные эффекты мода.
     @Override
+@SuppressWarnings("removal")
     public void initializeClient(@NotNull Consumer<IClientMobEffectExtensions> consumer) {
-        com.hbm_m.platform.ClientEffectHooks.initializeClient(this, (Consumer<Object>) (Object) consumer);
+        consumer.accept(new IClientMobEffectExtensions() {
+            @Override
+            public boolean renderInventoryIcon(net.minecraft.world.effect.MobEffectInstance instance,
+                    net.minecraft.client.gui.screens.inventory.EffectRenderingInventoryScreen<?> screen,
+                    net.minecraft.client.gui.GuiGraphics gfx, int x, int y, int blitOffset) {
+                com.hbm_m.effect.render.PotionSheetRenderer.renderInventory(gfx, iconU, iconV, x, y, blitOffset);
+                return true;
+            }
+
+            @Override
+            public boolean renderGuiIcon(net.minecraft.world.effect.MobEffectInstance instance, net.minecraft.client.gui.Gui gui,
+                    net.minecraft.client.gui.GuiGraphics gfx, int x, int y, float z, float alpha) {
+                com.hbm_m.effect.render.PotionSheetRenderer.renderHud(gfx, iconU, iconV, x, y, (int) z, alpha);
+                return true;
+            }
+        });
     }
-    //?} elif neoforge {
-    /*@Override
-    public void initializeClient(@NotNull Consumer<net.neoforged.neoforge.client.extensions.common.IClientMobEffectExtensions> consumer) {
-        com.hbm_m.platform.ClientEffectHooks.initializeClient(this, (Consumer<Object>) (Object) consumer);
-    }
-    *///?}
 }

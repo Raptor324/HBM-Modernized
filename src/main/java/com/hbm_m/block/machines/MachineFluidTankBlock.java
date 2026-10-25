@@ -54,13 +54,21 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import com.hbm_m.platform.StackNbt;
 //? if forge {
 //?}
 
 
 import net.minecraft.world.level.Explosion;
 
-public class MachineFluidTankBlock extends BaseEntityBlock implements IMultiblockController, IPersistentInfoProvider, com.hbm_m.interfaces.ILookOverlay {
+public class MachineFluidTankBlock extends BaseEntityBlock implements IMultiblockController, IPersistentInfoProvider, com.hbm_m.api.block.IToolable, com.hbm_m.interfaces.ILookOverlay {
+
+    /** Original {@code onScrew}: Schweissbrenner repariert ueber {@code IRepairable.tryRepairMultiblock}. */
+    @Override
+    public boolean onScrew(Level world, Player player, BlockPos pos, net.minecraft.core.Direction side, float fX, float fY, float fZ, InteractionHand hand, com.hbm_m.api.block.IToolable.ToolType tool) {
+        if (tool != com.hbm_m.api.block.IToolable.ToolType.TORCH) return false;
+        return com.hbm_m.api.tile.IRepairable.tryRepairMultiblock(world, pos, player);
+    }
 
     /**
      * Whether this machine has been blown up. Drives the model swap to the wrecked variant - the
@@ -80,23 +88,24 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
     }
 
     /**
-     * Определяем структуру 5x3x3 через слои.
-     * 5 в ширину, 3 в высоту, 3 в глубину.
-     * Контроллер 'C' находится в центре переднего ряда нижнего слоя.
+     * 1:1 {@code MachineFluidTank}: {@code getDimensions {2,0,1,1,2,2}} (5 breit, 3 hoch, 3 tief), {@code getOffset 1}
+     * - der Kern sitzt in der Mitte der unteren Lage, die Klickzelle ist die Mitte der vorderen Reihe.
+     * {@code makeExtra} an den vier Diagonalen des Kerns (x +-1, z +-1) = 'F'. Der ganze Quader ist belegt
+     * (frueher standen hier zwei Reihen 'E' ohne Rolle, also Luftloecher im Tank).
      */
     protected MultiblockStructureHelper defineStructure() {
         // Строка 0 - передняя (ближняя к игроку), Строка 2 - задняя.
 
         // Направления лестницы: MultiblockSideTuples.ladder(north, south, west, east) - локально к схеме до поворота FACING.
         String[] layer0 = {
-            "LFCFA",
-            "LEEEA",
+            "LFAFA",
+            "LACAA",
             "AFAFA"
         };
 
         String[] layer1 = {
             "LAAAA",
-            "LEEEA",
+            "LAAAA",
             "AAAAA"
         };
 
@@ -143,6 +152,17 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
         return this.structureHelper;
     }
 
+    /**
+     * Migration: bis zur 1:1-Umstellung sass der Kern in der Mitte der vorderen Reihe (Raster (0,0,-1)). Die
+     * Auto-Reparatur verschiebt ihn samt NBT um eine Zelle nach hinten in die Mitte; die Grundflaeche bleibt
+     * gleich. Nur fuer den Tank selbst, nicht fuer abgeleitete Bloecke (BAT9000 hat eine eigene Struktur).
+     */
+    @Nullable
+    @Override
+    public BlockPos getLegacyControllerOffset() {
+        return getClass() == MachineFluidTankBlock.class ? new BlockPos(0, 0, -1) : null;
+    }
+
     @Override
     public PartRole getPartRole(BlockPos localOffset) {
         // Используем хелпер для автоматического определения ролей из схемы
@@ -176,7 +196,10 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
                 tank.dropInventory();
             }
             Direction facing = state.getValue(FACING);
-            structureHelper.destroyStructure(level, pos, facing);
+            // Kernverschiebung der Migration: die Teile raeumt attemptAutoRepair selbst um - hier nichts abreissen
+            if (!MultiblockStructureHelper.isRepairing()) {
+                structureHelper.destroyStructure(level, pos, facing);
+            }
         }
         super.onRemove(state, level, pos, newState, isMoving);
     }
@@ -199,7 +222,7 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
             // Контракт оригинала: writeNBT сам кладёт payload под "persistent",
             // тег предмета = data целиком (1.7.10: stack.stackTagCompound = data).
             if (!data.isEmpty()) {
-                PlatformHooks.setItemTag(stack, data);
+                StackNbt.set(stack, data);
             }
             return List.of(stack);
         }
@@ -214,7 +237,7 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
         super.setPlacedBy(level, pos, state, placer, stack);
         if (level.isClientSide) return;
-        CompoundTag tag = PlatformHooks.getItemTag(stack);
+        CompoundTag tag = StackNbt.copy(stack);
         if (tag == null || !tag.contains(IPersistentNBT.NBT_PERSISTENT_KEY)) return;
         if (level.getBlockEntity(pos) instanceof IPersistentNBT persistent) {
             persistent.readNBT(tag);
@@ -249,18 +272,7 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
      */
     @Override
     public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
-        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
-        if (mc.player == null || mc.player.getMainHandItem().getItem() != ModItems.BLOWTORCH.get()) return;
-        BlockEntity be = level.getBlockEntity(pos);
-        if (!(be instanceof MachineFluidTankBlockEntity tank) || !tank.isDamaged()) return;
-
-        List<Component> text = new java.util.ArrayList<>();
-        text.add(Component.literal("Repair with:").withStyle(ChatFormatting.GOLD));
-        for (ItemStack mat : tank.getRepairMaterials()) {
-            text.add(Component.literal("- " + mat.getHoverName().getString() + " x" + mat.getCount()));
-        }
-        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
-                Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
+        com.hbm_m.api.tile.IRepairable.addGenericOverlay(guiGraphics, level, pos, net.minecraft.network.chat.Component.translatable(getDescriptionId()));
     }
 
     // ═══════════════ Компаратор (порт hasComparatorInputOverride) ═══════════════
@@ -281,10 +293,11 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
     // 1. РАМКА ВЫДЕЛЕНИЯ: Показывает всю структуру целиком (3x3x3)
     @Override
     public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
+        // w16b: nur die Kernzelle (Raycast pro Zelle wie Original); Umriss der ganzen Maschine: MultiblockOutlineForge
         MultiblockStructureHelper helper = getStructureHelper();
         if (helper != null) {
             // Возвращаем объединенную форму всех частей
-            return helper.generateShapeFromParts(pState.getValue(FACING));
+            return helper.getControllerCellShape(pState.getValue(FACING));
         }
         return Shapes.block();
     }
@@ -314,6 +327,10 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
     *///?}
 
     private InteractionResult openMenu(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
+        // Original: geschlichen keine GUI; der Identifikator (doesSneakBypassUse) stellt dann im useOn die Sorte
+        if (player.isShiftKeyDown()) {
+            return InteractionResult.PASS;
+        }
         if (level.isClientSide) {
             return InteractionResult.sidedSuccess(true);
         }
@@ -398,6 +415,12 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
     @Override
     protected void createBlockStateDefinition(@NotNull StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(FACING, EXPLODED);
+    }
+
+    /** audit10: Original findCore - Explosionen auf Teilzellen setzen ebenfalls den ganzen Aufbau in Brand. */
+    @Override
+    public boolean forwardPartExplosions() {
+        return true;
     }
 
     /**

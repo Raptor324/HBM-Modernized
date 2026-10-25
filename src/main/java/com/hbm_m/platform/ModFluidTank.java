@@ -7,20 +7,52 @@ import net.minecraft.world.level.material.Fluids;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Кросс-платформенный и кросс-версионный бак (POJO).
- * Без Stonecutter!
+ * Кросс-платформенный и кросс-версионный бак.
+ * Без Stonecutter-гейтов в теле: пакеты net.minecraftforge.fluids.* автозаменяются
+ * !loader_packages при neoforge-prepare.
+ *
+ * Слои «схлопнуты»: класс сам реализует {@link IPlatformFluidHandler} и держит
+ * единственный объект — анонимный наследник loader-FluidTank. Делегат
+ * из FluidHooks.createFluidHandler и промежуточный backend больше не нужны.
  */
-public class ModFluidTank {
+public class ModFluidTank implements IPlatformFluidHandler {
 
     private Fluid conformedFluid = Fluids.EMPTY;
-    private final IPlatformFluidHandler backend;
+
+    /** Единственный платформенный объект: loader-FluidTank с валидатором. */
+    private final net.minecraftforge.fluids.capability.templates.FluidTank tank;
+    //? if < 1.21.1 {
+    private final net.minecraftforge.common.util.LazyOptional<net.minecraftforge.fluids.capability.IFluidHandler> lazyCap;
+    //?}
+
+    /** Кэш architectury-стека для {@link #getFluid()}; инвалидируется в onContentsChanged/setFluid/readNBT. */
+    private dev.architectury.fluid.FluidStack cachedFluidStack;
 
     public ModFluidTank(int capacity) {
-        this.backend = FluidHooks.createFluidHandler(capacity, this::isFluidValid, this::onContentsChanged, null, null);
+        this.tank = new net.minecraftforge.fluids.capability.templates.FluidTank(capacity) {
+            @Override public boolean isFluidValid(net.minecraftforge.fluids.FluidStack stack) { return ModFluidTank.this.isFluidValid(stack.getFluid()); }
+            @Override protected void onContentsChanged() {
+                // Инвалидация ЗДЕСЬ, а не в fillMb/drainMb: через capability (трубы, FluidUtil)
+                // зовут tank.fill/drain напрямую, минуя fillMb/drainMb. simulate-вызовы
+                // содержимое не меняют и кэш не сбрасывают.
+                ModFluidTank.this.cachedFluidStack = null;
+                ModFluidTank.this.onContentsChanged();
+            }
+        };
+        //? if < 1.21.1 {
+        this.lazyCap = net.minecraftforge.common.util.LazyOptional.of(() -> tank);
+        //?}
     }
 
+    /**
+     * Валидация заливаемой жидкости. Тип, зафиксированный через {@link #conform(Fluid)},
+     * принимается ВСЕГДА и только он — независимо от заполненности бака (внешние
+     * трубы/хендлеры проверяют isFluidValid ДО заливки и не должны видеть «бак пуст
+     * и принимает что угодно» или «бак полон, но валидно всё»).
+     */
     public boolean isFluidValid(Fluid fluid) {
-        return true;
+        if (fluid == null || fluid == Fluids.EMPTY) return false;
+        return conformedFluid == Fluids.EMPTY || fluid == conformedFluid;
     }
 
     protected void onContentsChanged() {}
@@ -44,42 +76,80 @@ public class ModFluidTank {
         return stored != Fluids.EMPTY ? stored : conformedFluid;
     }
 
-    // ── Платформенные хелперы ────────────────────────────────────────────────
+    // ── Платформенные хелперы (прямые, без делегата) ────────────────────────
 
-    public int getFluidAmountMb() { return backend.getFluidAmountMb(); }
-    public int getCapacityMb() { return backend.getCapacityMb(); }
+    public int getFluidAmountMb() { return tank.getFluidAmount(); }
+    public int getCapacityMb() { return tank.getCapacity(); }
     public boolean isEmpty() { return getFluidAmountMb() <= 0; }
     public int getSpaceMb() { return getCapacityMb() - getFluidAmountMb(); }
-    public Fluid getStoredFluid() { return backend.getStoredFluid(); }
+    public Fluid getStoredFluid() { return tank.getFluid().isEmpty() ? Fluids.EMPTY : tank.getFluid().getFluid(); }
 
     // ──────────────── Fill/Drain в mB ────────────────
 
     public int fillMb(Fluid fluid, int amountMb) {
-        return backend.fillMb(fluid, amountMb, false);
+        return fillMb(fluid, amountMb, false);
     }
 
     public int drainMb(int amountMb) {
-        return backend.drainMb(amountMb, false);
+        return drainMb(amountMb, false);
     }
 
-    public int fillInternal(Fluid fluid, int amount) {
-        return fillMb(fluid, amount);
+    @Override
+    public int fillMb(Fluid fluid, int amount, boolean simulate) {
+        if (amount <= 0 || fluid == null || fluid == Fluids.EMPTY) return 0;
+        return tank.fill(new net.minecraftforge.fluids.FluidStack(fluid, amount),
+                simulate ? net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE
+                         : net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
     }
 
-    public int drainInternal(int amount) {
-        return drainMb(amount);
+    @Override
+    public int drainMb(int amount, boolean simulate) {
+        if (amount <= 0) return 0;
+        return tank.drain(amount,
+                simulate ? net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE
+                         : net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE).getAmount();
     }
 
-    /** 
-     * Возвращает LazyOptional<IFluidHandler> (Forge), IFluidHandler (NeoForge)
-     * или Storage<FluidVariant> (Fabric).
+    @Override
+    public void setFluid(Fluid fluid, int amount) {
+        cachedFluidStack = null;
+        tank.setFluid(fluid == null || fluid == Fluids.EMPTY
+                ? net.minecraftforge.fluids.FluidStack.EMPTY
+                : new net.minecraftforge.fluids.FluidStack(fluid, amount));
+    }
+
+    @Override
+    public void setCapacityMb(int cap) { tank.setCapacity(cap); }
+
+    /**
+     * Возвращает LazyOptional<IFluidHandler> (Forge) или IFluidHandler (NeoForge).
      */
-    public Object getCapability() { return backend.getCapability(); }
+    @Override
+    public Object getCapability() {
+        //? if < 1.21.1 {
+        return lazyCap;
+        //?} else {
+        /*return tank;
+        *///?}
+    }
 
     // ──────────────── NBT ────────────────
 
     public CompoundTag writeNBT(CompoundTag tag) {
-        backend.writeNBT(tag);
+        return writeNBT(null, tag);
+    }
+
+    public void readNBT(CompoundTag tag) {
+        readNBT(null, tag);
+    }
+
+    public CompoundTag writeNBT(HolderLookup.Provider provider, CompoundTag tag) {
+        //? if < 1.21.1 {
+        tank.writeToNBT(tag);
+        //?} else {
+        /*net.minecraft.core.HolderLookup.Provider p = provider != null ? provider : PlatformHooks.bestEffortProvider();
+        tank.writeToNBT(p != null ? p : net.minecraft.core.RegistryAccess.EMPTY, tag);
+        *///?}
         if (conformedFluid != Fluids.EMPTY) {
             net.minecraft.resources.ResourceLocation loc = net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(conformedFluid);
             if (loc != null) tag.putString("ConformedFluid", loc.toString());
@@ -87,22 +157,20 @@ public class ModFluidTank {
         return tag;
     }
 
-    public void readNBT(CompoundTag tag) {
-        backend.readNBT(tag);
+    public void readNBT(HolderLookup.Provider provider, CompoundTag tag) {
+        //? if < 1.21.1 {
+        tank.readFromNBT(tag);
+        //?} else {
+        /*net.minecraft.core.HolderLookup.Provider p = provider != null ? provider : PlatformHooks.bestEffortProvider();
+        tank.readFromNBT(p != null ? p : net.minecraft.core.RegistryAccess.EMPTY, tag);
+        *///?}
+        cachedFluidStack = null;
         if (tag.contains("ConformedFluid")) {
             Fluid f = net.minecraft.core.registries.BuiltInRegistries.FLUID.get(net.minecraft.resources.ResourceLocation.tryParse(tag.getString("ConformedFluid")));
             conformedFluid = f != null ? f : Fluids.EMPTY;
         } else {
             conformedFluid = Fluids.EMPTY;
         }
-    }
-
-    public CompoundTag writeNBT(HolderLookup.Provider provider, CompoundTag tag) {
-        return writeNBT(tag);
-    }
-
-    public void readNBT(HolderLookup.Provider provider, CompoundTag tag) {
-        readNBT(tag);
     }
 
     // ──────────────── МЕТОДЫ ОБРАТНОЙ СОВМЕСТИМОСТИ ────────────────
@@ -120,13 +188,26 @@ public class ModFluidTank {
         }
     }
 
+    /**
+     * Architectury-стек. Кэшируется: аллокация только при первом обращении после
+     * изменения содержимого (fill/drain/setFluid/readNBT), а не на каждый вызов.
+     */
     public dev.architectury.fluid.FluidStack getFluid() {
+        if (cachedFluidStack != null) return cachedFluidStack;
         Fluid f = getStoredFluid();
-        if (f == null || f == Fluids.EMPTY) return dev.architectury.fluid.FluidStack.empty();
-        return dev.architectury.fluid.FluidStack.create(f, getFluidAmountMb());
+        if (f == null || f == Fluids.EMPTY) {
+            // Пустой стек — константа, кэшировать нечего.
+            return dev.architectury.fluid.FluidStack.empty();
+        }
+        dev.architectury.fluid.FluidStack stack = dev.architectury.fluid.FluidStack.create(f, getFluidAmountMb());
+        cachedFluidStack = stack;
+        return stack;
     }
 
+    /**
+     * Этот класс и есть платформенный бэкенд (слои схлопнуты).
+     */
     public IPlatformFluidHandler getBackend() {
-        return this.backend;
+        return this;
     }
 }

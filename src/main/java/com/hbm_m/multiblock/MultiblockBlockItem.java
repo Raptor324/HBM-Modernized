@@ -40,7 +40,7 @@ public class MultiblockBlockItem extends BlockItem implements com.hbm_m.item.ITo
     @Override
     public void appendHbmTooltip(net.minecraft.world.item.ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         if (!(getBlock() instanceof com.hbm_m.block.IPersistentInfoProvider provider)) return;
-        CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
+        CompoundTag tag = com.hbm_m.platform.StackNbt.copy(stack);
         if (tag == null || !tag.contains(com.hbm_m.blockentity.IPersistentNBT.NBT_PERSISTENT_KEY)) return;
         provider.addInformation(stack, tag.getCompound(com.hbm_m.blockentity.IPersistentNBT.NBT_PERSISTENT_KEY), level, tooltip, flag);
     }
@@ -51,6 +51,12 @@ public class MultiblockBlockItem extends BlockItem implements com.hbm_m.item.ITo
         BlockPlaceContext vanillaContext = super.updatePlacementContext(context);
         if (vanillaContext == null) {
             return null;
+        }
+
+        // E7 (Fork, nur mit Space-Addon): Wand-/Deckenplatzierung, Klickseite bestimmt die Lage (Tueren ausgenommen)
+        if (!(this instanceof DoorBlockItem)) {
+            BlockPlaceContext fork = ForkMultiblockPlacement.shift(vanillaContext, this.getBlock());
+            if (fork != null) return fork;
         }
 
         BlockPlaceContext adjusted = shiftContextToCore(vanillaContext);
@@ -82,7 +88,9 @@ public class MultiblockBlockItem extends BlockItem implements com.hbm_m.item.ITo
             return false;
         }
 
-        return super.placeBlock(context, state);
+        boolean placed = super.placeBlock(context, state);
+        if (placed && !level.isClientSide) ForkMultiblockPlacement.onPlaced(level, player);
+        return placed;
     }
 
     @Nullable
@@ -118,7 +126,7 @@ public class MultiblockBlockItem extends BlockItem implements com.hbm_m.item.ITo
             offset = helper.getPlacementOffset();
         }
         
-        BlockPos corePos = MultiblockPlacement.getCorePos(facadePos, facing, offset);
+        BlockPos corePos = MultiblockPlacement.getCorePos(facadePos, facing, offset).above(controller.getHeightOffset());
         if (corePos.equals(facadePos)) {
             return null;
         }
@@ -148,4 +156,33 @@ public class MultiblockBlockItem extends BlockItem implements com.hbm_m.item.ITo
             return this.corePos;
         }
     }
+
+    //? if forge {
+    /**
+     * Audit 7: Maschinen, deren Original-Itemrenderer animiert ist (z.B. drehende Raeder), haben ein
+     * builtin/entity-Itemmodell; gezeichnet wird dann ueber den AnimatedMachineItemRenderer. Fuer alle uebrigen
+     * Modelle wird der Renderer nie gefragt.
+     */
+    @Override
+@SuppressWarnings("removal")
+    public void initializeClient(java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> consumer) {
+        consumer.accept(new net.minecraftforge.client.extensions.common.IClientItemExtensions() {
+            @Override
+            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return com.hbm_m.client.render.item.AnimatedMachineItemRenderer.instance();
+            }
+        });
+    }
+    //?} elif neoforge {
+    /*@SuppressWarnings("removal")
+    @Override
+    public void initializeClient(java.util.function.Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
+        consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
+            @Override
+            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return com.hbm_m.client.render.item.AnimatedMachineItemRenderer.instance();
+            }
+        });
+    }
+    *///?}
 }

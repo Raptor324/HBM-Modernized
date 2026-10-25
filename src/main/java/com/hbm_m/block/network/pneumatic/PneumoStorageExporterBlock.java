@@ -33,6 +33,12 @@ public class PneumoStorageExporterBlock extends PneumaticStorageBlockBase {
                 (lvl, p, st, be) -> PneumoStorageExporterBlockEntity.tick(lvl, p, st, (PneumoStorageExporterBlockEntity) be));
     }
 
+    /** audit10: Original PneumoStorageExporter.breakBlock - nur ab Slot 9 (die Filter 0-8 sind Attrappen). */
+    @Override
+    protected int spillFrom() {
+        return 9;
+    }
+
     //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<PneumoStorageExporterBlock> CODEC = simpleCodec(PneumoStorageExporterBlock::new);
 

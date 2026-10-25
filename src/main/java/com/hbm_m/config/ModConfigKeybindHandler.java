@@ -1,12 +1,7 @@
 package com.hbm_m.config;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
 
 import org.lwjgl.glfw.GLFW;
 
@@ -77,6 +72,7 @@ public class ModConfigKeybindHandler {
             CATEGORY
     );
 
+
     public static final KeyMapping OPEN_MULTI_DETONATOR = new KeyMapping(
             "key.hbm_m.multi_detonator_open",
             InputConstants.Type.KEYSYM,
@@ -142,6 +138,8 @@ public class ModConfigKeybindHandler {
         registrar.accept(RBMK_CRANE_LEFT);
         registrar.accept(RBMK_CRANE_RIGHT);
         registrar.accept(RBMK_CRANE_LOAD);
+        // Alle Tasten des Originals (HbmKeybinds, Kategorie hbm.key).
+        com.hbm_m.handler.HbmKeybinds.registerAll(registrar);
     }
 
     private static void onClientPostTick() {
@@ -170,46 +168,22 @@ public class ModConfigKeybindHandler {
                 }
             }
         }
+        // Original-Tasten: Zustandsaenderungen an den Server (Dash, Jetpack, HUD, Magnet, Zug, Kran ...).
+        com.hbm_m.handler.HbmKeybinds.onClientTick();
 
-        // Обработка VATS
-        if (POWER_ARMOR_VATS.consumeClick()) {
-            if (mc.player != null && ModPowerArmorItem.hasFSBArmor(mc.player)) {
-                var chestplate = mc.player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST);
-                if (chestplate.getItem() instanceof ModPowerArmorItem armorItem) {
-                    var specs = armorItem.getSpecs();
-                    if (specs.hasVats) {
-                        if (PowerArmorClientState.isVATSActive()) {
-                            PowerArmorClientState.deactivateVATS();
-                            OverlayInfoToast.show(Component.translatable("hud.hbm_m.vats.off"), 60, OverlayInfoToast.ID_VATS, 0xFF0000);
-                        } else {
-                            PowerArmorClientState.activateVATS();
-                            OverlayInfoToast.show(Component.translatable("hud.hbm_m.vats.on"), 60, OverlayInfoToast.ID_VATS, 0x00FF00);
-                        }
-                    }
-                }
+        // Original: VATS und Waermebild sind keine Tasten, sondern laufen automatisch, solange das volle
+        // FSB-Set sie hat und das HUD (HbmPlayerProps.enableHUD) an ist.
+        if (mc.player != null) {
+            boolean hud = com.hbm_m.extprop.HbmPlayerProps.getData(mc.player).enableHUD;
+            com.hbm_m.powerarmor.ModArmorFSB plate = null;
+            if (com.hbm_m.powerarmor.ModArmorFSB.hasFSBArmor(mc.player)) {
+                plate = (com.hbm_m.powerarmor.ModArmorFSB) mc.player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST).getItem();
             }
-        }
-
-        // Обработка thermal vision
-        if (POWER_ARMOR_THERMAL.consumeClick()) {
-            if (mc.player != null && ModPowerArmorItem.hasFSBArmor(mc.player)) {
-                var chestplate = mc.player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST);
-                if (chestplate.getItem() instanceof ModPowerArmorItem armorItem) {
-                    var specs = armorItem.getSpecs();
-                    if (specs.hasThermal) {
-                        if (PowerArmorClientState.isThermalActive()) {
-                            PowerArmorClientState.deactivateThermal();
-                            OverlayInfoToast.show(Component.translatable("hud.hbm_m.thermal.off"), 60, OverlayInfoToast.ID_THERMAL, 0xFF0000);
-                        } else {
-                            PowerArmorClientState.activateThermal();
-                            // If activation was blocked by first-use warning, do not show "ON" toast.
-                            if (PowerArmorClientState.isThermalActive()) {
-                                OverlayInfoToast.show(Component.translatable("hud.hbm_m.thermal.on"), 60, OverlayInfoToast.ID_THERMAL, 0x00FF00);
-                            }
-                        }
-                    }
-                }
-            }
+            if (hud && plate != null && plate.vats) PowerArmorClientState.activateVATS(); else PowerArmorClientState.deactivateVATS();
+            if (hud && plate != null && plate.thermal) PowerArmorClientState.activateThermal(); else PowerArmorClientState.deactivateThermal();
+        } else {
+            PowerArmorClientState.deactivateVATS();
+            PowerArmorClientState.deactivateThermal();
         }
 
         // Multi-detonator GUI (R)

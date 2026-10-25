@@ -66,6 +66,7 @@ public class EntityCreeperVolatile extends Creeper {
         vnt.setBlockAllocator(new BlockAllocatorBulkie(60.0D, this.isPowered() ? 32 : 16));
         vnt.setBlockProcessor(new BlockProcessorStandard().withBlockEffect(new BlockMutatorBulkie(slagShell)));
         vnt.setEntityProcessor(new EntityProcessorStandard().withRangeMod(0.5F));
+        vnt.setPlayerProcessor(new com.hbm_m.explosion.vanillant.standard.PlayerProcessorStandard());
         vnt.setSFX(new ExplosionEffectStandard());
         vnt.explode();
     }
@@ -75,14 +76,16 @@ public class EntityCreeperVolatile extends Creeper {
     protected void dropCustomDeathLoot(net.minecraft.world.damagesource.DamageSource source, int looting, boolean recentlyHit) {
         super.dropCustomDeathLoot(source, looting, recentlyHit);
         this.spawnAtLocation(new ItemStack(ModItems.SULFUR.get(), 2 + this.random.nextInt(3)));
-        // stick_tnt — после порта предмета в ModItems
+        this.spawnAtLocation(new ItemStack(ModItems.STICK_TNT.get(), 1 + this.random.nextInt(2)));
+        CreeperDrops.dropRecord(this, source);
     }
     //?} else {
     /*@Override
     protected void dropCustomDeathLoot(net.minecraft.server.level.ServerLevel serverLevel, net.minecraft.world.damagesource.DamageSource source, boolean recentlyHit) {
         super.dropCustomDeathLoot(serverLevel, source, recentlyHit);
         this.spawnAtLocation(new ItemStack(ModItems.SULFUR.get(), 2 + this.random.nextInt(3)));
-        // stick_tnt — после порта предмета в ModItems
+        this.spawnAtLocation(new ItemStack(ModItems.STICK_TNT.get(), 1 + this.random.nextInt(2)));
+        CreeperDrops.dropRecord(this, source);
     }
     *///?}
 }

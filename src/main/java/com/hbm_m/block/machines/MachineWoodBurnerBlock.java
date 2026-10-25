@@ -41,6 +41,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 //? if forge {
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 //?}
 
 /**
@@ -68,8 +69,8 @@ public class MachineWoodBurnerBlock extends BaseEntityBlock implements IMultiblo
     public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
         MultiblockStructureHelper helper = getStructureHelper();
         if (helper != null) {
-            // Возвращаем объединенную форму всех частей
-            return helper.generateShapeFromParts(pState.getValue(FACING));
+            // w16b: nur die Kernzelle (Klicks fallen nicht in fremde Zellen); Umriss der ganzen Maschine: MultiblockOutlineForge
+            return helper.getControllerCellShape(pState.getValue(FACING));
         }
         return Shapes.block();
     }
@@ -128,11 +129,13 @@ public class MachineWoodBurnerBlock extends BaseEntityBlock implements IMultiblo
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
         return openMenu(state, level, pos, player, hand, hit);
     }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
         return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
     *///?}
@@ -149,8 +152,7 @@ public class MachineWoodBurnerBlock extends BaseEntityBlock implements IMultiblo
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return createTickerHelper(type, ModBlockEntities.WOOD_BURNER_BE.get(),
-                level.isClientSide ? MachineWoodBurnerBlockEntity::clientTick : MachineWoodBurnerBlockEntity::serverTick);
+        return createTickerHelper(type, ModBlockEntities.WOOD_BURNER_BE.get(), MachineWoodBurnerBlockEntity::tick);
     }
 
     // --- IMultiblockController implementation ---
@@ -192,4 +194,15 @@ public class MachineWoodBurnerBlock extends BaseEntityBlock implements IMultiblo
         return CODEC;
     }
     *///?}
+
+    /** Original {@code addInformation}: {@code addStandardInfo} (Umschalttaste zeigt {@code .desc}). */
+    @Override
+    //? if < 1.21.1 {
+    public void appendHoverText(net.minecraft.world.item.ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.BlockGetter level,
+                                java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(net.minecraft.world.item.ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    *///?}
+        com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
+    }
 }

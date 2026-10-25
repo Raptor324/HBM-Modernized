@@ -16,14 +16,8 @@ import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 /**
  * Лоадер item-моделей больших батарей-паков (бэкпорт оригинальных "hbm:obj" JSON'ов
  * battery_pack_*.json). Печёт одну OBJ-часть battery-сокета (Battery или Capacitor)

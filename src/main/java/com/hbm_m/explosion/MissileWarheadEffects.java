@@ -94,6 +94,7 @@ public final class MissileWarheadEffects {
         xnt.setBlockAllocator(new BlockAllocatorStandard(resolution));
         xnt.setBlockProcessor(new BlockProcessorStandard().setNoDrop().withBlockEffect(causesFire ? new BlockMutatorFire() : null));
         xnt.setEntityProcessor(new EntityProcessorCross(7.5D).withRangeMod(2));
+        xnt.setPlayerProcessor(new com.hbm_m.explosion.vanillant.standard.PlayerProcessorStandard());
         xnt.explode();
     }
 

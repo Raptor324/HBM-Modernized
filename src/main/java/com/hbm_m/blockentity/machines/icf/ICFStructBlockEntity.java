@@ -29,7 +29,7 @@ import net.minecraft.world.phys.AABB;
  * <p>Die Pruefpositionen stammen unveraendert aus {@code updateEntity}; {@code cbarp} heisst dort
  * "check block at relative position" und rechnet quer, hoch und laengs zur Blickrichtung.</p>
  */
-public class ICFStructBlockEntity extends BlockEntity {
+public class ICFStructBlockEntity extends BlockEntity implements com.hbm_m.api.render.RenderBoundsProvider {
 
     /** Original: die Schleife laeuft von -8 bis 8. */
     private static final int HALF_LENGTH = 8;
@@ -110,10 +110,7 @@ public class ICFStructBlockEntity extends BlockEntity {
         return level.getBlockState(at).is(block);
     }
 
-    // 1.21.1 moved render bounds to the renderer; the mod's RenderBoundsProvider still reads this.
-    //? if forge {
     @Override
-    //?}
     public AABB getRenderBoundingBox() {
         return new AABB(worldPosition).inflate(HALF_LENGTH + 1);
     }

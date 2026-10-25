@@ -1,43 +1,40 @@
 package com.hbm_m.block.decorations;
 
+import com.hbm_m.api.block.IToolable;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
-import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-import com.hbm_m.item.ModItems;
-
 /**
- * Порт {@code steel_wall} (DecoBlock, 1.7.10): тонкая стальная панель 2/16,
- * прижатая к стороне {@code FACING}. Хитбокс вращается вместе с моделью
- * (в оригинале — setBlockBoundsBasedOnState с meta 2=south, 3=north, 4=east, 5=west).
- * Отвёрткой панель циклически поворачивается (аналог onScrew из оригинала).
+ * 1:1 {@code DecoBlock} als {@code steel_wall}: Wandplatte 2px. {@code FACING} ist die Gegenrichtung der Meta
+ * (Meta 2 = Suedwand -> Platte an Nordseite des Blocks mit Blick nach Sueden).
  */
-public class SteelWallBlock extends Block {
+public class SteelWallBlock extends Block implements IToolable {
 
-    public static final DirectionProperty FACING = DirectionProperty.create("facing", Direction.Plane.HORIZONTAL);
+    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
-    private static final double T = 2.0 / 16.0;
+    protected static final VoxelShape SHAPE_NORTH = Shapes.box(0.0, 0.0, 0.0, 1.0, 1.0, 2.0 / 16.0);
+    protected static final VoxelShape SHAPE_SOUTH = Shapes.box(0.0, 0.0, 14.0 / 16.0, 1.0, 1.0, 1.0);
+    protected static final VoxelShape SHAPE_WEST  = Shapes.box(0.0, 0.0, 0.0, 2.0 / 16.0, 1.0, 1.0);
+    protected static final VoxelShape SHAPE_EAST  = Shapes.box(14.0 / 16.0, 0.0, 0.0, 1.0, 1.0, 1.0);
 
-    private static final VoxelShape SHAPE_NORTH = Shapes.box(0, 0, 0, 1, 1, T);
-    private static final VoxelShape SHAPE_SOUTH = Shapes.box(0, 0, 1 - T, 1, 1, 1);
-    private static final VoxelShape SHAPE_WEST = Shapes.box(0, 0, 0, T, 1, 1);
-    private static final VoxelShape SHAPE_EAST = Shapes.box(1 - T, 0, 0, 1, 1, 1);
-
-    public SteelWallBlock(Properties props) {
-        super(props);
+    public SteelWallBlock(Properties properties) {
+        super(properties);
         registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
     }
 
@@ -47,9 +44,12 @@ public class SteelWallBlock extends Block {
     }
 
     @Override
-    public BlockState getStateForPlacement(BlockPlaceContext context) {
-        // панель прижимается к стороне, смотрящей на игрока (как meta 2-5 по yaw в оригинале)
-        return defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+    public BlockState getStateForPlacement(BlockPlaceContext ctx) {
+        Direction clicked = ctx.getClickedFace();
+        if (clicked.getAxis().isHorizontal()) {
+            return defaultBlockState().setValue(FACING, clicked);
+        }
+        return defaultBlockState().setValue(FACING, ctx.getHorizontalDirection().getOpposite());
     }
 
     @Override
@@ -62,7 +62,7 @@ public class SteelWallBlock extends Block {
         return shapeFor(state.getValue(FACING));
     }
 
-    private static VoxelShape shapeFor(Direction facing) {
+    protected VoxelShape shapeFor(Direction facing) {
         return switch (facing) {
             case SOUTH -> SHAPE_SOUTH;
             case EAST -> SHAPE_EAST;
@@ -71,31 +71,22 @@ public class SteelWallBlock extends Block {
         };
     }
 
-    //? if < 1.21.1 {
     @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        return hbmOnUse(state, level, pos, player, hand);
-    }
-    //?} else {
-    /*@Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        return hbmOnUse(state, level, pos, player, InteractionHand.MAIN_HAND);
-    }
-    *///?}
-
-    /** Отвёртка циклически поворачивает панель (N→E→S→W), как onScrew оригинала. */
-    private InteractionResult hbmOnUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand) {
-        if (!isScrewdriver(player.getItemInHand(hand))) {
-            return InteractionResult.PASS;
-        }
-        if (!level.isClientSide) {
-            level.setBlockAndUpdate(pos, state.setValue(FACING, state.getValue(FACING).getClockWise()));
-        }
-        return InteractionResult.sidedSuccess(level.isClientSide);
+    public boolean onScrew(Level world, Player player, BlockPos pos, Direction side, float fX, float fY, float fZ, InteractionHand hand, ToolType tool) {
+        if (tool != ToolType.SCREWDRIVER) return false;
+        BlockState state = world.getBlockState(pos);
+        Direction f = state.getValue(FACING);
+        world.setBlock(pos, state.setValue(FACING, player.isShiftKeyDown() ? f.getCounterClockWise() : f.getClockWise()), 3);
+        return true;
     }
 
-    private static boolean isScrewdriver(net.minecraft.world.item.ItemStack stack) {
-        return stack.getItem() == ModItems.SCREWDRIVER.get()
-                || stack.getItem() == ModItems.SCREWDRIVER_DESH.get();
+    @Override
+    public BlockState rotate(BlockState state, Rotation rotation) {
+        return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
+    }
+
+    @Override
+    public BlockState mirror(BlockState state, Mirror mirror) {
+        return state.rotate(mirror.getRotation(state.getValue(FACING)));
     }
 }

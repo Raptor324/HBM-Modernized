@@ -80,7 +80,7 @@ public class EntityRequestDrone extends EntityDroneBase {
 
         if (next instanceof BlockPos pos) {
             setTarget(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5);
-        } else if (next instanceof ItemStack pattern && heldItem.isEmpty()) {
+        } else if (next instanceof com.hbm_m.blockentity.network.request.RequestNetwork.RequestStack pattern && heldItem.isEmpty()) {
             tryPickup(pattern);
             nextActionTimer = 5;
         } else if (next == ProgramStep.UNLOAD && !heldItem.isEmpty()) {
@@ -103,10 +103,10 @@ public class EntityRequestDrone extends EntityDroneBase {
         return level().getBlockEntity(hit.getBlockPos());
     }
 
-    private void tryPickup(ItemStack pattern) {
+    private void tryPickup(com.hbm_m.blockentity.network.request.RequestNetwork.RequestStack pattern) {
         if (!(raytraceBelow() instanceof MachineDroneProviderBlockEntity provider)) return;
 
-        ItemStack taken = provider.extractMatching(pattern, pattern.getMaxStackSize());
+        ItemStack taken = provider.extractMatching(pattern);
         if (!taken.isEmpty()) {
             heldItem = taken;
             setAppearance(APPEARANCE_CRATE);
@@ -168,9 +168,9 @@ public class EntityRequestDrone extends EntityDroneBase {
         super.readAdditionalSaveData(tag);
         
         //? if < 1.21.1 {
-        heldItem = tag.contains("held") ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("held"), com.hbm_m.platform.PlatformHooks.bestEffortProvider()) : ItemStack.EMPTY;
+        heldItem = tag.contains("held") ? com.hbm_m.platform.StackNbt.parse(tag.getCompound("held"), com.hbm_m.platform.PlatformHooks.bestEffortProvider()) : ItemStack.EMPTY;
         //?} else {
-        /*heldItem = tag.contains("held") ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("held"), this.registryAccess()) : ItemStack.EMPTY;
+        /*heldItem = tag.contains("held") ? com.hbm_m.platform.StackNbt.parse(tag.getCompound("held"), this.registryAccess()) : ItemStack.EMPTY;
         *///?}
         
         nextActionTimer = 5;
@@ -186,11 +186,10 @@ public class EntityRequestDrone extends EntityDroneBase {
                 }
                 case "unload" -> program.add(ProgramStep.UNLOAD);
                 case "dock" -> program.add(ProgramStep.DOCK);
-                //? if < 1.21.1 {
-                case "pattern" -> program.add(com.hbm_m.platform.PlatformHooks.itemStackOf(entry.getCompound("stack"), com.hbm_m.platform.PlatformHooks.bestEffortProvider()));
-                //?} else {
-                /*case "pattern" -> program.add(com.hbm_m.platform.PlatformHooks.itemStackOf(entry.getCompound("stack"), this.registryAccess()));
-                *///?}
+                case "comp", "dict" -> {
+                    com.hbm_m.blockentity.network.request.RequestNetwork.RequestStack rs = com.hbm_m.blockentity.network.request.RequestNetwork.RequestStack.load(entry);
+                    if (rs != null) program.add(rs);
+                }
                 default -> {}
             }
         }
@@ -201,9 +200,9 @@ public class EntityRequestDrone extends EntityDroneBase {
         super.addAdditionalSaveData(tag);
         
         //? if < 1.21.1 {
-        if (!heldItem.isEmpty()) tag.put("held", com.hbm_m.platform.PlatformHooks.safeItemSave(heldItem, com.hbm_m.platform.PlatformHooks.bestEffortProvider()));
+        if (!heldItem.isEmpty()) tag.put("held", com.hbm_m.platform.StackNbt.saveNew(heldItem, com.hbm_m.platform.PlatformHooks.bestEffortProvider()));
         //?} else {
-        /*if (!heldItem.isEmpty()) tag.put("held", com.hbm_m.platform.PlatformHooks.safeItemSave(heldItem, this.registryAccess()));
+        /*if (!heldItem.isEmpty()) tag.put("held", com.hbm_m.platform.StackNbt.saveNew(heldItem, this.registryAccess()));
         *///?}
 
         ListTag list = new ListTag();
@@ -216,13 +215,8 @@ public class EntityRequestDrone extends EntityDroneBase {
                 entry.putString("type", "unload");
             } else if (step == ProgramStep.DOCK) {
                 entry.putString("type", "dock");
-            } else if (step instanceof ItemStack pattern) {
-                entry.putString("type", "pattern");
-                //? if < 1.21.1 {
-                entry.put("stack", com.hbm_m.platform.PlatformHooks.safeItemSave(pattern, com.hbm_m.platform.PlatformHooks.bestEffortProvider()));
-                //?} else {
-                /*entry.put("stack", com.hbm_m.platform.PlatformHooks.safeItemSave(pattern, this.registryAccess()));
-                *///?}
+            } else if (step instanceof com.hbm_m.blockentity.network.request.RequestNetwork.RequestStack pattern) {
+                pattern.save(entry);
             }
             list.add(entry);
         }

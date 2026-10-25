@@ -68,14 +68,7 @@ public final class FleijaSphereMesh {
                                    float x, float y, float z,
                                    float r, float g, float b, float a,
                                    int light, int overlay) {
-        //? if < 1.21.1 {
-        consumer.vertex(matrix, x, y, z).color(r, g, b, a).uv(0, 0).overlayCoords(overlay).uv2(light).normal(0, 1, 0).endVertex();
-        //?} else {
-        /*// 1.21.1: vertex->addVertex; color takes int 0-255, uv->setUv, overlayCoords->setOverlay, uv2->setLight, normal->setNormal, no endVertex.
-        consumer.addVertex(matrix, x, y, z)
-                .setColor((int)(r * 255), (int)(g * 255), (int)(b * 255), (int)(a * 255))
-                .setUv(0, 0).setOverlay(overlay).setLight(light).setNormal(0, 1, 0);
-        *///?}
+        com.hbm_m.platform.RenderHooks.vertexFull(consumer, matrix, x, y, z, r, g, b, a, 0, 0, overlay, light, 0, 1, 0);
     }
 
     private static List<Tri> loadTriangles(ResourceManager rm) {

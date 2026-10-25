@@ -28,7 +28,7 @@ public class PersistentInfoBlockItem extends BlockItem implements com.hbm_m.item
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         if (!(getBlock() instanceof IPersistentInfoProvider provider)) return;
-        CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
+        CompoundTag tag = com.hbm_m.platform.StackNbt.read(stack);
         if (tag == null || !tag.contains(com.hbm_m.blockentity.IPersistentNBT.NBT_PERSISTENT_KEY)) return;
         provider.addInformation(stack, tag.getCompound(com.hbm_m.blockentity.IPersistentNBT.NBT_PERSISTENT_KEY), level, tooltip, flag);
     }

@@ -33,7 +33,13 @@
         { "type": "item", "name": "hbm_m:scrap", "weight": 7, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 4 } } ] },
         { "type": "item", "name": "hbm_m:coin_token", "weight": 6 },
         { "type": "item", "name": "hbm_m:blueprint_folder", "weight": 3 },
-        { "type": "item", "name": "hbm_m:tape_recorder", "weight": 2 }
+        { "type": "item", "name": "hbm_m:tape_recorder", "weight": 2 },
+        { "type": "item", "name": "hbm_m:gun_heavy_revolver", "weight": 2 },
+        { "type": "item", "name": "hbm_m:gun_am180", "weight": 1 },
+        { "type": "item", "name": "hbm_m:ammo_standard_bmg50_fmj", "weight": 1, "functions": [ { "function": "minecraft:set_count", "count": { "min": 24, "max": 48 } } ] },
+        { "type": "item", "name": "hbm_m:ammo_standard_p9_jhp", "weight": 2, "functions": [ { "function": "minecraft:set_count", "count": { "min": 48, "max": 64 } } ] },
+        { "type": "item", "name": "hbm_m:grenade_universal", "weight": 1, "functions": [ { "function": "minecraft:set_nbt", "tag": "{shell:0,filling:1,fuze:0}" } ] },
+        { "type": "item", "name": "hbm_m:grenade_universal", "weight": 1, "functions": [ { "function": "minecraft:set_nbt", "tag": "{shell:0,filling:3,fuze:0}" } ] }
       ]
     }
   ]

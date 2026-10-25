@@ -44,8 +44,8 @@ import java.util.List;
 public class DepthOreBlock extends Block {
 
     public DepthOreBlock(Properties properties) {
+        // Original BlockDepth: setBlockUnbreakable + setResistance(10) -> Werte kommen aus ModBlocks (-1 / 6)
         super(properties
-                // setBlockUnbreakable() + setResistance(10.0F) из BlockDepth
                 .strength(-1.0F, 10.0F)
                 .requiresCorrectToolForDrops()
                 .pushReaction(PushReaction.BLOCK)
@@ -70,10 +70,9 @@ public class DepthOreBlock extends Block {
     *///?}
 
 
+    /** 1:1 BlockDepth.addInformation: eine gelbe Zeile "trait.tile.depth". */
     private static void addDepthOreTooltip(List<Component> tooltip) {
-        tooltip.add(Component.translatable("tooltip.hbm_m.depthstone.line1")
-                .withStyle(ChatFormatting.YELLOW));
-        tooltip.add(Component.translatable("tooltip.hbm_m.depthstone.line4")
+        tooltip.add(Component.translatable("trait.tile.depth")
                 .withStyle(ChatFormatting.YELLOW));
     }
 
@@ -83,23 +82,21 @@ public class DepthOreBlock extends Block {
     @Override
     public float getDestroyProgress(BlockState state, Player player, BlockGetter level, BlockPos pos) {
         ItemStack held = player.getMainHandItem();
-        if (level instanceof Level lvl
-                && held.getItem() instanceof IDepthRockTool tool
-                && tool.canBreakRock(lvl, player, held, state, pos)) {
-            return (float) (1D / 50D);
+        if (!held.isEmpty() && held.getItem() instanceof com.hbm_m.api.item.IDepthRockTool tool) {
+            if (tool.canBreakRock(level, player, held, state, pos)) {
+                return (float) (1D / 50D);
+            }
         }
         return 0.0F;
     }
 
-    // Дроп разрешён только «ломателю породы» (в оригинале MINER-инструменты
-    // проходят canHarvestBlock — Material.rock в списке их эффективных материалов)
     @Override
     public boolean canHarvestBlock(BlockState state, BlockGetter level, BlockPos pos, Player player) {
         ItemStack held = player.getMainHandItem();
-        if (level instanceof Level lvl
-                && held.getItem() instanceof IDepthRockTool tool
-                && tool.canBreakRock(lvl, player, held, state, pos)) {
-            return true;
+        if (!held.isEmpty() && held.getItem() instanceof com.hbm_m.api.item.IDepthRockTool tool) {
+            if (tool.canBreakRock(level, player, held, state, pos)) {
+                return true;
+            }
         }
         return super.canHarvestBlock(state, level, pos, player);
     }

@@ -1,11 +1,6 @@
 package com.hbm_m.client;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 

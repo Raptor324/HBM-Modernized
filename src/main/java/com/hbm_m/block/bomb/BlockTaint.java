@@ -128,7 +128,7 @@ public class BlockTaint extends Block {
         // server-synced instance, so the HUD showed the effect twice.
         if (!level.isClientSide && entity instanceof LivingEntity living) {
             if (level.random.nextInt(50) == 0) {
-                com.hbm_m.platform.PlatformHooks.addEffect(living, ModEffects.TAINT, 15 * 20, effectLevel);
+                com.hbm_m.platform.EffectHooks.addEffect(living, ModEffects.TAINT, 15 * 20, effectLevel);
             }
         }
 
@@ -137,6 +137,15 @@ public class BlockTaint extends Block {
                 && !entity.isRemoved()
                 && entity.getClass() == Creeper.class) {
             EntityCreeperTainted.convertFromCreeper((Creeper) entity);
+        }
+
+        if (entity instanceof com.hbm_m.entity.mob.EntityTeslaCrab) {
+            com.hbm_m.entity.mob.EntityTaintCrab crab = com.hbm_m.entity.ModEntities.TAINT_CRAB.get().create(level);
+            if (crab != null && !level.isClientSide) {
+                crab.moveTo(entity.getX(), entity.getY(), entity.getZ(), entity.getYRot(), entity.getXRot());
+                entity.discard();
+                level.addFreshEntity(crab);
+            }
         }
     }
 
@@ -149,6 +158,7 @@ public class BlockTaint extends Block {
     *///?}
         tooltip.add(Component.literal("DO NOT TOUCH, BREATHE OR STARE AT.").withStyle(ChatFormatting.GRAY));
     }
+
 
     /** Устанавливает блок порчи с заданным «возрастом» (бывш. metadata). */
     public static BlockState stateWithAge(int age) {

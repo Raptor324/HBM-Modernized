@@ -32,7 +32,7 @@ public class BombMultiBlock extends NukeBaseBlock implements IBomb {
     @Override
     protected void explode(Level level, double x, double y, double z) {
         if (level instanceof net.minecraft.server.level.ServerLevel server) {
-            MultiBombExplosion.detonate(server, x, y, z, 0, 0);
+            MultiBombExplosion.detonate(server, (int) Math.floor(x), (int) Math.floor(y), (int) Math.floor(z), 0, 0);
         }
     }
 
@@ -45,8 +45,7 @@ public class BombMultiBlock extends NukeBaseBlock implements IBomb {
             bomb.clearContent();
             level.setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
             if (level instanceof net.minecraft.server.level.ServerLevel server) {
-                MultiBombExplosion.detonate(server,
-                        pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, type2, type5);
+                MultiBombExplosion.detonate(server, pos.getX(), pos.getY(), pos.getZ(), type2, type5);
             }
             return BombReturnCode.DETONATED;
         }

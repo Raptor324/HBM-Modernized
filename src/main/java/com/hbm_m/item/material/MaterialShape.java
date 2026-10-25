@@ -39,6 +39,16 @@ public enum MaterialShape {
 
     /** Id регистрации для материала (удобная перегрузка). */
     public String itemId(ModMaterials material) {
+        // Original-IDs, die vom Schema abweichen (frueher aluminum_ingot/plate_aluminum/block_aluminum,
+        // Umleitung in ForgeMainEvents.LEGACY_IDS).
+        if (material == ModMaterials.ALUMINUM) {
+            switch (this) {
+                case INGOT: return "ingot_aluminium";
+                case PLATE: return "plate_aluminium";
+                case BLOCK: return "block_aluminium";
+                default: break;
+            }
+        }
         return itemId(material.getId());
     }
 }

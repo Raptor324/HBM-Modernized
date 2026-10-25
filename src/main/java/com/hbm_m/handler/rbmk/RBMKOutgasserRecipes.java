@@ -66,6 +66,16 @@ public class RBMKOutgasserRecipes {
         put(ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.POWDER),
                 one(null, ModMaterialItems.item(ModMaterials.AU198, MaterialShape.POWDER)),                null, 0);
 
+        // E8 (Fork, nur mit Space-Addon): Space OutgasserRecipes - Kobalt -> Kobalt-60, Bismut -> Polonium-210
+        if (com.hbm_m.api.space.SpaceApi.forkActive()) {
+            for (MaterialShape shape : new MaterialShape[] { MaterialShape.INGOT, MaterialShape.NUGGET, MaterialShape.POWDER }) {
+                put(ModMaterialItems.item(ModMaterials.COBALT, shape), one(null, ModMaterialItems.item(ModMaterials.CO60, shape)), null, 0);
+            }
+            for (MaterialShape shape : new MaterialShape[] { MaterialShape.INGOT, MaterialShape.NUGGET, MaterialShape.POWDER }) {
+                put(ModMaterialItems.item(ModMaterials.BISMUTH, shape), one(null, ModMaterialItems.item(ModMaterials.POLONIUM, shape)), null, 0);
+            }
+        }
+
         // --- thorium-232 to thorium fuel ---
         put(ModMaterialItems.item(ModMaterials.THORIUM232, MaterialShape.INGOT),
                 one(null, ModMaterialItems.item(ModMaterials.THORIUM_FUEL, MaterialShape.INGOT)),          null, 0);
@@ -87,6 +97,10 @@ public class RBMKOutgasserRecipes {
         put(ModMaterialItems.item(ModMaterials.COAL, MaterialShape.POWDER), coalTar.copy(),             syngas,  50);
         put(Blocks.COAL_BLOCK.asItem(),
                 new ItemStack(ModItems.OIL_TAR_COAL.get(), 9),                               syngas, 500);
+
+        // Original OutgasserRecipes l.57: PVC -> C4 + Kolloid
+        put(ModMaterialItems.item(ModMaterials.PVC, MaterialShape.INGOT),
+                new ItemStack(ModMaterialItems.item(ModMaterials.C4, MaterialShape.INGOT)), ModFluids.COLLOID.getSource(), 250);
 
         // --- the tars themselves gas off further ---
         put(ModItems.OIL_TAR_COAL.get(), ItemStack.EMPTY, ModFluids.COALOIL.getSource(),      100);

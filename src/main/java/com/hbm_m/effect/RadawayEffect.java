@@ -1,6 +1,5 @@
 package com.hbm_m.effect;
 
-import com.hbm_m.platform.ClientEffectHooks;
 import com.hbm_m.radiation.PlayerHandler;
 
 import net.minecraft.world.effect.MobEffect;
@@ -12,11 +11,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Consumer;
 
-//? if forge {
 import net.minecraftforge.client.extensions.common.IClientMobEffectExtensions;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.client.extensions.common.IClientMobEffectExtensions;
- *///?}
 
 /**
  * Антирадин (порт {@code com.hbm.potion.HbmPotion.radaway} 1.7.10): каждый тик
@@ -24,7 +19,7 @@ import net.minecraftforge.client.extensions.common.IClientMobEffectExtensions;
  *
  * <p>Вся версия-специфика (сигнатуры тика, клиентские иконки) — тонкие гейты,
  * логика едина для 1.20.1/1.21.1; иконки HUD/инвентаря рисует
- * {@link ClientEffectHooks} (на обеих версиях).
+ * локальное расширение-иконки (на обеих версиях).
  */
 public class RadawayEffect extends MobEffect {
 
@@ -68,10 +63,28 @@ public class RadawayEffect extends MobEffect {
     }
      *///?}
 
-    // Клиентские иконки (HUD + инвентарь) — реализация в платформенном слое;
-    // работает и на forge, и на neoforge (раньше на 1.21.1 иконок не было).
+    // Клиентские иконки (HUD + инвентарь), обе версии. Расширение живёт здесь —
+    // платформенный слой не знает про конкретные эффекты мода.
     @Override
+@SuppressWarnings("removal")
     public void initializeClient(@NotNull Consumer<IClientMobEffectExtensions> consumer) {
-        ClientEffectHooks.initializeClient(this, (Consumer<Object>) (Object) consumer);
+        consumer.accept(RADAWAY_ICONS);
     }
+
+    private static final IClientMobEffectExtensions RADAWAY_ICONS = new IClientMobEffectExtensions() {
+        @Override
+        public boolean renderInventoryIcon(net.minecraft.world.effect.MobEffectInstance instance,
+                net.minecraft.client.gui.screens.inventory.EffectRenderingInventoryScreen<?> screen,
+                net.minecraft.client.gui.GuiGraphics gfx, int x, int y, int blitOffset) {
+            com.hbm_m.effect.render.RadawayEffectRenderer.renderInventory(gfx, x, y, blitOffset);
+            return true;
+        }
+
+        @Override
+        public boolean renderGuiIcon(net.minecraft.world.effect.MobEffectInstance instance, net.minecraft.client.gui.Gui gui,
+                net.minecraft.client.gui.GuiGraphics gfx, int x, int y, float z, float alpha) {
+            com.hbm_m.effect.render.RadawayEffectRenderer.renderHud(gfx, x, y, (int) z, alpha);
+            return true;
+        }
+    };
 }

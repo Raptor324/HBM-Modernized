@@ -1,4 +1,3 @@
-//? if forge {
 package com.hbm_m.powerarmor.overlay;
 
 import org.joml.Matrix4f;
@@ -18,14 +17,26 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
+//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderLivingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+//?} else {
+/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.event.RenderLivingEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+*///?}
 
 @OnlyIn(Dist.CLIENT)
+//? if forge {
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
+//?} else {
+/*@EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT)
+*///?}
 public class VATSRenderHandler {
 
     @SubscribeEvent
@@ -43,7 +54,7 @@ public class VATSRenderHandler {
         if (!ModPowerArmorItem.hasFSBArmor(player)) return;
 
         ItemStack chest = player.getItemBySlot(EquipmentSlot.CHEST);
-        if (!(chest.getItem() instanceof ModPowerArmorItem armorItem) || !armorItem.getSpecs().hasVats) return;
+        if (!(chest.getItem() instanceof com.hbm_m.powerarmor.ModArmorFSB armorItem) || !armorItem.vats) return;
 
         // В радиусе
         int chunks = ModClothConfig.get().vatsRenderDistanceChunks;
@@ -100,4 +111,3 @@ public class VATSRenderHandler {
         return sb.toString();
     }
 }
-//?}

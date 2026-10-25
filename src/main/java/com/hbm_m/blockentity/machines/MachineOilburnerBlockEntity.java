@@ -1,303 +1,147 @@
 package com.hbm_m.blockentity.machines;
 
-import org.jetbrains.annotations.Nullable;
-
 import com.hbm_m.api.fluids.IFluidStandardReceiverMK2;
-import com.hbm_m.api.fluids.IFluidStandardSenderMK2;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.blockentity.BaseMachineBlockEntity;
+import com.hbm_m.blockentity.MachinePollutingBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.interfaces.IHeatSource;
+import com.hbm_m.inventory.fluid.FluidType;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.fluid.trait.FT_Flammable;
-import com.hbm_m.inventory.fluid.trait.FT_Polluting;
-import com.hbm_m.inventory.fluid.trait.PollutionType;
-import com.hbm_m.interfaces.IHeatSource;
+import com.hbm_m.inventory.fluid.trait.FluidTrait.FluidReleaseType;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.Fluids;
-import net.minecraft.world.phys.AABB;
 
 /**
- * Порт {@code TileEntityHeaterOilburner} (1.7.10 Original) — жидкотопливный
- * теплогенератор: бак Heating Oil (16000 mB), 3 слота (контейнер внутрь /
- * контейнер наружу / fluid identifier для смены типа бака), скорость горения
- * {@code setting} 1..10 (отвёртка, зацикливается 10 → 1), вкл/выкл только через
- * кнопку GUI (оригинальный {@code receiveControl("toggle")}, красного камня нет).
+ * 1:1 {@code TileEntityHeaterOilburner}: Oelbrenner. Drei Plaetze (Behaelter rein 0, leer raus 1, Fluid-ID 2), Ein/Aus
+ * per GUI-Schalter ({@code NBTControlPacket "toggle"}), Brennrate 1..10 mB/t per Schraubenzieher. Hitze je mB =
+ * {@code FT_Flammable.getHeatEnergy() / 1000}; Abgas geht in die Rauchtanks und an die vier Anschluesse ({@code getConPos}).
  *
- * <p>Также обслуживает {@code oilburner_hp} ("High Pressure"): в оригинале
- * вариант существовал только как осиротевшие арт-ассеты, здесь тот же класс
- * с удвоённым баком и удвоенным тепловыделением на mB (выбирается по блоку).
- *
- * <p>Дым — порт {@code TileEntityMachinePolluting}: 3 бака SMOKE / SMOKE_LEADED /
- * SMOKE_POISON с буфером 100 (оригинал: super(3, 100)); раз в 5 тиков горения —
- * {@code pollute(FluidReleaseType.BURN, toBurn * 5)}, burnMap из
- * {@link FT_Polluting} (SOOT → обычный дым, HEAVYMETAL → свинцовый, POISON →
- * ядовитый), переполнение сбрасывается (мировой сетки загрязнения в порте нет),
- * с шансом 1/3 — шипение.
+ * <p>Der Port fuehrt zusaetzlich {@code oilburner_hp}: im Original gab es dazu nur Grafiken, keinen Code. Er nutzt diese
+ * Klasse mit doppeltem Tank und doppelter Brennrate.</p>
  */
-public class MachineOilburnerBlockEntity extends BaseMachineBlockEntity
-        implements IFluidStandardReceiverMK2, IFluidStandardSenderMK2, IHeatSource, com.hbm_m.interfaces.IFluidCopiable {
-
-    public static final int SLOT_IN = 0;
-    public static final int SLOT_OUT = 1;
-    public static final int SLOT_FLUID_ID = 2;
-    public static final int INVENTORY_SIZE = 3;
-
-    /** Буфер дымовых баков — оригинал TileEntityMachinePolluting(3, 100). */
-    public static final int SMOKE_BUFFER = 100;
+public class MachineOilburnerBlockEntity extends MachinePollutingBlockEntity
+        implements IFluidStandardReceiverMK2, IHeatSource, com.hbm_m.api.tile.IControlReceiver,
+        com.hbm_m.api.redstoneoverradio.IRORValueProvider, com.hbm_m.api.redstoneoverradio.IRORInteractive {
 
     public static final int MAX_SETTING = 10;
-    private static final int MAX_HEAT = 100_000;
-    private static final int TANK_CAPACITY_NORMAL = 16_000;
-    private static final int TANK_CAPACITY_HP = 32_000;
+    public static final int maxHeatEnergy = 100_000;
 
-    private final FluidTank oilTank;
-    private final int heatMultiplier;
+    private final FluidTank tank;
+    private final int burnMultiplier;
 
-    protected final FluidTank smoke = new FluidTank(ModFluids.SMOKE.getSource(), SMOKE_BUFFER);
-    protected final FluidTank smokeLeaded = new FluidTank(ModFluids.SMOKE_LEADED.getSource(), SMOKE_BUFFER);
-    protected final FluidTank smokePoison = new FluidTank(ModFluids.SMOKE_POISON.getSource(), SMOKE_BUFFER);
-
-    /** Скорость горения 1..10, оригинальное {@code setting}. */
-    private int setting = 1;
-    private int heatEnergy = 0;
-    /** Оригинальный {@code isOn} — только кнопка GUI, никакого редстоуна. */
-    private boolean isOn = false;
+    public boolean isOn = false;
+    public int setting = 1;
+    public int heatEnergy;
 
     public MachineOilburnerBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.OILBURNER_BE.get(), pos, state, INVENTORY_SIZE, 0L, 0L, 0L);
+        super(ModBlockEntities.OILBURNER_BE.get(), pos, state, 3, 0L, 0L, 0L, 100);
 
         boolean isHp = state.is(ModBlocks.OILBURNER_HP.get());
-        this.oilTank = new FluidTank(ModFluids.HEATINGOIL.getSource(), isHp ? TANK_CAPACITY_HP : TANK_CAPACITY_NORMAL);
-        this.heatMultiplier = isHp ? 2 : 1;
+        this.tank = new FluidTank(ModFluids.HEATINGOIL.getSource(), isHp ? 32_000 : 16_000);
+        this.burnMultiplier = isHp ? 2 : 1;
     }
 
-    //? if forge {
-    @Override
-    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
-            net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
-        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
-            return oilTank.getForgeFluidCapability().cast();
-        }
-        return super.getCapability(cap, side);
-    }
-    //?}
+    @Override public FluidTank[] getReceivingTanks() { return new FluidTank[] { tank }; }
+    @Override public FluidTank[] getSendingTanks() { return getSmokeTanks(); }
+    @Override public FluidTank[] getAllTanks() { return new FluidTank[] { tank }; }
 
-    // ─────────────────────────── Жидкости ───────────────────────────
-
-    @Override
-    public FluidTank[] getReceivingTanks() {
-        return new FluidTank[] { oilTank };
-    }
-
-    @Override
-    public FluidTank[] getSendingTanks() {
-        return new FluidTank[] { smoke, smokeLeaded, smokePoison };
-    }
-
-    @Override
-    public FluidTank[] getAllTanks() {
-        return new FluidTank[] { oilTank, smoke, smokeLeaded, smokePoison };
-    }
-
-    public FluidTank getOilTank() {
-        return oilTank;
-    }
-
-    @Override
-    public boolean isLoaded() {
-        return level != null && !isRemoved() && level.isLoaded(worldPosition);
-    }
-
-    // ─────────────────────────── Тик сервера ───────────────────────────
+    public FluidTank getOilTank() { return tank; }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineOilburnerBlockEntity be) {
         if (level.isClientSide() || !(level instanceof ServerLevel serverLevel)) return;
         be.serverTick(serverLevel, pos);
     }
 
-    /**
-     * Порты подключения оригинала ({@code getConPos()}): 4 позиции на ±2 по X/Z.
-     */
-    private BlockPos[] getConPos(Level level, BlockPos pos) {
-        return new BlockPos[] {
-                pos.offset(2, 0, 0),
-                pos.offset(-2, 0, 0),
-                pos.offset(0, 0, 2),
-                pos.offset(0, 0, -2)
-        };
-    }
-
     private void serverTick(ServerLevel level, BlockPos pos) {
-        // Автозалив/автоопустошение флюид-контейнеров в слотах 0/1 + смена типа бака по слоту 2.
-        ItemStack[] slots = getSlotsArray();
-        boolean slotsChanged = false;
-        if (oilTank.loadTank(SLOT_IN, SLOT_OUT, slots)) slotsChanged = true;
-        if (oilTank.setType(SLOT_FLUID_ID, slots)) slotsChanged = true;
-        if (slotsChanged) applySlotsArray(slots);
 
-        // Подписка на сеть масла + отправка дыма (оригинал: trySubscribe + sendSmoke по каждой позиции).
-        // trySubscribe (регистрация, идемпотентно) — раз в 5 тиков (фаза по позиции).
-        // tryProvide внутри sendSmoke — прямой пуш дыма в соседний приёмник: каждый тик,
-        // иначе гейт делит пропускную способность отвода дыма. sendSmoke сам проверяет
-        // заполнение баков, а обход getConPos выполняется только при дыме или подписке.
-        boolean subscribeDue = probeDue(5);
-        boolean hasSmoke = smoke.getFill() > 0 || smokeLeaded.getFill() > 0 || smokePoison.getFill() > 0;
-        if (subscribeDue || hasSmoke) {
-            for (BlockPos conPos : getConPos(level, pos)) {
-                Direction dir = getDirectionTo(pos, conPos);
-                if (subscribeDue) trySubscribe(oilTank.getTankType(), level, conPos, dir);
-                sendSmoke(level, conPos, dir);
-            }
+        ItemStack[] slots = new ItemStack[3];
+        for (int i = 0; i < 3; i++) slots[i] = inventory.getStackInSlot(i);
+        boolean changed = tank.loadTank(0, 1, slots);
+        changed |= tank.setType(2, slots);
+        if (changed) for (int i = 0; i < 3; i++) inventory.setStackInSlot(i, slots[i] == null ? ItemStack.EMPTY : slots[i]);
+
+        for (Direction dir : Direction.Plane.HORIZONTAL) {
+            BlockPos con = pos.relative(dir, 2);
+            this.trySubscribe(tank.getTankType(), level, con, dir);
+            this.sendSmoke(level, con, dir);
         }
 
-        // Точное портирование shouldCool-логики оригинала.
         boolean shouldCool = true;
 
-        if (this.isOn && this.heatEnergy < MAX_HEAT) {
-            FT_Flammable trait = com.hbm_m.inventory.fluid.FluidType.getTrait(oilTank.getTankType(), FT_Flammable.class);
-            if (trait != null) {
-                int burnRate = setting;
-                int toBurn = Math.min(burnRate, oilTank.getFill());
+        if (this.isOn && this.heatEnergy < maxHeatEnergy) {
 
-                oilTank.setFill(oilTank.getFill() - toBurn);
+            FT_Flammable type = FluidType.getTrait(tank.getTankType(), FT_Flammable.class);
+            if (type != null) {
 
-                int heat = (int) (trait.getHeatEnergy() / 1000L) * this.heatMultiplier;
-                this.heatEnergy += heat * toBurn;
+                int burnRate = setting * burnMultiplier;
+                int toBurn = Math.min(burnRate, tank.getFluidAmountMb());
 
-                if (level.getGameTime() % 5 == 0 && toBurn > 0) {
-                    this.pollute(oilTank.getTankType(), toBurn * 5, level, pos);
+                // NTM Space: if(toBurn > 0 && breatheAir(toBurn)) { ... } - ohne Space-Addon bleibt der bisherige Ablauf
+                // (auch bei leerem Tank kein Abkuehlen) exakt erhalten
+                boolean burns = toBurn > 0 ? breatheAir(toBurn) : !com.hbm_m.api.space.SpaceApi.isInstalled();
+                if (burns) {
+                    tank.drainMb(toBurn);
+
+                    int heat = (int) (type.getHeatEnergy() / 1000);
+
+                    this.heatEnergy += heat * toBurn;
+
+                    if (level.getGameTime() % 5 == 0 && toBurn > 0) {
+                        super.pollute(tank.getTankType(), FluidReleaseType.BURN, toBurn * 5);
+                    }
+
+                    shouldCool = false;
                 }
-
-                shouldCool = false;
             }
         }
 
-        if (this.heatEnergy >= MAX_HEAT)
+        if (this.heatEnergy >= maxHeatEnergy)
             shouldCool = false;
 
         if (shouldCool)
             this.heatEnergy = Math.max(this.heatEnergy - Math.max(this.heatEnergy / 1000, 1), 0);
 
-        // Anti-sync-spam: шлём пакет только при изменении отрисовываемого/NBT-состояния
-        // (подпись покрывает всё, что пишет writeNbtData: баки, isOn, heatEnergy, setting).
-        syncIfStateChanged(
-                // lo: тепло + isOn + setting
-                heatEnergy * 31L + (isOn ? 1L : 0L) * 31L + setting,
-                // hi: фингерпринты всех четырёх баков (тип + заполнение)
-                fluidSig(oilTank) * 31L + fluidSig(smoke) * 31L * 31L
-                        + fluidSig(smokeLeaded) * 31L * 31L * 31L + fluidSig(smokePoison));
+        long lo = (long) heatEnergy * 31L + (isOn ? 1L : 0L) * 7L + setting;
+        long hi = (long) tank.getFill() | (((long) tank.getTankType().hashCode()) << 32);
+        syncIfStateChanged(lo, hi);
     }
 
-    /** Дешёвая подпись бака (тип + заполнение) для sync-гейта. */
-    private static long fluidSig(FluidTank tank) {
-        return tank.getTankType().hashCode() * 31L + tank.getFill();
-    }
-
-    /**
-     * Порт {@code TileEntityMachinePolluting.pollute(FluidType, FluidReleaseType.BURN, amount)}:
-     * каждая запись burnMap из {@link FT_Polluting} добавляет ceil(amount * 100) mB
-     * в соответствующий дымовой бак (SOOT → smoke, HEAVYMETAL → smoke_leaded,
-     * остальное → smoke_poison); переполнение клампится и сбрасывается, шанс 1/3 — шипение.
-     */
-    private void pollute(net.minecraft.world.level.material.Fluid type, float amount, ServerLevel level, BlockPos pos) {
-        FT_Polluting trait = com.hbm_m.inventory.fluid.FluidType.getTrait(type, FT_Polluting.class);
-        if (trait == null) return;
-
-        for (var entry : trait.burnMap.entrySet()) {
-            FluidTank tank = entry.getKey() == PollutionType.SOOT ? smoke
-                    : entry.getKey() == PollutionType.HEAVYMETAL ? smokeLeaded
-                    : smokePoison;
-
-            int fluidAmount = (int) Math.ceil(entry.getValue() * amount * 100);
-            int newFill = tank.getFill() + fluidAmount;
-            if (newFill > tank.getMaxFill()) {
-                // Мировой сетки загрязнения в порте нет — излишек просто отбрасывается.
-                newFill = tank.getMaxFill();
-                if (level.random.nextInt(3) == 0) {
-                    level.playSound(null, pos, SoundEvents.FIRE_EXTINGUISH, SoundSource.BLOCKS, 0.1F, 1.5F);
-                }
-            }
-            tank.setFill(newFill);
-        }
-    }
-
-    /** Порт {@code TileEntityMachinePolluting.sendSmoke}: 3 дымовых бака в позицию трубы. */
-    private void sendSmoke(Level level, BlockPos pipePos, Direction dir) {
-        if (smoke.getFill() > 0) tryProvide(smoke, level, pipePos, dir);
-        if (smokeLeaded.getFill() > 0) tryProvide(smokeLeaded, level, pipePos, dir);
-        if (smokePoison.getFill() > 0) tryProvide(smokePoison, level, pipePos, dir);
-    }
-
-    private static Direction getDirectionTo(BlockPos from, BlockPos to) {
-        return Direction.getNearest(to.getX() - from.getX(), to.getY() - from.getY(), to.getZ() - from.getZ());
-    }
-
-    private ItemStack[] getSlotsArray() {
-        ItemStack[] slots = new ItemStack[INVENTORY_SIZE];
-        for (int i = 0; i < INVENTORY_SIZE; i++) slots[i] = inventory.getStackInSlot(i);
-        return slots;
-    }
-
-    private void applySlotsArray(ItemStack[] slots) {
-        for (int i = 0; i < INVENTORY_SIZE; i++) inventory.setStackInSlot(i, slots[i]);
-    }
-
-    // ─────────────────────────── Управление ───────────────────────────
-
-    /** Оригинальный {@code toggleSetting}: зацикливание 10 → 1. */
-    public void toggleSetting() {
+    /** Original {@code toggleSetting}. */
+    public void cycleSetting() {
         setting++;
         if (setting > MAX_SETTING) setting = 1;
         setChanged();
     }
 
-    public int getSetting() {
-        return setting;
-    }
+    public int getSetting() { return setting; }
 
-    /** Множитель тепла (HP-вариант горелки ×2) — для HUD прицела. */
-    public int getHeatMultiplier() {
-        return heatMultiplier;
-    }
+    /** GUI: Original zeigt Flamme/Schalter nach {@code isOn}. */
+    public boolean isBurning() { return isOn; }
 
-    /** Порт {@code receiveControl("toggle")}: isOn = !isOn (кнопка GUI). */
-    public void toggleOn() {
-        this.isOn = !this.isOn;
+    @Override public boolean hasPermission(Player player) { return player.distanceToSqr(worldPosition.getX(), worldPosition.getY(), worldPosition.getZ()) <= 256; }
+
+    @Override
+    public void receiveControl(CompoundTag data) {
+        if (data.contains("toggle")) {
+            this.isOn = !this.isOn;
+        }
         setChanged();
-        sendUpdateToClient();
     }
 
-    /** Оригинальный {@code isOn} — горелка включена кнопкой (не обязательно текущий факел). */
-    public boolean isOn() {
-        return isOn;
-    }
-
-    // ─────────────────────────── Тепло (IHeatSource) ───────────────────────────
-
-    @Override
-    public int getHeatStored() {
-        return heatEnergy;
-    }
-
-    @Override
-    public int getMaxHeatStored() {
-        return MAX_HEAT;
-    }
+    @Override public int getHeatStored() { return heatEnergy; }
+    @Override public int getMaxHeatStored() { return maxHeatEnergy; }
 
     @Override
     public void useUpHeat(int amount) {
@@ -305,12 +149,8 @@ public class MachineOilburnerBlockEntity extends BaseMachineBlockEntity
         setChanged();
     }
 
-    // ─────────────────────────── Инвентарь / GUI ───────────────────────────
-
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        // Оригинальные слоты не имеют валидации — любые предметы кладутся вручную,
-        // конвейеры/вёдра разбираются тиковой логикой loadTank/setType.
         return true;
     }
 
@@ -329,66 +169,103 @@ public class MachineOilburnerBlockEntity extends BaseMachineBlockEntity
         return com.hbm_m.inventory.menu.MachineOilburnerMenu.create(id, inventory, this);
     }
 
-    // ─────────────────────────── NBT ───────────────────────────
+    //? if forge {
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
+            net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
+            return tank.getForgeFluidCapability().cast();
+        }
+        return super.getCapability(cap, side);
+    }
+    //?}
+
+    //? if forge {
+    @Override
+    //?}
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return new net.minecraft.world.phys.AABB(worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1,
+                worldPosition.getX() + 2, worldPosition.getY() + 2, worldPosition.getZ() + 2);
+    }
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
-        oilTank.writeToNBT(tag, "tank");
+        tank.writeToNBT(tag, "tank");
         tag.putBoolean("isOn", isOn);
         tag.putInt("heatEnergy", heatEnergy);
         tag.putByte("setting", (byte) setting);
-        smoke.writeToNBT(tag, "smoke0");
-        smokeLeaded.writeToNBT(tag, "smoke1");
-        smokePoison.writeToNBT(tag, "smoke2");
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        if (tag.contains("tank")) oilTank.readFromNBT(tag, "tank");
+        tank.readFromNBT(tag, "tank");
         isOn = tag.getBoolean("isOn");
         heatEnergy = tag.getInt("heatEnergy");
         setting = tag.contains("setting") ? tag.getByte("setting") : 1;
-        if (tag.contains("smoke0")) smoke.readFromNBT(tag, "smoke0");
-        if (tag.contains("smoke1")) smokeLeaded.readFromNBT(tag, "smoke1");
-        if (tag.contains("smoke2")) smokePoison.readFromNBT(tag, "smoke2");
+        if (setting < 1) setting = 1;
     }
 
-    /** Оригинальный {@code getRenderBoundingBox}: 3×3×2 вокруг контроллера. */
-    @Override
-    public AABB getRenderBoundingBox() {
-        return new AABB(
-                worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1,
-                worldPosition.getX() + 2, worldPosition.getY() + 2, worldPosition.getZ() + 2);
+        @Override
+    public boolean canConnect(net.minecraft.world.level.material.Fluid fluid, Direction fromDir) {
+        return fromDir != null;
     }
 
-    // ─────────────────── Устройство настройки ───────────────────
-    // Оригинал: тип топлива + burnRate + isOn (дымовые баки не копируются).
-
-    @Override
-    public java.util.List<String> getFluidsToCopy() {
-        Fluid type = oilTank.getTankType();
-        if (type != Fluids.EMPTY && type != ModFluids.NONE.getSource()) {
-            return java.util.List.of(net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(type).toString());
-        }
-        return java.util.List.of();
-    }
-
-    @Override
-    public CompoundTag getSettings(Level level, BlockPos pos) {
-        CompoundTag nbt = com.hbm_m.interfaces.IFluidCopiable.super.getSettings(level, pos);
-        nbt.putInt("burnRate", setting);
-        nbt.putBoolean("isOn", isOn);
-        return nbt;
-    }
-
-    @Override
-    public void pasteSettings(CompoundTag nbt, int index, Level level, net.minecraft.world.entity.player.Player player, BlockPos pos) {
-        com.hbm_m.interfaces.IFluidCopiable.super.pasteSettings(nbt, index, level, player, pos);
-        if (nbt.contains("isOn")) isOn = nbt.getBoolean("isOn");
-        if (nbt.contains("burnRate")) setting = Math.min(nbt.getInt("burnRate"), MAX_SETTING);
+    public void toggleOn() {
+        this.isOn = !this.isOn;
         setChanged();
         sendUpdateToClient();
+    }
+
+    public void toggleSetting() {
+        cycleSetting();
+    }
+
+    public boolean isOn() {
+        return isOn;
+    }
+
+    // ── Redstone-over-Radio (1:1 TileEntityHeaterOilburner) ──
+
+    /** 1:1 inklusive Original-Eigenheit: gelistet als "burnRate", abgefragt wird (kleingeschrieben) "burnrate". */
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+                PREFIX_VALUE + "heat",
+                PREFIX_VALUE + "fuel",
+                PREFIX_VALUE + "burnRate",
+                PREFIX_VALUE + "state",
+                PREFIX_FUNCTION + "setstate" + NAME_SEPARATOR + "active",
+                PREFIX_FUNCTION + "setburnrate" + NAME_SEPARATOR + "rate"
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "heat").equals(name))     return "" + heatEnergy;
+        if ((PREFIX_VALUE + "fuel").equals(name))     return "" + tank.getFill();
+        if ((PREFIX_VALUE + "burnrate").equals(name)) return "" + setting;
+        if ((PREFIX_VALUE + "state").equals(name))    return isOn ? "1" : "0";
+        return null;
+    }
+
+    @Override
+    public String runRORFunction(String name, String[] params) {
+        // Original ohne Laengenpruefung (ein leerer Befehl haette den Server-Tick abgebrochen)
+        if ((PREFIX_FUNCTION + "setstate").equals(name) && params.length > 0) {
+            this.isOn = params[0].equals("1");
+            this.setChanged();
+            this.sendUpdateToClient();
+            return null;
+        }
+        if ((PREFIX_FUNCTION + "setburnrate").equals(name) && params.length > 0) {
+            int rate = com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[0], 1, 10);
+            this.setting = rate;
+            this.setChanged();
+            this.sendUpdateToClient();
+            return null;
+        }
+        return null;
     }
 }
