@@ -150,6 +150,8 @@ public class WeaponPartVboRenderer extends AbstractGpuMesh {
     private static IrisPhaseGuard irisBatchPhaseGuard;
     private static int irisBatchPrevBeId = Integer.MIN_VALUE;
     private static int irisBatchVao = -1;
+    /** COLOR-атрибут, которому батч задавал константный тинт (для сброса в белый). */
+    private static int irisBatchColorLoc = -1;
     private static boolean irisBatchShadow;
     private static ResourceLocation batchTexture;
     private static int batchMode = -1;
@@ -325,6 +327,7 @@ public class WeaponPartVboRenderer extends AbstractGpuMesh {
             int colorLoc = companion.getColorLocation();
             if (colorLoc != -1) {
                 GL20.glVertexAttrib4f(colorLoc, r, g, b, a);
+                irisBatchColorLoc = colorLoc;
             }
             // Страховка для паков, умножающих на ColorModulator вместо vaColor.
             if (shader.COLOR_MODULATOR != null) {
@@ -413,6 +416,21 @@ public class WeaponPartVboRenderer extends AbstractGpuMesh {
 
     private static void closeIrisBatchGuards() {
         if (irisBatchShader != null) {
+            try {
+                // Тинт GunGL.color (гильзы и т.п.) был загружен в ColorModulator и константный
+                // COLOR-атрибут ОБЩЕЙ Iris-блок-программы, которой рисуются и GPU-бейк машины.
+                // Без сброса в белый последний цвет гильзы красит все последующие батчи кадра.
+                // Программа ещё привязана (сброс до закрытия гвардов) — upload() валиден.
+                com.mojang.blaze3d.shaders.Uniform modulator = irisBatchShader.COLOR_MODULATOR;
+                if (modulator != null) {
+                    modulator.set(1.0F, 1.0F, 1.0F, 1.0F);
+                    modulator.upload();
+                }
+                if (irisBatchColorLoc != -1) {
+                    GL20.glVertexAttrib4f(irisBatchColorLoc, 1.0F, 1.0F, 1.0F, 1.0F);
+                    irisBatchColorLoc = -1;
+                }
+            } catch (Throwable ignored) {}
             try {
                 irisBatchShader.clear();
             } catch (Throwable ignored) {}

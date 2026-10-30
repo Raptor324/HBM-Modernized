@@ -134,6 +134,7 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
      * or if {@link #ensureBuilt} has not run yet.
      */
     private float[] perVertexCornerWeights;
+    private float[] weldedPositions;
     /**
      * GL buffer holding per-instance per-vertex UV2 values. Laid out as
      * {@code instanceSlots[maxInstanceSlots] × vertexCount × 2 × sizeof(USHORT)}
@@ -522,12 +523,108 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
             com.hbm_m.client.render.debug.GlDebugMarkers.labelVao(this.vaoId, "IrisComp_" + debugName + "_VAO");
             com.hbm_m.client.render.debug.GlDebugMarkers.labelBuffer(this.vboId, "IrisComp_" + debugName + "_VBO");
 
-            GlStateManager._glBindVertexArray(vaoId);
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
-            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, vertexBytes, GL15.GL_STATIC_DRAW);
-            this.vboStoreBytes = vertexBytes.remaining();
-
             int stride = RenderHooks.getVertexSize(actualFormat);
+            int normalOff = elementOffsets.getOrDefault("normal", 32);
+            int rawVertCount = this.vertexCount;
+            int quadCount = rawVertCount / 4;
+            int tableSize = Integer.highestOneBit(Math.max(16, rawVertCount * 2) - 1) << 1;
+            int tableMask = tableSize - 1;
+            int[] hashTable = new int[tableSize];
+            java.util.Arrays.fill(hashTable, -1);
+            int[] vertRemap = new int[rawVertCount];
+            int[] uniqueRawIdx = new int[rawVertCount];
+            int uniqueCount = 0;
+            long srcBaseAddr = MemoryUtil.memAddress(vertexBytes);
+
+            for (int v = 0; v < rawVertCount; v++) {
+                long vAddr = srcBaseAddr + (long) v * stride;
+                // Hash Position (words 0..2), Color (word 3), UV0 (words 4..5), and Normal (3 bytes @ normalOff),
+                // ignoring the uninitialized padding byte and per-quad midTexCoord average so shared vertices
+                // across adjacent triangles weld together identically to PartGeometry.
+                int w0 = MemoryUtil.memGetInt(vAddr);
+                int w1 = MemoryUtil.memGetInt(vAddr + 4L);
+                int w2 = MemoryUtil.memGetInt(vAddr + 8L);
+                int w3 = MemoryUtil.memGetInt(vAddr + 12L);
+                int w4 = MemoryUtil.memGetInt(vAddr + 16L);
+                int w5 = MemoryUtil.memGetInt(vAddr + 20L);
+                int nxyz = MemoryUtil.memGetInt(vAddr + normalOff) & 0x00FFFFFF;
+
+                int h = w0 * 31 + w1;
+                h = h * 31 + w2;
+                h = h * 31 + w3;
+                h = h * 31 + w4;
+                h = h * 31 + w5;
+                h = h * 31 + nxyz;
+                h ^= (h >>> 16);
+
+                int slot = h & tableMask;
+                int found = -1;
+                while (true) {
+                    int cand = hashTable[slot];
+                    if (cand < 0) {
+                        found = uniqueCount++;
+                        uniqueRawIdx[found] = v;
+                        hashTable[slot] = found;
+                        break;
+                    }
+                    long candAddr = srcBaseAddr + (long) uniqueRawIdx[cand] * stride;
+                    if (MemoryUtil.memGetInt(candAddr) == w0
+                            && MemoryUtil.memGetInt(candAddr + 4L) == w1
+                            && MemoryUtil.memGetInt(candAddr + 8L) == w2
+                            && MemoryUtil.memGetInt(candAddr + 12L) == w3
+                            && MemoryUtil.memGetInt(candAddr + 16L) == w4
+                            && MemoryUtil.memGetInt(candAddr + 20L) == w5
+                            && (MemoryUtil.memGetInt(candAddr + normalOff) & 0x00FFFFFF) == nxyz) {
+                        found = cand;
+                        break;
+                    }
+                    slot = (slot + 1) & tableMask;
+                }
+                vertRemap[v] = found;
+            }
+
+            int[] tempIndices = new int[quadCount * 6];
+            int validIdxCount = 0;
+            for (int q = 0, base = 0; q < quadCount; q++, base += 4) {
+                int i0 = vertRemap[base];
+                int i1 = vertRemap[base + 1];
+                int i2 = vertRemap[base + 2];
+                int i3 = vertRemap[base + 3];
+                if (i0 != i1 && i1 != i2 && i2 != i0) {
+                    tempIndices[validIdxCount++] = i0;
+                    tempIndices[validIdxCount++] = i1;
+                    tempIndices[validIdxCount++] = i2;
+                }
+                if (i2 != i3 && i3 != i0 && i0 != i2) {
+                    tempIndices[validIdxCount++] = i2;
+                    tempIndices[validIdxCount++] = i3;
+                    tempIndices[validIdxCount++] = i0;
+                }
+            }
+            int[] indices = java.util.Arrays.copyOf(tempIndices, validIdxCount);
+            this.vertexCount = uniqueCount;
+            this.weldedPositions = new float[uniqueCount * 3];
+
+            ByteBuffer weldedBuf = MemoryUtil.memAlloc(uniqueCount * stride);
+            try {
+                long dstBaseAddr = MemoryUtil.memAddress(weldedBuf);
+                for (int u = 0; u < uniqueCount; u++) {
+                    long sAddr = srcBaseAddr + (long) uniqueRawIdx[u] * stride;
+                    MemoryUtil.memCopy(sAddr, dstBaseAddr + (long) u * stride, stride);
+                    this.weldedPositions[u * 3]     = MemoryUtil.memGetFloat(sAddr);
+                    this.weldedPositions[u * 3 + 1] = MemoryUtil.memGetFloat(sAddr + 4L);
+                    this.weldedPositions[u * 3 + 2] = MemoryUtil.memGetFloat(sAddr + 8L);
+                }
+                weldedBuf.position(0).limit(uniqueCount * stride);
+
+                GlStateManager._glBindVertexArray(vaoId);
+                GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
+                GL15.glBufferData(GL15.GL_ARRAY_BUFFER, weldedBuf, GL15.GL_STATIC_DRAW);
+                this.vboStoreBytes = weldedBuf.remaining();
+            } finally {
+                MemoryUtil.memFree(weldedBuf);
+            }
+
             int offset = 0;
             int detectedUv2Location = -1;
             int detectedColorLocation = -1;
@@ -610,18 +707,6 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
             }
             this.colorLocation = detectedColorLocation;
 
-            // Build a triangulated index buffer matching our standard quad layout
-            // (0,1,2,2,3,0) so that we can reuse the companion mesh with raw glDrawElements.
-            int quadCount = vertexCount / 4;
-            int[] indices = new int[quadCount * 6];
-            for (int q = 0, idx = 0, base = 0; q < quadCount; q++, base += 4) {
-                indices[idx++] = base;
-                indices[idx++] = base + 1;
-                indices[idx++] = base + 2;
-                indices[idx++] = base + 2;
-                indices[idx++] = base + 3;
-                indices[idx++] = base;
-            }
             this.eboId = GL15.glGenBuffers();
             com.hbm_m.client.render.debug.GlDebugMarkers.labelBuffer(this.eboId, "IrisComp_" + debugName + "_EBO");
             GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, eboId);
@@ -750,15 +835,13 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
         float invSx = 1f / sx, invSy = 1f / sy, invSz = 1f / sz;
 
         float[] weights = new float[vertexCount * 8];
-        int wBase = 0;
-        for (BakedQuad quad : quads) {
-            int[] raw = quad.getVertices();
-            if (raw == null || raw.length < 32) continue;
-            for (int i = 0; i < 4 && (wBase + 8) <= weights.length; i++) {
-                int base = i * 8;
-                float x = Float.intBitsToFloat(raw[base + 0]);
-                float y = Float.intBitsToFloat(raw[base + 1]);
-                float z = Float.intBitsToFloat(raw[base + 2]);
+        float[] posArr = this.weldedPositions;
+        if (posArr != null && posArr.length >= vertexCount * 3) {
+            for (int v = 0; v < vertexCount; v++) {
+                int wBase = v * 8;
+                float x = posArr[v * 3];
+                float y = posArr[v * 3 + 1];
+                float z = posArr[v * 3 + 2];
                 float wx = Math.max(0f, Math.min(1f, (x - minX) * invSx));
                 float wy = Math.max(0f, Math.min(1f, (y - minY) * invSy));
                 float wz = Math.max(0f, Math.min(1f, (z - minZ) * invSz));
@@ -776,7 +859,6 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
                 weights[wBase + 5] = axy1 * wz;
                 weights[wBase + 6] = axy2 * wz;
                 weights[wBase + 7] = axy3 * wz;
-                wBase += 8;
             }
         }
         perVertexCornerWeights = weights;

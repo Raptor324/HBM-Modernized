@@ -1415,8 +1415,46 @@ public final class MachineSpec<T extends BlockEntity> {
     @Nullable BakedModel partModel(PartDef<T> part, BakedModel multipartModel) {
         if (part.dynamic()) return null;
         multipartModel = com.hbm_m.client.render.AbstractPartBasedRenderer.unwrapFabricForwardingModels(multipartModel);
-        return (multipartModel instanceof com.hbm_m.client.model.AbstractMultipartBakedModel mp)
-                ? mp.getPart(part.modelPartName()) : null;
+        if (!(multipartModel instanceof com.hbm_m.client.model.AbstractMultipartBakedModel mp)) {
+            return null;
+        }
+        String mpn = part.modelPartName();
+        if (mpn.indexOf(',') < 0) {
+            return mp.getPart(mpn);
+        }
+        for (String sub : mpn.split(",")) {
+            BakedModel subModel = mp.getPart(sub);
+            if (subModel != null) {
+                return subModel;
+            }
+        }
+        return null;
+    }
+
+    @Nullable List<net.minecraft.client.renderer.block.model.BakedQuad> mergedStaticQuads(PartDef<T> part, T be) {
+        String mpn = part.modelPartName();
+        if (part.dynamic() || mpn.indexOf(',') < 0 || be == null) {
+            return null;
+        }
+        try {
+            BakedModel rawModel = modelResolver != null ? modelResolver.apply(be) : null;
+            rawModel = com.hbm_m.client.render.AbstractPartBasedRenderer.unwrapFabricForwardingModels(rawModel);
+            if (!(rawModel instanceof com.hbm_m.client.model.AbstractMultipartBakedModel mp)) {
+                return null;
+            }
+            List<net.minecraft.client.renderer.block.model.BakedQuad> combined = new ArrayList<>();
+            for (String sub : mpn.split(",")) {
+                BakedModel subModel = mp.getPart(sub);
+                if (subModel != null) {
+                    combined.addAll(com.hbm_m.client.render.MeshRenderCache
+                            .getOrCompilePartGeometry(id + "/" + sub, subModel).solidQuads());
+                }
+            }
+            return combined;
+        } catch (Throwable t) {
+            com.hbm_m.main.MainRegistry.LOGGER.error("[MachineRenderers:{}] merged static part '{}' failed", id, part.name(), t);
+            return null;
+        }
     }
 
     @Nullable List<net.minecraft.client.renderer.block.model.BakedQuad> dynamicQuads(PartDef<T> part, T be) {
@@ -1581,7 +1619,9 @@ public final class MachineSpec<T extends BlockEntity> {
         MachinePartRenderer existing = findExistingRenderer(partIdx, part, dynamicKey);
         if (existing != null) {
             if (!existing.isAttempted()) {
-                existing.ensureBuilt(partModel, dynamicQuads(part, be));
+                List<net.minecraft.client.renderer.block.model.BakedQuad> quads =
+                        part.dynamic() ? dynamicQuads(part, be) : mergedStaticQuads(part, be);
+                existing.ensureBuilt(partModel, quads);
             }
             return existing;
         }
@@ -1595,7 +1635,9 @@ public final class MachineSpec<T extends BlockEntity> {
                 staticRendererMemo.put(part, raced);
             }
             if (!raced.isAttempted()) {
-                raced.ensureBuilt(partModel, dynamicQuads(part, be));
+                List<net.minecraft.client.renderer.block.model.BakedQuad> quads =
+                        part.dynamic() ? dynamicQuads(part, be) : mergedStaticQuads(part, be);
+                raced.ensureBuilt(partModel, quads);
             }
             return raced;
         }
@@ -1604,7 +1646,9 @@ public final class MachineSpec<T extends BlockEntity> {
             staticRenderers[partIdx] = created;
             staticRendererMemo.put(part, created);
         }
-        created.ensureBuilt(partModel, dynamicQuads(part, be));
+        List<net.minecraft.client.renderer.block.model.BakedQuad> quads =
+                part.dynamic() ? dynamicQuads(part, be) : mergedStaticQuads(part, be);
+        created.ensureBuilt(partModel, quads);
         return created;
     }
 

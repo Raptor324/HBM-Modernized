@@ -36,4 +36,5 @@ public final class ModeCache {
     public int eboInstances = 0;
     public long admissionRefusedFrame = -1L;
     public long sourceMutationEpoch = -1L;
+    public boolean hasTrackedJoints = false;
 }

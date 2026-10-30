@@ -187,11 +187,15 @@ public final class HardwareTierManager {
             // Probe OpenGL 4.4 persistent mapped buffer storage independently
             boolean hasBufferStorage = (caps.OpenGL44 || caps.GL_ARB_buffer_storage) && caps.glBufferStorage != 0L && caps.glFenceSync != 0L;
 
-            // 6. Check for legacy Intel integrated GPU instability and UMA memory bus contention
+            // 6. Check for legacy Intel integrated GPU instability (Gen7/Gen8/Gen9 HD Graphics & old Iris 5xxx/6xxx)
             String renderer = (caps.glGetString != 0L) ? GL11.glGetString(GL11.GL_RENDERER) : null;
             boolean isLegacyIntel = renderer != null && renderer.contains("Intel")
-                    && (renderer.contains("HD Graphics") || renderer.contains("Iris"))
-                    && !renderer.contains("Arc") && !renderer.contains("Xe");
+                    && (renderer.contains("HD Graphics")
+                        || renderer.contains("Iris(TM) Graphics")
+                        || renderer.contains("Iris(TM) Pro")
+                        || renderer.contains("Iris Graphics 5")
+                        || renderer.contains("Iris Graphics 6"))
+                    && !renderer.contains("Arc") && !renderer.contains("Xe") && !renderer.contains("Plus");
 
             if (isLegacyIntel) {
                 activeTier = HardwareTier.TIER_2_BASELINE_GL32;

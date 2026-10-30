@@ -23,7 +23,7 @@ import com.hbm_m.powerarmor.ArmorTrenchmaster;
 //? if forge {
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
 //?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
 *///?}
 /**
  * 1:1 {@code RenderLoot}: jeder Gegenstand der Lootkiste an seiner gespeicherten Stelle (ab Blockecke). Sonderfaelle

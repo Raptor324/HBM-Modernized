@@ -93,7 +93,7 @@ final class MachinePartRenderer {
 
         this.attempted = true;
         SingleMeshVboRenderer.VboData data = null;
-        if (dynamic) {
+        if (dynamic || (dynamicQuadsIn != null && !dynamicQuadsIn.isEmpty())) {
             List<BakedQuad> resolved = (dynamicQuadsIn == null || dynamicQuadsIn.isEmpty())
                     ? List.of() : dynamicQuadsIn;
             this.quads = resolved;

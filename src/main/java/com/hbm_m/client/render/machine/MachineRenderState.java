@@ -30,6 +30,9 @@ import org.joml.Matrix4f;
  */
 final class MachineRenderState {
 
+    long worldGen = -1L;
+    long berEpoch = -1L;
+
     // -- Roster (frozen walk) ---------------------------------------------
 
     static final byte REBUILD = 0;
@@ -51,7 +54,7 @@ final class MachineRenderState {
     private boolean allEpochAsserted;
 
     void computeRosterFlags() {
-        if (rosterCategory == null || rosterCategory.length == 0) {
+        if (rosterCategory == null || rosterCategory.length == 0 || rosterRenderers == null) {
             allStaticAsserted = false;
             allEpochAsserted = false;
             rosterFlagsComputed = true;
@@ -59,13 +62,22 @@ final class MachineRenderState {
         }
         boolean stat = true;
         boolean ep = true;
-        for (byte cat : rosterCategory) {
-            if (cat != ASSERT) {
-                stat = false;
-                if (cat != ASSERT_EPOCH) {
+        for (int i = 0; i < rosterCategory.length; i++) {
+            byte cat = rosterCategory[i];
+            if (cat == ASSERT) {
+                if (rosterRenderers[i] == null) {
+                    stat = false;
                     ep = false;
                     break;
                 }
+            } else if (cat == ASSERT_EPOCH) {
+                if (rosterRenderers[i] == null) {
+                    ep = false;
+                }
+            } else {
+                stat = false;
+                ep = false;
+                break;
             }
         }
         allStaticAsserted = stat;

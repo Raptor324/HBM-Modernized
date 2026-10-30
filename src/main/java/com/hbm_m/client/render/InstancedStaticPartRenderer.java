@@ -1620,19 +1620,24 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
                 || slot < 0 || slot >= maxInstances) {
             return false;
         }
-        if (batchSkyDarken < 0f) {
-            var level = Minecraft.getInstance().level;
-            batchSkyDarken = (level != null) ? level.getSkyDarken(1.0f) : -1f;
-        }
-        if (slot < instanceCullIndices.length) {
-            instanceCullIndices[slot] = -1;
-        }
-        slotPosQuatStable[slot] = true;
-        slotPosQuatVerified[slot] = true;
-        if (slot + 1 > instanceCount) {
-            instanceCount = Math.min(maxInstances, Math.max(instanceCount, slotAllocator.getHighWaterMark()));
+        if (instanceCount == 0) {
+            if (batchSkyDarken < 0f) {
+                var level = Minecraft.getInstance().level;
+                batchSkyDarken = (level != null) ? level.getSkyDarken(1.0f) : -1f;
+            }
+            instanceCount = Math.min(maxInstances, Math.max(slot + 1, slotAllocator.getHighWaterMark()));
             int targetPos = Math.min(instanceDataSize * instanceCount, instanceBuffer.capacity());
             ((Buffer) instanceBuffer).position(targetPos);
+        } else if (slot + 1 > instanceCount) {
+            instanceCount = Math.min(maxInstances, Math.max(slot + 1, slotAllocator.getHighWaterMark()));
+            int targetPos = Math.min(instanceDataSize * instanceCount, instanceBuffer.capacity());
+            ((Buffer) instanceBuffer).position(targetPos);
+        }
+        if (!slotPosQuatStable[slot]) {
+            slotPosQuatStable[slot] = true;
+            if (slot < instanceCullIndices.length) {
+                instanceCullIndices[slot] = -1;
+            }
         }
         return true;
     }
@@ -1910,19 +1915,19 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         }
         long uvA = a + (long) UVRECT_FLOAT_OFFSET * 4L;
         for (int i = 0; i < 4; i++) {
-            if (MemoryUtil.memGetFloat(uvA + (long) i * 4L) != tmpUvRect[i]) return false;
+            if (MemoryUtil.memGetInt(uvA + (long) i * 4L) != Float.floatToRawIntBits(tmpUvRect[i])) return false;
         }
         long tintA = a + (long) TINT_FLOAT_OFFSET * 4L;
         for (int i = 0; i < 4; i++) {
-            if (MemoryUtil.memGetFloat(tintA + (long) i * 4L) != tmpTint[i]) return false;
+            if (MemoryUtil.memGetInt(tintA + (long) i * 4L) != Float.floatToRawIntBits(tmpTint[i])) return false;
         }
         long gradA = a + (long) GRAD_FLOAT_OFFSET * 4L;
         for (int i = 0; i < 4; i++) {
-            if (MemoryUtil.memGetFloat(gradA + (long) i * 4L) != tmpGrad[i]) return false;
+            if (MemoryUtil.memGetInt(gradA + (long) i * 4L) != Float.floatToRawIntBits(tmpGrad[i])) return false;
         }
         long animA = a + (long) ANIM_FLOAT_OFFSET * 4L;
         for (int i = 0; i < 4; i++) {
-            if (MemoryUtil.memGetFloat(animA + (long) i * 4L) != tmpAnimParams[i]) return false;
+            if (MemoryUtil.memGetInt(animA + (long) i * 4L) != Float.floatToRawIntBits(tmpAnimParams[i])) return false;
         }
         return true;
     }
@@ -2078,24 +2083,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
             }
             return;
         }
-        if (instanceCount == 0 && slotAllocator.getHighWaterMark() > 0) {
-            instanceCount = Math.min(maxInstances, slotAllocator.getHighWaterMark());
-            if (instanceBuffer != null) {
-                int targetPos = Math.min(instanceDataSize * instanceCount, instanceBuffer.capacity());
-                ((Buffer) instanceBuffer).position(targetPos);
-            }
-        }
         if (instanceCount == 0) {
-            com.hbm_m.client.render.retained.RetainedInstanceGraph rig =
-                    com.hbm_m.client.render.retained.RetainedInstanceGraph.get();
-            if (rig != null && !rig.hasActiveInstances(this)) {
-                return;
-            }
-            MdiBatchCoordinator coord = MdiBatchCoordinator.active();
-            if (coord != null && coord.tryAssertRetainedPresence(this)) {
-                noteMdiDispatched();
-                return;
-            }
             return;
         }
 
@@ -2123,10 +2111,6 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
             IrisShadowBatchCollector.publishPrebake(this, instanceBuffer, instanceCount,
                     instanceOcclusionKeys, slotPosQuatStable, slotPosQuatVerified);
         }
-        // The verified flags mean "compare-verified THIS frame" - the snapshot above
-        // has consumed them (collector copies), so drop stale flags before the next
-        // frame; only addInstance's posQuatMatchesBuffer compares may set them again.
-        java.util.Arrays.fill(slotPosQuatVerified, 0, instanceCount, false);
 
         boolean useIrisFlush = ShaderCompatibilityDetector.canUseIrisExtendedShader();
         if (useIrisFlush) {

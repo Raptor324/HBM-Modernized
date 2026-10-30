@@ -42,7 +42,12 @@ public final class RenderBoundsCache {
     /** Immediate eviction when a BlockEntity is removed from the client world. */
     public static void remove(net.minecraft.world.level.block.entity.BlockEntity be) {
         if (be != null) {
-            CACHE.remove(be);
+            if (be instanceof NucleusTrackedBlockEntity tracked) {
+                tracked.hbm_m$setBoundsEntry(null);
+            }
+            if (!CACHE.isEmpty()) {
+                CACHE.remove(be);
+            }
         }
     }
 
@@ -125,9 +130,14 @@ public final class RenderBoundsCache {
             }
         }
         long tick = frameGameTime;
-        Entry e = CACHE.get(be);
+        NucleusTrackedBlockEntity tracked = (be instanceof NucleusTrackedBlockEntity t) ? t : null;
+        Entry e = (tracked != null) ? (Entry) tracked.hbm_m$getBoundsEntry() : CACHE.get(be);
         if (be.isRemoved()) {
-            CACHE.remove(be);
+            if (tracked != null) {
+                tracked.hbm_m$setBoundsEntry(null);
+            } else {
+                CACHE.remove(be);
+            }
             return e;
         }
         // Tracker BEs (every HBM machine/multiblock) recompute ONLY on an actual
@@ -143,13 +153,19 @@ public final class RenderBoundsCache {
                         : (tick - e.stampTick > TTL_TICKS));
         if (needsRecompute) {
             net.minecraft.world.phys.AABB oldBox = e != null ? e.box : null;
-            e = new Entry();
+            if (e == null) {
+                e = new Entry();
+            }
             e.box = com.hbm_m.platform.RenderBounds.get(be);
             e.physicalBox = computePhysicalBounds(be);
             e.localPhysicalBox = computeLocalPhysicalBounds(be);
             e.stampTick = tick;
             e.worldGen = (int) wg;
-            CACHE.put(be, e);
+            if (tracked != null) {
+                tracked.hbm_m$setBoundsEntry(e);
+            } else {
+                CACHE.put(be, e);
+            }
 
             // If bounds changed dynamically, notify the enclosing chunk bucket immediately
             if (oldBox != null && !oldBox.equals(e.box)) {

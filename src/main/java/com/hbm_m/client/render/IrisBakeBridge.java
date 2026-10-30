@@ -58,7 +58,7 @@ public final class IrisBakeBridge {
         }
         if (cachedMidBlockLoc >= 0) {
             GL20.glEnableVertexAttribArray(cachedMidBlockLoc);
-            GL20.glVertexAttribPointer(cachedMidBlockLoc, 3, GL11.GL_BYTE, false, strideBytes, offMidBlock);
+            GL20.glVertexAttribPointer(cachedMidBlockLoc, 4, GL11.GL_BYTE, false, strideBytes, offMidBlock);
         }
     }
 

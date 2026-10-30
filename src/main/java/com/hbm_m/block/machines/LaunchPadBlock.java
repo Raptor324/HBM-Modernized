@@ -91,7 +91,7 @@ public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockContro
                 MultiblockStructureHelper helper = getStructureHelper();
                 Direction facing = state.getValue(FACING);
 
-                // Инвентарь дропается автоматически в BaseHbmBlockEntity#setRemoved.
+                com.hbm_m.block.MachineDrops.dropInventory(level, pos);
 
                 helper.destroyStructure(level, pos, facing);
             }

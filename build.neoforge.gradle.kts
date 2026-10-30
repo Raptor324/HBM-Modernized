@@ -448,7 +448,7 @@ tasks.matching { it.name == "runGameTestServer" }.configureEach {
 // ── Автономный HotSwap v2 (с фильтрацией по SHA-256 байткода против пересборок Stonecutter) ──
 fun buildAutoHotswapAgentJar(): File {
 	val dir = layout.buildDirectory.dir("hotswap-agent").get().asFile
-	val jarFile = File(dir, "hbm-auto-hotswap-agent-v2.jar")
+	val jarFile = File(dir, "hbm-auto-hotswap-agent-v4.jar")
 	if (jarFile.exists()) return jarFile
 
 	val srcDir = File(dir, "src").apply { mkdirs() }
@@ -515,7 +515,77 @@ fun buildAutoHotswapAgentJar(): File {
 		        return changedBytes;
 		    }
 
-		    private static void loop(List<Path> roots, Instrumentation inst) {
+			    private static Object findMethodByReturn(Object owner, String returnSimpleName) {
+			        try {
+			            for (java.lang.reflect.Method m : owner.getClass().getDeclaredMethods()) {
+			                if (m.getParameterCount() == 0 && m.getReturnType() != void.class
+			                        && m.getReturnType().getSimpleName().equals(returnSimpleName)) {
+			                    m.setAccessible(true);
+			                    return m.invoke(owner);
+			                }
+			            }
+			        } catch (Throwable ignored) {}
+			        return null;
+			    }
+
+			    private static void postChat(String text) {
+			        try {
+			            Class<?> mcClass = Class.forName("net.minecraft.client.Minecraft");
+			            Object mc = null;
+			            for (java.lang.reflect.Method m : mcClass.getDeclaredMethods()) {
+			                if (java.lang.reflect.Modifier.isStatic(m.getModifiers())
+			                        && m.getParameterCount() == 0 && m.getReturnType() == mcClass) {
+			                    m.setAccessible(true);
+			                    mc = m.invoke(null);
+			                    break;
+			                }
+			            }
+			            if (mc == null) {
+			                System.out.println("⚡ [HBM-HotSwap] postChat: Minecraft.getInstance accessor not found");
+			                return;
+			            }
+			            Runnable task = () -> {
+			                try {
+			                    Object gui = findMethodByReturn(mc, "Gui");
+			                    if (gui == null) {
+			                        System.out.println("⚡ [HBM-HotSwap] postChat: Gui accessor not found");
+			                        return;
+			                    }
+			                    Object chat = findMethodByReturn(gui, "ChatComponent");
+			                    if (chat == null) {
+			                        System.out.println("⚡ [HBM-HotSwap] postChat: ChatComponent accessor not found");
+			                        return;
+			                    }
+			                    Class<?> component = Class.forName("net.minecraft.network.chat.Component");
+			                    Object msg = component.getMethod("literal", String.class).invoke(null, text);
+			                    boolean done = false;
+			                    for (java.lang.reflect.Method m : chat.getClass().getMethods()) {
+			                        if (m.getParameterCount() == 1 && m.getParameterTypes()[0] == component) {
+			                            m.invoke(chat, msg);
+			                            done = true;
+			                            break;
+			                        }
+			                    }
+			                    if (!done) System.out.println("⚡ [HBM-HotSwap] postChat: addMessage(Component) not found");
+			                } catch (Throwable t) {
+			                    System.out.println("⚡ [HBM-HotSwap] postChat task failed: " + t);
+			                }
+			            };
+			            for (java.lang.reflect.Method m : mcClass.getMethods()) {
+			                if (m.getName().equals("execute") && m.getParameterCount() == 1
+			                        && m.getParameterTypes()[0] == Runnable.class) {
+			                    m.invoke(mc, task);
+			                    return;
+			                }
+			            }
+			            // No execute(Runnable) resolved: run on this thread as a last resort.
+			            task.run();
+			        } catch (Throwable t) {
+			            System.out.println("⚡ [HBM-HotSwap] postChat failed: " + t);
+			        }
+			    }
+
+			    private static void loop(List<Path> roots, Instrumentation inst) {
 		        while (true) {
 		            try {
 		                Thread.sleep(500);
@@ -552,23 +622,27 @@ fun buildAutoHotswapAgentJar(): File {
 		                    }
 		                }
 
-		                if (!defs.isEmpty()) {
-		                    long t0 = System.currentTimeMillis();
-		                    try {
-		                        inst.redefineClasses(defs.toArray(new ClassDefinition[0]));
-		                        long dt = System.currentTimeMillis() - t0;
-		                        System.out.println("⚡ [HBM-HotSwap] Перезагружено реально измененных классов: " + names.size() + " за " + dt + " мс -> " + names);
-		                    } catch (Throwable batchErr) {
-		                        for (ClassDefinition def : defs) {
-		                            try {
-		                                inst.redefineClasses(def);
-		                                System.out.println("⚡ [HBM-HotSwap] Перезагружен: " + def.getDefinitionClass().getName());
-		                            } catch (Throwable singleErr) {
-		                                System.err.println("❌ [HBM-HotSwap] Ошибка замены " + def.getDefinitionClass().getName() + ": " + singleErr);
-		                            }
-		                        }
-		                    }
-		                }
+			                if (!defs.isEmpty()) {
+			                    long t0 = System.currentTimeMillis();
+			                    try {
+			                        inst.redefineClasses(defs.toArray(new ClassDefinition[0]));
+			                        long dt = System.currentTimeMillis() - t0;
+			                        System.out.println("⚡ [HBM-HotSwap] Перезагружено реально измененных классов: " + names.size() + " за " + dt + " мс -> " + names);
+			                        postChat("⚡ [HBM-HotSwap] Reloaded " + names.size() + " class(es) in " + dt + " ms");
+			                    } catch (Throwable batchErr) {
+			                        List<String> ok = new ArrayList<>();
+			                        for (ClassDefinition def : defs) {
+			                            try {
+			                                inst.redefineClasses(def);
+			                                ok.add(def.getDefinitionClass().getName());
+			                                System.out.println("⚡ [HBM-HotSwap] Перезагружен: " + def.getDefinitionClass().getName());
+			                            } catch (Throwable singleErr) {
+			                                System.err.println("❌ [HBM-HotSwap] Ошибка замены " + def.getDefinitionClass().getName() + ": " + singleErr);
+			                            }
+			                        }
+			                        if (!ok.isEmpty()) postChat("⚡ [HBM-HotSwap] Reloaded " + ok.size() + " class(es) (fallback mode)");
+			                    }
+			                }
 		            } catch (Throwable t) {
 		                t.printStackTrace();
 		            }

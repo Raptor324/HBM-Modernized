@@ -338,8 +338,8 @@ void main() {
     // compose each node's rigid transform into one mat4 in a single forward
     // pass and apply it to vPos/vNrm once - mathematically identical, not
     // bit-identical (no shipped rig takes that path yet).
-    if (GradParams.w >= 0.0) {
-        int base = int(GradParams.w);
+    if (GradParams.w >= 0.0 && BoneId >= 0) {
+        int base = int(GradParams.w) + BoneId;
         float countW = texelFetch(uJointSpecs, ivec2(base * 3 + 1, 0), 0).w;
         int n = 1;
         if (countW >= 0.5) {

@@ -162,8 +162,8 @@ public final class NucleusGpuBaker {
      * no-cull growth), 0 = write the visible list (cull EBO build). Uniforms are
      * per-program state, so every entry point sets it before dispatching. */
     static int cuIdentity;
-    /** Optional Hi-Z occlusion uniforms (see CULL_SOURCE pass 0). */
-    static int cuHiZMode, cuClipMat, cuViewSize, cuMip0Size, cuPyramidLevels;
+    /** Optional Hi-Z occlusion and subpixel culling uniforms (see CULL_SOURCE pass 0). */
+    static int cuHiZMode, cuClipMat, cuViewSize, cuMip0Size, cuPyramidLevels, cuSubpixelMinNdc, cuIsShadowPass;
 
     static final int BONE_PALETTE_SIZE = 64;
     static int boneSsbo = -1;
@@ -685,7 +685,9 @@ public final class NucleusGpuBaker {
             if (programId == -1 && !initProgram()) {
                 return false;
             }
-            ensureBoneBuffer();
+            if (hasBoneMatrices) {
+                ensureBoneBuffer();
+            }
             // Draw state mirrors Tier 2 drawShadowInstances: multiblock machinery has
             // mixed winding order; culling is disabled to prevent missing faces.
             try (RenderStateGuard ignored = RenderStateGuard.snapshot()) {
@@ -721,17 +723,23 @@ public final class NucleusGpuBaker {
                     BakedMesh baked = getOrCreate(mesh);
                     if (baked == null) continue;
                     ModeCache mc = baked.shadow;
+                    mc.lastUseFrame = frameStamp();
                     if (!cacheAllocated(mc)) {
                         if (preallocateCacheBuffers(baked, mc, e.count, MODE_SHADOW)) {
                             needShadowRelayout = true;
                         }
                     } else {
+                        boolean grew = false;
                         if (e.count > mc.outInstances) {
                             mc.outInstances = roundUpInstanceCapacity(e.count);
-                            needShadowRelayout = true;
+                            grew = true;
                         }
                         if (e.count > mc.eboInstances) {
                             mc.eboInstances = roundUpInstanceCapacity(e.count);
+                            grew = true;
+                        }
+                        if (grew) {
+                            invalidateBakedOutput(mc);
                             needShadowRelayout = true;
                         }
                     }
@@ -1021,11 +1029,7 @@ public final class NucleusGpuBaker {
         boolean dirtyMode = false;
         int dirtyCount = 0;
         if (mc.outputValid && mc.recordCount == count && mc.boneKey == boneKey(baked)) {
-            // Always run diffRecords when uJointSpecs has registered joints so time-driven
-            // tracked rigs (which advance via uAnimTicks/uPartialTick without mutating the
-            // CPU instanceBuffer) are detected and span-expanded.
-            if (mutationEpoch > 0L && mc.sourceMutationEpoch == mutationEpoch
-                    && NucleusJointSpecs.getJointCount() == 0) {
+            if (mutationEpoch > 0L && mc.sourceMutationEpoch == mutationEpoch && !mc.hasTrackedJoints) {
                 dirtyCount = 0;
                 recordsChanged = false;
                 dirtyMode = false;
@@ -1177,6 +1181,7 @@ public final class NucleusGpuBaker {
                 cull && mc.cullValid && mc.lastCullHiZ);
         recordExpansionStats(mode, dirtyMode, dirtyCount);
         mc.sourceMutationEpoch = mutationEpoch;
+        mc.hasTrackedJoints = NucleusJointSpecs.getJointCount() > 0;
         return true;
     }
 
@@ -1219,7 +1224,9 @@ public final class NucleusGpuBaker {
                                         boolean dirtyMode, int dirtyCount, boolean relayoutAllowed) {
         // Capacity was ensured by bakeEntry BEFORE the cull (a realloc there would
         // invalidate output/EBO state the cull below is about to build).
-        ensureBoneBuffer();
+        if (hasBoneMatrices) {
+            ensureBoneBuffer();
+        }
         if (!cullEnabled()) {
             // No cull: CPU-expanded pool EBO range, full dispatch, full draw.
             if (!BakeVramPoolManager.expandPoolEbo(baked, mc, count, mode, relayoutAllowed)) {
@@ -1302,7 +1309,12 @@ public final class NucleusGpuBaker {
         GL15.glBufferSubData(GL31.GL_UNIFORM_BUFFER, 0L, UBO_BYTE_BUF);
         GL30.glBindBufferBase(GL31.GL_UNIFORM_BUFFER, UBO_BINDING_BAKE_PARAMS, bakeParamsUbo);
 
-        // Bind uJointSpecs texture to unit 4 (NucleusJointSpecs.SAMPLER_UNIT) for parametric evaluation
+        // Save the pack's texture binding on SAMPLER_UNIT (GL_TEXTURE4) before binding uJointSpecs:
+        // shaderpacks bind shadowtex/specular on unit 4 during tryApply(packShader), and leaving
+        // uJointSpecs bound there projects a bright stripe perpendicular to the sun/moon in flushPool.
+        GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0 + NucleusJointSpecs.SAMPLER_UNIT);
+        int prevUnit4Texture = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
+        GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
         NucleusJointSpecs.bindSampler();
 
         // WAR synchronization with previous draw call: ensures shader storage and vertex attribute
@@ -1314,13 +1326,17 @@ public final class NucleusGpuBaker {
         GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 0, inputSsbo);
         GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 1, recordSsbo);
         GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 2, outputTargetSsbo);
-        GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 3, boneSsbo);
+        GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 3, hasBoneMatrices && boneSsbo != -1 ? boneSsbo : 0);
         GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 4, dirtyListMode ? dirtySsbo : 0);
         int numVertGroups = (baked.vertCount + LOCAL_SIZE - 1) / LOCAL_SIZE;
         int totalInst = dirtyListMode ? dirtyCount : count;
         int groupsY = Math.min(totalInst, 65535);
         int groupsZ = (totalInst + 65534) / 65535;
         GL43.glDispatchCompute(numVertGroups, groupsY, Math.max(groupsZ, 1));
+        // Restore the pack's unit-4 texture binding before flushPool draws with packShader.
+        GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0 + NucleusJointSpecs.SAMPLER_UNIT);
+        GlStateManager._bindTexture(prevUnit4Texture);
+        GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
         // Expansion is the LAST GPU op of a bake (bakeEntry runs the cull first),
         // so this unbind set is pipeline-exit hygiene: the pooled flush reaches
         // a foreign pack-program draw right after it (see also runCull's
@@ -1380,11 +1396,19 @@ public final class NucleusGpuBaker {
             hiZBound = true;
         }
         GL20.glUniform1i(cuHiZMode, hiZMode);
+        if (cuClipMat >= 0 && worldToClip != null) {
+            worldToClip.get(CLIP_MAT_FLOATS);
+            GL20.glUniformMatrix4fv(cuClipMat, false, CLIP_MAT_FLOATS);
+        }
+        if (cuIsShadowPass >= 0) {
+            GL20.glUniform1i(cuIsShadowPass, mode == MODE_SHADOW ? 1 : 0);
+        }
+        if (cuSubpixelMinNdc >= 0) {
+            int vh = Math.max(1, Minecraft.getInstance().getWindow().getHeight());
+            float minNdc = (mode == MODE_SHADOW) ? (2.0f * 1.25f / 2048.0f) : (2.0f * 0.85f / vh);
+            GL20.glUniform1f(cuSubpixelMinNdc, minNdc);
+        }
         if (hiZMode == 1) {
-            if (cuClipMat >= 0) {
-                worldToClip.get(CLIP_MAT_FLOATS);
-                GL20.glUniformMatrix4fv(cuClipMat, false, CLIP_MAT_FLOATS);
-            }
             if (cuViewSize >= 0) {
                 GL20.glUniform2f(cuViewSize, (float) hiZViewWidth, (float) hiZViewHeight);
             }
@@ -1658,6 +1682,8 @@ public final class NucleusGpuBaker {
             cuViewSize = GL20.glGetUniformLocation(p, "uViewSize");
             cuMip0Size = GL20.glGetUniformLocation(p, "uMip0Size");
             cuPyramidLevels = GL20.glGetUniformLocation(p, "uPyramidLevels");
+            cuSubpixelMinNdc = GL20.glGetUniformLocation(p, "uSubpixelMinNdc");
+            cuIsShadowPass = GL20.glGetUniformLocation(p, "uIsShadowPass");
         } catch (Exception t) {
             cullInitFailed = true;
             cullProgramId = -1;
@@ -2184,23 +2210,42 @@ public final class NucleusGpuBaker {
                 .setCurrentRenderedBlockEntity(0);
         try (com.hbm_m.client.render.shader.IrisPhaseGuard guard =
                      com.hbm_m.client.render.shader.IrisPhaseGuard.pushBlockEntities()) {
+            // Apply packShader BEFORE the MAIN_BAKE_QUEUE loop so the pack's gbuffer FBO
+            // is bound when ensureBakeHiZ(MODE_MAIN) queries GL_DRAW_FRAMEBUFFER depth.
+            if (!com.hbm_m.client.render.shader.ShaderBindResync.tryApply(packShader)) {
+                com.hbm_m.client.render.shader.IrisExtendedShaderAccess.invalidateShaderCache();
+                com.hbm_m.client.render.shader.IrisRenderBatch.invalidateCaches();
+                packShader = com.hbm_m.client.render.shader.IrisExtendedShaderAccess
+                        .getBlockShader(false);
+                if (packShader == null
+                        || !com.hbm_m.client.render.shader.ShaderBindResync.tryApply(packShader)) {
+                    return;
+                }
+            }
+
             if (!MAIN_BAKE_QUEUE.isEmpty()) {
                 // Capacity pre-pass over MAIN_BAKE_QUEUE
                 boolean needMainRelayout = false;
                 for (int i = 0; i < MAIN_BAKE_QUEUE.size(); i++) {
                     MainBakeQueueEntry entry = MAIN_BAKE_QUEUE.get(i);
                     ModeCache mc = entry.baked.main;
+                    mc.lastUseFrame = frameStamp();
                     if (!cacheAllocated(mc)) {
                         if (preallocateCacheBuffers(entry.baked, mc, entry.count, MODE_MAIN)) {
                             needMainRelayout = true;
                         }
                     } else {
+                        boolean grew = false;
                         if (entry.count > mc.outInstances) {
                             mc.outInstances = roundUpInstanceCapacity(entry.count);
-                            needMainRelayout = true;
+                            grew = true;
                         }
                         if (entry.count > mc.eboInstances) {
                             mc.eboInstances = roundUpInstanceCapacity(entry.count);
+                            grew = true;
+                        }
+                        if (grew) {
+                            invalidateBakedOutput(mc);
                             needMainRelayout = true;
                         }
                     }
@@ -2217,7 +2262,9 @@ public final class NucleusGpuBaker {
                 IrisBakeBridge.extractFrustumPlanes(worldToClip, planes);
                 long frustumStamp = IrisBakeBridge.stampPlanes(planes);
 
-                ensureBoneBuffer();
+                if (hasBoneMatrices) {
+                    ensureBoneBuffer();
+                }
 
                 for (int i = 0; i < MAIN_BAKE_QUEUE.size(); i++) {
                     MainBakeQueueEntry item = MAIN_BAKE_QUEUE.get(i);
@@ -2241,22 +2288,8 @@ public final class NucleusGpuBaker {
             }
 
             if (PENDING_MAIN.isEmpty()) {
+                packShader.clear();
                 return;
-            }
-
-            if (!com.hbm_m.client.render.shader.ShaderBindResync.tryApply(packShader)) {
-                // One re-resolve + retry before giving up: a transient apply failure
-                // (destroyed GlResource during an Iris pipeline rebuild) used to
-                // silently drop the WHOLE frame's bake batch - the collect walk's
-                // compute work discarded, machines invisible for a frame.
-                com.hbm_m.client.render.shader.IrisExtendedShaderAccess.invalidateShaderCache();
-                com.hbm_m.client.render.shader.IrisRenderBatch.invalidateCaches();
-                packShader = com.hbm_m.client.render.shader.IrisExtendedShaderAccess
-                        .getBlockShader(false);
-                if (packShader == null
-                        || !com.hbm_m.client.render.shader.ShaderBindResync.tryApply(packShader)) {
-                    return;
-                }
             }
             try (RenderStateGuard ignored = RenderStateGuard.snapshot()) {
                 RenderSystem.enableDepthTest();
@@ -2386,7 +2419,6 @@ public final class NucleusGpuBaker {
                 return null;
             }
             baked = new BakedMesh(mesh, vertCount, base.length, base);
-            ensureBoneBuffer();
             // Base indices as an SSBO for the cull program's EBO-build pass.
             baked.baseIdxSsbo = GL15.glGenBuffers();
             GlDebugMarkers.labelBuffer(baked.baseIdxSsbo, "HBM_BaseIdx_" + baked.debugTag());

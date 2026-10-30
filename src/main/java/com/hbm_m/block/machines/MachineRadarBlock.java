@@ -107,8 +107,8 @@ public class MachineRadarBlock extends BaseEntityBlock implements IMultiblockCon
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock())) {
-            // Инвентарь дропается автоматически в BaseHbmBlockEntity#setRemoved.
             if (!level.isClientSide()) {
+                com.hbm_m.block.MachineDrops.dropInventory(level, pos);
                 structureHelper.destroyStructure(level, pos, state.getValue(FACING));
             }
         }

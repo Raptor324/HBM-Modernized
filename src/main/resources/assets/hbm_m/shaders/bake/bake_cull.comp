@@ -49,6 +49,8 @@ uniform mat4 uClipMat;
 uniform vec2 uViewSize;      // pyramid source viewport (px)
 uniform vec2 uMip0Size;      // actual pow2-snapped mip-0 dimensions
 uniform int uPyramidLevels;
+uniform float uSubpixelMinNdc; // minimum NDC diameter before subpixel culling
+uniform int uIsShadowPass;     // 1 = shadow pass (apply fisheye distortion compensation), 0 = main pass
 layout(binding = 10) uniform sampler2D uDepthPyramid;
 
 vec3 quatRotate(vec4 q, vec3 v) {
@@ -146,6 +148,8 @@ void main() {
         vec4 q = instQuat(ib);
         vec3 bmin = vec3(instData[ib + INST_BMIN_WORD], instData[ib + INST_BMIN_WORD + 1u], instData[ib + INST_BMIN_WORD + 2u]);
         vec3 ext = vec3(instData[ib + INST_BSIZE_WORD], instData[ib + INST_BSIZE_WORD + 1u], instData[ib + INST_BSIZE_WORD + 2u]) * 0.5;
+        float unpaddedRadius = length(ext);
+        bool isAnimOrParam = (instData[ib + INST_FADE_WORD] < 0.99985) || (instData[ib + INST_GRAD_WORD + 3u] >= 0.0);
         // Conservative record-space AABB: rotate the model-space center and
         // take the abs-rotation rows times the model-space half extent.
         center += quatRotate(q, bmin + ext);
@@ -164,6 +168,23 @@ void main() {
             float d = dot(n, center) + uPlane[i].w;
             float r = dot(abs(n), he);
             if (d + r < 0.0) return; // fully outside this plane
+        }
+        // Subpixel / Sub-texel Culling (Main Pass & Shadow Pass):
+        if (uSubpixelMinNdc > 0.0) {
+            vec4 clipCenter = uClipMat * vec4(center, 1.0);
+            float w = clipCenter.w;
+            bool validW = (uIsShadowPass != 0) ? (w > 1e-4) : (w > unpaddedRadius + 0.05);
+            if (validW) {
+                float projScale = max(length(uClipMat[0].xyz), length(uClipMat[1].xyz));
+                float ndcDiameter = (2.0 * unpaddedRadius * projScale) / w;
+                if (uIsShadowPass != 0) {
+                    vec2 ndcPos = clipCenter.xy / w;
+                    float distortFactor = length(ndcPos) * 0.85 + 0.15;
+                    ndcDiameter /= max(distortFactor, 0.15);
+                }
+                float minNdc = (unpaddedRadius < 0.75 || isAnimOrParam) ? (uSubpixelMinNdc * 1.5) : uSubpixelMinNdc;
+                if (ndcDiameter < minNdc) return;
+            }
         }
         // Hi-Z occlusion phase (strictly optional, uHiZMode selects at
         // dispatch time): culled only when the box's nearest depth is

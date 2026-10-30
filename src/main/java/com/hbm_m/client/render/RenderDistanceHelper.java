@@ -287,4 +287,23 @@ public final class RenderDistanceHelper {
         double detailBlocks = Math.max(0, maxBlocks - LIGHT_CORNER_DETAIL_MARGIN_BLOCKS);
         return detailBlocks * detailBlocks;
     }
+
+    /**
+     * Fast CPU subpixel test for a part's object-space bounding box `[minX, minY, minZ, maxX, maxY, maxZ]`
+     * at squared camera distance `distSq`. Returns true if the part projects to less than `minPixels` on screen.
+     */
+    public static boolean isSubpixelPart(float[] objBbox, double distSq, float minPixels) {
+        if (objBbox == null || objBbox.length < 6 || distSq <= 16.0) {
+            return false;
+        }
+        float dx = objBbox[3] - objBbox[0];
+        float dy = objBbox[4] - objBbox[1];
+        float dz = objBbox[5] - objBbox[2];
+        float radiusSq = 0.25f * (dx * dx + dy * dy + dz * dz);
+        int vh = Math.max(1, Minecraft.getInstance().getWindow().getHeight());
+        // Conservative focal length (~1.4f for standard 70 deg FOV)
+        float focalPx = vh * 1.4f;
+        double projectedPxSq = (double) (radiusSq * focalPx * focalPx);
+        return projectedPxSq < (double) (minPixels * minPixels) * distSq;
+    }
 }

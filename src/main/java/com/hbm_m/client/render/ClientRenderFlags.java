@@ -121,8 +121,7 @@ public final class ClientRenderFlags {
      * instancing is never enabled blindly.
      */
     public static boolean irisTrueInstancing() {
-        return com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive()
-                && com.hbm_m.client.render.shader.IrisInstancedEncoders.hasEncoder();
+        return false;
     }
 
     /**

@@ -1,20 +1,14 @@
 package com.hbm_m.client.render.retained;
 
-import com.hbm_m.client.render.FrameViewState;
 import com.hbm_m.client.render.LightSampleCache;
 import com.hbm_m.client.render.NucleusTrackedBlockEntity;
 import com.hbm_m.client.render.RenderBoundsCache;
 import com.hbm_m.client.render.machine.MachineRenderRegistry;
 import com.hbm_m.client.render.machine.MachineSpec;
 import com.hbm_m.client.render.retained.alloc.InstanceSlotAllocator;
-import com.hbm_m.client.render.retained.upload.SparseUpdateQueue;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.SectionPos;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -34,7 +28,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public final class RetainedInstanceGraph {
 
-    private static final RetainedInstanceGraph INSTANCE = new RetainedInstanceGraph(65536);
+    private static final RetainedInstanceGraph INSTANCE = new RetainedInstanceGraph(16);
 
     public static RetainedInstanceGraph get() {
         return INSTANCE;
@@ -42,14 +36,11 @@ public final class RetainedInstanceGraph {
 
     private final Long2ObjectOpenHashMap<ChunkInstancePartition> partitions = new Long2ObjectOpenHashMap<>(128);
     private final Long2ObjectOpenHashMap<MachineInstanceHandle> handlesByPos = new Long2ObjectOpenHashMap<>(1024);
-    private final Long2ObjectOpenHashMap<LongArrayList> sectionToMachines = new Long2ObjectOpenHashMap<>(256);
-    private final LongOpenHashSet dirtyLightSections = new LongOpenHashSet();
     // Reusable scratch for the amortized ghost sweep (render thread only, see reconcileStaleHandles).
     private final LongArrayList staleSweepScratch = new LongArrayList();
     private static final int GHOST_SWEEP_BUDGET = 64;
 
     private final InstanceSlotAllocator slotAllocator;
-    private final SparseUpdateQueue sparseQueue;
 
     // Lock-free handoff queue staging mutations from network/worker threads
     private final ConcurrentLinkedQueue<Runnable> handoffQueue = new ConcurrentLinkedQueue<>();
@@ -61,7 +52,6 @@ public final class RetainedInstanceGraph {
 
     public RetainedInstanceGraph(int initialCapacity) {
         this.slotAllocator = new InstanceSlotAllocator(initialCapacity);
-        this.sparseQueue = new SparseUpdateQueue(slotAllocator);
         cacheSpecs();
     }
 
@@ -120,73 +110,9 @@ public final class RetainedInstanceGraph {
      */
     @SuppressWarnings({"rawtypes", "unchecked"})
     public boolean isMachineStaticAndRetained(BlockEntity be) {
-        if (be == null || be.isRemoved() || be.getLevel() == null) {
-            return false;
-        }
-        MachineSpec<?> spec = getSpec(be.getType());
-        if (spec == null || !spec.isPurelyStatic()) {
-            return false;
-        }
-        if (be instanceof NucleusTrackedBlockEntity tracked && !tracked.hbm_m$isNucleusRegistered()) {
-            return false;
-        }
-        if (be instanceof com.hbm_m.api.render.RenderDirtyTracker tracker && tracker.isRenderDirty()) {
-            return false;
-        }
-        // External shader packs / forced vanilla path own the whole pipeline -
-        // the retained short-circuit must not eat machines then.
-        if (com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive()
-                || com.hbm_m.client.render.ClientRenderFlags.forceVanillaImmediate()) {
-            return false;
-        }
-        long blockKey = be.getBlockPos().asLong();
-        MachineInstanceHandle handle = handlesByPos.get(blockKey);
-        if (handle == null || !handle.isActive()) {
-            return false;
-        }
-
-        // Dynamic geometry requires per-state quad evaluation
-        if (spec.hasDynamicParts()) {
-            return false;
-        }
-
-        // Immediate render hooks (fluids, crafting icons, hazard diamonds) require BER pass if drawing
-        if (!spec.hooks().isEmpty()) {
-            for (com.hbm_m.client.render.machine.MachineRenderHook hook : spec.hooks()) {
-                if (hook.mayDrawContent(be)) {
-                    return false;
-                }
-            }
-        }
-
-        // Only 100% purely static specs can bypass MachineBer entirely via the
-        // retained graph. Machines with animationEpoch / parametric / animated
-        // parts are fast-asserted by MachineBer.tryFastAssertRender once their
-        // epoch is verified stable across ticks - short-circuiting them here made
-        // collectMain skip every animated machine (deduceAnimationEpoch assigns
-        // an epoch to all animated specs), freezing their part animation.
-        return spec.isPurelyStatic() && refreshTtlIfStale(be);
-    }
-
-    /**
-     * TTL refresh, checked only AFTER every other short-circuit condition passed:
-     * a stale record (light/fade TTL, worldGen change) gets its retained light
-     * slice re-sampled (onMachineDirty -> sparseQueue.enqueueUpdate updates the
-     * instance light slice synchronously on the render thread) and its collection
-     * stamp renewed, then stays short-circuited as retained-static this frame -
-     * the sparse update itself commits the refreshed data. A machine without a
-     * handle never reaches this, so it never burns its TTL stamp.
-     */
-    private boolean refreshTtlIfStale(BlockEntity be) {
-        if (be instanceof com.hbm_m.api.render.RenderDirtyTracker tracker
-                && be.getLevel() != null
-                && tracker.isRenderStale(be.getLevel().getGameTime(),
-                        com.hbm_m.client.render.NucleusRenderVersion.worldGen())) {
-            onMachineDirty(be, DirtyMask.LIGHT);
-            tracker.onRenderCollected(be.getLevel().getGameTime(),
-                    com.hbm_m.client.render.NucleusRenderVersion.worldGen());
-        }
-        return true;
+        // Static machines are fast-asserted in O(1) by MachineBer.tryFastAssertRender
+        // via MixinBlockEntity's attached MachineRenderState.
+        return false;
     }
 
     // ── Asynchronous Entry Points (Invoked from Mixins / Off-Thread) ──
@@ -234,9 +160,7 @@ public final class RetainedInstanceGraph {
     }
 
     public void onSectionLightDirty(long sectionPosKey) {
-        synchronized (dirtyLightSections) {
-            dirtyLightSections.add(sectionPosKey);
-        }
+        LightSampleCache.onSectionLightUpdate(sectionPosKey);
     }
 
     // ── Render Thread Execution (Invoked strictly on Render Thread) ──
@@ -258,30 +182,9 @@ public final class RetainedInstanceGraph {
 
     /**
      * Updates instance light data for all machines intersecting dirty chunk sections.
+     * Handled centrally by LightSampleCache.drainLightUpdates.
      */
     public void processDirtyLightSections() {
-        if (dirtyLightSections.isEmpty()) return;
-        long[] dirtyArr;
-        synchronized (dirtyLightSections) {
-            dirtyArr = dirtyLightSections.toLongArray();
-            dirtyLightSections.clear();
-        }
-
-        for (long secKey : dirtyArr) {
-            LongArrayList machines = sectionToMachines.get(secKey);
-            if (machines != null && !machines.isEmpty()) {
-                for (int i = 0; i < machines.size(); i++) {
-                    long blockKey = machines.getLong(i);
-                    MachineInstanceHandle handle = handlesByPos.get(blockKey);
-                    if (handle != null && handle.isActive()) {
-                        BlockEntity be = handle.getBlockEntity();
-                        if (be != null && !be.isRemoved() && be.getLevel() != null) {
-                            sparseQueue.enqueueUpdate(handle, be, DirtyMask.LIGHT);
-                        }
-                    }
-                }
-            }
-        }
     }
 
     public void onChunkLoaded(LevelChunk chunk) {
@@ -307,7 +210,6 @@ public final class RetainedInstanceGraph {
         if (partition != null) {
             for (MachineInstanceHandle handle : partition.getHandles().values()) {
                 handlesByPos.remove(handle.getBlockPosKey());
-                unregisterSectionSlots(handle);
                 activeCountsByType.computeIfPresent(handle.getType(), (k, v) -> v <= 1 ? null : v - 1);
                 MachineSpec<?> spec = getSpec(handle.getType());
                 if (spec != null) {
@@ -375,7 +277,6 @@ public final class RetainedInstanceGraph {
                     partitions.remove(chunkKey);
                 }
             }
-            unregisterSectionSlots(handle);
             handle.free(slotAllocator);
             activeCountsByType.computeIfPresent(handle.getType(), (k, v) -> v <= 1 ? null : v - 1);
             MachineSpec<?> spec = getSpec(handle.getType());
@@ -450,18 +351,20 @@ public final class RetainedInstanceGraph {
         for (MachineInstanceHandle handle : handlesByPos.values()) {
             if (handle == null || !handle.isActive()) continue;
             BlockEntity be = handle.getBlockEntity();
-            if (be != null && !be.isRemoved()) {
-                sparseQueue.enqueueUpdate(handle, be, DirtyMask.TRANSFORM);
+            if (be instanceof com.hbm_m.api.render.RenderDirtyTracker tracker && !be.isRemoved()) {
+                tracker.markRenderDirty();
             }
         }
     }
 
     public void onMachineDirty(BlockEntity be, int dirtyMask) {
         if (be == null) return;
+        if (be instanceof com.hbm_m.api.render.RenderDirtyTracker tracker) {
+            tracker.markRenderDirty();
+        }
         long blockKey = be.getBlockPos().asLong();
         MachineInstanceHandle handle = handlesByPos.get(blockKey);
         if (handle != null && handle.isActive()) {
-            sparseQueue.enqueueUpdate(handle, be, dirtyMask);
             ChunkInstancePartition partition = partitions.get(handle.getChunkPosKey());
             if (partition != null) {
                 partition.markDirty();
@@ -477,25 +380,6 @@ public final class RetainedInstanceGraph {
         long blockKey = be.getBlockPos().asLong();
         if (handlesByPos.containsKey(blockKey)) return;
 
-        try {
-            ((MachineSpec) rawSpec).ensureStaticPartRenderers(be);
-        } catch (Throwable t) {
-            // Fail open: without GPU part renderers the retained record would claim
-            // presence while nothing is ever baked - and both render paths skip it
-            // (collectMain short-circuit + shouldBypass cancelling the vanilla BER),
-            // leaving the machine permanently invisible. Leave it unregistered so it
-            // stays on the vanilla per-frame BER path instead.
-            com.hbm_m.main.MainRegistry.LOGGER.error(
-                    "[RIG] ensureStaticPartRenderers failed for {} @ {} - staying on the vanilla BER path",
-                    be.getType(), be.getBlockPos().toShortString(), t);
-            return;
-        }
-
-        int partCount = (rawSpec.parts() != null && !rawSpec.parts().isEmpty()) ? rawSpec.parts().size() : 1;
-        // Real GPU instance slots are owned per-part by InstancedStaticPartRenderer.slotAllocator;
-        // the handle only needs an array of length partCount for SparseUpdateQueue part iteration.
-        int[] slots = new int[partCount];
-
         AABB bounds = RenderBoundsCache.get(be);
         if (bounds == null) {
             BlockPos bp = be.getBlockPos();
@@ -503,85 +387,14 @@ public final class RetainedInstanceGraph {
         }
 
         MachineInstanceHandle handle = new MachineInstanceHandle(
-                blockKey, partition.getChunkKey(), be.getType(), slots, bounds, be
+                blockKey, partition.getChunkKey(), be.getType(), new int[0], bounds, be
         );
 
         handlesByPos.put(blockKey, handle);
         partition.addHandle(handle);
-        registerSectionSlots(handle, bounds);
         activeCountsByType.merge(be.getType(), 1, Integer::sum);
 
-        // Route the registered flag through the dispatcher's addMachine: setting
-        // the flag BEFORE the machine lands in CHUNK_BUCKETS made shouldBypass
-        // cancel the vanilla BER while collectMain (bucket-driven) never saw the
-        // machine - it rendered through neither path until the next bucket sweep.
-        // addMachine sets the same flag itself, after bucket registration.
         com.hbm_m.client.render.NucleusDispatcherBypass.addMachine(be);
-
-        sparseQueue.enqueueInitialBake(handle, be, (MachineSpec) rawSpec);
-    }
-
-    private void registerSectionSlots(MachineInstanceHandle handle, AABB bounds) {
-        if (bounds == null) return;
-        int minSecX = ((int) Math.floor(bounds.minX - 1.0)) >> 4;
-        int maxSecX = ((int) Math.ceil(bounds.maxX + 1.0)) >> 4;
-        int minSecY = Math.max(-4, ((int) Math.floor(bounds.minY - 1.0)) >> 4);
-        int maxSecY = Math.min(20, ((int) Math.ceil(bounds.maxY + 1.0)) >> 4);
-        int minSecZ = ((int) Math.floor(bounds.minZ - 1.0)) >> 4;
-        int maxSecZ = ((int) Math.ceil(bounds.maxZ + 1.0)) >> 4;
-
-        long blockKey = handle.getBlockPosKey();
-        for (int sx = minSecX; sx <= maxSecX; sx++) {
-            for (int sy = minSecY; sy <= maxSecY; sy++) {
-                for (int sz = minSecZ; sz <= maxSecZ; sz++) {
-                    long secKey = SectionPos.asLong(sx, sy, sz);
-                    LongArrayList machineList = sectionToMachines.computeIfAbsent(secKey, k -> new LongArrayList());
-                    if (!machineList.contains(blockKey)) {
-                        machineList.add(blockKey);
-                    }
-                }
-            }
-        }
-    }
-
-    private void unregisterSectionSlots(MachineInstanceHandle handle) {
-        if (handle == null) return;
-        long blockKey = handle.getBlockPosKey();
-        AABB bounds = handle.getBounds();
-        if (bounds == null) {
-            // No bounds recorded - conservative full sweep (rare fallback), still
-            // compacting empty lists so sectionToMachines cannot grow unbounded.
-            for (var it = sectionToMachines.values().iterator(); it.hasNext(); ) {
-                LongArrayList machineList = it.next();
-                machineList.rem(blockKey);
-                if (machineList.isEmpty()) it.remove();
-            }
-            return;
-        }
-        // R4-3.3: compute the registered section range from the bounds (symmetric to
-        // registerSectionSlots) instead of sweeping every section in the world - the
-        // full sweep ran per machine on every chunk unload (O(sections x machines)).
-        int minSecX = ((int) Math.floor(bounds.minX - 1.0)) >> 4;
-        int maxSecX = ((int) Math.ceil(bounds.maxX + 1.0)) >> 4;
-        int minSecY = Math.max(-4, ((int) Math.floor(bounds.minY - 1.0)) >> 4);
-        int maxSecY = Math.min(20, ((int) Math.ceil(bounds.maxY + 1.0)) >> 4);
-        int minSecZ = ((int) Math.floor(bounds.minZ - 1.0)) >> 4;
-        int maxSecZ = ((int) Math.ceil(bounds.maxZ + 1.0)) >> 4;
-
-        for (int sx = minSecX; sx <= maxSecX; sx++) {
-            for (int sy = minSecY; sy <= maxSecY; sy++) {
-                for (int sz = minSecZ; sz <= maxSecZ; sz++) {
-                    long secKey = SectionPos.asLong(sx, sy, sz);
-                    LongArrayList machineList = sectionToMachines.get(secKey);
-                    if (machineList != null) {
-                        machineList.rem(blockKey);
-                        if (machineList.isEmpty()) {
-                            sectionToMachines.remove(secKey);
-                        }
-                    }
-                }
-            }
-        }
     }
 
     public synchronized void clear() {
@@ -589,6 +402,7 @@ public final class RetainedInstanceGraph {
         for (MachineInstanceHandle handle : handlesByPos.values()) {
             if (handle != null && handle.getBlockEntity() instanceof NucleusTrackedBlockEntity tracked) {
                 tracked.hbm_m$setNucleusRegistered(false);
+                tracked.hbm_m$setRenderState(null);
             }
         }
         for (ChunkInstancePartition p : partitions.values()) {
@@ -597,9 +411,6 @@ public final class RetainedInstanceGraph {
         partitions.clear();
         handlesByPos.clear();
         activeCountsByType.clear();
-        sectionToMachines.clear();
-        dirtyLightSections.clear();
-        sparseQueue.clear();
         slotAllocator.reset();
     }
 
@@ -638,7 +449,6 @@ public final class RetainedInstanceGraph {
     }
 
     public InstanceSlotAllocator getSlotAllocator() { return slotAllocator; }
-    public SparseUpdateQueue getSparseQueue() { return sparseQueue; }
     public Long2ObjectOpenHashMap<ChunkInstancePartition> getPartitions() { return partitions; }
     public Long2ObjectOpenHashMap<MachineInstanceHandle> getHandlesByPos() { return handlesByPos; }
 }

@@ -262,7 +262,6 @@ public final class IrisShadowBatchCollector {
         // SHADOW-EPOCH: the shadow basis is only meaningful for the shadow pass that
         // stashed the matrices; the next pass recalibrates from fresh fallback records.
         prebakeCalibrated = false;
-        prebakeCalibSawFirst = false;
         prebakeCalibFrame = -1L;
     }
 
@@ -726,26 +725,29 @@ public final class IrisShadowBatchCollector {
         return true;
     }
 
+    public static boolean hasFreshAnchorPrebake(InstancedStaticPartRenderer renderer) {
+        if (!anchorSpaceShadowActive) {
+            return false;
+        }
+        PrebakeSnapshot s = PREBAKES.get(renderer);
+        return s != null && s.epoch == prebakeEpoch && s.count > 0 && s.records != null
+                && s.anchorX == shadowAnchorX && s.anchorY == shadowAnchorY && s.anchorZ == shadowAnchorZ;
+    }
+
     /** Whether the shadow basis is calibrated for the CURRENT shadow pass (or anchor-space prebakes are active). */
     public static boolean prebakeCalibrated() {
         return anchorSpaceShadowActive || (prebakeCalibrated && prebakeCalibFrame == renderFrame);
     }
 
-    // ── Shadow-basis calibration (solved from fallback records, per shadow pass) ──
+    // ── Shadow-basis calibration (extracted from stashShadowMv, per shadow pass) ──
     private static final Matrix3f PREBAKE_R_SHADOW = new Matrix3f();
     private static final Vector3f PREBAKE_T_SHADOW = new Vector3f();
     private static final Quaternionf PREBAKE_Q_SHADOW = new Quaternionf();
-    private static final Matrix3f PREBAKE_R_CAND = new Matrix3f();
-    private static final Vector3f PREBAKE_T_CAND = new Vector3f();
-    private static final Matrix3f PREBAKE_S_ROT = new Matrix3f();
-    private static final Matrix3f PREBAKE_REC_ROT = new Matrix3f();
     private static final Quaternionf PREBAKE_Q_TMP = new Quaternionf();
     private static final Quaternionf PREBAKE_Q_OUT = new Quaternionf();
     private static final Vector3f PREBAKE_V = new Vector3f();
     private static long prebakeCalibFrame = -1L;
     private static boolean prebakeCalibrated = false;
-    private static boolean prebakeCalibSawFirst = false;
-    private static long prebakeCalibFirstPosKey = Long.MIN_VALUE;
 
     /**
      * Calibration feed from a fallback/probe record (called by
@@ -758,110 +760,16 @@ public final class IrisShadowBatchCollector {
      */
     public static void notePrebakeCalibration(InstancedStaticPartRenderer renderer,
                                               BlockPos blockPos, Matrix4f lightPose) {
-        if (anchorSpaceShadowActive || blockPos == null || prebakeCalibrated || !stashValid) {
+        if (anchorSpaceShadowActive || prebakeCalibrated || !stashValid || !stashShadowMvValid) {
             return;
         }
-        if (prebakeCalibFrame != renderFrame) {
-            // New shadow pass: the previous calibration is invalid.
-            prebakeCalibFrame = renderFrame;
-            prebakeCalibrated = false;
-            prebakeCalibSawFirst = false;
-            prebakeCalibFirstPosKey = Long.MIN_VALUE;
-        }
-        PrebakeSnapshot s = PREBAKES.get(renderer);
-        if (s == null || s.epoch != prebakeEpoch) {
-            return;
-        }
-        long posKey = blockPos.asLong();
-        // Calibration pairs THIS record call's pose with a snapshot slot of the same
-        // (renderer, machine) run - but the call site cannot know which slot of a
-        // multi-slot run the record belongs to. Restrict to single-slot runs (the
-        // common case: one part renderer = one record per machine), where the pairing
-        // is provably exact; multi-slot machines simply do not calibrate.
-        if (s.runLenByKey.get(posKey) != 1) {
-            return;
-        }
-        int first = s.firstSlotByKey.get(posKey);
-        // Only compare-VERIFIED slots may calibrate: a merely-stable slot (roster
-        // assert / skip-write trust) whose pose moved since an older snapshot
-        // (door mid-travel, melt rising) would solve a t_shadow wrong by exactly
-        // the part travel and poison every consumed machine.
-        if (s.posQuatVerified[first]) {
-            solveShadowBasis(s, first, blockPos, lightPose);
-        }
-    }
-
-    private static void solveShadowBasis(PrebakeSnapshot s, int slot, BlockPos bePos, Matrix4f lightPose) {
-        int base = slot * FLOATS_PER_INSTANCE;
-        // lightPose = MV_shadow * T(bePos - camPos) * S; S (the machine part pose,
-        // bob-stripped world coordinates) is known from the main-pass record.
-        // R_light comes from the shadow record pose, R_S from the snapshot record.
-        lightPose.getNormalizedRotation(PREBAKE_Q_OUT);
-        PREBAKE_REC_ROT.rotation(PREBAKE_Q_OUT);
-        decodeRecordQuat(s.records, base, PREBAKE_Q_TMP);
-        PREBAKE_S_ROT.rotation(PREBAKE_Q_TMP);
-        PREBAKE_S_ROT.invert();
-        // R_shadow = R_light * R_S^-1 (pure rotations - no distance scaling).
-        PREBAKE_R_CAND.set(PREBAKE_REC_ROT).mul(PREBAKE_S_ROT);
-        // S_t = recPosMain - (bePos - anchor) (the record is anchor-relative to the
-        // snapshot's PUBLISH-time anchor - never re-capture mid-shadow-pass).
-        float stx = s.records.get(base)     - (bePos.getX() - s.anchorX);
-        float sty = s.records.get(base + 1) - (bePos.getY() - s.anchorY);
-        float stz = s.records.get(base + 2) - (bePos.getZ() - s.anchorZ);
-        float wx = (bePos.getX() - stashCamX) + stx;
-        float wy = (bePos.getY() - stashCamY) + sty;
-        float wz = (bePos.getZ() - stashCamZ) + stz;
-        // t_shadow = T_light - R_shadow * world; use a proper JOML transform.
-        // (Manual m<col><row> indexing applied the TRANSPOSED rotation, poisoning
-        // the candidate by (R - R^T) * (pos - cam), growing with camera distance.)
-        PREBAKE_V.set(wx, wy, wz);
-        PREBAKE_R_CAND.transform(PREBAKE_V);
-        PREBAKE_T_CAND.set(lightPose.m30() - PREBAKE_V.x, lightPose.m31() - PREBAKE_V.y, lightPose.m32() - PREBAKE_V.z);
-        if (!prebakeCalibSawFirst) {
-            PREBAKE_R_SHADOW.set(PREBAKE_R_CAND);
-            PREBAKE_T_SHADOW.set(PREBAKE_T_CAND);
-            prebakeCalibFirstPosKey = bePos.asLong();
-            prebakeCalibSawFirst = true;
-            return;
-        }
-        // The two calibration samples must come from DIFFERENT machines: samples
-        // sharing a posKey repeat the identical error by construction, so the
-        // agreement check proves nothing.
-        if (bePos.asLong() == prebakeCalibFirstPosKey) {
-            return;
-        }
-        if (prebakeBasisAgrees(PREBAKE_R_CAND, PREBAKE_T_CAND)) {
-            PREBAKE_R_SHADOW.set(PREBAKE_R_CAND);
-            PREBAKE_T_SHADOW.set(PREBAKE_T_CAND);
-            PREBAKE_Q_SHADOW.setFromNormalized(PREBAKE_R_SHADOW);
-            prebakeCalibrated = true;
-        } else {
-            // Disagreement between independent solves - restart validation
-            // (fail-closed: the shadow basis stays unusable until two agree).
-            prebakeCalibSawFirst = false;
-        }
-    }
-
-    private static boolean prebakeBasisAgrees(Matrix3f r, Vector3f t) {
-        if (Math.abs(r.m00() - PREBAKE_R_SHADOW.m00()) > 1.0e-3f) return false;
-        if (Math.abs(r.m01() - PREBAKE_R_SHADOW.m01()) > 1.0e-3f) return false;
-        if (Math.abs(r.m02() - PREBAKE_R_SHADOW.m02()) > 1.0e-3f) return false;
-        if (Math.abs(r.m10() - PREBAKE_R_SHADOW.m10()) > 1.0e-3f) return false;
-        if (Math.abs(r.m11() - PREBAKE_R_SHADOW.m11()) > 1.0e-3f) return false;
-        if (Math.abs(r.m12() - PREBAKE_R_SHADOW.m12()) > 1.0e-3f) return false;
-        if (Math.abs(r.m20() - PREBAKE_R_SHADOW.m20()) > 1.0e-3f) return false;
-        if (Math.abs(r.m21() - PREBAKE_R_SHADOW.m21()) > 1.0e-3f) return false;
-        if (Math.abs(r.m22() - PREBAKE_R_SHADOW.m22()) > 1.0e-3f) return false;
-        // t error scales with the machine's distance; two independent solves agree
-        // only if the basis is systematically sound (wrong-S candidates fail on R).
-        // The t tolerance is deliberately TIGHT (1e-2): the basis is exact, so two
-        // honest solves differ by float noise only. A loose tolerance (was 1.0) let
-        // a translation-poisoned solve (part pose moved since the snapshot) "agree"
-        // with a correct one - oven door travel is 0.75, crucible melt 0.875 - and
-        // the locked wrong basis crawled the consumed machines' shadows per pass.
-        return Math.abs(t.x - PREBAKE_T_SHADOW.x) <= 1.0e-2f
-                && Math.abs(t.y - PREBAKE_T_SHADOW.y) <= 1.0e-2f
-                && Math.abs(t.z - PREBAKE_T_SHADOW.z) <= 1.0e-2f;
+        // Directly extract the shadow basis from stashShadowMv instead of solving
+        // a 2-machine system of equations at runtime.
+        stashShadowMv.get3x3(PREBAKE_R_SHADOW);
+        PREBAKE_Q_SHADOW.setFromNormalized(PREBAKE_R_SHADOW);
+        PREBAKE_T_SHADOW.set(stashShadowMv.m30(), stashShadowMv.m31(), stashShadowMv.m32());
+        prebakeCalibFrame = renderFrame;
+        prebakeCalibrated = true;
     }
 
     /**
@@ -1363,7 +1271,6 @@ public final class IrisShadowBatchCollector {
         }
         PREBAKES.clear();
         prebakeCalibrated = false;
-        prebakeCalibSawFirst = false;
         prebakeCalibFrame = -1L;
     }
 

@@ -316,6 +316,12 @@ public final class RawScreenSpaceLight {
             GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
             sceneTexW = w; sceneTexH = h;
         }
+        GLCapabilities caps = GL.getCapabilities();
+        if (caps == null || caps.glCopyImageSubData == 0L) {
+            sceneCopySupported = false;
+            MainRegistry.LOGGER.info("RawScreenSpaceLight: glCopyImageSubData unsupported on this GL context - scene copy cinematics disabled, core light stays active");
+            return false;
+        }
         while (GL11.glGetError() != GL11.GL_NO_ERROR) { /* drain stale errors */ }
         GL43.glCopyImageSubData(srcTexture, GL11.GL_TEXTURE_2D, 0, 0, 0, 0, sceneTex, GL11.GL_TEXTURE_2D, 0, 0, 0, 0, w, h, 1);
         boolean ok = GL11.glGetError() == GL11.GL_NO_ERROR;

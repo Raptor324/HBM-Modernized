@@ -217,8 +217,16 @@ public record PartGeometry(List<BakedQuad> solidQuads, boolean standalone) {
         float maxX = Float.NEGATIVE_INFINITY, maxY = Float.NEGATIVE_INFINITY, maxZ = Float.NEGATIVE_INFINITY;
 
         try {
-            vb = MemoryUtil.memAlloc(vertexCount * vertexStrideBytes);
-            ib = MemoryUtil.memAllocInt(indexCapacity);
+            final int intsPerVert = vertexStrideBytes >>> 2; // 9 ints (36 bytes)
+            int[] uniqueVerts = new int[vertexCount * intsPerVert];
+            int[] validIndices = new int[indexCapacity];
+            int tableSize = Integer.highestOneBit(Math.max(16, vertexCount * 2) - 1) << 1;
+            int tableMask = tableSize - 1;
+            int[] hashTable = new int[tableSize];
+            java.util.Arrays.fill(hashTable, -1);
+            int uniqueVertCount = 0;
+            int validIndexCount = 0;
+            int[] quadVi = new int[4];
 
             for (BakedQuad quad : quads) {
                 int[] raw = quad.getVertices();
@@ -270,7 +278,6 @@ public record PartGeometry(List<BakedQuad> solidQuads, boolean standalone) {
                     float ny = ((byte) ((normalPacked >> 8) & 0xFF)) / 127.0f;
                     float nz = ((byte) ((normalPacked >> 16) & 0xFF)) / 127.0f;
 
-                    // Optimization: Math.sqrt only runs when the normal vector is denormalized
                     float lenSq = nx * nx + ny * ny + nz * nz;
                     if (lenSq > 1e-6f && Math.abs(lenSq - 1.0f) > 1e-3f) {
                         float invLen = (float) (1.0 / Math.sqrt(lenSq));
@@ -279,29 +286,81 @@ public record PartGeometry(List<BakedQuad> solidQuads, boolean standalone) {
                         nz *= invLen;
                     }
 
-                    vb.putFloat(x).putFloat(y).putFloat(z);
-                    vb.putFloat(nx).putFloat(ny).putFloat(nz);
-                    vb.putFloat(u).putFloat(v);
-                    vb.putInt(perVertexBoneId);
+                    int w0 = Float.floatToRawIntBits(x);
+                    int w1 = Float.floatToRawIntBits(y);
+                    int w2 = Float.floatToRawIntBits(z);
+                    int w3 = Float.floatToRawIntBits(nx);
+                    int w4 = Float.floatToRawIntBits(ny);
+                    int w5 = Float.floatToRawIntBits(nz);
+                    int w6 = Float.floatToRawIntBits(u);
+                    int w7 = Float.floatToRawIntBits(v);
+                    int w8 = perVertexBoneId;
+
+                    int h = w0 * 31 + w1;
+                    h = h * 31 + w2;
+                    h = h * 31 + w3;
+                    h = h * 31 + w4;
+                    h = h * 31 + w5;
+                    h = h * 31 + w6;
+                    h = h * 31 + w7;
+                    h = h * 31 + w8;
+                    h ^= (h >>> 16);
+
+                    int slot = h & tableMask;
+                    int foundIdx = -1;
+                    while (true) {
+                        int cand = hashTable[slot];
+                        if (cand < 0) {
+                            foundIdx = uniqueVertCount++;
+                            int vo = foundIdx * intsPerVert;
+                            uniqueVerts[vo + 0] = w0;
+                            uniqueVerts[vo + 1] = w1;
+                            uniqueVerts[vo + 2] = w2;
+                            uniqueVerts[vo + 3] = w3;
+                            uniqueVerts[vo + 4] = w4;
+                            uniqueVerts[vo + 5] = w5;
+                            uniqueVerts[vo + 6] = w6;
+                            uniqueVerts[vo + 7] = w7;
+                            uniqueVerts[vo + 8] = w8;
+                            hashTable[slot] = foundIdx;
+                            break;
+                        }
+                        int vo = cand * intsPerVert;
+                        if (uniqueVerts[vo + 0] == w0 && uniqueVerts[vo + 1] == w1 && uniqueVerts[vo + 2] == w2
+                                && uniqueVerts[vo + 3] == w3 && uniqueVerts[vo + 4] == w4 && uniqueVerts[vo + 5] == w5
+                                && uniqueVerts[vo + 6] == w6 && uniqueVerts[vo + 7] == w7 && uniqueVerts[vo + 8] == w8) {
+                            foundIdx = cand;
+                            break;
+                        }
+                        slot = (slot + 1) & tableMask;
+                    }
+                    quadVi[i] = foundIdx;
                 }
 
-                ib.put(indexOffset + 0);
-                ib.put(indexOffset + 1);
-                ib.put(indexOffset + 2);
-                ib.put(indexOffset + 2);
-                ib.put(indexOffset + 3);
-                ib.put(indexOffset + 0);
+                int i0 = quadVi[0], i1 = quadVi[1], i2 = quadVi[2], i3 = quadVi[3];
+                if (i0 != i1 && i1 != i2 && i2 != i0) {
+                    validIndices[validIndexCount++] = i0;
+                    validIndices[validIndexCount++] = i1;
+                    validIndices[validIndexCount++] = i2;
+                }
+                if (i2 != i3 && i3 != i0 && i0 != i2) {
+                    validIndices[validIndexCount++] = i2;
+                    validIndices[validIndexCount++] = i3;
+                    validIndices[validIndexCount++] = i0;
+                }
                 indexOffset += 4;
             }
 
-            if (indexOffset == 0) {
+            if (uniqueVertCount == 0 || validIndexCount == 0) {
                 MainRegistry.LOGGER.debug("PartGeometry: Part '{}' produced no valid quads for VBO", partName);
-                MemoryUtil.memFree(vb);
-                MemoryUtil.memFree(ib);
                 return null;
             }
 
-            vb.flip();
+            vb = MemoryUtil.memAlloc(uniqueVertCount * vertexStrideBytes);
+            ib = MemoryUtil.memAllocInt(validIndexCount);
+            vb.asIntBuffer().put(uniqueVerts, 0, uniqueVertCount * intsPerVert);
+            vb.position(0).limit(uniqueVertCount * vertexStrideBytes);
+            ib.put(validIndices, 0, validIndexCount);
             ib.flip();
 
             if (!Float.isFinite(minX)) {

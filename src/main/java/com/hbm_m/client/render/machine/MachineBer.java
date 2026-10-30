@@ -262,13 +262,45 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
     private final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<MachineRenderState> states =
             new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
     private long statesWorldGen = -1L;
+    private long berEpoch = 1L;
 
-    /** Get-or-create the state of a position (render thread only). */
-    private MachineRenderState stateFor(long posKey) {
+    /** O(1) state lookup directly from the BlockEntity field (fallback to map only for un-mixed BEs). */
+    private @Nullable MachineRenderState getState(@Nullable BlockEntity be, long posKey) {
+        long wg = com.hbm_m.client.render.NucleusRenderVersion.worldGen();
+        if (statesWorldGen != wg) {
+            states.clear();
+            statesWorldGen = wg;
+        }
+        if (be instanceof com.hbm_m.client.render.NucleusTrackedBlockEntity tracked) {
+            Object raw = tracked.hbm_m$getRenderState();
+            if (raw instanceof MachineRenderState s) {
+                if (s.worldGen == wg && s.berEpoch == this.berEpoch) {
+                    return s;
+                }
+                tracked.hbm_m$setRenderState(null);
+            }
+            return null;
+        }
         MachineRenderState s = states.get(posKey);
+        if (s != null && (s.worldGen != wg || s.berEpoch != this.berEpoch)) {
+            states.remove(posKey);
+            return null;
+        }
+        return s;
+    }
+
+    /** Get-or-create the state of a BlockEntity in O(1) (render thread only). */
+    private MachineRenderState stateFor(@Nullable BlockEntity be, long posKey) {
+        MachineRenderState s = getState(be, posKey);
         if (s == null) {
             s = new MachineRenderState();
-            states.put(posKey, s);
+            s.worldGen = com.hbm_m.client.render.NucleusRenderVersion.worldGen();
+            s.berEpoch = this.berEpoch;
+            if (be instanceof com.hbm_m.client.render.NucleusTrackedBlockEntity tracked) {
+                tracked.hbm_m$setRenderState(s);
+            } else {
+                states.put(posKey, s);
+            }
         }
         return s;
     }
@@ -291,6 +323,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
 
     /** Teardown of per-machine state; runs on the render thread via RenderCacheManager. */
     public void clearRosterCache() {
+        berEpoch++;
         states.clear();
         statesWorldGen = -1L;
     }
@@ -322,6 +355,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
             InstancedStaticPartRenderer inst = rends[i].instanced();
             if (inst == null) return false;
             int slot = slots != null ? slots[i] : -1;
+            if (slot == -2) continue; // Intentionally unallocated (invisible conditional part)
             if (slot < 0) {
                 slot = inst.getSlot(rosterKey);
                 if (slot < 0) return false;
@@ -335,7 +369,9 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
         for (int i = 0; i < n; i++) {
             byte cat = cats[i];
             if (cat != MachineRenderState.ASSERT && !(cat == MachineRenderState.ASSERT_EPOCH && epochParts)) continue;
-            if (!rends[i].instanced().assertCleanSlot(slots[i])) {
+            int slot = slots[i];
+            if (slot == -2) continue;
+            if (!rends[i].instanced().assertCleanSlot(slot)) {
                 return false;
             }
         }
@@ -372,9 +408,10 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
         int[] slots = roster.rosterSlots;
         int n = cats.length;
         for (int i = 0; i < n; i++) {
+            int slot = slots != null ? slots[i] : -1;
+            if (slot == -2) continue; // Intentionally unallocated invisible conditional part
             InstancedStaticPartRenderer inst = rends[i] != null ? rends[i].instanced() : null;
             if (inst == null) return false;
-            int slot = slots != null ? slots[i] : -1;
             if (slot < 0) {
                 slot = inst.getSlot(rosterKey);
                 if (slot < 0) return false;
@@ -390,9 +427,10 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
         float[] pr = paramScratch;
         float[] enc = encodedScratch;
         for (int i = 0; i < n; i++) {
+            int slot = slots[i];
+            if (slot == -2) continue;
             byte cat = cats[i];
             InstancedStaticPartRenderer inst = rends[i].instanced();
-            int slot = slots[i];
             if (cat == MachineRenderState.ASSERT || throttled) {
                 inst.assertCleanSlot(slot);
                 continue;
@@ -403,7 +441,8 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
             if (pa == null || part.parametricParams() == null) {
                 return false;
             }
-            java.util.Arrays.fill(pr, 0f);
+            pr[0] = 0f; pr[1] = 0f; pr[2] = 0f; pr[3] = 0f;
+            pr[4] = 0f; pr[5] = 0f; pr[6] = 0f; pr[7] = 0f;
             boolean drawP;
             try {
                 drawP = part.parametricParams().params(blockEntity, partialTick, gameTime, pr);
@@ -464,7 +503,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
             return epochMemoStable;
         }
         boolean stable = false;
-        MachineRenderState s = states.get(posKey);
+        MachineRenderState s = getState(be, posKey);
         if (s != null && s.epochStored && s.epochTick != gameTick) {
             long cur = currentEpoch(be);
             stable = cur != Long.MIN_VALUE && cur == s.epochValue;
@@ -485,7 +524,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
         if (cur == Long.MIN_VALUE) {
             return;
         }
-        MachineRenderState s = stateFor(posKey);
+        MachineRenderState s = stateFor(be, posKey);
         // Store ONLY on a real change: re-storing an unchanged epoch bumps
         // epochTick to the current tick, and the epochTick != gameTick guard
         // then reports "unstable" for the REST of that tick - the next frame
@@ -863,8 +902,12 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
      * Safety: phase 1 is read-only (renderer lookup + roster check); on any miss -
      * false, state untouched, the caller performs the full {@code collectRender}.
      */
-    @SuppressWarnings("unchecked")
     public boolean tryFastAssertRender(BlockEntity beRaw, long gameTick) {
+        return tryFastAssertRender(beRaw, gameTick, -1.0);
+    }
+
+    @SuppressWarnings("unchecked")
+    public boolean tryFastAssertRender(BlockEntity beRaw, long gameTick, double precomputedDistSq) {
         if (!ClientRenderFlags.nucleusDirtySkip()) {
             return false;
         }
@@ -872,26 +915,6 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
         // зависящие от shareEpoch). Frame-stamped -- один расчёт на кадр.
         if (beRaw instanceof com.hbm_m.block.entity.doors.DoorBlockEntity) {
             com.hbm_m.client.render.implementations.MachineDoorRenderer.syncShareState();
-        }
-
-        if (spec.isPurelyStatic()
-                && com.hbm_m.client.render.retained.RetainedInstanceGraph.get().isMachineStaticAndRetained(beRaw)) {
-            // The retained graph has no TTL of its own: its light slices refresh
-            // only on render-dirty events and light-network section dirt. The
-            // tracker's TTL horizon is the safety net for events that miss both
-            // (same contract as the streamed fast path below) - honor it here by
-            // requesting a sparse LIGHT slice re-sample. The machine STAYS
-            // retained (falling through would double-draw it against the GPU
-            // graph); only the light/fade record is rebuilt. The tracker is then
-            // re-stamped so the refresh fires once per TTL window, not per frame.
-            if (beRaw instanceof com.hbm_m.api.render.RenderDirtyTracker tracker
-                    && tracker.isRenderStale(gameTick, com.hbm_m.client.render.NucleusRenderVersion.worldGen())) {
-                com.hbm_m.client.render.retained.RetainedInstanceGraph.get()
-                        .onMachineDirty(beRaw, com.hbm_m.client.render.retained.DirtyMask.LIGHT);
-                tracker.onRenderCollected(gameTick, com.hbm_m.client.render.NucleusRenderVersion.worldGen());
-            }
-            com.hbm_m.client.render.NucleusDebug.recordMachineRendered();
-            return true;
         }
         // Dynamic-animator parts (Frame quads, door panels: the pose follows
         // state that advances without a render-dirty event) are handled in
@@ -969,7 +992,15 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
         // zone (56% of the frame in collectMain, spark 2026-10-07). The epoch
         // covers the content state (contract in mayDrawContent), so the frame
         // content appears the epoch flips and the full path draws it.
-        double distSq = frameDistSq(beRaw);
+        double distSq;
+        if (precomputedDistSq >= 0.0) {
+            distSq = precomputedDistSq;
+            frameDistBE = beRaw;
+            frameDistStamp = com.hbm_m.client.render.IrisShadowBatchCollector.renderFrame();
+            frameDistSq = distSq;
+        } else {
+            distSq = frameDistSq(beRaw);
+        }
         float staticFade = RenderDistanceHelper.computeStaticFade(beRaw, distSq);
         if (staticFade < 0) {
             return false;
@@ -977,9 +1008,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
 
         BlockPos pos = beRaw.getBlockPos();
         long posKey = pos.asLong();
-        MachineRenderState cachedState =
-                (statesWorldGen == com.hbm_m.client.render.NucleusRenderVersion.worldGen())
-                        ? states.get(posKey) : null;
+        MachineRenderState cachedState = getState(beRaw, posKey);
 
         double animDist = RenderDistanceHelper.getAnimatedDistanceBlocks();
         boolean epochFullAssert = false;
@@ -1029,6 +1058,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
         // before the anim-zone branch - the fast parametric update uses it too.)
         if (cachedState != null && cachedState.allAsserted(epochFullAssert)
                 && tryFrozenRosterAssert(cachedState, pos, posKey, epochFullAssert)) {
+            com.hbm_m.client.render.NucleusDebug.recordWalkAttempt(true);
             com.hbm_m.client.render.NucleusDebug.recordMachineRendered();
             return true;
         }
@@ -1044,6 +1074,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
         java.util.List<MachineSpec.PartDef<T>> specParts = spec.parts();
         for (int pIdx = 0; pIdx < specParts.size(); pIdx++) {
             MachineSpec.PartDef<T> part = specParts.get(pIdx);
+            if (part.isConditional() && !part.isVisible((T) beRaw)) continue;
             // Without an epoch, animated parts are skipped, exactly as in renderAll.
             if (part.animated() && !epochFullAssert) continue;
             // Parametric parts: their record words are provably stable ONLY under
@@ -1103,12 +1134,8 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
             fastAssertScratch[i].assertCleanInstance(pos);
         }
 
-        if (cachedState == null || cachedState.rosterCategory == null) {
-            if (statesWorldGen != com.hbm_m.client.render.NucleusRenderVersion.worldGen()) {
-                states.clear();
-                statesWorldGen = com.hbm_m.client.render.NucleusRenderVersion.worldGen();
-            }
-            MachineRenderState st = stateFor(posKey);
+        if (cachedState == null || !cachedState.allAsserted(epochFullAssert)) {
+            MachineRenderState st = stateFor(beRaw, posKey);
             int pSize = specParts.size();
             st.rosterCategory = new byte[pSize];
             st.rosterRenderers = new MachinePartRenderer[pSize];
@@ -1116,11 +1143,20 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
             java.util.Arrays.fill(st.rosterSlots, -1);
             for (int pIdx = 0; pIdx < pSize; pIdx++) {
                 MachineSpec.PartDef<T> part = specParts.get(pIdx);
-                if (part.animated() && part.parametric() == null) continue;
+                if (part.animated() && !epochFullAssert) {
+                    st.rosterCategory[pIdx] = MachineRenderState.ASSERT_EPOCH;
+                    continue;
+                }
                 String dynKey = part.dynamic() ? spec.dynamicCacheKeyValue(part, (T) beRaw) : null;
                 MachinePartRenderer r = spec.findExistingRenderer(pIdx, part, dynKey);
+                if (part.isConditional() && !part.isVisible((T) beRaw)) {
+                    st.rosterCategory[pIdx] = MachineRenderState.ASSERT;
+                    st.rosterRenderers[pIdx] = r;
+                    st.rosterSlots[pIdx] = -2;
+                    continue;
+                }
                 if (r != null && r.instanced() != null) {
-                    st.rosterCategory[pIdx] = part.parametric() != null
+                    st.rosterCategory[pIdx] = (part.parametric() != null || part.animated())
                             ? MachineRenderState.ASSERT_EPOCH
                             : MachineRenderState.ASSERT;
                     st.rosterRenderers[pIdx] = r;
@@ -1170,13 +1206,15 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
             if (IrisShadowBatchCollector.isAnchorSpaceShadowActive()) {
                 if (!spec.hasDynamicParts() && beRaw instanceof com.hbm_m.client.render.NucleusTrackedBlockEntity tracked && tracked.hbm_m$isNucleusRegistered()) {
                     long pk = beRaw.getBlockPos().asLong();
-                    MachineRenderState st = (statesWorldGen == com.hbm_m.client.render.NucleusRenderVersion.worldGen())
-                            ? states.get(pk) : null;
-                    if (st != null && st.rosterRenderers != null && st.rosterRenderers.length > 0) {
-                        for (MachinePartRenderer r : st.rosterRenderers) {
-                            if (r != null) {
+                    MachineRenderState st = getState(beRaw, pk);
+                    if (st != null && st.rosterRenderers != null && st.rosterSlots != null) {
+                        for (int i = 0; i < st.rosterRenderers.length; i++) {
+                            MachinePartRenderer r = st.rosterRenderers[i];
+                            int slot = i < st.rosterSlots.length ? st.rosterSlots[i] : -1;
+                            if (r != null && slot >= 0) {
                                 InstancedStaticPartRenderer inst = r.instanced();
-                                if (inst != null && IrisShadowBatchCollector.hasFreshPrebake(inst, pk)) {
+                                if (inst != null && inst.canAssertSlot(slot, pk)
+                                        && IrisShadowBatchCollector.hasFreshAnchorPrebake(inst)) {
                                     return true;
                                 }
                             }
@@ -1192,8 +1230,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
             // parts beyond the animation zone draw in neither path - no record needed.
             boolean animatedVisible =
                     RenderDistanceHelper.computeAnimatedFade(beRaw, frameDistSq(beRaw)) >= 0;
-            MachineRenderState state = (statesWorldGen == com.hbm_m.client.render.NucleusRenderVersion.worldGen())
-                    ? states.get(posKey) : null;
+            MachineRenderState state = getState(beRaw, posKey);
             MachinePartRenderer[] rosterRenderers = (state != null && state.rosterRenderers != null)
                     ? state.rosterRenderers : null;
 
@@ -1442,14 +1479,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
             epochStableNow = false;
             animationThrottled = false;
         }
-        if (statesWorldGen != worldGenNow) {
-            // Chunk reload / render-origin shift: drop stale per-machine state
-            // (after the shift the same positions may belong to different
-            // chunks/machines).
-            states.clear();
-            statesWorldGen = worldGenNow;
-        }
-        MachineRenderState state = states.get(rosterKey);
+        MachineRenderState state = getState(blockEntity, rosterKey);
         MachineRenderState roster = partialAssert ? state : null;
         if (roster != null && ttlRebuild) {
             // TTL frame: the whole point is a fresh light/fade rebuild - a
@@ -1471,7 +1501,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
         }
         boolean buildRoster = roster == null;
         if (buildRoster && state == null) {
-            state = stateFor(rosterKey);
+            state = stateFor(blockEntity, rosterKey);
         }
         if (buildRoster) {
             int pSize = spec.parts().size();
@@ -1564,7 +1594,24 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
             }
             // Only animated CONTENT is skipped; static parts with an "animator"
             // transform (legacy offsets) live up to the static cutoff.
-            if (!animatedVisible && part.animated()) continue;
+            if (!animatedVisible && part.animated()) {
+                if (buildRoster) {
+                    state.rosterCategory[partIdx] = MachineRenderState.ASSERT_EPOCH;
+                }
+                continue;
+            }
+            if (part.animated() && part.parametric() == null
+                    && !ShaderCompatibilityDetector.isRenderingShadowPass()
+                    && !com.hbm_m.client.render.culling.GpuCullCoverage.isActive()) {
+                MachinePartRenderer existingR = !part.dynamic() ? spec.findExistingRenderer(partIdx, part, null) : null;
+                InstancedStaticPartRenderer subInst = existingR != null ? existingR.instanced() : null;
+                if (subInst != null && RenderDistanceHelper.isSubpixelPart(subInst.getObjBbox(), frameDistSq(blockEntity), 1.1f)) {
+                    if (subInst.hasSlot(rosterKey)) {
+                        subInst.freeSlot(rosterKey);
+                    }
+                    continue;
+                }
+            }
             BakedModel partModel = resolvedPartModels != null ? resolvedPartModels[partIdx] : spec.partModel(part, model);
             // Lazy build: dynQuads are computed only if the VBO is not built yet
             // (previously the resolver was invoked every frame for every BE - see
@@ -1596,6 +1643,17 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
             // heat/tint change with no consumed dirty event (turbofan nozzle glow
             // fading to zero) would freeze the old tint in the buffer. The rebuild
             // path costs a 46-float compare with skip-write when unchanged.
+            if (part.isConditional() && !part.isVisible(blockEntity)) {
+                if (renderer.instanced() != null && renderer.instanced().hasSlot(rosterKey)) {
+                    renderer.instanced().freeSlot(rosterKey);
+                }
+                if (buildRoster) {
+                    state.rosterCategory[partIdx] = MachineRenderState.ASSERT;
+                    state.rosterRenderers[partIdx] = renderer;
+                }
+                continue;
+            }
+
             boolean canAssertParametric = part.parametric() != null && spec.animationEpoch() != null;
             if (buildRoster
                     && (!part.animated() || canAssertParametric)
@@ -1675,7 +1733,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
                     // Cache for the frozen frames (specs with an epoch only; the
                     // provider-error sentinel stays uncached).
                     if (paramEpoch != Long.MIN_VALUE) {
-                        MachineRenderState st = state != null ? state : stateFor(rosterKey);
+                        MachineRenderState st = state != null ? state : stateFor(blockEntity, rosterKey);
                         st.storeParamWords(partIdx, parts.size(), paramEpoch, gameTime, drawP, pr, encodedScratch);
                     }
                 }
@@ -1985,18 +2043,29 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
             epochStoreAfterFullAnim(blockEntity, gameTime, rosterKey);
         }
 
-        if (buildRoster) {
-            // Pre-resolve slots and the allAsserted flags once per build so the
-            // frozen assert path stays hash-lookup-free for the roster's lifetime.
-            for (int i = 0; i < state.rosterCategory.length; i++) {
-                if (state.rosterCategory[i] != MachineRenderState.REBUILD && state.rosterRenderers[i] != null) {
-                    InstancedStaticPartRenderer inst = state.rosterRenderers[i].instanced();
-                    if (inst != null) {
-                        state.rosterSlots[i] = inst.getSlot(rosterKey);
+        if (buildRoster || (state != null && animatedVisible && !state.allAsserted(true))) {
+            // Pre-resolve slots and the allAsserted flags once per build (or when a
+            // machine built beyond animDist enters animDist and populates its animated parts).
+            if (state.rosterCategory != null && state.rosterRenderers != null && state.rosterSlots != null) {
+                for (int i = 0; i < state.rosterCategory.length; i++) {
+                    if (state.rosterRenderers[i] == null && i < parts.size()) {
+                        MachineSpec.PartDef<T> pDef = parts.get(i);
+                        if (!pDef.dynamic() && (state.rosterCategory[i] == MachineRenderState.ASSERT
+                                || state.rosterCategory[i] == MachineRenderState.ASSERT_EPOCH)) {
+                            state.rosterRenderers[i] = spec.findExistingRenderer(i, pDef, null);
+                        }
+                    }
+                    if (state.rosterCategory[i] != MachineRenderState.REBUILD && state.rosterRenderers[i] != null) {
+                        InstancedStaticPartRenderer inst = state.rosterRenderers[i].instanced();
+                        if (inst != null) {
+                            int s = inst.getSlot(rosterKey);
+                            MachineSpec.PartDef<T> pDef = parts.get(i);
+                            state.rosterSlots[i] = (s < 0 && pDef.isConditional() && !pDef.isVisible(blockEntity)) ? -2 : s;
+                        }
                     }
                 }
+                state.computeRosterFlags();
             }
-            state.computeRosterFlags();
         }
 
         // -- Hooks: fluids/items/diamonds (immediate); not drawn beyond the

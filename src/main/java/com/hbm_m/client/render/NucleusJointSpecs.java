@@ -100,6 +100,7 @@ public final class NucleusJointSpecs {
     private static final int VALID_TRACK_FLAGS = FLAG_CYCLE | FLAG_HERMITE;
 
     private static int texId = 0;
+    private static int placeholderTexId = 0;
     private static int widthTexels = 0;
     private static int jointCount = 0;
     private static FloatBuffer cpu;
@@ -116,6 +117,9 @@ public final class NucleusJointSpecs {
     private static int[] jointTrackFlags = new int[16];
     // Per-joint rateScale of the track (the C texel's x component; 0 = streamed).
     private static float[] jointTrackRate = new float[16];
+    // Lock-free snapshot of whether each joint index is tracked (read on hot path without synchronized).
+    private static volatile boolean[] trackedJointSnapshot = new boolean[16];
+    private static volatile boolean anyTrackRegistered = false;
 
     private NucleusJointSpecs() {}
 
@@ -349,11 +353,23 @@ public final class NucleusJointSpecs {
             jointTrackFlags = java.util.Arrays.copyOf(jointTrackFlags, cap);
             jointTrackRate = java.util.Arrays.copyOf(jointTrackRate, cap);
         }
+        boolean[] snap = java.util.Arrays.copyOf(trackedJointSnapshot, jointTrackEntry.length);
         for (int p = 0; p < n; p++) {
             jointTrackEntry[jointCount + p] = entries[p];
             jointTrackFlags[jointCount + p] = entries[p] >= 0 ? (flagsPerJoint[p] & VALID_TRACK_FLAGS) : 0;
             jointTrackRate[jointCount + p] = entries[p] >= 0 ? ratesPerJoint[p] : TRACK_STREAMED;
+            if (entries[p] >= 0) {
+                snap[jointCount + p] = true;
+                anyTrackRegistered = true;
+            }
         }
+        for (int p = 0; p < n; p++) {
+            if (snap[jointCount + p]) {
+                snap[jointCount] = true; // mark chain base index as containing a tracked node
+                break;
+            }
+        }
+        trackedJointSnapshot = snap;
         // Overlapping move of the pool right by n texel triples - backward
         // float loop (MemoryUtil.memCopy is memcpy: overlapping is undefined).
         // Empty pool: the range is empty and the loop does not run (a full
@@ -517,10 +533,46 @@ public final class NucleusJointSpecs {
         return jointCount - n;
     }
 
-    /** GL texture of specs; 0 means no joints registered. */
+    /** GL texture of specs; returns a 1x1 RGBA32F placeholder if no joints are uploaded yet. */
     public static synchronized int getTextureId() {
         uploadIfDirty();
-        return texId;
+        return texId != 0 ? texId : ensurePlaceholderTexture();
+    }
+
+    private static int ensurePlaceholderTexture() {
+        if (placeholderTexId != 0) {
+            return placeholderTexId;
+        }
+        if (!com.mojang.blaze3d.systems.RenderSystem.isOnRenderThread()) {
+            return 0;
+        }
+        try {
+            placeholderTexId = GL11.glGenTextures();
+            GlStateManager._bindTexture(placeholderTexId);
+            try {
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL32.GL_CLAMP_TO_EDGE);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL32.GL_CLAMP_TO_EDGE);
+                GlVaoSafety.bindVertexArray(0);
+                BufferUploader.invalidate();
+                FloatBuffer zero = MemoryUtil.memCallocFloat(4);
+                try {
+                    GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL30.GL_RGBA32F, 1, 1, 0,
+                            GL11.GL_RGBA, GL11.GL_FLOAT, zero);
+                } finally {
+                    MemoryUtil.memFree(zero);
+                }
+            } finally {
+                GlStateManager._bindTexture(0);
+            }
+        } catch (Throwable t) {
+            if (placeholderTexId != 0) {
+                GL11.glDeleteTextures(placeholderTexId);
+                placeholderTexId = 0;
+            }
+        }
+        return placeholderTexId;
     }
 
     public static synchronized int getJointCount() {
@@ -532,19 +584,12 @@ public final class NucleusJointSpecs {
      * any keyframe-tracked node (rateScale > 0 in texel C). Used by BakeRecordDiffer
      * to mark actively moving time-driven instances dirty during compute baking.
      */
-    public static synchronized boolean isTrackedChain(int baseJointIdx) {
-        if (baseJointIdx < 0 || baseJointIdx >= jointCount || cpu == null) {
+    public static boolean isTrackedChain(int baseJointIdx) {
+        if (!anyTrackRegistered || baseJointIdx < 0) {
             return false;
         }
-        int baseFloat = baseJointIdx * TEXELS_PER_JOINT * FLOATS_PER_TEXEL;
-        float countW = cpu.get(baseFloat + 7);
-        int n = countW >= 0.5f ? Math.min((int) countW, 8) : 1;
-        for (int i = 0; i < n && (baseJointIdx + i) < jointCount; i++) {
-            if (jointTrackEntry[baseJointIdx + i] >= 0) {
-                return true;
-            }
-        }
-        return false;
+        boolean[] snap = trackedJointSnapshot;
+        return baseJointIdx < snap.length && snap[baseJointIdx];
     }
 
     /**

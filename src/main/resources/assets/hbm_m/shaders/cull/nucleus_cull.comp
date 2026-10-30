@@ -139,10 +139,6 @@ float hizOccluder(vec4 aabb) {
     // the conservative VISIBLE below.
     ivec4 rect = ivec4(uv * uMip0Size.xyxy + vec4(0.5, 0.5, -0.5, -0.5));
     if (any(lessThan(rect.zw, rect.xy))) {
-        // Sub-pixel sphere (rounded rect is empty): the pyramid cannot answer
-        // the occlusion query at this resolution. Conservative answer = far
-        // plane depth, i.e. VISIBLE - returning near-plane 0.0/-1.0 here culled
-        // legitimate distant instances every frame.
         return 1.0;
     }
     rect = min(rect, ivec4(uMip0Size.xyxy) - 1);
@@ -185,6 +181,8 @@ bool testInstanceVisibility(uint inIdx) {
 
     vec3 localCenter = bboxMin + 0.5 * bboxSize;
     float radius = 0.5 * length(bboxSize);
+    float unpaddedRadius = radius;
+    bool isAnimOrParam = (fadeMode < 0.99985) || (inData[inFloatOff + 27u] >= 0.0);
     // Word 27 is GradParams.w - the parametric joint chain base index (< 0 = not
     // GPU-animated). GPU-parametric parts sweep beyond their static bbox (the CPU
     // no longer pads the record bbox: block_lit_instanced.vsh interpolates the
@@ -200,6 +198,20 @@ bool testInstanceVisibility(uint inIdx) {
 
     // 1. 6-plane frustum test in view space
     bool isVisible = testFrustum(viewCenter, radius);
+
+    // 1.5. Analytic Subpixel Culling:
+    // Reject tiny parts whose projected diameter on screen is below the subpixel threshold.
+    // Small detail / animated parts use a 1.35 px threshold; structural parts use 0.75 px.
+    if (isVisible) {
+        float depthZ = -viewCenter.z;
+        if (depthZ > unpaddedRadius + uZNear) {
+            float subpixelThresholdPx = (unpaddedRadius < 0.75 || isAnimOrParam) ? 1.35 : 0.75;
+            float screenDiameterPx = (unpaddedRadius * uP11 * uViewSize.y) / depthZ;
+            if (screenDiameterPx < subpixelThresholdPx) {
+                return false;
+            }
+        }
+    }
 
     // 2. Forward-Z Hi-Z occlusion test (skipped in frustum-only mode:
     //    adaptive gate keeps the pyramid from being rebuilt on small scenes)

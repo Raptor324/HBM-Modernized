@@ -95,18 +95,13 @@ public final class IrisInstancedShaders {
         // decode, rendering black machines - consumers fall back to the
         // companion path (the pack's own program). The shadow slot is
         // universal (depth + vanilla-parity color).
-        if (!shadowPass && !IrisInstancedEncoders.hasEncoder()) {
+        if (!shadowPass) {
             return null;
         }
-        int slot = shadowPass ? 1 : 0;
+        int slot = 1;
+        String shaderName = "hbm_m:iris/block_lit_instanced_iris";
         if (cachedShader[slot] != null) {
-            // The profile (pack gbuffer scheme) changed - rebuild with a different FSH.
-            String wanted = IrisInstancedEncoders.shaderName(shadowPass);
-            if (!wanted.equals(cachedShaderName[slot])) {
-                disposeSlot(slot);
-            } else {
-                return cachedShader[slot];
-            }
+            return cachedShader[slot];
         }
         if (capturedFbo[slot] == -1) {
             return null; // FB snapshot for constructor arguments not taken yet
@@ -115,7 +110,6 @@ public final class IrisInstancedShaders {
         if (constructionFailed[slot] && failedAtGeneration[slot] == generation) {
             return null; // already failed on this pipeline build - do not retry every frame
         }
-        String shaderName = IrisInstancedEncoders.shaderName(shadowPass);
         Object[] fbs = null;
         try {
             // Built before the FB pair so a failure here cannot orphan FBOs.

@@ -31,6 +31,8 @@ public final class BakeVramPoolManager {
     public static final int INDIRECT_CMD_BYTES = 20; // DrawElementsIndirectCommand
     public static final int CULL_CMD_BINDING = 4;
     public static final long MIN_POOL_BYTES = 64L << 20; // 64 MB initial floor
+    /** Hard ceiling for a single OpenGL buffer object (safely below signed 32-bit 2 GiB driver limit). */
+    public static final long MAX_SINGLE_BUFFER_BYTES = 1900L << 20; // 1900 MiB
     public static final long SHRINK_IDLE_FRAMES = 300L;
     public static final long SHRINK_MIN_SAVINGS = 8L << 20;
     public static final long LRU_FRAME_LIMIT = 24;
@@ -104,7 +106,12 @@ public final class BakeVramPoolManager {
 
     public static int roundUpInstanceCapacity(int count) {
         int min = Math.max(count, 256);
-        return Integer.highestOneBit(min - 1) << 1;
+        if (min <= 1024) {
+            return Integer.highestOneBit(min - 1) << 1;
+        }
+        // Above 1024 instances, round up to multiples of 256 (with 12.5% growth step)
+        // instead of doubling (which inflated 5000 instances to 8192 and blew past 2 GiB).
+        return (min + (min >> 3) + 255) & ~255;
     }
 
     public static boolean cacheAllocated(ModeCache mc) {
@@ -289,6 +296,7 @@ public final class BakeVramPoolManager {
             cacheBytes += localNeed;
         }
         try {
+            mc.lastUseFrame = frameStamp();
             mc.outInstances = cap;
             mc.eboInstances = cap;
             mc.recordSsbo = GL15.glGenBuffers();
@@ -523,6 +531,13 @@ public final class BakeVramPoolManager {
     public static boolean relayoutPool(int mode) {
         PassPool pool = pool(mode);
         int stride = outStrideBytes(mode);
+        // Evict genuinely stale caches FIRST before computing prefix-sum offsets so
+        // an eviction never mutates mc.outInstances after newVertBases[] was calculated.
+        synchronized (BakeVramPoolManager.class) {
+            if (cacheBytes > cacheBudgetBytes()) {
+                evictStaleCaches();
+            }
+        }
         long verts = 0, words = 0;
         long outNeeded = 0, eboNeeded = 0;
         int n = BAKED.size();
@@ -545,28 +560,18 @@ public final class BakeVramPoolManager {
                 if (bm.vertBase[mode] != newVertBases[i] || bm.eboWordBase[mode] != newEboBases[i]) {
                     firstShiftEncountered = true;
                 } else {
-                    if (mc.outInstances > 0 && mc.outputValid) {
-                        validOutCopyBytes = (long) newVertBases[i] * stride + (long) bm.vertCount * mc.outInstances * stride;
+                    if (mc.outInstances > 0 && mc.outputValid && mc.recordCount > 0) {
+                        validOutCopyBytes = (long) newVertBases[i] * stride + (long) bm.vertCount * mc.recordCount * stride;
                     }
                     if (!NucleusGpuBaker.cullEnabled() && mc.filled > 0) {
-                        validEboCopyBytes = (long) newEboBases[i] * 4L + (long) bm.idxCount * mc.eboInstances * 4L;
+                        validEboCopyBytes = (long) newEboBases[i] * 4L + (long) bm.idxCount * mc.filled * 4L;
                     }
                 }
             }
         }
-        if (verts > Integer.MAX_VALUE || words > Integer.MAX_VALUE) {
+        if (verts > Integer.MAX_VALUE || words > Integer.MAX_VALUE
+                || outNeeded > MAX_SINGLE_BUFFER_BYTES || eboNeeded > MAX_SINGLE_BUFFER_BYTES) {
             return false;
-        }
-        long delta = (outNeeded > pool.outputAllocBytes
-                               ? poolStoreTarget(outNeeded) - pool.outputAllocBytes : 0L)
-                   + (eboNeeded > pool.eboAllocBytes
-                               ? poolStoreTarget(eboNeeded) - pool.eboAllocBytes : 0L);
-        if (delta > 0) {
-            synchronized (BakeVramPoolManager.class) {
-                if (cacheBytes + delta > cacheBudgetBytes()) {
-                    evictStaleCaches();
-                }
-            }
         }
         if (!ensurePoolStorage(pool, outNeeded, eboNeeded, validOutCopyBytes, validEboCopyBytes)) {
             return false;
@@ -587,7 +592,8 @@ public final class BakeVramPoolManager {
     }
 
     public static long poolStoreTarget(long needed) {
-        return Math.max(needed + (needed >> 1), MIN_POOL_BYTES);
+        long withHeadroom = needed + (needed >> 3); // 12.5% headroom instead of 50%
+        return Math.min(MAX_SINGLE_BUFFER_BYTES, Math.max(withHeadroom, MIN_POOL_BYTES));
     }
 
     public static void invalidateBakedOutput(ModeCache mc) {
@@ -606,12 +612,39 @@ public final class BakeVramPoolManager {
         try {
             boolean vaoNeedsRebuild = false;
             if (outNeeded > pool.outputAllocBytes) {
-                long target = poolStoreTarget(outNeeded);
+                long target = Math.max(outNeeded, poolStoreTarget(outNeeded));
+                if (target > MAX_SINGLE_BUFFER_BYTES) {
+                    return false;
+                }
+                // If no valid bytes need copying (or if the copy would exceed half a gigabyte,
+                // risking peak double-allocation OOM), release the old buffer BEFORE allocating
+                // the new one and invalidate cached outputs so they re-expand cleanly.
+                boolean preserveOld = pool.outputSsbo != -1 && pool.outputAllocBytes > 0
+                        && validOutCopyBytes > 0 && (pool.outputAllocBytes + target <= MAX_SINGLE_BUFFER_BYTES);
+                if (!preserveOld && pool.outputSsbo != -1) {
+                    GL15.glDeleteBuffers(pool.outputSsbo);
+                    synchronized (BakeVramPoolManager.class) {
+                        cacheBytes -= pool.outputAllocBytes;
+                    }
+                    pool.outputSsbo = -1;
+                    pool.outputAllocBytes = 0;
+                    int mode = modeOfPool(pool);
+                    for (int i = 0; i < BAKED.size(); i++) {
+                        invalidateBakedOutput(BAKED.get(i).cache(mode));
+                    }
+                }
+                while (GL11.glGetError() != GL11.GL_NO_ERROR) { /* drain */ }
                 int newSsbo = GL15.glGenBuffers();
                 GlDebugMarkers.labelBuffer(newSsbo, "HBM_PoolOut_" + poolName(pool) + "_SSBO");
                 GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, newSsbo);
                 GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, target, GL15.GL_DYNAMIC_COPY);
-                if (pool.outputSsbo != -1 && pool.outputAllocBytes > 0 && validOutCopyBytes > 0) {
+                if (GL11.glGetError() == GL11.GL_OUT_OF_MEMORY) {
+                    GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
+                    GL15.glDeleteBuffers(newSsbo);
+                    MainRegistry.LOGGER.warn("[HBM-M] NucleusGpuBaker: GL_OUT_OF_MEMORY allocating {} MiB pool output SSBO", target >> 20);
+                    return false;
+                }
+                if (preserveOld) {
                     long copyBytes = Math.min(validOutCopyBytes, pool.outputAllocBytes);
                     GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT | GL43.GL_BUFFER_UPDATE_BARRIER_BIT);
                     GL15.glBindBuffer(GL31.GL_COPY_READ_BUFFER, pool.outputSsbo);
@@ -619,8 +652,6 @@ public final class BakeVramPoolManager {
                     GL31.glCopyBufferSubData(GL31.GL_COPY_READ_BUFFER, GL31.GL_COPY_WRITE_BUFFER, 0L, 0L, copyBytes);
                     GL15.glBindBuffer(GL31.GL_COPY_READ_BUFFER, 0);
                     GL15.glBindBuffer(GL31.GL_COPY_WRITE_BUFFER, 0);
-                }
-                if (pool.outputSsbo != -1) {
                     GL15.glDeleteBuffers(pool.outputSsbo);
                 }
                 GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
@@ -633,12 +664,33 @@ public final class BakeVramPoolManager {
                 vaoNeedsRebuild = true;
             }
             if (eboNeeded > pool.eboAllocBytes) {
-                long target = poolStoreTarget(eboNeeded);
+                long target = Math.max(eboNeeded, poolStoreTarget(eboNeeded));
+                if (target > MAX_SINGLE_BUFFER_BYTES) {
+                    return false;
+                }
+                boolean preserveOld = !NucleusGpuBaker.cullEnabled() && pool.eboSsbo != -1
+                        && pool.eboAllocBytes > 0 && validEboCopyBytes > 0
+                        && (pool.eboAllocBytes + target <= MAX_SINGLE_BUFFER_BYTES);
+                if (!preserveOld && pool.eboSsbo != -1) {
+                    GL15.glDeleteBuffers(pool.eboSsbo);
+                    synchronized (BakeVramPoolManager.class) {
+                        cacheBytes -= pool.eboAllocBytes;
+                    }
+                    pool.eboSsbo = -1;
+                    pool.eboAllocBytes = 0;
+                }
+                while (GL11.glGetError() != GL11.GL_NO_ERROR) { /* drain */ }
                 int newEbo = GL15.glGenBuffers();
                 GlDebugMarkers.labelBuffer(newEbo, "HBM_PoolEbo_" + poolName(pool) + "_EBO");
                 GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, newEbo);
                 GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, target, GL15.GL_DYNAMIC_COPY);
-                if (!NucleusGpuBaker.cullEnabled() && pool.eboSsbo != -1 && pool.eboAllocBytes > 0 && validEboCopyBytes > 0) {
+                if (GL11.glGetError() == GL11.GL_OUT_OF_MEMORY) {
+                    GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
+                    GL15.glDeleteBuffers(newEbo);
+                    MainRegistry.LOGGER.warn("[HBM-M] NucleusGpuBaker: GL_OUT_OF_MEMORY allocating {} MiB pool EBO", target >> 20);
+                    return false;
+                }
+                if (preserveOld) {
                     long copyBytes = Math.min(validEboCopyBytes, pool.eboAllocBytes);
                     GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT | GL43.GL_ELEMENT_ARRAY_BARRIER_BIT | GL43.GL_BUFFER_UPDATE_BARRIER_BIT);
                     GL15.glBindBuffer(GL31.GL_COPY_READ_BUFFER, pool.eboSsbo);
@@ -646,8 +698,6 @@ public final class BakeVramPoolManager {
                     GL31.glCopyBufferSubData(GL31.GL_COPY_READ_BUFFER, GL31.GL_COPY_WRITE_BUFFER, 0L, 0L, copyBytes);
                     GL15.glBindBuffer(GL31.GL_COPY_READ_BUFFER, 0);
                     GL15.glBindBuffer(GL31.GL_COPY_WRITE_BUFFER, 0);
-                }
-                if (pool.eboSsbo != -1) {
                     GL15.glDeleteBuffers(pool.eboSsbo);
                 }
                 GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);

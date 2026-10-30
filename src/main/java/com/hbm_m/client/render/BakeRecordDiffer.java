@@ -84,21 +84,21 @@ public final class BakeRecordDiffer {
         int[] dirty = mc.dirtyIdx;
         int n = 0;
         int o = 0;
+        boolean sawTrackedJoint = false;
         final int gradWWord = InstancedStaticPartRenderer.GRAD_FLOAT_OFFSET + 3; // word 27
         final int animYWord = InstancedStaticPartRenderer.ANIM_FLOAT_OFFSET + 1; // word 29
         for (int r = 0; r < count; r++, o += stride) {
             boolean rowDirty = false;
-            for (int w = 0; w < stride; w++) {
+            for (int w = stride - 1; w >= 0; w--) {
                 int rawA = isDirect
                         ? MemoryUtil.memGetInt(baseAddr + (long) (o + w) * 4L)
                         : Float.floatToRawIntBits(SCRATCH_CMP[o + w]);
                 int rawB = Float.floatToRawIntBits(snap[o + w]);
                 if (rawA == rawB) {
-                    // NaN poison guard: raw-bits equality can hold across two
-                    // NaN-poisoned words forever. Any non-finite tint/grad word
-                    // forces the record dirty so a poisoned record can never be
-                    // cached instead of re-uploaded.
-                    if ((rawA & 0x7f800000) != 0x7f800000) {
+                    // NaN poison guard on float32 tint/grad words (words 20..27) ONLY:
+                    // words 3..4 (quat), 12..15 (light u8), and 28..31 (binary16 AnimParams)
+                    // are bit-packed integers whose high bits can legitimately match 0x7f800000.
+                    if (w < 20 || w >= 28 || (rawA & 0x7f800000) != 0x7f800000) {
                         continue;
                     }
                     rowDirty = true;
@@ -118,15 +118,15 @@ public final class BakeRecordDiffer {
             if (!rowDirty) {
                 // Check if this instance uses a time-tracked GPU joint chain that is
                 // actively moving (duration halfword in high 16 bits of word 29 != 0).
-                float gradW = isDirect
-                        ? MemoryUtil.memGetFloat(baseAddr + (long) (o + gradWWord) * 4L)
-                        : SCRATCH_CMP[o + gradWWord];
-                if (gradW >= 0.0f && NucleusJointSpecs.isTrackedChain((int) gradW)) {
-                    int rawAnimY = isDirect
-                            ? MemoryUtil.memGetInt(baseAddr + (long) (o + animYWord) * 4L)
-                            : Float.floatToRawIntBits(SCRATCH_CMP[o + animYWord]);
-                    // High 16 bits of AnimParams.y hold binary16 durationTicks; non-zero magnitude means moving
-                    if ((rawAnimY & 0x7FFF0000) != 0) {
+                int rawAnimY = isDirect
+                        ? MemoryUtil.memGetInt(baseAddr + (long) (o + animYWord) * 4L)
+                        : Float.floatToRawIntBits(SCRATCH_CMP[o + animYWord]);
+                if ((rawAnimY & 0x7FFF0000) != 0) {
+                    float gradW = isDirect
+                            ? MemoryUtil.memGetFloat(baseAddr + (long) (o + gradWWord) * 4L)
+                            : SCRATCH_CMP[o + gradWWord];
+                    if (gradW >= 0.0f && NucleusJointSpecs.isTrackedChain((int) gradW)) {
+                        sawTrackedJoint = true;
                         rowDirty = true;
                     }
                 }
@@ -135,6 +135,7 @@ public final class BakeRecordDiffer {
                 dirty[n++] = r;
             }
         }
+        mc.hasTrackedJoints = sawTrackedJoint;
         mc.dirtyCount = n;
         return n;
     }

@@ -269,6 +269,7 @@ public final class NucleusDispatcherBypass {
                 pos.toShortString(), be.getType(), bucket.machines.size());
         if (be instanceof NucleusTrackedBlockEntity tracked) {
             tracked.hbm_m$setNucleusRegistered(true);
+            tracked.hbm_m$setDemolished(false);
         }
     }
 
@@ -288,6 +289,7 @@ public final class NucleusDispatcherBypass {
         }
         if (be instanceof NucleusTrackedBlockEntity tracked) {
             tracked.hbm_m$setNucleusRegistered(false);
+            tracked.hbm_m$setRenderState(null);
         }
         // Render-thread safe cache eviction
         MachineBer<?> ber = BER_FAST_CACHE.get(be.getType());
@@ -514,6 +516,9 @@ public final class NucleusDispatcherBypass {
             coreBe = level.getBlockEntity(corePos);
         }
         if (coreBe != null) {
+            if (coreBe instanceof NucleusTrackedBlockEntity tracked) {
+                tracked.hbm_m$setDemolished(true);
+            }
             com.hbm_m.multiblock.TeardownTrace.log("onMachineControllerRemoved: live controller BE at {}, evicting normally",
                     corePos.toShortString());
             removeMachine(coreBe);
@@ -529,6 +534,9 @@ public final class NucleusDispatcherBypass {
             for (int i = 0; i < bucket.machines.size(); i++) {
                 BlockEntity m = bucket.machines.get(i);
                 if (m.getBlockPos().equals(corePos)) {
+                    if (m instanceof NucleusTrackedBlockEntity tracked) {
+                        tracked.hbm_m$setDemolished(true);
+                    }
                     bucketHit = true;
                     removeMachine(m);
                     break;
@@ -571,6 +579,7 @@ public final class NucleusDispatcherBypass {
                     }
                     if (b instanceof NucleusTrackedBlockEntity tracked) {
                         tracked.hbm_m$setNucleusRegistered(false);
+                        tracked.hbm_m$setRenderState(null);
                     }
                     MachineBer<?> ber = BER_FAST_CACHE.get(b.getType());
                     if (ber != null) {
@@ -640,6 +649,7 @@ public final class NucleusDispatcherBypass {
         for (BlockEntity be : BE_TO_BUCKET.keySet()) {
             if (be instanceof NucleusTrackedBlockEntity tracked) {
                 tracked.hbm_m$setNucleusRegistered(false);
+                tracked.hbm_m$setRenderState(null);
             }
         }
         CHUNK_BUCKETS.clear();
@@ -818,51 +828,28 @@ public final class NucleusDispatcherBypass {
                 continue; // All machines in this chunk culled in ~25 ns!
             }
 
-            // LEVEL 1: Static chunk retained short-circuit (Milestone 2)
-            long chunkKey = bucket.chunkKey;
-            com.hbm_m.client.render.retained.RetainedInstanceGraph rig =
-                    com.hbm_m.client.render.retained.RetainedInstanceGraph.get();
-            if (rig != null) {
-                com.hbm_m.client.render.retained.ChunkInstancePartition partition =
-                        rig.getPartitions().get(chunkKey);
-                if (partition != null && partition.getHandles().size() == bucket.machines.size()
-                        && partition.isPurelyStaticAndClean()) {
-                    // F3 honesty: the chunk is skipped wholesale, but every machine
-                    // in it IS rendered (retained instance records) - count per
-                    // machine so the overlay does not show 0 models for
-                    // fully-static chunks.
-                    for (com.hbm_m.client.render.retained.MachineInstanceHandle retainedHandle
-                            : partition.getHandles().values()) {
-                        NucleusDebug.recordMachineRendered();
-                    }
-                    continue; // All machines in this chunk are already retained in GPU memory!
-                }
-            }
-
             // LEVEL 2: Visible Chunk -> Machine Iteration
             ArrayList<BlockEntity> list = bucket.machines;
             for (int i = 0; i < list.size(); i++) {
                 BlockEntity be = list.get(i);
-                if (be.isRemoved() || isDemolished(be.getBlockPos().asLong())) {
+                boolean demolished = (be instanceof NucleusTrackedBlockEntity tracked)
+                        ? tracked.hbm_m$isDemolished()
+                        : isDemolished(be.getBlockPos().asLong());
+                if (be.isRemoved() || demolished) {
                     removeMachine(be);
                     i--;
                     continue;
                 }
 
-                if (rig != null && rig.isMachineStaticAndRetained(be)) {
-                    // Counted, not vanished: the machine renders through its
-                    // retained records even though the BER collect is skipped.
-                    NucleusDebug.recordMachineRendered();
-                    continue;
-                }
-
                 // Individual machine frustum test before touching BER or matrices.
-                // The box is fetched ONCE here and threaded into collectOne - the
-                // old code re-fetched it 5 lines later inside collectOne (2 ms/frame
-                // of duplicate cache hits at 5000 machines in spark).
-                AABB beBox = RenderBoundsCache.get(be);
-                if (!gpuCullCoversMain && frustum != null && beBox != null && !frustum.isVisible(beBox)) {
-                    continue; // Machine outside frustum; skipped!
+                // Only fetch the AABB when CPU frustum culling is actually active
+                // (!gpuCullCoversMain) — saves 5.27 ms/frame on 5000-machine scenes!
+                AABB beBox = null;
+                if (!gpuCullCoversMain && frustum != null) {
+                    beBox = RenderBoundsCache.get(be);
+                    if (beBox != null && !frustum.isVisible(beBox)) {
+                        continue; // Machine outside frustum; skipped!
+                    }
                 }
 
                 collectOne(be, beBox, partialTick, pose, buffers, base, cam, mc, gameTime, maxDistCapSq);
@@ -928,9 +915,11 @@ public final class NucleusDispatcherBypass {
         double dx = pos.getX() - cam.x;
         double dy = pos.getY() - cam.y;
         double dz = pos.getZ() - cam.z;
-        double distSq = (beBox != null)
-                ? beBox.distanceToSqr(cam)
-                : (dx * dx + dy * dy + dz * dz);
+        double cdx = dx + 0.5;
+        double cdy = dy + 0.5;
+        double cdz = dz + 0.5;
+        double centerDistSq = cdx * cdx + cdy * cdy + cdz * cdz;
+        double distSq = (beBox != null) ? beBox.distanceToSqr(cam) : centerDistSq;
         // Safety distance cap: slightly above the maximum CONFIG distance
         // (static/animated draw sliders) - the real soft fade lives inside
         // renderParts anyway; this is just a cheap early exit.
@@ -952,7 +941,7 @@ public final class NucleusDispatcherBypass {
         // change, no expired light/fade TTL) confirms its presence with a
         // roster assert instead of a full rebuild (matrices/light/comparison
         // of 46 floats per part).
-        if (((MachineBer<?>) machineBer).tryFastAssertRender(be, gameTime)) {
+        if (((MachineBer<?>) machineBer).tryFastAssertRender(be, gameTime, centerDistSq)) {
             return;
         }
         pose.last().pose().set(base);

@@ -65,8 +65,10 @@ public class SodiumWorldRendererMixin {
         }
         // Teardown ghost: Embeddium's compiled section can still list a BE for
         // 1-2 frames after removal/demolition - never let it render.
-        if (blockEntity.isRemoved()
-                || NucleusDispatcherBypass.isDemolished(blockEntity.getBlockPos().asLong())) {
+        boolean demolished = (blockEntity instanceof NucleusTrackedBlockEntity t)
+                ? t.hbm_m$isDemolished()
+                : NucleusDispatcherBypass.isDemolished(blockEntity.getBlockPos().asLong());
+        if (blockEntity.isRemoved() || demolished) {
             ci.cancel();
             return;
         }

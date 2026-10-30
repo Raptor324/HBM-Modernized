@@ -319,8 +319,11 @@ void main() {
                    float(bitfieldExtract(int(tRaw), 16, 8)) / 127.0);
     }
 
-    // Parametric joint chain animation (evaluated once per workgroup into shared memory)
-    if (s_hasJoint != 0u) {
+    int vBoneId = (uOffBoneId >= 0) ? int(ldWord(mBase, uOffBoneId)) : 0;
+
+    // Parametric joint chain animation (evaluated once per workgroup into shared memory;
+    // vertices with vBoneId < 0 are static hull vertices and bypass the joint transform)
+    if (s_hasJoint != 0u && vBoneId >= 0) {
         pos = s_jointRot * pos + s_jointTrans;
         nrm = s_jointRot * nrm;
         tng = s_jointRot * tng;
@@ -328,13 +331,10 @@ void main() {
 
     // Dynamic skeletal bone animation support
     vec4 localPos = vec4(pos, 1.0);
-    if (uHasBones > 0 && uOffBoneId >= 0) {
-        int bone = int(ldWord(mBase, uOffBoneId));
-        if (bone >= 0 && bone < 64) {
-            localPos = uBoneMatrices[bone] * localPos;
-            nrm = mat3(uBoneMatrices[bone]) * nrm;
-            tng = mat3(uBoneMatrices[bone]) * tng;
-        }
+    if (uHasBones > 0 && vBoneId >= 0 && vBoneId < 64) {
+        localPos = uBoneMatrices[vBoneId] * localPos;
+        nrm = mat3(uBoneMatrices[vBoneId]) * nrm;
+        tng = mat3(uBoneMatrices[vBoneId]) * tng;
     }
 
     vec3 outPos;
@@ -365,8 +365,12 @@ void main() {
         vec4 rot = instQuat(iBase);
         outPos = quatRotate(rot, localPos.xyz)
                 + vec3(instData[iBase + INST_POS_WORD], instData[iBase + INST_POS_WORD + 1u], instData[iBase + INST_POS_WORD + 2u]);
-        nOut = normalize(quatRotate(rot, nrm));
-        tOut = normalize(quatRotate(rot, tng));
+        vec3 rNrm = quatRotate(rot, nrm);
+        float nLenSq = dot(rNrm, rNrm);
+        nOut = (nLenSq > 1e-8) ? (rNrm * inversesqrt(nLenSq)) : vec3(0.0, 1.0, 0.0);
+        vec3 rTng = quatRotate(rot, tng);
+        float tLenSq = dot(rTng, rTng);
+        tOut = (tLenSq > 1e-8) ? (rTng * inversesqrt(tLenSq)) : vec3(1.0, 0.0, 0.0);
     }
 
     outData[o + 0u] = outPos.x;

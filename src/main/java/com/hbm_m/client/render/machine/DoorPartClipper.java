@@ -32,7 +32,34 @@ public final class DoorPartClipper {
     private static final int[][] polyB = new int[CAPACITY][VERTEX_SIZE];
     private static final float[] dist = new float[CAPACITY];
     private static final int[] PACKED_SCRATCH = new int[4 * VERTEX_SIZE];
-    private static final BakedQuad SCRATCH_QUAD = new BakedQuad(PACKED_SCRATCH, -1, net.minecraft.core.Direction.UP, null, true);
+
+    private static final class MutableScratchQuad extends BakedQuad {
+        private net.minecraft.core.Direction dir = net.minecraft.core.Direction.UP;
+        private net.minecraft.client.renderer.texture.TextureAtlasSprite spr = null;
+        private int tint = -1;
+        private boolean shadeFlag = true;
+
+        MutableScratchQuad(int[] vertices) {
+            super(vertices, -1, net.minecraft.core.Direction.UP, null, true);
+        }
+
+        MutableScratchQuad prepare(BakedQuad src) {
+            if (src != null) {
+                this.dir = src.getDirection() != null ? src.getDirection() : net.minecraft.core.Direction.UP;
+                this.spr = src.getSprite();
+                this.tint = src.getTintIndex();
+                this.shadeFlag = src.isShade();
+            }
+            return this;
+        }
+
+        @Override public net.minecraft.core.Direction getDirection() { return this.dir; }
+        @Override public net.minecraft.client.renderer.texture.TextureAtlasSprite getSprite() { return this.spr; }
+        @Override public int getTintIndex() { return this.tint; }
+        @Override public boolean isShade() { return this.shadeFlag; }
+    }
+
+    private static final MutableScratchQuad SCRATCH_QUAD = new MutableScratchQuad(PACKED_SCRATCH);
 
     private DoorPartClipper() {}
 
@@ -72,7 +99,7 @@ public final class DoorPartClipper {
                     System.arraycopy(v, 0, PACKED_SCRATCH, 0, 4 * VERTEX_SIZE);
                     remapUvInPlace(PACKED_SCRATCH, u0, v0, du, dv);
                     float shade = RenderHooks.quadShade(quad.getDirection());
-                    RenderHooks.putBulkData(consumer, pose, SCRATCH_QUAD,
+                    RenderHooks.putBulkData(consumer, pose, SCRATCH_QUAD.prepare(quad),
                             shade * tr, shade * tg, shade * tb, alpha, packedLight,
                             OverlayTexture.NO_OVERLAY, false);
                 }
@@ -179,6 +206,7 @@ public final class DoorPartClipper {
                                 float tr, float tg, float tb, float alpha, int packedLight) {
         if (n < 3) return;
 
+        SCRATCH_QUAD.prepare(srcQuad);
         float shade = RenderHooks.quadShade(srcQuad.getDirection());
 
         // Первый квад (или треугольник, дополненный 4-й вершиной)

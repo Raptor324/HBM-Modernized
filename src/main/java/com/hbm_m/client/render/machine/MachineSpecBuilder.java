@@ -1201,11 +1201,84 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
         }
     }
 
+    private static <T extends BlockEntity> boolean isMergeableStaticPart(MachineSpec.PartDef<T> p) {
+        return !p.animated()
+                && !p.dynamic()
+                && !p.isConditional()
+                && !MachineSpec.isFramePart(p.modelPartName())
+                && p.animator() == null
+                && p.parametric() == null
+                && p.lightOverride() == null
+                && p.uvRectResolver() == null
+                && p.tintOverride() == null
+                && p.tintFalloff() == null
+                && p.clipPlanesResolver() == null;
+    }
+
+    private List<MachineSpec.PartDef<T>> mergePlainStaticParts(List<MachineSpec.PartDef<T>> rawParts) {
+        int mergeableCount = 0;
+        for (int i = 0; i < rawParts.size(); i++) {
+            if (isMergeableStaticPart(rawParts.get(i))) {
+                mergeableCount++;
+            }
+        }
+        if (mergeableCount < 2) {
+            return rawParts;
+        }
+        StringBuilder joinedModelNames = new StringBuilder();
+        MachineSpec.PartDef<T> firstStatic = null;
+        for (int i = 0; i < rawParts.size(); i++) {
+            MachineSpec.PartDef<T> p = rawParts.get(i);
+            if (isMergeableStaticPart(p)) {
+                if (firstStatic == null) {
+                    firstStatic = p;
+                }
+                if (joinedModelNames.length() > 0) {
+                    joinedModelNames.append(',');
+                }
+                joinedModelNames.append(p.modelPartName());
+            }
+        }
+        String mergedModelName = joinedModelNames.toString();
+        MachineSpec.PartDef<T> mergedDef = new MachineSpec.PartDef<>(
+                firstStatic.name(),
+                mergedModelName,
+                null, null, null, false,
+                id + "/" + mergedModelName,
+                null, null, null, null, null, null, null, null);
+        List<MachineSpec.PartDef<T>> out = new ArrayList<>(rawParts.size() - mergeableCount + 1);
+        boolean inserted = false;
+        for (int i = 0; i < rawParts.size(); i++) {
+            MachineSpec.PartDef<T> p = rawParts.get(i);
+            if (isMergeableStaticPart(p)) {
+                if (!inserted) {
+                    out.add(mergedDef);
+                    inserted = true;
+                }
+            } else {
+                out.add(p);
+            }
+        }
+        return out;
+    }
+
     /** Registers the BER in the vanilla registry + the spec in {@link MachineRenderRegistry}. */
     public void register() {
         ToLongFunction<T> resolvedEpoch = deduceAnimationEpoch();
+        List<String> effectiveItemParts = this.itemParts;
+        if (effectiveItemParts == null) {
+            List<String> derived = new ArrayList<>();
+            for (MachineSpec.PartDef<T> p : parts) {
+                if (!p.dynamic() && !p.isConditional() && !MachineSpec.isFramePart(p.modelPartName())
+                        && !derived.contains(p.modelPartName())) {
+                    derived.add(p.modelPartName());
+                }
+            }
+            effectiveItemParts = derived;
+        }
+        List<MachineSpec.PartDef<T>> runtimeParts = mergePlainStaticParts(parts);
         MachineSpec<T> spec = new MachineSpec<>(id, beClass, type, modelResolver, facingResolver,
-                parts, hooks, viewDistance, blockTransform, itemParts, itemExcept, chunkRenderTypes,
+                runtimeParts, hooks, viewDistance, blockTransform, effectiveItemParts, itemExcept, chunkRenderTypes,
                 resolvedEpoch);
         BlockEntityRenderers.register(type, ctx -> new MachineBer<>(spec));
         MachineRenderRegistry.register(spec);

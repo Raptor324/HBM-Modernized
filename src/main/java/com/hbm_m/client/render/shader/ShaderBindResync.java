@@ -295,14 +295,25 @@ public final class ShaderBindResync {
     public static void invalidateStaticProgramCache() {
         try {
             if (lastProgramIdField == null) {
+                java.lang.reflect.Field fallback = null;
                 for (java.lang.reflect.Field f : ShaderInstance.class.getDeclaredFields()) {
                     if (f.getType() == int.class && java.lang.reflect.Modifier.isStatic(f.getModifiers())
                             && !java.lang.reflect.Modifier.isFinal(f.getModifiers())
                             && !f.isSynthetic()) {
-                        f.setAccessible(true);
-                        lastProgramIdField = f;
-                        break;
+                        String n = f.getName();
+                        if ("lastProgramId".equals(n) || "f_173313_".equals(n)) {
+                            f.setAccessible(true);
+                            lastProgramIdField = f;
+                            break;
+                        }
+                        if (fallback == null) {
+                            fallback = f;
+                        }
                     }
+                }
+                if (lastProgramIdField == null && fallback != null) {
+                    fallback.setAccessible(true);
+                    lastProgramIdField = fallback;
                 }
             }
             if (lastProgramIdField != null) {
@@ -386,15 +397,26 @@ public final class ShaderBindResync {
     public static void invalidateBlendModeCache() {
         try {
             if (blendLastAppliedField == null) {
+                java.lang.reflect.Field fallback = null;
                 for (java.lang.reflect.Field f : com.mojang.blaze3d.shaders.BlendMode.class
                         .getDeclaredFields()) {
                     if (java.lang.reflect.Modifier.isStatic(f.getModifiers())
                             && !f.isSynthetic()
                             && f.getType() == com.mojang.blaze3d.shaders.BlendMode.class) {
-                        f.setAccessible(true);
-                        blendLastAppliedField = f;
-                        break;
+                        String n = f.getName();
+                        if ("lastApplied".equals(n) || "f_85514_".equals(n)) {
+                            f.setAccessible(true);
+                            blendLastAppliedField = f;
+                            break;
+                        }
+                        if (fallback == null) {
+                            fallback = f;
+                        }
                     }
+                }
+                if (blendLastAppliedField == null && fallback != null) {
+                    fallback.setAccessible(true);
+                    blendLastAppliedField = fallback;
                 }
             }
             if (blendLastAppliedField != null) {

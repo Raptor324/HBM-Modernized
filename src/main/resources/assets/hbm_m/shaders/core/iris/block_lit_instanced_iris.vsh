@@ -261,8 +261,8 @@ void main() {
     // each node's rigid transform into one mat4 and apply it once - array-free
     // (the old dynamically indexed specA[8]/specB[8]/offs[8] locals pressed
     // per-vertex registers), mathematically identical, not bit-identical.
-    if (GradParams.w >= 0.0) {
-        int base = int(GradParams.w);
+    if (GradParams.w >= 0.0 && BoneId >= 0) {
+        int base = int(GradParams.w) + BoneId;
         float countW = texelFetch(iris_uJointSpecs, ivec2(base * 3 + 1, 0), 0).w;
         int n = 1;
         if (countW >= 0.5) {
