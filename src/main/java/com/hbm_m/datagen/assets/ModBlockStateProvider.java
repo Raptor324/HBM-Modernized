@@ -58,6 +58,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
     protected void registerStatesAndModels() {
         registerR6aBlocks();
         registerMigratedManualBlocks();
+        registerFfaBlockstatePorts();
 
         // ГЕНЕРАЦИЯ МОДЕЛЕЙ ДЛЯ БЛОКОВ-РЕСУРСОВ С ПРЕФИКСОМ "block_"
         simpleBlockWithItem(ModBlocks.STRAWBERRY_BUSH.get(), models().cross(blockTexture(ModBlocks.STRAWBERRY_BUSH.get()).getPath(),
@@ -276,14 +277,16 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // Texturen liegen unter block/ported/, getrennt vom handgepflegten Bestand.
         simpleBlockWithItem(ModBlocks.BLOCK_ASBESTOS.get(), models().cubeAll("block_asbestos", modLoc("block/ported/block_asbestos")));
         simpleBlockWithItem(ModBlocks.BLOCK_BAKELITE.get(), models().cubeAll("block_bakelite", modLoc("block/ported/block_bakelite")));
-        simpleBlockWithItem(ModBlocks.BLOCK_C4.get(), models().cubeAll("block_c4", modLoc("block/ported/block_c4")));
+        // ffa-port: item model -> manual assets/hbm_m/models/item/block_c4.json
+        simpleBlockItem(ModBlocks.BLOCK_C4.get(), models().getExistingFile(modLoc("item/block_c4")));
         simpleBlockWithItem(ModBlocks.BLOCK_COLTAN.get(), models().cubeAll("block_coltan", modLoc("block/ported/block_coltan")));
         simpleBlockWithItem(ModBlocks.BLOCK_CORIUM.get(), models().cubeAll("block_corium", modLoc("block/ported/block_corium")));
         simpleBlockWithItem(ModBlocks.BLOCK_CORIUM_COBBLE.get(), models().cubeAll("block_corium_cobble", modLoc("block/ported/block_corium_cobble")));
         // block_euphemium_cluster — FFA-канон: axisBlock ниже по файлу; авто-порт-дубль удалён.
         // block_fiberglass — FFA-канон: axisBlock ниже по файлу; авто-порт-дубль удалён.
         simpleBlockWithItem(ModBlocks.BLOCK_FLUORITE.get(), models().cubeAll("block_fluorite", modLoc("block/ported/block_fluorite")));
-        simpleBlockWithItem(ModBlocks.BLOCK_GRAPHITE_TRITIUM.get(), models().cubeAll("block_graphite_tritium", modLoc("block/ported/block_graphite_tritium")));
+        // ffa-port: item model -> manual assets/hbm_m/models/item/block_graphite_tritium.json
+        simpleBlockItem(ModBlocks.BLOCK_GRAPHITE_TRITIUM.get(), models().getExistingFile(modLoc("item/block_graphite_tritium")));
         // block_insulator — FFA-канон: axisBlock ниже по файлу; авто-порт-дубль удалён.
         simpleBlockWithItem(ModBlocks.BLOCK_LITHIUM.get(), models().cubeAll("block_lithium", modLoc("block/ported/block_lithium")));
         simpleBlockWithItem(ModBlocks.BLOCK_MAGNETIZED_TUNGSTEN.get(), models().cubeAll("block_magnetized_tungsten", modLoc("block/ported/block_magnetized_tungsten")));
@@ -294,7 +297,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockWithItem(ModBlocks.BLOCK_PU_MIX.get(), models().cubeAll("block_pu_mix", modLoc("block/ported/block_pu_mix")));
         simpleBlockWithItem(ModBlocks.BLOCK_RED_PHOSPHORUS.get(), models().cubeAll("block_red_phosphorus", modLoc("block/ported/block_red_phosphorus")));
         simpleBlockWithItem(ModBlocks.BLOCK_RUBBER.get(), models().cubeAll("block_rubber", modLoc("block/ported/block_rubber")));
-        simpleBlockWithItem(ModBlocks.BLOCK_SEMTEX.get(), models().cubeAll("block_semtex", modLoc("block/ported/block_semtex")));
+        // ffa-port: item model -> manual assets/hbm_m/models/item/block_semtex.json
+        simpleBlockItem(ModBlocks.BLOCK_SEMTEX.get(), models().getExistingFile(modLoc("item/block_semtex")));
         simpleBlockWithItem(ModBlocks.BLOCK_SULFUR.get(), models().cubeAll("block_sulfur", modLoc("block/ported/block_sulfur")));
         simpleBlockWithItem(ModBlocks.BLOCK_TANTALIUM.get(), models().cubeAll("block_tantalium", modLoc("block/ported/block_tantalium")));
         simpleBlockWithItem(ModBlocks.BLOCK_TRINITITE.get(), models().cubeAll("block_trinitite", modLoc("block/ported/block_trinitite")));
@@ -303,17 +307,22 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockWithItem(ModBlocks.BLOCK_WASTE_VITRIFIED.get(), models().cubeAll("block_waste_vitrified", modLoc("block/ported/block_waste_vitrified")));
         simpleBlockWithItem(ModBlocks.BLOCK_WHITE_PHOSPHORUS.get(), models().cubeAll("block_white_phosphorus", modLoc("block/ported/block_white_phosphorus")));
         simpleBlockWithItem(ModBlocks.BLOCK_YELLOWCAKE.get(), models().cubeAll("block_yellowcake", modLoc("block/ported/block_yellowcake")));
-        simpleBlockWithItem(ModBlocks.BRICK_FORGOTTEN.get(), models().cubeAll("brick_forgotten", modLoc("block/ported/brick_forgotten")));
+        // ffa-port: item model -> manual assets/hbm_m/models/item/brick_forgotten.json
+        simpleBlockItem(ModBlocks.BRICK_FORGOTTEN.get(), models().getExistingFile(modLoc("item/brick_forgotten")));
         simpleBlockWithItem(ModBlocks.CONCRETE_LIQUID.get(), models().cubeAll("concrete_liquid", modLoc("block/ported/concrete_liquid")));
-        simpleBlockWithItem(ModBlocks.DIGAMMA_MATTER.get(), models().cubeAll("digamma_matter", modLoc("block/ported/digamma_matter")));
+        // ffa-port: item model -> manual assets/hbm_m/models/item/digamma_matter.json
+        simpleBlockItem(ModBlocks.DIGAMMA_MATTER.get(), models().getExistingFile(modLoc("item/digamma_matter")));
         simpleBlockWithItem(ModBlocks.DUNGEON_SPAWNER.get(), models().cubeAll("dungeon_spawner", modLoc("block/ported/dungeon_spawner")));
         simpleBlockWithItem(ModBlocks.EVENT_TESTER.get(), models().cubeAll("event_tester", modLoc("block/ported/event_tester")));
-        simpleBlockWithItem(ModBlocks.FLUID_DUCT_PAINTABLE_BLOCK_EXHAUST.get(), models().cubeAll("fluid_duct_paintable_block_exhaust", modLoc("block/ported/fluid_duct_paintable_block_exhaust")));
-        simpleBlockWithItem(ModBlocks.GEYSIR_NETHER.get(), models().cubeAll("geysir_nether", modLoc("block/ported/geysir_nether")));
+        // ffa-port: item model -> manual assets/hbm_m/models/item/fluid_duct_paintable_block_exhaust.json
+        simpleBlockItem(ModBlocks.FLUID_DUCT_PAINTABLE_BLOCK_EXHAUST.get(), models().getExistingFile(modLoc("item/fluid_duct_paintable_block_exhaust")));
+        // ffa-port: item model -> manual assets/hbm_m/models/item/geysir_nether.json
+        simpleBlockItem(ModBlocks.GEYSIR_NETHER.get(), models().getExistingFile(modLoc("item/geysir_nether")));
         icfPhantomState();
         simpleBlockWithItem(ModBlocks.LAUNCH_TABLE.get(), models().cubeAll("launch_table", modLoc("block/ported/launch_table")));
         simpleBlockWithItem(ModBlocks.LOGIC_BLOCK.get(), models().cubeAll("logic_block", modLoc("block/ported/logic_block")));
-        simpleBlockWithItem(ModBlocks.MUSH_BLOCK_STEM.get(), models().cubeAll("mush_block_stem", modLoc("block/ported/mush_block_stem")));
+        // ffa-port: item model -> manual assets/hbm_m/models/item/mush_block_stem.json
+        simpleBlockItem(ModBlocks.MUSH_BLOCK_STEM.get(), models().getExistingFile(modLoc("item/mush_block_stem")));
         simpleBlockWithItem(ModBlocks.ORE_GNEISS_URANIUM_SCORCHED.get(), models().cubeAll("ore_gneiss_uranium_scorched", modLoc("block/ported/ore_gneiss_uranium_scorched")));
         simpleBlockWithItem(ModBlocks.ORE_ALUMINIUM.get(), models().cubeAll("ore_aluminium", modLoc("block/ported/ore_aluminium")));
         simpleBlockWithItem(ModBlocks.ORE_AUSTRALIUM.get(), models().cubeAll("ore_australium", modLoc("block/ported/ore_australium")));
@@ -346,7 +355,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockWithItem(ModBlocks.PNEUMATIC_STORAGE_EXPORTER.get(), models().cubeAll("pneumatic_storage_exporter", modLoc("block/ported/pneumatic_storage_exporter")));
         simpleBlockWithItem(ModBlocks.PNEUMATIC_STORAGE_IMPORTER.get(), models().cubeAll("pneumatic_storage_importer", modLoc("block/ported/pneumatic_storage_importer")));
         simpleBlockWithItem(ModBlocks.PNEUMATIC_STORAGE_MONO.get(), models().cubeAll("pneumatic_storage_mono", modLoc("block/ported/pneumatic_storage_mono")));
-        simpleBlockWithItem(ModBlocks.SOLAR_MIRROR.get(), models().cubeAll("solar_mirror", modLoc("block/ported/solar_mirror")));
+        simpleBlockItem(ModBlocks.SOLAR_MIRROR.get(), models().cubeAll("solar_mirror", modLoc("block/ported/solar_mirror")));
         simpleBlockWithItem(ModBlocks.STRUCTURE_ANCHOR.get(), models().cubeAll("structure_anchor", modLoc("block/ported/structure_anchor")));
         simpleBlockWithItem(ModBlocks.WAND_TANDEM.get(), models().cubeBottomTop("wand_tandem",
                 modLoc("block/ported/wand_tandem_side"), modLoc("block/ported/wand_tandem_bottom"), modLoc("block/ported/wand_tandem_top")));
@@ -622,7 +631,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // --- WIP Machines (3D OBJ models) ---
         customMachineBlock(ModBlocks.AMMO_PRESS);
         customMachineBlock(ModBlocks.ANNIHILATOR);
-        customMachineBlock(ModBlocks.ARC_FURNACE);
+        // Arc furnace: Original-TESR-Drehtabelle (RenderArcFurnace: N->90, S->270, W->180, E->0).
+        customMachineBlockRotated(ModBlocks.ARC_FURNACE, Map.of(
+                Direction.NORTH, 90, Direction.SOUTH, 270, Direction.WEST, 180, Direction.EAST, 0));
         simpleMachineBlock(ModBlocks.ASSEMBLY_FACTORY);
         simpleBlock(ModBlocks.AUTOSAW.get(),
             models().getExistingFile(modLoc("block/machines/autosaw")));
@@ -809,7 +820,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         ModelFile fluidValveModel = models().withExistingParent(ModBlocks.FLUID_VALVE.getId().getPath(), mcLoc("block/cube_all"))
                 .texture("all", modLoc("block/fluid_valve_off"))
                 .texture("particle", modLoc("block/fluid_valve_off"));
-        simpleBlock(ModBlocks.FLUID_VALVE.get(), fluidValveModel);
 
         ModelFile fluidExhaustModel = models().withExistingParent(ModBlocks.FLUID_EXHAUST.getId().getPath(), mcLoc("block/cube_all"))
                 .texture("all", mcLoc("block/iron_block"))
@@ -1163,22 +1173,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // стальная балка — DecoObjBlock (Placement.NONE, только FACING): одна OBJ-модель без поворотов
         customObjBlockSimple(ModBlocks.STEEL_BEAM);
         java.util.Map<Block, String[]> pipes = new java.util.LinkedHashMap<>();
-        pipes.put(ModBlocks.DECO_PIPE.get(), new String[]{"block/deco_pipe", "block/deco_pipe_end"});        pipes.put(ModBlocks.DECO_PIPE_RUSTED.get(), new String[]{"block/deco_pipe_rusted", "block/deco_pipe_rusted_end"});
-        pipes.put(ModBlocks.DECO_PIPE_RED.get(), new String[]{"block/deco_pipe_red", "block/deco_pipe_red_end"});
-        pipes.put(ModBlocks.DECO_PIPE_MARKED.get(), new String[]{"block/deco_pipe_marked", "block/deco_pipe_marked_end"});
-        pipes.put(ModBlocks.DECO_PIPE_QUAD.get(), new String[]{"block/deco_pipe_quad", "block/deco_pipe_quad"});
-        pipes.put(ModBlocks.DECO_PIPE_QUAD_RUSTED.get(), new String[]{"block/deco_pipe_quad_rusted", "block/deco_pipe_quad_rusted"});
-        pipes.put(ModBlocks.DECO_PIPE_QUAD_RED.get(), new String[]{"block/deco_pipe_quad_red", "block/deco_pipe_quad_red"});
-        pipes.put(ModBlocks.DECO_PIPE_QUAD_MARKED.get(), new String[]{"block/deco_pipe_quad_marked", "block/deco_pipe_quad_marked"});
-        pipes.put(ModBlocks.DECO_PIPE_FRAMED.get(), new String[]{"block/deco_pipe_framed", "block/deco_pipe_framed"});
-        pipes.put(ModBlocks.DECO_PIPE_FRAMED_RUSTED.get(), new String[]{"block/deco_pipe_framed_rusted", "block/deco_pipe_framed_rusted"});
-        pipes.put(ModBlocks.DECO_PIPE_FRAMED_RED.get(), new String[]{"block/deco_pipe_framed_red", "block/deco_pipe_framed_red"});
-        pipes.put(ModBlocks.DECO_PIPE_FRAMED_GREEN_RUSTED.get(), new String[]{"block/deco_pipe_framed_green_rusted", "block/deco_pipe_framed_green_rusted_end"});
         // Текстур deco_pipe_rim* не существует (ручные модели ссылались на них «в дырку»),
         // поэтому rim-трубы рендерятся framed-моделями, как и до миграции
         pipes.put(ModBlocks.DECO_PIPE_RIM.get(), new String[]{"block/deco_pipe_framed", "block/deco_pipe_framed"});
-        pipes.put(ModBlocks.DECO_PIPE_RIM_RUSTED.get(), new String[]{"block/deco_pipe_framed_rusted", "block/deco_pipe_framed_rusted"});
-        pipes.put(ModBlocks.DECO_PIPE_RIM_MARKED.get(), new String[]{"block/deco_pipe_framed_red", "block/deco_pipe_framed_red"});
         pipes.forEach((block, tex) -> axisBlockWithItem(block, tex[0], tex[1]));
 
         // ================== КОНЕЦ ДЕКОРА СТРУКТУР ==================
@@ -1775,12 +1772,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/brick_jungle_lava")
                 )
         );
-        simpleBlockWithItem(ModBlocks.BRICK_JUNGLE_TRAP.get(),
-                models().cubeAll(
-                        ModBlocks.BRICK_JUNGLE_TRAP.getId().getPath(),
-                        modLoc("block/brick_jungle_trap")
-                )
-        );
+        // ffa-port: item model -> manual assets/hbm_m/models/item/brick_jungle_trap.json
+        simpleBlockItem(ModBlocks.BRICK_JUNGLE_TRAP.get(), models().getExistingFile(modLoc("item/brick_jungle_trap")));
         // brick_red — порт BlockRedBrick (1.7.10): одна грань (RED_FACE) красная
         // (вертикальная — brick_red, горизонтальная — brick_red_top), остальные
         // серые brick_base. NONE — все грани серые (оболочка/meta-комната).
@@ -1818,24 +1811,12 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 .setModels(ConfiguredModel.builder().modelFile(broadcasterPcModel).rotationY(270).build());
         simpleBlockItem(ModBlocks.BROADCASTER_PC.get(),
                 models().getExistingFile(modLoc("block/machines/broadcaster_pc")));
-        simpleBlockWithItem(ModBlocks.CABLE_DETECTOR.get(),
-                models().cubeAll(
-                        ModBlocks.CABLE_DETECTOR.getId().getPath(),
-                        modLoc("block/cable_detector_off")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.CABLE_DIODE.get(),
-                models().cubeAll(
-                        ModBlocks.CABLE_DIODE.getId().getPath(),
-                        modLoc("block/cable_diode")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.CABLE_SWITCH.get(),
-                models().cubeAll(
-                        ModBlocks.CABLE_SWITCH.getId().getPath(),
-                        modLoc("block/cable_switch_off")
-                )
-        );
+        // ffa-port: item model -> manual assets/hbm_m/models/item/cable_detector.json
+        simpleBlockItem(ModBlocks.CABLE_DETECTOR.get(), models().getExistingFile(modLoc("item/cable_detector")));
+        // ffa-port: item model -> manual assets/hbm_m/models/item/cable_diode.json
+        simpleBlockItem(ModBlocks.CABLE_DIODE.get(), models().getExistingFile(modLoc("item/cable_diode")));
+        // ffa-port: item model -> manual assets/hbm_m/models/item/cable_switch.json
+        simpleBlockItem(ModBlocks.CABLE_SWITCH.get(), models().getExistingFile(modLoc("item/cable_switch")));
         // Capacitor/Bus: FACING sichtbar machen. Die Eingangsface (FACING = geklickte Face beim
         // Platzieren) bekommt die inner_top-Textur ("Steckdose"), der Bus seine capacitor_bus_out-
         // Face (Original: getIcon(side, meta)). Modell ist mit dem Eingang auf NORTH genaeht; die
@@ -1852,30 +1833,14 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 "capacitor_schrabidate_inner_top", "capacitor_schrabidate_side", "capacitor_schrabidate_top", "capacitor_schrabidate_bottom");
         capacitorBlockWithFacing(ModBlocks.CAPACITOR_TANTALIUM,
                 "capacitor_tantalium_inner_top", "capacitor_tantalium_side", "capacitor_tantalium_top", "capacitor_tantalium_bottom");
-        simpleBlockWithItem(ModBlocks.CHARGE_C4.get(),
-                models().cubeAll(
-                        ModBlocks.CHARGE_C4.getId().getPath(),
-                        modLoc("block/charge_c4")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.CHARGE_DYNAMITE.get(),
-                models().cubeAll(
-                        ModBlocks.CHARGE_DYNAMITE.getId().getPath(),
-                        modLoc("block/charge_dynamite")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.CHARGE_MINER.get(),
-                models().cubeAll(
-                        ModBlocks.CHARGE_MINER.getId().getPath(),
-                        modLoc("block/charge_miner")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.CHARGE_SEMTEX.get(),
-                models().cubeAll(
-                        ModBlocks.CHARGE_SEMTEX.getId().getPath(),
-                        modLoc("block/charge_semtex")
-                )
-        );
+        // ffa-port: item model -> manual assets/hbm_m/models/item/charge_c4.json
+        simpleBlockItem(ModBlocks.CHARGE_C4.get(), models().getExistingFile(modLoc("item/charge_c4")));
+        // ffa-port: item model -> manual assets/hbm_m/models/item/charge_dynamite.json
+        simpleBlockItem(ModBlocks.CHARGE_DYNAMITE.get(), models().getExistingFile(modLoc("item/charge_dynamite")));
+        // ffa-port: item model -> manual assets/hbm_m/models/item/charge_miner.json
+        simpleBlockItem(ModBlocks.CHARGE_MINER.get(), models().getExistingFile(modLoc("item/charge_miner")));
+        // ffa-port: item model -> manual assets/hbm_m/models/item/charge_semtex.json
+        simpleBlockItem(ModBlocks.CHARGE_SEMTEX.get(), models().getExistingFile(modLoc("item/charge_semtex")));
         simpleBlockWithItem(ModBlocks.CHLORINE_GAS.get(),
                 models().cubeAll(
                         ModBlocks.CHLORINE_GAS.getId().getPath(),
@@ -1974,6 +1939,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/crane_router_overlay")
                 )
         );
+        // FFA merge loss restore: генерация block-модели сплиттера потеряна при мердже.
         horizontalBlock(ModBlocks.CRANE_SPLITTER.get(),
                 models().cubeBottomTop(
                         ModBlocks.CRANE_SPLITTER.getId().getPath(),
@@ -2153,34 +2119,14 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 )
         );
         // slag_dynamic регистрируется ниже (канон FFA/machines); здесь был битый дубль с моделью fire_digamma.
-        simpleBlockWithItem(ModBlocks.FIREWORKS.get(),
-                models().cubeBottomTop(
-                        ModBlocks.FIREWORKS.getId().getPath(),
-                        modLoc("block/fireworks_side"),
-                        modLoc("block/fireworks_bottom"),
-                        modLoc("block/fireworks_top")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.FISSURE_BOMB.get(),
-                models().cubeBottomTop(
-                        ModBlocks.FISSURE_BOMB.getId().getPath(),
-                        modLoc("block/fissure_bomb_side"),
-                        modLoc("block/fissure_bomb_bottom"),
-                        modLoc("block/fissure_bomb_top")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.FLAME_WAR.get(),
-                models().cubeAll(
-                        ModBlocks.FLAME_WAR.getId().getPath(),
-                        modLoc("block/flame_war")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.FLUID_COUNTER_VALVE.get(),
-                models().cubeAll(
-                        ModBlocks.FLUID_COUNTER_VALVE.getId().getPath(),
-                        modLoc("block/fluid_counter_valve_off")
-                )
-        );
+        // ffa-port: item model -> manual assets/hbm_m/models/item/fireworks.json
+        simpleBlockItem(ModBlocks.FIREWORKS.get(), models().getExistingFile(modLoc("item/fireworks")));
+        // ffa-port: item model -> manual assets/hbm_m/models/item/fissure_bomb.json
+        simpleBlockItem(ModBlocks.FISSURE_BOMB.get(), models().getExistingFile(modLoc("item/fissure_bomb")));
+        // ffa-port: item model -> manual assets/hbm_m/models/item/flame_war.json
+        simpleBlockItem(ModBlocks.FLAME_WAR.get(), models().getExistingFile(modLoc("item/flame_war")));
+        // ffa-port: item model -> manual assets/hbm_m/models/item/fluid_counter_valve.json
+        simpleBlockItem(ModBlocks.FLUID_COUNTER_VALVE.get(), models().getExistingFile(modLoc("item/fluid_counter_valve")));
         simpleBlockWithItem(ModBlocks.FLUID_DUCT_BOX.get(),
                 models().cubeAll(
                         ModBlocks.FLUID_DUCT_BOX.getId().getPath(),
@@ -2193,24 +2139,12 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/fluid_duct_box")
                 )
         );
-        simpleBlockWithItem(ModBlocks.PIPE_ANCHOR.get(),
-                models().cubeAll(
-                        ModBlocks.PIPE_ANCHOR.getId().getPath(),
-                        modLoc("block/block_steel")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.FLUID_DUCT_PAINTABLE.get(),
-                models().cubeAll(
-                        ModBlocks.FLUID_DUCT_PAINTABLE.getId().getPath(),
-                        modLoc("block/fluid_duct_paintable")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.FLUID_SWITCH.get(),
-                models().cubeAll(
-                        ModBlocks.FLUID_SWITCH.getId().getPath(),
-                        modLoc("block/fluid_switch_off")
-                )
-        );
+        // ffa-port: item model -> manual assets/hbm_m/models/item/pipe_anchor.json
+        simpleBlockItem(ModBlocks.PIPE_ANCHOR.get(), models().getExistingFile(modLoc("item/pipe_anchor")));
+        // ffa-port: item model -> manual assets/hbm_m/models/item/fluid_duct_paintable.json
+        simpleBlockItem(ModBlocks.FLUID_DUCT_PAINTABLE.get(), models().getExistingFile(modLoc("item/fluid_duct_paintable")));
+        // ffa-port: item model -> manual assets/hbm_m/models/item/fluid_switch.json
+        simpleBlockItem(ModBlocks.FLUID_SWITCH.get(), models().getExistingFile(modLoc("item/fluid_switch")));
         simpleBlock(ModBlocks.SLAG_DYNAMIC.get(),
                 models().cubeAll(
                         ModBlocks.SLAG_DYNAMIC.getId().getPath(),
@@ -2295,7 +2229,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(ModBlocks.CHARGER.get(), models().getExistingFile(modLoc("block/machines/charger_item")));
         // Original: der Grosstank nutzt ebenfalls die Stahlblock-Textur.
         simpleBlockWithItem(ModBlocks.MACHINE_BIGASSTANK.get(),
-                models().cubeAll(ModBlocks.MACHINE_BIGASSTANK.getId().getPath(), modLoc("block/block_steel")));
+                models().getExistingFile(modLoc("block/machines/machine_bigasstank")));
         // Original: der RTG ist ein schlichter Wuerfel mit der Textur "rtg" auf allen Seiten.
         // 1.7.10 OBJ: the generator is the block model, the cable connectors are drawn by RtgRenderer.
         simpleBlock(ModBlocks.MACHINE_RTG.get(), models().getExistingFile(modLoc("block/machines/rtg")));
@@ -2456,25 +2390,21 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         .end()
         );
         // MachineBatteryBlock (FACING-Blockstate) statt simpleBlockWithItem - siehe orientableBlockWithItem-Aufrufe fuer MACHINE_BATTERY etc.
-        // Конвертеры HE<->RF: оригинальная текстура machine_converter из 1.7.10 не портирована —
-        // временно общий машинный металл block_steel_machine (как у fluid_pump/fluid_valve).
+        // Конвертеры HE<->RF: текстуры machine_converter_* восстановлены из FFA (FFA merge loss restore).
         simpleBlockWithItem(ModBlocks.MACHINE_CONVERTER_HE_RF.get(),
                 models().cubeAll(
                         ModBlocks.MACHINE_CONVERTER_HE_RF.getId().getPath(),
-                        modLoc("block/block_steel_machine")
+                        modLoc("block/machine_converter_he_rf")
                 )
         );
         simpleBlockWithItem(ModBlocks.MACHINE_CONVERTER_RF_HE.get(),
                 models().cubeAll(
                         ModBlocks.MACHINE_CONVERTER_RF_HE.getId().getPath(),
-                        modLoc("block/block_steel_machine")
+                        modLoc("block/machine_converter_rf_he")
                 )
         );
         simpleBlockWithItem(ModBlocks.MACHINE_FORCEFIELD.get(),
-                models().cubeAll(
-                        ModBlocks.MACHINE_FORCEFIELD.getId().getPath(),
-                        modLoc("block/machine_forcefield")
-                )
+                models().getExistingFile(modLoc("block/machine_forcefield"))
         );
         simpleBlockWithItem(ModBlocks.MACHINE_FUNNEL.get(),
                 models().cubeBottomTop(
@@ -2486,9 +2416,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
         );
         {
             // Multiblock mit Ausrichtung: das Modell dreht sich mit der Struktur.
-            // Текстура machine/precass из 1.7.10 не портирована — временно block_steel_machine.
-            horizontalBlock(ModBlocks.MACHINE_PRECASS.get(), models().getBuilder("machine_precass").texture("particle", modLoc("block/block_steel_machine")));
-            var purex = models().cubeAll(ModBlocks.PUREX.getId().getPath(), modLoc("block/machine/purex"));
+            // Текстура machine/precass восстановлена из FFA (FFA merge loss restore); геометрию рисует
+            // MachinePrecAssRenderer, blockstate задаёт только particle-текстуру.
+            horizontalBlock(ModBlocks.MACHINE_PRECASS.get(), models().getBuilder("machine_precass").texture("particle", modLoc("block/machine/precass")));
+            // PUREX — multipart-модель machine_parts (части Frame/Fan/Pump/Base из models/purex.obj).
+            var purex = models().getExistingFile(modLoc("block/purex"));
             horizontalBlock(ModBlocks.PUREX.get(), purex);
             simpleBlockItem(ModBlocks.PUREX.get(), purex);
         }
@@ -2513,12 +2445,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleMachineBlock(ModBlocks.MACHINE_LARGE_TURBINE);
         // 1.7.10 OBJ (RenderMissileAssembly); the block has no facing, so it stands the one way.
         simpleBlockWithItem(ModBlocks.MACHINE_MISSILE_ASSEMBLY.get(), models().getExistingFile(modLoc("block/machines/missile_assembly")));
-        simpleBlockWithItem(ModBlocks.MACHINE_PUF6_TANK.get(),
-                models().cubeAll(
-                        ModBlocks.MACHINE_PUF6_TANK.getId().getPath(),
-                        modLoc("block/machine_puf6_tank")
-                )
-        );
+        // ffa-port: item model -> manual assets/hbm_m/models/item/machine_puf6_tank.json
+        simpleBlockItem(ModBlocks.MACHINE_PUF6_TANK.get(), models().getExistingFile(modLoc("item/machine_puf6_tank")));
         {
             // Multiblock mit Ausrichtung: das Modell dreht sich jetzt mit der Struktur.
             // 1.7.10 OBJ (RenderDrain), three blocks long like the structure.
@@ -2526,12 +2454,21 @@ public class ModBlockStateProvider extends BlockStateProvider {
             horizontalBlock(ModBlocks.MACHINE_DRAIN.get(), drain);
             simpleBlockItem(ModBlocks.MACHINE_DRAIN.get(), drain);
         }
-        orientableBlockWithItem(
-                ModBlocks.MACHINE_DIFURNACE_RTG,
-                modLoc("block/difurnace_side_tall"),
-                modLoc("block/difurnace_front_off_tall"),
-                modLoc("block/difurnace_top_off_alt")
-        );
+        // 1:1 MachineDiFurnaceRTG (FFA merge loss restore): an/aus wechselt Front- und Deckeltextur,
+        // Seiten/Boden machine_rtg_furnace_side_alt; das LIT-Property des Blocks steuert Modell und Licht.
+        {
+            var rtgOff = models().orientableWithBottom("machine_difurnace_rtg_off", modLoc("block/machine_rtg_furnace_side_alt"),
+                    modLoc("block/rtg_difurnace_front_off"), modLoc("block/machine_rtg_furnace_side_alt"), modLoc("block/rtg_difurnace_top_off"))
+                    .texture("particle", modLoc("block/rtg_difurnace_front_off"));
+            var rtgOn = models().orientableWithBottom("machine_difurnace_rtg_on", modLoc("block/machine_rtg_furnace_side_alt"),
+                    modLoc("block/rtg_difurnace_front_on"), modLoc("block/machine_rtg_furnace_side_alt"), modLoc("block/rtg_difurnace_top_on"))
+                    .texture("particle", modLoc("block/rtg_difurnace_front_on"));
+            getVariantBuilder(ModBlocks.MACHINE_DIFURNACE_RTG.get()).forAllStates(st -> ConfiguredModel.builder()
+                    .modelFile(st.getValue(com.hbm_m.block.machines.MachineDifurnaceRtgBlock.LIT) ? rtgOn : rtgOff)
+                    .rotationY(((int) st.getValue(com.hbm_m.block.machines.MachineDifurnaceRtgBlock.FACING).toYRot() + 180) % 360)
+                    .build());
+            simpleBlockItem(ModBlocks.MACHINE_DIFURNACE_RTG.get(), rtgOff);
+        }
         {
             // 1:1 MachineRtgFurnace: Front an/aus, Deckel/Boden base_alt, Seiten side_alt
             var off = models().orientableWithBottom("machine_rtg_furnace_off", modLoc("block/machine_rtg_furnace_side_alt"),
@@ -2602,12 +2539,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/machine_storage_drum")
                 )
         );
-        simpleBlockWithItem(ModBlocks.MACHINE_UF6_TANK.get(),
-                models().cubeAll(
-                        ModBlocks.MACHINE_UF6_TANK.getId().getPath(),
-                        modLoc("block/machine_uf6_tank")
-                )
-        );
+        // ffa-port: item model -> manual assets/hbm_m/models/item/machine_uf6_tank.json
+        simpleBlockItem(ModBlocks.MACHINE_UF6_TANK.get(), models().getExistingFile(modLoc("item/machine_uf6_tank")));
         // Die vier Groessen des Originals - jede mit ihrem eigenen Texturzusatz.
         for (var entry : java.util.List.of(
                 java.util.Map.entry(ModBlocks.MASS_STORAGE, ""),
@@ -2648,12 +2581,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/mine_shrap")
                 )
         );
-        simpleBlockWithItem(ModBlocks.MUSH.get(),
-                models().cubeAll(
-                        ModBlocks.MUSH.getId().getPath(),
-                        modLoc("block/mush")
-                )
-        );
+        // ffa-port: item model -> manual assets/hbm_m/models/item/mush.json
+        simpleBlockItem(ModBlocks.MUSH.get(), models().getExistingFile(modLoc("item/mush")));
         customBombBlock(ModBlocks.NUKE_N2);
         customBombBlock(ModBlocks.NUKE_SOLINIUM);
         customBombBlock(ModBlocks.NUKE_FSTBMB);
@@ -2678,18 +2607,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 .texture("particle", modLoc("block/pedestal_side"));
         simpleBlock(ModBlocks.PEDESTAL.get(), pedestalModel);
         simpleBlockItem(ModBlocks.PEDESTAL.get(), pedestalModel);
-        simpleBlockWithItem(ModBlocks.PINK_LOG.get(),
-                models().cubeAll(
-                        ModBlocks.PINK_LOG.getId().getPath(),
-                        modLoc("block/pink_log")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.PINK_PLANKS.get(),
-                models().cubeAll(
-                        ModBlocks.PINK_PLANKS.getId().getPath(),
-                        modLoc("block/pink_planks")
-                )
-        );
+        // ffa-port: item model -> manual assets/hbm_m/models/item/pink_log.json
+        simpleBlockItem(ModBlocks.PINK_LOG.get(), models().getExistingFile(modLoc("item/pink_log")));
+        // ffa-port: item model -> manual assets/hbm_m/models/item/pink_planks.json
+        simpleBlockItem(ModBlocks.PINK_PLANKS.get(), models().getExistingFile(modLoc("item/pink_planks")));
         simpleBlockWithItem(ModBlocks.PLANT_FLOWER_CD0.get(),
                 models().cubeAll(
                         ModBlocks.PLANT_FLOWER_CD0.getId().getPath(),
@@ -2845,12 +2766,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         railBlockstate(ModBlocks.RAIL_BOOSTER, "rail_booster");
         railBlockstate(ModBlocks.RAIL_HIGHSPEED, "rail_highspeed");
         railBlockstate(ModBlocks.RAIL_NARROW, "rail_narrow");
-        simpleBlockWithItem(ModBlocks.RAIL_WOOD.get(),
-                models().cubeAll(
-                        ModBlocks.RAIL_WOOD.getId().getPath(),
-                        modLoc("block/rail_wood")
-                )
-        );
+        // ffa-port: item model -> manual assets/hbm_m/models/item/rail_wood.json
+        simpleBlockItem(ModBlocks.RAIL_WOOD.get(), models().getExistingFile(modLoc("item/rail_wood")));
                                         // red_cable_box: blockstate/model/item — вручную (hbm_m:box_cable loader), 5 размеров
                                         simpleBlockWithItem(ModBlocks.RED_WIRE_COATED.get(),
                 models().cubeAll(
@@ -2894,12 +2811,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 modLoc("block/reinforced_glass_pane"), modLoc("block/reinforced_glass_pane_edge"),
                 mcLoc("cutout"));
         simpleBlockItem(ModBlocks.REINFORCED_GLASS_PANE.get(), models().getExistingFile(modLoc("block/reinforced_glass_pane_post")));
-        simpleBlockWithItem(ModBlocks.REINFORCED_LAMINATE_PANE.get(),
-                models().cubeAll(
-                        ModBlocks.REINFORCED_LAMINATE_PANE.getId().getPath(),
-                        modLoc("block/reinforced_laminate_pane")
-                )
-        );
+        // ffa-port: item model -> manual assets/hbm_m/models/item/reinforced_laminate_pane.json
+        simpleBlockItem(ModBlocks.REINFORCED_LAMINATE_PANE.get(), models().getExistingFile(modLoc("item/reinforced_laminate_pane")));
         simpleBlockWithItem(ModBlocks.REINFORCED_LAMP_OFF.get(),
                 models().cubeAll(
                         ModBlocks.REINFORCED_LAMP_OFF.getId().getPath(),
@@ -2972,12 +2885,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 .modelFile(models().getBuilder("soyuz_capsule").texture("particle", modLoc("block/soyuz_capsule"))).build());
         customObjBlock(ModBlocks.SOYUZ_LAUNCHER);
         customObjBlock(ModBlocks.DECO_SOYUZ_ROCKET);
-        simpleBlockWithItem(ModBlocks.SPIKES.get(),
-                models().cubeAll(
-                        ModBlocks.SPIKES.getId().getPath(),
-                        modLoc("block/spikes")
-                )
-        );
+        // ffa-port: item model -> manual assets/hbm_m/models/item/spikes.json
+        simpleBlockItem(ModBlocks.SPIKES.get(), models().getExistingFile(modLoc("item/spikes")));
         simpleBlockWithItem(ModBlocks.STALACTITE_ASBESTOS.get(), models().getExistingFile(modLoc("block/stalactite_asbestos")));
         simpleBlockWithItem(ModBlocks.STALACTITE_SULFUR.get(), models().getExistingFile(modLoc("block/stalactite_sulfur")));
         simpleBlockWithItem(ModBlocks.STALAGMITE_ASBESTOS.get(), models().getExistingFile(modLoc("block/stalagmite_asbestos")));
@@ -3047,12 +2956,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 .texture("top", modLoc("block/brick_red_top"));
         horizontalBlock(ModBlocks.STONE_KEYHOLE_META.get(), stoneKeyholeMetaModel);
         simpleBlockItem(ModBlocks.STONE_KEYHOLE_META.get(), stoneKeyholeMetaModel);
-        simpleBlockWithItem(ModBlocks.STONE_POROUS.get(),
-                models().cubeAll(
-                        ModBlocks.STONE_POROUS.getId().getPath(),
-                        modLoc("block/stone_porous")
-                )
-        );
+        // ffa-port: item model -> manual assets/hbm_m/models/item/stone_porous.json
+        simpleBlockItem(ModBlocks.STONE_POROUS.get(), models().getExistingFile(modLoc("item/stone_porous")));
         simpleBlockWithItem(ModBlocks.STONE_RESOURCE_ASBESTOS.get(),
                 models().cubeAll(
                         ModBlocks.STONE_RESOURCE_ASBESTOS.getId().getPath(),
@@ -3150,18 +3055,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 )
         );
         simpleBlockWithItem(ModBlocks.TESLA.get(), models().getExistingFile(modLoc("block/machines/tesla")));
-        simpleBlockWithItem(ModBlocks.THERM_ENDO.get(),
-                models().cubeAll(
-                        ModBlocks.THERM_ENDO.getId().getPath(),
-                        modLoc("block/therm_endo")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.THERM_EXO.get(),
-                models().cubeAll(
-                        ModBlocks.THERM_EXO.getId().getPath(),
-                        modLoc("block/therm_exo")
-                )
-        );
+        // ffa-port: item model -> manual assets/hbm_m/models/item/therm_endo.json
+        simpleBlockItem(ModBlocks.THERM_ENDO.get(), models().getExistingFile(modLoc("item/therm_endo")));
+        // ffa-port: item model -> manual assets/hbm_m/models/item/therm_exo.json
+        simpleBlockItem(ModBlocks.THERM_EXO.get(), models().getExistingFile(modLoc("item/therm_exo")));
         simpleBlockWithItem(ModBlocks.TILE_LAB.get(),
                 models().cubeAll(
                         ModBlocks.TILE_LAB.getId().getPath(),
@@ -3208,12 +3105,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/vent_pink_cloud")
                 )
         );
-        simpleBlockWithItem(ModBlocks.VINE_PHOSPHOR.get(),
-                models().cubeAll(
-                        ModBlocks.VINE_PHOSPHOR.getId().getPath(),
-                        modLoc("block/vine_phosphor")
-                )
-        );
+        // ffa-port: item model -> manual assets/hbm_m/models/item/vine_phosphor.json
+        simpleBlockItem(ModBlocks.VINE_PHOSPHOR.get(), models().getExistingFile(modLoc("item/vine_phosphor")));
         // Ядро вулкана: 5 состояний (меты BlockVolcano 1.7.10), одна текстура на все
         getVariantBuilder(ModBlocks.VOLCANO_CORE.get()).partialState().setModels(
                 ConfiguredModel.builder().modelFile(
@@ -3224,6 +3117,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 ).build()
         );
         itemModels().withExistingParent(ModBlocks.VOLCANO_CORE.getId().getPath(), modLoc("block/volcano_core"));
+        // FFA merge loss restore: block-модель volcano_rad_core потеряна при мердже (осталась item).
         getVariantBuilder(ModBlocks.VOLCANO_RAD_CORE.get()).partialState().setModels(
                 ConfiguredModel.builder().modelFile(
                         models().cubeAll(
@@ -3281,12 +3175,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/wand_loot_top")
                 )
         );
-        simpleBlockWithItem(ModBlocks.WOOD_BARRIER.get(),
-                models().cubeAll(
-                        ModBlocks.WOOD_BARRIER.getId().getPath(),
-                        modLoc("block/wood_barrier")
-                )
-        );
+        // ffa-port: item model -> manual assets/hbm_m/models/item/wood_barrier.json
+        simpleBlockItem(ModBlocks.WOOD_BARRIER.get(), models().getExistingFile(modLoc("item/wood_barrier")));
         simpleBlockWithItem(ModBlocks.WAND_STRUCTURE_SAVE.get(), models().cubeAll("wand_structure_save", modLoc("block/wand_structure_save")));
         simpleBlockWithItem(ModBlocks.WAND_STRUCTURE_LOAD.get(), models().cubeAll("wand_structure_load", modLoc("block/wand_structure_load")));
         simpleBlockWithItem(ModBlocks.LOGIC_BLOCK_INVIS.get(), models().cubeAll("logic_block_invis", modLoc("block/ported/logic_block")));
@@ -3957,118 +3847,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
         getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_east_mid_south"))).addModel();
         getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_east_single"))).addModel();
         getVariantBuilder(ModBlocks.FLUORESCENT_LAMP.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_east_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_cap_north"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_cap_south"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_cap_west"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_cap_east"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_mid_north"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_mid_south"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_mid_west"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.DOWN).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_down_mid_east"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_cap_north"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_cap_south"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_cap_west"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_cap_east"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_mid_north"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_mid_south"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_mid_west"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.UP).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_up_mid_east"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_cap_down"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_cap_up"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_cap_west"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_cap_east"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_mid_down"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_mid_up"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_mid_west"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.NORTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_north_mid_east"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_cap_down"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_cap_up"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_cap_west"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_cap_east"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_mid_down"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_mid_up"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_mid_west"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.SOUTH).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_south_mid_east"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_cap_down"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_cap_up"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_cap_north"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_cap_south"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_mid_down"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_mid_up"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_mid_north"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_mid_south"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.WEST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_west_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_single"))).addModel();
 
         registerPortedBlockstates2();
     }
 
-    private void registerPortedBlockstates2() {        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.SINGLE).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_cap_down"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_cap_up"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_cap_north"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_cap_south"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.CAP).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_mid_down"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_mid_up"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_mid_north"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_mid_south"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_single"))).addModel();
-        getVariantBuilder(ModBlocks.FLUORESCENT_LAMP_OFF.get()).partialState().with(com.hbm_m.block.decorations.SpotlightBlock.FACING, Direction.EAST).with(com.hbm_m.block.decorations.SpotlightBlock.PART, com.hbm_m.block.decorations.SpotlightBlock.Part.MID).with(com.hbm_m.block.decorations.SpotlightBlock.CONN, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/lights/fluorescent_lamp_off_east_single"))).addModel();
+    private void registerPortedBlockstates2() {
         getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/iso_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.ISOLATED);
         getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/iso_overlay"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.ISOLATED);
         getMultipartBuilder(ModBlocks.FLUID_DUCT.get()).part().modelFile(models().getExistingFile(modLoc("block/pipe_neo/through_x_base"))).addModel().condition(com.hbm_m.block.machines.FluidDuctBlock.SHAPE, com.hbm_m.block.machines.PipeRenderShape.THROUGH_X);
@@ -4618,22 +4401,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         getVariantBuilder(ModBlocks.SAFE.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/safe"))).rotationY(180).addModel();
         getVariantBuilder(ModBlocks.SAFE.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/safe"))).rotationY(270).addModel();
         // sandbags.json — R6dBlocks.Sandbags N/S/E/W booleans, 16 variants (bits N,S,E,W)
-        getVariantBuilder(ModBlocks.SANDBAGS.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.Sandbags.NORTH, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.SOUTH, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.EAST, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.WEST, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/sandbags_0000"))).addModel();
-        getVariantBuilder(ModBlocks.SANDBAGS.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.Sandbags.NORTH, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.SOUTH, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.EAST, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.WEST, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/sandbags_0001"))).addModel();
-        getVariantBuilder(ModBlocks.SANDBAGS.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.Sandbags.NORTH, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.SOUTH, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.EAST, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.WEST, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/sandbags_0010"))).addModel();
-        getVariantBuilder(ModBlocks.SANDBAGS.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.Sandbags.NORTH, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.SOUTH, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.EAST, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.WEST, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/sandbags_0011"))).addModel();
-        getVariantBuilder(ModBlocks.SANDBAGS.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.Sandbags.NORTH, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.SOUTH, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.EAST, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.WEST, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/sandbags_0100"))).addModel();
-        getVariantBuilder(ModBlocks.SANDBAGS.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.Sandbags.NORTH, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.SOUTH, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.EAST, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.WEST, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/sandbags_0101"))).addModel();
-        getVariantBuilder(ModBlocks.SANDBAGS.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.Sandbags.NORTH, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.SOUTH, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.EAST, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.WEST, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/sandbags_0110"))).addModel();
-        getVariantBuilder(ModBlocks.SANDBAGS.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.Sandbags.NORTH, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.SOUTH, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.EAST, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.WEST, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/sandbags_0111"))).addModel();
-        getVariantBuilder(ModBlocks.SANDBAGS.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.Sandbags.NORTH, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.SOUTH, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.EAST, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.WEST, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/sandbags_1000"))).addModel();
-        getVariantBuilder(ModBlocks.SANDBAGS.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.Sandbags.NORTH, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.SOUTH, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.EAST, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.WEST, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/sandbags_1001"))).addModel();
-        getVariantBuilder(ModBlocks.SANDBAGS.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.Sandbags.NORTH, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.SOUTH, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.EAST, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.WEST, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/sandbags_1010"))).addModel();
-        getVariantBuilder(ModBlocks.SANDBAGS.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.Sandbags.NORTH, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.SOUTH, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.EAST, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.WEST, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/sandbags_1011"))).addModel();
-        getVariantBuilder(ModBlocks.SANDBAGS.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.Sandbags.NORTH, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.SOUTH, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.EAST, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.WEST, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/sandbags_1100"))).addModel();
-        getVariantBuilder(ModBlocks.SANDBAGS.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.Sandbags.NORTH, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.SOUTH, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.EAST, false).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.WEST, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/sandbags_1101"))).addModel();
-        getVariantBuilder(ModBlocks.SANDBAGS.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.Sandbags.NORTH, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.SOUTH, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.EAST, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.WEST, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/sandbags_1110"))).addModel();
-        getVariantBuilder(ModBlocks.SANDBAGS.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.Sandbags.NORTH, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.SOUTH, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.EAST, true).with(com.hbm_m.block.generic.R6dBlocks.Sandbags.WEST, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/sandbags_1111"))).addModel();
         // seal_controller.json — SealBlocks.Controller.FACING + POWERED, powered does not change the model
         getVariantBuilder(ModBlocks.SEAL_CONTROLLER.get()).partialState().with(com.hbm_m.block.machines.SealBlocks.Controller.FACING, Direction.NORTH).with(com.hbm_m.block.machines.SealBlocks.Controller.POWERED, false).modelForState().modelFile(models().getExistingFile(modLoc("block/seal_controller"))).addModel();
         getVariantBuilder(ModBlocks.SEAL_CONTROLLER.get()).partialState().with(com.hbm_m.block.machines.SealBlocks.Controller.FACING, Direction.NORTH).with(com.hbm_m.block.machines.SealBlocks.Controller.POWERED, true).modelForState().modelFile(models().getExistingFile(modLoc("block/seal_controller"))).addModel();
@@ -4800,38 +4567,38 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // --- wood_structure_ceiling ---
         getVariantBuilder(ModBlocks.WOOD_STRUCTURE_CEILING.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_ceiling"))).addModel();
         // --- wood_structure_scaffold (Bits py nx nz px pz, py=MSB) ---
-        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_00000"))).addModel();
-        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_00001"))).addModel();
-        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_00010"))).addModel();
-        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_00011"))).addModel();
-        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_00100"))).addModel();
-        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_00101"))).addModel();
-        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_00110"))).addModel();
-        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_00111"))).addModel();
-        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_01000"))).addModel();
-        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_01001"))).addModel();
-        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_01010"))).addModel();
-        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_01011"))).addModel();
-        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_01100"))).addModel();
-        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_01101"))).addModel();
-        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_01110"))).addModel();
-        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_01111"))).addModel();
-        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_10000"))).addModel();
-        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_10001"))).addModel();
-        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_10010"))).addModel();
-        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_10011"))).addModel();
-        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_10100"))).addModel();
-        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_10101"))).addModel();
-        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_10110"))).addModel();
-        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_10111"))).addModel();
-        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_11000"))).addModel();
-        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_11001"))).addModel();
-        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_11010"))).addModel();
-        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_11011"))).addModel();
-        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_11100"))).addModel();
-        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, false).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_11101"))).addModel();
-        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, false).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_11110"))).addModel();
-        getVariantBuilder(ModBlocks.WOOD_STRUCTURE_SCAFFOLD.get()).partialState().with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PY, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.NZ, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PX, true).with(com.hbm_m.block.generic.R6dBlocks.WoodStructure.PZ, true).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/wood_structure_scaffold_11111"))).addModel();
+        migVar("wood_structure_scaffold", "nx=false,nz=false,px=false,py=false,pz=false", "block/deco/wood_structure_scaffold_00000", 0, 0);
+        migVar("wood_structure_scaffold", "nx=false,nz=false,px=false,py=false,pz=true", "block/deco/wood_structure_scaffold_00001", 0, 0);
+        migVar("wood_structure_scaffold", "nx=false,nz=false,px=true,py=false,pz=false", "block/deco/wood_structure_scaffold_00010", 0, 0);
+        migVar("wood_structure_scaffold", "nx=false,nz=false,px=true,py=false,pz=true", "block/deco/wood_structure_scaffold_00011", 0, 0);
+        migVar("wood_structure_scaffold", "nx=false,nz=true,px=false,py=false,pz=false", "block/deco/wood_structure_scaffold_00100", 0, 0);
+        migVar("wood_structure_scaffold", "nx=false,nz=true,px=false,py=false,pz=true", "block/deco/wood_structure_scaffold_00101", 0, 0);
+        migVar("wood_structure_scaffold", "nx=false,nz=true,px=true,py=false,pz=false", "block/deco/wood_structure_scaffold_00110", 0, 0);
+        migVar("wood_structure_scaffold", "nx=false,nz=true,px=true,py=false,pz=true", "block/deco/wood_structure_scaffold_00111", 0, 0);
+        migVar("wood_structure_scaffold", "nx=true,nz=false,px=false,py=false,pz=false", "block/deco/wood_structure_scaffold_01000", 0, 0);
+        migVar("wood_structure_scaffold", "nx=true,nz=false,px=false,py=false,pz=true", "block/deco/wood_structure_scaffold_01001", 0, 0);
+        migVar("wood_structure_scaffold", "nx=true,nz=false,px=true,py=false,pz=false", "block/deco/wood_structure_scaffold_01010", 0, 0);
+        migVar("wood_structure_scaffold", "nx=true,nz=false,px=true,py=false,pz=true", "block/deco/wood_structure_scaffold_01011", 0, 0);
+        migVar("wood_structure_scaffold", "nx=true,nz=true,px=false,py=false,pz=false", "block/deco/wood_structure_scaffold_01100", 0, 0);
+        migVar("wood_structure_scaffold", "nx=true,nz=true,px=false,py=false,pz=true", "block/deco/wood_structure_scaffold_01101", 0, 0);
+        migVar("wood_structure_scaffold", "nx=true,nz=true,px=true,py=false,pz=false", "block/deco/wood_structure_scaffold_01110", 0, 0);
+        migVar("wood_structure_scaffold", "nx=true,nz=true,px=true,py=false,pz=true", "block/deco/wood_structure_scaffold_01111", 0, 0);
+        migVar("wood_structure_scaffold", "nx=false,nz=false,px=false,py=true,pz=false", "block/deco/wood_structure_scaffold_10000", 0, 0);
+        migVar("wood_structure_scaffold", "nx=false,nz=false,px=false,py=true,pz=true", "block/deco/wood_structure_scaffold_10001", 0, 0);
+        migVar("wood_structure_scaffold", "nx=false,nz=false,px=true,py=true,pz=false", "block/deco/wood_structure_scaffold_10010", 0, 0);
+        migVar("wood_structure_scaffold", "nx=false,nz=false,px=true,py=true,pz=true", "block/deco/wood_structure_scaffold_10011", 0, 0);
+        migVar("wood_structure_scaffold", "nx=false,nz=true,px=false,py=true,pz=false", "block/deco/wood_structure_scaffold_10100", 0, 0);
+        migVar("wood_structure_scaffold", "nx=false,nz=true,px=false,py=true,pz=true", "block/deco/wood_structure_scaffold_10101", 0, 0);
+        migVar("wood_structure_scaffold", "nx=false,nz=true,px=true,py=true,pz=false", "block/deco/wood_structure_scaffold_10110", 0, 0);
+        migVar("wood_structure_scaffold", "nx=false,nz=true,px=true,py=true,pz=true", "block/deco/wood_structure_scaffold_10111", 0, 0);
+        migVar("wood_structure_scaffold", "nx=true,nz=false,px=false,py=true,pz=false", "block/deco/wood_structure_scaffold_11000", 0, 0);
+        migVar("wood_structure_scaffold", "nx=true,nz=false,px=false,py=true,pz=true", "block/deco/wood_structure_scaffold_11001", 0, 0);
+        migVar("wood_structure_scaffold", "nx=true,nz=false,px=true,py=true,pz=false", "block/deco/wood_structure_scaffold_11010", 0, 0);
+        migVar("wood_structure_scaffold", "nx=true,nz=false,px=true,py=true,pz=true", "block/deco/wood_structure_scaffold_11011", 0, 0);
+        migVar("wood_structure_scaffold", "nx=true,nz=true,px=false,py=true,pz=false", "block/deco/wood_structure_scaffold_11100", 0, 0);
+        migVar("wood_structure_scaffold", "nx=true,nz=true,px=false,py=true,pz=true", "block/deco/wood_structure_scaffold_11101", 0, 0);
+        migVar("wood_structure_scaffold", "nx=true,nz=true,px=true,py=true,pz=false", "block/deco/wood_structure_scaffold_11110", 0, 0);
+        migVar("wood_structure_scaffold", "nx=true,nz=true,px=true,py=true,pz=true", "block/deco/wood_structure_scaffold_11111", 0, 0);
         // --- wire_coated (multipart; !straight_x/y/z als positive OR-Liste) ---
         getMultipartBuilder(ModBlocks.WIRE_COATED.get()).part().modelFile(models().getExistingFile(modLoc("block/wire_coated_core"))).addModel().condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.JUNCTION).end();
         getMultipartBuilder(ModBlocks.WIRE_COATED.get()).part().modelFile(models().getExistingFile(modLoc("block/wire_coated_straight_x"))).addModel().condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_X).end();
@@ -5493,6 +5260,470 @@ public class ModBlockStateProvider extends BlockStateProvider {
         mig("ore_bedrock_oil", more_bedrock_oil, "@0");
         mig("particle_test_block", mparticle_test_block, "@0");
         mig("steam_turbine", mmachines_steam_turbine, "facing=east@90", "facing=north@0", "facing=south@180", "facing=west@270");
+    }
+
+    /** FFA-порт: воспроизводит ручной blockstate из variants-JSON. Ключ "prop=val,..." или "". */
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void migVar(String blockName, String key, String model, int rotX, int rotY) {
+        try {
+        Block block = migBlock(blockName);
+        VariantBlockStateBuilder.PartialBlockstate ps = getVariantBuilder(block).partialState();
+        if (!key.isEmpty()) {
+            for (String kv : key.split(",")) {
+                String[] p = kv.split("=", 2);
+                net.minecraft.world.level.block.state.properties.Property prop = migFindProp(block, p[0]);
+                ps = ps.with(prop, (Comparable) migValOn(prop, p[1], blockName));
+            }
+        }
+        var mb = ps.modelForState().modelFile(models().getExistingFile(modLoc(model)));
+        if (rotX != 0) mb.rotationX(rotX);
+        if (rotY != 0) mb.rotationY(rotY);
+        mb.addModel();
+        } catch (RuntimeException e) {
+            throw new IllegalStateException("FFA-PORT: migVar failed for block '" + blockName + "' key '" + key + "'", e);
+        }
+    }
+
+    private net.minecraft.world.level.block.state.properties.Property migFindProp(Block block, String name) {
+        for (net.minecraft.world.level.block.state.properties.Property q : block.getStateDefinition().getProperties()) {
+            if (q.getName().equals(name)) return q;
+        }
+        throw new IllegalStateException("FFA-PORT: property '" + name + "' not found on " + block);
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private Comparable migValOn(net.minecraft.world.level.block.state.properties.Property prop, String val, String blockName) {
+        if (prop instanceof net.minecraft.world.level.block.state.properties.BooleanProperty) return Boolean.parseBoolean(val);
+        if (prop instanceof net.minecraft.world.level.block.state.properties.IntegerProperty) return Integer.parseInt(val);
+        for (Object v : prop.getPossibleValues()) {
+            if (v instanceof net.minecraft.util.StringRepresentable sr && sr.getSerializedName().equals(val)) return (Comparable) v;
+            if (v instanceof Direction d && d.getName().equals(val)) return (Comparable) v;
+        }
+        throw new IllegalStateException("FFA-PORT: value '" + val + "' invalid for '" + prop.getName() + "' on " + blockName);
+    }
+
+    private Block mpOwner;
+
+    private ModelFile exm(String path) { return models().getExistingFile(modLoc(path)); }
+
+    private net.minecraftforge.client.model.generators.MultiPartBlockStateBuilder.PartBuilder mpPart(net.minecraftforge.client.model.generators.MultiPartBlockStateBuilder b, String model, int x, int y) {
+        var pb = b.part().modelFile(exm(model));
+        if (x != 0) pb = pb.rotationX(x);
+        if (y != 0) pb = pb.rotationY(y);
+        return pb.addModel();
+    }
+
+    private net.minecraftforge.client.model.generators.MultiPartBlockStateBuilder.PartBuilder mpOr(net.minecraftforge.client.model.generators.MultiPartBlockStateBuilder.PartBuilder p) { p.useOr(); return p; }
+
+    private net.minecraftforge.client.model.generators.MultiPartBlockStateBuilder.PartBuilder.ConditionGroup mpOr(net.minecraftforge.client.model.generators.MultiPartBlockStateBuilder.PartBuilder.ConditionGroup g) { g.useOr = true; return g; }
+
+    private net.minecraftforge.client.model.generators.MultiPartBlockStateBuilder.PartBuilder.ConditionGroup mpNg(net.minecraftforge.client.model.generators.MultiPartBlockStateBuilder.PartBuilder p) { return p.nestedGroup(); }
+
+    private net.minecraftforge.client.model.generators.MultiPartBlockStateBuilder.PartBuilder.ConditionGroup mpNg(net.minecraftforge.client.model.generators.MultiPartBlockStateBuilder.PartBuilder.ConditionGroup g) { return g.nestedGroup(); }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private net.minecraftforge.client.model.generators.MultiPartBlockStateBuilder.PartBuilder mpCond(net.minecraftforge.client.model.generators.MultiPartBlockStateBuilder.PartBuilder p, String prop, String... vals) {
+        Comparable[] cv = new Comparable[vals.length];
+        for (int i = 0; i < vals.length; i++) cv[i] = migValOn(migFindProp(mpOwner, prop), vals[i], "mp:" + prop);
+        return p.condition(migFindProp(mpOwner, prop), cv);
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private net.minecraftforge.client.model.generators.MultiPartBlockStateBuilder.PartBuilder.ConditionGroup mpCond(net.minecraftforge.client.model.generators.MultiPartBlockStateBuilder.PartBuilder.ConditionGroup g, String prop, String... vals) {
+        Comparable[] cv = new Comparable[vals.length];
+        for (int i = 0; i < vals.length; i++) cv[i] = migValOn(migFindProp(mpOwner, prop), vals[i], "mp:" + prop);
+        return g.condition(migFindProp(mpOwner, prop), cv);
+    }
+
+    /** FFA-порт: все блоки, чьи ручные blockstates отличались от сгенерированных. */
+    private void registerFfaBlockstatePorts() {
+        // --- block_c4
+        // --- block_graphite_tritium
+        // --- block_semtex
+        // --- boxcar
+        // --- brick_forgotten
+        // --- brick_jungle_trap
+        // --- cable_detector
+        // --- cable_diode (multipart)
+        {
+            mpOwner = migBlock("cable_diode");
+            var mp = getMultipartBuilder(mpOwner);
+            var p0 = mpPart(mp, "block/cable_diode_pad", 0, 0);
+            var p1 = mpPart(mp, "block/cable_diode_plate", 0, 180);
+            mpCond(p1, "facing", "north");
+            var p2 = mpPart(mp, "block/cable_diode_plate", 0, 270);
+            mpCond(p2, "facing", "east");
+            var p3 = mpPart(mp, "block/cable_diode_plate", 0, 0);
+            mpCond(p3, "facing", "south");
+            var p4 = mpPart(mp, "block/cable_diode_plate", 0, 90);
+            mpCond(p4, "facing", "west");
+            var p5 = mpPart(mp, "block/cable_diode_plate", 90, 0);
+            mpCond(p5, "facing", "up");
+            var p6 = mpPart(mp, "block/cable_diode_plate", 270, 0);
+            mpCond(p6, "facing", "down");
+            var p7 = mpPart(mp, "block/red_cable_arm_north", 0, 0);
+            mpCond(p7, "north", "true");
+            var p8 = mpPart(mp, "block/red_cable_arm_east", 0, 0);
+            mpCond(p8, "east", "true");
+            var p9 = mpPart(mp, "block/red_cable_arm_south", 0, 0);
+            mpCond(p9, "south", "true");
+            var p10 = mpPart(mp, "block/red_cable_arm_west", 0, 0);
+            mpCond(p10, "west", "true");
+            var p11 = mpPart(mp, "block/red_cable_arm_up", 0, 0);
+            mpCond(p11, "up", "true");
+            var p12 = mpPart(mp, "block/red_cable_arm_down", 0, 0);
+            mpCond(p12, "down", "true");
+        }
+        // --- cable_switch
+        // --- charge_c4
+        // --- charge_dynamite
+        // --- charge_miner
+        // --- charge_semtex
+        // --- crane_partitioner
+        // --- crane_splitter
+        // --- deco_pipe
+        migVar("deco_pipe", "axis=x", "block/pipes/deco_pipe_x", 0, 0);
+        migVar("deco_pipe", "axis=y", "block/pipes/deco_pipe_y", 0, 0);
+        migVar("deco_pipe", "axis=z", "block/pipes/deco_pipe_z", 0, 0);
+        // --- deco_pipe_framed
+        migVar("deco_pipe_framed", "axis=x", "block/pipes/deco_pipe_framed_x", 0, 0);
+        migVar("deco_pipe_framed", "axis=y", "block/pipes/deco_pipe_framed_y", 0, 0);
+        migVar("deco_pipe_framed", "axis=z", "block/pipes/deco_pipe_framed_z", 0, 0);
+        // --- deco_pipe_framed_green_rusted
+        migVar("deco_pipe_framed_green_rusted", "axis=x", "block/pipes/deco_pipe_framed_green_rusted_x", 0, 0);
+        migVar("deco_pipe_framed_green_rusted", "axis=y", "block/pipes/deco_pipe_framed_green_rusted_y", 0, 0);
+        migVar("deco_pipe_framed_green_rusted", "axis=z", "block/pipes/deco_pipe_framed_green_rusted_z", 0, 0);
+        // --- deco_pipe_framed_red
+        migVar("deco_pipe_framed_red", "axis=x", "block/pipes/deco_pipe_framed_red_x", 0, 0);
+        migVar("deco_pipe_framed_red", "axis=y", "block/pipes/deco_pipe_framed_red_y", 0, 0);
+        migVar("deco_pipe_framed_red", "axis=z", "block/pipes/deco_pipe_framed_red_z", 0, 0);
+        // --- deco_pipe_framed_rusted
+        migVar("deco_pipe_framed_rusted", "axis=x", "block/pipes/deco_pipe_framed_rusted_x", 0, 0);
+        migVar("deco_pipe_framed_rusted", "axis=y", "block/pipes/deco_pipe_framed_rusted_y", 0, 0);
+        migVar("deco_pipe_framed_rusted", "axis=z", "block/pipes/deco_pipe_framed_rusted_z", 0, 0);
+        // --- deco_pipe_marked
+        migVar("deco_pipe_marked", "axis=x", "block/pipes/deco_pipe_marked_x", 0, 0);
+        migVar("deco_pipe_marked", "axis=y", "block/pipes/deco_pipe_marked_y", 0, 0);
+        migVar("deco_pipe_marked", "axis=z", "block/pipes/deco_pipe_marked_z", 0, 0);
+        // --- deco_pipe_quad
+        migVar("deco_pipe_quad", "axis=x", "block/pipes/deco_pipe_quad_x", 0, 0);
+        migVar("deco_pipe_quad", "axis=y", "block/pipes/deco_pipe_quad_y", 0, 0);
+        migVar("deco_pipe_quad", "axis=z", "block/pipes/deco_pipe_quad_z", 0, 0);
+        // --- deco_pipe_quad_marked
+        migVar("deco_pipe_quad_marked", "axis=x", "block/pipes/deco_pipe_quad_marked_x", 0, 0);
+        migVar("deco_pipe_quad_marked", "axis=y", "block/pipes/deco_pipe_quad_marked_y", 0, 0);
+        migVar("deco_pipe_quad_marked", "axis=z", "block/pipes/deco_pipe_quad_marked_z", 0, 0);
+        // --- deco_pipe_quad_red
+        migVar("deco_pipe_quad_red", "axis=x", "block/pipes/deco_pipe_quad_red_x", 0, 0);
+        migVar("deco_pipe_quad_red", "axis=y", "block/pipes/deco_pipe_quad_red_y", 0, 0);
+        migVar("deco_pipe_quad_red", "axis=z", "block/pipes/deco_pipe_quad_red_z", 0, 0);
+        // --- deco_pipe_quad_rusted
+        migVar("deco_pipe_quad_rusted", "axis=x", "block/pipes/deco_pipe_quad_rusted_x", 0, 0);
+        migVar("deco_pipe_quad_rusted", "axis=y", "block/pipes/deco_pipe_quad_rusted_y", 0, 0);
+        migVar("deco_pipe_quad_rusted", "axis=z", "block/pipes/deco_pipe_quad_rusted_z", 0, 0);
+        // --- deco_pipe_red
+        migVar("deco_pipe_red", "axis=x", "block/pipes/deco_pipe_red_x", 0, 0);
+        migVar("deco_pipe_red", "axis=y", "block/pipes/deco_pipe_red_y", 0, 0);
+        migVar("deco_pipe_red", "axis=z", "block/pipes/deco_pipe_red_z", 0, 0);
+        // --- deco_pipe_rim
+        // --- deco_pipe_rim_marked
+        migVar("deco_pipe_rim_marked", "axis=x", "block/pipes/deco_pipe_rim_marked_x", 0, 0);
+        migVar("deco_pipe_rim_marked", "axis=y", "block/pipes/deco_pipe_rim_marked_y", 0, 0);
+        migVar("deco_pipe_rim_marked", "axis=z", "block/pipes/deco_pipe_rim_marked_z", 0, 0);
+        // --- deco_pipe_rim_rusted
+        migVar("deco_pipe_rim_rusted", "axis=x", "block/pipes/deco_pipe_rim_rusted_x", 0, 0);
+        migVar("deco_pipe_rim_rusted", "axis=y", "block/pipes/deco_pipe_rim_rusted_y", 0, 0);
+        migVar("deco_pipe_rim_rusted", "axis=z", "block/pipes/deco_pipe_rim_rusted_z", 0, 0);
+        // --- deco_pipe_rusted
+        migVar("deco_pipe_rusted", "axis=x", "block/pipes/deco_pipe_rusted_x", 0, 0);
+        migVar("deco_pipe_rusted", "axis=y", "block/pipes/deco_pipe_rusted_y", 0, 0);
+        migVar("deco_pipe_rusted", "axis=z", "block/pipes/deco_pipe_rusted_z", 0, 0);
+        // --- digamma_matter
+        // --- fireworks
+        // --- fissure_bomb
+        // --- flame_war
+        // --- fluid_counter_valve
+        // --- fluid_duct_paintable
+        // --- fluid_duct_paintable_block_exhaust
+        // --- fluid_switch
+        // --- fluid_valve
+        // --- fluorescent_lamp_off
+        migVar("fluorescent_lamp_off", "broken=false,conn=down,facing=down,part=single", "block/lights/fluorescent_lamp_off_down_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=down,facing=down,part=single", "block/lights/fluorescent_lamp_off_down_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=up,facing=down,part=single", "block/lights/fluorescent_lamp_off_down_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=up,facing=down,part=single", "block/lights/fluorescent_lamp_off_down_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=north,facing=down,part=single", "block/lights/fluorescent_lamp_off_down_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=north,facing=down,part=single", "block/lights/fluorescent_lamp_off_down_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=south,facing=down,part=single", "block/lights/fluorescent_lamp_off_down_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=south,facing=down,part=single", "block/lights/fluorescent_lamp_off_down_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=west,facing=down,part=single", "block/lights/fluorescent_lamp_off_down_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=west,facing=down,part=single", "block/lights/fluorescent_lamp_off_down_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=east,facing=down,part=single", "block/lights/fluorescent_lamp_off_down_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=east,facing=down,part=single", "block/lights/fluorescent_lamp_off_down_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=down,facing=down,part=cap", "block/lights/fluorescent_lamp_off_down_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=down,facing=down,part=cap", "block/lights/fluorescent_lamp_off_down_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=down,facing=down,part=mid", "block/lights/fluorescent_lamp_off_down_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=down,facing=down,part=mid", "block/lights/fluorescent_lamp_off_down_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=up,facing=down,part=cap", "block/lights/fluorescent_lamp_off_down_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=up,facing=down,part=cap", "block/lights/fluorescent_lamp_off_down_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=up,facing=down,part=mid", "block/lights/fluorescent_lamp_off_down_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=up,facing=down,part=mid", "block/lights/fluorescent_lamp_off_down_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=north,facing=down,part=cap", "block/lights/fluorescent_lamp_off_down_cap_north", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=north,facing=down,part=cap", "block/lights/fluorescent_lamp_off_down_cap_north", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=north,facing=down,part=mid", "block/lights/fluorescent_lamp_off_down_mid_north", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=north,facing=down,part=mid", "block/lights/fluorescent_lamp_off_down_mid_north", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=south,facing=down,part=cap", "block/lights/fluorescent_lamp_off_down_cap_south", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=south,facing=down,part=cap", "block/lights/fluorescent_lamp_off_down_cap_south", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=south,facing=down,part=mid", "block/lights/fluorescent_lamp_off_down_mid_south", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=south,facing=down,part=mid", "block/lights/fluorescent_lamp_off_down_mid_south", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=west,facing=down,part=cap", "block/lights/fluorescent_lamp_off_down_cap_west", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=west,facing=down,part=cap", "block/lights/fluorescent_lamp_off_down_cap_west", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=west,facing=down,part=mid", "block/lights/fluorescent_lamp_off_down_mid_west", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=west,facing=down,part=mid", "block/lights/fluorescent_lamp_off_down_mid_west", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=east,facing=down,part=cap", "block/lights/fluorescent_lamp_off_down_cap_east", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=east,facing=down,part=cap", "block/lights/fluorescent_lamp_off_down_cap_east", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=east,facing=down,part=mid", "block/lights/fluorescent_lamp_off_down_mid_east", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=east,facing=down,part=mid", "block/lights/fluorescent_lamp_off_down_mid_east", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=down,facing=up,part=single", "block/lights/fluorescent_lamp_off_up_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=down,facing=up,part=single", "block/lights/fluorescent_lamp_off_up_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=up,facing=up,part=single", "block/lights/fluorescent_lamp_off_up_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=up,facing=up,part=single", "block/lights/fluorescent_lamp_off_up_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=north,facing=up,part=single", "block/lights/fluorescent_lamp_off_up_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=north,facing=up,part=single", "block/lights/fluorescent_lamp_off_up_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=south,facing=up,part=single", "block/lights/fluorescent_lamp_off_up_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=south,facing=up,part=single", "block/lights/fluorescent_lamp_off_up_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=west,facing=up,part=single", "block/lights/fluorescent_lamp_off_up_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=west,facing=up,part=single", "block/lights/fluorescent_lamp_off_up_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=east,facing=up,part=single", "block/lights/fluorescent_lamp_off_up_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=east,facing=up,part=single", "block/lights/fluorescent_lamp_off_up_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=down,facing=up,part=cap", "block/lights/fluorescent_lamp_off_up_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=down,facing=up,part=cap", "block/lights/fluorescent_lamp_off_up_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=down,facing=up,part=mid", "block/lights/fluorescent_lamp_off_up_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=down,facing=up,part=mid", "block/lights/fluorescent_lamp_off_up_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=up,facing=up,part=cap", "block/lights/fluorescent_lamp_off_up_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=up,facing=up,part=cap", "block/lights/fluorescent_lamp_off_up_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=up,facing=up,part=mid", "block/lights/fluorescent_lamp_off_up_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=up,facing=up,part=mid", "block/lights/fluorescent_lamp_off_up_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=north,facing=up,part=cap", "block/lights/fluorescent_lamp_off_up_cap_north", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=north,facing=up,part=cap", "block/lights/fluorescent_lamp_off_up_cap_north", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=north,facing=up,part=mid", "block/lights/fluorescent_lamp_off_up_mid_north", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=north,facing=up,part=mid", "block/lights/fluorescent_lamp_off_up_mid_north", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=south,facing=up,part=cap", "block/lights/fluorescent_lamp_off_up_cap_south", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=south,facing=up,part=cap", "block/lights/fluorescent_lamp_off_up_cap_south", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=south,facing=up,part=mid", "block/lights/fluorescent_lamp_off_up_mid_south", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=south,facing=up,part=mid", "block/lights/fluorescent_lamp_off_up_mid_south", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=west,facing=up,part=cap", "block/lights/fluorescent_lamp_off_up_cap_west", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=west,facing=up,part=cap", "block/lights/fluorescent_lamp_off_up_cap_west", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=west,facing=up,part=mid", "block/lights/fluorescent_lamp_off_up_mid_west", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=west,facing=up,part=mid", "block/lights/fluorescent_lamp_off_up_mid_west", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=east,facing=up,part=cap", "block/lights/fluorescent_lamp_off_up_cap_east", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=east,facing=up,part=cap", "block/lights/fluorescent_lamp_off_up_cap_east", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=east,facing=up,part=mid", "block/lights/fluorescent_lamp_off_up_mid_east", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=east,facing=up,part=mid", "block/lights/fluorescent_lamp_off_up_mid_east", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=down,facing=north,part=single", "block/lights/fluorescent_lamp_off_north_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=down,facing=north,part=single", "block/lights/fluorescent_lamp_off_north_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=up,facing=north,part=single", "block/lights/fluorescent_lamp_off_north_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=up,facing=north,part=single", "block/lights/fluorescent_lamp_off_north_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=north,facing=north,part=single", "block/lights/fluorescent_lamp_off_north_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=north,facing=north,part=single", "block/lights/fluorescent_lamp_off_north_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=south,facing=north,part=single", "block/lights/fluorescent_lamp_off_north_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=south,facing=north,part=single", "block/lights/fluorescent_lamp_off_north_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=west,facing=north,part=single", "block/lights/fluorescent_lamp_off_north_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=west,facing=north,part=single", "block/lights/fluorescent_lamp_off_north_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=east,facing=north,part=single", "block/lights/fluorescent_lamp_off_north_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=east,facing=north,part=single", "block/lights/fluorescent_lamp_off_north_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=down,facing=north,part=cap", "block/lights/fluorescent_lamp_off_north_cap_down", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=down,facing=north,part=cap", "block/lights/fluorescent_lamp_off_north_cap_down", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=down,facing=north,part=mid", "block/lights/fluorescent_lamp_off_north_mid_down", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=down,facing=north,part=mid", "block/lights/fluorescent_lamp_off_north_mid_down", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=up,facing=north,part=cap", "block/lights/fluorescent_lamp_off_north_cap_up", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=up,facing=north,part=cap", "block/lights/fluorescent_lamp_off_north_cap_up", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=up,facing=north,part=mid", "block/lights/fluorescent_lamp_off_north_mid_up", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=up,facing=north,part=mid", "block/lights/fluorescent_lamp_off_north_mid_up", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=north,facing=north,part=cap", "block/lights/fluorescent_lamp_off_north_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=north,facing=north,part=cap", "block/lights/fluorescent_lamp_off_north_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=north,facing=north,part=mid", "block/lights/fluorescent_lamp_off_north_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=north,facing=north,part=mid", "block/lights/fluorescent_lamp_off_north_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=south,facing=north,part=cap", "block/lights/fluorescent_lamp_off_north_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=south,facing=north,part=cap", "block/lights/fluorescent_lamp_off_north_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=south,facing=north,part=mid", "block/lights/fluorescent_lamp_off_north_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=south,facing=north,part=mid", "block/lights/fluorescent_lamp_off_north_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=west,facing=north,part=cap", "block/lights/fluorescent_lamp_off_north_cap_west", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=west,facing=north,part=cap", "block/lights/fluorescent_lamp_off_north_cap_west", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=west,facing=north,part=mid", "block/lights/fluorescent_lamp_off_north_mid_west", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=west,facing=north,part=mid", "block/lights/fluorescent_lamp_off_north_mid_west", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=east,facing=north,part=cap", "block/lights/fluorescent_lamp_off_north_cap_east", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=east,facing=north,part=cap", "block/lights/fluorescent_lamp_off_north_cap_east", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=east,facing=north,part=mid", "block/lights/fluorescent_lamp_off_north_mid_east", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=east,facing=north,part=mid", "block/lights/fluorescent_lamp_off_north_mid_east", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=down,facing=south,part=single", "block/lights/fluorescent_lamp_off_south_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=down,facing=south,part=single", "block/lights/fluorescent_lamp_off_south_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=up,facing=south,part=single", "block/lights/fluorescent_lamp_off_south_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=up,facing=south,part=single", "block/lights/fluorescent_lamp_off_south_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=north,facing=south,part=single", "block/lights/fluorescent_lamp_off_south_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=north,facing=south,part=single", "block/lights/fluorescent_lamp_off_south_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=south,facing=south,part=single", "block/lights/fluorescent_lamp_off_south_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=south,facing=south,part=single", "block/lights/fluorescent_lamp_off_south_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=west,facing=south,part=single", "block/lights/fluorescent_lamp_off_south_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=west,facing=south,part=single", "block/lights/fluorescent_lamp_off_south_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=east,facing=south,part=single", "block/lights/fluorescent_lamp_off_south_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=east,facing=south,part=single", "block/lights/fluorescent_lamp_off_south_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=down,facing=south,part=cap", "block/lights/fluorescent_lamp_off_south_cap_down", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=down,facing=south,part=cap", "block/lights/fluorescent_lamp_off_south_cap_down", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=down,facing=south,part=mid", "block/lights/fluorescent_lamp_off_south_mid_down", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=down,facing=south,part=mid", "block/lights/fluorescent_lamp_off_south_mid_down", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=up,facing=south,part=cap", "block/lights/fluorescent_lamp_off_south_cap_up", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=up,facing=south,part=cap", "block/lights/fluorescent_lamp_off_south_cap_up", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=up,facing=south,part=mid", "block/lights/fluorescent_lamp_off_south_mid_up", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=up,facing=south,part=mid", "block/lights/fluorescent_lamp_off_south_mid_up", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=north,facing=south,part=cap", "block/lights/fluorescent_lamp_off_south_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=north,facing=south,part=cap", "block/lights/fluorescent_lamp_off_south_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=north,facing=south,part=mid", "block/lights/fluorescent_lamp_off_south_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=north,facing=south,part=mid", "block/lights/fluorescent_lamp_off_south_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=south,facing=south,part=cap", "block/lights/fluorescent_lamp_off_south_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=south,facing=south,part=cap", "block/lights/fluorescent_lamp_off_south_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=south,facing=south,part=mid", "block/lights/fluorescent_lamp_off_south_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=south,facing=south,part=mid", "block/lights/fluorescent_lamp_off_south_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=west,facing=south,part=cap", "block/lights/fluorescent_lamp_off_south_cap_west", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=west,facing=south,part=cap", "block/lights/fluorescent_lamp_off_south_cap_west", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=west,facing=south,part=mid", "block/lights/fluorescent_lamp_off_south_mid_west", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=west,facing=south,part=mid", "block/lights/fluorescent_lamp_off_south_mid_west", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=east,facing=south,part=cap", "block/lights/fluorescent_lamp_off_south_cap_east", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=east,facing=south,part=cap", "block/lights/fluorescent_lamp_off_south_cap_east", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=east,facing=south,part=mid", "block/lights/fluorescent_lamp_off_south_mid_east", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=east,facing=south,part=mid", "block/lights/fluorescent_lamp_off_south_mid_east", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=down,facing=west,part=single", "block/lights/fluorescent_lamp_off_west_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=down,facing=west,part=single", "block/lights/fluorescent_lamp_off_west_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=up,facing=west,part=single", "block/lights/fluorescent_lamp_off_west_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=up,facing=west,part=single", "block/lights/fluorescent_lamp_off_west_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=north,facing=west,part=single", "block/lights/fluorescent_lamp_off_west_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=north,facing=west,part=single", "block/lights/fluorescent_lamp_off_west_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=south,facing=west,part=single", "block/lights/fluorescent_lamp_off_west_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=south,facing=west,part=single", "block/lights/fluorescent_lamp_off_west_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=west,facing=west,part=single", "block/lights/fluorescent_lamp_off_west_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=west,facing=west,part=single", "block/lights/fluorescent_lamp_off_west_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=east,facing=west,part=single", "block/lights/fluorescent_lamp_off_west_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=east,facing=west,part=single", "block/lights/fluorescent_lamp_off_west_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=down,facing=west,part=cap", "block/lights/fluorescent_lamp_off_west_cap_down", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=down,facing=west,part=cap", "block/lights/fluorescent_lamp_off_west_cap_down", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=down,facing=west,part=mid", "block/lights/fluorescent_lamp_off_west_mid_down", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=down,facing=west,part=mid", "block/lights/fluorescent_lamp_off_west_mid_down", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=up,facing=west,part=cap", "block/lights/fluorescent_lamp_off_west_cap_up", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=up,facing=west,part=cap", "block/lights/fluorescent_lamp_off_west_cap_up", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=up,facing=west,part=mid", "block/lights/fluorescent_lamp_off_west_mid_up", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=up,facing=west,part=mid", "block/lights/fluorescent_lamp_off_west_mid_up", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=north,facing=west,part=cap", "block/lights/fluorescent_lamp_off_west_cap_north", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=north,facing=west,part=cap", "block/lights/fluorescent_lamp_off_west_cap_north", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=north,facing=west,part=mid", "block/lights/fluorescent_lamp_off_west_mid_north", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=north,facing=west,part=mid", "block/lights/fluorescent_lamp_off_west_mid_north", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=south,facing=west,part=cap", "block/lights/fluorescent_lamp_off_west_cap_south", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=south,facing=west,part=cap", "block/lights/fluorescent_lamp_off_west_cap_south", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=south,facing=west,part=mid", "block/lights/fluorescent_lamp_off_west_mid_south", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=south,facing=west,part=mid", "block/lights/fluorescent_lamp_off_west_mid_south", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=west,facing=west,part=cap", "block/lights/fluorescent_lamp_off_west_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=west,facing=west,part=cap", "block/lights/fluorescent_lamp_off_west_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=west,facing=west,part=mid", "block/lights/fluorescent_lamp_off_west_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=west,facing=west,part=mid", "block/lights/fluorescent_lamp_off_west_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=east,facing=west,part=cap", "block/lights/fluorescent_lamp_off_west_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=east,facing=west,part=cap", "block/lights/fluorescent_lamp_off_west_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=east,facing=west,part=mid", "block/lights/fluorescent_lamp_off_west_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=east,facing=west,part=mid", "block/lights/fluorescent_lamp_off_west_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=down,facing=east,part=single", "block/lights/fluorescent_lamp_off_east_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=down,facing=east,part=single", "block/lights/fluorescent_lamp_off_east_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=up,facing=east,part=single", "block/lights/fluorescent_lamp_off_east_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=up,facing=east,part=single", "block/lights/fluorescent_lamp_off_east_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=north,facing=east,part=single", "block/lights/fluorescent_lamp_off_east_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=north,facing=east,part=single", "block/lights/fluorescent_lamp_off_east_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=south,facing=east,part=single", "block/lights/fluorescent_lamp_off_east_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=south,facing=east,part=single", "block/lights/fluorescent_lamp_off_east_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=west,facing=east,part=single", "block/lights/fluorescent_lamp_off_east_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=west,facing=east,part=single", "block/lights/fluorescent_lamp_off_east_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=east,facing=east,part=single", "block/lights/fluorescent_lamp_off_east_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=east,facing=east,part=single", "block/lights/fluorescent_lamp_off_east_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=down,facing=east,part=cap", "block/lights/fluorescent_lamp_off_east_cap_down", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=down,facing=east,part=cap", "block/lights/fluorescent_lamp_off_east_cap_down", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=down,facing=east,part=mid", "block/lights/fluorescent_lamp_off_east_mid_down", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=down,facing=east,part=mid", "block/lights/fluorescent_lamp_off_east_mid_down", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=up,facing=east,part=cap", "block/lights/fluorescent_lamp_off_east_cap_up", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=up,facing=east,part=cap", "block/lights/fluorescent_lamp_off_east_cap_up", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=up,facing=east,part=mid", "block/lights/fluorescent_lamp_off_east_mid_up", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=up,facing=east,part=mid", "block/lights/fluorescent_lamp_off_east_mid_up", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=north,facing=east,part=cap", "block/lights/fluorescent_lamp_off_east_cap_north", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=north,facing=east,part=cap", "block/lights/fluorescent_lamp_off_east_cap_north", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=north,facing=east,part=mid", "block/lights/fluorescent_lamp_off_east_mid_north", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=north,facing=east,part=mid", "block/lights/fluorescent_lamp_off_east_mid_north", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=south,facing=east,part=cap", "block/lights/fluorescent_lamp_off_east_cap_south", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=south,facing=east,part=cap", "block/lights/fluorescent_lamp_off_east_cap_south", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=south,facing=east,part=mid", "block/lights/fluorescent_lamp_off_east_mid_south", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=south,facing=east,part=mid", "block/lights/fluorescent_lamp_off_east_mid_south", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=west,facing=east,part=cap", "block/lights/fluorescent_lamp_off_east_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=west,facing=east,part=cap", "block/lights/fluorescent_lamp_off_east_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=west,facing=east,part=mid", "block/lights/fluorescent_lamp_off_east_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=west,facing=east,part=mid", "block/lights/fluorescent_lamp_off_east_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=east,facing=east,part=cap", "block/lights/fluorescent_lamp_off_east_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=east,facing=east,part=cap", "block/lights/fluorescent_lamp_off_east_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=false,conn=east,facing=east,part=mid", "block/lights/fluorescent_lamp_off_east_single", 0, 0);
+        migVar("fluorescent_lamp_off", "broken=true,conn=east,facing=east,part=mid", "block/lights/fluorescent_lamp_off_east_single", 0, 0);
+        // --- geysir_nether
+        // --- machine_puf6_tank
+        // --- machine_uf6_tank
+        // --- mush
+        // --- mush_block_stem
+        // --- ore_volcano
+        // --- pink_log
+        // --- pink_planks
+        // --- pipe_anchor
+        // --- rail_wood
+        // --- reinforced_laminate_pane (multipart)
+        {
+            mpOwner = migBlock("reinforced_laminate_pane");
+            var mp = getMultipartBuilder(mpOwner);
+            var p0 = mpPart(mp, "block/deco/laminate_pane_post", 0, 0);
+            var p1 = mpPart(mp, "block/deco/laminate_pane_side", 0, 0);
+            mpCond(p1, "north", "true");
+            var p2 = mpPart(mp, "block/deco/laminate_pane_side", 0, 90);
+            mpCond(p2, "east", "true");
+            var p3 = mpPart(mp, "block/deco/laminate_pane_side_alt", 0, 0);
+            mpCond(p3, "south", "true");
+            var p4 = mpPart(mp, "block/deco/laminate_pane_side_alt", 0, 90);
+            mpCond(p4, "west", "true");
+            var p5 = mpPart(mp, "block/deco/laminate_pane_noside", 0, 0);
+            mpCond(p5, "north", "false");
+            var p6 = mpPart(mp, "block/deco/laminate_pane_noside_alt", 0, 0);
+            mpCond(p6, "east", "false");
+            var p7 = mpPart(mp, "block/deco/laminate_pane_noside_alt", 0, 90);
+            mpCond(p7, "south", "false");
+            var p8 = mpPart(mp, "block/deco/laminate_pane_noside", 0, 270);
+            mpCond(p8, "west", "false");
+        }
+        // --- sandbags
+        // --- solar_mirror
+        // --- spikes
+        // --- steel_beam
+        migVar("sandbags", "north=false,south=false,east=false,west=false", "block/deco/sandbags_0000", 0, 0);
+        migVar("sandbags", "north=false,south=false,east=false,west=true", "block/deco/sandbags_0001", 0, 0);
+        migVar("sandbags", "north=false,south=false,east=true,west=false", "block/deco/sandbags_0010", 0, 0);
+        migVar("sandbags", "north=false,south=false,east=true,west=true", "block/deco/sandbags_0011", 0, 0);
+        migVar("sandbags", "north=false,south=true,east=false,west=false", "block/deco/sandbags_0100", 0, 0);
+        migVar("sandbags", "north=false,south=true,east=false,west=true", "block/deco/sandbags_0101", 0, 0);
+        migVar("sandbags", "north=false,south=true,east=true,west=false", "block/deco/sandbags_0110", 0, 0);
+        migVar("sandbags", "north=false,south=true,east=true,west=true", "block/deco/sandbags_0111", 0, 0);
+        migVar("sandbags", "north=true,south=false,east=false,west=false", "block/deco/sandbags_1000", 0, 0);
+        migVar("sandbags", "north=true,south=false,east=false,west=true", "block/deco/sandbags_1001", 0, 0);
+        migVar("sandbags", "north=true,south=false,east=true,west=false", "block/deco/sandbags_1010", 0, 0);
+        migVar("sandbags", "north=true,south=false,east=true,west=true", "block/deco/sandbags_1011", 0, 0);
+        migVar("sandbags", "north=true,south=true,east=false,west=false", "block/deco/sandbags_1100", 0, 0);
+        migVar("sandbags", "north=true,south=true,east=false,west=true", "block/deco/sandbags_1101", 0, 0);
+        migVar("sandbags", "north=true,south=true,east=true,west=false", "block/deco/sandbags_1110", 0, 0);
+        migVar("sandbags", "north=true,south=true,east=true,west=true", "block/deco/sandbags_1111", 0, 0);
+        // --- stone_porous
+        // --- therm_endo
+        // --- therm_exo
+        // --- vine_phosphor
+        // --- volcano_core
+        // --- volcano_rad_core
+        // --- wood_barrier
+        // --- wood_structure_scaffold
     }
 
     /** Блок по registry-имени (поиск по статическим полям ModBlocks). */
@@ -6247,11 +6478,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
     /** OBJ-блок без ориентации (модель-обёртка в resources, identity transform). */
     private void customObjBlockSimple(RegistrySupplier<Block> blockObject) {
         ModelFile model = models().getExistingFile(modLoc("block/" + blockObject.getId().getPath()));
-        VariantBlockStateBuilder builder = getVariantBuilder(blockObject.get());
-        for (Direction facing : Direction.Plane.HORIZONTAL) {
-            builder.partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, facing)
-                    .modelForState().modelFile(model).addModel();
-        }
+        // horizontalBlock вместо ручного partialState-цикла: ванильный хелпер сам раскладывает
+        // все 4 ориентации и не конфликтует с уже сконфигурированными состояниями.
+        horizontalBlock(blockObject.get(), model);
         simpleBlockItem(blockObject.get(), model);
     }
 

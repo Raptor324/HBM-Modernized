@@ -81,6 +81,10 @@ public class ClientModEvents {
         });
 
         ClientTickEvent.CLIENT_POST.register(client -> {
+            // Порт onClientTickLast (1.7.10): Leitstern-Raycast alle 200 мс, только Обызвездный мир.
+            if (client.level != null && client.level.dimension() == Level.OVERWORLD) {
+                com.hbm_m.client.render.world.RenderNTMSkybox.updateLodeStar(client, client.level);
+            }
             com.hbm_m.client.overlay.OverlayInfoToast.tick();
             // Порт ModEventHandlerClient:919 (1.7.10): метка в статус-стеке (ID_FILTER),
             // обновляемая каждый тик, пока надета маска без фильтра.
@@ -274,6 +278,12 @@ public class ClientModEvents {
             }
             com.hbm_m.client.RebarPlacerPreview.render(event.getPoseStack(), cameraPos);
             return;
+        }
+
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_WEATHER) {
+            if (!com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive()) {
+                com.hbm_m.client.render.shader.PackAdditiveQueue.drainAndClear();
+            }
         }
 
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {

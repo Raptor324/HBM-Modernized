@@ -30,7 +30,7 @@ public final class StingerClient {
     public static void onOverlayPre(RenderGuiOverlayEvent.Pre event) {
         if (event.getOverlay() != VanillaGuiOverlay.CROSSHAIR.type()) return;
         Player player = GunClientHooks.clientPlayer();
-        if (player == null) return;
+        if (player == null || player.isSpectator()) return;
         ItemStack stack = player.getMainHandItem();
         if (!(stack.getItem() instanceof ItemGunStinger gun)) return;
 
@@ -73,7 +73,7 @@ public final class StingerClient {
     public static void onOverlayPre(RenderGuiLayerEvent.Pre event) {
         if (!VanillaGuiLayers.CROSSHAIR.equals(event.getName())) return;
         Player player = GunClientHooks.clientPlayer();
-        if (player == null) return;
+        if (player == null || player.isSpectator()) return;
         ItemStack stack = player.getMainHandItem();
         if (!(stack.getItem() instanceof ItemGunStinger gun)) return;
 

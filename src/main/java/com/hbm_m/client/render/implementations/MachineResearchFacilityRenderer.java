@@ -162,6 +162,8 @@ public final class MachineResearchFacilityRenderer {
         MachineRenderers.machine("fel",
                 ModBlockEntities.FEL_BE.get(),
                 MachineFelBlockEntity.class)
+            .part("Cube_Cube.001")
+            .itemParts("Cube_Cube.001")
             .hook(new MachineRenderHook<MachineFelBlockEntity>() {
                 @Override
                 public void render(MachineFelBlockEntity fel, float pt, PoseStack ps,
@@ -198,6 +200,9 @@ public final class MachineResearchFacilityRenderer {
         MachineRenderers.machine("forcefield",
                 ModBlockEntities.FORCE_FIELD_BE.get(),
                 ForceFieldBlockEntity.class)
+            .part("Base")
+            .part("Top")
+            .itemParts("Base", "Top")
             .hook(new MachineRenderHook<ForceFieldBlockEntity>() {
                 @Override
                 public void render(ForceFieldBlockEntity be, float pt, PoseStack ps,

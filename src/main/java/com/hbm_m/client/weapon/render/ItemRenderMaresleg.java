@@ -1,5 +1,8 @@
 package com.hbm_m.client.weapon.render;
 
+import com.hbm_m.client.render.weapon.WeaponJointRig;
+import com.hbm_m.client.render.weapon.WeaponKinematics;
+import com.hbm_m.client.render.weapon.WeaponRenderRegistry;
 import com.hbm_m.client.weapon.GunGL;
 import com.hbm_m.client.weapon.ItemRenderWeaponBase;
 import com.hbm_m.client.weapon.WeaponResources;
@@ -84,29 +87,18 @@ public class ItemRenderMaresleg extends ItemRenderWeaponBase {
 		this.renderSmokeNodes(gun.getConfig(stack, 0).smokeNodes, 0.25D);
 		GunGL.popMatrix();
 
-		GunGL.renderPart(WeaponResources.maresleg, "Gun");
+		WeaponRenderRegistry.renderPart(WeaponResources.maresleg, "Gun", GunGL.pose());
 		if(!shortened) {
-			GunGL.renderPart(WeaponResources.maresleg, "Stock");
-			GunGL.renderPart(WeaponResources.maresleg, "Barrel");
+			WeaponRenderRegistry.renderPart(WeaponResources.maresleg, "Stock", GunGL.pose());
+			WeaponRenderRegistry.renderPart(WeaponResources.maresleg, "Barrel", GunGL.pose());
 		}
 
-		GunGL.pushMatrix();
-		GunGL.translate(0, 0.125, -2.875);
-		GunGL.rotate(lever[0], 1, 0, 0);
-		GunGL.translate(0, -0.125, 2.875);
-		GunGL.renderPart(WeaponResources.maresleg, "Lever");
-		GunGL.popMatrix();
-
-		GunGL.pushMatrix();
-		GunGL.translate(shell[0], shell[1] - 0.75, shell[2]);
-		GunGL.renderPart(WeaponResources.maresleg, "Shell");
-		GunGL.popMatrix();
+		WeaponJointRig rig = WeaponRenderRegistry.getRig(WeaponResources.maresleg);
+		WeaponKinematics.renderPartWithJoint(rig, "Lever", GunGL.pose(), (float) lever[0]);
+		WeaponKinematics.renderPartWithVector(rig, "Shell", GunGL.pose(), (float) shell[0], (float) (shell[1] - 0.75), (float) shell[2]);
 
 		if(flag[0] != 0) {
-			GunGL.pushMatrix();
-			GunGL.translate(0, -0.5, 0);
-			GunGL.renderPart(WeaponResources.maresleg, "Shell");
-			GunGL.popMatrix();
+			WeaponKinematics.renderPartWithVector(rig, "Shell", GunGL.pose(), 0f, -0.5f, 0f);
 		}
 
 		GunGL.pushMatrix();
@@ -119,43 +111,26 @@ public class ItemRenderMaresleg extends ItemRenderWeaponBase {
 
 	@Override
 	public void setupThirdPerson(ItemStack stack) {
-		super.setupThirdPerson(stack);
-		double scale = 1.75D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.translate(0, 0.25, 3);
-
+		setupThirdPerson(stack, 1.75D, 0, 0.25, 3);
 	}
 
 	@Override
 	public void setupInv(ItemStack stack) {
-		super.setupInv(stack);
-
 		if(getShort(stack)) {
-			double scale = 2.5D;
-			GunGL.scale(scale, scale, scale);
-			GunGL.rotate(25, 1, 0, 0);
-			GunGL.rotate(45, 0, 1, 0);
-			GunGL.translate(-1, 0, 0);
+			setupInv(stack, 2.5D, -1, 0, 0);
 		} else {
-			double scale = 1.4375D;
-			GunGL.scale(scale, scale, scale);
-			GunGL.rotate(25, 1, 0, 0);
-			GunGL.rotate(45, 0, 1, 0);
-			GunGL.translate(-0.5, 0.5, 0);
+			setupInv(stack, 1.4375D, -0.5, 0.5, 0);
 		}
 	}
 
 	@Override
 	public void setupModTable(ItemStack stack) {
-		double scale = -8.75D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(90, 0, 1, 0);
+		setupModTable(stack, -8.75D, 0, 0, 0);
 	}
 
 	@Override
 	public void renderOther(ItemStack stack, ItemRenderType type, Object... data) {
 		GunGL.enableLighting();
-
 		GunGL.bindTexture(texture);
 		GunGL.renderPart(WeaponResources.maresleg, "Gun");
 		GunGL.renderPart(WeaponResources.maresleg, "Lever");
@@ -164,27 +139,7 @@ public class ItemRenderMaresleg extends ItemRenderWeaponBase {
 			GunGL.renderPart(WeaponResources.maresleg, "Stock");
 			GunGL.renderPart(WeaponResources.maresleg, "Barrel");
 		}
-
-		if(type == ItemRenderType.EQUIPPED) {
-			LivingEntity ent = (LivingEntity) data[1];
-			long shot;
-			double shotRand = 0;
-			if(ent == Minecraft.getInstance().player) {
-				ItemGunBaseNT gun = (ItemGunBaseNT) stack.getItem();
-				shot = gun.lastShot[0];
-				shotRand = gun.shotRand;
-			} else {
-				shot = ItemRenderWeaponBase.flashMap.getOrDefault(ent, (long) -1);
-				if(shot < 0) return;
-			}
-
-			GunGL.pushMatrix();
-			GunGL.translate(0, 1, shortened ? 3.75 : 8);
-			GunGL.rotate(90, 0, 1, 0);
-			GunGL.rotate(90 * shotRand, 1, 0, 0);
-			this.renderMuzzleFlash(shot, 75, 5);
-			GunGL.popMatrix();
-		}
+		renderEquippedMuzzleFlash(type, stack, data, 0, 1, shortened ? 3.75 : 8, 1.0D, 75, 5);
 	}
 
 	public boolean getShort(ItemStack stack) {

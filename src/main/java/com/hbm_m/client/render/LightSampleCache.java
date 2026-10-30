@@ -93,6 +93,29 @@ public final class LightSampleCache {
     public static final ThreadLocal<Boolean> BASE_POSE_SET = ThreadLocal.withInitial(() -> false);
 
     /**
+     * Reconstructs the block-relative local pose matrix from a BER {@code worldPose}
+     * by stripping the level basis (camera rotation + view bob) and subtracting the
+     * camera-relative block offset. Zero heap allocations.
+     *
+     * <p>L^-1 (FrameViewState): strips R_cam AND the view bob — the local pose is
+     * static while walking, so light sample points stop jittering. (History: an
+     * early extra {@code .invert()} here rotated sample points by R_cam² and the
+     * light "crawled" over the machine on camera rotation.)
+     */
+    public static void computeLocalPose(Matrix4f worldPose, BlockPos anchor, Matrix4f outLocalPose) {
+        if (anchor == null) anchor = BlockPos.ZERO;
+        if (BASE_POSE_SET.get()) {
+            outLocalPose.set(BASE_POSE.get()).invert().mul(worldPose);
+        } else {
+            var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+            outLocalPose.set(FrameViewState.poseToWorldRotation()).mul(worldPose);
+            outLocalPose.m30(outLocalPose.m30() - (float) (anchor.getX() - cam.x));
+            outLocalPose.m31(outLocalPose.m31() - (float) (anchor.getY() - cam.y));
+            outLocalPose.m32(outLocalPose.m32() - (float) (anchor.getZ() - cam.z));
+        }
+    }
+
+    /**
      * Single-slot fast path. Stores the most recently sampled BE so the typical
      * call pattern - Advanced Assembler dispatching {@link #getOrSample} 11
      * times in a row for the same {@code BlockEntity} (one per part renderer)

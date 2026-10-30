@@ -25,6 +25,9 @@ import com.hbm_m.client.render.cache.RenderCacheManager;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.client.render.culling.HiZDepthPyramid;
 import com.hbm_m.client.render.debug.GlDebugMarkers;
+import com.hbm_m.client.render.shader.GlShaderUtil;
+
+import static com.hbm_m.client.render.BakeVramPoolManager.*;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderInstance;
@@ -112,10 +115,10 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
  */
 public final class NucleusGpuBaker {
 
-    private static final int LOCAL_SIZE = 64;
+
     private static final int UBO_BINDING_BAKE_PARAMS = 0;
-    private static int bakeParamsUbo = -1;
-    private static final java.nio.ByteBuffer UBO_BYTE_BUF = org.lwjgl.system.MemoryUtil.memAlloc(88);
+    static int bakeParamsUbo = -1;
+    private static final java.nio.ByteBuffer UBO_BYTE_BUF = org.lwjgl.system.MemoryUtil.memAlloc(96);
     private static final java.nio.IntBuffer UBO_INT_VIEW = UBO_BYTE_BUF.asIntBuffer();
 
     private static final boolean KILL_SWITCH =
@@ -133,30 +136,10 @@ public final class NucleusGpuBaker {
      * 0 or less disables
      * caching. Default 192 MB (config nucleusBakeCacheMB; -Dhbm.bakeCacheMB=N overrides).
      */
-    private static long cacheBudgetBytes() {
-        Integer flag = Integer.getInteger("hbm.bakeCacheMB");
-        int mb = flag != null ? flag : com.hbm_m.config.ModClothConfig.get().nucleusBakeCacheMB;
-        if (mb <= 0) {
-            return 0L;
-        }
-        int effectiveMb = flag != null ? mb : Math.max(1024, mb);
-        return Math.max(16L, (long) effectiveMb) * 1024L * 1024L;
+    public static long cacheBudgetBytes() {
+        return BakeVramPoolManager.cacheBudgetBytes();
     }
-    /**
-     * A cache unused for this many render frames may be evicted to admit a new one.
-     * 24 frames is ~1.2 s at 20 fps: caches survive momentary looks-away but stop
-     * pinning VRAM soon after the camera leaves a farm.
-     */
-    private static final long LRU_FRAME_LIMIT = 24;
 
-    /**
-     * Admission backoff window (frames): after a budget refusal (allocateCache /
-     * ensureOutputCapacity / ensureCacheRecords) the entry stays refused (Tier-2/3
-     * fallback) for this many frames instead of re-attempting admission - and its
-     * evictStaleCaches / relayoutPool churn - EVERY frame. Behavior with
-     * budget available is unchanged: the stamp is only set on an actual refusal.
-     */
-    private static final long ADMISSION_BACKOFF_FRAMES = 32;
 
     private static boolean checked = false;
     private static boolean available = false;
@@ -168,252 +151,50 @@ public final class NucleusGpuBaker {
     private static boolean initFailed = false;
 
     /** Instance-granularity cull program (pass 0 cull / 1 EBO build / 2 assemble indirect words). */
-    private static int cullProgramId = -1;
+    static int cullProgramId = -1;
     private static boolean cullInitFailed = false;
-    private static int cuPass, cuInstCount, cuVertCount, cuIdxCount, cuInstStride, cuPlanes;
+    static int cuPass, cuInstCount, cuVertCount, cuIdxCount, cuInstStride, cuPlanes;
     /** Global-batch placement uniforms: output vertBase + EBO word base (pool path). */
-    private static int cuVertBase, cuEboBase;
+    static int cuVertBase, cuEboBase;
     /** Pool command-store slot for pass 2's GPU-written indirect command (-1 = path off). */
-    private static int cuCmdSlot;
+    static int cuCmdSlot;
     /** Pass 1 identity-fill flag: 1 = write EVERY instance slot (the expandPoolEbo
      * no-cull growth), 0 = write the visible list (cull EBO build). Uniforms are
      * per-program state, so every entry point sets it before dispatching. */
-    private static int cuIdentity;
+    static int cuIdentity;
     /** Optional Hi-Z occlusion uniforms (see CULL_SOURCE pass 0). */
-    private static int cuHiZMode, cuClipMat, cuViewSize, cuPyramidLevels;
+    static int cuHiZMode, cuClipMat, cuViewSize, cuMip0Size, cuPyramidLevels;
 
-    private static final int BONE_PALETTE_SIZE = 64;
-    private static int boneSsbo = -1;
+    static final int BONE_PALETTE_SIZE = 64;
+    static int boneSsbo = -1;
     private static boolean hasBoneMatrices = false;
     /** Bumped on every bone palette upload; meshes with a bone-id attribute fold it into their cache key. */
     private static long boneEpoch = 0L;
 
-    // ── Dense OUTPUT bake layout, MAIN pass (56 bytes, 4-byte aligned) ──
-    // The input companion mesh uses IrisVertexFormats.ENTITY, whose stride
-    // on 1.21.1 is 54 bytes (unaligned: invisible padding after normal).
-    // Addressing it via floats caused an off-by-2 byte stride misalignment
-    // and exploding triangles on 1.21.1/Iris (on 1.20.1/Oculus stride 56 is
-    // 4-byte aligned). The compute shader reads inputs by byte offsets
-    // using bitfield unpacking and writes to this dense 56-byte layout,
-    // matching the attribute order of Iris ENTITY formats. The appended
-    // at_midBlock word mirrors the Iris/Oculus TERRAIN extension attribute
-    // (BYTE x 3, packed by ExtendedDataHelper.packMidBlock semantics) which
-    // the ENTITY-format companion mesh does not carry.
-    private static final int OUT_STRIDE_BYTES = 56;
-    private static final int OUT_OFF_POS = 0;      // 3F
-    private static final int OUT_OFF_COLOR = 12;   // 4UB
-    private static final int OUT_OFF_UV0 = 16;     // 2F
-    private static final int OUT_OFF_UV1 = 24;     // 2S (integer pipeline)
-    private static final int OUT_OFF_UV2 = 28;     // 2S (integer pipeline)
-    private static final int OUT_OFF_NORMAL = 32;  // 3B + 1 pad
-    private static final int OUT_OFF_ENTITY = 36;  // 2US
-    private static final int OUT_OFF_MIDTEX = 40;  // 2F
-    private static final int OUT_OFF_TANGENT = 48; // 4B
-    private static final int OUT_OFF_MIDBLOCK = 52; // 3B (x,y,z) + 1 pad, computed in the bake
 
-    // ── Slim SHADOW output layout (24 bytes) ──────────────────────────
-    // Shadow programs only need position + UV0 (depth/shadowcolor) and the
-    // normal: writing the full 56-byte layout spent >2x the required SSBO
-    // bandwidth on the most expensive pass. at_midBlock is intentionally
-    // absent here: it feeds gbuffers-only pack features (parallax/waving).
-    private static final int SHADOW_STRIDE_BYTES = 24;
-    private static final int SH_OFF_POS = 0;       // 3F
-    private static final int SH_OFF_UV0 = 12;      // 2F
-    private static final int SH_OFF_NORMAL = 20;   // 3B + 1 pad
+    public static final PassPool POOL_MAIN = BakeVramPoolManager.POOL_MAIN;
+    public static final PassPool POOL_SHADOW = BakeVramPoolManager.POOL_SHADOW;
 
-    /** Total VRAM + snapshot bytes currently held by per-renderer caches. */
-    private static long cacheBytes = 0;
-    private static boolean cacheOverflowLogged = false;
-    /** Cumulative admission (budget) refusals since the last session reset
-     * (releaseResourcesInternal); gives the one-shot overflow log's refusal
-     * count a session-scale meaning. Touched only under the class lock. */
-    private static long admissionRefusals = 0;
-
-    private static final java.util.ArrayList<BakedMesh> BAKED = new java.util.ArrayList<>(64);
-
-    static final class BakedMesh {
-        final IrisCompanionMesh mesh;
-        final int vertCount;
-        final int idxCount;
-        final int[] baseIndices;
-        /** Base mesh indices as an SSBO for the cull program's EBO-build pass. */
-        int baseIdxSsbo = -1;
-        // P3: one-time aligned relayout of the input mesh; -1 = bind the mesh VBO
-        // directly (its stride is already a multiple of 4).
-        int inputSsbo = -1;
-        int inputStride;
-        final ModeCache shadow = new ModeCache();
-        final ModeCache main = new ModeCache();
-        // Global-batch placement: vertex offset of this
-        // mesh's output range and uint-word offset of its EBO range, per mode
-        // (index 0 = shadow, 1 = main). Recomputed by relayoutPool on any
-        // range-capacity change; -1 = no range assigned.
-        final int[] vertBase = { -1, -1 };
-        final int[] eboWordBase = { -1, -1 };
-
-        BakedMesh(IrisCompanionMesh mesh, int vertCount, int idxCount, int[] baseIndices) {
-            this.mesh = mesh;
-            this.vertCount = vertCount;
-            this.idxCount = idxCount;
-            this.baseIndices = baseIndices;
-        }
-
-        String debugTag() {
-            if (mesh != null) {
-                String name = mesh.getDebugName();
-                if (name != null && !name.isEmpty() && !"unknown".equals(name)) {
-                    return name;
-                }
-            }
-            return "mesh#" + System.identityHashCode(this);
-        }
-
-        ModeCache cache(int mode) {
-            return mode == MODE_SHADOW ? shadow : main;
-        }
-
-        /** Mode index of one of this mesh's caches (0 = shadow, 1 = main). */
-        int modeOf(ModeCache mc) {
-            return mc == main ? MODE_MAIN : MODE_SHADOW;
-        }
+    public static PassPool pool(int mode) {
+        return BakeVramPoolManager.pool(mode);
     }
 
-    /** Per-pass cache of one BakedMesh: everything needed to draw without re-baking. */
-    private static final class ModeCache {
-        int filled = -1;               // CPU EBO fill level (no-cull path)
-        int eboCapacity = 0;
-        int recordSsbo = -1;
-        final long[] recordSize = { -1L };
-        float[] recordCopy;            // heap snapshot of the records at last bake
-        int recordCount = -1;
-        long boneKey = -1;             // bone epoch folded into validity
-        // Span-level re-expansion state: dirty-index list (word 0 = dirty count,
-        // words 1.. = dirty instance indices) + CPU-side scratch of the same list,
-        // filled by diffRecords. Comparison-only state: quantization never touches
-        // the uploaded or expanded bytes (see quantizeCmpBits).
-        int dirtySsbo = -1;
-        long dirtyBytes = -1;
-        int[] dirtyIdx = null;
-        int dirtyCount = 0;
-        // cull state
-        int ctlSsbo = -1;
-        long ctlBytes = -1;
-        long frustumStamp = Long.MIN_VALUE;
-        boolean cullValid = false;
-        boolean outputValid = false;
-        long lastUseFrame = 0L;
-        // Instance-granularity cull result of the last cull run for THIS cache
-        // (ctl word 0 read back once per FLUSH batch, not per cull run): valid
-        // whenever cullValid is true - a cache hit reuses the still-true last count.
-        long lastVisibleCount = 0L;
-        // Set when a cull run refreshed the ctl header and the CPU-side count has
-        // not been resolved yet (the batched readback in flushPool owns it now -
-        // one pipeline sync per pool flush instead of one per renderer per frame).
-        boolean countsDirty = false;
-        // Scratch index into the staging SSBO during the batched counts readback.
-        int stagingSlot = -1;
-        // GPU-count flush path (GL 4.6): generation of the pool command store and
-        // the pending-slot index at this cache's last cull run's pass-2 write. A
-        // flush may draw the GPU-written command only while both still match -
-        // otherwise the slot was orphaned by a store grow or belongs to another
-        // pending position (the walk order shifted between cache hits).
-        int cmdGenStamp = -1;
-        int cmdSlotWritten = -1;
-        // Companions of lastVisibleCount: instances culled by the optional Hi-Z
-        // occlusion phase (frustum-passed but depth-occluded) and whether that
-        // cull run sampled the pyramid (uHiZMode = 1).
-        long lastOccludedCount = 0L;
-        boolean lastCullHiZ = false;
-        // ── Global-batch state ──
-        // Instance capacity of this cache's range in the pass pool (0 = no range).
-        int outInstances = 0;
-        // Instance capacity of this cache's EBO range in the pass pool.
-        int eboInstances = 0;
-        // Admission backoff stamp: frameStamp of the last budget refusal
-        // (-1 = none). See ADMISSION_BACKOFF_FRAMES.
-        long admissionRefusedFrame = -1L;
-        long sourceMutationEpoch = -1L;
+    public static String poolName(PassPool pool) {
+        return BakeVramPoolManager.poolName(pool);
     }
 
-    // ── Global multi-draw batch (one indirect multi-draw per pass) ─────
-    // One output SSBO + one EBO + one command buffer per pass holding every
-    // cache-admitted mesh at per-mesh vertBase / eboWordBase offsets. The
-    // flush binds ONE VAO (full/slim layout), ONE bindIrisExtendedAttributes
-    // call and issues ONE glMultiDrawElementsIndirect over the command buffer.
-    // Zero-instance commands are compacted out CPU-side (primcount == number
-    // of meshes that actually draw), so no no-op commands reach the GPU.
-    private static final int INDIRECT_CMD_BYTES = 20; // DrawElementsIndirectCommand
-    /** Cull-program SSBO binding of the pool command store (pass 2 writes slots). */
-    private static final int CULL_CMD_BINDING = 4;
-    /** Minimum pool store once allocated (avoids VAO/buffer churn on eviction). */
-    private static final long MIN_POOL_BYTES = 64L << 20; // 64 MB initial floor to absorb all machine parts without mid-walk store reallocations
-    /**
-     * Idle frames (no relayout of the pass) before the shrink policy may return
-     * tail capacity. 600 frames ≈ 30 s at 20 fps: well past any chunk-load /
-     * spawn wave, so a transient peak is never shrunk mid-wave. The shrink runs
-     * from the flush path only (never per frame, never mid-walk - the walk's
-     * own relayoutPool stamps lastRelayoutFrame).
-     */
-    private static final long SHRINK_IDLE_FRAMES = 60;
-    /** Minimum SAVED bytes for a shrink to fire (avoids driver churn over crumbs). */
-    private static final long SHRINK_MIN_SAVINGS = 8L << 20;
-
-    private static int roundUpInstanceCapacity(int count) {
-        int min = Math.max(count, 256);
-        return Integer.highestOneBit(min - 1) << 1;
+    public static int outStrideBytes(int mode) {
+        return BakeVramPoolManager.outStrideBytes(mode);
     }
 
-    private static final class PassPool {
-        final boolean slim;
-        int outputSsbo = -1;
-        long outputAllocBytes = 0;
-        int eboSsbo = -1;
-        long eboAllocBytes = 0;
-        /** GPU-count flush path (GL 4.6): one 20-byte indirect command per
-         * pending-entry slot, written by cull pass 2 (see ensurePoolCmdBuffer). */
-        int cmdSsbo = -1;
-        long cmdSlots = 0;
-        /** Bumped whenever the slot store is (re)specified: orphaned bytes must
-         * never reach a draw, so stale generation stamps fall back to the CPU path. */
-        int cmdGen = 0;
-        /** Per-slot owner: which cache last wrote each slot. The stamp pair alone
-         * cannot detect that a slot's CONTENT was overwritten by a different
-         * cache in an earlier frame (same generation, same pending index) - the
-         * owner identity check closes that hole. Regrown with the store. */
-        ModeCache[] cmdSlotOwners = new ModeCache[64];
-        /** CPU-path command upload store (compacted commands). Kept separate from
-         * the slot store so a fallback flush never orphans pass-2-written slots. */
-        int cmdCpuSsbo = -1;
-        /** GL 4.6 parameter buffer: the 4-byte drawcount consumed by
-         * glMultiDrawElementsIndirectCount (re-specified per flush). */
-        int paramSsbo = -1;
-        int vao = -1;
-        /** CPU-side scratch for command building (grown lazily). */
-        java.nio.ByteBuffer cmdCpu = null;
-        /** Counts pool store reallocs for the F3 counters (resize = full re-upload). */
-        long reallocs = 0;
-        /** Session count of pool store SHRINKS (idle-tail release, maybeShrinkPool).
-         *  A shrink uses the same orphaning realloc as growth - it also increments
-         *  {@link #reallocs}; this counter splits the F3 line into grow vs shrink. */
-        long shrinks = 0;
-        /** frameStamp of the last relayoutPool run for this pass: the deferral
-         * gate refuses further mid-walk growth relayouts in the same frame
-         * (see relayoutPool, 2026-10-07 shadow-fix). */
-        long lastRelayoutFrame = -1L;
-
-        PassPool(boolean slim) { this.slim = slim; }
+    public static int roundUpInstanceCapacity(int count) {
+        return BakeVramPoolManager.roundUpInstanceCapacity(count);
     }
 
-    private static final PassPool POOL_MAIN = new PassPool(false);
-    private static final PassPool POOL_SHADOW = new PassPool(true);
+    public static final int INDIRECT_CMD_BYTES = BakeVramPoolManager.INDIRECT_CMD_BYTES;
+    public static final int CULL_CMD_BINDING = BakeVramPoolManager.CULL_CMD_BINDING;
 
-    private static PassPool pool(int mode) {
-        return mode == MODE_SHADOW ? POOL_SHADOW : POOL_MAIN;
-    }
-
-    private static String poolName(PassPool pool) {
-        return pool == POOL_SHADOW ? "Shadow" : "Main";
-    }
+    private static final java.util.List<BakedMesh> BAKED = BakeVramPoolManager.BAKED;
 
     /** One baked mesh awaiting the pass flush. */
     private static final class PendingDraw {
@@ -457,151 +238,17 @@ public final class NucleusGpuBaker {
     private static final java.util.ArrayList<PendingDraw> PENDING_SHADOW = new java.util.ArrayList<>(64);
 
     /** F3 accessors: pool store realloc count of the last flush (per pass). */
-    public static long poolMainReallocs() { return POOL_MAIN.reallocs; }
-    public static long poolShadowReallocs() { return POOL_SHADOW.reallocs; }
-    /** F3 accessors: session pool store shrink counts (per pass). */
-    public static long poolMainShrinks() { return POOL_MAIN.shrinks; }
-    public static long poolShadowShrinks() { return POOL_SHADOW.shrinks; }
+    public static long poolMainReallocs() { return BakeVramPoolManager.poolMainReallocs(); }
+    public static long poolShadowReallocs() { return BakeVramPoolManager.poolShadowReallocs(); }
+    public static long poolMainShrinks() { return BakeVramPoolManager.poolMainShrinks(); }
+    public static long poolShadowShrinks() { return BakeVramPoolManager.poolShadowShrinks(); }
 
-    // ── F3 VRAM breakdown (per component; pure field math, no GL calls) ──
-
-    /** ALLOCATED bytes of one pass pool (output + EBO + cmd/param stores), F3 only. */
-    public static long poolAllocatedBytes(int mode) {
-        synchronized (NucleusGpuBaker.class) {
-            return poolAllocatedBytes(pool(mode));
-        }
-    }
-
-    /** USED bytes of one pass pool: the exact live-range math of usedGpuBytes, per mode. */
-    public static long poolUsedBytes(int mode) {
-        synchronized (NucleusGpuBaker.class) {
-            long total = 0L;
-            for (int i = 0; i < BAKED.size(); i++) {
-                BakedMesh bm = BAKED.get(i);
-                ModeCache mc = bm.cache(mode);
-                total += (long) bm.vertCount * mc.outInstances * outStrideBytes(mode)
-                        + (long) bm.idxCount * mc.eboInstances * 4L;
-            }
-            return total;
-        }
-    }
-
-    /**
-     * ALLOCATED bytes of everything in {@link #allocatedGpuBytes()} EXCEPT the
-     * two pass pools: per-cache SSBOs (records/dirty/ctl), counts staging, bone
-     * palette and the bake-params UBO.
-     */
-    public static long cacheNonPoolAllocatedBytes() {
-        synchronized (NucleusGpuBaker.class) {
-            long total = 0L;
-            for (int i = 0; i < BAKED.size(); i++) {
-                BakedMesh bm = BAKED.get(i);
-                total += cacheAllocatedBytes(bm.main);
-                total += cacheAllocatedBytes(bm.shadow);
-            }
-            total += countsStagingBytes;
-            if (boneSsbo != -1) total += (long) BONE_PALETTE_SIZE * 16L * 4L;
-            if (bakeParamsUbo != -1) total += 88L;
-            return total;
-        }
-    }
-
-    /** USED bytes of the same non-pool coverage as {@link #cacheNonPoolAllocatedBytes()}. */
-    public static long cacheNonPoolUsedBytes() {
-        synchronized (NucleusGpuBaker.class) {
-            long total = 0L;
-            for (int i = 0; i < BAKED.size(); i++) {
-                BakedMesh bm = BAKED.get(i);
-                total += cacheUsedBytes(bm.main);
-                total += cacheUsedBytes(bm.shadow);
-            }
-            total += countsStagingBytes;
-            if (boneSsbo != -1) total += (long) BONE_PALETTE_SIZE * 16L * 4L;
-            if (bakeParamsUbo != -1) total += 88L;
-            return total;
-        }
-    }
-
-    // ── F3 VRAM accounting (NucleusDebug VRAM bar) ─────────────────────
-    // Both getters are computed from the CAPACITY FIELDS, never from
-    // cacheBytes (that counter is VRAM-only, mirroring this coverage; the CPU
-    // heap snapshots recordCopy / dirtyIdx are deliberately unaccounted).
-
-    /**
-     * Total GPU bytes actually ALLOCATED by the Tier-1 bake. Coverage: both
-     * pass pools (output + EBO stores at their 1.25x-headroom allocation
-     * targets, the GPU-count command slot store, the 4-byte GL 4.6 parameter
-     * buffer), every live per-cache SSBO (records, dirty list, ctl), counts
-     * staging, the bone palette and the bake-params UBO. NOT counted: the
-     * CPU-path command store (re-specified per flush via glBufferData, a few
-     * KB, no tracked capacity) and the CPU heap snapshots (recordCopy /
-     * dirtyIdx - no tracked capacity, not VRAM).
-     */
-    public static long allocatedGpuBytes() {
-        synchronized (NucleusGpuBaker.class) {
-            long total = poolAllocatedBytes(POOL_MAIN) + poolAllocatedBytes(POOL_SHADOW);
-            for (int i = 0; i < BAKED.size(); i++) {
-                BakedMesh bm = BAKED.get(i);
-                total += cacheAllocatedBytes(bm.main);
-                total += cacheAllocatedBytes(bm.shadow);
-            }
-            total += countsStagingBytes;
-            if (boneSsbo != -1) total += (long) BONE_PALETTE_SIZE * 16L * 4L;
-            if (bakeParamsUbo != -1) total += 88L;
-            return total;
-        }
-    }
-
-    /**
-     * Total GPU bytes USED by the Tier-1 bake on the same coverage as
-     * {@link #allocatedGpuBytes()}. Pool ranges use the exact live-range math
-     * of relayoutPool's trial pass (vertCount * outInstances * stride +
-     * idxCount * eboInstances * 4); per-cache record stores use the record
-     * count. Everything without a used tracker (ctl/dirty headers) is reported
-     * at its allocated size - the slack there is small or by design.
-     */
-    public static long usedGpuBytes() {
-        synchronized (NucleusGpuBaker.class) {
-            long total = 0L;
-            for (int mode = MODE_SHADOW; mode <= MODE_MAIN; mode++) {
-                for (int i = 0; i < BAKED.size(); i++) {
-                    BakedMesh bm = BAKED.get(i);
-                    ModeCache mc = bm.cache(mode);
-                    total += (long) bm.vertCount * mc.outInstances * outStrideBytes(mode)
-                            + (long) bm.idxCount * mc.eboInstances * 4L;
-                }
-            }
-            for (int i = 0; i < BAKED.size(); i++) {
-                BakedMesh bm = BAKED.get(i);
-                total += cacheUsedBytes(bm.main);
-                total += cacheUsedBytes(bm.shadow);
-            }
-            total += countsStagingBytes;
-            if (boneSsbo != -1) total += (long) BONE_PALETTE_SIZE * 16L * 4L;
-            if (bakeParamsUbo != -1) total += 88L;
-            return total;
-        }
-    }
-
-    private static long poolAllocatedBytes(PassPool pool) {
-        return pool.outputAllocBytes + pool.eboAllocBytes
-                + pool.cmdSlots * INDIRECT_CMD_BYTES
-                + (pool.paramSsbo != -1 ? 4L : 0L);
-    }
-
-    /** Per-cache SSBO allocation. The pool-path output/EBO bytes are charged
-     * by {@link #poolAllocatedBytes} instead. */
-    private static long cacheAllocatedBytes(ModeCache mc) {
-        return Math.max(mc.recordSize[0], 0L) + Math.max(mc.dirtyBytes, 0L)
-                + Math.max(mc.ctlBytes, 0L);
-    }
-
-    private static long cacheUsedBytes(ModeCache mc) {
-        long records = mc.recordCount >= 0
-                ? (long) mc.recordCount * InstancedStaticPartRenderer.INSTANCE_DATA_SIZE * 4L
-                : 0L;
-        return records + Math.max(mc.dirtyBytes, 0L) + Math.max(mc.ctlBytes, 0L);
-    }
+    public static long poolAllocatedBytes(int mode) { return BakeVramPoolManager.poolAllocatedBytes(mode); }
+    public static long poolUsedBytes(int mode) { return BakeVramPoolManager.poolUsedBytes(mode); }
+    public static long cacheNonPoolAllocatedBytes() { return BakeVramPoolManager.cacheNonPoolAllocatedBytes(); }
+    public static long cacheNonPoolUsedBytes() { return BakeVramPoolManager.cacheNonPoolUsedBytes(); }
+    public static long allocatedGpuBytes() { return BakeVramPoolManager.allocatedGpuBytes(); }
+    public static long usedGpuBytes() { return BakeVramPoolManager.usedGpuBytes(); }
 
     /** Discards pending collect batches (exception path in the present hook). */
     public static void discardPendingBatches() {
@@ -656,7 +303,7 @@ public final class NucleusGpuBaker {
     }
 
     /** Cull pre-pass available: toggle on, indirect draws present, cull program compiled. */
-    private static boolean cullEnabled() {
+    static boolean cullEnabled() {
         return CULL_SWITCH && cullProgramId != -1;
     }
 
@@ -711,7 +358,6 @@ public final class NucleusGpuBaker {
     /** Viewport of the pyramid source texture at the last successful build. */
     private static int hiZViewWidth = 0, hiZViewHeight = 0;
     private static final java.nio.IntBuffer HI_Z_VIEWPORT = org.lwjgl.BufferUtils.createIntBuffer(16);
-    private static final long[] HI_Z_OCCLUDED_OUT = new long[1];
 
     /**
      * Builds the Hi-Z pyramid for this pass unless already built this frame;
@@ -738,14 +384,9 @@ public final class NucleusGpuBaker {
             return 0;
         }
         long f = frameStamp();
-        if (mode == MODE_SHADOW) {
-            if (hiZAttemptShadowFrame == f) {
-                return hiZShadowActive ? 1 : 0;
-            }
-        } else {
-            if (hiZAttemptMainFrame == f) {
-                return hiZMainActive ? 1 : 0;
-            }
+        // mode == MODE_SHADOW already returned above (shadow stays frustum-only).
+        if (hiZAttemptMainFrame == f) {
+            return hiZMainActive ? 1 : 0;
         }
         boolean active = false;
         try {
@@ -769,7 +410,7 @@ public final class NucleusGpuBaker {
                     depthTex = irisDepth;
                 }
             }
-            if (depthTex <= 0 && mode != MODE_SHADOW) {
+            if (depthTex <= 0) {
                 var mainTarget = Minecraft.getInstance().getMainRenderTarget();
                 depthTex = mainTarget != null ? mainTarget.getDepthTextureId() : 0;
             }
@@ -806,7 +447,7 @@ public final class NucleusGpuBaker {
                         hiZActiveLogged = true;
                         com.hbm_m.main.MainRegistry.LOGGER.info(
                                 "[HBM-M] NucleusGpuBaker: bake Hi-Z occlusion active (pass={}, depthTex={}, {}x{})",
-                                mode == MODE_SHADOW ? "shadow" : "main", depthTex, w, h);
+                                "main", depthTex, w, h);
                     }
                 } else {
                     disableBakeHiZForSession();
@@ -815,13 +456,8 @@ public final class NucleusGpuBaker {
         } catch (Exception t) {
             disableBakeHiZForSession();
         }
-        if (mode == MODE_SHADOW) {
-            hiZAttemptShadowFrame = f;
-            hiZShadowActive = active;
-        } else {
-            hiZAttemptMainFrame = f;
-            hiZMainActive = active;
-        }
+        hiZAttemptMainFrame = f;
+        hiZMainActive = active;
         return active ? 1 : 0;
     }
 
@@ -856,9 +492,6 @@ public final class NucleusGpuBaker {
             return false;
         }
         long f = frameStamp();
-        if (mode == MODE_SHADOW) {
-            return hiZAttemptShadowFrame != f || hiZShadowActive;
-        }
         return hiZAttemptMainFrame != f || hiZMainActive;
     }
 
@@ -976,7 +609,7 @@ public final class NucleusGpuBaker {
      * stores; freed by releaseResourcesInternal.
      */
     private static int countsStagingSsbo = -1;
-    private static long countsStagingBytes = 0;
+    static long countsStagingBytes = 0;
     /** CPU-side mirror of the staging SSBO; grown to the batch size on demand (untracked memAlloc: freed by releaseResourcesInternal). */
     private static java.nio.ByteBuffer ctlBatchReadback = org.lwjgl.system.MemoryUtil.memAlloc(4096);
     /** 4-byte drawcount scratch for the GL 4.6 parameter-buffer upload (re-specified per flush). */
@@ -1030,8 +663,8 @@ public final class NucleusGpuBaker {
         }
         Matrix4f worldToClip = new Matrix4f(shadowProj).mul(SHADOW_MV);
         float[] planes = new float[24];
-        extractFrustumPlanes(worldToClip, planes);
-        long frustumStamp = stampPlanes(planes);
+        IrisBakeBridge.extractFrustumPlanes(worldToClip, planes);
+        long frustumStamp = IrisBakeBridge.stampPlanes(planes);
 
         int previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
         int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
@@ -1179,7 +812,7 @@ public final class NucleusGpuBaker {
                     // + camera, so a ModelViewMat/ProjMat that cannot be resolved on
                     // the active pack program would send the multi-draw off-map with
                     // NO error. That is a Tier-1 refusal, not a silent skip.
-                    matricesOk = setMatrices(shader, shadowProj, SHADOW_MV);
+                    matricesOk = IrisBakeBridge.setMatrices(shader, shadowProj, SHADOW_MV);
                     if (matricesOk) {
                         // Explicit unit-0 atlas bind (setShaderTexture alone mutates the
                         // VANILLA ShaderInstance's sampler state, not the applied pack program).
@@ -1265,8 +898,8 @@ public final class NucleusGpuBaker {
         }
     }
 
-    private static final int MODE_SHADOW = 0;
-    private static final int MODE_MAIN = 1;
+    public static final int MODE_SHADOW = 0;
+    public static final int MODE_MAIN = 1;
     // Control block layout (uint words) — the EBO-build dispatch reads a full
     // (x,y,z) triplet, so regions must not overlap:
     //   word 0      : visibleCount (atomic counter, reset by CPU before cull)
@@ -1280,8 +913,7 @@ public final class NucleusGpuBaker {
     private static final int DRAW_CMD_OFFSET = 16;
     /** Byte offset of the EBO-build glDispatchComputeIndirect triplet (word 9). */
     private static final int EBO_DISPATCH_OFFSET = 36;
-    /** Control block header words before the visible-index list. */
-    private static final int CTL_HEADER_WORDS = 16;
+
 
     private static final Matrix4f MAIN_MV = new Matrix4f();
     private static final Matrix4f SHADOW_MV = new Matrix4f();
@@ -1389,12 +1021,16 @@ public final class NucleusGpuBaker {
         boolean dirtyMode = false;
         int dirtyCount = 0;
         if (mc.outputValid && mc.recordCount == count && mc.boneKey == boneKey(baked)) {
-            if (mutationEpoch > 0L && mc.sourceMutationEpoch == mutationEpoch) {
+            // Always run diffRecords when uJointSpecs has registered joints so time-driven
+            // tracked rigs (which advance via uAnimTicks/uPartialTick without mutating the
+            // CPU instanceBuffer) are detected and span-expanded.
+            if (mutationEpoch > 0L && mc.sourceMutationEpoch == mutationEpoch
+                    && NucleusJointSpecs.getJointCount() == 0) {
                 dirtyCount = 0;
                 recordsChanged = false;
                 dirtyMode = false;
             } else {
-                dirtyCount = diffRecords(mc, records, count, mode);
+                dirtyCount = BakeRecordDiffer.diffRecords(mc, records, count, mode);
                 recordsChanged = dirtyCount > 0;
                 dirtyMode = dirtyCount > 0 && dirtyCount < count;
             }
@@ -1554,45 +1190,19 @@ public final class NucleusGpuBaker {
      * Whether this cache owns real storage: a range in the pass pool.
      */
     private static boolean cacheAllocated(ModeCache mc) {
-        return mc.outInstances > 0;
+        return BakeVramPoolManager.cacheAllocated(mc);
     }
 
-    /**
-     * Admission backoff (see {@link #ADMISSION_BACKOFF_FRAMES}): true while this
-     * cache is inside the window after its last budget refusal.
-     */
     private static boolean admissionBackoffActive(ModeCache mc) {
-        long refused = mc.admissionRefusedFrame;
-        return refused >= 0L && frameStamp() - refused < ADMISSION_BACKOFF_FRAMES;
+        return BakeVramPoolManager.admissionBackoffActive(mc);
     }
 
-    /**
-     * Stamps a budget refusal, but only when no backoff window is already
-     * active: the window always expires ADMISSION_BACKOFF_FRAMES after the
-     * FIRST refusal of a streak, so one admission retry happens per window.
-     */
     private static void stampAdmissionRefusal(ModeCache mc) {
-        if (!admissionBackoffActive(mc)) {
-            mc.admissionRefusedFrame = frameStamp();
-        }
+        BakeVramPoolManager.stampAdmissionRefusal(mc);
     }
 
-    /**
-     * True when a pool relayout already ran for this pass this frame (the
-     * 2026-10-07 shadow-fix deferral): further growth relayouts from OTHER
-     * entries of the same walk are refused for the frame. bakeEntry snapshots
-     * this ONCE at its start (before its own relayouts stamp the pool), so the
-     * back-to-back layout runs of ONE bake (allocateCache + expandPoolEbo)
-     * count as the single relayout of the frame. Callers also use the snapshot
-     * to suppress the admission-backoff stamp - a deferral refusal is a
-     * ONE-frame soft skip (the growth succeeds next frame, before entries are
-     * pending), not a budget refusal, and must not arm the entry's
-     * ADMISSION_BACKOFF_FRAMES window.
-     */
     private static boolean poolRelayoutDeferred(int mode) {
-        // Never defer relayouts: relayoutPool only invalidates shifted ranges or reallocated stores,
-        // and we pre-allocate generous headroom (MIN_POOL_BYTES = 16MB below) so store reallocs are rare.
-        return false;
+        return BakeVramPoolManager.poolRelayoutDeferred(mode);
     }
 
     private static int meshBoneOffset(BakedMesh baked) {
@@ -1604,112 +1214,6 @@ public final class NucleusGpuBaker {
         return offBoneId;
     }
 
-    /**
-     * Canonicalizes -0.0f to +0.0f: a sign-of-zero flip must not dirty a record
-     * (poseStack decompositions and light interpolation legitimately produce 0.0
-     * and -0.0 for the same quantity). Applied on BOTH sides of every comparison
-     * (live words and the cached snapshot), so the snapshot can stay an exact raw
-     * copy of what was uploaded.
-     */
-    private static float canonicalize(float v) {
-        return Float.floatToRawIntBits(v) == 0x80000000 ? 0.0f : v;
-    }
-
-    /**
-     * SHADOW comparison quantization: raw-bits mask of the LOW 3 MANTISSA BITS
-     * (rawBits &amp; ~0x7), applied to the pos words (0..2) and the packed quat words (3..4)
-     * ONLY, on BOTH sides of the comparison. Chosen because shadow records are
-     * rebuilt every frame by IrisShadowBatchCollector.appendRecord from a poseStack
-     * decomposition + getNormalizedRotation and WILL ulp-jitter in the low 1-2
-     * mantissa bits (a guarantee, not a risk): masking 3 bits swallows that jitter
-     * with a 1-bit margin, at a worst-case absolute error of 4 ulp (~2^-20
-     * relative — far below anything visible in a shadow map; light/uv/tint words
-     * keep the exact compare). COMPARISON-ONLY: the bytes uploaded to recordSsbo
-     * and expanded by the compute are never modified. An exponent-boundary carry
-     * (e.g. 0x3FF -> 0x401 across the mantissa wrap) can still dirty one record
-     * once — harmless now that a dirty record costs one per-record expansion.
-     */
-    private static int quantizeCmpBits(int rawBits) {
-        return rawBits & ~0x7;
-    }
-
-    /**
-     * Last record word covered by the shadow quantization: pos 0..2 + the packed
-     * snorm16 quat words 3..4 (the quat moved from words 3..6 into 2 packed words
-     * with the compressed record - the quantization domain shifted with it).
-     */
-    private static final int SHADOW_QUANT_LAST_WORD = 4;
-
-    /**
-     * Per-record diff of the live records against the cached snapshot, filling
-     * {@code mc.dirtyIdx[0..dirtyCount)} with the changed instance indices.
-     * Returns the dirty count. MAIN records: exact raw-bits equality after -0.0f
-     * canonicalization on both sides. SHADOW records: pos/quat words additionally
-     * quantized on both sides (see {@link #quantizeCmpBits}); all other words
-     * exact. Bitwise-equal words short-circuit before any canonicalization.
-     */
-    private static int diffRecords(ModeCache mc, FloatBuffer records, int count, int mode) {
-        int stride = InstancedStaticPartRenderer.INSTANCE_DATA_SIZE;
-        int floats = count * stride;
-        if (mc.recordCopy == null || mc.recordCopy.length < floats) {
-            return count; // no usable snapshot: full re-bake
-        }
-        if (mc.dirtyIdx == null || mc.dirtyIdx.length < count) {
-            // Defensive growth (the allocation sized this for the admission count);
-            // CPU heap scratch - deliberately NOT cacheBytes-accounted (VRAM-only
-            // counter, see allocateCache).
-            mc.dirtyIdx = new int[count];
-        }
-        boolean isDirect = records.isDirect();
-        long baseAddr = isDirect ? MemoryUtil.memAddress(records) : 0L;
-        if (!isDirect) {
-            if (SCRATCH_CMP.length < floats) {
-                SCRATCH_CMP = new float[floats];
-            }
-            int pos = records.position();
-            records.get(SCRATCH_CMP, 0, floats);
-            records.position(pos);
-        }
-        boolean quant = mode == MODE_SHADOW;
-        float[] snap = mc.recordCopy;
-        int[] dirty = mc.dirtyIdx;
-        int n = 0;
-        int o = 0;
-        for (int r = 0; r < count; r++, o += stride) {
-            for (int w = 0; w < stride; w++) {
-                int rawA = isDirect
-                        ? MemoryUtil.memGetInt(baseAddr + (long) (o + w) * 4L)
-                        : Float.floatToRawIntBits(SCRATCH_CMP[o + w]);
-                int rawB = Float.floatToRawIntBits(snap[o + w]);
-                if (rawA == rawB) {
-                    // NaN poison guard: raw-bits equality can hold across two
-                    // NaN-poisoned words forever. Any non-finite tint/grad word
-                    // forces the record dirty so a poisoned record can never be
-                    // cached instead of re-uploaded.
-                    if ((rawA & 0x7f800000) != 0x7f800000) {
-                        continue; // bitwise equal: also equal under canonicalization
-                    }
-                    dirty[n++] = r;
-                    break;
-                }
-                int ia = (rawA == 0x80000000) ? 0 : rawA;
-                int ib = (rawB == 0x80000000) ? 0 : rawB;
-                if (quant && w <= SHADOW_QUANT_LAST_WORD) {
-                    ia = quantizeCmpBits(ia);
-                    ib = quantizeCmpBits(ib);
-                }
-                if (ia != ib) {
-                    dirty[n++] = r;
-                    break;
-                }
-            }
-        }
-        mc.dirtyCount = n;
-        return n;
-    }
-
-    /** Scratch for record comparison — grown lazily. */
-    private static float[] SCRATCH_CMP = new float[InstancedStaticPartRenderer.INSTANCE_DATA_SIZE * 4096];
 
     private static boolean runExpansion(BakedMesh baked, ModeCache mc, int count, int mode,
                                         boolean dirtyMode, int dirtyCount, boolean relayoutAllowed) {
@@ -1718,7 +1222,7 @@ public final class NucleusGpuBaker {
         ensureBoneBuffer();
         if (!cullEnabled()) {
             // No cull: CPU-expanded pool EBO range, full dispatch, full draw.
-            if (!expandPoolEbo(baked, mc, count, mode, relayoutAllowed)) {
+            if (!BakeVramPoolManager.expandPoolEbo(baked, mc, count, mode, relayoutAllowed)) {
                 return false;
             }
         }
@@ -1790,11 +1294,16 @@ public final class NucleusGpuBaker {
         // expansion writes at vertBase + inst*vertCount + lv. The value comes
         // from the caller (baked.vertBase[mode]).
         UBO_INT_VIEW.put(vertBase);
+        UBO_INT_VIEW.put(Float.floatToRawIntBits(FrameViewState.animTicks()));
+        UBO_INT_VIEW.put(Float.floatToRawIntBits(FrameViewState.animPartialTick()));
         UBO_INT_VIEW.flip();
 
         GL15.glBindBuffer(GL31.GL_UNIFORM_BUFFER, bakeParamsUbo);
         GL15.glBufferSubData(GL31.GL_UNIFORM_BUFFER, 0L, UBO_BYTE_BUF);
         GL30.glBindBufferBase(GL31.GL_UNIFORM_BUFFER, UBO_BINDING_BAKE_PARAMS, bakeParamsUbo);
+
+        // Bind uJointSpecs texture to unit 4 (NucleusJointSpecs.SAMPLER_UNIT) for parametric evaluation
+        NucleusJointSpecs.bindSampler();
 
         // WAR synchronization with previous draw call: ensures shader storage and vertex attribute
         // arrays are synchronized before compute write. BUFFER_UPDATE covers record uploads
@@ -1825,9 +1334,6 @@ public final class NucleusGpuBaker {
         return true;
     }
 
-    private static int outStrideBytes(int mode) {
-        return mode == MODE_SHADOW ? SHADOW_STRIDE_BYTES : OUT_STRIDE_BYTES;
-    }
 
     // ── Cull pre-pass (compute, instance granularity) ──────────────────
 
@@ -1881,6 +1387,11 @@ public final class NucleusGpuBaker {
             }
             if (cuViewSize >= 0) {
                 GL20.glUniform2f(cuViewSize, (float) hiZViewWidth, (float) hiZViewHeight);
+            }
+            if (cuMip0Size >= 0) {
+                int mip0W = Math.max(1, Integer.highestOneBit(Math.max(2, hiZViewWidth) - 1));
+                int mip0H = Math.max(1, Integer.highestOneBit(Math.max(2, hiZViewHeight) - 1));
+                GL20.glUniform2f(cuMip0Size, (float) mip0W, (float) mip0H);
             }
             if (cuPyramidLevels >= 0) {
                 GL20.glUniform1i(cuPyramidLevels, HiZDepthPyramid.get().getMipLevels());
@@ -2005,30 +1516,7 @@ public final class NucleusGpuBaker {
      * @return the buffer name, or -1 on a GL failure (the flush falls back)
      */
     private static int ensurePoolCmdBuffer(PassPool pool, int minSlots) {
-        try {
-            if (pool.cmdSsbo == -1) {
-                pool.cmdSsbo = GL15.glGenBuffers();
-                GlDebugMarkers.labelBuffer(pool.cmdSsbo, "HBM_PoolCmd_" + poolName(pool) + "_SSBO");
-            }
-            if (minSlots > pool.cmdSlots) {
-                long newSlots = Math.max(minSlots, Math.max(pool.cmdSlots * 2, 64));
-                GL15.glBindBuffer(GL40.GL_DRAW_INDIRECT_BUFFER, pool.cmdSsbo);
-                GL15.glBufferData(GL40.GL_DRAW_INDIRECT_BUFFER,
-                        newSlots * INDIRECT_CMD_BYTES, GL15.GL_DYNAMIC_DRAW);
-                GL15.glBindBuffer(GL40.GL_DRAW_INDIRECT_BUFFER, 0);
-                pool.cmdSlots = newSlots;
-                pool.cmdGen++;
-                // Store re-specified: every previously written slot is orphaned,
-                // so drop the owner table alongside the generation bump.
-                pool.cmdSlotOwners = new ModeCache[(int) newSlots];
-            }
-            return pool.cmdSsbo;
-        } catch (Exception t) {
-            com.hbm_m.main.MainRegistry.LOGGER.warn(
-                    "[HBM-M] NucleusGpuBaker: pool command store allocation failed - "
-                            + "flush falls back to the CPU count path this frame", t);
-            return -1;
-        }
+        return BakeVramPoolManager.ensurePoolCmdBuffer(pool, minSlots);
     }
 
     /** Header reset before each cull run: visible counter (word 0), reserved words
@@ -2048,179 +1536,24 @@ public final class NucleusGpuBaker {
      *         capacity and remains valid for smaller counts).
      */
     private static boolean ensureCacheRecords(ModeCache mc, long bytes) {
-        if (bytes > mc.recordSize[0]) {
-            long newBytes = Math.max(bytes, Math.max(mc.recordSize[0], 0) * 2);
-            long delta = newBytes - Math.max(mc.recordSize[0], 0);
-            synchronized (NucleusGpuBaker.class) {
-                if (cacheBytes + delta > cacheBudgetBytes()) {
-                    evictStaleCaches();
-                }
-                cacheBytes += delta;
-            }
-            GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, mc.recordSsbo);
-            GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, newBytes, GL15.GL_DYNAMIC_COPY);
-            mc.recordSize[0] = newBytes;
-        }
-        return true;
+        return BakeRecordDiffer.ensureCacheRecords(mc, bytes);
     }
 
-    /**
-     * Uploads {@code count} instance records via the persistent staging ring
-     * (glBufferSubData fallback when the ring is exhausted or unavailable).
-     * The destination storage must be pre-sized (ensureCacheRecords).
-     */
     private static boolean uploadRecords(FloatBuffer records, int count, int destSsbo) {
-        int floats = count * InstancedStaticPartRenderer.INSTANCE_DATA_SIZE;
-        if (records == null || records.remaining() < floats) {
-            return false;
-        }
-        int pos = records.position();
-        int lim = records.limit();
-        GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, destSsbo);
-        try {
-            records.limit(pos + floats);
-            GL15.glBufferSubData(GL43.GL_SHADER_STORAGE_BUFFER, 0L, records);
-        } finally {
-            records.limit(lim).position(pos);
-            GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
-        }
-        return true;
+        return BakeRecordDiffer.uploadRecords(records, count, destSsbo);
     }
 
-    /**
-     * Span-level record upload: only the dirty instance records reach the GPU, as
-     * ONE span per contiguous dirty run (records are 32-float aligned, so a run of
-     * {@code n} instances is {@code n * 32} floats at byte offset
-     * {@code startIndex * 32 * 4}). Consecutive dirty indices merge into a run;
-     * isolated dirty records (the common case) produce one tiny span each.
-     * Destination storage must be pre-sized (ensureCacheRecords).
-     */
     private static boolean uploadDirtyRecords(FloatBuffer records, int count, ModeCache mc,
                                               int dirtyCount) {
-        int stride = InstancedStaticPartRenderer.INSTANCE_DATA_SIZE;
-        if (records == null || records.remaining() < count * stride
-                || mc.dirtyIdx == null || mc.dirtyIdx.length < dirtyCount) {
-            return false;
-        }
-        // Invariant: every dirty index must be inside [0, count). diffRecords fills
-        // them bounded by ITS count, so an out-of-range value means diff/cache state
-        // drift (observed 2026-10-05: runStart == count+1 crashed the fallback loop
-        // with newPosition > limit and the broad catch then killed Tier 1 for the
-        // whole session). Bail out to the caller's fallback instead of crashing, and
-        // dump the cache state once per cache so the drift source is identifiable.
-        for (int i = 0; i < dirtyCount; i++) {
-            int idx = mc.dirtyIdx[i];
-            if (idx < 0 || idx >= count) {
-                if (DIRTY_RANGE_DUMP.add(System.identityHashCode(mc))) {
-                    com.hbm_m.main.MainRegistry.LOGGER.error(
-                            "[HBM-M] NucleusGpuBaker: out-of-range dirty index (modeCache@{}): dirty[{}]={}, "
-                                    + "count={}, recordCount={}, stride={}, buffer pos={} lim={} cap={}"
-                                    + " - invalidating the diff snapshot (full re-bake next call), bake stays enabled",
-                            System.identityHashCode(mc), i, idx, count, mc.recordCount, stride,
-                            records.position(), records.limit(), records.capacity());
-                }
-                // Self-heal: drop the snapshot so the next call takes the FULL path
-                // (fresh diff, fresh dirtyIdx) instead of re-hitting the drift forever.
-                mc.recordCopy = null;
-                mc.recordCount = -1;
-                mc.outputValid = false;
-                return false;
-            }
-        }
-        // Coalesce dirty indices separated by <= 64 slots into contiguous spans.
-        // If more than 4 spans remain, collapse into a single bounding span [firstSlot .. lastSlot]
-        // so we NEVER issue thousands of tiny glCopyBufferSubData / glClientWaitSync calls per frame!
-        int spanCount = 0;
-        int[] spanStart = new int[4];
-        int[] spanEnd = new int[4];
-        int i = 0;
-        while (i < dirtyCount) {
-            int rStart = mc.dirtyIdx[i];
-            int j = i;
-            while (j + 1 < dirtyCount && mc.dirtyIdx[j + 1] - mc.dirtyIdx[j] <= 64) {
-                j++;
-            }
-            int rEnd = mc.dirtyIdx[j];
-            if (spanCount < 4) {
-                spanStart[spanCount] = rStart;
-                spanEnd[spanCount] = rEnd;
-                spanCount++;
-            } else {
-                // More than 4 spans: collapse everything into 1 single bounding span [first .. last]
-                spanStart[0] = mc.dirtyIdx[0];
-                spanEnd[0] = mc.dirtyIdx[dirtyCount - 1];
-                spanCount = 1;
-                break;
-            }
-            i = j + 1;
-        }
-
-        int base = records.position();
-        int limit = records.limit();
-        GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, mc.recordSsbo);
-        try {
-            for (int s = 0; s < spanCount; s++) {
-                int rStart = spanStart[s];
-                int rEnd = spanEnd[s];
-                int from = base + rStart * stride;
-                int floatLen = (rEnd - rStart + 1) * stride;
-                records.position(base).limit(limit);
-                records.position(from).limit(from + floatLen);
-                GL15.glBufferSubData(GL43.GL_SHADER_STORAGE_BUFFER,
-                        (long) rStart * stride * 4L, records);
-            }
-        } finally {
-            records.position(base).limit(limit);
-            GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
-        }
-        return true;
+        return BakeRecordDiffer.uploadDirtyRecords(records, count, mc, dirtyCount);
     }
 
-    /** Scratch for the dirty-list upload ([count, idx...]) — grown lazily. */
-    private static java.nio.IntBuffer SCRATCH_DIRTY_LIST = null;
-
-    /** Grows the per-cache dirty-index SSBO (instance capacity + count word, budget-accounted). */
     private static boolean ensureDirtyBuffer(ModeCache mc, int count) {
-        long bytes = (long) (1 + count) * 4L;
-        if (bytes > mc.dirtyBytes) {
-            long newBytes = Math.max(bytes, Math.max(mc.dirtyBytes, 0) * 2);
-            long delta = newBytes - Math.max(mc.dirtyBytes, 0);
-            synchronized (NucleusGpuBaker.class) {
-                if (cacheBytes + delta > cacheBudgetBytes()) {
-                    evictStaleCaches();
-                }
-            }
-            if (mc.dirtySsbo == -1) {
-                mc.dirtySsbo = GL15.glGenBuffers();
-                GlDebugMarkers.labelBuffer(mc.dirtySsbo, "HBM_Dirty_Grow_SSBO");
-            }
-            GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, mc.dirtySsbo);
-            GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, newBytes, GL15.GL_DYNAMIC_COPY);
-            GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
-            synchronized (NucleusGpuBaker.class) {
-                cacheBytes += delta;
-            }
-            mc.dirtyBytes = newBytes;
-        } else if (mc.dirtySsbo == -1) {
-            return false;
-        }
-        return true;
+        return BakeRecordDiffer.ensureDirtyBuffer(mc, count);
     }
 
-    /** Uploads the CPU-side dirty list ([dirtyCount, instance indices...]) into the SSBO. */
     private static void uploadDirtyList(ModeCache mc, int dirtyCount) {
-        int words = 1 + dirtyCount;
-        if (SCRATCH_DIRTY_LIST == null || SCRATCH_DIRTY_LIST.capacity() < words) {
-            SCRATCH_DIRTY_LIST = org.lwjgl.BufferUtils
-                    .createIntBuffer(1 + Math.max(mc.dirtyIdx != null ? mc.dirtyIdx.length : 0, dirtyCount));
-        }
-        SCRATCH_DIRTY_LIST.clear();
-        SCRATCH_DIRTY_LIST.put(dirtyCount);
-        SCRATCH_DIRTY_LIST.put(mc.dirtyIdx, 0, dirtyCount);
-        SCRATCH_DIRTY_LIST.flip();
-        GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, mc.dirtySsbo);
-        GL15.glBufferSubData(GL43.GL_SHADER_STORAGE_BUFFER, 0L, SCRATCH_DIRTY_LIST);
-        GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
+        BakeRecordDiffer.uploadDirtyList(mc, dirtyCount);
     }
 
     // ── Initialization & Resources ─────────────────────────────────────
@@ -2250,14 +1583,9 @@ public final class NucleusGpuBaker {
         if (initFailed) {
             return false;
         }
-        // Hoisted so the catch can free partially created GL objects: glCreateProgram
-        // returns 0 on failure, so 0 marks "never created" here.
-        int p = 0;
-        int cs = 0;
+        ensureShadersLoaded();
         try {
-            p = GL20.glCreateProgram();
-            cs = GL20.glCreateShader(GL43.GL_COMPUTE_SHADER);
-            com.hbm_m.platform.RenderHooks.safeShaderSource(cs, injectRecordLayout(COMPUTE_SOURCE, "COMPUTE_SOURCE",
+            String source = injectRecordLayout(COMPUTE_SOURCE, "COMPUTE_SOURCE",
                     "INST_STRIDE", InstancedStaticPartRenderer.INSTANCE_DATA_SIZE,
                     "INST_POS_WORD", InstancedStaticPartRenderer.POS_FLOAT_OFFSET,
                     "INST_QUAT_WORD", InstancedStaticPartRenderer.QUAT_FLOAT_OFFSET,
@@ -2266,23 +1594,18 @@ public final class NucleusGpuBaker {
                     "INST_FADE_WORD", InstancedStaticPartRenderer.FADE_FLOAT_OFFSET,
                     "INST_UVRECT_WORD", InstancedStaticPartRenderer.UVRECT_FLOAT_OFFSET,
                     "INST_TINT_WORD", InstancedStaticPartRenderer.TINT_FLOAT_OFFSET,
-                    "INST_GRAD_WORD", InstancedStaticPartRenderer.GRAD_FLOAT_OFFSET));
-            GL20.glCompileShader(cs);
-            if (GL20.glGetShaderi(cs, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
-                throw new IllegalStateException("compute compile: " + GL20.glGetShaderInfoLog(cs, 4096));
-            }
-            GL20.glAttachShader(p, cs);
-            GL20.glLinkProgram(p);
-            GL20.glDeleteShader(cs);
-            if (GL20.glGetProgrami(p, GL20.GL_LINK_STATUS) == GL11.GL_FALSE) {
-                throw new IllegalStateException("compute link: " + GL20.glGetProgramInfoLog(p, 4096));
+                    "INST_GRAD_WORD", InstancedStaticPartRenderer.GRAD_FLOAT_OFFSET,
+                    "INST_ANIM_WORD", InstancedStaticPartRenderer.ANIM_FLOAT_OFFSET);
+            int p = GlShaderUtil.createComputeProgram(source, "HBM_BakeExpand_CS");
+            if (p == 0) {
+                initFailed = true;
+                return false;
             }
             programId = p;
-            GlDebugMarkers.labelProgram(programId, "HBM_BakeExpand_CS");
             bakeParamsUbo = GL15.glGenBuffers();
             GlDebugMarkers.labelBuffer(bakeParamsUbo, "HBM_BakeParams_UBO");
             GL15.glBindBuffer(GL31.GL_UNIFORM_BUFFER, bakeParamsUbo);
-            GL15.glBufferData(GL31.GL_UNIFORM_BUFFER, 88L, GL15.GL_DYNAMIC_DRAW);
+            GL15.glBufferData(GL31.GL_UNIFORM_BUFFER, 96L, GL15.GL_DYNAMIC_DRAW);
             GL30.glBindBufferBase(GL31.GL_UNIFORM_BUFFER, UBO_BINDING_BAKE_PARAMS, bakeParamsUbo);
             GL15.glBindBuffer(GL31.GL_UNIFORM_BUFFER, 0);
             initCullProgram();
@@ -2294,16 +1617,6 @@ public final class NucleusGpuBaker {
             }
             return true;
         } catch (Exception t) {
-            // Partial-init cleanup (GL 4.6 §7.1/§7.3; mirrors NucleusGpuCuller.
-            // compileComputeShader): a compile failure throws before the explicit
-            // shader delete, and a failed-link program stays live until
-            // glDeleteProgram - a shader flagged while attached only completes its
-            // deletion once detached, which the program delete below does. Skip the
-            // program delete when programId already owns the name (assignment at
-            // the top precedes the buffer setup that can still throw); it is
-            // tracked and freed by releaseResourcesInternal instead.
-            if (cs != 0) GL20.glDeleteShader(cs);
-            if (p != 0 && p != programId) GL20.glDeleteProgram(p);
             initFailed = true;
             com.hbm_m.main.MainRegistry.LOGGER.warn("[HBM-M] NucleusGpuBaker init failed - Tier 1 disabled", t);
             return false;
@@ -2314,32 +1627,22 @@ public final class NucleusGpuBaker {
         if (cullInitFailed || !CULL_SWITCH) {
             return;
         }
-        // Hoisted so the catch can free partially created GL objects (0 = never
-        // created, glCreateProgram returns 0 on failure).
-        int p = 0;
-        int cs = 0;
+        ensureShadersLoaded();
         try {
-            p = GL20.glCreateProgram();
-            cs = GL20.glCreateShader(GL43.GL_COMPUTE_SHADER);
-            com.hbm_m.platform.RenderHooks.safeShaderSource(cs, injectRecordLayout(CULL_SOURCE, "CULL_SOURCE",
+            String source = injectRecordLayout(CULL_SOURCE, "CULL_SOURCE",
                     "INST_STRIDE", InstancedStaticPartRenderer.INSTANCE_DATA_SIZE,
                     "INST_POS_WORD", InstancedStaticPartRenderer.POS_FLOAT_OFFSET,
                     "INST_QUAT_WORD", InstancedStaticPartRenderer.QUAT_FLOAT_OFFSET,
                     "INST_BMIN_WORD", InstancedStaticPartRenderer.BBOX_MIN_FLOAT_OFFSET,
                     "INST_BSIZE_WORD", InstancedStaticPartRenderer.BBOX_SIZE_FLOAT_OFFSET,
-                    "INST_FADE_WORD", InstancedStaticPartRenderer.FADE_FLOAT_OFFSET));
-            GL20.glCompileShader(cs);
-            if (GL20.glGetShaderi(cs, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
-                throw new IllegalStateException("cull compile: " + GL20.glGetShaderInfoLog(cs, 4096));
-            }
-            GL20.glAttachShader(p, cs);
-            GL20.glLinkProgram(p);
-            GL20.glDeleteShader(cs);
-            if (GL20.glGetProgrami(p, GL20.GL_LINK_STATUS) == GL11.GL_FALSE) {
-                throw new IllegalStateException("cull link: " + GL20.glGetProgramInfoLog(p, 4096));
+                    "INST_FADE_WORD", InstancedStaticPartRenderer.FADE_FLOAT_OFFSET,
+                    "INST_GRAD_WORD", InstancedStaticPartRenderer.GRAD_FLOAT_OFFSET);
+            int p = GlShaderUtil.createComputeProgram(source, "HBM_BakeCull_CS");
+            if (p == 0) {
+                cullInitFailed = true;
+                return;
             }
             cullProgramId = p;
-            GlDebugMarkers.labelProgram(cullProgramId, "HBM_BakeCull_CS");
             cuPass = GL20.glGetUniformLocation(p, "uPass");
             cuIdentity = GL20.glGetUniformLocation(p, "uIdentity");
             cuInstCount = GL20.glGetUniformLocation(p, "uInstCount");
@@ -2353,15 +1656,9 @@ public final class NucleusGpuBaker {
             cuHiZMode = GL20.glGetUniformLocation(p, "uHiZMode");
             cuClipMat = GL20.glGetUniformLocation(p, "uClipMat");
             cuViewSize = GL20.glGetUniformLocation(p, "uViewSize");
+            cuMip0Size = GL20.glGetUniformLocation(p, "uMip0Size");
             cuPyramidLevels = GL20.glGetUniformLocation(p, "uPyramidLevels");
         } catch (Exception t) {
-            // Partial-init cleanup (GL 4.6 §7.1/§7.3, see initProgram). Unlike
-            // initProgram this catch zeroes cullProgramId below, so the local
-            // program becomes untracked in EVERY failure window - always delete
-            // it, plus the shader (still unflagged on a compile failure, still
-            // attached on a link failure).
-            if (cs != 0) GL20.glDeleteShader(cs);
-            if (p != 0) GL20.glDeleteProgram(p);
             cullInitFailed = true;
             cullProgramId = -1;
             com.hbm_m.main.MainRegistry.LOGGER.warn(
@@ -2369,117 +1666,6 @@ public final class NucleusGpuBaker {
         }
     }
 
-    private static final int MIN_EBO_INSTANCES = 1024;
-
-    /**
-     * True when {@code targetCapacity} instances of this mesh still fit int
-     * bounds: {@code idxCount * targetCapacity} sizes the fill buffer / EBO
-     * range and {@code vertCount * targetCapacity} bounds the largest written
-     * vertex index. Same Integer.MAX_VALUE guard relayoutPool applies to its
-     * summed ranges, here per expansion in long math - the int product used to
-     * wrap negative and throw out of memAllocInt / Buffer.put, and the bake
-     * catch-all then shut Tier 1 down for the whole session.
-     */
-    private static boolean eboExpansionFits(BakedMesh baked, int targetCapacity) {
-        return (long) baked.idxCount * targetCapacity <= Integer.MAX_VALUE
-                && (long) baked.vertCount * targetCapacity <= Integer.MAX_VALUE;
-    }
-
-    /**
-     * GL_MAX_COMPUTE_WORK_GROUP_COUNT[0], latched once on first identity-fill
-     * dispatch (conservative GL 4.3 spec minimum 65535 when the query fails).
-     * The flat-1D fill dispatches ceil(idxCount*slotCount/64) groups along X;
-     * exceeding the limit raises INVALID_VALUE and SKIPS the dispatch, so such
-     * fills must route to the CPU loop BEFORE any capacity field latches - a
-     * skipped dispatch over the just-orphaned store would otherwise be read by
-     * every later draw (undefined contents, permanent for the session).
-     */
-    private static int maxComputeGroupsX = -1;
-    private static boolean identityFillRefuseLogged = false;
-
-    /**
-     * True when {@code groups} X work-groups fit the driver's compute
-     * work-group-count limit; latches the limit on first call and logs a
-     * refusal once (the refusal is deterministic per mesh size - every frame
-     * would spam otherwise).
-     */
-    private static boolean identityFillGroupsFit(long groups) {
-        if (maxComputeGroupsX < 0) {
-            int limit = 65535; // GL 4.3 spec minimum for MAX_COMPUTE_WORK_GROUP_COUNT[0]
-            try {
-                int queried = GL30.glGetIntegeri(GL43.GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0);
-                if (queried > 0) {
-                    limit = queried;
-                }
-            } catch (Throwable ignored) {
-                // keep the spec floor (query unavailable on a broken context)
-            }
-            maxComputeGroupsX = limit;
-        }
-        if (groups > maxComputeGroupsX) {
-            if (!identityFillRefuseLogged) {
-                identityFillRefuseLogged = true;
-                com.hbm_m.main.MainRegistry.LOGGER.warn(
-                        "[HBM-M] NucleusGpuBaker: identity EBO fill needs {} X work-groups, "
-                                + "driver limit {} - oversized fills stay on the CPU path",
-                        groups, maxComputeGroupsX);
-            }
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * GPU identity fill of an EBO range (cull program, uPass = 1 with uIdentity
-     * = 1): one flat dispatch writes {@code slotCount * idxCount} entries -
-     * {@code vertBase + slot * vertCount + baseIdx[k]} for EVERY slot - byte for
-     * byte what the CPU fill loops build, without pulling tens of MB through the
-     * CPU per expansion. Flat 1D addressing because the 2D (x = index groups,
-     * y = slots) cull layout cannot address slot counts past the Y work-group
-     * limit (typically 65535) that the doubling capacities easily exceed.
-     * Returns false (caller falls back to the CPU fill, which overwrites the
-     * whole store BEFORE any capacity field latches) when the cull program is
-     * not available, or when the X work-group count would exceed the driver's
-     * {@link #maxComputeGroupsX} limit (both pre-checked - the dispatch itself
-     * is no longer error-polled, see the barrier comment below). Callers
-     * must guard the overflow with {@link #eboExpansionFits} first so the
-     * dispatch fits int bounds. {@code eboSsbo} must be a live buffer name (&gt; 0).
-     */
-    private static boolean dispatchIdentityEboFill(BakedMesh baked, int eboSsbo,
-                                                   int slotCount, int vertBase, int eboWordBase) {
-        if (cullProgramId == -1) {
-            return false;
-        }
-        long invocations = (long) baked.idxCount * slotCount; // int-bounded by eboExpansionFits
-        long groups = (invocations + LOCAL_SIZE - 1) / LOCAL_SIZE;
-        if (!identityFillGroupsFit(groups)) {
-            return false;
-        }
-        GlStateManager._glUseProgram(cullProgramId);
-        GL20.glUniform1i(cuPass, 1);
-        GL20.glUniform1i(cuIdentity, 1);
-        GL20.glUniform1i(cuInstCount, slotCount);
-        GL20.glUniform1i(cuVertCount, baked.vertCount);
-        GL20.glUniform1i(cuIdxCount, baked.idxCount);
-        GL20.glUniform1i(cuVertBase, vertBase);
-        GL20.glUniform1i(cuEboBase, eboWordBase);
-        // BUFFER_UPDATE covers the orphaning glBufferData that sized the store
-        // just before this dispatch (and the pool store allocation upstream).
-        GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT | GL43.GL_BUFFER_UPDATE_BARRIER_BIT);
-        GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 2, baked.baseIdxSsbo);
-        GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 3, eboSsbo);
-        GL43.glDispatchCompute((int) groups, 1, 1);
-        GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 2, 0);
-        GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 3, 0);
-        // Same barrier set as the cull EBO-build pass: draws consume the EBO
-        // as element indices right after the bake.
-        GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT | GL43.GL_ELEMENT_ARRAY_BARRIER_BIT);
-        // No post-dispatch glGetError: the work-group count is pre-validated by
-        // identityFillGroupsFit (the only deterministic INVALID_VALUE source),
-        // and a synchronous poll here cost every expansion in a healthy state
-        // (see allowGlErrorDiag). GLDebug reports any residual driver error.
-        return true;
-    }
 
     /**
      * P3: one-time u32-aligned relayout of the input mesh. Iris ENTITY stride is
@@ -2529,222 +1715,6 @@ public final class NucleusGpuBaker {
         }
     }
 
-    /**
-     * Output VAO over a bake output buffer with its own fresh EBO (bound inside the VAO).
-     * {@code slim} = shadow layout (Position loc0, UV0 loc2, Normal loc5);
-     * full = the six standard attributes (locations 0..5, dense 56-byte layout).
-     * Returns the VAO handle; the created EBO handle lands in
-     * {@code createdEboOut[0]} ({@code -1} only if the create failed).
-     * Exception-safe: a mid-create failure deletes the partial names before
-     * rethrowing - until the return, neither name has a field reference, so no
-     * caller rollback could otherwise reach them. The pre-call VAO binding is
-     * saved on entry and restored on every exit (a mid-walk allocation must not
-     * leave the caller's draws running against the wrong VAO).
-     */
-    private static int createOutputVao(int vbo, boolean slim, int[] createdEboOut) {
-        int previousVao = com.hbm_m.client.render.GlVaoSafety.currentBinding();
-        int vao = GL30.glGenVertexArrays();
-        int ebo = -1;
-        try {
-            GL30.glBindVertexArray(vao);
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
-            if (slim) {
-                GL20.glEnableVertexAttribArray(0);
-                GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, SHADOW_STRIDE_BYTES, SH_OFF_POS);
-                GL20.glEnableVertexAttribArray(2);
-                GL20.glVertexAttribPointer(2, 2, GL11.GL_FLOAT, false, SHADOW_STRIDE_BYTES, SH_OFF_UV0);
-                GL20.glEnableVertexAttribArray(5);
-                GL20.glVertexAttribPointer(5, 3, GL11.GL_BYTE, true, SHADOW_STRIDE_BYTES, SH_OFF_NORMAL);
-            } else {
-                GL20.glEnableVertexAttribArray(0);
-                GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, OUT_STRIDE_BYTES, OUT_OFF_POS);
-                GL20.glEnableVertexAttribArray(1);
-                GL20.glVertexAttribPointer(1, 4, GL11.GL_UNSIGNED_BYTE, true, OUT_STRIDE_BYTES, OUT_OFF_COLOR);
-                GL20.glEnableVertexAttribArray(2);
-                GL20.glVertexAttribPointer(2, 2, GL11.GL_FLOAT, false, OUT_STRIDE_BYTES, OUT_OFF_UV0);
-                // UV1/UV2: 16-bit short integers bound via glVertexAttribIPointer.
-                GL20.glEnableVertexAttribArray(3);
-                GL30.glVertexAttribIPointer(3, 2, GL11.GL_SHORT, OUT_STRIDE_BYTES, OUT_OFF_UV1);
-                GL20.glEnableVertexAttribArray(4);
-                GL30.glVertexAttribIPointer(4, 2, GL11.GL_SHORT, OUT_STRIDE_BYTES, OUT_OFF_UV2);
-                GL20.glEnableVertexAttribArray(5);
-                GL20.glVertexAttribPointer(5, 3, GL11.GL_BYTE, true, OUT_STRIDE_BYTES, OUT_OFF_NORMAL);
-            }
-            ebo = GL15.glGenBuffers();
-            GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, ebo);
-            com.hbm_m.client.render.GlVaoSafety.bindVertexArray(previousVao);
-            createdEboOut[0] = ebo;
-            return vao;
-        } catch (Exception t) {
-            // Mid-create failure (GL 4.6 §2.6.1.2: generated names stay used until
-            // deleted): restore the caller's VAO binding, then delete the partial
-            // names and rethrow into the caller's rollback.
-            com.hbm_m.client.render.GlVaoSafety.bindVertexArray(previousVao);
-            GL30.glDeleteVertexArrays(vao);
-            if (ebo != -1) GL15.glDeleteBuffers(ebo);
-            throw t;
-        }
-    }
-
-    /**
-     * Binds Iris extended vertex attributes (mc_midTexCoord, at_tangent, at_midBlock)
-     * on the pack program from the given output layout. iris_Entity is supplied as
-     * constant 0 (multiblock machines are not entity-specific).
-     * <p>
-     * MUST run on every main-pass draw (including culled ones): the locations are
-     * pack-program-dependent, so the pointers are captured per draw — and
-     * glVertexAttribPointer snapshots whatever is bound to GL_ARRAY_BUFFER, so the
-     * owning output SSBO is bound here first (stale global bindings would otherwise
-     * corrupt the VAO's attribute state permanently).
-     */
-    // Extended-attribute location cache, keyed per (ShaderInstance, pipeline
-    // generation) - same pattern as the matrix uniform cache below: Iris can
-    // relink a program and reuse the same ShaderInstance, and the shared pass
-    // VAO outlives ANY single pack program, so the enable state alone proves
-    // nothing - the pointers must be (re)written unconditionally on every call,
-    // with the locations themselves fetched only on a cache miss.
-    private static ShaderInstance extAttribShader;
-    private static long extAttribPipelineGen = -1L;
-    private static int cachedEntLoc = -2, cachedMidTexLoc = -2,
-            cachedTangentLoc = -2, cachedMidBlockLoc = -2;
-
-    private static void bindIrisExtendedAttributes(ShaderInstance shader, int outputSsbo,
-                                                   int strideBytes, int offMidTex, int offTangent,
-                                                   int offMidBlock) {
-        long gen = com.hbm_m.client.render.shader.IrisExtendedShaderAccess.getPipelineGeneration();
-        if (extAttribShader != shader || extAttribPipelineGen != gen) {
-            extAttribShader = shader;
-            extAttribPipelineGen = gen;
-            int program = shader.getId();
-            cachedEntLoc = GL20.glGetAttribLocation(program, "iris_Entity");
-            cachedMidTexLoc = GL20.glGetAttribLocation(program, "mc_midTexCoord");
-            cachedTangentLoc = GL20.glGetAttribLocation(program, "at_tangent");
-            cachedMidBlockLoc = GL20.glGetAttribLocation(program, "at_midBlock");
-        }
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, outputSsbo);
-        if (cachedEntLoc >= 0) {
-            // Supply constant 0 for entity ID since multiblock machines are not entity-specific.
-            GL20.glDisableVertexAttribArray(cachedEntLoc);
-            GL30.glVertexAttribI2i(cachedEntLoc, 0, 0);
-        }
-        // Always re-issue the pointer: the VAO is shared across pack programs,
-        // so an already-enabled array may carry a FOREIGN program's offset/type.
-        // glDisable on a disabled array is a no-op; GL_ARRAY_BUFFER points at
-        // the output SSBO (bound above), so the pointers snapshot the right
-        // buffer.
-        if (cachedMidTexLoc >= 0) {
-            GL20.glEnableVertexAttribArray(cachedMidTexLoc);
-            GL20.glVertexAttribPointer(cachedMidTexLoc, 2, GL11.GL_FLOAT, false, strideBytes, offMidTex);
-        }
-        if (cachedTangentLoc >= 0) {
-            GL20.glEnableVertexAttribArray(cachedTangentLoc);
-            GL20.glVertexAttribPointer(cachedTangentLoc, 4, GL11.GL_BYTE, true, strideBytes, offTangent);
-        }
-        if (cachedMidBlockLoc >= 0) {
-            GL20.glEnableVertexAttribArray(cachedMidBlockLoc);
-            // 3 NON-normalized GLbytes - byte-for-byte how Iris binds the TERRAIN
-            // format's MID_BLOCK element (BYTE x 3 GENERIC, normalized=false).
-            // Packs read at_midBlock.xyz as raw signed bytes and divide by 64.0
-            // themselves; a vec4 declaration sees w = 1.0 (GL default for a
-            // 3-component pointer), same as native Iris terrain.
-            GL20.glVertexAttribPointer(cachedMidBlockLoc, 3, GL11.GL_BYTE, false, strideBytes, offMidBlock);
-        }
-    }
-
-    // ── Shadow slim-layout attribute rebinding (2026-10-15) ────────────
-    // The shadow pool VAO hard-codes Position@0, UV0@2, Normal@5 (the
-    // IrisVertexFormats.ENTITY ordinals). Iris sources (1.20.1): the pack shadow
-    // program is an ExtendedShader (a ShaderInstance) whose attribute locations
-    // come from vanilla Uniform.glBindAttribLocation at the format's ordinal
-    // positions, with names redirected to "iris_"-prefixed variants
-    // (MixinShaderInstance#iris$redirectBindAttributeLocation) - so 0/2/5 IS the
-    // expected layout for the ENTITY-format shadow program. But the VAO outlives
-    // any single pack program and Iris can re-link/reuse the ShaderInstance, so
-    // the locations are resolved from the ACTIVE program before every shadow
-    // multi-draw (glGetAttribLocation, cached per ShaderInstance + pipeline
-    // generation like the matrix uniform cache) and the pointers are re-issued
-    // at the resolved locations when they differ. All -1 (program uses none of
-    // the slim attributes) leaves the VAO untouched - enabled-but-unread arrays
-    // are harmless, so partial mismatches only rebind what the program reads.
-    private static ShaderInstance slimAttribShader;
-    private static long slimAttribPipelineGen = -1L;
-    private static int slimLocPos = -2, slimLocUv = -2, slimLocNormal = -2;
-    private static boolean slimAttribMismatchLogged = false;
-
-    private static void bindSlimShadowAttributes(ShaderInstance shader, int outputSsbo) {
-        if (shader == null || outputSsbo == -1) {
-            return;
-        }
-        long gen = com.hbm_m.client.render.shader.IrisExtendedShaderAccess.getPipelineGeneration();
-        if (slimAttribShader != shader || slimAttribPipelineGen != gen) {
-            slimAttribShader = shader;
-            slimAttribPipelineGen = gen;
-            int program = shader.getId();
-            // ExtendedShader programs carry iris_-prefixed attribute names
-            // (MixinShaderInstance); FallbackShader/vanilla ones use plain names.
-            slimLocPos = firstAttrib(program, "iris_Position", "Position");
-            slimLocUv = firstAttrib(program, "iris_UV0", "UV0");
-            slimLocNormal = firstAttrib(program, "iris_Normal", "Normal");
-        }
-        if (slimLocPos < 0 && slimLocUv < 0 && slimLocNormal < 0) {
-            return; // program consumes none of the slim attributes - nothing to bind
-        }
-        if (slimLocPos == 0
-                && (slimLocUv < 0 || slimLocUv == 2)
-                && (slimLocNormal < 0 || slimLocNormal == 5)) {
-            return; // matches the hard-coded VAO layout - pointers already correct
-        }
-        if (!slimAttribMismatchLogged) {
-            slimAttribMismatchLogged = true;
-            com.hbm_m.main.MainRegistry.LOGGER.info(
-                    "[HBM-M] NucleusGpuBaker: pack shadow program attribute locations "
-                            + "(Position={}, UV0={}, Normal={}) differ from the shadow VAO layout "
-                            + "(0, 2, 5) - rebinding slim shadow attributes per program",
-                    slimLocPos, slimLocUv, slimLocNormal);
-        }
-        // Same discipline as bindIrisExtendedAttributes: the pointers snapshot
-        // GL_ARRAY_BUFFER, so the owning output SSBO is bound first. The VAO is
-        // already bound by the flush caller; the rebind lands in ITS state.
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, outputSsbo);
-        if (slimLocPos >= 0) {
-            GL20.glEnableVertexAttribArray(slimLocPos);
-            GL20.glVertexAttribPointer(slimLocPos, 3, GL11.GL_FLOAT, false,
-                    SHADOW_STRIDE_BYTES, SH_OFF_POS);
-        }
-        if (slimLocUv >= 0) {
-            GL20.glEnableVertexAttribArray(slimLocUv);
-            GL20.glVertexAttribPointer(slimLocUv, 2, GL11.GL_FLOAT, false,
-                    SHADOW_STRIDE_BYTES, SH_OFF_UV0);
-        }
-        if (slimLocNormal >= 0) {
-            GL20.glEnableVertexAttribArray(slimLocNormal);
-            GL20.glVertexAttribPointer(slimLocNormal, 3, GL11.GL_BYTE, true,
-                    SHADOW_STRIDE_BYTES, SH_OFF_NORMAL);
-        }
-    }
-
-    /** First resolvable vertex-attribute location among the given names (-1 if none). */
-    private static int firstAttrib(int program, String... names) {
-        for (String name : names) {
-            int loc = GL20.glGetAttribLocation(program, name);
-            if (loc >= 0) {
-                return loc;
-            }
-        }
-        return -1;
-    }
-
-    /**
-     * Sets ModelViewMat / ProjMat on the active pack program using raw GL uniform locations.
-     * Raw locations avoid overhead and type mismatch issues with Minecraft's Uniform wrappers.
-     */
-    private static ShaderInstance matrixShader;
-    /** Pipeline generation folded into the location cache: Iris can rebuild a pipeline
-     * and reuse the same ShaderInstance with a NEW GL program (stale locations otherwise). */
-    private static long matrixPipelineGen = -1L;
-    private static com.hbm_m.client.render.shader.IrisDerivedMatrixUniforms.Locations matrixLocs =
-            com.hbm_m.client.render.shader.IrisDerivedMatrixUniforms.Locations.NONE;
-    private static int projLoc = -2;
 
     /**
      * @return true when BOTH the model-view and projection uniforms were resolved and
@@ -2755,89 +1725,15 @@ public final class NucleusGpuBaker {
      *         off-map with no GL error). Main-pass callers may ignore the result (their
      *         programs always declare the vanilla uniforms).
      */
-    private static boolean setMatrices(ShaderInstance shader, Matrix4f proj, Matrix4f modelView) {
-        long gen = com.hbm_m.client.render.shader.IrisExtendedShaderAccess.getPipelineGeneration();
-        if (matrixShader != shader || matrixPipelineGen != gen) {
-            matrixShader = shader;
-            matrixPipelineGen = gen;
-            matrixLocs = com.hbm_m.client.render.shader.IrisDerivedMatrixUniforms.resolve(shader);
-            int program = shader.getId();
-            projLoc = GL20.glGetUniformLocation(program, "iris_ProjMat");
-            if (projLoc < 0) {
-                projLoc = GL20.glGetUniformLocation(program, "ProjMat");
-            }
-        }
-        modelView.get(MV_FLOATS);
-        int locModelView = matrixLocs.modelView();
-        if (locModelView >= 0) {
-            GL20.glUniformMatrix4fv(locModelView, false, MV_FLOATS);
-        }
-        if (projLoc >= 0) {
-            proj.get(PROJ_FLOATS);
-            GL20.glUniformMatrix4fv(projLoc, false, PROJ_FLOATS);
-        }
-        // Derived matrices: required for shaderpacks (e.g. Photon) calculating world-space
-        // normals via inverse model-view or normal matrices.
-        int locInverse = matrixLocs.modelViewInverse();
-        if (locInverse >= 0) {
-            INVERSE_SCRATCH.set(modelView).invertAffine();
-            INVERSE_SCRATCH.get(INV_FLOATS);
-            GL20.glUniformMatrix4fv(locInverse, false, INV_FLOATS);
-        }
-        int locNormalMat = matrixLocs.normalMat();
-        if (locNormalMat >= 0) {
-            NORMAL_TMP.set(modelView);
-            NORMAL_TMP.get(NORM_FLOATS);
-            GL20.glUniformMatrix3fv(locNormalMat, false, NORM_FLOATS);
-        }
-        return locModelView >= 0 && projLoc >= 0;
-    }
-
-    private static final Matrix4f INVERSE_SCRATCH = new Matrix4f();
-    private static final float[] MV_FLOATS = new float[16];
-    private static final float[] PROJ_FLOATS = new float[16];
-    private static final float[] INV_FLOATS = new float[16];
-    private static final org.joml.Matrix3f NORMAL_TMP = new org.joml.Matrix3f();
-    private static final float[] NORM_FLOATS = new float[9];
-
+    
+    
     /**
-     * Gribb–Hartmann frustum plane extraction for a column-major clip matrix
-     * (records-space → clip): left/right/bottom/top/near/far, each (n.xyz, d)
-     * with "inside" on the positive side. Planes are unnormalized — the cull
-     * shader's |n|·extent radius test is scale-invariant.
+     * Gribb–Hartmann frustum plane extraction for a column-major clip matrix.
+     * Delegates to centralized CpuFrustumCuller.extractPlanes.
      */
-    private static void extractFrustumPlanes(Matrix4f clip, float[] out24) {
-        // JOML mXY = column X, row Y → matrix rows:
-        // row0 = (m00, m10, m20, m30); row1 = (m01, m11, m21, m31);
-        // row2 = (m02, m12, m22, m32); row3 = (m03, m13, m23, m33).
-        float r00 = clip.m00(), r01 = clip.m10(), r02 = clip.m20(), r03 = clip.m30();
-        float r10 = clip.m01(), r11 = clip.m11(), r12 = clip.m21(), r13 = clip.m31();
-        float r20 = clip.m02(), r21 = clip.m12(), r22 = clip.m22(), r23 = clip.m32();
-        float r30 = clip.m03(), r31 = clip.m13(), r32 = clip.m23(), r33 = clip.m33();
-        setPlane(out24, 0,  r30 + r00, r31 + r01, r32 + r02, r33 + r03); // left
-        setPlane(out24, 4,  r30 - r00, r31 - r01, r32 - r02, r33 - r03); // right
-        setPlane(out24, 8,  r30 + r10, r31 + r11, r32 + r12, r33 + r13); // bottom
-        setPlane(out24, 12, r30 - r10, r31 - r11, r32 - r12, r33 - r13); // top
-        setPlane(out24, 16, r30 + r20, r31 + r21, r32 + r22, r33 + r23); // near
-        setPlane(out24, 20, r30 - r20, r31 - r21, r32 - r22, r33 - r23); // far
-    }
-
-    private static void setPlane(float[] out, int idx, float a, float b, float c, float d) {
-        out[idx] = a;
-        out[idx + 1] = b;
-        out[idx + 2] = c;
-        out[idx + 3] = d;
-    }
-
+    
     /** Stable stamp of the 6 frustum planes (any camera motion changes it). */
-    private static long stampPlanes(float[] planes) {
-        long h = 0xcbf29ce484222325L;
-        for (int i = 0; i < 24; i++) {
-            h = (h ^ Float.floatToRawIntBits(planes[i])) * 0x100000001b3L;
-        }
-        return h;
-    }
-
+    
     // ── Cache allocation, budget, eviction ─────────────────────────────
 
     /**
@@ -2846,651 +1742,58 @@ public final class NucleusGpuBaker {
      * This is used by the capacity pre-pass in bakeAndDrawShadow and presentMainBatch.
      */
     private static boolean preallocateCacheBuffers(BakedMesh baked, ModeCache mc, int count, int mode) {
-        int cap = roundUpInstanceCapacity(count);
-        long recBytes = (long) cap * InstancedStaticPartRenderer.INSTANCE_DATA_SIZE * 4L;
-        long recStorage = Math.max(recBytes, 1L << 16);
-        long ctlBytes = (long) (CTL_HEADER_WORDS + cap) * 4L;
-        long dirtySsboBytes = (long) (1 + cap) * 4L;
-        long localNeed = recStorage + ctlBytes + dirtySsboBytes;
-        synchronized (NucleusGpuBaker.class) {
-            cacheBytes += localNeed;
-        }
-        try {
-            mc.outInstances = cap;
-            mc.eboInstances = cap;
-            mc.recordSsbo = GL15.glGenBuffers();
-            GlDebugMarkers.labelBuffer(mc.recordSsbo, "HBM_Record_" + baked.debugTag() + "_" + (mode == MODE_SHADOW ? "Shadow" : "Main"));
-            GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, mc.recordSsbo);
-            mc.recordSize[0] = recStorage;
-            GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, mc.recordSize[0], GL15.GL_DYNAMIC_COPY);
-            mc.recordCopy = new float[(int) (recBytes / 4L)];
-            mc.ctlSsbo = GL15.glGenBuffers();
-            GlDebugMarkers.labelBuffer(mc.ctlSsbo, "HBM_Ctl_" + baked.debugTag() + "_" + (mode == MODE_SHADOW ? "Shadow" : "Main"));
-            GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, mc.ctlSsbo);
-            GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, ctlBytes, GL15.GL_DYNAMIC_COPY);
-            mc.ctlBytes = ctlBytes;
-            mc.dirtySsbo = GL15.glGenBuffers();
-            GlDebugMarkers.labelBuffer(mc.dirtySsbo, "HBM_Dirty_" + baked.debugTag() + "_" + (mode == MODE_SHADOW ? "Shadow" : "Main"));
-            GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, mc.dirtySsbo);
-            GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, dirtySsboBytes, GL15.GL_DYNAMIC_COPY);
-            mc.dirtyBytes = dirtySsboBytes;
-            mc.dirtyIdx = new int[cap];
-            mc.dirtyCount = 0;
-            GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
-            return true;
-        } catch (Exception t) {
-            com.hbm_m.main.MainRegistry.LOGGER.warn(
-                    "[HBM-M] NucleusGpuBaker: preallocate cache buffers failed", t);
-            if (mc.recordSsbo != -1) GL15.glDeleteBuffers(mc.recordSsbo);
-            if (mc.ctlSsbo != -1) GL15.glDeleteBuffers(mc.ctlSsbo);
-            if (mc.dirtySsbo != -1) GL15.glDeleteBuffers(mc.dirtySsbo);
-            mc.recordSsbo = -1;
-            mc.ctlSsbo = -1;
-            mc.dirtySsbo = -1;
-            mc.outInstances = 0;
-            mc.eboInstances = 0;
-            synchronized (NucleusGpuBaker.class) {
-                cacheBytes -= localNeed;
-            }
-            return false;
-        }
+        return BakeVramPoolManager.preallocateCacheBuffers(baked, mc, count, mode);
     }
 
-    /**
-     * Allocates the per-mode cache objects. Returns false (the caller refuses the
-     * entry; the mesh renders via the Tier-2/3 fallback this frame) when the budget
-     * cannot admit this entry even after LRU eviction. Output is sized for the
-     * requested count and grows on demand.
-     */
     private static boolean allocateCache(BakedMesh baked, ModeCache mc, int count, int mode) {
-        int cap = roundUpInstanceCapacity(count);
-        long outBytes = (long) baked.vertCount * cap * outStrideBytes(mode);
-        long eboBytes = (long) baked.idxCount * cap * 4L;
-        long recBytes = (long) cap * InstancedStaticPartRenderer.INSTANCE_DATA_SIZE * 4L;
-        long recStorage = Math.max(recBytes, 1L << 16);
-        long ctlBytes = (long) (CTL_HEADER_WORDS + cap) * 4L;
-        long dirtySsboBytes = (long) (1 + cap) * 4L;
-        long localNeed = recStorage + ctlBytes + dirtySsboBytes;
-        long poolNeed = outBytes + eboBytes;
-        long totalEstimate = localNeed + poolNeed;
-        synchronized (NucleusGpuBaker.class) {
-            if (cacheBytes + totalEstimate > cacheBudgetBytes()) {
-                evictStaleCaches();
-                if (cacheBytes + totalEstimate > cacheBudgetBytes()) {
-                    if (!cacheOverflowLogged) {
-                        cacheOverflowLogged = true;
-                        com.hbm_m.main.MainRegistry.LOGGER.warn(
-                                "[HBM-M] NucleusGpuBaker: cache budget exceeded (needs {} MB, {} MB in use, budget {} MB) - allowing active mesh allocation to avoid legacy fallback",
-                                Math.max(1L, totalEstimate >> 20),
-                                cacheBytes >> 20,
-                                cacheBudgetBytes() >> 20);
-                    }
-                }
-            }
-        }
-        if (!preallocateCacheBuffers(baked, mc, count, mode)) {
-            return false;
-        }
-        if (!relayoutPool(mode)) {
-            freeModeCache(mc);
-            return false;
-        }
-        return true;
+        return BakeVramPoolManager.allocateCache(baked, mc, count, mode);
     }
 
-    /** Frees caches unused for LRU_FRAME_LIMIT frames to admit fresh allocations.
-     * Fully releases BakedMesh entries whose companion mesh was closed (skin change,
-     * world switch) - they can never bake again and would otherwise hold dead GL
-     * objects until budget pressure. getOrCreate rebuilds on the next use. */
-    private static synchronized void evictStaleCaches() {
-        long now = frameStamp();
-        for (int i = BAKED.size() - 1; i >= 0; i--) {
-            BakedMesh bm = BAKED.get(i);
-            if (!bm.mesh.isBuilt()) {
-                releaseBakedMesh(bm);
-                BAKED.remove(i);
-                continue;
-            }
-            releaseCacheIfStale(bm.shadow, now);
-            releaseCacheIfStale(bm.main, now);
-        }
+    private static void evictStaleCaches() {
+        BakeVramPoolManager.evictStaleCaches();
     }
 
     private static void releaseCacheIfStale(ModeCache mc, long now) {
-        // Pool-aware liveness (cacheAllocated = outInstances > 0): idle caches
-        // age out of the global-batch path and stop pinning their pool ranges +
-        // record snapshots after LRU_FRAME_LIMIT frames. freeModeCache is
-        // pool-safe: it
-        // releases the range (outInstances = 0), which the next relayoutPool
-        // reclaims from the front.
-        if (cacheAllocated(mc) && now - mc.lastUseFrame > LRU_FRAME_LIMIT) {
-            freeModeCache(mc);
-        }
+        BakeVramPoolManager.releaseCacheIfStale(mc, now);
     }
 
-    /** Releases every GL object owned by a BakedMesh (both caches + mesh SSBOs). */
     private static void releaseBakedMesh(BakedMesh bm) {
-        freeModeCache(bm.shadow);
-        freeModeCache(bm.main);
-        if (bm.inputSsbo != -1) GL15.glDeleteBuffers(bm.inputSsbo);
-        if (bm.baseIdxSsbo != -1) GL15.glDeleteBuffers(bm.baseIdxSsbo);
+        BakeVramPoolManager.releaseBakedMesh(bm);
     }
 
     private static void freeModeCache(ModeCache mc) {
-        synchronized (NucleusGpuBaker.class) {
-            // Global-batch path: output/EBO live in the pass pool and are accounted
-            // there once; freeing the cache only releases its RANGE (outInstances/
-            // eboInstances = 0 below - the space is reclaimed from the front by the
-            // next relayout, never leaked).
-            cacheBytes -= Math.max(mc.ctlBytes, 0)
-                    + Math.max(mc.recordSize[0], 0)
-                    + Math.max(mc.dirtyBytes, 0);
-        }
-        mc.outInstances = 0;
-        mc.eboInstances = 0;
-        if (mc.recordSsbo != -1) GL15.glDeleteBuffers(mc.recordSsbo);
-        if (mc.ctlSsbo != -1) GL15.glDeleteBuffers(mc.ctlSsbo);
-        if (mc.dirtySsbo != -1) GL15.glDeleteBuffers(mc.dirtySsbo);
-        mc.recordSsbo = -1;
-        mc.recordSize[0] = -1;
-        mc.ctlSsbo = -1;
-        mc.ctlBytes = -1;
-        mc.dirtySsbo = -1;
-        mc.dirtyBytes = -1;
-        mc.dirtyIdx = null;
-        mc.dirtyCount = 0;
-        mc.filled = -1;
-        mc.recordCopy = null;
-        mc.recordCount = -1;
-        mc.boneKey = -1;
-        mc.cullValid = false;
-        mc.outputValid = false;
-        mc.countsDirty = false;
-        mc.stagingSlot = -1;
-        mc.frustumStamp = Long.MIN_VALUE;
-        mc.admissionRefusedFrame = -1L;
-        mc.sourceMutationEpoch = -1L;
+        BakeVramPoolManager.freeModeCache(mc);
     }
 
-    // ── Global-batch pool: range layout, storage, flush ────────────────
-
-    /**
-     * Grows the cache's range capacity in the pass pool and re-lays-out ranges.
-     * MUST run before the cull pre-pass of a bake: a pool realloc invalidates
-     * output/EBO state that the same bake then rebuilds (cull + expansion), never
-     * state it has already built.
-     *
-     * @return false when the growth was refused (cache budget, pool realloc
-     *         failure) - the capacity fields are rolled back and the caller
-     *         refuses the entry (Tier-2/3 fallback); the parked range is
-     *         deliberately NOT freed (a mid-frame free shifts other meshes'
-     *         pool bases and invalidates their already-baked output).
-     */
     private static boolean ensureOutputCapacity(BakedMesh baked, ModeCache mc, int count, int mode,
                                                 boolean relayoutAllowed) {
-        boolean grew = false;
-        int oldOut = mc.outInstances;
-        int oldEbo = mc.eboInstances;
-        if (count > mc.outInstances) {
-            mc.outInstances = roundUpInstanceCapacity(count);
-            grew = true;
-        }
-        if (count > mc.eboInstances) {
-            mc.eboInstances = roundUpInstanceCapacity(count);
-            grew = true;
-        }
-        if (grew) {
-            // 2026-10-07 shadow-fix relayout deferral: a relayout already ran
-            // this frame's walk - refuse soft WITHOUT the evict sweep; the
-            // caller refuses the entry for this frame (Tier-2/3 fallback) and
-            // the growth succeeds on a later frame, before entries are pending.
-            // Capacity fields roll back (the parked-range contract is preserved).
-            if (!relayoutAllowed) {
-                mc.outInstances = oldOut;
-                mc.eboInstances = oldEbo;
-                return false;
-            }
-            // Admission backoff: a capacity GROWTH inside the window is
-            // refused without re-attempting the relayout
-            // (and its evict sweep) every frame. Same-capacity requests pass.
-            if (admissionBackoffActive(mc)) {
-                mc.outInstances = oldOut;
-                mc.eboInstances = oldEbo;
-                return false;
-            }
-            if (!relayoutPool(mode)) {
-                // Budget refusal: the ONLY budget-freeing mechanism is LRU eviction
-                // (evictStaleCaches), and without this retry a refusing cache had
-                // to wait until its own lastUseFrame went stale before eviction
-                // could release it - the refresh moved AFTER the growth steps in
-                // bakeEntry, so this in-place retry frees budget the same frame.
-                // Evict, then retry the layout once. Eviction only releases pool
-                // RANGES (outInstances = 0); bases shift on the retry's relayout,
-                // which is the normal invalidation contract.
-                evictStaleCaches();
-                if (!relayoutPool(mode)) {
-                    mc.outInstances = oldOut;
-                    mc.eboInstances = oldEbo;
-                    return false;
-                }
-            }
-        }
-        return true;
+        return BakeVramPoolManager.ensureOutputCapacity(baked, mc, count, mode, relayoutAllowed);
     }
 
-    /**
-     * CPU expansion of the mesh's EBO range in the pass pool up to {@code count}
-     * instances (no-cull path; the cull path builds the EBO on the GPU). Entries
-     * are absolute: vertBase + slot*vertCount + baseIdx. 1.25x growth step
-     * aligned to 16 instances, cached - same policy as ensureOutputCapacity
-     * (the old doubling stacked with the pool's 1.25x store headroom to ~2.5x
-     * live EBO need).
-     */
     private static boolean expandPoolEbo(BakedMesh baked, ModeCache mc, int count, int mode,
                                          boolean relayoutAllowed) {
-        if (mc.eboCapacity >= count && mc.filled == count) {
-            return true;
-        }
-        int targetCapacity = Math.max(count, Math.max(MIN_EBO_INSTANCES,
-                mc.eboCapacity + Math.max(16, mc.eboCapacity >> 2)));
-        // Overflow guard (long math, same Integer.MAX_VALUE check relayoutPool
-        // applies to its summed ranges): placed BEFORE any capacity/relayout
-        // mutation, so a refusal leaves the pool layout untouched - the int
-        // product used to wrap negative and throw out of memAllocInt, and the
-        // bake catch-all then shut Tier 1 down for the whole session.
-        if (!eboExpansionFits(baked, targetCapacity)) {
-            return false;
-        }
-        // Refusals roll the capacity field back and fail SOFT (false): this used
-        // to throw IllegalStateException, which bakeMain's catch converts into a
-        // whole-session Tier 1 shutdown - a budget refusal must never do that.
-        // Relayout deferral (2026-10-07 shadow-fix, see relayoutPool): refuse
-        // soft BEFORE touching the capacity fields when a relayout already ran
-        // this frame's walk (snapshot taken at bakeEntry start, so THIS bake's
-        // own back-to-back layout runs below still count as its single
-        // relayout); runExpansion fails the entry for the frame (companion
-        // fallback), the growth succeeds next frame.
-        if (!relayoutAllowed && (count > mc.eboInstances || targetCapacity > mc.eboInstances)) {
-            return false;
-        }
-        if (count > mc.eboInstances) {
-            int oldEbo = mc.eboInstances;
-            mc.eboInstances = Math.max(count, mc.eboInstances + Math.max(16, mc.eboInstances >> 2));
-            if (!relayoutPool(mode)) {
-                mc.eboInstances = oldEbo;
-                return false;
-            }
-        }
-        PassPool pool = pool(mode);
-        if (targetCapacity > mc.eboInstances) {
-            int oldEbo = mc.eboInstances;
-            mc.eboInstances = targetCapacity;
-            if (!relayoutPool(mode)) {
-                mc.eboInstances = oldEbo;
-                return false;
-            }
-        }
-        // GPU identity fill first: the same cull program pass 1 (EBO build)
-        // uses, with the same placement uniforms (uVertBase/uEboBase) - writes
-        // exactly the bytes the CPU loop below produces, without pulling tens
-        // of MB through the CPU per expansion. The CPU loop runs unchanged
-        // whenever the dispatch is refused - cullProgramId at -1 (bakeCull kill
-        // switch / compile failure), the X work-group limit, or a dispatch GL
-        // error (see dispatchIdentityEboFill): this no-cull path must stay CPU
-        // there, and nothing latches before the CPU bytes are in.
-        if (pool.eboSsbo > 0 && dispatchIdentityEboFill(baked, pool.eboSsbo,
-                targetCapacity, baked.vertBase[mode], baked.eboWordBase[mode])) {
-            mc.eboCapacity = targetCapacity;
-            mc.filled = count;
-            return true;
-        }
-        IntBuffer data = MemoryUtil.memAllocInt((int) ((long) baked.idxCount * targetCapacity));
-        try {
-            int vertBase = baked.vertBase[mode];
-            for (int i = 0; i < targetCapacity; i++) {
-                int base = vertBase + i * baked.vertCount;
-                for (int k = 0; k < baked.idxCount; k++) {
-                    data.put(baked.baseIndices[k] + base);
-                }
-            }
-            data.flip();
-            GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, pool.eboSsbo);
-            GL15.glBufferSubData(GL43.GL_SHADER_STORAGE_BUFFER,
-                    (long) baked.eboWordBase[mode] * 4L, data);
-            GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
-            mc.eboCapacity = targetCapacity;
-            mc.filled = count;
-        } finally {
-            MemoryUtil.memFree(data);
-        }
-        return true;
+        return BakeVramPoolManager.expandPoolEbo(baked, mc, count, mode, relayoutAllowed);
     }
 
-    /**
-     * Recomputes per-mesh vertBase/eboWordBase placement for one pass from the
-     * live range capacities (prefix sums over BAKED meshes in BAKED order) and
-     * grows the pool stores when the summed ranges exceed the allocated size.
-     * Frees the stores when the last range disappears; no shrink otherwise -
-     * freed ranges are reclaimed from the front by the next relayout (no leak,
-     * no realloc churn).
-     * <p>
-     * Invalidation model: a pool store realloc (orphaning glBufferData) wipes the
-     * pass's baked bytes, so EVERY cache of the pass is invalidated (full re-bake;
-     * the F3 pool counters surface this as a pool realloc). A base shift of a
-     * single live cache (another mesh's range grew ahead of it in BAKED order)
-     * invalidates just that mesh.
-     *
-     * @return false on a GL allocation failure (caller falls back / aborts Tier 1).
-     */
     private static boolean relayoutPool(int mode) {
-        PassPool pool = pool(mode);
-        // 2026-10-07 shadow-fix: relayouts are DEFERRED by the walk's callers
-        // (see poolRelayoutDeferred + the relayoutAllowed snapshot in bakeEntry):
-        // ONE growth relayout per pass per frame. A mid-walk relayout reallocs
-        // the pool stores (orphaning glBufferData) and wipes EVERY cache of the
-        // pass - entries already baked and appended to the pending list earlier
-        // in the walk were then skipped by the flush (their output was gone)
-        // and vanished for exactly that frame: model flicker in main, holes in
-        // the shadow map. Past the first relayout of a frame, growth is refused
-        // soft by the callers: they roll their capacity fields back and refuse
-        // the entry (the admission-failure contract, Tier-2/3 fallback); the
-        // growth succeeds on a later frame's walk, before entries are pending.
-        // relayoutPool itself stays ungated so the
-        // back-to-back layout runs of ONE bake (allocateCache +
-        // expandPoolEbo's EBO target growth) count as the single relayout.
-        int stride = outStrideBytes(mode);
-        long verts = 0, words = 0;
-        long outNeeded = 0, eboNeeded = 0;
-        // Trial pass: compute the whole new layout WITHOUT committing anything,
-        // so a refusal below cannot leave half-updated bases behind (a base shift
-        // without the backing store resize would point draws at foreign bytes).
-        int n = BAKED.size();
-        int[] newVertBases = new int[n];
-        int[] newEboBases = new int[n];
-        long validOutCopyBytes = 0L;
-        long validEboCopyBytes = 0L;
-        boolean firstShiftEncountered = false;
-        for (int i = 0; i < n; i++) {
-            BakedMesh bm = BAKED.get(i);
-            ModeCache mc = bm.cache(mode);
-            newVertBases[i] = (int) verts;
-            newEboBases[i] = (int) words;
-            verts += (long) bm.vertCount * mc.outInstances;
-            words += (long) bm.idxCount * mc.eboInstances;
-            outNeeded += (long) bm.vertCount * mc.outInstances * stride;
-            eboNeeded += (long) bm.idxCount * mc.eboInstances * 4L;
-
-            if (!firstShiftEncountered) {
-                if (bm.vertBase[mode] != newVertBases[i] || bm.eboWordBase[mode] != newEboBases[i]) {
-                    firstShiftEncountered = true;
-                } else {
-                    if (mc.outInstances > 0 && mc.outputValid) {
-                        validOutCopyBytes = (long) newVertBases[i] * stride + (long) bm.vertCount * mc.outInstances * stride;
-                    }
-                    if (!cullEnabled() && mc.filled > 0) {
-                        validEboCopyBytes = (long) newEboBases[i] * 4L + (long) bm.idxCount * mc.eboInstances * 4L;
-                    }
-                }
-            }
-        }
-        if (verts > Integer.MAX_VALUE || words > Integer.MAX_VALUE) {
-            return false; // cannot happen within the cache budget; guard anyway
-        }
-        // Budget gate for GROWTH: admission checks an entry's worst-case reserve,
-        // but count growth (chunk-load waves, spawn waves) used to bypass the
-        // budget entirely - the pool inflated to 409 MB against a 192 MB budget
-        // with 1000 stress machines and nothing could evict it back. Only the
-        // delta the pool will actually charge is gated here: the growth branch
-        // of ensurePoolStorage allocates poolStoreTarget(needed) (1.25x headroom)
-        // exactly when needed exceeds the current allocation, so the gate below
-        // mirrors that condition term by term (gate and charge must match or
-        // the budget leaks by the headroom).
-        long delta = (outNeeded > pool.outputAllocBytes
-                              ? poolStoreTarget(outNeeded) - pool.outputAllocBytes : 0L)
-                   + (eboNeeded > pool.eboAllocBytes
-                              ? poolStoreTarget(eboNeeded) - pool.eboAllocBytes : 0L);
-        if (delta > 0) {
-            synchronized (NucleusGpuBaker.class) {
-                if (cacheBytes + delta > cacheBudgetBytes()) {
-                    evictStaleCaches();
-                }
-            }
-        }
-        if (!ensurePoolStorage(pool, outNeeded, eboNeeded, validOutCopyBytes, validEboCopyBytes)) {
-            return false;
-        }
-        // Commit pass: write the bases and invalidate shifted live ranges (their
-        // baked bytes moved within the store; the next bake of each rebuilds).
-        for (int i = 0; i < n; i++) {
-            BakedMesh bm = BAKED.get(i);
-            ModeCache mc = bm.cache(mode);
-            boolean shifted = bm.vertBase[mode] != newVertBases[i]
-                    || bm.eboWordBase[mode] != newEboBases[i];
-            bm.vertBase[mode] = newVertBases[i];
-            bm.eboWordBase[mode] = newEboBases[i];
-            if (shifted && mc.outInstances > 0) {
-                invalidateBakedOutput(mc);
-            }
-        }
-        pool.lastRelayoutFrame = frameStamp();
-        return true;
+        return BakeVramPoolManager.relayoutPool(mode);
     }
 
-    /**
-     * Allocation target for a pool store given the summed live range size:
-     * 1.5x headroom over the current need (floor {@link #MIN_POOL_BYTES}) so a
-     * chunk-load admission wave does not re-orphan - and with it fully re-bake -
-     * the whole pass on every single growth step. A realloc still rebakes every
-     * mesh of the pass (unchanged invalidation model); the headroom only cuts
-     * HOW OFTEN that happens.
-     */
     private static long poolStoreTarget(long needed) {
-        return Math.max(needed + (needed >> 1), MIN_POOL_BYTES);
+        return BakeVramPoolManager.poolStoreTarget(needed);
     }
 
-    /** Wipes everything derived from the pool-resident output/EBO bytes of a cache. */
     private static void invalidateBakedOutput(ModeCache mc) {
-        mc.outputValid = false;
-        mc.cullValid = false;
-        mc.countsDirty = false;
-        mc.stagingSlot = -1;
-        mc.filled = -1;
-        mc.eboCapacity = 0;
-        mc.frustumStamp = Long.MIN_VALUE;
-        mc.sourceMutationEpoch = -1L;
+        BakeVramPoolManager.invalidateBakedOutput(mc);
     }
 
-    /** Grows (or empties) the pool stores to cover the summed live ranges. */
     private static boolean ensurePoolStorage(PassPool pool, long outNeeded, long eboNeeded,
                                             long validOutCopyBytes, long validEboCopyBytes) {
-        try {
-            boolean vaoNeedsRebuild = false;
-            if (outNeeded > pool.outputAllocBytes) {
-                long target = poolStoreTarget(outNeeded);
-                int newSsbo = GL15.glGenBuffers();
-                GlDebugMarkers.labelBuffer(newSsbo, "HBM_PoolOut_" + poolName(pool) + "_SSBO");
-                GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, newSsbo);
-                GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, target, GL15.GL_DYNAMIC_COPY);
-                if (pool.outputSsbo != -1 && pool.outputAllocBytes > 0 && validOutCopyBytes > 0) {
-                    long copyBytes = Math.min(validOutCopyBytes, pool.outputAllocBytes);
-                    GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT | GL43.GL_BUFFER_UPDATE_BARRIER_BIT);
-                    GL15.glBindBuffer(GL31.GL_COPY_READ_BUFFER, pool.outputSsbo);
-                    GL15.glBindBuffer(GL31.GL_COPY_WRITE_BUFFER, newSsbo);
-                    GL31.glCopyBufferSubData(GL31.GL_COPY_READ_BUFFER, GL31.GL_COPY_WRITE_BUFFER, 0L, 0L, copyBytes);
-                    GL15.glBindBuffer(GL31.GL_COPY_READ_BUFFER, 0);
-                    GL15.glBindBuffer(GL31.GL_COPY_WRITE_BUFFER, 0);
-                }
-                if (pool.outputSsbo != -1) {
-                    GL15.glDeleteBuffers(pool.outputSsbo);
-                }
-                GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
-                synchronized (NucleusGpuBaker.class) {
-                    cacheBytes += target - pool.outputAllocBytes;
-                }
-                pool.outputSsbo = newSsbo;
-                pool.outputAllocBytes = target;
-                pool.reallocs++;
-                vaoNeedsRebuild = true;
-            }
-            if (eboNeeded > pool.eboAllocBytes) {
-                long target = poolStoreTarget(eboNeeded);
-                int newEbo = GL15.glGenBuffers();
-                GlDebugMarkers.labelBuffer(newEbo, "HBM_PoolEbo_" + poolName(pool) + "_EBO");
-                GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, newEbo);
-                GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, target, GL15.GL_DYNAMIC_COPY);
-                if (!cullEnabled() && pool.eboSsbo != -1 && pool.eboAllocBytes > 0 && validEboCopyBytes > 0) {
-                    long copyBytes = Math.min(validEboCopyBytes, pool.eboAllocBytes);
-                    GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT | GL43.GL_ELEMENT_ARRAY_BARRIER_BIT | GL43.GL_BUFFER_UPDATE_BARRIER_BIT);
-                    GL15.glBindBuffer(GL31.GL_COPY_READ_BUFFER, pool.eboSsbo);
-                    GL15.glBindBuffer(GL31.GL_COPY_WRITE_BUFFER, newEbo);
-                    GL31.glCopyBufferSubData(GL31.GL_COPY_READ_BUFFER, GL31.GL_COPY_WRITE_BUFFER, 0L, 0L, copyBytes);
-                    GL15.glBindBuffer(GL31.GL_COPY_READ_BUFFER, 0);
-                    GL15.glBindBuffer(GL31.GL_COPY_WRITE_BUFFER, 0);
-                }
-                if (pool.eboSsbo != -1) {
-                    GL15.glDeleteBuffers(pool.eboSsbo);
-                }
-                GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
-                synchronized (NucleusGpuBaker.class) {
-                    cacheBytes += target - pool.eboAllocBytes;
-                }
-                pool.eboSsbo = newEbo;
-                pool.eboAllocBytes = target;
-                pool.reallocs++;
-                vaoNeedsRebuild = true;
-            }
-            if (outNeeded == 0 && eboNeeded == 0
-                    && (pool.outputAllocBytes > 0 || pool.eboAllocBytes > 0)) {
-                if (pool.vao != -1) {
-                    GL30.glDeleteVertexArrays(pool.vao);
-                    pool.vao = -1;
-                }
-                if (pool.outputSsbo != -1) {
-                    GL15.glDeleteBuffers(pool.outputSsbo);
-                    pool.outputSsbo = -1;
-                    synchronized (NucleusGpuBaker.class) {
-                        cacheBytes -= pool.outputAllocBytes;
-                    }
-                    pool.outputAllocBytes = 0;
-                }
-                if (pool.eboSsbo != -1) {
-                    GL15.glDeleteBuffers(pool.eboSsbo);
-                    pool.eboSsbo = -1;
-                    synchronized (NucleusGpuBaker.class) {
-                        cacheBytes -= pool.eboAllocBytes;
-                    }
-                    pool.eboAllocBytes = 0;
-                }
-            } else if ((pool.vao == -1 || vaoNeedsRebuild) && pool.outputSsbo != -1 && pool.eboSsbo != -1) {
-                if (pool.vao != -1) {
-                    GL30.glDeleteVertexArrays(pool.vao);
-                }
-                pool.vao = createOutputVaoWithEbo(pool.outputSsbo, pool.eboSsbo, pool.slim);
-                GlDebugMarkers.labelVao(pool.vao, "HBM_Pool_" + poolName(pool) + "_VAO");
-            }
-            return true;
-        } catch (Exception t) {
-            com.hbm_m.main.MainRegistry.LOGGER.warn(
-                    "[HBM-M] NucleusGpuBaker: bake pool allocation failed", t);
-            return false;
-        }
+        return BakeVramPoolManager.ensurePoolStorage(pool, outNeeded, eboNeeded, validOutCopyBytes, validEboCopyBytes);
     }
 
-    private static int modeOfPool(PassPool pool) {
-        return pool == POOL_SHADOW ? MODE_SHADOW : MODE_MAIN;
-    }
-
-    /**
-     * Pool SHRINK policy (audit 2026-10-07 VRAM ledger [A]): the pool store
-     * used to stay at 1.5x the all-time peak forever - growth was budget-gated,
-     * but demand DROPS (evictStaleCaches frees live ranges) never returned the
-     * tail capacity to the driver. Called from the flush path only, after the
-     * pass's multi-draw was issued:
-     * <ul>
-     *   <li>the pass must be idle-stable: no relayoutPool for
-     *       {@link #SHRINK_IDLE_FRAMES} frames (so no growth is in flight and
-     *       the current live ranges are the settled demand);</li>
-     *   <li>the savings must exceed {@link #SHRINK_MIN_SAVINGS}.</li>
-     * </ul>
-     * The shrink itself mirrors the growth realloc contract exactly: an
-     * orphaning glBufferData to {@link #poolStoreTarget}(live need), the same
-     * per-store invalidateBakedOutput sweep (every orphaned byte is re-baked by
-     * its next bake - the cost reason for the idle+hysteresis gates), and the
-     * same cacheBytes adjustment under the class lock. The reallocs counter
-     * increments (an orphan IS a full pass re-bake, per F3 semantics); a
-     * separate shrinks counter splits the F3 line. Never runs mid-walk: the
-     * collect walk's relayouts stamp lastRelayoutFrame, so a walk in progress
-     * resets the idle window.
-     */
     private static void maybeShrinkPool(PassPool pool, int mode) {
-        long now = frameStamp();
-        if (pool.outputSsbo == -1 && pool.eboSsbo == -1) {
-            return; // nothing allocated (or last-range release already ran)
-        }
-        // Live need = exact relayoutPool trial math over the CURRENT ranges.
-        long outNeeded = 0L, eboNeeded = 0L;
-        long stride = outStrideBytes(mode);
-        for (int i = 0; i < BAKED.size(); i++) {
-            BakedMesh bm = BAKED.get(i);
-            ModeCache mc = bm.cache(mode);
-            outNeeded += (long) bm.vertCount * mc.outInstances * stride;
-            eboNeeded += (long) bm.idxCount * mc.eboInstances * 4L;
-        }
-        if (outNeeded == 0L && eboNeeded == 0L) {
-            ensurePoolStorage(pool, 0L, 0L, 0L, 0L);
-            return;
-        }
-        if (now - pool.lastRelayoutFrame < SHRINK_IDLE_FRAMES) {
-            return;
-        }
-        long outTarget = poolStoreTarget(outNeeded);
-        long eboTarget = poolStoreTarget(eboNeeded);
-        long outSave = pool.outputAllocBytes - outTarget;
-        long eboSave = pool.eboAllocBytes - eboTarget;
-        try {
-            boolean shrunk = false;
-            if (outSave >= SHRINK_MIN_SAVINGS && pool.outputSsbo != -1) {
-                GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, pool.outputSsbo);
-                GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, outTarget, GL15.GL_DYNAMIC_COPY);
-                GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
-                synchronized (NucleusGpuBaker.class) {
-                    cacheBytes -= pool.outputAllocBytes - outTarget;
-                }
-                pool.outputAllocBytes = outTarget;
-                shrunk = true;
-            }
-            if (eboSave >= SHRINK_MIN_SAVINGS && pool.eboSsbo != -1) {
-                GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, pool.eboSsbo);
-                GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, eboTarget, GL15.GL_DYNAMIC_COPY);
-                GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
-                synchronized (NucleusGpuBaker.class) {
-                    cacheBytes -= pool.eboAllocBytes - eboTarget;
-                }
-                pool.eboAllocBytes = eboTarget;
-                shrunk = true;
-            }
-            if (shrunk) {
-                // Orphaned every baked byte of the pass: same sweep as a growth
-                // realloc (per store, immediately - no cache may keep
-                // outputValid across this).
-                for (int i = 0; i < BAKED.size(); i++) {
-                    invalidateBakedOutput(BAKED.get(i).cache(mode));
-                }
-                pool.reallocs++;
-                pool.shrinks++;
-                // Restart the idle window so the pass cannot shrink every frame.
-                pool.lastRelayoutFrame = now;
-                com.hbm_m.main.MainRegistry.LOGGER.info(
-                        "[HBM-M] NucleusGpuBaker: {} pool shrunk to {} output / {} EBO bytes (idle release)",
-                        mode == MODE_SHADOW ? "shadow" : "main", outTarget, eboTarget);
-            }
-        } catch (Exception t) {
-            // Fail closed: leave the pool at its current (larger) sizes - the
-            // invalidate sweep below only ran for completed shrinks, so caches
-            // of an untouched store stay valid. Retry on a future flush.
-            com.hbm_m.main.MainRegistry.LOGGER.warn(
-                    "[HBM-M] NucleusGpuBaker: pool shrink failed (sizes unchanged)", t);
-        }
+        BakeVramPoolManager.maybeShrinkPool(pool, mode);
     }
 
     /**
@@ -3567,12 +1870,12 @@ public final class NucleusGpuBaker {
             // Shadow draw: resolve the ACTIVE pack program's slim-layout attribute
             // locations and rebind the VAO pointers if they differ from the
             // hard-coded 0/2/5 (see bindSlimShadowAttributes).
-            bindSlimShadowAttributes(packShader, pool.outputSsbo);
+            IrisBakeBridge.bindSlimShadowAttributes(packShader, pool.outputSsbo);
         } else if (mode == MODE_MAIN) {
             // One bindIrisExtendedAttributes call for the WHOLE multi-draw: the
             // locations are pack-program-dependent and the pointers snapshot
             // GL_ARRAY_BUFFER, so the pool output is bound as the source first.
-            bindIrisExtendedAttributes(packShader, pool.outputSsbo, OUT_STRIDE_BYTES,
+            IrisBakeBridge.bindIrisExtendedAttributes(packShader, pool.outputSsbo, OUT_STRIDE_BYTES,
                     OUT_OFF_MIDTEX, OUT_OFF_TANGENT, OUT_OFF_MIDBLOCK);
         }
         if (GlDebugMarkers.ENABLED && GlDebugMarkers.isActive()) {
@@ -3621,10 +1924,6 @@ public final class NucleusGpuBaker {
     private static int flushPool(PassPool pool, int mode, ShaderInstance packShader,
                                   java.util.ArrayList<PendingDraw> pending) {
         if (flushPoolGpuCounts(pool, mode, packShader, pending)) {
-            // Same idle-tail release as the CPU path below: on capable hardware
-            // this is the NORM for every flush, so the shrink check must sit
-            // here too or a stable GL 4.6 scene would never release tail VRAM.
-            maybeShrinkPool(pool, mode);
             return pending.size();
         }
         resolvePendingCounts(pending);
@@ -3676,7 +1975,6 @@ public final class NucleusGpuBaker {
             commands++;
         }
         if (commands == 0) {
-            maybeShrinkPool(pool, mode);
             return validEvaluated > 0 ? -1 : 0;
         }
         buf.flip();
@@ -3701,12 +1999,12 @@ public final class NucleusGpuBaker {
             // Shadow draw: resolve the ACTIVE pack program's slim-layout attribute
             // locations and rebind the VAO pointers if they differ from the
             // hard-coded 0/2/5 (see bindSlimShadowAttributes).
-            bindSlimShadowAttributes(packShader, pool.outputSsbo);
+            IrisBakeBridge.bindSlimShadowAttributes(packShader, pool.outputSsbo);
         } else if (mode == MODE_MAIN) {
             // One bindIrisExtendedAttributes call for the WHOLE multi-draw: the
             // locations are pack-program-dependent and the pointers snapshot
             // GL_ARRAY_BUFFER, so the pool output is bound as the source first.
-            bindIrisExtendedAttributes(packShader, pool.outputSsbo, OUT_STRIDE_BYTES,
+            IrisBakeBridge.bindIrisExtendedAttributes(packShader, pool.outputSsbo, OUT_STRIDE_BYTES,
                     OUT_OFF_MIDTEX, OUT_OFF_TANGENT, OUT_OFF_MIDBLOCK);
         }
         if (GlDebugMarkers.ENABLED && GlDebugMarkers.isActive()) {
@@ -3731,10 +2029,6 @@ public final class NucleusGpuBaker {
         NucleusDebug.recordDraw(commands, instances,
                 mode == MODE_MAIN ? "GPU bake main" : "GPU bake shadow");
         bakeGlError(mode == MODE_MAIN ? "main multi-draw" : "shadow multi-draw");
-        // Idle-tail release: at most twice per frame (once per pass), gated by
-        // 600 idle frames + 8 MiB savings inside - free after the flush, never
-        // mid-walk and never per frame.
-        maybeShrinkPool(pool, mode);
         return commands;
     }
 
@@ -3767,11 +2061,11 @@ public final class NucleusGpuBaker {
             // fail closed - the affected entries keep countsDirty but lose
             // cullValid, so flushPool skips them this frame and the next bake
             // re-runs the cheap instance-count cull.
-            synchronized (NucleusGpuBaker.class) {
-                if (cacheBytes + delta > cacheBudgetBytes()) {
+            synchronized (BakeVramPoolManager.class) {
+                if (BakeVramPoolManager.getCacheBytes() + delta > cacheBudgetBytes()) {
                     evictStaleCaches();
                 }
-                cacheBytes += delta;
+                BakeVramPoolManager.adjustCacheBytes(delta);
             }
             if (countsStagingSsbo == -1) {
                 countsStagingSsbo = GL15.glGenBuffers();
@@ -3920,8 +2214,8 @@ public final class NucleusGpuBaker {
                 MAIN_MV.set(first.viewRot).translate(-first.relCamX, -first.relCamY, -first.relCamZ);
                 float[] planes = new float[24];
                 Matrix4f worldToClip = new Matrix4f(effProj).mul(MAIN_MV);
-                extractFrustumPlanes(worldToClip, planes);
-                long frustumStamp = stampPlanes(planes);
+                IrisBakeBridge.extractFrustumPlanes(worldToClip, planes);
+                long frustumStamp = IrisBakeBridge.stampPlanes(planes);
 
                 ensureBoneBuffer();
 
@@ -3950,7 +2244,7 @@ public final class NucleusGpuBaker {
                 return;
             }
 
-            if (!com.hbm_m.client.render.shader.IrisShaderApply.tryApply(packShader)) {
+            if (!com.hbm_m.client.render.shader.ShaderBindResync.tryApply(packShader)) {
                 // One re-resolve + retry before giving up: a transient apply failure
                 // (destroyed GlResource during an Iris pipeline rebuild) used to
                 // silently drop the WHOLE frame's bake batch - the collect walk's
@@ -3960,7 +2254,7 @@ public final class NucleusGpuBaker {
                 packShader = com.hbm_m.client.render.shader.IrisExtendedShaderAccess
                         .getBlockShader(false);
                 if (packShader == null
-                        || !com.hbm_m.client.render.shader.IrisShaderApply.tryApply(packShader)) {
+                        || !com.hbm_m.client.render.shader.ShaderBindResync.tryApply(packShader)) {
                     return;
                 }
             }
@@ -3975,7 +2269,7 @@ public final class NucleusGpuBaker {
                 Matrix4f viewRot = new Matrix4f(FrameViewState.viewBasisRotation());
                 MAIN_MV.set(viewRot).translate(-FrameViewState.relCamX(),
                         -FrameViewState.relCamY(), -FrameViewState.relCamZ());
-                setMatrices(packShader, projection, MAIN_MV);
+                IrisBakeBridge.setMatrices(packShader, projection, MAIN_MV);
                 // Explicit unit-0 atlas bind (the bake path never relies on
                 // setShaderTexture alone).
                 RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
@@ -3997,7 +2291,7 @@ public final class NucleusGpuBaker {
                     // RenderSystem cache - without this restore a later hand/weapon
                     // draw whose cached RenderSystem matrix is unchanged would skip
                     // its re-upload and render with our matrix (disappears).
-                    setMatrices(packShader, RenderSystem.getProjectionMatrix(),
+                    IrisBakeBridge.setMatrices(packShader, RenderSystem.getProjectionMatrix(),
                             RenderSystem.getModelViewMatrix());
                 }
                 packShader.clear();
@@ -4139,35 +2433,12 @@ public final class NucleusGpuBaker {
      * is saved on entry and restored on every exit.
      */
     private static int createOutputVaoWithEbo(int vbo, int ebo, boolean slim) {
-        int previousVao = com.hbm_m.client.render.GlVaoSafety.currentBinding();
-        int[] placeholderEbo = {-1};
-        int vao = createOutputVao(vbo, slim, placeholderEbo);
-        try {
-            GL30.glBindVertexArray(vao);
-            GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, ebo);
-        } catch (Exception t) {
-            // The half-built VAO and the placeholder EBO are unreachable by the
-            // caller in this window (its vao field is still -1) - restore the
-            // caller's VAO binding, delete both names, and rethrow
-            // (GL 4.6 §2.6.1.2/§5.1.2).
-            com.hbm_m.client.render.GlVaoSafety.bindVertexArray(previousVao);
-            GL30.glDeleteVertexArrays(vao);
-            if (placeholderEbo[0] != -1) {
-                GL15.glDeleteBuffers(placeholderEbo[0]);
-            }
-            throw t;
-        }
-        com.hbm_m.client.render.GlVaoSafety.bindVertexArray(previousVao);
-        int staleEbo = placeholderEbo[0];
-        if (staleEbo != -1) GL15.glDeleteBuffers(staleEbo);
-        return vao;
+        return BakeVramPoolManager.createOutputVaoWithEbo(vbo, ebo, slim);
     }
 
     /** Diagnostics tracking for skipped bake entries (prevents log spam). */
     private static final java.util.HashSet<Integer> SKIP_LOGGED = new java.util.HashSet<>();
 
-    /** One invariant-dump per mode cache for out-of-range dirty indices (see uploadDirtyRecords). */
-    private static final java.util.HashSet<Integer> DIRTY_RANGE_DUMP = new java.util.HashSet<>();
 
     /** Rate limit (ms) for data-shape bake failures that must NOT disable Tier 1. */
     private static volatile long dataFailLogMs;
@@ -4262,33 +2533,13 @@ public final class NucleusGpuBaker {
     // (all entries skipped, 0-command flush, unresolved matrices). Each decline
     // bumps a session counter (F3-accessible) and logs at most once per 30 s so
     // the Tier-2/3 fallback engagement is observable without spamming.
-    private static volatile long shadowDeclines = 0L;
-    private static long shadowDeclineLogMs = Long.MIN_VALUE;
-
-    /** Session-total count of Tier-1 shadow bakes declined to Tier 2/3. */
     public static long shadowDeclineCount() {
-        return shadowDeclines;
+        return IrisBakeBridge.shadowDeclineCount();
     }
 
     private static void logShadowDecline(String reason, ShaderInstance shader) {
-        shadowDeclines++;
-        long now = System.currentTimeMillis();
-        if (now - shadowDeclineLogMs < 30000L) {
-            return;
-        }
-        shadowDeclineLogMs = now;
-        String program = "(unknown)";
-        try {
-            program = shader != null ? shader.getName() + "#" + shader.getId() : "(no shader)";
-        } catch (Throwable ignored) {
-            // diagnostics only - never fail the bake for a log name
-        }
-        com.hbm_m.main.MainRegistry.LOGGER.info(
-                "[HBM-M] NucleusGpuBaker: Tier 1 shadow bake declined - falling back to Tier 2/3 "
-                        + "(reason: {}, program: {}) [{} declines this session]",
-                reason, program, shadowDeclines);
+        IrisBakeBridge.logShadowDecline(reason, shader);
     }
-
 
     public static void setBoneMatrices(org.joml.Matrix4f[] bones) {
         if (!isEnabled()) return;
@@ -4383,11 +2634,11 @@ public final class NucleusGpuBaker {
         if (bytes > mc.ctlBytes) {
             long newBytes = Math.max(bytes, Math.max(mc.ctlBytes, 0) * 2);
             long delta = newBytes - Math.max(mc.ctlBytes, 0);
-            synchronized (NucleusGpuBaker.class) {
-                if (cacheBytes + delta > cacheBudgetBytes()) {
+            synchronized (BakeVramPoolManager.class) {
+                if (BakeVramPoolManager.getCacheBytes() + delta > cacheBudgetBytes()) {
                     evictStaleCaches();
                 }
-                cacheBytes += delta;
+                BakeVramPoolManager.adjustCacheBytes(delta);
             }
             if (mc.ctlSsbo == -1) {
                 mc.ctlSsbo = GL15.glGenBuffers();
@@ -4424,7 +2675,7 @@ public final class NucleusGpuBaker {
                 releaseBakedMesh(bm);
             }
             BAKED.clear();
-            cacheBytes = 0;
+            BakeVramPoolManager.resetCacheBytes();
         }
         if (programId != -1) {
             GL20.glDeleteProgram(programId);
@@ -4467,7 +2718,6 @@ public final class NucleusGpuBaker {
         // caches): dead after a teardown, grew unbounded for the whole session
         // until now - covers the lifecycle hook and this crash path alike.
         SKIP_LOGGED.clear();
-        DIRTY_RANGE_DUMP.clear();
         // Reset the one-way latches so a FULL reload (F3+T / world reload via the
         // RenderCacheManager hook) genuinely restores Tier 1 after a transient
         // failure: checked/available/initFailed stayed false forever once any
@@ -4481,700 +2731,26 @@ public final class NucleusGpuBaker {
             initFailed = false;
             glErrorDiags = 0;
             glErrorWindowStart = 0L;
-            cacheOverflowLogged = false;
-            admissionRefusals = 0;
+
             foreignShadowMvLogged = false;
             dataFailLogMs = 0L;
         }
     }
 
     private static void releasePool(PassPool pool) {
-        if (pool.vao != -1) {
-            GL30.glDeleteVertexArrays(pool.vao);
-            pool.vao = -1;
-        }
-        if (pool.outputSsbo != -1) {
-            GL15.glDeleteBuffers(pool.outputSsbo);
-            pool.outputSsbo = -1;
-            pool.outputAllocBytes = 0;
-        }
-        if (pool.eboSsbo != -1) {
-            GL15.glDeleteBuffers(pool.eboSsbo);
-            pool.eboSsbo = -1;
-            pool.eboAllocBytes = 0;
-        }
-        if (pool.cmdSsbo != -1) {
-            GL15.glDeleteBuffers(pool.cmdSsbo);
-            pool.cmdSsbo = -1;
-        }
-        pool.cmdSlots = 0;
-        pool.cmdGen = 0;
-        pool.cmdSlotOwners = new ModeCache[0];
-        if (pool.cmdCpuSsbo != -1) {
-            GL15.glDeleteBuffers(pool.cmdCpuSsbo);
-            pool.cmdCpuSsbo = -1;
-        }
-        if (pool.paramSsbo != -1) {
-            GL15.glDeleteBuffers(pool.paramSsbo);
-            pool.paramSsbo = -1;
-        }
-        // Untracked memAlloc scratch (GC never reclaims it): freed explicitly.
-        if (pool.cmdCpu != null) {
-            org.lwjgl.system.MemoryUtil.memFree(pool.cmdCpu);
-            pool.cmdCpu = null;
-        }
+        BakeVramPoolManager.releasePool(pool);
     }
 
-    // ── Expansion compute shader: one invocation per output vertex ─────
-    // Output is CAMERA-INDEPENDENT (main = anchor-space, shadow = light-space:
-    // the shadow records decompose the Iris shadow poseStack, so the light
-    // rotation rides inside; the camera offset carried in the record translation
-    // is folded out by draw-time ModelViewMat = T(-cam), and the shader subtracts
-    // nothing, so the expanded output never contains camera orientation and stays
-    // cacheable)
-    // and FRUSTUM-INDEPENDENT: vertices are written INSTANCE-MAJOR, so the
-    // cull pre-pass can rebuild the visible-list EBO at will without touching
-    // the expanded data. The expansion covers the SELECTED instances: identity
-    // mode (uDirtyMode = 0) dispatches ALL of them (full re-bakes), dirty-list
-    // mode dispatches only the instances named in the per-cache dirty-index
-    // SSBO (span re-expansion; untouched slots keep their valid previous
-    // output). The cull trims only the DRAW.
-    // MODE_SHADOW (0): slim 24-byte output (pos+uv0+normal).
-    // MODE_MAIN (1): 56-byte output (UV2 via trilinear interpolation of the
-    // 8-corner light records + a computed at_midBlock).
-    //
-    // INPUT (SSBO 0): aligned relayout of the companion mesh (stride multiple of 4)
-    // or the raw mesh VBO when its stride is already aligned. Attributes are read
-    // at byte offsets via ldWord (single fetch on aligned strides).
 
-    private static final String COMPUTE_SOURCE = """
-            #version 430 core
-            // Instance record layout (float words) — injected at init by
-            // injectRecordLayout from the InstancedStaticPartRenderer offset constants
-            // (the literals below are only a fallback; a drift here corrupts every
-            // baked vertex). Layout: pos @0, quat @3 (4 snorm16 halves packed in 2
-            // words), bboxMin @5, bboxSize @8, fade @11, corner light @12 (4 packed
-            // u8 words), tint @20, grad @24 (32 words = 128 bytes per record).
-            #define INST_STRIDE 32u
-            #define INST_POS_WORD 0u
-            #define INST_QUAT_WORD 3u
-            #define INST_BMIN_WORD 5u
-            #define INST_BSIZE_WORD 8u
-            #define INST_FADE_WORD 11u
-            #define INST_UVRECT_WORD 16u
-            #define INST_TINT_WORD 20u
-            #define INST_GRAD_WORD 24u
-            layout(local_size_x = 64, local_size_y = 1) in;
+    private static String COMPUTE_SOURCE;
+    private static String CULL_SOURCE;
 
-            layout(std430, binding = 0) readonly restrict buffer MeshBuf { uint meshW[]; };
-            layout(std430, binding = 1) readonly restrict buffer InstBuf { float instData[]; };
-            layout(std430, binding = 2) restrict buffer OutBuf { float outData[]; };
-            layout(std430, binding = 3) readonly restrict buffer BonePaletteSSBO { mat4 uBoneMatrices[64]; };
-            // Dirty-index list (bound only in dirty-list mode): word 0 = count,
-            // words 1.. = instance indices. Identity mode (uDirtyMode == 0) never
-            // reads it, so full re-bakes can never consume stale list contents.
-            layout(std430, binding = 4) readonly restrict buffer DirtyBuf { uint dirtyData[]; };
-
-            layout(std140, binding = 0) uniform BakeParams {
-                int uMeshStride; // Input mesh byte stride (multiple of 4 after relayout)
-                int uInstStride; // Instance record float stride (32)
-                int uOutStride;  // Output vertex float stride (14 main / 6 shadow)
-                int uVertCount;
-                int uInstCount;
-                int uOffPos;     // Input byte offsets
-                int uOffColor;
-                int uOffNormal;
-                int uOffUv0;
-                int uOffUv1;
-                int uOffUv2;
-                int uOffMidTex;
-                int uOffTangent;
-                int uBakeMode;   // 0 shadow, 1 main
-                int uOffLight;   // Float offset of the packed 8-corner light words (12)
-                int uTransformMode; // 0 pos+quat, 1 3x4 affine matrix
-                int uHasBones;      // 0 no bones, 1 bone palette active
-                int uOffBoneId;     // Byte offset of bone id in mesh (-1 if none)
-                int uMeshWords;     // Input mesh size in uint32 words (OOB guard for unaligned tails)
-                int uDirtyMode;     // 0 identity (y = instance), 1 dirty-list (y = dirty slot)
-                int uVertBase;      // Global-batch output placement: vertex offset of this mesh's range
-            };
-
-            shared vec2 s_light[8];
-            shared vec3 s_bmin;
-            shared vec3 s_bsize;
-            shared vec4 s_uvRect;
-
-            uint ldWord(uint base, int byteOff) {
-                if (byteOff < 0) return 0u;
-                uint a = base + uint(byteOff);
-                uint wi = a >> 2u;
-                uint w0 = meshW[wi];
-                uint sh = (a & 3u) * 8u;
-                if (sh == 0u) return w0;
-                // Unaligned tail of the LAST vertex: the second word lies past the
-                // buffer (raw 54-byte stride fallback) - the attribute's valid bytes
-                // all live in w0's high half; reading meshW[wi+1] would be OOB.
-                if (wi + 1u >= uint(uMeshWords)) return w0 >> sh;
-                uint w1 = meshW[wi + 1u];
-                return (w0 >> sh) | (w1 << (32u - sh));
-            }
-
-            float ldFloat(uint base, int byteOff) {
-                if (byteOff < 0) return 0.0;
-                return uintBitsToFloat(ldWord(base, byteOff));
-            }
-
-            vec3 quatRotate(vec4 q, vec3 v) {
-                return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
-            }
-
-            // snorm16 decode (plain ALU): the record packs the quat as 4 signed
-            // 16-bit halves in 2 float words (low half first) - the CPU encoder is
-            // InstancedStaticPartRenderer.packSnorm16, the VAO reads the same bytes
-            // as GL_SHORT normalized.
-            float snorm16ToFloat(uint h) {
-                // int overload sign-extends the 16-bit field (mirrors the VAO's
-                // GL_SHORT normalized fetch and HalfFloat-style software decode).
-                return clamp(float(bitfieldExtract(int(h), 0, 16)) / 32767.0, -1.0, 1.0);
-            }
-
-            vec4 instQuat(uint base) {
-                uint wxy = floatBitsToUint(instData[base + INST_QUAT_WORD]);
-                uint wzw = floatBitsToUint(instData[base + INST_QUAT_WORD + 1u]);
-                return vec4(snorm16ToFloat(wxy), snorm16ToFloat(wxy >> 16u),
-                            snorm16ToFloat(wzw), snorm16ToFloat(wzw >> 16u));
-            }
-
-            void main() {
-                // Instance selection: dirty-list mode maps y through the compacted
-                // dirty-index list (one workgroup row per DIRTY instance; the count
-                // word is re-checked as an OOB guard); identity mode treats y as the
-                // raw instance index and covers every instance (full re-bakes).
-                uint rawY = gl_GlobalInvocationID.y + gl_GlobalInvocationID.z * gl_NumWorkGroups.y;
-                uint inst;
-                if (uDirtyMode == 1) {
-                    if (rawY >= dirtyData[0u]) return;
-                    inst = dirtyData[1u + rawY];
-                    if (inst >= uint(uInstCount)) return;
-                } else {
-                    inst = rawY;
-                    if (inst >= uint(uInstCount)) return;
-                }
-
-                uint iBase = uint(inst * uInstStride);     // Instance record float offset
-
-                uint lid = gl_LocalInvocationID.x;
-                if (lid < 8u) {
-                    // Corner light: 4 packed u8 words, 2 corners per word (low byte
-                    // first): word j = c2j.u, c2j.v, c2j+1.u, c2j+1.v. Corner lid ->
-                    // word lid>>1, u/v at byte shifts (lid&1)*16 + {0, 8}; decode to
-                    // the 0..240 texel grid (byte x 240/255).
-                    uint lBase = iBase + uint(uOffLight);
-                    uint wraw = floatBitsToUint(instData[lBase + (lid >> 1u)]);
-                    uint sh = (lid & 1u) * 16u;
-                    s_light[lid] = vec2(float((wraw >> sh) & 0xFFu), float((wraw >> (sh + 8u)) & 0xFFu))
-                            * (240.0 / 255.0);
-                } else if (lid == 8u) {
-                    s_bmin = vec3(instData[iBase + INST_BMIN_WORD], instData[iBase + INST_BMIN_WORD + 1u], instData[iBase + INST_BMIN_WORD + 2u]);
-                    s_bsize = max(vec3(instData[iBase + INST_BSIZE_WORD], instData[iBase + INST_BSIZE_WORD + 1u], instData[iBase + INST_BSIZE_WORD + 2u]), vec3(1e-4));
-                } else if (lid == 9u) {
-                    // Atlas remap rect (words 16..19): sprite-local [0..1] UVs ->
-                    // atlas UVs, mirrors block_lit_instanced.vsh's InstUvRect.
-                    s_uvRect = vec4(instData[iBase + INST_UVRECT_WORD],
-                                    instData[iBase + INST_UVRECT_WORD + 1u],
-                                    instData[iBase + INST_UVRECT_WORD + 2u],
-                                    instData[iBase + INST_UVRECT_WORD + 3u]);
-                }
-                barrier();
-
-                uint lv = gl_GlobalInvocationID.x;
-                if (lv >= uint(uVertCount)) return;
-
-                uint mBase = uint(lv * uint(uMeshStride)); // Input mesh byte offset
-                // Instance-MAJOR output (see header comment): output slot s always
-                // belongs to raw instance inst, independent of any cull compaction.
-                // Global-batch placement: the mesh's range starts at uVertBase
-                // vertices into the pass pool.
-                uint o = (uint(uVertBase) + inst * uint(uVertCount) + lv) * uint(uOutStride);
-
-                // Invisible instance (FADE_MODE_INVISIBLE, fade word < 0): the
-                // bake output bypasses the vsh fade discard, so culling disabled
-                // would draw it as garbage. Write degenerate zero positions -
-                // zero-area triangles rasterize into nothing in both the shadow
-                // and the main pass.
-                if (uTransformMode == 0 && instData[iBase + INST_FADE_WORD] < 0.0) {
-                    outData[o + 0u] = 0.0;
-                    outData[o + 1u] = 0.0;
-                    outData[o + 2u] = 0.0;
-                    return;
-                }
-
-                vec3 pos = vec3(ldFloat(mBase, uOffPos),
-                                ldFloat(mBase, uOffPos + 4),
-                                ldFloat(mBase, uOffPos + 8));
-
-                // Normal decode
-                vec3 nrm;
-                uint nRaw = 0u;
-                if (uOffNormal >= 0) {
-                    nRaw = ldWord(mBase, uOffNormal);
-                    nrm = vec3(float(bitfieldExtract(int(nRaw), 0, 8)) / 127.0,
-                               float(bitfieldExtract(int(nRaw), 8, 8)) / 127.0,
-                               float(bitfieldExtract(int(nRaw), 16, 8)) / 127.0);
-                } else {
-                    nrm = vec3(0.0, 1.0, 0.0);
-                }
-
-                // Tangent decode (packed 4 GLbytes, byte 3 = bitangent w sign):
-                // rotated together with the normal below so the TBN stays valid
-                // on rotated instances.
-                vec3 tng = vec3(1.0, 0.0, 0.0);
-                uint tRaw = 0u;
-                if (uOffTangent >= 0) {
-                    tRaw = ldWord(mBase, uOffTangent);
-                    tng = vec3(float(bitfieldExtract(int(tRaw), 0, 8)) / 127.0,
-                               float(bitfieldExtract(int(tRaw), 8, 8)) / 127.0,
-                               float(bitfieldExtract(int(tRaw), 16, 8)) / 127.0);
-                }
-
-                // Dynamic skeletal bone animation support
-                vec4 localPos = vec4(pos, 1.0);
-                if (uHasBones > 0 && uOffBoneId >= 0) {
-                    int bone = int(ldWord(mBase, uOffBoneId));
-                    if (bone >= 0 && bone < 64) {
-                        localPos = uBoneMatrices[bone] * localPos;
-                        nrm = mat3(uBoneMatrices[bone]) * nrm;
-                        tng = mat3(uBoneMatrices[bone]) * tng;
-                    }
-                }
-
-                vec3 outPos;
-                vec3 nOut;
-                vec3 tOut = tng;
-                if (uTransformMode == 1) {
-                    // Full 12-float 3x4 affine transform matrix (row0, row1, row2)
-                    vec4 row0 = vec4(instData[iBase + 0u], instData[iBase + 1u], instData[iBase + 2u], instData[iBase + 3u]);
-                    vec4 row1 = vec4(instData[iBase + 4u], instData[iBase + 5u], instData[iBase + 6u], instData[iBase + 7u]);
-                    vec4 row2 = vec4(instData[iBase + 8u], instData[iBase + 9u], instData[iBase + 10u], instData[iBase + 11u]);
-
-                    outPos = vec3(dot(row0, localPos), dot(row1, localPos), dot(row2, localPos));
-
-                    // Cofactor / adjoint normal matrix for arbitrary affine transforms (transposed for GLSL column-major order)
-                    mat3 normalMat = transpose(mat3(
-                        cross(row1.xyz, row2.xyz),
-                        cross(row2.xyz, row0.xyz),
-                        cross(row0.xyz, row1.xyz)
-                    ));
-                    float nLenSq = dot(normalMat * nrm, normalMat * nrm);
-                    nOut = (nLenSq > 1e-8) ? normalize(normalMat * nrm) : nrm;
-                    // Same adjoint matrix as the normal: for the rigid rotations/
-                    // translations these instances use it equals the linear part.
-                    float tLenSq = dot(normalMat * tng, normalMat * tng);
-                    tOut = (tLenSq > 1e-8) ? normalize(normalMat * tng) : tng;
-                } else {
-                    // pos(3) + packed quat (2 words). No camera subtraction (see header comment).
-                    vec4 rot = instQuat(iBase);
-                    outPos = quatRotate(rot, localPos.xyz)
-                            + vec3(instData[iBase + INST_POS_WORD], instData[iBase + INST_POS_WORD + 1u], instData[iBase + INST_POS_WORD + 2u]);
-                    nOut = normalize(quatRotate(rot, nrm));
-                    tOut = normalize(quatRotate(rot, tng));
-                }
-
-                outData[o + 0u] = outPos.x;
-                outData[o + 1u] = outPos.y;
-                outData[o + 2u] = outPos.z;
-
-                if (uBakeMode == 0) {
-                    // Slim shadow layout (24 bytes): pos@0..2, uv0@3..4, normal@5.
-                    // UV0 through the atlas remap rect (identity {0,0,1,1} on
-                    // regular machines, so this is a no-op there).
-                    outData[o + 3u] = s_uvRect.x + ldFloat(mBase, uOffUv0) * s_uvRect.z;
-                    outData[o + 4u] = s_uvRect.y + ldFloat(mBase, uOffUv0 + 4) * s_uvRect.w;
-                    uint nSlim = uint(int(round(clamp(nOut.x, -1.0, 1.0) * 127.0)) & 255)
-                            | (uint(int(round(clamp(nOut.y, -1.0, 1.0) * 127.0)) & 255) << 8)
-                            | (uint(int(round(clamp(nOut.z, -1.0, 1.0) * 127.0)) & 255) << 16);
-                    outData[o + 5u] = uintBitsToFloat(nSlim);
-                    return;
-                }
-
-                // Main 56-byte dense layout, 14 words per vertex - the write indices
-                // below MUST stay in lockstep with OUT_STRIDE_BYTES / OUT_OFF_* and the
-                // VAO attrib offsets on the Java side (a drift here writes the tangent
-                // of vertex N over the position of vertex N+1: geometry corruption).
-                // color@3, uv0@4..5, uv1@6, uv2@7, normal@8, entity@9, midtex@10..11,
-                // tangent@12, midblock@13.
-                //
-                // Color: mesh color x per-instance tint (records @20..23) with a spatial
-                // falloff (records @24..27). The gradient is evaluated on the MODEL-space
-                // vertex position (pos, before the instance transform); the
-                // mix(white, tint, smoothstep) semantics match block_lit_instanced.vsh
-                // exactly. The 4UB channel clamps overbright (>1); glow brightness under
-                // shader packs comes from uv2 (lightmap, see lightOverride).
-                uint cRaw = (uOffColor >= 0) ? ldWord(mBase, uOffColor) : 0xFFFFFFFFu;
-                // Float 11 is a fade MODE sentinel (1.0/0.9999/0.9998), not an alpha:
-                // the distance ramp is a vsh feature the bake path does not apply, so
-                // all modes must bake fully opaque (0.9999*255 = 254 darkened machine
-                // pixels by 0.4% and fed gl_Color.a into pack AO/alpha thresholds).
-                float fadeRaw = instData[iBase + INST_FADE_WORD];
-                float fade = fadeRaw >= 0.999 ? 1.0 : clamp(fadeRaw, 0.0, 1.0);
-                float tA = instData[iBase + INST_TINT_WORD + 3u]; // emission strength (heat 0..1), NOT alpha
-                float gAxis = instData[iBase + INST_GRAD_WORD];
-                vec3 tCol = vec3(instData[iBase + INST_TINT_WORD], instData[iBase + INST_TINT_WORD + 1u], instData[iBase + INST_TINT_WORD + 2u]);
-                vec3 colMul;
-                // Init 1.0: no gradient (gAxis < 0) means full-weight emission,
-                // so uniformly heated parts keep their tA glow (matches
-                // block_lit_instanced.vsh); the branch below overwrites gt.
-                float gt = 1.0;
-                // Fail-closed gate: axis must be finite and in [0, 2] (NaN fails
-                // every comparison, so a zeroed/corrupt word disables the gradient
-                // entirely, never divides by zero -> +Inf -> full tint).
-                if (gAxis >= 0.0 && gAxis <= 2.0) {
-                    float gCoord = gAxis < 0.5 ? pos.x : (gAxis < 1.5 ? pos.y : pos.z);
-                    float denom = instData[iBase + INST_GRAD_WORD + 1u] - instData[iBase + INST_GRAD_WORD + 2u];
-                    // Epsilon guard: zero-length gradient span must not produce Inf/NaN.
-                    gt = clamp((gCoord - instData[iBase + INST_GRAD_WORD + 2u])
-                             / (abs(denom) < 1e-4 ? 1e-4 : denom), 0.0, 1.0);
-                    gt = gt * gt * (3.0 - 2.0 * gt);
-                    colMul = mix(vec3(1.0), tCol, gt);
-                } else {
-                    colMul = tCol;
-                }
-                uint r8 = uint(clamp(float((cRaw >>  0) & 0xFFu) * colMul.r, 0.0, 255.0));
-                uint g8 = uint(clamp(float((cRaw >>  8) & 0xFFu) * colMul.g, 0.0, 255.0));
-                uint b8 = uint(clamp(float((cRaw >> 16) & 0xFFu) * colMul.b, 0.0, 255.0));
-                uint a8 = uint(clamp(float((cRaw >> 24) & 0xFFu) * fade, 0.0, 255.0));
-                outData[o + 3u] = uintBitsToFloat(r8 | (g8 << 8) | (b8 << 16) | (a8 << 24));
-
-                // UV0 (2 floats), through the atlas remap rect (sprite-local
-                // [0..1] skins -> atlas; identity rect on regular machines)
-                outData[o + 4u] = s_uvRect.x + ldFloat(mBase, uOffUv0) * s_uvRect.z;
-                outData[o + 5u] = s_uvRect.y + ldFloat(mBase, uOffUv0 + 4) * s_uvRect.w;
-
-                // UV1 (overlay) — 2 shorts packed into one word
-                outData[o + 6u] = (uOffUv1 >= 0) ? uintBitsToFloat(ldWord(mBase, uOffUv1)) : 0.0;
-
-                // UV2 (lightmap) — 2 ushorts packed into one word
-                uint uv2Bits;
-                {
-                    vec3 w = clamp((pos - s_bmin) / s_bsize, 0.0, 1.0);
-                    vec2 x00 = mix(s_light[0], s_light[1], w.x);
-                    vec2 x10 = mix(s_light[2], s_light[3], w.x);
-                    vec2 x01 = mix(s_light[4], s_light[5], w.x);
-                    vec2 x11 = mix(s_light[6], s_light[7], w.x);
-                    vec2 y0 = mix(x00, x10, w.y);
-                    vec2 y1 = mix(x01, x11, w.y);
-                    vec2 lm = mix(y0, y1, w.z);
-                    // Emission: push the lightmap toward fullbright by heat*gradient so
-                    // the glow follows the tint (hot metal), not just lightOverride parts.
-                    float emit = clamp(tA * gt, 0.0, 1.0);
-                    lm = mix(lm, vec2(240.0), emit);
-                    int bu = int(clamp(lm.x, 0.0, 240.0));
-                    int sv = int(clamp(lm.y, 0.0, 240.0));
-                    uv2Bits = uint(bu | (sv << 16));
-                }
-                outData[o + 7u] = uintBitsToFloat(uv2Bits);
-
-                // Normal: packed 4 GLbytes
-                uint nPacked = uint(int(round(clamp(nOut.x, -1.0, 1.0) * 127.0)) & 255)
-                        | (uint(int(round(clamp(nOut.y, -1.0, 1.0) * 127.0)) & 255) << 8)
-                        | (uint(int(round(clamp(nOut.z, -1.0, 1.0) * 127.0)) & 255) << 16)
-                        | (nRaw & 0xFF000000u);
-                outData[o + 8u] = uintBitsToFloat(nPacked);
-
-                // iris_Entity — constant 0
-                outData[o + 9u] = uintBitsToFloat(0u);
-
-                // mc_midTexCoord — 2 floats, remapped alongside UV0 (vanilla
-                // parity: both are atlas-space, so pack shaders comparing the
-                // two stay consistent)
-                float midU = (uOffMidTex >= 0) ? ldFloat(mBase, uOffMidTex) : 0.0;
-                float midV = (uOffMidTex >= 0) ? ldFloat(mBase, uOffMidTex + 4) : 0.0;
-                outData[o + 10u] = s_uvRect.x + midU * s_uvRect.z;
-                outData[o + 11u] = s_uvRect.y + midV * s_uvRect.w;
-
-                // at_tangent — 4 bytes packed into one word (word 12 = byte 48):
-                // rotated tangent (world axes) with the original bitangent w
-                // sign byte preserved.
-                uint tPacked = 0u;
-                if (uOffTangent >= 0) {
-                    tPacked = uint(int(round(clamp(tOut.x, -1.0, 1.0) * 127.0)) & 255)
-                            | (uint(int(round(clamp(tOut.y, -1.0, 1.0) * 127.0)) & 255) << 8)
-                            | (uint(int(round(clamp(tOut.z, -1.0, 1.0) * 127.0)) & 255) << 16)
-                            | (tRaw & 0xFF000000u);
-                }
-                outData[o + 12u] = uintBitsToFloat(tPacked);
-
-                // at_midBlock (word 13 = byte 52, last of the 56) - mirrors the
-                // Iris/Oculus TERRAIN extension attribute that our ENTITY-format
-                // companion mesh does not carry. Three signed bytes = offset FROM
-                // the vertex TO the center of the vertex's block (blockCenter -
-                // vertex), in 1/64 block units, truncated toward zero and folded
-                // into u8 two's complement - byte-for-byte ExtendedDataHelper.
-                // computeMidBlock semantics from Oculus 1.20.1-1.8.0:
-                // packMidBlock = (int)(component * 64.0) & 255, x=bits 0..7,
-                // y=8..15, z=16..23, byte 3 unused. Because blockCenter =
-                // floor(outPos) + 0.5, the offset always lands in (-0.5, 0.5], so
-                // *64 fits a signed byte with no truncation artifacts. The block
-                // association comes from the WORLD-axes vertex position (outPos,
-                // matching the emitted vertex; the fractional part of outPos is
-                // the position inside the world block since anchorOrigin is an
-                // integer BlockPos). Per-instance by design — output slots are
-                // already instance-major, so this stays cache-consistent; packs
-                // divide by 64.0 themselves.
-                vec3 blockCenter = floor(outPos) + 0.5;
-                vec3 midOff = blockCenter - outPos;
-                uint midBits = (uint(int(midOff.x * 64.0)) & 255u)
-                             | ((uint(int(midOff.y * 64.0)) & 255u) << 8)
-                             | ((uint(int(midOff.z * 64.0)) & 255u) << 16);
-                outData[o + 13u] = uintBitsToFloat(midBits);
-            }
-            """;
-
-    // ── Cull compute shader ────────────────────────────────────────────
-    // pass 0: one invocation per instance — conservative record-space AABB
-    //   (quat-rotated model bbox) vs the 6 frustum planes; visible indices
-    //   compacted into ctl[16..] via atomicAdd.
-    //   KNOWN LIMIT: the AABB covers only pos+quat and the record bbox - skeletal
-    //   bone deformation escaping the bbox can pop at the frustum edge (bone meshes
-    //   re-bake every frame anyway via boneEpoch, so only the cull footprint is off).
-    // pass 2: single-invocation assembler — visible count -> the glDrawElementsIndirect
-    //   command and the EBO-build dispatch triplet (each indirect consumer reads a
-    //   full (x,y,z) triple — no region may overlap).
-    // pass 1: one invocation per drawn EBO index — visible[slot]*vertCount + base[k].
-    //
-    // Control block (uint words): 0 visibleCount (atomic), 1..3 reserved,
-    // 4..8 glDrawElementsIndirect command, 9..11 EBO dispatch triplet,
-    // 12..15 pad, 16.. visible list.
-
-    private static final String CULL_SOURCE = """
-            #version 430 core
-            // Instance record layout (float words) — injected at init by
-            // injectRecordLayout from the InstancedStaticPartRenderer offset constants
-            // (the literals below are only a fallback). Layout: pos @0, quat @3 (4
-            // snorm16 halves packed in 2 words), bboxMin @5, bboxSize @8, fade @11.
-            #define INST_STRIDE 32u
-            #define INST_POS_WORD 0u
-            #define INST_QUAT_WORD 3u
-            #define INST_BMIN_WORD 5u
-            #define INST_BSIZE_WORD 8u
-            #define INST_FADE_WORD 11u
-            layout(local_size_x = 64) in;
-
-            layout(std430, binding = 0) readonly restrict buffer InstBuf { float instData[]; };
-            layout(std430, binding = 1) restrict buffer CtlBuf { uint ctl[]; };
-            layout(std430, binding = 2) readonly restrict buffer EboBase { uint baseIdx[]; };
-            layout(std430, binding = 3) writeonly restrict buffer EboBuf { uint ebo[]; };
-            // Pool command store (pass 2, GPU-count flush path): slot uCmdSlot of
-            // the shared pass-pool command buffer - one DrawElementsIndirectCommand
-            // per pending entry, consumed by glMultiDrawElementsIndirectCount.
-            layout(std430, binding = 4) writeonly restrict buffer CmdBuf { uint cmdWords[]; };
-
-            uniform int uPass;       // 0 = cull, 1 = EBO build, 2 = assemble indirect words
-            uniform int uInstCount;
-            uniform int uVertCount;
-            uniform int uIdxCount;
-            uniform int uInstStride; // Instance record float stride (32)
-            uniform vec4 uPlane[6];  // (n.xyz, d), inside = positive side
-            // Global-batch placement: EBO entries land at
-            // uEboBase words into the pass EBO, absolute vertex indices
-            // shifted by uVertBase (the mesh's range start in the pass output).
-            uniform int uVertBase;
-            uniform int uEboBase;
-            // Pool command slot this cache's indirect command lands at (-1 = the
-            // GPU-count flush path is off: no GL 4.6 capability).
-            uniform int uCmdSlot;
-            // 1 = pass 1 is an IDENTITY fill (every instance slot, flat 1D
-            // dispatch - the no-cull EBO growth of expandPoolEbo);
-            // 0 = the cull EBO build (visible list, 2D dispatch from the
-            // assembler). Per-program state: every dispatch entry sets it.
-            uniform int uIdentity;
-            // Optional Hi-Z occlusion (uHiZMode 1; frustum-only when 0). uClipMat is
-            // the same record-space->clip product the frustum planes were extracted
-            // from (bakeAndDrawShadow / bakeMain). The pyramid is the shared
-            // HiZDepthPyramid texture reduced in Forward-Z (max = farthest occluder).
-            uniform int uHiZMode;
-            uniform mat4 uClipMat;
-            uniform vec2 uViewSize;      // pyramid source viewport (px)
-            uniform int uPyramidLevels;
-            layout(binding = 10) uniform sampler2D uDepthPyramid;
-
-            vec3 quatRotate(vec4 q, vec3 v) {
-                return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
-            }
-
-            // snorm16 decode (plain ALU): the record packs the quat as 4 signed
-            // 16-bit halves in 2 float words (low half first) - the CPU encoder is
-            // InstancedStaticPartRenderer.packSnorm16, the VAO reads the same bytes
-            // as GL_SHORT normalized.
-            float snorm16ToFloat(uint h) {
-                // int overload sign-extends the 16-bit field (mirrors the VAO's
-                // GL_SHORT normalized fetch and HalfFloat-style software decode).
-                return clamp(float(bitfieldExtract(int(h), 0, 16)) / 32767.0, -1.0, 1.0);
-            }
-
-            vec4 instQuat(uint base) {
-                uint wxy = floatBitsToUint(instData[base + INST_QUAT_WORD]);
-                uint wzw = floatBitsToUint(instData[base + INST_QUAT_WORD + 1u]);
-                return vec4(snorm16ToFloat(wxy), snorm16ToFloat(wxy >> 16u),
-                            snorm16ToFloat(wzw), snorm16ToFloat(wzw >> 16u));
-            }
-
-            // Conservative Hi-Z occluder depth for a screen-space AABB. Mirrors
-            // nucleus_cull.comp hizOccluder() exactly: mip chosen from the pixel
-            // extent, four texelFetches at the rect corners, MAX reduction
-            // (Forward-Z: the pyramid stores the FARTHEST occluder; sky footprints
-            // are filtered by the downsampler). A sub-pixel rect answers 1.0 =
-            // VISIBLE (the pyramid cannot answer at this resolution - returning
-            // near depth here culled legitimate distant instances in the MDI cull).
-            float hizOccluder(vec4 aabb) {
-                vec4 uv = clamp(vec4(min(aabb.xy, aabb.zw), max(aabb.xy, aabb.zw)), 0.0, 1.0);
-                ivec4 rect = ivec4(uv * uViewSize.xyxy + vec4(0.5, 0.5, -0.5, -0.5));
-                if (any(lessThan(rect.zw, rect.xy))) {
-                    return 1.0;
-                }
-                rect = min(rect, ivec4(uViewSize.xyxy) - 1) >> 1;
-
-                ivec2 extent = rect.zw - rect.xy;
-                int level = max(findMSB(max(extent.x, extent.y)), 0);
-                level += any(greaterThan((rect.zw >> level) - (rect.xy >> level), ivec2(1))) ? 1 : 0;
-                level = min(level, uPyramidLevels - 1);
-
-                ivec4 bounds = rect >> level;
-
-                float depth01 = texelFetch(uDepthPyramid, bounds.xw, level).r;
-                float depth11 = texelFetch(uDepthPyramid, bounds.zw, level).r;
-                float depth10 = texelFetch(uDepthPyramid, bounds.zy, level).r;
-                float depth00 = texelFetch(uDepthPyramid, bounds.xy, level).r;
-
-                return max(max(depth00, depth01), max(depth10, depth11));
-            }
-
-            // Projects the 8 corners of the conservative record-space AABB through
-            // uClipMat into a screen-space AABB + the box's nearest window depth.
-            // Returns false when any corner is behind the near plane (w <= 0): the
-            // box touches the camera plane, Hi-Z must not answer (visible).
-            bool projectAabb(vec3 center, vec3 he, out vec4 aabb, out float minDepth) {
-                aabb = vec4(1.0e9, 1.0e9, -1.0e9, -1.0e9);
-                minDepth = 1.0e9;
-                for (int i = 0; i < 8; i++) {
-                    vec3 sign3 = vec3(i & 1, (i >> 1) & 1, (i >> 2) & 1);
-                    vec3 p = center + mix(-he, he, sign3);
-                    vec4 clip = uClipMat * vec4(p, 1.0);
-                    if (clip.w <= 0.0) {
-                        return false;
-                    }
-                    vec3 ndc = clip.xyz / clip.w;
-                    aabb.xy = min(aabb.xy, ndc.xy);
-                    aabb.zw = max(aabb.zw, ndc.xy);
-                    // Forward-Z window depth (0 = near, 1 = far, standard GL depth
-                    // range [0,1]) - the convention the pyramid is reduced in and the
-                    // same hardwired Forward-Z NucleusGpuCuller.cull assumes. DH's
-                    // reverse-Z LOD depth never appears in this source texture: it is
-                    // re-encoded Forward-Z into the main buffer by DhDepthCopy.
-                    minDepth = min(minDepth, ndc.z * 0.5 + 0.5);
-                }
-                aabb = aabb * 0.5 + 0.5; // NDC -> uv
-                return true;
-            }
-
-            void main() {
-                uint gid = gl_GlobalInvocationID.x;
-                if (uPass == 0) {
-                    if (gid >= uint(uInstCount)) return;
-                    uint ib = gid * uint(uInstStride);
-                    // FADE_MODE_INVISIBLE (-1.0): the instance must not cast or
-                    // exist at all - drop it before the frustum planes so it never
-                    // lands in the compacted draw list (the vanilla MDI path
-                    // discards instFade <= 0 in the vsh; this is the bake mirror).
-                    if (instData[ib + INST_FADE_WORD] < 0.0) return;
-                    vec3 center = vec3(instData[ib + INST_POS_WORD], instData[ib + INST_POS_WORD + 1u], instData[ib + INST_POS_WORD + 2u]);
-                    vec4 q = instQuat(ib);
-                    vec3 bmin = vec3(instData[ib + INST_BMIN_WORD], instData[ib + INST_BMIN_WORD + 1u], instData[ib + INST_BMIN_WORD + 2u]);
-                    vec3 ext = vec3(instData[ib + INST_BSIZE_WORD], instData[ib + INST_BSIZE_WORD + 1u], instData[ib + INST_BSIZE_WORD + 2u]) * 0.5;
-                    // Conservative record-space AABB: rotate the model-space center and
-                    // take the abs-rotation rows times the model-space half extent.
-                    center += quatRotate(q, bmin + ext);
-                    float xx = q.x * q.x, yy = q.y * q.y, zz = q.z * q.z;
-                    float xy = q.x * q.y, xz = q.x * q.z, yz = q.y * q.z;
-                    float wx = q.w * q.x, wy = q.w * q.y, wz = q.w * q.z;
-                    vec3 he;
-                    he.x = abs(1.0 - 2.0 * (yy + zz)) * ext.x + abs(2.0 * (xy - wz)) * ext.y + abs(2.0 * (xz + wy)) * ext.z;
-                    he.y = abs(2.0 * (xy + wz)) * ext.x + abs(1.0 - 2.0 * (xx + zz)) * ext.y + abs(2.0 * (yz - wx)) * ext.z;
-                    he.z = abs(2.0 * (xz - wy)) * ext.x + abs(2.0 * (yz + wx)) * ext.y + abs(1.0 - 2.0 * (xx + yy)) * ext.z;
-                    for (int i = 0; i < 6; i++) {
-                        vec3 n = uPlane[i].xyz;
-                        float d = dot(n, center) + uPlane[i].w;
-                        float r = dot(abs(n), he);
-                        if (d + r < 0.0) return; // fully outside this plane
-                    }
-                    // Hi-Z occlusion phase (strictly optional, uHiZMode selects at
-                    // dispatch time): culled only when the box's nearest depth is
-                    // behind the stored occluder depth at EVERY sampled footprint
-                    // texel - conservative, mirroring NucleusGpuCuller's
-                    // depthSphere <= occluderDepth semantics.
-                    if (uHiZMode == 1) {
-                        vec4 aabb;
-                        float minDepth;
-                        if (projectAabb(center, he, aabb, minDepth)) {
-                            if (minDepth >= hizOccluder(aabb)) {
-                                atomicAdd(ctl[15u], 1u); // F3: culled-by-occlusion counter (pad word)
-                                return;
-                            }
-                        }
-                    }
-                    uint slot = atomicAdd(ctl[0u], 1u);
-                    ctl[16u + slot] = gid;
-                } else if (uPass == 1) {
-                    uint n;
-                    uint k;
-                    uint slot;
-                    uint inst;
-                    if (uIdentity != 0) {
-                        n = uint(uInstCount);
-                        k = gid % uint(uIdxCount);
-                        slot = gid / uint(uIdxCount);
-                        if (k >= uint(uIdxCount) || slot >= n) return;
-                        inst = slot;
-                    } else {
-                        n = ctl[0u];
-                        k = gid;
-                        slot = gl_GlobalInvocationID.y + gl_GlobalInvocationID.z * gl_NumWorkGroups.y;
-                        if (k >= uint(uIdxCount) || slot >= n) return;
-                        inst = ctl[16u + slot];
-                    }
-                    uint outIdx = uint(uEboBase) + slot * uint(uIdxCount) + k;
-                    ebo[outIdx] = uint(uVertBase) + inst * uint(uVertCount) + baseIdx[k];
-                } else {
-                    if (gid != 0u) return;
-                    uint n = ctl[0u];
-                    // glDrawElementsIndirect command (words 4..8)
-                    ctl[4u] = uint(uIdxCount) * n; // indexCount
-                    ctl[5u] = 1u;                  // instanceCount
-                    ctl[6u] = uint(uEboBase);      // firstIndex
-                    ctl[7u] = 0u;                  // baseVertex
-                    ctl[8u] = 0u;                  // baseInstance
-                    if (uCmdSlot >= 0) {
-                        // Pool command for the GPU-count flush path: the flush
-                        // draws this store with glMultiDrawElementsIndirectCount
-                        // (drawcount = pending entry count, CPU-known; zero-index
-                        // commands are legal no-ops), so indexCount carries the
-                        // GPU-side visible count and no CPU readback is needed.
-                        // firstIndex = the mesh's EBO range start; baseVertex = 0
-                        // (output vertices already carry vertBase), same shape as
-                        // the CPU-built command in flushPool.
-                        uint w = uint(uCmdSlot) * 5u;
-                        cmdWords[w + 0u] = uint(uIdxCount) * n;
-                        cmdWords[w + 1u] = 1u;
-                        cmdWords[w + 2u] = uint(uEboBase);
-                        cmdWords[w + 3u] = 0u;
-                        cmdWords[w + 4u] = 0u;
-                    }
-                    // EBO-build dispatch triplet (words 9..11) - the dispatcher
-                    // reads a full (x,y,z) triple: X = index groups, Y = visible instance count, Z = 1.
-                    ctl[9u]  = (uint(uIdxCount) + 63u) / 64u;
-                    ctl[10u] = min(n, 65535u);
-                    ctl[11u] = (n + 65534u) / 65535u;
-                }
-            }
-            """;
+    private static void ensureShadersLoaded() {
+        if (COMPUTE_SOURCE == null) {
+            COMPUTE_SOURCE = GlShaderUtil.loadResource(NucleusGpuBaker.class, "/assets/hbm_m/shaders/bake/bake_expand.comp");
+        }
+        if (CULL_SOURCE == null) {
+            CULL_SOURCE = GlShaderUtil.loadResource(NucleusGpuBaker.class, "/assets/hbm_m/shaders/bake/bake_cull.comp");
+        }
+    }
 }

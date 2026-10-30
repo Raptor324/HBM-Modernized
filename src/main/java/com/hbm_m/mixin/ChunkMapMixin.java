@@ -134,7 +134,11 @@ public abstract class ChunkMapMixin {
 
     @Redirect(
             method = "lambda$scheduleUnload$12",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ChunkHolder;isReadyForSaving()Z"))
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ChunkHolder;isReadyForSaving()Z"),
+            // Синтетическое имя лямбды сдвинется, если любой другой мод (C2ME, Moonrise)
+            // или минор NeoForge добавит лямбду в ChunkMap - с defaultRequire: 1 это
+            // был бы краш на старте. Хуже: без миксина ваниль снова зависает на сейве.
+            require = 0)
     private boolean hbm$capUnloadRetries(ChunkHolder holder) {
         if (holder.isReadyForSaving()) {
             hbm$unloadRetries.remove(holder.getPos().toLong());
@@ -183,8 +187,15 @@ public abstract class ChunkMapMixin {
                     target = "Lnet/minecraft/server/level/ChunkHolder;getGenerationRefCount()I"))
     private int hbm$guardToDropRefCheck(ChunkHolder holder) {
         int refs = holder.getGenerationRefCount();
-        if (refs > 0
-                && hbm$forceReleaseEnabled()
+        if (refs <= 0) {
+            // Чанк уже готов к выгрузке: сбрасываем метку «первого наблюдения не-готов»,
+            // иначе запись, оставленная прошлым проходом с refs > 0, через 3+ минуты
+            // заставит releaseLeakedState мгновенно убить живые refs при следующем
+            // попадании чанка в processUnloads под легитимную генерацию соседа.
+            hbm$firstNotReadyAt.remove(holder.getPos().toLong());
+            return refs;
+        }
+        if (hbm$forceReleaseEnabled()
                 && this.level.getServer().isRunning()
                 && holder instanceof net.minecraft.server.level.GenerationChunkHolder gen) {
             hbm$releaseLeakedState(gen, holder.getPos().toLong(), System.currentTimeMillis());
@@ -221,6 +232,9 @@ public abstract class ChunkMapMixin {
         if (pending == 0) {
             if (refs > 0 && waited >= hbm$LEAK_REFS_MS) {
                 while (gen.getGenerationRefCount() > 0) gen.decreaseGenerationRefCount();
+                // Метку времени сбрасываем: иначе следующий проход (уже с refs == 0)
+                // прочитает старое `first` и мгновенно влетит в dead-pipeline ветку.
+                hbm$firstNotReadyAt.remove(posLong);
                 if (now - hbm$lastWarnAt > 1000) {
                     hbm$lastWarnAt = now;
                     MainRegistry.LOGGER.warn(
@@ -249,6 +263,9 @@ public abstract class ChunkMapMixin {
         if (refs > 0) {
             while (gen.getGenerationRefCount() > 0) gen.decreaseGenerationRefCount();
         }
+        // Форс-релиз состоялся — отсчёт с нуля: следующее застревание этого чанка
+        // обязано прожить полный гейт заново, а не унаследовать пятиминутную метку.
+        hbm$firstNotReadyAt.remove(posLong);
         if (now - hbm$lastWarnAt > 1000) {
             hbm$lastWarnAt = now;
             MainRegistry.LOGGER.warn(

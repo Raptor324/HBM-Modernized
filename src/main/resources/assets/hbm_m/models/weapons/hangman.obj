@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'hangman.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Bullets
 v 0.176776 0.176778 -2.231359
 v 0.000000 0.250001 -2.231359

@@ -394,6 +394,8 @@ public class AnvilBlockEntity extends BaseHbmBlockEntity implements MenuProvider
         List<ItemStack> produced = rollOutputs(level, recipe, craftCount);
         applyEnergyToOutputs(produced, tracker.getTotalEnergy());
         if (!produced.isEmpty()) {
+            // FFA: Achivements fuer construction-Kraefte (AnvilMenu bulk loop fired pro Ausgang)
+            com.hbm_m.advancement.AchievementHandler.fire(player, produced.get(0));
             giveStacksToPlayer(player, produced);
         }
 

@@ -21,6 +21,16 @@ import org.spongepowered.asm.mixin.injection.Redirect;
  * на 1.21.1 такого вызова нет - инъекция не находит точку и скипается.
  * Параметр {@code Object}: класс forge-интерфейса отсутствует на neoforge-
  * класспасе, а супертип в сигнатуре хендлера Mixin принимает.
+ * <p>
+ * Покрытие (аудит 2026-10-29): этот миксин работает только на 1.20.1
+ * Embeddium (единственный таргет, где есть и пакет {@code me.jellysquid}, и
+ * вызов {@code IForgeBlockEntity#getRenderBoundingBox}). На 1.21.1 Embeddium
+ * 1.0.x переименовал рендерер в {@code org.embeddedt.embeddium.impl.render.
+ * EmbeddiumWorldRenderer} и перенёс куллинг на
+ * {@code BlockEntityRenderer#getRenderBoundingBox(be)} (NeoForge-экстеншен) -
+ * это покрывает {@link EmbeddiumRenderBoundsMixin}. У нативного Sodium 0.6+
+ * вызова {@code getRenderBoundingBox} нет вовсе (куллинг через ванильный
+ * {@code getBoundingBoxForCulling()} с тривиальным дефолтом) - кэш там не нужен.
  */
 @Pseudo
 @Mixin(targets = "me.jellysquid.mods.sodium.client.render.SodiumWorldRenderer", remap = false)

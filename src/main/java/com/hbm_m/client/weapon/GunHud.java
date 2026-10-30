@@ -36,7 +36,12 @@ public final class GunHud {
         int w = g.guiWidth(), h = g.guiHeight();
         RenderSystem.enableBlend();
         RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.ONE_MINUS_DST_COLOR, GlStateManager.DestFactor.ONE_MINUS_SRC_COLOR, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
-        g.blit(MISC, w / 2 - (size / 2), h / 2 - (size / 2), cross.x, cross.y, size, size);
+        if (size == 32) {
+            // L_* crosshairs (32x32) have a 1-pixel cell boundary in overlay_misc.png; step in by 1px
+            g.blit(MISC, w / 2 - ((size - 2) / 2), h / 2 - ((size - 2) / 2), cross.x + 1, cross.y + 1, size - 2, size - 2);
+        } else {
+            g.blit(MISC, w / 2 - (size / 2), h / 2 - (size / 2), cross.x, cross.y, size, size);
+        }
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableBlend();
     }

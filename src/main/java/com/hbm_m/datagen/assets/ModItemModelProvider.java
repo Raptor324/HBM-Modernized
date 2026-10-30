@@ -165,20 +165,6 @@ public class ModItemModelProvider extends ItemModelProvider {
         // Sentry-Turret Munition (MVP-Platzhalter, nutzt vorhandene Ammo-DGK-Textur)
         powderTexture(ModItems.TURRET_AMMO, "turret_ammo");
 
-        // Echte 9mm/.50/5.56mm-Munition fuer Sentry/Chekhov/Friendly (Platzhalter-Textur, bis eigene Assets vorhanden sind)
-        powderTexture(ModItems.AMMO_9MM_SP, "ammo_9mm_sp");
-        powderTexture(ModItems.AMMO_9MM_FMJ, "ammo_9mm_fmj");
-        powderTexture(ModItems.AMMO_9MM_JHP, "ammo_9mm_jhp");
-        powderTexture(ModItems.AMMO_9MM_AP, "ammo_9mm_ap");
-        powderTexture(ModItems.AMMO_50_SP, "ammo_50_sp");
-        powderTexture(ModItems.AMMO_50_FMJ, "ammo_50_fmj");
-        powderTexture(ModItems.AMMO_50_JHP, "ammo_50_jhp");
-        powderTexture(ModItems.AMMO_50_AP, "ammo_50_ap");
-        powderTexture(ModItems.AMMO_50_DU, "ammo_50_du");
-        powderTexture(ModItems.AMMO_556_SP, "ammo_556_sp");
-        powderTexture(ModItems.AMMO_556_FMJ, "ammo_556_fmj");
-        powderTexture(ModItems.AMMO_556_JHP, "ammo_556_jhp");
-        powderTexture(ModItems.AMMO_556_AP, "ammo_556_ap");
         // Every rocket used to fall back to the DGK grenade icon; each now carries its own
         // art, taken from the original's projectile textures.
         powderTexture(ModItems.ROCKET_HIMARS_STANDARD, "rocket_himars_standard");
@@ -194,8 +180,6 @@ public class ModItemModelProvider extends ItemModelProvider {
         powderTexture(ModItems.ROCKET_TURRET_DEMO, "rocket_turret_demo");
         powderTexture(ModItems.ROCKET_TURRET_INC, "rocket_turret_inc");
         powderTexture(ModItems.ROCKET_TURRET_PHOSPHORUS, "rocket_turret_phosphorus");
-        powderTexture(ModItems.AMMO_TAU_URANIUM, "ammo_tau_uranium");
-        powderTexture(ModItems.AMMO_FLAME_DIESEL, "ammo_flame_diesel");
 
         // Missile-Assembly-Teile (Platzhalter-Texturen, bis eigene Assets vorhanden sind)
         powderTexture(ModItems.MISSILE_FUSELAGE, "pipes_steel");
@@ -1252,7 +1236,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         withExistingParent("machine_precass", modLoc("block/machines/precass_item"));
         withExistingParent("soyuz_capsule", modLoc("block/machines/soyuz_capsule_item"));
         withExistingParent("piston_inserter", modLoc("block/machines/piston_inserter_item"));
-        withExistingParent("refueler", modLoc("block/machines/refueler_item"));
+        withExistingParent("refueler", modLoc("block/machines/refueler"));
         withExistingParent("lantern_behemoth", "minecraft:block/cube_all").texture("all", modLoc("block/block_rust"));
         // Original ItemModMinecart: Basis-Symbol + Art-Overlay
         withExistingParent("cart_empty_wood", "item/generated").texture("layer0", modLoc("item/cart_base_wood")).texture("layer1", modLoc("item/cart_overlay_empty"));

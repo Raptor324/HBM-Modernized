@@ -7,7 +7,6 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.core.Direction;
@@ -26,12 +25,14 @@ import com.hbm_m.platform.RenderHooks;
 /**
  * Demon Core Lamp rays: 16 additive quads per ring, two rings (slightly below /
  * above the block center) forming a fan of light rays that shoot outward along
- * the block's facing axis, plus a bright crossed-quad core. The lamp sphere
- * itself is the chunk-meshed OBJ block model; only the rays/core are drawn here.
+ * the block's facing axis, plus a bright crossed-quad core. The lamp sphere itself is the chunk-meshed OBJ
+ * block model; only the rays/core are drawn here.
  *
- * <p>Rays and core use vanilla {@link RenderType#beaconBeam} (POSITION_TEX with
- * the type's own texture, LIGHTNING additive blend, no cull, no depth write),
- * drawn through an isolated {@link PlainBufferSource}. That is the only stable
+ * <p>Rays and core use {@link com.hbm_m.client.ClientRenderHandler.CustomRenderTypes#DEMON_LAMP_RAYS}
+ * (POSITION_COLOR, additive LIGHTNING blend, no cull, NO depth write — the
+ * depth-writing vanilla {@code lightning()} made translucent water/particles
+ * drawn later fail the depth test behind the ray quads). Drawn through an
+ * isolated {@link PlainBufferSource}. That is the only stable
  * combination under shaderpacks, established over four iterations:
  * <ul>
  *   <li>custom render types are unusable - Iris masks vanilla shaders on them and
@@ -103,7 +104,6 @@ public class DemonLampRenderer implements BlockEntityRenderer<DemonLampBlockEnti
         pose.translate(0.5D, 0.5D, 0.5D);
         orient(pose, facing);
         pose.translate(0.0D, -0.5D, 0.0D);
-
         Matrix4f matrix = pose.last().pose();
 
         // Rings: additive POSITION_COLOR, split into four brightness segments per
@@ -111,7 +111,7 @@ public class DemonLampRenderer implements BlockEntityRenderer<DemonLampBlockEnti
         // color at all - the stepped segments fake the radial fade there; packs
         // with varying interpolation render them as a piecewise-smooth fade.
         MultiBufferSource.BufferSource source = raysSource();
-        VertexConsumer buf = source.getBuffer(RenderType.lightning());
+        VertexConsumer buf = source.getBuffer(com.hbm_m.client.ClientRenderHandler.CustomRenderTypes.DEMON_LAMP_RAYS);
         emitRays(matrix, buf);
         // White in the shader sampler: pack fallback programs for lightning sample
         // gtexture at undefined UVs; white makes that a no-op. Vanilla lightning
@@ -121,14 +121,15 @@ public class DemonLampRenderer implements BlockEntityRenderer<DemonLampBlockEnti
 
         // Emissive core: bright crossed quads at the block center - pack bloom and
         // the vanilla additive blend both pick these up as the light source itself.
-        VertexConsumer coreBuf = source.getBuffer(RenderType.lightning());
+        VertexConsumer coreBuf = source.getBuffer(com.hbm_m.client.ClientRenderHandler.CustomRenderTypes.DEMON_LAMP_RAYS);
         emitCore(matrix, coreBuf);
         source.endBatch();
 
         pose.popPose();
     }
 
-    /** Rotates local space so the +Y ray fan points along {@code facing}. */
+    /** Rotates local space so the +Y ray fan points along {@code facing}
+     * (повороты 1:1 из RenderDemonLamp 1.7.10). */
     public static void orient(PoseStack poseStack, Direction facing) {
         switch (facing) {
             case DOWN -> poseStack.mulPose(Axis.XP.rotationDegrees(180));

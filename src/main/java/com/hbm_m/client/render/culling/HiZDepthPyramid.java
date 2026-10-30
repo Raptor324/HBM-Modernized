@@ -2,6 +2,7 @@ package com.hbm_m.client.render.culling;
 
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import com.hbm_m.client.render.shader.GlShaderUtil;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -141,22 +142,9 @@ public final class HiZDepthPyramid {
 
     private static int compileComputeShader(String resourcePath) {
         String source = loadShaderSource(resourcePath);
-        int shader = GL20.glCreateShader(GL43.GL_COMPUTE_SHADER);
-        com.hbm_m.platform.RenderHooks.safeShaderSource(shader, source);
-        GL20.glCompileShader(shader);
-        if (GL20.glGetShaderi(shader, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
-            String log = GL20.glGetShaderInfoLog(shader, 4096);
-            GL20.glDeleteShader(shader);
-            throw new IllegalStateException("Failed to compile compute shader " + resourcePath + ": " + log);
-        }
-        int program = GL20.glCreateProgram();
-        GL20.glAttachShader(program, shader);
-        GL20.glLinkProgram(program);
-        GL20.glDeleteShader(shader);
-        if (GL20.glGetProgrami(program, GL20.GL_LINK_STATUS) == GL11.GL_FALSE) {
-            String log = GL20.glGetProgramInfoLog(program, 4096);
-            GL20.glDeleteProgram(program);
-            throw new IllegalStateException("Failed to link compute program for " + resourcePath + ": " + log);
+        int program = GlShaderUtil.createComputeProgram(source, "HiZDepthPyramid");
+        if (program == 0) {
+            throw new IllegalStateException("Failed to compile/link compute program for " + resourcePath);
         }
         return program;
     }

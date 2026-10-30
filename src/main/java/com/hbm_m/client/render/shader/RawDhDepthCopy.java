@@ -1,9 +1,7 @@
 package com.hbm_m.client.render.shader;
 
-import com.hbm_m.client.render.GlVaoSafety;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.renderer.ShaderInstance;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL15;
@@ -35,8 +33,6 @@ public final class RawDhDepthCopy {
     private static int uFadeMaskDist = -1;
     private static int uReverseZ = -1;
     private static int uSampler = -1;
-    private static int vao = -1;
-    private static int vbo = -1;
 
     // One-way session latch for program construction failures (pattern:
     // IrisInstancedShaders.constructionFailed). Deliberately NEVER reset - this
@@ -50,104 +46,75 @@ public final class RawDhDepthCopy {
 
     private RawDhDepthCopy() {}
 
-    private static final String VSH = """
-            #version 150
-            in vec3 Position;
-            out vec2 uv;
-            void main() {
-                gl_Position = vec4(Position, 1.0);
-                uv = Position.xy * 0.5 + 0.5;
-            }
-            """;
-
-    private static final String FSH = """
-            #version 150
-            uniform sampler2D uDepthTex;
-            uniform float uDhNear;
-            uniform float uDhFar;
-            uniform float uOutNear;
-            uniform float uOutFar;
-            uniform float uFadeMaskDist;
-            // DH depth convention: > 0.5 = REVERSE_Z (DH 3.3.1+ without a pack,
-            // near=1/sky=0), otherwise FORWARD_Z. Detection in DhClientState.
-            uniform float uReverseZ;
-            in vec2 uv;
-            void main() {
-                float d = texture(uDepthTex, uv).r;
-                bool reverseZ = uReverseZ > 0.5;
-                if (reverseZ ? (d <= 1.0e-6) : (d >= 0.999999)) { discard; }
-                // REVERSE_Z (DH 3.3.1+): d in [0..1] (1 = near, 0 = far),
-                // dist = fn/(n + d*(f-n)). The ndc [-1..1] mapping is WRONG here:
-                // for d < 0.5 the denominator goes negative, clamps to 1e-6 and
-                // every LOD beyond ~15 blocks decoded to ~3e10 blocks.
-                float dist = reverseZ
-                    ? (uDhFar * uDhNear) / max(uDhNear + d * (uDhFar - uDhNear), 1e-6)
-                    : (2.0 * uDhFar * uDhNear) / max((uDhFar + uDhNear) - (d * 2.0 - 1.0) * (uDhFar - uDhNear), 1e-6);
-                // DH dither-fade zone ("Fade Nearby DH LODs"): DEPTH32F there is noise.
-                if (dist < uFadeMaskDist) { discard; }
-                // Exact window of our projection: window = 1 - fnEff/dist,
-                // fnEff = F*N/(F-N) (NOT 0.1/dist - a 2x error in occluder distance).
-                float fnEff = (uOutFar * uOutNear) / (uOutFar - uOutNear);
-                gl_FragDepth = clamp((1.0 - fnEff / dist) + 1.0e-6, 0.0, 1.0);
-            }
-            """;
+    /**
+     * The Iris raw path compiles the SAME dh_depth_blit.fsh the vanilla path
+     * uses via its ShaderInstance - one source of truth for the clip-plane
+     * math. Only the uniform upload differs (glUniform* vs safeGetUniform);
+     * the uniform names below are the ones declared in the .fsh file.
+     */
+    private static final String FSH_RESOURCE =
+            "/assets/hbm_m/shaders/core/dh_depth_blit.fsh";
 
     /** Writes into the ALREADY BOUND draw framebuffer - call after the content shader's apply(). */
     public static void copyIntoBoundFramebuffer(float dhNear, float dhFar, int depthTextureId) {
         if (depthTextureId <= 0 || dhNear <= 0.0F || dhFar <= dhNear) {
             return;
         }
-        if (!ensureProgram() || !ensureQuad()) {
-            return;
-        }
-
-        int prevProgram = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
         int prevVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
-        int prevActiveTex = GL11.glGetInteger(GL13.GL_ACTIVE_TEXTURE);
-        boolean cullWasEnabled = GL11.glIsEnabled(GL11.GL_CULL_FACE);
-        // Previous unit-0 texture: restore THAT one, not raw zero. Previously,
-        // after this pass TU0 was left with an empty texture while the
-        // GlStateManager cache was live, so subsequent vanilla _bindTexture
-        // calls were no-ops and later draws (particles) sampled "nothing"
-        // (black squares).
-        GlStateManager._activeTexture(GL13.GL_TEXTURE0);
-        int prevUnit0Tex = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
+        int prevVbo = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
+        try {
+            if (!ensureProgram() || !RawFullscreenQuad.ensureQuad()) {
+                return;
+            }
 
-        GlStateManager._colorMask(false, false, false, false);
-        RenderSystem.depthMask(true);
-        RenderSystem.enableDepthTest();
-        // Write only closer depth: vanilla geometry in the pixel is kept,
-        // sky (1.0) is replaced with the LOD.
-        RenderSystem.depthFunc(GL11.GL_LESS);
-        RenderSystem.disableCull();
+            int prevProgram = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
+            int prevActiveTex = GL11.glGetInteger(GL13.GL_ACTIVE_TEXTURE);
+            boolean cullWasEnabled = GL11.glIsEnabled(GL11.GL_CULL_FACE);
+            // Previous unit-0 texture: restore THAT one, not raw zero. Previously,
+            // after this pass TU0 was left with an empty texture while the
+            // GlStateManager cache was live, so subsequent vanilla _bindTexture
+            // calls were no-ops and later draws (particles) sampled "nothing"
+            // (black squares).
+            GlStateManager._activeTexture(GL13.GL_TEXTURE0);
+            int prevUnit0Tex = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
 
-        GlStateManager._glUseProgram(program);
-        GL20.glUniform1f(uDhNear, dhNear);
-        GL20.glUniform1f(uDhFar, dhFar);
-        GL20.glUniform1f(uOutNear, com.hbm_m.client.compat.dh.DhClientCompat.extendedNear());
-        GL20.glUniform1f(uOutFar, com.hbm_m.client.compat.dh.DhClientCompat.extendedFar());
-        GL20.glUniform1f(uFadeMaskDist, com.hbm_m.client.compat.dh.DhOcclusionGpu.ditherFadeMaskDistance());
-        GL20.glUniform1f(uReverseZ,
-                com.hbm_m.client.compat.dh.DhClientState.dhReverseZ() ? 1.0F : 0.0F);
-        GlStateManager._activeTexture(GL13.GL_TEXTURE0);
-        GlStateManager._bindTexture(depthTextureId);
-        GL20.glUniform1i(uSampler, 0);
+            GlStateManager._colorMask(false, false, false, false);
+            RenderSystem.depthMask(true);
+            RenderSystem.enableDepthTest();
+            // Write only closer depth: vanilla geometry in the pixel is kept,
+            // sky (1.0) is replaced with the LOD.
+            RenderSystem.depthFunc(GL11.GL_LESS);
+            RenderSystem.disableCull();
 
-        GlStateManager._glBindVertexArray(vao);
-        GL11.glDrawArrays(GL11.GL_TRIANGLE_STRIP, 0, 4);
+            GlStateManager._glUseProgram(program);
+            GL20.glUniform1f(uDhNear, dhNear);
+            GL20.glUniform1f(uDhFar, dhFar);
+            GL20.glUniform1f(uOutNear, com.hbm_m.client.compat.dh.DhClientCompat.extendedNear());
+            GL20.glUniform1f(uOutFar, com.hbm_m.client.compat.dh.DhClientCompat.extendedFar());
+            GL20.glUniform1f(uFadeMaskDist, com.hbm_m.client.compat.dh.DhOcclusionGpu.ditherFadeMaskDistance());
+            GL20.glUniform1f(uReverseZ,
+                    com.hbm_m.client.compat.dh.DhClientState.dhReverseZ() ? 1.0F : 0.0F);
+            GlStateManager._activeTexture(GL13.GL_TEXTURE0);
+            GlStateManager._bindTexture(depthTextureId);
+            GL20.glUniform1i(uSampler, 0);
 
-        // Restore: put back the PREVIOUS unit-0 texture (feedback), then state -
-        // all through the managed API so the cache stays honest.
-        GlStateManager._activeTexture(GL13.GL_TEXTURE0);
-        GlStateManager._bindTexture(prevUnit0Tex);
-        GlStateManager._colorMask(true, true, true, true);
-        RenderSystem.depthFunc(GL43.GL_LEQUAL);
-        if (cullWasEnabled) {
-            RenderSystem.enableCull();
+            RawFullscreenQuad.draw();
+
+            // Restore: put back the PREVIOUS unit-0 texture (feedback), then state -
+            // all through the managed API so the cache stays honest.
+            GlStateManager._activeTexture(GL13.GL_TEXTURE0);
+            GlStateManager._bindTexture(prevUnit0Tex);
+            GlStateManager._colorMask(true, true, true, true);
+            RenderSystem.depthFunc(GL43.GL_LEQUAL);
+            if (cullWasEnabled) {
+                RenderSystem.enableCull();
+            }
+            GlStateManager._glUseProgram(prevProgram);
+            GlStateManager._activeTexture(prevActiveTex);
+        } finally {
+            GlStateManager._glBindVertexArray(prevVao);
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, prevVbo);
         }
-        GlStateManager._glBindVertexArray(prevVao);
-        GlStateManager._glUseProgram(prevProgram);
-        GlStateManager._activeTexture(prevActiveTex);
     }
 
     private static boolean ensureProgram() {
@@ -157,103 +124,20 @@ public final class RawDhDepthCopy {
         if (program != -1 && GL20.glIsProgram(program)) {
             return true;
         }
-        // Hoisted so every failure path can free what was already created.
-        int vs = 0;
-        int fs = 0;
-        int newProgram = 0;
-        try {
-            vs = compile(GL20.GL_VERTEX_SHADER, VSH);
-            fs = compile(GL20.GL_FRAGMENT_SHADER, FSH);
-            if (vs == 0 || fs == 0) {
-                // compile() already freed the failed stage; the other one is
-                // still unattached, so glDeleteShader frees it immediately
-                // (GL 4.6 spec §7.1; zero is silently ignored).
-                GL20.glDeleteShader(vs);
-                GL20.glDeleteShader(fs);
-                constructionFailed = true;
-                return false;
-            }
-            newProgram = GL20.glCreateProgram();
-            GL20.glAttachShader(newProgram, vs);
-            GL20.glAttachShader(newProgram, fs);
-            GL20.glBindAttribLocation(newProgram, 0, "Position");
-            GL20.glLinkProgram(newProgram);
-            if (GL20.glGetProgrami(newProgram, GL20.GL_LINK_STATUS) == GL11.GL_FALSE) {
-                com.hbm_m.main.MainRegistry.LOGGER.warn(
-                        "RawDhDepthCopy: link failed: {}", GL20.glGetProgramInfoLog(newProgram, 4096));
-                // A failed link leaves the program allocated (docs.gl glLinkProgram):
-                // flag both attached shaders, then delete the program. Deleting the
-                // program detaches them (GL 4.6 spec §7.3) and a flagged, detached
-                // shader is freed (§7.1).
-                GL20.glDeleteShader(vs);
-                GL20.glDeleteShader(fs);
-                GL20.glDeleteProgram(newProgram);
-                constructionFailed = true;
-                return false;
-            }
-            // Both shaders are attached: glDeleteShader only FLAGS them (GL 4.6
-            // spec §7.1) and they are freed when the program is deleted - the
-            // same process lifetime as the program itself.
-            GL20.glDeleteShader(vs);
-            GL20.glDeleteShader(fs);
-            uDhNear = GL20.glGetUniformLocation(newProgram, "uDhNear");
-            uDhFar = GL20.glGetUniformLocation(newProgram, "uDhFar");
-            uOutNear = GL20.glGetUniformLocation(newProgram, "uOutNear");
-            uOutFar = GL20.glGetUniformLocation(newProgram, "uOutFar");
-            uFadeMaskDist = GL20.glGetUniformLocation(newProgram, "uFadeMaskDist");
-            uReverseZ = GL20.glGetUniformLocation(newProgram, "uReverseZ");
-            uSampler = GL20.glGetUniformLocation(newProgram, "uDepthTex");
-            program = newProgram;
-            return true;
-        } catch (Throwable t) {
-            com.hbm_m.main.MainRegistry.LOGGER.warn("RawDhDepthCopy: program init failed: {}", t.toString());
-            // Free everything created before the throw (compile() already freed
-            // a stage whose compile failed; zero names are silently ignored).
-            GL20.glDeleteShader(vs);
-            GL20.glDeleteShader(fs);
-            GL20.glDeleteProgram(newProgram);
+        String fsh = GlShaderUtil.loadResource(RawDhDepthCopy.class, FSH_RESOURCE);
+        int newProgram = GlShaderUtil.createRasterProgram(RawFullscreenQuad.FULLSCREEN_VSH, fsh, java.util.Map.of(0, "Position"), "RawDhDepthCopy");
+        if (newProgram == 0) {
             constructionFailed = true;
             return false;
         }
-    }
-
-    private static int compile(int type, String source) {
-        int sh = GL20.glCreateShader(type);
-        com.hbm_m.platform.RenderHooks.safeShaderSource(sh, source);
-        GL20.glCompileShader(sh);
-        if (GL20.glGetShaderi(sh, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
-            com.hbm_m.main.MainRegistry.LOGGER.warn(
-                    "RawDhDepthCopy: compile failed: {}", GL20.glGetShaderInfoLog(sh, 4096));
-            // The failed shader is not attached anywhere yet, so glDeleteShader
-            // frees it immediately (GL 4.6 spec §7.1) - without this it leaks.
-            GL20.glDeleteShader(sh);
-            return 0;
-        }
-        return sh;
-    }
-
-    private static boolean ensureQuad() {
-        if (vao != -1 && GL30.glIsVertexArray(vao)) {
-            return true;
-        }
-        try {
-            vao = GL30.glGenVertexArrays();
-            vbo = GL15.glGenBuffers();
-            GlStateManager._glBindVertexArray(vao);
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
-            // TRIANGLE_STRIP: BL, BR, TL, TR
-            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, new float[]{
-                    -1f, -1f, 0f,
-                    1f, -1f, 0f,
-                    -1f, 1f, 0f,
-                    1f, 1f, 0f}, GL15.GL_STATIC_DRAW);
-            GL20.glEnableVertexAttribArray(0);
-            GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 12, 0);
-            GlVaoSafety.bindVertexArray(0);
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);            return true;
-        } catch (Throwable t) {
-            com.hbm_m.main.MainRegistry.LOGGER.warn("RawDhDepthCopy: quad init failed: {}", t.toString());
-            return false;
-        }
+        uDhNear = GL20.glGetUniformLocation(newProgram, "DhNear");
+        uDhFar = GL20.glGetUniformLocation(newProgram, "DhFar");
+        uOutNear = GL20.glGetUniformLocation(newProgram, "OutNear");
+        uOutFar = GL20.glGetUniformLocation(newProgram, "OutFar");
+        uFadeMaskDist = GL20.glGetUniformLocation(newProgram, "DhFadeMaskDist");
+        uReverseZ = GL20.glGetUniformLocation(newProgram, "DhReverseZ");
+        uSampler = GL20.glGetUniformLocation(newProgram, "Sampler0");
+        program = newProgram;
+        return true;
     }
 }

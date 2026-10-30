@@ -15,6 +15,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
 /**
@@ -103,6 +104,18 @@ public final class RenderHelperB {
     public static void clipPlane0(double a, double b, double c, double d) {
         clipPlane[0] = a; clipPlane[1] = b; clipPlane[2] = c; clipPlane[3] = d;
         clipInverse.set(GunGL.pose().last().pose()).invert();
+    }
+
+    public static void renderPart(ResourceLocation modelLocation, String part) {
+        if (!clipEnabled) {
+            GunGL.renderPart(modelLocation, part);
+            return;
+        }
+        ClipConsumer clip = new ClipConsumer(GunGL.buffer());
+        com.hbm_m.client.render.weapon.WeaponRenderRegistry.renderPartQuads(modelLocation, part, GunGL.pose(), clip,
+                GunGL.light(), OverlayTexture.NO_OVERLAY,
+                GunGL.red(), GunGL.green(), GunGL.blue(), GunGL.alpha());
+        clip.flush();
     }
 
     /** {@code model.renderPart(part)} unter Beachtung von {@code GL_CLIP_PLANE0}. */

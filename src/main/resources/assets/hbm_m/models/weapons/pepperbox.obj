@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'pepperbox.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Cylinder
 v 0.000000 0.125000 7.000000
 v -0.088388 0.088388 7.000000

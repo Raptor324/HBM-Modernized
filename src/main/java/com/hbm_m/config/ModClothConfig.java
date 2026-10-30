@@ -131,6 +131,8 @@ public class ModClothConfig {
     public boolean gunAnimsLegacy = false;
     public boolean gunModelFov = false;
     public boolean gunVisualRecoil = true;
+    /** Nicht im Original: multipliziert den Rueckstoss aller Waffen mit 10 ("Irre-Rueckstoss"). */
+    public boolean gunCrazyRecoil = false;
     public float gunAnimationSpeed = 1.0F;
     /** Original GeneralConfig 1.20_enableGuns: neue Waffen koennen abgefeuert werden. */
     public boolean enableGuns = true;

@@ -1,6 +1,7 @@
 package com.hbm_m.client.weapon.render;
 
-import com.hbm_m.client.render.SimpleObjModel;
+import com.hbm_m.client.render.weapon.WeaponKinematics;
+import com.hbm_m.client.render.weapon.WeaponRenderRegistry;
 import com.hbm_m.client.weapon.GunGL;
 import com.hbm_m.client.weapon.ItemRenderWeaponBase;
 import com.hbm_m.item.tool.ItemToolAbilityFueled;
@@ -19,7 +20,7 @@ import net.minecraft.world.item.ItemStack;
  */
 public class ItemRenderChainsaw extends ItemRenderWeaponBase {
 
-    public static final SimpleObjModel chainsaw = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/weapons/chainsaw.obj"));
+    public static final ResourceLocation chainsaw_loc = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/weapons/chainsaw.obj");
     public static final ResourceLocation chainsaw_tex = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/weapons/chainsaw.png");
 
     @Override public boolean customFirstPerson() { return false; }
@@ -81,27 +82,10 @@ public class ItemRenderChainsaw extends ItemRenderWeaponBase {
             default -> { }
         }
 
-        GunGL.renderPart(chainsaw, "Saw");
+        WeaponRenderRegistry.renderPart(chainsaw_loc, "Saw", GunGL.pose());
 
         boolean canOperate = item.getItem() instanceof ItemToolAbilityFueled fueled && fueled.canOperate(item);
-
-        for (int i = 0; i < 20; i++) {
-
-            double run = canOperate ? System.currentTimeMillis() % 100D * 0.25D / 100D : 0.0625D;
-            double forward = i * 0.25 + (run) - 2.0625;
-
-            GunGL.pushMatrix();
-
-            GunGL.translate(0, 0, 1.9375);
-            GunGL.translate(0, 0.375, 0.5625);
-            double angle = Mth.clamp(forward, 0, 0.25 * Math.PI);
-            GunGL.rotate(angle * 180D / (Math.PI * 0.25), 1, 0, 0);
-            GunGL.translate(0, -0.375, -0.5625);
-            if (forward < 0) GunGL.translate(0, 0, forward);
-            if (forward > Math.PI * 0.25) GunGL.translate(0, 0, forward - Math.PI * 0.25);
-            GunGL.renderPart(chainsaw, "Tooth");
-            GunGL.popMatrix();
-        }
+        WeaponKinematics.renderChainsawTeeth(chainsaw_loc, GunGL.pose(), canOperate, System.currentTimeMillis());
 
         GunGL.popMatrix();
     }

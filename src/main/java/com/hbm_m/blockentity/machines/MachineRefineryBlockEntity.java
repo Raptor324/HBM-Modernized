@@ -578,8 +578,8 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
         sidedItems.invalidate();
     }
     //?} elif neoforge {
-    /*
-    // Original {@code ISidedInventory}: Slot {11}; nichts hinein, Schwefel heraus.
+    
+    /*// Original {@code ISidedInventory}: Slot {11}; nichts hinein, Schwefel heraus.
     private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
             new com.hbm_m.blockentity.SidedItemAccess.Rules() {
                 @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 11 }; }

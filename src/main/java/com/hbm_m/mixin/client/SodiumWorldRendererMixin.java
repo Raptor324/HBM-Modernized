@@ -31,6 +31,19 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * </ul>
  * {@code @Pseudo} + {@code require = 0}: without a terrain mod the mixin
  * silently does not apply.
+ * <p>
+ * Coverage matrix (audit 2026-10-29):
+ * <ul>
+ *   <li>1.20.1 Embeddium - applies (this class, {@code me.jellysquid} package).</li>
+ *   <li>1.21.1 Embeddium 1.0.x - renderer renamed to
+ *       {@code org.embeddedt.embeddium.impl.render.EmbeddiumWorldRenderer};
+ *       covered by {@link EmbeddiumWorldRendererMixin} (same 10-param
+ *       signature).</li>
+ *   <li>1.21.1 native Sodium 0.6+ - package {@code net.caffeinemc.mods.sodium},
+ *       signature extended with Sodium-internal types; covered by
+ *       {@link CaffeineSodiumWorldRendererMixin} (HEAD inject via
+ *       {@code @Coerce} on the internal argument).</li>
+ * </ul>
  */
 @Pseudo
 @Mixin(targets = "me.jellysquid.mods.sodium.client.render.SodiumWorldRenderer", remap = false)

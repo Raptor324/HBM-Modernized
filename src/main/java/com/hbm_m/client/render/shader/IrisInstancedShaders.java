@@ -2,69 +2,22 @@ package com.hbm_m.client.render.shader;
 
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderInstance;
-
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
 
 @OnlyIn(Dist.CLIENT)
-/**
- * Factory of our {@code ExtendedShader} instances for true glDrawElementsInstanced
- * under Iris/Oculus: the shader selected by
- * {@link IrisInstancedEncoders#shaderName(boolean)} (our GLSL, uniforms with the
- * {@code iris_} prefix - ExtendedShader.getUniform() resolves
- * {@code "iris_" + name}) draws into the active pipeline's gbuffer / shadow FB.
- *
- * <p><b>Framebuffers:</b> {@code ExtendedShader.apply()} itself binds
- * {@code writingToBefore/AfterTranslucent} - therefore we SNAPSHOT the live
- * {@code GL_DRAW_FRAMEBUFFER_BINDING} (at call time the pack shader has already
- * bound the correct gbuffer/shadow FB): we read attachment names 0..7 + depth and
- * build our own {@code GlFramebuffer}s with the same textures. Both slots of the
- * pair are filled identically - which one apply() picks based on
- * {@code isBeforeTranslucent} does not matter.</p>
- *
- * <p><b>Draw targets:</b> at draw time the PACK's gbuffer FBO stays bound (the
- * pack program was applied first; we only swap the program), so our
- * fragment outputs land in the pack's own render targets through the
- * draw-buffers list the pack declared via its RENDERTARGETS/DRAWBUFFERS
- * directive. The shadow slot's single-output FSH (block_lit_iris.fsh) writes
- * vanilla-parity color to the first target; the main-pass FSH
- * (block_lit_instanced_packed.fsh, see IrisInstancedEncoders) writes the
- * pack's byte-paired packing scheme and is only built for packs whose gbuffers
- * source carries that signature. The {@code drawBuffers0(..., 1)} in
- * {@link #fillAttachments} only initializes the constructor framebuffers,
- * which are never bound at draw time.</p>
- *
- * <p>The ExtendedShader constructor is <b>identical</b> on Iris 1.20.1 (1.7.6) and
- * 1.21.1 (1.8+) - a single reflection setup with no adapter. Consumer/BiConsumer
- * are passed as erased {@code Consumer<Object>} (generics are erased - Iris
- * classes are not needed at compile time).</p>
- *
- * <p>Fail-safety: any reflection/GL error sets {@code available=false} and the
- * calling code stays on the previous (companion per-instance) path.</p>
- */
 public final class IrisInstancedShaders {
 
     private static volatile boolean reflectionTried = false;
     private static volatile boolean available = false;
 
-    private static Constructor<?> extendedShaderCtor;
-    private static Object alphaTestOff;          // AlphaTests.OFF
     private static Object pipeline;              // live IrisRenderingPipeline (swapped on rebuild, see refreshPipelineIfRebuilt)
     /** Generation {@link #pipeline} was fetched at; -1 = never resolved. */
     private static long pipelineGenSeen = -1L;
 
-    /** Per-pass cache: (pipeline generation, fboId, attachment signature) -> shader. */
-    private static final long[] cachedGen = { -1L, -1L };
-    private static final int[] cachedFbo = { -1, -1 };
-    private static final int[] cachedAttachSig = { 0, 0 };
     private static final ShaderInstance[] cachedShader = { null, null };
     private static final String[] cachedShaderName = { null, null };
     private static final Object[][] cachedFbPair = { null, null }; // [before, after] GlFramebuffer
@@ -81,59 +34,13 @@ public final class IrisInstancedShaders {
     // closePersistentIfActive has already switched the binding to the main
     // RenderTarget).
     private static final int[] capturedFbo = { -1, -1 };
-    private static final long[] capturedGen = { -1L, -1L };
-    private static final int[] capturedSig = { 0, 0 };
     private static final int[][] capturedColors = { new int[8], new int[8] };
     private static final int[] capturedColorCount = { 0, 0 };
     private static final int[] capturedDepth = { -1, -1 };
 
     private static boolean constructionLogged = false;
-    /** One-time DEBUG marker for the {@code ours_programId} reflection probe. */
-    private static volatile boolean programIdProbeFailLogged = false;
 
     private IrisInstancedShaders() {}
-
-    /**
-     * Program id of a built shader, for logging only. {@code getId()} resolves by
-     * name in dev, but production jars run SRG names - there the method is found
-     * by SHAPE instead (the unique public no-arg int getter on ShaderInstance;
-     * located by type the same way {@link ShaderBindResync} finds lastProgramId).
-     * Returns -1 when reflection cannot resolve - a cosmetic logging gap only.
-     */
-    private static int ours_programId(Object shader) {
-        try {
-            Class<?> c = shader.getClass();
-            java.lang.reflect.Method m = null;
-            try {
-                m = c.getMethod("getId");
-            } catch (NoSuchMethodException ignored) {
-                for (java.lang.reflect.Method cand : c.getMethods()) {
-                    if (cand.getParameterCount() == 0
-                            && cand.getReturnType() == int.class
-                            && !cand.isSynthetic()
-                            && !cand.isBridge()
-                            && !java.lang.reflect.Modifier.isStatic(cand.getModifiers())) {
-                        m = cand;
-                        break;
-                    }
-                }
-            }
-            return m == null ? -1 : (int) m.invoke(shader);
-        } catch (Exception | LinkageError t) {
-            // optional-mod probe (SRG/obfuscation drift is the expected failure) -
-            // cosmetic logging gap only, surfaced once at DEBUG
-            if (!programIdProbeFailLogged) {
-                programIdProbeFailLogged = true;
-                com.hbm_m.main.MainRegistry.LOGGER.debug(
-                        "[HBM-M] IrisInstancedShaders: program id probe failed ({})", t.toString());
-            }
-            return -1;
-        }
-    }
-
-    public static boolean isAvailable() {
-        return available;
-    }
 
     /**
      * One-time snapshot of the live FB (only needed as an ExtendedShader
@@ -161,10 +68,6 @@ public final class IrisInstancedShaders {
                 capturedColorCount[slot] > 0 ? capturedColors[slot][capturedColorCount[slot]-1] : -1,
                 capturedColorCount[slot],
                 capturedDepth[slot] == -1 ? "none" : String.valueOf(capturedDepth[slot]));
-    }
-
-    /** Compatibility: hook remains in InstancedRenderFrame, now a no-op. */
-    public static void onFrameStart() {
     }
 
     /**
@@ -216,27 +119,27 @@ public final class IrisInstancedShaders {
         Object[] fbs = null;
         try {
             // Built before the FB pair so a failure here cannot orphan FBOs.
-            Object customUniforms = newEmptyCustomUniforms();
+            Object customUniforms = IrisReflectionBridge.createEmptyCustomUniforms();
             fbs = buildFramebuffers(slot);
             if (fbs == null) {
                 return null;
             }
             VertexFormat format = requireVertexFormat();
-            Object shader = extendedShaderCtor.newInstance(
+            ShaderInstance shader = IrisReflectionBridge.createExtendedShader(
                     Minecraft.getInstance().getResourceManager(),
                     shaderName,
                     format,
                     Boolean.FALSE,
                     fbs[0], fbs[1],
                     null,
-                    alphaTestOff,
+                    IrisReflectionBridge.getAlphaTestOff(),
                     (java.util.function.Consumer<Object>) o -> { },
                     (java.util.function.BiConsumer<Object, Object>) (a, b) -> { },
                     Boolean.FALSE,
                     pipeline,
                     null,
                     customUniforms);
-            cachedShader[slot] = (ShaderInstance) shader;
+            cachedShader[slot] = shader;
             cachedShaderName[slot] = shaderName;
             cachedFbPair[slot] = fbs;
             constructionFailed[slot] = false;
@@ -244,7 +147,7 @@ public final class IrisInstancedShaders {
                 constructionLogged = true;
                 com.hbm_m.main.MainRegistry.LOGGER.info(
                         "[HBM-M] IrisInstancedShaders: ExtendedShader built (slot={}, programId={}, captureFbo={})",
-                        slot, ours_programId(shader), capturedFbo[slot]);
+                        slot, shader.getId(), capturedFbo[slot]);
             }
             return cachedShader[slot];
         } catch (Exception | LinkageError t) {
@@ -252,8 +155,8 @@ public final class IrisInstancedShaders {
             // construction - a throw from requireVertexFormat or the ctor up to
             // here would orphan both live GL FBOs; destroy them.
             if (fbs != null) {
-                GlFramebufferHolder.destroy(fbs[0]);
-                GlFramebufferHolder.destroy(fbs[1]);
+                IrisReflectionBridge.destroyGlFramebuffer(fbs[0]);
+                IrisReflectionBridge.destroyGlFramebuffer(fbs[1]);
             }
             constructionFailed[slot] = true;
             failedAtGeneration[slot] = generation;
@@ -279,18 +182,14 @@ public final class IrisInstancedShaders {
         Object before = null;
         Object after = null;
         try {
-            before = GlFramebufferHolder.newFramebuffer();
-            after = GlFramebufferHolder.newFramebuffer();
+            before = IrisReflectionBridge.createGlFramebuffer();
+            after = IrisReflectionBridge.createGlFramebuffer();
             fillAttachments(slot, before);
             fillAttachments(slot, after);
             return new Object[] { before, after };
         } catch (Exception t) {
-            // Whatever was constructed here is owned by nobody yet - each
-            // GlFramebuffer ctor allocated a real GL FBO and drawBuffers can
-            // throw IllegalArgumentException (over-limit count), so destroy
-            // both instead of orphaning them.
-            GlFramebufferHolder.destroy(before);
-            GlFramebufferHolder.destroy(after);
+            IrisReflectionBridge.destroyGlFramebuffer(before);
+            IrisReflectionBridge.destroyGlFramebuffer(after);
             MainLog.warn("IrisInstancedShaders: framebuffer capture failed", t);
             return null;
         }
@@ -298,15 +197,12 @@ public final class IrisInstancedShaders {
 
     private static void fillAttachments(int slot, Object framebuffer) throws Exception {
         for (int i = 0; i < capturedColorCount[slot]; i++) {
-            GlFramebufferHolder.addColorAttachment(framebuffer, i, capturedColors[slot][i]);
+            IrisReflectionBridge.addFramebufferColorAttachment(framebuffer, i, capturedColors[slot][i]);
         }
         if (capturedDepth[slot] != -1) {
-            GlFramebufferHolder.addDepthAttachment(framebuffer, capturedDepth[slot]);
+            IrisReflectionBridge.addFramebufferDepthAttachment(framebuffer, capturedDepth[slot]);
         }
-        // Only color attachment 0 on the CONSTRUCTOR framebuffers: these are
-        // never bound at draw time (the pack's own gbuffer FBO stays bound and
-        // carries the pack's draw-buffers directive - see the class javadoc).
-        GlFramebufferHolder.drawBuffers0(framebuffer, capturedColorCount[slot] > 0 ? 1 : 0);
+        IrisReflectionBridge.setFramebufferDrawBuffers(framebuffer, capturedColorCount[slot] > 0 ? 1 : 0);
     }
 
     /** Snapshots the texture names of the current GL_DRAW_FRAMEBUFFER into staging. */
@@ -335,14 +231,6 @@ public final class IrisInstancedShaders {
         return true;
     }
 
-    private static int attachmentSignature(int slot) {
-        int sig = capturedColorCount[slot] * 31 + capturedDepth[slot];
-        for (int i = 0; i < capturedColorCount[slot]; i++) {
-            sig = sig * 31 + capturedColors[slot][i];
-        }
-        return sig;
-    }
-
     private static int queryAttachment(int attachment) {
         int type = GL30.glGetFramebufferAttachmentParameteri(
                 GL30.GL_DRAW_FRAMEBUFFER, attachment, GL30.GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE);
@@ -358,67 +246,20 @@ public final class IrisInstancedShaders {
             return available;
         }
         reflectionTried = true;
-        try {
-            Class<?> extendedShader = Class.forName("net.irisshaders.iris.pipeline.programs.ExtendedShader");
-            Class<?> glFramebuffer = Class.forName("net.irisshaders.iris.gl.framebuffer.GlFramebuffer");
-
-            extendedShaderCtor = extendedShader.getDeclaredConstructor(
-                    net.minecraft.server.packs.resources.ResourceProvider.class,
-                    String.class,
-                    VertexFormat.class,
-                    boolean.class,
-                    glFramebuffer,
-                    glFramebuffer,
-                    Class.forName("net.irisshaders.iris.gl.blending.BlendModeOverride"),
-                    Class.forName("net.irisshaders.iris.gl.blending.AlphaTest"),
-                    java.util.function.Consumer.class,
-                    java.util.function.BiConsumer.class,
-                    boolean.class,
-                    Class.forName("net.irisshaders.iris.pipeline.IrisRenderingPipeline"),
-                    Class.forName("java.util.List"),
-                    Class.forName("net.irisshaders.iris.uniforms.custom.CustomUniforms"));
-            extendedShaderCtor.setAccessible(true);
-
-            Field off = Class.forName("net.irisshaders.iris.gl.blending.AlphaTests").getField("OFF");
-            alphaTestOff = off.get(null);
-
-            Object nullable = fetchLivePipeline();
-            if (nullable == null) {
-                MainLog.warn("IrisInstancedShaders: Iris pipeline is null — instanced path disabled", null);
-                return false;
-            }
-            pipeline = nullable;
-            pipelineGenSeen = IrisExtendedShaderAccess.getPipelineGeneration();
-            available = true;
-        } catch (Exception | LinkageError t) {
-            MainLog.warn("IrisInstancedShaders: reflection init failed — instanced Iris path disabled", t);
+        if (!IrisReflectionBridge.isIrisPresent() || !IrisReflectionBridge.isReflectionAvailable()) {
             available = false;
+            return false;
         }
-        return available;
-    }
-
-    /** Resolves {@code Iris.getPipelineManager().getPipelineNullable()}; null when there is no live pipeline. */
-    private static Object fetchLivePipeline() throws Exception {
-        Object manager = iris().getMethod("getPipelineManager").invoke(null);
-        return manager == null ? null : manager.getClass().getMethod("getPipelineNullable").invoke(manager);
-    }
-
-    /**
-     * Builds a FRESH empty CustomUniforms (Builder().build(), no uniforms) for a
-     * SINGLE ExtendedShader construction attempt - instances are NEVER shared.
-     * The ExtendedShader ctor inserts its own instance as a strong KEY into
-     * CustomUniforms.locationMap (mapholderToPass) - a plain fastutil map with
-     * no key-removal API - so one shared static would retain every constructed
-     * shader, and through ExtendedShader.parent every dead IrisRenderingPipeline,
-     * for process lifetime. A per-attempt instance is referenced only by its own
-     * shader's field, so it becomes garbage together with that shader whenever a
-     * slot is disposed (pipeline refresh) or the construction attempt fails.
-     */
-    private static Object newEmptyCustomUniforms() throws Exception {
-        Object builder = Class.forName("net.irisshaders.iris.uniforms.custom.CustomUniforms$Builder")
-                .getDeclaredConstructor().newInstance();
-        Method build = builder.getClass().getMethod("build", java.util.function.Consumer[].class);
-        return build.invoke(builder, new Object[] { new java.util.function.Consumer[0] });
+        Object nullable = IrisReflectionBridge.getLivePipeline();
+        if (nullable == null) {
+            MainLog.warn("IrisInstancedShaders: Iris pipeline is null — instanced path disabled", null);
+            available = false;
+            return false;
+        }
+        pipeline = nullable;
+        pipelineGenSeen = IrisExtendedShaderAccess.getPipelineGeneration();
+        available = true;
+        return true;
     }
 
     /**
@@ -437,38 +278,24 @@ public final class IrisInstancedShaders {
         if (generation == pipelineGenSeen) {
             return true;
         }
-        try {
-            Object nullable = fetchLivePipeline();
-            if (nullable == null) {
-                MainLog.warn("IrisInstancedShaders: Iris pipeline is null — instanced path disabled", null);
-                available = false;
-                pipelineGenSeen = -1L;
-                return false;
-            }
-            pipeline = nullable;
-            pipelineGenSeen = generation;
-            disposeSlot(0);
-            disposeSlot(1);
-            return true;
-        } catch (Exception | LinkageError t) {
-            MainLog.warn("IrisInstancedShaders: pipeline re-fetch failed — instanced Iris path disabled", t);
+        Object nullable = IrisReflectionBridge.getLivePipeline();
+        if (nullable == null) {
+            MainLog.warn("IrisInstancedShaders: Iris pipeline is null — instanced path disabled", null);
             available = false;
             pipelineGenSeen = -1L;
             return false;
         }
-    }
-
-    private static Class<?> iris() throws ClassNotFoundException {
-        return Class.forName("net.irisshaders.iris.Iris");
+        pipeline = nullable;
+        pipelineGenSeen = generation;
+        disposeSlot(0);
+        disposeSlot(1);
+        return true;
     }
 
     private static void disposeFramebuffers(int slot) {
         if (cachedFbPair[slot] != null) {
             for (Object fb : cachedFbPair[slot]) {
-                // Iris GlFramebuffer extends GlResource and implements
-                // AutoCloseable on NEITHER target - reflective GlResource.destroy()
-                // is the only free path (it lands in _glDeleteFramebuffers).
-                GlFramebufferHolder.destroy(fb);
+                IrisReflectionBridge.destroyGlFramebuffer(fb);
             }
         }
         cachedFbPair[slot] = null;
@@ -483,75 +310,9 @@ public final class IrisInstancedShaders {
             cachedShader[slot] = null;
         }
         disposeFramebuffers(slot);
-        cachedFbo[slot] = -1;
-        cachedGen[slot] = -1L;
-        cachedAttachSig[slot] = 0;
         cachedShaderName[slot] = null;
         constructionFailed[slot] = false;
         failedAtGeneration[slot] = -1L;
-    }
-
-    /** Deferred host for GlFramebuffer reflection (Iris classes referenced by name only). */
-    private static final class GlFramebufferHolder {
-        private static final Constructor<?> NO_ARG_CTOR;
-        private static final Method ADD_COLOR;
-        private static final Method ADD_DEPTH;
-        private static final Method DRAW_BUFFERS;
-
-        static {
-            try {
-                Class<?> fb = Class.forName("net.irisshaders.iris.gl.framebuffer.GlFramebuffer");
-                NO_ARG_CTOR = fb.getDeclaredConstructor();
-                NO_ARG_CTOR.setAccessible(true);
-                ADD_COLOR = fb.getMethod("addColorAttachment", int.class, int.class);
-                ADD_DEPTH = fb.getMethod("addDepthAttachment", int.class);
-                DRAW_BUFFERS = fb.getMethod("drawBuffers", int[].class);
-            } catch (Throwable t) {
-                throw new ExceptionInInitializerError(t);
-            }
-        }
-
-        static Object newFramebuffer() throws Exception {
-            return NO_ARG_CTOR.newInstance();
-        }
-
-        static void addColorAttachment(Object fb, int index, int texture) throws Exception {
-            ADD_COLOR.invoke(fb, index, texture);
-        }
-
-        static void addDepthAttachment(Object fb, int texture) throws Exception {
-            ADD_DEPTH.invoke(fb, texture);
-        }
-
-        static void drawBuffers0(Object fb, int count) throws Exception {
-            // WARNING: Iris GlFramebuffer.drawBuffers takes attachment INDICES and
-            // adds GL_COLOR_ATTACHMENT0 itself (otherwise IllegalArgumentException
-            // "attachment with index 36064" - see debug.log 0913).
-            int[] buffers = new int[count];
-            for (int i = 0; i < count; i++) {
-                buffers[i] = i;
-            }
-            DRAW_BUFFERS.invoke(fb, (Object) buffers);
-        }
-
-        /**
-         * Reflectively calls {@code GlResource.destroy()} - public final in BOTH
-         * Iris and Oculus, so {@code getMethod} resolves it on the GlFramebuffer
-         * subclass; it frees the GL FBO via {@code _glDeleteFramebuffers}. Must
-         * swallow (Exception | LinkageError): destroy() asserts validity (a second destroy throws
-         * IllegalStateException) and a failure here must never break the render
-         * loop. Framebuffer objects are deleted only by DeleteFramebuffers
-         * (GL 4.6 spec §9.2), so without this call they leak until context death.
-         */
-        static void destroy(Object fb) {
-            if (fb == null) {
-                return;
-            }
-            try {
-                fb.getClass().getMethod("destroy").invoke(fb);
-            } catch (Exception | LinkageError ignored) {
-            }
-        }
     }
 
     /** Local logger - avoid dragging MainRegistry into every reflection site. */

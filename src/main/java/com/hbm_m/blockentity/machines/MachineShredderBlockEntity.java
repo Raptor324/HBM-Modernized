@@ -320,14 +320,7 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
 
         for (int i = INPUT_START; i <= INPUT_END; i++) {
             ItemStack stack = inventory.getStackInSlot(i);
-            // E11 (Fork, nur mit Space-Addon): Wackelkopf "Gwen" im Schredder -> Schredder explodiert
-            if (!stack.isEmpty() && com.hbm_m.api.space.SpaceApi.forkActive() && com.hbm_m.api.space.SpaceApi.fork().shredderExplodes(stack)) {
-                if (level != null && !level.isClientSide) {
-                    level.destroyBlock(worldPosition, false);
-                    level.explode(null, worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5, 5F, true, net.minecraft.world.level.Level.ExplosionInteraction.BLOCK);
-                }
-                break;
-            } else if (!stack.isEmpty() && stack.getCount() > 0 && hasSpace(stack)) {
+            if (!stack.isEmpty() && stack.getCount() > 0 && hasSpace(stack)) {
                 return true;
             }
         }

@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'stinger.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Mag_Cube.002
 v -0.089029 2.933951 -0.760703
 v -0.089029 1.301304 -1.115814

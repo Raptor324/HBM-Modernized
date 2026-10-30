@@ -523,7 +523,8 @@ public final class NucleusDebug {
         } else {
             out.add("Uploads: §f" + uploadSpans + "§7 spans, " + humanBytes(uploadBytes) + " §7(" + channel + ")" + ovf);
         }
-        out.add("Parametric records: §7" + parametricRecords);
+        // "Parametric records" is appended to the Draws: line above (line ~412) -
+        // the standalone line was a duplicate.
         // Frozen-walk diagnostics (only when the epoch machinery is in play):
         // epoch = share of REAL stability checks that came out stable, walk =
         // share of frozen roster walks that confirmed every part, pbr = how

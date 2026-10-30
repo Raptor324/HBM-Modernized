@@ -62,9 +62,10 @@ public final class GunClientEventsForge {
         }
     }
 
+    /** Original {@code ModEventHandlerClient}: Rueckstoss, pro Frame integriert (siehe {@link GunClientHooks#onRenderFrame}). */
     @SubscribeEvent
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase == TickEvent.Phase.END) GunClientHooks.onClientTickEnd();
+    public static void onRenderTick(TickEvent.RenderTickEvent event) {
+        if (event.phase == TickEvent.Phase.START) GunClientHooks.onRenderFrame();
     }
 
     @SubscribeEvent
@@ -79,7 +80,6 @@ public final class GunClientEventsForge {
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.ComputeFovModifierEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
@@ -135,9 +135,10 @@ public final class GunClientEventsForge {
         }
     }
 
+    /* Original {@code ModEventHandlerClient}: Rueckstoss, pro Frame integriert (siehe {@link GunClientHooks#onRenderFrame}). ^/
     @SubscribeEvent
-    public static void onClientTick(ClientTickEvent.Post event) {
-        GunClientHooks.onClientTickEnd();
+    public static void onRenderFrame(net.neoforged.neoforge.client.event.RenderFrameEvent.Pre event) {
+        GunClientHooks.onRenderFrame();
     }
 
     @SubscribeEvent

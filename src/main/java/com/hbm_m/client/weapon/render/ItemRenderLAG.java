@@ -109,27 +109,17 @@ public class ItemRenderLAG extends ItemRenderWeaponBase {
 
 	@Override
 	public void setupThirdPerson(ItemStack stack) {
-		super.setupThirdPerson(stack);
-		GunGL.translate(0, 1, 1);
-
+		setupThirdPerson(stack, 1.0D, 0, 1, 1);
 	}
 
 	@Override
 	public void setupInv(ItemStack stack) {
-		super.setupInv(stack);
-		double scale = 1.5D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(25, 1, 0, 0);
-		GunGL.rotate(45, 0, 1, 0);
-		GunGL.translate(2.5, 1, 0);
+		setupInv(stack, 1.5D, 2.5, 1, 0);
 	}
 
 	@Override
 	public void setupModTable(ItemStack stack) {
-		double scale = -7.5D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(90, 0, 1, 0);
-		GunGL.translate(0, 0.5, -2);
+		setupModTable(stack, -7.5D, 0, 0.5, -2);
 	}
 
 	@Override

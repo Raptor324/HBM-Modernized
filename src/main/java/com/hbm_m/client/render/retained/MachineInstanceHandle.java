@@ -44,7 +44,9 @@ public final class MachineInstanceHandle {
         if (!active) return;
         if (allocator != null && slotIndices != null) {
             for (int slot : slotIndices) {
-                allocator.freeSlot(slot);
+                if (slot > 0 || allocator.isSlotAllocated(slot)) {
+                    allocator.freeSlot(slot);
+                }
             }
         }
         active = false;

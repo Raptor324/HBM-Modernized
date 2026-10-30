@@ -199,7 +199,10 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         cachedFadeAlphaU = shader.getUniform("FadeAlpha");
     }
 
-    protected abstract VboData buildVboData();
+    // buildVboData() and initVbo() now live in {@link AbstractGpuMesh} (moved
+    // verbatim) so that {@code WeaponPartVboRenderer} can extend
+    // {@code AbstractGpuMesh} directly as a sibling of this class without
+    // inheriting the machine-only block_lit / IrisCompanionMesh state.
 
     /**
      * Baked quads for Iris-compatible fallback path (BufferBuilder + GameRenderer shader).
@@ -587,83 +590,8 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         return irisCompanion.ensureBuilt() ? irisCompanion : null;
     }
 
-    protected void initVbo() {
-        if (initialized) return;
-
-        int previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
-        int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
-        int previousElementArrayBuffer = GL11.glGetInteger(GL15.GL_ELEMENT_ARRAY_BUFFER_BINDING);
-
-        VboData data = null;
-
-        try {
-            vaoId = GL30.glGenVertexArrays();
-            vboId = GL15.glGenBuffers();
-
-            data = buildVboData();
-            if (data == null) {
-                MainRegistry.LOGGER.warn("VboData is null, cannot initialize VBO");
-                throw new IllegalStateException("VboData is null");
-            }
-            indexCount = data.indices != null ? data.indices.remaining() : 0;
-            setObjBboxFrom(data);
-
-            int vs = data.bytesPerVertex;
-
-            GL30.glBindVertexArray(vaoId);
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
-            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, data.byteBuffer, GL15.GL_STATIC_DRAW);
-
-            GL20.glEnableVertexAttribArray(0);
-            GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, vs, 0);
-
-            GL20.glEnableVertexAttribArray(1);
-            GL20.glVertexAttribPointer(1, 3, GL11.GL_FLOAT, false, vs, 12);
-
-            GL20.glEnableVertexAttribArray(2);
-            GL20.glVertexAttribPointer(2, 2, GL11.GL_FLOAT, false, vs, 24);
-
-            if (data.indices != null && data.indices.remaining() > 0) {
-                eboId = GL15.glGenBuffers();
-                GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, eboId);
-                GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, data.indices, GL15.GL_STATIC_DRAW);
-            }
-
-            GL30.glBindVertexArray(0);
-
-            data.close();
-
-            initialized = true;
-
-        } catch (Exception e) {
-            if (data != null) {
-                data.close();
-            }
-
-            if (vaoId != -1) {
-                GL30.glDeleteVertexArrays(vaoId);
-                vaoId = -1;
-            }
-            if (vboId != -1) {
-                GL15.glDeleteBuffers(vboId);
-                vboId = -1;
-            }
-            if (eboId != -1) {
-                GL15.glDeleteBuffers(eboId);
-                eboId = -1;
-            }
-
-            throw e;
-
-        } finally {
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
-            GL30.glBindVertexArray(previousVao);
-
-            if (previousVao == 0) {
-                GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, previousElementArrayBuffer);
-            }
-        }
-    }
+    // initVbo() moved verbatim to {@link AbstractGpuMesh} so WeaponPartVboRenderer
+    // can extend AbstractGpuMesh directly as a sibling of this class.
 
     private void renderToBufferSource(PoseStack poseStack, int packedLight, List<BakedQuad> quads, MultiBufferSource bufferSource) {
         if (quads == null || quads.isEmpty() || bufferSource == null) return;
@@ -819,17 +747,9 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             // See the matching (more detailed) comment in
             // InstancedStaticPartRenderer.addInstance.
             long partHash = System.identityHashCode(this);
-            if (LightSampleCache.BASE_POSE_SET.get()) {
-                tmpLocalPose.set(LightSampleCache.BASE_POSE.get()).invert().mul(poseStack.last().pose());
-            } else {
-                var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
-                // L^-1 (FrameViewState): strips R_cam AND the view bob - the local
-                // pose is static while walking, light sample points stop jittering.
-                tmpLocalPose.set(FrameViewState.poseToWorldRotation()).mul(poseStack.last().pose());
-                tmpLocalPose.m30(tmpLocalPose.m30() - (float) (blockPos.getX() - cam.x));
-                tmpLocalPose.m31(tmpLocalPose.m31() - (float) (blockPos.getY() - cam.y));
-                tmpLocalPose.m32(tmpLocalPose.m32() - (float) (blockPos.getZ() - cam.z));
-            }
+            // See LightSampleCache.computeLocalPose: strips R_cam + view bob and
+            // subtracts the camera-relative block offset, zero heap allocations.
+            LightSampleCache.computeLocalPose(poseStack.last().pose(), blockPos, tmpLocalPose);
             LightSampleCache.getOrSample8(blockEntity, partHash, objBbox, blockPos,
                                           tmpLocalPose, packedLight, tmpCornerUV);
 
@@ -1003,16 +923,8 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         if (!shadowPassEarly && companion.supportsPerVertexLightmap()) {
             BlockPos anchor = (blockEntity != null) ? blockEntity.getBlockPos() : blockPos;
             if (anchor == null) anchor = BlockPos.ZERO;
-            if (LightSampleCache.BASE_POSE_SET.get()) {
-                tmpLocalPose.set(LightSampleCache.BASE_POSE.get()).invert().mul(poseStack.last().pose());
-            } else {
-                var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
-                // L^-1 (FrameViewState): strips R_cam AND the view bob (see render()).
-                tmpLocalPose.set(FrameViewState.poseToWorldRotation()).mul(poseStack.last().pose());
-                tmpLocalPose.m30(tmpLocalPose.m30() - (float) (anchor.getX() - cam.x));
-                tmpLocalPose.m31(tmpLocalPose.m31() - (float) (anchor.getY() - cam.y));
-                tmpLocalPose.m32(tmpLocalPose.m32() - (float) (anchor.getZ() - cam.z));
-            }
+            // See LightSampleCache.computeLocalPose (strips R_cam AND the view bob, see render()).
+            LightSampleCache.computeLocalPose(poseStack.last().pose(), anchor, tmpLocalPose);
 
             long partHash = System.identityHashCode(this);
             LightSampleCache.getOrSample8(blockEntity, partHash, objBbox, anchor,
@@ -1107,7 +1019,7 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
 
             com.mojang.blaze3d.platform.GlStateManager._glBindVertexArray(companion.getVaoId());
             
-            if (!com.hbm_m.client.render.shader.IrisShaderApply.tryApply(shader)) {
+            if (!com.hbm_m.client.render.shader.ShaderBindResync.tryApply(shader)) {
                 return false;
             }
 

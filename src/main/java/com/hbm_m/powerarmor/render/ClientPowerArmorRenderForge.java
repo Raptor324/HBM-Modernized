@@ -2,7 +2,7 @@
 package com.hbm_m.powerarmor.render;
 
 import com.hbm_m.main.MainRegistry;
-import com.hbm_m.mixin.LivingEntityRendererInvoker;
+import com.hbm_m.mixin.client.LivingEntityRendererInvoker;
 import com.hbm_m.powerarmor.layer.AJROPowerArmorLayer;
 import com.hbm_m.powerarmor.layer.AJRPowerArmorLayer;
 import com.hbm_m.powerarmor.layer.BismuthPowerArmorLayer;

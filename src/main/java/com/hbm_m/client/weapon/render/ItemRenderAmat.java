@@ -8,9 +8,7 @@ import com.hbm_m.item.weapon.sedna.WeaponItems;
 import com.hbm_m.item.weapon.sedna.mods.XWeaponModManager;
 import com.hbm_m.render.anim.HbmAnimations;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
 /** 1:1 {@code ItemRenderAmat}. */
@@ -146,42 +144,26 @@ public class ItemRenderAmat extends ItemRenderWeaponBase {
 
 	@Override
 	public void setupThirdPerson(ItemStack stack) {
-		super.setupThirdPerson(stack);
-		double scale = 1.25D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.translate(0, 0.5, 6.75);
+		setupThirdPerson(stack, 1.25D, 0, 0.5, 6.75);
 	}
 
 	@Override
 	public void setupInv(ItemStack stack) {
-		super.setupInv(stack);
 		if(isSilenced(stack)) {
-		double scale = 0.8175D;
-			GunGL.scale(scale, scale, scale);
-			GunGL.rotate(25, 1, 0, 0);
-			GunGL.rotate(45, 0, 1, 0);
-			GunGL.translate(-0.5, 0.5, -1);
+			setupInv(stack, 0.8175D, -0.5, 0.5, -1);
 		} else {
-			double scale = 0.9375D;
-			GunGL.scale(scale, scale, scale);
-			GunGL.rotate(25, 1, 0, 0);
-			GunGL.rotate(45, 0, 1, 0);
-			GunGL.translate(-0.5, 0.5, 0);
+			setupInv(stack, 0.9375D, -0.5, 0.5, 0);
 		}
 	}
 
 	@Override
 	public void setupModTable(ItemStack stack) {
-		double scale = -5.75D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(90, 0, 1, 0);
-		GunGL.translate(0, -0.25, -1.5);
+		setupModTable(stack, -5.75D, 0, -0.25, -1.5);
 	}
 
 	@Override
 	public void renderOther(ItemStack stack, ItemRenderType type, Object... data) {
 		GunGL.enableLighting();
-
 		GunGL.bindTexture(texture);
 		GunGL.renderPart(WeaponResources.amat, "Gun");
 		GunGL.renderPart(WeaponResources.amat, "Bolt");
@@ -200,25 +182,7 @@ public class ItemRenderAmat extends ItemRenderWeaponBase {
 			GunGL.renderPart(WeaponResources.g3, "Silencer");
 		} else {
 			GunGL.renderPart(WeaponResources.amat, "MuzzleBrake");
-		}
-
-		if(type == ItemRenderType.EQUIPPED && !silenced) {
-			LivingEntity ent = (LivingEntity) data[1];
-			long shot;
-			if(ent == Minecraft.getInstance().player) {
-				ItemGunBaseNT gun = (ItemGunBaseNT) stack.getItem();
-				shot = gun.lastShot[0];
-			} else {
-				shot = ItemRenderWeaponBase.flashMap.getOrDefault(ent, (long) -1);
-				if(shot < 0) return;
-			}
-
-			GunGL.pushMatrix();
-			GunGL.translate(0, 0.5, 11);
-			GunGL.rotate(90, 0, 1, 0);
-			GunGL.scale(0.75, 0.75, 0.75);
-			renderGapFlash(shot);
-			GunGL.popMatrix();
+			renderEquippedGapFlash(type, stack, data, 0, 0.5, 11, 90.0D, 0.75D);
 		}
 	}
 

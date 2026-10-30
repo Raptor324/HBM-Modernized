@@ -59,7 +59,6 @@ public final class InstancedRenderFrame {
         // Shadow phase has already run: an unflushed global shadow batch means the
         // mixin did not fire -> automatic fallback to the immediate shadow path.
         com.hbm_m.client.render.IrisShadowBatchCollector.onMainPassFrameStart();
-        com.hbm_m.client.render.shader.IrisInstancedShaders.onFrameStart();
         // Per-frame counters for the F3 ([Nucleus]) section; the overlay draws later in this frame.
         NucleusDebug.onFrameStart();
         // Event-driven light: invalidate light caches + render-dirty machines in
@@ -144,7 +143,10 @@ public final class InstancedRenderFrame {
 
             // All span uploads of this frame went to the staging ring - place a fence
             // guarding reuse of the range by the next frame.
-            PersistentUploadStaging staging = PersistentUploadStaging.getOrCreate();
+            // Only fence the staging ring if something actually instantiated and used it;
+            // calling getOrCreate() here allocated 32 MB of dead VRAM when GpuSpanUploader
+            // uses glBufferSubData.
+            PersistentUploadStaging staging = PersistentUploadStaging.peekOrNull();
             if (staging != null) {
                 staging.endFrame();
             }
@@ -175,7 +177,7 @@ public final class InstancedRenderFrame {
             // (otherwise the next frame may overwrite an unfinished range) and
             // invalidate the camera cache (serial did not grow - without the reset the
             // next frame would reuse a stale view matrix).
-            PersistentUploadStaging staging = PersistentUploadStaging.getOrCreate();
+            PersistentUploadStaging staging = PersistentUploadStaging.peekOrNull();
             if (staging != null) {
                 staging.endFrame();
             }

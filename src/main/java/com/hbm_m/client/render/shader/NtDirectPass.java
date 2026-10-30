@@ -77,7 +77,7 @@ public final class NtDirectPass {
             // storm - apply() pushed every uniform into program 0 once the
             // window's vanilla draws had left the program there).
             ShaderBindResync.invalidateStaticProgramCache();
-            ShaderInstance packShader = FarContentShaders.resolveTexColor();
+            ShaderInstance packShader = ModShaders.resolveTexColor();
             activePackShader = packShader;
             packFbo = -1;
             if (packShader != null) {
@@ -153,5 +153,51 @@ public final class NtDirectPass {
      */
     public static int getPackFbo() {
         return packFbo;
+    }
+
+    /**
+     * Ensures that when a mod-owned direct shader (like {@code gun_additive} for muzzle
+     * flashes or bullet tracers) is drawn outside an explicit {@link #begin()}/{@link #end()}
+     * window while an Iris/Oculus shaderpack is active, the draw lands in the shaderpack's
+     * G-buffer FBO instead of the dead vanilla {@code mainRenderTarget}.
+     *
+     * @return the FBO ID that was bound before this call (or -1 if no FBO switch was needed).
+     */
+    public static int bindPackFboIfDetached() {
+        if (!ShaderCompatibilityDetector.isExternalShaderActive()
+                || ShaderCompatibilityDetector.isRenderingShadowPass()) {
+            return -1;
+        }
+        int currentFbo = org.lwjgl.opengl.GL11.glGetInteger(org.lwjgl.opengl.GL30.GL_DRAW_FRAMEBUFFER_BINDING);
+        if (active && packFbo > 0) {
+            if (currentFbo != packFbo) {
+                com.mojang.blaze3d.platform.GlStateManager._glBindFramebuffer(org.lwjgl.opengl.GL30.GL_FRAMEBUFFER, packFbo);
+            }
+            return -1;
+        }
+        var mainTarget = net.minecraft.client.Minecraft.getInstance().getMainRenderTarget();
+        if (mainTarget != null && currentFbo == mainTarget.frameBufferId) {
+            // An earlier ExtendedShader.clear() rebound mainRenderTarget.
+            // Briefly apply the pack's textured_color ExtendedShader to resolve the pack's
+            // G-buffer FBO, then clear() it immediately: without clear() the pack shader's
+            // BlendModeOverride leaves Iris's BlendModeStorage locked and ExtendedShader.
+            // lastApplied stale for the rest of the frame.
+            ShaderInstance packShader = ModShaders.resolveTexColor();
+            if (packShader != null) {
+                try {
+                    ShaderBindResync.ensureFreshBind(packShader);
+                    packShader.apply();
+                    int resolvedFbo = org.lwjgl.opengl.GL11.glGetInteger(org.lwjgl.opengl.GL30.GL_DRAW_FRAMEBUFFER_BINDING);
+                    packShader.clear();
+                    if (resolvedFbo > 0 && resolvedFbo != currentFbo) {
+                        com.mojang.blaze3d.platform.GlStateManager._glBindFramebuffer(
+                                org.lwjgl.opengl.GL30.GL_FRAMEBUFFER, resolvedFbo);
+                        return currentFbo;
+                    }
+                } catch (Throwable ignored) {
+                }
+            }
+        }
+        return -1;
     }
 }

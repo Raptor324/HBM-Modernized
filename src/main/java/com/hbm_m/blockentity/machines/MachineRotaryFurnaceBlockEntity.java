@@ -360,8 +360,8 @@ public class MachineRotaryFurnaceBlockEntity extends MachinePollutingBlockEntity
         return super.getCapability(cap, side);
     }
     //?} elif neoforge {
-    /*
-    // Original {@code getAccessibleSlotsFromSide(x, y, z, side)}: die drei Rueckwandzellen (rot, gelb, gruen) fuehren
+    
+    /*// Original {@code getAccessibleSlotsFromSide(x, y, z, side)}: die drei Rueckwandzellen (rot, gelb, gruen) fuehren
     // je in einen Eingabeslot, die vordere Brennstoffklappe in Slot 4. Entnehmen ist nirgends moeglich.
     @Override
     public net.minecraftforge.items.IItemHandler getConditionalItemHandler(BlockPos part, @Nullable Direction side) {

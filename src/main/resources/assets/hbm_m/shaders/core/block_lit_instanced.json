@@ -3,7 +3,6 @@
     "fragment": "hbm_m:block_lit",
     "samplers": [
         { "name": "Sampler0" },
-        { "name": "Sampler1" },
         { "name": "Sampler2" },
         { "name": "uJointSpecs" }
     ],

@@ -56,13 +56,13 @@ public final class MachineTankRenderer {
     }
 
     private static void registerBigAssTank() {
+        // bigasstank.obj слит в одну группу "Circle"; окно уровня рисует hook.
         MachineRenderers.machine("bigasstank", ModBlockEntities.BIGASSTANK_BE.get(),
                 MachineBigAssTankBlockEntity.class)
-            .part("Body")
-            .part("Tank")
+            .part("Circle")
             .facing(ObjBerHelper::facing)
             .viewDistance(256)
-            .itemParts("Body", "Tank")
+            .itemParts("Circle")
             .hook(new MachineRenderHook<MachineBigAssTankBlockEntity>() {
                 @Override
                 public void render(MachineBigAssTankBlockEntity bat, float pt, PoseStack ps,

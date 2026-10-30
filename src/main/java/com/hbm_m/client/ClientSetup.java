@@ -668,6 +668,56 @@ public class ClientSetup {
         MenuRegistry.registerScreenFactory(ModMenuTypes.COMPRESSOR_MENU.get(), com.hbm_m.inventory.gui.GUIMachineCompressor::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.ELECTRIC_FURNACE_MENU.get(), com.hbm_m.inventory.gui.GUIMachineElectricFurnace::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.FURNACE_BRICK_MENU.get(), com.hbm_m.inventory.gui.GUIMachineFurnaceBrick::new);
+
+        // Restore of FFA merge loss (merge ab86420b9 dropped these): FFA registered 185 screen
+        // factories, the merge kept only the machines list. Menus exist and are opened by
+        // gameplay code, but without a factory the client silently fails to open the GUI.
+        MenuRegistry.registerScreenFactory(ModMenuTypes.HELD_ITEM_MENU.get(), com.hbm_m.inventory.gui.GUIHeldItem::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.SAFE_MENU.get(), com.hbm_m.inventory.gui.GUISafe::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.FILE_CABINET_MENU.get(), com.hbm_m.inventory.gui.GUIFileCabinet::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.CART_CRATE_MENU.get(), com.hbm_m.inventory.gui.GUICartScreens.Crate::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.CART_DESTROYER_MENU.get(), com.hbm_m.inventory.gui.GUICartScreens.Destroyer::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.WEAPON_TABLE_MENU.get(), com.hbm_m.inventory.gui.GUIWeaponTable::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.PRECASS_MENU.get(), com.hbm_m.inventory.gui.GUIMachinePrecAss::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.ROCKMILL_MENU.get(), com.hbm_m.inventory.gui.GUIMachineRockMill::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.SUPERCOMPUTER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineSuperComputer::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.ASSEMBLY_FACTORY_MENU.get(), com.hbm_m.inventory.gui.GUIMachineAssemblyFactory::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.ELECTROLYSER_FLUID_MENU.get(), com.hbm_m.inventory.gui.GUIElectrolyserFluid::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.ELECTROLYSER_METAL_MENU.get(), com.hbm_m.inventory.gui.GUIElectrolyserMetal::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.REACTOR_CONTROL_MENU.get(), com.hbm_m.inventory.gui.GUIReactorControl::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.FORCE_FIELD_MENU.get(), com.hbm_m.inventory.gui.GUIForceField::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.BATTERY_REDD_MENU.get(), com.hbm_m.inventory.gui.GUIBatteryREDD::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.RTG_MENU.get(), com.hbm_m.inventory.gui.GUIMachineRTG::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.MACHINE_RTG_FURNACE_MENU.get(), com.hbm_m.inventory.gui.GUIRtgFurnace::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.FUSION_BREEDER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineFusionBreeder::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.FUSION_KLYSTRON_MENU.get(), com.hbm_m.inventory.gui.GUIMachineFusionKlystron::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.FUSION_PLASMA_FORGE_MENU.get(), com.hbm_m.inventory.gui.GUIMachineFusionPlasmaForge::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.FUSION_TORUS_MENU.get(), com.hbm_m.inventory.gui.GUIMachineFusionTorus::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.DFC_CORE_MENU.get(), com.hbm_m.inventory.gui.GUIDFCCore::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.DFC_STABILIZER_MENU.get(), com.hbm_m.inventory.gui.GUIDFCStabilizer::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.MACHINE_ICF_MENU.get(), com.hbm_m.inventory.gui.GUIMachineICF::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.MACHINE_ICF_PRESS_MENU.get(), com.hbm_m.inventory.gui.GUIMachineICFPress::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.PA_SOURCE_MENU.get(), com.hbm_m.inventory.gui.GUIPASource::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.PA_DETECTOR_MENU.get(), com.hbm_m.inventory.gui.GUIPADetector::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.PA_DIPOLE_MENU.get(), com.hbm_m.inventory.gui.GUIPADipole::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.PA_QUADRUPOLE_MENU.get(), com.hbm_m.inventory.gui.GUIPAQuadrupole::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.PA_RFC_MENU.get(), com.hbm_m.inventory.gui.GUIPARFC::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.PNEUMO_TUBE_MENU.get(), com.hbm_m.inventory.gui.GUIPneumoTube::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.PNEUMO_STORAGE_ACCESS_MENU.get(), com.hbm_m.inventory.gui.GUIPneumoStorageAccess::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.PNEUMO_STORAGE_CLUTTER_MENU.get(), com.hbm_m.inventory.gui.GUIPneumoStorageClutter::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.PNEUMO_STORAGE_IMPORTER_MENU.get(), com.hbm_m.inventory.gui.GUIPneumoStorageImporter::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.PNEUMO_STORAGE_EXPORTER_MENU.get(), com.hbm_m.inventory.gui.GUIPneumoStorageExporter::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.PNEUMO_STORAGE_MONO_MENU.get(), com.hbm_m.inventory.gui.GUIPneumoStorageMono::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.CUSTOM_LAUNCHER_MENU.get(), com.hbm_m.inventory.gui.GUICustomLauncher::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.CUSTOM_MACHINE_MENU.get(), com.hbm_m.inventory.gui.GUIMachineCustom::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.LAUNCHPAD_LAMBDA_MENU.get(), com.hbm_m.inventory.gui.GUILaunchpadLambda::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.SAT_DOCK_MENU.get(), com.hbm_m.inventory.gui.GUISatDock::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.SOYUZ_CAPSULE_MENU.get(), com.hbm_m.inventory.gui.GUISoyuzCapsule::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.LEMEGETON_MENU.get(), com.hbm_m.inventory.gui.GUILemegeton::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.TAPE_DRIVE_MENU.get(), com.hbm_m.inventory.gui.GUITapeDrive::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.REBAR_MENU.get(), com.hbm_m.inventory.gui.GUIRebar::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.TRAIN_CARGO_TRAM_MENU.get(), com.hbm_m.inventory.gui.GUITrainCargoTram::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.TRAIN_CARGO_TRAM_TRAILER_MENU.get(), com.hbm_m.inventory.gui.GUITrainCargoTramTrailer::new);
     }
 
     private static void registerRenderersCommon() {
@@ -1033,7 +1083,9 @@ public class ClientSetup {
             if (baked != null && !(baked instanceof com.hbm_m.client.model.ReedsBakedModel)) models.put(loc, new com.hbm_m.client.model.ReedsBakedModel(baked));
         }
         // checkTilt: gekippte Maschinen (Absenkung wie in den Originalrenderern)
-        wrapTilted(models, ModBlocks.MACHINE_BIGASSTANK.get(), 1D);
+        // BIGASSTANK без wrapTilted: его multipart-модель обязана остаться
+        // ConfiguredMultipartBakedModel для биндинга спеки; наклон применяет хук
+        // в MachineTankRenderer.registerBigAssTank().
         wrapTilted(models, ModBlocks.MACHINE_BLAST_FURNACE.get(), 0.25D);
         wrapTilted(models, ModBlocks.FLARE_STACK.get(), 0.25D);
         wrapTilted(models, ModBlocks.REFINERY.get(), 0.25D);
@@ -1199,6 +1251,7 @@ public class ClientSetup {
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onModelBakeBindMachineModels(ModelEvent.ModifyBakingResult event) {
         MachineRenderRegistry.bindBakedModels(event.getModels());
+        com.hbm_m.client.render.weapon.WeaponRenderRegistry.bindBakedModels(event.getModels());
     }
 
     private static void wrapConnectedDecoCtTerrainModels(java.util.Map models) {
@@ -1231,6 +1284,9 @@ public class ClientSetup {
 
     @SubscribeEvent
     public static void onModelRegisterAdditional(ModelEvent.RegisterAdditional event) {
+        // Weapon models (Milestone M1)
+        com.hbm_m.client.render.weapon.WeaponRenderRegistry.onModelRegisterAdditional(event);
+
         // Power armor: общие multipart-модели сетов (рендер на entity через OBJ-слои)
         LoaderHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.T51_MODEL_ID);
         LoaderHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.AJR_MODEL_ID);
@@ -1352,6 +1408,11 @@ public class ClientSetup {
         LoaderHooks.registerGeometryLoader(event, "missile_loader", new MissileModelLoader());
         LoaderHooks.registerGeometryLoader(event, "machine_parts_loader", new MachinePartsModelLoader<ConfiguredMultipartBakedModel>());
         // LoaderHooks.registerGeometryLoader(event, "test", new TestModelLoader());
+
+        // Weapon OBJ loader (Milestone M1)
+        com.hbm_m.client.loader.WeaponPartsModelLoader weaponLoader = new com.hbm_m.client.loader.WeaponPartsModelLoader();
+        LoaderHooks.registerGeometryLoader(event, "weapon_obj_parts", weaponLoader);
+        LoaderHooks.registerGeometryLoader(event, "weapon_parts_loader", weaponLoader);
 
         //? if neoforge {
         /*event.register(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("forge", "composite"), net.neoforged.neoforge.client.model.CompositeModel.Loader.INSTANCE);
@@ -1802,6 +1863,19 @@ public class ClientSetup {
         );
         MainRegistry.LOGGER.info("Successfully registered block_lit_simple shader");
 
+        // Weapon viewmodel mesh shader (WeaponPartVboRenderer / WeaponRenderRegistry, audit firearms parity §7.4 Phase 1):
+        // same Position/Normal/UV0 layout as block_lit_simple, but Sampler0 = weapon
+        // texture, uColor = per-part tint, constant lightmap UV from packedLight.
+        event.registerShader(
+            new ShaderInstance(
+                event.getResourceProvider(),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "weapon_lit"),
+                blockLitSimpleFormat
+            ),
+            ModShaders::setWeaponLitShader
+        );
+        MainRegistry.LOGGER.info("Successfully registered weapon_lit shader");
+
         event.registerShader(
             new ShaderInstance(
                 instancedProvider,
@@ -1848,6 +1922,16 @@ public class ClientSetup {
         );
         MainRegistry.LOGGER.info("Successfully registered nuke_add shader");
 
+        event.registerShader(
+            new ShaderInstance(
+                event.getResourceProvider(),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "gun_additive"),
+                DefaultVertexFormat.NEW_ENTITY
+            ),
+            ModShaders::setGunAdditiveShader
+        );
+        MainRegistry.LOGGER.info("Successfully registered gun_additive shader");
+
         // Vanilla position_color_tex_lightmap clone: NT particle render types
         // (gas flame, cooling tower, ashes) bind OUR instance so the pack's
         // translucent material treatment never replaces the vanilla look.
@@ -1871,40 +1955,6 @@ public class ClientSetup {
             ModShaders::setDhDepthBlitShader
         );
         MainRegistry.LOGGER.info("Successfully registered dh_depth_blit shader");
-
-        // Register thermal vision shader for post-processing
-        // VertexFormat thermalVisionFormat = new VertexFormat(
-        //     ImmutableMap.<String, VertexFormatElement>builder()
-        //         .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
-        //         .put("UV0", DefaultVertexFormat.ELEMENT_UV0)
-        //         .build()
-        // );
-        
-        // ResourceLocation shaderLocation = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "thermal_vision");
-        // MainRegistry.LOGGER.info("Attempting to register thermal_vision shader at: {}", shaderLocation);
-        
-        // ShaderInstance shaderInstance = null;
-        // try {
-        //     shaderInstance = new ShaderInstance(
-        //         event.getResourceProvider(),
-        //         shaderLocation,
-        //         thermalVisionFormat
-        //     );
-        //     MainRegistry.LOGGER.info("ShaderInstance created successfully for thermal_vision");
-        // } catch (Exception e) {
-        //     MainRegistry.LOGGER.error("Exception while creating ShaderInstance for thermal_vision: {}", e.getMessage(), e);
-        //     return; // Don't register if creation failed
-        // }
-        
-        // if (shaderInstance != null) {
-        //     event.registerShader(shaderInstance, ModShaders::setThermalVisionShader);
-        //     MainRegistry.LOGGER.info("thermal_vision shader registered with event handler");
-            
-        //     // Note: The callback ModShaders::setThermalVisionShader is called asynchronously,
-        //     // so we can't verify it here immediately. The shader will be available after reload.
-        // } else {
-        //     MainRegistry.LOGGER.error("ShaderInstance is null after creation - cannot register thermal_vision shader!");
-        // }
     }
 
     private static class LeavesModelWrapper extends BakedModelWrapper<BakedModel> {

@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'am180.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Mag
 v 0.574255 2.611670 3.643148
 v 0.000000 2.611670 2.937500

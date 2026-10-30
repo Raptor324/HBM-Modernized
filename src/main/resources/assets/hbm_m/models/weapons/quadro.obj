@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'quadro.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Rockets
 v 0.066291 2.121209 -0.250000
 v 0.000000 2.093750 -0.250000

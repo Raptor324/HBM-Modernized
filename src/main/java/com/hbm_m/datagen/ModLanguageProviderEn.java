@@ -305,19 +305,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         // Оригинал: 4310 powder_coltan_ore "Crushed Coltan" / 4311 powder_coltan "Purified Tantalite".
         add(ModItems.POWDER_COLTAN.get(), "Crushed Coltan");
         add(ModItems.TURRET_AMMO.get(), "Turret Ammo");
-        add(ModItems.AMMO_9MM_SP.get(), "9mm Round (Soft Point)");
-        add(ModItems.AMMO_9MM_FMJ.get(), "9mm Round (FMJ)");
-        add(ModItems.AMMO_9MM_JHP.get(), "9mm Round (Hollow Point)");
-        add(ModItems.AMMO_9MM_AP.get(), "9mm Round (Armor Piercing)");
-        add(ModItems.AMMO_50_SP.get(), ".50 Round (Soft Point)");
-        add(ModItems.AMMO_50_FMJ.get(), ".50 Round (FMJ)");
-        add(ModItems.AMMO_50_JHP.get(), ".50 Round (Hollow Point)");
-        add(ModItems.AMMO_50_AP.get(), ".50 Round (Armor Piercing)");
-        add(ModItems.AMMO_50_DU.get(), ".50 Round (Depleted Uranium)");
-        add(ModItems.AMMO_556_SP.get(), "5.56mm Round (Soft Point)");
-        add(ModItems.AMMO_556_FMJ.get(), "5.56mm Round (FMJ)");
-        add(ModItems.AMMO_556_JHP.get(), "5.56mm Round (Hollow Point)");
-        add(ModItems.AMMO_556_AP.get(), "5.56mm Round (Armor Piercing)");
         add(ModItems.ROCKET_TURRET_STANDARD.get(), "Turret Guided Rocket");
         add(ModItems.ROCKET_HIMARS_STANDARD.get(), "HIMARS Rocket (Standard)");
         add(ModItems.ROCKET_HIMARS_HE.get(), "HIMARS Rocket (HE)");
@@ -325,8 +312,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.ROCKET_HIMARS_MINI_NUKE.get(), "HIMARS Rocket (Mini-Nuke)");
         add(ModItems.ROCKET_HIMARS_WP.get(), "HIMARS Rocket (White Phosphorus)");
         add(ModItems.ROCKET_HIMARS_THERMOBARIC.get(), "HIMARS Rocket (Thermobaric)");
-        add(ModItems.AMMO_TAU_URANIUM.get(), "Uranium Charge (Tau Accelerator)");
-        add(ModItems.AMMO_FLAME_DIESEL.get(), "Diesel Fuel (Flamethrower)");
 
         // =========================================================================
         // СЮДА ВСТАВЛЯЕТСЯ ВЕСЬ КОД ИЗ СТАРЫХ МЕТОДОВ ПО ПОРЯДКУ:
@@ -2016,6 +2001,13 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("hud.hbm_m.dash.perform", "Dash Performed");
         add("text.autoconfig.hbm_m.option.graphicEffects.thermalRenderMode", "Thermal Vision Render Mode");
         add("text.autoconfig.hbm_m.option.graphicEffects.thermalRenderMode.@Tooltip", "Choose how thermal vision is rendered.");
+        // FFA merge loss restore: подписи значений enum для настроек
+        add("text.autoconfig.hbm_m.option.graphicEffects.thermalRenderMode.FULL_SHADER", "Full shader");
+        add("text.autoconfig.hbm_m.option.graphicEffects.thermalRenderMode.ORIGINAL_FALLBACK", "Spectral fallback");
+        add("text.autoconfig.hbm_m.option.radiationSystem", "World radiation system");
+        add("text.autoconfig.hbm_m.option.radiationSystem.@Tooltip", "Raptor: the classic per-chunk radiation (default). Advanced: pocket-based radiation field ported from NTM Next (diffusion, shielding blocks, half-life). Takes effect after reloading the world; each system keeps its own saved data.");
+        add("text.autoconfig.hbm_m.option.radiationSystem.RAPTOR", "Raptor (classic)");
+        add("text.autoconfig.hbm_m.option.radiationSystem.ADVANCED", "Advanced (NTM Next based)");
 
 
         // POWER ARMOR CONTROLS

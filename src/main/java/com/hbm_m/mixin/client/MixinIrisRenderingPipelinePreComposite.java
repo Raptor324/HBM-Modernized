@@ -37,7 +37,8 @@ public class MixinIrisRenderingPipelinePreComposite {
 
     @Inject(method = "finalizeLevelRendering", at = @At("HEAD"), remap = false, expect = 0, require = 0)
     private void hbm$headCaptureFrameMatrices(CallbackInfo ci) {
-        com.hbm_m.client.render.shader.RawScreenSpaceLight.captureFrameMatrices(this);
+        com.hbm_m.client.render.shader.RawScreenSpaceLight.captureFrameMatrices();
+        com.hbm_m.client.render.shader.PackAdditiveQueue.captureFrameMatrices();
     }
 
     @Inject(method = "finalizeLevelRendering", at = @At("TAIL"), remap = false, expect = 0, require = 0)
@@ -47,6 +48,7 @@ public class MixinIrisRenderingPipelinePreComposite {
             com.hbm_m.main.MainRegistry.LOGGER.info(
                     "MixinIrisRenderingPipelinePreComposite: injection fired (finalizeLevelRendering TAIL, main RT)");
         }
-        com.hbm_m.client.render.shader.RawScreenSpaceLight.drawIfReady(this);
+        com.hbm_m.client.render.shader.PackAdditiveQueue.drainAndClear();
+        com.hbm_m.client.render.shader.RawScreenSpaceLight.drawIfReady();
     }
 }

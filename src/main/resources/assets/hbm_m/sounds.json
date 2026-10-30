@@ -654,6 +654,13 @@
       "hbm_m:mukeexplosion"
     ]
   },
+  "weapon.mukeexplosion": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.mukeexplosion",
+    "sounds": [
+      "hbm_m:mukeexplosion"
+    ]
+  },
   "music_disc.bunker": {
     "category": "record",
     "subtitle": "item.hbm_m.music_disc_bunker.desc",

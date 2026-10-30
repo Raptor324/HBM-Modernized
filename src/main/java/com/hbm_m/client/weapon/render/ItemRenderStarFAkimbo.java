@@ -1,5 +1,8 @@
 package com.hbm_m.client.weapon.render;
 
+import com.hbm_m.client.render.weapon.WeaponJointRig;
+import com.hbm_m.client.render.weapon.WeaponKinematics;
+import com.hbm_m.client.render.weapon.WeaponRenderRegistry;
 import com.hbm_m.client.weapon.GunGL;
 import com.hbm_m.client.weapon.ItemRenderWeaponBase;
 import com.hbm_m.client.weapon.WeaponResources;
@@ -7,8 +10,6 @@ import com.hbm_m.item.weapon.sedna.ItemGunBaseNT;
 import com.hbm_m.item.weapon.sedna.mods.XWeaponModManager;
 import com.hbm_m.render.anim.HbmAnimations;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
@@ -22,8 +23,7 @@ public class ItemRenderStarFAkimbo extends ItemRenderWeaponBase {
 
 	@Override
 	public float getViewFOV(ItemStack stack, float fov) {
-		float aimingProgress = ItemGunBaseNT.prevAimingProgress + (ItemGunBaseNT.aimingProgress - ItemGunBaseNT.prevAimingProgress) * interp;
-		return  fov * (1 - aimingProgress * 0.33F);
+		return standardZoomFov(fov, 0.33F);
 	}
 
 	@Override
@@ -57,9 +57,7 @@ public class ItemRenderStarFAkimbo extends ItemRenderWeaponBase {
 			double[] bullet = HbmAnimations.getRelevantTransformation("BULLET", index);
 			double[] slide = HbmAnimations.getRelevantTransformation("SLIDE", index);
 
-			GunGL.translate(0, -2, -8);
-			GunGL.rotate(equip[0], 1, 0, 0);
-			GunGL.translate(0, 2, 8);
+			GunGL.rotateAround(equip[0], 1, 0, 0, 0, -2, -8);
 
 			GunGL.translate(0, 1, -3);
 			GunGL.rotate(turn[2] * i, 0, 0, 1);
@@ -68,26 +66,18 @@ public class ItemRenderStarFAkimbo extends ItemRenderWeaponBase {
 
 			GunGL.translate(0, 0, recoil[2]);
 
-			GunGL.renderPart(WeaponResources.star_f, "Gun");
+			WeaponRenderRegistry.renderPart(WeaponResources.star_f, "Gun", GunGL.pose());
 
-			GunGL.pushMatrix();
-			GunGL.translate(0, 1.75, -4.25);
-			GunGL.rotate(60 * (hammer[0] - 1), 1, 0, 0);
-			GunGL.translate(0, -1.75, 4.25);
-			GunGL.renderPart(WeaponResources.star_f, "Hammer");
-			GunGL.popMatrix();
+			WeaponJointRig rig = WeaponRenderRegistry.getRig(WeaponResources.star_f);
+			WeaponKinematics.renderPartWithJoint(rig, "Hammer", GunGL.pose(), (float) (60 * (hammer[0] - 1)));
+			WeaponKinematics.renderPartWithJoint(rig, "Slide", GunGL.pose(), (float) (slide[2] * 2.3125));
 
-			GunGL.pushMatrix();
-			GunGL.translate(0, 0, slide[2] * 2.3125);
-			GunGL.renderPart(WeaponResources.star_f, "Slide");
-			GunGL.popMatrix();
-
-			GunGL.pushMatrix();
-			GunGL.translate(mag[0], mag[1], mag[2]);
-			GunGL.renderPart(WeaponResources.star_f, "Mag");
-			GunGL.translate(bullet[0], bullet[1], bullet[2]);
-			GunGL.renderPart(WeaponResources.star_f, "Bullet");
-			GunGL.popMatrix();
+			WeaponKinematics.scoped(GunGL.pose(), ps -> {
+				WeaponKinematics.applyVectorTranslate(ps, (float) mag[0], (float) mag[1], (float) mag[2]);
+				WeaponRenderRegistry.renderPart(WeaponResources.star_f, "Mag", ps);
+				WeaponKinematics.applyVectorTranslate(ps, (float) bullet[0], (float) bullet[1], (float) bullet[2]);
+				WeaponRenderRegistry.renderPart(WeaponResources.star_f, "Bullet", ps);
+			});
 
 			if(hasSilencer(stack, index)) {
 				GunGL.pushMatrix();
@@ -253,20 +243,8 @@ public class ItemRenderStarFAkimbo extends ItemRenderWeaponBase {
 		}
 	}
 
-	public void renderThirdPersonFlash(Entity ent, ItemStack stack, int config) {
-
-		long shot;
-		double shotRand = 0;
-		if(ent == Minecraft.getInstance().player) {
-			ItemGunBaseNT gun = (ItemGunBaseNT) stack.getItem();
-			shot = gun.lastShot[config];
-			shotRand = gun.shotRand;
-		} else {
-			shot = ItemRenderWeaponBase.flashMap.getOrDefault(ent, (long) -1);
-			if(shot < 0) return;
-		}
-
-		renderMuzzleFlash(shotRand, shot);
+	public void renderThirdPersonFlash(LivingEntity ent, ItemStack stack, int config) {
+		renderEquippedMuzzleFlash(stack, ent, config, 0, 3, 6.125, 1.0D, 75, 7.5);
 	}
 
 	public void renderMuzzleFlash(double shotRand, long shot) {

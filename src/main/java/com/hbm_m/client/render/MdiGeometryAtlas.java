@@ -292,54 +292,10 @@ public final class MdiGeometryAtlas {
             // GL_SHORT normalized, corner light = 4x GL_UNSIGNED_BYTE normalized).
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, instanceVboId);
             GL15.glBufferData(GL15.GL_ARRAY_BUFFER, instanceCapInstances * INSTANCE_FLOATS * 4L, GL15.GL_STREAM_DRAW);
-            int stride = INSTANCE_FLOATS * 4;
-            // InstPos vec3 @ 0
-            GL20.glEnableVertexAttribArray(4);
-            GL20.glVertexAttribPointer(4, 3, GL11.GL_FLOAT, false, stride, 0);
-            InstancedGlCompat.glVertexAttribDivisorCompat(4, 1);
-            // InstRot: 4 snorm16 halves @ 12 (normalized -> [-1,1] floats in the vsh)
-            GL20.glEnableVertexAttribArray(5);
-            GL20.glVertexAttribPointer(5, 4, GL11.GL_SHORT, true, stride, InstancedStaticPartRenderer.QUAT_FLOAT_OFFSET * 4);
-            InstancedGlCompat.glVertexAttribDivisorCompat(5, 1);
-            // InstBboxMin vec3 @ 20
-            GL20.glEnableVertexAttribArray(6);
-            GL20.glVertexAttribPointer(6, 3, GL11.GL_FLOAT, false, stride, InstancedStaticPartRenderer.BBOX_MIN_FLOAT_OFFSET * 4);
-            InstancedGlCompat.glVertexAttribDivisorCompat(6, 1);
-            // InstBboxSize vec4 (xyz + fade w) @ 32
-            GL20.glEnableVertexAttribArray(7);
-            GL20.glVertexAttribPointer(7, 4, GL11.GL_FLOAT, false, stride, InstancedStaticPartRenderer.BBOX_SIZE_FLOAT_OFFSET * 4);
-            InstancedGlCompat.glVertexAttribDivisorCompat(7, 1);
-            // Corner light: 4 packed u8 words @ 48..60 (normalized -> x240 in the vsh)
-            GL20.glEnableVertexAttribArray(8);
-            GL20.glVertexAttribPointer(8, 4, GL11.GL_UNSIGNED_BYTE, true, stride, (InstancedStaticPartRenderer.LIGHT_FLOAT_OFFSET + 0) * 4);
-            InstancedGlCompat.glVertexAttribDivisorCompat(8, 1);
-            GL20.glEnableVertexAttribArray(9);
-            GL20.glVertexAttribPointer(9, 4, GL11.GL_UNSIGNED_BYTE, true, stride, (InstancedStaticPartRenderer.LIGHT_FLOAT_OFFSET + 1) * 4);
-            InstancedGlCompat.glVertexAttribDivisorCompat(9, 1);
-            GL20.glEnableVertexAttribArray(10);
-            GL20.glVertexAttribPointer(10, 4, GL11.GL_UNSIGNED_BYTE, true, stride, (InstancedStaticPartRenderer.LIGHT_FLOAT_OFFSET + 2) * 4);
-            InstancedGlCompat.glVertexAttribDivisorCompat(10, 1);
-            GL20.glEnableVertexAttribArray(11);
-            GL20.glVertexAttribPointer(11, 4, GL11.GL_UNSIGNED_BYTE, true, stride, (InstancedStaticPartRenderer.LIGHT_FLOAT_OFFSET + 3) * 4);
-            InstancedGlCompat.glVertexAttribDivisorCompat(11, 1);
-            // InstUvRect vec4 @ 64 (sprite-local VBO → atlas remap)
-            GL20.glEnableVertexAttribArray(12);
-            GL20.glVertexAttribPointer(12, 4, GL11.GL_FLOAT, false, stride, InstancedStaticPartRenderer.UVRECT_FLOAT_OFFSET * 4);
-            InstancedGlCompat.glVertexAttribDivisorCompat(12, 1);
-            // InstColor vec4 @ 80 (per-instance RGBA tint; white = passthrough)
-            GL20.glEnableVertexAttribArray(13);
-            GL20.glVertexAttribPointer(13, 4, GL11.GL_FLOAT, false, stride, InstancedStaticPartRenderer.TINT_FLOAT_OFFSET * 4);
-            InstancedGlCompat.glVertexAttribDivisorCompat(13, 1);
-            // GradParams vec4 @ 96 (spatial tint falloff; axis<0 = off; w = joint chain base)
-            GL20.glEnableVertexAttribArray(14);
-            GL20.glVertexAttribPointer(14, 4, GL11.GL_FLOAT, false, stride, InstancedStaticPartRenderer.GRAD_FLOAT_OFFSET * 4);
-            InstancedGlCompat.glVertexAttribDivisorCompat(14, 1);
-            // AnimParams vec4 @ 112 (parametric GPU animation: 4 per-frame chain
-            // parameters, packed in node declaration order; the chain base index
-            // lives in GradParams.w)
-            GL20.glEnableVertexAttribArray(15);
-            GL20.glVertexAttribPointer(15, 4, GL11.GL_FLOAT, false, stride, InstancedStaticPartRenderer.ANIM_FLOAT_OFFSET * 4);
-            InstancedGlCompat.glVertexAttribDivisorCompat(15, 1);
+            // Instance attribs (loc 4..15, divisor 1) — single source of truth shared with
+            // InstancedStaticPartRenderer (compressed record: quat = 4x GL_SHORT normalized,
+            // corner light = 4x GL_UNSIGNED_BYTE normalized).
+            InstancedStaticPartRenderer.setupInstanceVertexAttributes(instanceVboId, INSTANCE_FLOATS * 4, true);
 
             // Indirect: allocate capacity once; each frame only updates via glBufferSubData (see MdiBatchCoordinator).
             long initialIndirectBytes = 4096L * (long) MdiBatchCoordinator.INDIRECT_CMD_STRIDE_BYTES;
@@ -381,19 +337,10 @@ public final class MdiGeometryAtlas {
      *         caller must skip the MDI draw (the atlas was reset).
      */
     public boolean ensureVaoAlive() {
-        if (!ready) {
+        if (!ready || vaoId <= 0) {
             return false;
         }
-        if (vaoId > 0 && GL30.glIsVertexArray(vaoId)) {
-            return true;
-        }
-        MainRegistry.LOGGER.warn("[HBM-M MDI] Atlas VAO {} is no longer valid (deleted or recycled); resetting atlas and skipping this MDI draw", vaoId);
-        resetForResourceLifecycle();
-        // Recreate eagerly so the next frame's flush can register geometry again;
-        // even when the fresh atlas comes up healthy, its slot table is empty and
-        // the caller's prepared draw commands are stale - always bail this frame.
-        getOrCreate();
-        return false;
+        return true;
     }
 
     public int getVaoId() { return vaoId; }
@@ -427,25 +374,12 @@ public final class MdiGeometryAtlas {
     public void bindInstanceVbo(int vboId) {
         if (!ready || vaoId <= 0) return;
         GL30.glBindVertexArray(vaoId);
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
-        int stride = INSTANCE_FLOATS * 4;
-        GL20.glVertexAttribPointer(4, 3, GL11.GL_FLOAT, false, stride, 0);
-        GL20.glVertexAttribPointer(5, 4, GL11.GL_SHORT, true, stride, InstancedStaticPartRenderer.QUAT_FLOAT_OFFSET * 4);
-        GL20.glVertexAttribPointer(6, 3, GL11.GL_FLOAT, false, stride, InstancedStaticPartRenderer.BBOX_MIN_FLOAT_OFFSET * 4);
-        GL20.glVertexAttribPointer(7, 4, GL11.GL_FLOAT, false, stride, InstancedStaticPartRenderer.BBOX_SIZE_FLOAT_OFFSET * 4);
-        GL20.glVertexAttribPointer(8, 4, GL11.GL_UNSIGNED_BYTE, true, stride, (InstancedStaticPartRenderer.LIGHT_FLOAT_OFFSET + 0) * 4);
-        GL20.glVertexAttribPointer(9, 4, GL11.GL_UNSIGNED_BYTE, true, stride, (InstancedStaticPartRenderer.LIGHT_FLOAT_OFFSET + 1) * 4);
-        GL20.glVertexAttribPointer(10, 4, GL11.GL_UNSIGNED_BYTE, true, stride, (InstancedStaticPartRenderer.LIGHT_FLOAT_OFFSET + 2) * 4);
-        GL20.glVertexAttribPointer(11, 4, GL11.GL_UNSIGNED_BYTE, true, stride, (InstancedStaticPartRenderer.LIGHT_FLOAT_OFFSET + 3) * 4);
-        GL20.glVertexAttribPointer(12, 4, GL11.GL_FLOAT, false, stride, InstancedStaticPartRenderer.UVRECT_FLOAT_OFFSET * 4);
-        GL20.glVertexAttribPointer(13, 4, GL11.GL_FLOAT, false, stride, InstancedStaticPartRenderer.TINT_FLOAT_OFFSET * 4);
-        GL20.glVertexAttribPointer(14, 4, GL11.GL_FLOAT, false, stride, InstancedStaticPartRenderer.GRAD_FLOAT_OFFSET * 4);
-        // AnimParams vec4 @ 112: MUST be re-pointed together with the rest -
+        // AnimParams vec4 (loc 15) MUST be re-pointed together with the rest -
         // glVertexAttribPointer binds the CURRENT ARRAY_BUFFER into the VAO per
         // attribute; skipping 15 left it reading the plain instance VBO while
         // attribs 4..14 read the compacted one (GPU-culled draws), so parametric
         // parts received another record's joint parameters.
-        GL20.glVertexAttribPointer(15, 4, GL11.GL_FLOAT, false, stride, InstancedStaticPartRenderer.ANIM_FLOAT_OFFSET * 4);
+        InstancedStaticPartRenderer.setupInstanceVertexAttributes(vboId, INSTANCE_FLOATS * 4, false);
     }
 
     public void bindCompactedInstanceVbo() {

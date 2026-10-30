@@ -29,10 +29,11 @@ public final class MachineReactorResearchRenderer {
 
     public static void register() {
         // ── Breeder Reactor ──────────────────────────────────────────────────
+        // breeder.obj слит в одну группу "Cube_Cube.001"
         MachineRenderers.machine("breeder",
                 ModBlockEntities.BREEDER_BE.get(),
                 MachineBreederBlockEntity.class)
-            .part("Breeder")
+            .part("Cube_Cube.001")
             .hook(new MachineRenderHook<MachineBreederBlockEntity>() {
                 @Override
                 public void render(MachineBreederBlockEntity be, float pt, PoseStack ps,
@@ -54,7 +55,7 @@ public final class MachineReactorResearchRenderer {
                     return be.getProgress() > 0;
                 }
             })
-            .itemParts("Breeder")
+            .itemParts("Cube_Cube.001")
             .register();
 
         // ── Research Reactor ─────────────────────────────────────────────────

@@ -16,7 +16,6 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
-import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
@@ -30,6 +29,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 import org.jetbrains.annotations.NotNull;
+import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.ai.goal.Goal;
 
 /**
  * 1:1 port of {@code EntityMaskMan} - a 1000 HP boss that shrugs off most of what you throw at it
@@ -96,13 +97,15 @@ public class EntityMaskMan extends Monster implements IRadiationImmune {
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(1, new FloatGoal(this));
-        // EntityAIMaskmanCasualApproach: it walks, it does not charge.
-        this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.0D, false));
+        // EntityAIMaskmanCasualApproach (FFA merge loss restore): haelt ~10 Bloecke Abstand,
+        // greift nie im Nahkampf an - wie im 1.7.10-Original (Melee dort auskommentiert).
+        this.goalSelector.addGoal(2, new CasualApproachGoal(this, Player.class, 1.0D, false));
         this.goalSelector.addGoal(3, new WaterAvoidingRandomStrollGoal(this, 1.0D));
         this.goalSelector.addGoal(4, new RandomLookAroundGoal(this));
         this.goalSelector.addGoal(5, new LookAtPlayerGoal(this, Player.class, 8.0F));
         this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
-        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
+        // EntityAINearestAttackableTarget(this, EntityPlayer.class, 0, true): Chance 0 = jeden Tick
+        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, null));
     }
 
     @Override public boolean fireImmune()                { return true; }
@@ -115,6 +118,126 @@ public class EntityMaskMan extends Monster implements IRadiationImmune {
     /** Half health is what flips the face to a skull; the renderer reads this. */
     public boolean isUnmasked() {
         return this.getHealth() < this.getMaxHealth() / 2;
+    }
+
+    // ─── EntityAIMaskmanCasualApproach (FFA merge loss restore) ──────────────
+
+    /** {@code EntityAIMaskmanCasualApproach}: haelt ~10 Bloecke Abstand, greift nie im Nahkampf an. */
+    static class CasualApproachGoal extends Goal {
+        private final PathfinderMob attacker;
+        private final double speedTowardsTarget;
+        private final boolean longMemory;
+        private final Class<?> classTarget;
+        private net.minecraft.world.level.pathfinder.Path entityPathEntity;
+        private int attackTick;
+        private int pathTimer;
+        private double lastX, lastY, lastZ;
+        private int failedPathFindingPenalty;
+
+        CasualApproachGoal(PathfinderMob owner, Class<?> target, double speed, boolean longMemory) {
+            this.attacker = owner;
+            this.classTarget = target;
+            this.speedTowardsTarget = speed;
+            this.longMemory = longMemory;
+            this.setFlags(java.util.EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK)); // setMutexBits(3)
+        }
+
+        @Override
+        public boolean canUse() {
+            LivingEntity target = this.attacker.getTarget();
+            if (target == null || !target.isAlive()) return false;
+            if (this.classTarget != null && !this.classTarget.isAssignableFrom(target.getClass())) return false;
+
+            if (--this.pathTimer <= 0) {
+                double[] pos = getApproachPos();
+                this.entityPathEntity = this.attacker.getNavigation().createPath(pos[0], pos[1], pos[2], 0);
+                this.pathTimer = 4 + this.attacker.getRandom().nextInt(7);
+                return this.entityPathEntity != null;
+            }
+            return false;
+        }
+
+        @Override
+        public boolean canContinueToUse() {
+            LivingEntity target = this.attacker.getTarget();
+            if (target == null || !target.isAlive()) return false;
+            return !this.longMemory ? !this.attacker.getNavigation().isDone()
+                    : this.attacker.isWithinRestriction(target.blockPosition());
+        }
+
+        @Override
+        public void start() {
+            this.attacker.getNavigation().moveTo(this.entityPathEntity, this.speedTowardsTarget);
+            this.pathTimer = 0;
+        }
+
+        @Override
+        public void stop() {
+            this.attacker.getNavigation().stop();
+        }
+
+        @Override
+        public boolean requiresUpdateEveryTick() {
+            return true;
+        }
+
+        @Override
+        public void tick() {
+            LivingEntity target = this.attacker.getTarget();
+            if (target == null) return;
+            this.attacker.getLookControl().setLookAt(target, 30.0F, 30.0F);
+            double d0 = this.attacker.distanceToSqr(target.getX(), target.getBoundingBox().minY, target.getZ());
+
+            this.pathTimer--;
+
+            if ((this.longMemory || this.attacker.getSensing().hasLineOfSight(target)) && this.pathTimer <= 0
+                    && (this.lastX == 0.0D && this.lastY == 0.0D && this.lastZ == 0.0D
+                    || target.distanceToSqr(this.lastX, this.lastY, this.lastZ) >= 1.0D
+                    || this.attacker.getRandom().nextFloat() < 0.05F)) {
+
+                this.lastX = target.getX();
+                this.lastY = target.getBoundingBox().minY;
+                this.lastZ = target.getZ();
+                this.pathTimer = this.failedPathFindingPenalty + 4 + this.attacker.getRandom().nextInt(7);
+
+                net.minecraft.world.level.pathfinder.Path path = this.attacker.getNavigation().getPath();
+                if (path != null) {
+                    net.minecraft.world.level.pathfinder.Node finalPathPoint = path.getEndNode();
+                    if (finalPathPoint != null && target.distanceToSqr(finalPathPoint.x, finalPathPoint.y, finalPathPoint.z) < 1) {
+                        this.failedPathFindingPenalty = 0;
+                    } else {
+                        this.failedPathFindingPenalty += 10;
+                    }
+                } else {
+                    this.failedPathFindingPenalty += 10;
+                }
+
+                if (d0 > 1024.0D) {
+                    this.pathTimer += 10;
+                } else if (d0 > 256.0D) {
+                    this.pathTimer += 5;
+                }
+
+                double[] pos = getApproachPos();
+                if (!this.attacker.getNavigation().moveTo(pos[0], pos[1], pos[2], this.speedTowardsTarget)) {
+                    this.pathTimer += 15;
+                }
+            }
+
+            this.attackTick = Math.max(this.attackTick - 1, 0);
+            // Nahkampf ist im Original auskommentiert.
+        }
+
+        private double[] getApproachPos() {
+            LivingEntity target = this.attacker.getTarget();
+            Vec3 vec = new Vec3(this.attacker.getX() - target.getX(), this.attacker.getY() - target.getY(), this.attacker.getZ() - target.getZ());
+            double range = Math.min(vec.length(), 20) - 10;
+            vec = vec.normalize();
+            double x = this.attacker.getX() + vec.x * range + this.attacker.getRandom().nextGaussian() * 2;
+            double y = this.attacker.getY() + vec.y - 5 + this.attacker.getRandom().nextInt(11);
+            double z = this.attacker.getZ() + vec.z * range + this.attacker.getRandom().nextGaussian() * 2;
+            return new double[] {x, y, z};
+        }
     }
 
     // ─── Damage table ────────────────────────────────────────────────────────

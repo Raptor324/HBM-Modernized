@@ -114,6 +114,7 @@ public final class ConfigSchema {
         reg(ConfigField.bool("gunAnimsLegacy", ConfigSide.CLIENT, ApplyMode.LIVE, "general").withComment("Uses the legacy gun animations"));
         reg(ConfigField.bool("gunModelFov", ConfigSide.CLIENT, ApplyMode.LIVE, "general").withComment("Gun models use the FOV setting instead of a fixed 70"));
         reg(ConfigField.bool("gunVisualRecoil", ConfigSide.CLIENT, ApplyMode.LIVE, "general").withComment("Guns shake the camera when fired"));
+        reg(ConfigField.bool("gunCrazyRecoil", ConfigSide.CLIENT, ApplyMode.LIVE, "general").withComment("Crazy recoil: multiplies the recoil of every gun by 10"));
         reg(ConfigField.floatNum("gunAnimationSpeed", ConfigSide.CLIENT, ApplyMode.LIVE, "general", 0.01F, 10F).withComment("Multiplier for gun animation speed"));
         reg(ConfigField.bool("enableGuns", ConfigSide.SERVER, ApplyMode.LIVE, "general").withComment("Prevents new system guns to be fired"));
         reg(ConfigField.integer("renderRebarLimit", ConfigSide.CLIENT, ApplyMode.LIVE, "general", 0, 100000).withComment("How many rebar blocks may render their concrete fill per frame"));

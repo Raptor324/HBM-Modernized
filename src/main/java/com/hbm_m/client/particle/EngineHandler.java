@@ -250,7 +250,7 @@ public class EngineHandler {
                     if (irisActive) {
                         try {
                             net.minecraft.client.renderer.ShaderInstance contentShader =
-                                    com.hbm_m.client.render.shader.FarContentShaders.resolveTexColor();
+                                    com.hbm_m.client.render.shader.ModShaders.resolveTexColor();
                             if (contentShader != null) {
                                 // PROGRAM CACHE DESYNC PROTECTION: same lastApplied skip guard as DhDepthCopy:76.
                                 com.hbm_m.client.render.shader.ShaderBindResync.ensureFreshBind(contentShader);
@@ -376,7 +376,7 @@ public class EngineHandler {
      * mode 1 — попиксельная окклюзия против DH LOD (Sampler1 = DEPTH32F);
      * mode 2 — диагностика: цвет = (vDhWinZ, DH-глубина, 0), без discard.
      * Под Iris-паком не вызывается по смыслу: там контент рисуется через
-     * ExtendedShader пака (FarContentShaders), окклюзия — нативным depth-тестом
+     * ExtendedShader пака (ModShaders.resolveTexColor), окклюзия — нативным depth-тестом
      * против единого z-buffer'а (LOD'ы рендерятся DH прямо в него).
      */
     private static void setDhShaderFarMode(float mode, org.joml.Matrix4f dhProj) {

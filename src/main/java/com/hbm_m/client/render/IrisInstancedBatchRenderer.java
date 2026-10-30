@@ -29,7 +29,7 @@ import com.hbm_m.client.render.shader.IrisDerivedMatrixUniforms;
 import com.hbm_m.client.render.shader.IrisExtendedShaderAccess;
 import com.hbm_m.client.render.shader.IrisPhaseGuard;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
-import com.hbm_m.client.render.shader.IrisShaderApply;
+import com.hbm_m.client.render.shader.ShaderBindResync;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.shaders.Uniform;
@@ -68,18 +68,12 @@ final class IrisInstancedBatchRenderer {
 
     /** Scratch MV composite for a single Iris draw (rendering is single-threaded). */
     private final Matrix4f tmpSingleMv = new Matrix4f();
-    /** Scratch: composed shadow model-view matrix for recording into the global shadow batch. */
-    private final Matrix4f tmpShadowMv = new Matrix4f();
-    /** Scratch: the composed BER pose recovered for recording (name is historical — the
-     * value is exactly {@code poseStack.last().pose()}, since inv(MV) * MV cancels; it is
-     * a light-space shadow poseStack decomposition, not a world-space transform). */
+    /** Scratch: the BER pose handed to the shadow collector (a light-space shadow
+     * poseStack decomposition, not a world-space transform; copied from
+     * {@code poseStack.last().pose()} so the collector never sees a pooled PoseStack entry). */
     private final Matrix4f tmpShadowWorld = new Matrix4f();
     private final Vector3f tmpShadowPos = new Vector3f();
     private final Quaternionf tmpShadowRot = new Quaternionf();
-    /** Cached shadow model-view and inverse matrices (constant throughout the shadow pass). */
-    private final Matrix4f shadowMvCache = new Matrix4f();
-    private final Matrix4f shadowInvMvCache = new Matrix4f();
-    private boolean shadowInvValid = false;
     /** Scratch: R_cam (view rotation) for converting anchor-relative (main-pass) records to view space. */
     private final Matrix4f irisCamRotMat = new Matrix4f();
     /** Scratch: instance view-space pose = R_cam * T(record - cam) * R (main pass). */
@@ -167,17 +161,7 @@ final class IrisInstancedBatchRenderer {
                                     @Nullable BlockEntity blockEntity, int packedLight) {
         BlockPos anchor = (blockEntity != null) ? blockEntity.getBlockPos() : blockPos;
         if (anchor == null) anchor = BlockPos.ZERO;
-        if (LightSampleCache.BASE_POSE_SET.get()) {
-                parent.tmpLocalPose.set(LightSampleCache.BASE_POSE.get()).invert().mul(poseStack.last().pose());
-        } else {
-            var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
-            // L^-1 (FrameViewState): strips R_cam AND the view bob - the local pose
-            // is static while walking, light sample points stop jittering.
-            parent.tmpLocalPose.set(FrameViewState.poseToWorldRotation()).mul(poseStack.last().pose());
-            parent.tmpLocalPose.m30(parent.tmpLocalPose.m30() - (float) (anchor.getX() - cam.x));
-            parent.tmpLocalPose.m31(parent.tmpLocalPose.m31() - (float) (anchor.getY() - cam.y));
-            parent.tmpLocalPose.m32(parent.tmpLocalPose.m32() - (float) (anchor.getZ() - cam.z));
-        }
+        LightSampleCache.computeLocalPose(poseStack.last().pose(), anchor, parent.tmpLocalPose);
         long partHash = System.identityHashCode(parent);
         LightSampleCache.getOrSample8(blockEntity, partHash, parent.objBbox, anchor,
                                       parent.tmpLocalPose, packedLight, parent.tmpCornerUV);
@@ -209,22 +193,15 @@ final class IrisInstancedBatchRenderer {
         if (parent.tmpFadeMode < 0.0f || SingleMeshVboRenderer.getFadeAlpha() <= 0.0f) {
             return true;
         }
-        Matrix4f currentMv = RenderSystem.getModelViewMatrix();
         // Stash every frame (flush resets stashValid; conditional calls broke batching from the second frame).
         IrisShadowBatchCollector.stashShadowMatrices(RenderSystem.getProjectionMatrix());
-        if (!shadowInvValid || !shadowMvCache.equals(currentMv)) {
-            shadowMvCache.set(currentMv);
-            shadowInvMvCache.set(shadowMvCache).invertAffine();
-            shadowInvValid = true;
-        }
-        // NOTE: inv(currentMv) * currentMv cancels algebraically, so tmpShadowWorld is
-        // exactly poseStack.last().pose() — this composition is a mathematical no-op.
-        // The record handed to the collector is therefore an exact pos/quat
-        // decomposition of the Iris shadow poseStack MV_shadow * T(bePos - camPos) *
-        // part, i.e. LIGHT-space (the light rotation rides inside the record), NOT a
-        // camera-converted world-space transform.
-        tmpShadowMv.set(currentMv).mul(poseStack.last().pose());
-        tmpShadowWorld.set(shadowInvMvCache).mul(tmpShadowMv);
+        // The record handed to the collector is an exact pos/quat decomposition of
+        // the Iris shadow poseStack MV_shadow * T(bePos - camPos) * part, i.e.
+        // LIGHT-space (the light rotation rides inside the record), NOT a
+        // camera-converted world-space transform. The BER pose IS the stack's top
+        // entry - inv(currentMv) * currentMv cancels algebraically (the former
+        // inverse-multiply roundtrip was a per-part 4x4 no-op).
+        tmpShadowWorld.set(poseStack.last().pose());
         // Light is unneeded in shadow pass (depth/shadowcolor only) — write zeros instead of expensive 8-corner sampling.
         java.util.Arrays.fill(parent.tmpCornerUV, 0.0f);
         IrisShadowBatchCollector.record(parent, tmpShadowWorld, parent.objBbox, parent.tmpCornerUV);
@@ -305,7 +282,7 @@ final class IrisInstancedBatchRenderer {
             
             companion.bindVaoIfNeeded();
             
-            if (!IrisShaderApply.tryApply(shader)) {
+            if (!ShaderBindResync.tryApply(shader)) {
                 return false;
             }
 
@@ -398,7 +375,7 @@ final class IrisInstancedBatchRenderer {
                 Matrix4f viewRot = new Matrix4f(FrameViewState.viewBasisRotation());
                 boolean baked = false;
                 try (IrisPhaseGuard guard = IrisPhaseGuard.pushBlockEntities()) {
-                    // No IrisShaderApply.tryApply here: bakeMain only runs compute
+                    // No ShaderBindResync.tryApply here: bakeMain only runs compute
                     // shaders and queues PENDING_MAIN - the pack shader is applied
                     // later in NucleusGpuBaker.presentMainBatch. An unbalanced apply
                     // here polluted ExtendedShader.lastApplied and broke the later
@@ -451,17 +428,6 @@ final class IrisInstancedBatchRenderer {
             return;
         }
 
-        int previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
-        int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
-        boolean cullWasEnabled = GL11.glIsEnabled(GL11.GL_CULL_FACE);
-        boolean depthTestWasEnabled = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
-        boolean depthMaskWasEnabled = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
-        int previousDepthFunc = GL11.glGetInteger(GL11.GL_DEPTH_FUNC);
-        boolean blendWasEnabled = GL11.glIsEnabled(GL11.GL_BLEND);
-        int prevBlendSrcRgb = GL11.glGetInteger(GL14.GL_BLEND_SRC_RGB);
-        int prevBlendDstRgb = GL11.glGetInteger(GL14.GL_BLEND_DST_RGB);
-        int prevBlendSrcAlpha = GL11.glGetInteger(GL14.GL_BLEND_SRC_ALPHA);
-        int prevBlendDstAlpha = GL11.glGetInteger(GL14.GL_BLEND_DST_ALPHA);
         int previousBlockEntityId = IrisExtendedShaderAccess.setCurrentRenderedBlockEntity(0);
 
         // REGRESSION-FIX: closePersistentIfActive prior to flush binds main-RT
@@ -477,8 +443,9 @@ final class IrisInstancedBatchRenderer {
             }
             return;
         }
-        try (IrisPhaseGuard phaseGuard = IrisPhaseGuard.pushBlockEntities()) {
-            if (!IrisShaderApply.tryApply(packShader)) {
+        try (RenderStateGuard stateGuard = RenderStateGuard.snapshot();
+             IrisPhaseGuard phaseGuard = IrisPhaseGuard.pushBlockEntities()) {
+            if (!ShaderBindResync.tryApply(packShader)) {
                 return;
             }
             GL30.glBindVertexArray(parent.vaoId);
@@ -522,17 +489,6 @@ final class IrisInstancedBatchRenderer {
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error during instanced flush (Iris instanced)", e);
         } finally {
-            com.hbm_m.client.render.GlVaoSafety.bindVertexArray(previousVao);
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
-            RenderSystem.depthMask(depthMaskWasEnabled);
-            RenderSystem.depthFunc(previousDepthFunc);
-            if (depthTestWasEnabled) RenderSystem.enableDepthTest();
-            else RenderSystem.disableDepthTest();
-            if (cullWasEnabled) RenderSystem.enableCull();
-            else RenderSystem.disableCull();
-            RenderSystem.blendFuncSeparate(prevBlendSrcRgb, prevBlendDstRgb, prevBlendSrcAlpha, prevBlendDstAlpha);
-            if (blendWasEnabled) RenderSystem.enableBlend();
-            else RenderSystem.disableBlend();
             RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
             com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0,
                 net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS);
@@ -567,21 +523,10 @@ final class IrisInstancedBatchRenderer {
             return;
         }
 
-        int previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
-        int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
-        boolean cullWasEnabled = GL11.glIsEnabled(GL11.GL_CULL_FACE);
-        boolean depthTestWasEnabled = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
-        boolean depthMaskWasEnabled = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
-        int previousDepthFunc = GL11.glGetInteger(GL11.GL_DEPTH_FUNC);
-        boolean blendWasEnabled = GL11.glIsEnabled(GL11.GL_BLEND);
-        int prevBlendSrcRgb = GL11.glGetInteger(GL14.GL_BLEND_SRC_RGB);
-        int prevBlendDstRgb = GL11.glGetInteger(GL14.GL_BLEND_DST_RGB);
-        int prevBlendSrcAlpha = GL11.glGetInteger(GL14.GL_BLEND_SRC_ALPHA);
-        int prevBlendDstAlpha = GL11.glGetInteger(GL14.GL_BLEND_DST_ALPHA);
-
         int previousBlockEntityId = IrisExtendedShaderAccess.setCurrentRenderedBlockEntity(0);
 
-        try (IrisPhaseGuard ignored = IrisPhaseGuard.pushBlockEntities()) {
+        try (RenderStateGuard stateGuard = RenderStateGuard.snapshot();
+             IrisPhaseGuard ignored = IrisPhaseGuard.pushBlockEntities()) {
             RenderSystem.setShader(() -> shader);
 
 
@@ -603,7 +548,7 @@ final class IrisInstancedBatchRenderer {
                 com.mojang.blaze3d.platform.GlStateManager._glBindVertexArray(targetVao);
             }
             
-            if (!IrisShaderApply.tryApply(shader)) {
+            if (!ShaderBindResync.tryApply(shader)) {
                 return;
             }
 
@@ -629,7 +574,7 @@ final class IrisInstancedBatchRenderer {
                         continue;
                     }
                     int cornerBase = i * parent.instanceDataSize + InstancedStaticPartRenderer.LIGHT_FLOAT_OFFSET;
-                    long key = 1469598103934665603L;
+                    long key = IrisCompanionMesh.LIGHT_KEY_FNV_OFFSET;
                     // The record's corner light is 4 packed u8 words (2 corners per
                     // word, low byte first): word j = c2j.u, c2j.v, c2j+1.u, c2j+1.v.
                     // Float-staging index k (u at even k, v at odd k) -> word k>>2,
@@ -640,11 +585,9 @@ final class IrisInstancedBatchRenderer {
                         int qu = Math.round(InstancedStaticPartRenderer.decodeLightU8(word >>> sh));
                         int qv = Math.round(InstancedStaticPartRenderer.decodeLightU8(word >>> (sh + 8)));
                         tmpCornerShort[k] = (short) qu;
-                        key ^= (qu & 0xFFFF);
-                        key *= 1099511628211L;
+                        key = IrisCompanionMesh.lightKeyStep(key, qu);
                         tmpCornerShort[k + 1] = (short) qv;
-                        key ^= (qv & 0xFFFF);
-                        key *= 1099511628211L;
+                        key = IrisCompanionMesh.lightKeyStep(key, qv);
                     }
                     long alloc = companion.allocLightmapSlot(key);
                     int slot = (int) (alloc & 0xFFFF_FFFFL);
@@ -778,17 +721,6 @@ final class IrisInstancedBatchRenderer {
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error during instanced flush (Iris)", e);
         } finally {
-            com.hbm_m.client.render.GlVaoSafety.bindVertexArray(previousVao);
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
-            RenderSystem.depthMask(depthMaskWasEnabled);
-            RenderSystem.depthFunc(previousDepthFunc);
-            if (depthTestWasEnabled) RenderSystem.enableDepthTest();
-            else RenderSystem.disableDepthTest();
-            if (cullWasEnabled) RenderSystem.enableCull();
-            else RenderSystem.disableCull();
-            RenderSystem.blendFuncSeparate(prevBlendSrcRgb, prevBlendDstRgb, prevBlendSrcAlpha, prevBlendDstAlpha);
-            if (blendWasEnabled) RenderSystem.enableBlend();
-            else RenderSystem.disableBlend();
             RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
             com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0,
                 net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS);

@@ -279,6 +279,11 @@ public class ParticleEngineNT {
             List<ParticleNT> list = this.particlesByType.get(type);
             if (list == null || list.isEmpty()) continue;
 
+            if (list.get(0) instanceof com.hbm_m.client.particle.ParticleSpentCasing) {
+                com.hbm_m.client.particle.ParticleSpentCasing.renderBatch(list, camera, partialTick, 0.0D, false, false);
+                continue;
+            }
+
             // Порядок отрисовки ВНУТРИ батча: от дальних к ближним (painter).
             // sortOnUpload у наших RenderType выключен (нестабилен в модпаке —
             // «Sorting state uninitialized»), поэтому порядок квайдов задаём
@@ -300,6 +305,11 @@ public class ParticleEngineNT {
             net.minecraft.client.renderer.RenderType type = ordered.get(i);
             List<ParticleNT> list = this.particlesByType.get(type);
             if (list == null || list.isEmpty()) continue;
+
+            if (list.get(0) instanceof com.hbm_m.client.particle.ParticleSpentCasing) {
+                com.hbm_m.client.particle.ParticleSpentCasing.renderBatch(list, camera, partialTick, splitSq, true, renderFar);
+                continue;
+            }
 
             sortFarToNear(list, camera);
 

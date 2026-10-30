@@ -1,0 +1,10 @@
+# HBM-Modernized shared weapon material (anvil convention).
+# Weapon OBJs are single-texture models: the real PNG (e.g. uzi.png) is bound
+# at draw time by GunGL, and the Nucleus VBO baker un-maps atlas UVs back to
+# [0..1]. This library exists because Forge's ObjModel silently drops every
+# mesh that has no usemtl-assigned material (ModelMesh.addQuads skips
+# mat == null), which made all material-less Blender exports invisible.
+# Reference from any asset directory via: "mtllib hbm_m:models/gun.mtl".
+newmtl gun
+Kd 1.000 1.000 1.000
+map_Kd #default

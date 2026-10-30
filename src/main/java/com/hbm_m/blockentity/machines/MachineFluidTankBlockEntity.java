@@ -72,7 +72,8 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity
         implements MenuProvider, IMultiblockSidedIO, IFluidStandardTransceiverMK2, IPersistentNBT,
                 com.hbm_m.api.redstoneoverradio.IRORValueProvider,
                 com.hbm_m.api.redstoneoverradio.IRORInteractive,
-                com.hbm_m.api.tile.IOverpressurable {
+                com.hbm_m.api.tile.IOverpressurable,
+                com.hbm_m.api.tile.IRepairable {
 
     public static final int SLOT_ID_IN = 0;
     public static final int SLOT_ID_OUT = 1;
@@ -369,6 +370,17 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity
                 }
             }
 
+            // Original TileEntityBarrel: "For when Tom's firestorm hits a barrel full of water"
+            // (FFA merge loss restore): полная водяная бочка под открытым небом во время
+            // файрсторма взрывается.
+            if (entity.fluidTank.getTankType() == ModFluids.WATER.getSource() && level instanceof ServerLevel sl
+                    && com.hbm_m.saveddata.TomSaveData.forWorld(sl).fire > 1e-5) {
+                int light = level.getBrightness(net.minecraft.world.level.LightLayer.SKY, pos);
+                if (light > 7) {
+                    level.explode(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 5F, true, Level.ExplosionInteraction.BLOCK);
+                }
+            }
+
             if (entity.fluidTank.getFill() > 0) {
                 Fluid type = entity.fluidTank.getTankType();
                 FluidType ftype = FluidType.forFluid(type);
@@ -572,26 +584,53 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity
         level.setBlock(worldPosition, state.setValue(com.hbm_m.block.machines.MachineFluidTankBlock.EXPLODED, this.hasExploded), 3);
     }
 
-
-    public void repair() {
-        this.hasExploded = false;
-        this.onFire = false;
-        this.setChanged();
-        syncExplodedState();
-    }
-
     // ═══════════════════════════ IRepairable (порт 1.7.10) ═══════════════════════════
     // Оригинал: TileEntityMachineFluidTank реализует IRepairable; ремонт запускает
     // блок по клику газовой горелкой (onScrew/TORCH), материалы списываются с игрока.
 
     /** 1.7.10 {@code IRepairable.isDamaged()}. */
+    @Override
     public boolean isDamaged() {
         return this.hasExploded;
     }
 
     /** 1.7.10 {@code IRepairable.getRepairMaterials()}: 6 стальных пластин. */
-    public java.util.List<ItemStack> getRepairMaterials() {
-        return java.util.List.of(new ItemStack(com.hbm_m.item.ModItems.STEEL_PLATE.get(), 6));
+    @Override
+    public java.util.List<com.hbm_m.api.tile.IRepairable.RepairStack> getRepairMaterials() {
+        return java.util.List.of(new com.hbm_m.api.tile.IRepairable.RepairStack(
+                net.minecraft.world.item.crafting.Ingredient.of(com.hbm_m.item.material.ModMaterialItems.item(
+                        com.hbm_m.item.material.ModMaterials.STEEL, com.hbm_m.item.material.MaterialShape.PLATE)), 6));
+    }
+
+    /** Original {@code repair}: nur die Beschaedigung, ein Brand brennt weiter. */
+    @Override
+    public void repair() {
+        this.hasExploded = false;
+        this.setChanged();
+        syncExplodedState();
+    }
+
+    /** 1:1 {@code tryExtinguish}: Wasser auf brennende Fluessigkeit laesst den Tank explodieren (FFA merge loss restore). */
+    @Override
+    public void tryExtinguish(net.minecraft.world.level.Level world, net.minecraft.core.BlockPos pos,
+                              com.hbm_m.api.tile.IRepairable.EnumExtinguishType type) {
+        if (!this.hasExploded || !this.onFire) return;
+
+        if (type == com.hbm_m.api.tile.IRepairable.EnumExtinguishType.WATER) {
+            // extinguishing oil with water is a terrible idea!
+            if (FluidType.forFluid(fluidTank.getTankType()).hasTrait(com.hbm_m.inventory.fluid.trait.FluidTraitSimple.FT_Liquid.class)) {
+                world.explode(null, worldPosition.getX() + 0.5, worldPosition.getY() + 1.5, worldPosition.getZ() + 0.5, 5F, true, net.minecraft.world.level.Level.ExplosionInteraction.BLOCK);
+            } else {
+                this.onFire = false;
+                this.setChanged();
+                return;
+            }
+        }
+
+        if (type == com.hbm_m.api.tile.IRepairable.EnumExtinguishType.FOAM || type == com.hbm_m.api.tile.IRepairable.EnumExtinguishType.CO2) {
+            this.onFire = false;
+            this.setChanged();
+        }
     }
 
     // ═══════════════════════════ IPersistentNBT (порт 1.7.10) ═══════════════════════════

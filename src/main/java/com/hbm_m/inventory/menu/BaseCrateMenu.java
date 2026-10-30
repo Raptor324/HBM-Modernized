@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.block.machines.crates.CrateSlot;
 import com.hbm_m.block.machines.crates.CrateType;
-import com.hbm_m.block.machines.crates.CrateValidation;
 import com.hbm_m.blockentity.crates.BaseCrateBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 
@@ -120,9 +119,6 @@ public abstract class BaseCrateMenu extends AbstractContainerMenu {
                 return ItemStack.EMPTY;
             }
         } else {
-            if (CrateValidation.isCrateItem(sourceStack)) {
-                return ItemStack.EMPTY;
-            }
             if (!this.moveItemStackTo(sourceStack, 0, crateSlots, false)) {
                 return ItemStack.EMPTY;
             }

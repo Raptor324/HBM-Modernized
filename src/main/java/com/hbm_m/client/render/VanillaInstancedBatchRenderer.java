@@ -273,17 +273,7 @@ final class VanillaInstancedBatchRenderer {
         parent.convertToWorldRecord(poseStack.last().pose());
 
         BlockPos blockPosForSample = (blockEntity != null) ? blockEntity.getBlockPos() : BlockPos.ZERO;
-        if (LightSampleCache.BASE_POSE_SET.get()) {
-            parent.tmpLocalPose.set(LightSampleCache.BASE_POSE.get()).invert().mul(poseStack.last().pose());
-        } else {
-            var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
-            // L^-1 (FrameViewState): strips R_cam AND the view bob - the local pose
-            // is static while walking, light sample points stop jittering.
-            parent.tmpLocalPose.set(FrameViewState.poseToWorldRotation()).mul(poseStack.last().pose());
-            parent.tmpLocalPose.m30(parent.tmpLocalPose.m30() - (float) (blockPosForSample.getX() - cam.x));
-            parent.tmpLocalPose.m31(parent.tmpLocalPose.m31() - (float) (blockPosForSample.getY() - cam.y));
-            parent.tmpLocalPose.m32(parent.tmpLocalPose.m32() - (float) (blockPosForSample.getZ() - cam.z));
-        }
+        LightSampleCache.computeLocalPose(poseStack.last().pose(), blockPosForSample, parent.tmpLocalPose);
         long partHash = System.identityHashCode(parent);
 
         LightSampleCache.getOrSample8(blockEntity, partHash, parent.objBbox, blockPosForSample,

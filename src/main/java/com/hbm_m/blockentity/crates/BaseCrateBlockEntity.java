@@ -3,7 +3,6 @@ package com.hbm_m.blockentity.crates;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.block.machines.crates.CrateValidation;
 import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.platform.ModItemStackHandler;
 
@@ -61,7 +60,7 @@ public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements
 
             @Override
             public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-                return CrateValidation.isValidForCrate(stack);
+                return true; // Original TileEntityCrateBase.isItemValidForSlot: jeder Gegenstand, auch andere Kisten
             }
         };
     }

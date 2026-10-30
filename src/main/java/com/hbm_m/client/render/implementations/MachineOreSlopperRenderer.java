@@ -18,6 +18,7 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import com.hbm_m.platform.LoaderHooks;
+import com.hbm_m.client.render.machine.MachineRenderApi;
 
 /**
  * Ore slopper on the {@link MachineRenderers} factory: Fan rotates around X,
@@ -41,6 +42,14 @@ public final class MachineOreSlopperRenderer {
     public static void register() {
         MachineRenderers.machine("oreslopper", ModBlockEntities.ORE_SLOPPER_BE.get(),
                 MachineOreSlopperBlockEntity.class)
+            // Статичный корпус из multipart-модели; подвижные части — dynamic parts
+            // из отдельных моделей (как в legacy-рендере).
+            // FFA merge loss restore: Slider/Hydraulics/Bucket снова анимированы (1:1 RenderOreSlopper),
+            // плюс парящий кусок руды в ковше при LIFTING (hook).
+            .part("Base")
+            .part("Slider", MachineOreSlopperRenderer::animateSlider)
+            .part("Hydraulics", MachineOreSlopperRenderer::animateHydraulics)
+            .part("Bucket", MachineOreSlopperRenderer::animateBucket)
             .dynamicPart("BladesLeft", MachineOreSlopperRenderer::animateBladesLeft,
                     be -> partQuads("ore_slopper/blades_left", BLADES_LEFT_MODEL_ID), be -> "bl")
             .dynamicPart("BladesRight", MachineOreSlopperRenderer::animateBladesRight,
@@ -48,6 +57,7 @@ public final class MachineOreSlopperRenderer {
             .dynamicPart("Fan", MachineOreSlopperRenderer::animateFan,
                     be -> partQuads("ore_slopper/fan", FAN_MODEL_ID), be -> "fan")
             .blockTransform((be, animator) -> { /* legacy renderer drew in raw block coordinates */ })
+            .hook(MachineOreSlopperRenderer::renderOreChunk)
             .register();
     }
 
@@ -90,5 +100,57 @@ public final class MachineOreSlopperRenderer {
         pose.mulPose(Axis.XP.rotationDegrees(-fan));
         pose.translate(-0.5, -FAN_PIVOT_Y, -FAN_PIVOT_Z);
         return true;
+    }
+
+    // --- FFA merge loss restore: 1:1 RenderOreSlopper анимации ковша и кусок руды ---
+
+    private static float sliderPos(MachineOreSlopperBlockEntity be, float pt) {
+        return Mth.lerp(pt, be.prevSlider, be.slider);
+    }
+
+    private static float bucketExt(MachineOreSlopperBlockEntity be, float pt) {
+        return (Mth.lerp(pt, be.prevBucket, be.bucket)) * 1.5F;
+    }
+
+    /** Слайд едет на 3 блока вперёд по мере цикла. */
+    private static boolean animateSlider(MachineOreSlopperBlockEntity be, float pt, long gt, PoseStack pose) {
+        pose.translate(0, 0, sliderPos(be, pt) * -3);
+        return true;
+    }
+
+    /** Гидравлика опускается до 1.25 (с зазором 0.25), поверх трансформа слайда. */
+    private static boolean animateHydraulics(MachineOreSlopperBlockEntity be, float pt, long gt, PoseStack pose) {
+        pose.translate(0, 0, sliderPos(be, pt) * -3);
+        pose.translate(0, -Mth.clamp(bucketExt(be, pt) - 0.25F, 0, 1.25F), 0);
+        return true;
+    }
+
+    /** Ковш опускается до 1.25, поверх трансформа гидравлики. */
+    private static boolean animateBucket(MachineOreSlopperBlockEntity be, float pt, long gt, PoseStack pose) {
+        pose.translate(0, 0, sliderPos(be, pt) * -3);
+        pose.translate(0, -Mth.clamp(bucketExt(be, pt) - 0.25F, 0, 1.25F), 0);
+        pose.translate(0, -Mth.clamp(bucketExt(be, pt), 0, 1.25F), 0);
+        return true;
+    }
+
+    /**
+     * 1:1 RenderOreSlopper: во время LIFTING в ковше висит кусок бедроковой руды
+     * (оригинал: ItemStack(ModItems.bedrock_ore, 1, 0) = BASE/LIGHT).
+     */
+    private static void renderOreChunk(MachineOreSlopperBlockEntity be, float pt,
+                                       PoseStack pose, net.minecraft.client.renderer.MultiBufferSource buf,
+                                       int packedLight, int packedOverlay, MachineRenderApi api) {
+        if (be.animation != MachineOreSlopperBlockEntity.SlopperAnimation.LIFTING) return;
+        pose.pushPose();
+        pose.translate(0, 0, sliderPos(be, pt) * -3);
+        pose.translate(0, -Mth.clamp(bucketExt(be, pt) - 0.25F, 0, 1.25F), 0);
+        pose.translate(0, -Mth.clamp(bucketExt(be, pt), 0, 1.25F), 0);
+        pose.translate(0.0625D, 4.3125D, 2D);
+        pose.mulPose(Axis.YP.rotationDegrees(90));
+        pose.mulPose(Axis.XP.rotationDegrees(-90));
+        pose.scale(1.75F, 1.75F, 1.75F);
+        Minecraft.getInstance().getItemRenderer().renderStatic(new net.minecraft.world.item.ItemStack(com.hbm_m.item.ModItems.BEDROCK_ORE_BASE_LIGHT.get()),
+                net.minecraft.world.item.ItemDisplayContext.FIXED, packedLight, packedOverlay, pose, buf, be.getLevel(), 0);
+        pose.popPose();
     }
 }

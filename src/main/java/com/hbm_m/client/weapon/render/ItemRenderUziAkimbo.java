@@ -1,5 +1,8 @@
 package com.hbm_m.client.weapon.render;
 
+import com.hbm_m.client.render.weapon.WeaponJointRig;
+import com.hbm_m.client.render.weapon.WeaponKinematics;
+import com.hbm_m.client.render.weapon.WeaponRenderRegistry;
 import com.hbm_m.client.weapon.GunGL;
 import com.hbm_m.client.weapon.ItemRenderWeaponBase;
 import com.hbm_m.client.weapon.WeaponResources;
@@ -22,8 +25,7 @@ public class ItemRenderUziAkimbo extends ItemRenderWeaponBase {
 
 	@Override
 	public float getViewFOV(ItemStack stack, float fov) {
-		float aimingProgress = ItemGunBaseNT.prevAimingProgress + (ItemGunBaseNT.aimingProgress - ItemGunBaseNT.prevAimingProgress) * interp;
-		return  fov * (1 - aimingProgress * 0.33F);
+		return standardZoomFov(fov, 0.33F);
 	}
 
 	@Override
@@ -62,43 +64,31 @@ public class ItemRenderUziAkimbo extends ItemRenderWeaponBase {
 			GunGL.translate(yeet[0], yeet[1], yeet[2]);
 			GunGL.rotate(speen[0], 0, 0, i);
 
-			GunGL.translate(0, -2, -4);
-			GunGL.rotate(equip[0], 1, 0, 0);
-			GunGL.translate(0, 2, 4);
-
-			GunGL.translate(0, 0, -6);
-			GunGL.rotate(lift[0], 1, 0, 0);
-			GunGL.translate(0, 0, 6);
+			GunGL.rotateAround(equip[0], 1, 0, 0, 0, -2, -4);
+			GunGL.rotateAround(lift[0], 1, 0, 0, 0, 0, -6);
 
 			GunGL.translate(0, 0, recoil[2]);
 
-			GunGL.renderPart(WeaponResources.uzi, index == 0 ? "GunMirror" : "Gun");
+			WeaponJointRig rig = WeaponRenderRegistry.getRig(WeaponResources.uzi);
+			WeaponRenderRegistry.renderPart(WeaponResources.uzi, WeaponKinematics.getAkimboReceiverPart(rig, index), GunGL.pose());
 
 			boolean silenced = hasSilencer(stack, index);
-			if(silenced) GunGL.renderPart(WeaponResources.uzi, "Silencer");
+			if(silenced) WeaponRenderRegistry.renderPart(WeaponResources.uzi, "Silencer", GunGL.pose());
 
-			GunGL.pushMatrix();
-			GunGL.translate(0, 0.3125D, -5.75);
-			GunGL.rotate(180 - stockFront[0], 1, 0, 0);
-			GunGL.translate(0, -0.3125D, 5.75);
-			GunGL.renderPart(WeaponResources.uzi, "StockFront");
+			WeaponKinematics.scoped(GunGL.pose(), ps -> {
+				WeaponKinematics.applyJoint(ps, rig.getJoint("StockFront"), (float) (180 - stockFront[0]));
+				WeaponRenderRegistry.renderPart(WeaponResources.uzi, "StockFront", ps);
+				WeaponKinematics.applyJoint(ps, rig.getJoint("StockBack"), (float) (-200 - stockBack[0]));
+				WeaponRenderRegistry.renderPart(WeaponResources.uzi, "StockBack", ps);
+			});
 
-			GunGL.translate(0, -0.3125D, -3);
-			GunGL.rotate(-200 - stockBack[0], 1, 0, 0);
-			GunGL.translate(0, 0.3125D, 3);
-			GunGL.renderPart(WeaponResources.uzi, "StockBack");
-			GunGL.popMatrix();
+			WeaponKinematics.renderPartWithJoint(rig, "Slide", GunGL.pose(), (float) slide[2]);
 
-			GunGL.pushMatrix();
-			GunGL.translate(0, 0, slide[2]);
-			GunGL.renderPart(WeaponResources.uzi, "Slide");
-			GunGL.popMatrix();
-
-			GunGL.pushMatrix();
-			GunGL.translate(mag[0], mag[1], mag[2]);
-			GunGL.renderPart(WeaponResources.uzi, "Magazine");
-			if(bullet[0] == 1) GunGL.renderPart(WeaponResources.uzi, "Bullet");
-			GunGL.popMatrix();
+			WeaponKinematics.scoped(GunGL.pose(), ps -> {
+				WeaponKinematics.applyVectorTranslate(ps, (float) mag[0], (float) mag[1], (float) mag[2]);
+				WeaponRenderRegistry.renderPart(WeaponResources.uzi, "Magazine", ps);
+				if(bullet[0] == 1) WeaponRenderRegistry.renderPart(WeaponResources.uzi, "Bullet", ps);
+			});
 
 			if(!silenced) {
 				double smokeScale = 0.5;
@@ -152,82 +142,32 @@ public class ItemRenderUziAkimbo extends ItemRenderWeaponBase {
 
 	@Override
 	public void renderEquipped(ItemStack stack, Object... data) {
-
-		GunGL.bindTexture(isSaturnite(stack, 1) ? WeaponResources.uzi_saturnite_tex : WeaponResources.uzi_tex);
-		GunGL.renderPart(WeaponResources.uzi, "Gun");
-		GunGL.renderPart(WeaponResources.uzi, "StockBack");
-		GunGL.renderPart(WeaponResources.uzi, "StockFront");
-		GunGL.renderPart(WeaponResources.uzi, "Slide");
-		GunGL.renderPart(WeaponResources.uzi, "Magazine");
 		boolean silenced = hasSilencer(stack, 1);
-		if(silenced) GunGL.renderPart(WeaponResources.uzi, "Silencer");
-
-		if(!silenced) {
-			LivingEntity ent = (LivingEntity) data[1]; //Entity is second obj. passed
-			long shot;
-			double shotRand = 0;
-			if(ent == Minecraft.getInstance().player) {
-				ItemGunBaseNT gun = (ItemGunBaseNT) stack.getItem();
-				shot = gun.lastShot[1];
-				shotRand = gun.shotRand;
-			} else {
-				shot = ItemRenderWeaponBase.flashMap.getOrDefault(ent, (long) -1);
-				if(shot < 0) return;
-			}
-
-			GunGL.pushMatrix();
-			GunGL.translate(0, 0.75, 8.5);
-			GunGL.rotate(90, 0, 1, 0);
-			GunGL.rotate(90 * shotRand, 1, 0, 0);
-			this.renderMuzzleFlash(shot, 75, 7.5);
-			GunGL.popMatrix();
+		GunGL.bindTexture(isSaturnite(stack, 1) ? WeaponResources.uzi_saturnite_tex : WeaponResources.uzi_tex);
+		WeaponKinematics.renderRestParts(WeaponRenderRegistry.getRig(WeaponResources.uzi), 1, GunGL.pose(),
+				silenced ? "Silencer" : null);
+		if(!silenced && data.length > 1 && data[1] instanceof LivingEntity ent) {
+			renderEquippedMuzzleFlash(stack, ent, 1, 0, 0.75, 8.5, 1.0D, 75, 7.5);
 		}
 	}
 
 	@Override
 	public void renderEquippedAkimbo(ItemStack stack, LivingEntity ent) {
-
-		GunGL.bindTexture(isSaturnite(stack, 0) ? WeaponResources.uzi_saturnite_tex : WeaponResources.uzi_tex);
-		GunGL.renderPart(WeaponResources.uzi, "GunMirror");
-		GunGL.renderPart(WeaponResources.uzi, "StockBack");
-		GunGL.renderPart(WeaponResources.uzi, "StockFront");
-		GunGL.renderPart(WeaponResources.uzi, "Slide");
-		GunGL.renderPart(WeaponResources.uzi, "Magazine");
 		boolean silenced = hasSilencer(stack, 0);
-		if(silenced) GunGL.renderPart(WeaponResources.uzi, "Silencer");
-
+		GunGL.bindTexture(isSaturnite(stack, 0) ? WeaponResources.uzi_saturnite_tex : WeaponResources.uzi_tex);
+		WeaponKinematics.renderRestParts(WeaponRenderRegistry.getRig(WeaponResources.uzi), 0, GunGL.pose(),
+				silenced ? "Silencer" : null);
 		if(!silenced) {
-			long shot;
-			double shotRand = 0;
-			if(ent == Minecraft.getInstance().player) {
-				ItemGunBaseNT gun = (ItemGunBaseNT) stack.getItem();
-				shot = gun.lastShot[0];
-				shotRand = gun.shotRand;
-			} else {
-				shot = ItemRenderWeaponBase.flashMap.getOrDefault(ent, (long) -1);
-				if(shot < 0) return;
-			}
-
-			GunGL.pushMatrix();
-			GunGL.translate(0, 0.75, 8.5);
-			GunGL.rotate(90, 0, 1, 0);
-			GunGL.rotate(90 * shotRand, 1, 0, 0);
-			this.renderMuzzleFlash(shot, 75, 7.5);
-			GunGL.popMatrix();
+			renderEquippedMuzzleFlash(stack, ent, 0, 0, 0.75, 8.5, 1.0D, 75, 7.5);
 		}
 	}
 
 	@Override
 	public void renderModTable(ItemStack stack, int index) {
 		GunGL.enableLighting();
-
 		GunGL.bindTexture(isSaturnite(stack, index) ? WeaponResources.uzi_saturnite_tex : WeaponResources.uzi_tex);
-		GunGL.renderPart(WeaponResources.uzi, index == 0 ? "GunMirror" : "Gun");
-		GunGL.renderPart(WeaponResources.uzi, "StockBack");
-		GunGL.renderPart(WeaponResources.uzi, "StockFront");
-		GunGL.renderPart(WeaponResources.uzi, "Slide");
-		GunGL.renderPart(WeaponResources.uzi, "Magazine");
-		if(hasSilencer(stack, index)) GunGL.renderPart(WeaponResources.uzi, "Silencer");
+		WeaponKinematics.renderRestParts(WeaponRenderRegistry.getRig(WeaponResources.uzi), index, GunGL.pose(),
+				hasSilencer(stack, index) ? "Silencer" : null);
 	}
 
 	@Override

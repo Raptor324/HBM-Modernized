@@ -24,7 +24,7 @@ import org.jetbrains.annotations.Nullable;
  * Порт {@code DemonLamp} — лампа из заряда-демона.
  *
  * <p>Ориентируется по кликнутой грани ({@code FACING}, все 6 направлений),
- * всегда светится на полную (свет 15). Вся игровая логика (радиация,
+ * как в 1.7.10 ({@code onBlockPlaced -> side}). Вся игровая логика (радиация,
  * поджиг сущностей) — в {@link DemonLampBlockEntity}, статичная сфера рендерится
  * чанк-мешем (OBJ-модель), лучи — {@link com.hbm_m.client.render.implementations.DemonLampRenderer}.
  */

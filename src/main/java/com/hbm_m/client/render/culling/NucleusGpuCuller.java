@@ -2,9 +2,11 @@ package com.hbm_m.client.render.culling;
 
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import com.hbm_m.client.render.shader.GlShaderUtil;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
+import com.hbm_m.config.ModClothConfig;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLCapabilities;
@@ -96,6 +98,15 @@ public final class NucleusGpuCuller {
         return subgroupSize;
     }
 
+    private static boolean isDispatchLogEnabled() {
+        try {
+            ModClothConfig cfg = ModClothConfig.get();
+            return (cfg != null && cfg.mdiDebugLogDispatch) || Boolean.getBoolean("hbm.mdiDebugLogDispatch");
+        } catch (Throwable ignored) {
+            return false;
+        }
+    }
+
     private static synchronized boolean ensureProgram() {
         if (initialized) {
             return programId > 0;
@@ -182,61 +193,13 @@ public final class NucleusGpuCuller {
                             + "#define NUCLEUS_BALLOT 1\n"
                             + "#define SUBGROUP_SIZE " + getWorkgroupSize());
         }
-        int shader = GL20.glCreateShader(GL43.GL_COMPUTE_SHADER);
-        com.hbm_m.platform.RenderHooks.safeShaderSource(shader, source);
-        GL20.glCompileShader(shader);
-        if (GL20.glGetShaderi(shader, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
-            String log = GL20.glGetShaderInfoLog(shader, 4096);
-            GL20.glDeleteShader(shader);
-            throw new IllegalStateException("Failed to compile compute shader " + resourcePath + ": " + log);
-        }
-        int program = GL20.glCreateProgram();
-        GL20.glAttachShader(program, shader);
-        GL20.glLinkProgram(program);
-        GL20.glDeleteShader(shader);
-        if (GL20.glGetProgrami(program, GL20.GL_LINK_STATUS) == GL11.GL_FALSE) {
-            String log = GL20.glGetProgramInfoLog(program, 4096);
-            GL20.glDeleteProgram(program);
-            throw new IllegalStateException("Failed to link compute program for " + resourcePath + ": " + log);
+        int program = GlShaderUtil.createComputeProgram(source, "NucleusGpuCuller");
+        if (program == 0) {
+            throw new IllegalStateException("Failed to compile/link compute program for " + resourcePath);
         }
         return program;
     }
 
-    private static void computeFrustumPlanes(Matrix4f m, float[] out) {
-        float m00 = m.m00(), m01 = m.m01(), m02 = m.m02(), m03 = m.m03();
-        float m10 = m.m10(), m11 = m.m11(), m12 = m.m12(), m13 = m.m13();
-        float m20 = m.m20(), m21 = m.m21(), m22 = m.m22(), m23 = m.m23();
-        float m30 = m.m30(), m31 = m.m31(), m32 = m.m32(), m33 = m.m33();
-
-        // Left: row 3 + row 0
-        setNormalizedPlane(out, 0, m03 + m00, m13 + m10, m23 + m20, m33 + m30);
-        // Right: row 3 - row 0
-        setNormalizedPlane(out, 4, m03 - m00, m13 - m10, m23 - m20, m33 - m30);
-        // Bottom: row 3 + row 1
-        setNormalizedPlane(out, 8, m03 + m01, m13 + m11, m23 + m21, m33 + m31);
-        // Top: row 3 - row 1
-        setNormalizedPlane(out, 12, m03 - m01, m13 - m11, m23 - m21, m33 - m31);
-        // Near: row 3 + row 2
-        setNormalizedPlane(out, 16, m03 + m02, m13 + m12, m23 + m22, m33 + m32);
-        // Far: row 3 - row 2
-        setNormalizedPlane(out, 20, m03 - m02, m13 - m12, m23 - m22, m33 - m32);
-    }
-
-    private static void setNormalizedPlane(float[] out, int offset, float x, float y, float z, float w) {
-        float len = (float) Math.sqrt(x * x + y * y + z * z);
-        if (len > 1e-6f) {
-            float inv = 1.0f / len;
-            out[offset] = x * inv;
-            out[offset + 1] = y * inv;
-            out[offset + 2] = z * inv;
-            out[offset + 3] = w * inv;
-        } else {
-            out[offset] = x;
-            out[offset + 1] = y;
-            out[offset + 2] = z;
-            out[offset + 3] = w;
-        }
-    }
 
     /**
      * Executes GPU occlusion culling and stream compaction for all submitted MDI commands.
@@ -361,7 +324,7 @@ public final class NucleusGpuCuller {
                 GL20.glUniform1f(uP11Loc, projMatrix.m11());
             }
             if (uFrustumPlanesLoc >= 0) {
-                computeFrustumPlanes(projMatrix, FRUSTUM_PLANES);
+                CpuFrustumCuller.extractPlanes(projMatrix, FRUSTUM_PLANES, true);
                 GL20.glUniform4fv(uFrustumPlanesLoc, FRUSTUM_PLANES);
             }
             if (uFrustumOnlyLoc >= 0) {
@@ -373,11 +336,13 @@ public final class NucleusGpuCuller {
             int numWorkgroups = (totalInstances + wgSize - 1) / wgSize;
             GL43.glDispatchCompute(numWorkgroups, 1, 1);
 
-            long now = System.currentTimeMillis();
-            if (now - lastDispatchLogTimeMs >= 2000L) {
-                lastDispatchLogTimeMs = now;
-                LOGGER.info("[HBM-M GPU Cull] Compute dispatched: cmds={}, totalInstances={}, workgroups={}, pyramidMips={}, viewSize={}x{}, zNear={}, zFar={}, P00={}, P11={}",
-                        numCommands, totalInstances, numWorkgroups, depthPyramid.getMipLevels(), viewWidth, viewHeight, zNear, zFar, projMatrix.m00(), projMatrix.m11());
+            if (isDispatchLogEnabled()) {
+                long now = System.currentTimeMillis();
+                if (now - lastDispatchLogTimeMs >= 2000L) {
+                    lastDispatchLogTimeMs = now;
+                    LOGGER.info("[HBM-M GPU Cull] Compute dispatched: cmds={}, totalInstances={}, workgroups={}, pyramidMips={}, viewSize={}x{}, zNear={}, zFar={}, P00={}, P11={}",
+                            numCommands, totalInstances, numWorkgroups, depthPyramid.getMipLevels(), viewWidth, viewHeight, zNear, zFar, projMatrix.m00(), projMatrix.m11());
+                }
             }
 
             // Memory barrier ensuring indirect buffer commands and compacted instance VBO are ready for drawing

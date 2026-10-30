@@ -218,7 +218,6 @@ public abstract class BlockGasBase extends Block {
     @Override
     public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
         if (level.isClientSide() || !(entity instanceof LivingEntity living)) return;
-        if (living instanceof Player player && (player.isCreative() || player.isSpectator())) return;
         affect(living);
     }
 

@@ -14,23 +14,34 @@ import com.hbm_m.main.MainRegistry;
 
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
-
 
 /**
  * One {@link BakedModel#getQuads} pass for a multipart part: the shared quad list
  * (Iris / putBulkData) and construction of
  * {@link com.hbm_m.client.render.SingleMeshVboRenderer.VboData} from those same quads.
+ * <p>
+ * Supports both atlas-mapped machine parts (using {@code block_lit.vsh} and
+ * {@link net.minecraft.client.renderer.texture.TextureAtlas#LOCATION_BLOCKS}) and
+ * standalone-texture models (handheld weapons using {@code weapon_lit.vsh} and discrete PNGs)
+ * via mathematical UV unmapping back to normalized [0.0, 1.0] coordinates.
  */
-
 @OnlyIn(Dist.CLIENT)
-public record PartGeometry(List<BakedQuad> solidQuads) {
+public record PartGeometry(List<BakedQuad> solidQuads, boolean standalone) {
 
     public static final long BAKE_SEED = 42L;
 
-    public static final PartGeometry EMPTY = new PartGeometry(List.of());
+    public static final PartGeometry EMPTY = new PartGeometry(List.of(), false);
+
+    /**
+     * Backward-compatible constructor defaulting {@code standalone} to false (atlas UVs).
+     */
+    public PartGeometry(List<BakedQuad> solidQuads) {
+        this(solidQuads, false);
+    }
 
     public PartGeometry {
         solidQuads = List.copyOf(solidQuads);
@@ -41,9 +52,29 @@ public record PartGeometry(List<BakedQuad> solidQuads) {
     }
 
     /**
-     * Collects solid quads; returns {@link #EMPTY} when there is no geometry.
+     * Collects solid quads with default atlas UV coordinates (for machines).
+     * Returns {@link #EMPTY} when there is no geometry.
      */
     public static PartGeometry compile(BakedModel modelPart, String partName) {
+        return compile(modelPart, partName, false);
+    }
+
+    public static PartGeometry compile(BakedModel modelPart) {
+        return compile(modelPart, "unnamed", false);
+    }
+
+    public static PartGeometry compile(BakedModel modelPart, boolean standalone) {
+        return compile(modelPart, "unnamed", standalone);
+    }
+
+    /**
+     * Collects solid quads with explicit standalone/atlas UV mode.
+     *
+     * @param modelPart  baked model part to inspect
+     * @param partName   debug name of the part
+     * @param standalone if true, UVs will be un-mapped to normalized [0.0, 1.0] coordinates upon VBO compilation
+     */
+    public static PartGeometry compile(BakedModel modelPart, String partName, boolean standalone) {
         if (modelPart == null) {
             return EMPTY;
         }
@@ -54,8 +85,20 @@ public record PartGeometry(List<BakedQuad> solidQuads) {
             MainRegistry.LOGGER.debug("PartGeometry: Part '{}' has NO QUADS, skipping", partName);
             return EMPTY;
         }
-        MainRegistry.LOGGER.debug("PartGeometry: Part '{}' - {} quads", partName, quads.size());
-        return new PartGeometry(quads);
+        MainRegistry.LOGGER.debug("PartGeometry: Part '{}' (standalone={}) - {} quads", partName, standalone, quads.size());
+        return new PartGeometry(quads, standalone);
+    }
+
+    /**
+     * Named factory for standalone models (firearms, handheld items) that sample discrete PNG textures.
+     * Automatically sets {@code standalone = true}.
+     */
+    public static PartGeometry compileStandalone(BakedModel modelPart, String partName) {
+        return compile(modelPart, partName, true);
+    }
+
+    public static PartGeometry compileStandalone(BakedModel modelPart) {
+        return compile(modelPart, "unnamed", true);
     }
 
     /**
@@ -81,10 +124,11 @@ public record PartGeometry(List<BakedQuad> solidQuads) {
 
     /**
      * VBO built from the already-collected quads (no repeated getQuads).
+     * Uses this instance's {@code standalone} flag to decide UV normalization.
      * {@code bone_id} in vertices = 0 (static / ring).
      */
     public SingleMeshVboRenderer.VboData toVboData(String partName) {
-        return buildVboDataFromQuads(solidQuads, partName, 0);
+        return buildVboDataFromQuads(solidQuads, partName, 0, this.standalone);
     }
 
     /**
@@ -92,14 +136,70 @@ public record PartGeometry(List<BakedQuad> solidQuads) {
      *                        see {@code MachineAdvancedAssemblerRenderer} and {@code block_lit.vsh}.
      */
     public SingleMeshVboRenderer.VboData toVboData(String partName, int perVertexBoneId) {
-        return buildVboDataFromQuads(solidQuads, partName, perVertexBoneId);
+        return buildVboDataFromQuads(solidQuads, partName, perVertexBoneId, this.standalone);
+    }
+
+    /**
+     * Explicit override for UV normalization regardless of instance's {@code standalone} flag.
+     */
+    public SingleMeshVboRenderer.VboData toVboData(String partName, int perVertexBoneId, boolean normalizeUv) {
+        return buildVboDataFromQuads(solidQuads, partName, perVertexBoneId, normalizeUv);
+    }
+
+    /**
+     * Explicit convenience method to compile normalized VBO data for standalone textures.
+     */
+    public SingleMeshVboRenderer.VboData toVboDataNormalized(String partName) {
+        return buildVboDataFromQuads(solidQuads, partName, 0, true);
+    }
+
+    /**
+     * Explicit convenience method to compile normalized VBO data with bone index.
+     */
+    public SingleMeshVboRenderer.VboData toVboDataNormalized(String partName, int perVertexBoneId) {
+        return buildVboDataFromQuads(solidQuads, partName, perVertexBoneId, true);
+    }
+
+    /**
+     * Alias for {@link #toVboDataNormalized(String)} for loader/registry interoperability.
+     */
+    public SingleMeshVboRenderer.VboData toNormalizedVboData(String partName) {
+        return toVboDataNormalized(partName);
+    }
+
+    /**
+     * Alias for {@link #toVboDataNormalized(String, int)} for loader/registry interoperability.
+     */
+    public SingleMeshVboRenderer.VboData toNormalizedVboData(String partName, int perVertexBoneId) {
+        return toVboDataNormalized(partName, perVertexBoneId);
     }
 
     public static SingleMeshVboRenderer.VboData buildVboDataFromQuads(List<BakedQuad> quads, String partName) {
-        return buildVboDataFromQuads(quads, partName, 0);
+        return buildVboDataFromQuads(quads, partName, 0, false);
     }
 
     public static SingleMeshVboRenderer.VboData buildVboDataFromQuads(List<BakedQuad> quads, String partName, int perVertexBoneId) {
+        return buildVboDataFromQuads(quads, partName, perVertexBoneId, false);
+    }
+
+    public static SingleMeshVboRenderer.VboData buildVboDataFromQuadsNormalized(List<BakedQuad> quads, String partName) {
+        return buildVboDataFromQuads(quads, partName, 0, true);
+    }
+
+    public static SingleMeshVboRenderer.VboData buildVboDataFromQuadsNormalized(List<BakedQuad> quads, String partName, int perVertexBoneId) {
+        return buildVboDataFromQuads(quads, partName, perVertexBoneId, true);
+    }
+
+    /**
+     * Builds off-heap {@link SingleMeshVboRenderer.VboData} from baked quads.
+     *
+     * @param quads           list of baked quads to pack
+     * @param partName        part identifier for logging
+     * @param perVertexBoneId bone index for vertex layout
+     * @param normalizeUv     if true, un-maps quad UVs from atlas sprite coordinates back to [0.0, 1.0]
+     * @return populated off-heap VboData with 36-byte vertex stride, or null if no valid quads
+     */
+    public static SingleMeshVboRenderer.VboData buildVboDataFromQuads(List<BakedQuad> quads, String partName, int perVertexBoneId, boolean normalizeUv) {
         if (quads == null || quads.isEmpty()) {
             return null;
         }
@@ -128,6 +228,24 @@ public record PartGeometry(List<BakedQuad> solidQuads) {
                     continue;
                 }
 
+                // Compute sprite un-mapping parameters once per quad if normalization is requested
+                float u0 = 0f, v0 = 0f, invDu = 0f, invDv = 0f;
+                boolean shouldNormalize = false;
+                if (normalizeUv) {
+                    TextureAtlasSprite sprite = quad.getSprite();
+                    if (sprite != null) {
+                        u0 = sprite.getU0();
+                        v0 = sprite.getV0();
+                        float du = sprite.getU1() - u0;
+                        float dv = sprite.getV1() - v0;
+                        if (Math.abs(du) > 1e-7f && Math.abs(dv) > 1e-7f) {
+                            invDu = 1.0f / du;
+                            invDv = 1.0f / dv;
+                            shouldNormalize = true;
+                        }
+                    }
+                }
+
                 for (int i = 0; i < 4; i++) {
                     int base = i * 8;
 
@@ -141,6 +259,11 @@ public record PartGeometry(List<BakedQuad> solidQuads) {
 
                     float u = Float.intBitsToFloat(raw[base + 4]);
                     float v = Float.intBitsToFloat(raw[base + 5]);
+
+                    if (shouldNormalize) {
+                        u = (u - u0) * invDu;
+                        v = (v - v0) * invDv;
+                    }
 
                     int normalPacked = raw[base + 7];
                     float nx = ((byte) (normalPacked & 0xFF)) / 127.0f;
@@ -186,8 +309,8 @@ public record PartGeometry(List<BakedQuad> solidQuads) {
                 maxX = maxY = maxZ = 0f;
             }
 
-            MainRegistry.LOGGER.debug("PartGeometry VBO: {} vertices, {} indices, bbox min({},{},{}) max({},{},{})",
-                    indexOffset, ib.remaining(), minX, minY, minZ, maxX, maxY, maxZ);
+            MainRegistry.LOGGER.debug("PartGeometry VBO: {} vertices, {} indices, bbox min({},{},{}) max({},{},{}), normalizedUv={}",
+                    indexOffset, ib.remaining(), minX, minY, minZ, maxX, maxY, maxZ, normalizeUv);
             return new SingleMeshVboRenderer.VboData(vb, ib, minX, minY, minZ, maxX, maxY, maxZ, vertexStrideBytes);
 
         } catch (Exception | OutOfMemoryError e) {

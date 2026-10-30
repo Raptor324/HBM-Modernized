@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'liberator.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Shell4
 v -0.250000 0.437500 0.000000
 v -0.343750 0.412380 0.000000

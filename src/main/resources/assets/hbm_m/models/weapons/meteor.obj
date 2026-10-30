@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'meteor.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Cube
 v 0.500000 -0.171667 -0.171667
 v 0.171667 -0.500000 -0.171667

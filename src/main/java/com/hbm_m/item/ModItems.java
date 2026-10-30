@@ -2470,26 +2470,11 @@ public class ModItems {
     public static final RegistrySupplier<Item> AMMO_BAG_INFINITE = ITEMS.register("ammo_bag_infinite", () -> new com.hbm_m.item.tool.ItemAmmoBag(new Item.Properties()));
     public static final RegistrySupplier<Item> AMMO_CONTAINER = ITEMS.register("ammo_container", () -> new com.hbm_m.item.tool.ItemAmmoContainer(false, new Item.Properties()));
     public static final RegistrySupplier<Item> TURRET_AMMO = ITEMS.register("turret_ammo", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> AMMO_9MM_SP = ITEMS.register("ammo_9mm_sp", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> AMMO_9MM_FMJ = ITEMS.register("ammo_9mm_fmj", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> AMMO_9MM_JHP = ITEMS.register("ammo_9mm_jhp", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> AMMO_9MM_AP = ITEMS.register("ammo_9mm_ap", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> AMMO_50_SP = ITEMS.register("ammo_50_sp", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> AMMO_50_FMJ = ITEMS.register("ammo_50_fmj", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> AMMO_50_JHP = ITEMS.register("ammo_50_jhp", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> AMMO_50_AP = ITEMS.register("ammo_50_ap", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> AMMO_50_DU = ITEMS.register("ammo_50_du", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> AMMO_556_SP = ITEMS.register("ammo_556_sp", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> AMMO_556_FMJ = ITEMS.register("ammo_556_fmj", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> AMMO_556_JHP = ITEMS.register("ammo_556_jhp", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> AMMO_556_AP = ITEMS.register("ammo_556_ap", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> ROCKET_TURRET_STANDARD = ITEMS.register("rocket_turret_standard", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> ROCKET_TURRET_HEAT = ITEMS.register("rocket_turret_heat", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> ROCKET_TURRET_DEMO = ITEMS.register("rocket_turret_demo", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> ROCKET_TURRET_INC = ITEMS.register("rocket_turret_inc", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> ROCKET_TURRET_PHOSPHORUS = ITEMS.register("rocket_turret_phosphorus", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> AMMO_TAU_URANIUM = ITEMS.register("ammo_tau_uranium", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> AMMO_FLAME_DIESEL = ITEMS.register("ammo_flame_diesel", () -> new Item(new Item.Properties()));
 
     /** {@code ItemAmmoContainer} Meta 1 (Behelfskiste, Textur ammo_container_alt). */
     public static final RegistrySupplier<Item> AMMO_CONTAINER_1 = ITEMS.register("ammo_container_1", () -> new com.hbm_m.item.tool.ItemAmmoContainer(true, new Item.Properties()));

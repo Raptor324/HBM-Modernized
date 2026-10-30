@@ -42,17 +42,19 @@ public final class MachineChemistryRenderer {
     }
 
     private static void registerElectrolyser() {
+        // electrolyser.obj слит в одну группу "Cube_Cube.001"
         MachineRenderers.machine("electrolyser", ModBlockEntities.ELECTROLYSER_BE.get(),
                 MachineElectrolyserBlockEntity.class)
-            .part("Body")
+            .part("Cube_Cube.001")
             .blockTransform(MachineChemistryRenderer::applyElectrolyserTransform)
             .register();
     }
 
     private static void registerRadiolysis() {
+        // radiolysis.obj слит в одну группу "Cube.001_Cube.002"
         MachineRenderers.machine("radiolysis", ModBlockEntities.RADIOLYSIS_BE.get(),
                 MachineRadiolysisBlockEntity.class)
-            .part("Body")
+            .part("Cube.001_Cube.002")
             .blockTransform(MachineChemistryRenderer::applyRadiolysisTransform)
             .register();
     }

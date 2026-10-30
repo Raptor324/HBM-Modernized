@@ -84,7 +84,11 @@ public class EntityC130 extends EntityPlaneBase {
         this.payload = payload;
 
         this.moveTo(x - vector.x * 100, y + 100, z - vector.z * 100, 0.0F, 0.0F);
-        this.loadNeighboringChunks((int) (x / 16), (int) (z / 16));
+        // Bootstrap-Fix: das Flugzeug spawnt ~7 Chunks vom Ziel entfernt — ohne eigenes Ticket auf dem
+        // SPAWN-Chunk waere dieser nie entity-ticking, das Flugzeug wuerde nie ticken und erst auftauen,
+        // wenn ein Spieler die Gegend laedt. Der Zielchunk wird zusaetzlich verankert (Abwurfzone).
+        this.loadNeighboringChunks(net.minecraft.util.Mth.floor(this.getX() / 16D), net.minecraft.util.Mth.floor(this.getZ() / 16D));
+        this.anchorChunk(net.minecraft.util.Mth.floor(x / 16D), net.minecraft.util.Mth.floor(z / 16D));
 
         this.setDeltaMovement(vector.x, 0.0D, vector.z);
 

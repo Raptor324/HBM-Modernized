@@ -70,6 +70,7 @@ public final class NucleusJointSpecs {
 
     public static final int KIND_ROTATE = 0;
     public static final int KIND_TRANSLATE = 1;
+    public static final int KIND_TRANSLATE_AXIS = 2;
     /**
      * Sampler unit for uJointSpecs. Deliberately NOT the "4th declared sampler"
      * index: ShaderInstance.apply() maps samplers by declaration INDEX and drops
@@ -195,7 +196,6 @@ public final class NucleusJointSpecs {
         cpu.put(base + 7, 0f);
         // Texel C is written by appendJoints' rewrite pass (from the per-joint
         // entry/flags just stored) - nothing to do here.
-        uploadIfDirty();
         return jointCount - 1;
     }
 
@@ -514,7 +514,6 @@ public final class NucleusJointSpecs {
             cpu.put(b + 7, j == 0 ? (float) n : 0f);
             // Texel C (b + 8..11) was written by appendJoints' rewrite pass.
         }
-        uploadIfDirty();
         return jointCount - n;
     }
 
@@ -526,6 +525,26 @@ public final class NucleusJointSpecs {
 
     public static synchronized int getJointCount() {
         return jointCount;
+    }
+
+    /**
+     * Fast check whether the joint or chain starting at {@code baseJointIdx} contains
+     * any keyframe-tracked node (rateScale > 0 in texel C). Used by BakeRecordDiffer
+     * to mark actively moving time-driven instances dirty during compute baking.
+     */
+    public static synchronized boolean isTrackedChain(int baseJointIdx) {
+        if (baseJointIdx < 0 || baseJointIdx >= jointCount || cpu == null) {
+            return false;
+        }
+        int baseFloat = baseJointIdx * TEXELS_PER_JOINT * FLOATS_PER_TEXEL;
+        float countW = cpu.get(baseFloat + 7);
+        int n = countW >= 0.5f ? Math.min((int) countW, 8) : 1;
+        for (int i = 0; i < n && (baseJointIdx + i) < jointCount; i++) {
+            if (jointTrackEntry[baseJointIdx + i] >= 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -575,6 +594,9 @@ public final class NucleusJointSpecs {
 
     private static void uploadIfDirty() {
         if (!dirty) {
+            return;
+        }
+        if (!com.mojang.blaze3d.systems.RenderSystem.isOnRenderThread()) {
             return;
         }
         dirty = false;

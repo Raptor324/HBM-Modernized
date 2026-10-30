@@ -229,20 +229,35 @@ public final class SparseUpdateQueue {
         float[] bakedBbox = SCRATCH_BBOX.get();
         sampleMachineLight(be, handle, lightFloats, bakedBbox);
 
+        bakeAllPartsToSpec(handle, be, spec, poseStack, lightFloats, bakedBbox, slots.length);
+    }
+
+    /**
+     * Shared per-part record baking loop (pose each part, pack translation/rotation,
+     * build the 32-float instance record and push it into the per-machine CPU-side
+     * copy via {@link MachineSpec#syncInstanceRecord}). Used identically by
+     * {@link #enqueueInitialBake} and the full-rebuild tail of {@link #enqueueUpdate}.
+     * Runs entirely on thread-local scratch - zero heap allocation per part.
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private <T extends BlockEntity> void bakeAllPartsToSpec(
+            MachineInstanceHandle handle, T be, MachineSpec spec,
+            PoseStack poseStack, float[] lightFloats, float[] bakedBbox, int partCount) {
         float[] rec = SCRATCH_RECORD.get();
         float[] paramScratch = SCRATCH_PARAMS.get();
         float[] encodedAnim = SCRATCH_ANIM.get();
         long gameTime = be.getLevel() != null ? be.getLevel().getGameTime() : 0L;
-        java.util.List<? extends MachineSpec.PartDef<T>> specParts = spec.parts();
-        for (int i = 0; i < slots.length; i++) {
+        java.util.List<? extends MachineSpec.PartDef> specParts = spec != null ? spec.parts() : null;
+        int[] slots = handle.getSlotIndices();
+        for (int i = 0; i < partCount; i++) {
             int slot = slots[i];
             boolean invisible = false;
             java.util.Arrays.fill(encodedAnim, 0.0f);
-            MachineSpec.PartDef<T> partDef = (specParts != null && i < specParts.size()) ? specParts.get(i) : null;
+            MachineSpec.PartDef partDef = (specParts != null && i < specParts.size()) ? specParts.get(i) : null;
 
             poseStack.pushPose();
             if (partDef != null) {
-                if (partDef.isConditional() && !partDef.isVisible((T) be)) {
+                if (partDef.isConditional() && !partDef.isVisible(be)) {
                     invisible = true;
                 }
                 if (partDef.parametric() != null) {
@@ -253,7 +268,7 @@ public final class SparseUpdateQueue {
                     if (partDef.parametricParams() != null) {
                         java.util.Arrays.fill(paramScratch, 0.0f);
                         try {
-                            if (partDef.parametricParams().params((T) be, 0f, gameTime, paramScratch)) {
+                            if (partDef.parametricParams().params(be, 0f, gameTime, paramScratch)) {
                                 rig.encodeAnimParams(paramScratch, encodedAnim);
                             } else {
                                 invisible = true;
@@ -264,7 +279,7 @@ public final class SparseUpdateQueue {
                     }
                 } else if (partDef.animator() != null) {
                     try {
-                        if (!partDef.animator().animate((T) be, 0f, gameTime, poseStack)) {
+                        if (!partDef.animator().animate(be, 0f, gameTime, poseStack)) {
                             invisible = true;
                         }
                     } catch (Throwable ignored) {}
@@ -313,7 +328,7 @@ public final class SparseUpdateQueue {
             float uv0 = 0.0f, uv1 = 0.0f, uv2 = 1.0f, uv3 = 1.0f;
             if (partDef != null && partDef.uvRectResolver() != null) {
                 try {
-                    float[] uv = partDef.uvRectResolver().apply((T) be);
+                    float[] uv = (float[]) partDef.uvRectResolver().apply(be);
                     if (uv != null && uv.length >= 4) {
                         uv0 = uv[0];
                         uv1 = uv[1];
@@ -446,107 +461,7 @@ public final class SparseUpdateQueue {
         float[] bakedBbox = SCRATCH_BBOX.get();
         sampleMachineLight(be, handle, lightFloats, bakedBbox);
 
-        float[] rec = SCRATCH_RECORD.get();
-        float[] paramScratch = SCRATCH_PARAMS.get();
-        float[] encodedAnim = SCRATCH_ANIM.get();
-        long gameTime = be.getLevel() != null ? be.getLevel().getGameTime() : 0L;
-        for (int i = 0; i < slots.length; i++) {
-            int slot = slots[i];
-            boolean invisible = false;
-            java.util.Arrays.fill(encodedAnim, 0.0f);
-            MachineSpec.PartDef partDef = (rawParts != null && i < rawParts.size()) ? (MachineSpec.PartDef) rawParts.get(i) : null;
-
-            poseStack.pushPose();
-            if (partDef != null) {
-                if (partDef.isConditional() && !partDef.isVisible(be)) {
-                    invisible = true;
-                }
-                if (partDef.parametric() != null) {
-                    // Full base statics (baseYaw + baseOffset), plus real AnimParams
-                    // (the hardwired zeros froze every GPU-parametric part at rest).
-                    partDef.parametric().applyRecordStatic(poseStack, be, 0f);
-                    if (partDef.parametricParams() != null) {
-                        java.util.Arrays.fill(paramScratch, 0.0f);
-                        try {
-                            if (partDef.parametricParams().params(be, 0f, gameTime, paramScratch)) {
-                                partDef.parametric().encodeAnimParams(paramScratch, encodedAnim);
-                            } else {
-                                invisible = true;
-                            }
-                        } catch (Throwable ignored) {
-                            invisible = true;
-                        }
-                    }
-                } else if (partDef.animator() != null) {
-                    try {
-                        if (!partDef.animator().animate(be, 0f, gameTime, poseStack)) {
-                            invisible = true;
-                        }
-                    } catch (Throwable ignored) {}
-                }
-            }
-            Matrix4f partPose = poseStack.last().pose();
-            Vector3f trans = partPose.getTranslation(SCRATCH_VEC.get());
-            Quaternionf rot = partPose.getNormalizedRotation(SCRATCH_QUAT.get());
-            int q0 = InstancedStaticPartRenderer.packQuatWord(rot.x, rot.y);
-            int q1 = InstancedStaticPartRenderer.packQuatWord(rot.z, rot.w);
-            poseStack.popPose();
-
-            java.util.Arrays.fill(rec, 0.0f);
-            rec[0] = trans.x;
-            rec[1] = trans.y;
-            rec[2] = trans.z;
-            rec[3] = Float.intBitsToFloat(q0);
-            rec[4] = Float.intBitsToFloat(q1);
-            // InstBboxMin/Size (floats 5..10) - real sampled bounds
-            rec[5] = bakedBbox[0];
-            rec[6] = bakedBbox[1];
-            rec[7] = bakedBbox[2];
-            rec[8] = bakedBbox[3] - bakedBbox[0];
-            rec[9] = bakedBbox[4] - bakedBbox[1];
-            rec[10] = bakedBbox[5] - bakedBbox[2];
-            // InstBboxMin/Size stay UNPADDED: nucleus_cull.comp expands the cull
-            // sphere itself for GPU-parametric parts (GradParams.w >= 0), and
-            // block_lit_instanced.vsh interpolates the 8-corner lightmap with
-            // (vPos - bboxMin)/safeSize - a padded bbox corrupted that gradient
-            // and broke recordMatchesBuffer against MachineBer's sharedLightBbox.
-            boolean isAnimPart = partDef != null && (partDef.animated() || partDef.parametric() != null);
-            rec[11] = invisible
-                    ? InstancedStaticPartRenderer.FADE_MODE_INVISIBLE
-                    : (isAnimPart ? InstancedStaticPartRenderer.FADE_MODE_MIN_ANIM : InstancedStaticPartRenderer.FADE_MODE_STATIC);
-            rec[12] = lightFloats[0];
-            rec[13] = lightFloats[1];
-            rec[14] = lightFloats[2];
-            rec[15] = lightFloats[3];
-            float uv0 = 0.0f, uv1 = 0.0f, uv2 = 1.0f, uv3 = 1.0f;
-            if (partDef != null && partDef.uvRectResolver() != null) {
-                try {
-                    float[] uv = (float[]) partDef.uvRectResolver().apply(be);
-                    if (uv != null && uv.length >= 4) {
-                        uv0 = uv[0];
-                        uv1 = uv[1];
-                        uv2 = uv[2];
-                        uv3 = uv[3];
-                    }
-                } catch (Throwable ignored) {}
-            }
-            rec[16] = uv0;
-            rec[17] = uv1;
-            rec[18] = uv2;
-            rec[19] = uv3;
-            // InstColor (floats 20..23) + GradParams (floats 24..27)
-            writeTintAndGrad(rec, rawSpec, partDef, be);
-            // AnimParams (floats 28..31)
-            rec[28] = encodedAnim[0];
-            rec[29] = encodedAnim[1];
-            rec[30] = encodedAnim[2];
-            rec[31] = encodedAnim[3];
-            enqueueSlotFloats(slot, rec);
-
-            if (rawSpec != null) {
-                rawSpec.syncInstanceRecord(be, handle.getBlockPosKey(), i, rec);
-            }
-        }
+        bakeAllPartsToSpec(handle, be, rawSpec, poseStack, lightFloats, bakedBbox, slots.length);
     }
 
     /**

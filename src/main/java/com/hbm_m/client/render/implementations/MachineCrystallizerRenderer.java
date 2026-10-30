@@ -46,10 +46,10 @@ import com.hbm_m.platform.ClientFluidHooks;
 import com.hbm_m.platform.LoaderHooks;
 
 /**
- * Crystallizer on the {@link MachineRenderers} factory: the body lives in the chunk mesh,
- * the spinner is a dynamic part from the injected crystallizer_spinner model, the fluid is
- * an immediate hook with deferred drawing (drawn in AFTER_BLOCK_ENTITIES after the
- * instanced flush, see {@link #presentDeferredFluids()}).
+ * Crystallizer on the {@link MachineRenderers} factory: the body is a static part of the
+ * multipart model (Nucleus draws the whole machine), the spinner is a dynamic part from the
+ * injected crystallizer_spinner model, the fluid is an immediate hook with deferred drawing
+ * (drawn in AFTER_BLOCK_ENTITIES after the instanced flush, see {@link #presentDeferredFluids()}).
  */
 public final class MachineCrystallizerRenderer {
 
@@ -58,6 +58,7 @@ public final class MachineCrystallizerRenderer {
     public static void register() {
         MachineRenderers.machine("crystallizer", ModBlockEntities.CRYSTALLIZER.get(),
                 MachineCrystallizerBlockEntity.class)
+            .part("Body")
             .rotateY("Spinner", 0.5f, 0.5f, be -> spinnerQuads(), be -> "spinner",
                     (be, pt) -> (double) Mth.lerp(pt, be.prevAngle, be.angle))
             .blockTransform(MachineCrystallizerRenderer::applyBlockTransform)

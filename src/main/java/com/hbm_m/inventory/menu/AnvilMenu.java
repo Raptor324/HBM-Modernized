@@ -242,7 +242,10 @@ public class AnvilMenu extends AbstractContainerMenu {
         @Override
         public void onTake(@NotNull Player player, @NotNull ItemStack stack) {
             super.onTake(player, stack);
-            
+
+            // FFA: Achivements fuer den Ausgang, wie im Original-Anvil onTake
+            com.hbm_m.advancement.AchievementHandler.fire(player, stack);
+
             if (!level.isClientSide) {
                 blockEntity.handleCombineOutputTaken(player, stack);
             }

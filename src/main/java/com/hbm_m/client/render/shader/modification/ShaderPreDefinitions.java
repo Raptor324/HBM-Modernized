@@ -50,10 +50,10 @@ public final class ShaderPreDefinitions {
      * the "vertex"/"fragment" name from the JSON, so two variants pointing at the same name will
      * collide and only the first compilation wins.
      * <p>
-     * Example: {@code block_lit_simple.json} references {@code "vertex": "hbm_m:block_lit"},
-     * {@code block_lit_instanced.json} references {@code "vertex": "hbm_m:block_lit_instanced"}.
-     * Only the latter file does not exist on disk; this provider fabricates it from
-     * {@code hbm_m:shaders/core/block_lit.vsh} + {@code #define USE_INSTANCING}.
+     * Note: the instanced variants used to be fabricated here from
+     * {@code block_lit.vsh} + {@code #define USE_INSTANCING}; they now live as real
+     * files ({@code block_lit_instanced.vsh}, {@code iris/...}), so this redirect
+     * remains for future variant registrations only.
      */
     public static ResourceProvider wrapRedirect(ResourceProvider delegate,
                                                 ResourceLocation virtualTarget,

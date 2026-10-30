@@ -45,6 +45,9 @@ public abstract class EntityPlaneBase extends Entity {
     protected double syncPitch;
 
     private ChunkPos loadedChunk;
+    /** Bootstrap-Fix: solange das Flugzeug lebt, wird zusätzlich der Zielchunk (Abwurfzone) entity-ticking gehalten,
+     * wie das ForgeChunkManager-FORCED-Ticket des Originals. Ohne dies friert der Abwurf ein, sobald der Spieler weggeht. */
+    private ChunkPos anchorChunk;
 
     public float health = getMaxHealth();
     public int timer = getLifetime();
@@ -190,9 +193,29 @@ public abstract class EntityPlaneBase extends Entity {
     }
 
     public void clearChunkLoader() {
-        if (loadedChunk != null && level() instanceof ServerLevel server) {
-            server.getChunkSource().removeRegionTicket(CHUNK_TICKET, loadedChunk, 2, getUUID());
-            loadedChunk = null;
+        if (level() instanceof ServerLevel server) {
+            if (loadedChunk != null) {
+                server.getChunkSource().removeRegionTicket(CHUNK_TICKET, loadedChunk, 2, getUUID());
+                loadedChunk = null;
+            }
+            if (anchorChunk != null) {
+                server.getChunkSource().removeRegionTicket(CHUNK_TICKET, anchorChunk, 2, getUUID());
+                anchorChunk = null;
+            }
+        }
+    }
+
+    /**
+     * Bootstrap-Fix: haelt die Abwurfzone entity-ticking, bis das Flugzeug entfernt wird. Das mitwandernde Ticket aus
+     * {@link #loadNeighboringChunks(int, int)} wird dadurch nicht beruehrt (zwei Tickets unterschiedlichen Chunks).
+     */
+    public void anchorChunk(int chunkX, int chunkZ) {
+        if (level() instanceof ServerLevel server) {
+            ChunkPos pos = new ChunkPos(chunkX, chunkZ);
+            if (pos.equals(anchorChunk)) return;
+            if (anchorChunk != null) server.getChunkSource().removeRegionTicket(CHUNK_TICKET, anchorChunk, 2, getUUID());
+            server.getChunkSource().addRegionTicket(CHUNK_TICKET, pos, 2, getUUID());
+            anchorChunk = pos;
         }
     }
 

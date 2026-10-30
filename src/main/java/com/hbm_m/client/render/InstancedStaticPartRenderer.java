@@ -993,59 +993,12 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
 
                 int stride = instanceDataSize * 4;
 
-                GL20.glEnableVertexAttribArray(4);
-                GL20.glVertexAttribPointer(4, 3, GL11.GL_FLOAT, false, stride, POS_FLOAT_OFFSET * 4L);
-                InstancedGlCompat.glVertexAttribDivisorCompat(4, 1);
-
-                // InstRot (loc 5): 4 snorm16 halves packed in 2 words — GL_SHORT
-                // normalized makes the vsh see [-1,1] floats with no decode.
-                GL20.glEnableVertexAttribArray(5);
-                GL20.glVertexAttribPointer(5, 4, GL11.GL_SHORT, true, stride, QUAT_FLOAT_OFFSET * 4L);
-                InstancedGlCompat.glVertexAttribDivisorCompat(5, 1);
-
-                GL20.glEnableVertexAttribArray(6);
-                GL20.glVertexAttribPointer(6, 3, GL11.GL_FLOAT, false, stride, BBOX_MIN_FLOAT_OFFSET * 4L);
-                InstancedGlCompat.glVertexAttribDivisorCompat(6, 1);
-
-                GL20.glEnableVertexAttribArray(7);
-                GL20.glVertexAttribPointer(7, 4, GL11.GL_FLOAT, false, stride, BBOX_SIZE_FLOAT_OFFSET * 4L);
-                InstancedGlCompat.glVertexAttribDivisorCompat(7, 1);
-
-                // InstLightC0x (locs 8-11): 4 u8 corners per word, GL_UNSIGNED_BYTE
-                // normalized (0..1); the vsh decodes to the 0..240 texel grid by x240.
-                GL20.glEnableVertexAttribArray(8);
-                GL20.glVertexAttribPointer(8, 4, GL11.GL_UNSIGNED_BYTE, true, stride, (LIGHT_FLOAT_OFFSET + 0) * 4L);
-                InstancedGlCompat.glVertexAttribDivisorCompat(8, 1);
-                GL20.glEnableVertexAttribArray(9);
-                GL20.glVertexAttribPointer(9, 4, GL11.GL_UNSIGNED_BYTE, true, stride, (LIGHT_FLOAT_OFFSET + 1) * 4L);
-                InstancedGlCompat.glVertexAttribDivisorCompat(9, 1);
-                GL20.glEnableVertexAttribArray(10);
-                GL20.glVertexAttribPointer(10, 4, GL11.GL_UNSIGNED_BYTE, true, stride, (LIGHT_FLOAT_OFFSET + 2) * 4L);
-                InstancedGlCompat.glVertexAttribDivisorCompat(10, 1);
-                GL20.glEnableVertexAttribArray(11);
-                GL20.glVertexAttribPointer(11, 4, GL11.GL_UNSIGNED_BYTE, true, stride, (LIGHT_FLOAT_OFFSET + 3) * 4L);
-                InstancedGlCompat.glVertexAttribDivisorCompat(11, 1);
-
-                // InstUvRect vec4 (loc 12): sprite-rect remap from normalized VBO to atlas.
-                GL20.glEnableVertexAttribArray(12);
-                GL20.glVertexAttribPointer(12, 4, GL11.GL_FLOAT, false, stride, UVRECT_FLOAT_OFFSET * 4L);
-                InstancedGlCompat.glVertexAttribDivisorCompat(12, 1);
-
-                // InstColor vec4 (loc 13): per-instance RGBA tint (white = passthrough).
-                GL20.glEnableVertexAttribArray(13);
-                GL20.glVertexAttribPointer(13, 4, GL11.GL_FLOAT, false, stride, TINT_FLOAT_OFFSET * 4L);
-                InstancedGlCompat.glVertexAttribDivisorCompat(13, 1);
-
-                // GradParams vec4 (loc 14): spatial tint falloff (axis<0 = off).
-                GL20.glEnableVertexAttribArray(14);
-                GL20.glVertexAttribPointer(14, 4, GL11.GL_FLOAT, false, stride, GRAD_FLOAT_OFFSET * 4L);
-                InstancedGlCompat.glVertexAttribDivisorCompat(14, 1);
-
-                // AnimParams vec4 (loc 15): parametric GPU animation (xyz = parameters,
-                // w = joint index; w < 0 = no parametrics - the shader skips the joint delta).
-                GL20.glEnableVertexAttribArray(15);
-                GL20.glVertexAttribPointer(15, 4, GL11.GL_FLOAT, false, stride, ANIM_FLOAT_OFFSET * 4L);
-                InstancedGlCompat.glVertexAttribDivisorCompat(15, 1);
+                // InstPos vec3 @ 0; InstRot: 4 snorm16 halves packed in 2 words @ 12 — GL_SHORT
+                // normalized makes the vsh see [-1,1] floats with no decode; InstBboxMin/Size;
+                // InstLightC0x (locs 8-11): 4 u8 corners per word, GL_UNSIGNED_BYTE normalized
+                // (0..1); the vsh decodes to the 0..240 texel grid by x240; InstUvRect vec4 (loc
+                // 12); InstColor vec4 (loc 13); GradParams vec4 (loc 14); AnimParams vec4 (loc 15).
+                setupInstanceVertexAttributes(instanceVboId, stride, true);
 
                 GlVaoSafety.bindVertexArray(0);
             } finally {
@@ -1493,6 +1446,40 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     }
 
     /**
+     * Single source of truth for configuring instance VBO vertex attributes (locations 4..15)
+     * on the currently bound VAO.
+     *
+     * @param vboId       the GL buffer to bind to {@code GL_ARRAY_BUFFER}
+     * @param strideBytes byte stride of one instance record ({@code INSTANCE_DATA_SIZE * 4})
+     * @param setDivisors if true, enables vertex attrib arrays 4..15 and sets divisor 1 on each
+     */
+    public static void setupInstanceVertexAttributes(int vboId, int strideBytes, boolean setDivisors) {
+        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
+        if (setDivisors) {
+            for (int loc = 4; loc <= 15; loc++) {
+                GL20.glEnableVertexAttribArray(loc);
+            }
+        }
+        GL20.glVertexAttribPointer(4, 3, GL11.GL_FLOAT, false, strideBytes, POS_FLOAT_OFFSET * 4L);
+        GL20.glVertexAttribPointer(5, 4, GL11.GL_SHORT, true, strideBytes, QUAT_FLOAT_OFFSET * 4L);
+        GL20.glVertexAttribPointer(6, 3, GL11.GL_FLOAT, false, strideBytes, BBOX_MIN_FLOAT_OFFSET * 4L);
+        GL20.glVertexAttribPointer(7, 4, GL11.GL_FLOAT, false, strideBytes, BBOX_SIZE_FLOAT_OFFSET * 4L);
+        GL20.glVertexAttribPointer(8, 4, GL11.GL_UNSIGNED_BYTE, true, strideBytes, (LIGHT_FLOAT_OFFSET + 0) * 4L);
+        GL20.glVertexAttribPointer(9, 4, GL11.GL_UNSIGNED_BYTE, true, strideBytes, (LIGHT_FLOAT_OFFSET + 1) * 4L);
+        GL20.glVertexAttribPointer(10, 4, GL11.GL_UNSIGNED_BYTE, true, strideBytes, (LIGHT_FLOAT_OFFSET + 2) * 4L);
+        GL20.glVertexAttribPointer(11, 4, GL11.GL_UNSIGNED_BYTE, true, strideBytes, (LIGHT_FLOAT_OFFSET + 3) * 4L);
+        GL20.glVertexAttribPointer(12, 4, GL11.GL_FLOAT, false, strideBytes, UVRECT_FLOAT_OFFSET * 4L);
+        GL20.glVertexAttribPointer(13, 4, GL11.GL_FLOAT, false, strideBytes, TINT_FLOAT_OFFSET * 4L);
+        GL20.glVertexAttribPointer(14, 4, GL11.GL_FLOAT, false, strideBytes, GRAD_FLOAT_OFFSET * 4L);
+        GL20.glVertexAttribPointer(15, 4, GL11.GL_FLOAT, false, strideBytes, ANIM_FLOAT_OFFSET * 4L);
+        if (setDivisors) {
+            for (int loc = 4; loc <= 15; loc++) {
+                InstancedGlCompat.glVertexAttribDivisorCompat(loc, 1);
+            }
+        }
+    }
+
+    /**
      * Re-points the instance attribs (4..15) of the CURRENTLY BOUND VAO at
      * {@code vboId}. Used to draw the phase-2 fading window from
      * {@link #fadingInstanceVboId} and to restore the attribs back to
@@ -1500,20 +1487,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
      * later plain ARRAY_BUFFER bind does not re-point them).
      */
     void pointInstanceAttribsTo(int vboId) {
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
-        int stride = instanceDataSize * 4;
-        GL20.glVertexAttribPointer(4, 3, GL11.GL_FLOAT, false, stride, POS_FLOAT_OFFSET * 4L);
-        GL20.glVertexAttribPointer(5, 4, GL11.GL_SHORT, true, stride, QUAT_FLOAT_OFFSET * 4L);
-        GL20.glVertexAttribPointer(6, 3, GL11.GL_FLOAT, false, stride, BBOX_MIN_FLOAT_OFFSET * 4L);
-        GL20.glVertexAttribPointer(7, 4, GL11.GL_FLOAT, false, stride, BBOX_SIZE_FLOAT_OFFSET * 4L);
-        GL20.glVertexAttribPointer(8, 4, GL11.GL_UNSIGNED_BYTE, true, stride, (LIGHT_FLOAT_OFFSET + 0) * 4L);
-        GL20.glVertexAttribPointer(9, 4, GL11.GL_UNSIGNED_BYTE, true, stride, (LIGHT_FLOAT_OFFSET + 1) * 4L);
-        GL20.glVertexAttribPointer(10, 4, GL11.GL_UNSIGNED_BYTE, true, stride, (LIGHT_FLOAT_OFFSET + 2) * 4L);
-        GL20.glVertexAttribPointer(11, 4, GL11.GL_UNSIGNED_BYTE, true, stride, (LIGHT_FLOAT_OFFSET + 3) * 4L);
-        GL20.glVertexAttribPointer(12, 4, GL11.GL_FLOAT, false, stride, UVRECT_FLOAT_OFFSET * 4L);
-        GL20.glVertexAttribPointer(13, 4, GL11.GL_FLOAT, false, stride, TINT_FLOAT_OFFSET * 4L);
-        GL20.glVertexAttribPointer(14, 4, GL11.GL_FLOAT, false, stride, GRAD_FLOAT_OFFSET * 4L);
-        GL20.glVertexAttribPointer(15, 4, GL11.GL_FLOAT, false, stride, ANIM_FLOAT_OFFSET * 4L);
+        setupInstanceVertexAttributes(vboId, instanceDataSize * 4, false);
     }
 
     protected List<BakedQuad> getQuadsForIrisPath() {
@@ -2061,19 +2035,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
             return;
         }
 
-        if (LightSampleCache.BASE_POSE_SET.get()) {
-            tmpLocalPose.set(LightSampleCache.BASE_POSE.get()).invert().mul(worldPose);
-        } else {
-            var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
-            // L^-1 (FrameViewState): strips R_cam AND the view bob - the local pose
-            // is static while walking, light sample points stop jittering. (History:
-            // an early extra .invert() here rotated sample points by R_cam^2 and the
-            // light "crawled" over the machine on camera rotation.)
-            tmpLocalPose.set(FrameViewState.poseToWorldRotation()).mul(worldPose);
-            tmpLocalPose.m30(tmpLocalPose.m30() - (float) (blockPos.getX() - cam.x));
-            tmpLocalPose.m31(tmpLocalPose.m31() - (float) (blockPos.getY() - cam.y));
-            tmpLocalPose.m32(tmpLocalPose.m32() - (float) (blockPos.getZ() - cam.z));
-        }
+        LightSampleCache.computeLocalPose(worldPose, blockPos, tmpLocalPose);
 
         long partHash = System.identityHashCode(this);
         LightSampleCache.getOrSample8(blockEntity, partHash, objBbox, blockPos, tmpLocalPose,

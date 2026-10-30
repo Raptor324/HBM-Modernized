@@ -32,7 +32,8 @@ public class ItemGunChargeThrower extends ItemGunBaseNT {
             if (getLastHook(stack) != -1) setLastHook(stack, -1);
         }
 
-        if (isHeld && entity instanceof Player player) {
+        // Im Zuschauermodus kein Enterhaken-Zug (stattdessen letzter Haken verworfen)
+        if (isHeld && entity instanceof Player player && !player.isSpectator()) {
             Entity e = world.getEntity(getLastHook(stack));
             if (e != null && e.isAlive() && e instanceof EntityBulletBaseMK4 hook && hook.config == XFactoryTool.ct_hook && hook.velocity < 0.01) {
                 Vec3NT vec = new Vec3NT(e.getX() - player.getX(), e.getY() - player.getY() - player.getEyeHeight(), e.getZ() - player.getZ());

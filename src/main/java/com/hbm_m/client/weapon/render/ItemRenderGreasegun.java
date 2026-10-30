@@ -119,56 +119,25 @@ public class ItemRenderGreasegun extends ItemRenderWeaponBase {
 
 	@Override
 	public void setupThirdPerson(ItemStack stack) {
-		super.setupThirdPerson(stack);
-		GunGL.translate(0, 1, 3);
+		setupThirdPerson(stack, 1.0D, 0, 1, 3);
 	}
 
 	@Override
 	public void setupInv(ItemStack stack) {
-		super.setupInv(stack);
-		double scale = 1.5D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(25, 1, 0, 0);
-		GunGL.rotate(45, 0, 1, 0);
-		GunGL.translate(-0.5, 2, 0);
+		setupInv(stack, 1.5D, -0.5, 2, 0);
 	}
 
 	@Override
 	public void setupModTable(ItemStack stack) {
-		double scale = -7.5D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(90, 0, 1, 0);
-		GunGL.translate(0, 2, 0);
+		setupModTable(stack, -7.5D, 0, 2, 0);
 	}
 
 	@Override
 	public void renderOther(ItemStack stack, ItemRenderType type, Object... data) {
 		GunGL.enableLighting();
-
 		GunGL.bindTexture(isRefurbished(stack) ? WeaponResources.greasegun_clean_tex : WeaponResources.greasegun_tex);
 		GunGL.renderAll(WeaponResources.greasegun);
-
-		if(type == ItemRenderType.EQUIPPED) {
-			LivingEntity ent = (LivingEntity) data[1];
-			long shot;
-			double shotRand = 0;
-			if(ent == Minecraft.getInstance().player) {
-				ItemGunBaseNT gun = (ItemGunBaseNT) stack.getItem();
-				shot = gun.lastShot[0];
-				shotRand = gun.shotRand;
-			} else {
-				shot = ItemRenderWeaponBase.flashMap.getOrDefault(ent, (long) -1);
-				if(shot < 0) return;
-			}
-
-			GunGL.pushMatrix();
-			GunGL.translate(0, 0, 8);
-			GunGL.rotate(90, 0, 1, 0);
-			GunGL.rotate(90 * shotRand, 1, 0, 0);
-			GunGL.scale(0.5, 0.5, 0.5);
-			renderMuzzleFlash(shot, 75, 7.5);
-			GunGL.popMatrix();
-		}
+		renderEquippedMuzzleFlash(type, stack, data, 0, 0, 8, 0.5D, 75, 7.5);
 	}
 
 	public boolean isRefurbished(ItemStack stack) {

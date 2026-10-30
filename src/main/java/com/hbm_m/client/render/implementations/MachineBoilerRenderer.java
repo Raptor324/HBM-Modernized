@@ -34,19 +34,19 @@ public final class MachineBoilerRenderer {
     }
 
     private static void registerIndustrialBoiler() {
+        // Объект boiler.obj слит в одну группу "Plane" — пульсация давления идёт по всей модели.
         MachineRenderers.machine("boiler", ModBlockEntities.BOILER_BE.get(),
                 MachineBoilerBlockEntity.class)
-            .part("Body", (be, pt, gt, ps) -> {
+            .part("Plane", (be, pt, gt, ps) -> {
                 if (be.tanks != null && be.tanks.length > 1 && be.tanks[1].getFill() > be.tanks[1].getMaxFill() * 0.9) {
                     double sine = Math.sin(System.currentTimeMillis() / 50.0 % (Math.PI * 2)) * 0.01;
                     ps.scale((float) (1.0 - sine), (float) (1.0 + sine), (float) (1.0 - sine));
                 }
                 return true;
             })
-            .part("Base")
             .facing(ObjBerHelper::facing)
             .viewDistance(256)
-            .itemParts("Body", "Base")
+            .itemParts("Plane")
             .register();
     }
 

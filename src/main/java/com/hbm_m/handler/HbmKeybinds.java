@@ -109,7 +109,9 @@ public final class HbmKeybinds {
 
         for (EnumKeybind key : EnumKeybind.values()) {
             boolean last = props.getKeyPressed(key);
-            boolean current = mc.screen == null && getIsKeyPressed(key);
+            // Zuschauer: wie bei offenem Bildschirm gelten alle Tasten als losgelassen (Vanilla sperrt Interaktion),
+            // damit z.B. eine gehaltene Feuertaste beim Wechsel in den Zuschauermodus ein Release-Event ausloest.
+            boolean current = mc.screen == null && !player.isSpectator() && getIsKeyPressed(key);
             if (last != current) {
                 props.setKeyPressed(key, current);
                 ModPacketHandler.sendToServer(ModPacketHandler.KEYBIND, new KeybindPacket(key, current));

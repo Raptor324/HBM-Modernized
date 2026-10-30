@@ -8,9 +8,7 @@ import com.hbm_m.item.weapon.sedna.WeaponItems;
 import com.hbm_m.item.weapon.sedna.mods.XWeaponModManager;
 import com.hbm_m.render.anim.HbmAnimations;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
 /** 1:1 {@code ItemRenderDoubleBarrel}. */
@@ -123,42 +121,26 @@ public class ItemRenderDoubleBarrel extends ItemRenderWeaponBase {
 
 	@Override
 	public void setupThirdPerson(ItemStack stack) {
-		super.setupThirdPerson(stack);
-		double scale = 1.75D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.translate(0, 1, 3);
-
+		setupThirdPerson(stack, 1.75D, 0, 1, 3);
 	}
 
 	@Override
 	public void setupInv(ItemStack stack) {
-		super.setupInv(stack);
 		if(isSawedOff(stack)) {
-			double scale = 2D;
-			GunGL.scale(scale, scale, scale);
-			GunGL.rotate(25, 1, 0, 0);
-			GunGL.rotate(45, 0, 1, 0);
-			GunGL.translate(-2, 0.5, 0);
+			setupInv(stack, 2.0D, -2, 0.5, 0);
 		} else {
-			double scale = 1.375D;
-			GunGL.scale(scale, scale, scale);
-			GunGL.rotate(25, 1, 0, 0);
-			GunGL.rotate(45, 0, 1, 0);
-			GunGL.translate(0, 0.5, 0);
+			setupInv(stack, 1.375D, 0, 0.5, 0);
 		}
 	}
 
 	@Override
 	public void setupModTable(ItemStack stack) {
-		double scale = -8.75D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(90, 0, 1, 0);
+		setupModTable(stack, -8.75D, 0, 0, 0);
 	}
 
 	@Override
 	public void renderOther(ItemStack stack, ItemRenderType type, Object... data) {
 		GunGL.enableLighting();
-
 		GunGL.bindTexture(texture);
 		GunGL.renderPart(WeaponResources.double_barrel, "Stock");
 		GunGL.renderPart(WeaponResources.double_barrel, "BarrelShort");
@@ -166,28 +148,7 @@ public class ItemRenderDoubleBarrel extends ItemRenderWeaponBase {
 		GunGL.renderPart(WeaponResources.double_barrel, "Buckle");
 		GunGL.renderPart(WeaponResources.double_barrel, "Lever");
 		GunGL.renderPart(WeaponResources.double_barrel, "Shells");
-
-		if(type == ItemRenderType.EQUIPPED) {
-			LivingEntity ent = (LivingEntity) data[1];
-			long shot;
-			double shotRand = 0;
-			if(ent == Minecraft.getInstance().player) {
-				ItemGunBaseNT gun = (ItemGunBaseNT) stack.getItem();
-				shot = gun.lastShot[0];
-				shotRand = gun.shotRand;
-			} else {
-				shot = ItemRenderWeaponBase.flashMap.getOrDefault(ent, (long) -1);
-				if(shot < 0) return;
-			}
-
-			GunGL.pushMatrix();
-			GunGL.translate(0, 0, 8);
-			GunGL.rotate(90, 0, 1, 0);
-			GunGL.rotate(90 * shotRand, 1, 0, 0);
-			GunGL.scale(2, 2, 2);
-			renderMuzzleFlash(shot, 75, 5);
-			GunGL.popMatrix();
-		}
+		renderEquippedMuzzleFlash(type, stack, data, 0, 0, 8, 2.0D, 75, 5);
 	}
 
 	public boolean isSawedOff(ItemStack stack) {

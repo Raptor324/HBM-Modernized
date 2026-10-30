@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'boltgun.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Barrel
 v 0.000000 2.250000 1.000000
 v -0.176777 2.176777 1.000000

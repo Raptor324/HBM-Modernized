@@ -812,11 +812,11 @@ public class ConfigScreen extends Screen {
         }
 
         int[] idx = { indexOf(constants, cur) };
-        Button b = Button.builder(enumMessage(cur), btn -> {
+        Button b = Button.builder(enumMessage(f, cur), btn -> {
             idx[0] = (idx[0] + 1) % constants.length;
             Object v = constants[idx[0]];
             pendingEdits.put(f.getKey(), String.valueOf(v));
-            btn.setMessage(enumMessage(v));
+            btn.setMessage(enumMessage(f, v));
         }).bounds(0, 0, WIDGET_WIDTH, 20).build();
         return b;
     }
@@ -832,7 +832,13 @@ public class ConfigScreen extends Screen {
         return f.get(ModClothConfig.get());
     }
 
-    private static Component enumMessage(Object v) {
+    private static Component enumMessage(ConfigField f, Object v) {
+        // FFA: подписи значений enum через text.autoconfig.*.<VALUE> (restore merge loss),
+        // фолбэк — сырое имя константы.
+        String key = "text.autoconfig.hbm_m.option." + f.getKey() + "." + v;
+        if (Language.getInstance().has(key)) {
+            return Component.translatable(key);
+        }
         return Component.literal(String.valueOf(v));
     }
 

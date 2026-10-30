@@ -42,10 +42,6 @@ public final class RetainedInstanceGraph {
 
     private final Long2ObjectOpenHashMap<ChunkInstancePartition> partitions = new Long2ObjectOpenHashMap<>(128);
     private final Long2ObjectOpenHashMap<MachineInstanceHandle> handlesByPos = new Long2ObjectOpenHashMap<>(1024);
-    // R4-3.1: all persistent slots (parts 0..N-1) per blockKey. Only part 0 is keyed
-    // in the allocator's posKeyToSlot map, so without this record the else-branch of
-    // onMachineRemoved(long) could free part 0 while parts 1..N-1 leaked forever.
-    private final Long2ObjectOpenHashMap<int[]> partSlotsByBlockKey = new Long2ObjectOpenHashMap<>(1024);
     private final Long2ObjectOpenHashMap<LongArrayList> sectionToMachines = new Long2ObjectOpenHashMap<>(256);
     private final LongOpenHashSet dirtyLightSections = new LongOpenHashSet();
     // Reusable scratch for the amortized ghost sweep (render thread only, see reconcileStaleHandles).
@@ -372,7 +368,6 @@ public final class RetainedInstanceGraph {
                 BlockPos.of(blockKey).toShortString(), handle != null ? "FOUND" : "NONE");
         if (handle != null) {
             long chunkKey = handle.getChunkPosKey();
-            partSlotsByBlockKey.remove(blockKey);
             ChunkInstancePartition partition = partitions.get(chunkKey);
             if (partition != null) {
                 partition.removeHandle(blockKey);
@@ -388,26 +383,9 @@ public final class RetainedInstanceGraph {
                 spec.freeMachineSlots(blockKey);
             }
         } else {
-            // Smoking gun for a ghost living OUTSIDE the retained graph: something
-            // still draws a model for a key this graph never registered. A stack
-            // trace here names the channel that asked for the eviction.
             com.hbm_m.multiblock.TeardownTrace.trace(
                     "RIG.onMachineRemoved: NO handle at key={} - retained graph held nothing; if a ghost persists it is NOT a RIG handle",
                     BlockPos.of(blockKey).toShortString());
-            // R4-3.1: free ALL tracked part slots - only part 0 is keyed in the
-            // allocator, the anonymous part 1..N-1 slots would leak forever here.
-            // (The old invalid-record writes went to the dead global backing
-            // buffer - freed slots need no GPU tombstone, nothing samples them.)
-            int[] orphanedParts = partSlotsByBlockKey.remove(blockKey);
-            if (orphanedParts != null) {
-                for (int slot : orphanedParts) {
-                    slotAllocator.freeSlot(slot);
-                }
-            }
-            int s = slotAllocator.getSlot(blockKey);
-            if (s >= 0) {
-                slotAllocator.freeSlot(s);
-            }
             if (!slotsAlreadyFreed) {
                 synchronized (specsByType) {
                     for (MachineSpec<?> spec : specsByType.values()) {
@@ -514,13 +492,9 @@ public final class RetainedInstanceGraph {
         }
 
         int partCount = (rawSpec.parts() != null && !rawSpec.parts().isEmpty()) ? rawSpec.parts().size() : 1;
-
+        // Real GPU instance slots are owned per-part by InstancedStaticPartRenderer.slotAllocator;
+        // the handle only needs an array of length partCount for SparseUpdateQueue part iteration.
         int[] slots = new int[partCount];
-
-        for (int i = 0; i < partCount; i++) {
-            slots[i] = (i == 0) ? slotAllocator.allocateSlot(blockKey) : slotAllocator.allocateSlot();
-        }
-        partSlotsByBlockKey.put(blockKey, slots);
 
         AABB bounds = RenderBoundsCache.get(be);
         if (bounds == null) {
@@ -622,7 +596,6 @@ public final class RetainedInstanceGraph {
         }
         partitions.clear();
         handlesByPos.clear();
-        partSlotsByBlockKey.clear();
         activeCountsByType.clear();
         sectionToMachines.clear();
         dirtyLightSections.clear();

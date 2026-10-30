@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: ''
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o UnderBarrel
 v -0.562500 -0.750000 4.000000
 v 0.562500 -0.750000 4.000000

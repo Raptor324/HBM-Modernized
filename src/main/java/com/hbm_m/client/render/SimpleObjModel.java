@@ -26,6 +26,14 @@ import net.minecraft.resources.ResourceLocation;
  */
 public class SimpleObjModel {
 
+    // Reusable render-thread scratch buffers (rendering is single-threaded);
+    // keeps the per-triangle clipping loops heap-allocation-free.
+    private static final Vector3f SCRATCH_NORMAL = new Vector3f();
+    private static final org.joml.Vector4f SCRATCH_P4 = new org.joml.Vector4f();
+    private static final Matrix3f SCRATCH_LN = new Matrix3f();
+    private static final float[][] SCRATCH_IN_3 = new float[3][8];
+    private static final float[][] SCRATCH_CLIP_POLY = new float[8][8];
+
     private final ResourceLocation location;
     private final Map<String, List<float[]>> parts = new LinkedHashMap<>();
     private boolean loaded = false;
@@ -126,6 +134,11 @@ public class SimpleObjModel {
         if (tris != null) render(pose, vc, light, tris, (int) (r * 255), (int) (g * 255), (int) (b * 255));
     }
 
+    /** Resource location of the underlying {@code .obj} (mesh cache key for {@link com.hbm_m.client.render.weapon.WeaponRenderRegistry}). */
+    public ResourceLocation getLocation() {
+        return location;
+    }
+
     /** Namen aller Teile ({@code o}/{@code g}-Gruppen) in Dateireihenfolge. */
     public java.util.Set<String> getPartNames() {
         ensureLoaded();
@@ -148,7 +161,7 @@ public class SimpleObjModel {
         if (tris == null) return;
         Matrix4f m = pose.last().pose();
         org.joml.Matrix3f n = pose.last().normal();
-        org.joml.Vector3f normal = new org.joml.Vector3f();
+        org.joml.Vector3f normal = SCRATCH_NORMAL;
         int cr = (int) (r * 255), cg = (int) (g * 255), cb = (int) (b * 255);
         for (float[] tri : tris) {
             for (int pass = 0; pass < 4; pass++) {
@@ -167,7 +180,7 @@ public class SimpleObjModel {
         if (tris == null) return;
         Matrix4f m = pose.last().pose();
         org.joml.Matrix3f n = pose.last().normal();
-        org.joml.Vector3f normal = new org.joml.Vector3f();
+        org.joml.Vector3f normal = SCRATCH_NORMAL;
         int cr = (int) (r * 255), cg = (int) (g * 255), cb = (int) (b * 255), ca = (int) (a * 255);
         for (float[] tri : tris) {
             for (int pass = 0; pass < 4; pass++) {
@@ -201,23 +214,38 @@ public class SimpleObjModel {
         List<float[]> tris = parts.get(part);
         if (tris == null) return;
         Matrix4f m = pose.last().pose();
-        float[][] in = new float[3][];
+        float[][] in = SCRATCH_IN_3;
+        float[][] poly = SCRATCH_CLIP_POLY;
         for (float[] tri : tris) {
-            for (int v = 0; v < 3; v++) in[v] = new float[] { tri[v * 8], tri[v * 8 + 1] + dy, tri[v * 8 + 2] };
-            java.util.List<float[]> poly = new java.util.ArrayList<>(4);
+            for (int v = 0; v < 3; v++) {
+                in[v][0] = tri[v * 8];
+                in[v][1] = tri[v * 8 + 1] + dy;
+                in[v][2] = tri[v * 8 + 2];
+            }
+            int polyCount = 0;
             for (int v = 0; v < 3; v++) {
                 float[] cur = in[v], nxt = in[(v + 1) % 3];
                 boolean cIn = cur[1] >= clipY, nIn = nxt[1] >= clipY;
-                if (cIn) poly.add(cur);
+                if (cIn) {
+                    poly[polyCount][0] = cur[0];
+                    poly[polyCount][1] = cur[1];
+                    poly[polyCount][2] = cur[2];
+                    polyCount++;
+                }
                 if (cIn != nIn) {
                     float t = (clipY - cur[1]) / (nxt[1] - cur[1]);
-                    poly.add(new float[] { cur[0] + (nxt[0] - cur[0]) * t, clipY, cur[2] + (nxt[2] - cur[2]) * t });
+                    float[] cut = poly[polyCount];
+                    cut[0] = cur[0] + (nxt[0] - cur[0]) * t;
+                    cut[1] = clipY;
+                    cut[2] = cur[2] + (nxt[2] - cur[2]) * t;
+                    polyCount++;
                 }
             }
-            for (int k = 1; k + 1 < poly.size(); k++) {
-                for (float[] p : new float[][] { poly.get(0), poly.get(k), poly.get(k + 1) }) {
-                    com.hbm_m.platform.RenderHooks.vertexColor(vc, m, p[0], p[1], p[2], r, g, b, a);
-                }
+            if (polyCount < 3) continue;
+            for (int k = 1; k + 1 < polyCount; k++) {
+                com.hbm_m.platform.RenderHooks.vertexColor(vc, m, poly[0][0], poly[0][1], poly[0][2], r, g, b, a);
+                com.hbm_m.platform.RenderHooks.vertexColor(vc, m, poly[k][0], poly[k][1], poly[k][2], r, g, b, a);
+                com.hbm_m.platform.RenderHooks.vertexColor(vc, m, poly[k + 1][0], poly[k + 1][1], poly[k + 1][2], r, g, b, a);
             }
         }
     }
@@ -234,34 +262,46 @@ public class SimpleObjModel {
         if (tris == null) return;
         Matrix4f m = pose.last().pose();
         Matrix3f n = pose.last().normal();
-        Matrix3f ln = new Matrix3f(local).invert().transpose();
-        org.joml.Vector4f p4 = new org.joml.Vector4f();
-        Vector3f nv = new Vector3f();
-        float[][] in = new float[3][];
-        List<float[]> poly = new ArrayList<>(4);
+        Matrix3f ln = SCRATCH_LN.set(local).invert().transpose();
+        org.joml.Vector4f p4 = SCRATCH_P4;
+        Vector3f nv = SCRATCH_NORMAL;
+        float[][] in = SCRATCH_IN_3;
+        float[][] poly = SCRATCH_CLIP_POLY;
         for (float[] tri : tris) {
             for (int v = 0; v < 3; v++) {
                 int o = v * 8;
                 p4.set(tri[o], tri[o + 1], tri[o + 2], 1F).mul(local);
                 nv.set(tri[o + 5], tri[o + 6], tri[o + 7]).mul(ln);
-                in[v] = new float[] { p4.x, p4.y, p4.z, tri[o + 3], tri[o + 4], nv.x, nv.y, nv.z };
+                float[] row = in[v];
+                row[0] = p4.x;
+                row[1] = p4.y;
+                row[2] = p4.z;
+                row[3] = tri[o + 3];
+                row[4] = tri[o + 4];
+                row[5] = nv.x;
+                row[6] = nv.y;
+                row[7] = nv.z;
             }
-            poly.clear();
+            int polyCount = 0;
             for (int v = 0; v < 3; v++) {
                 float[] cur = in[v], nxt = in[(v + 1) % 3];
                 float dc = a * cur[0] + b * cur[1] + c * cur[2] + d;
                 float dn = a * nxt[0] + b * nxt[1] + c * nxt[2] + d;
-                if (dc >= 0) poly.add(cur);
+                if (dc >= 0) {
+                    float[] dst = poly[polyCount++];
+                    for (int k = 0; k < 8; k++) dst[k] = cur[k];
+                }
                 if ((dc >= 0) != (dn >= 0)) {
                     float t = dc / (dc - dn);
-                    float[] cut = new float[8];
+                    float[] cut = poly[polyCount++];
                     for (int k = 0; k < 8; k++) cut[k] = cur[k] + (nxt[k] - cur[k]) * t;
-                    poly.add(cut);
                 }
             }
-            for (int k = 1; k + 1 < poly.size(); k++) {
-                float[][] fan = { poly.get(0), poly.get(k), poly.get(k + 1), poly.get(k + 1) };
-                for (float[] p : fan) {
+            if (polyCount < 3) continue;
+            for (int k = 1; k + 1 < polyCount; k++) {
+                // Dreieck als entartetes Viereck (letzter Punkt doppelt) fuer QUADS-Puffer
+                for (int f = 0; f < 4; f++) {
+                    float[] p = poly[f == 0 ? 0 : (f == 1 ? k : k + 1)];
                     nv.set(p[5], p[6], p[7]).mul(n);
                     RenderHooks.vertexFull(vc, m, p[0], p[1], p[2], 255, 255, 255, 255,
                             p[3], 1F - p[4], OverlayTexture.NO_OVERLAY, light, nv.x, nv.y, nv.z);
@@ -290,7 +330,7 @@ public class SimpleObjModel {
     private static void render(PoseStack pose, VertexConsumer vc, int light, List<float[]> tris, int cr, int cg, int cb) {
         Matrix4f m = pose.last().pose();
         Matrix3f n = pose.last().normal();
-        Vector3f normal = new Vector3f();
+        Vector3f normal = SCRATCH_NORMAL;
         for (float[] tri : tris) {
             // Dreiecke als entartete Vierecke (letzter Punkt doppelt) fuer QUADS-Puffer
             for (int pass = 0; pass < 4; pass++) {

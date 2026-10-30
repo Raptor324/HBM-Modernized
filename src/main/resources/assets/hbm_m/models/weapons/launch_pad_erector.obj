@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: ''
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Pad
 v 4.500000 -0.000000 4.500000
 v 4.500000 1.000000 0.500000

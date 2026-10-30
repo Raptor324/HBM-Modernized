@@ -1,6 +1,19 @@
 {
-	"parent": "block/cube_all",
-	"textures": {
-		"all": "hbm_m:block/machine_large_turbine"
-	}
+  "loader": "hbm_m:machine_parts_loader",
+  "model": "hbm_m:models/turbine.obj",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
+  "parts": {
+    "Body": {
+      "group": "Body",
+      "texture": "hbm_m:block/machine/machine_turbine_base"
+    },
+    "Blades": {
+      "group": "Blades",
+      "texture": "hbm_m:block/machine/machine_turbine_top"
+    }
+  },
+  "textures": {
+    "particle": "hbm_m:block/machine/machine_turbine_base"
+  }
 }

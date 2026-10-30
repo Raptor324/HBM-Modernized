@@ -1,5 +1,8 @@
 package com.hbm_m.client.weapon.render;
 
+import com.hbm_m.client.render.weapon.WeaponJointRig;
+import com.hbm_m.client.render.weapon.WeaponKinematics;
+import com.hbm_m.client.render.weapon.WeaponRenderRegistry;
 import com.hbm_m.client.weapon.GunGL;
 import com.hbm_m.client.weapon.ItemRenderWeaponBase;
 import com.hbm_m.client.weapon.WeaponResources;
@@ -19,8 +22,7 @@ public class ItemRenderUzi extends ItemRenderWeaponBase {
 
 	@Override
 	public float getViewFOV(ItemStack stack, float fov) {
-		float aimingProgress = ItemGunBaseNT.prevAimingProgress + (ItemGunBaseNT.aimingProgress - ItemGunBaseNT.prevAimingProgress) * interp;
-		return  fov * (1 - aimingProgress * 0.33F);
+		return standardZoomFov(fov, 0.33F);
 	}
 
 	@Override
@@ -55,43 +57,32 @@ public class ItemRenderUzi extends ItemRenderWeaponBase {
 		GunGL.translate(yeet[0], yeet[1], yeet[2]);
 		GunGL.rotate(speen[0], 0, 0, 1);
 
-		GunGL.translate(0, -2, -4);
-		GunGL.rotate(equip[0], 1, 0, 0);
-		GunGL.translate(0, 2, 4);
-
-		GunGL.translate(0, 0, -6);
-		GunGL.rotate(lift[0], 1, 0, 0);
-		GunGL.translate(0, 0, 6);
+		GunGL.rotateAround(equip[0], 1, 0, 0, 0, -2, -4);
+		GunGL.rotateAround(lift[0], 1, 0, 0, 0, 0, -6);
 
 		GunGL.translate(0, 0, recoil[2]);
 
-		GunGL.renderPart(WeaponResources.uzi, "Gun");
+		WeaponRenderRegistry.renderPart(WeaponResources.uzi, "Gun", GunGL.pose());
 
 		boolean silenced = hasSilencer(stack, 0);
-		if(silenced) GunGL.renderPart(WeaponResources.uzi, "Silencer");
+		if(silenced) WeaponRenderRegistry.renderPart(WeaponResources.uzi, "Silencer", GunGL.pose());
 
-		GunGL.pushMatrix();
-		GunGL.translate(0, 0.3125D, -5.75);
-		GunGL.rotate(180 - stockFront[0], 1, 0, 0);
-		GunGL.translate(0, -0.3125D, 5.75);
-		GunGL.renderPart(WeaponResources.uzi, "StockFront");
+		WeaponJointRig rig = WeaponRenderRegistry.getRig(WeaponResources.uzi);
 
-		GunGL.translate(0, -0.3125D, -3);
-		GunGL.rotate(-200 - stockBack[0], 1, 0, 0);
-		GunGL.translate(0, 0.3125D, 3);
-		GunGL.renderPart(WeaponResources.uzi, "StockBack");
-		GunGL.popMatrix();
+		WeaponKinematics.scoped(GunGL.pose(), ps -> {
+			WeaponKinematics.applyJoint(ps, rig.getJoint("StockFront"), (float) (180 - stockFront[0]));
+			WeaponRenderRegistry.renderPart(WeaponResources.uzi, "StockFront", ps);
+			WeaponKinematics.applyJoint(ps, rig.getJoint("StockBack"), (float) (-200 - stockBack[0]));
+			WeaponRenderRegistry.renderPart(WeaponResources.uzi, "StockBack", ps);
+		});
 
-		GunGL.pushMatrix();
-		GunGL.translate(0, 0, slide[2]);
-		GunGL.renderPart(WeaponResources.uzi, "Slide");
-		GunGL.popMatrix();
+		WeaponKinematics.renderPartWithJoint(rig, "Slide", GunGL.pose(), (float) slide[2]);
 
-		GunGL.pushMatrix();
-		GunGL.translate(mag[0], mag[1], mag[2]);
-		GunGL.renderPart(WeaponResources.uzi, "Magazine");
-		if(bullet[0] == 1) GunGL.renderPart(WeaponResources.uzi, "Bullet");
-		GunGL.popMatrix();
+		WeaponKinematics.scoped(GunGL.pose(), ps -> {
+			WeaponKinematics.applyVectorTranslate(ps, (float) mag[0], (float) mag[1], (float) mag[2]);
+			WeaponRenderRegistry.renderPart(WeaponResources.uzi, "Magazine", ps);
+			if(bullet[0] == 1) WeaponRenderRegistry.renderPart(WeaponResources.uzi, "Bullet", ps);
+		});
 
 		if(!silenced) {
 			double smokeScale = 0.5;
@@ -114,81 +105,41 @@ public class ItemRenderUzi extends ItemRenderWeaponBase {
 
 	@Override
 	public void setupThirdPerson(ItemStack stack) {
-		super.setupThirdPerson(stack);
-		GunGL.translate(0, 1, 1);
-
+		setupThirdPerson(stack, 1.0D, 0, 1, 1);
 	}
 
 	@Override
 	public void setupInv(ItemStack stack) {
-		super.setupInv(stack);
-		double scale = 1.5D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(25, 1, 0, 0);
-		GunGL.rotate(45, 0, 1, 0);
-		GunGL.translate(0, 1, 0);
+		setupInv(stack, 1.5D, 0, 1, 0);
 	}
 
 	@Override
 	public void setupModTable(ItemStack stack) {
-		double scale = -6.25D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(90, 0, 1, 0);
-		GunGL.translate(0, 1, -4);
+		setupModTable(stack, -6.25D, 0, 1, -4);
 	}
 
 	@Override
 	public void renderModTable(ItemStack stack, int index) {
 		GunGL.enableLighting();
-
 		GunGL.bindTexture(isSaturnite(stack) ? WeaponResources.uzi_saturnite_tex : WeaponResources.uzi_tex);
-		GunGL.renderPart(WeaponResources.uzi, "Gun");
-		GunGL.renderPart(WeaponResources.uzi, "StockBack");
-		GunGL.renderPart(WeaponResources.uzi, "StockFront");
-		GunGL.renderPart(WeaponResources.uzi, "Slide");
-		GunGL.renderPart(WeaponResources.uzi, "Magazine");
-		if(hasSilencer(stack, index)) GunGL.renderPart(WeaponResources.uzi, "Silencer");
+		WeaponKinematics.renderRestParts(WeaponRenderRegistry.getRig(WeaponResources.uzi), 1, GunGL.pose(),
+				hasSilencer(stack, index) ? "Silencer" : null);
 	}
 
 	@Override
 	public void renderOther(ItemStack stack, ItemRenderType type, Object... data) {
 		GunGL.enableLighting();
-
 		boolean silenced = hasSilencer(stack, 0);
-
 		if(silenced && type == ItemRenderType.INVENTORY) {
 			double scale = 0.625D;
 			GunGL.scale(scale, scale, scale);
 			GunGL.translate(0, 0, -4);
 		}
-
 		GunGL.bindTexture(isSaturnite(stack) ? WeaponResources.uzi_saturnite_tex : WeaponResources.uzi_tex);
-		GunGL.renderPart(WeaponResources.uzi, "Gun");
-		GunGL.renderPart(WeaponResources.uzi, "StockBack");
-		GunGL.renderPart(WeaponResources.uzi, "StockFront");
-		GunGL.renderPart(WeaponResources.uzi, "Slide");
-		GunGL.renderPart(WeaponResources.uzi, "Magazine");
-		if(silenced) GunGL.renderPart(WeaponResources.uzi, "Silencer");
-
-		if(type == ItemRenderType.EQUIPPED && !silenced) {
-			LivingEntity ent = (LivingEntity) data[1];
-			long shot;
-			double shotRand = 0;
-			if(ent == Minecraft.getInstance().player) {
-				ItemGunBaseNT gun = (ItemGunBaseNT) stack.getItem();
-				shot = gun.lastShot[0];
-				shotRand = gun.shotRand;
-			} else {
-				shot = ItemRenderWeaponBase.flashMap.getOrDefault(ent, (long) -1);
-				if(shot < 0) return;
-			}
-
-			GunGL.pushMatrix();
-			GunGL.translate(0, 0.75, 8.5);
-			GunGL.rotate(90, 0, 1, 0);
-			GunGL.rotate(90 * shotRand, 1, 0, 0);
-			this.renderMuzzleFlash(shot, 75, 7.5);
-			GunGL.popMatrix();
+		WeaponKinematics.renderRestParts(WeaponRenderRegistry.getRig(WeaponResources.uzi), 1, GunGL.pose(),
+				silenced ? "Silencer" : null);
+		if(!silenced) {
+			renderEquippedMuzzleFlash(type, stack, data, 0, 0.75, 8.5, 1.0D, 75, 7.5);
 		}
 	}
 

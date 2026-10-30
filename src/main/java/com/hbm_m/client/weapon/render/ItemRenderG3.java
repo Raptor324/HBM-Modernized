@@ -144,37 +144,21 @@ public class ItemRenderG3 extends ItemRenderWeaponBase {
 
 	@Override
 	public void setupThirdPerson(ItemStack stack) {
-		super.setupThirdPerson(stack);
-		double scale = 1D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.translate(0, 2, 4);
-
+		setupThirdPerson(stack, 1.0D, 0, 2, 4);
 	}
 
 	@Override
 	public void setupInv(ItemStack stack) {
-		super.setupInv(stack);
 		if(hasStock(stack)) {
-			double scale = 0.875D;
-			GunGL.scale(scale, scale, scale);
-			GunGL.rotate(25, 1, 0, 0);
-			GunGL.rotate(hasSilencer(stack) ? 50 : 45, 0, 1, 0);
-			GunGL.translate(hasSilencer(stack) ? 0.75 : -0.5, 0.5, 0);
+			setupInv(stack, 0.875D, hasSilencer(stack) ? 50 : 45, hasSilencer(stack) ? 0.75 : -0.5, 0.5, 0);
 		} else {
-			double scale = 1.125D;
-			GunGL.scale(scale, scale, scale);
-			GunGL.rotate(25, 1, 0, 0);
-			GunGL.rotate(hasSilencer(stack) ? 55 : 45, 0, 1, 0); //preserves proportions whilst limiting size
-			GunGL.translate(2.5, 0.5, 0);
+			setupInv(stack, 1.125D, hasSilencer(stack) ? 55 : 45, 2.5, 0.5, 0);
 		}
 	}
 
 	@Override
 	public void setupModTable(ItemStack stack) {
-		double scale = -5D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(90, 0, 1, 0);
-		GunGL.translate(0, 0.5, -0.5);
+		setupModTable(stack, -5D, 0, 0.5, -0.5);
 	}
 
 	@Override

@@ -48,13 +48,13 @@ public final class MachinePetrochemRenderer {
     }
 
     private static void registerReformer() {
+        // catalytic_reformer.obj слит в одну группу "Plane"
         MachineRenderers.machine("catalytic_reformer", ModBlockEntities.CATALYTIC_REFORMER_BE.get(),
                 MachineCatalyticReformerBlockEntity.class)
-            .part("Body")
-            .part("Cylinder.002")
+            .part("Plane")
             .facing(ObjBerHelper::facing)
             .viewDistance(256)
-            .itemParts("Body", "Cylinder.002")
+            .itemParts("Plane")
             .hook(new MachineRenderHook<MachineCatalyticReformerBlockEntity>() {
                 @Override
                 public void render(MachineCatalyticReformerBlockEntity be, float pt, PoseStack ps,
@@ -99,35 +99,35 @@ public final class MachinePetrochemRenderer {
     }
 
     private static void registerCrackingTower() {
+        // cracking_tower.obj слит в одну группу "Cube_Cube.001"
         MachineRenderers.machine("cracking_tower", ModBlockEntities.CRACKING_TOWER_BE.get(),
                 MachineCrackingTowerBlockEntity.class)
-            .part("Body")
-            .part("Base")
+            .part("Cube_Cube.001")
             .facing(ObjBerHelper::facing)
             .viewDistance(256)
-            .itemParts("Body", "Base")
+            .itemParts("Cube_Cube.001")
             .register();
     }
 
     private static void registerFractionTower() {
+        // fraction_tower.obj слит в одну группу "Plane"
         MachineRenderers.machine("fraction_tower", ModBlockEntities.FRACTION_TOWER_BE.get(),
                 MachineFractionTowerBlockEntity.class)
-            .part("Body")
-            .part("Column")
+            .part("Plane")
             .facing(ObjBerHelper::facing)
             .viewDistance(256)
-            .itemParts("Body", "Column")
+            .itemParts("Plane")
             .register();
     }
 
     private static void registerVacuumDistill() {
+        // vacuum_distill.obj слит в одну группу "Cylinder"
         MachineRenderers.machine("vacuum_distill", ModBlockEntities.VACUUM_DISTILL_BE.get(),
                 MachineVacuumDistillBlockEntity.class)
-            .part("Body")
-            .part("Column")
+            .part("Cylinder")
             .facing(ObjBerHelper::facing)
             .viewDistance(256)
-            .itemParts("Body", "Column")
+            .itemParts("Cylinder")
             .register();
     }
 

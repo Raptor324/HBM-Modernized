@@ -6,8 +6,6 @@ import com.hbm_m.client.weapon.WeaponResources;
 import com.hbm_m.item.weapon.sedna.ItemGunBaseNT;
 import com.hbm_m.render.anim.HbmAnimations;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
 /** 1:1 {@code ItemRenderDebug}. */
@@ -95,34 +93,23 @@ public class ItemRenderDebug extends ItemRenderWeaponBase {
 
 	@Override
 	public void setupThirdPerson(ItemStack stack) {
-		super.setupThirdPerson(stack);
-		GunGL.scale(0.75, 0.75, 0.75);
-		GunGL.translate(0, 1, 3);
-
+		setupThirdPerson(stack, 0.75D, 0, 1, 3);
 	}
 
 	@Override
 	public void setupInv(ItemStack stack) {
-		super.setupInv(stack);
-		double scale = 1.25D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(25, 1, 0, 0);
-		GunGL.rotate(45, 0, 1, 0);
+		setupInv(stack, 1.25D, 0, 0, 0);
 	}
 
 	@Override
 	public void setupModTable(ItemStack stack) {
-		double scale = -5D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(90, 0, 1, 0);
+		setupModTable(stack, -5D, 0, 0, 0);
 	}
 
 	@Override
 	public void renderOther(ItemStack stack, ItemRenderType type, Object... data) {
-
 		GunGL.rotate(90, 0, 1, 0);
 		GunGL.enableLighting();
-
 		GunGL.bindTexture(WeaponResources.debug_gun_tex);
 		GunGL.renderPart(WeaponResources.lilmac, "Gun");
 		GunGL.renderPart(WeaponResources.lilmac, "Cylinder");
@@ -130,22 +117,6 @@ public class ItemRenderDebug extends ItemRenderWeaponBase {
 		GunGL.renderPart(WeaponResources.lilmac, "Casings");
 		GunGL.renderPart(WeaponResources.lilmac, "Pivot");
 		GunGL.renderPart(WeaponResources.lilmac, "Hammer");
-
-		if(type == ItemRenderType.EQUIPPED) {
-			LivingEntity ent = (LivingEntity) data[1];
-			long shot;
-			if(ent == Minecraft.getInstance().player) {
-				ItemGunBaseNT gun = (ItemGunBaseNT) stack.getItem();
-				shot = gun.lastShot[0];
-			} else {
-				shot = ItemRenderWeaponBase.flashMap.getOrDefault(ent, (long) -1);
-				if(shot < 0) return;
-			}
-
-			GunGL.pushMatrix();
-			GunGL.translate(0.125, 2.5, 0);
-			renderGapFlash(shot);
-			GunGL.popMatrix();
-		}
+		renderEquippedGapFlash(type, stack, data, 0.125, 2.5, 0, 0.0D, 1.0D);
 	}
 }

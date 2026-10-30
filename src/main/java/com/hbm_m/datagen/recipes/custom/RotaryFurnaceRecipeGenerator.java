@@ -17,8 +17,7 @@ import java.util.function.Consumer;
 /**
  * Генератор JSON-рецептов вращающейся печи ({@code hbm_m:rotary_furnace}).
  *
- * <p>1:1 порт всех 13 рецептов статической FFA-таблицы {@code com.hbm_m.inventory.recipes.RotaryFurnaceRecipes}
- * (оригинал 1.7.10 — {@code com.hbm.inventory.recipes.RotaryFurnaceRecipes}): те же материалы/предметы/жидкости/
+ * <p>1:1 порт всех 12 рецептов оригинала 1.7.10 ({@code com.hbm.inventory.recipes.RotaryFurnaceRecipes#registerDefaults}): те же материалы/предметы/жидкости/
  * количества/длительности/расход пара. Входы-формы материала выражаются каноническим предметом формы (железный
  * слиток — ванильный {@code minecraft:iron_ingot}, фрагмент бедрок-руды — {@code hbm_m:bedrock_ore_fragment_iron},
  * порошки — {@code <материал>_powder}), {@code anyCoke()} — ингредиентом из трёх видов кокса. Выход — слиток
@@ -124,14 +123,6 @@ public final class RotaryFurnaceRecipeGenerator {
                 fluid(ModFluids.SODIUM_ALUMINATE, 150),
                 out(ModMaterials.ALUMINUM, 3), 40, 200
         ).save(writer, "rotary_furnace/aluminium_sodium_aluminate_flux");
-
-        // TITANIUM x4: TITANIUM_TETRACHLORIDE(1000) + FLUX -> TITANIUM x4 (duration 40, steam 100) — Original l.53
-        RotaryFurnaceRecipeBuilder.rotaryFurnaceRecipe(
-                new Ingredient[]{ ing(ModItems.POWDER_FLUX.get()) },
-                new int[]{ 1 },
-                fluid(ModFluids.TITANIUM_TETRACHLORIDE, 1_000),
-                out(ModMaterials.TITANIUM, 4), 40, 100
-        ).save(writer, "rotary_furnace/titanium_tetrachloride_flux");
     }
 
     /** Слиток материала как выход ({@code new MaterialStack(MAT, INGOT.q(count))} статической таблицы). */

@@ -59,28 +59,7 @@ public final class CpuFrustumCuller {
             return;
         }
 
-        // Column-major JOML access: m<col><row>
-        // row0: (m00, m10, m20, m30)
-        // row1: (m01, m11, m21, m31)
-        // row2: (m02, m12, m22, m32)
-        // row3: (m03, m13, m23, m33)
-        float m00 = viewProj.m00(), m01 = viewProj.m01(), m02 = viewProj.m02(), m03 = viewProj.m03();
-        float m10 = viewProj.m10(), m11 = viewProj.m11(), m12 = viewProj.m12(), m13 = viewProj.m13();
-        float m20 = viewProj.m20(), m21 = viewProj.m21(), m22 = viewProj.m22(), m23 = viewProj.m23();
-        float m30 = viewProj.m30(), m31 = viewProj.m31(), m32 = viewProj.m32(), m33 = viewProj.m33();
-
-        // Left plane:   row3 + row0
-        setNormalizedPlane(0,  m03 + m00, m13 + m10, m23 + m20, m33 + m30);
-        // Right plane:  row3 - row0
-        setNormalizedPlane(4,  m03 - m00, m13 - m10, m23 - m20, m33 - m30);
-        // Bottom plane: row3 + row1
-        setNormalizedPlane(8,  m03 + m01, m13 + m11, m23 + m21, m33 + m31);
-        // Top plane:    row3 - row1
-        setNormalizedPlane(12, m03 - m01, m13 - m11, m23 - m21, m33 - m31);
-        // Near plane:   row3 + row2 (OpenGL NDC [-1, 1])
-        setNormalizedPlane(16, m03 + m02, m13 + m12, m23 + m22, m33 + m32);
-        // Far plane:    row3 - row2
-        setNormalizedPlane(20, m03 - m02, m13 - m12, m23 - m22, m33 - m32);
+        extractPlanes(viewProj);
 
         this.camOffsetValid = false;
         this.planesValid = true;
@@ -100,29 +79,67 @@ public final class CpuFrustumCuller {
             return;
         }
         scratchMatrix.set(projection).mul(viewRotation);
-        updatePlanes(scratchMatrix);
+        extractPlanes(scratchMatrix);
 
         this.camX = cameraPos.x;
         this.camY = cameraPos.y;
         this.camZ = cameraPos.z;
         this.camOffsetValid = true;
+
+        this.planesValid = true;
     }
 
-    private void setNormalizedPlane(int offset, float a, float b, float c, float d) {
-        float lenSq = a * a + b * b + c * c;
-        if (lenSq > 1e-12f) {
-            float invLen = 1.0f / (float) Math.sqrt(lenSq);
-            a *= invLen;
-            b *= invLen;
-            c *= invLen;
-            d *= invLen;
+    private void extractPlanes(Matrix4f viewProj) {
+        extractPlanes(viewProj, this.planes, true);
+        for (int i = 0; i < 6; i++) {
+            int off = i << 2;
+            planeVectors[i].set(planes[off], planes[off + 1], planes[off + 2], planes[off + 3]);
         }
-        planes[offset]     = a;
-        planes[offset + 1] = b;
-        planes[offset + 2] = c;
-        planes[offset + 3] = d;
+    }
 
-        planeVectors[offset >> 2].set(a, b, c, d);
+    /**
+     * Extracts 6 Gribb-Hartmann frustum planes into a 24-float array:
+     * [0..3]=Left, [4..7]=Right, [8..11]=Bottom, [12..15]=Top, [16..19]=Near, [20..23]=Far.
+     *
+     * @param viewProj column-major view-projection matrix
+     * @param out24 output array of length at least 24
+     * @param normalize whether to normalize plane normals
+     */
+    public static void extractPlanes(org.joml.Matrix4fc viewProj, float[] out24, boolean normalize) {
+        float m00 = viewProj.m00(), m01 = viewProj.m01(), m02 = viewProj.m02(), m03 = viewProj.m03();
+        float m10 = viewProj.m10(), m11 = viewProj.m11(), m12 = viewProj.m12(), m13 = viewProj.m13();
+        float m20 = viewProj.m20(), m21 = viewProj.m21(), m22 = viewProj.m22(), m23 = viewProj.m23();
+        float m30 = viewProj.m30(), m31 = viewProj.m31(), m32 = viewProj.m32(), m33 = viewProj.m33();
+
+        setPlane(out24, 0,  m03 + m00, m13 + m10, m23 + m20, m33 + m30, normalize); // Left
+        setPlane(out24, 4,  m03 - m00, m13 - m10, m23 - m20, m33 - m30, normalize); // Right
+        setPlane(out24, 8,  m03 + m01, m13 + m11, m23 + m21, m33 + m31, normalize); // Bottom
+        setPlane(out24, 12, m03 - m01, m13 - m11, m23 - m21, m33 - m31, normalize); // Top
+        setPlane(out24, 16, m03 + m02, m13 + m12, m23 + m22, m33 + m32, normalize); // Near
+        setPlane(out24, 20, m03 - m02, m13 - m12, m23 - m22, m33 - m32, normalize); // Far
+    }
+
+    private static void setPlane(float[] out, int offset, float a, float b, float c, float d, boolean normalize) {
+        if (normalize) {
+            float lenSq = a * a + b * b + c * c;
+            if (lenSq > 1e-12f) {
+                float invLen = 1.0f / (float) Math.sqrt(lenSq);
+                a *= invLen; b *= invLen; c *= invLen; d *= invLen;
+            }
+        }
+        out[offset]     = a;
+        out[offset + 1] = b;
+        out[offset + 2] = c;
+        out[offset + 3] = d;
+    }
+
+    /** 64-bit FNV-1a hash of 24 frustum plane floats. */
+    public static long stampPlanes(float[] planes) {
+        long h = 0xcbf29ce484222325L;
+        for (int i = 0; i < 24; i++) {
+            h = (h ^ Float.floatToRawIntBits(planes[i])) * 0x100000001b3L;
+        }
+        return h;
     }
 
     /**

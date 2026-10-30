@@ -1,9 +1,5 @@
 package com.hbm_m.blockentity.machines;
 
-import com.hbm_m.platform.PlatformHooks;
-
-import java.util.List;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -15,27 +11,22 @@ import com.hbm_m.api.tile.IControlReceiver;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.machines.DummyableMachineBlock;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
-import com.hbm_m.handler.pollution.PollutionHandler;
-import com.hbm_m.inventory.fluid.trait.PollutionType;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.handler.pollution.PollutionHandler;
+import com.hbm_m.inventory.fluid.trait.PollutionType;
 import com.hbm_m.interfaces.IUpgradeInfoProvider;
 import com.hbm_m.inventory.UpgradeManager;
-import com.hbm_m.inventory.fluid.trait.PollutionType;
 import com.hbm_m.inventory.material.MaterialShapes;
 import com.hbm_m.inventory.material.Mats;
 import com.hbm_m.inventory.material.Mats.MaterialStack;
 import com.hbm_m.inventory.material.NTMMaterial;
-import com.hbm_m.inventory.menu.MachineArcFurnaceMenu;
-import com.hbm_m.inventory.fluid.tank.FluidTank;
-import com.hbm_m.platform.StackNbt;
-import com.hbm_m.platform.recipe.RecipeHooks;
-import com.hbm_m.recipe.ArcFurnaceRecipe;
+import com.hbm_m.inventory.recipes.ArcFurnaceRecipes;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.industrial.ItemArcElectrode;
 import com.hbm_m.item.industrial.ItemArcElectrodeBurnt;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType;
+import com.hbm_m.platform.StackNbt;
 import com.hbm_m.sound.ClientSoundBootstrap;
 import com.hbm_m.sound.HbmSoundsNT;
 import com.hbm_m.util.CrucibleUtil;
@@ -49,6 +40,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import com.hbm_m.inventory.menu.MachineArcFurnaceMenu;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -62,7 +54,7 @@ import net.minecraft.world.phys.AABB;
  * bis zu 128 Bloecken Schmelze, die bei offenem Deckel 2,875 Bloecke vor dem Kern ausgegossen wird. Speed-Upgrades
  * verkuerzen Dauer, Deckelzeit und Pause und erhoehen Verbrauch und Stapelgroesse.
  */
-public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.fluids.IFluidStandardSenderMK2, IControlReceiver, IUpgradeInfoProvider {
+public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity implements IControlReceiver, IUpgradeInfoProvider {
 
     public static final int INVENTORY_SIZE = 30;
 
@@ -73,11 +65,6 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity impleme
     public boolean hasMaterial;
     public int delay;
     public int upgrade;
-
-    /** Fuer den Hot/Cold-Elektroden-Zustandswechsel im Renderer (siehe MachineArcFurnaceRenderer). */
-    public boolean isActive() {
-        return isProgressing;
-    }
 
     public float lid;
     public float prevLid;
@@ -102,43 +89,9 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity impleme
     public static final int maxLiquid = MaterialShapes.BLOCK.q(128);
     public List<MaterialStack> liquids = new ArrayList<>();
 
-    private static final int TANK_CAPACITY_MB = 4_000;
-    private final FluidTank tank1 = new FluidTank(TANK_CAPACITY_MB);
-    private final FluidTank tank2 = new FluidTank(TANK_CAPACITY_MB);
-
     public MachineArcFurnaceBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.ARC_FURNACE_BE.get(), pos, state, INVENTORY_SIZE, maxPower, maxPower);
     }
-
-    // ==================== IFluidUserMK2 / MK2-ÑÐµÑÑ ====================
-    // ÐÑÐ¸Ð²ÑÐ·ÐºÐ° Ð¾Ð±ÑÐ°Ð±Ð¾ÑÑÐ¸ÐºÐ° Ð¶Ð¸Ð´ÐºÐ¾ÑÑÐ¸ Ð½Ð¸Ð¶Ðµ Ð¶Ð¸Ð²ÑÑ Ð² //? if forge, Ð° BaseMachineBlockEntity
-    // Ð¾ÑÐ´Ð°ÑÑ NeoForge-Ð¾Ð±ÑÑÑÐºÑ ÑÐ¾Ð»ÑÐºÐ¾ ÑÐµÐ°Ð»Ð¸Ð·Ð°ÑÐ¸ÑÐ¼ IFluidUserMK2 â Ð±ÐµÐ· ÑÑÐ¾Ð³Ð¾ Ñ Ð¼Ð°ÑÐ¸Ð½Ñ
-    // Ð½Ð° NeoForge Ð½Ðµ Ð±ÑÐ»Ð¾ fluid-ÐºÐ°Ð¿Ð°Ð±Ð¸Ð»Ð¸ÑÐ¸ Ð²Ð¾Ð¾Ð±ÑÐµ, Ð¸ ÑÑÑÐ±Ñ Ðº Ð½ÐµÐ¹ Ð½Ðµ Ð¿Ð¾Ð´ÐºÐ»ÑÑÐ°Ð»Ð¸ÑÑ.
-
-    @Override
-    public FluidTank[] getAllTanks() { return new FluidTank[] { tank1, tank2 }; }
-
-    @Override
-    public FluidTank[] getSendingTanks() { return new FluidTank[] { tank1, tank2 }; }
-
-    @Override
-    public boolean isLoaded() {
-        return level != null && !isRemoved() && level.isLoaded(worldPosition);
-    }
-
-    @Override
-    public boolean canConnect(net.minecraft.world.level.material.Fluid fluid, net.minecraft.core.Direction fromDir) {
-        return fromDir != null;
-    }
-
-
-    //? if forge {
-    @Override
-    protected void setupFluidCapability() {
-        // Экспонируем главный бак (tank1) для внешних насосов/труб через базовый fluidHandlerOpt.
-        setFluidHandler(tank1);
-    }
-    //?}
 
     public long getPower() { return energy; }
 
@@ -322,27 +275,10 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity impleme
         }
     }
 
-    /**
-     * Kanonische Rezeptsuche (ersetzt das FFA-{@code ArcFurnaceRecipes.getOutput(stack, liquid, level)}),
-     * gespiegelt aus {@code MachineArcFurnaceMenu.findRecipe}: datengetriebene {@link ArcFurnaceRecipe}s
-     * aus dem Vanilla-RecipeManager, gefiltert nach Ausgabeart (Fluessig-Modus: Fluid-Ausgang,
-     * Fest-Modus: Item-Ausgang).
-     */
+    /** 1:1 {@code ArcFurnaceRecipes.getOutput}: feste Liste plus Autogen; {@code level} fuer die Ofenrezepte. */
     @Nullable
-    private ArcFurnaceRecipe findRecipe(ItemStack stack) {
-        if (level == null || stack.isEmpty()) return null;
-        for (ArcFurnaceRecipe recipe : RecipeHooks.getAllRecipes(level, ArcFurnaceRecipe.Type.INSTANCE)) {
-            if (!recipe.matchesInput(stack)) continue;
-            boolean hasOutput = this.liquidMode ? recipe.hasFluidOutput1() || recipe.hasFluidOutput2() : recipe.hasItemOutput();
-            if (hasOutput) return recipe;
-        }
-        return null;
-    }
-
-    /** Maschinen-Semantik (origin/machines): Fluid-Ausgang passt in den Tank (Typ + Restplatz). */
-    private boolean fitsInTank(FluidTank tank, net.minecraft.world.level.material.Fluid fluid, int amount) {
-        if (!tank.isEmpty() && tank.getStoredFluid() != fluid) return false;
-        return tank.getSpaceMb() >= amount;
+    private ArcFurnaceRecipes.ArcFurnaceRecipe findRecipe(ItemStack stack) {
+        return ArcFurnaceRecipes.getOutput(stack, this.liquidMode, level);
     }
 
     /** Moves items from the input queue to the main grid */
@@ -352,10 +288,10 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity impleme
 
         for (int q /* queue */ = 25; q < 30; q++) {
             if (slot(q).isEmpty()) continue;
-            ArcFurnaceRecipe recipe = findRecipe(slot(q));
+            ArcFurnaceRecipes.ArcFurnaceRecipe recipe = findRecipe(slot(q));
             if (recipe == null) continue;
             int max = this.getMaxInputSize();
-            int recipeMax = this.liquidMode ? max : slot(q).getMaxStackSize() / recipe.getOutput().getCount();
+            int recipeMax = this.liquidMode ? max : slot(q).getMaxStackSize() / recipe.solidOutput.getCount();
             max = Math.min(max, recipeMax);
 
             // add to existing stacks
@@ -407,27 +343,30 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity impleme
 
         for (int i = 5; i < 25; i++) {
             if (slot(i).isEmpty()) continue;
-            ArcFurnaceRecipe recipe = findRecipe(slot(i));
+            ArcFurnaceRecipes.ArcFurnaceRecipe recipe = findRecipe(slot(i));
             if (recipe == null) continue;
 
-            if (!liquidMode && recipe.hasItemOutput()) {
+            if (!liquidMode && recipe.solidOutput != null) {
                 int amount = slot(i).getCount();
-                ItemStack out = recipe.getOutput();
+                ItemStack out = recipe.solidOutput.copy();
                 out.setCount(out.getCount() * amount);
                 setSlot(i, out);
             }
 
-            if (liquidMode && (recipe.hasFluidOutput1() || recipe.hasFluidOutput2())) {
+            if (liquidMode && recipe.fluidOutput != null) {
 
                 while (!slot(i).isEmpty() && slot(i).getCount() > 0) {
+                    int liquid = this.getStackAmount(liquids);
+                    int toAdd = this.getStackAmount(recipe.fluidOutput);
 
-                    boolean fits = (!recipe.hasFluidOutput1() || fitsInTank(tank1, recipe.getFluid1(), recipe.getFluidAmount1()))
-                            && (!recipe.hasFluidOutput2() || fitsInTank(tank2, recipe.getFluid2(), recipe.getFluidAmount2()));
-                    if (!fits) break;
-
-                    this.decrStackSize(i, 1);
-                    if (recipe.hasFluidOutput1()) tank1.fillMb(recipe.getFluid1(), recipe.getFluidAmount1());
-                    if (recipe.hasFluidOutput2()) tank2.fillMb(recipe.getFluid2(), recipe.getFluidAmount2());
+                    if (liquid + toAdd <= maxLiquid) {
+                        this.decrStackSize(i, 1);
+                        for (MaterialStack stack : recipe.fluidOutput) {
+                            this.addToStack(stack);
+                        }
+                    } else {
+                        break;
+                    }
                 }
             }
         }
@@ -455,7 +394,10 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity impleme
 
         for (int i = 5; i < 25; i++) {
             if (slot(i).isEmpty()) continue;
-            if (findRecipe(slot(i)) != null) return true;
+            ArcFurnaceRecipes.ArcFurnaceRecipe recipe = findRecipe(slot(i));
+            if (recipe == null) continue;
+            if (liquidMode && recipe.fluidOutput != null) return true;
+            if (!liquidMode && recipe.solidOutput != null) return true;
         }
 
         return false;
@@ -500,13 +442,22 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity impleme
         if (slot < 3) return stack.getItem() instanceof ItemArcElectrode;
         if (slot == 3) return isEnergyProviderItem(stack);
         if (slot == 4) return stack.getItem() instanceof ItemMachineUpgrade;
-        return findRecipe(stack) != null;
+        if (slot > 4) {
+            ArcFurnaceRecipes.ArcFurnaceRecipe recipe = findRecipe(stack);
+            if (recipe == null) return false;
+            return liquidMode ? recipe.fluidOutput != null : recipe.solidOutput != null;
+        }
+        return false;
     }
 
     /** Original {@code canInsertItem}. */
     public boolean canInsertItem(int slot, ItemStack stack) {
         if (slot < 3) return stack.getItem() instanceof ItemArcElectrode;
-        if (slot >= 25) return findRecipe(stack) != null;
+        if (slot >= 25) {
+            ArcFurnaceRecipes.ArcFurnaceRecipe recipe = findRecipe(stack);
+            if (recipe == null) return false;
+            return true;
+        }
         return false;
     }
 
@@ -605,8 +556,6 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity impleme
         nbt.putBoolean("isProgressing", isProgressing);
         nbt.putBoolean("hasMaterial", hasMaterial);
         nbt.putByteArray("electrodes", electrodes);
-        tank1.writeToNBT(nbt, "tank1");
-        tank2.writeToNBT(nbt, "tank2");
 
         int count = liquids.size();
         nbt.putShort("count", (short) count);
@@ -634,8 +583,6 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity impleme
         this.hasMaterial = nbt.getBoolean("hasMaterial");
         byte[] el = nbt.getByteArray("electrodes");
         if (el.length == 3) this.electrodes = el;
-        tank1.readFromNBT(nbt, "tank1");
-        tank2.readFromNBT(nbt, "tank2");
 
         int count = nbt.getShort("count");
         liquids.clear();
@@ -710,15 +657,5 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity impleme
     @Override
     public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
         return this.inventory;
-    }
-
-    @Override
-    public @org.jetbrains.annotations.Nullable Object getFluidHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
-        if (!isFluidSideAllowed(side)) return null;
-        //? if forge {
-        return null;
-        //?} elif neoforge {
-        /*return new com.hbm_m.api.fluids.NeoForgeFluidHandlerMK2(this);
-        *///?}
     }
 }

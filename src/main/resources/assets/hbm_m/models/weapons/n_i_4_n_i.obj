@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'n_i_4_n_i.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Barrel
 v -0.187500 0.051777 3.937500
 v 0.187500 0.051777 3.937500

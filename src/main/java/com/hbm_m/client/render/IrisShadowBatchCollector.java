@@ -18,7 +18,7 @@ import com.hbm_m.client.render.cache.RenderCacheManager;
 import com.hbm_m.client.render.shader.IrisExtendedShaderAccess;
 import com.hbm_m.client.render.shader.IrisPhaseGuard;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
-import com.hbm_m.client.render.shader.IrisShaderApply;
+import com.hbm_m.client.render.shader.ShaderBindResync;
 import com.hbm_m.main.MainRegistry;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.core.BlockPos;
@@ -726,9 +726,9 @@ public final class IrisShadowBatchCollector {
         return true;
     }
 
-    /** Whether the shadow basis is calibrated for the CURRENT shadow pass. */
+    /** Whether the shadow basis is calibrated for the CURRENT shadow pass (or anchor-space prebakes are active). */
     public static boolean prebakeCalibrated() {
-        return prebakeCalibrated && prebakeCalibFrame == renderFrame;
+        return anchorSpaceShadowActive || (prebakeCalibrated && prebakeCalibFrame == renderFrame);
     }
 
     // ── Shadow-basis calibration (solved from fallback records, per shadow pass) ──
@@ -742,11 +742,6 @@ public final class IrisShadowBatchCollector {
     private static final Quaternionf PREBAKE_Q_TMP = new Quaternionf();
     private static final Quaternionf PREBAKE_Q_OUT = new Quaternionf();
     private static final Vector3f PREBAKE_V = new Vector3f();
-    private static final float[] PREBAKE_BBOX6 = new float[6];
-    private static final int[] PREBAKE_LIGHT_WORDS = new int[4];
-    private static final float[] PREBAKE_UV4 = new float[4];
-    private static final float[] PREBAKE_TINT4 = new float[4];
-    private static final float[] PREBAKE_GRAD3 = new float[3];
     private static long prebakeCalibFrame = -1L;
     private static boolean prebakeCalibrated = false;
     private static boolean prebakeCalibSawFirst = false;
@@ -763,7 +758,7 @@ public final class IrisShadowBatchCollector {
      */
     public static void notePrebakeCalibration(InstancedStaticPartRenderer renderer,
                                               BlockPos blockPos, Matrix4f lightPose) {
-        if (blockPos == null || prebakeCalibrated || !stashValid) {
+        if (anchorSpaceShadowActive || blockPos == null || prebakeCalibrated || !stashValid) {
             return;
         }
         if (prebakeCalibFrame != renderFrame) {
@@ -787,7 +782,11 @@ public final class IrisShadowBatchCollector {
             return;
         }
         int first = s.firstSlotByKey.get(posKey);
-        if (s.posQuatStable[first]) {
+        // Only compare-VERIFIED slots may calibrate: a merely-stable slot (roster
+        // assert / skip-write trust) whose pose moved since an older snapshot
+        // (door mid-travel, melt rising) would solve a t_shadow wrong by exactly
+        // the part travel and poison every consumed machine.
+        if (s.posQuatVerified[first]) {
             solveShadowBasis(s, first, blockPos, lightPose);
         }
     }
@@ -892,6 +891,14 @@ public final class IrisShadowBatchCollector {
         int first = s.firstSlotByKey.get(posKey);
         if (first < 0 || first + len > s.count) {
             return false;
+        }
+        if (anchorSpaceShadowActive) {
+            // In anchor-space shadow mode, activateAnchorSpacePrebakes() already linked
+            // the entire s.records buffer into Entry.prebakeDirectView with e.count = s.count.
+            // Returning true here skips the shadow BER without appending duplicate records!
+            noteShadowRecord();
+            com.hbm_m.client.render.NucleusDebug.recordShadowRecord(len);
+            return true;
         }
         Entry e = BY_RENDERER.get(renderer);
         if (e == null) {
@@ -1066,7 +1073,7 @@ public final class IrisShadowBatchCollector {
                 disableBatching("shadow pack shader unavailable");
                 return;
             }
-            if (!IrisShaderApply.tryApply(packShadow)) {
+            if (!ShaderBindResync.tryApply(packShadow)) {
                 disableBatching("shadow pack shader apply failed");
                 return;
             }
@@ -1090,32 +1097,13 @@ public final class IrisShadowBatchCollector {
                 NucleusDebug.recordShadowFlush("bake skipped", 0, 0);
             }
 
-            com.hbm_m.client.render.shader.IrisInstancedShaders.captureLiveFramebuffer(true);
-            ShaderInstance ours = com.hbm_m.client.render.shader.IrisInstancedShaders.getOrCreate(true);
+            ShaderInstance ours = resolveShadowInstancedShader();
 
-            int drawCalls = 0;
-            int total = 0;
-            boolean instancedSafe = com.hbm_m.config.ModClothConfig.get().nucleusShadowInstancing
-                    && SHADOW_INSTANCING_FLAG
-                    && com.hbm_m.client.render.shader.IrisShadowDistortion.isCompatible();
-            if (ours != null && instancedSafe) {
-                try (IrisPhaseGuard guard = IrisPhaseGuard.pushBlockEntities()) {
-                    for (int i = 0; i < ENTRIES.size(); i++) {
-                        Entry e = ENTRIES.get(i);
-                        if (e.count <= 0 || e.renderer == null) {
-                            continue;
-                        }
-                        if (e.renderer.drawShadowInstances(e.activeBuffer(), e.count, ours, shadowProj,
-                                stashCamX, stashCamY, stashCamZ)) {
-                            drawCalls++;
-                            total += e.count;
-                        }
-                    }
-                    // Restore pack program to keep Iris state tracking consistent
-                    GlStateManager._glUseProgram(packShadow.getId());
-                }
-                NucleusDebug.recordDraw(drawCalls, total, "Iris shadow instanced");
-                NucleusDebug.recordShadowFlush("instanced", drawCalls, total);
+            if (ours != null) {
+                Tier2Walk walk = drawEntriesInstanced(ENTRIES, ours, packShadow, shadowProj,
+                        stashCamX, stashCamY, stashCamZ);
+                NucleusDebug.recordDraw(walk.drawCalls, walk.total, "Iris shadow instanced");
+                NucleusDebug.recordShadowFlush("instanced", walk.drawCalls, walk.total);
             } else {
                 // Tier 3 Fallback: per-record drawCompanion via IrisRenderBatch
                 int calls = drawEntriesViaCompanionBatch(ENTRIES, shadowProj,
@@ -1124,9 +1112,8 @@ public final class IrisShadowBatchCollector {
                     disableBatching("shadow pack shader unavailable");
                     return;
                 }
-                drawCalls = calls;
-                NucleusDebug.recordDraw(drawCalls, totalInstances(), "Iris shadow batch");
-                NucleusDebug.recordShadowFlush("companion", drawCalls, totalInstances());
+                NucleusDebug.recordDraw(calls, totalInstances(), "Iris shadow batch");
+                NucleusDebug.recordShadowFlush("companion", calls, totalInstances());
             }
         } catch (Throwable t) {
             MainRegistry.LOGGER.error("[HBM-M] Iris shadow batch flush failed", t);
@@ -1135,6 +1122,63 @@ public final class IrisShadowBatchCollector {
             clearEntries();
             clearStash();
         }
+    }
+
+    /**
+     * Shared Tier-2 gate (instanced shadow path): resolves this pass's
+     * instanced shadow shader, or null when instancing is disabled in config,
+     * unsupported by the shadow batching flag, or incompatible with the pack's
+     * shadow distortion. Shared by {@link #flushGlobalShadowBatch()} and
+     * {@link #redrawFailedBakeEntries}.
+     */
+    private static ShaderInstance resolveShadowInstancedShader() {
+        com.hbm_m.client.render.shader.IrisInstancedShaders.captureLiveFramebuffer(true);
+        ShaderInstance ours = com.hbm_m.client.render.shader.IrisInstancedShaders.getOrCreate(true);
+        if (ours == null) {
+            return null;
+        }
+        boolean instancedSafe = com.hbm_m.config.ModClothConfig.get().nucleusShadowInstancing
+                && SHADOW_INSTANCING_FLAG
+                && com.hbm_m.client.render.shader.IrisShadowDistortion.isCompatible();
+        return instancedSafe ? ours : null;
+    }
+
+    /** Tier-2 walk outcome: draw stats plus entries whose {@code drawShadowInstances} refused (Tier-3 fallback). */
+    private static final class Tier2Walk {
+        int drawCalls;
+        int total;
+        final List<Entry> refused = new java.util.ArrayList<>();
+    }
+
+    /**
+     * Tier-2 instanced walk over the given entries under the BLOCK_ENTITIES
+     * phase guard, then restores the pack shadow program so Iris state tracking
+     * stays consistent. Entries without a renderer or whose
+     * {@code drawShadowInstances} refuses land in {@link Tier2Walk#refused}.
+     */
+    private static Tier2Walk drawEntriesInstanced(List<Entry> entries, ShaderInstance ours,
+                                                  ShaderInstance packShadow, Matrix4f shadowProj,
+                                                  float camX, float camY, float camZ) {
+        Tier2Walk walk = new Tier2Walk();
+        try (IrisPhaseGuard guard = IrisPhaseGuard.pushBlockEntities()) {
+            for (int i = 0; i < entries.size(); i++) {
+                Entry e = entries.get(i);
+                if (e.count <= 0) {
+                    continue;
+                }
+                if (e.renderer != null && e.renderer.drawShadowInstances(
+                        e.activeBuffer(), e.count, ours, shadowProj, camX, camY, camZ)) {
+                    walk.drawCalls++;
+                    walk.total += e.count;
+                } else {
+                    walk.refused.add(e);
+                }
+            }
+            if (packShadow != null) {
+                GlStateManager._glUseProgram(packShadow.getId());
+            }
+        }
+        return walk;
     }
 
     /**
@@ -1203,40 +1247,20 @@ public final class IrisShadowBatchCollector {
             return;
         }
         com.hbm_m.client.render.shader.IrisInstancedShaders.captureLiveFramebuffer(true);
-        ShaderInstance ours = com.hbm_m.client.render.shader.IrisInstancedShaders.getOrCreate(true);
-        boolean instancedSafe = com.hbm_m.config.ModClothConfig.get().nucleusShadowInstancing
-                && SHADOW_INSTANCING_FLAG
-                && com.hbm_m.client.render.shader.IrisShadowDistortion.isCompatible();
+        ShaderInstance ours = resolveShadowInstancedShader();
 
-        List<Entry> companionFallback = null;
-        if (ours != null && instancedSafe) {
+        List<Entry> companionFallback;
+        if (ours != null) {
             ShaderInstance packShadow = IrisExtendedShaderAccess.getBlockShader(true);
-            int drawCalls = 0;
-            int instancedTotal = 0;
-            try (IrisPhaseGuard guard = IrisPhaseGuard.pushBlockEntities()) {
-                for (int i = 0; i < failed.size(); i++) {
-                    Entry e = failed.get(i);
-                    if (e.count <= 0) continue;
-                    if (e.renderer != null && e.renderer.drawShadowInstances(
-                            e.activeBuffer(), e.count, ours, shadowProj, camX, camY, camZ)) {
-                        drawCalls++;
-                        instancedTotal += e.count;
-                    } else {
-                        if (companionFallback == null) companionFallback = new java.util.ArrayList<>();
-                        companionFallback.add(e);
-                    }
-                }
-                if (packShadow != null) {
-                    GlStateManager._glUseProgram(packShadow.getId());
-                }
+            Tier2Walk walk = drawEntriesInstanced(failed, ours, packShadow, shadowProj, camX, camY, camZ);
+            if (walk.drawCalls > 0) {
+                NucleusDebug.recordDraw(walk.drawCalls, walk.total, "Iris shadow bake-fallback-instanced");
+                NucleusDebug.recordShadowFlush("bake-fallback-instanced", walk.drawCalls, walk.total);
             }
-            if (drawCalls > 0) {
-                NucleusDebug.recordDraw(drawCalls, instancedTotal, "Iris shadow bake-fallback-instanced");
-                NucleusDebug.recordShadowFlush("bake-fallback-instanced", drawCalls, instancedTotal);
-            }
-            if (companionFallback == null || companionFallback.isEmpty()) {
+            if (walk.refused.isEmpty()) {
                 return;
             }
+            companionFallback = walk.refused;
         } else {
             companionFallback = failed;
         }
@@ -1345,16 +1369,9 @@ public final class IrisShadowBatchCollector {
 
     /** Cleanly releases all persistent off-heap shadow memory buffers (e.g. on client level unload). */
     public static void resetAllMemory() {
-        for (PrebakeSnapshot ps : PREBAKES.values()) {
-            if (ps != null && ps.records != null) {
-                MemoryUtil.memFree(ps.records);
-                ps.records = null;
-            }
-        }
-        PREBAKES.clear();
-        prebakeCalibrated = false;
-        prebakeCalibSawFirst = false;
-        prebakeCalibFrame = -1L;
+        // Same prebake teardown as the render-origin reset - delegate instead of
+        // duplicating the loop.
+        onRenderOriginChanged();
         for (Entry e : BY_RENDERER.values()) {
             if (e != null && e.data != null) {
                 MemoryUtil.memFree(e.data);

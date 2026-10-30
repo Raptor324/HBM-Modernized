@@ -60,14 +60,14 @@ public class ClientRenderHandler {
          *  Без Iris — кастомный шейдер nuke_cloud (попиксельная окклюзия против LOD).
          *  Под активным паком Iris — ExtendedShader ключа TEXTURED_COLOR: неизвестные
          *  Iris'у модовые ShaderInstance маскируются disableDepthColor и рисуются
-         *  «в никуда» (см. FarContentShaders). */
+         *  «в никуда» (см. ModShaders.resolveTexColor). */
         private static final RenderStateShard.ShaderStateShard NUKE_TEX_COLOR_SHADER =
                 new RenderStateShard.ShaderStateShard(
-                        com.hbm_m.client.render.shader.FarContentShaders::resolveTexColor);
+                        com.hbm_m.client.render.shader.ModShaders::resolveTexColor);
 
         private static final RenderStateShard.ShaderStateShard NUKE_ADD_TEX_COLOR_SHADER =
                 new RenderStateShard.ShaderStateShard(
-                        com.hbm_m.client.render.shader.FarContentShaders::resolveAddTexColor);
+                        com.hbm_m.client.render.shader.ModShaders::resolveAddTexColor);
 
         // -- NT direct variants (see com.hbm_m.client.render.shader.NtDirectPass) --
         // Under an active pack the NT render types bind OUR core shaders instead of
@@ -219,6 +219,22 @@ public class ClientRenderHandler {
                         .setTransparencyState(LIGHTNING_TRANSPARENCY)
                         .setDepthTestState(LEQUAL_DEPTH_TEST)
                         .setCullState(CULL)
+                        .setLightmapState(NO_LIGHTMAP)
+                        .setWriteMaskState(COLOR_WRITE)
+                        .createCompositeState(false));
+
+        /** Demon Core Lamp rays/core: additive POSITION_COLOR, cull off, НЕ пишет глубину.
+         *  Ванильный {@code RenderType.lightning()} использует COLOR_DEPTH_WRITE —
+         *  огромные квады лучей записывают глубину, и вода/частицы/сущности,
+         *  отрисовываемые позже, отсекаются depth-тестом (эффект «под кругом
+         *  не видно воду»). См. также {@link #RBMK_CHERENKOV}. */
+        public static final RenderType DEMON_LAMP_RAYS = create("hbm_m_demon_lamp_rays",
+                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 2048, false, false,
+                RenderType.CompositeState.builder()
+                        .setShaderState(POSITION_COLOR_SHADER)
+                        .setTransparencyState(LIGHTNING_TRANSPARENCY)
+                        .setDepthTestState(LEQUAL_DEPTH_TEST)
+                        .setCullState(NO_CULL)
                         .setLightmapState(NO_LIGHTMAP)
                         .setWriteMaskState(COLOR_WRITE)
                         .createCompositeState(false));

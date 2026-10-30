@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'c130.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Prop4
 v 8.876309 4.210099 19.990316
 v 9.975476 4.210099 20.539900

@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'drill.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Gauge
 v 1.000000 2.327665 -1.661612
 v 1.062500 2.106694 -1.882583

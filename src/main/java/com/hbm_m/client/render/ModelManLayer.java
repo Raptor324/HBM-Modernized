@@ -2,7 +2,7 @@ package com.hbm_m.client.render;
 
 import com.hbm_m.client.render.armor.ArmorObjModel;
 import com.hbm_m.main.MainRegistry;
-import com.hbm_m.mixin.LivingEntityRendererInvoker;
+import com.hbm_m.mixin.client.LivingEntityRendererInvoker;
 import com.hbm_m.network.PermaSyncMemePacket;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;

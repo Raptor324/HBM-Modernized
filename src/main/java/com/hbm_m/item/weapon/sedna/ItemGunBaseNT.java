@@ -233,6 +233,7 @@ public class ItemGunBaseNT extends Item implements IKeybindReceiver {
 
     @Override
     public boolean canHandleKeybind(Player player, ItemStack stack, EnumKeybind keybind) {
+        if (player.isSpectator()) return false;
         return keybind == EnumKeybind.GUN_PRIMARY || keybind == EnumKeybind.GUN_SECONDARY || keybind == EnumKeybind.GUN_TERTIARY || keybind == EnumKeybind.RELOAD;
     }
 
@@ -342,6 +343,21 @@ public class ItemGunBaseNT extends Item implements IKeybindReceiver {
             return;
         }
 
+        /// SPECTATOR: NO GUN USE ///
+        // Zustandsautomat und Tastenstillstand einfrieren, damit kein Refire/Nachladen aus einem
+        // vor dem Spectator-Wechsel gedrueckten Zustand heraus laufen kann.
+        if (player != null && player.isSpectator()) {
+            for (int i = 0; i < confNo; i++) {
+                setPrimary(stack, i, false);
+                setSecondary(stack, i, false);
+                setTertiary(stack, i, false);
+                setReloadKey(stack, i, false);
+            }
+            setIsAiming(stack, false);
+            setReloadCancel(stack, false);
+            return;
+        }
+
         for (int i = 0; i < confNo; i++) for (int k = 0; k == 0 || (k < 2 && player != null && ArmorTrenchmaster.isTrenchMaster(player) && getState(stack, i) == GunState.RELOADING); k++) {
             BiConsumer<ItemStack, LambdaContext> orchestra = configs[i].getOrchestra(stack);
             if (orchestra != null) orchestra.accept(stack, ctx[i]);
@@ -384,6 +400,13 @@ public class ItemGunBaseNT extends Item implements IKeybindReceiver {
             /** Original ModEventHandlerRenderer: Waffen halten den Arm wie beim Bogen ({@code aimedBow}). */
             @Override
             public net.minecraft.client.model.HumanoidModel.ArmPose getArmPose(LivingEntity entity, net.minecraft.world.InteractionHand hand, ItemStack stack) {
+                com.hbm_m.client.weapon.ItemRenderWeaponBase renderer = com.hbm_m.client.weapon.GunItemRenderer.get(stack);
+                if (renderer != null && renderer.isAkimbo(entity)) {
+                    return net.minecraft.client.model.HumanoidModel.ArmPose.ITEM;
+                }
+                if (hand == net.minecraft.world.InteractionHand.MAIN_HAND && !entity.getOffhandItem().isEmpty()) {
+                    return net.minecraft.client.model.HumanoidModel.ArmPose.ITEM;
+                }
                 return net.minecraft.client.model.HumanoidModel.ArmPose.BOW_AND_ARROW;
             }
         });
@@ -411,6 +434,13 @@ public class ItemGunBaseNT extends Item implements IKeybindReceiver {
             /^* Original ModEventHandlerRenderer: Waffen halten den Arm wie beim Bogen ({@code aimedBow}). ^/
             @Override
             public net.minecraft.client.model.HumanoidModel.ArmPose getArmPose(LivingEntity entity, net.minecraft.world.InteractionHand hand, ItemStack stack) {
+                com.hbm_m.client.weapon.ItemRenderWeaponBase renderer = com.hbm_m.client.weapon.GunItemRenderer.get(stack);
+                if (renderer != null && renderer.isAkimbo(entity)) {
+                    return net.minecraft.client.model.HumanoidModel.ArmPose.ITEM;
+                }
+                if (hand == net.minecraft.world.InteractionHand.MAIN_HAND && !entity.getOffhandItem().isEmpty()) {
+                    return net.minecraft.client.model.HumanoidModel.ArmPose.ITEM;
+                }
                 return net.minecraft.client.model.HumanoidModel.ArmPose.BOW_AND_ARROW;
             }
         });

@@ -114,9 +114,14 @@ public class MachineCokerBlockEntity extends BaseMachineBlockEntity implements I
             if (this.tank1.getFill() > 0) this.tryProvide(tank1, level, con.pos, con.dir);
         }
 
+        // Original networkPackNT(25) ships wasOn/heat/progress and both tank types+fills every tick;
+        // the change-gate signature must therefore cover wasOn and both tank types too, else the
+        // client keeps a stale running state when processing stops without any fill changing.
+        long type0 = tank0.getTankType() == null ? 0L : tank0.getTankType().hashCode() & 0xFFFFFFFFL;
+        long type1 = tank1.getTankType() == null ? 0L : tank1.getTankType().hashCode() & 0xFFFFFFFFL;
         syncIfStateChanged(
-                (long) progress << 32 | (long) heat,
-                (long) tank0.getFill() << 32 | (long) tank1.getFill()
+                (long) progress << 33 | (long) heat << 1 | (wasOn ? 1L : 0L),
+                (long) tank0.getFill() << 48 | (long) tank1.getFill() << 32 | (type0 * 31 + type1) & 0xFFFFFFFFL
         );
     }
 
@@ -344,8 +349,8 @@ public class MachineCokerBlockEntity extends BaseMachineBlockEntity implements I
         sidedItems.invalidate();
     }
     //?} elif neoforge {
-    /*
-    // Original {@code ISidedInventory}: Slot {1}; nichts hinein, das Ergebnis heraus.
+    
+    /*// Original {@code ISidedInventory}: Slot {1}; nichts hinein, das Ergebnis heraus.
     private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
             new com.hbm_m.blockentity.SidedItemAccess.Rules() {
                 @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 1 }; }

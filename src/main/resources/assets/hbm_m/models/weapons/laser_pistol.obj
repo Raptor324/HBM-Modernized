@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'laser_pistol.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Tape
 v 0.687500 2.885000 2.165625
 v -0.885000 2.885000 2.009375

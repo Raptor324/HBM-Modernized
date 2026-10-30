@@ -88,4 +88,38 @@ public final class IrisDerivedMatrixUniforms {
         }
         return -1;
     }
+
+    // Shared zero-allocation scratch buffers (guaranteed render-thread only)
+    private static final float[] MV_FLOATS = new float[16];
+    private static final float[] INV_FLOATS = new float[16];
+    private static final float[] NORM_FLOATS = new float[9];
+    private static final org.joml.Matrix4f INV_SCRATCH = new org.joml.Matrix4f();
+    private static final org.joml.Matrix3f NORM_SCRATCH = new org.joml.Matrix3f();
+
+    /**
+     * Uploads ModelViewMat, ModelViewMatInverse (if present), and NormalMat (if present)
+     * using zero-allocation internal scratch buffers.
+     */
+    public static void uploadDerivedMatrices(Locations locs, org.joml.Matrix4fc modelView) {
+        if (locs == null) return;
+
+        if (locs.modelView() >= 0) {
+            modelView.get(MV_FLOATS);
+            GL20.glUniformMatrix4fv(locs.modelView(), false, MV_FLOATS);
+        }
+        if (locs.modelViewInverse() >= 0) {
+            INV_SCRATCH.set(modelView).invertAffine();
+            INV_SCRATCH.get(INV_FLOATS);
+            GL20.glUniformMatrix4fv(locs.modelViewInverse(), false, INV_FLOATS);
+        }
+        if (locs.normalMat() >= 0) {
+            if (locs.modelViewInverse() >= 0) {
+                NORM_SCRATCH.set(INV_SCRATCH).transpose();
+            } else {
+                NORM_SCRATCH.set(INV_SCRATCH.set(modelView).invertAffine()).transpose();
+            }
+            NORM_SCRATCH.get(NORM_FLOATS);
+            GL20.glUniformMatrix3fv(locs.normalMat(), false, NORM_FLOATS);
+        }
+    }
 }

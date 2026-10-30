@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'stg77.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Breech
 v -0.156250 0.281250 -3.250000
 v -0.343750 -0.031250 -3.250000

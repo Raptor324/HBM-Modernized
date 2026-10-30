@@ -157,12 +157,16 @@ float gpuFadeAlpha(float modeW, vec3 instPos) {
     if (modeW < 0.0) return 0.0;
     float mode = (1.0 - modeW) * 10000.0;
     if (mode < 0.5) return 1.0;
+    // Guard (parity with the Iris vsh): unconfigured fade uniforms leave the
+    // instance fully opaque instead of ramping against the 1e9 JSON defaults.
+    if (uStaticFadeEnd <= uStaticFadeStart || uStaticFadeEnd <= 0.0) return 1.0;
     // View-space instance origin: ModelViewMat = R_cam * T(-relCam), so its
     // length is the distance from the camera to the instance origin (anchor-
     // relative record pos) - the same distance the CPU membership split uses.
     float dist = length((ModelViewMat * vec4(instPos, 1.0)).xyz);
     float sf = fadeRamp(dist, uStaticFadeStart, uStaticFadeEnd);
     if (mode < 1.5) return sf;
+    if (uAnimFadeEnd <= uAnimFadeStart || uAnimFadeEnd <= 0.0) return sf;
     return min(sf, fadeRamp(dist, uAnimFadeStart, uAnimFadeEnd));
 }
 
@@ -512,7 +516,7 @@ void main() {
     // with a uniform tint and no falloff.
     float glow = 1.0;
     vColor = InstColor;
-    if (GradParams.x >= 0.0) {
+    if (GradParams.x >= 0.0 && GradParams.x <= 2.0) {
         float gCoord = vPos.z;
         if (GradParams.x < 0.5) {
             gCoord = vPos.x;

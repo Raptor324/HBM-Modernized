@@ -149,7 +149,7 @@ public class CameraShakeHandler {
 //? if forge {
     @Mod.EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT)
     //?} elif neoforge {
-/*    @EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT)
+    /*@EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT)
     *///?}
     public static final class ShakeHooks {
 

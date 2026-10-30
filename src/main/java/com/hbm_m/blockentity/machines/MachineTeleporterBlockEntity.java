@@ -32,7 +32,7 @@ import net.minecraft.world.phys.AABB;
  * Interdimensional wie im Original fuer Spieler und alle anderen Entities (dort per Reflection auf
  * EntityTracker/Netty geloest, hier ueber {@code Entity#teleportTo(ServerLevel, ...)}).
  */
-public class MachineTeleporterBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.fluids.IFluidStandardReceiverMK2 {
+public class MachineTeleporterBlockEntity extends BaseMachineBlockEntity {
 
     private static final long MAX_POWER = 1_500_000L;
     private static final long CONSUMPTION = 1_000_000L;
@@ -42,40 +42,14 @@ public class MachineTeleporterBlockEntity extends BaseMachineBlockEntity impleme
     public int targetZ = 0;
     public String targetDim = "minecraft:overworld";
 
-    /** E16 (Fork, nur mit Space-Addon): N-Masse fuer Dimensionswechsel (Space {@code flucu = 100}, Tank 16 000 mB). */
-    public static final int FLUCU = 100;
-    @org.jetbrains.annotations.Nullable
-    public final com.hbm_m.inventory.fluid.tank.FluidTank tank;
-
     public MachineTeleporterBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MACHINE_TELEPORTER_BE.get(), pos, state, 0, MAX_POWER, MAX_POWER, 0L);
-        net.minecraft.world.level.material.Fluid nmass = com.hbm_m.api.space.SpaceApi.forkActive() ? com.hbm_m.api.space.SpaceApi.fork().teleporterFluid() : null;
-        this.tank = nmass == null ? null : new com.hbm_m.inventory.fluid.tank.FluidTank(nmass, 16000);
-    }
-
-    @Override
-    public com.hbm_m.inventory.fluid.tank.FluidTank[] getAllTanks() {
-        return tank == null ? new com.hbm_m.inventory.fluid.tank.FluidTank[0] : new com.hbm_m.inventory.fluid.tank.FluidTank[] { tank };
-    }
-
-    @Override
-    public com.hbm_m.inventory.fluid.tank.FluidTank[] getReceivingTanks() {
-        return getAllTanks();
-    }
-
-    @Override
-    public boolean isLoaded() {
-        return level != null && !isRemoved() && level.isLoaded(worldPosition);
-    }
-
-    private boolean crossDimension(Level level) {
-        return !level.dimension().location().toString().equals(targetDim);
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineTeleporterBlockEntity be) {
         if (level.isClientSide()) {
             // Original: blaue reddust-Partikel, solange ein Ziel gesetzt und genug Strom da ist
-            if (be.targetY != -1 && be.getEnergyStored() >= CONSUMPTION && (be.tank == null || be.tank.getFill() >= FLUCU)) {
+            if (be.targetY != -1 && be.getEnergyStored() >= CONSUMPTION) {
                 double x = pos.getX() + 0.5 + level.random.nextGaussian() * 0.25D;
                 double y = pos.getY() + 1 + level.random.nextDouble() * 2D;
                 double z = pos.getZ() + 0.5 + level.random.nextGaussian() * 0.25D;
@@ -85,9 +59,6 @@ public class MachineTeleporterBlockEntity extends BaseMachineBlockEntity impleme
         }
         if (!(level instanceof ServerLevel serverLevel)) return;
         be.ensureNetworkInitialized();
-        if (be.tank != null) {
-            for (net.minecraft.core.Direction d : net.minecraft.core.Direction.values()) be.trySubscribe(be.tank.getTankType(), level, pos.relative(d), d);
-        }
         if (level.getGameTime() % 15 == 0) be.sendUpdateToClient();
         if (be.targetY == -1) return;
 
@@ -101,10 +72,6 @@ public class MachineTeleporterBlockEntity extends BaseMachineBlockEntity impleme
 
     private void teleport(ServerLevel level, Entity entity) {
         if (getEnergyStored() < CONSUMPTION) return;
-        // E16: N-Masse ist fuer jeden Dimensionswechsel noetig
-        boolean cross = tank != null && crossDimension(level);
-        if (cross && tank.getFill() < FLUCU) return;
-        if (cross) tank.setFill(tank.getFill() - FLUCU);
 
         level.playSound(null, worldPosition.getX() + 0.5, worldPosition.getY() + 1.5, worldPosition.getZ() + 0.5, SoundEvents.ENDERMAN_TELEPORT, SoundSource.BLOCKS, 1.0F, 1.0F);
 
@@ -124,20 +91,6 @@ public class MachineTeleporterBlockEntity extends BaseMachineBlockEntity impleme
             entity.teleportTo(tx, ty, tz);
         } else {
             entity.teleportTo(destLevel, tx, ty, tz, java.util.Set.of(), entity.getYRot(), entity.getXRot());
-        }
-
-        // E16 (Fork, nur mit Space-Addon): "I have done nothing but teleport bread for three days" - Brot wird zum Schleim
-        if (tank != null && entity instanceof net.minecraft.world.entity.item.ItemEntity item && item.getItem().is(net.minecraft.world.item.Items.BREAD)) {
-            net.minecraft.world.entity.monster.Slime slime = net.minecraft.world.entity.EntityType.SLIME.create(destLevel);
-            if (slime != null) {
-                slime.moveTo(tx, ty, tz, entity.getYRot(), entity.getXRot());
-                //? if < 1.21.1 {
-                slime.finalizeSpawn(destLevel, destLevel.getCurrentDifficultyAt(slime.blockPosition()), net.minecraft.world.entity.MobSpawnType.SPAWN_EGG, null, null);
-                //?} else {
-                /*slime.finalizeSpawn(destLevel, destLevel.getCurrentDifficultyAt(slime.blockPosition()), net.minecraft.world.entity.MobSpawnType.SPAWN_EGG, null);
-                *///?}
-                destLevel.addFreshEntity(slime);
-            }
         }
 
         // Original: zweiter Ton an der Entity-Position nach dem Sprung
@@ -187,7 +140,6 @@ public class MachineTeleporterBlockEntity extends BaseMachineBlockEntity impleme
         tag.putInt("targetY", targetY);
         tag.putInt("targetZ", targetZ);
         tag.putString("targetDim", targetDim);
-        if (tank != null) tank.writeToNBT(tag, "tt");
     }
 
     @Override
@@ -197,6 +149,5 @@ public class MachineTeleporterBlockEntity extends BaseMachineBlockEntity impleme
         targetY = tag.contains("targetY") ? tag.getInt("targetY") : -1;
         targetZ = tag.getInt("targetZ");
         targetDim = tag.contains("targetDim") ? tag.getString("targetDim") : "minecraft:overworld";
-        if (tank != null) tank.readFromNBT(tag, "tt");
     }
 }

@@ -3,7 +3,6 @@
     "fragment": "hbm_m:iris/block_lit_iris",
     "samplers": [
         { "name": "iris_Sampler0" },
-        { "name": "iris_Sampler1" },
         { "name": "iris_Sampler2" },
         { "name": "iris_uJointSpecs" }
     ],

@@ -1,0 +1,23 @@
+{
+  "loader": "hbm_m:machine_parts_loader",
+  "model": "hbm_m:models/machines/bigasstank.obj",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "particle": "hbm_m:models/machines/bigasstank",
+    "default": "hbm_m:models/machines/bigasstank"
+  },
+  "transform": {
+    "translation": [
+      0.5,
+      0,
+      0.5
+    ],
+    "rotation": [
+      0,
+      0,
+      0
+    ],
+    "scale": 1.0
+  }
+}

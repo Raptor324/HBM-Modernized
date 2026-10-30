@@ -161,8 +161,6 @@ public final class SpaceEnvironmentGameTest {
         check(com.hbm_m.blockentity.machines.DeuteriumExtractorBlockEntity.powerDivisor() == 20, "E8 Deuterium /20");
         var part2 = new com.hbm_m.blockentity.network.CranePartitionerBlockEntity(BlockPos.ZERO, com.hbm_m.block.ModBlocks.CRANE_PARTITIONER.get().defaultBlockState());
         check(part2.inputCount == 45 && part2.outputCount == 45 && part2.inventory.getSlots() == 90, "E8 Sortierer 45+45");
-        var tele = new com.hbm_m.blockentity.machines.MachineTeleporterBlockEntity(BlockPos.ZERO, com.hbm_m.block.ModBlocks.MACHINE_TELEPORTER.get().defaultBlockState());
-        check(tele.tank == null && tele.getAllTanks().length == 0, "E16 Teleporter ohne Tank");
         var barrel = new com.hbm_m.blockentity.machines.BarrelIronBlockEntity(BlockPos.ZERO, com.hbm_m.block.ModBlocks.BARREL_IRON.get().defaultBlockState());
         check(barrel.isBarrel() && !barrel.handlesOverpressure(), "E3 Fass nimmt nicht am Ueberdruck teil");
         var ocelot = net.minecraft.world.entity.EntityType.OCELOT.create(sl);

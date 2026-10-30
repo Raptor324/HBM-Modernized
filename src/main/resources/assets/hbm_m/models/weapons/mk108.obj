@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'mk108.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Barrel
 v 0.000000 0.312500 8.000000
 v -0.156250 0.270633 8.000000

@@ -32,7 +32,7 @@ import org.lwjgl.opengl.GL20;
  * (rocket meshes, block_lit), the DH depth copy ({@code DhDepthCopy}), the
  * AFTER_WEATHER pass entries in {@code EngineHandler} (Torex clouds/flash),
  * the far-content depth copy in {@code EngineHandler} (via
- * {@code IrisShaderApply}), {@code IrisShaderApply.tryApply},
+ * {@code ShaderBindResync.tryApply}), {@code ShaderBindResync.tryApply},
  * {@code MdiBatchCoordinator} (MDI flush - compute passes clobber the program
  * between apply and the draws) and all three flush stages of
  * {@code VanillaInstancedBatchRenderer}.</p>
@@ -210,47 +210,8 @@ public final class ShaderBindResync {
     }
 
     // -- Iris DepthColorStorage watchdog -------------------------------------
-    private static volatile boolean irisChecked;
-    private static java.lang.reflect.Method irisIsLockedMethod;
-    private static java.lang.reflect.Method irisUnlockMethod;
-    private static java.lang.reflect.Field irisDepthColorLockedField;
-
-    private static synchronized void ensureIrisDepthColorReflected() {
-        if (irisChecked) {
-            return;
-        }
-        irisChecked = true;
-        try {
-            Class<?> cl = Class.forName("net.irisshaders.iris.gl.blending.DepthColorStorage");
-            try {
-                irisIsLockedMethod = cl.getDeclaredMethod("isDepthColorLocked");
-                irisIsLockedMethod.setAccessible(true);
-            } catch (Throwable ignored) {
-            }
-            try {
-                irisUnlockMethod = cl.getDeclaredMethod("unlockDepthColor");
-                irisUnlockMethod.setAccessible(true);
-            } catch (Throwable ignored) {
-            }
-            try {
-                irisDepthColorLockedField = cl.getDeclaredField("depthColorLocked");
-                irisDepthColorLockedField.setAccessible(true);
-            } catch (Throwable ignored) {
-                for (java.lang.reflect.Field f : cl.getDeclaredFields()) {
-                    if (f.getType() == boolean.class && java.lang.reflect.Modifier.isStatic(f.getModifiers())
-                            && "depthColorLocked".equals(f.getName())) {
-                        f.setAccessible(true);
-                        irisDepthColorLockedField = f;
-                        break;
-                    }
-                }
-            }
-        } catch (VirtualMachineError t) {
-            throw t;
-        } catch (Throwable t) {
-            logOnceProbeIssue("irisDepthColorDisabled", t, false);
-        }
-    }
+    // The DepthColorStorage reflection (dual-package lookup) lives in
+    // IrisReflectionBridge - the single reflection point.
 
     /**
      * Reads whether Iris / Oculus has locked depth and color writes via {@code DepthColorStorage}.
@@ -261,14 +222,8 @@ public final class ShaderBindResync {
     @org.jetbrains.annotations.Nullable
     public static Boolean irisDepthColorDisabled() {
         try {
-            ensureIrisDepthColorReflected();
-            if (irisIsLockedMethod != null) {
-                return (Boolean) irisIsLockedMethod.invoke(null);
-            }
-            if (irisDepthColorLockedField != null) {
-                return (Boolean) irisDepthColorLockedField.get(null);
-            }
-            return null;
+            IrisReflectionBridge.ensureDepthColorReflected();
+            return IrisReflectionBridge.depthColorIsLocked();
         } catch (VirtualMachineError t) {
             throw t;
         } catch (Throwable t) {
@@ -298,19 +253,12 @@ public final class ShaderBindResync {
     }
 
     private static boolean forceIrisDepthColorEnabledCore(boolean resetFullMasks) {
-        ensureIrisDepthColorReflected();
+        IrisReflectionBridge.ensureDepthColorReflected();
         boolean unlocked = false;
         try {
             Boolean disabled = irisDepthColorDisabled();
             if (disabled == null || disabled) {
-                if (irisUnlockMethod != null) {
-                    irisUnlockMethod.invoke(null);
-                    unlocked = true;
-                }
-                if (irisDepthColorLockedField != null && irisDepthColorLockedField.getBoolean(null)) {
-                    irisDepthColorLockedField.setBoolean(null, false);
-                    unlocked = true;
-                }
+                unlocked = IrisReflectionBridge.depthColorUnlock();
             }
         } catch (Throwable ignored) {
         }
@@ -462,6 +410,29 @@ public final class ShaderBindResync {
     private static java.lang.reflect.Field blendLastAppliedField;
 
     /**
+     * Resets Mojang's static {@code BlendMode.lastApplied} to the canonical default
+     * opaque {@link com.mojang.blaze3d.shaders.BlendMode} instance ({@code opaque = true}).
+     *
+     * <p>Why this is needed after custom additive/translucent shaders (like {@code gun_additive}):
+     * Vanilla shaders (like {@code position_tex} used by {@code Gui.renderVignette()}) have
+     * {@code opaque = true} in their {@code ShaderInstance.blend}. If {@code BlendMode.lastApplied}
+     * is left non-opaque (or {@code null}) at the end of first-person hand rendering,
+     * {@code position_tex.apply()} inside {@code Gui.renderVignette()} detects a state change
+     * ({@code !this.equals(lastApplied)}) and calls {@code RenderSystem.disableBlend()},
+     * drawing the fullscreen vignette quad as solid black!
+     * Calling {@code new BlendMode().apply()} sets {@code BlendMode.lastApplied} to an
+     * {@code opaque = true} instance so subsequent vanilla {@code shader.apply()} calls
+     * see {@code this.equals(lastApplied) == true} and do not clobber manual blending.</p>
+     */
+    public static void resetBlendModeToOpaque() {
+        try {
+            new com.mojang.blaze3d.shaders.BlendMode().apply();
+            forceHonestBlendState();
+        } catch (Exception ignored) {
+        }
+    }
+
+    /**
      * One-time log for silent probe failures (catch-narrowing audit): DEBUG for
      * probes whose failure is the expected "mod absent" case, WARN for compat
      * fixes that would otherwise die silently.
@@ -481,6 +452,38 @@ public final class ShaderBindResync {
                 }
             }
         }
+    }
+
+    /**
+     * Safe wrapper around {@link ShaderInstance#apply()} for Iris
+     * {@code ExtendedShader} instances whose sampler/image bindings can throw
+     * {@code IllegalStateException: Tried to use a destroyed GlResource} when the
+     * pipeline was rebuilt or the render phase moved on.
+     *
+     * @return {@code true} if {@code apply()} completed without throwing.
+     */
+    public static boolean tryApply(ShaderInstance shader) {
+        if (shader == null) return false;
+        try {
+            ensureFreshBind(shader);
+            shader.apply();
+            return true;
+        } catch (IllegalStateException e) {
+            if (isDestroyedGlResource(e)) {
+                IrisExtendedShaderAccess.invalidateShaderCache();
+                IrisRenderBatch.invalidateCaches();
+                MainRegistry_LOGGER.debug("ShaderBindResync: apply failed (destroyed GlResource), caches invalidated");
+            }
+            return false;
+        } catch (Throwable t) {
+            MainRegistry_LOGGER.debug("ShaderBindResync: apply failed ({})", t.toString());
+            return false;
+        }
+    }
+
+    private static boolean isDestroyedGlResource(Throwable t) {
+        String msg = t.getMessage();
+        return msg != null && msg.contains("destroyed GlResource");
     }
 
     private static final org.slf4j.Logger MainRegistry_LOGGER =

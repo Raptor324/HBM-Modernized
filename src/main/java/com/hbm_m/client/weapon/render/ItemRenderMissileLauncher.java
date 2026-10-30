@@ -7,7 +7,6 @@ import com.hbm_m.item.weapon.sedna.ItemGunBaseNT;
 import com.hbm_m.render.anim.HbmAnimations;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
@@ -104,35 +103,22 @@ public class ItemRenderMissileLauncher extends ItemRenderWeaponBase {
 
 	@Override
 	public void setupThirdPerson(ItemStack stack) {
-		super.setupThirdPerson(stack);
-		double scale = 2.5D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.translate(0, -0.5, -2);
-
+		setupThirdPerson(stack, 2.5D, 0, -0.5, -2);
 	}
 
 	@Override
 	public void setupInv(ItemStack stack) {
-		super.setupInv(stack);
-		double scale = 1.5D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(25, 1, 0, 0);
-		GunGL.rotate(45, 0, 1, 0);
-		GunGL.translate(0, -0.5, 0);
+		setupInv(stack, 1.5D, 0, -0.5, 0);
 	}
 
 	@Override
 	public void setupModTable(ItemStack stack) {
-		double scale = -10D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(90, 0, 1, 0);
-		GunGL.translate(0, -1, 0);
+		setupModTable(stack, -10D, 0, -1, 0);
 	}
 
 	@Override
 	public void renderOther(ItemStack stack, ItemRenderType type, Object... data) {
 		GunGL.enableLighting();
-
 		GunGL.bindTexture(WeaponResources.missile_launcher_tex);
 		ItemGunBaseNT gun = (ItemGunBaseNT) stack.getItem();
 
@@ -140,26 +126,6 @@ public class ItemRenderMissileLauncher extends ItemRenderWeaponBase {
 		GunGL.renderPart(WeaponResources.missile_launcher, "Barrel");
 		GunGL.renderPart(WeaponResources.missile_launcher, "Front");
 		if(gun.getConfig(stack, 0).getReceivers(stack)[0].getMagazine(stack).getAmount(stack, null) > 0) GunGL.renderPart(WeaponResources.missile_launcher, "Missile");
-
-		if(type == ItemRenderType.EQUIPPED) {
-			LivingEntity ent = (LivingEntity) data[1];
-			long shot;
-			double shotRand = 0;
-			if(ent == Minecraft.getInstance().player) {
-				shot = gun.lastShot[0];
-				shotRand = gun.shotRand;
-			} else {
-				shot = ItemRenderWeaponBase.flashMap.getOrDefault(ent, (long) -1);
-				if(shot < 0) return;
-			}
-
-			GunGL.pushMatrix();
-			GunGL.translate(0, 1, 6.75);
-			GunGL.rotate(90, 0, 1, 0);
-			GunGL.rotate(shotRand * 90, 1, 0, 0);
-			GunGL.scale(0.75, 0.75, 0.75);
-			this.renderMuzzleFlash(shot, 75, 7.5);
-			GunGL.popMatrix();
-		}
+		renderEquippedMuzzleFlash(type, stack, data, 0, 1, 6.75, 0.75D, 75, 7.5);
 	}
 }

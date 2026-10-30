@@ -22,7 +22,6 @@ import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL33;
 import org.lwjgl.opengl.GL31;
 import org.lwjgl.opengl.GL40;
@@ -1272,20 +1271,7 @@ public final class MdiBatchCoordinator {
             boolean gpuCulled = false;
 
             try {
-                GL30.glBindVertexArray(atlas.getVaoId());
-                // The driver can silently ignore the bind when the name was deleted or
-                // recycled behind our back (GL_INVALID_OPERATION "VAO names must be
-                // generated..."): the next line would then enable attribs 4..15 on a
-                // FOREIGN VAO and glMultiDrawElementsIndirect faults in the driver
-                // (native crash, hs_err_pid50040). Verify the binding actually stuck.
-                int bound = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
-                if (bound != atlas.getVaoId()) {
-                    MainRegistry.LOGGER.error(
-                            "[HBM-M MDI] Atlas VAO {} bind was rejected by the driver (GL_VERTEX_ARRAY_BINDING={}, foreign VAO); resetting atlas and skipping this frame's MDI draw",
-                            atlas.getVaoId(), bound);
-                    MdiGeometryAtlas.resetForResourceLifecycle();
-                    return;
-                }
+                GlVaoSafety.bindVertexArray(atlas.getVaoId());
                 atlas.enableVertexAttribArraysOnBoundVao();
 
                 // Lightmap freshness is owned by RenderFrameLight.ensureLightTextureUpdated()
@@ -1510,7 +1496,7 @@ public final class MdiBatchCoordinator {
                 // treats the offset (0L) as a CPU host memory pointer, instantly causing EXCEPTION_ACCESS_VIOLATION
                 // in the native graphics driver (e.g. nvoglv64.dll / atio6axx.dll).
                 GL15.glBindBuffer(GL40.GL_DRAW_INDIRECT_BUFFER, atlas.getIndirectBufferId());
-                GL30.glBindVertexArray(atlas.getVaoId());
+                GlVaoSafety.bindVertexArray(atlas.getVaoId());
                 // Re-bind the joint specs texture after the GPU-cull dispatch: the
                 // sampler uniform value persists per program, but the TEXTURE on
                 // the specs unit must survive any intermediate compute work.

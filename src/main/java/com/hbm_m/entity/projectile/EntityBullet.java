@@ -238,7 +238,7 @@ public class EntityBullet extends Entity {
 
             for (Entity entity1 : list) {
 
-                if (entity1.isPickable() && (entity1 != this.shootingEntity || this.ticksInAir >= 5)) {
+                if (entity1.isPickable() && !(entity1 instanceof LivingEntity living && !living.isAlive()) && (entity1 != this.shootingEntity || this.ticksInAir >= 5)) {
                     float f1 = 0.3F;
                     AABB axisalignedbb1 = entity1.getBoundingBox().inflate(f1, f1, f1);
                     var intercept = axisalignedbb1.clip(vec31, vec3);

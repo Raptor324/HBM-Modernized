@@ -53,6 +53,14 @@ public abstract class BaseCrateBlock extends BaseEntityBlock {
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        // Original: mit Schloss oder Nachschluessel-Set in der Hand oeffnet sich nichts (das Item handelt selbst).
+        // 1.21.1 runs useWithoutItem before ItemStack.useOn (ServerPlayerGameMode), so without this
+        // guard ItemLock.useOn could never lock the crate; both hands are checked because
+        // useWithoutItem has no hand parameter and either hand gets its own interaction pass.
+        for (ItemStack held : new ItemStack[] {player.getMainHandItem(), player.getOffhandItem()}) {
+            if (!held.isEmpty() && (held.getItem() instanceof com.hbm_m.item.tool.ItemLock || held.is(com.hbm_m.item.ModItems.KEY_KIT.get()))) return InteractionResult.PASS;
+        }
+        if (player.isShiftKeyDown()) return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.PASS; // Original: Client true, Server geschlichen false
         return openCrateMenu(state, level, pos, player);
     }
     *///?}
@@ -137,6 +145,25 @@ public abstract class BaseCrateBlock extends BaseEntityBlock {
 
     private void handlePlayerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         if (level.isClientSide || !(level.getBlockEntity(pos) instanceof BaseCrateBlockEntity crateEntity)) {
+            return;
+        }
+
+        // Original removedByPlayer: ohne CRATE_KEEP_CONTENTS droppt die leere Kiste, der Inhalt
+        // verschuettet lose - ausser die Kiste ist abgeschlossen, dann wird er geloescht.
+        if (!com.hbm_m.config.ModClothConfig.get().crateKeepContents) {
+            if (!player.getAbilities().instabuild) {
+                popResource(level, pos, new ItemStack(this));
+            }
+            if (!crateEntity.isLocked()) {
+                ModItemStackHandler handler = crateEntity.getItemHandler();
+                for (int slot = 0; slot < handler.getSlots(); slot++) {
+                    ItemStack stack = handler.getStackInSlot(slot);
+                    if (!stack.isEmpty()) {
+                        Containers.dropItemStack(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, stack);
+                    }
+                }
+            }
+            crateEntity.clearContents();
             return;
         }
 

@@ -17,7 +17,10 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
@@ -64,6 +67,7 @@ public class EntityBulletBaseMK4 extends EntityThrowableNT
         this.damage = damage;
         this.moveTo(posX, posY, posZ, 0, 0);
         this.setThrowableHeading(motionX, motionY, motionZ, 1.0F, this.config.spread + gunSpread);
+        this.seedVelocity();
     }
 
     /** For standard guns */
@@ -76,18 +80,62 @@ public class EntityBulletBaseMK4 extends EntityThrowableNT
         this.thrower = entity;
         this.setBulletConfig(config);
         this.damage = baseDamage * this.config.damageMult;
+
         float yaw = entity.getYRot();
         float pitch = entity.getXRot();
 
+        // 1. Calculate physical muzzle spawn position (audit DEF-06 / Section 3.3 Patch 1)
         Vec3NT offset = Vec3NT.createVectorHelper(sideOffset, heightOffset, frontOffset);
         offset.rotateAroundX(-pitch / 180F * (float) Math.PI);
         offset.rotateAroundY(-yaw / 180F * (float) Math.PI);
-        this.moveTo(entity.getX() + offset.xCoord, entity.getY() + entity.getEyeHeight() + offset.yCoord, entity.getZ() + offset.zCoord, yaw, pitch);
+        double spawnX = entity.getX() + offset.xCoord;
+        double spawnY = entity.getY() + entity.getEyeHeight() + offset.yCoord;
+        double spawnZ = entity.getZ() + offset.zCoord;
 
-        double mx = -Mth.sin(yaw / 180.0F * (float) Math.PI) * Mth.cos(pitch / 180.0F * (float) Math.PI);
-        double mz = Mth.cos(yaw / 180.0F * (float) Math.PI) * Mth.cos(pitch / 180.0F * (float) Math.PI);
-        double my = -Mth.sin(pitch / 180.0F * (float) Math.PI);
-        this.setThrowableHeading(mx, my, mz, 1.0F, gunSpread);
+        // 2. Compute camera line-of-sight zeroing target (100 blocks or block collider)
+        Vec3 eyePos = entity.getEyePosition(1.0F);
+        Vec3 lookVec = entity.getViewVector(1.0F);
+        double zeroDist = 100.0D;
+        Vec3 traceEnd = eyePos.add(lookVec.scale(zeroDist));
+        HitResult targetHit = entity.level().clip(new ClipContext(eyePos, traceEnd, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity));
+        Vec3 targetPoint = (targetHit.getType() != HitResult.Type.MISS) ? targetHit.getLocation() : traceEnd;
+
+        // Dynamic entity raycast: ensure convergence on target mobs in close combat
+        AABB traceBox = new AABB(eyePos, traceEnd).inflate(1.0D);
+        EntityHitResult entityHit = net.minecraft.world.entity.projectile.ProjectileUtil.getEntityHitResult(
+                entity.level(), entity, eyePos, traceEnd, traceBox, e -> !e.isSpectator() && e.isPickable());
+        if (entityHit != null) {
+            double entityDist = eyePos.distanceTo(entityHit.getLocation());
+            if (targetHit.getType() == HitResult.Type.MISS || entityDist < eyePos.distanceTo(targetPoint)) {
+                targetPoint = entityHit.getLocation();
+            }
+        }
+
+        // 3. True firing direction vector from muzzle to target point with point-blank fallback guard
+        Vec3 toTarget = targetPoint.subtract(spawnX, spawnY, spawnZ);
+        Vec3 fireDir;
+        // Directional fallback guard: prevents backward shooting if obstacle/entity is closer than the front offset
+        if (toTarget.dot(lookVec) <= 0.05D || eyePos.distanceTo(targetPoint) < 1.0D) {
+            fireDir = lookVec;
+        } else {
+            fireDir = toTarget.normalize();
+        }
+
+        // 4. Euler angles in the 1.7.10 Sedna convention (pitch positive up) that BulletRenderers.MK4 rotates by
+        float bulletYaw = (float) (Mth.atan2(fireDir.x, fireDir.z) * 180.0D / Math.PI);
+        float hyp = (float) Math.sqrt(fireDir.x * fireDir.x + fireDir.z * fireDir.z);
+        float bulletPitch = (float) (Mth.atan2(fireDir.y, hyp) * 180.0D / Math.PI);
+
+        this.moveTo(spawnX, spawnY, spawnZ, bulletYaw, bulletPitch);
+        this.setThrowableHeading(fireDir.x, fireDir.y, fireDir.z, 1.0F, gunSpread);
+        this.seedVelocity();
+    }
+
+    /** DEF-10: immediate velocity seeding to eliminate Frame-0 tracer pop-in (velocity was 0.0 on tick 0). */
+    private void seedVelocity() {
+        Vec3 motion = this.getDeltaMovement();
+        this.velocity = motion.length();
+        this.prevVelocity = this.velocity;
     }
 
     /** For turrets - angles are in radians, and pitch is negative! */
@@ -103,6 +151,7 @@ public class EntityBulletBaseMK4 extends EntityThrowableNT
         double mz = Mth.cos(y / 180.0F * (float) Math.PI) * Mth.cos(p / 180.0F * (float) Math.PI);
         double my = -Mth.sin(p / 180.0F * (float) Math.PI);
         this.setThrowableHeading(mx, my, mz, 1.0F, gunSpread);
+        this.seedVelocity();
     }
 
     //? if < 1.21.1 {
@@ -162,6 +211,7 @@ public class EntityBulletBaseMK4 extends EntityThrowableNT
 
         if (!this.inGround && !this.onGround() && velocity > 0 && (!level().isClientSide || !this.isClientRotationLocked())) {
             float hyp = Mth.sqrt((float) (dX * dX + dZ * dZ));
+            // 1.7.10 convention, consistent with setThrowableHeading
             this.setYRot((float) (Math.atan2(dX, dZ) * 180.0D / Math.PI));
             this.setXRot((float) (Math.atan2(dY, hyp) * 180.0D / Math.PI));
             while (this.getXRot() - this.xRotO < -180.0F) this.xRotO -= 360.0F;
@@ -240,6 +290,8 @@ public class EntityBulletBaseMK4 extends EntityThrowableNT
         if (e instanceof LivingEntity living) this.thrower = living;
         int id = buf.readInt();
         if (id >= 0 && id < BulletConfig.configs.size()) this.config = BulletConfig.configs.get(id);
+        // DEF-10: seed tracer velocity immediately so the tracer renders on frame 0
+        this.seedVelocity();
     }
 
     @Override
@@ -247,10 +299,10 @@ public class EntityBulletBaseMK4 extends EntityThrowableNT
         return net.minecraftforge.network.NetworkHooks.getEntitySpawningPacket(this);
     }
     //?} elif neoforge {
-    /*// NeoForge: IEntityWithComplexSpawn (Spawn-Paket wird automatisch erweitert)
-    // 1.21.1: ванилла больше не передаёт motion в spawn-пакете (1.20.1 ClientPacketListener
-    // звал lerpMotion(Xa/Ya/Za), 1.21.1 recreateFromPacket скорость не ставит) — иначе клиентская
-    // пуля стоит на месте, velocity=0 и трассер не рисуется (renderBulletStandard: len<=0).
+    /*// NeoForge: IEntityWithComplexSpawn (spawn packet is extended automatically).
+    // 1.21.1 vanilla no longer transmits motion in the spawn packet (1.20.1 ClientPacketListener
+    // called lerpMotion(Xa/Ya/Za); 1.21.1 recreateFromPacket does not set velocity) — otherwise the
+    // client bullet stands still, velocity=0 and the tracer never renders (renderBulletStandard: len<=0).
     @Override
     public void writeSpawnData(net.minecraft.network.RegistryFriendlyByteBuf buf) {
         buf.writeInt(this.thrower != null ? thrower.getId() : -1);
@@ -268,6 +320,8 @@ public class EntityBulletBaseMK4 extends EntityThrowableNT
         int id = buf.readInt();
         if (id >= 0 && id < BulletConfig.configs.size()) this.config = BulletConfig.configs.get(id);
         this.lerpMotion(buf.readDouble(), buf.readDouble(), buf.readDouble());
+        // DEF-10: seed tracer velocity immediately so the tracer renders on frame 0
+        this.seedVelocity();
     }
     *///?}
 }

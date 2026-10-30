@@ -83,61 +83,84 @@ public final class GpuSpanUploader {
             }
             return;
         }
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, destVbo);
-        try {
-            int valid = Math.min(floatCount, Math.max(0, shadowValidFloats));
-            // memAddress0 (not memAddress): these offsets are absolute float
-            // indices, so the base must be position-independent or a non-flipped
-            // src with a nonzero srcFloatOffset would be shifted twice.
-            long srcBaseAddr = MemoryUtil.memAddress0(src) + (long) srcFloatOffset * 4L;
-            long shdBaseAddr = MemoryUtil.memAddress0(shadow) + (long) shadowFloatOffset * 4L;
-            // Coalesce changed runs within one instance record (gaps <= 8 floats,
-            // e.g. scattered light words) but NOT across records: consecutive
-            // animated machines update only their 4-float AnimParams tail, and the
-            // 28 unchanged floats in between must NOT be bridged - a 64-float gap
-            // glued the whole window into one giant span and DMA'd 8x the changed
-            // bytes every frame. Raw memGetInt keeps the scan virtual-call-free.
-            final int COALESCE_GAP_FLOATS = 8;
-            int runStart = -1;
-            int runEnd = -1;
-            for (int i = 0; i < valid; i++) {
-                long byteOff = (long) i * 4L;
-                boolean changed = MemoryUtil.memGetInt(srcBaseAddr + byteOff) != MemoryUtil.memGetInt(shdBaseAddr + byteOff);
-                if (changed) {
-                    if (runStart < 0) {
-                        runStart = i;
-                    }
-                    runEnd = i + 1;
-                } else if (runStart >= 0 && (i - runEnd) >= COALESCE_GAP_FLOATS) {
-                    uploadDiffedSpanBound(src, srcFloatOffset + runStart, shadow, shadowFloatOffset + runStart,
-                            runEnd - runStart, destFloatOffset + runStart);
-                    runStart = -1;
+        int valid = Math.min(floatCount, Math.max(0, shadowValidFloats));
+        long srcBaseAddr = MemoryUtil.memAddress0(src) + (long) srcFloatOffset * 4L;
+        long shdBaseAddr = MemoryUtil.memAddress0(shadow) + (long) shadowFloatOffset * 4L;
+
+        final int COALESCE_GAP_FLOATS = 8;
+        int spanCount = 0;
+        int runStart = -1;
+        int runEnd = -1;
+        for (int i = 0; i < valid; i++) {
+            long byteOff = (long) i * 4L;
+            boolean changed = MemoryUtil.memGetInt(srcBaseAddr + byteOff) != MemoryUtil.memGetInt(shdBaseAddr + byteOff);
+            if (changed) {
+                if (runStart < 0) {
+                    runStart = i;
                 }
+                runEnd = i + 1;
+            } else if (runStart >= 0 && (i - runEnd) >= COALESCE_GAP_FLOATS) {
+                spanCount = recordSpan(spanCount, runStart, runEnd - runStart);
+                runStart = -1;
             }
-            if (runStart >= 0) {
-                uploadDiffedSpanBound(src, srcFloatOffset + runStart, shadow, shadowFloatOffset + runStart,
-                        runEnd - runStart, destFloatOffset + runStart);
-            }
-            // Tail beyond the shadow's known-valid region: unconditional full span.
-            if (valid < floatCount) {
-                int tailCount = floatCount - valid;
-                NucleusDebug.recordUpload(1, (long) tailCount * 4L);
-                uploadSpanBound(src, srcFloatOffset + valid, tailCount, (long) (destFloatOffset + valid) * 4L);
-                copyToShadow(shadow, shadowFloatOffset + valid, src, srcFloatOffset + valid, tailCount);
+        }
+        if (runStart >= 0) {
+            spanCount = recordSpan(spanCount, runStart, runEnd - runStart);
+        }
+        if (valid < floatCount) {
+            spanCount = recordSpan(spanCount, valid, floatCount - valid);
+        }
+        if (spanCount == 0) {
+            return;
+        }
+
+        PersistentUploadStaging staging = PersistentUploadStaging.getOrCreate();
+        if (spanCount >= SCATTER_MIN_SPANS && staging != null
+                && tryScatterUpload(staging, src, srcFloatOffset, shadow, shadowFloatOffset,
+                        destFloatOffset, destVbo, spanCount)) {
+            return;
+        }
+
+        boolean arrayBound = false;
+        if (staging != null) {
+            staging.beginWindowCopy(destVbo);
+        } else {
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, destVbo);
+            arrayBound = true;
+        }
+        try {
+            for (int s = 0; s < spanCount; s++) {
+                int rStart = spanStarts[s];
+                int rLen = spanLengths[s];
+                arrayBound = uploadDiffedSpan(staging, destVbo, arrayBound,
+                        src, srcFloatOffset + rStart, shadow, shadowFloatOffset + rStart,
+                        rLen, destFloatOffset + rStart);
             }
         } finally {
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+            if (staging != null) {
+                staging.endWindowCopy();
+            }
+            if (arrayBound) {
+                GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+            }
         }
     }
 
-    /** One diffed span when destVbo is already bound: GPU write + shadow mirror. */
-    private static void uploadDiffedSpanBound(FloatBuffer src, int srcFloatOffset,
-                                              FloatBuffer shadow, int shadowFloatOffset,
-                                              int floatCount, int destFloatOffset) {
+    private static boolean uploadDiffedSpan(PersistentUploadStaging staging, int destVbo, boolean arrayBound,
+                                            FloatBuffer src, int srcFloatOffset,
+                                            FloatBuffer shadow, int shadowFloatOffset,
+                                            int floatCount, int destFloatOffset) {
         NucleusDebug.recordUpload(1, (long) floatCount * 4L);
         long destByteOffset = (long) destFloatOffset * 4L;
-        uploadSpanBound(src, srcFloatOffset, floatCount, destByteOffset);
+        if (staging == null || !staging.copyRegion(src, srcFloatOffset, floatCount, destVbo, destByteOffset)) {
+            if (!arrayBound) {
+                GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, destVbo);
+                arrayBound = true;
+            }
+            uploadSpanBound(src, srcFloatOffset, floatCount, destByteOffset);
+        }
         copyToShadow(shadow, shadowFloatOffset, src, srcFloatOffset, floatCount);
+        return arrayBound;
     }
 
     /** @return true if the GPU write succeeded (or was a no-op). */
@@ -148,6 +171,10 @@ public final class GpuSpanUploader {
         }
         NucleusDebug.recordUpload(1, (long) floatCount * 4L);
         long destByteOffset = (long) destFloatOffset * 4L;
+        PersistentUploadStaging staging = PersistentUploadStaging.getOrCreate();
+        if (staging != null && staging.copyRegion(src, srcFloatOffset, floatCount, destVbo, destByteOffset)) {
+            return true;
+        }
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, destVbo);
         try {
             uploadSpanBound(src, srcFloatOffset, floatCount, destByteOffset);
@@ -183,5 +210,70 @@ public final class GpuSpanUploader {
         long srcAddr = MemoryUtil.memAddress0(src) + (long) srcFloatOffset * 4L;
         long dstAddr = MemoryUtil.memAddress0(shadow) + (long) shadowFloatOffset * 4L;
         MemoryUtil.memCopy(srcAddr, dstAddr, (long) floatCount * 4L);
+    }
+
+    private static final int SCATTER_MIN_SPANS = 16;
+    private static int[] spanStarts = new int[128];
+    private static int[] spanLengths = new int[128];
+    private static final long[] scatterOps = new long[ComputeScatterUploader.maxOpsPerDispatch() * 3];
+
+    private static int recordSpan(int idx, int start, int len) {
+        if (idx >= spanStarts.length) {
+            int newCap = spanStarts.length * 2;
+            spanStarts = java.util.Arrays.copyOf(spanStarts, newCap);
+            spanLengths = java.util.Arrays.copyOf(spanLengths, newCap);
+        }
+        spanStarts[idx] = start;
+        spanLengths[idx] = len;
+        return idx + 1;
+    }
+
+    private static boolean tryScatterUpload(PersistentUploadStaging staging,
+                                            FloatBuffer src, int srcFloatOffset,
+                                            FloatBuffer shadow, int shadowFloatOffset,
+                                            int destFloatOffset, int destVbo, int spanCount) {
+        ComputeScatterUploader scatter = ComputeScatterUploader.getOrCreate();
+        if (scatter == null || staging.getBufferId() <= 0) {
+            return false;
+        }
+        int maxOps = ComputeScatterUploader.maxOpsPerDispatch();
+        int previousProgram = org.lwjgl.opengl.GL11.glGetInteger(org.lwjgl.opengl.GL20.GL_CURRENT_PROGRAM);
+        PersistentUploadStaging.BatchMark batchMark = staging.markBatch();
+        long totalBytes = 0L;
+
+        for (int base = 0; base < spanCount; base += maxOps) {
+            int chunkOps = Math.min(maxOps, spanCount - base);
+            for (int k = 0; k < chunkOps; k++) {
+                int s = base + k;
+                int rStart = spanStarts[s];
+                int rLen = spanLengths[s];
+                long byteOff = staging.stageRegion(src, srcFloatOffset + rStart, rLen);
+                if (byteOff < 0 || (byteOff & 3L) != 0L) {
+                    staging.abortBatch(batchMark);
+                    return false;
+                }
+                scatterOps[k * 3] = byteOff >>> 2;
+                scatterOps[k * 3 + 1] = (long) (destFloatOffset + rStart);
+                scatterOps[k * 3 + 2] = (long) rLen;
+                totalBytes += (long) rLen * 4L;
+            }
+            if (!scatter.scatter(staging.getBufferId(), destVbo, scatterOps, chunkOps, previousProgram)) {
+                staging.abortBatch(batchMark);
+                return false;
+            }
+        }
+
+        org.lwjgl.opengl.GL42.glMemoryBarrier(org.lwjgl.opengl.GL42.GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT
+                | org.lwjgl.opengl.GL43.GL_SHADER_STORAGE_BARRIER_BIT);
+        com.hbm_m.client.render.shader.ShaderBindResync.markForeignProgramBind();
+        staging.fenceBatch(batchMark);
+
+        for (int s = 0; s < spanCount; s++) {
+            int rStart = spanStarts[s];
+            int rLen = spanLengths[s];
+            copyToShadow(shadow, shadowFloatOffset + rStart, src, srcFloatOffset + rStart, rLen);
+        }
+        NucleusDebug.recordUpload(spanCount, totalBytes);
+        return true;
     }
 }

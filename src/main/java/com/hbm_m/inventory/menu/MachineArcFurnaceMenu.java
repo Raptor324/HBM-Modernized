@@ -2,11 +2,11 @@ package com.hbm_m.inventory.menu;
 
 import com.hbm_m.blockentity.machines.MachineArcFurnaceBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
+import com.hbm_m.inventory.recipes.ArcFurnaceRecipes;
 import com.hbm_m.item.industrial.ItemArcElectrode;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.platform.recipe.RecipeHooks;
-import com.hbm_m.recipe.ArcFurnaceRecipe;
+import com.hbm_m.platform.ModItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -20,7 +20,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 import org.jetbrains.annotations.Nullable;
-import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * 1:1 {@code ContainerMachineArcFurnaceLarge}: Elektroden (62-98,22), Batterie (8,108), Upgrade (152,108), 4x5
@@ -67,20 +66,12 @@ public class MachineArcFurnaceMenu extends AbstractContainerMenu {
     }
 
     /**
-     * Kanonische Rezeptsuche (ersetzt das FFA-{@code ArcFurnaceRecipes.getOutput(stack, liquid, level)}):
-     * datengetriebene {@link ArcFurnaceRecipe}s aus dem Vanilla-RecipeManager, gefiltert nach Ausgabeart
-     * (Fluessig-Modus: Fluid-Ausgang, Fest-Modus: Item-Ausgang). Entspricht dem Muster von
-     * {@code MachineCombinationOvenBlockEntity.findRecipe}.
+     * 1:1 {@code ArcFurnaceRecipes.getOutput}: feste Rezeptliste plus Autogen; {@code level}
+     * fuer die Ofenrezepte (Original: FurnaceRecipes, hier der RecipeManager).
      */
     @Nullable
-    private static ArcFurnaceRecipe findRecipe(@Nullable Level level, ItemStack stack, boolean liquid) {
-        if (level == null || stack.isEmpty()) return null;
-        for (ArcFurnaceRecipe recipe : RecipeHooks.getAllRecipes(level, ArcFurnaceRecipe.Type.INSTANCE)) {
-            if (!recipe.matchesInput(stack)) continue;
-            boolean hasOutput = liquid ? recipe.hasFluidOutput1() || recipe.hasFluidOutput2() : recipe.hasItemOutput();
-            if (hasOutput) return recipe;
-        }
-        return null;
+    private static ArcFurnaceRecipes.ArcFurnaceRecipe findRecipe(@Nullable Level level, ItemStack stack, boolean liquid) {
+        return ArcFurnaceRecipes.getOutput(stack, liquid, level);
     }
 
     /** Original {@code SlotArcFurnace}: im Fest-Modus nur passende Mengen, Stapelgrenze nach Upgrade. */
@@ -94,9 +85,9 @@ public class MachineArcFurnaceMenu extends AbstractContainerMenu {
         public boolean mayPlace(ItemStack stack) {
             if (furnace == null) return false;
             if (furnace.liquidMode) return true;
-            ArcFurnaceRecipe recipe = findRecipe(furnace.getLevel(), stack, furnace.liquidMode);
-            if (recipe != null && recipe.hasItemOutput()) {
-                ItemStack output = recipe.getOutput();
+            ArcFurnaceRecipes.ArcFurnaceRecipe recipe = findRecipe(furnace.getLevel(), stack, furnace.liquidMode);
+            if (recipe != null && recipe.solidOutput != null) {
+                ItemStack output = recipe.solidOutput;
                 return output.getCount() * stack.getCount() <= output.getMaxStackSize() && stack.getCount() <= furnace.getMaxInputSize();
             }
             return false;

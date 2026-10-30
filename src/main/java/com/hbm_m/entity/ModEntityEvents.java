@@ -69,9 +69,13 @@ public final class ModEntityEvents {
         spawnPlacement(ModEntities.UNDEAD_SOLDIER, false, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, net.minecraft.world.entity.Mob::checkMobSpawnRules);
         spawnPlacement(ModEntities.PIGEON, false, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, net.minecraft.world.entity.Mob::checkMobSpawnRules);
         spawnPlacement(ModEntities.PLASTIC_BAG, true, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, com.hbm_m.entity.mob.EntityPlasticBag::checkBagSpawnRules);
-        spawnPlacement(ModEntities.ENTITY_MOB_VOLATILE_CREEPER, false, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, EntityCreeperVolatile::checkVolatileSpawnRules);
-        spawnPlacement(ModEntities.ENTITY_MOB_GOLD_CREEPER, false, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, EntityCreeperGold::checkGoldSpawnRules);
-        spawnPlacement(ModEntities.ENTITY_MOB_PHOSGENE_CREEPER, false, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, EntityCreeperPhosgene::checkPhosgeneSpawnRules);
+        // FFAs notMushroom-Wrap (FFA merge loss restore): Pilzinseln bekommen keine natuerlichen Spawns.
+        spawnPlacement(ModEntities.ENTITY_MOB_VOLATILE_CREEPER, false, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                (t, l, r, p, rnd) -> notMushroom(l, r, p) && EntityCreeperVolatile.checkVolatileSpawnRules(t, l, r, p, rnd));
+        spawnPlacement(ModEntities.ENTITY_MOB_GOLD_CREEPER, false, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                (t, l, r, p, rnd) -> notMushroom(l, r, p) && EntityCreeperGold.checkGoldSpawnRules(t, l, r, p, rnd));
+        spawnPlacement(ModEntities.ENTITY_MOB_PHOSGENE_CREEPER, false, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                (t, l, r, p, rnd) -> notMushroom(l, r, p) && EntityCreeperPhosgene.checkPhosgeneSpawnRules(t, l, r, p, rnd));
     }
 
     private static <T extends Mob> void spawnPlacement(Supplier<? extends EntityType<T>> type,

@@ -50,10 +50,7 @@ uniform mat4 iris_ModelViewMat;
 uniform mat4 iris_ProjMat;
 
 out vec2 texCoord;
-out vec2 lightmapUV;
 out vec2 lightLevels;
-out float vertexDistance;
-out vec3 fragNormal;
 out vec3 worldNormal;
 out float vFadeAlpha;
 out vec4 vColor;
@@ -105,7 +102,6 @@ void main() {
     mat4 instBase = translation * rotMatrix;
     mat4 modelView = iris_ModelViewMat * instBase;
 
-    fragNormal = mat3(instBase) * Normal;
     worldNormal = mat3(rotMatrix) * Normal;
 
     // Safeguard: a zero bbox axis would produce NaN for the whole vertex.
@@ -150,10 +146,7 @@ void main() {
     uvLm = mix(uvLm, vec2(240.0), clamp(InstColor.a * glow, 0.0, 1.0));
 
     texCoord = InstUvRect.xy + UV0 * InstUvRect.zw;
-    // Center of the 16x16 lightmap cell, like the vanilla UV2 -> texcoord block.
-    lightmapUV = (uvLm + vec2(8.0)) / 256.0;
     // Raw light levels 0..1, packed by the FSH into the pack's gbuffer format.
     lightLevels = uvLm * (1.0 / 240.0);
-    vertexDistance = length(viewPos.xyz);
     vFadeAlpha = InstBboxSize.w;
 }

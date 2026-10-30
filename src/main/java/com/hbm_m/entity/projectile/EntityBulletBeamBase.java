@@ -331,7 +331,7 @@ public class EntityBulletBeamBase extends Entity
         return net.minecraftforge.network.NetworkHooks.getEntitySpawningPacket(this);
     }
     //?} elif neoforge {
-    /*// NeoForge: IEntityWithComplexSpawn (Spawn-Paket wird automatisch erweitert)
+    /*// NeoForge: IEntityWithComplexSpawn (spawn packet is extended automatically)
     @Override
     public void writeSpawnData(net.minecraft.network.RegistryFriendlyByteBuf buf) {
         buf.writeDouble(beamLength);

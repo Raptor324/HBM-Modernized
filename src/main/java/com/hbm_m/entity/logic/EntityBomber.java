@@ -106,7 +106,9 @@ public class EntityBomber extends EntityPlaneBase {
         vector = new Vec3(vector.x * mult, 0, vector.z * mult);
 
         this.moveTo(x - vector.x * 100, y + 50, z - vector.z * 100, 0.0F, 0.0F);
-        this.loadNeighboringChunks((int) (x / 16), (int) (z / 16));
+        // Bootstrap-Fix, siehe EntityC130.fac: Ticket auf dem SPAWN-Chunk, damit der erste Tick garantiert stattfindet.
+        this.loadNeighboringChunks(net.minecraft.util.Mth.floor(this.getX() / 16D), net.minecraft.util.Mth.floor(this.getZ() / 16D));
+        this.anchorChunk(net.minecraft.util.Mth.floor(x / 16D), net.minecraft.util.Mth.floor(z / 16D));
 
         this.setDeltaMovement(vector.x, 0.0D, vector.z);
 

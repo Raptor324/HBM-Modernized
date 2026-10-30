@@ -1,5 +1,7 @@
 # Blender 4.0.1
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Gun
 v 0.000000 2.012847 0.929753
 v 0.000000 2.012847 1.070247

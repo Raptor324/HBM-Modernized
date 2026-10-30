@@ -47,14 +47,28 @@ public abstract class ItemRenderWeaponBase {
     public boolean isAkimbo(LivingEntity entity) { return false; }
     public boolean isLeftHanded() { return false; }
 
+    /** Original {@code Item.isFull3D} — waehlt den Drittperson-Basistransform in {@code RenderBiped.renderEquippedItems}. */
+    public boolean isFull3D() { return false; }
+
     /** Original {@code renderItem(type, item, data)}: Zustand ist bereits per {@link GunGL#begin} gesetzt. */
     public void renderItem(ItemRenderType type, ItemStack item, Object... data) {
         GunGL.pushMatrix();
         GunGL.enableCull();
         switch (type) {
-            case EQUIPPED_FIRST_PERSON -> { setupFirstPerson(item); renderFirstPerson(item); }
+            // setupFirstPerson gehoert nur zum SEDNA-Pfad mit eigener Projektion; klassische IItemRenderer
+            // (Granate, Feuerloescher, ...) bekamen in 1.7.10 nur die Vanilla-Basismatrix ohne diesen Zusatz-Offset
+            case EQUIPPED_FIRST_PERSON -> { if (customFirstPerson()) setupFirstPerson(item); renderFirstPerson(item); }
             case EQUIPPED -> { if (!isLeftHanded()) { setupThirdPerson(item); renderEquipped(item, data); } }
-            case INVENTORY -> { setupInv(item); renderInv(item); }
+            case INVENTORY -> {
+                // setupInv spiegelt/rotiert das Modell (Y-Achse zeigt nach unten) -> Lichtrichtungen spiegeln
+                GunGL.setGuiLighting(true);
+                try {
+                    setupInv(item);
+                    renderInv(item);
+                } finally {
+                    GunGL.setGuiLighting(false);
+                }
+            }
             case ENTITY -> { setupEntity(item); renderEntity(item); }
             default -> { }
         }
@@ -63,7 +77,7 @@ public abstract class ItemRenderWeaponBase {
 
     //entitylivingbase is second Object passed
     public void renderEquipped(ItemStack stack, Object... data) { renderOther(stack, ItemRenderType.EQUIPPED, data); }
-    public void renderEquippedAkimbo(ItemStack stack, LivingEntity entity) { renderOther(stack, ItemRenderType.EQUIPPED); }
+    public void renderEquippedAkimbo(ItemStack stack, LivingEntity entity) { renderOther(stack, ItemRenderType.EQUIPPED, null, entity); }
     public void renderInv(ItemStack stack) { renderOther(stack, ItemRenderType.INVENTORY); }
     public void renderEntity(ItemStack stack) { renderOther(stack, ItemRenderType.ENTITY); }
 
@@ -82,7 +96,10 @@ public abstract class ItemRenderWeaponBase {
 
         Matrix4f projection = new Matrix4f().setPerspective((float) Math.toRadians(getFOVModifier(partialTicks, ModClothConfig.get().gunModelFov)),
                 (float) mc.getWindow().getWidth() / (float) mc.getWindow().getHeight(), 0.05F, farPlaneDistance * 2.0F);
-        RenderSystem.clear(org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT, Minecraft.ON_OSX);
+        boolean externalShader = com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive();
+        if (!externalShader) {
+            RenderSystem.clear(org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT, Minecraft.ON_OSX);
+        }
         RenderSystem.setProjectionMatrix(projection, VertexSorting.DISTANCE_TO_ORIGIN);
 
         PoseStack pose = new PoseStack();
@@ -92,16 +109,40 @@ public abstract class ItemRenderWeaponBase {
         // возвращаем в identity, иначе вершины уходят в мировые оси и оружие не следует за камерой
         // (на 1.20.1 modelview в этой точке и так identity).
         com.hbm_m.platform.RenderHooks.pushHandModelView();
-        if (mc.options.getCameraType().isFirstPerson() && !mc.player.isSleeping() && !mc.options.hideGui) {
-            int light = LevelRenderer.getLightColor(mc.level, BlockPos.containing(mc.player.getX(), mc.player.getEyeY(), mc.player.getZ()));
-            GunGL.begin(pose, buffers, light);
-            this.setupTransformsAndRender(stack);
-            GunGL.end();
-            buffers.endBatch();
+        try {
+            if (externalShader) {
+                org.lwjgl.opengl.GL11.glDepthRange(0.0, 0.05);
+                com.hbm_m.client.render.shader.PackAdditiveQueue.setDepthMode(
+                        com.hbm_m.client.render.shader.PackAdditiveQueue.DEPTH_MODE_HAND);
+            }
+            if (mc.options.getCameraType().isFirstPerson() && !mc.player.isSleeping() && !mc.options.hideGui) {
+                // Трассеры (ENTITIES-фаза) могли оставить glDepthMask(false): без
+                // восстановления корпус оружия рисуется без записи глубины и внутренние
+                // детали (Mag/Bolt/Slide) проходят сквозь него без Z-отсечения.
+                RenderSystem.enableDepthTest();
+                RenderSystem.depthFunc(org.lwjgl.opengl.GL11.GL_LEQUAL);
+                RenderSystem.depthMask(true);
+                int light = LevelRenderer.getLightColor(mc.level, BlockPos.containing(mc.player.getX(), mc.player.getEyeY(), mc.player.getZ()));
+                GunGL.begin(pose, buffers, light);
+                this.setupTransformsAndRender(stack);
+                GunGL.end();
+                buffers.endBatch();
+            }
+        } finally {
+            if (externalShader) {
+                com.hbm_m.client.render.shader.PackAdditiveQueue.setDepthMode(
+                        com.hbm_m.client.render.shader.PackAdditiveQueue.DEPTH_MODE_WORLD);
+                org.lwjgl.opengl.GL11.glDepthRange(0.0, 1.0);
+            }
+            com.hbm_m.platform.RenderHooks.popHandModelView();
+            RenderSystem.setProjectionMatrix(oldProjection, oldSorting);
+            mc.gameRenderer.lightTexture().turnOffLightLayer();
+            com.mojang.blaze3d.platform.GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE2);
+            com.mojang.blaze3d.platform.GlStateManager._bindTexture(0);
+            com.mojang.blaze3d.platform.GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE1);
+            com.mojang.blaze3d.platform.GlStateManager._bindTexture(0);
+            com.mojang.blaze3d.platform.GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
         }
-        com.hbm_m.platform.RenderHooks.popHandModelView();
-
-        RenderSystem.setProjectionMatrix(oldProjection, oldSorting);
     }
 
     private float getFOVModifier(float interp, boolean useFOVSetting) {
@@ -124,6 +165,12 @@ public abstract class ItemRenderWeaponBase {
 
     protected float getBaseFOV(ItemStack stack) { return 70F; }
     public float getViewFOV(ItemStack stack, float fov) { return fov; }
+
+    public static float standardZoomFov(float fov, float zoomFactor) {
+        float aimingProgress = ItemGunBaseNT.prevAimingProgress + (ItemGunBaseNT.aimingProgress - ItemGunBaseNT.prevAimingProgress) * interp;
+        return fov * (1.0F - aimingProgress * zoomFactor);
+    }
+
     protected float getSwayMagnitude(ItemStack stack) { return ItemGunBaseNT.getIsAiming(stack) ? 0.1F : 0.5F; }
     protected float getSwayPeriod(ItemStack stack) { return 0.75F; }
     protected float getTurnMagnitude(ItemStack stack) { return 2.75F; }
@@ -177,7 +224,7 @@ public abstract class ItemRenderWeaponBase {
         }
     }
 
-    public void setupThirdPerson(ItemStack stack) {
+    protected final void setupThirdPersonBase(ItemStack stack) {
         double scale = 0.125D;
         GunGL.scale(scale, scale, scale);
 
@@ -188,7 +235,17 @@ public abstract class ItemRenderWeaponBase {
         GunGL.translate(3.5, 0, 0);
     }
 
-    public void setupThirdPersonAkimbo(ItemStack stack) {
+    public void setupThirdPerson(ItemStack stack) {
+        setupThirdPersonBase(stack);
+    }
+
+    protected void setupThirdPerson(ItemStack stack, double scale, double tx, double ty, double tz) {
+        this.setupThirdPersonBase(stack);
+        if (scale != 1.0D) GunGL.scale(scale, scale, scale);
+        GunGL.translate(tx, ty, tz);
+    }
+
+    protected final void setupThirdPersonAkimboBase(ItemStack stack) {
         double scale = 0.125D;
         GunGL.scale(scale, scale, scale);
 
@@ -199,11 +256,37 @@ public abstract class ItemRenderWeaponBase {
         GunGL.translate(5, 0, 0);
     }
 
-    public void setupInv(ItemStack stack) {
+    public void setupThirdPersonAkimbo(ItemStack stack) {
+        setupThirdPersonAkimboBase(stack);
+    }
+
+    protected void setupThirdPersonAkimbo(ItemStack stack, double scale, double tx, double ty, double tz) {
+        this.setupThirdPersonAkimboBase(stack);
+        if (scale != 1.0D) GunGL.scale(scale, scale, scale);
+        GunGL.translate(tx, ty, tz);
+    }
+
+    protected final void setupInvBase(ItemStack stack) {
         GunGL.scale(1, 1, -1);
         GunGL.translate(8, 8, 0);
         GunGL.rotate(225, 0, 0, 1);
         GunGL.rotate(90, 0, 1, 0);
+    }
+
+    public void setupInv(ItemStack stack) {
+        setupInvBase(stack);
+    }
+
+    protected void setupInv(ItemStack stack, double scale, double tx, double ty, double tz) {
+        this.setupInv(stack, scale, 45.0D, tx, ty, tz);
+    }
+
+    protected void setupInv(ItemStack stack, double scale, double ry, double tx, double ty, double tz) {
+        this.setupInvBase(stack);
+        GunGL.scale(scale, scale, scale);
+        GunGL.rotate(25, 1, 0, 0);
+        GunGL.rotate(ry, 0, 1, 0);
+        GunGL.translate(tx, ty, tz);
     }
 
     public void setupEntity(ItemStack stack) {
@@ -218,8 +301,93 @@ public abstract class ItemRenderWeaponBase {
         GunGL.rotate(90, 0, 1, 0);
     }
 
+    protected void setupModTable(ItemStack stack, double scale, double tx, double ty, double tz) {
+        GunGL.scale(scale, scale, scale);
+        GunGL.rotate(90, 0, 1, 0);
+        if (tx != 0.0D || ty != 0.0D || tz != 0.0D) {
+            GunGL.translate(tx, ty, tz);
+        }
+    }
+
     public void renderModTable(ItemStack stack, int index) {
         renderOther(stack, ItemRenderType.INVENTORY);
+    }
+
+    public static long getEquippedShotTime(ItemStack stack, Object[] data, int gunIndex) {
+        if (data == null || data.length < 2 || !(data[1] instanceof LivingEntity ent)) return -1L;
+        return getEquippedShotTime(stack, ent, gunIndex);
+    }
+
+    public static long getEquippedShotTime(ItemStack stack, LivingEntity ent, int gunIndex) {
+        if (ent == null) return -1L;
+        if (ent == Minecraft.getInstance().player && stack.getItem() instanceof ItemGunBaseNT gun) {
+            return gun.lastShot[gunIndex];
+        }
+        return flashMap.getOrDefault(ent, -1L);
+    }
+
+    public static double getEquippedShotRand(ItemStack stack, Object[] data) {
+        if (data == null || data.length < 2 || !(data[1] instanceof LivingEntity ent)) return 0.0D;
+        return getEquippedShotRand(stack, ent);
+    }
+
+    public static double getEquippedShotRand(ItemStack stack, LivingEntity ent) {
+        if (ent == Minecraft.getInstance().player && stack.getItem() instanceof ItemGunBaseNT gun) {
+            return gun.shotRand;
+        }
+        return 0.0D;
+    }
+
+    protected void renderEquippedMuzzleFlash(ItemRenderType type, ItemStack stack, Object[] data,
+                                             double x, double y, double z, double scale, int duration, double length) {
+        if (type != ItemRenderType.EQUIPPED || data == null || data.length < 2 || !(data[1] instanceof LivingEntity ent)) {
+            return;
+        }
+        renderEquippedMuzzleFlash(stack, ent, 0, x, y, z, scale, duration, length);
+    }
+
+    protected void renderEquippedMuzzleFlash(ItemStack stack, LivingEntity ent, int gunIndex,
+                                             double x, double y, double z, double scale, int duration, double length) {
+        long shot = getEquippedShotTime(stack, ent, gunIndex);
+        if (shot < 0) return;
+        double shotRand = getEquippedShotRand(stack, ent);
+        GunGL.pushMatrix();
+        GunGL.translate(x, y, z);
+        GunGL.rotate(90, 0, 1, 0);
+        GunGL.rotate(90 * shotRand, 1, 0, 0);
+        if (scale != 1.0D) GunGL.scale(scale, scale, scale);
+        renderMuzzleFlash(shot, duration, length);
+        GunGL.popMatrix();
+    }
+
+    protected void renderEquippedGapFlash(ItemRenderType type, ItemStack stack, Object[] data,
+                                          double x, double y, double z, double rotY, double scale) {
+        if (type != ItemRenderType.EQUIPPED) return;
+        long shot = getEquippedShotTime(stack, data, 0);
+        if (shot < 0) return;
+        GunGL.pushMatrix();
+        GunGL.translate(x, y, z);
+        if (rotY != 0.0D) GunGL.rotate(rotY, 0, 1, 0);
+        if (scale != 1.0D) GunGL.scale(scale, scale, scale);
+        renderGapFlash(shot);
+        GunGL.popMatrix();
+    }
+
+    protected void renderEquippedLaserFlash(ItemRenderType type, ItemStack stack, Object[] data,
+                                            double x, double y, double z, int duration,
+                                            double scale1, int color1, double dz2, double scale2, int color2) {
+        if (type != ItemRenderType.EQUIPPED) return;
+        long shot = getEquippedShotTime(stack, data, 0);
+        if (shot < 0) return;
+        GunGL.pushMatrix();
+        GunGL.translate(x, y, z);
+        GunGL.rotate(90, 0, 1, 0);
+        renderLaserFlash(shot, duration, scale1, color1);
+        if (scale2 > 0.0D) {
+            GunGL.translate(0, 0, dz2);
+            renderLaserFlash(shot, duration, scale2, color2);
+        }
+        GunGL.popMatrix();
     }
 
     public abstract void renderFirstPerson(ItemStack stack);
@@ -300,7 +468,7 @@ public abstract class ItemRenderWeaponBase {
             double inset = 2;
             GunGL.bindTexture(flash_plume);
             tess.startDrawingQuads();
-            tess.setBrightness(240);
+            tess.setBrightness(net.minecraft.client.renderer.LightTexture.FULL_BRIGHT);
             tess.setNormal(0F, 1F, 0F);
             tess.setColorRGBA_F(1F, 1F, 1F, 1F);
 
@@ -325,6 +493,7 @@ public abstract class ItemRenderWeaponBase {
             tess.addVertexWithUV(0.1, -length + inset, -width, 1, 0);
 
             tess.draw();
+            GunGL.flushEffects();
             GunGL.popMatrix();
             GunGL.popAttrib();
         }
@@ -338,6 +507,7 @@ public abstract class ItemRenderWeaponBase {
             GunGL.pushAttrib();
             GunGL.enableBlend();
             GunGL.blendFunc(GunGL.GL_SRC_ALPHA, GunGL.GL_ONE);
+            GunGL.depthMask(false); // аддитив: гарантирует mode 2 -> COLOR_WRITE и возврат depthMask(true) после батча
             GunGL.disableCull();
             GunGL.pushMatrix();
 
@@ -350,7 +520,7 @@ public abstract class ItemRenderWeaponBase {
             double lengthOffset = 0.125;
             GunGL.bindTexture(flash_plume);
             tess.startDrawingQuads();
-            tess.setBrightness(240);
+            tess.setBrightness(net.minecraft.client.renderer.LightTexture.FULL_BRIGHT);
             tess.setNormal(0F, 1F, 0F);
             tess.setColorRGBA_F(1F, 1F, 1F, 1F);
 
@@ -375,6 +545,7 @@ public abstract class ItemRenderWeaponBase {
             tess.addVertexWithUV(lengthOffset, height, -length + offset, 0, 0);
 
             tess.draw();
+            GunGL.flushEffects();
             GunGL.popMatrix();
             GunGL.popAttrib();
         }
@@ -397,7 +568,7 @@ public abstract class ItemRenderWeaponBase {
 
             GunGL.bindTexture(laser_flash);
             tess.startDrawingQuads();
-            tess.setBrightness(240);
+            tess.setBrightness(net.minecraft.client.renderer.LightTexture.FULL_BRIGHT);
             tess.setNormal(0F, 1F, 0F);
 
             tess.setColorRGBA_I(color, 255);
@@ -408,6 +579,7 @@ public abstract class ItemRenderWeaponBase {
             tess.addVertexWithUV(0, -size, size, 1, 0);
 
             tess.draw();
+            GunGL.flushEffects();
             GunGL.popMatrix();
             GunGL.popAttrib();
         }

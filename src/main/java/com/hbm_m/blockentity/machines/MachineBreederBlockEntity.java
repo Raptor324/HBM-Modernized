@@ -329,8 +329,8 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
         sidedItems.invalidate();
     }
     //?} elif neoforge {
-    /*
-    // Original {@code ISidedInventory}: Slots {0, 1}; Eingang hinein, Ergebnis heraus.
+    
+    /*// Original {@code ISidedInventory}: Slots {0, 1}; Eingang hinein, Ergebnis heraus.
     private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
             new com.hbm_m.blockentity.SidedItemAccess.Rules() {
                 @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0, 1 }; }

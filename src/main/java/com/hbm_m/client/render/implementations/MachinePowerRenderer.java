@@ -170,13 +170,13 @@ public final class MachinePowerRenderer {
     }
 
     private static void registerTesla() {
+        // tesla.obj слит в одну группу "Cube.001"
         MachineRenderers.machine("tesla", ModBlockEntities.TESLA_BE.get(),
                 TeslaBlockEntity.class)
-            .part("Base")
-            .part("Coil")
+            .part("Cube.001")
             .facing(ObjBerHelper::facing)
             .viewDistance(256)
-            .itemParts("Base", "Coil")
+            .itemParts("Cube.001")
             .hook(new MachineRenderHook<TeslaBlockEntity>() {
                 @Override
                 public void render(TeslaBlockEntity be, float pt, PoseStack ps,

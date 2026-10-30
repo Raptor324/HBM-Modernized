@@ -96,6 +96,7 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
      * precomputed trilinear weights ({@link #perVertexCornerWeights}).
      */
     private int uv2Location = -1;
+    private int colorLocation = -1;
     private boolean built = false;
     private boolean failed = false;
 
@@ -529,6 +530,7 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
             int stride = RenderHooks.getVertexSize(actualFormat);
             int offset = 0;
             int detectedUv2Location = -1;
+            int detectedColorLocation = -1;
             // We only enable the SIX standard Mojang attributes (locations 0..5:
             // Position/Color/UV0/UV1/UV2/Normal). Iris's MixinShaderInstance
             // explicitly binds these names - prefixed with "iris_" - to those
@@ -583,6 +585,9 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
                 if (RenderHooks.getUsage(element) == VertexFormatElement.Usage.UV && RenderHooks.getIndex(element) == 2) {
                     detectedUv2Location = location;
                 }
+                if (RenderHooks.getUsage(element) == VertexFormatElement.Usage.COLOR) {
+                    detectedColorLocation = location;
+                }
                 offset += RenderHooks.getByteSize(element);
             }
 
@@ -596,6 +601,14 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
                 GL20.glDisableVertexAttribArray(detectedUv2Location);
             }
             this.uv2Location = detectedUv2Location;
+            // COLOR отключается по той же схеме: putBulkData печёт в вершины (1,1,1,1),
+            // а пер-частный тинт (GunGL.color — гильзы красятся именно им, текстура
+            // casings.png ч/б) инжектится константой на каждый draw. Без этого под
+            // паком тинт терялся и гильзы становились полностью белыми.
+            if (detectedColorLocation != -1) {
+                GL20.glDisableVertexAttribArray(detectedColorLocation);
+            }
+            this.colorLocation = detectedColorLocation;
 
             // Build a triangulated index buffer matching our standard quad layout
             // (0,1,2,2,3,0) so that we can reuse the companion mesh with raw glDrawElements.
@@ -718,21 +731,30 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
 
         objBbox[0] = minX; objBbox[1] = minY; objBbox[2] = minZ;
         objBbox[3] = maxX; objBbox[4] = maxY; objBbox[5] = maxZ;
+        // perVertexCornerWeights is computed lazily in ensurePerVertexWeights() only
+        // if a Tier-2/3 fallback path actually calls writeInstanceLightmap().
+    }
 
-        // Precompute size with a tiny floor so thin/flat parts don't produce
-        // NaN weights. 1e-4 (100 microns) is far below the lightmap's 1-block
-        // granularity and invisible in the interpolated result.
+    private float[] ensurePerVertexWeights() {
+        if (perVertexCornerWeights != null) {
+            return perVertexCornerWeights;
+        }
+        if (quads == null || vertexCount <= 0) {
+            return null;
+        }
+        float minX = objBbox[0], minY = objBbox[1], minZ = objBbox[2];
+        float maxX = objBbox[3], maxY = objBbox[4], maxZ = objBbox[5];
         float sx = Math.max(maxX - minX, 1e-4f);
         float sy = Math.max(maxY - minY, 1e-4f);
         float sz = Math.max(maxZ - minZ, 1e-4f);
         float invSx = 1f / sx, invSy = 1f / sy, invSz = 1f / sz;
 
-        perVertexCornerWeights = new float[provisionalVertexCount * 8];
+        float[] weights = new float[vertexCount * 8];
         int wBase = 0;
         for (BakedQuad quad : quads) {
             int[] raw = quad.getVertices();
             if (raw == null || raw.length < 32) continue;
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < 4 && (wBase + 8) <= weights.length; i++) {
                 int base = i * 8;
                 float x = Float.intBitsToFloat(raw[base + 0]);
                 float y = Float.intBitsToFloat(raw[base + 1]);
@@ -742,31 +764,31 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
                 float wz = Math.max(0f, Math.min(1f, (z - minZ) * invSz));
                 float oneMinusWx = 1f - wx, oneMinusWy = 1f - wy, oneMinusWz = 1f - wz;
 
-                // Corner index encoding: bit 0=x, bit 1=y, bit 2=z; set → max side.
-                // Unrolled + factored to minimise multiplies (8 muls instead of 24).
                 float axy0 = oneMinusWx * oneMinusWy;
                 float axy1 = wx * oneMinusWy;
                 float axy2 = oneMinusWx * wy;
                 float axy3 = wx * wy;
-                perVertexCornerWeights[wBase + 0] = axy0 * oneMinusWz;
-                perVertexCornerWeights[wBase + 1] = axy1 * oneMinusWz;
-                perVertexCornerWeights[wBase + 2] = axy2 * oneMinusWz;
-                perVertexCornerWeights[wBase + 3] = axy3 * oneMinusWz;
-                perVertexCornerWeights[wBase + 4] = axy0 * wz;
-                perVertexCornerWeights[wBase + 5] = axy1 * wz;
-                perVertexCornerWeights[wBase + 6] = axy2 * wz;
-                perVertexCornerWeights[wBase + 7] = axy3 * wz;
+                weights[wBase + 0] = axy0 * oneMinusWz;
+                weights[wBase + 1] = axy1 * oneMinusWz;
+                weights[wBase + 2] = axy2 * oneMinusWz;
+                weights[wBase + 3] = axy3 * oneMinusWz;
+                weights[wBase + 4] = axy0 * wz;
+                weights[wBase + 5] = axy1 * wz;
+                weights[wBase + 6] = axy2 * wz;
+                weights[wBase + 7] = axy3 * wz;
                 wBase += 8;
             }
         }
+        perVertexCornerWeights = weights;
+        return weights;
     }
 
     /**
      * @return {@code true} if per-vertex trilinear lighting is available for
-     *         this mesh (weights precomputed + UV2 attribute location known).
+     *         this mesh (UV2 attribute location known and vertices present).
      */
     public boolean supportsPerVertexLightmap() {
-        return built && uv2Location != -1 && perVertexCornerWeights != null && vertexCount > 0;
+        return built && uv2Location != -1 && vertexCount > 0 && quads != null && !quads.isEmpty();
     }
 
     /**
@@ -1163,6 +1185,22 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
      *
      * @return packed long: low 32 bits = slot, bit 32 = reused flag (1 means slot already contained key).
      */
+    /** FNV-1a offset basis of the per-vertex lightmap key. */
+    public static final long LIGHT_KEY_FNV_OFFSET = 1469598103934665603L;
+    /** FNV-1a prime of the per-vertex lightmap key. */
+    public static final long LIGHT_KEY_FNV_PRIME = 1099511628211L;
+
+    /**
+     * One FNV-1a combine step of the per-vertex lightmap key. Callers quantize
+     * corner-light values into 16-bit words (their staging formats differ:
+     * packed-u8 words in the instance buffer vs raw 0..240 floats) and feed
+     * them here in order - the quantization stays caller-side, the hashing
+     * contract is shared with {@link #allocLightmapSlot}.
+     */
+    public static long lightKeyStep(long key, int quantized) {
+        return (key ^ (quantized & 0xFFFFL)) * LIGHT_KEY_FNV_PRIME;
+    }
+
     public long allocLightmapSlot(long key) {
         if (!supportsPerVertexLightmap()) return 0L;
         if (key == 0L) key = 1L;
@@ -1424,7 +1462,8 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
         if (corner16 == null || corner16.length < 16) return;
         if (lightmapShortView == null) return;
 
-        final float[] w = perVertexCornerWeights;
+        final float[] w = ensurePerVertexWeights();
+        if (w == null) return;
         final ShortBuffer dst = lightmapShortView;
 
         int requiredLength = vertexCount * 2;
@@ -1991,6 +2030,15 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
      */
     public int getUv2Location() {
         return uv2Location;
+    }
+
+    /**
+     * @return the linker-resolved COLOR attribute location of the last bound
+     *         shader, or {@code -1}. Use with {@code glVertexAttrib4f(getColorLocation(), r, g, b, a)}
+     *         to inject a per-draw tint (the per-vertex array is disabled in this VAO).
+     */
+    public int getColorLocation() {
+        return colorLocation;
     }
 
     /**

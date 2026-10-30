@@ -104,6 +104,7 @@ abstract class ModPlatformPlugin @Inject constructor() : Plugin<Project> {
 		configureProcessResources(isFabric, isNeoForge, isForge, modId, "$modVersion$channelTag", mcVersion, extension, extension.requiredJava.get())
 		configureJava(stonecutter, extension.requiredJava.get())
 		registerBuildAndCollectTask(extension, "$modVersion$channelTag")
+		registerCompiledClassesGuard(extension.jarTask.get())
 		configurePublishing(extension, loader, stonecutter, "$modVersion$channelTag", channelTag, version.toString())
 	}
 

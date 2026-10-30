@@ -239,19 +239,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         // Оригинал: 4310 powder_coltan_ore "Измельчённый колтан" / 4311 powder_coltan "Очищенный танталит".
         add(ModItems.POWDER_COLTAN.get(), "Измельчённый колтан");
         add(ModItems.TURRET_AMMO.get(), "Патроны для турели");
-        add(ModItems.AMMO_9MM_SP.get(), "9-мм патрон (мягкая пуля)");
-        add(ModItems.AMMO_9MM_FMJ.get(), "9-мм патрон (оболочечная пуля)");
-        add(ModItems.AMMO_9MM_JHP.get(), "9-мм патрон (экспансивная пуля)");
-        add(ModItems.AMMO_9MM_AP.get(), "9-мм патрон (бронебойный)");
-        add(ModItems.AMMO_50_SP.get(), ".50 патрон (мягкая пуля)");
-        add(ModItems.AMMO_50_FMJ.get(), ".50 патрон (оболочечная пуля)");
-        add(ModItems.AMMO_50_JHP.get(), ".50 патрон (экспансивная пуля)");
-        add(ModItems.AMMO_50_AP.get(), ".50 патрон (бронебойный)");
-        add(ModItems.AMMO_50_DU.get(), ".50 патрон (обеднённый уран)");
-        add(ModItems.AMMO_556_SP.get(), "5.56-мм патрон (мягкая пуля)");
-        add(ModItems.AMMO_556_FMJ.get(), "5.56-мм патрон (оболочечная пуля)");
-        add(ModItems.AMMO_556_JHP.get(), "5.56-мм патрон (экспансивная пуля)");
-        add(ModItems.AMMO_556_AP.get(), "5.56-мм патрон (бронебойный)");
         add(ModItems.ROCKET_TURRET_STANDARD.get(), "Ракета турели (наведение)");
         add(ModItems.ROCKET_HIMARS_STANDARD.get(), "Ракета HIMARS (стандартная)");
         add(ModItems.ROCKET_HIMARS_HE.get(), "Ракета HIMARS (фугасная)");
@@ -259,8 +246,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModItems.ROCKET_HIMARS_MINI_NUKE.get(), "Ракета HIMARS (мини-ядерная)");
         add(ModItems.ROCKET_HIMARS_WP.get(), "Ракета HIMARS (белый фосфор)");
         add(ModItems.ROCKET_HIMARS_THERMOBARIC.get(), "Ракета HIMARS (термобарическая)");
-        add(ModItems.AMMO_TAU_URANIUM.get(), "Урановый заряд (тау-ускоритель)");
-        add(ModItems.AMMO_FLAME_DIESEL.get(), "Дизельное топливо (огнемёт)");
         add(ModItems.MISSILE_FUSELAGE.get(), "Фюзеляж ракеты");
         add(ModItems.MISSILE_CHIP.get(), "Чип наведения ракеты");
 
@@ -1161,6 +1146,11 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.DEPTH_NETHER_TILES.get(), "Адская глубинная плитка");
         add(ModBlocks.DEPTH_STONE_NETHER.get(), "Адский глубинный камень");
         add(ModBlocks.DEPTH_TILES.get(), "Глубинная плитка");
+        // FFA merge loss restore: пропущенные глубинные руды и бедроковая нефть
+        add(ModBlocks.DEPTH_IRON.get(), "Глубинная железная руда");
+        add(ModBlocks.DEPTH_TUNGSTEN.get(), "Глубинная вольфрамовая руда");
+        add(ModBlocks.DEPTH_TITANIUM.get(), "Глубинная титановая руда");
+        add(ModBlocks.BEDROCK_OIL.get(), "Бедроковая нефть");
         add(ModBlocks.GNEISS_BRICK.get(), "Кирпичи из графитового сланца");
         add(ModBlocks.GNEISS_CHISELED.get(), "Резной графитовый сланец");
         add(ModBlocks.GNEISS_STONE.get(), "Графитовый сланец");
@@ -3122,6 +3112,13 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("hud.hbm_m.dash.perform", "Рывок выполнен");
         add("text.autoconfig.hbm_m.option.graphicEffects.thermalRenderMode", "Режим рендера тепловизора");
         add("text.autoconfig.hbm_m.option.graphicEffects.thermalRenderMode.@Tooltip", "Выберите способ рендера тепловизора.");
+        // FFA merge loss restore: подписи значений enum для настроек
+        add("text.autoconfig.hbm_m.option.graphicEffects.thermalRenderMode.FULL_SHADER", "Полный шейдер");
+        add("text.autoconfig.hbm_m.option.graphicEffects.thermalRenderMode.ORIGINAL_FALLBACK", "Спектральный фолбэк");
+        add("text.autoconfig.hbm_m.option.radiationSystem", "Система радиации мира");
+        add("text.autoconfig.hbm_m.option.radiationSystem.@Tooltip", "Raptor: классическая радиация по чанкам (по умолчанию). Advanced: поле радиации с карманами, порт из NTM Next (диффузия, экранирующие блоки, период полураспада). Вступает в силу после перезагрузки мира; у каждой системы свои сохранённые данные.");
+        add("text.autoconfig.hbm_m.option.radiationSystem.RAPTOR", "Raptor (классическая)");
+        add("text.autoconfig.hbm_m.option.radiationSystem.ADVANCED", "Advanced (на основе NTM Next)");
 
         // ARMOR BATTERIES
         add("item.hbm_m.armor_battery", "Батарея брони");

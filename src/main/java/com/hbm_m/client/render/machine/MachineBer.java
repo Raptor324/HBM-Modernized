@@ -59,7 +59,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
     // posKey in the same map as the roster/epoch/param state - no slot ring, no
     // collisions by construction (the 32768-slot ring see-sawed owners every
     // frame on a 5000-machine farm, spark 2026-10-07).
-    // Scratch (rendering is single-threaded): S/Sinv of the current BE for the
+    // Scratch (rendering is single-threaQTESTded): S/Sinv of the current BE for the
     // duration of the parts pass.
     private final Matrix4f animBase = new Matrix4f();
     private final Matrix4f animBaseInv = new Matrix4f();
@@ -350,9 +350,21 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
      * native instance buffer - the full renderAll loop (bounds, light sampling,
      * part models, addInstance) never runs for these machines.
      */
+    private static boolean canUseGpuParametrics() {
+        if (!parametricAnimOn()
+                || ShaderCompatibilityDetector.isRenderingShadowPass()
+                || ClientRenderFlags.forceVanillaImmediate()) {
+            return false;
+        }
+        if (!ShaderCompatibilityDetector.isExternalShaderActive()) {
+            return true;
+        }
+        return com.hbm_m.client.render.NucleusGpuBaker.isEnabled();
+    }
+
     private boolean tryFastParametricRosterUpdate(T blockEntity, MachineRenderState roster, long rosterKey,
                                                   long gameTime, float partialTick) {
-        if (!parametricAnimOn() || ShaderCompatibilityDetector.isExternalShaderActive()) {
+        if (!canUseGpuParametrics()) {
             return false;
         }
         byte[] cats = roster.rosterCategory;
@@ -555,10 +567,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
      * only, never the joint words.
      */
     private boolean isParametricPath(MachinePartRenderer renderer) {
-        if (!parametricAnimOn()
-                || ShaderCompatibilityDetector.isRenderingShadowPass()
-                || ClientRenderFlags.forceVanillaImmediate()
-                || ShaderCompatibilityDetector.isExternalShaderActive()) {
+        if (!canUseGpuParametrics()) {
             return false;
         }
         InstancedStaticPartRenderer inst = renderer.instanced();

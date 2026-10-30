@@ -1,6 +1,5 @@
 package com.hbm_m.client.render.culling;
 
-
 import com.hbm_m.main.MainRegistry;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
@@ -21,8 +20,10 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+
 /**
  * CPU-based occlusion culling helper for BlockEntityRenderers (BERs).
  * <p>
@@ -65,6 +66,12 @@ public final class OcclusionCullingHelper {
     /** Global counter incremented when client world geometry may have changed. */
     private static long clientGeometryStamp = 0L;
 
+    /** Frame interval for amortized distance-based cache eviction. */
+    private static final int EVICTION_INTERVAL_FRAMES = 60;
+
+    /** Frame marker to avoid repeated full-cache trimming scans when only current-frame entries remain. */
+    private static long lastTrimExhaustedFrame = -1L;
+
     /**
      * Vanilla frustum captured immediately prior to the BER loop ({@code RenderLevelStageEvent.AFTER_ENTITIES}).
      */
@@ -86,10 +93,6 @@ public final class OcclusionCullingHelper {
      */
     private static long occlusionCacheKey(BlockPos pos) {
         return pos.asLong();
-    }
-
-    private static long stripShadowKeyBit(long key) {
-        return key;
     }
 
     public static void setTransparentBlocksTag(TagKey<Block> tag) {
@@ -318,13 +321,13 @@ public final class OcclusionCullingHelper {
         if (existing == null) {
             occlusionCache.put(key, new CachedResult(visible, currentFrame, tick,
                     cameraPos.x, cameraPos.y, cameraPos.z, clientGeometryStamp, reason));
-            logDecision(BlockPos.of(stripShadowKeyBit(key)), visible, reason, null);
+            logDecision(BlockPos.of(key), visible, reason, null);
+            trimCacheIfNeeded();
         } else {
-            logDecision(BlockPos.of(stripShadowKeyBit(key)), visible, reason, existing);
+            logDecision(BlockPos.of(key), visible, reason, existing);
             existing.setAll(visible, currentFrame, tick,
                     cameraPos.x, cameraPos.y, cameraPos.z, clientGeometryStamp, reason);
         }
-        trimCacheIfNeeded();
     }
 
     // DIAGNOSTICS: Logs to console only when visibility state or reason changes.
@@ -340,34 +343,41 @@ public final class OcclusionCullingHelper {
     }
 
     private static void trimCacheIfNeeded() {
+        if (lastTrimExhaustedFrame == currentFrame) return;
         int size = occlusionCache.size();
         if (size <= MAX_CACHE_ENTRIES) return;
         int toRemove = size - MAX_CACHE_ENTRIES + (MAX_CACHE_ENTRIES >> 3);
         var it = occlusionCache.long2ObjectEntrySet().iterator();
-        while (toRemove-- > 0 && it.hasNext()) {
-            it.next();
-            it.remove();
+        while (toRemove > 0 && it.hasNext()) {
+            var entry = it.next();
+            if (entry.getValue().frame != currentFrame) {
+                it.remove();
+                toRemove--;
+            }
+        }
+        if (toRemove > 0) {
+            lastTrimExhaustedFrame = currentFrame;
         }
     }
 
     private static boolean isRayOccluded(Vec3 start, double endX, double endY, double endZ, Level level, AABB renderBounds) {
+        if (level == null) return false;
+
         double startX = start.x;
         double startY = start.y;
         double startZ = start.z;
 
-        BlockPos.MutableBlockPos mutablePos = RAY_MARCH_SCRATCH;
+        final int startVoxelX = Mth.floor(startX);
+        final int startVoxelY = Mth.floor(startY);
+        final int startVoxelZ = Mth.floor(startZ);
 
-        int currentX = Mth.floor(startX);
-        int currentY = Mth.floor(startY);
-        int currentZ = Mth.floor(startZ);
+        final int targetX = Mth.floor(endX);
+        final int targetY = Mth.floor(endY);
+        final int targetZ = Mth.floor(endZ);
 
-        int targetX = Mth.floor(endX);
-        int targetY = Mth.floor(endY);
-        int targetZ = Mth.floor(endZ);
-
-        int stepX = Integer.signum(targetX - currentX);
-        int stepY = Integer.signum(targetY - currentY);
-        int stepZ = Integer.signum(targetZ - currentZ);
+        final int stepX = Integer.signum(targetX - startVoxelX);
+        final int stepY = Integer.signum(targetY - startVoxelY);
+        final int stepZ = Integer.signum(targetZ - startVoxelZ);
 
         if (stepX == 0 && stepY == 0 && stepZ == 0) return false;
 
@@ -379,24 +389,51 @@ public final class OcclusionCullingHelper {
         double deltaY = (stepY == 0) ? Double.MAX_VALUE : Math.abs(1.0 / dy);
         double deltaZ = (stepZ == 0) ? Double.MAX_VALUE : Math.abs(1.0 / dz);
 
-        double maxX = (stepX == 0) ? Double.MAX_VALUE : (stepX > 0 ? (currentX + 1 - startX) * deltaX : (startX - currentX) * deltaX);
-        double maxY = (stepY == 0) ? Double.MAX_VALUE : (stepY > 0 ? (currentY + 1 - startY) * deltaY : (startY - currentY) * deltaY);
-        double maxZ = (stepZ == 0) ? Double.MAX_VALUE : (stepZ > 0 ? (currentZ + 1 - startZ) * deltaZ : (startZ - currentZ) * deltaZ);
+        double maxX = (stepX == 0) ? Double.MAX_VALUE : (stepX > 0 ? (startVoxelX + 1 - startX) * deltaX : (startX - startVoxelX) * deltaX);
+        double maxY = (stepY == 0) ? Double.MAX_VALUE : (stepY > 0 ? (startVoxelY + 1 - startY) * deltaY : (startY - startVoxelY) * deltaY);
+        double maxZ = (stepZ == 0) ? Double.MAX_VALUE : (stepZ > 0 ? (startVoxelZ + 1 - startZ) * deltaZ : (startZ - startVoxelZ) * deltaZ);
+
+        int currentX = startVoxelX;
+        int currentY = startVoxelY;
+        int currentZ = startVoxelZ;
+
+        final boolean hasRenderBounds = renderBounds != null;
+        final double rbMinX = hasRenderBounds ? renderBounds.minX : 0.0;
+        final double rbMaxX = hasRenderBounds ? renderBounds.maxX : 0.0;
+        final double rbMinY = hasRenderBounds ? renderBounds.minY : 0.0;
+        final double rbMaxY = hasRenderBounds ? renderBounds.maxY : 0.0;
+        final double rbMinZ = hasRenderBounds ? renderBounds.minZ : 0.0;
+        final double rbMaxZ = hasRenderBounds ? renderBounds.maxZ : 0.0;
+
+        BlockPos.MutableBlockPos mutablePos = RAY_MARCH_SCRATCH;
+
+        int cachedChunkX = Integer.MIN_VALUE;
+        int cachedChunkZ = Integer.MIN_VALUE;
+        LevelChunk cachedChunk = null;
 
         int maxSteps = 100;
 
         while (maxSteps-- > 0) {
             if (currentX == targetX && currentY == targetY && currentZ == targetZ) return false;
 
-            if (currentX != Mth.floor(startX) || currentY != Mth.floor(startY) || currentZ != Mth.floor(startZ)) {
-                mutablePos.set(currentX, currentY, currentZ);
+            if (currentX != startVoxelX || currentY != startVoxelY || currentZ != startVoxelZ) {
+                boolean inBounds = hasRenderBounds &&
+                        (currentX + 1 > rbMinX && currentX < rbMaxX &&
+                         currentY + 1 > rbMinY && currentY < rbMaxY &&
+                         currentZ + 1 > rbMinZ && currentZ < rbMaxZ);
 
-                if (renderBounds != null &&
-                        currentX + 1 > renderBounds.minX && currentX < renderBounds.maxX &&
-                        currentY + 1 > renderBounds.minY && currentY < renderBounds.maxY &&
-                        currentZ + 1 > renderBounds.minZ && currentZ < renderBounds.maxZ) {
-                } else if (isOccluder(level, mutablePos)) {
-                    return true;
+                if (!inBounds) {
+                    int chunkX = currentX >> 4;
+                    int chunkZ = currentZ >> 4;
+                    if (chunkX != cachedChunkX || chunkZ != cachedChunkZ) {
+                        cachedChunkX = chunkX;
+                        cachedChunkZ = chunkZ;
+                        cachedChunk = level.hasChunk(chunkX, chunkZ) ? level.getChunk(chunkX, chunkZ) : null;
+                    }
+                    mutablePos.set(currentX, currentY, currentZ);
+                    if (isOccluder(level, cachedChunk, mutablePos)) {
+                        return true;
+                    }
                 }
             }
 
@@ -421,9 +458,10 @@ public final class OcclusionCullingHelper {
         return false;
     }
 
-    private static boolean isOccluder(Level level, BlockPos pos) {
-        if (!level.hasChunkAt(pos)) return false;
-        BlockState state = level.getBlockState(pos);
+    private static boolean isOccluder(Level level, @Nullable LevelChunk chunk, BlockPos pos) {
+        if (chunk == null) return false;
+        if (level.isOutsideBuildHeight(pos)) return false;
+        BlockState state = chunk.getBlockState(pos);
         if (state.isAir()) return false;
         if (transparentBlocksTag != null && state.is(transparentBlocksTag)) return false;
         return state.isSolidRender(level, pos);
@@ -432,21 +470,23 @@ public final class OcclusionCullingHelper {
     public static void onFrameStart() {
         currentFrame++;
 
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player != null && !occlusionCache.isEmpty()) {
-            BlockPos pp = mc.player.blockPosition();
-            int px = pp.getX();
-            int py = pp.getY();
-            int pz = pp.getZ();
-            occlusionCache.long2ObjectEntrySet().removeIf(e -> {
-                long raw = stripShadowKeyBit(e.getLongKey());
-                // Manhattan distance straight from the packed key — BlockPos.of
-                // here allocated a throwaway object per cached entry per frame.
-                int dist = Math.abs(BlockPos.getX(raw) - px)
-                        + Math.abs(BlockPos.getY(raw) - py)
-                        + Math.abs(BlockPos.getZ(raw) - pz);
-                return dist > MAX_KEEP_MANHATTAN_BLOCKS;
-            });
+        if (currentFrame % EVICTION_INTERVAL_FRAMES == 0L) {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.player != null && !occlusionCache.isEmpty()) {
+                BlockPos pp = mc.player.blockPosition();
+                int px = pp.getX();
+                int py = pp.getY();
+                int pz = pp.getZ();
+                occlusionCache.long2ObjectEntrySet().removeIf(e -> {
+                    long raw = e.getLongKey();
+                    // Manhattan distance straight from the packed key — BlockPos.of
+                    // here allocated a throwaway object per cached entry per frame.
+                    int dist = Math.abs(BlockPos.getX(raw) - px)
+                            + Math.abs(BlockPos.getY(raw) - py)
+                            + Math.abs(BlockPos.getZ(raw) - pz);
+                    return dist > MAX_KEEP_MANHATTAN_BLOCKS;
+                });
+            }
         }
 
         if (currentFrame % 600L == 0L) {
@@ -456,6 +496,7 @@ public final class OcclusionCullingHelper {
 
     public static void clearCache() {
         occlusionCache.clear();
+        lastTrimExhaustedFrame = -1L;
         InstancedRenderFrame.clear();
     }
 }

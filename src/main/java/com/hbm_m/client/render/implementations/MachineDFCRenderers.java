@@ -70,7 +70,7 @@ public final class MachineDFCRenderers {
                 ModBlockEntities.CORE_EMITTER_BE.get(),
                 MachineCoreEmitterBlockEntity.class)
             .blockTransform(MachineDFCRenderers::orient)
-            .part("Body")
+            .part("Cube_Cube.001")
             .hook(new MachineRenderHook<MachineCoreEmitterBlockEntity>() {
                 @Override
                 public void render(MachineCoreEmitterBlockEntity te, float pt, PoseStack ps,
@@ -98,7 +98,7 @@ public final class MachineDFCRenderers {
                     return be.getBeamLength() > 0;
                 }
             })
-            .itemParts("Body")
+            .itemParts("Cube_Cube.001")
             .register();
 
         // ── DFC Receiver ─────────────────────────────────────────────────────
@@ -106,8 +106,8 @@ public final class MachineDFCRenderers {
                 ModBlockEntities.CORE_RECEIVER_BE.get(),
                 MachineCoreReceiverBlockEntity.class)
             .blockTransform(MachineDFCRenderers::orient)
-            .part("Body")
-            .itemParts("Body")
+            .part("Cube_Cube.001")
+            .itemParts("Cube_Cube.001")
             .register();
 
         // ── DFC Injector ─────────────────────────────────────────────────────
@@ -115,7 +115,7 @@ public final class MachineDFCRenderers {
                 ModBlockEntities.CORE_INJECTOR_BE.get(),
                 MachineCoreInjectorBlockEntity.class)
             .blockTransform(MachineDFCRenderers::orient)
-            .part("Body")
+            .part("Cube_Cube.001")
             .hook(new MachineRenderHook<MachineCoreInjectorBlockEntity>() {
                 @Override
                 public void render(MachineCoreInjectorBlockEntity injector, float pt, PoseStack ps,
@@ -147,7 +147,7 @@ public final class MachineDFCRenderers {
                     return be.getBeam() > 0;
                 }
             })
-            .itemParts("Body")
+            .itemParts("Cube_Cube.001")
             .register();
 
         // ── DFC Stabilizer ───────────────────────────────────────────────────

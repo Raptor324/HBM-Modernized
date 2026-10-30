@@ -2,7 +2,9 @@ package com.hbm_m.client.render;
 
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 
 import com.hbm_m.main.MainRegistry;
@@ -38,6 +40,102 @@ public abstract class AbstractGpuMesh {
      * When {@code true}, init has already failed; do not retry or log again.
      */
     protected boolean initFailed = false;
+
+    /**
+     * Supplies the one-shot off-heap transfer data consumed (and freed) by
+     * {@link #initVbo()}. Overridden by concrete mesh renderers that build
+     * through {@link #initVbo()} (default {@code null}: {@code initVbo()} treats
+     * it as an error, and mesh types that never call {@code initVbo()} - e.g.
+     * {@code InstancedStaticPartRenderer}, which lives in the MDI atlas - are
+     * not forced to implement it).
+     */
+    protected SingleMeshVboRenderer.VboData buildVboData() {
+        return null;
+    }
+
+    /**
+     * Uploads {@link #buildVboData()} to a fresh VAO/VBO(/EBO) and closes the
+     * transfer data. Moved verbatim from {@code SingleMeshVboRenderer} so that
+     * {@code WeaponPartVboRenderer} can extend {@code AbstractGpuMesh} directly
+     * as a sibling of {@code SingleMeshVboRenderer}.
+     */
+    protected void initVbo() {
+        if (initialized) return;
+
+        int previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
+        int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
+        int previousElementArrayBuffer = GL11.glGetInteger(GL15.GL_ELEMENT_ARRAY_BUFFER_BINDING);
+
+        SingleMeshVboRenderer.VboData data = null;
+
+        try {
+            vaoId = GL30.glGenVertexArrays();
+            vboId = GL15.glGenBuffers();
+
+            data = buildVboData();
+            if (data == null) {
+                MainRegistry.LOGGER.warn("VboData is null, cannot initialize VBO");
+                throw new IllegalStateException("VboData is null");
+            }
+            indexCount = data.indices != null ? data.indices.remaining() : 0;
+            setObjBboxFrom(data);
+
+            int vs = data.bytesPerVertex;
+
+            GL30.glBindVertexArray(vaoId);
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
+            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, data.byteBuffer, GL15.GL_STATIC_DRAW);
+
+            GL20.glEnableVertexAttribArray(0);
+            GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, vs, 0);
+
+            GL20.glEnableVertexAttribArray(1);
+            GL20.glVertexAttribPointer(1, 3, GL11.GL_FLOAT, false, vs, 12);
+
+            GL20.glEnableVertexAttribArray(2);
+            GL20.glVertexAttribPointer(2, 2, GL11.GL_FLOAT, false, vs, 24);
+
+            if (data.indices != null && data.indices.remaining() > 0) {
+                eboId = GL15.glGenBuffers();
+                GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, eboId);
+                GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, data.indices, GL15.GL_STATIC_DRAW);
+            }
+
+            GL30.glBindVertexArray(0);
+
+            data.close();
+
+            initialized = true;
+
+        } catch (Exception e) {
+            if (data != null) {
+                data.close();
+            }
+
+            if (vaoId != -1) {
+                GL30.glDeleteVertexArrays(vaoId);
+                vaoId = -1;
+            }
+            if (vboId != -1) {
+                GL15.glDeleteBuffers(vboId);
+                vboId = -1;
+            }
+            if (eboId != -1) {
+                GL15.glDeleteBuffers(eboId);
+                eboId = -1;
+            }
+
+            throw e;
+
+        } finally {
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
+            GL30.glBindVertexArray(previousVao);
+
+            if (previousVao == 0) {
+                GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, previousElementArrayBuffer);
+            }
+        }
+    }
 
     /**
      * Releases GL resources (VAO/VBO/EBO) on the render thread.

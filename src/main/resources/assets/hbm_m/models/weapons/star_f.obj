@@ -1,5 +1,7 @@
 # Blender v3.2.0 OBJ File: 'star-f-small.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Gun
 v -0.500000 2.625000 6.125000
 v -0.500000 3.250000 6.125000

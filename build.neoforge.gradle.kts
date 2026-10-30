@@ -64,18 +64,22 @@ neoForge {
 		register("client") {
 			client()
 			gameDirectory = file("run/")
-			ideName = "NeoForge Client (${stonecutter.active?.version})"
+			ideName = "NeoForge Client (${stonecutter.current.version})"
 			programArgument("--username=Dev")
 			// UTF-8 для логов + ASCII-локаль (иначе log4j пишет даты «сен.» в
 			// платформенной Cp1251 — debug.log открывается как ломаный UTF-8).
+			// AllowEnhancedClassRedefinition: DCEVM в JetBrains Runtime — hot swap
+			// новых методов/полей, не только тел методов. См. тот же флаг в forge-конфиге.
 			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-XX:+UnlockDiagnosticVMOptions", "-XX:+DebugNonSafepoints",
+				"-XX:+IgnoreUnrecognizedVMOptions",
+				"-XX:+AllowEnhancedClassRedefinition",
 				"-Dfile.encoding=UTF-8", "-Dconsole.encoding=UTF-8",
 				"-Duser.language=en", "-Duser.country=US")
 		}
 		register("server") {
 			server()
 			gameDirectory = file("run/")
-			ideName = "NeoForge Server (${stonecutter.active?.version})"
+			ideName = "NeoForge Server (${stonecutter.current.version})"
 			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8",
 				"-Duser.language=en", "-Duser.country=US")
 		}
@@ -438,5 +442,192 @@ tasks.matching { it.name == "runGameTestServer" }.configureEach {
 		delete(file("runGameTest/Test Level"))
 		delete(file("runGameTest/world"))
 		file("runGameTest/eula.txt").writeText("eula=true")
+	}
+}
+
+// ── Автономный HotSwap v2 (с фильтрацией по SHA-256 байткода против пересборок Stonecutter) ──
+fun buildAutoHotswapAgentJar(): File {
+	val dir = layout.buildDirectory.dir("hotswap-agent").get().asFile
+	val jarFile = File(dir, "hbm-auto-hotswap-agent-v2.jar")
+	if (jarFile.exists()) return jarFile
+
+	val srcDir = File(dir, "src").apply { mkdirs() }
+	val classesDir = File(dir, "classes").apply { deleteRecursively(); mkdirs() }
+	val javaFile = File(srcDir, "HbmAutoHotswapAgent.java")
+	javaFile.writeText("""
+		import java.io.File;
+		import java.lang.instrument.ClassDefinition;
+		import java.lang.instrument.Instrumentation;
+		import java.nio.file.*;
+		import java.security.MessageDigest;
+		import java.util.*;
+		import java.util.stream.Stream;
+
+		public class HbmAutoHotswapAgent {
+		    private static final Map<Path, Long> timestamps = new HashMap<>();
+		    private static final Map<Path, byte[]> bytecodeHashes = new HashMap<>();
+
+		    public static void premain(String agentArgs, Instrumentation inst) {
+		        if (agentArgs == null || agentArgs.isEmpty()) return;
+		        List<Path> roots = new ArrayList<>();
+		        for (String part : agentArgs.split(File.pathSeparator)) {
+		            if (!part.isBlank()) roots.add(Paths.get(part));
+		        }
+		        scan(roots, false);
+		        Thread watcher = new Thread(() -> loop(roots, inst), "HBM-AutoHotSwap");
+		        watcher.setDaemon(true);
+		        watcher.start();
+		        System.out.println("⚡ [HBM-HotSwap v2] Автономный SHA-256 вотчер запущен: " + roots);
+		    }
+
+		    private static byte[] sha256(byte[] data) {
+		        try {
+		            return MessageDigest.getInstance("SHA-256").digest(data);
+		        } catch (Exception e) {
+		            return data;
+		        }
+		    }
+
+		    private static Map<Path, byte[]> scan(List<Path> roots, boolean collectChanged) {
+		        Map<Path, byte[]> changedBytes = new LinkedHashMap<>();
+		        for (Path root : roots) {
+		            if (!Files.isDirectory(root)) continue;
+		            try (Stream<Path> stream = Files.walk(root)) {
+		                stream.filter(p -> p.toString().endsWith(".class") && Files.isRegularFile(p)).forEach(p -> {
+		                    try {
+		                        long mod = Files.getLastModifiedTime(p).toMillis();
+		                        Long prevMod = timestamps.get(p);
+		                        if (prevMod == null || mod > prevMod) {
+		                            byte[] bytes = Files.readAllBytes(p);
+		                            if (bytes.length == 0) return;
+		                            byte[] hash = sha256(bytes);
+		                            byte[] prevHash = bytecodeHashes.put(p, hash);
+		                            timestamps.put(p, mod);
+		                            // Перезагружаем ТОЛЬКО если реально изменился байткод класса!
+		                            if (collectChanged && (prevHash == null || !MessageDigest.isEqual(hash, prevHash))) {
+		                                changedBytes.put(p, bytes);
+		                            }
+		                        }
+		                    } catch (Exception ignored) {}
+		                });
+		            } catch (Exception ignored) {}
+		        }
+		        return changedBytes;
+		    }
+
+		    private static void loop(List<Path> roots, Instrumentation inst) {
+		        while (true) {
+		            try {
+		                Thread.sleep(500);
+		                Map<Path, byte[]> changed = new LinkedHashMap<>(scan(roots, true));
+		                if (changed.isEmpty()) continue;
+		                Thread.sleep(250); // Ждем завершения записи javac
+		                changed.putAll(scan(roots, true));
+
+		                Map<String, List<Class<?>>> loadedByName = new HashMap<>();
+		                for (Class<?> c : inst.getAllLoadedClasses()) {
+		                    if (inst.isModifiableClass(c)) {
+		                        loadedByName.computeIfAbsent(c.getName(), k -> new ArrayList<>()).add(c);
+		                    }
+		                }
+
+		                List<ClassDefinition> defs = new ArrayList<>();
+		                List<String> names = new ArrayList<>();
+		                for (Map.Entry<Path, byte[]> entry : changed.entrySet()) {
+		                    Path file = entry.getKey();
+		                    byte[] bytes = entry.getValue();
+		                    for (Path root : roots) {
+		                        if (file.startsWith(root)) {
+		                            String rel = root.relativize(file).toString().replace('\\', '.').replace('/', '.');
+		                            String className = rel.substring(0, rel.length() - 6);
+		                            List<Class<?>> targets = loadedByName.get(className);
+		                            if (targets != null && !targets.isEmpty()) {
+		                                for (Class<?> target : targets) {
+		                                    defs.add(new ClassDefinition(target, bytes));
+		                                }
+		                                if (!names.contains(className)) names.add(className);
+		                            }
+		                            break;
+		                        }
+		                    }
+		                }
+
+		                if (!defs.isEmpty()) {
+		                    long t0 = System.currentTimeMillis();
+		                    try {
+		                        inst.redefineClasses(defs.toArray(new ClassDefinition[0]));
+		                        long dt = System.currentTimeMillis() - t0;
+		                        System.out.println("⚡ [HBM-HotSwap] Перезагружено реально измененных классов: " + names.size() + " за " + dt + " мс -> " + names);
+		                    } catch (Throwable batchErr) {
+		                        for (ClassDefinition def : defs) {
+		                            try {
+		                                inst.redefineClasses(def);
+		                                System.out.println("⚡ [HBM-HotSwap] Перезагружен: " + def.getDefinitionClass().getName());
+		                            } catch (Throwable singleErr) {
+		                                System.err.println("❌ [HBM-HotSwap] Ошибка замены " + def.getDefinitionClass().getName() + ": " + singleErr);
+		                            }
+		                        }
+		                    }
+		                }
+		            } catch (Throwable t) {
+		                t.printStackTrace();
+		            }
+		        }
+		    }
+		}
+	""".trimIndent())
+
+	val compiler = javax.tools.ToolProvider.getSystemJavaCompiler()
+		?: error("SystemJavaCompiler not found (run Gradle on a JDK, not JRE)")
+	val rc = compiler.run(null, null, null, "--release", "17", "-d", classesDir.absolutePath, javaFile.absolutePath)
+	if (rc != 0) error("Failed to compile HbmAutoHotswapAgent")
+
+	val manifestFile = File(dir, "MANIFEST.MF")
+	manifestFile.writeText(
+		"Manifest-Version: 1.0\n" +
+				"Premain-Class: HbmAutoHotswapAgent\n" +
+				"Can-Redefine-Classes: true\n" +
+				"Can-Retransform-Classes: true\n\n"
+	)
+	ant.withGroovyBuilder {
+		"jar"("destfile" to jarFile, "basedir" to classesDir, "manifest" to manifestFile)
+	}
+	return jarFile
+}
+
+tasks.withType<JavaExec>().matching { it.name == "runClient" }.configureEach {
+	val targetJava = if (stonecutter.current.version == "1.20.1") 17 else 21
+	// Пытаемся взять JBR (с DCEVM); если у разработчика её нет и автоскачивание выключено —
+	// оставляем дефолтную JDK, чтобы runClient всегда запускался в 100% случаев.
+	val jbrLauncher = javaToolchains.launcherFor {
+		languageVersion.set(JavaLanguageVersion.of(targetJava))
+		vendor.set(JvmVendorSpec.JETBRAINS)
+	}
+	javaLauncher.set(provider {
+		runCatching { jbrLauncher.get() }.getOrElse {
+			logger.warn("⚠️ [HotSwap] JBR $targetJava не найдена, откат на стандартную JDK (хотсвап тел методов будет работать, но без добавления новых полей/методов).")
+			javaToolchains.launcherFor {
+				languageVersion.set(JavaLanguageVersion.of(targetJava))
+			}.get()
+		}
+	})
+
+	doFirst {
+		// 1. Mixin Agent для хотсвапа миксинов
+		val mixinJar = classpath.files.firstOrNull { file ->
+			file.name.endsWith(".jar") && (
+					file.name.startsWith("sponge-mixin-") ||
+							file.name.matches(Regex("mixin-\\d+.*\\.jar"))
+					)
+		}
+		if (mixinJar != null) {
+			jvmArgs("-javaagent:${mixinJar.absolutePath}")
+		}
+
+		// 2. Автономный SHA-256 вотчер классов (работает на любой JDK!)
+		val watcherJar = buildAutoHotswapAgentJar()
+		val classesDirs = sourceSets["main"].output.classesDirs.files
+			.joinToString(File.pathSeparator) { it.absolutePath }
+		jvmArgs("-javaagent:${watcherJar.absolutePath}=$classesDirs")
 	}
 }

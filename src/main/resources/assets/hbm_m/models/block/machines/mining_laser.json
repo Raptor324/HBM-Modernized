@@ -1,170 +1,163 @@
 {
-	"textures": {
-		"particle": "hbm_m:block/machine/mining_laser_base"
-	},
-	"loader": "forge:composite",
-	"children": {
-		"mining_laser_model": {
-			"loader": "forge:obj",
-			"model": "hbm_m:models/block/machines/mining_laser.obj",
-			"flip_v": true,
-			"render_type": "minecraft:cutout",
-			"textures": {
-				"laser": "hbm_m:block/machine/mining_laser_laser",
-				"pivot": "hbm_m:block/machine/mining_laser_pivot",
-				"base": "hbm_m:block/machine/mining_laser_base"
-			}
-		}
-	},
-	"transform": {
-		"translation": [
-			0.5,
-			0,
-			0.5
-		],
-		"rotation": [
-			0,
-			0,
-			0
-		],
-		"scale": 1.0
-	},
-	"display": {
-		"thirdperson_righthand": {
-			"rotation": [
-				75,
-				45,
-				0
-			],
-			"translation": [
-				0.0,
-				2.571,
-				0.263
-			],
-			"scale": [
-				0.0682,
-				0.0682,
-				0.0682
-			]
-		},
-		"thirdperson_lefthand": {
-			"rotation": [
-				75,
-				45,
-				0
-			],
-			"translation": [
-				0.0,
-				2.571,
-				0.263
-			],
-			"scale": [
-				0.0682,
-				0.0682,
-				0.0682
-			]
-		},
-		"firstperson_righthand": {
-			"rotation": [
-				0,
-				45,
-				0
-			],
-			"translation": [
-				0.0,
-				0.291,
-				0.0
-			],
-			"scale": [
-				0.0727,
-				0.0727,
-				0.0727
-			]
-		},
-		"firstperson_lefthand": {
-			"rotation": [
-				0,
-				225,
-				0
-			],
-			"translation": [
-				0.0,
-				0.291,
-				0.0
-			],
-			"scale": [
-				0.0727,
-				0.0727,
-				0.0727
-			]
-		},
-		"gui": {
-			"rotation": [
-				30,
-				225,
-				0
-			],
-			"translation": [
-				0.0,
-				0.394,
-				0.227
-			],
-			"scale": [
-				0.1136,
-				0.1136,
-				0.1136
-			]
-		},
-		"ground": {
-			"rotation": [
-				0,
-				0,
-				0
-			],
-			"translation": [
-				0.0,
-				3.182,
-				0.0
-			],
-			"scale": [
-				0.0455,
-				0.0455,
-				0.0455
-			]
-		},
-		"fixed": {
-			"rotation": [
-				0,
-				180,
-				0
-			],
-			"translation": [
-				0.0,
-				0.364,
-				0.0
-			],
-			"scale": [
-				0.0909,
-				0.0909,
-				0.0909
-			]
-		},
-		"head": {
-			"rotation": [
-				0,
-				0,
-				0
-			],
-			"translation": [
-				0,
-				0,
-				0
-			],
-			"scale": [
-				1,
-				1,
-				1
-			]
-		}
-	}
+  "loader": "hbm_m:machine_parts_loader",
+  "model": "hbm_m:models/block/machines/mining_laser.obj",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "particle": "hbm_m:block/machine/mining_laser_base",
+    "laser": "hbm_m:block/machine/mining_laser_laser",
+    "pivot": "hbm_m:block/machine/mining_laser_pivot",
+    "base": "hbm_m:block/machine/mining_laser_base"
+  },
+  "transform": {
+    "translation": [
+      0.5,
+      0,
+      0.5
+    ],
+    "rotation": [
+      0,
+      0,
+      0
+    ],
+    "scale": 1.0
+  },
+  "display": {
+    "thirdperson_righthand": {
+      "rotation": [
+        75,
+        45,
+        0
+      ],
+      "translation": [
+        0.0,
+        2.571,
+        0.263
+      ],
+      "scale": [
+        0.0682,
+        0.0682,
+        0.0682
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        75,
+        45,
+        0
+      ],
+      "translation": [
+        0.0,
+        2.571,
+        0.263
+      ],
+      "scale": [
+        0.0682,
+        0.0682,
+        0.0682
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        45,
+        0
+      ],
+      "translation": [
+        0.0,
+        0.291,
+        0.0
+      ],
+      "scale": [
+        0.0727,
+        0.0727,
+        0.0727
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        225,
+        0
+      ],
+      "translation": [
+        0.0,
+        0.291,
+        0.0
+      ],
+      "scale": [
+        0.0727,
+        0.0727,
+        0.0727
+      ]
+    },
+    "gui": {
+      "rotation": [
+        30,
+        225,
+        0
+      ],
+      "translation": [
+        0.0,
+        0.394,
+        0.227
+      ],
+      "scale": [
+        0.1136,
+        0.1136,
+        0.1136
+      ]
+    },
+    "ground": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0.0,
+        3.182,
+        0.0
+      ],
+      "scale": [
+        0.0455,
+        0.0455,
+        0.0455
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        0,
+        180,
+        0
+      ],
+      "translation": [
+        0.0,
+        0.364,
+        0.0
+      ],
+      "scale": [
+        0.0909,
+        0.0909,
+        0.0909
+      ]
+    },
+    "head": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    }
+  }
 }

@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'tau.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Rotor
 v 0.187500 0.644337 -1.375000
 v -0.375000 0.144338 -1.375000

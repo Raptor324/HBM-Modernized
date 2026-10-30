@@ -80,6 +80,17 @@ public class MachineTurretRenderer implements com.hbm_m.client.render.HbmBerBoun
         poseStack.translate(0.0, -pivotY, -pivotZ);
 
         for (String partKey : stats.pitchPartKeys) {
+            // RenderTurretTauon (FFA merge loss restore): Rotor dreht um die Laufachse (0/1.375/0)
+            if (partKey.equals("tauon_rotor")) {
+                float rot = Mth.lerp(partialTick, be.lastTauSpin, be.tauSpin);
+                poseStack.pushPose();
+                poseStack.translate(0.0, 1.375, 0.0);
+                poseStack.mulPose(Axis.XP.rotationDegrees(-rot));
+                poseStack.translate(0.0, -1.375, 0.0);
+                renderPart(partKey, be, poseStack, bufferSource, packedLight);
+                poseStack.popPose();
+                continue;
+            }
             float recoil = recoilOffsetFor(partKey, be, partialTick);
             float spinAngle = spinAngleFor(partKey, be, partialTick);
             if (recoil != 0.0F || spinAngle != 0.0F) {

@@ -4,7 +4,6 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
-import java.lang.reflect.Method;
 
 /**
  * BufferBuilder compatibility helper for Iris/Oculus.
@@ -28,12 +27,6 @@ import java.lang.reflect.Method;
  * optional dependency.</p>
  */
 public final class IrisBufferHelper {
-
-    private static final int GL_QUADS = 7;
-
-    private static Class<?> extendingBufferBuilderClass;
-    private static Method irisBeginWithoutExtending;
-    private static volatile boolean irisInitialized = false;
 
     /**
      * Cross-version {@link BufferBuilder} factory.
@@ -59,31 +52,11 @@ public final class IrisBufferHelper {
     }
 
     /**
-     * ExtendingBufferBuilder class from Connector/FFAPI (Forgified Fabric API).
-     * Connector uses the same interface as Iris, but in a different package.
-     */
-    private static Class<?> connectorClass;
-    private static Method connectorBeginWithoutExtending;
-    private static volatile boolean connectorInitialized = false;
-
-    /**
-     * Begins a BufferBuilder with DefaultVertexFormat.BLOCK without Iris
-     * extension. Prevents the switch to IrisVertexFormats.TERRAIN when
-     * Iris/Oculus is active.
-     * <p>
-     * Do not use for level render with shaders - the extended TERRAIN format
-     * is required there.
-     */
-    public static void beginBlockQuads(BufferBuilder buffer) {
-        begin(buffer, VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK);
-    }
-
-    /**
      * {@code begin} without Iris extension - for {@code POSITION_TEX_COLOR} and
      * other immediate-draw paths.
      */
     public static void beginWithoutExtending(BufferBuilder buffer, VertexFormat.Mode mode, VertexFormat format) {
-        if (tryIrisBeginWithoutExtending(buffer, mode, format)) {
+        if (IrisReflectionBridge.beginWithoutExtending(buffer, mode, format)) {
             return;
         }
         //? if < 1.21.1 {
@@ -107,108 +80,11 @@ public final class IrisBufferHelper {
             //?}
             return;
         }
-        if (tryIrisBeginWithoutExtending(buffer, mode, format)) {
+        if (IrisReflectionBridge.beginWithoutExtending(buffer, mode, format)) {
             return;
         }
         //? if < 1.21.1 {
         buffer.begin(mode, format);
         //?}
-    }
-
-    private static int getGlMode(VertexFormat.Mode mode) {
-        return switch (mode) {
-            case QUADS -> GL_QUADS;
-            case TRIANGLES -> 4;
-            case LINES -> 1;
-            case LINE_STRIP -> 3;
-            case TRIANGLE_STRIP -> 5;
-            case TRIANGLE_FAN -> 6;
-            default -> GL_QUADS;
-        };
-    }
-
-    private static synchronized void ensureIrisInitialized() {
-        if (irisInitialized) return;
-        irisInitialized = true;
-        for (String className : new String[]{
-                "net.irisshaders.iris.vertices.ExtendingBufferBuilder",
-                "net.coderbot.iris.vertices.ExtendingBufferBuilder"
-        }) {
-            try {
-                Class<?> iface = Class.forName(className);
-                Method m = null;
-                try {
-                    m = iface.getMethod("iris$beginWithoutExtending", VertexFormat.Mode.class, VertexFormat.class);
-                } catch (NoSuchMethodException e) {
-                    for (Method candidate : iface.getMethods()) {
-                        if ("iris$beginWithoutExtending".equals(candidate.getName()) && candidate.getParameterCount() == 2) {
-                            m = candidate;
-                            break;
-                        }
-                    }
-                }
-                if (m != null) {
-                    m.setAccessible(true);
-                    extendingBufferBuilderClass = iface;
-                    irisBeginWithoutExtending = m;
-                    break;
-                }
-            } catch (ClassNotFoundException ignored) {
-            }
-        }
-    }
-
-    private static synchronized void ensureConnectorInitialized() {
-        if (connectorInitialized) return;
-        connectorInitialized = true;
-        for (String className : new String[]{
-                "com.sinytra.forgified_fabric_api.fabric.mixin.renderer.indigo.MixinBufferBuilder",
-                "link.infra.indium.renderer.render.ExtendingBufferBuilder"
-        }) {
-            try {
-                Class<?> iface = Class.forName(className);
-                for (Method candidate : iface.getMethods()) {
-                    if ("iris$beginWithoutExtending".equals(candidate.getName()) && candidate.getParameterCount() == 2) {
-                        candidate.setAccessible(true);
-                        connectorClass = iface;
-                        connectorBeginWithoutExtending = candidate;
-                        return;
-                    }
-                }
-            } catch (ClassNotFoundException ignored) {
-            }
-        }
-    }
-
-    private static boolean tryIrisBeginWithoutExtending(BufferBuilder buffer, VertexFormat.Mode drawMode, VertexFormat vertexFormat) {
-        if (buffer == null) {
-            return false;
-        }
-        // --- Iris / Oculus (1.20+) ---
-        ensureIrisInitialized();
-        if (extendingBufferBuilderClass != null && irisBeginWithoutExtending != null) {
-            if (extendingBufferBuilderClass.isInstance(buffer)) {
-                try {
-                    irisBeginWithoutExtending.invoke(buffer, drawMode, vertexFormat);
-                    return true;
-                } catch (Exception ignored) {
-                }
-            }
-        }
-
-        // --- Connector / Forgified Fabric API (FFAPI) ---
-        ensureConnectorInitialized();
-        if (connectorClass != null && connectorBeginWithoutExtending != null) {
-            if (connectorClass.isInstance(buffer)) {
-                try {
-                    int glMode = getGlMode(drawMode);
-                    connectorBeginWithoutExtending.invoke(buffer, glMode, vertexFormat);
-                    return true;
-                } catch (Exception ignored) {
-                }
-            }
-        }
-
-        return false;
     }
 }

@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'missile_launcher.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Front
 v 0.000000 1.625000 1.687500
 v 0.312500 1.541266 1.687500

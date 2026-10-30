@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'remnant_scaled.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o RightBoot
 v -4.207808 18.567183 -2.139844
 v 0.192192 18.567184 -2.139844

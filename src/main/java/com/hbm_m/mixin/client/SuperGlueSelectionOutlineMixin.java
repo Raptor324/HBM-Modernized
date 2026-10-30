@@ -14,9 +14,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Super glue counterpart of {@link com.hbm_m.mixin.HoneyGlueSelectionExpansionMixin}: while super glue is held,
+ * Super glue counterpart of {@link com.hbm_m.mixin.client.HoneyGlueSelectionExpansionMixin}: while super glue is held,
  * the whole HBM multiblock under the selection is outlined, not only the blocks inside the box.
- * The glued group itself is already expanded by {@link com.hbm_m.mixin.SuperGlueSelectionHelperMixin}.
+ * The glued group itself is already expanded by {@link com.hbm_m.mixin.compat.create.SuperGlueSelectionHelperMixin}.
  */
 @Pseudo
 @Mixin(targets = "com.simibubi.create.content.contraptions.glue.SuperGlueSelectionHandler")

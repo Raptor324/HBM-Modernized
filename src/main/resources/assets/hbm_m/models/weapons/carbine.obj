@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'carbine.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Scope
 v 0.187500 1.250000 -0.875000
 v -0.187500 1.250000 -0.875000

@@ -344,52 +344,12 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
         // горелкой по взорванному баку чинит его за материалы с игрока; на целый бак
         // горелка не открывает GUI (клик уходит инструменту, как в оригинале).
         if (player.getItemInHand(hand).getItem() == ModItems.BLOWTORCH.get()) {
-            return tryRepairMultiblock(player, tank) ? InteractionResult.sidedSuccess(false) : InteractionResult.PASS;
+            return com.hbm_m.api.tile.IRepairable.tryRepairMultiblock(level, pos, player)
+                    ? InteractionResult.sidedSuccess(false) : InteractionResult.PASS;
         }
 
         MenuRegistry.openExtendedMenu((ServerPlayer) player, tank, buf -> buf.writeBlockPos(pos));
         return InteractionResult.sidedSuccess(false);
-    }
-
-    /** Порт {@code IRepairable.tryRepairMultiblock}: проверка isDamaged, материалов и ремонт. */
-    private static boolean tryRepairMultiblock(Player player, MachineFluidTankBlockEntity tank) {
-        if (!tank.isDamaged()) return false;
-
-        List<ItemStack> materials = tank.getRepairMaterials();
-        if (!playerHasAStacks(player, materials)) return false;
-        removeAStacks(player, materials);
-        tank.repair();
-        return true;
-    }
-
-    /** Порт {@code InventoryUtil.doesPlayerHaveAStacks(player, list, false)}. */
-    private static boolean playerHasAStacks(Player player, List<ItemStack> materials) {
-        for (ItemStack mat : materials) {
-            int needed = mat.getCount();
-            for (int i = 0; i < player.getInventory().getContainerSize() && needed > 0; i++) {
-                ItemStack inv = player.getInventory().getItem(i);
-                if (inv.getItem() == mat.getItem()) {
-                    needed -= inv.getCount();
-                }
-            }
-            if (needed > 0) return false;
-        }
-        return true;
-    }
-
-    /** Порт {@code InventoryUtil.doesPlayerHaveAStacks(player, list, true)} — списание. */
-    private static void removeAStacks(Player player, List<ItemStack> materials) {
-        for (ItemStack mat : materials) {
-            int remaining = mat.getCount();
-            for (int i = 0; i < player.getInventory().getContainerSize() && remaining > 0; i++) {
-                ItemStack inv = player.getInventory().getItem(i);
-                if (inv.getItem() == mat.getItem()) {
-                    int take = Math.min(remaining, inv.getCount());
-                    inv.shrink(take);
-                    remaining -= take;
-                }
-            }
-        }
     }
 
     @Override

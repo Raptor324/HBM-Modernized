@@ -1,0 +1,236 @@
+#version 430 core
+// Instance record layout (float words) — injected at init by
+// injectRecordLayout from the InstancedStaticPartRenderer offset constants
+// (the literals below are only a fallback). Layout: pos @0, quat @3 (4
+// snorm16 halves packed in 2 words), bboxMin @5, bboxSize @8, fade @11.
+#define INST_STRIDE 32u
+#define INST_POS_WORD 0u
+#define INST_QUAT_WORD 3u
+#define INST_BMIN_WORD 5u
+#define INST_BSIZE_WORD 8u
+#define INST_FADE_WORD 11u
+#define INST_GRAD_WORD 24u
+layout(local_size_x = 64) in;
+
+layout(std430, binding = 0) readonly restrict buffer InstBuf { float instData[]; };
+layout(std430, binding = 1) restrict buffer CtlBuf { uint ctl[]; };
+layout(std430, binding = 2) readonly restrict buffer EboBase { uint baseIdx[]; };
+layout(std430, binding = 3) writeonly restrict buffer EboBuf { uint ebo[]; };
+// Pool command store (pass 2, GPU-count flush path): slot uCmdSlot of
+// the shared pass-pool command buffer - one DrawElementsIndirectCommand
+// per pending entry, consumed by glMultiDrawElementsIndirectCount.
+layout(std430, binding = 4) writeonly restrict buffer CmdBuf { uint cmdWords[]; };
+
+uniform int uPass;       // 0 = cull, 1 = EBO build, 2 = assemble indirect words
+uniform int uInstCount;
+uniform int uVertCount;
+uniform int uIdxCount;
+uniform int uInstStride; // Instance record float stride (32)
+uniform vec4 uPlane[6];  // (n.xyz, d), inside = positive side
+// Global-batch placement: EBO entries land at
+// uEboBase words into the pass EBO, absolute vertex indices
+// shifted by uVertBase (the mesh's range start in the pass output).
+uniform int uVertBase;
+uniform int uEboBase;
+// Pool command slot this cache's indirect command lands at (-1 = the
+// GPU-count flush path is off: no GL 4.6 capability).
+uniform int uCmdSlot;
+// 1 = pass 1 is an IDENTITY fill (every instance slot, flat 1D
+// dispatch - the no-cull EBO growth of expandPoolEbo);
+// 0 = the cull EBO build (visible list, 2D dispatch from the
+// assembler). Per-program state: every dispatch entry sets it.
+uniform int uIdentity;
+// Optional Hi-Z occlusion (uHiZMode 1; frustum-only when 0). uClipMat is
+// the same record-space->clip product the frustum planes were extracted
+// from (bakeAndDrawShadow / bakeMain). The pyramid is the shared
+// HiZDepthPyramid texture reduced in Forward-Z (max = farthest occluder).
+uniform int uHiZMode;
+uniform mat4 uClipMat;
+uniform vec2 uViewSize;      // pyramid source viewport (px)
+uniform vec2 uMip0Size;      // actual pow2-snapped mip-0 dimensions
+uniform int uPyramidLevels;
+layout(binding = 10) uniform sampler2D uDepthPyramid;
+
+vec3 quatRotate(vec4 q, vec3 v) {
+    return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
+}
+
+// snorm16 decode (plain ALU): the record packs the quat as 4 signed
+// 16-bit halves in 2 float words (low half first) - the CPU encoder is
+// InstancedStaticPartRenderer.packSnorm16, the VAO reads the same bytes
+// as GL_SHORT normalized.
+float snorm16ToFloat(uint h) {
+    // int overload sign-extends the 16-bit field (mirrors the VAO's
+    // GL_SHORT normalized fetch and HalfFloat-style software decode).
+    return clamp(float(bitfieldExtract(int(h), 0, 16)) / 32767.0, -1.0, 1.0);
+}
+
+vec4 instQuat(uint base) {
+    uint wxy = floatBitsToUint(instData[base + INST_QUAT_WORD]);
+    uint wzw = floatBitsToUint(instData[base + INST_QUAT_WORD + 1u]);
+    return vec4(snorm16ToFloat(wxy), snorm16ToFloat(wxy >> 16u),
+                snorm16ToFloat(wzw), snorm16ToFloat(wzw >> 16u));
+}
+
+// Conservative Hi-Z occluder depth for a screen-space AABB. Mirrors
+// nucleus_cull.comp hizOccluder() exactly: mip chosen from the pixel
+// extent, four texelFetches at the rect corners, MAX reduction
+// (Forward-Z: the pyramid stores the FARTHEST occluder; sky footprints
+// are filtered by the downsampler). A sub-pixel rect answers 1.0 =
+// VISIBLE (the pyramid cannot answer at this resolution - returning
+// near depth here culled legitimate distant instances in the MDI cull).
+float hizOccluder(vec4 aabb) {
+    vec4 uv = clamp(vec4(min(aabb.xy, aabb.zw), max(aabb.xy, aabb.zw)), 0.0, 1.0);
+    ivec4 rect = ivec4(uv * uMip0Size.xyxy + vec4(0.5, 0.5, -0.5, -0.5));
+    if (any(lessThan(rect.zw, rect.xy))) {
+        return 1.0;
+    }
+    rect = min(rect, ivec4(uMip0Size.xyxy) - 1);
+
+    ivec2 extent = rect.zw - rect.xy;
+    int level = max(findMSB(max(extent.x, extent.y)), 0);
+    if (any(greaterThan((rect.zw >> level) - (rect.xy >> level), ivec2(1)))) {
+        level += 1;
+    }
+    level = min(level, uPyramidLevels - 1);
+
+    ivec4 bounds = rect >> level;
+
+    float depth01 = texelFetch(uDepthPyramid, bounds.xw, level).r;
+    float depth11 = texelFetch(uDepthPyramid, bounds.zw, level).r;
+    float depth10 = texelFetch(uDepthPyramid, bounds.zy, level).r;
+    float depth00 = texelFetch(uDepthPyramid, bounds.xy, level).r;
+
+    return max(max(depth00, depth01), max(depth10, depth11));
+}
+
+// Projects the 8 corners of the conservative record-space AABB through
+// uClipMat into a screen-space AABB + the box's nearest window depth.
+// Returns false when any corner is behind the near plane (w <= 0): the
+// box touches the camera plane, Hi-Z must not answer (visible).
+bool projectAabb(vec3 center, vec3 he, out vec4 aabb, out float minDepth) {
+    aabb = vec4(1.0e9, 1.0e9, -1.0e9, -1.0e9);
+    minDepth = 1.0e9;
+    for (int i = 0; i < 8; i++) {
+        vec3 sign3 = vec3(i & 1, (i >> 1) & 1, (i >> 2) & 1);
+        vec3 p = center + mix(-he, he, sign3);
+        vec4 clip = uClipMat * vec4(p, 1.0);
+        if (clip.w <= 0.0) {
+            return false;
+        }
+        vec3 ndc = clip.xyz / clip.w;
+        aabb.xy = min(aabb.xy, ndc.xy);
+        aabb.zw = max(aabb.zw, ndc.xy);
+        // Forward-Z window depth (0 = near, 1 = far, standard GL depth
+        // range [0,1]) - the convention the pyramid is reduced in and the
+        // same hardwired Forward-Z NucleusGpuCuller.cull assumes. DH's
+        // reverse-Z LOD depth never appears in this source texture: it is
+        // re-encoded Forward-Z into the main buffer by DhDepthCopy.
+        minDepth = min(minDepth, ndc.z * 0.5 + 0.5);
+    }
+    aabb = aabb * 0.5 + 0.5; // NDC -> uv
+    return true;
+}
+
+void main() {
+    uint gid = gl_GlobalInvocationID.x;
+    if (uPass == 0) {
+        if (gid >= uint(uInstCount)) return;
+        uint ib = gid * uint(uInstStride);
+        // FADE_MODE_INVISIBLE (-1.0): the instance must not cast or
+        // exist at all - drop it before the frustum planes so it never
+        // lands in the compacted draw list (the vanilla MDI path
+        // discards instFade <= 0 in the vsh; this is the bake mirror).
+        if (instData[ib + INST_FADE_WORD] < 0.0) return;
+        vec3 center = vec3(instData[ib + INST_POS_WORD], instData[ib + INST_POS_WORD + 1u], instData[ib + INST_POS_WORD + 2u]);
+        vec4 q = instQuat(ib);
+        vec3 bmin = vec3(instData[ib + INST_BMIN_WORD], instData[ib + INST_BMIN_WORD + 1u], instData[ib + INST_BMIN_WORD + 2u]);
+        vec3 ext = vec3(instData[ib + INST_BSIZE_WORD], instData[ib + INST_BSIZE_WORD + 1u], instData[ib + INST_BSIZE_WORD + 2u]) * 0.5;
+        // Conservative record-space AABB: rotate the model-space center and
+        // take the abs-rotation rows times the model-space half extent.
+        center += quatRotate(q, bmin + ext);
+        float xx = q.x * q.x, yy = q.y * q.y, zz = q.z * q.z;
+        float xy = q.x * q.y, xz = q.x * q.z, yz = q.y * q.z;
+        float wx = q.w * q.x, wy = q.w * q.y, wz = q.w * q.z;
+        vec3 he;
+        he.x = abs(1.0 - 2.0 * (yy + zz)) * ext.x + abs(2.0 * (xy - wz)) * ext.y + abs(2.0 * (xz + wy)) * ext.z;
+        he.y = abs(2.0 * (xy + wz)) * ext.x + abs(1.0 - 2.0 * (xx + zz)) * ext.y + abs(2.0 * (yz - wx)) * ext.z;
+        he.z = abs(2.0 * (xz - wy)) * ext.x + abs(2.0 * (yz + wx)) * ext.y + abs(1.0 - 2.0 * (xx + yy)) * ext.z;
+        if (instData[ib + INST_GRAD_WORD + 3u] >= 0.0) {
+            he = he * 2.0 + vec3(2.5);
+        }
+        for (int i = 0; i < 6; i++) {
+            vec3 n = uPlane[i].xyz;
+            float d = dot(n, center) + uPlane[i].w;
+            float r = dot(abs(n), he);
+            if (d + r < 0.0) return; // fully outside this plane
+        }
+        // Hi-Z occlusion phase (strictly optional, uHiZMode selects at
+        // dispatch time): culled only when the box's nearest depth is
+        // behind the stored occluder depth at EVERY sampled footprint
+        // texel - conservative, mirroring NucleusGpuCuller's
+        // depthSphere <= occluderDepth semantics.
+        if (uHiZMode == 1) {
+            vec4 aabb;
+            float minDepth;
+            if (projectAabb(center, he, aabb, minDepth)) {
+                if (minDepth >= hizOccluder(aabb)) {
+                    atomicAdd(ctl[15u], 1u); // F3: culled-by-occlusion counter (pad word)
+                    return;
+                }
+            }
+        }
+        uint slot = atomicAdd(ctl[0u], 1u);
+        ctl[16u + slot] = gid;
+    } else if (uPass == 1) {
+        uint n;
+        uint k;
+        uint slot;
+        uint inst;
+        if (uIdentity != 0) {
+            n = uint(uInstCount);
+            k = gid % uint(uIdxCount);
+            slot = gid / uint(uIdxCount);
+            if (k >= uint(uIdxCount) || slot >= n) return;
+            inst = slot;
+        } else {
+            n = ctl[0u];
+            k = gid;
+            slot = gl_GlobalInvocationID.y + gl_GlobalInvocationID.z * gl_NumWorkGroups.y;
+            if (k >= uint(uIdxCount) || slot >= n) return;
+            inst = ctl[16u + slot];
+        }
+        uint outIdx = uint(uEboBase) + slot * uint(uIdxCount) + k;
+        ebo[outIdx] = uint(uVertBase) + inst * uint(uVertCount) + baseIdx[k];
+    } else {
+        if (gid != 0u) return;
+        uint n = ctl[0u];
+        // glDrawElementsIndirect command (words 4..8)
+        ctl[4u] = uint(uIdxCount) * n; // indexCount
+        ctl[5u] = 1u;                  // instanceCount
+        ctl[6u] = uint(uEboBase);      // firstIndex
+        ctl[7u] = 0u;                  // baseVertex
+        ctl[8u] = 0u;                  // baseInstance
+        if (uCmdSlot >= 0) {
+            // Pool command for the GPU-count flush path: the flush
+            // draws this store with glMultiDrawElementsIndirectCount
+            // (drawcount = pending entry count, CPU-known; zero-index
+            // commands are legal no-ops), so indexCount carries the
+            // GPU-side visible count and no CPU readback is needed.
+            // firstIndex = the mesh's EBO range start; baseVertex = 0
+            // (output vertices already carry vertBase), same shape as
+            // the CPU-built command in flushPool.
+            uint w = uint(uCmdSlot) * 5u;
+            cmdWords[w + 0u] = uint(uIdxCount) * n;
+            cmdWords[w + 1u] = 1u;
+            cmdWords[w + 2u] = uint(uEboBase);
+            cmdWords[w + 3u] = 0u;
+            cmdWords[w + 4u] = 0u;
+        }
+        // EBO-build dispatch triplet (words 9..11) - the dispatcher
+        // reads a full (x,y,z) triple: X = index groups, Y = visible instance count, Z = 1.
+        ctl[9u]  = (uint(uIdxCount) + 63u) / 64u;
+        ctl[10u] = min(n, 65535u);
+        ctl[11u] = (n + 65534u) / 65535u;
+    }
+}

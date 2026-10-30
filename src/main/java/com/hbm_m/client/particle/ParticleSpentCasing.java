@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Random;
 
 import com.google.common.collect.Lists;
-import com.hbm_m.client.render.SimpleObjModel;
 import com.hbm_m.client.weapon.GunGL;
 import com.hbm_m.client.weapon.WeaponResources;
 import com.hbm_m.lib.RefStrings;
@@ -43,10 +42,13 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 public class ParticleSpentCasing extends ParticleNT {
 
 	public static final Random rand = new Random();
+	// Pre-registered in WeaponResources / WeaponRenderRegistry to eliminate runtime OBJ parsing (R1)
+	// Originally: public static final ResourceLocation casings = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/effect/casings.obj");
+	public static final ResourceLocation casings = WeaponResources.casings;
+	static {
+		com.hbm_m.client.render.weapon.WeaponRenderRegistry.registerModelLocation(casings);
+	}
 	private static float dScale = 0.05F, smokeJitter = 0.001F;
-
-	/** Original {@code ResourceManager.casings}. */
-	public static final SimpleObjModel casings = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/effect/casings.obj"));
 
 	private int maxSmokeGen = 120;
 	private double smokeLift = 0.5D;
@@ -73,6 +75,9 @@ public class ParticleSpentCasing extends ParticleNT {
 	private boolean isCollidedHorizontally, isCollidedVertically, isCollided;
 	/** EntityFX aktualisiert inWater nie (kein onEntityUpdate) - bleibt wie im Original immer false. */
 	private boolean inWater = false;
+	private boolean resting = false;
+	private int cachedLight = -1;
+	private static final PoseStack BATCH_POSE = new PoseStack();
 
 	public ParticleSpentCasing(ClientLevel world, double x, double y, double z, double mx, double my, double mz, float momentumPitch, float momentumYaw, SpentCasing config, boolean smoking, int smokeLife, double smokeLift, int nodeLife) {
 		super(world, x, y, z);
@@ -130,19 +135,48 @@ public class ParticleSpentCasing extends ParticleNT {
 			this.dead = true;
 		}
 
-		this.yd -= 0.04D * (double) this.gravity;
-		this.moveEntity(this.xd, this.yd, this.zd);
-		this.xd *= 0.98D;
-		this.yd *= 0.98D;
-		this.zd *= 0.98D;
+		if (this.resting) {
+			// Periodically check if the supporting block below was broken
+			if ((this.age & 19) == 0 && this.level != null) {
+				BlockPos below = BlockPos.containing(this.x, this.y - this.yOffset - 0.05D, this.z);
+				if (this.level.getBlockState(below).isAir()) {
+					this.resting = false;
+				}
+			}
+		}
 
-		if (this.onGround) {
-			this.xd *= 0.7D;
-			this.zd *= 0.7D;
+		if (!this.resting) {
+			this.yd -= 0.04D * (double) this.gravity;
+			this.moveEntity(this.xd, this.yd, this.zd);
+			this.xd *= 0.98D;
+			this.yd *= 0.98D;
+			this.zd *= 0.98D;
 
-			this.rotationPitch = (float) (Math.floor(this.rotationPitch / 180F + 0.5F)) * 180F;
-			this.momentumYaw *= 0.7F;
-			this.onGround = false;
+			if (this.onGround) {
+				this.xd *= 0.7D;
+				this.zd *= 0.7D;
+
+				this.rotationPitch = (float) (Math.floor(this.rotationPitch / 180F + 0.5F)) * 180F;
+				this.momentumYaw *= 0.7F;
+
+				if (this.xd * this.xd + this.zd * this.zd < 1.0E-5D
+						&& Math.abs(this.yd) < 0.05D
+						&& Math.abs(this.momentumYaw) < 0.05F) {
+					this.xd = 0.0D;
+					this.yd = 0.0D;
+					this.zd = 0.0D;
+					this.momentumPitch = 0.0F;
+					this.momentumYaw = 0.0F;
+					this.resting = true;
+				}
+				this.onGround = false;
+			}
+		}
+
+		// Update cached light level lazily (every 4 ticks while moving, every 32 ticks while resting)
+		int lightMask = this.resting ? 31 : 3;
+		if (this.cachedLight < 0 || (this.age & lightMask) == 0) {
+			this.cachedLight = LevelRenderer.getLightColor(this.level, BlockPos.containing(this.x, this.y, this.z));
 		}
 
 		if (age > maxSmokeGen && !smokeNodes.isEmpty())
@@ -168,17 +202,19 @@ public class ParticleSpentCasing extends ParticleNT {
 		prevRotationPitch = rotationPitch;
 		prevRotationYaw = rotationYaw;
 
-		rotationPitch += momentumPitch;
-		rotationYaw += momentumYaw;
+		if (!this.resting) {
+			rotationPitch += momentumPitch;
+			rotationYaw += momentumYaw;
 
-		if (Math.abs(prevRotationPitch - rotationPitch) > 180) {
-			if (prevRotationPitch < rotationPitch) prevRotationPitch += 360;
-			if (prevRotationPitch > rotationPitch) prevRotationPitch -= 360;
-		}
+			if (Math.abs(prevRotationPitch - rotationPitch) > 180) {
+				if (prevRotationPitch < rotationPitch) prevRotationPitch += 360;
+				if (prevRotationPitch > rotationPitch) prevRotationPitch -= 360;
+			}
 
-		if (Math.abs(prevRotationYaw - rotationYaw) > 180) {
-			if (prevRotationYaw < rotationYaw) prevRotationYaw += 360;
-			if (prevRotationYaw > rotationYaw) prevRotationYaw -= 360;
+			if (Math.abs(prevRotationYaw - rotationYaw) > 180) {
+				if (prevRotationYaw < rotationYaw) prevRotationYaw += 360;
+				if (prevRotationYaw > rotationYaw) prevRotationYaw -= 360;
+			}
 		}
 	}
 
@@ -263,9 +299,22 @@ public class ParticleSpentCasing extends ParticleNT {
 	private double prevRenderY;
 	private double prevRenderZ;
 
-	@Override
-	public void render(VertexConsumer ignored, Camera camera, float interp, PoseStack levelPoseStack) {
+	public int getCachedLight() {
+		if (this.cachedLight < 0) {
+			this.cachedLight = LevelRenderer.getLightColor(this.level, BlockPos.containing(this.x, this.y, this.z));
+		}
+		return this.cachedLight;
+	}
 
+	public boolean hasSmokeNodes() {
+		return this.smokeNodes.size() > 1;
+	}
+
+	/**
+	 * Pass 1 of batched casing rendering: draws only the 3D mesh parts into the currently
+	 * active GunGL VBO batch without opening/closing GunGL or flushing buffers.
+	 */
+	public void renderMeshBatched(double camX, double camY, double camZ, float interp) {
 		double pX = xo + (x - xo) * interp;
 		double pY = yo + (y - yo) * interp;
 		double pZ = zo + (z - zo) * interp;
@@ -277,59 +326,43 @@ public class ParticleSpentCasing extends ParticleNT {
 			setupDeltas = true;
 		}
 
-		int brightness = LevelRenderer.getLightColor(level, BlockPos.containing(pX, pY, pZ));
-
-		// Kameraposition statt interpolierter Spielerposition (1.7.10: posY des Spielers = Augenhoehe)
-		Vec3 cam = camera.getPosition();
-		double dX = cam.x;
-		double dY = cam.y;
-		double dZ = cam.z;
-
-		// eigener PoseStack nur mit Verschiebung, Kameradrehung steckt in der ModelView-Matrix (wie ParticleDebrisNT)
-		PoseStack pose = new PoseStack();
-		GunGL.begin(pose, ParticleEngineNT.buffer(), brightness);
-
+		GunGL.setPackedLight(getCachedLight());
 		GunGL.pushMatrix();
-		GunGL.enableLighting();
-		GunGL.disableBlend();
-		GunGL.enableCull();
-		GunGL.depthMask(true);
-
-		GunGL.bindTexture(WeaponResources.casings_tex);
-
-		GunGL.translate(pX - dX, pY - dY - this.height / 4 + config.getScaleY() * 0.01, pZ - dZ);
-
+		GunGL.translate(pX - camX, pY - camY - this.height / 4 + config.getScaleY() * 0.01, pZ - camZ);
 		GunGL.scale(dScale, dScale, dScale);
-
 		GunGL.rotate(180 - (float) BobMathUtil.interp(prevRotationYaw, rotationYaw, interp), 0, 1, 0);
 		GunGL.rotate((float) -BobMathUtil.interp(prevRotationPitch, rotationPitch, interp), 1, 0, 0);
-
 		GunGL.scale(config.getScaleX(), config.getScaleY(), config.getScaleZ());
 
 		int index = 0;
 		for (String name : config.getType().partNames) {
-			int col = this.config.getColors()[index]; //unsafe on purpose, set your colors properly or else...!
+			int col = this.config.getColors()[index];
 			GunGL.color(((col >> 16) & 255) / 255F, ((col >> 8) & 255) / 255F, (col & 255) / 255F);
 			GunGL.renderPart(casings, name);
 			index++;
 		}
-
-		GunGL.color(1F, 1F, 1F);
 		GunGL.popMatrix();
 
-		GunGL.pushMatrix();
-		GunGL.translate(pX - dX, pY - dY - this.height / 4, pZ - dZ);
+		if (!hasSmokeNodes()) {
+			prevRenderX = pX;
+			prevRenderY = pY;
+			prevRenderZ = pZ;
+		}
+	}
 
-		if (!smokeNodes.isEmpty()) {
-			GunGL.Tess tessellator = GunGL.tess();
-			tessellator.startDrawingQuads();
-			tessellator.setNormal(0F, 1F, 0F);
+	/**
+	 * Pass 2 of batched casing rendering: appends this casing's smoke ribbon vertices in
+	 * camera-relative coordinates into the shared Tessellator.
+	 */
+	public void appendSmokeBatched(GunGL.Tess tessellator, double camX, double camY, double camZ, float camYawRad, float interp) {
+		double pX = xo + (x - xo) * interp;
+		double pY = yo + (y - yo) * interp;
+		double pZ = zo + (z - zo) * interp;
 
-			Player player = Minecraft.getInstance().player;
+		if (smokeNodes.size() > 1) {
 			float scale = config.getScaleX() * 0.5F * dScale;
-			Vec3NT vec = Vec3NT.createVectorHelper(scale, 0, 0);
-			float yaw = player == null ? camera.getYRot() : player.yRotO + (player.getYRot() - player.yRotO) * interp;
-			vec.rotateAroundY((float) Math.toRadians(-yaw));
+			double vecX = Math.cos(camYawRad) * scale;
+			double vecZ = Math.sin(camYawRad) * scale;
 
 			double deltaX = prevRenderX - pX;
 			double deltaY = prevRenderY - pY;
@@ -337,58 +370,132 @@ public class ParticleSpentCasing extends ParticleNT {
 
 			for (SmokeNode pair : smokeNodes) {
 				Vec3NT pos = pair.key;
-				double mult = 1D;
-				pos.xCoord += deltaX * mult;
-				pos.yCoord += deltaY * mult;
-				pos.zCoord += deltaZ * mult;
+				pos.xCoord += deltaX;
+				pos.yCoord += deltaY;
+				pos.zCoord += deltaZ;
 			}
+
+			double baseX = pX - camX;
+			double baseY = pY - camY - this.height / 4;
+			double baseZ = pZ - camZ;
+			double timeAlpha = 1D - (double) age / (double) maxSmokeGen;
 
 			for (int i = 0; i < smokeNodes.size() - 1; i++) {
 				final SmokeNode node = smokeNodes.get(i), past = smokeNodes.get(i + 1);
 				final Vec3NT nodeLoc = node.key, pastLoc = past.key;
-				float nodeAlpha = (float) node.value;
-				float pastAlpha = (float) past.value;
+				float nodeAlpha = (float) (node.value * timeAlpha);
+				float pastAlpha = (float) (past.value * timeAlpha);
 
-				double timeAlpha = 1D - (double) age / (double) maxSmokeGen;
-				nodeAlpha *= timeAlpha;
-				pastAlpha *= timeAlpha;
-
-				tessellator.setNormal(0F, 1F, 0F);
-				tessellator.setColorRGBA_F(1F, 1F, 1F, nodeAlpha);
-				tessellator.addVertex(nodeLoc.xCoord, nodeLoc.yCoord, nodeLoc.zCoord);
-				tessellator.setColorRGBA_F(1F, 1F, 1F, 0F);
-				tessellator.addVertex(nodeLoc.xCoord + vec.xCoord, nodeLoc.yCoord, nodeLoc.zCoord + vec.zCoord);
-				tessellator.setColorRGBA_F(1F, 1F, 1F, 0F);
-				tessellator.addVertex(pastLoc.xCoord + vec.xCoord, pastLoc.yCoord, pastLoc.zCoord + vec.zCoord);
-				tessellator.setColorRGBA_F(1F, 1F, 1F, pastAlpha);
-				tessellator.addVertex(pastLoc.xCoord, pastLoc.yCoord, pastLoc.zCoord);
+				double nx = baseX + nodeLoc.xCoord;
+				double ny = baseY + nodeLoc.yCoord;
+				double nz = baseZ + nodeLoc.zCoord;
+				double px = baseX + pastLoc.xCoord;
+				double py = baseY + pastLoc.yCoord;
+				double pz = baseZ + pastLoc.zCoord;
 
 				tessellator.setColorRGBA_F(1F, 1F, 1F, nodeAlpha);
-				tessellator.addVertex(nodeLoc.xCoord, nodeLoc.yCoord, nodeLoc.zCoord);
+				tessellator.addVertex(nx, ny, nz);
 				tessellator.setColorRGBA_F(1F, 1F, 1F, 0F);
-				tessellator.addVertex(nodeLoc.xCoord - vec.xCoord, nodeLoc.yCoord, nodeLoc.zCoord - vec.zCoord);
+				tessellator.addVertex(nx + vecX, ny, nz + vecZ);
 				tessellator.setColorRGBA_F(1F, 1F, 1F, 0F);
-				tessellator.addVertex(pastLoc.xCoord - vec.xCoord, pastLoc.yCoord, pastLoc.zCoord - vec.zCoord);
+				tessellator.addVertex(px + vecX, py, pz + vecZ);
 				tessellator.setColorRGBA_F(1F, 1F, 1F, pastAlpha);
-				tessellator.addVertex(pastLoc.xCoord, pastLoc.yCoord, pastLoc.zCoord);
+				tessellator.addVertex(px, py, pz);
+
+				tessellator.setColorRGBA_F(1F, 1F, 1F, nodeAlpha);
+				tessellator.addVertex(nx, ny, nz);
+				tessellator.setColorRGBA_F(1F, 1F, 1F, 0F);
+				tessellator.addVertex(nx - vecX, ny, nz - vecZ);
+				tessellator.setColorRGBA_F(1F, 1F, 1F, 0F);
+				tessellator.addVertex(px - vecX, py, pz - vecZ);
+				tessellator.setColorRGBA_F(1F, 1F, 1F, pastAlpha);
+				tessellator.addVertex(px, py, pz);
 			}
-
-			GunGL.enableBlend();
-			GunGL.blendFunc(GunGL.GL_SRC_ALPHA, GunGL.GL_ONE_MINUS_SRC_ALPHA);
-			GunGL.disableTexture2D();
-			GunGL.disableCull();
-			tessellator.draw();
-			GunGL.enableCull();
-			GunGL.enableTexture2D();
-			GunGL.disableBlend();
 		}
-
-		GunGL.popMatrix();
-		GunGL.end();
 
 		prevRenderX = pX;
 		prevRenderY = pY;
 		prevRenderZ = pZ;
+	}
+
+	/**
+	 * Renders an entire list of ParticleSpentCasing instances in two consolidated passes:
+	 * Pass 1 = all 3D casing VBO meshes in one uninterrupted weapon batch;
+	 * Pass 2 = all smoke ribbons in one single Tessellator draw call.
+	 */
+	public static void renderBatch(List<ParticleNT> list, Camera camera, float interp,
+								   double splitSq, boolean filterByDistance, boolean renderFar) {
+		if (list == null || list.isEmpty()) return;
+		Vec3 cam = camera.getPosition();
+		double camX = cam.x, camY = cam.y, camZ = cam.z;
+
+		BATCH_POSE.setIdentity();
+		GunGL.begin(BATCH_POSE, ParticleEngineNT.buffer(), net.minecraft.client.renderer.LightTexture.FULL_BRIGHT);
+		try {
+			GunGL.enableLighting();
+			GunGL.disableBlend();
+			GunGL.enableCull();
+			GunGL.depthMask(true);
+			GunGL.bindTexture(WeaponResources.casings_tex);
+
+			boolean anySmoke = false;
+			for (int i = 0, size = list.size(); i < size; i++) {
+				ParticleNT p = list.get(i);
+				if (!(p instanceof ParticleSpentCasing c)) continue;
+				if (filterByDistance) {
+					double dx = c.x - camX, dy = c.y - camY, dz = c.z - camZ;
+					boolean near = (dx * dx + dy * dy + dz * dz) <= splitSq;
+					if (near == renderFar) continue;
+				}
+				c.renderMeshBatched(camX, camY, camZ, interp);
+				if (c.hasSmokeNodes()) {
+					anySmoke = true;
+				}
+			}
+			GunGL.color(1F, 1F, 1F);
+
+			if (anySmoke) {
+				Player player = Minecraft.getInstance().player;
+				float yaw = player == null ? camera.getYRot() : player.yRotO + (player.getYRot() - player.yRotO) * interp;
+				float camYawRad = (float) Math.toRadians(-yaw);
+
+				GunGL.enableBlend();
+				GunGL.blendFunc(GunGL.GL_SRC_ALPHA, GunGL.GL_ONE_MINUS_SRC_ALPHA);
+				GunGL.disableTexture2D();
+				GunGL.disableCull();
+				GunGL.depthMask(false);
+				GunGL.disableLighting();
+
+				GunGL.Tess tessellator = GunGL.tess();
+				tessellator.startDrawingQuads();
+				tessellator.setNormal(0F, 1F, 0F);
+
+				for (int i = 0, size = list.size(); i < size; i++) {
+					ParticleNT p = list.get(i);
+					if (!(p instanceof ParticleSpentCasing c) || !c.hasSmokeNodes()) continue;
+					if (filterByDistance) {
+						double dx = c.x - camX, dy = c.y - camY, dz = c.z - camZ;
+						boolean near = (dx * dx + dy * dy + dz * dz) <= splitSq;
+						if (near == renderFar) continue;
+					}
+					c.appendSmokeBatched(tessellator, camX, camY, camZ, camYawRad, interp);
+				}
+
+				tessellator.draw();
+				GunGL.depthMask(true);
+				GunGL.enableCull();
+				GunGL.enableTexture2D();
+				GunGL.enableLighting();
+				GunGL.disableBlend();
+			}
+		} finally {
+			GunGL.end();
+		}
+	}
+
+	@Override
+	public void render(VertexConsumer ignored, Camera camera, float interp, PoseStack levelPoseStack) {
+		renderBatch(java.util.Collections.singletonList(this), camera, interp, 0.0D, false, false);
 	}
 
 	@Override

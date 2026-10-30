@@ -1,5 +1,7 @@
 # Blender v3.2.0 OBJ File: 'g3.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Rifle
 v -0.154680 0.470320 2.000000
 v 0.343750 -0.343750 -6.625000

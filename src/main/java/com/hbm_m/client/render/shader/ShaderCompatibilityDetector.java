@@ -1,9 +1,5 @@
 package com.hbm_m.client.render.shader;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-import java.lang.reflect.Method;
 
 import com.hbm_m.client.render.culling.OcclusionCullingHelper;
 import com.hbm_m.main.MainRegistry;
@@ -32,20 +28,6 @@ public class ShaderCompatibilityDetector {
     private ShaderCompatibilityDetector() {}
 
     private static boolean initialized = false;
-    private static Method irisIsShaderPackInUse = null;
-    private static Method irisIsRenderingShadowPass = null;
-    private static Object irisApiInstance = null;
-
-    /**
-     * Hot-path MethodHandles for the two Iris API queries invoked every frame
-     * (often per-BE per-pass). {@link Method#invoke} boxes arguments into
-     * {@code Object[]} and re-runs reflection access checks each call;
-     * {@link MethodHandle#invokeExact} is JIT friendly and avoids both. Bound
-     * via {@code asType()} to {@code (Object)boolean} so call sites can
-     * invokeExact without knowing the concrete IrisApi class.
-     */
-    private static MethodHandle irisIsShaderPackInUseMH = null;
-    private static MethodHandle irisIsRenderingShadowPassMH = null;
 
     // Cache for performance and for access from background threads (Sodium chunk builder)
     private static boolean lastState = false;
@@ -73,37 +55,12 @@ public class ShaderCompatibilityDetector {
 
     private static void init() {
         if (initialized) return;
-
-        try {
-            Class<?> irisApiClass = Class.forName("net.irisshaders.iris.api.v0.IrisApi");
-            Method getInstanceMethod = irisApiClass.getMethod("getInstance");
-            irisApiInstance = getInstanceMethod.invoke(null);
-            irisIsShaderPackInUse = irisApiClass.getMethod("isShaderPackInUse");
-            irisIsRenderingShadowPass = irisApiClass.getMethod("isRenderingShadowPass");
-
-            // MethodHandle bind. Both methods return primitive `boolean`,
-            // so adapt to (Object)boolean so the call sites can invokeExact
-            // without an extra unboxing hop.
-            try {
-                MethodHandles.Lookup lookup = MethodHandles.lookup();
-                irisIsShaderPackInUse.setAccessible(true);
-                irisIsRenderingShadowPass.setAccessible(true);
-                irisIsShaderPackInUseMH = lookup.unreflect(irisIsShaderPackInUse)
-                        .asType(MethodType.methodType(boolean.class, Object.class));
-                irisIsRenderingShadowPassMH = lookup.unreflect(irisIsRenderingShadowPass)
-                        .asType(MethodType.methodType(boolean.class, Object.class));
-            } catch (Throwable mhFail) {
-                MainRegistry.LOGGER.warn("ShaderCompatibilityDetector: MethodHandle binding failed ({}), using Method.invoke", mhFail.toString());
-                irisIsShaderPackInUseMH = null;
-                irisIsRenderingShadowPassMH = null;
-            }
-
+        // The IrisApi v0 reflection (dual-package lookup + MethodHandle bind)
+        // lives in IrisReflectionBridge - the single reflection point.
+        IrisReflectionBridge.ensureIrisApi();
+        if (IrisReflectionBridge.irisApiInstance() != null) {
             MainRegistry.LOGGER.info("ShaderCompatibilityDetector: API found and cached (MH={}).",
-                    irisIsShaderPackInUseMH != null);
-        } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
-            // Iris / Oculus not present on classpath
-        } catch (Throwable e) {
-            MainRegistry.LOGGER.error("ShaderCompatibilityDetector: Failed to cache API", e);
+                    IrisReflectionBridge.irisPackInUseHandle() != null);
         }
         initialized = true;
     }
@@ -120,16 +77,19 @@ public class ShaderCompatibilityDetector {
         // in the method - the IrisApi early-return below must not gate it.
         ShaderBlockIdDisguises.applyIfPackChanged();
         if (!initialized) init();
-        if (irisApiInstance == null || (irisIsShaderPackInUseMH == null && irisIsShaderPackInUse == null)) {
+        if (IrisReflectionBridge.irisApiInstance() == null
+                || (IrisReflectionBridge.irisPackInUseHandle() == null && IrisReflectionBridge.irisPackInUseMethod() == null)) {
             cachedShaderActive = false;
             return;
         }
         try {
             boolean isActive;
-            if (irisIsShaderPackInUseMH != null) {
-                isActive = (boolean) irisIsShaderPackInUseMH.invokeExact((Object) irisApiInstance);
+            if (IrisReflectionBridge.irisPackInUseHandle() != null) {
+                isActive = (boolean) IrisReflectionBridge.irisPackInUseHandle()
+                        .invokeExact((Object) IrisReflectionBridge.irisApiInstance());
             } else {
-                Boolean inUse = (Boolean) irisIsShaderPackInUse.invoke(irisApiInstance);
+                Boolean inUse = (Boolean) IrisReflectionBridge.irisPackInUseMethod()
+                        .invoke(IrisReflectionBridge.irisApiInstance());
                 isActive = inUse != null && inUse;
             }
 

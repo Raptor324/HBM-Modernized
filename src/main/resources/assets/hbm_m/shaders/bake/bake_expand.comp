@@ -1,0 +1,519 @@
+#version 430 core
+// Instance record layout (float words) — injected at init by
+// injectRecordLayout from the InstancedStaticPartRenderer offset constants
+// (the literals below are only a fallback; a drift here corrupts every
+// baked vertex). Layout: pos @0, quat @3 (4 snorm16 halves packed in 2
+// words), bboxMin @5, bboxSize @8, fade @11, corner light @12 (4 packed
+// u8 words), tint @20, grad @24 (32 words = 128 bytes per record).
+#define INST_STRIDE 32u
+#define INST_POS_WORD 0u
+#define INST_QUAT_WORD 3u
+#define INST_BMIN_WORD 5u
+#define INST_BSIZE_WORD 8u
+#define INST_FADE_WORD 11u
+#define INST_UVRECT_WORD 16u
+#define INST_TINT_WORD 20u
+#define INST_GRAD_WORD 24u
+#define INST_ANIM_WORD 28u
+layout(local_size_x = 64, local_size_y = 1) in;
+
+layout(std430, binding = 0) readonly restrict buffer MeshBuf { uint meshW[]; };
+layout(std430, binding = 1) readonly restrict buffer InstBuf { float instData[]; };
+layout(std430, binding = 2) restrict buffer OutBuf { float outData[]; };
+layout(std430, binding = 3) readonly restrict buffer BonePaletteSSBO { mat4 uBoneMatrices[64]; };
+// Dirty-index list (bound only in dirty-list mode): word 0 = count,
+// words 1.. = instance indices. Identity mode (uDirtyMode == 0) never
+// reads it, so full re-bakes can never consume stale list contents.
+layout(std430, binding = 4) readonly restrict buffer DirtyBuf { uint dirtyData[]; };
+
+// Parametric joint specifications texture (bound to unit 4 = NucleusJointSpecs.SAMPLER_UNIT)
+layout(binding = 4) uniform sampler2D uJointSpecs;
+
+layout(std140, binding = 0) uniform BakeParams {
+    int uMeshStride; // Input mesh byte stride (multiple of 4 after relayout)
+    int uInstStride; // Instance record float stride (32)
+    int uOutStride;  // Output vertex float stride (14 main / 6 shadow)
+    int uVertCount;
+    int uInstCount;
+    int uOffPos;     // Input byte offsets
+    int uOffColor;
+    int uOffNormal;
+    int uOffUv0;
+    int uOffUv1;
+    int uOffUv2;
+    int uOffMidTex;
+    int uOffTangent;
+    int uBakeMode;   // 0 shadow, 1 main
+    int uOffLight;   // Float offset of the packed 8-corner light words (12)
+    int uTransformMode; // 0 pos+quat, 1 3x4 affine matrix
+    int uHasBones;      // 0 no bones, 1 bone palette active
+    int uOffBoneId;     // Byte offset of bone id in mesh (-1 if none)
+    int uMeshWords;     // Input mesh size in uint32 words (OOB guard for unaligned tails)
+    int uDirtyMode;     // 0 identity (y = instance), 1 dirty-list (y = dirty slot)
+    int uVertBase;      // Global-batch output placement: vertex offset of this mesh's range
+    float uAnimTicks;   // Whole-tick animation clock (FrameViewState.animTicks)
+    float uPartialTick; // Fractional-tick animation clock (FrameViewState.animPartialTick)
+};
+
+shared vec2 s_light[8];
+shared vec3 s_bmin;
+shared vec3 s_bsize;
+shared vec4 s_uvRect;
+shared mat3 s_jointRot;
+shared vec3 s_jointTrans;
+shared uint s_hasJoint;
+
+uint ldWord(uint base, int byteOff) {
+    if (byteOff < 0) return 0u;
+    uint a = base + uint(byteOff);
+    uint wi = a >> 2u;
+    uint w0 = meshW[wi];
+    uint sh = (a & 3u) * 8u;
+    if (sh == 0u) return w0;
+    // Unaligned tail of the LAST vertex: the second word lies past the
+    // buffer (raw 54-byte stride fallback) - the attribute's valid bytes
+    // all live in w0's high half; reading meshW[wi+1] would be OOB.
+    if (wi + 1u >= uint(uMeshWords)) return w0 >> sh;
+    uint w1 = meshW[wi + 1u];
+    return (w0 >> sh) | (w1 << (32u - sh));
+}
+
+float ldFloat(uint base, int byteOff) {
+    if (byteOff < 0) return 0.0;
+    return uintBitsToFloat(ldWord(base, byteOff));
+}
+
+vec3 quatRotate(vec4 q, vec3 v) {
+    return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
+}
+
+// snorm16 decode (plain ALU): the record packs the quat as 4 signed
+// 16-bit halves in 2 float words (low half first) - the CPU encoder is
+// InstancedStaticPartRenderer.packSnorm16, the VAO reads the same bytes
+// as GL_SHORT normalized.
+float snorm16ToFloat(uint h) {
+    // int overload sign-extends the 16-bit field (mirrors the VAO's
+    // GL_SHORT normalized fetch and HalfFloat-style software decode).
+    return clamp(float(bitfieldExtract(int(h), 0, 16)) / 32767.0, -1.0, 1.0);
+}
+
+vec4 instQuat(uint base) {
+    uint wxy = floatBitsToUint(instData[base + INST_QUAT_WORD]);
+    uint wzw = floatBitsToUint(instData[base + INST_QUAT_WORD + 1u]);
+    return vec4(snorm16ToFloat(wxy), snorm16ToFloat(wxy >> 16u),
+                snorm16ToFloat(wzw), snorm16ToFloat(wzw >> 16u));
+}
+
+float halfDecode(uint h) {
+    uint s = (h & 0x8000u) << 16u;
+    uint e = (h >> 10u) & 0x1Fu;
+    uint m = h & 0x3FFu;
+    if (e == 0u) {
+        float val = float(m) * 5.9604645e-8;
+        return ((h & 0x8000u) != 0u) ? -val : val;
+    }
+    if (e == 31u) {
+        return uintBitsToFloat(s | 0x7F800000u | (m << 13u));
+    }
+    return uintBitsToFloat(s | ((e + 112u) << 23u) | (m << 13u));
+}
+
+float animWord(uint iBase, int w) {
+    if (w < 0 || w >= 8) return 0.0;
+    uint u = floatBitsToUint(instData[iBase + INST_ANIM_WORD + uint(w >> 1)]);
+    uint halfBits = ((w & 1) == 0) ? (u & 0xFFFFu) : (u >> 16u);
+    return halfDecode(halfBits);
+}
+
+float trackSample(int ptr, int len, float u) {
+    if (len <= 0) return 0.0;
+    if (len == 1) return texelFetch(uJointSpecs, ivec2(ptr, 0), 0).y;
+    vec4 first = texelFetch(uJointSpecs, ivec2(ptr, 0), 0);
+    vec4 last = texelFetch(uJointSpecs, ivec2(ptr + len - 1, 0), 0);
+    if (u <= first.x) return first.y;
+    if (u >= last.x) return last.y;
+    vec4 prev = first;
+    for (int i = 1; i < len; i++) {
+        vec4 cur = texelFetch(uJointSpecs, ivec2(ptr + i, 0), 0);
+        if (u <= cur.x) {
+            float span = cur.x - prev.x;
+            float factor = span > 0.0 ? (u - prev.x) / span : 0.0;
+            return mix(prev.y, cur.y, factor);
+        }
+        prev = cur;
+    }
+    return last.y;
+}
+
+float trackedValue(uint iBase, vec4 specC) {
+    float t0 = instData[iBase + INST_ANIM_WORD];
+    uint raw = floatBitsToUint(instData[iBase + INST_ANIM_WORD + 1u]);
+    float u0 = halfDecode(raw & 0xFFFFu);
+    float dur = halfDecode(raw >> 16u);
+    float u = u0;
+    if (dur != 0.0) {
+        u += (((uAnimTicks - t0) + uPartialTick) / dur) * specC.x;
+    }
+    if ((int(specC.y) & 1) == 1) {
+        u = fract(u);
+    } else {
+        u = clamp(u, 0.0, 1.0);
+    }
+    if ((int(specC.y) & 2) != 0) {
+        float stroke = u < 0.5 ? (4.0 * u * u * (3.0 - 4.0 * u))
+                               : (4.0 * (1.0 - u) * (1.0 - u) * (3.0 - 4.0 * (1.0 - u)));
+        return trackSample(int(specC.z), int(specC.w), stroke);
+    }
+    return trackSample(int(specC.z), int(specC.w), u);
+}
+
+void evaluateInstanceJointChain(uint iBase) {
+    float gradW = instData[iBase + INST_GRAD_WORD + 3u];
+    if (gradW < 0.0) {
+        s_hasJoint = 0u;
+        return;
+    }
+    s_hasJoint = 1u;
+    int base = int(gradW);
+    float countW = texelFetch(uJointSpecs, ivec2(base * 3 + 1, 0), 0).w;
+    int n = (countW >= 0.5) ? min(int(countW), 8) : 1;
+    mat4 chain = mat4(1.0);
+    int wordBase = 0;
+    if (n > 1) {
+        for (int i = 0; i < n; i++) {
+            if (texelFetch(uJointSpecs, ivec2((base + i) * 3 + 2, 0), 0).x > 0.0) {
+                wordBase = 4;
+                break;
+            }
+        }
+    }
+    int acc = wordBase;
+    for (int i = 0; i < n; i++) {
+        vec4 specA = texelFetch(uJointSpecs, ivec2((base + i) * 3, 0), 0);
+        vec4 specB = texelFetch(uJointSpecs, ivec2((base + i) * 3 + 1, 0), 0);
+        vec4 specC = texelFetch(uJointSpecs, ivec2((base + i) * 3 + 2, 0), 0);
+        bool tracked = specC.x > 0.0;
+        int offs = acc;
+        if (!tracked) {
+            acc += (specA.x < 0.5) ? 1 : ((specA.x < 1.5) ? 3 : 1);
+        }
+        vec3 axis = specA.yzw;
+        vec3 pivot = specB.xyz;
+        mat4 node = mat4(1.0);
+        float jointVal = tracked ? trackedValue(iBase, specC) : animWord(iBase, offs);
+        if (specA.x < 0.5) {
+            float ang = radians(jointVal);
+            float c = cos(ang);
+            float s = sin(ang);
+            mat3 rot = c * mat3(1.0)
+                     + (1.0 - c) * outerProduct(axis, axis)
+                     + s * mat3( 0.0,     axis.z,  -axis.y,
+                                -axis.z,  0.0,      axis.x,
+                                 axis.y, -axis.x,   0.0);
+            node = mat4(rot);
+            node[3].xyz = pivot - rot * pivot;
+        } else if (specA.x < 1.5) {
+            if (!tracked) {
+                node[3].xyz = vec3(animWord(iBase, offs), animWord(iBase, offs + 1), animWord(iBase, offs + 2));
+            }
+        } else {
+            node[3].xyz = axis * jointVal;
+        }
+        chain = chain * node;
+    }
+    s_jointRot = mat3(chain);
+    s_jointTrans = chain[3].xyz;
+}
+
+void main() {
+    // Instance selection: dirty-list mode maps y through the compacted
+    // dirty-index list (one workgroup row per DIRTY instance; the count
+    // word is re-checked as an OOB guard); identity mode treats y as the
+    // raw instance index and covers every instance (full re-bakes).
+    uint rawY = gl_GlobalInvocationID.y + gl_GlobalInvocationID.z * gl_NumWorkGroups.y;
+    uint inst;
+    if (uDirtyMode == 1) {
+        if (rawY >= dirtyData[0u]) return;
+        inst = dirtyData[1u + rawY];
+        if (inst >= uint(uInstCount)) return;
+    } else {
+        inst = rawY;
+        if (inst >= uint(uInstCount)) return;
+    }
+
+    uint iBase = uint(inst * uInstStride);     // Instance record float offset
+
+    uint lid = gl_LocalInvocationID.x;
+    if (lid < 8u) {
+        // Corner light: 4 packed u8 words, 2 corners per word (low byte
+        // first): word j = c2j.u, c2j.v, c2j+1.u, c2j+1.v. Corner lid ->
+        // word lid>>1, u/v at byte shifts (lid&1)*16 + {0, 8}; decode to
+        // the 0..240 texel grid (byte x 240/255).
+        uint lBase = iBase + uint(uOffLight);
+        uint wraw = floatBitsToUint(instData[lBase + (lid >> 1u)]);
+        uint sh = (lid & 1u) * 16u;
+        s_light[lid] = vec2(float((wraw >> sh) & 0xFFu), float((wraw >> (sh + 8u)) & 0xFFu))
+                * (240.0 / 255.0);
+    } else if (lid == 8u) {
+        s_bmin = vec3(instData[iBase + INST_BMIN_WORD], instData[iBase + INST_BMIN_WORD + 1u], instData[iBase + INST_BMIN_WORD + 2u]);
+        s_bsize = max(vec3(instData[iBase + INST_BSIZE_WORD], instData[iBase + INST_BSIZE_WORD + 1u], instData[iBase + INST_BSIZE_WORD + 2u]), vec3(1e-4));
+    } else if (lid == 9u) {
+        // Atlas remap rect (words 16..19): sprite-local [0..1] UVs ->
+        // atlas UVs, mirrors block_lit_instanced.vsh's InstUvRect.
+        s_uvRect = vec4(instData[iBase + INST_UVRECT_WORD],
+                        instData[iBase + INST_UVRECT_WORD + 1u],
+                        instData[iBase + INST_UVRECT_WORD + 2u],
+                        instData[iBase + INST_UVRECT_WORD + 3u]);
+    } else if (lid == 10u) {
+        evaluateInstanceJointChain(iBase);
+    }
+    barrier();
+
+    uint lv = gl_GlobalInvocationID.x;
+    if (lv >= uint(uVertCount)) return;
+
+    uint mBase = uint(lv * uint(uMeshStride)); // Input mesh byte offset
+    // Instance-MAJOR output (see header comment): output slot s always
+    // belongs to raw instance inst, independent of any cull compaction.
+    // Global-batch placement: the mesh's range starts at uVertBase
+    // vertices into the pass pool.
+    uint o = (uint(uVertBase) + inst * uint(uVertCount) + lv) * uint(uOutStride);
+
+    // Invisible instance (FADE_MODE_INVISIBLE, fade word < 0): the
+    // bake output bypasses the vsh fade discard, so culling disabled
+    // would draw it as garbage. Write degenerate zero positions -
+    // zero-area triangles rasterize into nothing in both the shadow
+    // and the main pass.
+    if (uTransformMode == 0 && instData[iBase + INST_FADE_WORD] < 0.0) {
+        outData[o + 0u] = 0.0;
+        outData[o + 1u] = 0.0;
+        outData[o + 2u] = 0.0;
+        return;
+    }
+
+    vec3 pos = vec3(ldFloat(mBase, uOffPos),
+                    ldFloat(mBase, uOffPos + 4),
+                    ldFloat(mBase, uOffPos + 8));
+
+    // Normal decode
+    vec3 nrm;
+    uint nRaw = 0u;
+    if (uOffNormal >= 0) {
+        nRaw = ldWord(mBase, uOffNormal);
+        nrm = vec3(float(bitfieldExtract(int(nRaw), 0, 8)) / 127.0,
+                   float(bitfieldExtract(int(nRaw), 8, 8)) / 127.0,
+                   float(bitfieldExtract(int(nRaw), 16, 8)) / 127.0);
+    } else {
+        nrm = vec3(0.0, 1.0, 0.0);
+    }
+
+    // Tangent decode (packed 4 GLbytes, byte 3 = bitangent w sign):
+    // rotated together with the normal below so the TBN stays valid
+    // on rotated instances.
+    vec3 tng = vec3(1.0, 0.0, 0.0);
+    uint tRaw = 0u;
+    if (uOffTangent >= 0) {
+        tRaw = ldWord(mBase, uOffTangent);
+        tng = vec3(float(bitfieldExtract(int(tRaw), 0, 8)) / 127.0,
+                   float(bitfieldExtract(int(tRaw), 8, 8)) / 127.0,
+                   float(bitfieldExtract(int(tRaw), 16, 8)) / 127.0);
+    }
+
+    // Parametric joint chain animation (evaluated once per workgroup into shared memory)
+    if (s_hasJoint != 0u) {
+        pos = s_jointRot * pos + s_jointTrans;
+        nrm = s_jointRot * nrm;
+        tng = s_jointRot * tng;
+    }
+
+    // Dynamic skeletal bone animation support
+    vec4 localPos = vec4(pos, 1.0);
+    if (uHasBones > 0 && uOffBoneId >= 0) {
+        int bone = int(ldWord(mBase, uOffBoneId));
+        if (bone >= 0 && bone < 64) {
+            localPos = uBoneMatrices[bone] * localPos;
+            nrm = mat3(uBoneMatrices[bone]) * nrm;
+            tng = mat3(uBoneMatrices[bone]) * tng;
+        }
+    }
+
+    vec3 outPos;
+    vec3 nOut;
+    vec3 tOut = tng;
+    if (uTransformMode == 1) {
+        // Full 12-float 3x4 affine transform matrix (row0, row1, row2)
+        vec4 row0 = vec4(instData[iBase + 0u], instData[iBase + 1u], instData[iBase + 2u], instData[iBase + 3u]);
+        vec4 row1 = vec4(instData[iBase + 4u], instData[iBase + 5u], instData[iBase + 6u], instData[iBase + 7u]);
+        vec4 row2 = vec4(instData[iBase + 8u], instData[iBase + 9u], instData[iBase + 10u], instData[iBase + 11u]);
+
+        outPos = vec3(dot(row0, localPos), dot(row1, localPos), dot(row2, localPos));
+
+        // Cofactor / adjoint normal matrix for arbitrary affine transforms (transposed for GLSL column-major order)
+        mat3 normalMat = transpose(mat3(
+            cross(row1.xyz, row2.xyz),
+            cross(row2.xyz, row0.xyz),
+            cross(row0.xyz, row1.xyz)
+        ));
+        float nLenSq = dot(normalMat * nrm, normalMat * nrm);
+        nOut = (nLenSq > 1e-8) ? normalize(normalMat * nrm) : nrm;
+        // Same adjoint matrix as the normal: for the rigid rotations/
+        // translations these instances use it equals the linear part.
+        float tLenSq = dot(normalMat * tng, normalMat * tng);
+        tOut = (tLenSq > 1e-8) ? normalize(normalMat * tng) : tng;
+    } else {
+        // pos(3) + packed quat (2 words). No camera subtraction (see header comment).
+        vec4 rot = instQuat(iBase);
+        outPos = quatRotate(rot, localPos.xyz)
+                + vec3(instData[iBase + INST_POS_WORD], instData[iBase + INST_POS_WORD + 1u], instData[iBase + INST_POS_WORD + 2u]);
+        nOut = normalize(quatRotate(rot, nrm));
+        tOut = normalize(quatRotate(rot, tng));
+    }
+
+    outData[o + 0u] = outPos.x;
+    outData[o + 1u] = outPos.y;
+    outData[o + 2u] = outPos.z;
+
+    if (uBakeMode == 0) {
+        // Slim shadow layout (24 bytes): pos@0..2, uv0@3..4, normal@5.
+        // UV0 through the atlas remap rect (identity {0,0,1,1} on
+        // regular machines, so this is a no-op there).
+        outData[o + 3u] = s_uvRect.x + ldFloat(mBase, uOffUv0) * s_uvRect.z;
+        outData[o + 4u] = s_uvRect.y + ldFloat(mBase, uOffUv0 + 4) * s_uvRect.w;
+        uint nSlim = uint(int(round(clamp(nOut.x, -1.0, 1.0) * 127.0)) & 255)
+                | (uint(int(round(clamp(nOut.y, -1.0, 1.0) * 127.0)) & 255) << 8)
+                | (uint(int(round(clamp(nOut.z, -1.0, 1.0) * 127.0)) & 255) << 16);
+        outData[o + 5u] = uintBitsToFloat(nSlim);
+        return;
+    }
+
+    // Main 56-byte dense layout, 14 words per vertex - the write indices
+    // below MUST stay in lockstep with OUT_STRIDE_BYTES / OUT_OFF_* and the
+    // VAO attrib offsets on the Java side (a drift here writes the tangent
+    // of vertex N over the position of vertex N+1: geometry corruption).
+    // color@3, uv0@4..5, uv1@6, uv2@7, normal@8, entity@9, midtex@10..11,
+    // tangent@12, midblock@13.
+    //
+    // Color: mesh color x per-instance tint (records @20..23) with a spatial
+    // falloff (records @24..27). The gradient is evaluated on the MODEL-space
+    // vertex position (pos, before the instance transform); the
+    // mix(white, tint, smoothstep) semantics match block_lit_instanced.vsh
+    // exactly. The 4UB channel clamps overbright (>1); glow brightness under
+    // shader packs comes from uv2 (lightmap, see lightOverride).
+    uint cRaw = (uOffColor >= 0) ? ldWord(mBase, uOffColor) : 0xFFFFFFFFu;
+    // Float 11 is a fade MODE sentinel (1.0/0.9999/0.9998), not an alpha:
+    // the distance ramp is a vsh feature the bake path does not apply, so
+    // all modes must bake fully opaque (0.9999*255 = 254 darkened machine
+    // pixels by 0.4% and fed gl_Color.a into pack AO/alpha thresholds).
+    float fadeRaw = instData[iBase + INST_FADE_WORD];
+    float fade = fadeRaw >= 0.999 ? 1.0 : clamp(fadeRaw, 0.0, 1.0);
+    float tA = instData[iBase + INST_TINT_WORD + 3u]; // emission strength (heat 0..1), NOT alpha
+    float gAxis = instData[iBase + INST_GRAD_WORD];
+    vec3 tCol = vec3(instData[iBase + INST_TINT_WORD], instData[iBase + INST_TINT_WORD + 1u], instData[iBase + INST_TINT_WORD + 2u]);
+    vec3 colMul;
+    // Init 1.0: no gradient (gAxis < 0) means full-weight emission,
+    // so uniformly heated parts keep their tA glow (matches
+    // block_lit_instanced.vsh); the branch below overwrites gt.
+    float gt = 1.0;
+    // Fail-closed gate: axis must be finite and in [0, 2] (NaN fails
+    // every comparison, so a zeroed/corrupt word disables the gradient
+    // entirely, never divides by zero -> +Inf -> full tint).
+    if (gAxis >= 0.0 && gAxis <= 2.0) {
+        float gCoord = gAxis < 0.5 ? pos.x : (gAxis < 1.5 ? pos.y : pos.z);
+        float denom = instData[iBase + INST_GRAD_WORD + 1u] - instData[iBase + INST_GRAD_WORD + 2u];
+        // Epsilon guard: zero-length gradient span must not produce Inf/NaN.
+        gt = clamp((gCoord - instData[iBase + INST_GRAD_WORD + 2u])
+                 / (abs(denom) < 1e-4 ? 1e-4 : denom), 0.0, 1.0);
+        gt = gt * gt * (3.0 - 2.0 * gt);
+        colMul = mix(vec3(1.0), tCol, gt);
+    } else {
+        colMul = tCol;
+    }
+    uint r8 = uint(clamp(float((cRaw >>  0) & 0xFFu) * colMul.r, 0.0, 255.0));
+    uint g8 = uint(clamp(float((cRaw >>  8) & 0xFFu) * colMul.g, 0.0, 255.0));
+    uint b8 = uint(clamp(float((cRaw >> 16) & 0xFFu) * colMul.b, 0.0, 255.0));
+    uint a8 = uint(clamp(float((cRaw >> 24) & 0xFFu) * fade, 0.0, 255.0));
+    outData[o + 3u] = uintBitsToFloat(r8 | (g8 << 8) | (b8 << 16) | (a8 << 24));
+
+    // UV0 (2 floats), through the atlas remap rect (sprite-local
+    // [0..1] skins -> atlas; identity rect on regular machines)
+    outData[o + 4u] = s_uvRect.x + ldFloat(mBase, uOffUv0) * s_uvRect.z;
+    outData[o + 5u] = s_uvRect.y + ldFloat(mBase, uOffUv0 + 4) * s_uvRect.w;
+
+    // UV1 (overlay) — 2 shorts packed into one word
+    outData[o + 6u] = (uOffUv1 >= 0) ? uintBitsToFloat(ldWord(mBase, uOffUv1)) : 0.0;
+
+    // UV2 (lightmap) — 2 ushorts packed into one word
+    uint uv2Bits;
+    {
+        vec3 w = clamp((pos - s_bmin) / s_bsize, 0.0, 1.0);
+        vec2 x00 = mix(s_light[0], s_light[1], w.x);
+        vec2 x10 = mix(s_light[2], s_light[3], w.x);
+        vec2 x01 = mix(s_light[4], s_light[5], w.x);
+        vec2 x11 = mix(s_light[6], s_light[7], w.x);
+        vec2 y0 = mix(x00, x10, w.y);
+        vec2 y1 = mix(x01, x11, w.y);
+        vec2 lm = mix(y0, y1, w.z);
+        // Emission: push the lightmap toward fullbright by heat*gradient so
+        // the glow follows the tint (hot metal), not just lightOverride parts.
+        float emit = clamp(tA * gt, 0.0, 1.0);
+        lm = mix(lm, vec2(240.0), emit);
+        int bu = int(clamp(lm.x, 0.0, 240.0));
+        int sv = int(clamp(lm.y, 0.0, 240.0));
+        uv2Bits = uint(bu | (sv << 16));
+    }
+    outData[o + 7u] = uintBitsToFloat(uv2Bits);
+
+    // Normal: packed 4 GLbytes
+    uint nPacked = uint(int(round(clamp(nOut.x, -1.0, 1.0) * 127.0)) & 255)
+            | (uint(int(round(clamp(nOut.y, -1.0, 1.0) * 127.0)) & 255) << 8)
+            | (uint(int(round(clamp(nOut.z, -1.0, 1.0) * 127.0)) & 255) << 16)
+            | (nRaw & 0xFF000000u);
+    outData[o + 8u] = uintBitsToFloat(nPacked);
+
+    // iris_Entity — constant 0
+    outData[o + 9u] = uintBitsToFloat(0u);
+
+    // mc_midTexCoord — 2 floats, remapped alongside UV0 (vanilla
+    // parity: both are atlas-space, so pack shaders comparing the
+    // two stay consistent)
+    float midU = (uOffMidTex >= 0) ? ldFloat(mBase, uOffMidTex) : 0.0;
+    float midV = (uOffMidTex >= 0) ? ldFloat(mBase, uOffMidTex + 4) : 0.0;
+    outData[o + 10u] = s_uvRect.x + midU * s_uvRect.z;
+    outData[o + 11u] = s_uvRect.y + midV * s_uvRect.w;
+
+    // at_tangent — 4 bytes packed into one word (word 12 = byte 48):
+    // rotated tangent (world axes) with the original bitangent w
+    // sign byte preserved.
+    uint tPacked = 0u;
+    if (uOffTangent >= 0) {
+        tPacked = uint(int(round(clamp(tOut.x, -1.0, 1.0) * 127.0)) & 255)
+                | (uint(int(round(clamp(tOut.y, -1.0, 1.0) * 127.0)) & 255) << 8)
+                | (uint(int(round(clamp(tOut.z, -1.0, 1.0) * 127.0)) & 255) << 16)
+                | (tRaw & 0xFF000000u);
+    }
+    outData[o + 12u] = uintBitsToFloat(tPacked);
+
+    // at_midBlock (word 13 = byte 52, last of the 56) - mirrors the
+    // Iris/Oculus TERRAIN extension attribute that our ENTITY-format
+    // companion mesh does not carry. Three signed bytes = offset FROM
+    // the vertex TO the center of the vertex's block (blockCenter -
+    // vertex), in 1/64 block units, truncated toward zero and folded
+    // into u8 two's complement - byte-for-byte ExtendedDataHelper.
+    // computeMidBlock semantics from Oculus 1.20.1-1.8.0:
+    // packMidBlock = (int)(component * 64.0) & 255, x=bits 0..7,
+    // y=8..15, z=16..23, byte 3 unused. Because blockCenter =
+    // floor(outPos) + 0.5, the offset always lands in (-0.5, 0.5], so
+    // *64 fits a signed byte with no truncation artifacts. The block
+    // association comes from the WORLD-axes vertex position (outPos,
+    // matching the emitted vertex; the fractional part of outPos is
+    // the position inside the world block since anchorOrigin is an
+    // integer BlockPos). Per-instance by design — output slots are
+    // already instance-major, so this stays cache-consistent; packs
+    // divide by 64.0 themselves.
+    vec3 blockCenter = floor(outPos) + 0.5;
+    vec3 midOff = blockCenter - outPos;
+    uint midBits = (uint(int(midOff.x * 64.0)) & 255u)
+                 | ((uint(int(midOff.y * 64.0)) & 255u) << 8)
+                 | ((uint(int(midOff.z * 64.0)) & 255u) << 16);
+    outData[o + 13u] = uintBitsToFloat(midBits);
+}

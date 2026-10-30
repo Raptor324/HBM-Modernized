@@ -1,7 +1,5 @@
 package com.hbm_m.client.render.shader;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 
 import com.hbm_m.main.MainRegistry;
@@ -82,17 +80,6 @@ public final class IrisInstancedEncoders {
     private static volatile boolean detectionDone = false;
     private static volatile Layout layout = Layout.UNAVAILABLE;
 
-    private static boolean reflected = false;
-    private static Method getPipelineManager;
-    private static Method getPipelineNullable;
-    private static Field packField;
-    private static Method getProgramSet;
-    private static Object overworldId;
-    /** Resolved accessors for the pack's gbuffers_block / gbuffers_terrain sources. */
-    private static SourceGetterRef blockRef;
-    private static SourceGetterRef terrainRef;
-    private static Method getFragmentSource;
-
     private IrisInstancedEncoders() {}
 
     /**
@@ -149,65 +136,18 @@ public final class IrisInstancedEncoders {
 
     private static Layout detect() {
         try {
-            if (!reflected) {
-                reflected = true;
-                Class<?> iris = Class.forName("net.irisshaders.iris.Iris");
-                getPipelineManager = iris.getMethod("getPipelineManager");
-                Class<?> pmClass = Class.forName("net.irisshaders.iris.pipeline.PipelineManager");
-                getPipelineNullable = pmClass.getMethod("getPipelineNullable");
-                Class<?> pipelineClass = Class.forName("net.irisshaders.iris.pipeline.IrisRenderingPipeline");
-                packField = pipelineClass.getDeclaredField("pack");
-                packField.setAccessible(true);
-                Class<?> shaderPack = Class.forName("net.irisshaders.iris.shaderpack.ShaderPack");
-                getProgramSet = shaderPack.getMethod("getProgramSet",
-                        Class.forName("net.irisshaders.iris.shaderpack.materialmap.NamespacedId"));
-                Class<?> namespacedId = Class.forName("net.irisshaders.iris.shaderpack.materialmap.NamespacedId");
-                overworldId = namespacedId.getConstructor(String.class, String.class)
-                        .newInstance("minecraft", "overworld");
-                Class<?> programSet = Class.forName("net.irisshaders.iris.shaderpack.programs.ProgramSet");
-                // Getters return Optional<ProgramSource>!
-                // Iris 1.8+ (1.21.1) removed the named getGbuffersXxx() methods in
-                // favor of a unified get(ProgramId) - try both (Oculus 1.20.1 keeps
-                // the named ones; Iris 1.8.x has only get(ProgramId)).
-                Class<?> programIdClass = null;
-                try {
-                    programIdClass = Class.forName("net.irisshaders.iris.shaderpack.loading.ProgramId");
-                } catch (ClassNotFoundException ignored) {
-                }
-                blockRef = resolveSourceGetter(programSet, "getGbuffersBlock", programIdClass, "Block");
-                terrainRef = resolveSourceGetter(programSet, "getGbuffersTerrain", programIdClass, "Terrain");
-                if (blockRef == null && terrainRef == null) {
-                    // Logged once here; the check AFTER this init block is sticky
-                    // and re-fails every subsequent pipeline generation.
-                    MainRegistry.LOGGER.warn("[HBM-M] IrisInstancedEncoders: ProgramSet gbuffers getters not found");
-                }
-                Class<?> programSource = Class.forName("net.irisshaders.iris.shaderpack.programs.ProgramSource");
-                getFragmentSource = programSource.getMethod("getFragmentSource");
-            }
-            // STICKY guard - must not live inside the one-shot init block above:
-            // getter resolution happens once, so on the next pipeline generation
-            // blockRef/terrainRef are still null, fragmentSource() below returns
-            // null for both, and control would fall into the glsl == null branch
-            // returning EXOTIC without ever having looked at the pack. That is
-            // fail-CLOSED (companion path, never a wrong-content instanced
-            // write), but the sticky UNAVAILABLE below is the honest answer for
-            // "we could not introspect" - return it on every detect() call.
-            if (blockRef == null && terrainRef == null) {
+            if (!IrisReflectionBridge.isIrisPresent() || !IrisReflectionBridge.isReflectionAvailable()) {
                 return Layout.UNAVAILABLE;
             }
-            Object manager = getPipelineManager.invoke(null);
-            if (manager == null) {
-                return logMiss("pipeline manager null");
-            }
-            Object pipeline = getPipelineNullable.invoke(manager);
+            Object pipeline = IrisReflectionBridge.getLivePipeline();
             if (pipeline == null) {
                 return logMiss("pipeline null");
             }
-            Object pack = packField.get(pipeline);
+            Object pack = IrisReflectionBridge.getActivePack(pipeline);
             if (pack == null) {
                 return logMiss("pack null");
             }
-            Object programSet = getProgramSet.invoke(pack, overworldId);
+            Object programSet = IrisReflectionBridge.getProgramSetOverworld(pack);
             if (programSet == null) {
                 return logMiss("programSet null");
             }
@@ -215,9 +155,9 @@ public final class IrisInstancedEncoders {
             // back to gbuffers_terrain (the same resolution Iris's program
             // resolver applies, so the directive we read governs the FBO that
             // is actually bound at draw time).
-            String glsl = fragmentSource(programSet, blockRef);
+            String glsl = IrisReflectionBridge.getGbuffersBlockFragmentSource(programSet);
             if (glsl == null) {
-                glsl = fragmentSource(programSet, terrainRef);
+                glsl = IrisReflectionBridge.getGbuffersTerrainFragmentSource(programSet);
             }
             if (glsl == null) {
                 // No custom block/terrain programs at all: the pack either has
@@ -371,52 +311,6 @@ public final class IrisInstancedEncoders {
         return sb.append(']').toString();
     }
 
-    private static String fragmentSource(Object programSet, SourceGetterRef ref) throws Exception {
-        if (ref == null) {
-            return null;
-        }
-        Object sourceOpt = ref.invoke(programSet);
-        if (sourceOpt instanceof java.util.Optional<?> opt) {
-            sourceOpt = opt.orElse(null);
-        }
-        if (sourceOpt == null) {
-            return null;
-        }
-        Object fragment = getFragmentSource.invoke(sourceOpt);
-        if (fragment instanceof java.util.Optional<?> fopt) {
-            fragment = fopt.orElse(null);
-        }
-        if (!(fragment instanceof String glsl) || glsl.isBlank()) {
-            return null;
-        }
-        return glsl;
-    }
-
-    /**
-     * Resolves how to read one gbuffers program source from a
-     * {@code ProgramSet}: named getter (Iris/Oculus 1.20.1) or unified
-     * {@code get(ProgramId)} (Iris 1.8+, 1.21.1).
-     */
-    private static SourceGetterRef resolveSourceGetter(Class<?> programSet, String namedGetter,
-                                                       Class<?> programIdClass, String enumName) {
-        try {
-            return new SourceGetterRef(programSet.getMethod(namedGetter), null);
-        } catch (NoSuchMethodException ignored) {
-        }
-        if (programIdClass == null) {
-            return null;
-        }
-        try {
-            Object arg = enumValueOf(programIdClass, enumName);
-            if (arg == null) {
-                return null;
-            }
-            return new SourceGetterRef(programSet.getMethod("get", programIdClass), arg);
-        } catch (NoSuchMethodException e) {
-            return null;
-        }
-    }
-
     private static Layout logLayout(Layout l, String reason) {
         MainRegistry.LOGGER.info("[HBM-M] IrisInstancedEncoders: {} ({})", describe(l), reason);
         return l;
@@ -425,30 +319,5 @@ public final class IrisInstancedEncoders {
     private static Layout logMiss(String reason) {
         MainRegistry.LOGGER.info("[HBM-M] IrisInstancedEncoders: no known gbuffer scheme ({})", reason);
         return Layout.UNAVAILABLE;
-    }
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private static Object enumValueOf(Class<?> enumClass, String name) {
-        // ProgramId constants are mixed case ("Block", "Terrain") - pass as-is.
-        try {
-            return Enum.valueOf((Class<Enum>) enumClass.asSubclass(Enum.class), name);
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
-    }
-
-    /** A resolved ProgramSet -&gt; ProgramSource accessor (method + optional ProgramId arg). */
-    private static final class SourceGetterRef {
-        final Method method;
-        final Object arg;
-
-        SourceGetterRef(Method method, Object arg) {
-            this.method = method;
-            this.arg = arg;
-        }
-
-        Object invoke(Object programSet) throws Exception {
-            return (arg != null) ? method.invoke(programSet, arg) : method.invoke(programSet);
-        }
     }
 }

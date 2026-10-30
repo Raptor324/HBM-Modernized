@@ -57,9 +57,10 @@ public final class MachineFurnaceRenderer {
     }
 
     private static void registerSteelFurnace() {
+        // furnace_steel.obj слит в одну группу "Plane"
         MachineRenderers.machine("furnace_steel", ModBlockEntities.FURNACE_STEEL_BE.get(),
                 MachineFurnaceSteelBlockEntity.class)
-            .part("Body")
+            .part("Plane")
             .blockTransform(MachineFurnaceRenderer::applySteelFurnaceTransform)
             .hook(new MachineRenderHook<MachineFurnaceSteelBlockEntity>() {
                 @Override
@@ -93,8 +94,10 @@ public final class MachineFurnaceRenderer {
     }
 
     private static void registerRotaryFurnace() {
+        // rotary_furnace.obj: Furnace/Piston анимируются, Plane — статичная подставка
         MachineRenderers.machine("rotary_furnace", ModBlockEntities.ROTARY_FURNACE_BE.get(),
                 MachineRotaryFurnaceBlockEntity.class)
+            .part("Plane")
             .part("Furnace")
             .translatingPart("Piston", new Vector3f(0f, 1f, 0f), (be, pt) -> {
                 float anim = Mth.lerp(pt, be.lastAnim, be.anim);
@@ -105,9 +108,10 @@ public final class MachineFurnaceRenderer {
     }
 
     private static void registerCombinationOven() {
+        // combination_oven.obj слит в одну группу "Plane"
         MachineRenderers.machine("combination_oven", ModBlockEntities.COMBINATION_OVEN_BE.get(),
                 MachineCombinationOvenBlockEntity.class)
-            .part("Body")
+            .part("Plane")
             .blockTransform((be, animator) -> animator.translate(0.5, 0.0, 0.5))
             .hook(new MachineRenderHook<MachineCombinationOvenBlockEntity>() {
                 @Override

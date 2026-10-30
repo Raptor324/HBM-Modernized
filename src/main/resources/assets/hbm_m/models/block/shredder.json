@@ -1,9 +1,24 @@
 {
-	"parent": "block/orientable",
+	"parent": "block/block",
 	"textures": {
 		"top": "hbm_m:block/shredder_top",
 		"front": "hbm_m:block/shredder_front",
 		"side": "hbm_m:block/shredder_side",
-		"bottom": "hbm_m:block/shredder_bottom"
-	}
+		"bottom": "hbm_m:block/shredder_bottom",
+		"particle": "hbm_m:block/shredder_side"
+	},
+	"elements": [
+		{
+			"from": [0, 0, 0],
+			"to": [16, 16, 16],
+			"faces": {
+				"north": { "texture": "#front", "cullface": "north" },
+				"south": { "texture": "#front", "cullface": "south" },
+				"east": { "texture": "#side", "cullface": "east" },
+				"west": { "texture": "#side", "cullface": "west" },
+				"up": { "texture": "#top", "cullface": "up" },
+				"down": { "texture": "#bottom", "cullface": "down" }
+			}
+		}
+	]
 }
