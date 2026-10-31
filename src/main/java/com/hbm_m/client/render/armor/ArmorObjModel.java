@@ -45,6 +45,39 @@ public final class ArmorObjModel {
 
     private static ArmorObjModel load(ResourceLocation location) {
         ArmorObjModel model = new ArmorObjModel();
+
+        // nmesh-first: kompilierte .nmesh-Daten (oder NMeshLoader-Resourcepack-Fallback) statt eigenem Wavefront-Leser.
+        var nmesh = com.hbm_m.client.model.nmesh.NMeshLoader.load(location);
+        if (nmesh != null) {
+            try {
+                for (var sm : nmesh.subMeshes()) {
+                    String key = sm.objectName != null && !sm.objectName.isEmpty() ? sm.objectName
+                            : (sm.groupName != null && !sm.groupName.isEmpty() ? sm.groupName : "Default");
+                    float[] verts = sm.vertices;
+                    int[] idx = sm.indices;
+                    List<Face> faces = model.groups.computeIfAbsent(key, k -> new ArrayList<>());
+                    for (int i = 0; i + 2 < idx.length; i += 3) {
+                        float[][] pos = new float[3][];
+                        float[][] uv = new float[3][];
+                        float[][] nor = new float[3][];
+                        for (int c = 0; c < 3; c++) {
+                            int b = idx[i + c] * 8;
+                            pos[c] = new float[] {verts[b + 0], verts[b + 1], verts[b + 2]};
+                            // Dieser Leser spiegelt V bereits beim Laden (1 - v); nmesh liefert rohes V.
+                            uv[c] = new float[] {verts[b + 6], 1 - verts[b + 7]};
+                            float nx = verts[b + 3], ny = verts[b + 4], nz = verts[b + 5];
+                            nor[c] = (nx == 0 && ny == 0 && nz == 0) ? null : new float[] {nx, ny, nz};
+                        }
+                        faces.add(new Face(pos, uv, nor));
+                    }
+                }
+                return model;
+            } catch (Exception e) {
+                MainRegistry.LOGGER.warn("ArmorObjModel: nmesh conversion of {} failed: {}", location, e.toString());
+                model = new ArmorObjModel(); // sauber neu beginnen fuer den klassischen Pfad
+            }
+        }
+
         List<float[]> v = new ArrayList<>();
         List<float[]> vt = new ArrayList<>();
         List<float[]> vn = new ArrayList<>();

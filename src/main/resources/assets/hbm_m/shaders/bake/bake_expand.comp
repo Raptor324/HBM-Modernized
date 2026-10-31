@@ -32,7 +32,7 @@ layout(binding = 4) uniform sampler2D uJointSpecs;
 layout(std140, binding = 0) uniform BakeParams {
     int uMeshStride; // Input mesh byte stride (multiple of 4 after relayout)
     int uInstStride; // Instance record float stride (32)
-    int uOutStride;  // Output vertex float stride (14 main / 6 shadow)
+    int uOutStride;  // Output vertex float stride (12 main / 6 shadow)
     int uVertCount;
     int uInstCount;
     int uOffPos;     // Input byte offsets
@@ -390,12 +390,13 @@ void main() {
         return;
     }
 
-    // Main 56-byte dense layout, 14 words per vertex - the write indices
+    // Main 48-byte dense layout, 12 words per vertex - the write indices
     // below MUST stay in lockstep with OUT_STRIDE_BYTES / OUT_OFF_* and the
     // VAO attrib offsets on the Java side (a drift here writes the tangent
     // of vertex N over the position of vertex N+1: geometry corruption).
-    // color@3, uv0@4..5, uv1@6, uv2@7, normal@8, entity@9, midtex@10..11,
-    // tangent@12, midblock@13.
+    // color@3, uv0@4..5, uv2@6, normal@7, midtex@8..9, tangent@10,
+    // midblock@11. UV1 (overlay) is a GL constant attribute (NO_OVERLAY,
+    // location 3) and iris_Entity is a GL constant 0 - neither is stored.
     //
     // Color: mesh color x per-instance tint (records @20..23) with a spatial
     // falloff (records @24..27). The gradient is evaluated on the MODEL-space
@@ -443,9 +444,8 @@ void main() {
     outData[o + 4u] = s_uvRect.x + ldFloat(mBase, uOffUv0) * s_uvRect.z;
     outData[o + 5u] = s_uvRect.y + ldFloat(mBase, uOffUv0 + 4) * s_uvRect.w;
 
-    // UV1 (overlay) — 2 shorts packed into one word
-    outData[o + 6u] = (uOffUv1 >= 0) ? uintBitsToFloat(ldWord(mBase, uOffUv1)) : 0.0;
-
+    // UV1 (overlay) removed: constant NO_OVERLAY (0, 10) supplied as a
+    // GL constant attribute (location 3); saves one word per vertex.
     // UV2 (lightmap) — 2 ushorts packed into one word
     uint uv2Bits;
     {
@@ -465,27 +465,24 @@ void main() {
         int sv = int(clamp(lm.y, 0.0, 240.0));
         uv2Bits = uint(bu | (sv << 16));
     }
-    outData[o + 7u] = uintBitsToFloat(uv2Bits);
+    outData[o + 6u] = uintBitsToFloat(uv2Bits);
 
     // Normal: packed 4 GLbytes
     uint nPacked = uint(int(round(clamp(nOut.x, -1.0, 1.0) * 127.0)) & 255)
             | (uint(int(round(clamp(nOut.y, -1.0, 1.0) * 127.0)) & 255) << 8)
             | (uint(int(round(clamp(nOut.z, -1.0, 1.0) * 127.0)) & 255) << 16)
             | (nRaw & 0xFF000000u);
-    outData[o + 8u] = uintBitsToFloat(nPacked);
-
-    // iris_Entity — constant 0
-    outData[o + 9u] = uintBitsToFloat(0u);
+    outData[o + 7u] = uintBitsToFloat(nPacked);
 
     // mc_midTexCoord — 2 floats, remapped alongside UV0 (vanilla
     // parity: both are atlas-space, so pack shaders comparing the
     // two stay consistent)
     float midU = (uOffMidTex >= 0) ? ldFloat(mBase, uOffMidTex) : 0.0;
     float midV = (uOffMidTex >= 0) ? ldFloat(mBase, uOffMidTex + 4) : 0.0;
-    outData[o + 10u] = s_uvRect.x + midU * s_uvRect.z;
-    outData[o + 11u] = s_uvRect.y + midV * s_uvRect.w;
+    outData[o + 8u] = s_uvRect.x + midU * s_uvRect.z;
+    outData[o + 9u] = s_uvRect.y + midV * s_uvRect.w;
 
-    // at_tangent — 4 bytes packed into one word (word 12 = byte 48):
+    // at_tangent — 4 bytes packed into one word (word 10 = byte 40):
     // rotated tangent (world axes) with the original bitangent w
     // sign byte preserved.
     uint tPacked = 0u;
@@ -495,9 +492,9 @@ void main() {
                 | (uint(int(round(clamp(tOut.z, -1.0, 1.0) * 127.0)) & 255) << 16)
                 | (tRaw & 0xFF000000u);
     }
-    outData[o + 12u] = uintBitsToFloat(tPacked);
+    outData[o + 10u] = uintBitsToFloat(tPacked);
 
-    // at_midBlock (word 13 = byte 52, last of the 56) - mirrors the
+    // at_midBlock (word 11 = byte 44, last of the 48) - mirrors the
     // Iris/Oculus TERRAIN extension attribute that our ENTITY-format
     // companion mesh does not carry. Three signed bytes = offset FROM
     // the vertex TO the center of the vertex's block (blockCenter -
@@ -519,5 +516,5 @@ void main() {
     uint midBits = (uint(int(midOff.x * 64.0)) & 255u)
                  | ((uint(int(midOff.y * 64.0)) & 255u) << 8)
                  | ((uint(int(midOff.z * 64.0)) & 255u) << 16);
-    outData[o + 13u] = uintBitsToFloat(midBits);
+    outData[o + 11u] = uintBitsToFloat(midBits);
 }

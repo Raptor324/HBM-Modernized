@@ -12,9 +12,9 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import com.hbm_m.lib.RefStrings;
 *///?}
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 //? if forge {
 import net.minecraftforge.common.capabilities.*;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 //?}
 
 //? if forge {

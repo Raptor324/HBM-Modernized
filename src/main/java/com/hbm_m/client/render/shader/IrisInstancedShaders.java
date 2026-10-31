@@ -295,6 +295,22 @@ public final class IrisInstancedShaders {
         cachedFbPair[slot] = null;
     }
 
+    public static synchronized void destroyAll() {
+        disposeSlot(0);
+        disposeSlot(1);
+        capturedFbo[0] = -1;
+        capturedFbo[1] = -1;
+        capturedColorCount[0] = 0;
+        capturedColorCount[1] = 0;
+        capturedDepth[0] = -1;
+        capturedDepth[1] = -1;
+        pipeline = null;
+        pipelineGenSeen = -1L;
+        reflectionTried = false;
+        available = false;
+        constructionLogged = false;
+    }
+
     private static void disposeSlot(int slot) {
         if (cachedShader[slot] != null) {
             try {

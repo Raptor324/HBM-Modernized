@@ -245,6 +245,35 @@ public final class NucleusDispatcherBypass {
         }
     }
 
+    /** Evicts all tracked machines in an unloaded chunk and frees their GPU slots. */
+    public static void evictChunk(long chunkKey) {
+        ChunkBucket bucket = CHUNK_BUCKETS.remove(chunkKey);
+        if (bucket == null) return;
+        for (int i = bucket.machines.size() - 1; i >= 0; i--) {
+            BlockEntity be = bucket.machines.get(i);
+            RenderBoundsCache.remove(be);
+            BE_TO_BUCKET.remove(be);
+            if (be instanceof NucleusTrackedBlockEntity tracked) {
+                tracked.hbm_m$setNucleusRegistered(false);
+                tracked.hbm_m$setRenderState(null);
+            }
+            MachineBer<?> ber = BER_FAST_CACHE.get(be.getType());
+            if (ber != null) {
+                ber.dropPerPositionCaches(be.getBlockPos().asLong());
+            }
+        }
+        bucket.machines.clear();
+    }
+
+    /** Marks all currently tracked machines render-dirty after an anchor origin shift. */
+    public static void markAllMachinesDirty() {
+        for (BlockEntity be : BE_TO_BUCKET.keySet()) {
+            if (be instanceof com.hbm_m.api.render.RenderDirtyTracker tracker && !be.isRemoved()) {
+                tracker.markRenderDirty();
+            }
+        }
+    }
+
     public static void addMachine(BlockEntity be) {
         if (be == null || be.isRemoved()) return;
         if (isDemolished(be.getBlockPos().asLong())) {
@@ -614,11 +643,13 @@ public final class NucleusDispatcherBypass {
     private static final java.util.Map<BlockEntityType<?>, MachineBer<?>> BER_FAST_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
 
     static {
-        // Central teardown: without this, collectMain returns before
-        // processPresenceQueue when disabled or mc.level == null, so LIVE keeps
-        // the old world's machine BEs (each pins its whole stale ClientLevel)
-        // for the entire menu period (audit 2026-10-05 §3.9).
-        com.hbm_m.client.render.cache.RenderCacheManager.register(reason -> clearPresence());
+        com.hbm_m.client.render.cache.RenderCacheManager.register(reason -> {
+            if (reason == com.hbm_m.client.render.cache.RenderCacheManager.Reason.SESSION_END) {
+                clearPresence();
+            } else {
+                refreshPresenceOnReload();
+            }
+        });
     }
 
     private NucleusDispatcherBypass() {}
@@ -662,6 +693,30 @@ public final class NucleusDispatcherBypass {
         PENDING_REMOVE.clear();
         mainCollected = false;
         com.hbm_m.client.render.retained.RetainedInstanceGraph.get().clear();
+        for (MachineBer<?> ber : snapshotBers()) {
+            ber.clearRosterCache();
+        }
+    }
+
+    /**
+     * Resource-reload (F3+T) refresh: client chunks remain loaded and will not
+     * re-fire setBlockEntity, so keep CHUNK_BUCKETS and BE_TO_BUCKET intact while
+     * dropping per-BE render states, clearing BER rosters, and marking all live
+     * machines dirty for a clean rebuild on the next frame.
+     */
+    public static void refreshPresenceOnReload() {
+        for (BlockEntity be : BE_TO_BUCKET.keySet()) {
+            if (be instanceof NucleusTrackedBlockEntity tracked) {
+                tracked.hbm_m$setRenderState(null);
+            }
+            if (be instanceof com.hbm_m.api.render.RenderDirtyTracker tracker && !be.isRemoved()) {
+                tracker.markRenderDirty();
+            }
+        }
+        for (ChunkBucket bucket : CHUNK_BUCKETS.values()) {
+            bucket.markBoundsDirty();
+        }
+        mainCollected = false;
         for (MachineBer<?> ber : snapshotBers()) {
             ber.clearRosterCache();
         }

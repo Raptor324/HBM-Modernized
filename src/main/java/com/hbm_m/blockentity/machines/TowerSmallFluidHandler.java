@@ -1,13 +1,13 @@
 package com.hbm_m.blockentity.machines;
 
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+
 //? if forge {
 import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
-
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 
 /**
  * Forge fluid capability bridge for the Cooling Tower (Small).
@@ -96,9 +96,6 @@ public class TowerSmallFluidHandler implements IFluidHandler {
 
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
-
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 
 /^*
  * Forge fluid capability bridge for the Cooling Tower (Small).

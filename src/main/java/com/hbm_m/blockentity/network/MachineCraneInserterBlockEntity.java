@@ -16,9 +16,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
-//? if forge {
 import net.minecraftforge.items.IItemHandler;
-//?}
 
 /**
  * 1:1 {@code TileEntityCraneInserter}: 21 Pufferplaetze. Jeden Tick (ohne Redstone) wird der erste Stapel, von dem etwas in

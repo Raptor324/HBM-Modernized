@@ -1,26 +1,22 @@
 package com.hbm_m.particle.nt;
 
+import com.hbm_m.client.model.nmesh.NMeshData;
+import com.hbm_m.client.model.nmesh.NMeshLoader;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Camera;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.resources.Resource;
-import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -349,91 +345,40 @@ public class ParticleSkeletonNT extends ParticleNT implements ReplaceOnRespawn {
         }
     }
 
+    /** Nmesh-first: бинарный .nmesh через NMeshLoader (raw .obj — только resourcepack-fallback внутри него). */
     private static void load(ResourceLocation obj) {
-        try {
-            Minecraft mc = Minecraft.getInstance();
-            ResourceManager rm = mc.getResourceManager();
-            Resource resource = rm.getResource(obj).orElse(null);
-            if (resource == null) {
-                MainRegistry.LOGGER.warn("Skeleton particle OBJ missing: {}", obj);
-                return;
-            }
-
-            List<Vert> positions = new ArrayList<>();
-            List<UV> uvs = new ArrayList<>();
-            List<Vert> normals = new ArrayList<>();
-            String currentGroup = null;
-            String[] allGroups = {"Skull", "Torso", "Limb", "SkullVillager"};
-
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(resource.open(), StandardCharsets.UTF_8))) {
-                String line;
-                while ((line = br.readLine()) != null) {
-                    line = line.trim();
-                    if (line.isEmpty() || line.startsWith("#")) continue;
-
-                    if (line.startsWith("o ")) {
-                        currentGroup = line.substring(2).trim();
-                        continue;
-                    }
-                    if (line.startsWith("v ")) {
-                        String[] p = line.split("\\s+");
-                        positions.add(new Vert(Float.parseFloat(p[1]), Float.parseFloat(p[2]), Float.parseFloat(p[3])));
-                        continue;
-                    }
-                    if (line.startsWith("vt ")) {
-                        String[] p = line.split("\\s+");
-                        uvs.add(new UV(Float.parseFloat(p[1]), Float.parseFloat(p[2])));
-                        continue;
-                    }
-                    if (line.startsWith("vn ")) {
-                        String[] p = line.split("\\s+");
-                        normals.add(new Vert(Float.parseFloat(p[1]), Float.parseFloat(p[2]), Float.parseFloat(p[3])));
-                        continue;
-                    }
-                    if (line.startsWith("f ")) {
-                        if (currentGroup == null) continue;
-                        boolean interesting = false;
-                        for (String g : allGroups) if (g.equals(currentGroup)) { interesting = true; break; }
-                        if (!interesting) continue;
-
-                        String[] parts = line.substring(2).trim().split("\\s+");
-                        if (parts.length < 3) continue;
-
-                        Vert[] verts = new Vert[parts.length];
-                        UV[] tex = new UV[parts.length];
-                        Vert[] norms = new Vert[parts.length];
-
-                        for (int i = 0; i < parts.length; i++) {
-                            String[] idx = parts[i].split("/");
-                            int vi = parseIndex(idx[0], positions.size());
-                            int vti = idx.length > 1 && !idx[1].isEmpty() ? parseIndex(idx[1], uvs.size()) : 0;
-                            int vni = idx.length > 2 && !idx[2].isEmpty() ? parseIndex(idx[2], normals.size()) : 0;
-                            verts[i] = positions.get(vi - 1);
-                            tex[i] = vti > 0 ? uvs.get(vti - 1) : new UV(0, 0);
-                            norms[i] = vni > 0 ? normals.get(vni - 1) : new Vert(0, 1, 0);
-                        }
-
-                        for (int i = 1; i < parts.length - 1; i++) {
-                            Vert n = faceNormal(verts[0], verts[i], verts[i + 1], norms[0], norms[i], norms[i + 1]);
-                            Tri tri = new Tri(verts[0], verts[i], verts[i + 1], tex[0], tex[i], tex[i + 1], n);
-                            PARTS.computeIfAbsent(currentGroup, k -> new ArrayList<>()).add(tri);
-                        }
-                    }
-                }
-            }
-
-            int total = PARTS.values().stream().mapToInt(List::size).sum();
-            MainRegistry.LOGGER.info("Loaded skeleton particle OBJ: {} faces across {} groups", total, PARTS.size());
-        } catch (Exception e) {
-            MainRegistry.LOGGER.error("Failed to load skeleton particle OBJ {}", obj, e);
+        NMeshData nmesh = NMeshLoader.load(obj);
+        if (nmesh == null) {
+            MainRegistry.LOGGER.warn("Skeleton particle mesh missing: {}", obj);
+            return;
         }
-    }
 
-    private static int parseIndex(String s, int size) {
-        if (s.isEmpty()) return 0;
-        int i = Integer.parseInt(s);
-        if (i > 0) return i;
-        return size + i + 1;
+        for (NMeshData.SubMesh sm : nmesh.subMeshes()) {
+            String key = !sm.objectName.isEmpty() ? sm.objectName
+                    : (!sm.groupName.isEmpty() ? sm.groupName : "default");
+            if (!"Skull".equals(key) && !"Torso".equals(key) && !"Limb".equals(key) && !"SkullVillager".equals(key)) {
+                continue;
+            }
+            List<Tri> list = PARTS.computeIfAbsent(key, k -> new ArrayList<>());
+            float[] verts = sm.vertices;
+            int[] idx = sm.indices;
+            for (int i = 0; i + 2 < idx.length; i += 3) {
+                int b0 = idx[i] * 8, b1 = idx[i + 1] * 8, b2 = idx[i + 2] * 8;
+                Vert a = new Vert(verts[b0], verts[b0 + 1], verts[b0 + 2]);
+                Vert b = new Vert(verts[b1], verts[b1 + 1], verts[b1 + 2]);
+                Vert c = new Vert(verts[b2], verts[b2 + 1], verts[b2 + 2]);
+                UV ua = new UV(verts[b0 + 6], verts[b0 + 7]);
+                UV ub = new UV(verts[b1 + 6], verts[b1 + 7]);
+                UV uc = new UV(verts[b2 + 6], verts[b2 + 7]);
+                Vert na = new Vert(verts[b0 + 3], verts[b0 + 4], verts[b0 + 5]);
+                Vert nb = new Vert(verts[b1 + 3], verts[b1 + 4], verts[b1 + 5]);
+                Vert nc = new Vert(verts[b2 + 3], verts[b2 + 4], verts[b2 + 5]);
+                list.add(new Tri(a, b, c, ua, ub, uc, faceNormal(a, b, c, na, nb, nc)));
+            }
+        }
+
+        int total = PARTS.values().stream().mapToInt(List::size).sum();
+        MainRegistry.LOGGER.info("Loaded skeleton particle OBJ: {} faces across {} groups", total, PARTS.size());
     }
 
     private static Vert faceNormal(Vert a, Vert b, Vert c, Vert na, Vert nb, Vert nc) {

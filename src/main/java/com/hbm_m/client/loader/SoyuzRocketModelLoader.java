@@ -6,6 +6,9 @@ import java.util.function.Function;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonObject;
 import com.hbm_m.client.model.SoyuzRocketBakedModel;
+import com.hbm_m.client.model.nmesh.NMeshData;
+import com.hbm_m.client.model.nmesh.NMeshLoader;
+import com.hbm_m.client.model.nmesh.NMeshPartBakedModel;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.platform.LoaderHooks;
@@ -79,12 +82,30 @@ public class SoyuzRocketModelLoader implements IGeometryLoader<SoyuzRocketModelL
                 }
             };
 
-            try {
-                ObjModel objModel = LoaderHooks.loadObjModel(MODEL, true);
-                BakedModel baked = LoaderHooks.bakeObjModel(objModel, context, baker, spriteGetter, identityState, overrides, modelName);
+            // nmesh-first: весь меш одной частью, материалы резолвим из внешнего JSON'а модели
+            // (как делал ObjModel.bake через context.getMaterial(materialName)).
+            NMeshData nmesh = NMeshLoader.load(MODEL);
+            if (nmesh != null) {
+                java.util.List<NMeshPartBakedModel.BoundSubMesh> bound =
+                        new java.util.ArrayList<>(nmesh.subMeshes().size());
+                for (NMeshData.SubMesh sm : nmesh.subMeshes()) {
+                    Material mat = context.getMaterial(sm.materialName);
+                    TextureAtlasSprite sprite = mat != null ? spriteGetter.apply(mat) : null;
+                    bound.add(new NMeshPartBakedModel.BoundSubMesh(sm, sprite));
+                }
+                // flipV=true — паритет со старым LoaderHooks.loadObjModel(MODEL, true).
+                BakedModel baked = new NMeshPartBakedModel(
+                        bound, true, Transformation.identity(), context.getTransforms());
                 bakedParts.put(SoyuzRocketBakedModel.ROCKET, baked);
-            } catch (Exception e) {
-                MainRegistry.LOGGER.error("SoyuzRocketModelLoader: failed to load/bake soyuz.obj", e);
+            } else {
+                // Fallback: сырой .obj из ресурс-пака (nmesh-данных нет вообще).
+                try {
+                    ObjModel objModel = LoaderHooks.loadObjModel(MODEL, true);
+                    BakedModel baked = LoaderHooks.bakeObjModel(objModel, context, baker, spriteGetter, identityState, overrides, modelName);
+                    bakedParts.put(SoyuzRocketBakedModel.ROCKET, baked);
+                } catch (Exception e) {
+                    MainRegistry.LOGGER.error("SoyuzRocketModelLoader: failed to load/bake soyuz.obj", e);
+                }
             }
 
             return new SoyuzRocketBakedModel(bakedParts, context.getTransforms());

@@ -156,6 +156,12 @@ public final class IrisExtendedShaderAccess {
         cachedTexColorShadow = null;
         cachedTexColorMainPassId = -1L;
         cachedTexColorShadowPassId = -1L;
+        programFingerprints.clear();
+        deadShaderWarned = false;
+        synchronized (SILENT_FALLBACK_LOGGED) {
+            SILENT_FALLBACK_LOGGED.clear();
+        }
+        com.hbm_m.client.render.IrisBakeBridge.invalidateCaches();
     }
 
     /**

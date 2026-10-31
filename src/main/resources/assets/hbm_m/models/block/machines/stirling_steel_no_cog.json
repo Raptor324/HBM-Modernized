@@ -5,7 +5,7 @@
 	"loader": "forge:composite",
 	"children": {
 		"stirling_steel_no_cog_model": {
-			"loader": "forge:obj",
+			"loader": "hbm_m:nmesh_obj",
 			"model": "hbm_m:models/block/machines/stirling_steel.obj",
 			"flip_v": true,
 			"render_type": "minecraft:cutout",

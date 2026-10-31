@@ -14,33 +14,30 @@ layout(local_size_x = 256) in;
 layout(binding = 10) uniform sampler2D depth_tex;
 layout(binding = 1, r32f) uniform restrict writeonly image2D mip_0;
 
-float reduce_load_depth_tex(ivec2 tex) {
-    vec2 invSize = 1.0 / vec2(textureSize(depth_tex, 0));
-    vec2 uv = min((vec2(tex) + 0.75) * invSize, 1.0 - invSize);
+float reduce_load_depth_tex(ivec2 pix) {
+    vec2 invMip0Size = 1.0 / vec2(imageSize(mip_0));
+    vec2 borderInset = 2.0 / max(vec2(textureSize(depth_tex, 0)), vec2(64.0));
+    vec2 uv = clamp((vec2(pix) + 0.5) * invMip0Size, borderInset, vec2(1.0) - borderInset);
     return reduce_4(textureGather(depth_tex, uv));
 }
 
 void downsample_depth_tex(uint x, uint y, ivec2 workgroup_id) {
     vec4 v;
 
-    ivec2 tex = workgroup_id * 64 + ivec2(x * 2u, y * 2u);
     ivec2 pix = workgroup_id * 32 + ivec2(x, y);
-    v[0] = reduce_load_depth_tex(tex);
+    v[0] = reduce_load_depth_tex(pix);
     imageStore(mip_0, pix, vec4(v[0]));
 
-    tex = workgroup_id * 64 + ivec2(x * 2u + 32u, y * 2u);
     pix = workgroup_id * 32 + ivec2(x + 16u, y);
-    v[1] = reduce_load_depth_tex(tex);
+    v[1] = reduce_load_depth_tex(pix);
     imageStore(mip_0, pix, vec4(v[1]));
 
-    tex = workgroup_id * 64 + ivec2(x * 2u, y * 2u + 32u);
     pix = workgroup_id * 32 + ivec2(x, y + 16u);
-    v[2] = reduce_load_depth_tex(tex);
+    v[2] = reduce_load_depth_tex(pix);
     imageStore(mip_0, pix, vec4(v[2]));
 
-    tex = workgroup_id * 64 + ivec2(x * 2u + 32u, y * 2u + 32u);
     pix = workgroup_id * 32 + ivec2(x + 16u, y + 16u);
-    v[3] = reduce_load_depth_tex(tex);
+    v[3] = reduce_load_depth_tex(pix);
     imageStore(mip_0, pix, vec4(v[3]));
 }
 

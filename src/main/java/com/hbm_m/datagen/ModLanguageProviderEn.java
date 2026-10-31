@@ -3377,6 +3377,10 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("config.hbm_m.field.graphicEffects.nukeCinematics.tooltip", "Cinematic layer of the nuke light: albedo-lit surfaces (textures keep their relief), flash color spectrum (white core to amber to crimson), Mie glow, godrays behind terrain, refracting shockwave with chromatic aberration. 0 = classic additive light.");
         add("text.autoconfig.hbm_m.option.graphicEffects.nukeCinematics", "Nuke Light Cinematics");
         add("text.autoconfig.hbm_m.option.graphicEffects.nukeCinematics.@Tooltip", "Cinematic effects strength (0..2). 0 disables the layer, 1 is default.");
+        add("config.hbm_m.field.graphicEffects.nukeHaloStrength", "Nuke Sky Halo Strength");
+        add("config.hbm_m.field.graphicEffects.nukeHaloStrength.tooltip", "Sky halo around the explosion (outside the fireball silhouette): the glow lighting the sky and clouds around the mushroom. 0 - light only inside the fireball silhouette and on the ground, 1 - default, up to 3 - glow reaching the horizon. Multiplied by the light intensity.");
+        add("text.autoconfig.hbm_m.option.graphicEffects.nukeHaloStrength", "Nuke Sky Halo Strength");
+        add("text.autoconfig.hbm_m.option.graphicEffects.nukeHaloStrength.@Tooltip", "Sky halo strength (0..3), multiplied by the light intensity.");
         add("text.autoconfig.hbm_m.option.nucleusDispatcherBypass", "Nucleus: dispatcher bypass");
         add("text.autoconfig.hbm_m.option.nucleusDispatcherBypass.@Tooltip", "Collect factory machines with a flat pass instead of the vanilla/Sodium block-entity dispatcher. Disable if machines disappear or render twice.");
         add("text.autoconfig.hbm_m.option.nucleusGpuBake", "Nucleus: GPU bake (Iris Tier 1)");
@@ -3916,8 +3920,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModBlocks.MACHINE_CHUNGUS.get(), "Leviathan Steam Turbine");
         add(ModBlocks.MACHINE_CONTROLLER.get(), "Reactor Remote Control Block");
         add("container.hbm_m.machine_fensu", "FEnSU");
-        add(ModBlocks.MACHINE_CONVERTER_HE_RF.get(), "HE to RF Converter");
-        add(ModBlocks.MACHINE_CONVERTER_RF_HE.get(), "RF to HE Converter");
         add(ModBlocks.MACHINE_FORCEFIELD.get(), "Forcefield Emitter");
         add(ModBlocks.MACHINE_FUNNEL.get(), "Combinator Funnel");
         add("container.hbm_m.funnel", "Combinator Funnel");

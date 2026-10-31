@@ -5,7 +5,7 @@
   },
   "children": {
     "model": {
-      "loader": "forge:obj",
+      "loader": "hbm_m:nmesh_obj",
       "model": "hbm_m:models/block/machines/pa_detector.obj",
       "flip_v": true,
       "textures": {

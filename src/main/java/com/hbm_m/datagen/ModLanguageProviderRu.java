@@ -2822,8 +2822,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("block.hbm_m.logic_block", "Блок действия подземелья");
         add("block.hbm_m.machine_boiler", "Бойлер");
         add("block.hbm_m.machine_controller", "Блок удалённого доступа к реактору");
-        add("block.hbm_m.machine_converter_he_rf", "Конвертер энергии HE в RF");
-        add("block.hbm_m.machine_converter_rf_he", "Конвертер энергии RF в HE");
         add("block.hbm_m.machine_crystallizer", "Рудный окислитель");
         add("block.hbm_m.machine_detector", "Детектор мощности");
         add("block.hbm_m.machine_drain", "Сливная труба");
@@ -3847,6 +3845,10 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("config.hbm_m.field.graphicEffects.nukeCinematics.tooltip", "Кинематографический слой света взрыва: альбедо-освещение поверхностей (текстуры сохраняют рельеф), спектр вспышки (белое ядро → янтарь → багровое тление), Mie-ореол, godrays за рельефом, преломляющая ударная волна с хроматической аберрацией. 0 - классический аддитивный свет.");
         add("text.autoconfig.hbm_m.option.graphicEffects.nukeCinematics", "Кинематика света");
         add("text.autoconfig.hbm_m.option.graphicEffects.nukeCinematics.@Tooltip", "Сила кинематографических эффектов (0..2). 0 отключает слой, 1 - стандарт.");
+        add("config.hbm_m.field.graphicEffects.nukeHaloStrength", "Яркость ореола вокруг ядерного взрыва");
+        add("config.hbm_m.field.graphicEffects.nukeHaloStrength.tooltip", "Небесный ореол вокруг взрыва (за пределами силуэта огненного гриба): зарево, освещающее небо и облака вокруг гриба. 0 - свет только внутри силуэта файербола и на земле, 1 - яркость по умолчанию, до 3 - зарево на весь горизонт. Общий множитель с интенсивностью света.");
+        add("text.autoconfig.hbm_m.option.graphicEffects.nukeHaloStrength", "Сила небесного ореола");
+        add("text.autoconfig.hbm_m.option.graphicEffects.nukeHaloStrength.@Tooltip", "Сила небесного ореола (0..3), общий множитель с интенсивностью света.");
         add("text.autoconfig.hbm_m.option.nucleusDispatcherBypass", "Nucleus: байпас диспетчера");
         add("text.autoconfig.hbm_m.option.nucleusDispatcherBypass.@Tooltip", "Сбор станков фабрики плоским обходом вместо ванильного/Sodium-диспетчера BlockEntity. Отключать при исчезновении или задвоении станков.");
         add("text.autoconfig.hbm_m.option.nucleusGpuBake", "Nucleus: GPU-bake (Iris Tier 1)");

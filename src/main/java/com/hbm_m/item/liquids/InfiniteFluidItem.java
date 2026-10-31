@@ -17,6 +17,10 @@ import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import com.hbm_m.platform.StackNbt;
+
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+
 // Forge/NeoForge: сигнатуры IFluidHandlerItem идентичны, различаются только пакеты.
 //? if forge {
 import net.minecraft.nbt.CompoundTag;
@@ -24,16 +28,12 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import org.jetbrains.annotations.NotNull;
 import net.minecraft.core.Direction;
 //?}
 //? if neoforge {
-/*import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fluids.capability.IFluidHandlerItem;
+/*import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 *///?}
 
 /**

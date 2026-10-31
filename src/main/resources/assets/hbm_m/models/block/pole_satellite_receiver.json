@@ -5,7 +5,7 @@
   },
   "children": {
     "pole_satellite_receiver_model": {
-      "loader": "forge:obj",
+      "loader": "hbm_m:nmesh_obj",
       "model": "hbm_m:models/block/pole_satellite_receiver.obj",
       "flip_v": true,
       "textures": {

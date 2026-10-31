@@ -202,15 +202,12 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.WARHEAD_MIRV);
         simpleItem(ModItems.WARHEAD_VOLCANO);
 
-        // Siren cassettes all share the single ported "cassette" texture (no per-track overlay tint,
-        // simplified from the original's dye-tinted overlay layer)
-        simpleItemModelByName(ModItems.CASSETTE_AMS_SIREN.getId().getPath(), "cassette");
-        simpleItemModelByName(ModItems.CASSETTE_BEEP_SIREN.getId().getPath(), "cassette");
-        simpleItemModelByName(ModItems.CASSETTE_CLASSIC_SIREN.getId().getPath(), "cassette");
-        simpleItemModelByName(ModItems.CASSETTE_NOSTROMO_SIREN.getId().getPath(), "cassette");
-        simpleItemModelByName(ModItems.CASSETTE_REGULAR_SIREN.getId().getPath(), "cassette");
-        simpleItemModelByName(ModItems.CASSETTE_STRIDER_SIREN.getId().getPath(), "cassette");
-        simpleItemModelByName(ModItems.CASSETTE_SWEEP_SIREN.getId().getPath(), "cassette");
+        // Alle Kassetten (Original {@code cassette}: eine Textur, Tracks per Titeldaten) teilen sich die
+        // einzelne portierte "cassette"-Textur (kein pro-Track Overlay-Tint, vereinfacht gegenueber dem
+        // Original mit farbstoff-getintetem Overlay-Layer)
+        for (var sup : ModItems.CASSETTES) {
+            simpleItemModelByName(sup.getId().getPath(), "cassette");
+        }
         simpleItem(ModItems.WARHEAD_NUCLEAR);
         simpleItem(ModItems.THRUSTER_SMALL);
         simpleItem(ModItems.THRUSTER_MEDIUM);
@@ -223,6 +220,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.MISSILE_SOYUZ_LANDER);
         simpleItem(ModItems.MISSILE_LAMBDA);
         simpleItem(ModItems.NEUTRON_REFLECTOR);
+        simpleItem(ModItems.LOW_DENSITY_ELEMENT);
         simpleItem(ModItems.SAT_BASE);
         simpleItem(ModItems.SAT_LASER);
         simpleItem(ModItems.SAT_HEAD_LASER);
@@ -237,6 +235,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         // High-Speed Steel (= dura steel оригинала): текстура ingot_dura_steel.png / bolt.png оригинала.
         simpleItem(ModItems.INGOT_HIGHSPEED_STEEL);
         simpleItem(ModItems.BOLT_HIGHSPEED_STEEL);
+        // Фосфор (ориг. ingot_phosphorus): текстура item/ingot_phosphorus.png портирована
+        simpleItem(ModItems.INGOT_PHOSPHORUS);
 
         // The original is a single damage-variant item with one texture; the port splits it into
         // four items, so they all share that texture rather than inventing three new ones.
@@ -343,6 +343,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.CRT_DISPLAY);
         simpleItem(ModItems.MAGNETRON);
         simpleItem(ModItems.TURBINE_TITANIUM);
+        simpleItem(ModItems.SEQUESTRUM);
         simpleItem(ModItems.BLADE_STEEL);
         simpleItem(ModItems.BLADE_TITANIUM);
         simpleItem(ModItems.BLADE_ALLOY);
@@ -430,6 +431,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.CANNED_FIST);
         simpleItem(ModItems.CANNED_FRIED);
         simpleItem(ModItems.CANNED_HOTDOGS);
+        simpleItem(ModItems.CANNED_JIZZ);
         simpleItem(ModItems.CANNED_KEROSENE);
         simpleItem(ModItems.CANNED_LEFTOVERS);
         simpleItem(ModItems.CANNED_MILK);
@@ -612,16 +614,10 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.PWR_FUEL_BFB_AM_MIX_HOT);
         simpleItem(ModItems.PWR_FUEL_BFB_PU241);
         simpleItem(ModItems.PWR_FUEL_BFB_PU241_HOT);
-        simpleItem(ModItems.WATZ_PELLET_SCHRABIDIUM_OXIDE);
-        simpleItem(ModItems.WATZ_PELLET_SCHRABIDIUM_OXIDE_DEPLETED);
-        simpleItem(ModItems.WATZ_PELLET_LES_OXIDE);
-        simpleItem(ModItems.WATZ_PELLET_LES_OXIDE_DEPLETED);
-        simpleItem(ModItems.WATZ_PELLET_NATURAL_URANIUM);
-        simpleItem(ModItems.WATZ_PELLET_NATURAL_URANIUM_DEPLETED);
-        simpleItem(ModItems.WATZ_PELLET_BORON_CARBIDE);
-        simpleItem(ModItems.WATZ_PELLET_BORON_CARBIDE_DEPLETED);
-        simpleItem(ModItems.WATZ_PELLET_LEAD_SHIELD);
-        simpleItem(ModItems.WATZ_PELLET_LEAD_SHIELD_DEPLETED);
+        // Watz-Pellets: alle Typen (Original {@code watz_pellet} / {@code watz_pellet_depleted} Meta 0-11),
+        // Textur je Typ {@code watz_pellet_<typ>.png} bzw. {@code watz_pellet_depleted_<typ>.png}
+        for (var sup : ModItems.WATZ_PELLET.values()) simpleItem(sup);
+        for (var sup : ModItems.WATZ_PELLET_DEPLETED.values()) simpleItem(sup);
         // Brutstaebe rod_/rod_dual_/rod_quad_<typ> (Original-Texturen rod.<typ>.png usw.)
         for (var sup : ModItems.ROD.values()) simpleItem(sup);
         for (var sup : ModItems.ROD_DUAL.values()) simpleItem(sup);
@@ -1266,6 +1262,9 @@ public class ModItemModelProvider extends ItemModelProvider {
         itemModelFromBlockResourcePath(ModBlocks.CRANE_UNBOXER.getId().getPath(), "block/crane_unboxer_inventory");
         blockItemFromBlockModelMachine(ModBlocks.SOURCE);
         blockItemFromBlockModelMachine(ModBlocks.MACHINE_LARGE_TURBINE);
+        // Alias: ModItems.TURBINE ist ein MultiblockBlockItem auf ModBlocks.TURBINE (= MACHINE_LARGE_TURBINE),
+        // seine Item-ID "turbine" weicht vom Block-ID ab -> eigene Item-Modell auf das Block-Modell.
+        withExistingParent("turbine", modLoc("block/machines/machine_large_turbine"));
         blockItemFromBlockModelMachine(ModBlocks.LPW2);
         blockItemFromBlockModelMachine(ModBlocks.STEAM_ENGINE);
         blockItemFromBlockModelMachine(ModBlocks.STIRLING);
@@ -1441,9 +1440,11 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.FLUORITE);
         simpleItem(ModItems.LIGNITE);
         simpleItem(ModItems.COAL_ETERNAL);
-        // cinnabar: текстура item/cinnabar.png из 1.7.10 не портирована — модель не генерируем
-        // (warn-and-skip, как в oreWithItem); предмет останется с missing-моделью до порта текстуры.
-        generatedItemIfTextureExists(ModItems.CINNABAR, "cinnabar");
+        // cinnabar: текстура item/cinnabar.png из 1.7.10 не портирована — пока используем ближайшую
+        // существующую киноварь-текстуру (item/bedrock_ore_fragment_cinnabar.png) как замену,
+        // чтобы предмет не оставался с missing-моделью.
+        withExistingParent(ModItems.CINNABAR.getId().getPath(), "item/generated")
+                .texture("layer0", modLoc("item/bedrock_ore_fragment_cinnabar"));
         simpleItem(ModItems.FIREBRICK);
         simpleItem(ModItems.FIRECLAY_BALL);
         simpleItem(ModItems.ARMOR_BATTERY);
@@ -1525,7 +1526,8 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.SYRINGE_POISON,
                 ModItems.SYRINGE_AWESOME,
                 ModItems.CIGARETTE,
-                ModItems.CRACKPIPE
+                ModItems.CRACKPIPE,
+                ModItems.CRUCIBLE_TEMPLATE
         ).forEach(this::handheldItem);
 
         // DEV: importierte fehlende Items aus dem Original-HBM (zur Sichtung)

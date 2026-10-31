@@ -202,6 +202,11 @@ public final class PackAdditiveQueue {
                         consecutiveFailures, t.toString());
             }
         }
+        if (com.hbm_m.client.render.debug.NucleusFrameCapture.isCapturing()) {
+            com.hbm_m.client.render.debug.NucleusFrameCapture.recordEvent(
+                    "PACK_ADDITIVE_DRAIN",
+                    "batches=" + batches.size() + " drawn=" + drawn, null);
+        }
         if (drawn) {
             consecutiveFailures = 0;
         } else {
@@ -477,6 +482,34 @@ public final class PackAdditiveQueue {
         GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, ibo);
         GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indices, GL15.GL_STATIC_DRAW);
         iboQuadCapacity = newCap;
+    }
+
+    public static void destroy() {
+        clearQueue();
+        if (program != -1) {
+            GL20.glDeleteProgram(program);
+            program = -1;
+        }
+        if (vao != -1) {
+            GL30.glDeleteVertexArrays(vao);
+            vao = -1;
+        }
+        if (vbo != -1) {
+            GL15.glDeleteBuffers(vbo);
+            vbo = -1;
+        }
+        if (ibo != -1) {
+            GL15.glDeleteBuffers(ibo);
+            ibo = -1;
+            iboQuadCapacity = 0;
+        }
+        if (fbo != -1) {
+            GL30.glDeleteFramebuffers(fbo);
+            fbo = -1;
+        }
+        latched = false;
+        consecutiveFailures = 0;
+        loggedFirstDraw = false;
     }
 
     private static boolean ensureProgram() {

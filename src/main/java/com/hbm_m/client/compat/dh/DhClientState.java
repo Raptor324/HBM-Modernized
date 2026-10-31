@@ -37,6 +37,9 @@ public final class DhClientState {
     /** Время последнего реального DH-кадра: защита от «залипшего» флага,
      *  если DH перестал рендерить (настройка/выгрузка), пока мод установлен. */
     private static volatile long lastBridgeMs = 0;
+    /** Факт DH-кадра в ТЕКУЩЕМ кадре: protection from isActive() expiry
+     *  mid-frame during >500ms lag spikes between beginDhPass and AFTER_WEATHER. */
+    private static volatile boolean renderedThisFrame = false;
 
     private DhClientState() {}
 
@@ -63,6 +66,7 @@ public final class DhClientState {
             dhFar = far;
         }
         dhFboActive = true;
+        renderedThisFrame = true;
         lastBridgeMs = System.currentTimeMillis();
     }
 
@@ -72,6 +76,7 @@ public final class DhClientState {
 
     /** Called at AFTER_LEVEL to age the flag. */
     public static void onAfterLevel() {
+        renderedThisFrame = false;
         // If DH was not present this frame, we want isActive() to become false next frame.
         // Keep flag until next frame's start, then it will be overwritten if DH renders again.
         // For now clear after level so that if DH stops rendering for one frame, next frame's
@@ -98,7 +103,7 @@ public final class DhClientState {
         // через 500 мс считаем его неактивным. Этого достаточно: мост стреляет
         // каждый кадр, пока DH реально рисует LOD'ы, независимо от того,
         // какая фаза ванильного кадра идёт раньше.
-        return System.currentTimeMillis() - lastBridgeMs < 500;
+        return renderedThisFrame || (System.currentTimeMillis() - lastBridgeMs < 500);
     }
 
     public static Matrix4f dhProjection() { return dhProjection; }

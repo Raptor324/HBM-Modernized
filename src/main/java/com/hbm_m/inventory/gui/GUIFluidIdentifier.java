@@ -32,9 +32,9 @@ import net.minecraft.world.level.material.Fluids;
  * GUI for selecting primary/secondary fluid in the fluid identifier.
  * LMB: set primary. RMB: set secondary.
  */
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+//? if forge {
 /*@OnlyIn(Dist.CLIENT)
 *///?}
 public class GUIFluidIdentifier extends Screen {

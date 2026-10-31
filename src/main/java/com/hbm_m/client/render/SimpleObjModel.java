@@ -51,6 +51,43 @@ public class SimpleObjModel {
         long now = System.currentTimeMillis();
         if (now < retryAt) return;
 
+        // nmesh-first: kompilierte .nmesh-Daten (oder NMeshLoader-Resourcepack-Fallback) statt eigenem .obj-Parser.
+        var nmesh = com.hbm_m.client.model.nmesh.NMeshLoader.load(location);
+        if (nmesh != null) {
+            try {
+                parts.clear();
+                for (var sm : nmesh.subMeshes()) {
+                    String key = sm.objectName != null && !sm.objectName.isEmpty() ? sm.objectName
+                            : (sm.groupName != null && !sm.groupName.isEmpty() ? sm.groupName : "default");
+                    float[] verts = sm.vertices;
+                    int[] idx = sm.indices;
+                    List<float[]> tris = parts.computeIfAbsent(key, k -> new ArrayList<>());
+                    for (int i = 0; i + 2 < idx.length; i += 3) {
+                        float[] t = new float[24];
+                        for (int c = 0; c < 3; c++) {
+                            int b = idx[i + c] * 8;
+                            // SimpleObjModel legt u,v VOR den Normalen ab und spiegelt V erst beim Zeichnen
+                            // (1 - v): hier deshalb u,v roh uebernehmen, Normalen aus Index 3..5.
+                            t[c * 8 + 0] = verts[b + 0];
+                            t[c * 8 + 1] = verts[b + 1];
+                            t[c * 8 + 2] = verts[b + 2];
+                            t[c * 8 + 3] = verts[b + 6];
+                            t[c * 8 + 4] = verts[b + 7];
+                            t[c * 8 + 5] = verts[b + 3];
+                            t[c * 8 + 6] = verts[b + 4];
+                            t[c * 8 + 7] = verts[b + 5];
+                        }
+                        tris.add(t);
+                    }
+                }
+                loaded = true;
+                return;
+            } catch (Exception e) {
+                org.slf4j.LoggerFactory.getLogger("hbm_m").warn("SimpleObjModel: nmesh-Konvertierung von {} fehlgeschlagen: {}", location, e.toString());
+                // Weiter zum klassischen .obj-Pfad.
+            }
+        }
+
         // Fehlschlag nicht dauerhaft merken: fehlte die Datei beim ersten Zeichnen kurz (Ressourcen-Neuladen,
         // build/resources im Dev-Client gerade neu kopiert), blieb das Modell bis zum Neustart unsichtbar
         // (Spieltest: Mini-UFO nur als Hitbox sichtbar). Jetzt: erneuter Versuch nach einer Sekunde.

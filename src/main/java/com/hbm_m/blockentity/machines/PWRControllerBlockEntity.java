@@ -53,8 +53,8 @@ import com.hbm_m.platform.BlockHooks;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.items.IItemHandler;
 //?}
+import net.minecraftforge.items.IItemHandler;
 
 /**
  * 1:1 {@code TileEntityPWRController}. Der Aufbau wird von {@code MachinePWRControllerBlock} geflutet und in Traeger

@@ -1,11 +1,10 @@
 package com.hbm_m.client.render.projectile;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.hbm_m.client.model.nmesh.NMeshData;
+import com.hbm_m.client.model.nmesh.NMeshLoader;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.platform.RenderHooks;
@@ -16,7 +15,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 
 /**
@@ -82,79 +80,40 @@ public final class ClusterSubmunitionMesh {
                 normal.x(), normal.y(), normal.z());
     }
 
+    /**
+     * Nmesh-first: бинарный {@code .nmesh} через {@link NMeshLoader} (raw .obj — только
+     * resourcepack-fallback внутри самого NMeshLoader). Берём только сабмеши объекта
+     * "MiniNuke"; нормаль треугольника — среднее вершинных нормалей с фолбэком на
+     * векторное произведение, фильтр по максимальной длине ребра сохранён.
+     */
     private static List<Tri> loadMiniNukeTriangles(ResourceManager rm) {
-        Resource resource = rm.getResource(FATMAN_OBJ).orElse(null);
-        if (resource == null) {
-            MainRegistry.LOGGER.warn("Cluster submunition OBJ missing: {}", FATMAN_OBJ);
+        NMeshData nmesh = NMeshLoader.load(FATMAN_OBJ);
+        if (nmesh == null) {
+            MainRegistry.LOGGER.warn("Cluster submunition mesh missing: {}", FATMAN_OBJ);
             return List.of();
         }
 
-        List<Vec3> positions = new ArrayList<>();
-        List<Vec2> uvs = new ArrayList<>();
-        List<Vec3> normals = new ArrayList<>();
         List<Tri> tris = new ArrayList<>();
-        String currentObject = null;
-
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(resource.open(), StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                line = line.trim();
-                if (line.isEmpty() || line.startsWith("#")) {
+        for (NMeshData.SubMesh sm : nmesh.getSubMeshesForPart("MiniNuke")) {
+            float[] verts = sm.vertices;
+            int[] idx = sm.indices;
+            for (int i = 0; i + 2 < idx.length; i += 3) {
+                int b0 = idx[i] * 8, b1 = idx[i + 1] * 8, b2 = idx[i + 2] * 8;
+                Vec3 a = new Vec3(verts[b0], verts[b0 + 1], verts[b0 + 2]);
+                Vec3 b = new Vec3(verts[b1], verts[b1 + 1], verts[b1 + 2]);
+                Vec3 c = new Vec3(verts[b2], verts[b2 + 1], verts[b2 + 2]);
+                if (!isValidTriangle(a, b, c)) {
                     continue;
                 }
-                if (line.startsWith("o ")) {
-                    currentObject = line.substring(2).trim();
-                    continue;
-                }
-                if (line.startsWith("v ")) {
-                    String[] p = line.split("\\s+");
-                    positions.add(new Vec3(Float.parseFloat(p[1]), Float.parseFloat(p[2]), Float.parseFloat(p[3])));
-                    continue;
-                }
-                if (line.startsWith("vt ")) {
-                    String[] p = line.split("\\s+");
-                    uvs.add(new Vec2(Float.parseFloat(p[1]), Float.parseFloat(p[2])));
-                    continue;
-                }
-                if (line.startsWith("vn ")) {
-                    String[] p = line.split("\\s+");
-                    normals.add(new Vec3(Float.parseFloat(p[1]), Float.parseFloat(p[2]), Float.parseFloat(p[3])));
-                    continue;
-                }
-                if (!"MiniNuke".equals(currentObject) || !line.startsWith("f ")) {
-                    continue;
-                }
-                if (line.startsWith("f ")) {
-                    String[] parts = line.substring(2).trim().split("\\s+");
-                    if (parts.length < 3) {
-                        continue;
-                    }
-                    Vec3[] verts = new Vec3[parts.length];
-                    Vec2[] tex = new Vec2[parts.length];
-                    Vec3[] norms = new Vec3[parts.length];
-                    for (int i = 0; i < parts.length; i++) {
-                        String[] idx = parts[i].split("/");
-                        int vi = parseIndex(idx[0], positions.size());
-                        int vti = idx.length > 1 && !idx[1].isEmpty() ? parseIndex(idx[1], uvs.size()) : 0;
-                        int vni = idx.length > 2 && !idx[2].isEmpty() ? parseIndex(idx[2], normals.size()) : 0;
-                        verts[i] = positions.get(vi - 1);
-                        tex[i] = vti > 0 ? uvs.get(vti - 1) : new Vec2(0, 0);
-                        norms[i] = vni > 0 ? normals.get(vni - 1) : null;
-                    }
-                    for (int i = 1; i < parts.length - 1; i++) {
-                        Vec3 normal = faceNormal(verts[0], verts[i], verts[i + 1], norms[0], norms[i], norms[i + 1]);
-                        if (!isValidTriangle(verts[0], verts[i], verts[i + 1])) {
-                            continue;
-                        }
-                        tris.add(new Tri(verts[0], verts[i], verts[i + 1], tex[0], tex[i], tex[i + 1], normal));
-                    }
-                }
+                Vec2 ua = new Vec2(verts[b0 + 6], verts[b0 + 7]);
+                Vec2 ub = new Vec2(verts[b1 + 6], verts[b1 + 7]);
+                Vec2 uc = new Vec2(verts[b2 + 6], verts[b2 + 7]);
+                Vec3 na = new Vec3(verts[b0 + 3], verts[b0 + 4], verts[b0 + 5]);
+                Vec3 nb = new Vec3(verts[b1 + 3], verts[b1 + 4], verts[b1 + 5]);
+                Vec3 nc = new Vec3(verts[b2 + 3], verts[b2 + 4], verts[b2 + 5]);
+                tris.add(new Tri(a, b, c, ua, ub, uc, faceNormal(a, b, c, na, nb, nc)));
             }
-        } catch (Exception e) {
-            MainRegistry.LOGGER.error("Failed to load cluster submunition OBJ {}", FATMAN_OBJ, e);
-            return List.of();
         }
-
         return List.copyOf(tris);
     }
 
@@ -169,14 +128,6 @@ public final class ClusterSubmunitionMesh {
         float dy = a.y() - b.y();
         float dz = a.z() - b.z();
         return (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
-    }
-
-    private static int parseIndex(String token, int size) {
-        int i = Integer.parseInt(token);
-        if (i < 0) {
-            return size + i + 1;
-        }
-        return i;
     }
 
     private static Vec3 faceNormal(Vec3 a, Vec3 b, Vec3 c, Vec3 na, Vec3 nb, Vec3 nc) {

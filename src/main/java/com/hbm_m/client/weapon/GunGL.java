@@ -260,6 +260,7 @@ public final class GunGL {
                     RenderSystem.blendFuncSeparate(org.lwjgl.opengl.GL11.GL_SRC_ALPHA, org.lwjgl.opengl.GL11.GL_ONE,
                             org.lwjgl.opengl.GL11.GL_ONE, org.lwjgl.opengl.GL11.GL_ZERO);
                 }, () -> {
+                    com.hbm_m.client.render.shader.ShaderBindResync.resetBlendModeToOpaque();
                     RenderSystem.disableBlend();
                     RenderSystem.defaultBlendFunc();
                     // Аддитивный проход всегда рисует с depthMask(false): без явного
@@ -470,10 +471,17 @@ public final class GunGL {
         }
 
         public void draw() {
+            if (GunGL.isBlend() && GunGL.isAdditive()
+                    && com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isRenderingShadowPass()) {
+                vertCount = 0;
+                hasColor = false;
+                brightness = -1;
+                return;
+            }
             // Под активным шейдерпаком аддитивные квады ставятся в post-composite очередь:
             // draw кастомного gun_additive в gbuffer пака — незарегистрированный контент,
             // который Photon переинтерпретирует как данные материала, а Solas затирает
-            // небом (см. PackAdditiveQueue). Без пака и в GUI/теневом проходе — легаси-путь.
+            // небом (см. PackAdditiveQueue). Без пака и в GUI — легаси-путь.
             if (GunGL.isBlend() && GunGL.isAdditive()
                     && com.hbm_m.client.render.shader.PackAdditiveQueue.engaged()) {
                 com.hbm_m.client.render.shader.PackAdditiveQueue.push(

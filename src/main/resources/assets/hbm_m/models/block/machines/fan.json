@@ -6,12 +6,12 @@
   "loader": "forge:composite",
   "children": {
     "fan_model": {
-      "loader": "forge:obj",
+      "loader": "hbm_m:nmesh_obj",
       "model": "hbm_m:models/block/machines/fan.obj",
       "flip_v": true,
       "render_type": "minecraft:cutout",
       "textures": {
-        "default": "hbm_m:block/machine/fan"
+        "default": "hbm_m:models/fan"
       }
     }
   },

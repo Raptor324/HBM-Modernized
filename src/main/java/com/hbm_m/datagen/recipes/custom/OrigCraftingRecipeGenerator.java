@@ -255,8 +255,6 @@ public final class OrigCraftingRecipeGenerator {
         g.shaped(item("hbm_m:red_pylon_medium_wood"), 2, p("CCW", "IIW", "  S"), 'C', Ingredient.of(item("hbm_m:coil_copper")), 'W', ore("oredict/plank_wood"), 'I', Ingredient.of(item("hbm_m:plate_polymer")), 'S', ore("oredict/cobblestone"));
         // CraftingManager.java:249 (ABW)
         g.shaped(item("hbm_m:red_pylon_medium_steel"), 2, p("CCW", "IIW", "  S"), 'C', Ingredient.of(item("hbm_m:coil_copper")), 'W', ore("oredict/ntmpipe/steel"), 'I', Ingredient.of(item("hbm_m:plate_polymer")), 'S', ore("oredict/cobblestone"));
-        // CraftingManager.java:252 (ABW)
-        g.shaped(item("hbm_m:machine_converter_he_rf"), 1, p("RRR", "WWW", "III"), 'R', Ingredient.of(item("hbm_m:capacitor")), 'W', ore("oredict/dust/redstone"), 'I', ore("oredict/ingot/steel"));
         // CraftingManager.java:257 (ABW)
         g.shaped(item("hbm_m:machine_battery_socket"), 1, p("I I", "I I", "IRI"), 'I', Ingredient.of(item("hbm_m:plate_polymer")), 'R', Ingredient.of(item("hbm_m:coil_copper")));
         // CraftingManager.java:260 (ABW)

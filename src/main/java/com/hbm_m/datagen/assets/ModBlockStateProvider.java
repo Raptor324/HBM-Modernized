@@ -59,6 +59,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         registerR6aBlocks();
         registerMigratedManualBlocks();
         registerFfaBlockstatePorts();
+        registerMissingPlainBlockstates();
+        worldFluids();
 
         // ГЕНЕРАЦИЯ МОДЕЛЕЙ ДЛЯ БЛОКОВ-РЕСУРСОВ С ПРЕФИКСОМ "block_"
         simpleBlockWithItem(ModBlocks.STRAWBERRY_BUSH.get(), models().cross(blockTexture(ModBlocks.STRAWBERRY_BUSH.get()).getPath(),
@@ -506,7 +508,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/block_steel_machine")
                 ));
 
-        // Колючая проволока: составные OBJ-модели остаются ручными (forge:composite + forge:obj)
+        // Колючая проволока: составные OBJ-модели остаются ручными (forge:composite + hbm_m:nmesh_obj)
 
 
 
@@ -2390,19 +2392,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         .end()
         );
         // MachineBatteryBlock (FACING-Blockstate) statt simpleBlockWithItem - siehe orientableBlockWithItem-Aufrufe fuer MACHINE_BATTERY etc.
-        // Конвертеры HE<->RF: текстуры machine_converter_* восстановлены из FFA (FFA merge loss restore).
-        simpleBlockWithItem(ModBlocks.MACHINE_CONVERTER_HE_RF.get(),
-                models().cubeAll(
-                        ModBlocks.MACHINE_CONVERTER_HE_RF.getId().getPath(),
-                        modLoc("block/machine_converter_he_rf")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.MACHINE_CONVERTER_RF_HE.get(),
-                models().cubeAll(
-                        ModBlocks.MACHINE_CONVERTER_RF_HE.getId().getPath(),
-                        modLoc("block/machine_converter_rf_he")
-                )
-        );
         simpleBlockWithItem(ModBlocks.MACHINE_FORCEFIELD.get(),
                 models().getExistingFile(modLoc("block/machine_forcefield"))
         );
@@ -5335,15 +5324,85 @@ public class ModBlockStateProvider extends BlockStateProvider {
         return g.condition(migFindProp(mpOwner, prop), cv);
     }
 
+    /** Restblockstate-Fixes: Bloecke ohne je generierte blockstate (Datagen-Luecken, s. FFA-Merge-Verluste). */
+    private void registerMissingPlainBlockstates() {
+        // --- Bloecke ohne historische blockstate-Datei: generierte Wuerfelmodelle
+        simpleBlockWithItem(ModBlocks.BEDROCK_OIL.get(),
+                models().cubeAll("bedrock_oil", modLoc("block/bedrock_oil")));
+        simpleBlockWithItem(ModBlocks.DECO_ALUMINIUM.get(),
+                models().cubeAll("deco_aluminium", modLoc("block/deco_aluminum")));
+        simpleBlockWithItem(ModBlocks.DEPTH_IRON.get(),
+                models().cubeAll("depth_iron", modLoc("block/depth_iron")));
+        simpleBlockWithItem(ModBlocks.DEPTH_TITANIUM.get(),
+                models().cubeAll("depth_titanium", modLoc("block/depth_titanium")));
+        simpleBlockWithItem(ModBlocks.DEPTH_TUNGSTEN.get(),
+                models().cubeAll("depth_tungsten", modLoc("block/depth_tungsten")));
+        simpleBlockWithItem(ModBlocks.ORE_VOLCANO_RAD.get(),
+                models().cubeAll("ore_volcano_rad", modLoc("block/volcano_rad_core")));
+    }
+
+
     /** FFA-порт: все блоки, чьи ручные blockstates отличались от сгенерированных. */
     private void registerFfaBlockstatePorts() {
         // --- block_c4
+        migVar("block_c4", "facing=up", "block/bomb/block_c4", 0, 0);
+        migVar("block_c4", "facing=down", "block/bomb/block_c4", 180, 0);
+        migVar("block_c4", "facing=north", "block/bomb/block_c4", 90, 0);
+        migVar("block_c4", "facing=south", "block/bomb/block_c4", 90, 180);
+        migVar("block_c4", "facing=west", "block/bomb/block_c4", 90, 270);
+        migVar("block_c4", "facing=east", "block/bomb/block_c4", 90, 90);
         // --- block_graphite_tritium
+        migVar("block_graphite_tritium", "meta=0", "block/pile_mk1/block_graphite_tritium", 0, 0);
+        migVar("block_graphite_tritium", "meta=1", "block/pile_mk1/block_graphite_tritium", 90, 0);
+        migVar("block_graphite_tritium", "meta=2", "block/pile_mk1/block_graphite_tritium", 90, 90);
+        migVar("block_graphite_tritium", "meta=3", "block/pile_mk1/plain", 0, 0);
+        migVar("block_graphite_tritium", "meta=4", "block/pile_mk1/block_graphite_tritium_aluminum", 0, 0);
+        migVar("block_graphite_tritium", "meta=5", "block/pile_mk1/block_graphite_tritium_aluminum", 90, 0);
+        migVar("block_graphite_tritium", "meta=6", "block/pile_mk1/block_graphite_tritium_aluminum", 90, 90);
+        migVar("block_graphite_tritium", "meta=7", "block/pile_mk1/plain", 0, 0);
+        migVar("block_graphite_tritium", "meta=8", "block/pile_mk1/block_graphite_tritium", 0, 0);
+        migVar("block_graphite_tritium", "meta=9", "block/pile_mk1/block_graphite_tritium", 90, 0);
+        migVar("block_graphite_tritium", "meta=10", "block/pile_mk1/block_graphite_tritium", 90, 90);
+        migVar("block_graphite_tritium", "meta=11", "block/pile_mk1/plain", 0, 0);
+        migVar("block_graphite_tritium", "meta=12", "block/pile_mk1/block_graphite_tritium_aluminum", 0, 0);
+        migVar("block_graphite_tritium", "meta=13", "block/pile_mk1/block_graphite_tritium_aluminum", 90, 0);
+        migVar("block_graphite_tritium", "meta=14", "block/pile_mk1/block_graphite_tritium_aluminum", 90, 90);
+        migVar("block_graphite_tritium", "meta=15", "block/pile_mk1/plain", 0, 0);
         // --- block_semtex
+        migVar("block_semtex", "facing=up", "block/bomb/block_semtex", 0, 0);
+        migVar("block_semtex", "facing=down", "block/bomb/block_semtex", 180, 0);
+        migVar("block_semtex", "facing=north", "block/bomb/block_semtex", 90, 0);
+        migVar("block_semtex", "facing=south", "block/bomb/block_semtex", 90, 180);
+        migVar("block_semtex", "facing=west", "block/bomb/block_semtex", 90, 270);
+        migVar("block_semtex", "facing=east", "block/bomb/block_semtex", 90, 90);
         // --- boxcar
         // --- brick_forgotten
+        migVar("brick_forgotten", "meta=0", "block/brick_forgotten_0", 0, 0);
+        migVar("brick_forgotten", "meta=1", "block/brick_forgotten_1", 0, 0);
+        migVar("brick_forgotten", "meta=2", "block/brick_forgotten_2", 0, 0);
+        migVar("brick_forgotten", "meta=3", "block/brick_forgotten_3", 0, 0);
+        migVar("brick_forgotten", "meta=4", "block/brick_forgotten_4", 0, 0);
+        migVar("brick_forgotten", "meta=5", "block/brick_forgotten_5", 0, 0);
+        migVar("brick_forgotten", "meta=6", "block/brick_forgotten_6", 0, 0);
         // --- brick_jungle_trap
+        migVar("brick_jungle_trap", "trap=falling_rocks", "block/brick_jungle_trap", 0, 0);
+        migVar("brick_jungle_trap", "trap=fire", "block/brick_jungle_trap", 0, 0);
+        migVar("brick_jungle_trap", "trap=arrow", "block/brick_jungle_trap", 0, 0);
+        migVar("brick_jungle_trap", "trap=spikes", "block/brick_jungle_trap", 0, 0);
+        migVar("brick_jungle_trap", "trap=mine", "block/brick_jungle_trap", 0, 0);
+        migVar("brick_jungle_trap", "trap=web", "block/brick_jungle_trap", 0, 0);
+        migVar("brick_jungle_trap", "trap=flaming_arrow", "block/brick_jungle_trap", 0, 0);
+        migVar("brick_jungle_trap", "trap=pillar", "block/brick_jungle_trap", 0, 0);
+        migVar("brick_jungle_trap", "trap=rad_conversion", "block/brick_jungle_trap", 0, 0);
+        migVar("brick_jungle_trap", "trap=magic_converstion", "block/brick_jungle_trap", 0, 0);
+        migVar("brick_jungle_trap", "trap=slowness", "block/brick_jungle_trap", 0, 0);
+        migVar("brick_jungle_trap", "trap=weakness", "block/brick_jungle_trap", 0, 0);
+        migVar("brick_jungle_trap", "trap=poison_dart", "block/brick_jungle_trap", 0, 0);
+        migVar("brick_jungle_trap", "trap=zombie", "block/brick_jungle_trap", 0, 0);
+        migVar("brick_jungle_trap", "trap=spiders", "block/brick_jungle_trap", 0, 0);
         // --- cable_detector
+        migVar("cable_detector", "on=false", "block/cable_detector_off", 0, 0);
+        migVar("cable_detector", "on=true", "block/cable_detector_on", 0, 0);
         // --- cable_diode (multipart)
         {
             mpOwner = migBlock("cable_diode");
@@ -5375,10 +5434,36 @@ public class ModBlockStateProvider extends BlockStateProvider {
             mpCond(p12, "down", "true");
         }
         // --- cable_switch
+        migVar("cable_switch", "on=false", "block/cable_switch_off", 0, 0);
+        migVar("cable_switch", "on=true", "block/cable_switch_on", 0, 0);
         // --- charge_c4
+        migVar("charge_c4", "facing=down", "block/bomb/charge_c4_down", 0, 0);
+        migVar("charge_c4", "facing=up", "block/bomb/charge_c4_up", 0, 0);
+        migVar("charge_c4", "facing=north", "block/bomb/charge_c4_north", 0, 0);
+        migVar("charge_c4", "facing=south", "block/bomb/charge_c4_south", 0, 0);
+        migVar("charge_c4", "facing=west", "block/bomb/charge_c4_west", 0, 0);
+        migVar("charge_c4", "facing=east", "block/bomb/charge_c4_east", 0, 0);
         // --- charge_dynamite
+        migVar("charge_dynamite", "facing=down", "block/bomb/charge_dynamite_down", 0, 0);
+        migVar("charge_dynamite", "facing=up", "block/bomb/charge_dynamite_up", 0, 0);
+        migVar("charge_dynamite", "facing=north", "block/bomb/charge_dynamite_north", 0, 0);
+        migVar("charge_dynamite", "facing=south", "block/bomb/charge_dynamite_south", 0, 0);
+        migVar("charge_dynamite", "facing=west", "block/bomb/charge_dynamite_west", 0, 0);
+        migVar("charge_dynamite", "facing=east", "block/bomb/charge_dynamite_east", 0, 0);
         // --- charge_miner
+        migVar("charge_miner", "facing=down", "block/bomb/charge_miner_down", 0, 0);
+        migVar("charge_miner", "facing=up", "block/bomb/charge_miner_up", 0, 0);
+        migVar("charge_miner", "facing=north", "block/bomb/charge_miner_north", 0, 0);
+        migVar("charge_miner", "facing=south", "block/bomb/charge_miner_south", 0, 0);
+        migVar("charge_miner", "facing=west", "block/bomb/charge_miner_west", 0, 0);
+        migVar("charge_miner", "facing=east", "block/bomb/charge_miner_east", 0, 0);
         // --- charge_semtex
+        migVar("charge_semtex", "facing=down", "block/bomb/charge_semtex_down", 0, 0);
+        migVar("charge_semtex", "facing=up", "block/bomb/charge_semtex_up", 0, 0);
+        migVar("charge_semtex", "facing=north", "block/bomb/charge_semtex_north", 0, 0);
+        migVar("charge_semtex", "facing=south", "block/bomb/charge_semtex_south", 0, 0);
+        migVar("charge_semtex", "facing=west", "block/bomb/charge_semtex_west", 0, 0);
+        migVar("charge_semtex", "facing=east", "block/bomb/charge_semtex_east", 0, 0);
         // --- crane_partitioner
         // --- crane_splitter
         // --- deco_pipe
@@ -5439,14 +5524,36 @@ public class ModBlockStateProvider extends BlockStateProvider {
         migVar("deco_pipe_rusted", "axis=y", "block/pipes/deco_pipe_rusted_y", 0, 0);
         migVar("deco_pipe_rusted", "axis=z", "block/pipes/deco_pipe_rusted_z", 0, 0);
         // --- digamma_matter
+        migVar("digamma_matter", "age=0", "block/bomb/digamma_matter", 0, 0);
+        migVar("digamma_matter", "age=1", "block/bomb/digamma_matter", 0, 0);
+        migVar("digamma_matter", "age=2", "block/bomb/digamma_matter", 0, 0);
+        migVar("digamma_matter", "age=3", "block/bomb/digamma_matter", 0, 0);
+        migVar("digamma_matter", "age=4", "block/bomb/digamma_matter", 0, 0);
+        migVar("digamma_matter", "age=5", "block/bomb/digamma_matter", 0, 0);
+        migVar("digamma_matter", "age=6", "block/bomb/digamma_matter", 0, 0);
+        migVar("digamma_matter", "age=7", "block/bomb/digamma_matter", 0, 0);
         // --- fireworks
+        migVar("fireworks", "", "block/bomb/fireworks", 0, 0);
         // --- fissure_bomb
+        migVar("fissure_bomb", "ignite_on_break=false", "block/bomb/fissure_bomb", 0, 0);
+        migVar("fissure_bomb", "ignite_on_break=true", "block/bomb/fissure_bomb", 0, 0);
         // --- flame_war
+        migVar("flame_war", "", "block/bomb/flame_war", 0, 0);
         // --- fluid_counter_valve
+        migVar("fluid_counter_valve", "on=false", "block/fluid_counter_valve_off", 0, 0);
+        migVar("fluid_counter_valve", "on=true", "block/fluid_counter_valve_on", 0, 0);
         // --- fluid_duct_paintable
+        migVar("fluid_duct_paintable", "hidden=false", "block/fluid_duct_paintable_particle", 0, 0);
+        migVar("fluid_duct_paintable", "hidden=true", "block/fluid_duct_paintable_particle", 0, 0);
         // --- fluid_duct_paintable_block_exhaust
+        migVar("fluid_duct_paintable_block_exhaust", "hidden=false", "block/fluid_duct_paintable_block_exhaust_particle", 0, 0);
+        migVar("fluid_duct_paintable_block_exhaust", "hidden=true", "block/fluid_duct_paintable_block_exhaust_particle", 0, 0);
         // --- fluid_switch
+        migVar("fluid_switch", "on=false", "block/fluid_switch_off", 0, 0);
+        migVar("fluid_switch", "on=true", "block/fluid_switch_on", 0, 0);
         // --- fluid_valve
+        migVar("fluid_valve", "on=false", "block/fluid_valve_off", 0, 0);
+        migVar("fluid_valve", "on=true", "block/fluid_valve_on", 0, 0);
         // --- fluorescent_lamp_off
         migVar("fluorescent_lamp_off", "broken=false,conn=down,facing=down,part=single", "block/lights/fluorescent_lamp_off_down_single", 0, 0);
         migVar("fluorescent_lamp_off", "broken=true,conn=down,facing=down,part=single", "block/lights/fluorescent_lamp_off_down_single", 0, 0);
@@ -5665,15 +5772,56 @@ public class ModBlockStateProvider extends BlockStateProvider {
         migVar("fluorescent_lamp_off", "broken=false,conn=east,facing=east,part=mid", "block/lights/fluorescent_lamp_off_east_single", 0, 0);
         migVar("fluorescent_lamp_off", "broken=true,conn=east,facing=east,part=mid", "block/lights/fluorescent_lamp_off_east_single", 0, 0);
         // --- geysir_nether
+        migVar("geysir_nether", "erupting=false", "block/geysir_nether", 0, 0);
+        migVar("geysir_nether", "erupting=true", "block/geysir_nether", 0, 0);
         // --- machine_puf6_tank
+        migVar("machine_puf6_tank", "facing=north", "block/deco/machine_puf6_tank", 0, 0);
+        migVar("machine_puf6_tank", "facing=west", "block/deco/machine_puf6_tank", 0, 270);
+        migVar("machine_puf6_tank", "facing=south", "block/deco/machine_puf6_tank", 0, 180);
+        migVar("machine_puf6_tank", "facing=east", "block/deco/machine_puf6_tank", 0, 90);
         // --- machine_uf6_tank
+        migVar("machine_uf6_tank", "facing=north", "block/deco/machine_uf6_tank", 0, 0);
+        migVar("machine_uf6_tank", "facing=west", "block/deco/machine_uf6_tank", 0, 270);
+        migVar("machine_uf6_tank", "facing=south", "block/deco/machine_uf6_tank", 0, 180);
+        migVar("machine_uf6_tank", "facing=east", "block/deco/machine_uf6_tank", 0, 90);
         // --- mush
+        migVar("mush", "", "block/deco/mush", 0, 0);
         // --- mush_block_stem
+        migVar("mush_block_stem", "", "block/deco/mush_block_stem", 0, 0);
         // --- ore_volcano
         // --- pink_log
+        migVar("pink_log", "axis=y", "block/deco/pink_log", 0, 0);
+        migVar("pink_log", "axis=z", "block/deco/pink_log_horizontal", 90, 0);
+        migVar("pink_log", "axis=x", "block/deco/pink_log_horizontal", 90, 90);
         // --- pink_planks
+        migVar("pink_planks", "", "block/deco/pink_planks", 0, 0);
         // --- pipe_anchor
-        // --- rail_wood
+        migVar("pipe_anchor", "facing=down", "block/pipe_anchor_particle", 0, 0);
+        migVar("pipe_anchor", "facing=up", "block/pipe_anchor_particle", 0, 0);
+        migVar("pipe_anchor", "facing=north", "block/pipe_anchor_particle", 0, 0);
+        migVar("pipe_anchor", "facing=south", "block/pipe_anchor_particle", 0, 0);
+        migVar("pipe_anchor", "facing=west", "block/pipe_anchor_particle", 0, 0);
+        migVar("pipe_anchor", "facing=east", "block/pipe_anchor_particle", 0, 0);
+        // --- rail_wood (10 SHAPE-Varianten; Item-Modell separat, siehe registerStatesAndModels)
+        {
+            Block railWood = ModBlocks.RAIL_WOOD.get();
+            ModelFile flat = models().getExistingFile(modLoc("block/rail_wood_flat"));
+            ModelFile raisedNe = models().getExistingFile(modLoc("block/rail_wood_raised_ne"));
+            ModelFile raisedSw = models().getExistingFile(modLoc("block/rail_wood_raised_sw"));
+            ModelFile curved = models().getExistingFile(modLoc("block/rail_wood_curved"));
+            var p = net.minecraft.world.level.block.state.properties.BlockStateProperties.RAIL_SHAPE;
+            VariantBlockStateBuilder b = getVariantBuilder(railWood);
+            b.partialState().with(p, net.minecraft.world.level.block.state.properties.RailShape.NORTH_SOUTH).modelForState().modelFile(flat).addModel();
+            b.partialState().with(p, net.minecraft.world.level.block.state.properties.RailShape.EAST_WEST).modelForState().modelFile(flat).rotationY(90).addModel();
+            b.partialState().with(p, net.minecraft.world.level.block.state.properties.RailShape.ASCENDING_EAST).modelForState().modelFile(raisedNe).rotationY(90).addModel();
+            b.partialState().with(p, net.minecraft.world.level.block.state.properties.RailShape.ASCENDING_WEST).modelForState().modelFile(raisedSw).rotationY(90).addModel();
+            b.partialState().with(p, net.minecraft.world.level.block.state.properties.RailShape.ASCENDING_NORTH).modelForState().modelFile(raisedNe).addModel();
+            b.partialState().with(p, net.minecraft.world.level.block.state.properties.RailShape.ASCENDING_SOUTH).modelForState().modelFile(raisedSw).addModel();
+            b.partialState().with(p, net.minecraft.world.level.block.state.properties.RailShape.SOUTH_EAST).modelForState().modelFile(curved).addModel();
+            b.partialState().with(p, net.minecraft.world.level.block.state.properties.RailShape.SOUTH_WEST).modelForState().modelFile(curved).rotationY(90).addModel();
+            b.partialState().with(p, net.minecraft.world.level.block.state.properties.RailShape.NORTH_WEST).modelForState().modelFile(curved).rotationY(180).addModel();
+            b.partialState().with(p, net.minecraft.world.level.block.state.properties.RailShape.NORTH_EAST).modelForState().modelFile(curved).rotationY(270).addModel();
+        }
         // --- reinforced_laminate_pane (multipart)
         {
             mpOwner = migBlock("reinforced_laminate_pane");
@@ -5698,7 +5846,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
         }
         // --- sandbags
         // --- solar_mirror
+        migVar("solar_mirror", "", "block/machines/solar_mirror", 0, 0);
         // --- spikes
+        migVar("spikes", "", "block/deco/spikes", 0, 0);
         // --- steel_beam
         migVar("sandbags", "north=false,south=false,east=false,west=false", "block/deco/sandbags_0000", 0, 0);
         migVar("sandbags", "north=false,south=false,east=false,west=true", "block/deco/sandbags_0001", 0, 0);
@@ -5717,12 +5867,51 @@ public class ModBlockStateProvider extends BlockStateProvider {
         migVar("sandbags", "north=true,south=true,east=true,west=false", "block/deco/sandbags_1110", 0, 0);
         migVar("sandbags", "north=true,south=true,east=true,west=true", "block/deco/sandbags_1111", 0, 0);
         // --- stone_porous
+        migVar("stone_porous", "", "block/deco/stone_porous", 0, 0);
         // --- therm_endo
+        migVar("therm_endo", "", "block/bomb/therm_endo", 0, 0);
         // --- therm_exo
+        migVar("therm_exo", "", "block/bomb/therm_exo", 0, 0);
         // --- vine_phosphor
+        migVar("vine_phosphor", "look=ground", "block/deco/vine_phosphor_ground", 0, 0);
+        migVar("vine_phosphor", "look=middle", "block/deco/vine_phosphor_middle", 0, 0);
+        migVar("vine_phosphor", "look=hang", "block/deco/vine_phosphor_hang", 0, 0);
+        migVar("vine_phosphor", "look=hang_over", "block/deco/vine_phosphor_hang_over", 0, 0);
         // --- volcano_core
         // --- volcano_rad_core
         // --- wood_barrier
+        migVar("wood_barrier", "nx=false,nz=false,px=false,pz=false,py=false", "block/deco/wood_barrier_00000", 0, 0);
+        migVar("wood_barrier", "nx=false,nz=false,px=false,pz=false,py=true", "block/deco/wood_barrier_00001", 0, 0);
+        migVar("wood_barrier", "nx=false,nz=false,px=false,pz=true,py=false", "block/deco/wood_barrier_00010", 0, 0);
+        migVar("wood_barrier", "nx=false,nz=false,px=false,pz=true,py=true", "block/deco/wood_barrier_00011", 0, 0);
+        migVar("wood_barrier", "nx=false,nz=false,px=true,pz=false,py=false", "block/deco/wood_barrier_00100", 0, 0);
+        migVar("wood_barrier", "nx=false,nz=false,px=true,pz=false,py=true", "block/deco/wood_barrier_00101", 0, 0);
+        migVar("wood_barrier", "nx=false,nz=false,px=true,pz=true,py=false", "block/deco/wood_barrier_00110", 0, 0);
+        migVar("wood_barrier", "nx=false,nz=false,px=true,pz=true,py=true", "block/deco/wood_barrier_00111", 0, 0);
+        migVar("wood_barrier", "nx=false,nz=true,px=false,pz=false,py=false", "block/deco/wood_barrier_01000", 0, 0);
+        migVar("wood_barrier", "nx=false,nz=true,px=false,pz=false,py=true", "block/deco/wood_barrier_01001", 0, 0);
+        migVar("wood_barrier", "nx=false,nz=true,px=false,pz=true,py=false", "block/deco/wood_barrier_01010", 0, 0);
+        migVar("wood_barrier", "nx=false,nz=true,px=false,pz=true,py=true", "block/deco/wood_barrier_01011", 0, 0);
+        migVar("wood_barrier", "nx=false,nz=true,px=true,pz=false,py=false", "block/deco/wood_barrier_01100", 0, 0);
+        migVar("wood_barrier", "nx=false,nz=true,px=true,pz=false,py=true", "block/deco/wood_barrier_01101", 0, 0);
+        migVar("wood_barrier", "nx=false,nz=true,px=true,pz=true,py=false", "block/deco/wood_barrier_01110", 0, 0);
+        migVar("wood_barrier", "nx=false,nz=true,px=true,pz=true,py=true", "block/deco/wood_barrier_01111", 0, 0);
+        migVar("wood_barrier", "nx=true,nz=false,px=false,pz=false,py=false", "block/deco/wood_barrier_10000", 0, 0);
+        migVar("wood_barrier", "nx=true,nz=false,px=false,pz=false,py=true", "block/deco/wood_barrier_10001", 0, 0);
+        migVar("wood_barrier", "nx=true,nz=false,px=false,pz=true,py=false", "block/deco/wood_barrier_10010", 0, 0);
+        migVar("wood_barrier", "nx=true,nz=false,px=false,pz=true,py=true", "block/deco/wood_barrier_10011", 0, 0);
+        migVar("wood_barrier", "nx=true,nz=false,px=true,pz=false,py=false", "block/deco/wood_barrier_10100", 0, 0);
+        migVar("wood_barrier", "nx=true,nz=false,px=true,pz=false,py=true", "block/deco/wood_barrier_10101", 0, 0);
+        migVar("wood_barrier", "nx=true,nz=false,px=true,pz=true,py=false", "block/deco/wood_barrier_10110", 0, 0);
+        migVar("wood_barrier", "nx=true,nz=false,px=true,pz=true,py=true", "block/deco/wood_barrier_10111", 0, 0);
+        migVar("wood_barrier", "nx=true,nz=true,px=false,pz=false,py=false", "block/deco/wood_barrier_11000", 0, 0);
+        migVar("wood_barrier", "nx=true,nz=true,px=false,pz=false,py=true", "block/deco/wood_barrier_11001", 0, 0);
+        migVar("wood_barrier", "nx=true,nz=true,px=false,pz=true,py=false", "block/deco/wood_barrier_11010", 0, 0);
+        migVar("wood_barrier", "nx=true,nz=true,px=false,pz=true,py=true", "block/deco/wood_barrier_11011", 0, 0);
+        migVar("wood_barrier", "nx=true,nz=true,px=true,pz=false,py=false", "block/deco/wood_barrier_11100", 0, 0);
+        migVar("wood_barrier", "nx=true,nz=true,px=true,pz=false,py=true", "block/deco/wood_barrier_11101", 0, 0);
+        migVar("wood_barrier", "nx=true,nz=true,px=true,pz=true,py=false", "block/deco/wood_barrier_11110", 0, 0);
+        migVar("wood_barrier", "nx=true,nz=true,px=true,pz=true,py=true", "block/deco/wood_barrier_11111", 0, 0);
         // --- wood_structure_scaffold
     }
 
@@ -6681,22 +6870,14 @@ public class ModBlockStateProvider extends BlockStateProvider {
      * einen Quader der passenden Hoehe; Basalterze sind Saeulen mit eigener Oberseite.
      */
     private void worldFluids() {
-        String[][] liquids = {
-                { "mud_block", "mud" }, { "acid_block", "acid" }, { "toxic_block", "toxic" },
-                { "schrabidic_block", "schrabidic_acid" }, { "volcanic_lava_block", "volcanic_lava" },
-                { "rad_lava_block", "rad_lava" }, { "sulfuric_acid_block", "sulfuric_acid" } };
-        for (String[] l : liquids) {
-            net.minecraft.world.level.block.Block b = net.minecraftforge.registries.ForgeRegistries.BLOCKS.getValue(modLoc(l[0]));
-            simpleBlock(b, models().getBuilder(l[0]).texture("particle", modLoc("block/fluid/" + l[1] + "_still")));
-        }
-        finiteFluid(ModBlocks.CORIUM_BLOCK.get(), "corium_block", "block/fluid/corium_still", 5);
-        finiteFluid(ModBlocks.CONCRETE_LIQUID.get(), "concrete_liquid", "block/fluid/concrete_liquid", 4);
+        // Fluessigbloecke (LiquidBlock): blockstate mit Catch-all-Variante, Modell dient nur
+        // als Partikel-/Fallback-Quelle, der eigentliche Rendern uebernimmt das Fluid.
+        simpleBlock(ModBlocks.MUD_BLOCK.get(), models().getBuilder("mud_block").texture("particle", modLoc("block/fluid/mud_still")));
+        simpleBlock(ModBlocks.ACID_BLOCK.get(), models().getBuilder("acid_block").texture("particle", modLoc("block/fluid/acid_still")));
+        simpleBlock(ModBlocks.TOXIC_FLUID_BLOCK.get(), models().getBuilder("toxic_fluid_block").texture("particle", modLoc("block/fluid/toxic_still")));
+        simpleBlock(ModBlocks.SCHRABIDIC_BLOCK.get(), models().getBuilder("schrabidic_block").texture("particle", modLoc("block/fluid/schrabidic_acid_still")));
+        simpleBlock(ModBlocks.SULFURIC_ACID_BLOCK.get(), models().getBuilder("sulfuric_acid_block").texture("particle", modLoc("block/fluid/sulfuric_acid_still")));
 
-        for (String t : new String[] { "sulfur", "fluorite", "asbestos", "gem", "molysite" }) {
-            net.minecraft.world.level.block.Block b = net.minecraftforge.registries.ForgeRegistries.BLOCKS.getValue(modLoc("ore_basalt_" + t));
-            var model = models().cubeColumn("ore_basalt_" + t, modLoc("block/ore_basalt_" + t), modLoc("block/ore_basalt_" + t + "_top"));
-            simpleBlockWithItem(b, model);
-        }
     }
 
     private void finiteFluid(net.minecraft.world.level.block.Block block, String name, String texture, int quanta) {

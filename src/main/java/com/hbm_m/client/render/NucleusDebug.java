@@ -465,14 +465,10 @@ public final class NucleusDebug {
             // line always shows the last-known values with a per-column age
             // against the current render frame stamp f. "never" on BOTH passes
             // = no data yet - the line is omitted (F3 compaction 2026-10-07).
-            if (NucleusGpuBaker.lastSpanMainDirtyFrame() >= 0
-                    || NucleusGpuBaker.lastSpanShadowDirtyFrame() >= 0) {
+            if (NucleusGpuBaker.lastSpanMainDirtyFrame() >= 0) {
                 out.add("Bake spans: §a" + NucleusGpuBaker.lastSpanMainDirtyDispatches()
-                        + "§r/§f" + NucleusGpuBaker.lastSpanMainDirtyInstances() + "§7 main "
-                        + spanAge(NucleusGpuBaker.lastSpanMainDirtyFrame(), f) + ", §a"
-                        + NucleusGpuBaker.lastSpanShadowDirtyDispatches()
-                        + "§r/§f" + NucleusGpuBaker.lastSpanShadowDirtyInstances()
-                        + "§7 shadow " + spanAge(NucleusGpuBaker.lastSpanShadowDirtyFrame(), f)
+                        + "§r/§f" + NucleusGpuBaker.lastSpanMainDirtyInstances() + "§7 shared "
+                        + spanAge(NucleusGpuBaker.lastSpanMainDirtyFrame(), f)
                         + "§7 span-expanded");
             }
             // Global-batch pool realloc counters. reallocs is a SESSION-LIFETIME

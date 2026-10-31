@@ -7,12 +7,12 @@ import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemDisplayContext;
-//? if forge {
 import net.minecraftforge.client.model.BakedModelWrapper;
+
+//? if forge {
 import net.minecraftforge.fml.ModList;
 //?} else {
-/*import net.minecraftforge.client.model.BakedModelWrapper;
-import net.neoforged.fml.ModList;
+/*import net.neoforged.fml.ModList;
 *///?}
 import org.jetbrains.annotations.Nullable;
 

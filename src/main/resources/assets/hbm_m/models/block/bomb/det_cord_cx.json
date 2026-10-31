@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:block/block",
-  "loader": "forge:obj",
+  "loader": "hbm_m:nmesh_obj",
   "model": "hbm_m:models/block/bomb/det_cord_cx.obj",
   "flip_v": true,
   "render_type": "minecraft:cutout",

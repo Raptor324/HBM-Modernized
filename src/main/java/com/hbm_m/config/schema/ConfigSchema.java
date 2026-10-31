@@ -274,6 +274,7 @@ public final class ConfigSchema {
         reg(ConfigField.floatNested("graphicEffects.nukeLightIntensity", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", "graphicEffects", 0F, 50F));
         reg(ConfigField.floatNested("graphicEffects.nukeLightRadiusScale", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", "graphicEffects", 0.1F, 8F));
         reg(ConfigField.floatNested("graphicEffects.nukeCinematics", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", "graphicEffects", 0F, 2F));
+        reg(ConfigField.floatNested("graphicEffects.nukeHaloStrength", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", "graphicEffects", 0F, 3F));
 
         // ── CLIENT: оверлеи ─────────────────────────────────────────
         reg(ConfigField.boolNested("radiationPixelEffect.enableRadiationPixelEffect", ConfigSide.CLIENT, ApplyMode.LIVE, "overlay", "radiationPixelEffect"));

@@ -33,13 +33,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import com.hbm_m.platform.ModItemStackHandler;
 
-//? if neoforge {
-/*import net.minecraftforge.client.model.data.ModelData;
-import net.minecraftforge.client.model.data.ModelProperty;
-*///?}
-//? if forge {
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.client.model.data.ModelProperty;
+
+//? if forge {
 import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 //?}

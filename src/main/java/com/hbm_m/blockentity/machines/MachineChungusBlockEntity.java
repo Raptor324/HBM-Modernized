@@ -34,11 +34,9 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
+//?}
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
-//?} elif neoforge {
-/*import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
-*///?}
 
 /**
  * Chungus / Leviathan Steam Turbine BlockEntity - das Endgame-Upgrade zur Industrial Turbine.

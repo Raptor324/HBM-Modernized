@@ -1,5 +1,5 @@
 {
-  "loader": "forge:obj",
+  "loader": "hbm_m:nmesh_obj",
   "model": "hbm_m:models/block/rail/rail_standard_buffer.obj",
   "flip_v": true,
   "automatic_culling": false,

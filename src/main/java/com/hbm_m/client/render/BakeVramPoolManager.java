@@ -41,22 +41,15 @@ public final class BakeVramPoolManager {
     public static final int CTL_HEADER_WORDS = 16;
     public static final int LOCAL_SIZE = 64;
 
-    public static final int OUT_STRIDE_BYTES = 56;
+    public static final int OUT_STRIDE_BYTES = 48;
     public static final int OUT_OFF_POS = 0;
     public static final int OUT_OFF_COLOR = 12;
     public static final int OUT_OFF_UV0 = 16;
-    public static final int OUT_OFF_UV1 = 24;
-    public static final int OUT_OFF_UV2 = 28;
-    public static final int OUT_OFF_NORMAL = 32;
-    public static final int OUT_OFF_ENTITY = 36;
-    public static final int OUT_OFF_MIDTEX = 40;
-    public static final int OUT_OFF_TANGENT = 48;
-    public static final int OUT_OFF_MIDBLOCK = 52;
-
-    public static final int SHADOW_STRIDE_BYTES = 24;
-    public static final int SH_OFF_POS = 0;
-    public static final int SH_OFF_UV0 = 12;
-    public static final int SH_OFF_NORMAL = 20;
+    public static final int OUT_OFF_UV2 = 24;
+    public static final int OUT_OFF_NORMAL = 28;
+    public static final int OUT_OFF_MIDTEX = 32;
+    public static final int OUT_OFF_TANGENT = 40;
+    public static final int OUT_OFF_MIDBLOCK = 44;
 
     public static final PassPool POOL_MAIN = new PassPool(false);
     public static final PassPool POOL_SHADOW = new PassPool(true);
@@ -74,7 +67,8 @@ public final class BakeVramPoolManager {
     }
 
     public static int outStrideBytes(int mode) {
-        return mode == NucleusGpuBaker.MODE_SHADOW ? SHADOW_STRIDE_BYTES : OUT_STRIDE_BYTES;
+        // Shadow shares POOL_MAIN.outputSsbo, so both modes use the same 48-byte stride.
+        return OUT_STRIDE_BYTES;
     }
 
     /** Total VRAM bytes currently held by per-renderer caches and pools. */
@@ -171,11 +165,11 @@ public final class BakeVramPoolManager {
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
             if (slim) {
                 GL20.glEnableVertexAttribArray(0);
-                GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, SHADOW_STRIDE_BYTES, SH_OFF_POS);
+                GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, OUT_STRIDE_BYTES, OUT_OFF_POS);
                 GL20.glEnableVertexAttribArray(2);
-                GL20.glVertexAttribPointer(2, 2, GL11.GL_FLOAT, false, SHADOW_STRIDE_BYTES, SH_OFF_UV0);
+                GL20.glVertexAttribPointer(2, 2, GL11.GL_FLOAT, false, OUT_STRIDE_BYTES, OUT_OFF_UV0);
                 GL20.glEnableVertexAttribArray(5);
-                GL20.glVertexAttribPointer(5, 3, GL11.GL_BYTE, true, SHADOW_STRIDE_BYTES, SH_OFF_NORMAL);
+                GL20.glVertexAttribPointer(5, 3, GL11.GL_BYTE, true, OUT_STRIDE_BYTES, OUT_OFF_NORMAL);
             } else {
                 GL20.glEnableVertexAttribArray(0);
                 GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, OUT_STRIDE_BYTES, OUT_OFF_POS);
@@ -183,8 +177,10 @@ public final class BakeVramPoolManager {
                 GL20.glVertexAttribPointer(1, 4, GL11.GL_UNSIGNED_BYTE, true, OUT_STRIDE_BYTES, OUT_OFF_COLOR);
                 GL20.glEnableVertexAttribArray(2);
                 GL20.glVertexAttribPointer(2, 2, GL11.GL_FLOAT, false, OUT_STRIDE_BYTES, OUT_OFF_UV0);
-                GL20.glEnableVertexAttribArray(3);
-                GL30.glVertexAttribIPointer(3, 2, GL11.GL_SHORT, OUT_STRIDE_BYTES, OUT_OFF_UV1);
+                // UV1 (overlay) is constant NO_OVERLAY (0, 10) for all machines;
+                // keeping it as a constant attribute saves 4 bytes per baked vertex.
+                GL20.glDisableVertexAttribArray(3);
+                GL30.glVertexAttribI2i(3, 0, 10);
                 GL20.glEnableVertexAttribArray(4);
                 GL30.glVertexAttribIPointer(4, 2, GL11.GL_SHORT, OUT_STRIDE_BYTES, OUT_OFF_UV2);
                 GL20.glEnableVertexAttribArray(5);
@@ -287,10 +283,11 @@ public final class BakeVramPoolManager {
 
     public static boolean preallocateCacheBuffers(BakedMesh baked, ModeCache mc, int count, int mode) {
         int cap = roundUpInstanceCapacity(count);
+        boolean isShadow = (mode == NucleusGpuBaker.MODE_SHADOW);
         long recBytes = (long) cap * InstancedStaticPartRenderer.INSTANCE_DATA_SIZE * 4L;
-        long recStorage = Math.max(recBytes, 1L << 16);
+        long recStorage = isShadow ? 0L : Math.max(recBytes, 1L << 16);
         long ctlBytes = (long) (CTL_HEADER_WORDS + cap) * 4L;
-        long dirtySsboBytes = (long) (1 + cap) * 4L;
+        long dirtySsboBytes = isShadow ? 0L : (long) (1 + cap) * 4L;
         long localNeed = recStorage + ctlBytes + dirtySsboBytes;
         synchronized (BakeVramPoolManager.class) {
             cacheBytes += localNeed;
@@ -299,24 +296,26 @@ public final class BakeVramPoolManager {
             mc.lastUseFrame = frameStamp();
             mc.outInstances = cap;
             mc.eboInstances = cap;
-            mc.recordSsbo = GL15.glGenBuffers();
-            GlDebugMarkers.labelBuffer(mc.recordSsbo, "HBM_Record_" + baked.debugTag() + "_" + (mode == NucleusGpuBaker.MODE_SHADOW ? "Shadow" : "Main"));
-            GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, mc.recordSsbo);
-            mc.recordSize[0] = recStorage;
-            GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, mc.recordSize[0], GL15.GL_DYNAMIC_COPY);
-            mc.recordCopy = new float[(int) (recBytes / 4L)];
+            if (!isShadow) {
+                mc.recordSsbo = GL15.glGenBuffers();
+                GlDebugMarkers.labelBuffer(mc.recordSsbo, "HBM_Record_" + baked.debugTag() + "_Main");
+                GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, mc.recordSsbo);
+                mc.recordSize[0] = recStorage;
+                GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, mc.recordSize[0], GL15.GL_DYNAMIC_COPY);
+                mc.recordCopy = new float[(int) (recBytes / 4L)];
+                mc.dirtySsbo = GL15.glGenBuffers();
+                GlDebugMarkers.labelBuffer(mc.dirtySsbo, "HBM_Dirty_" + baked.debugTag() + "_Main");
+                GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, mc.dirtySsbo);
+                GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, dirtySsboBytes, GL15.GL_DYNAMIC_COPY);
+                mc.dirtyBytes = dirtySsboBytes;
+                mc.dirtyIdx = new int[cap];
+                mc.dirtyCount = 0;
+            }
             mc.ctlSsbo = GL15.glGenBuffers();
-            GlDebugMarkers.labelBuffer(mc.ctlSsbo, "HBM_Ctl_" + baked.debugTag() + "_" + (mode == NucleusGpuBaker.MODE_SHADOW ? "Shadow" : "Main"));
+            GlDebugMarkers.labelBuffer(mc.ctlSsbo, "HBM_Ctl_" + baked.debugTag() + "_" + (isShadow ? "Shadow" : "Main"));
             GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, mc.ctlSsbo);
             GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, ctlBytes, GL15.GL_DYNAMIC_COPY);
             mc.ctlBytes = ctlBytes;
-            mc.dirtySsbo = GL15.glGenBuffers();
-            GlDebugMarkers.labelBuffer(mc.dirtySsbo, "HBM_Dirty_" + baked.debugTag() + "_" + (mode == NucleusGpuBaker.MODE_SHADOW ? "Shadow" : "Main"));
-            GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, mc.dirtySsbo);
-            GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, dirtySsboBytes, GL15.GL_DYNAMIC_COPY);
-            mc.dirtyBytes = dirtySsboBytes;
-            mc.dirtyIdx = new int[cap];
-            mc.dirtyCount = 0;
             GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
             return true;
         } catch (Exception t) {
@@ -553,7 +552,9 @@ public final class BakeVramPoolManager {
             newEboBases[i] = (int) words;
             verts += (long) bm.vertCount * mc.outInstances;
             words += (long) bm.idxCount * mc.eboInstances;
-            outNeeded += (long) bm.vertCount * mc.outInstances * stride;
+            if (mode != NucleusGpuBaker.MODE_SHADOW) {
+                outNeeded += (long) bm.vertCount * mc.outInstances * stride;
+            }
             eboNeeded += (long) bm.idxCount * mc.eboInstances * 4L;
 
             if (!firstShiftEncountered) {
@@ -579,10 +580,19 @@ public final class BakeVramPoolManager {
         for (int i = 0; i < n; i++) {
             BakedMesh bm = BAKED.get(i);
             ModeCache mc = bm.cache(mode);
-            boolean shifted = bm.vertBase[mode] != newVertBases[i]
+            int targetVertBase = (mode == NucleusGpuBaker.MODE_SHADOW)
+                    ? bm.vertBase[NucleusGpuBaker.MODE_MAIN]
+                    : newVertBases[i];
+            boolean shifted = bm.vertBase[mode] != targetVertBase
                     || bm.eboWordBase[mode] != newEboBases[i];
-            bm.vertBase[mode] = newVertBases[i];
+            bm.vertBase[mode] = targetVertBase;
             bm.eboWordBase[mode] = newEboBases[i];
+            if (mode == NucleusGpuBaker.MODE_MAIN && bm.vertBase[NucleusGpuBaker.MODE_SHADOW] != targetVertBase) {
+                bm.vertBase[NucleusGpuBaker.MODE_SHADOW] = targetVertBase;
+                if (bm.shadow.outInstances > 0) {
+                    invalidateBakedOutput(bm.shadow);
+                }
+            }
             if (shifted && mc.outInstances > 0) {
                 invalidateBakedOutput(mc);
             }
@@ -611,6 +621,15 @@ public final class BakeVramPoolManager {
                                             long validOutCopyBytes, long validEboCopyBytes) {
         try {
             boolean vaoNeedsRebuild = false;
+            // Shadow shares POOL_MAIN.outputSsbo - never allocate a shadow-pool output SSBO.
+            if (pool == POOL_SHADOW && pool.outputSsbo != -1) {
+                GL15.glDeleteBuffers(pool.outputSsbo);
+                synchronized (BakeVramPoolManager.class) {
+                    cacheBytes -= pool.outputAllocBytes;
+                }
+                pool.outputSsbo = -1;
+                pool.outputAllocBytes = 0;
+            }
             if (outNeeded > pool.outputAllocBytes) {
                 long target = Math.max(outNeeded, poolStoreTarget(outNeeded));
                 if (target > MAX_SINGLE_BUFFER_BYTES) {
@@ -731,12 +750,28 @@ public final class BakeVramPoolManager {
                     }
                     pool.eboAllocBytes = 0;
                 }
+            } else if (pool == POOL_SHADOW) {
+                if ((pool.vao == -1 || vaoNeedsRebuild) && POOL_MAIN.outputSsbo != -1 && pool.eboSsbo != -1) {
+                    if (pool.vao != -1) {
+                        GL30.glDeleteVertexArrays(pool.vao);
+                    }
+                    pool.vao = createOutputVaoWithEbo(POOL_MAIN.outputSsbo, pool.eboSsbo, true);
+                    GlDebugMarkers.labelVao(pool.vao, "HBM_Pool_Shadow_VAO");
+                }
             } else if ((pool.vao == -1 || vaoNeedsRebuild) && pool.outputSsbo != -1 && pool.eboSsbo != -1) {
                 if (pool.vao != -1) {
                     GL30.glDeleteVertexArrays(pool.vao);
                 }
                 pool.vao = createOutputVaoWithEbo(pool.outputSsbo, pool.eboSsbo, pool.slim);
                 GlDebugMarkers.labelVao(pool.vao, "HBM_Pool_" + poolName(pool) + "_VAO");
+                // If POOL_MAIN.outputSsbo was reallocated, also repoint POOL_SHADOW.vao at the new buffer:
+                if (POOL_SHADOW.eboSsbo != -1) {
+                    if (POOL_SHADOW.vao != -1) {
+                        GL30.glDeleteVertexArrays(POOL_SHADOW.vao);
+                    }
+                    POOL_SHADOW.vao = createOutputVaoWithEbo(pool.outputSsbo, POOL_SHADOW.eboSsbo, true);
+                    GlDebugMarkers.labelVao(POOL_SHADOW.vao, "HBM_Pool_Shadow_VAO");
+                }
             }
             return true;
         } catch (Exception t) {
@@ -773,7 +808,7 @@ public final class BakeVramPoolManager {
         long eboSave = pool.eboAllocBytes - eboTarget;
         try {
             boolean shrunk = false;
-            if (outSave >= SHRINK_MIN_SAVINGS && pool.outputSsbo != -1) {
+            if (outSave >= SHRINK_MIN_SAVINGS && pool.outputSsbo != -1 && mode != NucleusGpuBaker.MODE_SHADOW) {
                 GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, pool.outputSsbo);
                 GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, outTarget, GL15.GL_DYNAMIC_COPY);
                 GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
@@ -844,6 +879,11 @@ public final class BakeVramPoolManager {
             MemoryUtil.memFree(pool.cmdCpu);
             pool.cmdCpu = null;
         }
+        pool.reallocs = 0;
+        pool.shrinks = 0;
+        pool.lastRelayoutFrame = -1L;
+        cacheOverflowLogged = false;
+        identityFillRefuseLogged = false;
     }
 
     // ── F3 Telemetry ───────────────────────────────────────────────────
@@ -871,8 +911,10 @@ public final class BakeVramPoolManager {
             for (int i = 0; i < BAKED.size(); i++) {
                 BakedMesh bm = BAKED.get(i);
                 ModeCache mc = bm.cache(mode);
-                total += (long) bm.vertCount * mc.outInstances * outStrideBytes(mode)
-                        + (long) bm.idxCount * mc.eboInstances * 4L;
+                if (mode != NucleusGpuBaker.MODE_SHADOW) {
+                    total += (long) bm.vertCount * mc.outInstances * outStrideBytes(mode);
+                }
+                total += (long) bm.idxCount * mc.eboInstances * 4L;
             }
             return total;
         }
@@ -927,12 +969,7 @@ public final class BakeVramPoolManager {
         synchronized (BakeVramPoolManager.class) {
             long total = 0L;
             for (int mode = NucleusGpuBaker.MODE_SHADOW; mode <= NucleusGpuBaker.MODE_MAIN; mode++) {
-                for (int i = 0; i < BAKED.size(); i++) {
-                    BakedMesh bm = BAKED.get(i);
-                    ModeCache mc = bm.cache(mode);
-                    total += (long) bm.vertCount * mc.outInstances * outStrideBytes(mode)
-                            + (long) bm.idxCount * mc.eboInstances * 4L;
-                }
+                total += poolUsedBytes(mode);
             }
             for (int i = 0; i < BAKED.size(); i++) {
                 BakedMesh bm = BAKED.get(i);
@@ -952,7 +989,7 @@ public final class BakeVramPoolManager {
     }
 
     private static long cacheUsedBytes(ModeCache mc) {
-        long records = mc.recordCount >= 0
+        long records = (mc.recordSsbo != -1 && mc.recordCount >= 0)
                 ? (long) mc.recordCount * InstancedStaticPartRenderer.INSTANCE_DATA_SIZE * 4L
                 : 0L;
         return records + Math.max(mc.dirtyBytes, 0L) + Math.max(mc.ctlBytes, 0L);

@@ -1,17 +1,17 @@
 package com.hbm_m.client.weapon;
 
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.client.event.RenderHandEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 //? if forge {
 import com.hbm_m.lib.RefStrings;
 
 import net.minecraftforge.client.event.ComputeFovModifierEvent;
-import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
-import net.minecraftforge.client.event.RenderHandEvent;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 /** Forge-Ereignisse des Waffensystems, siehe {@link GunClientHooks}. */
@@ -77,13 +77,9 @@ public final class GunClientEventsForge {
 //?} elif neoforge {
 /*import com.hbm_m.lib.RefStrings;
 
-import net.neoforged.bus.api.EventPriority;
-import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ComputeFovModifierEvent;
-import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
-import net.neoforged.neoforge.client.event.RenderHandEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 
 /^* NeoForge-Gegenstueck der Forge-Ereignisse des Waffensystems (gleiches Verhalten), siehe {@link GunClientHooks}. ^/

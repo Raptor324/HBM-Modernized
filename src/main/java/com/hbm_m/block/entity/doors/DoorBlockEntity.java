@@ -1,12 +1,7 @@
 package com.hbm_m.block.entity.doors;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-*///?}
 
 
 import org.jetbrains.annotations.NotNull;

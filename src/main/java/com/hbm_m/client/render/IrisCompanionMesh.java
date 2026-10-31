@@ -52,7 +52,7 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
  */
 
 @OnlyIn(Dist.CLIENT)
-public final class IrisCompanionMesh implements IrisCompanionMeshResource {
+public final class IrisCompanionMesh {
 
     /**
      * Linker-resolved locations forced by Oculus {@code ProgramCreator} for every

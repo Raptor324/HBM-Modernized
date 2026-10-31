@@ -959,7 +959,8 @@ public final class MdiBatchCoordinator {
                 continue;
             }
             int oldCap = p.atlasWindowCap;
-            p.atlasWindowCap = Math.max(WINDOW_MIN_CAP, Math.max(p.instanceCount, oldCap * 2));
+            int grownCap = oldCap < 1024 ? oldCap * 2 : oldCap + (oldCap >> 2);
+            p.atlasWindowCap = Math.max(WINDOW_MIN_CAP, Math.max(p.instanceCount, grownCap));
             p.atlasWindowBase = -1;
             p.windowUploaded = false;
             // The window will be re-placed at a new offset: the shadow mirrors the
@@ -1155,7 +1156,7 @@ public final class MdiBatchCoordinator {
         if (flag != null) {
             return Math.max(0, flag);
         }
-        return Math.max(0, com.hbm_m.config.ModClothConfig.get().nucleusGpuCullMinInstances);
+        return 0;
     }
     private static boolean occlusionLatch = false;
     private static long lastOcclusionGateLogMs = 0L;

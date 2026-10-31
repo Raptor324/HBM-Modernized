@@ -12,19 +12,17 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import dev.architectury.event.events.client.ClientPlayerEvent;
 import dev.architectury.event.events.client.ClientTickEvent;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+
+//? if forge {
 import net.minecraftforge.fml.common.Mod;
 
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 //?} elif neoforge {
-/*import net.minecraftforge.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+/*import net.neoforged.fml.common.EventBusSubscriber;
 
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
 @EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT)
@@ -104,7 +102,27 @@ public class EngineHandler {
 
     @SubscribeEvent
     public static void onRenderLevelStage(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_WEATHER) return;
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_WEATHER) {
+            // Fabulous (useShaderTransparency): transparencyChain.process()
+            // композитит weather/particle таргеты в main только ПОСЛЕ
+            // AFTER_WEATHER — RawScreenSpaceLight рисуем на AFTER_LEVEL.
+            if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
+                onAfterLevelFabulous();
+            }
+            return;
+        }
+
+        // ЧИСТЫЕ ванильные матрицы кадра ДО любого extended-pass: под DH
+        // beginVanillaExtendedPass подменяет проекцию на удлинённую (far=8e6),
+        // а RawScreenSpaceLight в сценариях A/B обязан разворачивать uDepthTex0
+        // именно ВАНИЛЬНОЙ проекцией (той, которой растеризованы чанки).
+        org.joml.Matrix4f vanillaProj = new org.joml.Matrix4f(event.getProjectionMatrix());
+        //? if < 1.21.1 {
+        org.joml.Matrix4f vanillaMv = new org.joml.Matrix4f(event.getPoseStack().last().pose());
+        //?} else {
+        /*org.joml.Matrix4f vanillaMv = new org.joml.Matrix4f(event.getModelViewMatrix());
+        *///?}
+        com.hbm_m.client.render.shader.RawScreenSpaceLight.captureVanillaFrameMatrices(vanillaProj, vanillaMv);
 
         // Матрица поворота камеры кадра (frustumMatrix): на ней строятся ВСЕ
         // camera-relative вершины прохода. Больше НЕ полагаемся на ambient
@@ -126,6 +144,31 @@ public class EngineHandler {
         } finally {
             com.hbm_m.platform.RenderHooks.popLevelModelView();
         }
+
+        // Vanilla-путь (сценарии A/B, Fast/Fancy): под Iris/Oculus вызов делал
+        // бы двойной дро — MixinIrisRenderingPipelinePreComposite зовёт
+        // drawIfReady() на TAIL finalizeLevelRendering. Fabulous уходит в
+        // AFTER_LEVEL (композит погоды/частиц в main там ещё не отработал).
+        if (!com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive()
+                && !Minecraft.useShaderTransparency()) {
+            com.hbm_m.client.render.shader.RawScreenSpaceLight.drawIfReady();
+            Minecraft.getInstance().getMainRenderTarget().bindWrite(false);
+        }
+    }
+
+    /**
+     * Fabulous (vanilla "Fabulous!" graphics): {@code transparencyChain.process()}
+     * композитит weather/particle таргеты в mainRenderTarget только на
+     * AFTER_LEVEL — здесь RawScreenSpaceLight видит финальный кадр и единый
+     * main depth. Вызов только без внешнего шейдерпака (под паком дро делает
+     * MixinIrisRenderingPipelinePreComposite на TAIL finalizeLevelRendering).
+     */
+    private static void onAfterLevelFabulous() {
+        if (com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive()) {
+            return;
+        }
+        com.hbm_m.client.render.shader.RawScreenSpaceLight.drawIfReady();
+        Minecraft.getInstance().getMainRenderTarget().bindWrite(false);
     }
 
     /**

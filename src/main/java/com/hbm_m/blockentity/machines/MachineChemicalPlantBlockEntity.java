@@ -52,8 +52,8 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidActionResult;
 import net.minecraftforge.fluids.FluidUtil;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 //?}
+import net.minecraftforge.fluids.capability.IFluidHandler;
 
 /**
  * Chemical Plant BlockEntity - порт с 1.7.10.

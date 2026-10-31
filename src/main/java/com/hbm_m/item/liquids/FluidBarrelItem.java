@@ -16,16 +16,13 @@ import com.hbm_m.platform.StackNbt;
 
 // Forge/NeoForge: сигнатуры IFluidHandlerItem идентичны, различаются только пакеты.
 // Логика — общая (BarrelAccess ниже), эти импорты нужны лишь обёртке-адаптеру.
-//? if forge {
-import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+//? if forge {
+import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
-//?}
-//? if neoforge {
-/*import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fluids.capability.IFluidHandlerItem;
+//?} elif neoforge {
+/*import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 *///?}
 //? if forge {
 import net.minecraftforge.common.capabilities.Capability;

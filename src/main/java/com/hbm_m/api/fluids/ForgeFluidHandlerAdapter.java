@@ -4,9 +4,6 @@ import java.util.Objects;
 
 //? if neoforge {
 /*import net.neoforged.neoforge.capabilities.Capabilities;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.items.IItemHandler;
 *///?}
 
 import com.hbm_m.blockentity.machines.MachineFluidTankBlockEntity;
@@ -23,11 +20,11 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.item.ItemStack;
 //? if forge {
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
+//?}
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import net.minecraftforge.items.IItemHandler;
-//?}
 
 
 import org.jetbrains.annotations.Nullable;

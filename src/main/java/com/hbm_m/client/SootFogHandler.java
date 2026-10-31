@@ -8,19 +8,16 @@ import com.hbm_m.network.PollutionSyncPacket;
 import com.mojang.blaze3d.shaders.FogShape;
 
 import net.minecraft.client.Minecraft;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.ViewportEvent;
-import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+//? if forge {
+import net.minecraftforge.client.event.ViewportEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.fml.common.Mod;
 //?} else {
-/*import net.minecraftforge.api.distmarker.Dist;
-import net.neoforged.neoforge.client.event.ViewportEvent;
+/*import net.neoforged.neoforge.client.event.ViewportEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.bus.api.EventPriority;
-import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 *///?}
 

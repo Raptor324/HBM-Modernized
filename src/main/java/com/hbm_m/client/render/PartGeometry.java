@@ -30,17 +30,24 @@ import net.minecraft.util.RandomSource;
  * via mathematical UV unmapping back to normalized [0.0, 1.0] coordinates.
  */
 @OnlyIn(Dist.CLIENT)
-public record PartGeometry(List<BakedQuad> solidQuads, boolean standalone) {
+public record PartGeometry(List<BakedQuad> solidQuads, boolean standalone, com.hbm_m.client.model.nmesh.NMeshPartBakedModel nmeshModel) {
 
     public static final long BAKE_SEED = 42L;
 
-    public static final PartGeometry EMPTY = new PartGeometry(List.of(), false);
+    public static final PartGeometry EMPTY = new PartGeometry(List.of(), false, null);
+
+    /**
+     * Backward-compatible constructor without an {@link com.hbm_m.client.model.nmesh.NMeshPartBakedModel} source.
+     */
+    public PartGeometry(List<BakedQuad> solidQuads, boolean standalone) {
+        this(solidQuads, standalone, null);
+    }
 
     /**
      * Backward-compatible constructor defaulting {@code standalone} to false (atlas UVs).
      */
     public PartGeometry(List<BakedQuad> solidQuads) {
-        this(solidQuads, false);
+        this(solidQuads, false, null);
     }
 
     public PartGeometry {
@@ -48,7 +55,7 @@ public record PartGeometry(List<BakedQuad> solidQuads, boolean standalone) {
     }
 
     public boolean isEmpty() {
-        return solidQuads.isEmpty();
+        return (nmeshModel == null || nmeshModel.isEmpty()) && solidQuads.isEmpty();
     }
 
     /**
@@ -80,13 +87,22 @@ public record PartGeometry(List<BakedQuad> solidQuads, boolean standalone) {
         }
         // Unwrap FRAPI wrappers (Continuity, Emissive, etc.) if present on this part
         modelPart = AbstractPartBasedRenderer.unwrapFabricForwardingModels(modelPart);
+        if (modelPart instanceof com.hbm_m.client.model.nmesh.NMeshPartBakedModel nmesh) {
+            if (nmesh.isEmpty()) {
+                MainRegistry.LOGGER.debug("PartGeometry: Part '{}' is an EMPTY nmesh model, skipping", partName);
+                return EMPTY;
+            }
+            List<BakedQuad> nmeshQuads = nmesh.getOrBuildQuads();
+            MainRegistry.LOGGER.debug("PartGeometry: Part '{}' (nmesh, standalone={}) - {} quads", partName, standalone, nmeshQuads.size());
+            return new PartGeometry(nmeshQuads, standalone, nmesh);
+        }
         List<BakedQuad> quads = collectSolidQuads(modelPart, partName);
         if (quads.isEmpty()) {
             MainRegistry.LOGGER.debug("PartGeometry: Part '{}' has NO QUADS, skipping", partName);
             return EMPTY;
         }
         MainRegistry.LOGGER.debug("PartGeometry: Part '{}' (standalone={}) - {} quads", partName, standalone, quads.size());
-        return new PartGeometry(quads, standalone);
+        return new PartGeometry(quads, standalone, null);
     }
 
     /**
@@ -143,6 +159,9 @@ public record PartGeometry(List<BakedQuad> solidQuads, boolean standalone) {
      * Explicit override for UV normalization regardless of instance's {@code standalone} flag.
      */
     public SingleMeshVboRenderer.VboData toVboData(String partName, int perVertexBoneId, boolean normalizeUv) {
+        if (nmeshModel != null) {
+            return nmeshModel.buildDirectVboData(perVertexBoneId, normalizeUv);
+        }
         return buildVboDataFromQuads(solidQuads, partName, perVertexBoneId, normalizeUv);
     }
 

@@ -5,7 +5,7 @@
   },
   "children": {
     "wood_burner_model": {
-      "loader": "forge:obj",
+      "loader": "hbm_m:nmesh_obj",
       "model": "hbm_m:models/block/machines/wood_burner.obj",
       "flip_v": true,
       "textures": {

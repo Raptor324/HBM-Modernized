@@ -13,6 +13,10 @@ uniform float uSrcRadius[4];
 uniform vec2 uSrcShock[4];
 uniform float uIntensity;
 uniform float uHeatScale;
+// Небесный ореол за пределами силуэта огненного шара (зарево на небе
+// и облаках вокруг гриба). 0 = прежнее поведение (свет только внутри
+// силуэта), конфиг graphicEffects.nukeHaloStrength.
+uniform float uHaloStrength;
 uniform float uDebugReplace;
 uniform float uSolidAdd;
 uniform float uDhReverseZ;
@@ -20,6 +24,9 @@ uniform float uDhPresent;
 uniform float uDhNear;
 uniform float uDhFar;
 uniform float uDhFadeDist;
+// Флаг CPU: в uDepthTex0 заблита DH-глубина (DhDepthCopy.copyToMain),
+// когда GPU-копия чистой ванильной глубины недоступна.
+uniform float uDhBlittedInDepth0;
 uniform mat4 uProjInv;
 // Кинематографический слой: копия цвета сцены (альбедо-освещение,
 // рефракция ударной волны) и его сила (0 = классический аддитив).
@@ -73,24 +80,36 @@ vec3 dhViewPos(vec2 suv, float dDh) {
     return nearView * (dist / max(-nearView.z, 1.0e-6));
 }
 
+// Returns true if d0 in uDepthTex0 was written by dh_depth_blit.fsh rather than vanilla terrain.
+bool isBlittedDhDepth(float d0, float dDh) {
+    if (uDhBlittedInDepth0 < 0.5 || uDhPresent < 0.5 || dhLayerEmpty(dDh)) {
+        return false;
+    }
+    float dhDist = decodeDhLinearZ(dDh);
+    if (dhDist < uDhFadeDist) {
+        return false;
+    }
+    float fnEff = (8000000.0 * 0.05) / (8000000.0 - 0.05);
+    float expectedBlit = clamp((1.0 - fnEff / dhDist) + 1.0e-6, 0.0, 1.0);
+    return abs(d0 - expectedBlit) < 2.5e-5;
+}
+
 // ЕДИНЫЙ декодер сцены (main, нормали, raymarch-тени, godrays):
 // ванильная ветка с F-1 фильтром uVanillaFar, затем DH-слой.
 vec3 sampleSceneViewPos(vec2 suv, out bool isDh) {
     isDh = false;
     float d0 = texture(uDepthTex0, suv).r;
-    if (d0 < 0.999999) {
+    float dDh = (uDhPresent > 0.5) ? texture(uDhDepthTex, suv).r : (uDhReverseZ > 0.5 ? 0.0 : 1.0);
+    if (d0 < 0.999999 && !isBlittedDhDepth(d0, dDh)) {
         vec4 vp = uProjInv * vec4(suv * 2.0 - 1.0, d0 * 2.0 - 1.0, 1.0);
         vec3 p = vp.xyz / vp.w;
         if (length(p) <= uVanillaFar) {
             return p;
         }
     }
-    if (uDhPresent > 0.5) {
-        float dDh = texture(uDhDepthTex, suv).r;
-        if (!dhLayerEmpty(dDh)) {
-            isDh = true;
-            return dhViewPos(suv, dDh);
-        }
+    if (uDhPresent > 0.5 && !dhLayerEmpty(dDh)) {
+        isDh = true;
+        return dhViewPos(suv, dDh);
     }
     return vec3(0.0);
 }
@@ -99,22 +118,19 @@ vec3 sampleSceneViewPos(vec2 suv, out bool isDh) {
 // СОХРАНЁННЫМ гейтом uDhFadeDist (кольцо round-2 остаётся закрытым).
 vec3 layerViewPosAir(vec2 suv) {
     float d = texture(uDepthTex0, suv).r;
-    if (d < 0.999999) {
+    float dDh = (uDhPresent > 0.5) ? texture(uDhDepthTex, suv).r : (uDhReverseZ > 0.5 ? 0.0 : 1.0);
+    if (d < 0.999999 && !isBlittedDhDepth(d, dDh)) {
         vec4 vp = uProjInv * vec4(suv * 2.0 - 1.0, d * 2.0 - 1.0, 1.0);
         vec3 p = vp.xyz / vp.w;
-        if (length(p) > uVanillaFar) {
+        if (length(p) <= uVanillaFar) {
+            return p;
+        }
+    }
+    if (uDhPresent > 0.5 && !dhLayerEmpty(dDh)) {
+        if (decodeDhLinearZ(dDh) < uDhFadeDist) {
             return vec3(0.0);
         }
-        return p;
-    }
-    if (uDhPresent > 0.5) {
-        float dDh = texture(uDhDepthTex, suv).r;
-        if (!dhLayerEmpty(dDh)) {
-            if (decodeDhLinearZ(dDh) < uDhFadeDist) {
-                return vec3(0.0);
-            }
-            return dhViewPos(suv, dDh);
-        }
+        return dhViewPos(suv, dDh);
     }
     return vec3(0.0);
 }
@@ -163,6 +179,35 @@ float airFlashCurve(float h) {
 // 2) Поверхностный свет земли и лодов - мощный и долгий, всю жизнь гриба.
 float groundFlashCurve(float h) {
     return pow(h, 1.25) * 1.65;
+}
+
+// 3) Небесный ореол ЗА пределами силуэта файербола (uHaloStrength): живёт
+//    со всем грибом (как земля), но мягче - гаснет вместе с жаром, не
+//    переживает его.
+float haloCurve(float h) {
+    float flash = pow(max(h - 0.72, 0.0) / 0.28, 2.0) * 0.9;
+    return pow(h, 1.2) * 0.55 + flash;
+}
+
+// Эффективное расстояние луча взгляда до ЦЕНТРА ЗАРЕВА: центр опущен под
+// источник (орел обнимает гриб и горизонт, а не висит над ним), вертикальная
+// составляющая растянута - зарево стелется вширь, вверх гаснет быстрее.
+float skyHaloDist(vec3 rel, vec3 dir, float R) {
+    float t = max(dot(rel, dir), 0.0);
+    vec3 perp = dir * t - rel;
+    perp.y = perp.y * 1.35 + R * 0.12;
+    return length(perp);
+}
+
+// Радиальный профиль ореола: пик у лимба силуэта, БЕЗ плоской шляпы внутри
+// (разгонка от центра smoothstep'ом) и с мягким экспоненциальным спадом
+// наружу, уходящим в чистый ноль на 3.6R - без вечной дымки через всё небо.
+float skyHalo(vec3 rel, vec3 dir, float R, float h) {
+    float x = skyHaloDist(rel, dir, R) / max(R, 1.0);
+    float limb = smoothstep(0.3, 0.95, x);
+    float decay = exp(-max(x - 1.0, 0.0) / 0.7);
+    float cutoff = 1.0 - smoothstep(2.2, 3.6, x);
+    return limb * decay * cutoff * haloCurve(h);
 }
 
 // Цветовая температура взрыва (спектр чёрного тела, огрубленный):
@@ -374,7 +419,15 @@ void main() {
             vec3 airCol = nukeColor(clamp(1.0 - sqrt(max(dot(relA, relA) - tA * tA, 0.0)) / RA, 0.0, 1.0), heatA);
             float air = airNorm * airNorm * airFlash * uIntensity * cloudWin
                     * mix(0.28, 0.85, miePhaseNorm(cosTA, 0.55));
-            glowAccum += airCol * airSoftCap(air, 0.28 * uIntensity * max(airFlash, 0.6));
+            // Небесный ореол за силуэтом: зарево на дальних горах/лодах и
+            // дымке. У ближней геометрии рассеивающей среды до ореола мало -
+            // мягкий гейт по дистанции пути.
+            float haloAir = skyHalo(relA, rayDir, RA, heatA)
+                    * uHaloStrength * mix(0.3, 0.9, miePhaseNorm(cosTA, 0.6))
+                    * smoothstep(0.0, 0.9 * RA, viewDist)
+                    // микро-дизеринг: ломает бэндинг плавного градиента в 8-бит RT
+                    * (1.0 + (airDither - 0.5) * 0.05);
+            glowAccum += airCol * airSoftCap(air + haloAir * cloudWin, 0.28 * uIntensity * max(airFlash, 0.6));
 
             // 2. Поверхностный свет земли и лодов. Купольный
             // Wrap-Lambert: угол падения считается на ВЕРХКУПКУ гриба
@@ -442,6 +495,13 @@ void main() {
             float air = airNorm * airNorm * airFlash * uIntensity * cloudWin
                     * mix(0.28, 0.85, miePhaseNorm(cosTA, 0.55));
             vec3 airCol = nukeColor(clamp(1.0 - sqrt(max(dot(relA, relA) - tAir * tAir, 0.0)) / R, 0.0, 1.0), heat);
+            // Небесный ореол ЗА силуэтом файербола: там, где chord-член
+            // (airTerm) даёт ровно ноль. cloudWin гасит его внутри эллипсоида
+            // гриба - ореол светит вокруг, не выжигая сам гриб.
+            air += skyHalo(relA, rayDir, R, heat)
+                    * uHaloStrength * cloudWin
+                    * mix(0.3, 0.9, miePhaseNorm(cosTA, 0.6))
+                    * (1.0 + (airDither - 0.5) * 0.05);
             if (uCine > 0.001) {
                 // godrays: та же окклюзия плюс сумеречные лучи.
                 vec4 sClip = uProj * (uModelView * vec4(relA, 1.0));

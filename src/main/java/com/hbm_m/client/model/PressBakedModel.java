@@ -7,9 +7,7 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
-//? if forge {
 import net.minecraftforge.client.model.data.ModelData;
-//?}
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 

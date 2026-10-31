@@ -101,7 +101,8 @@ public class GunB92Item extends Item {
                     setPower(stack, 0);
                     EntityNukeExplosionMK3 ex = EntityNukeExplosionMK3.statFacFleija(level, entity.getX(), entity.getY(), entity.getZ(), 50);
                     if (!ex.isRemoved()) {
-                        level.playSound(null, entity.getX(), entity.getY(), entity.getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.PLAYERS, 100.0F, level.random.nextFloat() * 0.1F + 0.9F);
+                        // Original: world.playSoundEffect("random.explode") -> Vanilla-Kategorie hostile
+                        level.playSound(null, entity.getX(), entity.getY(), entity.getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 100.0F, level.random.nextFloat() * 0.1F + 0.9F);
                         level.addFreshEntity(ex);
                         EntityCloudFleijaRainbow cloud = new EntityCloudFleijaRainbow(ModEntities.CLOUD_FLEIJA_RAINBOW.get(), level, 50);
                         cloud.setPos(entity.getX(), entity.getY(), entity.getZ());
@@ -129,15 +130,16 @@ public class GunB92Item extends Item {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
+        // Original: onItemRightClick gibt immer den Stack zurueck -> SUCCESS (mit Arm-Schwung)
         if (!player.isShiftKeyDown() && getPower(stack) > 0) {
             if (getAnim(stack) == 0) {
                 player.startUsingItem(hand);
-                return InteractionResultHolder.consume(stack);
+                return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
             }
         } else {
             if (getAnim(stack) == 0 && !level.isClientSide) setAnim(stack, 1);
         }
-        return InteractionResultHolder.pass(stack);
+        return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
     }
 
     @Override

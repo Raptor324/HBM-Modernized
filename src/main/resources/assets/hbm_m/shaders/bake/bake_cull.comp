@@ -51,6 +51,10 @@ uniform vec2 uMip0Size;      // actual pow2-snapped mip-0 dimensions
 uniform int uPyramidLevels;
 uniform float uSubpixelMinNdc; // minimum NDC diameter before subpixel culling
 uniform int uIsShadowPass;     // 1 = shadow pass (apply fisheye distortion compensation), 0 = main pass
+uniform int uHasMainView;      // 1 = main-camera frustum & clip matrix available for shadow-pass culling
+uniform vec4 uMainPlane[6];    // main-camera frustum planes in anchor-relative world space
+uniform mat4 uMainClipMat;     // main-camera worldToClip matrix
+uniform vec3 uShadowDir;       // world-space light ray direction (away from sun towards ground)
 layout(binding = 10) uniform sampler2D uDepthPyramid;
 
 vec3 quatRotate(vec4 q, vec3 v) {
@@ -110,13 +114,13 @@ float hizOccluder(vec4 aabb) {
 // uClipMat into a screen-space AABB + the box's nearest window depth.
 // Returns false when any corner is behind the near plane (w <= 0): the
 // box touches the camera plane, Hi-Z must not answer (visible).
-bool projectAabb(vec3 center, vec3 he, out vec4 aabb, out float minDepth) {
+bool projectAabbWithMat(mat4 clipMat, vec3 center, vec3 he, out vec4 aabb, out float minDepth) {
     aabb = vec4(1.0e9, 1.0e9, -1.0e9, -1.0e9);
     minDepth = 1.0e9;
     for (int i = 0; i < 8; i++) {
         vec3 sign3 = vec3(i & 1, (i >> 1) & 1, (i >> 2) & 1);
         vec3 p = center + mix(-he, he, sign3);
-        vec4 clip = uClipMat * vec4(p, 1.0);
+        vec4 clip = clipMat * vec4(p, 1.0);
         if (clip.w <= 0.0) {
             return false;
         }
@@ -161,7 +165,7 @@ void main() {
         he.y = abs(2.0 * (xy + wz)) * ext.x + abs(1.0 - 2.0 * (xx + zz)) * ext.y + abs(2.0 * (yz - wx)) * ext.z;
         he.z = abs(2.0 * (xz - wy)) * ext.x + abs(2.0 * (yz + wx)) * ext.y + abs(1.0 - 2.0 * (xx + yy)) * ext.z;
         if (instData[ib + INST_GRAD_WORD + 3u] >= 0.0) {
-            he = he * 2.0 + vec3(2.5);
+            he += vec3(0.15);
         }
         for (int i = 0; i < 6; i++) {
             vec3 n = uPlane[i].xyz;
@@ -186,15 +190,36 @@ void main() {
                 if (ndcDiameter < minNdc) return;
             }
         }
-        // Hi-Z occlusion phase (strictly optional, uHiZMode selects at
-        // dispatch time): culled only when the box's nearest depth is
-        // behind the stored occluder depth at EVERY sampled footprint
-        // texel - conservative, mirroring NucleusGpuCuller's
-        // depthSphere <= occluderDepth semantics.
-        if (uHiZMode == 1) {
+        // Shadow-pass swept volume culling against main camera frustum & Hi-Z:
+        // Extrudes the caster AABB along the light ray (uShadowDir) so shadows
+        // poking out from behind wall corners stay visible, while casters whose
+        // body AND cast shadow are completely behind the player or occluded behind
+        // walls are culled from the shadow pass.
+        if (uIsShadowPass != 0 && uHasMainView != 0) {
+            float shadowReach = max(max(he.x, max(he.y, he.z)) * 4.0, 10.0);
+            vec3 shadowShift = uShadowDir * shadowReach;
+            vec3 sweptCenter = center + shadowShift * 0.5;
+            vec3 sweptHe = he + abs(shadowShift) * 0.5;
+            for (int i = 0; i < 6; i++) {
+                vec3 n = uMainPlane[i].xyz;
+                float d = dot(n, sweptCenter) + uMainPlane[i].w;
+                float r = dot(abs(n), sweptHe);
+                if (d + r < 0.0) return;
+            }
+            if (uHiZMode == 1) {
+                vec4 aabb;
+                float minDepth;
+                if (projectAabbWithMat(uMainClipMat, sweptCenter, sweptHe, aabb, minDepth)) {
+                    if (minDepth >= hizOccluder(aabb)) {
+                        atomicAdd(ctl[15u], 1u);
+                        return;
+                    }
+                }
+            }
+        } else if (uHiZMode == 1) {
             vec4 aabb;
             float minDepth;
-            if (projectAabb(center, he, aabb, minDepth)) {
+            if (projectAabbWithMat(uClipMat, center, he, aabb, minDepth)) {
                 if (minDepth >= hizOccluder(aabb)) {
                     atomicAdd(ctl[15u], 1u); // F3: culled-by-occlusion counter (pad word)
                     return;

@@ -31,13 +31,14 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
+import net.minecraftforge.items.IItemHandler;
+
 //? if forge {
 import com.hbm_m.api.energy.PackedEnergyCapabilityProvider;
 import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.items.IItemHandler;
 //?}
 
 //? if neoforge {

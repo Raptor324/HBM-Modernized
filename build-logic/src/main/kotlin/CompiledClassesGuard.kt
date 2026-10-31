@@ -161,6 +161,14 @@ fun Project.registerCompiledClassesGuard(jarTaskName: String) {
 		}
 	}
 
+	// Битый энтри build cache (частичный вывод компиляции) при FROM-CACHE восстанавливается
+	// таким же частичным — repair чистил classes, а finalizedBy compileJava тут же возвращал
+	// мусор из кэша. Кэширование компиляции отключаем: медленнее только холодная сборка,
+	// инкрементальность Gradle не трогаем.
+	tasks.matching { it.name == "compileJava" || it.name == "compileKotlin" }.configureEach {
+		outputs.cacheIf { false }
+	}
+
 	tasks.register("repairCompiledClasses") {
 		group = "build"
 		description = "При расхождении исходников с выводом компиляции чистит classes и инкрементальное состояние, затем пересобирает"

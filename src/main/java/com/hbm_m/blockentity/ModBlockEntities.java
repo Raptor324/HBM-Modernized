@@ -1745,13 +1745,6 @@ public static final RegistrySupplier<BlockEntityType<TransitionSealBlockEntity>>
                             ModBlocks.CRATE_TEMPLATE.get()
                     ).build(null));
 
-    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineConverterHeRfBlockEntity>> MACHINE_CONVERTER_HE_RF_BE =
-            BLOCK_ENTITIES.register("machine_converter_he_rf_be",
-                    () -> BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineConverterHeRfBlockEntity::new, ModBlocks.MACHINE_CONVERTER_HE_RF.get()).build(null));
-
-    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineConverterRfHeBlockEntity>> MACHINE_CONVERTER_RF_HE_BE =
-            BLOCK_ENTITIES.register("machine_converter_rf_he_be",
-                    () -> BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineConverterRfHeBlockEntity::new, ModBlocks.MACHINE_CONVERTER_RF_HE.get()).build(null));
     public static final RegistrySupplier<BlockEntityType<HeatingOvenBlockEntity>> HEATING_OVEN_BE =
             BLOCK_ENTITIES.register("heating_oven_be", () ->
                     BlockEntityType.Builder.of(HeatingOvenBlockEntity::new,

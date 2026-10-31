@@ -20,15 +20,14 @@ import com.hbm_m.lib.RefStrings;
  * Forge — {@code @Mod.EventBusSubscriber}; NeoForge — {@code @EventBusSubscriber}.
  */
 
-//? if forge {
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+//? if forge {
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.event.RegisterGameTestsEvent;
 
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 //?} elif neoforge {
-/*import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
+/*import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 
 @EventBusSubscriber(modid = RefStrings.MODID)

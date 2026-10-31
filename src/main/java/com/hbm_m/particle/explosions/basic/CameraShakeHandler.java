@@ -6,18 +6,16 @@ import net.minecraft.client.Minecraft;
 import dev.architectury.event.events.client.ClientTickEvent;
 
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 //? if forge {
 import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.client.event.RenderGuiEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 //?} elif neoforge {
 /*import net.neoforged.neoforge.client.event.ViewportEvent;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.bus.api.EventPriority;
-import net.neoforged.bus.api.SubscribeEvent;
 *///?}
 
 /**

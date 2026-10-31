@@ -444,6 +444,37 @@ public final class PersistentUploadStaging {
         }
     }
 
+    public static synchronized void destroy() {
+        lastDestVbo = -1;
+        lastDestSize = -1L;
+        copyErrorLogged = false;
+        fenceFailLogged = false;
+        if (instance != null) {
+            instance.endWindowCopy();
+            while (!instance.fences.isEmpty()) {
+                FenceRange f = instance.fences.pollFirst();
+                if (f != null && f.sync != 0L) {
+                    try {
+                        GL32.glDeleteSync(f.sync);
+                    } catch (Throwable ignored) {}
+                }
+            }
+            if (instance.bufferId > 0) {
+                try {
+                    GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, instance.bufferId);
+                    GL15.glUnmapBuffer(GL15.GL_ARRAY_BUFFER);
+                } catch (Throwable ignored) {}
+                try {
+                    GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+                    GL15.glDeleteBuffers(instance.bufferId);
+                } catch (Throwable ignored) {}
+                instance.bufferId = 0;
+            }
+            instance = null;
+        }
+        resolved = false;
+    }
+
     private boolean waitForRange(long start, long len) {
         reclaimSignaledFences();
         if (fences.isEmpty()) {

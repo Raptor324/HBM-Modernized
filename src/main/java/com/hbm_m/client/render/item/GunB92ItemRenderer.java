@@ -23,7 +23,12 @@ import net.minecraft.world.item.ItemStack;
 public class GunB92ItemRenderer extends BlockEntityWithoutLevelRenderer {
 
     private static GunB92ItemRenderer instance;
-    public static final ResourceLocation ICON_MODEL = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "item/gun_b92_icon");
+    /**
+     * Bake-Id иконки БЕЗ префикса {@code item/}: {@code LoaderHooks.registerItemModel}/{@code getItemModel}
+     * строят {@code ModelResourceLocation} из пути как есть (файл ищется в {@code models/item/<path>.json}).
+     * Префиксированный путь дал бы {@code models/item/item/gun_b92_icon.json} и missing model.
+     */
+    public static final ResourceLocation ICON_BAKE_ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "gun_b92_icon");
     private static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/modelb92sm.png");
 
     private ModelB92 model;
@@ -46,12 +51,21 @@ public class GunB92ItemRenderer extends BlockEntityWithoutLevelRenderer {
 
         switch (ctx) {
             case GUI -> {
-                BakedModel icon = com.hbm_m.platform.LoaderHooks.getModel(Minecraft.getInstance().getModelManager(), ICON_MODEL);
+                BakedModel icon = com.hbm_m.platform.LoaderHooks.getItemModel(Minecraft.getInstance().getModelManager(), ICON_BAKE_ID);
                 Minecraft.getInstance().getItemRenderer().render(stack, ctx, false, ps, buf, light, overlay, icon);
             }
             case FIRST_PERSON_RIGHT_HAND, FIRST_PERSON_LEFT_HAND -> {
-                ps.mulPose(Axis.YP.rotationDegrees(-90));
-                // EQUIPPED_FIRST_PERSON
+                // Vanilla 1.7.10 renderItemInFirstPerson: nach dem in-hand Offset folgen R_y(+45) und S(0.4).
+                // 1.20.1 (applyItemArmAttackTransform) hebt die 45 auf -> hier 1:1 nachbauen.
+                ps.mulPose(Axis.YP.rotationDegrees(45.0F));
+                ps.scale(0.4F, 0.4F, 0.4F);
+                // Forge 1.7.10 ForgeHooksClient.renderEquippedItem (shouldUseRenderHelper == false):
+                ps.translate(0.0F, -0.3F, 0.0F);
+                ps.scale(1.5F, 1.5F, 1.5F);
+                ps.mulPose(Axis.YP.rotationDegrees(50.0F));
+                ps.mulPose(Axis.ZP.rotationDegrees(335.0F));
+                ps.translate(-0.9375F, -0.0625F, 0.0F);
+                // EQUIPPED_FIRST_PERSON ItemRenderGunAnim
                 ps.mulPose(Axis.ZP.rotationDegrees(-135.0F));
                 ps.translate(-0.5F, 0.0F, -0.2F);
                 ps.scale(0.5F, 0.5F, 0.5F);
@@ -76,7 +90,18 @@ public class GunB92ItemRenderer extends BlockEntityWithoutLevelRenderer {
                 ps.mulPose(Axis.ZP.rotationDegrees(60));
                 ps.mulPose(Axis.XP.rotationDegrees(-90));
                 ps.mulPose(Axis.ZP.rotationDegrees(20));
+                // Forge 1.7.10 ForgeHooksClient.renderEquippedItem (gilt fuer EQUIPPED, nicht fuer ENTITY):
+                ps.translate(0.0F, -0.3F, 0.0F);
+                ps.scale(1.5F, 1.5F, 1.5F);
+                ps.mulPose(Axis.YP.rotationDegrees(50.0F));
+                ps.mulPose(Axis.ZP.rotationDegrees(335.0F));
+                ps.translate(-0.9375F, -0.0625F, 0.0F);
                 renderEquipped(stack, ps, buf, light);
+            }
+            case FIXED -> {
+                // Original: handleRenderType(FIXED) == false -> Rahmengestell zeigt das flache Icon
+                BakedModel icon = com.hbm_m.platform.LoaderHooks.getItemModel(Minecraft.getInstance().getModelManager(), ICON_BAKE_ID);
+                Minecraft.getInstance().getItemRenderer().render(stack, ctx, false, ps, buf, light, overlay, icon);
             }
             default -> {
                 ps.scale(0.5F, 0.5F, 0.5F);

@@ -7,6 +7,9 @@ import java.util.function.Function;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonObject;
 import com.hbm_m.client.model.SoyuzLauncherBakedModel;
+import com.hbm_m.client.model.nmesh.NMeshData;
+import com.hbm_m.client.model.nmesh.NMeshLoader;
+import com.hbm_m.client.model.nmesh.NMeshPartBakedModel;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.platform.LoaderHooks;
@@ -105,6 +108,24 @@ public class SoyuzLauncherModelLoader implements IGeometryLoader<SoyuzLauncherMo
 
             for (PartDef part : PARTS) {
                 try {
+                    // nmesh-first: каждая часть — отдельный .obj-файл, целиком одной NMeshPartBakedModel.
+                    NMeshData nmesh = NMeshLoader.load(part.model());
+                    if (nmesh != null) {
+                        PartContext partContext = new PartContext(context, part.texture());
+                        java.util.List<NMeshPartBakedModel.BoundSubMesh> bound =
+                                new java.util.ArrayList<>(nmesh.subMeshes().size());
+                        for (NMeshData.SubMesh sm : nmesh.subMeshes()) {
+                            Material mat = partContext.getMaterial(sm.materialName);
+                            TextureAtlasSprite sprite = mat != null ? spriteGetter.apply(mat) : null;
+                            bound.add(new NMeshPartBakedModel.BoundSubMesh(sm, sprite));
+                        }
+                        // flipV=true — паритет со старым LoaderHooks.loadObjModel(part.model(), true).
+                        BakedModel baked = new NMeshPartBakedModel(
+                                bound, true, partContext.getRootTransform(), partContext.getTransforms());
+                        bakedParts.put(part.name(), baked);
+                        continue;
+                    }
+                    // Fallback: сырой .obj из ресурс-пака.
                     ObjModel objModel = LoaderHooks.loadObjModel(part.model(), true);
                     IGeometryBakingContext partContext = new PartContext(context, part.texture());
                     BakedModel baked = LoaderHooks.bakeObjModel(objModel, partContext, baker, spriteGetter, identityState, overrides, modelName);

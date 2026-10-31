@@ -177,29 +177,10 @@ public final class DhClientCompat {
     }
 
     // ── Источник 1: Iris CapturedRenderingState ─────────────────────────────
-    private static Object irisCapturedStateInstance;
-    private static java.lang.reflect.Method irisGetGbufferProjection;
-    private static volatile boolean irisCaptureInitialized = false;
 
     private static Matrix4f captureFromIris() {
-        if (!irisCaptureInitialized) {
-            irisCaptureInitialized = true;
-            try {
-                Class<?> cl = Class.forName("net.irisshaders.iris.uniforms.CapturedRenderingState");
-                irisCapturedStateInstance = cl.getField("INSTANCE").get(null);
-                irisGetGbufferProjection = cl.getMethod("getGbufferProjection");
-            } catch (Throwable ignored) {}
-        }
-        if (irisCapturedStateInstance == null || irisGetGbufferProjection == null) {
-            return null;
-        }
-        try {
-            Object proj = irisGetGbufferProjection.invoke(irisCapturedStateInstance);
-            if (proj instanceof org.joml.Matrix4fc m) {
-                return new Matrix4f(m);
-            }
-        } catch (Throwable ignored) {}
-        return null;
+        org.joml.Matrix4fc proj = com.hbm_m.client.render.shader.IrisReflectionBridge.getGbufferProjection();
+        return proj != null ? new Matrix4f(proj) : null;
     }
 
     // ── Источник 2: реконструкция ванильной последовательности кадра ────────

@@ -5,7 +5,7 @@
   },
   "children": {
     "steel_roof_model": {
-      "loader": "forge:obj",
+      "loader": "hbm_m:nmesh_obj",
       "model": "hbm_m:models/block/steel_roof.obj",
       "flip_v": true,
       "textures": {

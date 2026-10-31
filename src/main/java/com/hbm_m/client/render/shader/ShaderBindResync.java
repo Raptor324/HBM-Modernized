@@ -389,67 +389,92 @@ public final class ShaderBindResync {
      * RenderSystem.disableBlend() - silently killing blending for vanilla draws
      * that enabled it manually: the vignette (multiply) renders as an opaque
      * dark texture fullscreen ("black screen" on Fancy), sun/moon (additive) as
-     * black squares, translucent GUI layers as black slabs. After the reset to
-     * null, the next apply() performs the FULL honest setup (enable/disable +
-     * factors). The field is located by TYPE (the only static BlendMode in the
-     * class) - works under SRG names in production too.</p>
+     * black squares, translucent GUI layers as black slabs. The reset restores
+     * the canonical vanilla position_tex blend instance (see
+     * {@link #resetBlendModeToOpaque}), so vanilla apply() calls see an equal
+     * lastApplied and stop clobbering manually-set blending.</p>
      */
     public static void invalidateBlendModeCache() {
+        resetBlendModeToOpaque();
+    }
+
+    /**
+     * Canonical vanilla BlendMode instance - byte-for-byte what
+     * {@code ShaderInstance.parseBlendNode()} builds for position_tex.json /
+     * rendertype_*.json ("blend": {"func": "add", "srcrgb": "srcalpha",
+     * "dstrgb": "1-srcalpha"}, no explicit srcalpha/dstalpha keys).
+     *
+     * <p>Verified against 1.20.1 official-mappings bytecode: parseBlendNode defaults
+     * srcalpha to ONE and dstalpha to ZERO, but since the JSON has NO explicit alpha
+     * keys, it takes the 3-ARG ctor {@code new BlendMode(srcColor, dstColor, blendFunc)}
+     * which yields separateBlend=false, srcAlpha=SRC_ALPHA(770), dstAlpha=ONE_MINUS_SRC_ALPHA(771),
+     * opaque=false. Do NOT build this instance with the 5-arg ctor or (ONE, ZERO) alpha
+     * factors - position_tex.blend would NOT be equals() to it, and its apply() inside
+     * Gui.renderVignette() would clobber the (ZERO, ONE_MINUS_SRC_COLOR) multiply blend
+     * (vignette.png has alpha=1.0 everywhere, so that draws a solid black screen).</p>
+     */
+    private static final com.mojang.blaze3d.shaders.BlendMode VANILLA_DEFAULT_BLEND_MODE =
+            new com.mojang.blaze3d.shaders.BlendMode(
+                    org.lwjgl.opengl.GL11.GL_SRC_ALPHA,
+                    org.lwjgl.opengl.GL11.GL_ONE_MINUS_SRC_ALPHA,
+                    org.lwjgl.opengl.GL14.GL_FUNC_ADD);
+
+    private static java.lang.reflect.Field blendModeLastAppliedField;
+
+    /**
+     * Directly writes Mojang's static {@code BlendMode.lastApplied} (blaze3d is
+     * unobfuscated, so the "lastApplied" name works in production too).
+     *
+     * <p>Why direct reflection instead of {@code apply()}: BlendMode.apply() assigns
+     * {@code lastApplied = this} ONLY when {@code lastApplied == null} or the opaque
+     * flag CHANGES (1.20.1 bytecode: {@code if_icmpeq} skips the assignment when both
+     * sides agree on opaque-ness). Calling {@code VANILLA_DEFAULT_BLEND_MODE.apply()}
+     * after a custom non-opaque shader (gun_additive etc.) would therefore silently
+     * LEAVE the foreign blend in the cache while still touching GL factors.</p>
+     *
+     * @return true if the field was written, false if reflection failed.
+     */
+    private static boolean forceBlendModeLastApplied(com.mojang.blaze3d.shaders.BlendMode value) {
         try {
-            if (blendLastAppliedField == null) {
-                java.lang.reflect.Field fallback = null;
-                for (java.lang.reflect.Field f : com.mojang.blaze3d.shaders.BlendMode.class
-                        .getDeclaredFields()) {
-                    if (java.lang.reflect.Modifier.isStatic(f.getModifiers())
-                            && !f.isSynthetic()
-                            && f.getType() == com.mojang.blaze3d.shaders.BlendMode.class) {
-                        String n = f.getName();
-                        if ("lastApplied".equals(n) || "f_85514_".equals(n)) {
-                            f.setAccessible(true);
-                            blendLastAppliedField = f;
-                            break;
-                        }
-                        if (fallback == null) {
-                            fallback = f;
-                        }
-                    }
-                }
-                if (blendLastAppliedField == null && fallback != null) {
-                    fallback.setAccessible(true);
-                    blendLastAppliedField = fallback;
-                }
+            if (blendModeLastAppliedField == null) {
+                blendModeLastAppliedField = com.mojang.blaze3d.shaders.BlendMode.class.getDeclaredField("lastApplied");
+                blendModeLastAppliedField.setAccessible(true);
             }
-            if (blendLastAppliedField != null) {
-                blendLastAppliedField.set(null, null);
-            }
-        } catch (Exception t) {
-            // vanilla class - never absent; a failure here silently re-enables the
-            // blend-cache black-screen bug - surface it once
-            logOnceProbeIssue("invalidateBlendModeCache", t, true);
+            blendModeLastAppliedField.set(null, value);
+            return true;
+        } catch (Throwable t) {
+            logOnceProbeIssue("blendModeLastApplied", t, false);
+            return false;
         }
     }
 
-    private static java.lang.reflect.Field blendLastAppliedField;
-
     /**
-     * Resets Mojang's static {@code BlendMode.lastApplied} to the canonical default
-     * opaque {@link com.mojang.blaze3d.shaders.BlendMode} instance ({@code opaque = true}).
+     * Resets Mojang's static {@code BlendMode.lastApplied} to the exact instance
+     * vanilla itself parses from shader JSONs such as {@code position_tex.json}
+     * (used by {@code Gui.renderVignette()}): {@code opaque=false (SRC_ALPHA ->
+     * ONE_MINUS_SRC_ALPHA)}, separateBlend=false. Frame capture proved those
+     * shaders do NOT have {@code opaque = true} blends.
      *
-     * <p>Why this is needed after custom additive/translucent shaders (like {@code gun_additive}):
-     * Vanilla shaders (like {@code position_tex} used by {@code Gui.renderVignette()}) have
-     * {@code opaque = true} in their {@code ShaderInstance.blend}. If {@code BlendMode.lastApplied}
-     * is left non-opaque (or {@code null}) at the end of first-person hand rendering,
-     * {@code position_tex.apply()} inside {@code Gui.renderVignette()} detects a state change
-     * ({@code !this.equals(lastApplied)}) and calls {@code RenderSystem.disableBlend()},
-     * drawing the fullscreen vignette quad as solid black!
-     * Calling {@code new BlendMode().apply()} sets {@code BlendMode.lastApplied} to an
-     * {@code opaque = true} instance so subsequent vanilla {@code shader.apply()} calls
-     * see {@code this.equals(lastApplied) == true} and do not clobber manual blending.</p>
+     * <p>If {@code BlendMode.lastApplied} is left as anything else at the end of
+     * first-person hand rendering, {@code position_tex.apply()} inside
+     * {@code Gui.renderVignette()} detects a state change ({@code !this.equals(lastApplied)})
+     * and overwrites the vignette's (ZERO, ONE_MINUS_SRC_COLOR) multiply blend with
+     * (SRC_ALPHA, ONE_MINUS_SRC_ALPHA). Since vignette.png has alpha = 1.0 everywhere,
+     * that rasterizes the vignette as a 100% opaque black fullscreen quad.</p>
      */
     public static void resetBlendModeToOpaque() {
         try {
-            new com.mojang.blaze3d.shaders.BlendMode().apply();
+            IrisReflectionBridge.blendModeUnlock();
+            // The (0,0,0,0) sentinel forces a real GL call even when the GlStateManager
+            // blend cache has diverged from the physical state, then restores the
+            // vanilla default factors - no draws happen between the two calls.
             forceHonestBlendState();
+            // Record the canonical instance directly (see forceBlendModeLastApplied for
+            // why a plain apply() would silently skip the lastApplied assignment).
+            if (!forceBlendModeLastApplied(VANILLA_DEFAULT_BLEND_MODE)) {
+                VANILLA_DEFAULT_BLEND_MODE.apply(); // reflection unavailable - best effort
+            }
+            com.mojang.blaze3d.systems.RenderSystem.disableBlend();
         } catch (Exception ignored) {
         }
     }

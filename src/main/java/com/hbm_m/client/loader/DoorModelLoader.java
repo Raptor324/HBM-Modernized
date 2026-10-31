@@ -3,6 +3,7 @@ package com.hbm_m.client.loader;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.hbm_m.client.model.DoorBakedModel;
+import com.hbm_m.client.model.nmesh.NMeshData;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -108,6 +109,72 @@ public class DoorModelLoader extends AbstractObjPartModelLoader<DoorBakedModel> 
             return prev.model; // идентичный вид — шарим модель напрямую
         }
         return new RemappedPartModel(prev.model, prev.sprite, sprite);
+    }
+
+    @Override
+    public BakedModel bakeNMeshPart(NMeshData nmesh, SinglePartBakingContext partContext,
+                                    Function<Material, TextureAtlasSprite> spriteGetter,
+                                    ModelState modelState) {
+        BakedModel fresh = super.bakeNMeshPart(nmesh, partContext, spriteGetter, modelState);
+        if (fresh == null) {
+            return null;
+        }
+
+        String partName = partContext.getPartName();
+        Material mat = partContext.getMaterial(partName);
+        if (mat == null) {
+            mat = partContext.getMaterial("default");
+        }
+        ResourceLocation texture = mat != null ? mat.texture() : null;
+        if (partContext.textureOverride() != null) {
+            texture = partContext.textureOverride();
+        }
+        if (texture == null) {
+            java.util.List<NMeshData.SubMesh> subs = nmesh.getSubMeshesForPart(partName);
+            for (NMeshData.SubMesh sm : subs) {
+                Material m = partContext.getMaterial(sm.materialName);
+                if (m != null) {
+                    mat = m;
+                    texture = m.texture();
+                    break;
+                }
+            }
+        }
+        TextureAtlasSprite sprite = null;
+        if (mat != null) {
+            try {
+                sprite = spriteGetter.apply(mat);
+            } catch (Exception ignored) {
+            }
+        } else if (texture != null) {
+            try {
+                sprite = spriteGetter.apply(new Material(TextureAtlas.LOCATION_BLOCKS, texture));
+            } catch (Exception ignored) {
+            }
+        }
+        if (sprite == null) {
+            try {
+                sprite = fresh.getParticleIcon();
+            } catch (Exception ignored) {
+            }
+        }
+        if (sprite == null) {
+            return fresh;
+        }
+
+        String key = "nmesh:" + System.identityHashCode(nmesh)
+                + "|" + partContext.getPartName()
+                + "|" + partContext.getRootTransform().hashCode();
+
+        CanonicalEntry prev = CANONICAL_PARTS.putIfAbsent(
+                key, new CanonicalEntry(fresh, sprite, texture));
+        if (prev == null) {
+            return fresh;
+        }
+        if (java.util.Objects.equals(prev.texture(), texture) || prev.sprite() == sprite) {
+            return prev.model();
+        }
+        return new RemappedPartModel(prev.model(), prev.sprite(), sprite);
     }
 
     @Override

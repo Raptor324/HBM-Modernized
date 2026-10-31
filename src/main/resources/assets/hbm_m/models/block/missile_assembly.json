@@ -5,7 +5,7 @@
   },
   "children": {
     "base": {
-      "loader": "forge:obj",
+      "loader": "hbm_m:nmesh_obj",
       "model": "hbm_m:models/block/missile_assembly.obj",
       "flip_v": true,
       "textures": {

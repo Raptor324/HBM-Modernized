@@ -5,15 +5,13 @@ import net.minecraft.world.entity.Entity;
 
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//? if forge {
-import net.minecraftforge.client.event.RenderLivingEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+//? if forge {
+import net.minecraftforge.client.event.RenderLivingEvent;
 import net.minecraftforge.fml.common.Mod;
 //?} elif neoforge {
-/*import net.neoforged.bus.api.EventPriority;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
+/*import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderLivingEvent;
 *///?}
 

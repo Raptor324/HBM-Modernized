@@ -2915,10 +2915,6 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> MACHINE_CONTROLLER = registerBlock("machine_controller",
             () -> new com.hbm_m.block.machines.MachineReactorControlBlock(
                     BlockHooks.copy(Blocks.IRON_BLOCK).requiresCorrectToolForDrops().noOcclusion().strength(5.0F, 6.0F).sound(SoundType.STONE)));
-    public static final RegistrySupplier<Block> MACHINE_CONVERTER_HE_RF = registerBlock("machine_converter_he_rf",
-            () -> new com.hbm_m.block.machines.MachineConverterHeRfBlock(BlockHooks.copy(Blocks.IRON_BLOCK).noOcclusion().strength(5.0F, 6.0F).sound(SoundType.STONE)));
-    public static final RegistrySupplier<Block> MACHINE_CONVERTER_RF_HE = registerBlock("machine_converter_rf_he",
-            () -> new com.hbm_m.block.machines.MachineConverterRfHeBlock(BlockHooks.copy(Blocks.IRON_BLOCK).noOcclusion().strength(5.0F, 6.0F).sound(SoundType.STONE)));
     /** 1:1 {@code MachineFENSU} (LEGACY): Multiblock 5x5x3, Haerte 5 / Widerstand 10, kein Kreativ-Tab. */
     public static final RegistrySupplier<Block> MACHINE_FENSU = registerBlock("machine_fensu",
             () -> new com.hbm_m.block.machines.MachineFENSUBlock(BlockHooks.copy(Blocks.IRON_BLOCK).requiresCorrectToolForDrops().noOcclusion().strength(5.0F, 6.0F).sound(SoundType.STONE)));

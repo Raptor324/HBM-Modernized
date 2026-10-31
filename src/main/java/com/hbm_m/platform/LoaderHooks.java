@@ -25,15 +25,45 @@ public final class LoaderHooks {
     // (включая flipV) и сбрасывает кеш на resource reload (F3+T) — наш ConcurrentHashMap
     // удерживал старые модели навсегда и ломал hot-reload .obj-ассетов.
 
+    /** Локации, для которых уже предупреждали, что сырой .obj недоступен (чтобы не спамить лог каждый кадр/запекание). */
+    private static final java.util.Set<String> RAW_OBJ_WARNED = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
     /**
      * Кросс-версионная загрузка OBJ модели.
      * Исправляет баг 1.20.1 Forge, где flipV ошибочно передавался вместо automaticCulling.
+     *
+     * <p><b>Nmesh-first:</b> данные модели теперь идут из {@link com.hbm_m.client.model.nmesh.NMeshLoader#load}
+     * (бинарный {@code .nmesh} из джарки, собранный таском compileNucleusMeshes, либо runtime-фолбэк
+     * сырого .obj из ресурс-пака внутри самого NMeshLoader). Прямой вызов этого метода для ПОЛУЧЕНИЯ
+     * геометрии запрещён — используйте {@code NMeshLoader.load(...)}. Здесь остался только фолбэк
+     * {@link ObjLoader} для resourcepack-оверрайдов с живым .obj, и он вызывается лишь тогда, когда
+     * сырой .obj реально есть в ресурсах: в джарке без *.obj/*.mtl ObjLoader всё равно упал бы, поэтому
+     * вместо него — явное предупреждение в лог и исключение с внятной причиной.
      */
     public static ObjModel loadObjModel(ResourceLocation modelLocation, boolean flipV) {
+        // Прогрев/валидация бинарного меша: кешируется в NMeshLoader, nmesh-first пути дальше читают из кеша.
+        com.hbm_m.client.model.nmesh.NMeshData nmesh = com.hbm_m.client.model.nmesh.NMeshLoader.load(modelLocation);
+        net.minecraft.server.packs.resources.Resource objRes = null;
+        try {
+            objRes = net.minecraft.client.Minecraft.getInstance()
+                    .getResourceManager().getResource(modelLocation).orElse(null);
+        } catch (Throwable ignored) {
+        }
+        if (objRes == null) {
+            if (RAW_OBJ_WARNED.add(modelLocation.toString())) {
+                com.hbm_m.main.MainRegistry.LOGGER.warn(
+                        "LoaderHooks.loadObjModel: no raw .obj resource for {} (jar ships compiled .nmesh only; nmesh available: {}). " +
+                        "Call NMeshLoader.load() for model data; the ObjLoader fallback needs a resourcepack .obj override.",
+                        modelLocation, nmesh != null);
+            }
+            throw new IllegalStateException(
+                    "Raw OBJ resource missing for " + modelLocation
+                    + " — the jar ships .nmesh only; use com.hbm_m.client.model.nmesh.NMeshLoader.load() instead of the ObjLoader fallback");
+        }
         ObjModel model = ObjLoader.INSTANCE.loadModel(
             new ObjModel.ModelSettings(modelLocation, false, true, flipV, true, null)
         );
-        com.hbm_m.main.MainRegistry.LOGGER.debug("LoaderHooks: parsed OBJ model {}", modelLocation);
+        com.hbm_m.main.MainRegistry.LOGGER.debug("LoaderHooks: parsed OBJ model {} (raw .obj fallback)", modelLocation);
         return model;
     }
 

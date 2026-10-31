@@ -7,7 +7,7 @@
   },
   "children": {
     "lamp_demon_model": {
-      "loader": "forge:obj",
+      "loader": "hbm_m:nmesh_obj",
       "model": "hbm_m:models/block/demon_lamp.obj",
       "flip_v": true,
       "textures": {

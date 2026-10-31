@@ -32,14 +32,12 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 import net.minecraftforge.api.distmarker.Dist;
-//? if forge {
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+//? if forge {
 import net.minecraftforge.fml.common.Mod;
 //?} elif neoforge {
-/*import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
+/*import net.neoforged.fml.common.EventBusSubscriber;
 *///?}
 
 //? if forge {

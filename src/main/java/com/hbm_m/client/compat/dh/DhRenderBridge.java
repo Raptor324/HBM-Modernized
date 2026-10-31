@@ -144,14 +144,14 @@ public final class DhRenderBridge extends DhApiBeforeApplyShaderRenderEvent {
 
     // ── Определение Iris DH-compat override ─────────────────────────────────
 
-    private static volatile boolean dhCompatQueryInitialized = false;
-    // Кешируются ТОЛЬКО синглтоны и рефлексивная механика. Инстансы pipeline/
-    // DHCompat/DHCompatInternal Iris пересоздаёт при каждом reload пака —
-    // их кеширование давало протухший shouldOverride=false навсегда.
-    private static Object dhPipelineManager;
-    private static java.lang.reflect.Method dhGetPipelineNullable;
+    // Кешируются ТОЛЬКО рефлексивная механика и классы-хозяева. Инстансы
+    // pipeline/DHCompat/DHCompatInternal Iris пересоздаёт при каждом reload
+    // пака — их кеширование давало протухший shouldOverride=false навсегда.
+    private static Class<?> lastPipelineClass;
     private static java.lang.reflect.Method dhGetDHCompat;
+    private static Class<?> lastDhCompatClass;
     private static java.lang.reflect.Method dhGetInstance;
+    private static Class<?> lastInternalClass;
     private static java.lang.reflect.Field dhCompatShouldOverrideField;
 
     /**
@@ -178,45 +178,42 @@ public final class DhRenderBridge extends DhApiBeforeApplyShaderRenderEvent {
      * с DH-поддержкой это так.
      */
     public static boolean isIrisLodOverrideActive() {
+        if (!com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive()) {
+            return false;
+        }
         try {
-            if (!dhCompatQueryInitialized) {
-                dhCompatQueryInitialized = true;
-                Class<?> irisC = Class.forName("net.irisshaders.iris.Iris");
-                // PipelineManager — синглтон на время жизни игры, кешируем.
-                dhPipelineManager = irisC.getMethod("getPipelineManager").invoke(null);
-            }
-            if (dhPipelineManager == null) {
-                // Iris ещё не инициализирован — LOD'ы рисует нативный DH.
-                return false;
-            }
-            if (dhGetPipelineNullable == null) {
-                dhGetPipelineNullable = dhPipelineManager.getClass().getMethod("getPipelineNullable");
-            }
-            Object pipeline = dhGetPipelineNullable.invoke(dhPipelineManager);
+            Object pipeline = com.hbm_m.client.render.shader.IrisReflectionBridge.getLivePipeline();
             if (pipeline == null) {
-                // Пак неактивен — LOD'ы рисует нативный DH.
                 return false;
             }
-            if (dhGetDHCompat == null) {
-                dhGetDHCompat = pipeline.getClass().getMethod("getDHCompat");
+            Class<?> pipeCls = pipeline.getClass();
+            if (dhGetDHCompat == null || pipeCls != lastPipelineClass) {
+                dhGetDHCompat = pipeCls.getMethod("getDHCompat");
+                dhGetDHCompat.setAccessible(true);
+                lastPipelineClass = pipeCls;
             }
             Object dhCompat = dhGetDHCompat.invoke(pipeline);
             if (dhCompat == null) {
                 return false;
             }
-            if (dhGetInstance == null) {
-                dhGetInstance = dhCompat.getClass().getMethod("getInstance");
+            Class<?> compatCls = dhCompat.getClass();
+            if (dhGetInstance == null || compatCls != lastDhCompatClass) {
+                dhGetInstance = compatCls.getMethod("getInstance");
+                dhGetInstance.setAccessible(true);
+                lastDhCompatClass = compatCls;
             }
             Object internal = dhGetInstance.invoke(dhCompat);
             if (internal == null) {
                 return false;
             }
-            if (dhCompatShouldOverrideField == null) {
-                dhCompatShouldOverrideField = internal.getClass().getField("shouldOverride");
+            Class<?> internalCls = internal.getClass();
+            if (dhCompatShouldOverrideField == null || internalCls != lastInternalClass) {
+                dhCompatShouldOverrideField = internalCls.getField("shouldOverride");
+                dhCompatShouldOverrideField.setAccessible(true);
+                lastInternalClass = internalCls;
             }
             return dhCompatShouldOverrideField.getBoolean(internal);
         } catch (Throwable ignored) {}
-        // Фолбэк: активный пак → предполагаем override
         return com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive();
     }
 

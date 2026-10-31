@@ -511,6 +511,14 @@ public class ModClothConfig {
          */
         public float nukeCinematics = 1.0F;
 
+        /**
+         * Небесный ореол вокруг взрыва (за пределами силуэта огненного шара):
+         * зарево, освещающее небо и облака вокруг гриба. 0 - прежнее поведение
+         * (свет только внутри силуэта файербола и на земле), 1 - штатная сила,
+         * до 3 - зарево на весь горизонт. Общий множитель с nukeLightIntensity.
+         */
+        public float nukeHaloStrength = 1.0F;
+
         /** Режим рендера тепловизора. */
         public ThermalRenderMode thermalRenderMode = ThermalRenderMode.FULL_SHADER;
     }

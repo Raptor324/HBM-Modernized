@@ -19,9 +19,9 @@ import net.minecraft.world.phys.Vec3;
 
 //? if forge {
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.wrapper.InvWrapper;
 //?}
+import net.minecraftforge.items.IItemHandler;
 
 /** Gemeinsame Helfer der Krane: {@code CraneInserter.addToInventory}, {@code InventoryUtil.masquerade}, Band-Ausgabe. */
 public final class CraneInventoryUtil {

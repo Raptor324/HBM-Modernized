@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.platform.RenderHooks;
 
+import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
@@ -16,10 +17,8 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
-//? if forge {
 import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.model.data.ModelData;
-//?}
 
 /**
  * Единая multipart-модель станков (лоадер {@code hbm_m:machine_parts_loader}).
@@ -184,7 +183,9 @@ public class ConfiguredMultipartBakedModel extends AbstractMultipartBakedModel i
         if (chunkRenderTypes != null && !chunkRenderTypes.isEmpty()) {
             return ChunkRenderTypeSet.of(chunkRenderTypes.toArray(RenderType[]::new));
         }
-        return super.getRenderTypes(state, rand, data);
+        // Дефолт IForgeBakedModel: неквалифицированный `super.` не достаёт до default-методов
+        // интерфейса (javac: cannot find symbol).
+        return ItemBlockRenderTypes.getRenderLayers(state);
     }
 
     @Override

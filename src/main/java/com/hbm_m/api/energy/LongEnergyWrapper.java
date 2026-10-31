@@ -3,13 +3,7 @@ package com.hbm_m.api.energy;
 import com.hbm_m.interfaces.IEnergyConnector;
 import com.hbm_m.interfaces.IEnergyProvider;
 import com.hbm_m.interfaces.IEnergyReceiver;
-
-//? if forge {
 import net.minecraftforge.energy.IEnergyStorage;
-//?}
-//? if neoforge {
-/*import net.minecraftforge.energy.IEnergyStorage;
-*///?}
 
 /**
  * FE-обёртка над HBM-энергией (long) для чужих модов: FE-уровень = feFromHe(HE),

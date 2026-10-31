@@ -5,7 +5,7 @@
   },
   "children": {
     "anvil_model": {
-      "loader": "forge:obj",
+      "loader": "hbm_m:nmesh_obj",
       "model": "hbm_m:models/block/machines/anvil_block.obj",
       "flip_v": true,
       "textures": {

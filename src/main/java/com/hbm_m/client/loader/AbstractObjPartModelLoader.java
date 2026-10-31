@@ -14,6 +14,8 @@ import com.google.gson.JsonObject;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.platform.LoaderHooks;
 import com.mojang.math.Transformation;
+import com.hbm_m.client.model.nmesh.NMeshData;
+import com.hbm_m.client.model.nmesh.NMeshPartBakedModel;
 
 import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
@@ -66,6 +68,44 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
         return LoaderHooks.bakeObjModel(model, partContext, baker, spriteGetter, identityState, overrides, modelName);
     }
 
+    /**
+     * Запекает одну часть напрямую из данных {@link NMeshData} (nmesh-first путь),
+     * без промежуточного Forge {@link ObjModel}.
+     */
+    protected BakedModel bakeSingleNMeshPart(NMeshData nmesh,
+                                           SinglePartBakingContext partContext,
+                                           Function<Material, TextureAtlasSprite> spriteGetter,
+                                           ModelState modelState) {
+        java.util.List<NMeshData.SubMesh> subs =
+                nmesh.getSubMeshesForPart(partContext.visiblePartName());
+        if (subs.isEmpty()) {
+            return new NMeshPartBakedModel(
+                    java.util.List.of(), flipV(), Transformation.identity(), partContext.getTransforms());
+        }
+        java.util.List<NMeshPartBakedModel.BoundSubMesh> bound =
+                new java.util.ArrayList<>(subs.size());
+        for (NMeshData.SubMesh sm : subs) {
+            Material mat = partContext.getMaterial(sm.materialName);
+            TextureAtlasSprite sprite = mat != null ? spriteGetter.apply(mat) : null;
+            bound.add(new NMeshPartBakedModel.BoundSubMesh(sm, sprite));
+        }
+        // Forge ObjModel.addQuads order: modelState rotation first, then the JSON root transform.
+        Transformation root = modelState.getRotation().compose(partContext.getRootTransform());
+        return new NMeshPartBakedModel(
+                bound, flipV(), root, partContext.getTransforms());
+    }
+
+    /**
+     * Запекание ОДНОЙ части модели для NMesh. Переопределяется загрузчиками с дедупликацией
+     * (двери: текстурные скины шарят canonical-запекание через {@link DoorModelLoader}).
+     */
+    protected BakedModel bakeNMeshPart(NMeshData nmesh,
+                                       SinglePartBakingContext partContext,
+                                       Function<Material, TextureAtlasSprite> spriteGetter,
+                                       ModelState modelState) {
+        return bakeSingleNMeshPart(nmesh, partContext, spriteGetter, modelState);
+    }
+
     @Override
     public ObjPartGeometry<T> read(JsonObject jsonObject, JsonDeserializationContext deserializationContext) {
         String modelStr = GsonHelper.getAsString(jsonObject, "model");
@@ -77,6 +117,70 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
     }
 
     public static class ObjPartGeometry<T extends BakedModel> implements IUnbakedGeometry<ObjPartGeometry<T>> {
+        /** Часть, добавляемая фолбэком для машин, ожидающих "Base" (см. ensureBasePart). */
+        private static final String FALLBACK_BASE_PART = "Base";
+
+        /**
+         * Ищет уже запечённую часть без учёта регистра: OBJ/nmesh-группы бывают в
+         * другом регистре, чем фолбэк "Base" (blast_door: группа "base"). Без этого
+         * фолбэк запекал ПУСТУЮ часть "Base" без спрайтов — а выбор спрайта частиц
+         * в AbstractMultipartBakedModel берёт "Base" первым, и частицы ломания
+         * двери получали missing-спрайт (фиолетовый/чёрный).
+         */
+        @Nullable
+        private static BakedModel findPartIgnoreCase(Map<String, BakedModel> parts, String name) {
+            for (Map.Entry<String, BakedModel> entry : parts.entrySet()) {
+                if (entry.getKey().equalsIgnoreCase(name) && entry.getValue() != null) {
+                    return entry.getValue();
+                }
+            }
+            return null;
+        }
+
+        /** Пустая запечённая часть (без меша и квадов) не годится ни для рендера, ни для спрайта частиц. */
+        private static boolean isEffectivelyEmpty(BakedModel model) {
+            if (model instanceof com.hbm_m.client.model.nmesh.NMeshPartBakedModel nmeshPart) {
+                return nmeshPart.isEmpty();
+            }
+            try {
+                var rand = net.minecraft.util.RandomSource.create(42L);
+                for (net.minecraft.core.Direction d : net.minecraft.core.Direction.values()) {
+                    if (!model.getQuads(null, d, rand).isEmpty()) {
+                        return false;
+                    }
+                }
+                return model.getQuads(null, null, rand).isEmpty();
+            } catch (Throwable t) {
+                return false;
+            }
+        }
+
+        /**
+         * Резолвит спрайт "particle" из JSON модели и инжектирует его в multipart-модель:
+         * частицы ломания (BlockModelShaper.getTexture → getParticleIcon) и фолбэки
+         * получают каноничный спрайт даже если авто-выбор части промахнулся.
+         */
+        private static BakedModel withJsonParticleIcon(BakedModel model, IGeometryBakingContext context,
+                                                       Function<Material, TextureAtlasSprite> spriteGetter) {
+            if (!(model instanceof com.hbm_m.client.model.AbstractMultipartBakedModel multipart)) {
+                return model;
+            }
+            try {
+                if (context.hasMaterial("particle")) {
+                    Material particleMat = context.getMaterial("particle");
+                    if (particleMat != null) {
+                        TextureAtlasSprite particleSprite = spriteGetter.apply(particleMat);
+                        if (particleSprite != null) {
+                            multipart.setParticleIcon(particleSprite);
+                        }
+                    }
+                }
+            } catch (Exception ignored) {
+                // Нет "particle" в JSON или спрайт не застичен — остаётся авто-выбор части.
+            }
+            return model;
+        }
+
         private final ResourceLocation modelLocation;
         /** Пустой set = АВТОрежим: запечь все корневые группы OBJ (обнаруживаются при запекании). */
         private final Set<String> partNames;
@@ -133,6 +237,84 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
         *///?}
 
         private BakedModel doBake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides, ResourceLocation modelName) {
+            // nmesh-first: если рядом с .obj лежит скомпилированный .nmesh (или resourcepack-fallback сработал),
+            // запекаем напрямую без Forge ObjModel.
+            NMeshData nmesh = com.hbm_m.client.model.nmesh.NMeshLoader.load(modelLocation);
+            if (nmesh != null) {
+                if (!partSpecs.isEmpty()) {
+                    HashMap<String, BakedModel> specParts = new HashMap<>();
+                    for (var entry : partSpecs.entrySet()) {
+                        PartSpec spec = entry.getValue();
+                        String group = spec.group() != null ? spec.group() : entry.getKey();
+                        SinglePartBakingContext partContext = new SinglePartBakingContext(context, group, loader, spec.texture());
+                        BakedModel baked = loader.bakeNMeshPart(nmesh, partContext, spriteGetter, stateForPart(entry.getKey()));
+                        specParts.put(entry.getKey(), baked);
+                    }
+                    return withJsonParticleIcon(
+                            loader.createBakedModel(specParts, context.getTransforms(), modelName),
+                            context, spriteGetter);
+                }
+                boolean auto = partNames.isEmpty();
+                Set<String> names = auto ? nmesh.getRootComponentNames() : partNames;
+                HashMap<String, BakedModel> bakedParts = new HashMap<>();
+                for (String partName : names) {
+                    if (bakedParts.containsKey(partName)) {
+                        continue;
+                    }
+                    SinglePartBakingContext partContext = new SinglePartBakingContext(context, partName, loader);
+                    BakedModel baked = loader.bakeNMeshPart(nmesh, partContext, spriteGetter, stateForPart(partName));
+                    if (baked != null) {
+                        bakedParts.put(partName, baked);
+                        for (NMeshData.SubMesh sm : nmesh.subMeshes()) {
+                            if (!sm.objectName.isEmpty() && !sm.groupName.isEmpty() && !sm.objectName.equals(sm.groupName)) {
+                                if (partName.equals(sm.objectName)) {
+                                    bakedParts.putIfAbsent(sm.groupName, baked);
+                                } else if (partName.equals(sm.groupName)) {
+                                    bakedParts.putIfAbsent(sm.objectName, baked);
+                                }
+                            }
+                        }
+                    }
+                }
+                if (!auto && !bakedParts.containsKey(FALLBACK_BASE_PART)) {
+                    BakedModel reused = findPartIgnoreCase(bakedParts, FALLBACK_BASE_PART);
+                    if (reused != null) {
+                        // Группа "Base" есть в другом регистре ("base") — алиас на ту же запечённую
+                        // часть, чтобы не плодить пустую часть без спрайтов.
+                        bakedParts.put(FALLBACK_BASE_PART, reused);
+                    } else {
+                        SinglePartBakingContext baseCtx = new SinglePartBakingContext(context, FALLBACK_BASE_PART, loader);
+                        BakedModel baked = loader.bakeNMeshPart(nmesh, baseCtx, spriteGetter, stateForPart(FALLBACK_BASE_PART));
+                        if (baked != null && !isEffectivelyEmpty(baked)) {
+                            bakedParts.put(FALLBACK_BASE_PART, baked);
+                            for (NMeshData.SubMesh sm : nmesh.subMeshes()) {
+                                if (!sm.objectName.isEmpty() && !sm.groupName.isEmpty() && !sm.objectName.equals(sm.groupName)) {
+                                    if (FALLBACK_BASE_PART.equals(sm.objectName)) {
+                                        bakedParts.putIfAbsent(sm.groupName, baked);
+                                    } else if (FALLBACK_BASE_PART.equals(sm.groupName)) {
+                                        bakedParts.putIfAbsent(sm.objectName, baked);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                for (NMeshData.SubMesh sm : nmesh.subMeshes()) {
+                    if (!sm.objectName.isEmpty() && !sm.groupName.isEmpty() && !sm.objectName.equals(sm.groupName)) {
+                        BakedModel objModel = bakedParts.get(sm.objectName);
+                        BakedModel grpModel = bakedParts.get(sm.groupName);
+                        if (objModel != null && grpModel == null) {
+                            bakedParts.put(sm.groupName, objModel);
+                        } else if (grpModel != null && objModel == null) {
+                            bakedParts.put(sm.objectName, grpModel);
+                        }
+                    }
+                }
+                return withJsonParticleIcon(
+                        loader.createBakedModel(bakedParts, context.getTransforms(), modelName),
+                        context, spriteGetter);
+            }
+
             ObjModel model = getOrLoadObjModel();
 
             // Режим спецификаций: имена и группы частей заданы картой (возможны алиасы групп).
@@ -151,7 +333,9 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
                                 loader.getClass().getSimpleName(), entry.getKey(), group);
                     }
                 }
-                return loader.createBakedModel(specParts, context.getTransforms(), modelName);
+                return withJsonParticleIcon(
+                        loader.createBakedModel(specParts, context.getTransforms(), modelName),
+                        context, spriteGetter);
             }
 
             // АВТОрежим: пустой список частей = взять все корневые группы OBJ.
@@ -183,7 +367,9 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
                             loader.getClass().getSimpleName(), entry.getKey(), modelName, quads);
                 }
             }
-            return loader.createBakedModel(bakedParts, context.getTransforms(), modelName);
+            return withJsonParticleIcon(
+                    loader.createBakedModel(bakedParts, context.getTransforms(), modelName),
+                    context, spriteGetter);
         }
 
         private HashMap<String, BakedModel> bakeParts(ObjModel model, Set<String> names, IGeometryBakingContext context,
@@ -212,14 +398,20 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
                                    IGeometryBakingContext context, ModelBaker baker,
                                    Function<Material, TextureAtlasSprite> spriteGetter,
                                    ItemOverrides overrides, ResourceLocation modelName) {
-            if (!bakedParts.containsKey("Base")) {
+            if (!bakedParts.containsKey(FALLBACK_BASE_PART)) {
+                BakedModel reused = findPartIgnoreCase(bakedParts, FALLBACK_BASE_PART);
+                if (reused != null) {
+                    // Группа "Base" есть в другом регистре ("base") — алиас на ту же часть.
+                    bakedParts.put(FALLBACK_BASE_PART, reused);
+                    return;
+                }
                 MainRegistry.LOGGER.info("{}: Creating fallback 'Base' part", loader.getClass().getSimpleName());
-                BakedModel baseModel = LoaderHooks.bakeObjModel(model, new SinglePartBakingContext(context, "Base", loader), baker, spriteGetter, createIdentityState(), overrides, modelName);
-                if (baseModel != null) {
-                    bakedParts.put("Base", baseModel);
+                BakedModel baseModel = LoaderHooks.bakeObjModel(model, new SinglePartBakingContext(context, FALLBACK_BASE_PART, loader), baker, spriteGetter, createIdentityState(), overrides, modelName);
+                if (baseModel != null && !isEffectivelyEmpty(baseModel)) {
+                    bakedParts.put(FALLBACK_BASE_PART, baseModel);
                     MainRegistry.LOGGER.info("{}: Fallback 'Base' part baked successfully", loader.getClass().getSimpleName());
                 } else {
-                    MainRegistry.LOGGER.warn("{}: Fallback 'Base' part is NULL!", loader.getClass().getSimpleName());
+                    MainRegistry.LOGGER.warn("{}: Fallback 'Base' part is NULL/empty!", loader.getClass().getSimpleName());
                 }
             }
         }
@@ -249,7 +441,7 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
     protected record PartSpec(@org.jetbrains.annotations.Nullable String group,
                               @org.jetbrains.annotations.Nullable ResourceLocation texture) { }
 
-    protected static class SinglePartBakingContext implements IGeometryBakingContext {
+    public static class SinglePartBakingContext implements IGeometryBakingContext {
         private final IGeometryBakingContext parent;
         private final String visiblePart;
         private final AbstractObjPartModelLoader<?> loader;
@@ -272,6 +464,7 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
         @Override public String getModelName() { return parent.getModelName(); }
         /** Имя части (visiblePart), заданное этому контексту запекания. */
         public String visiblePartName() { return visiblePart; }
+        public String getPartName() { return visiblePart; }
         @Nullable
         public ResourceLocation textureOverride() { return textureOverride; }
         @Override public boolean isGui3d() { return parent.isGui3d(); }

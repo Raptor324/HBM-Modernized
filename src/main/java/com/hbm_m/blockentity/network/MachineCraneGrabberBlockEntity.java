@@ -27,9 +27,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-//? if forge {
 import net.minecraftforge.items.IItemHandler;
-//?}
 
 /**
  * 1:1 {@code TileEntityCraneGrabber}: 9 Filter, Stapel- und Auswurf-Upgrade. Greift Teile vom Band vor dem Eingang

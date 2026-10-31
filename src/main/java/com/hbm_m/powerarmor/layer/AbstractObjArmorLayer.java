@@ -34,9 +34,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import com.hbm_m.platform.LoaderHooks;
 
-//? if forge {
 import net.minecraftforge.client.model.data.ModelData;
-//?}
 
 /**
  * Абстрактный базовый класс для рендеринга OBJ-брони.

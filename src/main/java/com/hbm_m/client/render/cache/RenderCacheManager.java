@@ -113,6 +113,22 @@ public final class RenderCacheManager {
             // texture, culler/scatter SSBOs) lives until its explicit destroy and
             // must not survive a reload/disconnect; the sampler-location cache is
             // keyed by pipeline generation and grows across Iris reloads.
+            guarded("NucleusGpuBaker.releaseAll",
+                    com.hbm_m.client.render.NucleusGpuBaker::releaseAll);
+            guarded("PersistentUploadStaging.destroy",
+                    com.hbm_m.client.render.PersistentUploadStaging::destroy);
+            guarded("IrisInstancedShaders.destroyAll",
+                    com.hbm_m.client.render.shader.IrisInstancedShaders::destroyAll);
+            guarded("IrisExtendedShaderAccess.invalidateShaderCache",
+                    com.hbm_m.client.render.shader.IrisExtendedShaderAccess::invalidateShaderCache);
+            guarded("RawFullscreenQuad.destroy",
+                    com.hbm_m.client.render.shader.RawFullscreenQuad::destroy);
+            guarded("RawDhDepthCopy.destroy",
+                    com.hbm_m.client.render.shader.RawDhDepthCopy::destroy);
+            guarded("RawScreenSpaceLight.destroy",
+                    com.hbm_m.client.render.shader.RawScreenSpaceLight::destroy);
+            guarded("PackAdditiveQueue.destroy",
+                    com.hbm_m.client.render.shader.PackAdditiveQueue::destroy);
             guarded("HiZDepthPyramid.destroy",
                     () -> com.hbm_m.client.render.culling.HiZDepthPyramid.get().destroy());
             guarded("NucleusGpuCuller.destroy",

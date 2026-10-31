@@ -55,6 +55,7 @@ stonecutter parameters {
 		replace("net.minecraftforge.client.model.data.ModelProperty", "net.neoforged.neoforge.client.model.data.ModelProperty")
 		replace("net.minecraftforge.client.model.BakedModelWrapper", "net.neoforged.neoforge.client.model.BakedModelWrapper")
 		replace("net.minecraftforge.client.ChunkRenderTypeSet", "net.neoforged.neoforge.client.ChunkRenderTypeSet")
+		replace("net.minecraftforge.client.RenderTypeHelper", "net.neoforged.neoforge.client.RenderTypeHelper")
 		replace("net.minecraftforge.client.model.geometry.IUnbakedGeometry", "net.neoforged.neoforge.client.model.geometry.IUnbakedGeometry")
 		replace("net.minecraftforge.client.model.geometry.IGeometryLoader", "net.neoforged.neoforge.client.model.geometry.IGeometryLoader")
 		// fluids
@@ -70,5 +71,12 @@ stonecutter parameters {
 		replace("net.minecraftforge.gametest.GameTestHolder", "net.neoforged.neoforge.gametest.GameTestHolder")
 		replace("net.minecraftforge.gametest.PrefixGameTestTemplate", "net.neoforged.neoforge.gametest.PrefixGameTestTemplate")
 		replace("net.minecraftforge.gametest.GameTest", "net.neoforged.neoforge.gametest.GameTest")
+		// client events (same simple class names on both loaders)
+		replace("net.minecraftforge.client.event.InputEvent", "net.neoforged.neoforge.client.event.InputEvent")
+		replace("net.minecraftforge.client.event.RenderHandEvent", "net.neoforged.neoforge.client.event.RenderHandEvent")
+		replace("net.minecraftforge.client.event.RenderLevelStageEvent", "net.neoforged.neoforge.client.event.RenderLevelStageEvent")
+		// event bus (NeoForge moved the package, class names unchanged)
+		replace("net.minecraftforge.eventbus.api.EventPriority", "net.neoforged.bus.api.EventPriority")
+		replace("net.minecraftforge.eventbus.api.SubscribeEvent", "net.neoforged.bus.api.SubscribeEvent")
 	}
 }

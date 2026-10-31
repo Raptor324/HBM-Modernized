@@ -981,6 +981,93 @@ public final class IrisReflectionBridge {
         return unlocked;
     }
 
+    // ── BlendModeStorage (Iris blend lock) ────────────────────────────────
+
+    private static boolean blendModeStorageChecked;
+    private static Method blendModeIsLockedMethod;
+    private static Method blendModeRestoreMethod;
+    private static java.lang.reflect.Field blendModeLockedField;
+
+    /** Resolves BlendModeStorage once (no-op afterwards). Never throws. */
+    public static synchronized void ensureBlendModeReflected() {
+        if (blendModeStorageChecked) {
+            return;
+        }
+        blendModeStorageChecked = true;
+        try {
+            Class<?> cl = findIrisClass("gl.blending.BlendModeStorage");
+            try {
+                blendModeIsLockedMethod = cl.getDeclaredMethod("isBlendLocked");
+                blendModeIsLockedMethod.setAccessible(true);
+            } catch (Throwable ignored) {
+            }
+            try {
+                blendModeRestoreMethod = cl.getDeclaredMethod("restoreBlend");
+                blendModeRestoreMethod.setAccessible(true);
+            } catch (Throwable ignored) {
+            }
+            try {
+                blendModeLockedField = cl.getDeclaredField("blendLocked");
+                blendModeLockedField.setAccessible(true);
+            } catch (Throwable ignored) {
+                for (java.lang.reflect.Field f : cl.getDeclaredFields()) {
+                    if (f.getType() == boolean.class && java.lang.reflect.Modifier.isStatic(f.getModifiers())
+                            && "blendLocked".equals(f.getName())) {
+                        f.setAccessible(true);
+                        blendModeLockedField = f;
+                        break;
+                    }
+                }
+            }
+        } catch (VirtualMachineError t) {
+            throw t;
+        } catch (Throwable ignored) {
+        }
+    }
+
+    /**
+     * Reads Iris's blend lock: {@code true} = locked, {@code false} = unlocked,
+     * {@code null} = Iris absent/unreadable.
+     */
+    public static Boolean blendModeIsLocked() {
+        ensureBlendModeReflected();
+        try {
+            if (blendModeIsLockedMethod != null) {
+                return (Boolean) blendModeIsLockedMethod.invoke(null);
+            }
+            if (blendModeLockedField != null) {
+                return (Boolean) blendModeLockedField.get(null);
+            }
+            return null;
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    /**
+     * Unlocks Iris BlendModeStorage if locked so subsequent vanilla RenderSystem.enableBlend()
+     * calls (e.g. Gui.renderVignette) are not swallowed by MixinGlStateManager_BlendOverride.
+     */
+    public static boolean blendModeUnlock() {
+        ensureBlendModeReflected();
+        boolean unlocked = false;
+        try {
+            Boolean locked = blendModeIsLocked();
+            if (Boolean.TRUE.equals(locked)) {
+                if (blendModeRestoreMethod != null) {
+                    blendModeRestoreMethod.invoke(null);
+                    unlocked = true;
+                }
+                if (blendModeLockedField != null && blendModeLockedField.getBoolean(null)) {
+                    blendModeLockedField.setBoolean(null, false);
+                    unlocked = true;
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        return unlocked;
+    }
+
     // ── ExtendingBufferBuilder (iris$beginWithoutExtending) ───────────────
 
     private static boolean bweChecked;

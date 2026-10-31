@@ -960,6 +960,14 @@
       "hbm_m:weapon/spark_shoot3"
     ]
   },
+  "weapon.sparkshoot": {
+    "category": "player",
+    "sounds": [
+      "hbm_m:weapon/sparkshoot1",
+      "hbm_m:weapon/sparkshoot2",
+      "hbm_m:weapon/sparkshoot3"
+    ]
+  },
   "block.turbofan_operate": {
     "category": "blocks",
     "sounds": [

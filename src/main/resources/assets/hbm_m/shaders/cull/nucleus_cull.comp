@@ -100,34 +100,37 @@ vec4 instQuat(uint base) {
                 snorm16ToFloat(wzw), snorm16ToFloat(wzw >> 16u));
 }
 
-bool testFrustum(vec3 center, float radius) {
+bool testFrustumAabb(vec3 viewCenter, vec3 viewHalfExt) {
     for (int i = 0; i < 6; i++) {
-        if (dot(uFrustumPlanes[i].xyz, center) + uFrustumPlanes[i].w < -radius) {
+        vec3 n = uFrustumPlanes[i].xyz;
+        float d = dot(n, viewCenter) + uFrustumPlanes[i].w;
+        float r = dot(abs(n), viewHalfExt);
+        if (d + r < 0.0) {
             return false;
         }
     }
     return true;
 }
 
-bool projectSphere(vec3 c, float r, float znear, float P00, float P11, out vec4 aabb) {
-    if (c.z + r > -znear) {
-        return false;
+bool projectViewAabb(vec3 worldCenter, vec3 worldHe, float znear, float zfar, float P00, float P11,
+                     out vec4 aabb, out float minDepth) {
+    aabb = vec4(1.0e9, 1.0e9, -1.0e9, -1.0e9);
+    minDepth = 1.0;
+    for (int i = 0; i < 8; i++) {
+        vec3 sign3 = vec3(i & 1, (i >> 1) & 1, (i >> 2) & 1);
+        vec3 wp = worldCenter + mix(-worldHe, worldHe, sign3);
+        vec3 vp = (uViewMat * vec4(wp, 1.0)).xyz;
+        if (vp.z > -znear) {
+            return false;
+        }
+        float invW = -1.0 / vp.z;
+        vec2 ndc = vec2(vp.x * P00, vp.y * P11) * invW;
+        aabb.xy = min(aabb.xy, ndc);
+        aabb.zw = max(aabb.zw, ndc);
+        float winZ = (zfar / (zfar - znear)) + (zfar * znear) / ((zfar - znear) * vp.z);
+        minDepth = min(minDepth, winZ);
     }
-
-    vec3 cr = c * r;
-    float czr2 = c.z * c.z - r * r;
-
-    float vx = sqrt(c.x * c.x + czr2);
-    float minx = (vx * c.x - cr.z) / (vx * c.z + cr.x);
-    float maxx = (vx * c.x + cr.z) / (vx * c.z - cr.x);
-
-    float vy = sqrt(c.y * c.y + czr2);
-    float miny = (vy * c.y - cr.z) / (vy * c.z + cr.y);
-    float maxy = (vy * c.y + cr.z) / (vy * c.z - cr.y);
-
-    aabb = vec4(minx * P00, miny * P11, maxx * P00, maxy * P11);
-    aabb = aabb.xwzy * vec4(-0.5f, -0.5f, -0.5f, -0.5f) + vec4(0.5f);
-
+    aabb = aabb * 0.5 + 0.5;
     return true;
 }
 
@@ -179,29 +182,34 @@ bool testInstanceVisibility(uint inIdx) {
                          inData[inFloatOff + INST_BSIZE_WORD + 1u],
                          inData[inFloatOff + INST_BSIZE_WORD + 2u]);
 
-    vec3 localCenter = bboxMin + 0.5 * bboxSize;
-    float radius = 0.5 * length(bboxSize);
-    float unpaddedRadius = radius;
+    vec3 ext = 0.5 * bboxSize;
+    vec3 localCenter = bboxMin + ext;
+    float unpaddedRadius = length(ext);
     bool isAnimOrParam = (fadeMode < 0.99985) || (inData[inFloatOff + 27u] >= 0.0);
-    // Word 27 is GradParams.w - the parametric joint chain base index (< 0 = not
-    // GPU-animated). GPU-parametric parts sweep beyond their static bbox (the CPU
-    // no longer pads the record bbox: block_lit_instanced.vsh interpolates the
-    // 8-corner lightmap with (vPos - bboxMin)/safeSize, and a padded bbox corrupts
-    // that gradient). Expand the cull sphere here instead - over-inclusive is the
-    // safe direction (looser frustum/occlusion test, never a false cull).
-    if (inData[inFloatOff + 27u] >= 0.0) {
-        radius = radius * 2.0 + 2.5;
-    }
 
     vec3 worldCenter = instPos + quatRotate(instRot, localCenter);
-    vec3 viewCenter = (uViewMat * vec4(worldCenter, 1.0)).xyz;
+    float xx = instRot.x * instRot.x, yy = instRot.y * instRot.y, zz = instRot.z * instRot.z;
+    float xy = instRot.x * instRot.y, xz = instRot.x * instRot.z, yz = instRot.y * instRot.z;
+    float wx = instRot.w * instRot.x, wy = instRot.w * instRot.y, wz = instRot.w * instRot.z;
+    vec3 worldHe;
+    worldHe.x = abs(1.0 - 2.0 * (yy + zz)) * ext.x + abs(2.0 * (xy - wz)) * ext.y + abs(2.0 * (xz + wy)) * ext.z;
+    worldHe.y = abs(2.0 * (xy + wz)) * ext.x + abs(1.0 - 2.0 * (xx + zz)) * ext.y + abs(2.0 * (yz - wx)) * ext.z;
+    worldHe.z = abs(2.0 * (xz - wy)) * ext.x + abs(2.0 * (yz + wx)) * ext.y + abs(1.0 - 2.0 * (xx + yy)) * ext.z;
+    // Word 27 is GradParams.w - the parametric joint chain base index (< 0 = not
+    // GPU-animated). Parametric parts sweep slightly beyond their static bbox:
+    // add a tight 0.15 block margin (over-inclusive is the safe direction).
+    if (inData[inFloatOff + 27u] >= 0.0) {
+        worldHe += vec3(0.15);
+    }
 
-    // 1. 6-plane frustum test in view space
-    bool isVisible = testFrustum(viewCenter, radius);
+    vec3 viewCenter = (uViewMat * vec4(worldCenter, 1.0)).xyz;
+    mat3 absView = mat3(abs(uViewMat[0].xyz), abs(uViewMat[1].xyz), abs(uViewMat[2].xyz));
+    vec3 viewHe = absView * worldHe;
+
+    // 1. 6-plane AABB frustum test in view space
+    bool isVisible = testFrustumAabb(viewCenter, viewHe);
 
     // 1.5. Analytic Subpixel Culling:
-    // Reject tiny parts whose projected diameter on screen is below the subpixel threshold.
-    // Small detail / animated parts use a 1.35 px threshold; structural parts use 0.75 px.
     if (isVisible) {
         float depthZ = -viewCenter.z;
         if (depthZ > unpaddedRadius + uZNear) {
@@ -213,15 +221,13 @@ bool testInstanceVisibility(uint inIdx) {
         }
     }
 
-    // 2. Forward-Z Hi-Z occlusion test (skipped in frustum-only mode:
-    //    adaptive gate keeps the pyramid from being rebuilt on small scenes)
+    // 2. Forward-Z Hi-Z occlusion test using tight 8-corner AABB projection
     if (isVisible && uFrustumOnly == 0u) {
         vec4 aabb;
-        if (projectSphere(viewCenter, radius, uZNear, uP00, uP11, aabb)) {
+        float minDepth;
+        if (projectViewAabb(worldCenter, worldHe, uZNear, uZFar, uP00, uP11, aabb, minDepth)) {
             float occluderDepth = hizOccluder(aabb);
-            float zEye = viewCenter.z + radius;
-            float depthSphere = (uZFar / (uZFar - uZNear)) + (uZFar * uZNear) / ((uZFar - uZNear) * zEye);
-            isVisible = depthSphere <= occluderDepth;
+            isVisible = minDepth <= occluderDepth;
         }
     }
     return isVisible;

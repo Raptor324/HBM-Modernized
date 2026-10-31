@@ -2000,8 +2000,6 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.WATZ_END.get()));
         add.accept(new ItemStack(ModItems.WATZ_POWERPLANT.get()));
         add.accept(new ItemStack(ModItems.WATZ_PUMP.get()));
-        add.accept(new ItemStack(ModBlocks.MACHINE_CONVERTER_HE_RF.get()));
-        add.accept(new ItemStack(ModBlocks.MACHINE_CONVERTER_RF_HE.get()));
         // Achtung: DFC_EMITTER/INJECTOR/RECEIVER sind reine Platzhalterbloecke ohne Logik. Die
         // arbeitenden Maschinen heissen im Port CORE_EMITTER/INJECTOR/RECEIVER und lagen bisher
         // nicht im Reiter - der Spieler bekam also die toten Attrappen.
@@ -3500,8 +3498,6 @@ public final class CreativeModeTabEventHandler {
         // add.accept(new ItemStack(ModBlocks.MACHINE_AUTOCRAFTER.get()));
         // add.accept(new ItemStack(ModBlocks.MACHINE_CHUNGUS.get()));
         // add.accept(new ItemStack(ModBlocks.MACHINE_CONTROLLER.get()));
-        // add.accept(new ItemStack(ModBlocks.MACHINE_CONVERTER_HE_RF.get()));
-        // add.accept(new ItemStack(ModBlocks.MACHINE_CONVERTER_RF_HE.get()));
         // add.accept(new ItemStack(ModBlocks.MACHINE_FENSU.get()));
         // add.accept(new ItemStack(ModBlocks.MACHINE_FORCEFIELD.get()));
         // add.accept(new ItemStack(ModBlocks.MACHINE_FUNNEL.get()));

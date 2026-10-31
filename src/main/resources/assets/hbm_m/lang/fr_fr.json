@@ -616,8 +616,6 @@
   "block.hbm_m.machine_centrifuge": "Centrifuge",
   "block.hbm_m.machine_chungus": "Turbine à vapeur léviathan",
   "block.hbm_m.machine_controller": "Bloc de contrôle à distance de réacteur",
-  "block.hbm_m.machine_converter_he_rf": "Convertisseur HE vers RF",
-  "block.hbm_m.machine_converter_rf_he": "Convertisseur RF vers HE",
   "block.hbm_m.machine_crystallizer": "Acidificateur de minerai",
   "block.hbm_m.machine_detector": "Détecteur de puissance",
   "block.hbm_m.machine_epress": "Presse électrique",

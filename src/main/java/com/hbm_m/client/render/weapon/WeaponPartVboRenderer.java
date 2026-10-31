@@ -149,6 +149,8 @@ public class WeaponPartVboRenderer extends AbstractGpuMesh {
     private static RenderStateGuard irisBatchStateGuard;
     private static IrisPhaseGuard irisBatchPhaseGuard;
     private static int irisBatchPrevBeId = Integer.MIN_VALUE;
+    private static int irisBatchPrevDrawFbo = -1;
+    private static int irisBatchPrevReadFbo = -1;
     private static int irisBatchVao = -1;
     /** COLOR-атрибут, которому батч задавал константный тинт (для сброса в белый). */
     private static int irisBatchColorLoc = -1;
@@ -231,9 +233,11 @@ public class WeaponPartVboRenderer extends AbstractGpuMesh {
 
         if (!sameBatch || quadsPendingSinceBatch) {
             endWeaponBatch();
-            // Flush pending immediate BufferSource quads so GL draws don't interleave mid-batch
-            flushGunBatch();
-            quadsPendingSinceBatch = false;
+            if (quadsPendingSinceBatch) {
+                // Flush pending immediate BufferSource quads so GL draws don't interleave mid-batch
+                flushGunBatch();
+                quadsPendingSinceBatch = false;
+            }
             beginWeaponBatch(shader, texLoc, mode, effectiveLight, cull, depthMask, shaded, guiLighting);
         }
 
@@ -292,8 +296,10 @@ public class WeaponPartVboRenderer extends AbstractGpuMesh {
 
         if (!sameIrisBatch || quadsPendingSinceBatch) {
             endWeaponBatch();
-            flushGunBatch();
-            quadsPendingSinceBatch = false;
+            if (quadsPendingSinceBatch) {
+                flushGunBatch();
+                quadsPendingSinceBatch = false;
+            }
             if (!beginIrisWeaponBatch(shader, companion, texLoc, mode, effLight, cull, depthMask, shadowPass)) {
                 return false;
             }
@@ -347,6 +353,8 @@ public class WeaponPartVboRenderer extends AbstractGpuMesh {
                                                 ResourceLocation texLoc, int mode, int effLight,
                                                 boolean cull, boolean depthMask, boolean shadowPass) {
         irisBatchPrevBeId = IrisExtendedShaderAccess.setCurrentRenderedBlockEntity(0);
+        irisBatchPrevDrawFbo = GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING);
+        irisBatchPrevReadFbo = GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
         irisBatchStateGuard = RenderStateGuard.snapshot();
         irisBatchPhaseGuard = IrisPhaseGuard.pushBlockEntities();
         try {
@@ -378,6 +386,9 @@ public class WeaponPartVboRenderer extends AbstractGpuMesh {
                 GlStateManager._bindTexture(weaponTex.getId());
             }
 
+            // Шейдер партиклов Oculus может менять физический glBlendFunc в обход кэша
+            // GlStateManager (см. [BLEND_FUNC_DESYNC] перед casings.png) — синхронизируем.
+            ShaderBindResync.forceHonestBlendState();
             if (mode != 0) {
                 RenderSystem.enableBlend();
                 if (mode == 2) {
@@ -407,6 +418,11 @@ public class WeaponPartVboRenderer extends AbstractGpuMesh {
             batchCull = cull;
             batchDepthMask = depthMask;
             batchLight = Integer.MIN_VALUE;
+            if (com.hbm_m.client.render.debug.NucleusFrameCapture.isCapturing()) {
+                com.hbm_m.client.render.debug.NucleusFrameCapture.recordEvent(
+                        "WEAPON_IRIS_BATCH_BEGIN",
+                        "tex=" + texLoc + " mode=" + mode + " shadow=" + shadowPass, null);
+            }
             return true;
         } catch (Exception e) {
             closeIrisBatchGuards();
@@ -449,6 +465,17 @@ public class WeaponPartVboRenderer extends AbstractGpuMesh {
                 irisBatchStateGuard.close();
             } catch (Throwable ignored) {}
             irisBatchStateGuard = null;
+        }
+        // irisBatchShader.clear() внутри Oculus делает bindWrite(MAIN_RT) - во время
+        // теневого прохода это отвязывает теневой FBO пака посреди рендера теней.
+        // Принудительно возвращаем FBO, захваченные на входе в батч.
+        if (irisBatchPrevDrawFbo > 0) {
+            GlStateManager._glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, irisBatchPrevDrawFbo);
+            irisBatchPrevDrawFbo = -1;
+        }
+        if (irisBatchPrevReadFbo > 0) {
+            GlStateManager._glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, irisBatchPrevReadFbo);
+            irisBatchPrevReadFbo = -1;
         }
         if (irisBatchPrevBeId != Integer.MIN_VALUE) {
             IrisExtendedShaderAccess.restoreCurrentRenderedBlockEntity(irisBatchPrevBeId);
@@ -579,6 +606,11 @@ public class WeaponPartVboRenderer extends AbstractGpuMesh {
         batchShaded = shaded;
         batchGui = guiLighting;
         batchLight = effectiveLight;
+        if (com.hbm_m.client.render.debug.NucleusFrameCapture.isCapturing()) {
+            com.hbm_m.client.render.debug.NucleusFrameCapture.recordEvent(
+                    "WEAPON_VANILLA_BATCH_BEGIN",
+                    "tex=" + texLoc + " mode=" + mode + " gui=" + guiLighting, null);
+        }
     }
 
     private static boolean blend0(int mode) {
@@ -605,6 +637,14 @@ public class WeaponPartVboRenderer extends AbstractGpuMesh {
         batchActive = false;
         batchTexture = null;
         batchMode = -1;
+
+        ShaderInstance weaponShader = ModShaders.getWeaponLitShader();
+        if (weaponShader != null) {
+            try {
+                weaponShader.clear();
+            } catch (Throwable ignored) {}
+        }
+        ShaderBindResync.invalidateStaticProgramCache();
 
         GlVaoSafety.bindVertexArray(0);
         if (previousShader != null) {
@@ -646,18 +686,23 @@ public class WeaponPartVboRenderer extends AbstractGpuMesh {
     }
 
     public static void flushGunBatch() {
+        boolean hadQuads = quadsPendingSinceBatch;
+        quadsPendingSinceBatch = false;
         MultiBufferSource buffers = GunGL.buffers();
-        if (buffers instanceof MultiBufferSource.BufferSource bufferSource) {
+        if (hadQuads && buffers instanceof MultiBufferSource.BufferSource bufferSource) {
             bufferSource.endBatch();
-            // gun_additive sets BlendMode.lastApplied to non-opaque (opaque = false).
-            // Reset it to opaque so Gui.renderVignette() -> position_tex.apply() does not
-            // call RenderSystem.disableBlend() and turn the screen black.
-            ShaderBindResync.resetBlendModeToOpaque();
-            // Трассеры/вспышки рисуются с depthMask(false); vanilla COLOR_DEPTH_WRITE
-            // не восстанавливает glDepthMask при writeDepth == true — принудительно
-            // возвращаем запись цвета и глубины, чтобы следующие батчи кадра не теряли Z.
-            RenderSystem.depthMask(true);
-            RenderSystem.colorMask(true, true, true, true);
+        }
+        // Always reset BlendMode.lastApplied to vanilla default and unlock Oculus BlendModeStorage.
+        ShaderBindResync.resetBlendModeToOpaque();
+        // Трассеры/вспышки рисуются с depthMask(false); vanilla COLOR_DEPTH_WRITE
+        // не восстанавливает glDepthMask при writeDepth == true — принудительно
+        // возвращаем запись цвета и глубины, чтобы следующие батчи кадра не теряли Z.
+        RenderSystem.depthMask(true);
+        RenderSystem.colorMask(true, true, true, true);
+        if (hadQuads && com.hbm_m.client.render.debug.NucleusFrameCapture.isCapturing()) {
+            com.hbm_m.client.render.debug.NucleusFrameCapture.recordEvent(
+                    "WEAPON_FLUSH_GUN_BATCH",
+                    "buffersClass=" + (buffers != null ? buffers.getClass().getSimpleName() : "null"), null);
         }
     }
 

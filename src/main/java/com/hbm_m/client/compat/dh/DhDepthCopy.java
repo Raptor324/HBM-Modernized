@@ -52,6 +52,11 @@ public final class DhDepthCopy {
             return;
         }
 
+        // Снимок ЧИСТОЙ ванильной глубины ДО перезаписи DH-слоем: с активным
+        // взрывом RawScreenSpaceLight копирует main depth-текстуру, чтобы
+        // разворачивать ванильную геометрию без гибридной проекции.
+        com.hbm_m.client.render.shader.RawScreenSpaceLight.onBeforeDhDepthBlit();
+
         Minecraft mc = Minecraft.getInstance();
         mc.getMainRenderTarget().bindWrite(false);
 

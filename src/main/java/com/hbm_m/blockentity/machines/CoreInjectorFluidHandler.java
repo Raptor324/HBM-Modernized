@@ -1,12 +1,12 @@
 package com.hbm_m.blockentity.machines;
 
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+
 //? if forge {
 import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.inventory.fluid.tank.FluidTank;
-
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 
 /**
  * Forge-Fluid-Capability-Bruecke fuer den Core Injector: Tank 0 = Deuterium, Tank 1 = Tritium
@@ -104,9 +104,6 @@ public class CoreInjectorFluidHandler implements IFluidHandler {
 /*import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.inventory.fluid.tank.FluidTank;
-
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 
 /^*
  * Forge-Fluid-Capability-Bruecke fuer den Core Injector: Tank 0 = Deuterium, Tank 1 = Tritium

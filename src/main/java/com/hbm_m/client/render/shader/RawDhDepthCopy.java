@@ -117,6 +117,14 @@ public final class RawDhDepthCopy {
         }
     }
 
+    public static void destroy() {
+        if (program != -1) {
+            GL20.glDeleteProgram(program);
+            program = -1;
+        }
+        constructionFailed = false;
+    }
+
     private static boolean ensureProgram() {
         if (constructionFailed) {
             return false; // latched - never retry the compile/link per frame

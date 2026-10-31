@@ -164,6 +164,13 @@ public final class NucleusGpuBaker {
     static int cuIdentity;
     /** Optional Hi-Z occlusion and subpixel culling uniforms (see CULL_SOURCE pass 0). */
     static int cuHiZMode, cuClipMat, cuViewSize, cuMip0Size, cuPyramidLevels, cuSubpixelMinNdc, cuIsShadowPass;
+    static int cuHasMainView, cuMainPlanes, cuMainClipMat, cuShadowDir;
+    private static final float[] LAST_MAIN_PLANES = new float[24];
+    private static final Matrix4f LAST_MAIN_CLIP_MAT = new Matrix4f();
+    private static final float[] LAST_MAIN_CLIP_FLOATS = new float[16];
+    private static boolean lastMainViewValid = false;
+    private static final float[] SHADOW_DIR_VEC = new float[] { 0.0f, -1.0f, 0.0f };
+    private static final long[] LAST_COUNT_READBACK_MS = new long[] { 0L, 0L };
 
     static final int BONE_PALETTE_SIZE = 64;
     static int boneSsbo = -1;
@@ -380,8 +387,14 @@ public final class NucleusGpuBaker {
         // shadow viewport (shadow map resolution) differs from the screen, so
         // building both passes through the singleton reallocated the pyramid
         // texture twice per frame. Shadows keep frustum-only culling.
-        if (mode == MODE_SHADOW || hiZSessionDisabled || !com.hbm_m.config.ModClothConfig.get().nucleusBakeHiZ) {
+        if (hiZSessionDisabled || !com.hbm_m.config.ModClothConfig.get().nucleusBakeHiZ) {
             return 0;
+        }
+        if (mode == MODE_SHADOW) {
+            // Shadow pass never builds the pyramid: it REUSES the main pass's
+            // already-built HiZDepthPyramid for swept-volume occlusion culling.
+            return (lastMainViewValid && hiZMainActive && HiZDepthPyramid.get().isReady()
+                    && hiZViewWidth > 0 && hiZViewHeight > 0) ? 1 : 0;
         }
         long f = frameStamp();
         // mode == MODE_SHADOW already returned above (shadow stays frustum-only).
@@ -487,9 +500,12 @@ public final class NucleusGpuBaker {
      * discipline the MDI coordinator uses while its occlusion gate is on.
      */
     private static boolean bakeHiZPlanned(int mode) {
-        // Mirrors ensureBakeHiZ: shadow pass is always frustum-only (see there).
-        if (mode == MODE_SHADOW || hiZSessionDisabled || !com.hbm_m.config.ModClothConfig.get().nucleusBakeHiZ) {
+        if (hiZSessionDisabled || !com.hbm_m.config.ModClothConfig.get().nucleusBakeHiZ) {
             return false;
+        }
+        if (mode == MODE_SHADOW) {
+            // Shadow reuses the main pass's pyramid - no per-shadow attempt.
+            return lastMainViewValid && hiZMainActive && HiZDepthPyramid.get().isReady();
         }
         long f = frameStamp();
         return hiZAttemptMainFrame != f || hiZMainActive;
@@ -633,6 +649,18 @@ public final class NucleusGpuBaker {
      *         list so the Tier-3 companion batch covers them whenever the Tier-1
      *         draw itself went through.
      */
+    private static void saveSsboBindings(int[] out5) {
+        for (int i = 0; i < 5; i++) {
+            out5[i] = GL30.glGetIntegeri(GL43.GL_SHADER_STORAGE_BUFFER_BINDING, i);
+        }
+    }
+
+    private static void restoreSsboBindings(int[] saved5) {
+        for (int i = 0; i < 5; i++) {
+            GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, i, saved5[i]);
+        }
+    }
+
     public static boolean bakeAndDrawShadow(List<IrisShadowBatchCollector.Entry> entries,
                                             ShaderInstance shader, Matrix4f shadowProj,
                                             float camX, float camY, float camZ) {
@@ -656,10 +684,16 @@ public final class NucleusGpuBaker {
                             + "flush - ignored (shadow ModelViewMat stays T(-cam); the light "
                             + "rotation lives inside the instance records)");
         }
-        if (IrisShadowBatchCollector.isAnchorSpaceShadowActive()) {
-            IrisShadowBatchCollector.buildShadowModelView(SHADOW_MV, camX, camY, camZ);
-        } else {
-            SHADOW_MV.translation(-camX, -camY, -camZ);
+        if (!IrisShadowBatchCollector.isAnchorSpaceShadowActive()) {
+            return false;
+        }
+        IrisShadowBatchCollector.buildShadowModelView(SHADOW_MV, camX, camY, camZ);
+        float sdx = -SHADOW_MV.m02(), sdy = -SHADOW_MV.m12(), sdz = -SHADOW_MV.m22();
+        float sdLen = (float) Math.sqrt(sdx * sdx + sdy * sdy + sdz * sdz);
+        if (sdLen > 1e-4f) {
+            SHADOW_DIR_VEC[0] = sdx / sdLen;
+            SHADOW_DIR_VEC[1] = sdy / sdLen;
+            SHADOW_DIR_VEC[2] = sdz / sdLen;
         }
         Matrix4f worldToClip = new Matrix4f(shadowProj).mul(SHADOW_MV);
         float[] planes = new float[24];
@@ -673,6 +707,8 @@ public final class NucleusGpuBaker {
         // into the restore-binds below.
         int prevDrawIndirect = GL11.glGetInteger(GL40.GL_DRAW_INDIRECT_BUFFER_BINDING);
         int prevDispatchIndirect = GL11.glGetInteger(GL43.GL_DISPATCH_INDIRECT_BUFFER_BINDING);
+        int[] prevSsbos = new int[5];
+        saveSsboBindings(prevSsbos);
         // Tier 2/3 and IrisRenderBatch all reset this before applying the pack program;
         // the bake path did not - blockEntityId stuck at whatever BE Iris rendered last,
         // a value that changes frame to frame (pack special cases keyed on it flicker).
@@ -710,6 +746,7 @@ public final class NucleusGpuBaker {
                 // 2/3 fallback OFF at the collector. They now join bakeFailed
                 // (same as a bakeEntry refusal) and the frame's outcome is
                 // decided by the flush's issued-command count below.
+                boolean needMainRelayout = false;
                 boolean needShadowRelayout = false;
                 for (int i = 0; i < entries.size(); i++) {
                     IrisShadowBatchCollector.Entry e = entries.get(i);
@@ -722,6 +759,28 @@ public final class NucleusGpuBaker {
                     }
                     BakedMesh baked = getOrCreate(mesh);
                     if (baked == null) continue;
+                    // Ensure main cache is allocated first since shadow shares POOL_MAIN.outputSsbo and baked.main.recordSsbo:
+                    ModeCache mainMc = baked.main;
+                    mainMc.lastUseFrame = frameStamp();
+                    if (!cacheAllocated(mainMc)) {
+                        if (preallocateCacheBuffers(baked, mainMc, e.count, MODE_MAIN)) {
+                            needMainRelayout = true;
+                        }
+                    } else {
+                        boolean mainGrew = false;
+                        if (e.count > mainMc.outInstances) {
+                            mainMc.outInstances = roundUpInstanceCapacity(e.count);
+                            mainGrew = true;
+                        }
+                        if (e.count > mainMc.eboInstances) {
+                            mainMc.eboInstances = roundUpInstanceCapacity(e.count);
+                            mainGrew = true;
+                        }
+                        if (mainGrew) {
+                            invalidateBakedOutput(mainMc);
+                            needMainRelayout = true;
+                        }
+                    }
                     ModeCache mc = baked.shadow;
                     mc.lastUseFrame = frameStamp();
                     if (!cacheAllocated(mc)) {
@@ -743,6 +802,10 @@ public final class NucleusGpuBaker {
                             needShadowRelayout = true;
                         }
                     }
+                }
+                if (needMainRelayout) {
+                    relayoutPool(MODE_MAIN);
+                    needShadowRelayout = true;
                 }
                 if (needShadowRelayout) {
                     relayoutPool(MODE_SHADOW);
@@ -815,6 +878,10 @@ public final class NucleusGpuBaker {
                     GlDebugMarkers.pushGroup("HBM_Shadow_MultiDrawFlush");
                 }
                 try {
+                    // Restore the shaderpack's SSBO bindings before any draw that may
+                    // run pack code (pack shaders rebind their own SSBOs during
+                    // program use; our compute dispatches must not leave 0s behind).
+                    restoreSsboBindings(prevSsbos);
                     GlStateManager._glUseProgram(shader.getId());
                     // Fail-closed matrices (2026-10-15): a shadow record stores world
                     // + camera, so a ModelViewMat/ProjMat that cannot be resolved on
@@ -898,6 +965,7 @@ public final class NucleusGpuBaker {
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
             return false;
         } finally {
+            restoreSsboBindings(prevSsbos);
             com.hbm_m.client.render.shader.ShaderBindResync.markForeignProgramBind();
             com.hbm_m.client.render.shader.IrisExtendedShaderAccess
                     .restoreCurrentRenderedBlockEntity(previousBlockEntityId);
@@ -982,27 +1050,20 @@ public final class NucleusGpuBaker {
      * skips the cull pre-pass (pure draw). When the budget cannot admit a cache,
      * the entry is refused (false) and the caller falls back to Tier 2/3.
      */
-    private static boolean bakeEntry(BakedMesh baked, FloatBuffer records, int count, int mode,
-                                     float[] planes, long frustumStamp, Matrix4f worldToClip,
-                                     long mutationEpoch) {
-        ModeCache mc = baked.cache(mode);
-        // 2026-10-07 shadow-fix relayout deferral: snapshotted BEFORE this bake's
-        // own relayouts stamp the pool (see relayoutPool) - admission, capacity
-        // growth and EBO expansion may relayout only when no relayout ran for
-        // this pass earlier in the frame's walk. A deferral refusal is a
-        // ONE-frame soft skip (the entry is refused this frame, the next
-        // frame's walk retries with no backoff).
-        boolean relayoutAllowed = !poolRelayoutDeferred(mode);
-        if (!cacheAllocated(mc)) {
+    private static boolean ensureSharedMainExpanded(BakedMesh baked, FloatBuffer records, int count,
+                                                    long mutationEpoch, boolean relayoutAllowed,
+                                                    boolean[] outRecordsChanged) {
+        ModeCache mainMc = baked.main;
+        if (!cacheAllocated(mainMc)) {
             // 2026-10-07 shadow-fix: two soft-skip reasons checked BEFORE
-            // admission is attempted - the relayout deferral above and the
+            // admission is attempted - the relayout deferral and the
             // admission backoff window (a previous budget refusal; the entry
             // stays refused without re-attempting the admission churn every
             // frame).
-            if (!relayoutAllowed || admissionBackoffActive(mc)
-                    || !allocateCache(baked, mc, count, mode)) {
+            if (!relayoutAllowed || admissionBackoffActive(mainMc)
+                    || !allocateCache(baked, mainMc, count, MODE_MAIN)) {
                 if (relayoutAllowed) {
-                    stampAdmissionRefusal(mc);
+                    stampAdmissionRefusal(mainMc);
                 }
                 return false;
             }
@@ -1010,13 +1071,9 @@ public final class NucleusGpuBaker {
         // Grow the output range BEFORE the diff/cull/expansion so a pool realloc
         // invalidates only state this bake then rebuilds (cull + expansion) -
         // never state it has already built.
-        // A refusal (cache budget or relayout deferral) parks the range and
-        // refuses this frame's entry - the admission-failure contract.
-        if (!ensureOutputCapacity(baked, mc, count, mode, relayoutAllowed)) {
-            // Only a real budget refusal arms the backoff window; a deferral
-            // refusal is the one-frame soft skip documented above.
+        if (!ensureOutputCapacity(baked, mainMc, count, MODE_MAIN, relayoutAllowed)) {
             if (relayoutAllowed) {
-                stampAdmissionRefusal(mc);
+                stampAdmissionRefusal(mainMc);
             }
             return false;
         }
@@ -1028,112 +1085,51 @@ public final class NucleusGpuBaker {
         // mode with one contiguous whole-buffer upload instead of count runs.
         boolean dirtyMode = false;
         int dirtyCount = 0;
-        if (mc.outputValid && mc.recordCount == count && mc.boneKey == boneKey(baked)) {
-            if (mutationEpoch > 0L && mc.sourceMutationEpoch == mutationEpoch && !mc.hasTrackedJoints) {
+        if (mainMc.outputValid && mainMc.recordCount == count && mainMc.boneKey == boneKey(baked)) {
+            if (mutationEpoch > 0L && mainMc.sourceMutationEpoch == mutationEpoch && !mainMc.hasTrackedJoints) {
                 dirtyCount = 0;
                 recordsChanged = false;
                 dirtyMode = false;
             } else {
-                dirtyCount = BakeRecordDiffer.diffRecords(mc, records, count, mode);
+                dirtyCount = BakeRecordDiffer.diffRecords(mainMc, records, count, MODE_MAIN);
                 recordsChanged = dirtyCount > 0;
                 dirtyMode = dirtyCount > 0 && dirtyCount < count;
             }
         } else {
             recordsChanged = true;
         }
-        boolean cull = cullEnabled();
-        boolean frustumChanged = !mc.cullValid || mc.frustumStamp != frustumStamp;
-
-        if (GlDebugMarkers.ENABLED && GlDebugMarkers.isActive()) {
-            GlDebugMarkers.insertMarker("BakeDecision: " + baked.debugTag()
-                    + " recChanged=" + recordsChanged
-                    + " dirtyMode=" + dirtyMode
-                    + " dirtyCount=" + dirtyCount
-                    + " cull=" + cull
-                    + " frustumChanged=" + frustumChanged);
-        }
-        if (dirtyMode && !ensureDirtyBuffer(mc, count)) {
+        if (dirtyMode && !ensureDirtyBuffer(mainMc, count)) {
             dirtyMode = false;
         }
 
         if (recordsChanged) {
-            if (!ensureCacheRecords(mc, (long) floats * 4L)) {
+            if (!ensureCacheRecords(mainMc, (long) floats * 4L)) {
                 // Budget refused the record-buffer growth (same contract as
                 // admission failure): refuse the entry, caller falls back.
-                stampAdmissionRefusal(mc);
+                stampAdmissionRefusal(mainMc);
                 return false;
             }
             // Dirty span upload lands in recordSsbo BEFORE the cull dispatch below
             // (the cull reads recordSsbo; the GL order + runCull's BUFFER_UPDATE
             // barrier make the fresh records visible to it).
             boolean uploaded = dirtyMode
-                    ? uploadDirtyRecords(records, count, mc, dirtyCount)
-                    : uploadRecords(records, count, mc.recordSsbo);
+                    ? uploadDirtyRecords(records, count, mainMc, dirtyCount)
+                    : uploadRecords(records, count, mainMc.recordSsbo);
             if (!uploaded) {
                 // Self-heal: drop the snapshot so the next call takes the FULL path
                 // (fresh diff, fresh dirtyIdx) instead of trusting a shadow whose
                 // GPU write failed - never mark a snapshot synced on upload failure.
-                mc.recordCopy = null;
-                mc.recordCount = -1;
-                mc.outputValid = false;
+                mainMc.recordCopy = null;
+                mainMc.recordCount = -1;
+                mainMc.outputValid = false;
                 return false;
             }
             bakeGlError("upload records");
-        }
-        // LRU stamp: refreshed ONLY after the admission and growth steps above
-        // succeeded. A budget refusal here refuses the entry (Tier-2/3 fallback) while
-        // path while the parked pool range stayed allocated AND lastUseFrame
-        // kept up with the current frame - the sole eviction gate
-        // (releaseCacheIfStale: now - lastUseFrame > LRU_FRAME_LIMIT) could
-        // never fire, so the range was a session-long "zombie". Now a refusing
-        // cache ages out of evictStaleCaches like any other idle cache.
-        mc.lastUseFrame = frameStamp();
-
-        // Cull pre-pass: cheap (instance-count work). Re-run whenever the frustum moved,
-        // the records changed, or the occlusion phase is live this frame (with Hi-Z the
-        // cull output also depends on the freshly rebuilt depth pyramid - the pure
-        // planes+records skip would keep an occluded instance hidden after its occluder
-        // is removed while the camera stands still); its indirect words then drive
-        // expansion and draw.
-        if (cull && (recordsChanged || frustumChanged || bakeHiZPlanned(mode))) {
-            if (GlDebugMarkers.ENABLED) {
-                GlDebugMarkers.pushGroup("HBM_CullPrePass_" + baked.debugTag());
-            }
-            try {
-                int hiZModeUsed = runCull(baked, mc, count, planes, worldToClip, mode);
-                if (hiZModeUsed < 0) {
-                    // ctl growth refused (budget): the entry keeps its previous
-                    // valid state but is not re-culled this frame - skip it before
-                    // the unconditional cull-valid stamping below.
-                    return false;
-                }
-                mc.frustumStamp = frustumStamp;
-                mc.cullValid = true;
-                mc.lastCullHiZ = hiZModeUsed == 1;
-                bakeGlError("cull pre-pass");
-                // The visible count is NOT read back here. This used to be a
-                // glGetBufferSubData per renderer per cull run - with animating
-                // machines that is a full CPU-GPU pipeline sync PER RENDERER PER
-                // FRAME (40+ syncs/frame at 1000 machines: GPU 100% sawtooth, render
-                // thread pinned in native wait, OS kill). The count is only consumed
-                // by flushPool (indirect-command indexCount) which now resolves all
-                // dirty caches in ONE batched readback per pool flush; lastVisibleCount
-                // keeps the previous run's value until then (F3 stats skew by one
-                // phase at most).
-                mc.countsDirty = true;
-            } finally {
-                if (GlDebugMarkers.ENABLED) {
-                    GlDebugMarkers.popGroup();
-                }
-            }
-        }
-
-        if (recordsChanged) {
             if (GlDebugMarkers.ENABLED) {
                 GlDebugMarkers.pushGroup(dirtyMode ? "HBM_Expand_DirtySpan_" + baked.debugTag() : "HBM_Expand_FullIdentity_" + baked.debugTag());
             }
             try {
-                if (!runExpansion(baked, mc, count, mode, dirtyMode, dirtyCount, relayoutAllowed)) {
+                if (!runExpansion(baked, mainMc, count, MODE_MAIN, dirtyMode, dirtyCount, relayoutAllowed)) {
                     // Mesh lacks the attributes this mode needs (old dispatchBake contract):
                     // skip the entry for this frame.
                     return false;
@@ -1143,45 +1139,132 @@ public final class NucleusGpuBaker {
                 // diffRecords canonicalizes (-0.0f -> +0.0f, plus shadow pos/quat mantissa
                 // quantization) on BOTH sides of every comparison, so the stored bytes
                 // never need to be quantized themselves.
-                if (mc.recordCopy == null || mc.recordCopy.length < floats) {
+                if (mainMc.recordCopy == null || mainMc.recordCopy.length < floats) {
                     // CPU heap snapshot: deliberately NOT cacheBytes-accounted (that
                     // counter is VRAM-only, see allocateCache).
-                    mc.recordCopy = new float[floats];
+                    mainMc.recordCopy = new float[floats];
                 }
                 if (dirtyMode) {
                     // Refresh only the dirty records' snapshot words.
                     int stride = InstancedStaticPartRenderer.INSTANCE_DATA_SIZE;
                     int pos = records.position();
                     for (int i = 0; i < dirtyCount; i++) {
-                        int off = mc.dirtyIdx[i] * stride;
+                        int off = mainMc.dirtyIdx[i] * stride;
                         records.position(pos + off);
-                        records.get(mc.recordCopy, off, stride);
+                        records.get(mainMc.recordCopy, off, stride);
                     }
                     records.position(pos);
                 } else {
                     int pos = records.position();
-                    records.get(mc.recordCopy, 0, floats);
+                    records.get(mainMc.recordCopy, 0, floats);
                     records.position(pos);
                 }
-                mc.recordCount = count;
-                mc.boneKey = boneKey(baked);
-                mc.outputValid = true;
+                mainMc.recordCount = count;
+                mainMc.boneKey = boneKey(baked);
+                mainMc.outputValid = true;
+                // Invalidate cull validity on both passes since records changed:
+                mainMc.cullValid = false;
+                baked.shadow.cullValid = false;
             } finally {
                 if (GlDebugMarkers.ENABLED) {
                     GlDebugMarkers.popGroup();
                 }
             }
+            recordExpansionStats(MODE_MAIN, dirtyMode, dirtyCount);
+            mainMc.sourceMutationEpoch = mutationEpoch;
+            mainMc.hasTrackedJoints = NucleusJointSpecs.getJointCount() > 0;
         }
-        // F3 bake-cull diagnostics: last-baked total and visible-after-cull of
-        // this pass (frustum-only or hi-z cull; full count when the cull pre-pass
-        // is off), plus the occlusion-culled count when the pyramid was sampled.
-        recordBakeStats(mode, count,
-                cull && mc.cullValid ? mc.lastVisibleCount : count,
-                cull && mc.cullValid ? mc.lastOccludedCount : 0L,
-                cull && mc.cullValid && mc.lastCullHiZ);
-        recordExpansionStats(mode, dirtyMode, dirtyCount);
-        mc.sourceMutationEpoch = mutationEpoch;
-        mc.hasTrackedJoints = NucleusJointSpecs.getJointCount() > 0;
+        // LRU stamp: refreshed ONLY after the admission and growth steps above
+        // succeeded.
+        mainMc.lastUseFrame = frameStamp();
+        outRecordsChanged[0] = recordsChanged;
+        return true;
+    }
+
+    private static boolean bakeEntry(BakedMesh baked, FloatBuffer records, int count, int mode,
+                                     float[] planes, long frustumStamp, Matrix4f worldToClip,
+                                     long mutationEpoch) {
+        // 2026-10-07 shadow-fix relayout deferral: snapshotted BEFORE this bake's
+        // own relayouts stamp the pool (see relayoutPool) - admission, capacity
+        // growth and EBO expansion may relayout only when no relayout ran for
+        // this pass earlier in the frame's walk. A deferral refusal is a
+        // ONE-frame soft skip (the entry is refused this frame, the next
+        // frame's walk retries with no backoff).
+        boolean relayoutAllowed = !poolRelayoutDeferred(mode);
+        boolean[] recChangedOut = new boolean[1];
+        // Both passes share POOL_MAIN.outputSsbo and baked.main.recordSsbo: the
+        // shadow pass reuses the main pass's expansion and only runs its own cull.
+        if (!ensureSharedMainExpanded(baked, records, count, mutationEpoch, relayoutAllowed, recChangedOut)) {
+            return false;
+        }
+        if (com.hbm_m.client.render.debug.NucleusFrameCapture.isCapturing()) {
+            com.hbm_m.client.render.debug.NucleusFrameCapture.recordEvent(
+                    "GPU_BAKE_ENTRY_" + (mode == MODE_SHADOW ? "SHADOW" : "MAIN"),
+                    baked.debugTag() + " (inst=" + count + ", changed=" + recChangedOut[0] + ")",
+                    com.hbm_m.client.render.debug.NucleusFrameCapture.inspectInstanceBuffer(
+                            baked.debugTag(), records, count, InstancedStaticPartRenderer.INSTANCE_DATA_SIZE));
+        }
+        boolean recordsChanged = recChangedOut[0];
+        ModeCache mc = baked.cache(mode);
+        if (mode == MODE_SHADOW) {
+            if (!cacheAllocated(mc)) {
+                if (!relayoutAllowed || admissionBackoffActive(mc)
+                        || !allocateCache(baked, mc, count, MODE_SHADOW)) {
+                    if (relayoutAllowed) {
+                        stampAdmissionRefusal(mc);
+                    }
+                    return false;
+                }
+            }
+            if (!ensureOutputCapacity(baked, mc, count, MODE_SHADOW, relayoutAllowed)) {
+                if (relayoutAllowed) {
+                    stampAdmissionRefusal(mc);
+                }
+                return false;
+            }
+            // Shadow reads POOL_MAIN.outputSsbo at MODE_MAIN's vertex base:
+            baked.vertBase[MODE_SHADOW] = baked.vertBase[MODE_MAIN];
+            mc.recordCount = count;
+            mc.outputValid = baked.main.outputValid;
+        }
+        mc.lastUseFrame = frameStamp();
+
+        boolean cull = cullEnabled();
+        boolean frustumChanged = !mc.cullValid || mc.frustumStamp != frustumStamp;
+
+        // Cull pre-pass: cheap (instance-count work). Re-run whenever the frustum moved,
+        // the records changed, or the occlusion phase is live this frame (with Hi-Z the
+        // cull output also depends on the freshly rebuilt depth pyramid - the pure
+        // planes+records cache-hit skip would let an occluded instance stay hidden
+        // after its occluder disappears while the camera stands still). While Hi-Z is
+        // active this re-culls every frame per cache - the same always-recull
+        // discipline the MDI coordinator uses while its occlusion gate is on.
+        if (cull && (recordsChanged || frustumChanged || bakeHiZPlanned(mode))) {
+            if (GlDebugMarkers.ENABLED) {
+                GlDebugMarkers.pushGroup("HBM_CullPrePass_" + baked.debugTag());
+            }
+            try {
+                int hiZModeUsed = runCull(baked, mc, count, planes, worldToClip, mode);
+                if (hiZModeUsed < 0) {
+                    // ctl growth refused (budget): the entry keeps its previous
+                    // valid state but is not re-culled this frame.
+                    return false;
+                }
+                mc.frustumStamp = frustumStamp;
+                mc.cullValid = true;
+                mc.lastCullHiZ = hiZModeUsed == 1;
+                bakeGlError("cull pre-pass");
+                mc.countsDirty = true;
+            } finally {
+                if (GlDebugMarkers.ENABLED) {
+                    GlDebugMarkers.popGroup();
+                }
+            }
+        } else if (!cull) {
+            if (!expandPoolEbo(baked, mc, count, mode, relayoutAllowed)) {
+                return false;
+            }
+        }
         return true;
     }
 
@@ -1403,6 +1486,22 @@ public final class NucleusGpuBaker {
         if (cuIsShadowPass >= 0) {
             GL20.glUniform1i(cuIsShadowPass, mode == MODE_SHADOW ? 1 : 0);
         }
+        if (cuHasMainView >= 0) {
+            boolean useMainView = (mode == MODE_SHADOW && lastMainViewValid);
+            GL20.glUniform1i(cuHasMainView, useMainView ? 1 : 0);
+            if (useMainView) {
+                if (cuMainPlanes >= 0) {
+                    GL20.glUniform4fv(cuMainPlanes, LAST_MAIN_PLANES);
+                }
+                if (cuMainClipMat >= 0) {
+                    LAST_MAIN_CLIP_MAT.get(LAST_MAIN_CLIP_FLOATS);
+                    GL20.glUniformMatrix4fv(cuMainClipMat, false, LAST_MAIN_CLIP_FLOATS);
+                }
+                if (cuShadowDir >= 0) {
+                    GL20.glUniform3f(cuShadowDir, SHADOW_DIR_VEC[0], SHADOW_DIR_VEC[1], SHADOW_DIR_VEC[2]);
+                }
+            }
+        }
         if (cuSubpixelMinNdc >= 0) {
             int vh = Math.max(1, Minecraft.getInstance().getWindow().getHeight());
             float minNdc = (mode == MODE_SHADOW) ? (2.0f * 1.25f / 2048.0f) : (2.0f * 0.85f / vh);
@@ -1432,13 +1531,13 @@ public final class NucleusGpuBaker {
         GL20.glUniform1i(cuInstStride, InstancedStaticPartRenderer.INSTANCE_DATA_SIZE);
         GL20.glUniform4fv(cuPlanes, planes);
         // Global-batch placement: EBO entries land at the mesh's pool range with
-        // absolute indices shifted by vertBase.
-        GL20.glUniform1i(cuVertBase, baked.vertBase[baked.modeOf(mc)]);
+        // absolute indices shifted by vertBase (always MODE_MAIN's shared output vertex base).
+        GL20.glUniform1i(cuVertBase, baked.vertBase[MODE_MAIN]);
         GL20.glUniform1i(cuEboBase, baked.eboWordBase[baked.modeOf(mc)]);
         // BUFFER_UPDATE: the records were just written by glCopyBufferSubData (staging)
         // or glBufferSubData (fallback) - make those writes visible to SSBO reads.
         GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT | GL43.GL_BUFFER_UPDATE_BARRIER_BIT);
-        GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 0, mc.recordSsbo);
+        GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 0, baked.main.recordSsbo);
         GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 1, mc.ctlSsbo);
         GL43.glDispatchCompute((count + LOCAL_SIZE - 1) / LOCAL_SIZE, 1, 1);
         // Binding 0 is unbound here, not after the assembler: a frustum-only
@@ -1684,6 +1783,10 @@ public final class NucleusGpuBaker {
             cuPyramidLevels = GL20.glGetUniformLocation(p, "uPyramidLevels");
             cuSubpixelMinNdc = GL20.glGetUniformLocation(p, "uSubpixelMinNdc");
             cuIsShadowPass = GL20.glGetUniformLocation(p, "uIsShadowPass");
+            cuHasMainView = GL20.glGetUniformLocation(p, "uHasMainView");
+            cuMainPlanes = GL20.glGetUniformLocation(p, "uMainPlane");
+            cuMainClipMat = GL20.glGetUniformLocation(p, "uMainClipMat");
+            cuShadowDir = GL20.glGetUniformLocation(p, "uShadowDir");
         } catch (Exception t) {
             cullInitFailed = true;
             cullProgramId = -1;
@@ -1852,14 +1955,29 @@ public final class NucleusGpuBaker {
         if (ensurePoolCmdBuffer(pool, n) == -1 || pool.vao == -1) {
             return false;
         }
-        long instances = 0L;
-        boolean anyRepaired = false;
         for (int i = 0; i < n; i++) {
             PendingDraw pd = pending.get(i);
             ModeCache mc = pd.cache;
             if (!mc.outputValid || !mc.cullValid) {
                 return false;
             }
+        }
+        // When F3 debug overlay or MDI dispatch logging is active, read back the
+        // 64-byte ctl headers so F3 shows real visible/occl-culled counts on GL 4.6.
+        // Throttled to 4 Hz: resolvePendingCounts is a CPU-GPU pipeline sync, and
+        // running it every frame stalled the render thread whenever F3 was open.
+        if (com.hbm_m.platform.RenderHooks.isDebugScreenVisible() || MdiRenderDiag.isDebugEnabled()) {
+            long nowMs = System.currentTimeMillis();
+            if (nowMs - LAST_COUNT_READBACK_MS[mode] >= 250L) {
+                LAST_COUNT_READBACK_MS[mode] = nowMs;
+                resolvePendingCounts(pending);
+            }
+        }
+        long instances = 0L;
+        boolean anyRepaired = false;
+        for (int i = 0; i < n; i++) {
+            PendingDraw pd = pending.get(i);
+            ModeCache mc = pd.cache;
             if (mc.cmdGenStamp != pool.cmdGen || mc.cmdSlotWritten != i
                     || i >= pool.cmdSlotOwners.length || pool.cmdSlotOwners[i] != mc) {
                 anyRepaired = true;
@@ -1871,7 +1989,12 @@ public final class NucleusGpuBaker {
                 mc.cmdSlotWritten = i;
                 pool.cmdSlotOwners[i] = mc;
             }
-            instances += mc.countsDirty ? pd.instanceCount : (int) mc.lastVisibleCount;
+            // F3 bake-cull diagnostics recorded at flush time so Draws: and
+            // Bake cull: totals always describe the same frame (never flicker).
+            long vis = mc.cullValid ? mc.lastVisibleCount : pd.instanceCount;
+            long occl = mc.cullValid ? mc.lastOccludedCount : 0L;
+            recordBakeStats(mode, pd.instanceCount, vis, occl, mc.cullValid && mc.lastCullHiZ);
+            instances += vis;
             mc.countsDirty = false;
         }
         if (anyRepaired) {
@@ -1896,7 +2019,7 @@ public final class NucleusGpuBaker {
             // Shadow draw: resolve the ACTIVE pack program's slim-layout attribute
             // locations and rebind the VAO pointers if they differ from the
             // hard-coded 0/2/5 (see bindSlimShadowAttributes).
-            IrisBakeBridge.bindSlimShadowAttributes(packShader, pool.outputSsbo);
+            IrisBakeBridge.bindSlimShadowAttributes(packShader, POOL_MAIN.outputSsbo);
         } else if (mode == MODE_MAIN) {
             // One bindIrisExtendedAttributes call for the WHOLE multi-draw: the
             // locations are pack-program-dependent and the pointers snapshot
@@ -1992,6 +2115,12 @@ public final class NucleusGpuBaker {
                 instances += pd.instanceCount;
             }
             validEvaluated++;
+            // F3 bake-cull diagnostics recorded at flush time so Draws: and
+            // Bake cull: totals always describe the same frame (never flicker).
+            long vis = cullEnabled() && mc.cullValid ? mc.lastVisibleCount : pd.instanceCount;
+            long occl = cullEnabled() && mc.cullValid ? mc.lastOccludedCount : 0L;
+            recordBakeStats(mode, pd.instanceCount, vis, occl,
+                    cullEnabled() && mc.cullValid && mc.lastCullHiZ);
             if (indexCount <= 0) {
                 continue; // nothing visible: compacted out CPU-side (no no-op command)
             }
@@ -2025,7 +2154,7 @@ public final class NucleusGpuBaker {
             // Shadow draw: resolve the ACTIVE pack program's slim-layout attribute
             // locations and rebind the VAO pointers if they differ from the
             // hard-coded 0/2/5 (see bindSlimShadowAttributes).
-            IrisBakeBridge.bindSlimShadowAttributes(packShader, pool.outputSsbo);
+            IrisBakeBridge.bindSlimShadowAttributes(packShader, POOL_MAIN.outputSsbo);
         } else if (mode == MODE_MAIN) {
             // One bindIrisExtendedAttributes call for the WHOLE multi-draw: the
             // locations are pack-program-dependent and the pointers snapshot
@@ -2102,7 +2231,9 @@ public final class NucleusGpuBaker {
             GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
             countsStagingBytes = target;
         }
-        GL42.glMemoryBarrier(GL43.GL_BUFFER_UPDATE_BARRIER_BIT);
+        // SHADER_STORAGE barrier: the ctl headers were written by compute
+        // dispatches earlier this frame - order those writes before the copy reads.
+        GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT | GL43.GL_BUFFER_UPDATE_BARRIER_BIT);
         int slot = 0;
         for (int i = 0; i < pending.size(); i++) {
             PendingDraw pd = pending.get(i);
@@ -2206,6 +2337,7 @@ public final class NucleusGpuBaker {
         int prevDrawIndirect = GL11.glGetInteger(GL40.GL_DRAW_INDIRECT_BUFFER_BINDING);
         int prevDispatchIndirect = GL11.glGetInteger(GL43.GL_DISPATCH_INDIRECT_BUFFER_BINDING);
         int previousProgram = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
+        int[] prevSsbos = new int[5];
         int previousBlockEntityId = com.hbm_m.client.render.shader.IrisExtendedShaderAccess
                 .setCurrentRenderedBlockEntity(0);
         try (com.hbm_m.client.render.shader.IrisPhaseGuard guard =
@@ -2222,6 +2354,12 @@ public final class NucleusGpuBaker {
                     return;
                 }
             }
+
+            // Snapshot the active SSBO bindings AFTER tryApply(packShader): the
+            // pack may bind its own SSBOs here (Euphoria ACL voxelization, Photon,
+            // Rethinking Voxels); our compute dispatches below must not clobber
+            // them to 0 before flushPool draws.
+            saveSsboBindings(prevSsbos);
 
             if (!MAIN_BAKE_QUEUE.isEmpty()) {
                 // Capacity pre-pass over MAIN_BAKE_QUEUE
@@ -2260,6 +2398,10 @@ public final class NucleusGpuBaker {
                 float[] planes = new float[24];
                 Matrix4f worldToClip = new Matrix4f(effProj).mul(MAIN_MV);
                 IrisBakeBridge.extractFrustumPlanes(worldToClip, planes);
+                // Snapshot for the shadow pass's swept-volume main-camera culling:
+                System.arraycopy(planes, 0, LAST_MAIN_PLANES, 0, 24);
+                LAST_MAIN_CLIP_MAT.set(worldToClip);
+                lastMainViewValid = true;
                 long frustumStamp = IrisBakeBridge.stampPlanes(planes);
 
                 if (hasBoneMatrices) {
@@ -2292,6 +2434,7 @@ public final class NucleusGpuBaker {
                 return;
             }
             try (RenderStateGuard ignored = RenderStateGuard.snapshot()) {
+                restoreSsboBindings(prevSsbos);
                 RenderSystem.enableDepthTest();
                 RenderSystem.depthFunc(GL11.GL_LEQUAL);
                 RenderSystem.depthMask(true);
@@ -2766,6 +2909,34 @@ public final class NucleusGpuBaker {
 
             foreignShadowMvLogged = false;
             dataFailLogMs = 0L;
+            hiZSessionDisabled = false;
+            hiZSessionLogged = false;
+            hiZActiveLogged = false;
+            hiZAttemptShadowFrame = -1L;
+            hiZAttemptMainFrame = -1L;
+            hiZShadowActive = false;
+            hiZMainActive = false;
+            hiZViewWidth = 0;
+            hiZViewHeight = 0;
+            lastMainViewValid = false;
+            LAST_COUNT_READBACK_MS[0] = 0L;
+            LAST_COUNT_READBACK_MS[1] = 0L;
+            bakeMainFrame = -1L;
+            bakeMainTotal = 0L;
+            bakeMainVisible = 0L;
+            bakeMainOccluded = 0L;
+            bakeMainHiZ = false;
+            bakeShadowFrame = -1L;
+            bakeShadowTotal = 0L;
+            bakeShadowVisible = 0L;
+            bakeShadowOccluded = 0L;
+            bakeShadowHiZ = false;
+            expMainDirtyFrame = -1L;
+            expMainDirtyDispatches = 0L;
+            expMainDirtyInstances = 0L;
+            expShadowDirtyFrame = -1L;
+            expShadowDirtyDispatches = 0L;
+            expShadowDirtyInstances = 0L;
         }
     }
 

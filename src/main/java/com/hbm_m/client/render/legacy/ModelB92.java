@@ -47,13 +47,16 @@ public class ModelB92 {
         pump2 = baked.getChild("Pump2");
     }
 
-    /** Original renderAnim(..., 0.0625F, tran): offsetX in Bloecken = 16 Pixel je Block. */
+    /**
+     * Original renderAnim(..., 0.0625F, tran): der 1.7.10-Renderer addiert {@code tran} direkt auf
+     * {@code offsetX} und rendert mit dem Faktor 0,0625, d.h. {@code tran} ist in Modelpixeln gemessen.
+     * ModelPart rendert x als x/16 - daher exakt derselbe Wert, KEINE 16er-Skalierung.
+     */
     public void renderAnim(PoseStack ps, VertexConsumer vc, int light, int overlay, float tran) {
-        float px = tran * 16F;
-        pump1.x += px;
-        pump2.x += px;
+        pump1.x += tran;
+        pump2.x += tran;
         for (ModelPart p : parts) p.render(ps, vc, light, overlay);
-        pump1.x -= px;
-        pump2.x -= px;
+        pump1.x -= tran;
+        pump2.x -= tran;
     }
 }

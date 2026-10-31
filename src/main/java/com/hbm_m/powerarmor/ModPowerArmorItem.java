@@ -37,10 +37,10 @@ import com.hbm_m.item.tools_and_armor.ModArmorMaterials;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import com.hbm_m.platform.MobHooks;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 //? if forge {
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import net.minecraftforge.event.entity.living.LivingEquipmentChangeEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 //?}
 

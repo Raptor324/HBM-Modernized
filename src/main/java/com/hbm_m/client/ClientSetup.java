@@ -28,7 +28,6 @@ import com.hbm_m.client.render.machine.MachineRenderRegistry;
 import com.hbm_m.client.loader.MachineBatterySocketModelLoader;
 import com.hbm_m.client.loader.MissileModelLoader;
 import com.hbm_m.client.loader.MachineRadarModelLoader;
-import com.hbm_m.client.render.missile.MissileRenderHelper;
 import com.hbm_m.client.loader.PressModelLoader;
 import com.hbm_m.client.loader.TemplateModelLoader;
 // import com.hbm_m.client.loader.TestModelLoader;
@@ -216,37 +215,33 @@ import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
-import com.hbm_m.platform.LoaderHooks;
-import com.hbm_m.platform.RenderHooks;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.ChunkRenderTypeSet;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+
+import com.hbm_m.platform.LoaderHooks;
+import com.hbm_m.platform.RenderHooks;
+import net.minecraftforge.client.model.BakedModelWrapper;
+import net.minecraftforge.client.model.data.ModelData;
+
+//? if forge {
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.ModelEvent;
 import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
 import net.minecraftforge.client.event.RegisterClientCommandsEvent;
 import net.minecraftforge.client.event.RegisterClientTooltipComponentFactoriesEvent;
-import net.minecraftforge.client.model.BakedModelWrapper;
-import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import com.hbm_m.client.render.missile.MissileItemModelDefinitions;
 //?} elif neoforge {
-/*import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.ChunkRenderTypeSet;
-import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+/*import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
 import net.neoforged.neoforge.client.event.RegisterClientTooltipComponentFactoriesEvent;
-import net.minecraftforge.client.model.BakedModelWrapper;
-import net.minecraftforge.client.model.data.ModelData;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.bus.api.EventPriority;
-import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import com.hbm_m.client.render.missile.MissileItemModelDefinitions;
@@ -1297,6 +1292,11 @@ public class ClientSetup {
         LoaderHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.HAZMAT_RED_MODEL_ID);
         LoaderHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.HAZMAT_GREY_MODEL_ID);
 
+        // B92 "Star Blaster": die Icon-Modell-Datei gehoert zu keinem registrierten Item, ohne diese
+        // Registrierung gibt es keinen BakedModel-Schluessel (1.20.1 "#inventory", 1.21.1 "#standalone")
+        // und das GUI rendert das MissingModel statt des flachen Icons.
+        LoaderHooks.registerItemModel(event, com.hbm_m.client.render.item.GunB92ItemRenderer.ICON_BAKE_ID);
+
         LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_legacy"));
         LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/crystallizer_fluid"));
         LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/crystallizer_spinner"));
@@ -1383,11 +1383,11 @@ public class ClientSetup {
         LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_106"));
         LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_111"));
 
-        for (MissileItemModelDefinitions.Definition definition : MissileItemModelDefinitions.all()) {
-            ResourceLocation meshId = MissileRenderHelper.meshModelId(
-                    ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, definition.itemPath()));
-            LoaderHooks.registerAdditionalModel(event, meshId);
-        }
+        // Меши ракет НЕ регистрируются через RegisterAdditional: их item-модели
+        // (models/item/missile_*.json, loader hbm_m:missile_loader) запекаются автоматически
+        // как item-MRL зарегистрированных предметов, а MissileRenderHelper читает их по
+        // MRL(itemId, "inventory"). Регистрация же плоского meshId (models/<path>.json)
+        // вела только к 44 предупреждениям "Unable to load model".
 
         MainRegistry.LOGGER.debug("Registered door and missile variant models for loading");
     }
@@ -1408,6 +1408,12 @@ public class ClientSetup {
         LoaderHooks.registerGeometryLoader(event, "missile_loader", new MissileModelLoader());
         LoaderHooks.registerGeometryLoader(event, "machine_parts_loader", new MachinePartsModelLoader<ConfiguredMultipartBakedModel>());
         // LoaderHooks.registerGeometryLoader(event, "test", new TestModelLoader());
+
+        // Milestone M3: .nmesh-backed whole-mesh loader for the ~800 static block/item models that
+        // used to declare "forge:obj". Raw .obj/.mtl are excluded from the packaged jar, so the stock
+        // ObjLoader cannot serve them; hbm_m:nmesh_obj bakes the compiled .nmesh binary instead
+        // (see com.hbm_m.client.loader.NMeshObjModelLoader).
+        LoaderHooks.registerGeometryLoader(event, "nmesh_obj", new com.hbm_m.client.loader.NMeshObjModelLoader());
 
         // Weapon OBJ loader (Milestone M1)
         com.hbm_m.client.loader.WeaponPartsModelLoader weaponLoader = new com.hbm_m.client.loader.WeaponPartsModelLoader();

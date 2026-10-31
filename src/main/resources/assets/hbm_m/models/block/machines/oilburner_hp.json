@@ -5,7 +5,7 @@
 	"loader": "forge:composite",
 	"children": {
 		"oilburner_hp_model": {
-			"loader": "forge:obj",
+			"loader": "hbm_m:nmesh_obj",
 			"model": "hbm_m:models/block/machines/oilburner_hp.obj",
 			"flip_v": true,
 			"render_type": "minecraft:cutout",

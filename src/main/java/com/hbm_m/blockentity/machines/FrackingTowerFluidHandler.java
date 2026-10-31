@@ -1,12 +1,13 @@
 package com.hbm_m.blockentity.machines;
+
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+
 //? if forge {
 import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.inventory.fluid.ModFluids;
-
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 
 /**
  * Обработчик жидкостей для Fracking Tower.
@@ -151,9 +152,6 @@ public class FrackingTowerFluidHandler implements IFluidHandler {
 
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.inventory.fluid.ModFluids;
-
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 
 /^*
  * Обработчик жидкостей для Fracking Tower.

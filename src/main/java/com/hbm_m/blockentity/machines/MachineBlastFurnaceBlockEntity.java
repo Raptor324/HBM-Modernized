@@ -51,9 +51,9 @@ import com.hbm_m.platform.LevelHooks;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
+//?}
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-//?}
 
 /**
  * Доменная печь (обновлённая версия из оригинала).

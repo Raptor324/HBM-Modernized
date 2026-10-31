@@ -43,6 +43,9 @@ public final class IrisBakeBridge {
             cachedMidBlockLoc = GL20.glGetAttribLocation(program, "at_midBlock");
         }
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, outputSsbo);
+        // Supply constant NO_OVERLAY (0, 10) on location 3 (UV1) since machines have no entity hurt/flash overlay.
+        GL20.glDisableVertexAttribArray(3);
+        GL30.glVertexAttribI2i(3, 0, 10);
         if (cachedEntLoc >= 0) {
             // Supply constant 0 for entity ID since multiblock machines are not entity-specific.
             GL20.glDisableVertexAttribArray(cachedEntLoc);
@@ -100,17 +103,17 @@ public final class IrisBakeBridge {
         if (slimLocPos >= 0) {
             GL20.glEnableVertexAttribArray(slimLocPos);
             GL20.glVertexAttribPointer(slimLocPos, 3, GL11.GL_FLOAT, false,
-                    BakeVramPoolManager.SHADOW_STRIDE_BYTES, BakeVramPoolManager.SH_OFF_POS);
+                    BakeVramPoolManager.OUT_STRIDE_BYTES, BakeVramPoolManager.OUT_OFF_POS);
         }
         if (slimLocUv >= 0) {
             GL20.glEnableVertexAttribArray(slimLocUv);
             GL20.glVertexAttribPointer(slimLocUv, 2, GL11.GL_FLOAT, false,
-                    BakeVramPoolManager.SHADOW_STRIDE_BYTES, BakeVramPoolManager.SH_OFF_UV0);
+                    BakeVramPoolManager.OUT_STRIDE_BYTES, BakeVramPoolManager.OUT_OFF_UV0);
         }
         if (slimLocNormal >= 0) {
             GL20.glEnableVertexAttribArray(slimLocNormal);
             GL20.glVertexAttribPointer(slimLocNormal, 3, GL11.GL_BYTE, true,
-                    BakeVramPoolManager.SHADOW_STRIDE_BYTES, BakeVramPoolManager.SH_OFF_NORMAL);
+                    BakeVramPoolManager.OUT_STRIDE_BYTES, BakeVramPoolManager.OUT_OFF_NORMAL);
         }
     }
 
@@ -162,6 +165,25 @@ public final class IrisBakeBridge {
 
     private static volatile long shadowDeclines = 0L;
     private static long shadowDeclineLogMs = Long.MIN_VALUE;
+
+    public static void invalidateCaches() {
+        extAttribShader = null;
+        extAttribPipelineGen = -1L;
+        cachedEntLoc = -2;
+        cachedMidTexLoc = -2;
+        cachedTangentLoc = -2;
+        cachedMidBlockLoc = -2;
+        slimAttribShader = null;
+        slimAttribPipelineGen = -1L;
+        slimLocPos = -2;
+        slimLocUv = -2;
+        slimLocNormal = -2;
+        slimAttribMismatchLogged = false;
+        matrixShader = null;
+        matrixPipelineGen = -1L;
+        matrixLocs = IrisDerivedMatrixUniforms.Locations.NONE;
+        projLoc = -2;
+    }
 
     public static long shadowDeclineCount() {
         return shadowDeclines;

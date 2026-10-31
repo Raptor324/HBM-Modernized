@@ -50,8 +50,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
  */
 @OnlyIn(Dist.CLIENT)
 
-public class InstancedStaticPartRenderer extends AbstractGpuMesh
-        implements VanillaInstancedMeshRenderer, IrisCompanionMeshRenderer {
+public class InstancedStaticPartRenderer extends AbstractGpuMesh {
 
     /** Per-part instance cap (one renderer = one mesh part, e.g. ChemPlant/Base). */
     final int maxInstances = ClientRenderFlags.maxInstances();
@@ -1501,7 +1500,6 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         renderSingle(poseStack, packedLight, blockPos, blockEntity, null);
     }
 
-    @Override
     public void renderSingle(PoseStack poseStack, int packedLight, BlockPos blockPos,
                              @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource) {
         if (!initialized || !ensureOwnGlObjects() || indexCount <= 0 || instanceVboId <= 0 || instanceBuffer == null) return;
@@ -1709,7 +1707,6 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
      * state: a degraded or throwing enqueue leaves the request unread instead of
      * leaking armed statics into an unrelated record (the teleport bug, 10-09).
      */
-    @Override
     public void addInstance(PartEnqueueRequest rq) {
         if (!initialized) return;
 
@@ -2049,7 +2046,6 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
 
     // ── Flush ──────────────────────────────────────────────────────────
 
-    @Override
     public void flush() {
         flush(RenderSystem.getProjectionMatrix());
     }
@@ -2068,7 +2064,6 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
      * Called from {@link com.hbm_m.client.render.culling.InstancedRenderFrame#presentAfterBlockEntities}
      * in the same frame as addInstance - do not defer the flush to the end of the level.
      */
-    @Override
     public void flush(Matrix4f projectionMatrix) {
         // Last phase's deferred fading was either already drawn by flushFading(),
         // or staled (a second AFTER_BLOCK_ENTITIES pass per frame) - reset.
@@ -2383,14 +2378,12 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         return RenderDistanceHelper.evalInstanceAlpha(distSq, buf.get(recBase + fadeOffset));
     }
 
-    // ── IrisCompanionMeshRenderer interface ────────────────────────────
+    // ── Iris companion delegates ───────────────────────────────────────
 
-    @Override
     public void flushBatchIris(Matrix4f projectionMatrix) {
         irisHelper.flushBatchIris(projectionMatrix);
     }
 
-    @Override
     public boolean drawSingleWithIrisExtended(PoseStack poseStack, int packedLight,
                                               BlockPos blockPos, @Nullable BlockEntity blockEntity) {
         return irisHelper.drawSingleWithIrisExtended(poseStack, packedLight, blockPos, blockEntity);
@@ -2398,7 +2391,6 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
 
     // ── State queries ──────────────────────────────────────────────────
 
-    @Override
     public boolean isInitialized() {
         // "The constructor succeeded - the renderer can take the instanced
         // pipeline (MDI submit, roster asserts, record writes)". NOT "own GL
@@ -2408,7 +2400,6 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         return initialized;
     }
 
-    @Override
     public int getInstanceCount() {
         return instanceCount;
     }

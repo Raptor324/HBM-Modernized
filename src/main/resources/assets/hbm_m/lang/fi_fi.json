@@ -616,8 +616,6 @@
   "block.hbm_m.machine_centrifuge": "Centrifuge",
   "block.hbm_m.machine_chungus": "Leviathan Steam Turbine",
   "block.hbm_m.machine_controller": "Reactor Remote Control Block",
-  "block.hbm_m.machine_converter_he_rf": "HE to RF Converter",
-  "block.hbm_m.machine_converter_rf_he": "RF to HE Converter",
   "block.hbm_m.machine_crystallizer": "Malmihappamoitin ",
   "block.hbm_m.machine_detector": "Power Detector",
   "block.hbm_m.machine_epress": "Electric Press",

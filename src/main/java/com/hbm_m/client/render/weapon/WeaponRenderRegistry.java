@@ -11,6 +11,9 @@ import java.util.function.Function;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.client.model.nmesh.NMeshData;
+import com.hbm_m.client.model.nmesh.NMeshLoader;
+import com.hbm_m.client.model.nmesh.NMeshPartBakedModel;
 import com.hbm_m.client.render.PartGeometry;
 import com.hbm_m.client.render.SingleMeshVboRenderer;
 import com.hbm_m.client.render.cache.RenderCacheManager;
@@ -198,14 +201,15 @@ public final class WeaponRenderRegistry {
 
     /**
      * Hook called from ClientSetup on ModelEvent.RegisterAdditional.
-     * Registers all known weapon models so ModelBakery bakes them.
+     * Только инициализирует список моделей: сами weapon-модели запекаются через item-MRL
+     * зарегистрированных предметов (WeaponMultipartBakedModel подхватывается в onModelBake).
+     * Регистрация сырых {@code *.obj}-путей через RegisterAdditional была рудиментом эпохи
+     * forge:obj и вела лишь к предупреждениям "Unable to load model" (файл искался как
+     * {@code models/models/....obj.json}).
      */
     public static void onModelRegisterAdditional(Object event) {
         initDefaults();
-        for (ResourceLocation loc : REGISTERED_WEAPON_MODELS) {
-            LoaderHooks.registerAdditionalModel(event, loc);
-        }
-        MainRegistry.LOGGER.info("[WeaponRenderRegistry] Registered {} weapon models for loading",
+        MainRegistry.LOGGER.info("[WeaponRenderRegistry] Tracking {} weapon models (baked via item models)",
                 REGISTERED_WEAPON_MODELS.size());
     }
 
@@ -310,16 +314,30 @@ public final class WeaponRenderRegistry {
     /**
      * Compiles all parts of a WeaponMultipartBakedModel into native VboData with normalized UVs
      * and wraps each in a WeaponPartVboRenderer.
+     *
+     * <p>The parts map may alias one {@link BakedModel} instance under both its object and group
+     * name (o/g aliasing). Each unique instance is compiled exactly ONCE; alias keys share the
+     * same {@link WeaponPartVboRenderer}, so the merged ALL_PARTS VBO never contains duplicated
+     * geometry.
      */
     public static int compileAndStoreModel(ResourceLocation modelId, WeaponMultipartBakedModel model) {
         Map<String, WeaponPartVboRenderer> partRenderers = new ConcurrentHashMap<>();
         List<BakedQuad> allRawQuads = new java.util.ArrayList<>();
         List<BakedQuad> allNormQuads = new java.util.ArrayList<>();
+        java.util.IdentityHashMap<BakedModel, WeaponPartVboRenderer> compiled =
+                new java.util.IdentityHashMap<>();
 
         for (Map.Entry<String, BakedModel> partEntry : model.getParts().entrySet()) {
             String partName = partEntry.getKey();
             BakedModel partBaked = partEntry.getValue();
             if (partBaked == null) continue;
+
+            WeaponPartVboRenderer existing = compiled.get(partBaked);
+            if (existing != null) {
+                // o/g alias of an already-compiled instance: reuse, do not compile twice.
+                partRenderers.put(partName, existing);
+                continue;
+            }
 
             PartGeometry geo = PartGeometry.compile(partBaked, partName, true);
             SingleMeshVboRenderer.VboData vboData = geo.toVboDataNormalized(partName);
@@ -333,7 +351,9 @@ public final class WeaponRenderRegistry {
                 allNormQuads.addAll(normQuads);
                 // VboData ownership is fully handed to the renderer; initVbo()
                 // consumes and frees it - it must never be retained here.
-                partRenderers.put(partName, new WeaponPartVboRenderer(vboData, List.copyOf(normQuads)));
+                WeaponPartVboRenderer renderer = new WeaponPartVboRenderer(vboData, List.copyOf(normQuads));
+                compiled.put(partBaked, renderer);
+                partRenderers.put(partName, renderer);
             }
         }
 
@@ -424,9 +444,13 @@ public final class WeaponRenderRegistry {
                     GunGL.red(), GunGL.green(), GunGL.blue(), GunGL.alpha())) {
                 return;
             }
-            for (String partName : parts.keySet()) {
-                if (!ALL_PARTS_KEY.equals(partName)) {
-                    renderPart(modelLocation, partName, pose);
+            // o/g aliasing: two keys may map to one renderer instance - draw each instance once.
+            java.util.Set<WeaponPartVboRenderer> drawn =
+                    java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+            for (Map.Entry<String, WeaponPartVboRenderer> e : parts.entrySet()) {
+                if (ALL_PARTS_KEY.equals(e.getKey())) continue;
+                if (e.getValue() != null && drawn.add(e.getValue())) {
+                    renderPart(modelLocation, e.getKey(), pose);
                 }
             }
         } else {
@@ -450,8 +474,12 @@ public final class WeaponRenderRegistry {
         }
         if (parts != null) {
             Set<String> skip = Set.of(except);
-            for (String partName : parts.keySet()) {
-                if (ALL_PARTS_KEY.equals(partName)) continue;
+            // o/g aliasing: two keys may map to one renderer instance - draw each instance once.
+            java.util.Set<WeaponPartVboRenderer> drawn =
+                    java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+            for (Map.Entry<String, WeaponPartVboRenderer> e : parts.entrySet()) {
+                if (ALL_PARTS_KEY.equals(e.getKey())) continue;
+                String partName = e.getKey();
                 boolean match = skip.contains(partName);
                 if (!match) {
                     for (String ex : except) {
@@ -461,7 +489,7 @@ public final class WeaponRenderRegistry {
                         }
                     }
                 }
-                if (!match) {
+                if (!match && e.getValue() != null && drawn.add(e.getValue())) {
                     renderPart(modelLocation, partName, pose);
                 }
             }
@@ -491,7 +519,12 @@ public final class WeaponRenderRegistry {
         int light = GunGL.light();
         int overlay = GunGL.overlay();
         float r = GunGL.red(), g = GunGL.green(), b = GunGL.blue(), a = GunGL.alpha();
-        for (String partName : model.getParts().keySet()) {
+        // o/g aliasing: two part names may reference one BakedModel instance - emit it once.
+        java.util.Set<BakedModel> emitted =
+                java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        for (Map.Entry<String, BakedModel> entry : model.getParts().entrySet()) {
+            if (entry.getValue() == null || !emitted.add(entry.getValue())) continue;
+            String partName = entry.getKey();
             if (except != null && except.length > 0) {
                 boolean match = false;
                 for (String ex : except) {
@@ -614,22 +647,107 @@ public final class WeaponRenderRegistry {
     /**
      * Programmatic baking helper to bake an OBJ model directly into WeaponMultipartBakedModel
      * without requiring an explicit JSON file.
+     *
+     * <p>Nmesh-first: geometry comes from {@link NMeshLoader#load} (pre-compiled binary
+     * {@code .nmesh} shipped in the jar, or the runtime resourcepack {@code .obj} fallback).
+     * Per-part access uses object/group names with the same o/g aliasing as
+     * {@code AbstractObjPartModelLoader.doBake}. The Forge {@link ObjModel} loader is kept
+     * only as a fallback for the case where no mesh data exists at all (raw resourcepack).
      */
     public static WeaponMultipartBakedModel bakeObjDirect(ResourceLocation objLocation,
                                                           ModelBaker baker,
                                                           Function<Material, TextureAtlasSprite> spriteGetter) {
-        ObjModel objModel = LoaderHooks.loadObjModel(objLocation, true);
         Map<String, BakedModel> bakedParts = new ConcurrentHashMap<>();
+
+        final Function<Material, TextureAtlasSprite> effectiveSpriteGetter = (spriteGetter != null)
+                ? spriteGetter
+                : getDefaultSpriteGetter();
+
+        NMeshData nmesh = NMeshLoader.load(objLocation);
+        if (nmesh != null) {
+            bakeNMeshParts(nmesh, objLocation, effectiveSpriteGetter, bakedParts);
+        } else {
+            bakeObjFallback(objLocation, baker, effectiveSpriteGetter, bakedParts);
+        }
+
+        WeaponMultipartBakedModel model = new WeaponMultipartBakedModel(bakedParts, ItemTransforms.NO_TRANSFORMS, objLocation);
+        BAKED_MODELS.put(objLocation, model);
+        compileAndStoreModel(objLocation, model);
+        return model;
+    }
+
+    /**
+     * Per-part bake straight from {@link NMeshData}: every root component (object/group name)
+     * becomes one {@link NMeshPartBakedModel} bound to the model's own texture material
+     * (weapons bind a standalone PNG via {@code GunGL.texture()}, VBO UVs are normalized,
+     * so a single atlas material matches the old ObjLoader-based behaviour).
+     */
+    private static void bakeNMeshParts(NMeshData nmesh,
+                                       ResourceLocation objLocation,
+                                       Function<Material, TextureAtlasSprite> spriteGetter,
+                                       Map<String, BakedModel> bakedParts) {
+        Material material = new Material(TextureAtlas.LOCATION_BLOCKS, objLocation);
+        TextureAtlasSprite sprite = spriteGetter.apply(material);
+
+        for (String partName : nmesh.getRootComponentNames()) {
+            BakedModel baked = bakeSingleNMeshPart(nmesh, partName, sprite);
+            if (baked == null) {
+                continue;
+            }
+            bakedParts.put(partName, baked);
+            // o/g aliasing (objectName <-> groupName), same as AbstractObjPartModelLoader.doBake:
+            // GunGL.renderPart may address a part by either of the two names.
+            for (NMeshData.SubMesh sm : nmesh.subMeshes()) {
+                if (!sm.objectName.isEmpty() && !sm.groupName.isEmpty() && !sm.objectName.equals(sm.groupName)) {
+                    if (partName.equals(sm.objectName)) {
+                        bakedParts.putIfAbsent(sm.groupName, baked);
+                    } else if (partName.equals(sm.groupName)) {
+                        bakedParts.putIfAbsent(sm.objectName, baked);
+                    }
+                }
+            }
+        }
+        // Cross-alias pass: any part known under only one of its two names is registered
+        // under the missing name too.
+        for (NMeshData.SubMesh sm : nmesh.subMeshes()) {
+            if (!sm.objectName.isEmpty() && !sm.groupName.isEmpty() && !sm.objectName.equals(sm.groupName)) {
+                BakedModel objModel = bakedParts.get(sm.objectName);
+                BakedModel grpModel = bakedParts.get(sm.groupName);
+                if (objModel != null && grpModel == null) {
+                    bakedParts.put(sm.groupName, objModel);
+                } else if (grpModel != null && objModel == null) {
+                    bakedParts.put(sm.objectName, grpModel);
+                }
+            }
+        }
+    }
+
+    /** Bakes one named part of {@code nmesh} into an {@link NMeshPartBakedModel} (null if the part has no geometry). */
+    private static BakedModel bakeSingleNMeshPart(NMeshData nmesh, String partName, TextureAtlasSprite sprite) {
+        List<NMeshData.SubMesh> subs = nmesh.getSubMeshesForPart(partName);
+        if (subs.isEmpty()) {
+            return null;
+        }
+        List<NMeshPartBakedModel.BoundSubMesh> bound = new java.util.ArrayList<>(subs.size());
+        for (NMeshData.SubMesh sm : subs) {
+            bound.add(new NMeshPartBakedModel.BoundSubMesh(sm, sprite));
+        }
+        // flipV=true keeps parity with the previous LoaderHooks.loadObjModel(loc, true) path.
+        return new NMeshPartBakedModel(bound, true, Transformation.identity(), ItemTransforms.NO_TRANSFORMS);
+    }
+
+    /** Legacy fallback: Forge ObjLoader bake (only reached when NMeshLoader has no data at all). */
+    private static void bakeObjFallback(ResourceLocation objLocation,
+                                        ModelBaker baker,
+                                        Function<Material, TextureAtlasSprite> effectiveSpriteGetter,
+                                        Map<String, BakedModel> bakedParts) {
+        ObjModel objModel = LoaderHooks.loadObjModel(objLocation, true);
         ModelState identityState = new ModelState() {
             @Override
             public Transformation getRotation() {
                 return Transformation.identity();
             }
         };
-
-        final Function<Material, TextureAtlasSprite> effectiveSpriteGetter = (spriteGetter != null)
-                ? spriteGetter
-                : getDefaultSpriteGetter();
 
         Set<String> rootParts = objModel.getRootComponentNames();
         Set<String> targetParts = (rootParts == null || rootParts.isEmpty()) ? Set.of("default", "") : rootParts;
@@ -656,11 +774,6 @@ public final class WeaponRenderRegistry {
                 bakedParts.put(partName, baked);
             }
         }
-
-        WeaponMultipartBakedModel model = new WeaponMultipartBakedModel(bakedParts, ItemTransforms.NO_TRANSFORMS, objLocation);
-        BAKED_MODELS.put(objLocation, model);
-        compileAndStoreModel(objLocation, model);
-        return model;
     }
 
     /**

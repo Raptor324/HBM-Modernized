@@ -1,8 +1,10 @@
 {
-  "loader": "forge:obj",
+  "loader": "hbm_m:nmesh_obj",
   "model": "hbm_m:models/block/pipe_neo.obj",
   "flip_v": true,
   "mtl_override": "hbm_m:models/block/pipe_silver_overlay.mtl",
+  "texture": "hbm_m:block/pipe_silver_overlay",
+  "tint_index": 1,
   "render_type": "minecraft:cutout",
   "textures": {
     "particle": "hbm_m:block/pipe_silver",

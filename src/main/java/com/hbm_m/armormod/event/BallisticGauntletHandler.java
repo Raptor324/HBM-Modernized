@@ -17,13 +17,13 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import com.hbm_m.platform.AttributeHooks;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+
 //? if forge {
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 //?} else {
 /*import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
-import net.neoforged.bus.api.SubscribeEvent;
 *///?}
 
 /**

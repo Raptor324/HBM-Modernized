@@ -228,6 +228,8 @@ public final class IrisShadowBatchCollector {
             e.prebakeDirectView = s.records;
             e.count = s.count;
             e.mutationEpoch = s.bakedMutationEpoch;
+            noteShadowRecord();
+            NucleusDebug.recordShadowRecord(s.count);
         }
     }
 

@@ -49,11 +49,23 @@ public class GunItemRenderer extends BlockEntityWithoutLevelRenderer {
         if (firstPerson && renderer.customFirstPerson()) return;
 
         ps.pushPose();
+        boolean prevGuiLighting = GunGL.isGuiLighting();
         try {
             ps.translate(0.5, 0.5, 0.5); // ItemRenderer verschiebt vor dem BEWLR um -0.5
 
             GunGL.begin(ps, buffers, light, overlay);
             ItemRenderWeaponBase.interp = com.hbm_m.platform.RenderHooks.getPartialTickRaw();
+
+            // GUI-Zeichnungen muessen die GUI-Lichtflagge setzen, BEVOR das Modell gezeichnet wird.
+            // ItemRenderGrenade & Co. ueberschreiben renderItem() und umgehen damit das
+            // setGuiLighting(true) aus ItemRenderWeaponBase.renderItem (INVENTORY-Zweig) - ohne
+            // die Flagge nimmt WeaponPartVboRenderer unter Iris/Oculus den Gbuffer-Pfad (zeichnet
+            // in den Welt-Gbuffer statt in den GUI-Framepuffer) und das Item bleibt unsichtbar;
+            // ausserdem zeigen die Lichtrichtungen in die falsche Richtung. Hier zentral gesetzt,
+            // damit jedes ItemRenderWeaponBase-Override abgedeckt ist.
+            if (ctx == ItemDisplayContext.GUI) {
+                GunGL.setGuiLighting(true);
+            }
 
             switch (ctx) {
                 case GUI -> {
@@ -117,6 +129,7 @@ public class GunItemRenderer extends BlockEntityWithoutLevelRenderer {
                 default -> { }
             }
         } finally {
+            GunGL.setGuiLighting(prevGuiLighting);
             GunGL.end();
             ps.popPose();
         }

@@ -35,9 +35,9 @@ import net.minecraft.world.item.ItemStack;
  *
  * @author HBM-M Team
  */
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+//? if forge {
 /*@OnlyIn(Dist.CLIENT)
 *///?}
 public class GUIDoorModelSelection extends Screen {

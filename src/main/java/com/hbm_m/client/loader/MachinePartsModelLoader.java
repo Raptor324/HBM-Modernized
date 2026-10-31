@@ -176,10 +176,27 @@ public class MachinePartsModelLoader<T extends BakedModel> extends AbstractObjPa
                 String partName = entry.getKey();
                 PartDef def = entry.getValue();
                 try {
-                    ObjModel objModel = LoaderHooks.loadObjModel(def.model(), flipV);
                     IGeometryBakingContext partContext = def.texture() != null
                             ? new PartTextureContext(context, def.texture())
                             : context;
+                    // nmesh-first: запекаем напрямую из .nmesh, если он доступен (весь .obj целиком —
+                    // этот лоадер запекает целые модели, а не срезы по частям).
+                    com.hbm_m.client.model.nmesh.NMeshData nmesh =
+                            com.hbm_m.client.model.nmesh.NMeshLoader.load(def.model());
+                    if (nmesh != null) {
+                        java.util.List<com.hbm_m.client.model.nmesh.NMeshPartBakedModel.BoundSubMesh> bound =
+                                new java.util.ArrayList<>(nmesh.subMeshes().size());
+                        for (com.hbm_m.client.model.nmesh.NMeshData.SubMesh sm : nmesh.subMeshes()) {
+                            Material mat = partContext.getMaterial(sm.materialName);
+                            TextureAtlasSprite sprite = mat != null ? spriteGetter.apply(mat) : null;
+                            bound.add(new com.hbm_m.client.model.nmesh.NMeshPartBakedModel.BoundSubMesh(sm, sprite));
+                        }
+                        BakedModel baked = new com.hbm_m.client.model.nmesh.NMeshPartBakedModel(
+                                bound, flipV, partContext.getRootTransform(), partContext.getTransforms());
+                        bakedParts.put(partName, baked);
+                        continue;
+                    }
+                    ObjModel objModel = LoaderHooks.loadObjModel(def.model(), flipV);
                     BakedModel baked = LoaderHooks.bakeObjModel(objModel, partContext, baker, spriteGetter, identityState, overrides, modelName);
                     bakedParts.put(partName, baked);
                 } catch (Exception e) {

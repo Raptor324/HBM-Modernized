@@ -120,10 +120,6 @@ public final class ClientRenderFlags {
      * renders black/corrupted machines (the composite decodes garbage), so
      * instancing is never enabled blindly.
      */
-    public static boolean irisTrueInstancing() {
-        return false;
-    }
-
     /**
      * Force the vanilla immediate (putBulkData) path for every machine render.
      * Read live (also safe before {@link #onFrameStart}).
