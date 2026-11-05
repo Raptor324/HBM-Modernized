@@ -43,3 +43,27 @@ The files derived from this component carry SPDX headers with the original
 copyright lines and "SPDX-License-Identifier: LGPL-3.0-only". They were
 adapted to Minecraft 1.20.1 / Forge / Java 17 and to the HBM-Modernized code
 base; the algorithm of the Java fallback path is unchanged.
+
+
+--------------------------------------------------------------------------------
+Pantsir-S1 3D model
+--------------------------------------------------------------------------------
+
+Files: models/machines/pantsir_s1.obj, textures/models/machines/pantsir_s1.png
+Author: SanderWolf (https://sketchfab.com/SanderWolf_)
+Source: https://sketchfab.com/3d-models/pantsir-s1-3cb67b0bae10418190e7ce32142231e4
+License: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+Changes: rescaled, retextured, hidden faces removed, wheels replaced, turret
+split into animated parts.
+
+
+--------------------------------------------------------------------------------
+Ka-52 3D model
+--------------------------------------------------------------------------------
+
+Files: models/machines/ka52.obj, textures/models/machines/ka52.png
+Author: SIpriv (https://sketchfab.com/S1Priv)
+Source: https://sketchfab.com/3d-models/lowpoly-ka-52-1b47fb709d634ea987a3bb1a30c1507b
+License: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+Changes: rescaled, reoriented, materials merged into one atlas, split into
+animated parts.
