@@ -641,6 +641,9 @@ public class ModBlocks {
     /** Topol-M-Werfer (MZKT-79221), 25x5-Grundriss mit Aufrichter - siehe TopolLaunchPadBlock. */
     public static final RegistrySupplier<Block> TOPOL_LAUNCH_PAD = registerBlockWithoutItem("topol_launch_pad",
             () -> new com.hbm_m.block.machines.TopolLaunchPadBlock(BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion()));
+    /** Pantsir-S1 auf KamAZ-Fahrgestell, 13x5-Grundriss - siehe PantsirBlock. */
+    public static final RegistrySupplier<Block> PANTSIR_S1 = registerBlockWithoutItem("pantsir_s1",
+            () -> new com.hbm_m.block.machines.PantsirBlock(BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion()));
 
     public static final RegistrySupplier<Block> LAUNCH_PAD_RUSTED = registerBlockWithoutItem("launch_pad_rusted",
             () -> new LaunchPadRustedBlock(BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion().sound(SoundType.STONE)));

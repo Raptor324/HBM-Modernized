@@ -57,6 +57,7 @@ public final class MissileTextures {
     public static final ResourceLocation MISSILE_9M723 = rl("missile_9m723");
     public static final ResourceLocation MISSILE_9M723_BU = rl("missile_9m723_bu");
     public static final ResourceLocation MISSILE_TOPOL = rl("missile_topol");
+    public static final ResourceLocation MISSILE_57E6 = rl("missile_57e6");
 
     public static final ResourceLocation MISSILE_ATLAS_NUCLEAR = rl("missile_atlas_nuclear");
     public static final ResourceLocation MISSILE_ATLAS_THERMO = rl("missile_atlas_thermo");
@@ -101,6 +102,7 @@ public final class MissileTextures {
         if (item == ModItems.MISSILE_9M723.get()) return MISSILE_9M723;
         if (item == ModItems.MISSILE_9M723_BUSTER.get()) return MISSILE_9M723_BU;
         if (item == ModItems.MISSILE_TOPOL.get()) return MISSILE_TOPOL;
+        if (item == ModItems.MISSILE_57E6.get()) return MISSILE_57E6;
         if (item == ModItems.MISSILE_SHUTTLE.get()) return MISSILE_SHUTTLE;
 
         if (item == ModItems.MISSILE_NUCLEAR.get()) return MISSILE_ATLAS_NUCLEAR;
@@ -121,6 +123,7 @@ public final class MissileTextures {
 
     public static ResourceLocation forEntity(MissileBaseEntity entity) {
         if (entity instanceof MissileTestEntity) return MISSILE_MICRO;
+        if (entity instanceof com.hbm_m.entity.missile.MissilePantsirEntity) return MISSILE_57E6;
         if (entity instanceof MissileABMEntity) return MISSILE_ABM;
 
         if (entity instanceof MissileTier0.MissileMicro) return MISSILE_MICRO;

@@ -55,6 +55,15 @@ public abstract class EntityPlaneBase extends Entity {
     }
 
     public float getMaxHealth() { return 50F; }
+
+    /** Wer das Flugzeug gerufen hat, fuer die Freund-Feind-Erkennung. */
+    @org.jetbrains.annotations.Nullable
+    private UUID callerUuid;
+
+    @org.jetbrains.annotations.Nullable
+    public UUID getCaller() { return this.callerUuid; }
+
+    public void setCaller(@org.jetbrains.annotations.Nullable UUID caller) { this.callerUuid = caller; }
     public int getLifetime() { return 200; }
 
     @Override public boolean isPickable() { return this.health > 0; }
@@ -180,12 +189,14 @@ public abstract class EntityPlaneBase extends Entity {
     protected void readAdditionalSaveData(@NotNull CompoundTag nbt) {
         tickCount = nbt.getInt("ticksExisted");
         this.health = nbt.getFloat("health");
+        this.callerUuid = nbt.hasUUID("caller") ? nbt.getUUID("caller") : null;
         this.entityData.set(HEALTH, this.health);
     }
 
     @Override
     protected void addAdditionalSaveData(@NotNull CompoundTag nbt) {
         nbt.putInt("ticksExisted", tickCount);
+        if (this.callerUuid != null) nbt.putUUID("caller", this.callerUuid);
         nbt.putFloat("health", this.entityData.get(HEALTH));
     }
 

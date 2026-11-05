@@ -48,6 +48,13 @@ public class TopolLauncherRenderer implements HbmBerBounds<TopolLaunchPadBlockEn
     private static final String CHASSIS_OBJ = "models/machines/topol_chassis.obj";
     private static final String CANISTER_OBJ = "models/machines/topol_canister.obj";
 
+    /**
+     * Die Schiene oben am Behaelter liegt als eigene Gruppe in der Fahrzeugdatei, weil sie die
+     * Fahrzeugtextur nutzt. Gezeichnet wird sie aber mit dem Behaelter, sonst bleibt sie beim
+     * Aufrichten waagerecht in der Luft haengen.
+     */
+    private static final String RAIL_GROUP = "topol_rail";
+
     private static final ResourceLocation TEX_CHASSIS = ResourceLocation.fromNamespaceAndPath(
             RefStrings.MODID, "textures/models/machines/topol_chassis.png");
     private static final ResourceLocation TEX_CANISTER = ResourceLocation.fromNamespaceAndPath(
@@ -92,8 +99,13 @@ public class TopolLauncherRenderer implements HbmBerBounds<TopolLaunchPadBlockEn
             default -> { }
         }
 
-        drawMesh(buffer.getBuffer(RenderType.entityCutoutNoCull(TEX_CHASSIS)),
-                poseStack.last().pose(), chassis, packedLight);
+        VertexConsumer chassisBuffer = buffer.getBuffer(RenderType.entityCutoutNoCull(TEX_CHASSIS));
+        Matrix4f chassisMatrix = poseStack.last().pose();
+        chassis.forEach((group, triangles) -> {
+            if (!RAIL_GROUP.equals(group)) {
+                drawTriangles(chassisBuffer, chassisMatrix, triangles, packedLight);
+            }
+        });
 
         poseStack.pushPose();
         // Gedreht wird um einen Punkt, der vor dem Rohrende liegt; der Behaelter wird davor
@@ -109,6 +121,15 @@ public class TopolLauncherRenderer implements HbmBerBounds<TopolLaunchPadBlockEn
         poseStack.translate(0.0D, 0.0D, -TopolLaunchPadBlockEntity.HINGE_OFFSET);
         drawMesh(buffer.getBuffer(RenderType.entityCutoutNoCull(TEX_CANISTER)),
                 poseStack.last().pose(), canister, packedLight);
+
+        // Die Schiene ist in Fahrzeugkoordinaten modelliert, darum zuerst zurueck auf deren Ursprung.
+        poseStack.pushPose();
+        poseStack.translate(-TopolLaunchPadBlockEntity.PIVOT_LATERAL,
+                -TopolLaunchPadBlockEntity.PIVOT_HEIGHT,
+                TopolLaunchPadBlockEntity.PIVOT_FORWARD);
+        drawTriangles(buffer.getBuffer(RenderType.entityCutoutNoCull(TEX_CHASSIS)),
+                poseStack.last().pose(), chassis.get(RAIL_GROUP), packedLight);
+        poseStack.popPose();
 
         // Auswurf: die geladene Rakete faehrt entlang der Behaelterachse aus dem Rohr. Gezeichnet
         // wird sie im Koordinatensystem des Behaelters, sie folgt also seiner Neigung mit.
@@ -162,19 +183,23 @@ public class TopolLauncherRenderer implements HbmBerBounds<TopolLaunchPadBlockEn
     private static void drawMesh(VertexConsumer vc, Matrix4f matrix,
                                  Map<String, List<float[]>> obj, int light) {
         for (List<float[]> triangles : obj.values()) {
-            if (triangles == null) {
-                continue;
-            }
-            for (float[] tri : triangles) {
-                for (int pass = 0; pass < 4; pass++) {   // vierter Durchlauf doppelt den dritten
-                    int base = Math.min(pass, 2) * 8;
-                    RenderHooks.vertexFull(vc, matrix,
-                            tri[base], tri[base + 1], tri[base + 2],
-                            255, 255, 255, 255,
-                            tri[base + 3], 1.0F - tri[base + 4],
-                            OverlayTexture.NO_OVERLAY, light,
-                            tri[base + 5], tri[base + 6], tri[base + 7]);
-                }
+            drawTriangles(vc, matrix, triangles, light);
+        }
+    }
+
+    private static void drawTriangles(VertexConsumer vc, Matrix4f matrix, List<float[]> triangles, int light) {
+        if (triangles == null) {
+            return;
+        }
+        for (float[] tri : triangles) {
+            for (int pass = 0; pass < 4; pass++) {   // vierter Durchlauf doppelt den dritten
+                int base = Math.min(pass, 2) * 8;
+                RenderHooks.vertexFull(vc, matrix,
+                        tri[base], tri[base + 1], tri[base + 2],
+                        255, 255, 255, 255,
+                        tri[base + 3], 1.0F - tri[base + 4],
+                        OverlayTexture.NO_OVERLAY, light,
+                        tri[base + 5], tri[base + 6], tri[base + 7]);
             }
         }
     }

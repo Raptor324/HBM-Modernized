@@ -53,6 +53,13 @@ public final class MissileTrackBroadcaster {
             }
         });
         PlayerEvent.PLAYER_JOIN.register(MissileTrackBroadcaster::syncTracksToPlayer);
+        dev.architectury.event.events.common.BlockEvent.PLACE.register((level, pos, state, placer) -> {
+            if (!level.isClientSide() && placer instanceof ServerPlayer player
+                    && level.getBlockEntity(pos) instanceof com.hbm_m.interfaces.IOwnedMachine machine) {
+                machine.setOwner(player.getUUID());
+            }
+            return dev.architectury.event.EventResult.pass();
+        });
         // Singleplayer «save & quit to title» → повторный вход не перезапускает JVM,
         // поэтому эти статические карты переживают перезаход и хранят ссылки на сущности
         // из прежнего экземпляра ServerLevel. Это (а) рисует «замороженные» фантомные

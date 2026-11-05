@@ -1,6 +1,14 @@
 {
   "sources": [
     {
+      "type": "single",
+      "resource": "hbm_m:models/machines/ka52"
+    },
+    {
+      "type": "single",
+      "resource": "hbm_m:models/machines/pantsir_s1"
+    },
+    {
       "type": "directory",
       "source": "block/fluids",
       "prefix": "block/fluids/"

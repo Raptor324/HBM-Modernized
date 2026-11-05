@@ -67,8 +67,18 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
      */
     private static final int CHUNK_LOOKAHEAD_TICKS = 6;
 
-    /** Obergrenze, damit ein absurdes Tempo nicht die halbe Welt laedt. */
-    private static final int CHUNK_LOOKAHEAD_MAX = 8;
+    /**
+     * Obergrenze, damit ein absurdes Tempo nicht die halbe Welt laedt. Die Tickets liegen dicht
+     * hintereinander auf dem Flugweg und ueberlappen sich, 16 davon laden weniger Chunks als sechs
+     * weit auseinanderliegende.
+     */
+    private static final int CHUNK_LOOKAHEAD_MAX = 16;
+
+    /** Abtastweite auf dem Flugweg des naechsten Ticks, in Bloecken. Muss deutlich unter 16 liegen. */
+    private static final double CHUNK_LOOKAHEAD_WALK_STEP = 4.0D;
+
+    /** Sicherheitszuschlag auf den naechsten Tick, weil die Rakete in der Startphase noch beschleunigt. */
+    private static final double CHUNK_LOOKAHEAD_WALK_MARGIN = 1.15D;
 
     /** Макс. длина сегмента raycast за тик (как в 1.7.10 — один луч, но без туннелирования). */
     private static final double MAX_COLLISION_SEGMENT = 1.0D;
@@ -97,6 +107,9 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
     private double lerpXRot;
 
     private ChunkPos loadedChunk;
+
+    @javax.annotation.Nullable
+    private UUID launcherOwner;
 
     /** Zusaetzlich gehaltene Tickets entlang des Flugwegs; siehe {@link #updateChunkTicket()}. */
     private final java.util.Set<ChunkPos> lookaheadChunks = new java.util.HashSet<>();
@@ -149,6 +162,24 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
     public void setLaunchFacing(Direction facing) {
         Direction dir = facing == null ? Direction.NORTH : facing;
         this.entityData.set(DATA_LAUNCH_FACING, dir);
+    }
+
+    /** Besitzer der Startrampe, fuer die Freund-Feind-Erkennung. Null bei Raketen ohne bekannte Herkunft. */
+    @javax.annotation.Nullable
+    public UUID getLauncherOwner() {
+        return this.launcherOwner;
+    }
+
+    public void setLauncherOwner(@javax.annotation.Nullable UUID owner) {
+        this.launcherOwner = owner;
+    }
+
+    public int getImpactX() {
+        return this.targetX;
+    }
+
+    public int getImpactZ() {
+        return this.targetZ;
     }
 
     public Direction getLaunchFacing() {
@@ -262,7 +293,6 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
             }
 
             this.baseTick();
-            updateChunkTicket();
 
             if (this.isRemoved()) {
                 return;
@@ -288,6 +318,11 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
                     }
                     integrateMotion(stepVelocity);
                 }
+            }
+            // Erst nach der Bewegung: landet die Rakete in einem Chunk ohne Ticket, tickt sie dort
+            // nicht mehr weiter und koennte sich nie wieder selbst ein Ticket holen.
+            if (!this.isRemoved()) {
+                updateChunkTicket();
             }
             com.hbm_m.server.missile.MissileTrackBroadcaster.broadcastPoseForMissile(this);
         } else {
@@ -618,6 +653,9 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         tag.putInt("StartZ", this.startZ);
         tag.putInt("TargetX", this.targetX);
         tag.putInt("TargetZ", this.targetZ);
+        if (this.launcherOwner != null) {
+            tag.putUUID("LauncherOwner", this.launcherOwner);
+        }
         tag.putDouble("Velocity", this.velocity);
         tag.putDouble("DecelY", this.decelY);
         tag.putDouble("AccelXZ", this.accelXZ);
@@ -633,6 +671,7 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         this.startZ = tag.getInt("StartZ");
         this.targetX = tag.getInt("TargetX");
         this.targetZ = tag.getInt("TargetZ");
+        this.launcherOwner = tag.hasUUID("LauncherOwner") ? tag.getUUID("LauncherOwner") : null;
         this.velocity = tag.getDouble("Velocity");
         this.decelY = tag.getDouble("DecelY");
         this.accelXZ = tag.getDouble("AccelXZ");
@@ -711,6 +750,11 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
      * <p>Deshalb halten schnelle Raketen zusaetzlich Tickets auf den Chunks, in denen sie in den
      * naechsten Ticks sein werden. Fuer alles, was seinen aktuellen Chunk nicht pro Tick verlaesst,
      * aendert sich dadurch nichts - die Vorhersage landet dann im selben Chunk und wird verworfen.
+     *
+     * <p>Ein Ticket mit {@link #CHUNK_LOOKAHEAD_RADIUS} macht nur seinen Mittelchunk tickend. Reine
+     * Stuetzpunkte im Tickabstand genuegen deshalb nicht: liegt der echte Landepunkt knapp hinter
+     * einer Chunkgrenze, trifft er den Nachbarn des Stuetzpunkts und die Rakete bleibt dort stehen.
+     * Der Weg des naechsten Ticks wird darum lueckenlos abgelaufen.
      */
     private void updateLookaheadTickets(ServerLevel server) {
         java.util.Set<ChunkPos> wanted = null;
@@ -718,19 +762,22 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         Vec3 perTick = this.getDeltaMovement().scale(this.velocity);
         if (perTick.lengthSqr() > 1.0D) {
             Vec3 pos = this.position();
-            for (int i = 1; i <= CHUNK_LOOKAHEAD_TICKS; i++) {
-                Vec3 predicted = pos.add(perTick.scale(i));
-                ChunkPos chunk = new ChunkPos(Mth.floor(predicted.x) >> 4, Mth.floor(predicted.z) >> 4);
-                if (chunk.equals(this.loadedChunk)) {
-                    continue;
+            wanted = new java.util.HashSet<>();
+
+            double groundStep = perTick.horizontalDistance();
+            if (groundStep > 1.0E-6D) {
+                Vec3 walk = new Vec3(perTick.x, 0.0D, perTick.z).scale(CHUNK_LOOKAHEAD_WALK_STEP / groundStep);
+                int steps = (int) Math.ceil(groundStep * CHUNK_LOOKAHEAD_WALK_MARGIN / CHUNK_LOOKAHEAD_WALK_STEP);
+                for (int i = 1; i <= steps && wanted.size() < CHUNK_LOOKAHEAD_MAX; i++) {
+                    addLookaheadChunk(wanted, pos.add(walk.scale(i)));
                 }
-                if (wanted == null) {
-                    wanted = new java.util.HashSet<>();
-                }
-                wanted.add(chunk);
-                if (wanted.size() >= CHUNK_LOOKAHEAD_MAX) {
-                    break;
-                }
+            }
+            for (int i = 1; i <= CHUNK_LOOKAHEAD_TICKS && wanted.size() < CHUNK_LOOKAHEAD_MAX; i++) {
+                addLookaheadChunk(wanted, pos.add(perTick.scale(i)));
+            }
+
+            if (wanted.isEmpty()) {
+                wanted = null;
             }
         }
 
@@ -750,6 +797,13 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
             if (this.lookaheadChunks.add(chunk)) {
                 server.getChunkSource().addRegionTicket(CHUNK_TICKET, chunk, CHUNK_LOOKAHEAD_RADIUS, this.getUUID());
             }
+        }
+    }
+
+    private void addLookaheadChunk(java.util.Set<ChunkPos> wanted, Vec3 predicted) {
+        ChunkPos chunk = new ChunkPos(Mth.floor(predicted.x) >> 4, Mth.floor(predicted.z) >> 4);
+        if (!chunk.equals(this.loadedChunk)) {
+            wanted.add(chunk);
         }
     }
 

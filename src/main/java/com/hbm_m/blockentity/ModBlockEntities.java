@@ -1274,6 +1274,10 @@ public class ModBlockEntities {
         BLOCK_ENTITIES.register("topol_launch_pad_be", () ->
             BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.TopolLaunchPadBlockEntity::new,
                     ModBlocks.TOPOL_LAUNCH_PAD.get()).build(null));
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.PantsirBlockEntity>> PANTSIR_S1_BE =
+        BLOCK_ENTITIES.register("pantsir_s1_be", () ->
+            BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.PantsirBlockEntity::new,
+                    ModBlocks.PANTSIR_S1.get()).build(null));
 
 	public static final RegistrySupplier<BlockEntityType<LaunchPadRustedBlockEntity>> LAUNCH_PAD_RUSTED_BE =
 		BLOCK_ENTITIES.register("launch_pad_rusted_be", () ->

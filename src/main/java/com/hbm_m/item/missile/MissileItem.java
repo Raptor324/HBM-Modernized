@@ -108,6 +108,8 @@ public class MissileItem extends Item implements ITooltipProvider {
         ISKANDER(MissileFuel.KEROSENE_LOXY),
         /** RT-2PM2 Topol-M: 22,5 Bloecke hoch, eigener Rumpf. */
         TOPOL(MissileFuel.JETFUEL_LOXY),
+        /** 57E6 des Pantsir-S1: 3,2 Bloecke lang, zweistufig. */
+        PANTSIR(MissileFuel.SOLID),
         ATLAS(MissileFuel.JETFUEL_LOXY),
         OTHER(MissileFuel.KEROSENE_PEROXIDE);
 

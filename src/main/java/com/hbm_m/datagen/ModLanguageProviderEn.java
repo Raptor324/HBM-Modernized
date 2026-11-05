@@ -336,7 +336,17 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("block.hbm_m.topol_launch_pad", "Topol-M Launcher");
         add("item.hbm_m.topol_launch_pad", "Topol-M Launcher");
         add("container.topolLaunchPad", "Topol-M Launcher");
+        add("item.hbm_m.ka52", "Ka-52 Attack Helicopter");
+        add("entity.hbm_m.ka52", "Ka-52 Attack Helicopter");
+        add("block.hbm_m.pantsir_s1", "Pantsir-S1");
+        add("item.hbm_m.pantsir_s1", "Pantsir-S1");
+        add("message.hbm_m.pantsir.on", "Pantsir-S1 active, missiles: %s/%s, 30 mm: %s/%s");
+        add("message.hbm_m.pantsir.off", "Pantsir-S1 off, missiles: %s/%s, 30 mm: %s/%s");
         add("item.hbm_m.missile_topol", "RT-2PM2 Topol-M Missile");
+        add("item.hbm_m.missile_57e6", "57E6 Interceptor Missile");
+        add("message.hbm_m.pantsir.iff_on", "Pantsir-S1: friend-or-foe identification on");
+        add("message.hbm_m.pantsir.iff_off", "Pantsir-S1: friend-or-foe identification off, engaging everything");
+        add("message.hbm_m.pantsir.loaded", "Pantsir-S1 loaded, missiles: %s/%s, 30 mm: %s/%s");
         add("item.hbm_m.missile_shuttle", "Shuttle Missile");
         add("item.hbm_m.missile_nuclear", "Atlas Nuclear Missile");
         add("item.hbm_m.missile_nuclear_cluster", "Nuclear Cluster Missile");

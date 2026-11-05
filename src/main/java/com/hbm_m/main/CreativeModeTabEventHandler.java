@@ -2295,6 +2295,8 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.CRATE_SUPPLY.get()));
         add.accept(new ItemStack(ModItems.MOBILE_LAUNCH_PAD.get()));
         add.accept(new ItemStack(ModItems.TOPOL_LAUNCH_PAD.get()));
+        add.accept(new ItemStack(ModItems.PANTSIR_S1.get()));
+        add.accept(new ItemStack(ModItems.KA52.get()));
         add.accept(new ItemStack(ModItems.LAUNCH_PAD_RUSTED.get()));
         add.accept(new ItemStack(ModItems.RADAR_SCREEN.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_MISSILE_ASSEMBLY.get()));
@@ -2335,6 +2337,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.MISSILE_9M723.get()));
         add.accept(new ItemStack(ModItems.MISSILE_9M723_BUSTER.get()));
         add.accept(new ItemStack(ModItems.MISSILE_TOPOL.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_57E6.get()));
         add.accept(new ItemStack(ModItems.MISSILE_NUCLEAR.get()));
         add.accept(new ItemStack(ModItems.MISSILE_NUCLEAR_CLUSTER.get()));
         add.accept(new ItemStack(ModItems.MISSILE_VOLCANO.get()));

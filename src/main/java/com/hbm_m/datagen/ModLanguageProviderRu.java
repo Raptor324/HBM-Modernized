@@ -311,7 +311,17 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("block.hbm_m.topol_launch_pad", "ПУ «Тополь-М»");
         add("item.hbm_m.topol_launch_pad", "ПУ «Тополь-М»");
         add("container.topolLaunchPad", "ПУ «Тополь-М»");
+        add("item.hbm_m.ka52", "Ударный вертолёт Ка-52");
+        add("entity.hbm_m.ka52", "Ударный вертолёт Ка-52");
+        add("block.hbm_m.pantsir_s1", "ЗРПК «Панцирь-С1»");
+        add("item.hbm_m.pantsir_s1", "ЗРПК «Панцирь-С1»");
+        add("message.hbm_m.pantsir.on", "«Панцирь-С1» включён, ракет: %s/%s, 30 мм: %s/%s");
+        add("message.hbm_m.pantsir.off", "«Панцирь-С1» выключен, ракет: %s/%s, 30 мм: %s/%s");
         add("item.hbm_m.missile_topol", "Ракета РТ-2ПМ2 «Тополь-М»");
+        add("item.hbm_m.missile_57e6", "Зенитная ракета 57Э6");
+        add("message.hbm_m.pantsir.iff_on", "«Панцирь-С1»: опознавание «свой-чужой» включено");
+        add("message.hbm_m.pantsir.iff_off", "«Панцирь-С1»: опознавание выключено, огонь по всем целям");
+        add("message.hbm_m.pantsir.loaded", "«Панцирь-С1» заряжен, ракет: %s/%s, 30 мм: %s/%s");
         add("item.hbm_m.missile_shuttle", "Шаттл-ракета");
         add("item.hbm_m.missile_nuclear", "Ядерная ракета Atlas");
         // Warheads (имена 1:1 из item.warhead_* оригинального ru_RU.lang)

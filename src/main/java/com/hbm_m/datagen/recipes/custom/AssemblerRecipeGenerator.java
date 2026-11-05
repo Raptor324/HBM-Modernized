@@ -307,6 +307,28 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 12)
                 .save(writer, "topol_launch_pad");
 
+        // Pantsir-S1: kleiner als der Topol, dafuer mehr Elektronik.
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.PANTSIR_S1.get(), 1), 500, 500)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 32)
+                .addIngredient(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE), 24)
+                .addIngredient(ModItems.MOTOR.get(), 12)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 16)
+                .save(writer, "pantsir_s1");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.KA52.get(), 1), 600, 600)
+                .addIngredient(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE), 32)
+                .addIngredient(ModItems.MOTOR.get(), 8)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 12)
+                .save(writer, "ka52");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_57E6.get(), 1), 100, 150)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 6)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 2)
+                .save(writer, "missile_57e6");
+
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModItems.MISSILE_TOPOL.get(), 1), 400, 500)
                 .addIngredient(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE), 24)

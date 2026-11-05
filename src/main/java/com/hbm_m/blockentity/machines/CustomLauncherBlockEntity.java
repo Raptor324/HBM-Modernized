@@ -50,7 +50,7 @@ import net.minecraft.world.phys.Vec3;
  * startet sie zum Ziel des Zielgebers, die Streuung ergibt sich aus Chip und Leitwerk.
  */
 public abstract class CustomLauncherBlockEntity extends BaseMachineBlockEntity
-        implements com.hbm_m.api.fluids.IFluidStandardReceiverMK2, IRadarCommandReceiver, com.hbm_m.api.tile.IControlReceiver {
+        implements com.hbm_m.interfaces.IOwnedMachine, com.hbm_m.api.fluids.IFluidStandardReceiverMK2, IRadarCommandReceiver, com.hbm_m.api.tile.IControlReceiver {
 
     public static final int SLOT_MISSILE = 0;
     public static final int SLOT_DESIGNATOR = 1;
@@ -244,6 +244,7 @@ public abstract class CustomLauncherBlockEntity extends BaseMachineBlockEntity
         EntityMissileCustom missile = ModEntities.MISSILE_CUSTOM.get().create(level);
         if (missile != null) {
             missile.setup(worldPosition.getX() + 0.5F, worldPosition.getY() + 2.5F, worldPosition.getZ() + 0.5F, tX + (int) rx, tZ + (int) rz, struct);
+            missile.setLauncherOwner(this.ownerUuid);
             level.addFreshEntity(missile);
         }
 
@@ -412,9 +413,28 @@ public abstract class CustomLauncherBlockEntity extends BaseMachineBlockEntity
         return RenderBounds.INFINITE;
     }
 
+    /** Wer die Anlage aufgestellt hat, fuer die Freund-Feind-Erkennung. */
+    @org.jetbrains.annotations.Nullable
+    private java.util.UUID ownerUuid;
+
+    @Override
+    public void setOwner(java.util.UUID owner) {
+        this.ownerUuid = owner;
+        setChanged();
+    }
+
+    @org.jetbrains.annotations.Nullable
+    @Override
+    public java.util.UUID getOwner() {
+        return this.ownerUuid;
+    }
+
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
+        if (this.ownerUuid != null) {
+            tag.putUUID("owner_uuid", this.ownerUuid);
+        }
         tanks[0].writeToNBT(tag, "fuel");
         tanks[1].writeToNBT(tag, "oxidizer");
         tag.putInt("solidfuel", solid);
@@ -424,6 +444,7 @@ public abstract class CustomLauncherBlockEntity extends BaseMachineBlockEntity
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
+        this.ownerUuid = tag.hasUUID("owner_uuid") ? tag.getUUID("owner_uuid") : null;
         tanks[0].readFromNBT(tag, "fuel");
         tanks[1].readFromNBT(tag, "oxidizer");
         solid = tag.getInt("solidfuel");

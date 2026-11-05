@@ -22,6 +22,8 @@ public enum MissileFormFactorModels {
     ISKANDER("models/missiles/missile_9m723.obj", Set.of("Missile"), 1.0F, 1.0F),
     /** RT-2PM2 Topol-M - als Rotationskoerper erzeugt, 22,5 x 1,9 Bloecke. */
     TOPOL("models/missiles/missile_topol.obj", Set.of("Missile"), 1.0F, 1.0F),
+    /** 57E6 des Pantsir-S1, 3,2 Bloecke lang. */
+    PANTSIR("models/missiles/missile_57e6.obj", Set.of("Missile"), 1.0F, 1.0F),
     ATLAS("models/missiles/missile_atlas.obj", Set.of("Circle.002_Circle.003"), 1.0F, 1.0F),
     ABM("models/missiles/missile_abm.obj", Set.of("Circle"), 1.0F, 1.0F),
     SHUTTLE("models/missiles/missile_shuttle.obj",
@@ -73,6 +75,7 @@ public enum MissileFormFactorModels {
             case HUGE -> HUGE;
             case ISKANDER -> ISKANDER;
             case TOPOL -> TOPOL;
+            case PANTSIR -> PANTSIR;
             case ATLAS -> ATLAS;
             case ABM -> ABM;
             case OTHER -> SHUTTLE;
@@ -80,6 +83,9 @@ public enum MissileFormFactorModels {
     }
 
     public static MissileFormFactorModels fromEntity(Class<? extends com.hbm_m.entity.missile.MissileBaseEntity> entityClass) {
+        if (com.hbm_m.entity.missile.MissilePantsirEntity.class.isAssignableFrom(entityClass)) {
+            return PANTSIR;
+        }
         if (com.hbm_m.entity.missile.MissileABMEntity.class.isAssignableFrom(entityClass)) {
             return ABM;
         }

@@ -719,6 +719,7 @@ public class ClientSetup {
         ModEntities.MISSILE_9M723.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
         ModEntities.MISSILE_9M723_BUSTER.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
         ModEntities.MISSILE_TOPOL.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_PANTSIR.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
         ModEntities.MISSILE_SHUTTLE.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
         ModEntities.MISSILE_NUCLEAR.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
         ModEntities.MISSILE_NUCLEAR_CLUSTER.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
@@ -870,6 +871,7 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.LAUNCH_PAD_BE.get(), LaunchPadMissileRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.MOBILE_LAUNCH_PAD_BE.get(), com.hbm_m.client.render.implementations.MobileLaunchPadMissileRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.TOPOL_LAUNCH_PAD_BE.get(), com.hbm_m.client.render.implementations.TopolLauncherRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.PANTSIR_S1_BE.get(), com.hbm_m.client.render.implementations.PantsirRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.LAUNCH_PAD_RUSTED_BE.get(), LaunchPadMissileRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.COOLING_TOWER_BE.get(), com.hbm_m.client.render.implementations.CoolingTowerRenderer::large);
         BlockEntityRenderers.register(ModBlockEntities.TOWER_SMALL_BE.get(), com.hbm_m.client.render.implementations.CoolingTowerRenderer::small);
@@ -1621,6 +1623,7 @@ public class ClientSetup {
         event.registerEntityRenderer(ModEntities.MISSILE_9M723.get(), MissileEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.MISSILE_9M723_BUSTER.get(), MissileEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.MISSILE_TOPOL.get(), MissileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_PANTSIR.get(), MissileEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.MISSILE_SHUTTLE.get(), MissileEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.MISSILE_NUCLEAR.get(), MissileEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.MISSILE_NUCLEAR_CLUSTER.get(), MissileEntityRenderer::new);
@@ -1647,6 +1650,7 @@ public class ClientSetup {
         event.registerEntityRenderer(ModEntities.BOT_PRIME_BODY.get(), com.hbm_m.client.render.mob.BOTPrimeRenderer::body);
         event.registerEntityRenderer(ModEntities.UFO.get(), com.hbm_m.client.render.mob.UFORenderer::new);
         event.registerEntityRenderer(ModEntities.BOMBER.get(), com.hbm_m.client.render.plane.BomberRenderer::new);
+        event.registerEntityRenderer(ModEntities.KA52.get(), com.hbm_m.client.render.entity.Ka52Renderer::new);
         // 1:1 RenderBombletTheta (Zeta: halbe Groesse, eigene Textur)
         event.registerEntityRenderer(ModEntities.BOMBLET_ZETA.get(), com.hbm_m.client.render.projectile.BombletThetaRenderer::new);
         event.registerEntityRenderer(ModEntities.MASKMAN.get(), com.hbm_m.client.render.mob.MaskManRenderer::new);

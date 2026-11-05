@@ -90,6 +90,7 @@ public class ItemBombCaller extends Item {
                 case PC       -> EntityBomber.pc(level, x, y, z);
                 default       -> EntityBomber.carpet(level, x, y, z);
             };
+            bomber.setCaller(player.getUUID());
             level.addFreshEntity(bomber);
 
             player.displayClientMessage(Component.literal("Called in airstrike!"), false);

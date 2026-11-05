@@ -59,7 +59,7 @@ import net.minecraft.world.level.material.Fluids;
  * на энерго-/жидкостные сети через {@link #getConPos()} (угловые коннекторы мультиблока).
  */
 public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
-        implements IRadarCommandReceiver, IFluidStandardReceiverMK2 {
+        implements com.hbm_m.interfaces.IOwnedMachine, IRadarCommandReceiver, IFluidStandardReceiverMK2 {
 
     public static final int TANK_CAPACITY_MB = 24_000;
 
@@ -148,6 +148,10 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
 
     @Nullable
     public static Item getLaunchItemFor(EntityType<?> entityType) {
+        // Bewusst nicht in MISSILES: die 57E6 startet nur aus dem Pantsir, nicht von einer Rampe.
+        if (entityType == ModEntities.MISSILE_PANTSIR.get()) {
+            return ModItems.MISSILE_57E6.get();
+        }
         for (Map.Entry<Item, EntityType<? extends MissileBaseEntity>> entry : MISSILES.entrySet()) {
             if (entry.getValue() == entityType) {
                 return entry.getKey();
@@ -571,6 +575,7 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
         MissileBaseEntity missile = type.create(level);
         net.minecraft.world.phys.Vec3 origin = getLaunchOrigin();
         missile.initLaunch(origin.x, origin.y, origin.z, targetX, targetZ);
+        missile.setLauncherOwner(this.ownerUuid);
         BlockState padState = level.getBlockState(worldPosition);
         if (padState.hasProperty(HorizontalDirectionalBlock.FACING)) {
             missile.setLaunchFacing(padState.getValue(HorizontalDirectionalBlock.FACING));
@@ -691,9 +696,28 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
     // -----------------------
 
     
+    /** Wer die Anlage aufgestellt hat, fuer die Freund-Feind-Erkennung. */
+    @org.jetbrains.annotations.Nullable
+    private java.util.UUID ownerUuid;
+
+    @Override
+    public void setOwner(java.util.UUID owner) {
+        this.ownerUuid = owner;
+        setChanged();
+    }
+
+    @org.jetbrains.annotations.Nullable
+    @Override
+    public java.util.UUID getOwner() {
+        return this.ownerUuid;
+    }
+
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
+        if (this.ownerUuid != null) {
+            tag.putUUID("owner_uuid", this.ownerUuid);
+        }
         tag.putInt("launchpad_state", state);
         tag.putInt("launchpad_redstone", redstonePower);
         tag.putInt("launchpad_prev_redstone", prevRedstonePower);
@@ -707,6 +731,7 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
+        this.ownerUuid = tag.hasUUID("owner_uuid") ? tag.getUUID("owner_uuid") : null;
         state = tag.getInt("launchpad_state");
         redstonePower = tag.getInt("launchpad_redstone");
         prevRedstonePower = tag.getInt("launchpad_prev_redstone");

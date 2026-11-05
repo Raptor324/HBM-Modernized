@@ -1,0 +1,7 @@
+{
+    "_comment": "Leeres Modell mit Absicht: gezeichnet wird das Fahrzeug vollstaendig vom PantsirRenderer. Die Textur dient nur den Bruchpartikeln.",
+    "textures": {
+        "particle": "hbm_m:block/pantsir_s1"
+    },
+    "elements": []
+}

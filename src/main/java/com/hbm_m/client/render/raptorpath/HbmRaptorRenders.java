@@ -47,6 +47,7 @@ public final class HbmRaptorRenders {
         com.hbm_m.client.render.implementations.RaptorPathP5.register();
         com.hbm_m.client.render.implementations.RaptorPathP6.register();
         com.hbm_m.client.render.implementations.RaptorPathP7.register();
+        com.hbm_m.client.render.implementations.PantsirRenderer.registerRaptorPath();
         MainRegistry.LOGGER.info("[hbm_m] Maschinen-BERs der Render-Migration auf Raptors Renderpfad angemeldet");
     }
 }

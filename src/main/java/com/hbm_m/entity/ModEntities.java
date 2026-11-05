@@ -324,6 +324,11 @@ public class ModEntities {
             ENTITY_TYPES.register("missile_topol",
                     () -> missileBuilder(com.hbm_m.entity.missile.MissileTopolEntity::new).build("missile_topol"));
 
+    /** 57E6 - Flugkoerper des Pantsir-S1. */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.missile.MissilePantsirEntity>> MISSILE_PANTSIR =
+            ENTITY_TYPES.register("missile_57e6",
+                    () -> missileBuilder(com.hbm_m.entity.missile.MissilePantsirEntity::new).build("missile_57e6"));
+
     public static final RegistrySupplier<EntityType<MissileShuttleEntity>> MISSILE_SHUTTLE =
             ENTITY_TYPES.register("missile_shuttle",
                     () -> missileBuilder(MissileShuttleEntity::new).build("missile_shuttle"));
@@ -953,6 +958,16 @@ public class ModEntities {
                     .build("nolo"));
 
     /** 1:1 port of {@code EntityBomber}: the plane a bomb caller brings in. */
+    /** Ka-52 Kampfhubschrauber, siehe EntityKa52. */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.logic.EntityKa52>> KA52 =
+            ENTITY_TYPES.register("ka52",
+                    () -> EntityType.Builder.<com.hbm_m.entity.logic.EntityKa52>of(
+                                    com.hbm_m.entity.logic.EntityKa52::new, MobCategory.MISC)
+                            .sized(8.0F, 4.0F)
+                            .clientTrackingRange(256)
+                            .updateInterval(1)
+                            .build("ka52"));
+
     /** Original EntityC130 (entity_c130): 8x4, Tracking 1000. */
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.logic.EntityC130>> C130 =
             ENTITY_TYPES.register("entity_c130",

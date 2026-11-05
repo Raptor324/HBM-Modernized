@@ -1657,6 +1657,8 @@ public class ModItems {
 
     public static final RegistrySupplier<Item> TOPOL_LAUNCH_PAD = ITEMS.register("topol_launch_pad",
         () -> new MultiblockBlockItem(ModBlocks.TOPOL_LAUNCH_PAD.get(), new Item.Properties()));
+    public static final RegistrySupplier<Item> PANTSIR_S1 = ITEMS.register("pantsir_s1",
+        () -> new MultiblockBlockItem(ModBlocks.PANTSIR_S1.get(), new Item.Properties()));
 
 	public static final RegistrySupplier<Item> NUKE_FAT_MAN = ITEMS.register("nuke_fat_man",
         () -> new MultiblockBlockItem(ModBlocks.NUKE_FAT_MAN.get(), new Item.Properties()));
@@ -1739,6 +1741,13 @@ public class ModItems {
     /** RT-2PM2 Topol-M: eigener Rumpf, 22,5 Bloecke hoch. */
     public static final RegistrySupplier<Item> MISSILE_TOPOL = ITEMS.register("missile_topol",
             () -> new MissileItem(MissileItem.MissileFormFactor.TOPOL, MissileItem.MissileTier.TIER4));
+    /** 57E6: nur fuer den Pantsir-S1, Rechtsklick laedt ihn nach. */
+    public static final RegistrySupplier<Item> MISSILE_57E6 = ITEMS.register("missile_57e6",
+            () -> new MissileItem(MissileItem.MissileFormFactor.PANTSIR, MissileItem.MissileTier.TIER1));
+
+    /** Ka-52 Kampfhubschrauber, platziert die Entity. */
+    public static final RegistrySupplier<Item> KA52 = ITEMS.register("ka52",
+            () -> new com.hbm_m.item.tool.ItemKa52(new Item.Properties().stacksTo(1)));
     public static final RegistrySupplier<Item> MISSILE_SHUTTLE = ITEMS.register("missile_shuttle",
             () -> new MissileItem(MissileItem.MissileFormFactor.OTHER, MissileItem.MissileTier.TIER3,
                     MissileItem.MissileFuel.KEROSENE_PEROXIDE));

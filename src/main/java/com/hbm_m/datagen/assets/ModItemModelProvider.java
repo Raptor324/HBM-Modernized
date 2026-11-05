@@ -1084,6 +1084,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.MOBILE_LAUNCH_PAD);
         // Der Topol-M-Werfer wird nur vom TESR gezeichnet, sein Item bekommt ein flaches Symbol.
         withExistingParent("topol_launch_pad", "item/generated").texture("layer0", modLoc("block/topol_launch_pad"));
+        withExistingParent("pantsir_s1", "item/generated").texture("layer0", modLoc("block/pantsir_s1"));
+        withExistingParent("ka52", "item/generated").texture("layer0", modLoc("item/ka52"));
         blockItemFromBlockModelMachine(ModBlocks.LAUNCH_PAD_RUSTED);
         blockItemFromBlockModelBomb(ModBlocks.NUKE_FAT_MAN);
         blockItemFromBlockModelBomb(ModBlocks.NUKE_PROTOTYPE); // fehlte: Item ohne Modell
