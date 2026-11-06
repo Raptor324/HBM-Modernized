@@ -94,7 +94,19 @@ public final class HbmKeybinds {
             case GUN_PRIMARY -> gunPrimaryKey.isDown();
             case GUN_SECONDARY -> gunSecondaryKey.isDown();
             case GUN_TERTIARY -> gunTertiaryKey.isDown();
+            case HELI_FORWARD -> pilotKey(Minecraft.getInstance().options.keyUp);
+            case HELI_BACK -> pilotKey(Minecraft.getInstance().options.keyDown);
+            case HELI_LEFT -> pilotKey(Minecraft.getInstance().options.keyLeft);
+            case HELI_RIGHT -> pilotKey(Minecraft.getInstance().options.keyRight);
+            case HELI_UP -> pilotKey(Minecraft.getInstance().options.keyJump);
+            case HELI_DOWN -> pilotKey(Minecraft.getInstance().options.keySprint);
         };
+    }
+
+    /** Flugtasten des Ka-52: die normalen Bewegungstasten, gemeldet nur solange der Spieler im Hubschrauber sitzt. */
+    private static boolean pilotKey(KeyMapping key) {
+        Player player = Minecraft.getInstance().player;
+        return player != null && player.getVehicle() instanceof com.hbm_m.entity.logic.EntityKa52 && key.isDown();
     }
 
     /**

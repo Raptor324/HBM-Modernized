@@ -37,6 +37,7 @@
     "client.ClientLevelImpactMixin",
     "client.DimensionSpecialEffectsImpactMixin",
     "client.LevelRendererImpactMixin",
+    "client.CameraMixin",
     "HoneyGlueSelectionExpansionMixin"
   ],
   "injectors": {

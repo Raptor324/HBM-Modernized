@@ -10,6 +10,7 @@ import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.culling.Frustum;
@@ -18,11 +19,16 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
 
 /**
  * Zeichnet den Ka-52 ueber Raptors VBO-Pfad: jedes bewegliche Teil ist ein eigener Mesh. Die Koaxial-
  * Rotoren drehen gegenlaeufig, das Fahrwerk klappt nach hinten ein, das Sensorgehaeuse unter der Nase
- * sucht die Umgebung ab. Das Modell schaut nach +Z, die Rotorachse liegt im Ursprung.
+ * sucht die Umgebung ab, die Kanone an der rechten Rumpfseite richtet sich aufs Ziel und ihr Rohr laeuft bei
+ * jedem Schuss zurueck. Das Modell schaut nach +Z, die Rotorachse liegt im Ursprung.
+ *
+ * <p>Sitzt der Betrachter selbst im Cockpit und schaut aus der Ich-Sicht, bleibt der Rumpf weg, sonst saehe
+ * er nur die Innenseite der Zelle.
  */
 //? if forge {
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
@@ -45,8 +51,11 @@ public class Ka52Renderer extends EntityRenderer<EntityKa52> {
     private static final ObjAtlasMesh GEAR_LEFT = mesh("gear_left");
     private static final ObjAtlasMesh GEAR_RIGHT = mesh("gear_right");
     private static final ObjAtlasMesh SENSOR = mesh("cannon");
+    private static final ObjAtlasMesh GUN_MOUNT = mesh("gun_mount");
+    private static final ObjAtlasMesh GUN_BARREL = mesh("gun_barrel");
 
     private static final float GEAR_FOLD = 85.0F;
+    private static final double GUN_RECOIL = 0.18D;
 
     private static ObjAtlasMesh mesh(String group) {
         return ObjAtlasMesh.groups(OBJ, SPRITE, "hbm_m/ka52/" + group, group);
@@ -68,10 +77,16 @@ public class Ka52Renderer extends EntityRenderer<EntityKa52> {
         BlockPos pos = entity.blockPosition();
         pose.pushPose();
         pose.mulPose(Axis.YP.rotationDegrees(-Mth.rotLerp(partialTick, entity.yRotO, entity.getYRot())));
-        pose.mulPose(Axis.XP.rotationDegrees(Mth.lerp(partialTick, entity.xRotO, entity.getXRot())));
+        float pitch = Mth.lerp(partialTick, entity.xRotO, entity.getXRot());
+        pose.mulPose(Axis.XP.rotationDegrees(pitch));
         pose.mulPose(Axis.ZP.rotationDegrees(entity.getRoll()));
 
-        draw(BODY, pose, light, pos, buffer);
+        Minecraft minecraft = Minecraft.getInstance();
+        Entity viewer = minecraft.getCameraEntity();
+        boolean cockpitView = minecraft.options.getCameraType().isFirstPerson() && viewer != null && viewer.getVehicle() == entity;
+        if (!cockpitView) {
+            draw(BODY, pose, light, pos, buffer);
+        }
 
         float rotor = entity.getRotorAngle(partialTick);
         pose.pushPose();
@@ -93,6 +108,16 @@ public class Ka52Renderer extends EntityRenderer<EntityKa52> {
         pose.mulPose(Axis.YP.rotationDegrees(Mth.sin((entity.tickCount + partialTick) * 0.03F) * 50.0F));
         pose.translate(-0.29D, -0.62D, -3.76D);
         draw(SENSOR, pose, light, pos, buffer);
+        pose.popPose();
+
+        pose.pushPose();
+        pose.translate(EntityKa52.GUN_X, EntityKa52.GUN_Y, EntityKa52.GUN_Z);
+        pose.mulPose(Axis.YP.rotationDegrees(-entity.getCannonYaw()));
+        pose.mulPose(Axis.XP.rotationDegrees(entity.getCannonPitch() - pitch));
+        pose.translate(-EntityKa52.GUN_X, -EntityKa52.GUN_Y, -EntityKa52.GUN_Z);
+        draw(GUN_MOUNT, pose, light, pos, buffer);
+        pose.translate(0.0D, 0.0D, -entity.getGunRecoil(partialTick) * GUN_RECOIL);
+        draw(GUN_BARREL, pose, light, pos, buffer);
         pose.popPose();
 
         pose.popPose();

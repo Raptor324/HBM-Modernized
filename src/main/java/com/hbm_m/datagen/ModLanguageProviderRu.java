@@ -313,6 +313,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("container.topolLaunchPad", "ПУ «Тополь-М»");
         add("item.hbm_m.ka52", "Ударный вертолёт Ка-52");
         add("entity.hbm_m.ka52", "Ударный вертолёт Ка-52");
+        add("entity.hbm_m.ka52.controls", "W/A/S/D: полёт - Прыжок: набор высоты - Бег: снижение - ЛКМ: пушка - ПКМ: ракеты - Красться: выход");
         add("block.hbm_m.pantsir_s1", "ЗРПК «Панцирь-С1»");
         add("item.hbm_m.pantsir_s1", "ЗРПК «Панцирь-С1»");
         add("message.hbm_m.pantsir.on", "«Панцирь-С1» включён, ракет: %s/%s, 30 мм: %s/%s");

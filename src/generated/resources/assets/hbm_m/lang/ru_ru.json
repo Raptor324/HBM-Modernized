@@ -2325,6 +2325,7 @@
   "entity.hbm_m.glyphid_nuclear": "Чмяк",
   "entity.hbm_m.glyphid_scout": "Глифид-скаут",
   "entity.hbm_m.ka52": "Ударный вертолёт Ка-52",
+  "entity.hbm_m.ka52.controls": "W/A/S/D: полёт - Прыжок: набор высоты - Бег: снижение - ЛКМ: пушка - ПКМ: ракеты - Красться: выход",
   "entity.hbm_m.maskman": "Человек в маске",
   "entity.hbm_m.parasite_maggot": "Паразитическая личинка",
   "entity.hbm_m.rad_beast": "РАД-зверь",

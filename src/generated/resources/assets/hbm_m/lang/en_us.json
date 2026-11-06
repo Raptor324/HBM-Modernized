@@ -2427,6 +2427,7 @@
   "entity.hbm_m.glyphid_nuclear": "Big Man Johnson",
   "entity.hbm_m.glyphid_scout": "Glyphid Scout",
   "entity.hbm_m.ka52": "Ka-52 Attack Helicopter",
+  "entity.hbm_m.ka52.controls": "W/A/S/D: fly - Jump: climb - Sprint: descend - LMB: cannon - RMB: rockets - Sneak: exit",
   "entity.hbm_m.maskman": "Maskman",
   "entity.hbm_m.parasite_maggot": "Parasitic Maggot",
   "entity.hbm_m.rad_beast": "RAD Beast",

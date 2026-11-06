@@ -23,5 +23,11 @@ public enum EnumKeybind {
     GUN_PRIMARY,
     GUN_SECONDARY,
     GUN_TERTIARY,
-    RELOAD
+    RELOAD,
+    HELI_FORWARD,
+    HELI_BACK,
+    HELI_LEFT,
+    HELI_RIGHT,
+    HELI_UP,
+    HELI_DOWN
 }

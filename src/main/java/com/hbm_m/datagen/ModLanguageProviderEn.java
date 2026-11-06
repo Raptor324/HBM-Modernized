@@ -338,6 +338,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("container.topolLaunchPad", "Topol-M Launcher");
         add("item.hbm_m.ka52", "Ka-52 Attack Helicopter");
         add("entity.hbm_m.ka52", "Ka-52 Attack Helicopter");
+        add("entity.hbm_m.ka52.controls", "W/A/S/D: fly - Jump: climb - Sprint: descend - LMB: cannon - RMB: rockets - Sneak: exit");
         add("block.hbm_m.pantsir_s1", "Pantsir-S1");
         add("item.hbm_m.pantsir_s1", "Pantsir-S1");
         add("message.hbm_m.pantsir.on", "Pantsir-S1 active, missiles: %s/%s, 30 mm: %s/%s");
